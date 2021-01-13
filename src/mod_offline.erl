@@ -5,7 +5,7 @@
 %%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -1253,7 +1253,7 @@ mod_doc() ->
               "are currently open."), "",
            ?T("NOTE: 'ejabberdctl' has a command to "
               "delete expired messages (see chapter "
-              "https://docs.ejabberd.im/admin/guide/managing"
+              "https://docs.ejabberd.im/admin/guide/managing/"
               "[Managing an ejabberd server] in online documentation.")],
       opts =>
           [{access_max_user_messages,

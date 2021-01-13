@@ -78,7 +78,6 @@
 {"Displayed:","Affichés :"}.
 {"Dump Backup to Text File at ","Enregistrer la sauvegarde dans un fichier texte sur "}.
 {"Dump to Text File","Sauvegarder dans un fichier texte"}.
-{"Duplicated groups are not allowed by RFC6121","Les groupes ne peuvent être dupliqués (rfc6121)"}.
 {"Edit Properties","Modifier les propriétés"}.
 {"Either approve or decline the voice request.","Accepter ou refuser la demande de voix."}.
 {"ejabberd MUC module","Module MUC ejabberd"}.
@@ -211,7 +210,6 @@
 {"Module failed to handle the query","Échec de traitement de la demande"}.
 {"Monday","Lundi"}.
 {"Multicast","Multidiffusion"}.
-{"Multiple <item/> elements are not allowed by RFC6121","Les elements <item/> multiples ne sont pas autorisés (rfc6121)"}.
 {"Multi-User Chat","Discussion de groupe"}.
 {"Name","Nom"}.
 {"Name:","Nom :"}.
@@ -302,7 +300,6 @@
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ces options sauvegardent uniquement la base de données interne Mnesia. Si vous utilisez le module ODBC vous devez sauvegarde votre base SQL séparément."}.
 {"Please, wait for a while before sending new voice request","Attendez un moment avant de re-lancer une requête de voix"}.
 {"Pong","Pong"}.
-{"Possessing 'ask' attribute is not allowed by RFC6121","Le traitement de l'attribut 'ack' n'est pas autorisé (rfc6121)"}.
 {"Present real Jabber IDs to","Rendre le Jabber ID réel visible pour"}.
 {"private, ","privé"}.
 {"Publish-Subscribe","Publication-Abonnement"}.
@@ -385,6 +382,8 @@
 {"the password is","le mot de passe est"}.
 {"The query is only allowed from local users","La requête n'est autorisé qu'aux utilisateurs locaux"}.
 {"The query must not contain <item/> elements","La requête ne doit pas contenir d'élément <item/>"}.
+{"There was an error creating the account: ","Il y a eu une erreur en créant le compte : "}.
+{"There was an error deleting the account: ","Il y a eu une erreur en effaçant le compte : "}.
 {"This room is not anonymous","Ce salon n'est pas anonyme"}.
 {"Thursday","Jeudi"}.
 {"Time delay","Délais"}.

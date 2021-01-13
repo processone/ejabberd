@@ -75,7 +75,6 @@
 {"Disc only copy","Jen kopie disku"}.
 {"Dump Backup to Text File at ","Uložit zálohu do textového souboru na "}.
 {"Dump to Text File","Uložit do textového souboru"}.
-{"Duplicated groups are not allowed by RFC6121","Duplicitní skupiny nejsou povoleny dle RFC6121"}.
 {"Edit Properties","Upravit vlastnosti"}.
 {"Either approve or decline the voice request.","Povolit nebo odmítnout voice žádost."}.
 {"ejabberd MUC module","ejabberd MUC modul"}.
@@ -195,7 +194,6 @@
 {"Module failed to handle the query","Modul chyboval při zpracování dotazu"}.
 {"Monday","Pondělí"}.
 {"Multicast","Multicast"}.
-{"Multiple <item/> elements are not allowed by RFC6121","Vícenásobný element <item/> není povolen dle RFC6121"}.
 {"Multi-User Chat","Víceuživatelský chat"}.
 {"Name","Jméno"}.
 {"Name:","Jméno:"}.
@@ -285,7 +283,6 @@
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Podotýkáme, že tato nastavení budou zálohována do zabudované databáze Mnesia. Pokud používáte ODBC modul, musíte zálohovat svoji SQL databázi samostatně."}.
 {"Please, wait for a while before sending new voice request","Prosím, počkejte chvíli před posláním nové žádosti o voice práva"}.
 {"Pong","Pong"}.
-{"Possessing 'ask' attribute is not allowed by RFC6121","Atribut 'ask' není povolen dle RFC6121"}.
 {"Present real Jabber IDs to","Odhalovat skutečná Jabber ID"}.
 {"private, ","soukromá, "}.
 {"Publish-Subscribe","Publish-Subscribe"}.
@@ -368,6 +365,8 @@
 {"The query is only allowed from local users","Dotaz je povolen pouze pro místní uživatele"}.
 {"The query must not contain <item/> elements","Dotaz nesmí obsahovat elementy <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Stanza MUSÍ obsahovat pouze jeden element  <active/>, jeden element <default/> nebo jeden element <list/>"}.
+{"There was an error creating the account: ","Při vytváření účtu došlo k chybě:"}.
+{"There was an error deleting the account: ","Při mazání účtu došlo k chybě: "}.
 {"This room is not anonymous","Tato místnost není anonymní"}.
 {"Thursday","Čtvrtek"}.
 {"Time delay","Časový posun"}.

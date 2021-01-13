@@ -138,8 +138,9 @@ gives us the option to relicense the code with a more permissive license in the 
 [coc]: https://github.com/processone/ejabberd/blob/master/CODE_OF_CONDUCT.md
 [stackoverflow]: https://stackoverflow.com/questions/tagged/ejabberd?sort=newest
 [list]: https://lists.jabber.ru/mailman/listinfo/ejabberd
-[muc]: xmpp:ejabberd@conference.process-one.net
+[muc]: xmpp:ejabberd@conference.process-one.net?join
 [logs]: https://process-one.net/logs/ejabberd@conference.process-one.net/
+[translations]: https://hosted.weblate.org/projects/ejabberd/
 [github]: https://github.com/processone/ejabberd
 [github-issues]: https://github.com/processone/ejabberd/issues
 [github-new-issue]: https://github.com/processone/ejabberd/issues/new

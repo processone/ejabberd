@@ -7,7 +7,7 @@
 %%% Created : 20 Jul 2011 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -366,7 +366,7 @@ get_container_children(Heading) ->
 			attrs = [{<<"class">>, <<"block">>}],
 			children =
 			    [#xmlel{name = <<"a">>,
-				    attrs = [{<<"href">>, <<"https://www.ejabberd.im">>}],
+				    attrs = [{<<"href">>, <<"https://www.ejabberd.im/">>}],
 				    children =
 					[#xmlel{name = <<"img">>,
 						attrs = [{<<"height">>, <<"32">>},
@@ -381,7 +381,7 @@ get_container_children(Heading) ->
 			     #xmlel{name = <<"p">>, children =
 					[{xmlcdata, <<"An implementation of ">>},
 					 #xmlel{name = <<"a">>,
-						attrs = [{<<"href">>, <<"http://xmpp.org/extensions/xep-0206.html">>}],
+						attrs = [{<<"href">>, <<"https://xmpp.org/extensions/xep-0206.html">>}],
 						children = [{xmlcdata, <<"XMPP over BOSH (XEP-0206)">>}]}]},
 			     #xmlel{name = <<"p">>, children =
 					[{xmlcdata, <<"This web page is only informative. To "
@@ -394,12 +394,12 @@ get_container_children(Heading) ->
 			attrs = [{<<"class">>, <<"block">>}],
 			children =
 			    [#xmlel{name = <<"a">>,
-				    attrs = [{<<"href">>, <<"https://www.ejabberd.im">>},
+				    attrs = [{<<"href">>, <<"https://www.ejabberd.im/">>},
 					     {<<"title">>, <<"ejabberd XMPP server">>}],
 				    children = [{xmlcdata, <<"ejabberd">>}]},
 			     {xmlcdata, <<" is maintained by ">>},
 			     #xmlel{name = <<"a">>,
-				    attrs = [{<<"href">>, <<"https://www.process-one.net">>},
+				    attrs = [{<<"href">>, <<"https://www.process-one.net/">>},
 					     {<<"title">>, <<"ProcessOne - Leader in Instant Messaging and Push Solutions">>}],
 				    children = [{xmlcdata, <<"ProcessOne">>}]} ]}]}
     ].

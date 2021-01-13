@@ -5,7 +5,7 @@
 %%% Created : 09-10-2010 by Eric Cestari <ecestari@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -301,7 +301,7 @@ get_human_html_xmlel() ->
                                         #xmlel{name = <<"a">>,
                                                attrs =
                                                    [{<<"href">>,
-                                                     <<"http://tools.ietf.org/html/rfc6455">>}],
+                                                     <<"https://tools.ietf.org/html/rfc6455">>}],
                                                children =
                                                    [{xmlcdata,
                                                      <<"WebSocket protocol">>}]}]},

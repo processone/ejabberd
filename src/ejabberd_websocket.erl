@@ -5,12 +5,12 @@
 %%% Created : 09-10-2010 by Eric Cestari <ecestari@process-one.net>
 %%%
 %%% Some code lifted from MISULTIN - WebSocket misultin_websocket.erl - >-|-|-(°>
-%%% (http://github.com/ostinelli/misultin/blob/master/src/misultin_websocket.erl)
+%%% (https://github.com/ostinelli/misultin/blob/master/src/misultin_websocket.erl)
 %%% Copyright (C) 2010, Roberto Ostinelli <roberto@ostinelli.net>, Joe Armstrong.
 %%% All rights reserved.
 %%%
 %%% Code portions from Joe Armstrong have been originally taken under MIT license at the address:
-%%% <http://armstrongonsoftware.blogspot.com/2009/12/comet-is-dead-long-live-websockets.html>
+%%% <https://armstrongonsoftware.blogspot.com/2009/12/comet-is-dead-long-live-websockets.html>
 %%%
 %%% BSD License
 %%%
@@ -33,7 +33,7 @@
 %%% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %%% POSSIBILITY OF SUCH DAMAGE.
 %%% ==========================================================================================================
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_websocket).

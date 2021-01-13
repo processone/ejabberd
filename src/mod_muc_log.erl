@@ -5,7 +5,7 @@
 %%% Created : 12 Mar 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -272,26 +272,26 @@ write_last_lines(_, _, plaintext) -> ok;
 write_last_lines(F, Images_dir, _FileFormat) ->
     fw(F, <<"<div class=\"legend\">">>),
     fw(F,
-       <<"  <a href=\"http://www.ejabberd.im\"><img "
-	 "style=\"border:0\" src=\"~ts/powered-by-ejabbe"
-	 "rd.png\" alt=\"Powered by ejabberd - robust, scalable and extensible XMPP server\"/></a>">>,
+       <<"  <a href=\"https://www.ejabberd.im/\"><img "
+	 "style=\"border:0\" src=\"~ts/powered-by-ejabberd"
+	 ".png\" alt=\"Powered by ejabberd - robust, scalable and extensible XMPP server\"/></a>">>,
        [Images_dir]),
     fw(F,
-       <<"  <a href=\"http://www.erlang.org/\"><img "
+       <<"  <a href=\"https://erlang.org/\"><img "
 	 "style=\"border:0\" src=\"~ts/powered-by-erlang"
 	 ".png\" alt=\"Powered by Erlang\"/></a>">>,
        [Images_dir]),
     fw(F, <<"<span class=\"w3c\">">>),
     fw(F,
-       <<"  <a href=\"http://validator.w3.org/check?uri"
+       <<"  <a href=\"https://validator.w3.org/check?uri"
 	 "=referer\"><img style=\"border:0;width:88px;h"
 	 "eight:31px\" src=\"~ts/valid-xhtml10.png\" "
 	 "alt=\"Valid XHTML 1.0 Transitional\" "
 	 "/></a>">>,
        [Images_dir]),
     fw(F,
-       <<"  <a href=\"http://jigsaw.w3.org/css-validato"
-	 "r/\"><img style=\"border:0;width:88px;height:"
+       <<"  <a href=\"https://jigsaw.w3.org/css-validator"
+	 "/\"><img style=\"border:0;width:88px;height:"
 	 "31px\" src=\"~ts/vcss.png\" alt=\"Valid "
 	 "CSS!\"/></a>">>,
        [Images_dir]),

@@ -1,12 +1,12 @@
 %%%-------------------------------------------------------------------
 %%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% @copyright (C) 2002-2020 ProcessOne, SARL. All Rights Reserved.
+%%% @copyright (C) 2002-2021 ProcessOne, SARL. All Rights Reserved.
 %%%
 %%% Licensed under the Apache License, Version 2.0 (the "License");
 %%% you may not use this file except in compliance with the License.
 %%% You may obtain a copy of the License at
 %%%
-%%%     http://www.apache.org/licenses/LICENSE-2.0
+%%%     https://www.apache.org/licenses/LICENSE-2.0
 %%%
 %%% Unless required by applicable law or agreed to in writing, software
 %%% distributed under the License is distributed on an "AS IS" BASIS,
@@ -159,7 +159,7 @@ get_human_html_xmlel() ->
                                         #xmlel{name = <<"a">>,
                                                attrs =
                                                    [{<<"href">>,
-                                                     <<"http://tools.ietf.org/html/rfc6455">>}],
+                                                     <<"https://tools.ietf.org/html/rfc6455">>}],
                                                children =
                                                    [{xmlcdata,
                                                      <<"WebSocket protocol">>}]}]},

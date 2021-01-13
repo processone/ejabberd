@@ -87,7 +87,6 @@
 {"Disc only copy","только диск"}.
 {"Dump Backup to Text File at ","Копирование в текстовый файл на "}.
 {"Dump to Text File","Копирование в текстовый файл"}.
-{"Duplicated groups are not allowed by RFC6121","Группы с одинаковыми названиями запрещены стандартом RFC6121"}.
 {"Edit Properties","Изменить параметры"}.
 {"Either approve or decline the voice request.","Подтвердите или отклоните право голоса."}.
 {"ejabberd MUC module","ejabberd MUC модуль"}.
@@ -215,7 +214,6 @@
 {"Module failed to handle the query","Ошибка модуля при обработке запроса"}.
 {"Monday","Понедельник"}.
 {"Multicast","Мультикаст"}.
-{"Multiple <item/> elements are not allowed by RFC6121","Множественные элементы <item/> запрещены стандартом RFC6121"}.
 {"Multi-User Chat","Конференция"}.
 {"Name","Название"}.
 {"Name:","Название:"}.
@@ -311,7 +309,6 @@
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Заметьте, что здесь производится резервное копирование только встроенной базы данных Mnesia. Если Вы также используете другое хранилище данных (например с помощью модуля ODBC), то его резервное копирование следует осуществлять отдельно."}.
 {"Please, wait for a while before sending new voice request","Пожалуйста, подождите перед тем как подать новый запрос на право голоса"}.
 {"Pong","Понг"}.
-{"Possessing 'ask' attribute is not allowed by RFC6121","Включение атрибута 'ask' запрещено стандартом RFC6121"}.
 {"Present real Jabber IDs to","Сделать реальные Jabber ID участников видимыми"}.
 {"Previous session not found","Предыдущая сессия не найдена"}.
 {"Previous session PID has been killed","Предыдущая сессия была убита"}.
@@ -399,6 +396,7 @@
 {"The account already exists","Учётная запись уже существует"}.
 {"The CAPTCHA is valid.","Проверка капчи прошла успешно."}.
 {"The CAPTCHA verification has failed","Проверка капчи не пройдена"}.
+{"The captcha you entered is wrong","Неправильно введённое значение капчи"}.
 {"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.
 {"The feature requested is not supported by the conference","Запрашиваемое свойство не поддерживается этой конференцией"}.
 {"The password contains unacceptable characters","Пароль содержит недопустимые символы"}.
@@ -410,6 +408,8 @@
 {"The query must not contain <item/> elements","Запрос не должен содержать элементов <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Строфа может содержать только один элемент <active/>, один элемент <default/> или один элемент <list/>"}.
 {"The username is not valid","Недопустимое имя пользователя"}.
+{"There was an error creating the account: ","Ошибка при создании аккаунта:"}.
+{"There was an error deleting the account: ","Ошибка при удалении аккаунта:"}.
 {"This room is not anonymous","Эта комната не анонимная"}.
 {"This service can not process the address: ~s","Сервер не может обработать адрес: ~s"}.
 {"Thursday","Четверг"}.

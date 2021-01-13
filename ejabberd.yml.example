@@ -3,7 +3,7 @@
 ###
 ### The parameters used in this configuration file are explained at
 ###
-###       https://docs.ejabberd.im/admin/configuration
+###       https://docs.ejabberd.im/admin/configuration/
 ###
 ### The configuration file is written in YAML.
 ### *******************************************************
@@ -11,7 +11,7 @@
 ### *******     YAML IS INDENTATION SENSITIVE       *******
 ### ******* MAKE SURE YOU INDENT SECTIONS CORRECTLY *******
 ### *******************************************************
-### Refer to http://en.wikipedia.org/wiki/YAML for the brief description.
+### Refer to https://en.wikipedia.org/wiki/YAML for the brief description.
 ###
 
 hosts:

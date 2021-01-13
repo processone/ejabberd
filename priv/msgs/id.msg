@@ -12,6 +12,7 @@
 {"Access model of presence","Model akses kehadiran"}.
 {"Access model of roster","model akses daftar kontak"}.
 {"Access model","Model akses"}.
+{"Account doesn't exist","Akun tidak ada"}.
 {"Action on user","Tindakan pada pengguna"}.
 {"Add Jabber ID","Tambah Jabber ID"}.
 {"Add New","Tambah Baru"}.
@@ -23,6 +24,7 @@
 {"All Users","Semua Pengguna"}.
 {"Allow subscription","Ijinkan berlangganan"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Izinkan ID Jabber ini untuk berlangganan pada node pubsub ini?"}.
+{"Allow this person to register with the room?","Ijinkan orang ini mendaftar masuk kamar?"}.
 {"Allow users to change the subject","Perbolehkan pengguna untuk mengganti topik"}.
 {"Allow users to query other users","Perbolehkan pengguna untuk mengetahui pengguna lain"}.
 {"Allow users to send invites","Perbolehkan pengguna mengirimkan undangan"}.
@@ -34,9 +36,16 @@
 {"Answer associated with a video","Jawaban yang berhubungan dengan video"}.
 {"Answer associated with speech","Jawaban yang berhubungan dengan ucapan"}.
 {"Answer to a question","Jawaban pertanyaan"}.
+{"Anyone in the specified roster group(s) may subscribe and retrieve items","Siapapun dalam keanggotaan grup tertentu dapat berlangganan dan mengambil item"}.
+{"Anyone may publish","Siapapun dapat mempublikasi"}.
+{"Anyone may subscribe and retrieve items","Siapapun dapat berlangganan dan mengambil item"}.
+{"Anyone with Voice","Siapapun dengan fungsi suara"}.
 {"April","April"}.
+{"Attribute 'channel' is required for this request","Atribut 'channel' diperlukan untuk permintaan ini"}.
+{"Attribute 'id' is mandatory for MIX messages","Atribut 'id' harus ada untuk pesan MIX"}.
 {"Attribute 'jid' is not allowed here","Atribut 'jid' tidak diijinkan disini"}.
 {"Attribute 'node' is not allowed here","Atribut 'node' tidak diijinkan disini"}.
+{"Attribute 'to' of stanza that triggered challenge","Atribut 'to' dari stanza yang memicu respon"}.
 {"August","Agustus"}.
 {"Automatic node creation is not enabled","Pembuatan node otomatis tidak diijinkan"}.
 {"Backup Management","Manajemen Backup"}.
@@ -45,6 +54,7 @@
 {"Backup","Backup"}.
 {"Bad format","Format yang buruk"}.
 {"Birthday","Hari Lahir"}.
+{"Both the username and the resource are required","Baik nama pengguna dan sumber daya diperlukan"}.
 {"Bytestream already activated","Bytestream telah aktif"}.
 {"Cannot remove active list","Tidak bisa menghapus daftar aktif"}.
 {"Cannot remove default list","Tidak bisa menghapus daftar standar"}.
@@ -98,14 +108,16 @@
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","Jangan beritahukan kata sandi Anda ke siapapun, bahkan ke administrator layanan XMPP."}.
 {"Dump Backup to Text File at ","Dump Backup menjadi File Teks di "}.
 {"Dump to Text File","Dump menjadi File Teks"}.
-{"Duplicated groups are not allowed by RFC6121","Grup duplikat tidak diperbolehkan oleh RFC6121"}.
 {"Edit Properties","Ganti Properti"}.
 {"Either approve or decline the voice request.","Antara terima atau tolak permintaan suara"}.
-{"ejabberd MUC module","ejabberd MUC Module"}.
+{"ejabberd HTTP Upload service","Layanan HTTP Upload ejabberd"}.
+{"ejabberd MUC module","Modul MUC ejabberd"}.
+{"ejabberd Multicast service","Layanan Multicast ejabberd"}.
 {"ejabberd Publish-Subscribe module","Modul ejabberd Setujui-Pertemanan"}.
 {"ejabberd SOCKS5 Bytestreams module","modul ejabberd SOCKS5 Bytestreams"}.
 {"ejabberd vCard module","Modul ejabberd vCard"}.
 {"ejabberd Web Admin","Admin Web ejabberd"}.
+{"ejabberd","ejabberd"}.
 {"Elements","Elemen-elemen"}.
 {"Email Address","Alamat email"}.
 {"Email","Email"}.
@@ -290,6 +302,7 @@
 {"Roster size","Ukuran Daftar Kontak"}.
 {"RPC Call Error","Panggilan Kesalahan RPC"}.
 {"Running Nodes","Menjalankan Node"}.
+{"~s invites you to the room ~s","~s mengundang anda masuk kamar ~s"}.
 {"Saturday","Sabtu"}.
 {"Script check","Periksa naskah"}.
 {"Search Results for ","Hasil Pencarian untuk"}.
@@ -324,50 +337,116 @@
 {"Sunday","Minggu"}.
 {"That nickname is already in use by another occupant","Julukan itu sudah digunakan oleh penghuni lain"}.
 {"That nickname is registered by another person","Julukan tersebut telah didaftarkan oleh orang lain"}.
+{"The account was not unregistered","Akun tidak terdaftar"}.
 {"The CAPTCHA is valid.","Captcha ini benar."}.
 {"The CAPTCHA verification has failed","Verifikasi CAPTCHA telah gagal"}.
 {"The collections with which a node is affiliated","Koleksi dengan yang berafiliasi dengan sebuah node"}.
+{"The number of subscribers to the node","Jumlah pendaftar di node"}.
+{"The number of unread or undelivered messages","Jumlah pesan yang belum dibaca atau tidak terkirim"}.
+{"The password contains unacceptable characters","Kata sandi mengandung karakter yang tidak dapat diterima"}.
 {"The password is too weak","Kata sandi terlalu lemah"}.
-{"the password is","kata sandi yaitu:"}.
+{"the password is","kata sandinya"}.
+{"The password was not changed","Kata sandi belum berubah"}.
+{"The passwords are different","Kata sandi berbeda"}.
+{"There was an error changing the password: ","Ada kesalahan saat merubah kata kunci: "}.
+{"There was an error creating the account: ","Ada kesalahan saat membuat akun: "}.
+{"There was an error deleting the account: ","Ada kesalahan saat menghapus akun:"}.
 {"This room is not anonymous","Ruangan ini tidak dikenal"}.
 {"Thursday","Kamis"}.
 {"Time delay","Waktu tunda"}.
 {"Time","Waktu"}.
+{"To register, visit ~s","Untuk mendaftar, kunjungi ~s"}.
+{"To ~ts","Kepada ~ts"}.
+{"Token TTL","TTL Token"}.
 {"To","Kepada"}.
-{"Traffic rate limit is exceeded","Lalu lintas melebihi batas"}.
-{"Transactions Aborted:","Transaksi yang dibatalkan:"}.
+{"Too many CAPTCHA requests","Terlalu banyak permintaan CAPTCHA"}.
+{"Too many <item/> elements","Terlalu banyak <item/> elemen"}.
+{"Too many <list/> elements","Terlalu banyak <list/> elemen"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Terlalu banyak (~p) percobaan otentifikasi yang gagal dari alamat IP (~s). Alamat akan di unblok pada ~s UTC"}.
+{"Too many users in this conference","Terlalu banyak pengguna di grup ini"}.
+{"Total rooms","Total kamar"}.
+{"Traffic rate limit is exceeded","Batas tingkat lalu lintas terlampaui"}.
+{"Transactions Aborted:","Transaksi dibatalkan:"}.
 {"Transactions Committed:","Transaksi yang dilakukan:"}.
 {"Transactions Logged:","Transaksi yang ditempuh:"}.
 {"Transactions Restarted:","Transaksi yang dijalankan ulang:"}.
+{"~ts's Offline Messages Queue","~ts's antrian Pesan Offline"}.
 {"Tuesday","Selasa"}.
 {"Unable to generate a CAPTCHA","Tidak dapat menghasilkan CAPTCHA"}.
 {"Unauthorized","Ditolak"}.
+{"Unexpected action","Aksi yang tidak diharapkan"}.
+{"Unexpected error condition: ~p","Kondisi kerusakan yang tidak diduga: ~p"}.
+{"Unregister an XMPP account","Nonaktifkan akun XMPP"}.
 {"Unregister","Nonaktifkan"}.
+{"Unselect All","Batalkan semua"}.
+{"Unsupported <index/> element","Elemen <index/> tidak didukung"}.
+{"Unsupported version","Versi tidak didukung"}.
 {"Update message of the day (don't send)","Rubah pesan harian (tidak dikirim)"}.
 {"Update message of the day on all hosts (don't send)","Rubah pesan harian pada semua host (tidak dikirim)"}.
 {"Update plan","Rencana Perubahan"}.
+{"Update ~p","Memperbaharui ~p"}.
 {"Update script","Perbarui naskah"}.
 {"Update","Memperbarui"}.
 {"Uptime:","Sampai saat:"}.
+{"User already exists","Pengguna sudah ada"}.
+{"User (jid)","Pengguna (jid)"}.
+{"User JID","Pengguna JID"}.
 {"User Management","Manajemen Pengguna"}.
+{"User removed","Pengguna dipindahkan"}.
+{"User session not found","Sesi pengguna tidak ditemukan"}.
+{"User session terminated","Sesi pengguna dihentikan"}.
+{"User ~ts","Pengguna ~ts"}.
 {"Username:","Nama Pengguna:"}.
 {"User","Pengguna"}.
 {"Users are not allowed to register accounts so quickly","Pengguna tidak diperkenankan untuk mendaftar akun begitu cepat"}.
 {"Users Last Activity","Aktifitas terakhir para pengguna"}.
 {"Users","Pengguna"}.
 {"Validate","Mengesahkan"}.
+{"Value 'get' of 'type' attribute is not allowed","Nilai 'get' dari 'type' atribut tidak diperbolehkan"}.
+{"Value of '~s' should be boolean","Nilai '~ s' harus boolean"}.
+{"Value of '~s' should be datetime string","Nilai '~s' harus string datetime"}.
+{"Value of '~s' should be integer","Nilai '~ s' harus integer"}.
+{"Value 'set' of 'type' attribute is not allowed","Nilai 'set' dari 'type' atribut tidak diperbolehkan"}.
 {"vCard User Search","vCard Pencarian Pengguna"}.
+{"View Queue","Lihat antrian"}.
+{"View Roster","Lihat daftar kontak"}.
 {"Virtual Hosts","Virtual Hosts"}.
-{"Visitors are not allowed to change their nicknames in this room","Visitor tidak diperbolehkan untuk mengubah nama julukan di ruangan ini"}.
-{"Visitors are not allowed to send messages to all occupants","Visitor tidak diperbolehkan untuk mengirim pesan ke semua penghuni"}.
+{"Visitors are not allowed to change their nicknames in this room","Tamu tidak diperbolehkan untuk mengubah nama panggilan di ruangan ini"}.
+{"Visitors are not allowed to send messages to all occupants","Tamu tidak diperbolehkan untuk mengirim pesan ke semua penghuni"}.
+{"Visitor","Tamu"}.
+{"Voice request","Permintaan suara"}.
+{"Voice requests are disabled in this conference","Permintaan suara dinonaktifkan dalam konferensi ini"}.
 {"Wednesday","Rabu"}.
+{"When a new subscription is processed and whenever a subscriber comes online","Saat langganan baru diproses dan tiap kali pelanggan online"}.
+{"When a new subscription is processed","Saat langganan baru diproses"}.
 {"When to send the last published item","Ketika untuk mengirim item terakhir yang dipublikasikan"}.
+{"Whether an entity wants to receive an XMPP message body in addition to the payload format","Apakah entitas ingin menerima isi pesan XMPP selain format payload"}.
+{"Whether an entity wants to receive digests (aggregations) of notifications or all notifications individually","Apakah entitas ingin menerima ringkasan(agregasi) pemberitahuan atau semua pemberitahuan satu per satu"}.
+{"Whether an entity wants to receive or disable notifications","Apakah entitas ingin menerima atau menonaktifkan pemberitahuan"}.
+{"Whether owners or publisher should receive replies to items","Apakah pemilik atau penerbit harus menerima balasan dari item"}.
 {"Whether to allow subscriptions","Apakah diperbolehkan untuk berlangganan"}.
+{"Whether to make all subscriptions temporary, based on subscriber presence","Apakah akan menjadikan semua langganan sementara, berdasarkan keberadaan pelanggan"}.
+{"Whether to notify owners about new subscribers and unsubscribes","Apakah akan memberi tahu pemilik tentang pelanggan baru dan berhenti berlangganan"}.
+{"Wrong parameters in the web formulary","Parameter yang salah di formula web"}.
+{"Wrong xmlns","xmlns salah"}.
+{"XMPP Domains","Domain XMPP"}.
+{"XMPP Show Value of Away","XMPP menunjukkan status Away"}.
+{"XMPP Show Value of Chat","XMPP menunjukkan status Chat"}.
+{"XMPP Show Value of DND (Do Not Disturb)","XMPP menunjukkan status DND (Do Not Disturb)"}.
+{"XMPP Show Value of XA (Extended Away)","XMPP menunjukkan status XA (Extended Away)"}.
+{"XMPP URI of Associated Publish-Subscribe Node","XMPP URI dari node Associated Publish-Subscribe"}.
+{"You are being removed from the room because of a system shutdown","Anda sedang dikeluarkan dari kamar karena sistem shutdown"}.
+{"You are not joined to the channel","Anda tidak bergabung ke channel"}.
+{"You can later change your password using an XMPP client.","Anda dapat mengubah kata sandi menggunakan aplikasi XMPP."}.
 {"You have been banned from this room","Anda telah diblokir dari ruangan ini"}.
-{"You must fill in field \"Nickname\" in the form","Anda harus mengisi kolom \"Julukan\" dalam formulir"}.
+{"You have joined too many conferences","Anda telah mengikuti terlalu banyak grup"}.
+{"You must fill in field \"Nickname\" in the form","Anda harus mengisi kolom \"Panggilan\" dalam formulir"}.
 {"You need a client that supports x:data and CAPTCHA to register","Anda memerlukan klien yang mendukung x:data dan CAPTCHA untuk mendaftar"}.
 {"You need a client that supports x:data to register the nickname","Anda memerlukan klien yang mendukung x:data untuk mendaftar julukan"}.
 {"You need an x:data capable client to search","Anda memerlukan x:data klien untuk melakukan pencarian"}.
-{"Your active privacy list has denied the routing of this stanza.","Daftar privasi aktif Anda telah menolak routing ztanza ini"}.
+{"Your active privacy list has denied the routing of this stanza.","Daftar privasi aktif Anda telah menolak routing stanza ini."}.
 {"Your contact offline message queue is full. The message has been discarded.","Kontak offline Anda pada antrian pesan sudah penuh. Pesan telah dibuang."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Pesan Anda untuk ~s sedang diblokir. Untuk membuka blokir tersebut, kunjungi ~s"}.
+{"Your XMPP account was successfully registered.","Akun XMPP Anda berhasil didaftarkan."}.
+{"Your XMPP account was successfully unregistered.","Akun XMPP Anda berhasil dihapus."}.
+{"You're not allowed to create nodes","Anda tidak diizinkan membuat node"}.

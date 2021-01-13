@@ -3,7 +3,7 @@
 %%% Created : 15 Oct 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -509,7 +509,7 @@ history_slave(Config) ->
     ok = leave(Config),
     %% If the client wishes to receive no history, it MUST set the 'maxchars'
     %% attribute to a value of "0" (zero)
-    %% (http://xmpp.org/extensions/xep-0045.html#enter-managehistory)
+    %% (https://xmpp.org/extensions/xep-0045.html#enter-managehistory)
     ct:comment("Checking if maxchars=0 yields to no history"),
     {[], _, _} = join(Config, #muc{history = #muc_history{maxchars = 0}}),
     ok = leave(Config),

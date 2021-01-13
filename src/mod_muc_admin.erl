@@ -5,7 +5,7 @@
 %%% Created : 8 Sep 2007 by Badlop <badlop@ono.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -852,6 +852,13 @@ get_all_rooms(Host) ->
 	end, #{}, OnlineRooms),
 
     Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    DbRooms =
+    case erlang:function_exported(Mod, get_rooms_without_subscribers, 2) of
+	true ->
+	    Mod:get_rooms_without_subscribers(ServerHost, Host);
+	_ ->
+	    Mod:get_rooms(ServerHost, Host)
+    end,
     StoredRooms = lists:filtermap(
 	fun(#muc_room{name_host = {Room, _}, opts = Opts}) ->
 	    case maps:is_key(Room, OnlineMap) of
@@ -860,7 +867,7 @@ get_all_rooms(Host) ->
 		_ ->
 		    {true, {Room, Host, ServerHost, Opts}}
 	    end
-	end, Mod:get_rooms(ServerHost, Host)),
+	end, DbRooms),
     OnlineRooms ++ StoredRooms.
 
 get_room_config(Room_pid) ->
@@ -1000,7 +1007,7 @@ get_room_occupants_number(Room, Host) ->
 %%----------------------------
 %% Send Direct Invitation
 %%----------------------------
-%% http://xmpp.org/extensions/xep-0249.html
+%% https://xmpp.org/extensions/xep-0249.html
 
 send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
     case jid:make(RoomName, RoomService) of
@@ -1237,7 +1244,15 @@ get_room_affiliation(Name, Service, JID) ->
 %% If the affiliation is 'none', the action is to remove,
 %% In any other case the action will be to create the affiliation.
 set_room_affiliation(Name, Service, JID, AffiliationString) ->
-    Affiliation = misc:binary_to_atom(AffiliationString),
+    Affiliation = case AffiliationString of
+                      <<"outcast">> -> outcast;
+                      <<"none">> -> none;
+                      <<"member">> -> member;
+                      <<"admin">> -> admin;
+                      <<"owner">> -> owner;
+                      _ ->
+                          throw({error, "Invalid affiliation"})
+                  end,
     case get_room_pid(Name, Service) of
 	Pid when is_pid(Pid) ->
 	    %% Get the PID for the online room so we can get the state of the room

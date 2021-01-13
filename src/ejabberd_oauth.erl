@@ -5,7 +5,7 @@
 %%% Created : 20 Mar 2015 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -80,19 +80,19 @@
 get_commands_spec() ->
     [
      #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
-                        desc = "Issue an OAuth token for the given JID",
+                        desc = "Issue an oauth token for the given jid",
                         module = ?MODULE, function = oauth_issue_token,
                         args = [{jid, string},{ttl, integer}, {scopes, string}],
                         policy = restricted,
                         args_example = ["user@server.com", 3600, "connected_users_number;muc_online_rooms"],
-                        args_desc = ["JID for which issue token",
+                        args_desc = ["Jid for which issue token",
 				     "Time to live of generated token in seconds",
 				     "List of scopes to allow, separated by ';'"],
                         result = {result, {tuple, [{token, string}, {scopes, string}, {expires_in, string}]}}
                        },
      #ejabberd_commands{name = oauth_list_tokens, tags = [oauth],
-                        desc = "List OAuth tokens, user, scope, and seconds to expire (only Mnesia)",
-                        longdesc = "List OAuth tokens, their user and scope, and how many seconds remain until expirity",
+                        desc = "List oauth tokens, user, scope, and seconds to expire (only Mnesia)",
+                        longdesc = "List oauth tokens, their user and scope, and how many seconds remain until expirity",
                         module = ?MODULE, function = oauth_list_tokens,
                         args = [],
                         policy = restricted,
@@ -107,7 +107,7 @@ get_commands_spec() ->
                         result_desc = "List of remaining tokens"
                        },
      #ejabberd_commands{name = oauth_add_client_password, tags = [oauth],
-                        desc = "Add OAuth client_id with password grant type",
+                        desc = "Add OAUTH client_id with password grant type",
                         module = ?MODULE, function = oauth_add_client_password,
                         args = [{client_id, binary},
                                 {client_name, binary},
@@ -116,7 +116,7 @@ get_commands_spec() ->
                         result = {res, restuple}
                        },
      #ejabberd_commands{name = oauth_add_client_implicit, tags = [oauth],
-                        desc = "Add OAuth client_id with implicit grant type",
+                        desc = "Add OAUTH client_id with implicit grant type",
                         module = ?MODULE, function = oauth_add_client_implicit,
                         args = [{client_id, binary},
                                 {client_name, binary},
@@ -125,7 +125,7 @@ get_commands_spec() ->
                         result = {res, restuple}
                        },
      #ejabberd_commands{name = oauth_remove_client, tags = [oauth],
-                        desc = "Remove OAuth client_id",
+                        desc = "Remove OAUTH client_id",
                         module = ?MODULE, function = oauth_remove_client,
                         args = [{client_id, binary}],
                         policy = restricted,
@@ -496,7 +496,7 @@ process(_Handlers,
         ?XAE(<<"form">>,
              [{<<"action">>, <<"authorization_token">>},
               {<<"method">>, <<"post">>}],
-             [?LABEL(<<"username">>, [?CT(?T("User (JID)")), ?C(<<": ">>)]),
+             [?LABEL(<<"username">>, [?CT(?T("User (jid)")), ?C(<<": ">>)]),
               ?INPUTID(<<"email">>, <<"username">>, <<"">>),
               ?BR,
               ?LABEL(<<"password">>, [?CT(?T("Password")), ?C(<<": ">>)]),
@@ -521,7 +521,7 @@ process(_Handlers,
     Top =
         ?DIV(<<"section">>,
              [?DIV(<<"block">>,
-                   [?A(<<"https://www.ejabberd.im">>,
+                   [?A(<<"https://www.ejabberd.im/">>,
                        [?XA(<<"img">>,
                             [{<<"height">>, <<"32">>},
                              {<<"src">>, logo()}])]
@@ -541,13 +541,13 @@ process(_Handlers,
         ?DIV(<<"section">>,
              [?DIV(<<"block">>,
                    [?XAC(<<"a">>,
-                         [{<<"href">>, <<"https://www.ejabberd.im">>},
+                         [{<<"href">>, <<"https://www.ejabberd.im/">>},
                           {<<"title">>, <<"ejabberd XMPP server">>}],
                          <<"ejabberd">>),
                     ?C(<<" is maintained by ">>),
                     ?XAC(<<"a">>,
-                         [{<<"href">>, <<"https://www.process-one.net">>},
-                          {<<"title">>, <<"ProcessOne—Leader in Instant Messaging and Push Solutions">>}],
+                         [{<<"href">>, <<"https://www.process-one.net/">>},
+                          {<<"title">>, <<"ProcessOne - Leader in Instant Messaging and Push Solutions">>}],
                          <<"ProcessOne">>)
                    ])]),
     Body = ?DIV(<<"container">>, [Top, Middle, Bottom]),

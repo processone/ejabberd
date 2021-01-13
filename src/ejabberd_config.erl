@@ -5,7 +5,7 @@
 %%% Created : 14 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -203,7 +203,7 @@ get_lang(Host) ->
 
 -spec get_uri() -> binary().
 get_uri() ->
-    <<"http://www.process-one.net/en/ejabberd/">>.
+    <<"https://www.process-one.net/en/ejabberd/">>.
 
 -spec get_copyright() -> binary().
 get_copyright() ->

@@ -5,7 +5,7 @@
 %%% Created : 12 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2013-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2013-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -75,6 +75,12 @@ convert_loglevel(2) -> error;
 convert_loglevel(3) -> warning;
 convert_loglevel(4) -> info;
 convert_loglevel(5) -> debug.
+
+quiet_mode() ->
+    case application:get_env(ejabberd, quiet) of
+	{ok, true} -> true;
+	_ -> false
+    end.
 
 -spec get_integer_env(atom(), T) -> T.
 get_integer_env(Name, Default) ->
@@ -150,9 +156,13 @@ do_start(Level) ->
                     end,
     LogRotateCount = get_integer_env(log_rotate_count, 1),
     LogRateLimit = get_integer_env(log_rate_limit, 100),
+    ConsoleLevel0 = case quiet_mode() of
+		        true -> critical;
+		        _ -> Level
+		    end,
     ConsoleLevel = case get_lager_version() >= "3.6.0" of
-		       true -> [{level, Level}];
-		       false -> Level
+		       true -> [{level, ConsoleLevel0}];
+		       false -> ConsoleLevel0
 		   end,
     application:set_env(lager, error_logger_hwm, LogRateLimit),
     application:set_env(
@@ -212,10 +222,11 @@ set(Level) when ?is_loglevel(Level) ->
             ok;
         _ ->
             ConsoleLog = get_log_path(),
+            QuietMode = quiet_mode(),
             lists:foreach(
               fun({lager_file_backend, File} = H) when File == ConsoleLog ->
                       lager:set_loglevel(H, Level);
-                 (lager_console_backend = H) ->
+                 (lager_console_backend = H) when not QuietMode ->
                       lager:set_loglevel(H, Level);
                  (elixir_logger_backend = H) ->
                       lager:set_loglevel(H, Level);
@@ -278,6 +289,12 @@ start(Level) ->
     try
 	ok = logger:set_primary_config(level, Level),
 	ok = logger:update_formatter_config(default, ConsoleFmtConfig),
+	case quiet_mode() of
+	    true ->
+		ok = logger:set_handler_config(default, level, critical);
+	    _ ->
+		ok
+	end,
 	case logger:add_primary_filter(progress_report,
 				       {fun ?MODULE:progress_filter/2, stop}) of
 	    ok -> ok;

@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -247,6 +247,8 @@ opt_type(oauth_cache_life_time) ->
     econf:timeout(second, infinity);
 opt_type(oauth_cache_missed) ->
     econf:bool();
+opt_type(oauth_cache_rest_failure_life_time) ->
+    econf:timeout(second, infinity);
 opt_type(oauth_cache_size) ->
     econf:pos_int(infinity);
 opt_type(oauth_db_type) ->
@@ -586,6 +588,7 @@ options() ->
       fun(Host) -> ejabberd_config:get_option({cache_missed, Host}) end},
      {oauth_cache_size,
       fun(Host) -> ejabberd_config:get_option({cache_size, Host}) end},
+     {oauth_cache_rest_failure_life_time, infinity},
      {oauth_db_type,
       fun(Host) -> ejabberd_config:default_db(Host, ejabberd_oauth) end},
      {oauth_expire, 4294967},
@@ -726,6 +729,7 @@ globals() ->
      oauth_cache_life_time,
      oauth_cache_missed,
      oauth_cache_size,
+     oauth_cache_rest_failure_life_time,
      oauth_db_type,
      oauth_expire,
      oauth_use_cache,

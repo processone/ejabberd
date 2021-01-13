@@ -4,7 +4,7 @@
 %%% Created : 13 Apr 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
 	 get_online_rooms/3, count_online_rooms/2, rsm_supported/0,
 	 register_online_user/4, unregister_online_user/4,
 	 count_online_rooms_by_user/3, get_online_rooms_by_user/3,
-	 get_subscribed_rooms/3]).
+	 get_subscribed_rooms/3, get_rooms_without_subscribers/2]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
@@ -153,6 +153,22 @@ can_use_nick(LServer, Host, JID, Nick) ->
                       " and host=%(Host)s")) of
 	{selected, [{SJID1}]} -> SJID == SJID1;
 	_ -> true
+    end.
+
+get_rooms_without_subscribers(LServer, Host) ->
+    case catch ejabberd_sql:sql_query(
+	LServer,
+	?SQL("select @(name)s, @(opts)s from muc_room"
+	     " where host=%(Host)s")) of
+	{selected, RoomOpts} ->
+	    lists:map(
+		fun({Room, Opts}) ->
+		    OptsD = ejabberd_sql:decode_term(Opts),
+		    #muc_room{name_host = {Room, Host},
+			      opts = mod_muc:opts_to_binary(OptsD)}
+		end, RoomOpts);
+	_Err ->
+	    []
     end.
 
 get_rooms(LServer, Host) ->

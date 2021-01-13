@@ -299,6 +299,8 @@
 {"The collections with which a node is affiliated","Колекція, до якої входить вузол"}.
 {"The password is too weak","Пароль надто простий"}.
 {"the password is","пароль:"}.
+{"There was an error creating the account: ","Помилка при створенні акаунту:"}.
+{"There was an error deleting the account: ","Помилка при видаленні акаунту: "}.
 {"This room is not anonymous","Ця кімната не анонімна"}.
 {"Thursday","Четвер"}.
 {"Time delay","Час затримки"}.

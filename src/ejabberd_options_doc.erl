@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -867,6 +867,11 @@ doc() ->
         desc =>
             ?T("Same as 'cache_missed', but applied to OAuth cache "
                "only. If not set, the value from 'cache_missed' will be used.")}},
+     {oauth_cache_rest_failure_life_time,
+      #{value => "timeout()",
+        desc =>
+            ?T("The time that a failure in OAuth ReST is cached. "
+               "The default value is 'infinity'.")}},
      {oauth_cache_size,
       #{value => "pos_integer() | infinity",
         desc =>

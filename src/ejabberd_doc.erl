@@ -2,7 +2,7 @@
 %%% File    : ejabberd_doc.erl
 %%% Purpose : Options documentation generator
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -293,7 +293,7 @@ man_footer(Lang) ->
     [io_lib:nl(),
      "AUTHOR",
      "------",
-     "https://www.process-one.net[ProcessOne].",
+     "https://www.process-one.net/[ProcessOne].",
      io_lib:nl(),
      "VERSION",
      "-------",
@@ -311,9 +311,9 @@ man_footer(Lang) ->
      "---------",
      tr(Lang, ?T("Default configuration file")) ++ ": " ++ default_config_url(),
      io_lib:nl(),
-     tr(Lang, ?T("Main site")) ++ ": <https://ejabberd.im>",
+     tr(Lang, ?T("Main site")) ++ ": <https://ejabberd.im/>",
      io_lib:nl(),
-     tr(Lang, ?T("Documentation")) ++ ": <https://docs.ejabberd.im>",
+     tr(Lang, ?T("Documentation")) ++ ": <https://docs.ejabberd.im/>",
      io_lib:nl(),
      tr(Lang, ?T("Configuration Guide")) ++ ": " ++ configuration_guide_url(),
      io_lib:nl(),
@@ -322,7 +322,7 @@ man_footer(Lang) ->
      "COPYING",
      "-------",
      "Copyright (c) 2002-" ++ integer_to_list(Year) ++
-         " https://www.process-one.net[ProcessOne]."].
+         " https://www.process-one.net/[ProcessOne]."].
 
 tr(Lang, {Format, Args}) ->
     unicode:characters_to_list(
@@ -457,4 +457,4 @@ default_config_url() ->
         "/ejabberd.yml.example>".
 
 configuration_guide_url() ->
-    "<https://docs.ejabberd.im/admin/configuration>".
+    "<https://docs.ejabberd.im/admin/configuration/>".

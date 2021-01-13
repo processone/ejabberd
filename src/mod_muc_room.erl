@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -3369,7 +3369,7 @@ process_iq_owner(From, #iq{type = set, lang = Lang,
 			    case is_allowed_log_change(Options, StateData, From) andalso
 				is_allowed_persistent_change(Options, StateData, From) andalso
 				is_allowed_mam_change(Options, StateData, From) andalso
-				is_allowed_room_name_desc_limits(Options, StateData) andalso
+				is_allowed_string_limits(Options, StateData) andalso
 				is_password_settings_correct(Options, StateData) of
 				true ->
 				    set_config(Options, StateData, Lang);
@@ -3453,16 +3453,25 @@ is_allowed_mam_change(Options, StateData, From) ->
 			   AccessMam, From)
     end.
 
-%% Check if the Room Name and Room Description defined in the Data Form
+%% Check if the string fields defined in the Data Form
 %% are conformant to the configured limits
--spec is_allowed_room_name_desc_limits(muc_roomconfig:result(), state()) -> boolean().
-is_allowed_room_name_desc_limits(Options, StateData) ->
+-spec is_allowed_string_limits(muc_roomconfig:result(), state()) -> boolean().
+is_allowed_string_limits(Options, StateData) ->
     RoomName = proplists:get_value(roomname, Options, <<"">>),
     RoomDesc = proplists:get_value(roomdesc, Options, <<"">>),
+    Password = proplists:get_value(roomsecret, Options, <<"">>),
+    CaptchaWhitelist = proplists:get_value(captcha_whitelist, Options, []),
+    CaptchaWhitelistSize = lists:foldl(
+      fun(Jid, Sum) -> byte_size(jid:encode(Jid)) + Sum end,
+      0, CaptchaWhitelist),
     MaxRoomName = mod_muc_opt:max_room_name(StateData#state.server_host),
     MaxRoomDesc = mod_muc_opt:max_room_desc(StateData#state.server_host),
+    MaxPassword = mod_muc_opt:max_password(StateData#state.server_host),
+    MaxCaptchaWhitelist = mod_muc_opt:max_captcha_whitelist(StateData#state.server_host),
     (byte_size(RoomName) =< MaxRoomName)
-	andalso (byte_size(RoomDesc) =< MaxRoomDesc).
+    andalso (byte_size(RoomDesc) =< MaxRoomDesc)
+    andalso (byte_size(Password) =< MaxPassword)
+    andalso (CaptchaWhitelistSize =< MaxCaptchaWhitelist).
 
 %% Return false if:
 %% "the password for a password-protected room is blank"
@@ -4158,7 +4167,7 @@ process_iq_disco_items(From, #iq{type = get, sub_els = [#disco_items{node = <<>>
 	    _ ->
 		%% If the list of occupants is private,
 		%% the room MUST return an empty <query/> element
-		%% (http://xmpp.org/extensions/xep-0045.html#disco-roomitems)
+		%% (https://xmpp.org/extensions/xep-0045.html#disco-roomitems)
 		{result, #disco_items{}}
 	  end
     end;

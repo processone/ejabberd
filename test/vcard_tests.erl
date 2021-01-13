@@ -3,7 +3,7 @@
 %%% Created : 16 Nov 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -78,9 +78,9 @@ get_set(Config) ->
 		    jabberid = <<"stpeter@jabber.org">>,
 		    title = <<"Executive Director">>,role = <<"Patron Saint">>,
 		    org = #vcard_org{name = <<"XMPP Standards Foundation">>},
-		    url = <<"http://www.xmpp.org/xsf/people/stpeter.shtml">>,
+		    url = <<"https://xmpp.org/xsf/people/stpeter.shtml">>,
 		    desc = <<"More information about me is located on my "
-			     "personal website: http://www.saint-andre.com/">>},
+			     "personal website: https://stpeter.im/">>},
     #iq{type = result, sub_els = []} =
         send_recv(Config, #iq{type = set, sub_els = [VCard]}),
     %% TODO: check if VCard == VCard1.

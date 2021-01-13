@@ -299,6 +299,8 @@
 {"The collections with which a node is affiliated","Les ramexhnêyes k' on nuk est afiyî avou"}.
 {"The password is too weak","li scret est trop flåw"}.
 {"the password is","li scret est"}.
+{"There was an error creating the account: ","Åk n' a nén stî tot ahivant l' conte: "}.
+{"There was an error deleting the account: ","Åk n' a nén stî tot disfaçant l' conte: "}.
 {"This room is not anonymous","Cisse såle ci n' est nén anonime"}.
 {"Thursday","djudi"}.
 {"Time delay","Tårdjaedje"}.

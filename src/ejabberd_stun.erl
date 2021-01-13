@@ -5,7 +5,7 @@
 %%% Created :  8 May 2014 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2013-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2013-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -203,7 +203,7 @@ listen_options() ->
      {turn_max_port, 65535},
      {turn_max_allocations, 10},
      {turn_max_permissions, 10},
-     {turn_blacklist, [<<"2001::/32">>, <<"2002::/16">>]}, % Teredo, 6to4.
+     {turn_blacklist, [<<"127.0.0.0/8">>, <<"::1/128">>]},
      {server_name, <<"ejabberd">>}].
 
 -spec init_logger() -> ok.

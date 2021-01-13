@@ -183,6 +183,6 @@ https://hosted.weblate.org/projects/ejabberd/ejabberd/
 Links
 -----
 
-- Documentation: https://docs.ejabberd.im
-- Community site: https://www.ejabberd.im
-- ejabberd commercial offering and support: https://www.process-one.net/en/ejabberd
+- Documentation: https://docs.ejabberd.im/
+- Community site: https://www.ejabberd.im/
+- ejabberd commercial offering and support: https://www.process-one.net/en/ejabberd/

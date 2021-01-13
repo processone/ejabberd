@@ -81,7 +81,6 @@
 {"Disc only copy","Csak lemez másolása"}.
 {"Dump Backup to Text File at ","Biztonsági mentés kiírása szövegfájlba itt: "}.
 {"Dump to Text File","Kiírás szövegfájlba"}.
-{"Duplicated groups are not allowed by RFC6121","A kettőzött csoportok nem engedélyezettek az RFC6121 alapján"}.
 {"Edit Properties","Tulajdonságok szerkesztése"}.
 {"Either approve or decline the voice request.","Hagyja jóvá vagy utasítsa el a hangkérelmet."}.
 {"ejabberd HTTP Upload service","ejabberd HTTP feltöltési szolgáltatás"}.
@@ -206,7 +205,6 @@
 {"Module failed to handle the query","A modul nem tudta kezelni a lekérdezést"}.
 {"Monday","hétfő"}.
 {"Multicast","Csoportcímzés"}.
-{"Multiple <item/> elements are not allowed by RFC6121","Több <item/> elem nem engedélyezett az RFC6121 alapján"}.
 {"Multi-User Chat","Többfelhasználós csevegés"}.
 {"Name","Név"}.
 {"Name:","Név:"}.
@@ -294,7 +292,6 @@
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ne feledje, hogy ezek a beállítások csak a beépített Mnesia adatbázisról készítenek biztonsági mentést. Ha az ODBC modult használja, akkor az SQL adatbázisról is különálló biztonsági mentést kell készítenie."}.
 {"Please, wait for a while before sending new voice request","Várjon egy kicsit az új hangkérelem küldése előtt"}.
 {"Pong","Pong"}.
-{"Possessing 'ask' attribute is not allowed by RFC6121","Az „ask” attribútum feldolgozása nem engedélyezett az RFC6121 alapján"}.
 {"Previous session not found","Az előző munkamenet nem található"}.
 {"Previous session PID has been killed","Az előző munkamenet folyamat-azonosítója ki lett lőve"}.
 {"Previous session PID has exited","Az előző munkamenet folyamat-azonosítója kilépett"}.
@@ -377,6 +374,7 @@
 {"The account already exists","A fiók már létezik"}.
 {"The CAPTCHA is valid.","A CAPTCHA érvényes."}.
 {"The CAPTCHA verification has failed","A CAPTCHA ellenőrzése nem sikerült"}.
+{"The captcha you entered is wrong","A beírt CAPTCHA hibás"}.
 {"The feature requested is not supported by the conference","A kért funkciót nem támogatja a konferencia"}.
 {"The password contains unacceptable characters","A jelszó elfogadhatatlan karaktereket tartalmaz"}.
 {"The password is too weak","A jelszó túl gyenge"}.
@@ -387,6 +385,8 @@
 {"The query must not contain <item/> elements","A lekérdezés nem tartalmazhat <item/> elemeket"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","A stanzának csak egyetlen <active/> elemet, egyetlen <default/> elemet vagy egyetlen <list/> elemet KELL tartalmaznia"}.
 {"The username is not valid","A felhasználónév nem érvényes"}.
+{"There was an error creating the account: ","Hiba történt a fiók létrehozásakor: "}.
+{"There was an error deleting the account: ","Hiba történt a fiók törlésekor: "}.
 {"This room is not anonymous","Ez a szoba nem névtelen"}.
 {"This service can not process the address: ~s","Ez a szolgáltatás nem tudja feldolgozni a címet: ~s"}.
 {"Thursday","csütörtök"}.

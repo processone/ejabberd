@@ -3,7 +3,7 @@
 %%% Created : 22 Apr 2020 by Holger Weiss <holger@zedat.fu-berlin.de>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2020   ProcessOne
+%%% ejabberd, Copyright (C) 2020-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as

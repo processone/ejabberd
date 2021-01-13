@@ -297,6 +297,8 @@
 {"The collections with which a node is affiliated","提携されたノードの集合です"}.
 {"The password is too weak","このパスワードは単純過ぎます"}.
 {"the password is","パスワードは"}.
+{"There was an error creating the account: ","アカウントの作成中にエラーが発生しました: "}.
+{"There was an error deleting the account: ","アカウントの削除中にエラーが発生しました: "}.
 {"This room is not anonymous","このチャットルームは非匿名です"}.
 {"Thursday","木曜日"}.
 {"Time delay","遅延時間"}.

@@ -93,7 +93,7 @@ defmodule Ejabberd.Mixfile do
      {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
      {:fast_tls, "~> 1.1"},
-     {:stun, "~> 1.0.34"},
+     {:stun, "~> 1.0.41", override: true},
      {:esip, "~> 1.0.32"},
      {:p1_mysql, "~> 1.0"},
      {:mqtree, "~> 1.0"},
@@ -148,10 +148,10 @@ defmodule Ejabberd.Mixfile do
       files: ["lib", "src", "priv", "mix.exs", "include", "README.md", "COPYING", "rebar.config", "rebar.config.script"],
       maintainers: ["ProcessOne"],
       licenses: ["GPLv2"],
-      links: %{"Site" => "https://www.ejabberd.im",
-               "Documentation" => "http://docs.ejabberd.im",
+      links: %{"Site" => "https://www.ejabberd.im/",
+               "Documentation" => "https://docs.ejabberd.im/",
                "Source" => "https://github.com/processone/ejabberd",
-               "ProcessOne" => "http://www.process-one.net/"}]
+               "ProcessOne" => "https://www.process-one.net/"}]
   end
 
   defp vars do

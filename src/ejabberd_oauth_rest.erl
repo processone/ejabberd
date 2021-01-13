@@ -5,7 +5,7 @@
 %%% Created : 26 Jul 2016 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -81,7 +81,10 @@ lookup(Token) ->
             error;
         Other ->
             ?ERROR_MSG("Unexpected response for oauth lookup: ~p", [Other]),
-	    error
+            case ejabberd_option:oauth_cache_rest_failure_life_time() of
+                infinity -> error;
+                Time -> {cache_with_timeout, error, Time}
+	    end
     end.
 
 clean(_TS) ->
