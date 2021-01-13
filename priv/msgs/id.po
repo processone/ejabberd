@@ -2,32 +2,33 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"PO-Revision-Date: 2011-02-15 07:09+0800\n"
-"Last-Translator: Irfan Mahfudz Guntur <ayes.email@gmail.com>\n"
-"Language-Team: SmartCommunity <http://jsmart.web.id>\n"
-"Language: \n"
+"PO-Revision-Date: 2021-01-13 14:54+0000\n"
+"Last-Translator: uira <inboxriau@andriana.id>\n"
+"Language-Team: Indonesian <https://hosted.weblate.org/projects/ejabberd/"
+"ejabberd/id/>\n"
+"Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 4.4.1-dev\n"
 "X-Language: Indonesian (Bahasa Indonesia)\n"
 "X-Poedit-Basepath: ../../src\n"
 "X-Poedit-SearchPath-0: .\n"
 
 #: src/mod_vcard.erl:462
-#, fuzzy
 msgid " (Add * to the end of field to match substring)"
 msgstr ""
-"Isi formulir untuk pencarian pengguna Jabber yang cocok (Tambahkan * ke "
+" Isi formulir untuk pencarian pengguna Jabber yang cocok (Tambahkan * ke "
 "mengakhiri pengisian untuk menyamakan kata)"
 
 #: src/mod_muc_log.erl:420 src/mod_muc_log.erl:592
 msgid " has set the subject to: "
-msgstr "telah menetapkan topik yaitu:"
+msgstr " telah menetapkan topik yaitu: "
 
 #: src/mod_muc_admin.erl:532
-#, fuzzy
 msgid "# participants"
-msgstr "pengguna pertama kali masuk sebagai participant"
+msgstr "# pengguna"
 
 #: src/mod_shared_roster.erl:1047
 msgid "'Displayed groups' not added (they do not exist!): "
@@ -35,13 +36,12 @@ msgstr ""
 
 #: deps/xmpp/src/muc_register.erl:502
 msgid "A Web Page"
-msgstr ""
+msgstr "Halaman web"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1561
 #: deps/xmpp/src/pubsub_meta_data.erl:672
-#, fuzzy
 msgid "A description of the node"
-msgstr "Nama yang dikenal untuk node"
+msgstr "Deskripsi node"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1985
 msgid "A friendly name for the node"
@@ -53,7 +53,7 @@ msgstr "Diperlukan kata sandi untuk masuk ruangan ini"
 
 #: src/ejabberd_oauth.erl:519
 msgid "Accept"
-msgstr ""
+msgstr "Diterima"
 
 #: src/ejabberd_service.erl:232 src/mod_configure.erl:186
 #: src/mod_configure.erl:303 src/mod_configure.erl:429
@@ -71,13 +71,12 @@ msgid "Access denied by service policy"
 msgstr "Akses ditolak oleh kebijakan layanan"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:833
-#, fuzzy
 msgid "Access model"
-msgstr "Aturan Akses"
+msgstr "Model akses"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:295
 msgid "Access model of authorize"
-msgstr ""
+msgstr "Model akses otorisasi"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:299
 msgid "Access model of open"
@@ -85,11 +84,11 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_publish_options.erl:303
 msgid "Access model of presence"
-msgstr ""
+msgstr "Model akses kehadiran"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:307
 msgid "Access model of roster"
-msgstr ""
+msgstr "model akses daftar kontak"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:311
 #, fuzzy
@@ -124,7 +123,7 @@ msgstr "Administrasi"
 
 #: src/mod_configure.erl:1509
 msgid "Administration of "
-msgstr "Administrasi"
+msgstr "Administrasi "
 
 #: src/mod_muc_room.erl:2801
 msgid "Administrator privileges required"
@@ -139,9 +138,8 @@ msgid "All activity"
 msgstr "Semua aktifitas"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1556
-#, fuzzy
 msgid "Allow subscription"
-msgstr "Berlangganan"
+msgstr "Ijinkan berlangganan"
 
 #: deps/xmpp/src/pubsub_subscribe_authorization.erl:343
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
@@ -198,19 +196,19 @@ msgstr "Pengumuman"
 
 #: deps/xmpp/src/captcha_form.erl:762
 msgid "Answer associated with a picture"
-msgstr ""
+msgstr "Jawaban yang berhubungan dengan gambar"
 
 #: deps/xmpp/src/captcha_form.erl:866
 msgid "Answer associated with a video"
-msgstr ""
+msgstr "Jawaban yang berhubungan dengan video"
 
 #: deps/xmpp/src/captcha_form.erl:836
 msgid "Answer associated with speech"
-msgstr ""
+msgstr "Jawaban yang berhubungan dengan ucapan"
 
 #: deps/xmpp/src/captcha_form.erl:791
 msgid "Answer to a question"
-msgstr ""
+msgstr "Jawaban pertanyaan"
 
 #: deps/xmpp/src/muc_roominfo.erl:728 deps/xmpp/src/muc_roomconfig.erl:1418
 #: deps/xmpp/src/muc_roomconfig.erl:1478 deps/xmpp/src/muc_roomconfig.erl:1981
@@ -263,11 +261,11 @@ msgstr ""
 
 #: src/mod_pubsub.erl:1173
 msgid "Attribute 'jid' is not allowed here"
-msgstr ""
+msgstr "Atribut 'jid' tidak diijinkan disini"
 
 #: src/mod_pubsub.erl:1176
 msgid "Attribute 'node' is not allowed here"
-msgstr ""
+msgstr "Atribut 'node' tidak diijinkan disini"
 
 #: deps/xmpp/src/captcha_form.erl:731
 msgid "Attribute 'to' of stanza that triggered challenge"
@@ -279,7 +277,7 @@ msgstr "Agustus"
 
 #: src/mod_pubsub.erl:1918
 msgid "Automatic node creation is not enabled"
-msgstr ""
+msgstr "Pembuatan node otomatis tidak diijinkan"
 
 #: src/mod_configure.erl:143 src/mod_configure.erl:582
 #: src/ejabberd_web_admin.erl:1100 src/ejabberd_web_admin.erl:1807
@@ -291,13 +289,12 @@ msgid "Backup Management"
 msgstr "Manajemen Backup"
 
 #: src/ejabberd_web_admin.erl:1206
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Cadangan dari"
+msgstr "Cadangan dari ~p"
 
 #: src/mod_configure.erl:857
 msgid "Backup to File at "
-msgstr "Backup ke File pada"
+msgstr "Backup ke File di lokasi "
 
 #: src/ejabberd_web_admin.erl:644 src/ejabberd_web_admin.erl:938
 #: src/ejabberd_web_admin.erl:1094 src/mod_roster.erl:1061
@@ -317,7 +314,7 @@ msgstr ""
 
 #: src/mod_proxy65_service.erl:237
 msgid "Bytestream already activated"
-msgstr ""
+msgstr "Bytestream telah aktif"
 
 #: deps/xmpp/src/captcha_form.erl:910
 msgid "CAPTCHA web page"
@@ -329,15 +326,15 @@ msgstr "Waktu CPU:"
 
 #: src/mod_privacy.erl:322
 msgid "Cannot remove active list"
-msgstr ""
+msgstr "Tidak bisa menghapus daftar aktif"
 
 #: src/mod_privacy.erl:329
 msgid "Cannot remove default list"
-msgstr ""
+msgstr "Tidak bisa menghapus daftar standar"
 
 #: deps/xmpp/src/captcha_form.erl:715
 msgid "Challenge ID"
-msgstr ""
+msgstr "ID tantangan"
 
 #: src/ejabberd_web_admin.erl:912 src/mod_register_web.erl:216
 #: src/mod_register_web.erl:389 src/mod_register_web.erl:397
@@ -351,27 +348,24 @@ msgid "Change User Password"
 msgstr "Ubah User Password"
 
 #: src/mod_register.erl:308
-#, fuzzy
 msgid "Changing password is not allowed"
-msgstr "Karakter tidak diperbolehkan:"
+msgstr "Tidak diijinkan mengubah kata sandi"
 
 #: src/mod_muc_room.erl:3060
-#, fuzzy
 msgid "Changing role/affiliation is not allowed"
-msgstr "Karakter tidak diperbolehkan:"
+msgstr "Tidak diijinkan mengubah peran/afiliasi"
 
 #: src/mod_mix.erl:657
 msgid "Channel already exists"
-msgstr ""
+msgstr "Channel sudah ada"
 
 #: src/mod_mix.erl:662
-#, fuzzy
 msgid "Channel does not exist"
-msgstr "Ruang Konferensi tidak ada"
+msgstr "Channel tidak ada"
 
 #: src/mod_mix.erl:97
 msgid "Channels"
-msgstr ""
+msgstr "Channel"
 
 #: src/mod_register_web.erl:271
 msgid "Characters not allowed:"
@@ -421,7 +415,7 @@ msgstr "Kota"
 
 #: src/mod_stream_mgmt.erl:477
 msgid "Client acknowledged more stanzas than sent by server"
-msgstr ""
+msgstr "Klien menerima lebih banyak stanza daripada yang dikirim oleh server"
 
 #: src/mod_adhoc.erl:107 src/mod_adhoc.erl:134 src/mod_adhoc.erl:150
 #: src/mod_adhoc.erl:166
@@ -448,7 +442,7 @@ msgstr "Sumber Daya Terhubung:"
 
 #: deps/xmpp/src/muc_roominfo.erl:764
 msgid "Contact Addresses (normally, room owner or owners)"
-msgstr ""
+msgstr "Alamat Kontak (biasanya, pemilik atau pemilik kamar)"
 
 #: src/mod_vcard_mnesia.erl:106 src/mod_vcard_mnesia.erl:120
 #: src/mod_vcard_sql.erl:163 src/mod_vcard_sql.erl:177
@@ -458,7 +452,7 @@ msgstr "Negara"
 
 #: deps/xmpp/src/muc_roominfo.erl:875
 msgid "Current Discussion Topic"
-msgstr ""
+msgstr "Topik diskusi saat ini"
 
 #: src/mod_configure.erl:140 src/mod_configure.erl:564
 #: src/ejabberd_web_admin.erl:1099 src/ejabberd_web_admin.erl:1806
@@ -467,12 +461,11 @@ msgstr "Database"
 
 #: src/mod_configure.erl:828
 msgid "Database Tables Configuration at "
-msgstr "Database Tabel Konfigurasi pada"
+msgstr "Konfigurasi Tabel Database pada "
 
 #: src/ejabberd_web_admin.erl:1168
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Tabel Database pada"
+msgstr "Tabel Database pada ~p"
 
 #: src/mod_blocking.erl:263 src/node_flat_sql.erl:775 src/mod_pubsub.erl:3744
 #: src/mod_pubsub.erl:3788 src/mod_pubsub.erl:3808 src/mod_pubsub.erl:3892
@@ -487,9 +480,8 @@ msgstr "Tabel Database pada"
 #: src/mod_mam.erl:670 src/mod_mam.erl:700 src/mod_mam.erl:1036
 #: src/nodetree_tree_sql.erl:124 src/nodetree_tree_sql.erl:138
 #: src/nodetree_tree_sql.erl:280 src/mod_vcard.erl:238
-#, fuzzy
 msgid "Database failure"
-msgstr "Database"
+msgstr "Kegagalan database"
 
 #: src/mod_muc_log.erl:489
 msgid "December"
@@ -509,9 +501,8 @@ msgid "Delete User"
 msgstr "Hapus Pengguna"
 
 #: src/ejabberd_web_admin.erl:1509
-#, fuzzy
 msgid "Delete content"
-msgstr "Hapus Yang Terpilih"
+msgstr "Hapus isi"
 
 #: src/mod_announce.erl:625
 msgid "Delete message of the day"
@@ -522,9 +513,8 @@ msgid "Delete message of the day on all hosts"
 msgstr "Hapus pesan harian pada semua host"
 
 #: src/ejabberd_web_admin.erl:1510
-#, fuzzy
 msgid "Delete table"
-msgstr "Hapus Pengguna"
+msgstr "Hapus tabel"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1530
 msgid "Deliver event notifications"
@@ -543,22 +533,20 @@ msgid "Disc only copy"
 msgstr "Hanya salinan dari disc"
 
 #: src/mod_shared_roster.erl:1029
-#, fuzzy
 msgid "Displayed:"
-msgstr "Tampilkan Grup:"
+msgstr "Tampilkan:"
 
 #: src/mod_register_web.erl:283
-#, fuzzy
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the XMPP "
 "server."
 msgstr ""
-"Jangan memberitahukan kata sandi Anda ke siapapun, bahkan para administrator "
-"dari layanan XMPP."
+"Jangan beritahukan kata sandi Anda ke siapapun, bahkan ke administrator "
+"layanan XMPP."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
-msgstr "Dump Backup ke File Teks di"
+msgstr "Dump Backup menjadi File Teks di "
 
 #: src/mod_configure.erl:149 src/mod_configure.erl:586
 msgid "Dump to Text File"
@@ -566,7 +554,7 @@ msgstr "Dump menjadi File Teks"
 
 #: src/mod_roster.erl:175
 msgid "Duplicated groups are not allowed by RFC6121"
-msgstr ""
+msgstr "Grup duplikat tidak diperbolehkan oleh RFC6121"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1597
 msgid "Dynamically specify a replyto of the item publisher"
@@ -578,7 +566,7 @@ msgstr "Ganti Properti"
 
 #: src/mod_muc_room.erl:4412
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Antara terima atau tolak permintaan suara"
 
 #: src/ejabberd_web_admin.erl:1180
 msgid "Elements"
@@ -592,19 +580,19 @@ msgstr "Email"
 
 #: deps/xmpp/src/muc_register.erl:432
 msgid "Email Address"
-msgstr ""
+msgstr "Alamat email"
 
 #: src/mod_muc_log.erl:822 deps/xmpp/src/muc_roomconfig.erl:1668
 msgid "Enable logging"
-msgstr "Aktifkan catatan"
+msgstr "Aktifkan log"
 
 #: deps/xmpp/src/muc_roomconfig.erl:2007
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Aktifkan pengarsipan pesan"
 
 #: src/mod_push.erl:324
 msgid "Enabling push without 'node' attribute is not supported"
-msgstr ""
+msgstr "Aktivasi push tanpa atribut 'node' tidak didukung"
 
 #: src/mod_configure.erl:165 src/mod_configure.erl:508
 #: src/mod_configure.erl:1018
@@ -646,7 +634,7 @@ msgstr "Kesalahan"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1607
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Kecualikan Jabber IDs dari tantangan CAPTCHA"
 
 #: src/ejabberd_web_admin.erl:1309
 msgid "Export all tables as SQL queries to a file:"
@@ -663,23 +651,23 @@ msgstr "Ekspor data pengguna pada sebuah host ke berkas PIEFXIS (XEP-0227):"
 
 #: src/mod_delegation.erl:352
 msgid "External component failure"
-msgstr ""
+msgstr "Kegagalan komponen eksternal"
 
 #: src/mod_delegation.erl:360
 msgid "External component timeout"
-msgstr ""
+msgstr "Komponen eksternal kehabisan waktu"
 
 #: deps/xmpp/src/muc_register.erl:446
 msgid "FAQ Entry"
-msgstr ""
+msgstr "Entri FAQ"
 
 #: src/mod_proxy65_service.erl:229
 msgid "Failed to activate bytestream"
-msgstr ""
+msgstr "Gagal mengaktifkan bytestream"
 
 #: src/mod_muc_room.erl:1137
 msgid "Failed to extract JID from your voice request approval"
-msgstr ""
+msgstr "Gagal mendapatkan JID dari permintaan akses suara"
 
 #: src/mod_delegation.erl:333
 msgid "Failed to map delegated namespace to external component"
@@ -687,11 +675,11 @@ msgstr ""
 
 #: src/mod_http_upload.erl:864
 msgid "Failed to parse HTTP response"
-msgstr ""
+msgstr "Gagal mengurai respon HTTP"
 
 #: src/mod_muc_room.erl:3642
 msgid "Failed to process option '~s'"
-msgstr ""
+msgstr "Gagal memproses dengan opsi '~s'"
 
 #: src/mod_vcard_mnesia.erl:103 src/mod_vcard_mnesia.erl:117
 #: src/mod_vcard_sql.erl:160 src/mod_vcard_sql.erl:174
@@ -706,7 +694,7 @@ msgstr "Februari"
 
 #: src/mod_http_upload.erl:810
 msgid "File larger than ~w bytes"
-msgstr ""
+msgstr "File lebih besar dari ~w bytes"
 
 #: src/mod_vcard.erl:458
 #, fuzzy
@@ -722,17 +710,16 @@ msgid "From"
 msgstr "Dari"
 
 #: src/mod_configure.erl:678
-#, fuzzy
 msgid "From ~ts"
-msgstr "Dari ~s"
+msgstr "Dari ~ts"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1909
 msgid "Full List of Room Admins"
-msgstr ""
+msgstr "Daftar Lengkap Admin Kamar"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1952
 msgid "Full List of Room Owners"
-msgstr ""
+msgstr "Daftar Lengkap Pemilik Kamar"
 
 #: src/mod_vcard_mnesia.erl:100 src/mod_vcard_mnesia.erl:114
 #: src/mod_vcard_sql.erl:157 src/mod_vcard_sql.erl:171
@@ -749,14 +736,13 @@ msgid "Get Number of Registered Users"
 msgstr "Dapatkan Jumlah Pengguna Yang Terdaftar"
 
 #: src/mod_pubsub.erl:1036
-#, fuzzy
 msgid "Get Pending"
-msgstr "Tertunda"
+msgstr "Lihat yang tertunda"
 
 #: src/mod_configure.erl:171 src/mod_configure.erl:514
 #: src/mod_configure.erl:1052
 msgid "Get User Last Login Time"
-msgstr "Dapatkan Waktu Login Terakhir Pengguna "
+msgstr "Lihat Waktu Login Terakhir Pengguna"
 
 #: src/mod_configure.erl:167 src/mod_configure.erl:510
 #: src/mod_configure.erl:1028
@@ -776,7 +762,7 @@ msgstr "Nama Tengah"
 
 #: deps/xmpp/src/muc_request.erl:383
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Ijinkan akses suara kepadanya?"
 
 #: src/mod_shared_roster.erl:1040
 msgid "Group"
@@ -801,7 +787,7 @@ msgstr "Host"
 
 #: src/mod_s2s_dialback.erl:363
 msgid "Host unknown"
-msgstr ""
+msgstr "Host tidak dikenal"
 
 #: src/mod_configure.erl:1405
 msgid "IP addresses"
