@@ -115,11 +115,11 @@ process([<<"new">>],
       {success, ok, {Username, Host, _Password}} ->
 	  Jid = jid:make(Username, Host),
           mod_register:send_registration_notifications(?MODULE, Jid, Ip),
-	  Text = translate:translate(Lang, ?T("XMPP account created.")),
+	  Text = translate:translate(Lang, ?T("XMPP account registered.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
-                list_to_binary([translate:translate(Lang, ?T("Could not create the account: ")),
+                list_to_binary([translate:translate(Lang, ?T("Could not register the account: ")),
                                 translate:translate(Lang, get_error_text(Error))]),
 	  {404, [], ErrorText}
     end;
@@ -128,11 +128,11 @@ process([<<"delete">>],
 		 host = _HTTPHost}) ->
     case form_del_post(Q) of
       {atomic, ok} ->
-	  Text = translate:translate(Lang, ?T("XMPP account deleted.")),
+	  Text = translate:translate(Lang, ?T("XMPP account unregistered.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
-                list_to_binary([translate:translate(Lang, ?T("Could not delete the account: ")),
+                list_to_binary([translate:translate(Lang, ?T("Could not unregister the account: ")),
                                 translate:translate(Lang, get_error_text(Error))]),
 	  {404, [], ErrorText}
     end;
@@ -249,7 +249,7 @@ form_new_get2(Host, Lang, CaptchaEls) ->
 		  {<<"style">>, <<"text-align:center;">>}],
 		 ?T("Register an XMPP account")),
 	   ?XCT(<<"p">>,
-		?T("This page allows creating an XMPP "
+		?T("This page allows registering an XMPP "
 		   "account on this XMPP server. Your "
 		   "JID (Jabber ID) will be of the "
 		   "form: username@server. Please read the "
@@ -608,7 +608,7 @@ get_error_text({error, not_allowed}) ->
 get_error_text({error, account_doesnt_exist}) ->
     ?T("Account doesn't exist");
 get_error_text({error, account_exists}) ->
-    ?T("The account was not deleted");
+    ?T("The account was not unregistered");
 get_error_text({error, password_not_changed}) ->
     ?T("The password was not changed");
 get_error_text({error, passwords_not_identical}) ->
@@ -624,7 +624,7 @@ mod_doc() ->
           [?T("This module provides a web page where users can:"), "",
            ?T("- Register a new account on the server."), "",
            ?T("- Change the password from an existing account on the server."), "",
-           ?T("- Delete an existing account on the server."), "",
+           ?T("- Unregister an existing account on the server."), "",
 	   ?T("This module supports CAPTCHA image to register a new account. "
 	      "To enable this feature, configure the options 'captcha\_cmd' "
 	      "and 'captcha\_url', documented in the section with "
