@@ -15,12 +15,8 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 
 #: src/mod_vcard.erl:462
-#, fuzzy
 msgid " (Add * to the end of field to match substring)"
 msgstr ""
-"Συμπληρώστε τη φόρμα για να αναζητήσετε οποιαδήποτε Jabber χρήστη που "
-"ταιριάζει (Προσθέστε * στο τέλος τού πεδίου για να ταιριάξει σε μεγαλύτερες "
-"γραμματοσηρές)"
 
 #: src/mod_muc_log.erl:420 src/mod_muc_log.erl:592
 msgid " has set the subject to: "
@@ -49,7 +45,7 @@ msgstr "Ένα φιλικό όνομα για τον κόμβο"
 msgid "A friendly name for the node"
 msgstr "Ένα φιλικό όνομα για τον κόμβο"
 
-#: src/mod_muc_room.erl:2157
+#: src/mod_muc_room.erl:2158
 msgid "A password is required to enter this room"
 msgstr "Απαιτείται κωδικός πρόσβασης για είσοδο σε αυτή την αίθουσα"
 
@@ -75,7 +71,7 @@ msgstr "Άρνηση πρόσβασης, λόγω τακτικής παροχή�
 #: deps/xmpp/src/pubsub_meta_data.erl:833
 #, fuzzy
 msgid "Access model"
-msgstr "Κανόνες Πρόσβασης"
+msgstr "Καθορίστε το μοντέλο πρόσβασης"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:295
 msgid "Access model of authorize"
@@ -94,14 +90,12 @@ msgid "Access model of roster"
 msgstr ""
 
 #: deps/xmpp/src/pubsub_publish_options.erl:311
-#, fuzzy
 msgid "Access model of whitelist"
-msgstr "Λίστες Ελέγχου Πρόσβασης"
+msgstr ""
 
 #: src/mod_register_web.erl:609
-#, fuzzy
 msgid "Account doesn't exist"
-msgstr "Αίθουσα σύνεδριασης δεν υπάρχει"
+msgstr ""
 
 #: src/mod_configure.erl:1514
 msgid "Action on user"
@@ -128,7 +122,7 @@ msgstr "Διαχείριση"
 msgid "Administration of "
 msgstr "Διαχείριση του "
 
-#: src/mod_muc_room.erl:2801
+#: src/mod_muc_room.erl:2802
 msgid "Administrator privileges required"
 msgstr "Aπαιτούνται προνόμια διαχειριστή"
 
@@ -157,27 +151,27 @@ msgstr ""
 
 #: src/mod_muc_log.erl:813 deps/xmpp/src/muc_roomconfig.erl:1654
 msgid "Allow users to change the subject"
-msgstr "Επιτρέψετε στους χρήστες να αλλάζουν το θέμα"
+msgstr "Επιτρέψτε στους χρήστες να αλλάζουν το θέμα"
 
 #: src/mod_muc_log.erl:819 deps/xmpp/src/muc_roomconfig.erl:1623
 msgid "Allow users to query other users"
-msgstr "Επιτρέπστε στους χρήστες να ερωτούν άλλους χρήστες"
+msgstr "Επιτρέψτε στους χρήστες να ερωτούν άλλους χρήστες"
 
 #: src/mod_muc_log.erl:821 deps/xmpp/src/muc_roomconfig.erl:1638
 msgid "Allow users to send invites"
-msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν προσκλήσεις"
+msgstr "Επιτρέψτε στους χρήστες να αποστέλλουν προσκλήσεις"
 
 #: src/mod_muc_log.erl:815 deps/xmpp/src/muc_roomconfig.erl:1456
 msgid "Allow users to send private messages"
-msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα"
+msgstr "Επιτρέψτε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα"
 
 #: src/mod_muc_log.erl:824 deps/xmpp/src/muc_roomconfig.erl:1526
 msgid "Allow visitors to change nickname"
-msgstr "Επιτρέψετε στους επισκέπτες να αλλάζου ψευδώνυμο"
+msgstr "Επιτρέψτε στους επισκέπτες να αλλάζου ψευδώνυμο"
 
 #: src/mod_muc_log.erl:817 deps/xmpp/src/muc_roomconfig.erl:1491
 msgid "Allow visitors to send private messages to"
-msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα σε"
+msgstr "Επιτρέψτε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα σε"
 
 #: src/mod_muc_log.erl:826 deps/xmpp/src/muc_roomconfig.erl:1507
 msgid "Allow visitors to send status text in presence updates"
@@ -218,9 +212,8 @@ msgstr ""
 
 #: deps/xmpp/src/muc_roominfo.erl:728 deps/xmpp/src/muc_roomconfig.erl:1418
 #: deps/xmpp/src/muc_roomconfig.erl:1478 deps/xmpp/src/muc_roomconfig.erl:1981
-#, fuzzy
 msgid "Anyone"
-msgstr "οποιοσδήποτε"
+msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1327
 #: deps/xmpp/src/pubsub_meta_data.erl:817
@@ -320,7 +313,7 @@ msgstr "Τόσο το όνομα χρήστη όσο και ο πόρος είν
 
 #: src/mod_proxy65_service.erl:237
 msgid "Bytestream already activated"
-msgstr "Το Bytestream έχει ήδη ενεργοποιηθε"
+msgstr "Το Bytestream έχει ήδη ενεργοποιηθεί"
 
 #: deps/xmpp/src/captcha_form.erl:910
 msgid "CAPTCHA web page"
@@ -357,7 +350,7 @@ msgstr "Αλλαγή Κωδικού Πρόσβασης Χρήστη"
 msgid "Changing password is not allowed"
 msgstr "Η αλλαγή του κωδικού πρόσβασης δεν επιτρέπεται"
 
-#: src/mod_muc_room.erl:3060
+#: src/mod_muc_room.erl:3061
 msgid "Changing role/affiliation is not allowed"
 msgstr "Η αλλαγή ρόλου/ομάδας δεν επιτρέπεται"
 
@@ -369,7 +362,7 @@ msgstr "Ο κόμβος υπάρχει ήδη"
 #: src/mod_mix.erl:662
 #, fuzzy
 msgid "Channel does not exist"
-msgstr "Αίθουσα σύνεδριασης δεν υπάρχει"
+msgstr "Η αίθουσα σύνεδριασης δεν υπάρχει"
 
 #: src/mod_mix.erl:97
 msgid "Channels"
@@ -377,11 +370,11 @@ msgstr ""
 
 #: src/mod_register_web.erl:271
 msgid "Characters not allowed:"
-msgstr "Χαρακτήρες δεν επιτρέπονται:"
+msgstr "Χαρακτήρες που δεν επιτρέπονται:"
 
 #: src/mod_muc_log.erl:365 src/mod_muc_log.erl:374
 msgid "Chatroom configuration modified"
-msgstr "Διαμόρφωση Αίθουσaς σύνεδριασης τροποποιηθηκε"
+msgstr "Διαμόρφωση Αίθουσας σύνεδριασης τροποποιηθηκε"
 
 #: src/mod_muc_log.erl:458
 msgid "Chatroom is created"
@@ -435,14 +428,14 @@ msgstr "Εντολές"
 #: src/mod_muc.erl:552 src/mod_muc.erl:576 src/mod_muc_room.erl:212
 #: src/mod_muc_room.erl:223
 msgid "Conference room does not exist"
-msgstr "Αίθουσα σύνεδριασης δεν υπάρχει"
+msgstr "Η αίθουσα σύνεδριασης δεν υπάρχει"
 
 #: src/mod_configure.erl:129 src/mod_configure.erl:275
 #: src/mod_configure.erl:296 src/mod_configure.erl:492
 msgid "Configuration"
 msgstr "Διαμόρφωση"
 
-#: src/mod_muc_room.erl:3499
+#: src/mod_muc_room.erl:3500
 msgid "Configuration of room ~s"
 msgstr "Διαμόρφωση Αίθουσας σύνεδριασης ~s"
 
@@ -457,17 +450,15 @@ msgstr ""
 #: src/mod_register_web.erl:150
 #, fuzzy
 msgid "Could not change the password: "
-msgstr "Υπήρξε ένα σφάλμα κατά την αλλαγή του κωδικού πρόσβασης: "
+msgstr "Αλλαγή Κωδικού Πρόσβασης Χρήστη"
 
 #: src/mod_register_web.erl:122
-#, fuzzy
 msgid "Could not register the account: "
-msgstr "Καταργήστε την εγγραφή ενός λογαριασμού XMPP"
+msgstr ""
 
 #: src/mod_register_web.erl:135
-#, fuzzy
 msgid "Could not unregister the account: "
-msgstr "Καταργήστε την εγγραφή ενός λογαριασμού XMPP"
+msgstr ""
 
 #: src/mod_vcard_mnesia.erl:106 src/mod_vcard_mnesia.erl:120
 #: src/mod_vcard_sql.erl:163 src/mod_vcard_sql.erl:177
@@ -560,18 +551,14 @@ msgid "Disc only copy"
 msgstr "Αντίγραφο μόνο σε δίσκο"
 
 #: src/mod_shared_roster.erl:1029
-#, fuzzy
 msgid "Displayed:"
-msgstr "Εμφανίσμενες Ομάδες:"
+msgstr ""
 
 #: src/mod_register_web.erl:283
-#, fuzzy
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the XMPP "
 "server."
 msgstr ""
-"Μην πείτε τον κωδικό πρόσβασής σας σε κανέναν, ακόμη και στους διαχειριστές "
-"του διακομιστή XMPP."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
@@ -581,7 +568,6 @@ msgstr "Αποθήκευση Αντιγράφου Ασφαλείας σε αρχ
 msgid "Dump to Text File"
 msgstr "Αποθήκευση σε αρχείο κειμένου"
 
-# Should be "Duplicate" not "Duplicated"
 #: src/mod_roster.erl:175
 msgid "Duplicated groups are not allowed by RFC6121"
 msgstr "Δεν επιτρέπονται διπλότυπες ομάδες από το RFC6121"
@@ -594,7 +580,7 @@ msgstr ""
 msgid "Edit Properties"
 msgstr "Επεξεργασία ιδιοτήτων"
 
-#: src/mod_muc_room.erl:4412
+#: src/mod_muc_room.erl:4413
 msgid "Either approve or decline the voice request."
 msgstr "Είτε εγκρίνετε ή απορρίψτε το αίτημα φωνής."
 
@@ -632,7 +618,7 @@ msgstr "Τερματισμός Συνεδρίας Χρήστη"
 
 #: src/mod_muc.erl:1009
 msgid "Enter nickname you want to register"
-msgstr "Πληκτρολογήστε το ψευδώνυμο που θέλετε να εγγραφείτε"
+msgstr "Πληκτρολογήστε το ψευδώνυμο που θέλετε να καταχωρήσετε"
 
 #: src/mod_configure.erl:859 src/mod_configure.erl:871
 msgid "Enter path to backup file"
@@ -655,9 +641,8 @@ msgid "Enter the text you see"
 msgstr "Πληκτρολογήστε το κείμενο που βλέπετε"
 
 #: src/mod_vcard.erl:213
-#, fuzzy
 msgid "Erlang XMPP Server"
-msgstr "Erlang XMPP Διακομιστής"
+msgstr ""
 
 #: src/ejabberd_web_admin.erl:1203
 msgid "Error"
@@ -665,7 +650,7 @@ msgstr "Σφάλμα"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1607
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr "Εξαίρεση από τις ταυτότητες Jabber, ή CAPTCHA πρόκληση"
+msgstr "Εξαίρεσε αυτές τις ταυτότητες Jabber από την CAPTCHA πρόκληση"
 
 #: src/ejabberd_web_admin.erl:1309
 msgid "Export all tables as SQL queries to a file:"
@@ -699,7 +684,7 @@ msgstr ""
 msgid "Failed to activate bytestream"
 msgstr "Απέτυχε η ενεργοποίηση του bytestream"
 
-#: src/mod_muc_room.erl:1137
+#: src/mod_muc_room.erl:1138
 msgid "Failed to extract JID from your voice request approval"
 msgstr "Απέτυχε η εξαγωγή JID από την έγκριση του αιτήματος φωνής σας"
 
@@ -712,7 +697,7 @@ msgstr ""
 msgid "Failed to parse HTTP response"
 msgstr "Αποτυχία ανάλυσης της απόκρισης HTTP"
 
-#: src/mod_muc_room.erl:3642
+#: src/mod_muc_room.erl:3643
 msgid "Failed to process option '~s'"
 msgstr "Αποτυχία επεξεργασίας της επιλογής '~s'"
 
@@ -732,10 +717,8 @@ msgid "File larger than ~w bytes"
 msgstr "Αρχείο μεγαλύτερο από ~w bytes"
 
 #: src/mod_vcard.erl:458
-#, fuzzy
 msgid "Fill in the form to search for any matching XMPP User"
 msgstr ""
-"Συμπληρώστε τα πεδία για να αναζητήσετε οποιαδήποτε ταιριάζοντα XMPP χρήστη"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -748,7 +731,7 @@ msgstr "Από"
 #: src/mod_configure.erl:678
 #, fuzzy
 msgid "From ~ts"
-msgstr "Από ~s"
+msgstr "Από"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1909
 #, fuzzy
@@ -834,7 +817,7 @@ msgstr "Διευθύνσεις IP"
 #: src/ejabberd_s2s_out.erl:269
 #, fuzzy
 msgid "Idle connection"
-msgstr "Αντικαταστάθικε από νέα σύνδεση"
+msgstr "Αντικαταστάθηκε από μια νέα σύνδεση"
 
 #: src/ejabberd_captcha.erl:119
 msgid "If you don't see the CAPTCHA image here, visit the web page."
@@ -884,18 +867,18 @@ msgstr "Ακατάλληλο είδος μηνύματος"
 msgid "Incoming s2s Connections:"
 msgstr "Εισερχόμενες συνδέσεις s2s:"
 
-#: src/mod_register.erl:197 src/mod_muc_room.erl:4178
+#: src/mod_register.erl:197 src/mod_muc_room.erl:4179
 #: src/ejabberd_captcha.erl:215
 msgid "Incorrect CAPTCHA submit"
 msgstr "Λάθος υποβολή CAPTCHA"
 
 #: src/mod_pubsub.erl:1247 src/mod_register.erl:193 src/mod_muc.erl:1057
-#: src/mod_muc_room.erl:3383 src/mod_vcard.erl:267
+#: src/mod_muc_room.erl:3384 src/mod_vcard.erl:267
 msgid "Incorrect data form"
 msgstr "Εσφαλμένη φόρμα δεδομένων"
 
 #: src/mod_register.erl:153 src/mod_register_web.erl:603
-#: src/mod_muc_room.erl:2207
+#: src/mod_muc_room.erl:2208
 msgid "Incorrect password"
 msgstr "Εσφαλμένος κωδικός πρόσβασης"
 
@@ -926,35 +909,34 @@ msgid "Invalid 'from' attribute in forwarded message"
 msgstr "Μη έγκυρο χαρακτηριστικό 'από' στο προωθούμενο μήνυμα"
 
 #: src/mod_stream_mgmt.erl:792
-#, fuzzy
 msgid "Invalid 'previd' value"
-msgstr "Άκυρος ρόλο: ~s"
+msgstr ""
 
-#: src/mod_muc_room.erl:4095
-#, fuzzy
+#: src/mod_muc_room.erl:4096
 msgid "Invalid node name"
-msgstr "Άκυρος ρόλο: ~s"
+msgstr ""
 
-#: src/mod_muc_room.erl:4457
+#: src/mod_muc_room.erl:4458
 msgid "Invitations are not allowed in this conference"
 msgstr "Οι προσκλήσεις δεν επιτρέπονται σε αυτή τη διάσκεψη"
 
-#: src/mod_muc_room.erl:377 src/mod_muc_room.erl:523 src/mod_muc_room.erl:1302
+#: src/mod_muc_room.erl:377 src/mod_muc_room.erl:523 src/mod_muc_room.erl:1303
 msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
 "Δεν επιτρέπεται η αποστολή μηνυμάτων σφάλματος στο δωμάτιο. Ο συμμετέχων "
-"(~s) έχει στείλει ένα μήνυμα σφάλματος (~s) και έχει πέταχτεί έξω από την "
+"(~s) έχει στείλει ένα μήνυμα σφάλματος (~s) και έχει πεταχτεί έξω από την "
 "αίθουσα"
 
-#: src/mod_muc_room.erl:568 src/mod_muc_room.erl:579
+#: src/mod_muc_room.erl:569 src/mod_muc_room.erl:580
 msgid "It is not allowed to send private messages"
 msgstr "Δεν επιτρέπεται η αποστολή προσωπικών μηνυμάτων"
 
-#: src/mod_muc_room.erl:536
+#: src/mod_muc_room.erl:537
+#, fuzzy
 msgid "It is not allowed to send private messages of type \"groupchat\""
-msgstr "Δεν επιτρέπεται να στείλει προσωπικά μηνύματα του τύπου \"groupchat\""
+msgstr "Δεν επιτρέπεται να στείλει προσωπικά μηνύματα για τη διάσκεψη"
 
 #: src/mod_muc_room.erl:388
 msgid "It is not allowed to send private messages to the conference"
@@ -963,7 +945,7 @@ msgstr "Δεν επιτρέπεται να στείλει προσωπικά μ�
 #: src/mod_jidprep.erl:160
 #, fuzzy
 msgid "JID normalization denied by service policy"
-msgstr "Άρνηση δημιουργίας αίθουσας , λόγω τακτικής παροχής υπηρεσιών"
+msgstr "Άρνηση δημιουργίας αίθουσας, λόγω της τακτικής Παροχής Υπηρεσιών"
 
 #: src/mod_jidprep.erl:154
 msgid "JID normalization failed"
@@ -1041,7 +1023,7 @@ msgstr "Προγράμα ενημέρωσης χαμηλού επίπεδου"
 #: src/mod_mam.erl:656
 #, fuzzy
 msgid "MAM preference modification denied by service policy"
-msgstr "Άρνηση δημιουργίας αίθουσας , λόγω τακτικής παροχής υπηρεσιών"
+msgstr "Άρνηση δημιουργίας αίθουσας, λόγω της τακτικής Παροχής Υπηρεσιών"
 
 #: src/mod_muc_log.erl:800 deps/xmpp/src/muc_roomconfig.erl:1894
 msgid "Make participants list public"
@@ -1049,7 +1031,7 @@ msgstr "Κάντε κοινό τον κατάλογο συμμετεχόντων
 
 #: src/mod_muc_log.erl:828 deps/xmpp/src/muc_roomconfig.erl:1591
 msgid "Make room CAPTCHA protected"
-msgstr "Κάντε την αίθουσα CAPTCHA προστατεύονομενη"
+msgstr "Κάντε την αίθουσα προστατεύομενη με CAPTCHA"
 
 #: src/mod_muc_log.erl:807 deps/xmpp/src/muc_roomconfig.erl:1772
 msgid "Make room members-only"
@@ -1057,7 +1039,7 @@ msgstr "Κάντε την αίθουσα μόνο για μέλη"
 
 #: src/mod_muc_log.erl:809 deps/xmpp/src/muc_roomconfig.erl:1786
 msgid "Make room moderated"
-msgstr "Κάντε την αίθουσα εποπτεύονομενη"
+msgstr "Κάντε την αίθουσα εποπτεύομενη"
 
 #: src/mod_muc_log.erl:802 deps/xmpp/src/muc_roomconfig.erl:1818
 msgid "Make room password protected"
@@ -1065,7 +1047,7 @@ msgstr "Κάντε την αίθουσα προστατεύομενη με κω�
 
 #: src/mod_muc_log.erl:796 deps/xmpp/src/muc_roomconfig.erl:1832
 msgid "Make room persistent"
-msgstr "Κάντε αίθουσα μόνιμη"
+msgstr "Κάντε την αίθουσα μόνιμη"
 
 #: src/mod_muc_log.erl:798 deps/xmpp/src/muc_roomconfig.erl:1879
 msgid "Make room public searchable"
@@ -1093,7 +1075,7 @@ msgstr ""
 
 #: src/mod_muc_log.erl:834 deps/xmpp/src/muc_roomconfig.erl:1758
 msgid "Maximum Number of Occupants"
-msgstr "Μέγιστος αριθμός συμετεχόντων"
+msgstr "Μέγιστος αριθμός συμμετεχόντων"
 
 #: deps/xmpp/src/http_upload.erl:240
 msgid "Maximum file size"
@@ -1116,19 +1098,15 @@ msgstr ""
 msgid "Members:"
 msgstr "Μέλη:"
 
-#: src/mod_muc_room.erl:2094
+#: src/mod_muc_room.erl:2095
 msgid "Membership is required to enter this room"
 msgstr "Απαιτείται αίτηση συμετοχής για είσοδο σε αυτή την αίθουσα"
 
 #: src/mod_register_web.erl:294
-#, fuzzy
 msgid ""
 "Memorize your password, or write it on a paper placed in a safe place. In "
 "XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
-"Απομνημονεύστε τον κωδικό πρόσβασής σας, ή γράψετε τον σε ένα χαρτί που είχε "
-"τοποθετηθεί σε ασφαλές μέρος. Στο XMPP δεν υπάρχει αυτοματοποιημένος τρόπος "
-"για να ανακτήσετε τον κωδικό σας αν τον ξεχάσετε."
 
 #: src/ejabberd_web_admin.erl:1181
 msgid "Memory"
@@ -1140,11 +1118,11 @@ msgstr ""
 
 #: src/mod_configure.erl:948 src/mod_configure.erl:988 src/mod_announce.erl:528
 msgid "Message body"
-msgstr "Περιεχόμενο μηνυμάτως"
+msgstr "Περιεχόμενο μηνύματος"
 
 #: src/mod_privilege.erl:414
 msgid "Message not found in forwarded payload"
-msgstr "Δεν βρέθηκε μήνυμα στο προωθημένο ωφέλιμο φορτίο"
+msgstr "Δεν βρέθηκε μήνυμα στον προωθημένο φόρτο εργασίας"
 
 #: src/mod_block_strangers.erl:177
 msgid "Messages from strangers are rejected"
@@ -1169,20 +1147,18 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "Ελάχιστο χρονικό διάστημα μεταξύ αιτημάτων φωνής (σε δευτερόλεπτα)"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1846
-#, fuzzy
 msgid "Moderator"
-msgstr "συντονιστές μόνο"
+msgstr ""
 
-#: src/mod_muc_room.erl:2809 src/mod_muc_room.erl:4232
-#: src/mod_muc_room.erl:4283 src/mod_muc_room.erl:4329
+#: src/mod_muc_room.erl:2810 src/mod_muc_room.erl:4233
+#: src/mod_muc_room.erl:4284 src/mod_muc_room.erl:4330
 msgid "Moderator privileges required"
 msgstr "Aπαιτούνται προνόμια συντονιστή"
 
 #: deps/xmpp/src/muc_roominfo.erl:734 deps/xmpp/src/muc_roomconfig.erl:1424
 #: deps/xmpp/src/muc_roomconfig.erl:1476 deps/xmpp/src/muc_roomconfig.erl:1979
-#, fuzzy
 msgid "Moderators Only"
-msgstr "συντονιστές μόνο"
+msgstr ""
 
 #: src/ejabberd_web_admin.erl:1440
 msgid "Modified modules"
@@ -1190,7 +1166,7 @@ msgstr "Τροποποιημένα modules"
 
 #: src/gen_iq_handler.erl:119
 msgid "Module failed to handle the query"
-msgstr "Το μodule απέτυχε να χειριστεί το ερώτημα"
+msgstr "Το module απέτυχε να χειριστεί το ερώτημα"
 
 #: src/mod_muc_log.erl:468
 msgid "Monday"
@@ -1231,11 +1207,11 @@ msgstr ""
 msgid "Natural-Language Room Name"
 msgstr ""
 
-#: src/mod_muc_room.erl:2987
+#: src/mod_muc_room.erl:2988
 msgid "Neither 'jid' nor 'nick' attribute found"
 msgstr "Δεν βρέθηκε κανένα χαρακτηριστικό 'jid' ούτε 'nick'"
 
-#: src/mod_muc_room.erl:2791 src/mod_muc_room.erl:2992
+#: src/mod_muc_room.erl:2792 src/mod_muc_room.erl:2993
 msgid "Neither 'role' nor 'affiliation' attribute found"
 msgstr "Δεν βρέθηκε ούτε χαρακτηριστικό 'role' ούτε 'affiliation'"
 
@@ -1259,20 +1235,20 @@ msgstr "Ψευδώνυμο"
 msgid "Nickname Registration at "
 msgstr "Εγγραφή με Ψευδώνυμο στο "
 
-#: src/mod_muc_room.erl:1251 src/mod_muc_room.erl:2115
-#: src/mod_muc_room.erl:4253
+#: src/mod_muc_room.erl:1252 src/mod_muc_room.erl:2116
+#: src/mod_muc_room.erl:4254
 msgid "Nickname can't be empty"
 msgstr ""
 
-#: src/mod_muc_room.erl:3004
+#: src/mod_muc_room.erl:3005
 msgid "Nickname ~s does not exist in the room"
 msgstr "Ψευδώνυμο ~s δεν υπάρχει σε αυτή την αίθουσα"
 
-#: src/mod_muc_room.erl:3406
+#: src/mod_muc_room.erl:3407
 msgid "No 'affiliation' attribute found"
 msgstr "Δεν βρέθηκε χαρακτηριστικό 'affiliation'"
 
-#: src/mod_muc_room.erl:2773
+#: src/mod_muc_room.erl:2774
 msgid "No 'item' element found"
 msgstr "Δεν βρέθηκε στοιχείο 'item'"
 
@@ -1290,14 +1266,14 @@ msgstr "Δεν βρέθηκε \"password\" σε αυτό το ερώτημα"
 msgid "No 'path' found in data form"
 msgstr "Δεν υπάρχει 'path' στη φόρμα δεδομένων"
 
-#: src/mod_muc_room.erl:4453
+#: src/mod_muc_room.erl:4454
 msgid "No 'to' attribute found in the invitation"
 msgstr "Δεν υπάρχει χαρακτηριστικό 'to' που βρέθηκε στην πρόσκληση"
 
 #: src/mod_privilege.erl:423
 #, fuzzy
 msgid "No <forwarded/> element found"
-msgstr "Μη έγκυρο στοιχείο <forwarded/>"
+msgstr "Δεν βρέθηκε στοιχείο 'item'"
 
 #: src/ejabberd_web_admin.erl:1000
 msgid "No Data"
@@ -1319,9 +1295,9 @@ msgstr "Δεν βρέθηκε διαθέσιμος πόρος"
 
 #: src/mod_announce.erl:579
 msgid "No body provided for announce message"
-msgstr "Δεν προμηθεύτικε περιεχόμενο ανακοινώσης"
+msgstr "Δεν προμηθεύτηκε περιεχόμενο ανακοινώσης"
 
-#: src/gen_iq_handler.erl:89 src/mod_muc_room.erl:1160
+#: src/gen_iq_handler.erl:89 src/mod_muc_room.erl:1161
 #, fuzzy
 msgid "No child elements found"
 msgstr "Δεν βρέθηκε στοιχείο 'item'"
@@ -1346,7 +1322,7 @@ msgstr "Δεν βρέθηκαν πληροφορίες για την τελευ�
 msgid "No items found in this query"
 msgstr "Δεν βρέθηκαν στοιχεία σε αυτό το ερώτημα"
 
-#: src/mod_muc_room.erl:3517 deps/xmpp/src/muc_roomconfig.erl:1736
+#: src/mod_muc_room.erl:3518 deps/xmpp/src/muc_roomconfig.erl:1736
 msgid "No limit"
 msgstr "Χωρίς όριο"
 
@@ -1358,7 +1334,7 @@ msgstr "Χωρίς όριο"
 #: src/mod_privacy.erl:273 src/mod_http_upload.erl:769
 #: src/ejabberd_captcha.erl:225
 msgid "No module is handling this query"
-msgstr "Καμνένα module δεν χειρίζεται αυτό το ερώτημα"
+msgstr "Κανένα module δεν χειρίζεται αυτό το ερώτημα"
 
 #: src/mod_pubsub.erl:1602
 msgid "No node specified"
@@ -1394,9 +1370,8 @@ msgstr "Δεν βρέθηκαν στατιστικά στοιχεία για α�
 
 #: deps/xmpp/src/muc_roominfo.erl:736 deps/xmpp/src/muc_roomconfig.erl:1426
 #: deps/xmpp/src/muc_roomconfig.erl:1473
-#, fuzzy
 msgid "Nobody"
-msgstr "κανείς"
+msgstr ""
 
 #: deps/xmpp/src/pubsub_subscribe_authorization.erl:358
 msgid "Node ID"
@@ -1412,7 +1387,7 @@ msgstr "Ο δείκτης κόμβου δεν βρέθηκε"
 
 #: src/ejabberd_web_admin.erl:533 src/nodetree_tree.erl:76
 #: src/nodetree_tree.erl:82 src/mod_muc.erl:671 src/mod_muc.erl:946
-#: src/mod_muc_room.erl:4165 src/nodetree_tree_sql.erl:126
+#: src/mod_muc_room.erl:4166 src/nodetree_tree_sql.erl:126
 #: src/nodetree_tree_sql.erl:140
 msgid "Node not found"
 msgstr "Κόμβος δεν βρέθηκε"
@@ -1438,12 +1413,12 @@ msgstr "Κανένα"
 
 #: src/ejabberd_web_admin.erl:519
 msgid "Not Found"
-msgstr "Δεν Βρέθηκε"
+msgstr "Δεν βρέθηκε"
 
 #: src/mod_register.erl:394 src/mod_register_web.erl:607
 #, fuzzy
 msgid "Not allowed"
-msgstr "Δεν Βρέθηκε"
+msgstr "Δεν βρέθηκε"
 
 #: src/mod_last.erl:145 src/mod_disco.erl:276 src/mod_disco.erl:335
 msgid "Not subscribed"
@@ -1451,15 +1426,15 @@ msgstr "Δεν έχετε εγγραφεί"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1776
 msgid "Notify subscribers when items are removed from the node"
-msgstr "Ειδοποιηση στους συνδρομητές  όταν αφαίρούντε στοιχεία από τον κόμβο"
+msgstr "Ειδοποίηση στους συνδρομητές  όταν αφαίρούνται στοιχεία από τον κόμβο"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1742
 msgid "Notify subscribers when the node configuration changes"
-msgstr "Ειδοποιηση στους συνδρομητές όταν αλλάζει η διαμόρφωση κόμβου"
+msgstr "Ειδοποίηση στους συνδρομητές όταν αλλάζει η διαμόρφωση κόμβου"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1759
 msgid "Notify subscribers when the node is deleted"
-msgstr "Ειδοποιηση στους συνδρομητές όταν ο κόμβος διαγράφεται"
+msgstr "Ειδοποίηση στους συνδρομητές όταν ο κόμβος διαγράφεται"
 
 #: src/mod_muc_log.erl:488
 msgid "November"
@@ -1498,12 +1473,12 @@ msgstr ""
 #: src/ejabberd_web_admin.erl:1320 src/ejabberd_web_admin.erl:1331
 #: src/ejabberd_web_admin.erl:1341 src/ejabberd_captcha.erl:176
 msgid "OK"
-msgstr "Όλλα Καλά"
+msgstr "Όλα Καλά"
 
 #: deps/xmpp/src/muc_roominfo.erl:925
 #, fuzzy
 msgid "Occupants May Change the Subject"
-msgstr "Επιτρέψετε στους χρήστες να αλλάζουν το θέμα"
+msgstr "Επιτρέψτε στους χρήστες να αλλάζουν το θέμα"
 
 #: deps/xmpp/src/muc_roominfo.erl:716
 #, fuzzy
@@ -1560,13 +1535,13 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1827
 msgid "Only deliver notifications to available users"
-msgstr "Παράδωση κοινοποιήσεων μόνο σε διαθέσιμους χρήστες"
+msgstr "Παράδοση κοινοποιήσεων μόνο σε διαθέσιμους χρήστες"
 
 #: src/mod_mam.erl:513
 msgid "Only members may query archives of this room"
 msgstr "Μόνο μέλη μπορούν να δούνε τα αρχεία αυτής της αίθουσας"
 
-#: src/mod_muc_room.erl:1000
+#: src/mod_muc_room.erl:1001
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
@@ -1574,19 +1549,19 @@ msgstr ""
 "Μόνο οι συντονιστές και οι συμμετέχοντες μπορούν να αλλάξουν το θέμα αυτής "
 "της αίθουσας"
 
-#: src/mod_muc_room.erl:1005
+#: src/mod_muc_room.erl:1006
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Μόνο οι συντονιστές μπορούν να αλλάξουν το θέμα αυτής της αίθουσας"
 
-#: src/mod_muc_room.erl:1144
+#: src/mod_muc_room.erl:1145
 msgid "Only moderators can approve voice requests"
 msgstr "Μόνο οι συντονιστές μπορούν να εγκρίνουν τις αιτήσεις φωνής"
 
-#: src/mod_muc_room.erl:574 src/mod_muc_room.erl:1019 src/mod_muc_room.erl:4522
+#: src/mod_muc_room.erl:575 src/mod_muc_room.erl:1020 src/mod_muc_room.erl:4523
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Μόνο οι συμμετέχωντες  μπορούν να στέλνουν μηνύματα στο συνέδριο"
 
-#: src/mod_muc_room.erl:620
+#: src/mod_muc_room.erl:621
 msgid "Only occupants are allowed to send queries to the conference"
 msgstr "Μόνο οι συμετεχόντες  μπορούν να στείλουν ερωτήματα στη διάσκεψη"
 
@@ -1633,8 +1608,8 @@ msgstr "Εξερχόμενες S2S Συνδέσεις:"
 #: src/mod_pubsub.erl:1355 src/mod_pubsub.erl:1450 src/mod_pubsub.erl:1624
 #: src/mod_pubsub.erl:2230 src/mod_pubsub.erl:2296 src/mod_pubsub.erl:2506
 #: src/mod_pubsub.erl:2600 src/mod_pubsub.erl:3288 src/mod_pubsub.erl:3450
-#: src/mod_mix.erl:677 src/mod_muc_room.erl:3353 src/mod_muc_room.erl:3398
-#: src/mod_muc_room.erl:4208
+#: src/mod_mix.erl:677 src/mod_muc_room.erl:3354 src/mod_muc_room.erl:3399
+#: src/mod_muc_room.erl:4209
 msgid "Owner privileges required"
 msgstr "Aπαιτούνται προνόμια ιδιοκτήτη"
 
@@ -1645,7 +1620,7 @@ msgstr "Πακέτο"
 #: src/mod_multicast.erl:347
 #, fuzzy
 msgid "Packet relay is denied by service policy"
-msgstr "Άρνηση δημιουργίας αίθουσας , λόγω τακτικής παροχής υπηρεσιών"
+msgstr "Άρνηση δημιουργίας αίθουσας, λόγω της τακτικής Παροχής Υπηρεσιών"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1849 deps/xmpp/src/muc_request.erl:330
 msgid "Participant"
@@ -1701,11 +1676,11 @@ msgstr "Μονιμη αποθήκευση στοιχείων"
 #: src/mod_muc_admin.erl:535
 #, fuzzy
 msgid "Persistent"
-msgstr "Κάντε αίθουσα μόνιμη"
+msgstr "Κάντε την αίθουσα μόνιμη"
 
 #: src/mod_adhoc.erl:155 src/mod_adhoc.erl:245
 msgid "Ping"
-msgstr "Πινγκ"
+msgstr "Ping"
 
 #: src/mod_ping.erl:178
 msgid "Ping query is incorrect"
@@ -1719,10 +1694,10 @@ msgid ""
 msgstr ""
 "Παρακαλώ σημειώστε ότι οι επιλογές αυτές θα αποθήκευσουν Αντιγράφο Ασφαλείας "
 "μόνο της ενσωματωμένης βάσης δεδομένων Mnesia. Εάν χρησιμοποιείτε το module "
-"ODBC, θα πρέπει επίσης να κάνετε χωριστά Αντιγράφο Ασφαλείας της SQL βάση "
-"δεδομένων σας ."
+"ODBC, θα πρέπει επίσης να κάνετε χωριστά Αντιγράφο Ασφαλείας της SQL βάσης "
+"δεδομένων σας."
 
-#: src/mod_muc_room.erl:1105
+#: src/mod_muc_room.erl:1106
 msgid "Please, wait for a while before sending new voice request"
 msgstr "Παρακαλώ, περιμένετε για λίγο πριν την αποστολή νέου αιτήματος φωνής"
 
@@ -1753,7 +1728,7 @@ msgstr ""
 #: src/mod_stream_mgmt.erl:780
 #, fuzzy
 msgid "Previous session not found"
-msgstr "Η συνάντηση χρήστη δεν βρέθηκε"
+msgstr "Η περίοδος σύνδεσης χρήστη δεν βρέθηκε"
 
 #: src/mod_stream_mgmt.erl:782
 msgid "Previous session timed out"
@@ -1785,10 +1760,10 @@ msgstr "Διαγραφή όλων των στοιχείων όταν ο σχετ
 msgid "Push record not found"
 msgstr "Κόμβος δεν βρέθηκε"
 
-#: src/mod_muc_room.erl:615
+#: src/mod_muc_room.erl:616
 msgid "Queries to the conference members are not allowed in this room"
 msgstr ""
-"Ερωτήματα πρώς τα μέλη της διασκέψεως δεν επιτρέπονται σε αυτήν την αίθουσα"
+"Ερωτήματα προς τα μέλη της διασκέψεως δεν επιτρέπονται σε αυτήν την αίθουσα"
 
 #: src/mod_blocking.erl:76 src/mod_mix_pam.erl:311 src/mod_roster.erl:157
 #: src/mod_private.erl:199 src/mod_disco.erl:305 src/mod_disco.erl:362
@@ -1808,10 +1783,9 @@ msgstr "Αντίγραφο σε RAM"
 msgid "RPC Call Error"
 msgstr "Σφάλμα RPC Κλήσης"
 
-# ; is question mark in Greek
 #: src/mod_announce.erl:519
 msgid "Really delete message of the day?"
-msgstr "Πραγματικά να διαγράψετε το μήνυμα της ημέρας;"
+msgstr "Πραγματικά να διαγραφεί το μήνυμα της ημέρας;"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:643
 msgid "Receive notification from all descendent nodes"
@@ -1829,9 +1803,9 @@ msgstr ""
 msgid "Receive notification of new nodes only"
 msgstr ""
 
-#: src/mod_muc_room.erl:543 src/mod_muc_room.erl:592
+#: src/mod_muc_room.erl:544 src/mod_muc_room.erl:593
 msgid "Recipient is not in the conference room"
-msgstr "Παραλήπτης δεν είναι στην αίθουσα συνεδριάσεων"
+msgstr "Ο παραλήπτης δεν είναι στην αίθουσα συνεδριάσεων"
 
 #: src/mod_register_web.erl:307
 msgid "Register"
@@ -1839,9 +1813,8 @@ msgstr "Καταχωρήστε"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-#, fuzzy
 msgid "Register an XMPP account"
-msgstr "Καταχωρήστε έναν λογαριασμό XMPP"
+msgstr ""
 
 #: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
@@ -1853,7 +1826,7 @@ msgstr "Εγγεγραμμένοι Χρήστες:"
 
 #: src/mod_configure.erl:808 src/ejabberd_web_admin.erl:1508
 msgid "Remote copy"
-msgstr "Απομεμακρυσμένο αντίγραφο"
+msgstr "Εξ αποστάσεως αντίγραφο"
 
 #: src/mod_roster.erl:1052
 msgid "Remove"
@@ -1861,7 +1834,7 @@ msgstr "Αφαίρεστε"
 
 #: src/mod_offline.erl:1083
 msgid "Remove All Offline Messages"
-msgstr "Αφαίρεση Όλων των Χωρίς Σύνδεση Μηνύματων"
+msgstr "Αφαίρεση όλων των Χωρίς Σύνδεση Μηνύματων"
 
 #: src/mod_configure.erl:1521 src/ejabberd_web_admin.erl:953
 msgid "Remove User"
@@ -1869,14 +1842,14 @@ msgstr "Αφαίρεση χρήστη"
 
 #: src/ejabberd_sm.erl:453
 msgid "Replaced by new connection"
-msgstr "Αντικαταστάθικε από νέα σύνδεση"
+msgstr "Αντικαταστάθηκε από μια νέα σύνδεση"
 
 #: src/mod_mix_pam.erl:292 src/mod_muc_room.erl:210 src/mod_muc_room.erl:219
-#: src/mod_muc_room.erl:855
+#: src/mod_muc_room.erl:856
 msgid "Request has timed out"
 msgstr ""
 
-#: src/mod_muc_room.erl:744 src/mod_muc_room.erl:759
+#: src/mod_muc_room.erl:745 src/mod_muc_room.erl:760
 msgid "Request is ignored"
 msgstr ""
 
@@ -1931,7 +1904,7 @@ msgstr ""
 #: deps/xmpp/src/muc_roominfo.erl:748 deps/xmpp/src/muc_roomconfig.erl:1438
 #, fuzzy
 msgid "Roles that May Send Private Messages"
-msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα"
+msgstr "Επιτρέψτε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα"
 
 #: src/mod_muc_log.erl:639
 msgid "Room Configuration"
@@ -1939,18 +1912,18 @@ msgstr "Διαμόρφωση Αίθουσας σύνεδριασης"
 
 #: src/mod_muc_log.erl:659
 msgid "Room Occupants"
-msgstr "Συμετεχόντες Αίθουσας σύνεδριασης"
+msgstr "Συμμετεχόντες Αίθουσας σύνεδριασης"
 
 #: src/mod_muc.erl:570
 msgid "Room creation is denied by service policy"
-msgstr "Άρνηση δημιουργίας αίθουσας , λόγω τακτικής παροχής υπηρεσιών"
+msgstr "Άρνηση δημιουργίας αίθουσας, λόγω της τακτικής Παροχής Υπηρεσιών"
 
 #: src/mod_muc_log.erl:830 deps/xmpp/src/muc_roominfo.erl:779
 #: deps/xmpp/src/muc_roomconfig.erl:1923
 msgid "Room description"
-msgstr "Περιγραφή Αίθουσας"
+msgstr "Περιγραφή αίθουσας"
 
-#: src/mod_muc_room.erl:882
+#: src/mod_muc_room.erl:883
 #, fuzzy
 msgid "Room terminates"
 msgstr "Τίτλος Αίθουσας"
@@ -1967,7 +1940,7 @@ msgstr "Ομάδες Καταλόγου Επαφών μπορούν να εγγ�
 #: src/mod_roster.erl:1056
 #, fuzzy
 msgid "Roster of ~ts"
-msgstr "Καταλόγος Επαφών τού "
+msgstr "Μέγεθος Καταλόγου Επαφών"
 
 #: src/mod_configure.erl:1403
 msgid "Roster size"
@@ -1976,7 +1949,7 @@ msgstr "Μέγεθος Καταλόγου Επαφών"
 #: src/mod_roster.erl:1174
 #, fuzzy
 msgid "Roster:"
-msgstr "Καταλόγος Επαφών"
+msgstr "Μέγεθος Καταλόγου Επαφών"
 
 #: src/mod_configure.erl:498 src/ejabberd_web_admin.erl:1071
 msgid "Running Nodes"
@@ -2082,17 +2055,13 @@ msgstr "Δείτε Κοινό Πίνακα"
 #: src/mod_configure.erl:159 src/mod_configure.erl:572
 #: src/mod_configure.erl:958
 msgid "Shut Down Service"
-msgstr "Κλείσιμο Υπηρεσίας"
+msgstr "Τερματισμός Υπηρεσίας"
 
 #: src/mod_register_web.erl:290
-#, fuzzy
 msgid ""
 "Some XMPP clients can store your password on the computer, but for safety "
 "reasons you should do this on your personal computers ."
 msgstr ""
-"Μερικοί πελάτες XMPP μπορεί να αποθηκεύσουν τον κωδικό πρόσβασής σας στον "
-"υπολογιστή σας. Χρησιμοποιήστε αυτό το χαρακτηριστικό μόνο εάν εμπιστεύεστε "
-"την ασφάλεια του υπολογιστή σας."
 
 #: deps/xmpp/src/pubsub_node_config.erl:1344
 #: deps/xmpp/src/pubsub_publish_options.erl:322
@@ -2160,7 +2129,7 @@ msgstr "Θέμα"
 
 #: src/ejabberd_web_admin.erl:1190 src/mod_shared_roster.erl:1055
 msgid "Submit"
-msgstr "Υποβοβολή"
+msgstr "Υποβολή"
 
 #: src/ejabberd_web_admin.erl:643 src/ejabberd_web_admin.erl:937
 #: src/ejabberd_web_admin.erl:1093 src/ejabberd_web_admin.erl:1121
@@ -2190,7 +2159,7 @@ msgid ""
 "items"
 msgstr ""
 
-#: src/mod_muc_room.erl:4219
+#: src/mod_muc_room.erl:4220
 msgid "Subscriptions are not allowed"
 msgstr "Οι συνδρομές δεν επιτρέπονται"
 
@@ -2214,13 +2183,13 @@ msgstr ""
 msgid "Text associated with speech"
 msgstr ""
 
-#: src/mod_muc_room.erl:1242 src/mod_muc_room.erl:2104
-#: src/mod_muc_room.erl:4248
+#: src/mod_muc_room.erl:1243 src/mod_muc_room.erl:2105
+#: src/mod_muc_room.erl:4249
 msgid "That nickname is already in use by another occupant"
-msgstr "Αυτό το ψευδώνυμο είναι ήδη σε χρήση από άλλον συμμετέχων"
+msgstr "Αυτό το ψευδώνυμο είναι ήδη σε χρήση από άλλον συμμετέχοντα"
 
-#: src/mod_muc.erl:1031 src/mod_muc_room.erl:1254 src/mod_muc_room.erl:2118
-#: src/mod_muc_room.erl:4256
+#: src/mod_muc.erl:1031 src/mod_muc_room.erl:1255 src/mod_muc_room.erl:2119
+#: src/mod_muc_room.erl:4257
 msgid "That nickname is registered by another person"
 msgstr "Αυτό το ψευδώνυμο είναι καταχωρημένο από άλλο πρόσωπο"
 
@@ -2229,7 +2198,7 @@ msgid "The CAPTCHA is valid."
 msgstr "Το CAPTCHA είναι έγκυρο."
 
 #: src/mod_block_strangers.erl:150 src/mod_register.erl:200
-#: src/mod_muc_room.erl:836 src/mod_muc_room.erl:4181
+#: src/mod_muc_room.erl:837 src/mod_muc_room.erl:4182
 #: src/ejabberd_captcha.erl:218
 msgid "The CAPTCHA verification has failed"
 msgstr "Η επαλήθευση της εικόνας CAPTCHA απέτυχε"
@@ -2278,9 +2247,8 @@ msgid "The account already exists"
 msgstr "Ο κόμβος υπάρχει ήδη"
 
 #: src/mod_register_web.erl:611
-#, fuzzy
 msgid "The account was not unregistered"
-msgstr "Ο Jabber λογαριασμός σας διαγράφηκε με επιτυχία."
+msgstr ""
 
 #: deps/xmpp/src/push_summary.erl:397
 msgid "The body text of the last received message"
@@ -2292,7 +2260,7 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1476
 msgid "The collections with which a node is affiliated"
-msgstr "Οι συλλογές με την οποία είναι ένας κόμβος συνδέεται"
+msgstr "Οι συλλογές με τις οποίες ένας κόμβος σχετίζεται"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:642
 msgid "The datetime when the node was created"
@@ -2357,17 +2325,17 @@ msgstr "Ο κωδικός πρόσβασης περιέχει μη αποδεκ�
 
 #: src/mod_register.erl:390
 msgid "The password is too weak"
-msgstr "Ο κωδικός πρόσβασης είναι πολύ ασθενές"
+msgstr "Ο κωδικός πρόσβασης είναι πολύ αδύναμος"
 
 #: src/mod_register_web.erl:613
 #, fuzzy
 msgid "The password was not changed"
-msgstr "Ο κωδικός πρόσβασης είναι πολύ ασθενές"
+msgstr "Ο κωδικός πρόσβασης είναι πολύ αδύναμος"
 
 #: src/mod_register_web.erl:615
 #, fuzzy
 msgid "The passwords are different"
-msgstr "Ο κωδικός πρόσβασης είναι πολύ ασθενές"
+msgstr "Ο κωδικός πρόσβασης είναι πολύ αδύναμος"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:591
 msgid "The presence states for which an entity wants to receive notifications"
@@ -2412,32 +2380,21 @@ msgid "The username is not valid"
 msgstr ""
 
 #: src/mod_register_web.erl:268
-#, fuzzy
 msgid ""
 "This is case insensitive: \"macbeth\" is the same as \"MacBeth\" and "
 "\"Macbeth\"."
 msgstr ""
-"Ανεξαρτήτως με πεζά ή κεφαλαία: 'μιαλεξη' είναι το ίδιο με 'ΜιαΛέξη' και "
-"'Μιαλέξη'."
 
 #: src/mod_register_web.erl:252
-#, fuzzy
 msgid ""
 "This page allows registering an XMPP account on this XMPP server. Your JID "
 "(Jabber ID) will be of the form: username@server. Please read the "
 "instructions carefully before filling in the fields."
 msgstr ""
-"Αυτή η σελίδα σας επιτρέπει να δημιουργήσετε ένα λογαριασμό XMPP σε αυτόν το "
-"διακομιστή XMPP. JID σας (Jabber Identifier) θα είναι της μορφής: "
-"όνομα_χρήστη@διακομιστής_Jabber. Παρακαλώ διαβάστε προσεκτικά τις οδηγίες "
-"για να συμπληρώσετε σωστά τα πεδία."
 
 #: src/mod_register_web.erl:507
-#, fuzzy
 msgid "This page allows unregistering an XMPP account on this XMPP server."
 msgstr ""
-"Η σελίδα αυτή δίνει τη δυνατότητα να καταργήσετε την καταχώρηση ενός "
-"λογαριασμό XMPP σε αυτόν το διακομιστή XMPP."
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2465,16 +2422,15 @@ msgstr ""
 
 #: src/mod_offline.erl:1001
 msgid "To"
-msgstr "Πρώς"
+msgstr "Προς"
 
 #: src/mod_register.erl:225
 msgid "To register, visit ~s"
 msgstr "Για να εγγραφείτε, επισκεφθείτε το ~s"
 
 #: src/mod_configure.erl:666
-#, fuzzy
 msgid "To ~ts"
-msgstr "Πρώς ~s"
+msgstr ""
 
 #: src/ejabberd_oauth.erl:510
 msgid "Token TTL"
@@ -2486,7 +2442,7 @@ msgid ""
 "will be unblocked at ~s UTC"
 msgstr ""
 
-#: src/mod_muc_room.erl:2778 src/mod_muc_room.erl:3412
+#: src/mod_muc_room.erl:2779 src/mod_muc_room.erl:3413
 msgid "Too many <item/> elements"
 msgstr "Πάρα πολλά στοιχεία <item/>"
 
@@ -2495,7 +2451,7 @@ msgid "Too many <list/> elements"
 msgstr "Πάρα πολλά στοιχεία <list/>"
 
 #: src/mod_block_strangers.erl:127 src/mod_register.erl:249
-#: src/mod_muc_room.erl:2188
+#: src/mod_muc_room.erl:2189
 msgid "Too many CAPTCHA requests"
 msgstr "Πάρα πολλά αιτήματα CAPTCHA"
 
@@ -2503,7 +2459,7 @@ msgstr "Πάρα πολλά αιτήματα CAPTCHA"
 msgid "Too many active bytestreams"
 msgstr "Πάρα πολλά ενεργά bytestreams"
 
-#: src/gen_iq_handler.erl:90 src/mod_muc_room.erl:1162
+#: src/gen_iq_handler.erl:90 src/mod_muc_room.erl:1163
 #, fuzzy
 msgid "Too many child elements"
 msgstr "Πάρα πολλά στοιχεία <item/>"
@@ -2516,7 +2472,7 @@ msgstr ""
 msgid "Too many unacked stanzas"
 msgstr "Πάρα πολλές μη αναγνωρισμένες stanzas"
 
-#: src/mod_muc_room.erl:2063
+#: src/mod_muc_room.erl:2064
 msgid "Too many users in this conference"
 msgstr "Πάρα πολλοί χρήστες σε αυτή τη διάσκεψη"
 
@@ -2534,11 +2490,11 @@ msgstr "Αποτυχημένες συναλλαγές:"
 
 #: src/ejabberd_web_admin.erl:1376
 msgid "Transactions Committed:"
-msgstr "Παραδοθείς συναλλαγές:"
+msgstr "Παραδοθείσες συναλλαγές:"
 
 #: src/ejabberd_web_admin.erl:1388
 msgid "Transactions Logged:"
-msgstr "Καταγραμμένες συναλλαγές:"
+msgstr "Καταγεγραμμένες συναλλαγές:"
 
 #: src/ejabberd_web_admin.erl:1384
 msgid "Transactions Restarted:"
@@ -2553,9 +2509,9 @@ msgid "URL for Archived Discussion Logs"
 msgstr ""
 
 #: src/mod_block_strangers.erl:131 src/mod_register.erl:253
-#: src/mod_muc_room.erl:2197
+#: src/mod_muc_room.erl:2198
 msgid "Unable to generate a CAPTCHA"
-msgstr "Αδήνατο να δημιουργηθεί CAPTCHA"
+msgstr "Αδύνατη η δημιουργία CAPTCHA"
 
 #: src/ejabberd_service.erl:140
 msgid "Unable to register route on existing local domain"
@@ -2565,7 +2521,7 @@ msgstr "Δεν είναι δυνατή η καταχώρηση της διαδρ
 #: src/ejabberd_web_admin.erl:210 src/ejabberd_web_admin.erl:222
 #: src/mod_stream_mgmt.erl:142
 msgid "Unauthorized"
-msgstr "Χορίς Εξουσιοδότηση"
+msgstr "Χωρίς Εξουσιοδότηση"
 
 #: src/mod_configure.erl:776 src/mod_configure.erl:1498
 #: src/mod_announce.erl:493
@@ -2583,9 +2539,8 @@ msgstr "Καταργήση εγγραφής"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-#, fuzzy
 msgid "Unregister an XMPP account"
-msgstr "Καταργήστε την εγγραφή ενός λογαριασμού XMPP"
+msgstr ""
 
 #: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
@@ -2596,9 +2551,8 @@ msgid "Unsupported <index/> element"
 msgstr "Μη υποστηριζόμενο στοιχείο <index />"
 
 #: src/mod_stream_mgmt.erl:369
-#, fuzzy
 msgid "Unsupported version"
-msgstr "Μη υποστηριζόμενο ερώτημα MIX"
+msgstr ""
 
 #: src/ejabberd_web_admin.erl:1102 src/ejabberd_web_admin.erl:1446
 #: src/ejabberd_web_admin.erl:1809
@@ -2607,12 +2561,12 @@ msgstr "Ενημέρωση"
 
 #: src/mod_announce.erl:621
 msgid "Update message of the day (don't send)"
-msgstr "Ενημέρωση μηνύματως ημέρας (χωρίς άμεση αποστολή)"
+msgstr "Ενημέρωση μηνύματος ημέρας (χωρίς άμεση αποστολή)"
 
 #: src/mod_announce.erl:623
 msgid "Update message of the day on all hosts (don't send)"
 msgstr ""
-"Ενημέρωση μηνύματως ημέρας σε όλους τους κεντρικούς υπολογιστές (χωρίς άμεση "
+"Ενημέρωση μηνύματος ημέρας σε όλους τους κεντρικούς υπολογιστές (χωρίς άμεση "
 "αποστολή)"
 
 #: src/ejabberd_web_admin.erl:1439
@@ -2629,7 +2583,7 @@ msgstr "Ενημέρωση ~p"
 
 #: src/ejabberd_web_admin.erl:1364
 msgid "Uptime:"
-msgstr "Uptime:"
+msgstr "Χρόνος σε λειτουργία:"
 
 #: src/mod_vcard_mnesia.erl:99 src/mod_vcard_sql.erl:156
 #: src/ejabberd_web_admin.erl:652 src/ejabberd_web_admin.erl:708
@@ -2639,7 +2593,7 @@ msgstr "Χρήστης"
 
 #: src/ejabberd_oauth.erl:499
 msgid "User (jid)"
-msgstr "Χρήστη (jid)"
+msgstr "Χρήστης (jid)"
 
 #: deps/xmpp/src/mam_query.erl:316 deps/xmpp/src/muc_request.erl:354
 msgid "User JID"
@@ -2659,16 +2613,16 @@ msgstr ""
 
 #: src/mod_push.erl:339 src/ejabberd_sm.erl:202 src/mod_sic.erl:93
 msgid "User session not found"
-msgstr "Η συνάντηση χρήστη δεν βρέθηκε"
+msgstr "Η περίοδος σύνδεσης χρήστη δεν βρέθηκε"
 
 #: src/mod_stream_mgmt.erl:614 src/mod_stream_mgmt.erl:637
 msgid "User session terminated"
-msgstr "Η σύνδεση χρήστη τερματίστηκε"
+msgstr "Η περίοδος σύνδεσης χρήστη τερματίστηκε"
 
 #: src/ejabberd_web_admin.erl:933
 #, fuzzy
 msgid "User ~ts"
-msgstr "Ο Χρήστης ~s"
+msgstr "Χρήστες"
 
 #: src/mod_register_web.erl:262 src/mod_register_web.erl:402
 #: src/mod_register_web.erl:513
@@ -2686,14 +2640,14 @@ msgstr "Τελευταία Δραστηριότητα Χρήστη"
 
 #: src/mod_register.erl:388
 msgid "Users are not allowed to register accounts so quickly"
-msgstr "Οι χρήστες δεν επιτρέπεται να εγγραφούν λογαριασμούς τόσο γρήγορα"
+msgstr "Οι χρήστες δεν επιτρέπεται να δημιουργούν λογαριασμούς τόσο γρήγορα"
 
 #: src/mod_roster.erl:1043
 msgid "Validate"
 msgstr "Επαληθεύστε"
 
 #: src/mod_pubsub.erl:900 src/mod_carboncopy.erl:104 src/mod_push.erl:321
-#: src/mod_muc_room.erl:4171 src/mod_muc_room.erl:4333
+#: src/mod_muc_room.erl:4172 src/mod_muc_room.erl:4334
 #: src/ejabberd_captcha.erl:222
 msgid "Value 'get' of 'type' attribute is not allowed"
 msgstr "Η τιμή 'get' του 'type' δεν επιτρέπεται"
@@ -2706,8 +2660,8 @@ msgstr "Η τιμή 'get' του 'type' δεν επιτρέπεται"
 #: src/mod_proxy65_service.erl:148 src/mod_proxy65_service.erl:165
 #: src/mod_proxy65_service.erl:172 src/mod_jidprep.erl:137 src/mod_time.erl:55
 #: src/mod_stun_disco.erl:478 src/mod_mix.erl:159 src/mod_mix.erl:206
-#: src/mod_sic.erl:68 src/mod_sic.erl:80 src/mod_muc_room.erl:4075
-#: src/mod_muc_room.erl:4146 src/mod_version.erl:53 src/mod_vcard.erl:205
+#: src/mod_sic.erl:68 src/mod_sic.erl:80 src/mod_muc_room.erl:4076
+#: src/mod_muc_room.erl:4147 src/mod_version.erl:53 src/mod_vcard.erl:205
 #: src/mod_vcard.erl:248
 msgid "Value 'set' of 'type' attribute is not allowed"
 msgstr "Δεν επιτρέπεται η παράμετρος 'set' του 'type'"
@@ -2730,35 +2684,34 @@ msgid "View Queue"
 msgstr ""
 
 #: src/mod_roster.erl:1172
-#, fuzzy
 msgid "View Roster"
-msgstr "Καταλόγος Επαφών"
+msgstr ""
 
 #: src/ejabberd_web_admin.erl:439 src/ejabberd_web_admin.erl:1818
 msgid "Virtual Hosts"
-msgstr "Eεικονικοί κεντρικοί υπολογιστές"
+msgstr "Eικονικοί κεντρικοί υπολογιστές"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1851
 msgid "Visitor"
 msgstr ""
 
-#: src/mod_muc_room.erl:1235
+#: src/mod_muc_room.erl:1236
 msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr ""
 "Οι επισκέπτες δεν επιτρέπεται να αλλάξουν τα ψευδώνυμα τους σε αυτή την "
 "αίθουσα"
 
-#: src/mod_muc_room.erl:1012
+#: src/mod_muc_room.erl:1013
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr ""
 "Οι επισκέπτες δεν επιτρέπεται να στείλουν μηνύματα σε όλους τους "
-"συμμετέχωντες"
+"συμμετέχοντες"
 
-#: src/mod_muc_room.erl:4410
+#: src/mod_muc_room.erl:4411
 msgid "Voice request"
 msgstr "Αίτημα φωνής"
 
-#: src/mod_muc_room.erl:1112
+#: src/mod_muc_room.erl:1113
 msgid "Voice requests are disabled in this conference"
 msgstr "Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"
 
@@ -2769,7 +2722,7 @@ msgstr "Τετάρτη"
 #: deps/xmpp/src/pubsub_node_config.erl:1920
 #, fuzzy
 msgid "When a new subscription is processed"
-msgstr "Εάν επιτρέποντε συνδρομές"
+msgstr "Εάν επιτρέπονται συνδρομές"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1924
 msgid ""
@@ -2778,7 +2731,7 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1938
 msgid "When to send the last published item"
-msgstr "Πότε να αποσταλθεί το τελευταίο στοιχείο που δημοσιεύθηκε"
+msgstr "Πότε να αποσταλεί το τελευταίο στοιχείο που δημοσιεύθηκε"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:546
 msgid ""
@@ -2806,7 +2759,7 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1970
 msgid "Whether to allow subscriptions"
-msgstr "Εάν επιτρέποντε συνδρομές"
+msgstr "Εάν επιτρέπονται συνδρομές"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1954
 msgid ""
@@ -2824,7 +2777,7 @@ msgstr ""
 #: src/mod_register_web.erl:599
 #, fuzzy
 msgid "Wrong CAPTCHA entered"
-msgstr "Κάντε την αίθουσα CAPTCHA προστατεύονομενη"
+msgstr "Κάντε την αίθουσα προστατεύομενη με CAPTCHA"
 
 #: src/mod_register_web.erl:617
 msgid "Wrong parameters in the web formulary"
@@ -2837,7 +2790,7 @@ msgstr ""
 #: src/mod_register_web.erl:203 src/mod_register_web.erl:211
 #, fuzzy
 msgid "XMPP Account Registration"
-msgstr "Εγγραφή λογαριασμού XMPP"
+msgstr "Εγγραφή με Ψευδώνυμο στο "
 
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
@@ -2865,21 +2818,18 @@ msgid "XMPP URI of Associated Publish-Subscribe Node"
 msgstr "ejabberd module Δημοσίευσης-Εγγραφής"
 
 #: src/mod_register_web.erl:146
-#, fuzzy
 msgid "XMPP account password changed."
-msgstr "Ο XMPP λογαριασμός σας δημιουργήθηκε με επιτυχία."
+msgstr ""
 
 #: src/mod_register_web.erl:118
-#, fuzzy
 msgid "XMPP account registered."
-msgstr "Εγγραφή λογαριασμού XMPP"
+msgstr ""
 
 #: src/mod_register_web.erl:131
-#, fuzzy
 msgid "XMPP account unregistered."
-msgstr "Εγγραφή λογαριασμού XMPP"
+msgstr ""
 
-#: src/mod_muc_room.erl:880
+#: src/mod_muc_room.erl:881
 #, fuzzy
 msgid "You are being removed from the room because of a system shutdown"
 msgstr "αποβλήθηκε λόγω τερματισμού συστήματος"
@@ -2887,42 +2837,40 @@ msgstr "αποβλήθηκε λόγω τερματισμού συστήματο�
 #: src/mod_mix.erl:667
 #, fuzzy
 msgid "You are not joined to the channel"
-msgstr "Δεν σου επιτρέπεται η δημιουργία κόμβων"
+msgstr "Δεν σας επιτρέπεται η δημιουργία κόμβων"
 
 #: src/mod_register_web.erl:287
-#, fuzzy
 msgid "You can change your password using an XMPP client later."
 msgstr ""
-"Μπορείτε αργότερα να αλλάξετε τον κωδικό πρόσβασής σας χρησιμοποιώντας έναν "
-"πελάτη XMPP."
 
-#: src/mod_muc_room.erl:2091
+#: src/mod_muc_room.erl:2092
 msgid "You have been banned from this room"
 msgstr "Σας έχει απαγορευθεί η είσοδος σε αυτή την αίθουσα"
 
-#: src/mod_muc_room.erl:2072
+#: src/mod_muc_room.erl:2073
 msgid "You have joined too many conferences"
 msgstr "Είσθε σε πάρα πολλά συνέδρια"
 
 #: src/mod_muc.erl:1062
 msgid "You must fill in field \"Nickname\" in the form"
-msgstr "Θα πρέπει να συμπληρώσετε το πεδίο \"Nickname\" στη φόρμα"
+msgstr ""
 
 #: src/mod_register.erl:231
 msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "Χρειάζεστε ένα x:data και CAPTCHA ικανό πελάτη για εγγραφή"
+msgstr "Χρειάζεστε έναν πελάτη που να υποστηρίζει x:data και CAPTCHA"
 
 #: src/mod_muc.erl:1017
 msgid "You need a client that supports x:data to register the nickname"
-msgstr "Χρειάζεστε ένα x:data ικανό πελάτη για εγγραφή με ψευδώνυμο"
+msgstr ""
+"Χρειάζεστε έναν πελάτη που να υποστηρίζει x:data για εγγραφή του ψευδώνυμου"
 
 #: src/mod_vcard.erl:451
 msgid "You need an x:data capable client to search"
-msgstr "Χρειάζεστε ένα  x:data ικανό πελάτη για αναζήτηση"
+msgstr "Χρειάζεστε έναν πελάτη που να υποστηρίζει x:data για να αναζητήσετε"
 
 #: src/mod_pubsub.erl:1563
 msgid "You're not allowed to create nodes"
-msgstr "Δεν σου επιτρέπεται η δημιουργία κόμβων"
+msgstr "Δεν σας επιτρέπεται η δημιουργία κόμβων"
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."
@@ -2934,14 +2882,14 @@ msgstr ""
 msgid ""
 "Your contact offline message queue is full. The message has been discarded."
 msgstr ""
-"Η μνήμη χωρίς σύνδεση μήνυματών είναι πλήρης. Το μήνυμα έχει απορριφθεί."
+"Η μνήμη μηνυμάτων χωρίς σύνδεση είναι πλήρης. Το μήνυμα έχει απορριφθεί."
 
 #: src/ejabberd_captcha.erl:97
 msgid ""
 "Your subscription request and/or messages to ~s have been blocked. To "
 "unblock your subscription request, visit ~s"
 msgstr ""
-"Τα μηνύματά σας πρως ~s είναι αποκλεισμένα. Για αποδεσμεύση, επισκεφθείτε ~s"
+"Τα μηνύματά σας προς ~s είναι αποκλεισμένα. Για αποδεσμεύση, επισκεφθείτε ~s"
 
 #: src/mod_disco.erl:439
 #, fuzzy
@@ -2979,7 +2927,7 @@ msgstr "ejabberd vCard module"
 
 #: src/mod_muc_log.erl:387 src/mod_muc_log.erl:390
 msgid "has been banned"
-msgstr "έχει απαγορευθεί"
+msgstr "έχει αποβληθεί διαπαντώς"
 
 #: src/mod_muc_log.erl:394 src/mod_muc_log.erl:397 src/ejabberd_sm.erl:456
 msgid "has been kicked"
@@ -3003,17 +2951,17 @@ msgstr "είναι τώρα γνωστή ως"
 
 #: src/mod_muc_log.erl:377
 msgid "joins the room"
-msgstr "συνδέετε στην αίθουσα"
+msgstr "συνδέεται στην αίθουσα"
 
 #: src/mod_muc_log.erl:380 src/mod_muc_log.erl:383
 msgid "leaves the room"
 msgstr "εγκαταλείπει την αίθουσα"
 
-#: src/mod_muc_room.erl:4389
+#: src/mod_muc_room.erl:4390
 msgid "private, "
 msgstr "ιδιωτικό, "
 
-#: src/mod_muc_room.erl:4486
+#: src/mod_muc_room.erl:4487
 msgid "the password is"
 msgstr "ο κωδικός πρόσβασης είναι"
 
@@ -3021,17 +2969,15 @@ msgstr "ο κωδικός πρόσβασης είναι"
 msgid "vCard User Search"
 msgstr "vCard Αναζήτηση χρηστών"
 
-#: src/mod_muc_room.erl:4479
-#, fuzzy
+#: src/mod_muc_room.erl:4480
 msgid "~s invites you to the room ~s"
-msgstr "~s σας προσκαλεί στην αίθουσα ~s"
+msgstr ""
 
 #: src/mod_offline.erl:991
 #, fuzzy
 msgid "~ts's Offline Messages Queue"
-msgstr "Η Σειρά Χωρίς Σύνδεση Μηνύματων τού ~s"
+msgstr "Χωρίς Σύνδεση Μηνύματα"
 
-#, fuzzy
 #~ msgid "The password of your XMPP account was successfully changed."
 #~ msgstr ""
 #~ "Ο κωδικός  πρόσβασης του XMPP λογαριασμού σας έχει αλλάξει επιτυχώς."
