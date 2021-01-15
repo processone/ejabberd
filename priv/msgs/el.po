@@ -17,7 +17,7 @@ msgstr ""
 # Parenthesis is not a space
 #: src/mod_vcard.erl:462
 msgid " (Add * to the end of field to match substring)"
-msgstr " (Προσθέστε * το τέλος του πεδίου για ταίριασμα με το substring)"
+msgstr " (Προσθέστε * στο τέλος του πεδίου για ταίριασμα με το substring)"
 
 #: src/mod_muc_log.erl:420 src/mod_muc_log.erl:592
 msgid " has set the subject to: "
