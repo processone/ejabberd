@@ -38,7 +38,7 @@ msgstr "Μία ιστοσελίδα"
 #: deps/xmpp/src/pubsub_node_config.erl:1561
 #: deps/xmpp/src/pubsub_meta_data.erl:672
 msgid "A description of the node"
-msgstr "Μία περιγραφή για τον κόμβο"
+msgstr "Μία περιγραφή του κόμβου"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1985
 msgid "A friendly name for the node"
