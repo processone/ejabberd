@@ -1164,6 +1164,10 @@ mod_opt_type(regexp_room_id) ->
     econf:re([unicode]);
 mod_opt_type(max_room_name) ->
     econf:pos_int(infinity);
+mod_opt_type(max_password) ->
+    econf:pos_int(infinity);
+mod_opt_type(max_captcha_whitelist) ->
+    econf:pos_int(infinity);
 mod_opt_type(max_user_conferences) ->
     econf:pos_int();
 mod_opt_type(max_users) ->
@@ -1244,6 +1248,8 @@ mod_options(Host) ->
      {max_room_desc, infinity},
      {max_room_id, infinity},
      {max_room_name, infinity},
+     {max_password, infinity},
+     {max_captcha_whitelist, infinity},
      {max_rooms_discoitems, 100},
      {max_user_conferences, 100},
      {max_users, 200},
@@ -1404,6 +1410,18 @@ mod_doc() ->
               desc =>
                   ?T("This option defines the maximum number of characters "
                      "that Room Name can have when configuring the room. "
+                     "The default value is 'infinity'.")}},
+           {max_password,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines the maximum number of characters "
+                     "that Password can have when configuring the room. "
+                     "The default value is 'infinity'.")}},
+           {max_captcha_whitelist,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines the maximum number of characters "
+                     "that Captcha Whitelist can have when configuring the room. "
                      "The default value is 'infinity'.")}},
            {max_rooms_discoitems,
             #{value => ?T("Number"),
