@@ -1237,7 +1237,15 @@ get_room_affiliation(Name, Service, JID) ->
 %% If the affiliation is 'none', the action is to remove,
 %% In any other case the action will be to create the affiliation.
 set_room_affiliation(Name, Service, JID, AffiliationString) ->
-    Affiliation = misc:binary_to_atom(AffiliationString),
+    Affiliation = case AffiliationString of
+                      <<"outcast">> -> outcast;
+                      <<"none">> -> none;
+                      <<"member">> -> member;
+                      <<"admin">> -> admin;
+                      <<"owner">> -> owner;
+                      _ ->
+                          throw({error, "Invalid affiliation"})
+                  end,
     case get_room_pid(Name, Service) of
 	Pid when is_pid(Pid) ->
 	    %% Get the PID for the online room so we can get the state of the room
