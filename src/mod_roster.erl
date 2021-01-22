@@ -165,14 +165,14 @@ process_local_iq(#iq{type = set,lang = Lang,
 		     sub_els = [#roster_query{
 				   items = [#roster_item{ask = Ask}]}]} = IQ)
   when Ask /= undefined ->
-    Txt = ?T("Possessing 'ask' attribute is not allowed by RFC 6121"),
+    Txt = ?T("Possessing 'ask' attribute is not allowed by RFC6121"),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 process_local_iq(#iq{type = set, from = From, lang = Lang,
 		     sub_els = [#roster_query{
 				   items = [#roster_item{} = Item]}]} = IQ) ->
     case has_duplicated_groups(Item#roster_item.groups) of
 	true ->
-	    Txt = ?T("Duplicated groups are not allowed by RFC 6121"),
+	    Txt = ?T("Duplicated groups are not allowed by RFC6121"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	false ->
 	    #jid{lserver = LServer} = From,
@@ -187,7 +187,7 @@ process_local_iq(#iq{type = set, from = From, lang = Lang,
     end;
 process_local_iq(#iq{type = set, lang = Lang,
 		     sub_els = [#roster_query{items = [_|_]}]} = IQ) ->
-    Txt = ?T("Multiple <item/> elements are not allowed by RFC 6121"),
+    Txt = ?T("Multiple <item/> elements are not allowed by RFC6121"),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 process_local_iq(#iq{type = get, lang = Lang,
 		     sub_els = [#roster_query{items = Items}]} = IQ) ->
@@ -739,7 +739,7 @@ out_state_change(none, none, subscribed) -> none;
 out_state_change(none, none, unsubscribe) -> none;
 out_state_change(none, none, unsubscribed) -> none;
 out_state_change(none, out, subscribe) ->
-    {none, out}; %% We need to resend query (RFC 3921, section 9.2)
+    {none, out}; %% We need to resend query (RFC3921, section 9.2)
 out_state_change(none, out, subscribed) -> none;
 out_state_change(none, out, unsubscribe) ->
     {none, none};
@@ -1315,7 +1315,7 @@ mod_doc() ->
     #{desc =>
           ?T("This module implements roster management as "
              "defined in https://tools.ietf.org/html/rfc6121#section-2"
-             "[RFC 6121 Section 2]. The module also adds support for "
+             "[RFC6121 Section 2]. The module also adds support for "
              "https://xmpp.org/extensions/xep-0237.html"
              "[XEP-0237: Roster Versioning]."),
       opts =>
@@ -1351,23 +1351,23 @@ mod_doc() ->
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as the 'default_db' top-level option, but only applied to this module.")}},
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as the 'use_cache' top-level option, but only applied to this module.")}},
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as the 'cache_size' top-level option, but only applied to this module.")}},
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as the 'cache_missed' top-level option, but only applied to this module.")}},
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as the 'cache_life_time' top-level option, but only applied to this module.")}}],
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}],
       example =>
           ["modules:",
            "  ...",
