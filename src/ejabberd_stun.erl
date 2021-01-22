@@ -203,7 +203,7 @@ listen_options() ->
      {turn_max_port, 65535},
      {turn_max_allocations, 10},
      {turn_max_permissions, 10},
-     {turn_blacklist, [<<"2001::/32">>, <<"2002::/16">>]}, % Teredo, 6to4.
+     {turn_blacklist, []},
      {server_name, <<"ejabberd">>}].
 
 -spec init_logger() -> ok.
