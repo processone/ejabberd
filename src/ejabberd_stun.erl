@@ -203,7 +203,7 @@ listen_options() ->
      {turn_max_port, 65535},
      {turn_max_allocations, 10},
      {turn_max_permissions, 10},
-     {turn_blacklist, []},
+     {turn_blacklist, [<<"127.0.0.0/8">>, <<"::1/128">>]},
      {server_name, <<"ejabberd">>}].
 
 -spec init_logger() -> ok.
