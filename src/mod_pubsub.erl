@@ -550,10 +550,10 @@ disco_items(Host, Node, From) ->
 %%
 
 -spec caps_add(jid(), jid(), [binary()]) -> ok.
-caps_add(JID, JID, _Features) ->
+caps_add(JID, JID, Features) ->
     %% Send the owner his last PEP items.
-    send_last_pep(JID, JID, _Features);
-caps_add(#jid{lserver = S1} = From, #jid{lserver = S2} = To, _Features)
+    send_last_pep(JID, JID, Features);
+caps_add(#jid{lserver = S1} = From, #jid{lserver = S2} = To, Features)
   when S1 =/= S2 ->
     %% When a remote contact goes online while the local user is offline, the
     %% remote contact won't receive last items from the local user even if
@@ -564,13 +564,13 @@ caps_add(#jid{lserver = S1} = From, #jid{lserver = S2} = To, _Features)
     %% contact becomes available; the former is also executed when the local
     %% user goes online (because that triggers the contact to send a presence
     %% packet with CAPS).
-    send_last_pep(To, From, _Features);
+    send_last_pep(To, From, Features);
 caps_add(_From, _To, _Features) ->
     ok.
 
 -spec caps_update(jid(), jid(), [binary()]) -> ok.
-caps_update(From, To, _Features) ->
-    send_last_pep(To, From, _Features).
+caps_update(From, To, Features) ->
+    send_last_pep(To, From, Features).
 
 -spec presence_probe(jid(), jid(), pid()) -> ok.
 presence_probe(#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}, _Pid) ->
