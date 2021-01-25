@@ -552,7 +552,7 @@ disco_items(Host, Node, From) ->
 -spec caps_add(jid(), jid(), [binary()]) -> ok.
 caps_add(JID, JID, _Features) ->
     %% Send the owner his last PEP items.
-    send_last_pep(JID, JID);
+    send_last_pep(JID, JID, _Features);
 caps_add(#jid{lserver = S1} = From, #jid{lserver = S2} = To, _Features)
   when S1 =/= S2 ->
     %% When a remote contact goes online while the local user is offline, the
@@ -564,20 +564,20 @@ caps_add(#jid{lserver = S1} = From, #jid{lserver = S2} = To, _Features)
     %% contact becomes available; the former is also executed when the local
     %% user goes online (because that triggers the contact to send a presence
     %% packet with CAPS).
-    send_last_pep(To, From);
-caps_add(_From, _To, _Feature) ->
+    send_last_pep(To, From, _Features);
+caps_add(_From, _To, _Features) ->
     ok.
 
 -spec caps_update(jid(), jid(), [binary()]) -> ok.
 caps_update(From, To, _Features) ->
-    send_last_pep(To, From).
+    send_last_pep(To, From, _Features).
 
 -spec presence_probe(jid(), jid(), pid()) -> ok.
 presence_probe(#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}, _Pid) ->
     %% ignore presence_probe from my other resources
     ok;
 presence_probe(#jid{lserver = S} = From, #jid{lserver = S} = To, _Pid) ->
-    send_last_pep(To, From);
+    send_last_pep(To, From, unknown);
 presence_probe(_From, _To, _Pid) ->
     %% ignore presence_probe from remote contacts, those are handled via caps_add
     ok.
@@ -606,7 +606,7 @@ on_user_offline(C2SState, _Reason) ->
 -spec out_subscription(presence()) -> any().
 out_subscription(#presence{type = subscribed, from = From, to = To}) ->
     if From#jid.lserver == To#jid.lserver ->
-           send_last_pep(jid:remove_resource(From), To);
+	    send_last_pep(jid:remove_resource(From), To, unknown);
        true ->
            ok
     end;
@@ -3151,32 +3151,52 @@ send_last_items(JID) ->
 %	true ->
 %	    ok
 %    end.
--spec send_last_pep(jid(), jid()) -> ok.
-send_last_pep(From, To) ->
+send_last_pep(From, To, Features) ->
     ServerHost = From#jid.lserver,
     Host = host(ServerHost),
     Publisher = jid:tolower(From),
     Owner = jid:remove_resource(Publisher),
+    NotifyNodes =
+    case Features of
+        _ when is_list(Features) ->
+            lists:filtermap(
+                fun(V) ->
+                    Vs = byte_size(V) - 7,
+                    case V of
+                        <<NotNode:Vs/binary, "+notify">> ->
+                            {true, NotNode};
+                        _ ->
+                            false
+                    end
+                end, Features);
+        _ ->
+            unknown
+    end,
     case tree_action(Host, get_nodes, [Owner, infinity]) of
-	Nodes when is_list(Nodes) ->
-	    lists:foreach(
-	      fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = Nidx, options = Options}) ->
-		      case match_option(Options, send_last_published_item, on_sub_and_presence) of
-			  true ->
-			      case delivery_permitted(From, To, Options) of
-				  true ->
-				      LJID = jid:tolower(To),
-				      send_items(Owner, Node, Nidx, Type, Options,
-						 Publisher, LJID, LJID, 1);
-				  false ->
-				      ok
-			      end;
-			  _ ->
-			      ok
-		      end
-	      end, Nodes);
-	_ ->
-	    ok
+        Nodes when is_list(Nodes) ->
+            lists:foreach(
+                fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = Nidx, options = Options}) ->
+                    MaybeNotify =
+                    case NotifyNodes of
+                        unknown -> true;
+                        _ -> lists:member(Node, NotifyNodes)
+                    end,
+                    case MaybeNotify andalso match_option(Options, send_last_published_item, on_sub_and_presence) of
+                        true ->
+                            case delivery_permitted(From, To, Options) of
+                                true ->
+                                    LJID = jid:tolower(To),
+                                    send_items(Owner, Node, Nidx, Type, Options,
+                                               Publisher, LJID, LJID, 1);
+                                false ->
+                                    ok
+                            end;
+                        _ ->
+                            ok
+                    end
+                end, Nodes);
+        _ ->
+            ok
     end.
 
 -spec subscribed_nodes_by_jid(items | nodes, subs_by_depth()) -> [{ljid(), binary(), subId()}].
