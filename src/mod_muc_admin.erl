@@ -852,6 +852,13 @@ get_all_rooms(Host) ->
 	end, #{}, OnlineRooms),
 
     Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    DbRooms =
+    case erlang:function_exported(Mod, get_rooms_without_subscribers, 2) of
+	true ->
+	    Mod:get_rooms_without_subscribers(ServerHost, Host);
+	_ ->
+	    Mod:get_rooms(ServerHost, Host)
+    end,
     StoredRooms = lists:filtermap(
 	fun(#muc_room{name_host = {Room, _}, opts = Opts}) ->
 	    case maps:is_key(Room, OnlineMap) of
@@ -860,7 +867,7 @@ get_all_rooms(Host) ->
 		_ ->
 		    {true, {Room, Host, ServerHost, Opts}}
 	    end
-	end, Mod:get_rooms(ServerHost, Host)),
+	end, DbRooms),
     OnlineRooms ++ StoredRooms.
 
 get_room_config(Room_pid) ->
