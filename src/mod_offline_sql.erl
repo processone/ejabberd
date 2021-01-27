@@ -94,6 +94,11 @@ remove_old_messages(Days, LServer) ->
                      ?SQL("DELETE FROM spool"
                           " WHERE created_at <"
                           " NOW() - %(Days)d * INTERVAL '1 DAY'"));
+	      (sqlite, _) ->
+		  ejabberd_sql:sql_query_t(
+		      ?SQL("DELETE FROM spool"
+			   " WHERE created_at <"
+			   " DATETIME('now', '-%(Days)d days')"));
               (_, _) ->
                    ejabberd_sql:sql_query_t(
                      ?SQL("DELETE FROM spool"
