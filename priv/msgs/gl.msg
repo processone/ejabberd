@@ -75,7 +75,6 @@
 {"Disc only copy","Copia en disco soamente"}.
 {"Dump Backup to Text File at ","Exporta copia de seguridade a ficheiro de texto en "}.
 {"Dump to Text File","Exportar a ficheiro de texto"}.
-{"Duplicated groups are not allowed by RFC6121","Os grupos duplicados non están permitidos por RFC6121"}.
 {"Edit Properties","Editar Propiedades"}.
 {"Either approve or decline the voice request.","Aproba ou rexeita a petición de voz."}.
 {"ejabberd MUC module","Módulo de MUC para ejabberd"}.
@@ -195,7 +194,6 @@
 {"Module failed to handle the query","O módulo non puido xestionar a consulta"}.
 {"Monday","Luns"}.
 {"Multicast","Multicast"}.
-{"Multiple <item/> elements are not allowed by RFC6121","Múltiples elementos <item/> non están permitidos por RFC6121"}.
 {"Multi-User Chat","Salas de Charla"}.
 {"Name","Nome"}.
 {"Name:","Nome:"}.
@@ -285,7 +283,6 @@
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ten en conta que estas opcións só farán copia de seguridade da base de datos Mnesia. Se está a utilizar o módulo de ODBC, tamén necesita unha copia de seguridade da súa base de datos SQL por separado."}.
 {"Please, wait for a while before sending new voice request","Por favor, espera un pouco antes de enviar outra petición de voz"}.
 {"Pong","Pong"}.
-{"Possessing 'ask' attribute is not allowed by RFC6121","Posuír o atributo 'ask' non está permitido por RFC6121"}.
 {"Present real Jabber IDs to","Os Jabber ID reais poden velos"}.
 {"private, ","privado, "}.
 {"Publish-Subscribe","Publicar-Subscribir"}.
@@ -368,6 +365,8 @@
 {"The query is only allowed from local users","A solicitude só se permite para usuarios locais"}.
 {"The query must not contain <item/> elements","A solicitude non debe conter elementos <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","A estroa DEBEN conter un elemento <active/>, un elemento <default/> ou un elemento <list/>"}.
+{"There was an error creating the account: ","Produciuse un erro ao crear a conta: "}.
+{"There was an error deleting the account: ","Produciuse un erro ao eliminar a conta: "}.
 {"This room is not anonymous","Sala non anónima"}.
 {"Thursday","Xoves"}.
 {"Time delay","Atraso temporal"}.

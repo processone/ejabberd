@@ -93,9 +93,6 @@
 {"Configuration","Ρύθμιση παραμέτρων"}.
 {"Connected Resources:","Συνδεδεμένοι Πόροι:"}.
 {"Contact Addresses (normally, room owner or owners)","Διευθύνσεις της Επαφής (κανονικά, ιδιοκτήτης (-ες) αίθουσας)"}.
-{"Could not change the password: ","Δεν μπόρεσα να αλλάξω τον Κωδικό Πρόσβασης: "}.
-{"Could not register the account: ","Δεν μπόρεσα να καταχωρήσω το λογαριασμό: "}.
-{"Could not unregister the account: ","Δεν μπόρεσα να διαγράψω το λογαριασμό: "}.
 {"Country","Χώρα"}.
 {"CPU Time:","Ώρα CPU:"}.
 {"Current Discussion Topic","Τρέχων θέμα συζήτησης"}.
@@ -120,7 +117,6 @@
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","Μη γνωστοποιείτε τον Κωδικό σας, ούτε στους Διαχειριστές του XMPP  εξυπηρετητή."}.
 {"Dump Backup to Text File at ","Αποθήκευση Αντιγράφου Ασφαλείας σε αρχείο κειμένου στο "}.
 {"Dump to Text File","Αποθήκευση σε αρχείο κειμένου"}.
-{"Duplicated groups are not allowed by RFC6121","Δεν επιτρέπονται διπλότυπες ομάδες από το RFC6121"}.
 {"Dynamically specify a replyto of the item publisher","Δυναμικά προσδιορίστε το Απάντηση σε του εκδότη του αντικειμένου"}.
 {"Edit Properties","Επεξεργασία ιδιοτήτων"}.
 {"Either approve or decline the voice request.","Είτε εγκρίνετε ή απορρίψτε το αίτημα φωνής."}.
@@ -258,7 +254,6 @@
 {"Members not added (inexistent vhost!): ","Τα μέλη δεν προστέθηκαν (ανύπαρκτος vhost!): "}.
 {"Membership is required to enter this room","Απαιτείται αίτηση συμετοχής για είσοδο σε αυτή την αίθουσα"}.
 {"Members:","Μέλη:"}.
-{"Memorize your password, or write it on a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Απομνημονεύστε ή καταγράψτε τον κωδικό σας σε ασφαλές μέρος. Στο XMPP δεν υπάρχει αυτοματοποιημένος τρόπος ανάκτησης."}.
 {"Memory","Μνήμη"}.
 {"Mere Availability in XMPP (No Show Value)","Διαθεσιμότητα στο XMPP (Χωρίς ένδειξη)"}.
 {"Message body","Περιεχόμενο μηνύματος"}.
@@ -275,7 +270,6 @@
 {"Module failed to handle the query","Το module απέτυχε να χειριστεί το ερώτημα"}.
 {"Monday","Δευτέρα"}.
 {"Multicast","Multicast"}.
-{"Multiple <item/> elements are not allowed by RFC6121","Πολλαπλά στοιχεία <item/> δεν επιτρέπονται από το RFC6121"}.
 {"Multi-User Chat","Συνομιλία με πολλούς χρήστες"}.
 {"Name in the rosters where this group will be displayed","Όνομα στις λίστες όπου αυτή η ομάδα θα εμφανίζεται"}.
 {"Name","Όνομα"}.
@@ -388,7 +382,6 @@
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Παρακαλώ σημειώστε ότι οι επιλογές αυτές θα αποθήκευσουν Αντιγράφο Ασφαλείας μόνο της ενσωματωμένης βάσης δεδομένων Mnesia. Εάν χρησιμοποιείτε το module ODBC, θα πρέπει επίσης να κάνετε χωριστά Αντιγράφο Ασφαλείας της SQL βάσης δεδομένων σας."}.
 {"Please, wait for a while before sending new voice request","Παρακαλώ, περιμένετε για λίγο πριν την αποστολή νέου αιτήματος φωνής"}.
 {"Pong","Pong"}.
-{"Possessing 'ask' attribute is not allowed by RFC6121","Η ιδιότητα 'ask' δεν επιτρέπεται από το RFC6121"}.
 {"Present real Jabber IDs to","Παρούσιαση πραγματικών ταυτοτήτων Jabber σε"}.
 {"Previous session not found","Η προηγούμενη περίοδος σύνδεσης χρήστη δεν βρέθηκε"}.
 {"Previous session PID has been killed","Το προηγούμενο αναγνωριστικό περιόδου σύνδεσης PID αφαιρέθηκε"}.
@@ -471,7 +464,6 @@
 {"Show Ordinary Table","Δείτε Κοινό Πίνακα"}.
 {"Shut Down Service","Τερματισμός Υπηρεσίας"}.
 {"SOCKS5 Bytestreams","Bytestreams του SOCKS5"}.
-{"Some XMPP clients can store your password on the computer, but for safety reasons you should do this on your personal computers .","Μερικοί XMPP-πελάτες μπορούν να αποθηκεύσουν τους κωδικούς σας, αλλά αυτό να επιτρέπεται μόνο σε δικούς σας υπολογιστές."}.
 {"Specify the access model","Καθορίστε το μοντέλο πρόσβασης"}.
 {"Specify the event message type","Καθορίστε τον τύπο μηνύματος συμβάντος"}.
 {"Specify the publisher model","Καθορίστε το μοντέλο εκδότη"}.
@@ -529,6 +521,7 @@
 {"The password contains unacceptable characters","Ο κωδικός πρόσβασης περιέχει μη αποδεκτούς χαρακτήρες"}.
 {"The password is too weak","Ο κωδικός πρόσβασης είναι πολύ αδύναμος"}.
 {"the password is","ο κωδικός πρόσβασης είναι"}.
+{"The password of your XMPP account was successfully changed.","Ο κωδικός  πρόσβασης του XMPP λογαριασμού σας έχει αλλάξει επιτυχώς."}.
 {"The password was not changed","Ο κωδικός πρόσβασης δεν άλλαξε"}.
 {"The passwords are different","Οι κωδικοί πρόσβασης δεν ταιριάζουν"}.
 {"The presence states for which an entity wants to receive notifications","Η παρουσία δηλώνει για ποιους θέλει κάποιος να λαμβάνει ειδοποιήσεις"}.
@@ -542,9 +535,8 @@
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","Το URL ενός μετασχηματισμού XSL το οποίο μπορεί να εφαρμοστεί σε φόρτους εργασίας για να παραχθεί το κατάλληλο στοιχείο του σώματος του μηνύματος."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","Το URL ενός μετασχηματισμού XSL, το οποίο μπορεί να εφαρμοστεί στους τύπους φόρτου εργασίας για να παραχθεί έγκυρο αποτέλεσμα Data Forms, τέτοιο που ο πελάτης μπορεί να εμφανίσει, χρησιμοποιώντας μια ευρείας χρήσης μηχανή επεξεργασίας Data Forms"}.
 {"The username is not valid","Το όνομα Χρήστη δεν είναι έγκυρο"}.
-{"This is case insensitive: \"macbeth\" is the same as \"MacBeth\" and \"Macbeth\".","Αυτό σημαίνει ότι δεν έχει σημασία αν είναι κεφαλαία ή πεζά γράμματα: \"κατσαντώνης\" είναι το ίδιο με \"ΚατσΑντώνης\" , όπως και \"Κατσαντώνης\"."}.
-{"This page allows registering an XMPP account on this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read the instructions carefully before filling in the fields.","Αυτή η σελίδα σας επιτρέπει να καταχωρήσετε έναν XMPP λογαριασμό σε αυτόν τον σέρβερ. Το JID (ταυτότητα ID) θα είναι της μορφής: όνομαχρήστη@σέρβερ. Παρακαλούμε διαβάστε προσεκτικά τις οδηγίες πριν συμπληρώσετε τα πεδία."}.
-{"This page allows unregistering an XMPP account on this XMPP server.","Αυτή η σελίδα σας επιτρέπει να διαγράψετε έναν XMPP λογαριασμό σε αυτόν τον σέρβερ."}.
+{"There was an error creating the account: ","Υπήρξε ένα σφάλμα κατά τη δημιουργία του λογαριασμού: "}.
+{"There was an error deleting the account: ","Υπήρξε ένα σφάλμα κατά τη διαγραφή του λογαριασμού: "}.
 {"This room is not anonymous","Η αίθουσα αυτή δεν είναι ανώνυμη"}.
 {"This service can not process the address: ~s","Αυτή η υπηρεσία δεν μπορεί να επεξεργαστεί την διεύθυνση: ~s"}.
 {"Thursday","Πέμπτη"}.
@@ -592,7 +584,6 @@
 {"URL for Archived Discussion Logs","URL αρχειοθετημένων καταγραφών συζητήσεων"}.
 {"User already exists","Ο χρήστης υπάρχει ήδη"}.
 {"User JID","JID Χρήστη"}.
-{"User (JID)","Χρήστης (JID)"}.
 {"User Management","Διαχείριση χρηστών"}.
 {"User removed","Ο Χρήστης αφαιρέθηκε"}.
 {"User session not found","Η περίοδος σύνδεσης χρήστη δεν βρέθηκε"}.
@@ -631,13 +622,9 @@
 {"Whether to make all subscriptions temporary, based on subscriber presence","Αν επιτρέπεται να γίνουν όλες οι συνδρομές προσωρινές, βασιζόμενοι στην παρουσία του συνδρομητή"}.
 {"Whether to notify owners about new subscribers and unsubscribes","Αν πρέπει να ειδοποιούνται οι ιδιοκτήτες για νέους συνδρομητές και αποχωρήσεις"}.
 {"Who may associate leaf nodes with a collection","Ποιός μπορεί να συσχετίζει leaf nodes με μία συλλογή"}.
-{"Wrong CAPTCHA entered","Εισήχθη εσφαλμένη CAPTCHA"}.
 {"Wrong parameters in the web formulary","Εσφαλμένες παράμετροι στην διαμόρφωση τυπικότητας του δυκτίου"}.
 {"Wrong xmlns","Εσφαλμένο xmlns"}.
-{"XMPP account password changed.","Ο Κωδικός λογαριασμού XMPP άλλαξε."}.
-{"XMPP account registered.","Ο λογαριασμός XMPP καταχωρήθηκε."}.
 {"XMPP Account Registration","Εγγραφή με Ψευδώνυμο στο "}.
-{"XMPP account unregistered.","Ο λογαριασμός XMPP αφαιρέθηκε."}.
 {"XMPP Domains","Ονόματα χώρου XMPP"}.
 {"XMPP Show Value of Away","Δείξε τιμή XMPP Απεμακρύνθην"}.
 {"XMPP Show Value of Chat","Δείξε τιμή XMPP Αξία Συνομιλίας"}.
@@ -646,7 +633,6 @@
 {"XMPP URI of Associated Publish-Subscribe Node","XMPP URI του συσχετισμένου κόμβου Δημοσίευσης-Εγγραφής"}.
 {"You are being removed from the room because of a system shutdown","Απαιτείται η απομάκρυνσή σας από την αίθουσα, λόγω τερματισμού συστήματος"}.
 {"You are not joined to the channel","Δεν λαμβάνετε μέρος στο κανάλι"}.
-{"You can change your password using an XMPP client later.","Μπορείτε να αλλάξετε το Κωδικό σας μέσῳ του προγράμματος-πελάτη XMPP, αργότερα."}.
 {"You have been banned from this room","Σας έχει απαγορευθεί η είσοδος σε αυτή την αίθουσα"}.
 {"You have joined too many conferences","Είσθε σε πάρα πολλά συνέδρια"}.
 {"You must fill in field \"Nickname\" in the form","Απαιτείται να συμπληρώσετε το πεδίο \"Ψευδώνυμο\" στη φόρμα"}.

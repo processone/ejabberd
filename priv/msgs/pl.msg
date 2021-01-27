@@ -75,7 +75,6 @@
 {"Disc only copy","Kopia tylko na dysku"}.
 {"Dump Backup to Text File at ","Zapisz kopię zapasową w pliku tekstowym na "}.
 {"Dump to Text File","Wykonaj kopie do pliku tekstowego"}.
-{"Duplicated groups are not allowed by RFC6121","Duplikaty grup nie są dozwolone"}.
 {"Edit Properties","Edytuj właściwości"}.
 {"Either approve or decline the voice request.","Zatwierdź lub odrzuć żądanie głosowe."}.
 {"ejabberd MUC module","Moduł MUC"}.
@@ -195,7 +194,6 @@
 {"Module failed to handle the query","Moduł nie był wstanie przetworzyć zapytania"}.
 {"Monday","Poniedziałek"}.
 {"Multicast","Multicast"}.
-{"Multiple <item/> elements are not allowed by RFC6121","Dopuszczalny jest wyłącznie pojedynczy <item/> "}.
 {"Multi-User Chat","Wieloosobowa rozmowa"}.
 {"Name","Imię"}.
 {"Name:","Nazwa:"}.
@@ -284,7 +282,6 @@
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Te opcje kopii zapasowych dotyczą tylko wbudowanej bazy danych typu Mnesia. Jeśli korzystasz z modułu ODBC, musisz wykonać kopie bazy we własnym zakresie."}.
 {"Please, wait for a while before sending new voice request","Proszę poczekać chwile, zanim wyślesz nowe żądanie głosowe"}.
 {"Pong","Pong"}.
-{"Possessing 'ask' attribute is not allowed by RFC6121","Atrybut 'ask' nie jest dozwolony"}.
 {"Present real Jabber IDs to","Prawdziwe Jabber ID widoczne dla"}.
 {"private, ","prywatny, "}.
 {"Publish-Subscribe","PubSub"}.
@@ -367,6 +364,8 @@
 {"The query is only allowed from local users","To żądanie jest dopuszczalne wyłącznie dla lokalnych użytkowników"}.
 {"The query must not contain <item/> elements","Żądanie nie może zawierać elementów <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Żądanie może zawierać wyłącznie jeden z elementów <active/>, <default/> lub <list/>"}.
+{"There was an error creating the account: ","Wystąpił błąd podczas tworzenia konta: "}.
+{"There was an error deleting the account: ","Podczas usuwania konta wystąpił błąd: "}.
 {"This room is not anonymous","Ten pokój nie jest anonimowy"}.
 {"Thursday","Czwartek"}.
 {"Time delay","Opóźnienie"}.

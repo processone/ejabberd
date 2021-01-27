@@ -292,6 +292,8 @@
 {"The collections with which a node is affiliated","De collecties waar een node mee is gerelateerd"}.
 {"The password is too weak","Het wachtwoord is te zwak"}.
 {"the password is","het wachtwoord is"}.
+{"There was an error creating the account: ","Er was een fout bij het creeern van de account:"}.
+{"There was an error deleting the account: ","Er was een fout bij het verwijderen van de account."}.
 {"This room is not anonymous","Deze chatruimte is niet anoniem"}.
 {"Thursday","Donderdag"}.
 {"Time delay","Vertraging"}.

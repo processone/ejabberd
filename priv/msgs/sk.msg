@@ -282,6 +282,8 @@
 {"The collections with which a node is affiliated","Kolekcie asociované s uzlom"}.
 {"The password is too weak","heslo je"}.
 {"the password is","heslo je"}.
+{"There was an error creating the account: ","Pri vytváraní účtu nastala chyba: "}.
+{"There was an error deleting the account: ","Pri rušení účtu nastala chyba:"}.
 {"This room is not anonymous","Táto miestnosť nie je anonymná"}.
 {"Thursday","Štvrtok"}.
 {"Time delay","Časový posun"}.
