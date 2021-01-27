@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/19/2020
+.\"      Date: 01/27/2021
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "05/19/2020" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "01/27/2021" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/20\&.04/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/21\&.01/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 20\&.04
+This section describes top level options of ejabberd 21\&.01
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLRules|ACLName}}\fR
 .RS 4
@@ -386,6 +386,11 @@ The option defines in what format the users passwords are stored\&.
 \fIscram\fR: The password is not stored, only some information that allows to verify the hash provided by the client\&. It is impossible to obtain the original plain password from the stored information; for this reason, when this value is configured it cannot be changed to plain anymore\&. This format allows clients to authenticate using: SASL PLAIN and SASL SCRAM\-SHA\-1\&.
 .RE
 .PP
+\fBauth_scram_hash\fR: \fIsha | sha256 | sha512\fR
+.RS 4
+Hash algorith that should be used to store password in SCRAM format\&. You shouldn\(cqt change this if you already have passwords generated with a different algorithm \- users that have such passwords will not be able to authenticate\&.
+.RE
+.PP
 \fBauth_use_cache\fR: \fItrue | false\fR
 .RS 4
 Same as
@@ -396,8 +401,14 @@ will be used\&.
 .PP
 \fBc2s_cafile\fR: \fIPath\fR
 .RS 4
-Full path to a file containing one or more CA certificates in PEM format\&. All client certificates should be signed by one of these root CA certificates and should contain the corresponding JID(s) in subjectAltName field\&. There is no default value\&.
+Full path to a file containing one or more CA certificates in PEM format\&. All client certificates should be signed by one of these root CA certificates and should contain the corresponding JID(s) in
+\fIsubjectAltName\fR
+field\&. There is no default value\&.
 .RE
+.sp
+You can use host_config to specify this option per\-vhost\&.
+.sp
+To set a specific file per listener, use the listener\(cqs cafile option\&. Please notice that \fIc2s_cafile\fR overrides the listener\(cqs \fIcafile\fR option\&.
 .PP
 \fBc2s_ciphers\fR: \fI[Cipher, \&.\&.\&.]\fR
 .RS 4
@@ -457,6 +468,8 @@ Whether to enable or disable TLS compression for c2s connections\&. The default 
 .RS 4
 Path to a file of CA root certificates\&. The default is to use system defined file if possible\&.
 .RE
+.sp
+For server conections, this \fIca_file\fR option is overriden by the s2s_cafile option\&.
 .PP
 \fBcache_life_time\fR: \fItimeout()\fR
 .RS 4
@@ -560,7 +573,7 @@ Default persistent storage for ejabberd\&. Modules and other components (e\&.g\&
 \fImnesia\fR\&.
 .RE
 .PP
-\fBdefault_ram_db\fR: \fImnesia | sql | redis\fR
+\fBdefault_ram_db\fR: \fImnesia | redis | sql\fR
 .RS 4
 Default volatile (in\-memory) storage for ejabberd\&. Modules and other components (e\&.g\&. session management) may have its own value\&. The default value is
 \fImnesia\fR\&.
@@ -854,7 +867,7 @@ Whether to encrypt LDAP connection using TLS or not\&. The default value is
 \fBldap_filter\fR: \fIFilter\fR
 .RS 4
 An LDAP filter as defined in
-RFC4515\&. There is no default value\&. Example: "(&(objectClass=shadowAccount)(memberOf=Jabber Users))"\&. NOTE: don\(cqt forget to close brackets and don\(cqt use superfluous whitespaces\&. Also you must not use "uid" attribute in the filter because this attribute will be appended to the filter automatically\&.
+RFC4515\&. There is no default value\&. Example: "(&(objectClass=shadowAccount)(memberOf=XMPP Users))"\&. NOTE: don\(cqt forget to close brackets and don\(cqt use superfluous whitespaces\&. Also you must not use "uid" attribute in the filter because this attribute will be appended to the filter automatically\&.
 .RE
 .PP
 \fBldap_password\fR: \fIPassword\fR
@@ -936,11 +949,12 @@ The number of rotated log files to keep\&. The default value is
 \fI1\fR\&.
 .RE
 .PP
-\fBlog_rotate_size\fR: \fISize\fR
+\fBlog_rotate_size\fR: \fIpos_integer() | infinity\fR
 .RS 4
-The size (in bytes) of a log file to trigger rotation\&. The default value is
+The size (in bytes) of a log file to trigger rotation\&. If set to
+\fIinfinity\fR, log rotation is disabled\&. The default value is
 \fI10485760\fR
-(10 Mb)\&.
+(that is, 10 Mb)\&.
 .RE
 .PP
 \fBloglevel\fR: \fInone | emergency | alert | critical | error | warning | notice | info | debug\fR
@@ -982,7 +996,7 @@ minute\&.
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/20\&.04/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/21\&.01/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1089,6 +1103,18 @@ percents\&.
 Specify which address families to try, in what order\&. The default is
 \fI[ipv4, ipv6]\fR
 which means it first tries connecting with IPv4, if that fails it tries using IPv6\&.
+.RE
+.PP
+\fBoutgoing_s2s_ipv4_address\fR: \fIAddress\fR
+.RS 4
+Specify the IPv4 address that will be used when establishing an outgoing S2S IPv4 connection, for example "127\&.0\&.0\&.1"\&. The default value is
+\fIundefined\fR\&.
+.RE
+.PP
+\fBoutgoing_s2s_ipv6_address\fR: \fIAddress\fR
+.RS 4
+Specify the IPv6 address that will be used when establishing an outgoing S2S IPv6 connection, for example "::FFFF:127\&.0\&.0\&.1"\&. The default value is
+\fIundefined\fR\&.
 .RE
 .PP
 \fBoutgoing_s2s_port\fR: \fI1\&.\&.65535\fR
@@ -1230,7 +1256,7 @@ Same as
 will be used\&.
 .RE
 .PP
-\fBrouter_db_type\fR: \fImnesia | sql | redis\fR
+\fBrouter_db_type\fR: \fImnesia | redis | sql\fR
 .RS 4
 Database backend to use for routing information\&. The default value is picked from
 \fIdefault_ram_db\fR
@@ -1263,10 +1289,12 @@ which means no restrictions are applied\&.
 .PP
 \fBs2s_cafile\fR: \fIPath\fR
 .RS 4
-A path to a file with CA root certificates that will be used to authenticate s2s connections\&. If not set the value of
-\fIca_file\fR
+A path to a file with CA root certificates that will be used to authenticate s2s connections\&. If not set, the value of
+ca_file
 will be used\&.
 .RE
+.sp
+You can use host_config to specify this option per\-vhost\&.
 .PP
 \fBs2s_ciphers\fR: \fI[Cipher, \&.\&.\&.]\fR
 .RS 4
@@ -1474,7 +1502,7 @@ Same as
 will be used\&.
 .RE
 .PP
-\fBsm_db_type\fR: \fImnesia | sql | redis\fR
+\fBsm_db_type\fR: \fImnesia | redis | sql\fR
 .RS 4
 Database backend to use for client sessions information\&. The default value is picked from
 \fIdefault_ram_db\fR
@@ -1509,6 +1537,15 @@ An SQL database name\&. For SQLite this must be a full path to a database file\&
 An interval to make a dummy SQL request to keep alive the connections to the database\&. There is no default value, so no keepalive requests are made\&.
 .RE
 .PP
+\fBsql_odbc_driver\fR: \fIPath\fR
+.RS 4
+Path to the ODBC driver to use to connect to a Microsoft SQL Server database\&. This option is only valid if the
+\fIsql_type\fR
+option is set to
+\fImssql\fR\&. The default value is:
+\fIlibtdsodbc\&.so\fR
+.RE
+.PP
 \fBsql_password\fR: \fIPassword\fR
 .RS 4
 The password for SQL authentication\&. The default is empty string\&.
@@ -1529,7 +1566,7 @@ for MySQL,
 \fI5432\fR
 for PostgreSQL and
 \fI1433\fR
-for MSSQL\&. The option has no effect for SQLite\&.
+for MS SQL\&. The option has no effect for SQLite\&.
 .RE
 .PP
 \fBsql_prepared_statements\fR: \fItrue | false\fR
@@ -1605,7 +1642,7 @@ A time to wait before retrying to restore failed SQL connection\&. The default v
 seconds\&.
 .RE
 .PP
-\fBsql_type\fR: \fImysql | pgsql | sqlite | mssql | odbc\fR
+\fBsql_type\fR: \fImssql | mysql | odbc | pgsql | sqlite\fR
 .RS 4
 The type of an SQL connection\&. The default is
 \fIodbc\fR\&.
@@ -1679,7 +1716,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes options of all modules in ejabberd 20\&.04
+This section describes options of all modules in ejabberd 21\&.01
 .SS "mod_adhoc"
 .sp
 This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary module and is only needed by some of the other modules\&.
@@ -1827,7 +1864,7 @@ ejabberdctl srg\-create g1 example\&.org "\*(AqGroup number 1\*(Aq" this_is_g1 g
 .RE
 .SS "mod_admin_update_sql"
 .sp
-This module can be used to update existing SQL database from \fIold\fR to \fInew\fR schema\&. When the module is loaded use \fIupdate_sql\fR ejabberdctl command\&.
+This module can be used to update existing SQL database from the default to the new schema\&. Check the section Default and New Schemas for details\&. When the module is loaded use \fIupdate_sql\fR ejabberdctl command\&.
 .sp
 The module has no options\&.
 .SS "mod_announce"
@@ -2402,7 +2439,9 @@ The value can be the keyword
 .PP
 \fBname\fR: \fIName\fR
 .RS 4
-Any arbitrary name of the contact\&.
+The field
+\fIvar\fR
+name that will be defined\&. See XEP\-0157 for some standardized names\&.
 .RE
 .PP
 \fBurls\fR: \fI[URI, \&.\&.\&.]\fR
@@ -3703,6 +3742,18 @@ This option defines the Jabber IDs of the service\&. If the
 option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix "conference\&."\&. The keyword
 \fI@HOST@\fR
 is replaced with the real virtual host name\&.
+.RE
+.PP
+\fBmax_captcha_whitelist\fR: \fINumber\fR
+.RS 4
+This option defines the maximum number of characters that Captcha Whitelist can have when configuring the room\&. The default value is
+\fIinfinity\fR\&.
+.RE
+.PP
+\fBmax_password\fR: \fINumber\fR
+.RS 4
+This option defines the maximum number of characters that Password can have when configuring the room\&. The default value is
+\fIinfinity\fR\&.
 .RE
 .PP
 \fBmax_room_desc\fR: \fINumber\fR
@@ -5039,7 +5090,7 @@ instead\&.
 .RS 4
 This option defines the Jabber IDs of the service\&. If the
 \fIhosts\fR
-option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix "vjud\&."\&. The keyword
+option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix "pubsub\&."\&. The keyword
 \fI@HOST@\fR
 is replaced with the real virtual host name\&.
 .RE
@@ -5125,21 +5176,6 @@ or
 nodetree requires to start from a clean database, it will not work if you used the default
 \fItree\fR
 nodetree before\&.
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fIdag\fR
-nodetree provides experimental support for PubSub Collection Nodes (XEP\-0248)\&. In that case you should also add
-\fIdag\fR
-node plugin as default, for example:
-\fIplugins: [flat,pep]\fR
 .RE
 .RE
 .PP
@@ -5403,7 +5439,7 @@ option\&. The default value is
 .RE
 .SS "mod_register"
 .sp
-This module adds support for XEP\-0077: In\-Band Registration\&. This protocol enables end users to use a XMPP client to:
+This module adds support for XEP\-0077: In\-Band Registration\&. This protocol enables end users to use an XMPP client to:
 .sp
 .RS 4
 .ie n \{\
@@ -5450,9 +5486,9 @@ This module reads also another option defined globally for the server: \fIregist
 .PP
 \fBaccess\fR: \fIAccessName\fR
 .RS 4
-Specify rules to restrict what usernames can be registered and unregistered\&. If a rule returns
+Specify rules to restrict what usernames can be registered\&. If a rule returns
 \fIdeny\fR
-on the requested username, registration and unregistration of that user name is denied\&. There are no restrictions by default\&.
+on the requested username, registration of that user name is denied\&. There are no restrictions by default\&.
 .RE
 .PP
 \fBaccess_from\fR: \fIAccessName\fR
@@ -5546,7 +5582,7 @@ Change the password from an existing account on the server\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-Delete an existing account on the server\&.
+Unregister an existing account on the server\&.
 .RE
 .sp
 This module supports CAPTCHA image to register a new account\&. To enable this feature, configure the options \fIcaptcha_cmd\fR and \fIcaptcha_url\fR, which are documented in the section with top\-level options\&.
@@ -6214,6 +6250,11 @@ The name of the attribute which holds the human\-readable user name\&. Retrieved
 \fIcn\fR\&.
 .RE
 .PP
+\fBldap_userjidattr\fR
+.RS 4
+The name of the attribute which is used to map user id to XMPP jid\&. If not specified (and that is default value of this option), user jid will be created from user id and this module host\&.
+.RE
+.PP
 \fBldap_useruid\fR
 .RS 4
 The name of the attribute which holds the ID of a roster item\&. Value of this attribute in the roster item objects needs to match the ID retrieved from the
@@ -6623,23 +6664,17 @@ services:
     transport: udp
     restricted: true
   \-
-    host: 203\&.0\&.113\&.3
+    host: 2001:db8::3
     port: 3478
     type: stun
-    transport: tcp
+    transport: udp
     restricted: false
   \-
-    host: 203\&.0\&.113\&.3
+    host: 2001:db8::3
     port: 3478
     type: turn
-    transport: tcp
+    transport: udp
     restricted: true
-  \-
-    host: server\&.example\&.com
-    port: 5349
-    type: stuns
-    transport: tcp
-    restricted: false
   \-
     host: server\&.example\&.com
     port: 5349
@@ -7121,7 +7156,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes options of all listeners in ejabberd 20\&.04
+This section describes options of all listeners in ejabberd 21\&.01
 .sp
 TODO
 .SH "AUTHOR"
@@ -7129,13 +7164,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 20\&.04\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 21\&.01\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/20\&.04/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/21\&.01/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
