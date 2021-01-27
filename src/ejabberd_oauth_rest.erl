@@ -81,7 +81,10 @@ lookup(Token) ->
             error;
         Other ->
             ?ERROR_MSG("Unexpected response for oauth lookup: ~p", [Other]),
-	    error
+            case ejabberd_option:oauth_cache_rest_failure_life_time() of
+                infinity -> error;
+                Time -> {cache_with_timeout, error, Time}
+	    end
     end.
 
 clean(_TS) ->

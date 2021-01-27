@@ -83,6 +83,7 @@
 -export([oauth_access/0, oauth_access/1]).
 -export([oauth_cache_life_time/0]).
 -export([oauth_cache_missed/0]).
+-export([oauth_cache_rest_failure_life_time/0]).
 -export([oauth_cache_size/0]).
 -export([oauth_client_id_check/0, oauth_client_id_check/1]).
 -export([oauth_db_type/0]).
@@ -634,6 +635,10 @@ oauth_cache_life_time() ->
 -spec oauth_cache_missed() -> boolean().
 oauth_cache_missed() ->
     ejabberd_config:get_option({oauth_cache_missed, global}).
+
+-spec oauth_cache_rest_failure_life_time() -> 'infinity' | pos_integer().
+oauth_cache_rest_failure_life_time() ->
+    ejabberd_config:get_option({oauth_cache_rest_failure_life_time, global}).
 
 -spec oauth_cache_size() -> 'infinity' | pos_integer().
 oauth_cache_size() ->
