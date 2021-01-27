@@ -867,6 +867,11 @@ doc() ->
         desc =>
             ?T("Same as 'cache_missed', but applied to OAuth cache "
                "only. If not set, the value from 'cache_missed' will be used.")}},
+     {oauth_cache_rest_failure_life_time,
+      #{value => "timeout()",
+        desc =>
+            ?T("The time that a failure in OAuth ReST is cached. "
+               "The default value is 'infinity'.")}},
      {oauth_cache_size,
       #{value => "pos_integer() | infinity",
         desc =>
