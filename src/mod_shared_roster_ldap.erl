@@ -50,6 +50,7 @@
 
 -define(USER_CACHE, shared_roster_ldap_user_cache).
 -define(GROUP_CACHE, shared_roster_ldap_group_cache).
+-define(DISPLAYED_CACHE, shared_roster_ldap_displayed_cache).
 -define(LDAP_SEARCH_TIMEOUT, 5).    %% Timeout for LDAP search queries in seconds
 -define(INVALID_SETTING_MSG, "~ts is not properly set! ~ts will not function.").
 
@@ -94,7 +95,8 @@ reload(Host, NewOpts, _OldOpts) ->
     case init_cache(Host, NewOpts) of
 	true ->
 	    ets_cache:setopts(?USER_CACHE, cache_opts(Host, NewOpts)),
-	    ets_cache:setopts(?GROUP_CACHE, cache_opts(Host, NewOpts));
+	    ets_cache:setopts(?GROUP_CACHE, cache_opts(Host, NewOpts)),
+	    ets_cache:setopts(?DISPLAYED_CACHE, cache_opts(Host, NewOpts));
 	false ->
 	    ok
     end,
@@ -307,6 +309,13 @@ eldap_search(State, FilterParseArgs, AttributesList) ->
 
 get_user_displayed_groups({User, Host}) ->
     {ok, State} = eldap_utils:get_state(Host, ?MODULE),
+    ets_cache:lookup(?DISPLAYED_CACHE,
+		     {User, Host},
+		     fun () ->
+			 search_user_displayed_groups(State, User)
+		     end).
+
+search_user_displayed_groups(State, User) ->
     GroupAttr = State#state.group_attr,
     Entries = eldap_search(State,
 			   [eldap_filter:do_sub(State#state.rfilter,
@@ -533,10 +542,12 @@ init_cache(Host, Opts) ->
 	true ->
 	    CacheOpts = cache_opts(Host, Opts),
 	    ets_cache:new(?USER_CACHE, CacheOpts),
-	    ets_cache:new(?GROUP_CACHE, CacheOpts);
+	    ets_cache:new(?GROUP_CACHE, CacheOpts),
+	    ets_cache:new(?DISPLAYED_CACHE, CacheOpts);
 	false ->
 	    ets_cache:delete(?USER_CACHE),
-	    ets_cache:delete(?GROUP_CACHE)
+	    ets_cache:delete(?GROUP_CACHE),
+	    ets_cache:delete(?DISPLAYED_CACHE)
     end,
     UseCache.
 
