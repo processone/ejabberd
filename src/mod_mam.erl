@@ -1288,7 +1288,7 @@ send(Msgs, Count, IsComplete,
 		     #mam_query{xmlns = NS, id = QID, rsm = RSMOut};
 	        NS == ?NS_MAM_0 ->
 		     #mam_fin{xmlns = NS, id = QID, rsm = RSMOut,
-			      complete = IsComplete}
+			      complete = IsComplete};
 		true ->
 		     #mam_fin{xmlns = NS, rsm = RSMOut, complete = IsComplete}
 	     end,
