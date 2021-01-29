@@ -1286,9 +1286,11 @@ send(Msgs, Count, IsComplete,
     RSMOut = make_rsm_out(Msgs, Count),
     Result = if NS == ?NS_MAM_TMP ->
 		     #mam_query{xmlns = NS, id = QID, rsm = RSMOut};
-		true ->
+	        NS == ?NS_MAM_0 ->
 		     #mam_fin{xmlns = NS, id = QID, rsm = RSMOut,
 			      complete = IsComplete}
+		true ->
+		     #mam_fin{xmlns = NS, rsm = RSMOut, complete = IsComplete}
 	     end,
     if NS /= ?NS_MAM_0 ->
 	    lists:foreach(
