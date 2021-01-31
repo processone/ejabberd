@@ -1494,10 +1494,10 @@ send_message(Type, From, To, Subject, Body) ->
                       #xmlel{name = <<"body">>,
                              children = [{xmlcdata, Body}]}]},
           ?NS_CLIENT, CodecOpts) of
-        #message{from = JID, subject = Subject, body = Body} = Msg ->
-            Msg2 = case {xmpp:get_text(Subject), xmpp:get_text(Body)} of
-                       {_, <<>>} -> Msg;
-                       {<<>>, _} -> Msg#message{subject = []};
+        #message{from = JID, subject = SubjectEl, body = BodyEl} = Msg ->
+            Msg2 = case {xmpp:get_text(SubjectEl), xmpp:get_text(BodyEl)} of
+                       {Subject, <<>>} -> Msg;
+                       {<<>>, Body} -> Msg#message{subject = []};
                        _ -> Msg
                    end,
             State = #{jid => JID},
