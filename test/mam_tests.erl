@@ -368,7 +368,6 @@ mucsub_slave(Config) ->
 	end, lists:seq(1, 5)),
     RSM = ?match(#iq{from = MyJIDBare, id = I, type = result,
 		     sub_els = [#mam_fin{xmlns = ?NS_MAM_2,
-					 id = QID,
 					 rsm = RSM,
 					 complete = true}]}, recv_iq(Config), RSM),
     match_rsm_count(RSM, 5),
@@ -488,7 +487,6 @@ recv_fin(Config, I, QueryID, NS, IsComplete) when NS == ?NS_MAM_1; NS == ?NS_MAM
     ct:comment("Receiving fin iq for namespace '~s'", [NS]),
     #iq{type = result, id = I,
 	sub_els = [#mam_fin{xmlns = NS,
-			    id = QueryID,
 			    complete = Complete,
 			    rsm = RSM}]} = recv_iq(Config),
     ct:comment("Checking if complete is ~s", [IsComplete]),
@@ -553,7 +551,6 @@ recv_messages_from_room(Config, Range) ->
       end, Range),
     #iq{from = Room, id = I, type = result,
 	sub_els = [#mam_fin{xmlns = ?NS_MAM_2,
-			    id = QID,
 			    rsm = RSM,
 			    complete = true}]} = recv_iq(Config),
     match_rsm_count(RSM, length(Range)).
