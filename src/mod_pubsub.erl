@@ -57,7 +57,7 @@
     disco_local_identity/5, disco_local_features/5,
     disco_local_items/5, disco_sm_identity/5,
     disco_sm_features/5, disco_sm_items/5,
-    c2s_handle_info/2]).
+    c2s_handle_info/2, sm_open_connection/3, sm_remove_connection/3]).
 
 %% exported iq handlers
 -export([iq_sm/1, process_disco_info/1, process_disco_items/1,
@@ -318,6 +318,10 @@ init([ServerHost|_]) ->
 	?MODULE, remove_user, 50),
     ejabberd_hooks:add(c2s_handle_info, ServerHost,
 	?MODULE, c2s_handle_info, 50),
+    ejabberd_hooks:add(sm_register_connection_hook, ServerHost,
+	?MODULE, sm_open_connection, 50),
+    ejabberd_hooks:add(sm_remove_connection_hook, ServerHost,
+	?MODULE, sm_remove_connection, 50),
     case lists:member(?PEPNODE, AllPlugins) of
 	true ->
 	    ejabberd_hooks:add(caps_add, ServerHost,
@@ -666,6 +670,20 @@ unsubscribe_user(Host, Entity, Owner) ->
 	      end
       end, plugins(Host)).
 
+%% subscription remove hook handling function
+-spec remove_tempsub_subscriptions(jid()) -> ok.
+remove_tempsub_subscriptions(#jid{lserver=LServer} = JID) ->
+    Proc = gen_mod:get_module_proc(LServer, ?MODULE),
+    gen_server:cast(Proc, {remove_tempsub_subscriptions, JID}).
+
+sm_open_connection(_SID, JID, _Info) ->
+    % in case cleanup was not performed when the client logged out (server crash?), try now
+    remove_tempsub_subscriptions(JID).
+
+sm_remove_connection(_SID, JID, _Info) ->
+    remove_tempsub_subscriptions(JID).
+
+
 %% -------
 %% user remove hook handling function
 %%
@@ -739,6 +757,31 @@ handle_call(Request, From, State) ->
     ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
 
+handle_cast({remove_tempsub_subscriptions, OfflineJid}, State) ->
+	?DEBUG("remove_tempsub_subscriptions for ~ts", [jid:encode(OfflineJid)]),
+	Host = host(State#state.server_host),
+	OfflineJidBare = jid:remove_resource(OfflineJid),
+	lists:foreach(fun(PType) ->
+	  % get_entity_subscriptions retrieves subscriptions based on the bare jid;
+	  % ie. also retrieves subscriptions made by other resources
+	  {result, Subs} = mod_pubsub:node_action(Host, PType, get_entity_subscriptions, [Host, OfflineJid]),
+	  lists:foreach(fun({#pubsub_node{nodeid = {_, NodeId}, options = NodeOptions}, _, SubId, SubscribedLJid}) ->
+	    SubscribedJid = jid:make(SubscribedLJid),
+	    MatchingJid = case SubscribedJid of
+	      OfflineJid -> true;     % subscribed on a full jid with resource matching to RemoveJid
+	      OfflineJidBare -> true; % subscribed on bare jid
+	      _ -> false              % subscribed on a different resource
+	    end,
+	    IsTempSub = get_option(NodeOptions, tempsub) == true,
+	    if
+	      MatchingJid and IsTempSub ->
+	        mod_pubsub:unsubscribe_node(Host, NodeId, OfflineJid, SubscribedJid, SubId);
+	      true -> ok
+	    end
+	  end, Subs)
+	end, State#state.plugins),
+	{noreply, State};
+
 handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
@@ -797,6 +840,10 @@ terminate(_Reason,
 	?MODULE, remove_user, 50),
     ejabberd_hooks:delete(c2s_handle_info, ServerHost,
 	?MODULE, c2s_handle_info, 50),
+    ejabberd_hooks:delete(sm_register_connection_hook, ServerHost,
+	?MODULE, sm_open_connection, 50),
+    ejabberd_hooks:delete(sm_remove_connection_hook, ServerHost,
+	?MODULE, sm_remove_connection, 50),
     lists:foreach(
       fun(Host) ->
 	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
