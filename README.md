@@ -177,7 +177,7 @@ Using any gettext editor, you can improve the translation files found in
 `priv/msgs/*.po`, and then submit your changes.
 
 Alternatively, a simple way to improve translations is using our Weblate project:
-https://hosted.weblate.org/projects/ejabberd/ejabberd/
+https://hosted.weblate.org/projects/ejabberd/ejabberd-po/
 
 
 Links
