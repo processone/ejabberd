@@ -398,7 +398,7 @@ CREATE TABLE push_session (
     service text NOT NULL,
     node text NOT NULL,
     xml text NOT NULL
-);
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE UNIQUE INDEX i_push_usn ON push_session (username(191), service(191), node(191));
 CREATE UNIQUE INDEX i_push_ut ON push_session (username(191), timestamp);
@@ -469,4 +469,4 @@ CREATE TABLE mqtt_pub (
     user_properties blob NOT NULL,
     expiry int unsigned NOT NULL,
     UNIQUE KEY i_mqtt_topic (topic(191))
-);
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
