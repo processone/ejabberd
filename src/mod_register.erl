@@ -654,7 +654,7 @@ mod_doc() ->
             #{value => "true | false",
               desc =>
                   ?T("Protect registrations with CAPTCHA (see section "
-                     "https://docs.ejabberd.im/admin/configuration/#captcha[CAPTCHA] "
+                     "https://docs.ejabberd.im/admin/configuration/basic/#captcha[CAPTCHA] "
                      "of the Configuration Guide). The default is 'false'.")}},
            {ip_access,
             #{value => ?T("AccessName"),
