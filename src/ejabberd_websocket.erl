@@ -358,7 +358,7 @@ process_frame(#frame_info{unprocessed = none,
                       | Recv],
                      Send};
                 9 -> % Ping
-                    Frame = encode_frame(Unprocessed, 10),
+                    Frame = encode_frame(Unmasked, 10),
                     {FrameInfo3#frame_info{unmasked_msg = UnmaskedMsg}, [ping | Recv],
                      [Frame | Send]};
                 10 -> % Pong
