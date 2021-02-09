@@ -1243,23 +1243,42 @@ update_vcard_els(Data, ContentList, Els1) ->
 %%%
 
 add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) ->
-    Jid = jid:make(LocalUser, LocalServer),
-    RosterItem = build_roster_item(User, Server, {add, Nick, Subs, Group}),
-    case mod_roster:set_item_and_notify_clients(Jid, RosterItem, true) of
-	ok -> ok;
-	_ -> error
+    case {jid:make(LocalUser, LocalServer), jid:make(User, Server)} of
+	{error, _} ->
+	    throw({error, "Invalid 'localuser'/'localserver'"});
+	{_, error} ->
+	    throw({error, "Invalid 'user'/'server'"});
+	{Jid, _Jid2} ->
+	    RosterItem = build_roster_item(User, Server, {add, Nick, Subs, Group}),
+	    case mod_roster:set_item_and_notify_clients(Jid, RosterItem, true) of
+		ok -> ok;
+		_ -> error
+	    end
     end.
 
 subscribe(LU, LS, User, Server, Nick, Group, Subscription, _Xattrs) ->
-    ItemEl = build_roster_item(User, Server, {add, Nick, Subscription, Group}),
-    mod_roster:set_items(LU, LS, #roster_query{items = [ItemEl]}).
+    case {jid:make(LU, LS), jid:make(User, Server)} of
+	{error, _} ->
+	    throw({error, "Invalid 'localuser'/'localserver'"});
+	{_, error} ->
+	    throw({error, "Invalid 'user'/'server'"});
+	{_Jid, _Jid2} ->
+	    ItemEl = build_roster_item(User, Server, {add, Nick, Subscription, Group}),
+	    mod_roster:set_items(LU, LS, #roster_query{items = [ItemEl]})
+    end.
 
 delete_rosteritem(LocalUser, LocalServer, User, Server) ->
-    Jid = jid:make(LocalUser, LocalServer),
-    RosterItem = build_roster_item(User, Server, remove),
-    case mod_roster:set_item_and_notify_clients(Jid, RosterItem, true) of
-	ok -> ok;
-	_ -> error
+    case {jid:make(LocalUser, LocalServer), jid:make(User, Server)} of
+	{error, _} ->
+	    throw({error, "Invalid 'localuser'/'localserver'"});
+	{_, error} ->
+	    throw({error, "Invalid 'user'/'server'"});
+	{Jid, _Jid2} ->
+	    RosterItem = build_roster_item(User, Server, remove),
+	    case mod_roster:set_item_and_notify_clients(Jid, RosterItem, true) of
+		ok -> ok;
+		_ -> error
+	    end
     end.
 
 %% -----------------------------
@@ -1267,8 +1286,13 @@ delete_rosteritem(LocalUser, LocalServer, User, Server) ->
 %% -----------------------------
 
 get_roster(User, Server) ->
-    Items = ejabberd_hooks:run_fold(roster_get, Server, [], [{User, Server}]),
-    make_roster_xmlrpc(Items).
+    case jid:make(User, Server) of
+	error ->
+	    throw({error, "Invalid 'user'/'server'"});
+	#jid{luser = U, lserver = S} ->
+	    Items = ejabberd_hooks:run_fold(roster_get, S, [], [{U, S}]),
+	    make_roster_xmlrpc(Items)
+    end.
 
 %% Note: if a contact is in several groups, the contact is returned
 %% several times, each one in a different group.
