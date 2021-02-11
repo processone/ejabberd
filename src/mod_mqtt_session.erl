@@ -956,8 +956,7 @@ recv_data({fast_tls, Sock}, Data) ->
     case fast_tls:recv_data(Sock, Data) of
 	{ok, _} = OK -> OK;
 	{error, E} when is_atom(E) -> {error, {socket, E}};
-	{error, E} when is_binary(E) -> {error, {tls, E}};
-	{error, _} = Err -> Err
+	{error, E} when is_binary(E) -> {error, {tls, E}}
     end;
 recv_data(_, Data) ->
     {ok, Data}.
