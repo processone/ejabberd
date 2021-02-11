@@ -143,10 +143,10 @@ xref: all
 	$(REBAR) $(SKIPDEPS) xref
 
 hooks: all
-	tools/hook_deps.sh ebin
+	tools/hook_deps.sh $(EBINDIR)
 
 options: all
-	tools/opt_types.sh ejabberd_option ebin
+	tools/opt_types.sh ejabberd_option $(EBINDIR)
 
 translations:
 	tools/prepare-tr.sh
