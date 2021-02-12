@@ -332,7 +332,7 @@ sub git_tag {
     my ($dep, $ver, $msg) = @_;
 
     system("git", "-C", ".deps-update/$dep", "commit", "-a", "-m", $msg);
-    system("git", "-C", ".deps-update/$dep", "tag", $ver);
+    system("git", "-C", ".deps-update/$dep", "tag", $ver, "-a", "-m", $msg);
 }
 
 sub git_push {
