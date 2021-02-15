@@ -132,7 +132,8 @@
          tls_options = []        :: [{certfile, string()} |
 				     {cacertfile, string()} |
                                      {depth, non_neg_integer()} |
-                                     {verify, non_neg_integer()}],
+                                     {verify, non_neg_integer()} |
+                                     {fail_if_no_peer_cert, boolean()}],
 	 fd                      :: gen_tcp:socket() | undefined,
          rootdn = <<"">>         :: binary(),
          passwd = <<"">>         :: binary(),
@@ -604,9 +605,9 @@ init([Hosts, Port, Rootdn, Passwd, Opts]) ->
 				  []),
 		     CertOpts;
 		 Verify == soft ->
-		     [{verify, 1}] ++ CertOpts ++ CacertOpts ++ DepthOpts;
+		     [{verify, verify_peer}, {fail_if_no_peer_cert, false}] ++ CertOpts ++ CacertOpts ++ DepthOpts;
 		 Verify == hard ->
-		     [{verify, 2}] ++ CertOpts ++ CacertOpts ++ DepthOpts;
+		     [{verify, verify_peer}, {fail_if_no_peer_cert, true}] ++ CertOpts ++ CacertOpts ++ DepthOpts;
 		 true -> []
 	      end,
     {ok, connecting,
@@ -1035,22 +1036,40 @@ polish([H | T], Res,
     polish(T, Res, [H | Ref]);
 polish([], Res, Ref) -> {Res, Ref}.
 
+
+-ifdef(NO_CUSTOMIZE_HOSTNAME_CHECK).
+check_hostname_opt(TLSOpts) ->
+    TLSOpts.
+-else.
+check_hostname_opt(TLSOpts) ->
+    MatchFun = public_key:pkix_verify_hostname_match_fun(https),
+    [{customize_hostname_check, [{match_fun, MatchFun}]} | TLSOpts].
+-endif.
+
+host_tls_options(Host, TLSOpts) ->
+    case proplists:get_value(verify, TLSOpts) of
+        verify_peer ->
+            check_hostname_opt([{server_name_indication, Host} | TLSOpts]);
+         _ ->
+            TLSOpts
+    end.
+
 %%-----------------------------------------------------------------------
 %% Connect to next server in list and attempt to bind to it.
 %%-----------------------------------------------------------------------
 connect_bind(S) ->
     Host = next_host(S#eldap.host, S#eldap.hosts),
+    HostS = binary_to_list(Host),
     Opts = if S#eldap.tls == tls ->
 		  [{packet, asn1}, {active, true}, {keepalive, true},
 		   binary
-		   | S#eldap.tls_options];
+		   | host_tls_options(HostS, S#eldap.tls_options)];
 	      true ->
 		  [{packet, asn1}, {active, true}, {keepalive, true},
 		   {send_timeout, ?SEND_TIMEOUT}, binary]
 	   end,
     ?DEBUG("Connecting to LDAP server at ~ts:~p with options ~p",
 	   [Host, S#eldap.port, Opts]),
-    HostS = binary_to_list(Host),
     SockMod = case S#eldap.tls of
 		  tls -> ssl;
 		  _ -> gen_tcp
