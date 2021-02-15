@@ -403,7 +403,7 @@ vcard_iq_set(#iq{from = From, lang = Lang, sub_els = [VCard]} = IQ) ->
 vcard_iq_set(Acc) ->
     Acc.
 
--spec set_vcard(binary(), binary(), xmlel() | vcard_temp()) -> {error, badarg} | ok.
+-spec set_vcard(binary(), binary(), xmlel() | vcard_temp()) -> {error, badarg|binary()} | ok.
 set_vcard(User, LServer, VCARD) ->
     case jid:nodeprep(User) of
 	error ->
@@ -412,10 +412,14 @@ set_vcard(User, LServer, VCARD) ->
 	    VCardEl = xmpp:encode(VCARD),
 	    VCardSearch = make_vcard_search(User, LUser, LServer, VCardEl),
 	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Mod:set_vcard(LUser, LServer, VCardEl, VCardSearch),
-	    ets_cache:delete(?VCARD_CACHE, {LUser, LServer},
+            case Mod:set_vcard(LUser, LServer, VCardEl, VCardSearch) of
+                {atomic, ok} ->
+	            ets_cache:delete(?VCARD_CACHE, {LUser, LServer},
 			     cache_nodes(Mod, LServer)),
-	    ok
+                    ok;
+                {atomic, Error} ->
+                    {error, Error}
+            end
     end.
 
 -spec string2lower(binary()) -> binary().
