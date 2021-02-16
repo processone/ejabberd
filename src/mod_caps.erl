@@ -238,7 +238,9 @@ c2s_presence_in(C2SState,
 		roster_get_jid_info, To#jid.lserver,
 		{none, none, []},
 		[To#jid.luser, To#jid.lserver, From]),
-	    {Subscription == both orelse Subscription == from, false}
+	    {Subscription == both orelse Subscription == from, false};
+	_ ->
+	    {false, false}
     end,
     if Insert or Delete ->
 	   LFrom = jid:tolower(From),
