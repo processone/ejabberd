@@ -45,6 +45,8 @@
 {vsn, "@PACKAGE_VERSION@"}.
 
 %% Variables for overlay template files
+{package_name, "@PACKAGE_NAME@"}.
+{enabled_backends, [@enabled_backends@]}.
 
 %% Platform-specific installation paths
 {release, true}.

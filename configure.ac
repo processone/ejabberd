@@ -67,8 +67,7 @@ fi
 AC_PREFIX_DEFAULT(/usr/local)
 
 AC_CONFIG_FILES([Makefile
-		 vars.config
-		 src/ejabberd.app.src])
+		 vars.config])
 
 AC_ARG_ENABLE(all,
 [AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-redis --enable-elixir --enable-stun --enable-sip --enable-debug --enable-tools (useful for Dialyzer checks, default: no)])],
