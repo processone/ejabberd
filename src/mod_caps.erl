@@ -226,15 +226,20 @@ disco_info(Acc, _, _, _Node, _Lang) ->
 -spec c2s_presence_in(ejabberd_c2s:state(), presence()) -> ejabberd_c2s:state().
 c2s_presence_in(C2SState,
 		#presence{from = From, to = To, type = Type} = Presence) ->
-    {Subscription, _, _} = ejabberd_hooks:run_fold(
-			     roster_get_jid_info, To#jid.lserver,
-			     {none, none, []},
-			     [To#jid.luser, To#jid.lserver, From]),
     ToSelf = (From#jid.luser == To#jid.luser)
 	       and (From#jid.lserver == To#jid.lserver),
-    Insert = (Type == available)
-	       and ((Subscription == both) or (Subscription == from) or ToSelf),
-    Delete = (Type == unavailable) or (Type == error),
+    {Insert, Delete} =
+    case {Type, ToSelf} of
+	{unavailable, _} -> {false, true};
+	{error, _} -> {false, true};
+	{available, true} -> {true, false};
+	{available, _} ->
+	    {Subscription, _, _} = ejabberd_hooks:run_fold(
+		roster_get_jid_info, To#jid.lserver,
+		{none, none, []},
+		[To#jid.luser, To#jid.lserver, From]),
+	    {Subscription == both orelse Subscription == from, false}
+    end,
     if Insert or Delete ->
 	   LFrom = jid:tolower(From),
 	   Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
