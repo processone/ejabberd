@@ -149,7 +149,7 @@ options: all
 	tools/opt_types.sh ejabberd_option $(EBINDIR)
 
 translations:
-	tools/prepare-tr.sh
+	tools/prepare-tr.sh $(DEPSDIR)
 
 edoc:
 	$(ERL) -noinput +B -eval \
