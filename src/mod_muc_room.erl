@@ -939,11 +939,10 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 	of
       true ->
 	  {FromNick, Role} = get_participant_data(From, StateData),
-	  #config{members_by_default = MBD,
-		  moderated = Moderated} = StateData#state.config,
+	  #config{moderated = Moderated} = StateData#state.config,
 	  AllowedByModerationRules =
 	  case {Role == moderator orelse Role == participant orelse
-		not Moderated orelse MBD, IsSubscriber} of
+		not Moderated, IsSubscriber} of
 	      {true, _} -> true;
 	      {_, true} ->
 		  case get_default_role(get_affiliation(From, StateData),
