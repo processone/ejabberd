@@ -612,7 +612,7 @@ do_check_packet(#jid{luser = LUser, lserver = LServer}, List, Packet, Dir) ->
 
 -spec check_packet_aux([listitem()],
 		       message | iq | presence_in | presence_out | other,
-		       ljid(), none | {none | both | from | to, [binary()]}) ->
+		       ljid(), [binary()] | {none | both | from | to, [binary()]}) ->
 			      allow | deny.
 %% Ptype = message | iq | presence_in | presence_out | other
 check_packet_aux([], _PType, _JID, _RosterInfo) ->
