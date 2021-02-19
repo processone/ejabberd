@@ -65,7 +65,7 @@ sub update_deps_repos {
             say "Downloading $dep...";
             my $repo = $deps->{$dep}->{repo};
             $repo =~ s!^https?://github.com/!git\@github.com:!;
-            system("git", "-C", ".deps-update", "clone", $repo);
+            system("git", "-C", ".deps-update", "clone", $repo, $dep);
         } elsif (time() - stat($dd)->mtime > 24 * 60 * 60 or $force) {
             say "Updating $dep...";
             system("git", "-C", $dd, "pull");
