@@ -24,13 +24,13 @@ INPUT=$1
 TRANSFORMATIONS=(INTRUDER SUM)
 DIGIT=(zero one two three four five six seven eight nine ten)
 
-if test -n ${BASH_VERSION:-''} ; then
+if test -n "${BASH_VERSION:-''}" ; then
     get_random ()
     {  
 	R=$RANDOM
     }
 else
-    for n in `od -A n -t u2 -N 64 /dev/urandom`; do RL="$RL$n "; done
+    for n in $(od -A n -t u2 -N 64 /dev/urandom); do RL="$RL$n "; done
     get_random ()
     {  
 	R=${RL%% *}
@@ -38,17 +38,16 @@ else
     }
 fi
 
-
 INTRUDER()
 {
-NUMBERS=$(echo $INPUT | grep -o . | tr '\n' ' ')
+NUMBERS=$(echo "$INPUT" | grep -o . | tr '\n' ' ')
 SORTED_UNIQ_NUM=$(echo "${NUMBERS[@]}" | sort -u | tr '\n' ' ')
 RANDOM_DIGITS=$(echo 123456789 | grep -o . | sort -R | tr '\n' ' ')
 INTRUDER=-1
 
-for i in ${RANDOM_DIGITS[@]}
+for i in $RANDOM_DIGITS
 do
-    if [[ ! " ${SORTED_UNIQ_NUM[@]} " =~ " ${i} " ]]; then
+    if [[ ! " ${SORTED_UNIQ_NUM[@]} " =~ ${i} ]]; then
         INTRUDER=$i
         break
     fi
@@ -57,14 +56,14 @@ done
 # Worst case
 if [[ $INTRUDER -eq "-1" ]]
 then
-    echo Type "$INPUT \n   without changes"
+    printf "Type %s \n without changes" "$INPUT"
     return
 fi
 
-for num in ${NUMBERS[@]}
+for num in "${NUMBERS[@]}"
 do
     get_random
-    R=$(($R % 100))
+    R=$((R % 100))
 
     if [[ $R -lt 60 ]]; then
         NEWINPUT=${NEWINPUT}${num}${INTRUDER}
@@ -74,12 +73,12 @@ do
 done
 
 get_random
-R=$(($R % 100))
+R=$((R % 100))
 
 if [[ $R -lt 50 ]]; then
-    echo "Type $NEWINPUT by\n   deleting the '${DIGIT[$INTRUDER]}'"
+    printf "Type %s by\n deleting the %s" "$NEWINPUT" "${DIGIT[$INTRUDER]}"
 else
-    echo "Enter $NEWINPUT by\n   removing the '${DIGIT[$INTRUDER]}'"
+    printf "Enter %s by\n removing the %s" "$NEWINPUT" "${DIGIT[$INTRUDER]}"
 fi
 }
 
@@ -87,46 +86,46 @@ fi
 SUM()
 {
 get_random
-RA=$(($R % 100))
+RA=$((R % 100))
 
-if [[ $(($INPUT % 2)) -eq 0 ]]; then
-    A=$(($INPUT - $RA))
+if [[ $((INPUT % 2)) -eq 0 ]]; then
+    A=$((INPUT - RA))
     B=$RA
 else
-    B=$(($INPUT - $RA))
+    B=$((INPUT - RA))
     A=$RA
 fi
 
 get_random
-R=$(($R % 100))
+R=$((R % 100))
 
 if [[ $R -lt 25 ]]; then
-    echo "Type the result\n   of $A + $B"
+    printf "Type the result\n of %s + %s" "$A" "$B"
 elif [[ $R -lt 50 ]]; then
-    echo "SUMz\n   $A and $B"
+    printf "SUMx\n %s and %s" "$A" "$B"
 elif [[ $R -lt 75 ]]; then
-    echo "Add\n   $A and $B"
+    printf "Add\n %s and %s" "$A" "$B"
 else
-    echo "Enter the result\n   of $A + $B"
+    printf "Enter the result\n of %s + %s" "$A" "$B"
 fi
 }
 
 
 get_random
 
-RAND_ITALIC=$(($R % 25))
+RAND_ITALIC=$((R % 25))
 get_random
 
-RAND_ANGLE=$(($R % 3))
+RAND_ANGLE=$((R % 3))
 get_random
 
-RAND_INDEX=$(($R % ${#TRANSFORMATIONS[@]}))
+RAND_INDEX=$((R % ${#TRANSFORMATIONS[@]}))
 
 convert -size 300x60 xc:none -pointsize 20 \
 \( -clone 0 -fill black \
 -stroke black -strokewidth 1 \
 -annotate "${RAND_ANGLE}x${RAND_ITALIC}+0+0" "\n $(${TRANSFORMATIONS[$RAND_INDEX]})" \
--roll +$ROLL_X+0 \
+-roll +"$ROLL_X"+0 \
 -wave "$WAVE1_AMPLITUDE"x"$WAVE1_LENGTH" \
--roll -$ROLL_X+0 \) \
+-roll -"$ROLL_X"+0 \) \
 -flatten -crop 300x60 +repage -quality 500 -depth 11 png:-
