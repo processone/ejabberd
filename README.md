@@ -1,7 +1,11 @@
 ejabberd Community Edition
 ==========================
 
-[![Build Status](https://travis-ci.org/processone/ejabberd.svg?branch=master)](https://travis-ci.org/processone/ejabberd) [![Hex version](https://img.shields.io/hexpm/v/ejabberd.svg "Hex version")](https://hex.pm/packages/ejabberd)
+[![Build Status](https://travis-ci.org/processone/ejabberd.svg?branch=master "Common Tests in Travis")](https://travis-ci.org/processone/ejabberd)
+[![Dialyzer](https://github.com/processone/ejabberd/actions/workflows/tests.yml/badge.svg "Dialyzer tests in Github Actions")](https://github.com/processone/ejabberd/actions/workflows/tests.yml)
+[![Coverage Status](https://coveralls.io/repos/github/processone/ejabberd/badge.svg?branch=master "Coverage in coveralls.io")](https://coveralls.io/github/processone/ejabberd?branch=master)
+[![Translation status](https://hosted.weblate.org/widgets/ejabberd/-/ejabberd-po/svg-badge.svg "Translation status in Weblate")](https://hosted.weblate.org/projects/ejabberd/ejabberd-po/)
+[![Hex version](https://img.shields.io/hexpm/v/ejabberd.svg "Hex version")](https://hex.pm/packages/ejabberd)
 
 ejabberd is a distributed, fault-tolerant technology that allows the creation
 of large-scale instant messaging applications. The server can reliably support
