@@ -1,0 +1,83 @@
+name: Tests
+
+on:
+  push:
+    paths-ignore:
+    - 'examples/**'
+    - 'man/**'
+    - 'priv/**'
+    - 'sql/**'
+    - 'test/**'
+  pull_request:
+    paths-ignore:
+    - 'examples/**'
+    - 'man/**'
+    - 'priv/**'
+    - 'sql/**'
+    - 'test/**'
+
+jobs:
+  dialyzer:
+    name: Dialyzer
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        erlang: ["19.3", "latest"]
+    container:
+      image: erlang:${{ matrix.erlang }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Rebar3 cache
+        uses: actions/cache@v2
+        env:
+            cache-name: cache-rebar3-deps
+        with:
+            path: ~/.cache/rebar3/
+            key: rebar3-${{ runner.os }}-erlang-${{ matrix.erlang }}
+
+      - name: System versions
+        run: |
+            uname -a
+            cat /etc/issue
+            erl -version
+            rebar3 version
+
+      - name: Libraries
+        run: |
+            apt-get -qq update
+            apt-get -qq install libgd-dev libpam-dev
+
+      - name: Compile
+        run: |
+            ./autogen.sh
+            ./configure --with-rebar=`which rebar3` \
+                        --enable-latest-deps \
+                        --enable-all --disable-elixir
+            make
+
+      - name: Hooks
+        run: make hooks
+
+      - name: Options
+        run: make options
+
+      - name: Xref
+        run: |
+            echo "{xref_ignores, [{eldap_filter_yecc, return_error, 2}]}." >>rebar.config
+            echo "{xref_checks, [deprecated_function_calls, deprecated_functions,
+                     locals_not_used, undefined_function_calls, undefined_functions]}.
+                     % Disabled: exports_not_used," >>rebar.config
+            make xref
+
+      - name: Dialyzer
+        run: |
+            echo "{dialyzer, [{get_warnings, true}, {plt_extra_apps, [cache_tab,
+                     eimp, epam, esip, ezlib, fast_tls, fast_xml, fast_yaml,
+                     mqtree, p1_acme, p1_mysql, p1_oauth2, p1_pgsql, p1_utils, pkix,
+                     sqlite3, stringprep, stun, xmpp, yconf]} ]}." >>rebar.config
+            make dialyzer
