@@ -326,7 +326,7 @@ remove_mam_for_user_with_peer(User, Server, Peer) ->
     LServer = jid:nameprep(Server),
     try jid:decode(Peer) of
 	Jid ->
-	    Mod = gen_mod:db_mod(LServer, ?MODULE),
+	    Mod = get_module_host(LServer),
 	    case Mod:remove_from_archive(LUser, LServer, Jid) of
 		ok ->
 		    {ok, <<"MAM archive removed">>};
@@ -337,6 +337,12 @@ remove_mam_for_user_with_peer(User, Server, Peer) ->
 	    end
     catch _:_ ->
 	{error, <<"Invalid peer JID">>}
+    end.
+
+get_module_host(LServer) ->
+    try gen_mod:db_mod(LServer, ?MODULE)
+    catch error:{module_not_loaded, ?MODULE, LServer} ->
+        gen_mod:db_mod(ejabberd_router:host_of_route(LServer), ?MODULE)
     end.
 
 -spec get_room_config([muc_roomconfig:property()], mod_muc_room:state(),
