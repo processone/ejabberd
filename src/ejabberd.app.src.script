@@ -1,22 +1,16 @@
-%% $Id$
 Vars = case file:consult(filename:join([filename:dirname(SCRIPT), "..", "vars.config"])) of
     {ok, Terms} ->
-        Terms;
+        [lists:keyfind(description, 1, Terms),
+         lists:keyfind(vsn, 1, Terms),
+         {env, [lists:keyfind(enabled_backends, 1, Terms)]}
+        ];
     _Err ->
         []
     end,
 
-Env = case lists:keyfind(enabled_backends, 1, Vars) of
-    false ->
-        {env, []};
-    Backends ->
-        {env, [Backends]}
-    end,
-
 {application, ejabberd,
- [{description, "ejabberd"},
-  lists:keyfind(vsn, 1, Vars),
-  {modules, []},
+ Vars ++
+ [{modules, []},
   {registered, []},
   {applications, [kernel, stdlib, sasl, ssl]},
   {included_applications,
@@ -31,9 +25,7 @@ Env = case lists:keyfind(enabled_backends, 1, Vars) of
      xmpp,
      cache_tab,
      eimp]},
-  Env,
   {mod, {ejabberd_app, []}}]}.
-
 
 %% Local Variables:
 %% mode: erlang
