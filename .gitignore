@@ -47,3 +47,4 @@ XmppAddr.hrl
 /_build
 /mnesiadb
 /.rebar
+/rebar.lock
