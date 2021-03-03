@@ -653,47 +653,21 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 	{_, _, error} ->
 	    throw({error, "Invalid 'serverhost'"});
 	{Name, Host, ServerHost} ->
-	    %% Get the default room options from the muc configuration
-	    DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
-	    %% Change default room options as required
-	    FormattedRoomOpts = [format_room_option(Opt, Val) || {Opt, Val}<-CustomRoomOpts],
-	    RoomOpts = lists:ukeymerge(1,
-				       lists:keysort(1, FormattedRoomOpts),
-				       lists:keysort(1, DefRoomOpts)),
-
-
-	    %% Get all remaining mod_muc parameters that might be utilized
-	    Access = mod_muc_opt:access(ServerHost),
-	    AcCreate = mod_muc_opt:access_create(ServerHost),
-	    AcAdmin = mod_muc_opt:access_admin(ServerHost),
-	    AcPer = mod_muc_opt:access_persistent(ServerHost),
-	    AcMam = mod_muc_opt:access_mam(ServerHost),
-	    HistorySize = mod_muc_opt:history_size(ServerHost),
-	    RoomShaper = mod_muc_opt:room_shaper(ServerHost),
-	    QueueType = mod_muc_opt:queue_type(ServerHost),
-
-	    %% If the room does not exist yet in the muc_online_room
 	    case get_room_pid(Name, Host) of
 		room_not_found ->
-		    %% Store the room on the server, it is not started yet though at this point
-		    case lists:keyfind(persistent, 1, RoomOpts) of
-			{persistent, true} ->
-			    mod_muc:store_room(ServerHost, Host, Name, RoomOpts);
-			_ ->
-			    ok
-		    end,
-		    %% Start the room
-		    {ok, Pid} = mod_muc_room:start(
-			Host,
-			ServerHost,
-			{Access, AcCreate, AcAdmin, AcPer, AcMam},
-			Name,
-			HistorySize,
-			RoomShaper,
-			RoomOpts,
-			QueueType),
-		    mod_muc:register_online_room(Name, Host, Pid),
-		    ok;
+		    %% Get the default room options from the muc configuration
+		    DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
+		    %% Change default room options as required
+		    FormattedRoomOpts = [format_room_option(Opt, Val) || {Opt, Val}<-CustomRoomOpts],
+		    RoomOpts = lists:ukeymerge(1,
+					       lists:keysort(1, FormattedRoomOpts),
+					       lists:keysort(1, DefRoomOpts)),
+		    case mod_muc:create_room(Host, Name, RoomOpts) of
+			ok ->
+			    ok;
+			{error, _} ->
+			    throw({error, "Unable to start room"})
+		    end;
 		_ ->
 		    throw({error, "Room already exists"})
 	    end

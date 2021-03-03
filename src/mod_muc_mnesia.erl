@@ -33,7 +33,8 @@
 -export([register_online_room/4, unregister_online_room/4, find_online_room/3,
 	 get_online_rooms/3, count_online_rooms/2, rsm_supported/0,
 	 register_online_user/4, unregister_online_user/4,
-	 count_online_rooms_by_user/3, get_online_rooms_by_user/3]).
+	 count_online_rooms_by_user/3, get_online_rooms_by_user/3,
+	 find_online_room_by_pid/2]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 %% gen_server callbacks
@@ -179,6 +180,19 @@ find_online_room(Room, Host) ->
     case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 	[] -> error;
 	[#muc_online_room{pid = Pid}] -> {ok, Pid}
+    end.
+
+find_online_room_by_pid(_ServerHost, Pid) ->
+    Res =
+    mnesia:dirty_select(
+	muc_online_room,
+	ets:fun2ms(
+	    fun(#muc_online_room{name_host = {Name, Host}, pid = PidS})
+		   when PidS == Pid -> {Name, Host}
+	    end)),
+    case Res of
+	[{Name, Host}] -> {ok, Name, Host};
+	_ -> error
     end.
 
 count_online_rooms(_ServerHost, Host) ->

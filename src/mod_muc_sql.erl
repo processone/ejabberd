@@ -36,7 +36,8 @@
 	 get_online_rooms/3, count_online_rooms/2, rsm_supported/0,
 	 register_online_user/4, unregister_online_user/4,
 	 count_online_rooms_by_user/3, get_online_rooms_by_user/3,
-	 get_subscribed_rooms/3, get_rooms_without_subscribers/2]).
+	 get_subscribed_rooms/3, get_rooms_without_subscribers/2,
+	 find_online_room_by_pid/2]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
@@ -300,6 +301,21 @@ find_online_room(ServerHost, Room, Host) ->
 	    try {ok, misc:decode_pid(PidS, NodeS)}
 	    catch _:{bad_node, _} -> error
 	    end;
+	{selected, []} ->
+	    error;
+	_Err ->
+	    error
+    end.
+
+find_online_room_by_pid(ServerHost, Pid) ->
+    PidS = misc:encode_pid(Pid),
+    NodeS = erlang:atom_to_binary(node(Pid), latin1),
+    case ejabberd_sql:sql_query(
+	ServerHost,
+	?SQL("select @(name)s, @(host)s from muc_online_room where "
+	     "node=%(NodeS)s and pid=%(PidS)s")) of
+	{selected, [{Room, Host}]} ->
+	    {ok, Room, Host};
 	{selected, []} ->
 	    error;
 	_Err ->

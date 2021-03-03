@@ -913,11 +913,9 @@ terminate(Reason, _StateName,
 		    _ ->
 			ok
 		end
-	end,
-	mod_muc:room_destroyed(Host, Room, self(), LServer)
+	end
     catch ?EX_RULE(E, R, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    mod_muc:room_destroyed(Host, Room, self(), LServer),
 	    ?ERROR_MSG("Got exception on room termination:~n** ~ts",
 		       [misc:format_exception(2, E, R, StackTrace)])
     end.

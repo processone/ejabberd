@@ -42,6 +42,7 @@
 	 store_room/5,
 	 restore_room/3,
 	 forget_room/3,
+	 create_room/3,
 	 create_room/5,
 	 shutdown_rooms/1,
 	 process_disco_info/1,
@@ -99,6 +100,7 @@
 -callback register_online_room(binary(), binary(), binary(), pid()) -> any().
 -callback unregister_online_room(binary(), binary(), binary(), pid()) -> any().
 -callback find_online_room(binary(), binary(), binary()) -> {ok, pid()} | error.
+-callback find_online_room_by_pid(binary(), pid()) -> {ok, binary(), binary()} | error.
 -callback get_online_rooms(binary(), binary(), undefined | rsm_set()) -> [{binary(), binary(), pid()}].
 -callback count_online_rooms(binary(), binary()) -> non_neg_integer().
 -callback rsm_supported() -> boolean().
@@ -295,6 +297,14 @@ create_room(Host, Name, From, Nick, Opts) ->
     Proc = procname(ServerHost, {Name, Host}),
     ?GEN_SERVER:call(Proc, {create, Name, Host, From, Nick, Opts}).
 
+%% @doc Create a room.
+%% If Opts = default, the default room options are used.
+%% Else use the passed options as defined in mod_muc_room.
+create_room(Host, Name, Opts) ->
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Proc = procname(ServerHost, {Name, Host}),
+    ?GEN_SERVER:call(Proc, {create, Name, Host, Opts}).
+
 store_room(ServerHost, Host, Name, Opts) ->
     store_room(ServerHost, Host, Name, Opts, undefined).
 
@@ -379,6 +389,25 @@ init([Host, Worker]) ->
 			 {stop, normal, ok, state()}.
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
+handle_call({unhibernate, Room, Host}, _From,
+    #{server_host := ServerHost} = State) ->
+    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+    {reply, load_room(RMod, Host, ServerHost, Room), State};
+handle_call({create, Room, Host, Opts}, _From,
+	    #{server_host := ServerHost} = State) ->
+    ?DEBUG("MUC: create new room '~ts'~n", [Room]),
+    NewOpts = case Opts of
+		  default -> mod_muc_opt:default_room_options(ServerHost);
+		  _ -> Opts
+	      end,
+    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+    case start_room(RMod, Host, ServerHost, Room, NewOpts) of
+	{ok, _} ->
+	    ejabberd_hooks:run(create_room, ServerHost, [ServerHost, Room, Host]),
+	    {reply, ok, State};
+	Err ->
+	    {reply, Err, State}
+    end;
 handle_call({create, Room, Host, From, Nick, Opts}, _From,
 	    #{server_host := ServerHost} = State) ->
     ?DEBUG("MUC: create new room '~ts'~n", [Room]),
@@ -437,6 +466,15 @@ handle_info({route, Packet}, #{server_host := ServerHost} = State) ->
 handle_info({room_destroyed, {Room, Host}, Pid}, State) ->
     %% For backward compat
     handle_cast({room_destroyed, {Room, Host}, Pid}, State);
+handle_info({'DOWN', _Ref, process, Pid, _Reason},
+	    #{server_host := ServerHost} = State) ->
+    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+    case RMod:find_online_room_by_pid(ServerHost, Pid) of
+	{ok, Room, Host} ->
+	    handle_cast({room_destroyed, {Room, Host}, Pid}, State);
+	_ ->
+	    {noreply, State}
+    end;
 handle_info(Info, State) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
@@ -531,7 +569,8 @@ unhibernate_room(ServerHost, Host, Room) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
-	    case load_room(RMod, Host, ServerHost, Room) of
+	    Proc = procname(ServerHost, {Room, Host}),
+	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host}) of
 		{ok, _} = R -> R;
 		_ -> error
 	    end;
@@ -791,27 +830,15 @@ get_rooms(ServerHost, Host) ->
 load_permanent_rooms(Hosts, ServerHost, Opts) ->
     case mod_muc_opt:preload_rooms(Opts) of
 	true ->
-	    Access = get_access(Opts),
-	    HistorySize = mod_muc_opt:history_size(Opts),
-	    QueueType = mod_muc_opt:queue_type(Opts),
-	    RoomShaper = mod_muc_opt:room_shaper(Opts),
-	    RMod = gen_mod:ram_db_mod(Opts, ?MODULE),
 	    lists:foreach(
-	      fun(Host) ->
-		      ?DEBUG("Loading rooms at ~ts", [Host]),
-		      lists:foreach(
+		fun(Host) ->
+		    ?DEBUG("Loading rooms at ~ts", [Host]),
+		    lists:foreach(
 			fun(R) ->
-				{Room, _} = R#muc_room.name_host,
-				case RMod:find_online_room(ServerHost, Room, Host) of
-				    error ->
-					start_room(RMod, Host, ServerHost, Access,
-						   Room, HistorySize, RoomShaper,
-						   R#muc_room.opts, QueueType);
-				    {ok, _} ->
-					ok
-				end
+			    {Room, _} = R#muc_room.name_host,
+			    unhibernate_room(ServerHost, Host, Room)
 			end, get_rooms(ServerHost, Host))
-	      end, Hosts);
+		end, Hosts);
 	false ->
 	    ok
     end.
@@ -877,6 +904,7 @@ start_room(Mod, Host, ServerHost, Access, Room,
     case mod_muc_room:start(Host, ServerHost, Access, Room,
 			    HistorySize, RoomShaper, DefOpts, QueueType) of
 	{ok, Pid} ->
+	    erlang:monitor(process, Pid),
 	    Mod:register_online_room(ServerHost, Room, Host, Pid),
 	    {ok, Pid};
 	Err ->
@@ -889,6 +917,7 @@ start_room(Mod, Host, ServerHost, Access, Room, HistorySize,
 			    HistorySize, RoomShaper,
 			    Creator, Nick, DefOpts, QueueType) of
 	{ok, Pid} ->
+	    erlang:monitor(process, Pid),
 	    Mod:register_online_room(ServerHost, Room, Host, Pid),
 	    {ok, Pid};
 	Err ->
