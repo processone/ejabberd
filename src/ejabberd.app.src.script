@@ -12,19 +12,17 @@ Vars = case file:consult(filename:join([filename:dirname(SCRIPT), "..", "vars.co
  Vars ++
  [{modules, []},
   {registered, []},
-  {applications, [kernel, stdlib, sasl, ssl]},
+  {applications, [kernel, sasl, ssl, stdlib]},
   {included_applications,
-    [os_mon,
-     lager,
-     mnesia,
-     inets,
-     p1_utils,
-     fast_yaml,
-     fast_tls,
-     pkix,
-     xmpp,
+    [inets, mnesia, os_mon,
      cache_tab,
-     eimp]},
+     eimp,
+     fast_tls,
+     fast_yaml,
+     lager,
+     p1_utils,
+     pkix,
+     xmpp]},
   {mod, {ejabberd_app, []}}]}.
 
 %% Local Variables:
