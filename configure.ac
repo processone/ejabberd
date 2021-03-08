@@ -70,10 +70,10 @@ AC_CONFIG_FILES([Makefile
 		 vars.config])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-redis --enable-elixir --enable-stun --enable-sip --enable-debug --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-redis --enable-elixir --enable-stun --enable-sip --enable-debug --enable-lua --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true redis=true elixir=true stun=true sip=true debug=true tools=true ;;
-  no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false redis=false elixir=false stun=false sip=false debug=false tools=false ;;
+  yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true redis=true elixir=true stun=true sip=true debug=true lua=true tools=true ;;
+  no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false redis=false elixir=false stun=false sip=false debug=false lua=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -142,6 +142,14 @@ AC_ARG_ENABLE(latest_deps,
   no)  latest_deps=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-latest-deps) ;;
 esac],[if test "x$latest_deps" = "x"; then latest_deps=false; fi])
+
+AC_ARG_ENABLE(lua,
+[AC_HELP_STRING([--enable-lua], [enable Lua support, to import from Prosody (default: no)])],
+[case "${enableval}" in
+  yes) lua=true ;;
+  no)  lua=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-lua) ;;
+esac],[if test "x$lua" = "x"; then lua=false; fi])
 
 AC_ARG_ENABLE(mssql,
 [AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
@@ -304,6 +312,7 @@ AC_SUBST(elixir)
 AC_SUBST(stun)
 AC_SUBST(sip)
 AC_SUBST(debug)
+AC_SUBST(lua)
 AC_SUBST(tools)
 AC_SUBST(latest_deps)
 AC_SUBST(system_deps)

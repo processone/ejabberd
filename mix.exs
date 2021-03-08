@@ -130,7 +130,7 @@ defmodule Ejabberd.Mixfile do
                          {config(:redis), {:eredis, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {config(:pam), {:epam, "~> 1.0"}},
-                         {config(:tools), {:luerl, "~> 0.3.1"}}], do:
+                         {config(:lua), {:luerl, "~> 0.3.1"}}], do:
       dep
   end
 

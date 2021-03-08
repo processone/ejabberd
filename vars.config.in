@@ -40,6 +40,7 @@
 {elixir, @elixir@}.
 {stun, @stun@}.
 {sip, @sip@}.
+{lua, @lua@}.
 
 %% Version
 {vsn, "@PACKAGE_VERSION@"}.
