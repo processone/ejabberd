@@ -268,7 +268,8 @@ ldap_attribute_to_vcard({Attr, Value}, V) ->
 	<<"role">> -> V#vcard_temp{role = Value};
 	<<"tel">> -> V#vcard_temp{tel = [#vcard_tel{number = Value}|Ts]};
 	<<"email">> -> V#vcard_temp{email = [#vcard_email{userid = Value}|Es]};
-	<<"photo">> -> V#vcard_temp{photo = #vcard_photo{binval = Value}};
+	<<"photo">> -> V#vcard_temp{photo = #vcard_photo{binval = Value,
+                                                         type = photo_type(Value)}};
 	<<"family">> -> V#vcard_temp{n = N#vcard_name{family = Value}};
 	<<"given">> -> V#vcard_temp{n = N#vcard_name{given = Value}};
 	<<"middle">> -> V#vcard_temp{n = N#vcard_name{middle = Value}};
@@ -281,6 +282,11 @@ ldap_attribute_to_vcard({Attr, Value}, V) ->
 	<<"pcode">> -> V#vcard_temp{adr = [A#vcard_adr{pcode = Value}]};
 	_ -> V
     end.
+
+-spec photo_type(binary()) -> binary().
+photo_type(Value) ->
+    Type = eimp:get_type(Value),
+    <<"image/", (atom_to_binary(Type, latin1))/binary>>.
 
 map_vcard_attr(VCardName, Attributes, Pattern, UD) ->
     Res = lists:filter(
