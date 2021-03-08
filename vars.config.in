@@ -23,7 +23,6 @@
 {full_xml, @full_xml@}.
 {db_type, @db_type@}.
 {debug, @debug@}.
-{hipe, @hipe@}.
 {new_sql_schema, @new_sql_schema@}.
 
 %% Ad-hoc directories with source files

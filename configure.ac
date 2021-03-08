@@ -127,14 +127,6 @@ if test "$ENABLEGROUP" != ""; then
   AC_SUBST([INSTALLGROUP], [$ENABLEGROUP])
 fi
 
-AC_ARG_ENABLE(hipe,
-[AC_HELP_STRING([--enable-hipe], [compile natively with HiPE, not recommended (default: no)])],
-[case "${enableval}" in
-  yes) hipe=true ;;
-  no)  hipe=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-hipe) ;;
-esac],[hipe=false])
-
 AC_ARG_ENABLE(latest_deps,
 [AC_HELP_STRING([--enable-latest-deps], [makes rebar use latest commits for dependencies instead of tagged versions (default: no)])],
 [case "${enableval}" in
@@ -295,7 +287,6 @@ for backend in odbc mysql pgsql sqlite redis mssql; do
     fi
 done
 
-AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(new_sql_schema)
 AC_SUBST(full_xml)
