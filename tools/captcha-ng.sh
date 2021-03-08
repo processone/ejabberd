@@ -60,7 +60,7 @@ then
     return
 fi
 
-for num in "${NUMBERS[@]}"
+for num in ${NUMBERS}
 do
     get_random
     R=$((R % 100))
@@ -76,9 +76,9 @@ get_random
 R=$((R % 100))
 
 if [[ $R -lt 50 ]]; then
-    printf "Type %s by\n deleting the %s" "$NEWINPUT" "${DIGIT[$INTRUDER]}"
+    printf "Type %s by\n  deleting the %s" "$NEWINPUT" "${DIGIT[$INTRUDER]}"
 else
-    printf "Enter %s by\n removing the %s" "$NEWINPUT" "${DIGIT[$INTRUDER]}"
+    printf "Enter %s by\n  removing the %s" "$NEWINPUT" "${DIGIT[$INTRUDER]}"
 fi
 }
 
@@ -100,13 +100,13 @@ get_random
 R=$((R % 100))
 
 if [[ $R -lt 25 ]]; then
-    printf "Type the result\n of %s + %s" "$A" "$B"
+    printf "Type the result\n  of %s + %s" "$A" "$B"
 elif [[ $R -lt 50 ]]; then
-    printf "SUMx\n %s and %s" "$A" "$B"
+    printf "SUMx\n  %s and %s" "$A" "$B"
 elif [[ $R -lt 75 ]]; then
-    printf "Add\n %s and %s" "$A" "$B"
+    printf "Add\n  %s and %s" "$A" "$B"
 else
-    printf "Enter the result\n of %s + %s" "$A" "$B"
+    printf "Enter the result\n  of %s + %s" "$A" "$B"
 fi
 }
 
