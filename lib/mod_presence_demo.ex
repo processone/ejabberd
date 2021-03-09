@@ -25,5 +25,9 @@ defmodule ModPresenceDemo do
   def mod_options(_host) do
     []
   end
-  
+
+  def mod_doc() do
+    %{:desc => 'This is just a demonstration.'}
+  end
+
 end
