@@ -86,30 +86,30 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp deps do
-    [{:lager, "~> 3.6.0"},
-     {:p1_utils, "~> 1.0"},
-     {:fast_xml, "~> 1.1"},
-     {:xmpp, "~> 1.5.1"},
+    [{:base64url, "~> 0.0.1"},
      {:cache_tab, "~> 1.0"},
-     {:stringprep, "~> 1.0"},
-     {:fast_yaml, "~> 1.0"},
-     {:fast_tls, "~> 1.1"},
-     {:stun, "~> 1.0.41"},
-     {:esip, "~> 1.0.32"},
-     {:p1_mysql, "~> 1.0"},
-     {:mqtree, "~> 1.0"},
-     {:p1_pgsql, "~> 1.1"},
-     {:jiffy, "~> 1.0.4"},
-     {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 2.0"},
-     {:pkix, "~> 1.0"},
-     {:ex_doc, ">= 0.0.0", only: :dev},
      {:eimp, "~> 1.0"},
-     {:base64url, "~> 0.0.1"},
-     {:yconf, "~> 1.0"},
-     {:jose, "~> 1.8"},
+     {:esip, "~> 1.0.32"},
+     {:ex_doc, ">= 0.0.0", only: :dev},
+     {:fast_tls, "~> 1.1"},
+     {:fast_xml, "~> 1.1"},
+     {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
-     {:p1_acme, "~> 1.0"}]
+     {:jiffy, "~> 1.0.4"},
+     {:jose, "~> 1.8"},
+     {:lager, "~> 3.6.0"},
+     {:mqtree, "~> 1.0"},
+     {:p1_acme, "~> 1.0"},
+     {:p1_mysql, "~> 1.0"},
+     {:p1_oauth2, "~> 0.6.1"},
+     {:p1_pgsql, "~> 1.1"},
+     {:p1_utils, "~> 1.0"},
+     {:pkix, "~> 1.0"},
+     {:stringprep, "~> 1.0"},
+     {:stun, "~> 1.0.41"},
+     {:xmpp, "~> 1.5.1"},
+     {:yconf, "~> 1.0"}]
     ++ cond_deps()
   end
 
@@ -126,11 +126,11 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp cond_deps do
-    for {:true, dep} <- [{config(:sqlite), {:sqlite3, "~> 1.1"}},
+    for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0"}},
                          {config(:redis), {:eredis, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
-                         {config(:pam), {:epam, "~> 1.0"}},
-                         {config(:lua), {:luerl, "~> 0.3.1"}}], do:
+                         {config(:lua), {:luerl, "~> 0.3.1"}},
+                         {config(:sqlite), {:sqlite3, "~> 1.1"}}], do:
       dep
   end
 
