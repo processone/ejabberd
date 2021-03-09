@@ -96,7 +96,7 @@ defmodule Ejabberd.Mixfile do
      {:fast_xml, "~> 1.1"},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
-     {:jiffy, "~> 1.0.4"},
+     {:jiffy, "~> 1.0.5"},
      {:jose, "~> 1.8"},
      {:lager, "~> 3.6.0"},
      {:mqtree, "~> 1.0"},
@@ -126,7 +126,7 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp cond_deps do
-    for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0"}},
+    for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0.10"}},
                          {config(:redis), {:eredis, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {config(:lua), {:luerl, "~> 0.3.1"}},
