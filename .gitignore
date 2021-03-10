@@ -45,6 +45,7 @@ XmppAddr.hrl
 /priv/sql
 /rel/ejabberd
 /_build
-/mnesiadb
+/database/
 /.rebar
 /rebar.lock
+/log/
