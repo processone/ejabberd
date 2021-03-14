@@ -283,17 +283,6 @@ case "`uname`" in
   ;;
 esac
 
-enabled_backends=""
-for backend in odbc mysql pgsql sqlite redis mssql; do
-    if eval test x\${$backend} = xtrue; then
-       if test "x$enabled_backends" = "x"; then
-          enabled_backends=$backend
-       else
-          enabled_backends="$enabled_backends, $backend"
-       fi
-    fi
-done
-
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(new_sql_schema)
 AC_SUBST(full_xml)
@@ -317,6 +306,5 @@ AC_SUBST(system_deps)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
-AC_SUBST(enabled_backends)
 
 AC_OUTPUT

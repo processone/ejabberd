@@ -1,8 +1,10 @@
 Vars = case file:consult(filename:join([filename:dirname(SCRIPT), "..", "vars.config"])) of
     {ok, Terms} ->
+        Backends = [mssql, mysql, odbc, pgsql, redis, sqlite],
+        EBs = lists:filter(fun(Backend) -> lists:member({Backend, true}, Terms) end, Backends),
         [lists:keyfind(description, 1, Terms),
          lists:keyfind(vsn, 1, Terms),
-         {env, [lists:keyfind(enabled_backends, 1, Terms)]}
+         {env, [{enabled_backends, EBs}]}
         ];
     _Err ->
         []
