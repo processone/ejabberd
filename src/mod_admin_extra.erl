@@ -744,7 +744,9 @@ get_commands_spec() ->
 				"Receiver JID", "Subject, or empty string", "Body"],
 			result = {res, rescode}},
      #ejabberd_commands{name = send_stanza_c2s, tags = [stanza],
-			desc = "Send a stanza as if sent from a c2s session",
+			desc = "Send a stanza from an existing C2S session",
+			longdesc = "USER@HOST/RESOURCE must be an existing C2S session."
+			" As an alternative, use send_stanza instead.",
 			module = ?MODULE, function = send_stanza_c2s,
 			args = [{user, binary}, {host, binary}, {resource, binary}, {stanza, binary}],
 			args_example = [<<"admin">>, <<"myserver.com">>, <<"bot">>,
