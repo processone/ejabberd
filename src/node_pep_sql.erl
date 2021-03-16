@@ -85,7 +85,7 @@ subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
     case node_flat_sql:unsubscribe_node(Nidx, Sender, Subscriber, SubId) of
 	{error, Error} -> {error, Error};
-	{result, _} -> {result, []}
+	{result, _} -> {result, default}
     end.
 
 publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload, PubOpts) ->
