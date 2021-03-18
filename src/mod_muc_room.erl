@@ -2947,7 +2947,11 @@ process_item_change(Item, SD, UJID) ->
 	    {JID, affiliation, outcast, Reason} ->
 		send_kickban_presence(UJID, JID, Reason, 301, outcast, SD),
 		maybe_send_affiliation(JID, outcast, SD),
-		set_affiliation(JID, outcast, set_role(JID, none, SD), Reason);
+                {result, undefined, SD2} =
+                    process_iq_mucsub(JID,
+                                      #iq{type = set,
+                                          sub_els = [#muc_unsubscribe{}]}, SD),
+		set_affiliation(JID, outcast, set_role(JID, none, SD2), Reason);
 	    {JID, affiliation, A, Reason} when (A == admin) or (A == owner) ->
 		SD1 = set_affiliation(JID, A, SD, Reason),
 		SD2 = set_role(JID, moderator, SD1),
