@@ -33,9 +33,14 @@ before_script:
   - psql -U postgres ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ejabberd_test;"
   - psql -U postgres ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ejabberd_test;"
 
+cache:
+  directories:
+  - deps/
+
 script:
   - ./autogen.sh
   - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-elixir
+  - make update
   - make
   - make install -s
   - make xref
