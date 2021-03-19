@@ -24,7 +24,7 @@
 %% Unsupported backend API
 -export([init/0]).
 -export([subscribe/4, unsubscribe/2, find_subscriber/2]).
--export([open_session/1, close_session/1, lookup_session/1]).
+-export([open_session/1, close_session/1, lookup_session/1, get_sessions/2]).
 
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -123,6 +123,9 @@ close_session(_) ->
     erlang:nif_error(unsupported_db).
 
 lookup_session(_) ->
+    erlang:nif_error(unsupported_db).
+
+get_sessions(_, _) ->
     erlang:nif_error(unsupported_db).
 
 subscribe(_, _, _, _) ->

@@ -23,7 +23,7 @@
 -export([list_topics/1, use_cache/1]).
 -export([init/0]).
 -export([subscribe/4, unsubscribe/2, find_subscriber/2]).
--export([open_session/1, close_session/1, lookup_session/1]).
+-export([open_session/1, close_session/1, lookup_session/1, get_sessions/2]).
 
 -include("logger.hrl").
 -include("mqtt.hrl").
@@ -46,9 +46,9 @@
 		   pid       :: pid(),
 		   timestamp :: erlang:timestamp()}).
 
--record(mqtt_session, {usr       :: jid:ljid(),
-		       pid       :: pid(),
-		       timestamp :: erlang:timestamp()}).
+-record(mqtt_session, {usr       :: jid:ljid() | {'_', '_', '$1'},
+		       pid       :: pid() | '_',
+		       timestamp :: erlang:timestamp() | '_'}).
 
 %%%===================================================================
 %%% API
@@ -195,6 +195,14 @@ lookup_session(USR) ->
 	[] ->
 	    {error, notfound}
     end.
+
+get_sessions(U, S) ->
+    Resources = mnesia:dirty_select(mqtt_session,
+                                    [{#mqtt_session{usr = {U, S, '$1'},
+                                                    _ = '_'},
+                                      [],
+                                      ['$1']}]),
+    [{U, S, Resource} || Resource <- Resources].
 
 subscribe({U, S, R} = USR, TopicFilter, SubOpts, ID) ->
     T1 = misc:unique_timestamp(),
