@@ -18,10 +18,7 @@
 /ejabberd.init
 /ejabberd.service
 /ejabberdctl.example
-XmppAddr.hrl
 /rel/ejabberd/
-/src/XmppAddr.asn1db
-/src/XmppAddr.erl
 /src/ejabberd.app.src
 /src/eldap_filter_yecc.erl
 /vars.config
