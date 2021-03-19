@@ -1258,8 +1258,8 @@ doc() ->
      {sql_pool_size,
       #{value => ?T("Size"),
         desc =>
-            ?T("A number of connections to the SQL server. By default ejabberd opens "
-               "10 connections to the database for each virtual host. WARNING: "
+            ?T("Number of connections to the SQL server that ejabberd will "
+               "open for each virtual host. The default value is 10. WARNING: "
                "for SQLite this value is '1' by default and it's not recommended "
                "to change it due to potential race conditions.")}},
      {sql_port,
