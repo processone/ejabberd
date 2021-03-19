@@ -19,7 +19,6 @@
 /ejabberd.service
 /ejabberdctl.example
 /rel/ejabberd/
-/src/ejabberd.app.src
 /src/eldap_filter_yecc.erl
 /vars.config
 /dialyzer/
