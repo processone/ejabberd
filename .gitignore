@@ -14,6 +14,7 @@
 /contrib/extract_translations/extract_translations.beam
 /*.cache
 /deps/
+/.deps-update/
 /doc/*.aux
 /doc/*.haux
 /doc/*.html
