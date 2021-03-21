@@ -1,6 +1,8 @@
 #!/usr/bin/env escript
 %% -*- erlang -*-
 
+-define(ENABLE_METRICS, true).
+
 -record(state, {run_hooks = #{},
 		run_fold_hooks = #{},
 		hooked_funs = {#{}, #{}},
@@ -325,6 +327,7 @@ emit_module(RunDeps, RunFoldDeps, Module) ->
 	emit_export(Fd, RunFoldDeps, "run_fold hooks"),
 	emit_run_hooks(Fd, RunDeps),
 	emit_run_fold_hooks(Fd, RunFoldDeps),
+	emit_metrics_helper(Fd, ?ENABLE_METRICS),
 	file:close(Fd),
 	log("Module written to ~s~n", [File])
     catch _:{badmatch, {error, Reason}} ->
@@ -347,6 +350,7 @@ emit_run_hooks(Fd, Deps) ->
       end, DepsList).
 
 emit_run_fold_hooks(Fd, Deps) ->
+    Comment = if ?ENABLE_METRICS -> "%"; true -> "" end,
     DepsList = lists:sort(maps:to_list(Deps)),
     lists:foreach(
       fun({{Hook, Arity, {File, LineNo}}, []}) ->
@@ -360,14 +364,54 @@ emit_run_fold_hooks(Fd, Deps) ->
 	      {Calls, _} = lists:mapfoldl(
 			     fun({{Mod, Fun, _}, _Seq, _}, N) ->
 				     Args1 = ["Acc" ++ integer_to_list(N)|Args],
-				     {io_lib:format("Acc~p = ~s:~s(~s)",
-						    [N+1, Mod, Fun,
+				     {io_lib:format("~s Acc~p = ~s:~s(~s)",
+						    [Comment, N+1, Mod, Fun,
 						     string:join(Args1, ", ")]),
 				      N + 1}
 			     end, 0, lists:keysort(2, Funs)),
 	      write(Fd, "~s,~n", [string:join(Calls, ",\n    ")]),
-	      write(Fd, "    Acc~p.~n~n", [length(Funs)])
+	      write(Fd, "    ~s Acc~p.~n", [Comment, length(Funs)]),
+        % now a version with some metrics
+        if ?ENABLE_METRICS ->
+            write(Fd, "    run_metrics([~s], [~n", [string:join(["Acc0"|Args], ", ")]),
+            lists:foldl(fun({{Mod,Fun,_},_,_}, true) ->
+                write(Fd, "          {~w, ~w}~n", [Mod, Fun]), false;
+              ({{Mod,Fun,_},_,_}, _) ->
+                write(Fd, "         ,{~w, ~w}~n", [Mod, Fun]), false
+              end, true, Funs),
+            write(Fd, "    ]).~n~n", []);
+          true -> ok
+        end
       end, DepsList).
+
+emit_metrics_helper(Fd, true) ->
+    write(Fd, "run_metrics([Acc0 | Args], ModFunList) ->~n", []),
+    write(Fd, "    Ret = #{result := Result, measures := Measures} = lists:foldl(~n", []),
+    write(Fd, "      fun({Mod, Fun}, #{result := Acc, measures := Measures} = Ctx) ->~n", []),
+    write(Fd, "         {reductions, Red0} = process_info(self(), reductions),~n", []),
+    write(Fd, "         TcRes = (catch timer:tc(Mod, Fun, [Acc | Args])),~n", []),
+    write(Fd, "         {reductions, Red1} = process_info(self(), reductions),~n", []),
+    write(Fd, "         Reductions = Red1 - Red0,~n", []),
+    write(Fd, "         case TcRes of~n", []),
+    write(Fd, "           {Duration, Res} when is_integer(Duration) ->~n", []),
+    write(Fd, "              NewRes = case Res of~n", []),
+    write(Fd, "                stop -> Acc;~n", []),
+    write(Fd, "                {stop, Val} -> Val;~n", []),
+    write(Fd, "                _ -> Res~n", []),
+    write(Fd, "              end,~n", []),
+    write(Fd, "              Ctx#{result => NewRes, measures => [{Duration, Reductions, {Mod, Fun}} | Measures]};~n", []),
+    write(Fd, "            _ ->~n", []),
+    write(Fd, "              Ctx#{measures => [{error, Reductions, {Mod, Fun}} | Measures]}~n", []),
+    write(Fd, "          end~n", []),
+    write(Fd, "      end,~n", []),
+    write(Fd, "      #{result => Acc0, measures => []},~n", []),
+    write(Fd, "      ModFunList~n", []),
+    write(Fd, "    ),~n", []),
+    write(Fd, "    {Result, maps:remove(result, Ret#{measures => [\"{microseconds, reductions, {module, function}}\"] ++ lists:reverse(Measures),~n", []),
+    write(Fd, "      total_reductions => lists:foldl(fun({_, R, _}, Red) -> Red + R end, 0, Measures),~n", []),
+    write(Fd, "      total_microseconds => lists:foldl(fun({D, _, _}, Dur) when is_integer(D) -> Dur + D;~n", []),
+    write(Fd, "                                        ({_, _, _}, Dur) -> Dur end, 0, Measures)})}.~n", []);
+emit_metrics_helper(_, _) -> ok.
 
 emit_export(Fd, Deps, Comment) ->
     DepsList = lists:sort(maps:to_list(Deps)),
