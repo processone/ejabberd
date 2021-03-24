@@ -90,7 +90,7 @@ defmodule Ejabberd.Mixfile do
      {:cache_tab, "~> 1.0"},
      {:distillery, "~> 2.0"},
      {:eimp, "~> 1.0"},
-     {:esip, "~> 1.0.32"},
+     {:esip, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
      {:fast_tls, "~> 1.1"},
      {:fast_xml, "~> 1.1"},
@@ -102,13 +102,13 @@ defmodule Ejabberd.Mixfile do
      {:mqtree, "~> 1.0"},
      {:p1_acme, "~> 1.0"},
      {:p1_mysql, "~> 1.0"},
-     {:p1_oauth2, "~> 0.6.1"},
+     {:p1_oauth2, "~> 0.6"},
      {:p1_pgsql, "~> 1.1"},
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, "~> 1.0"},
-     {:stun, "~> 1.0.41"},
-     {:xmpp, "~> 1.5.1"},
+     {:stun, "~> 1.0"},
+     {:xmpp, "~> 1.5"},
      {:yconf, "~> 1.0"}]
     ++ cond_deps()
   end
@@ -126,7 +126,7 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp cond_deps do
-    for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0.10"}},
+    for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0"}},
                          {config(:redis), {:eredis, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {config(:lua), {:luerl, "~> 0.3.1"}},
