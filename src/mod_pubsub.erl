@@ -705,8 +705,7 @@ remove_user(User, Server) ->
 					case node_action(Host, PType,
 							 get_state,
 							 [Nidx, jid:tolower(Entity)]) of
-					    {result, State} ->
-						ItemIds = State#pubsub_state.items,
+					    {result, #pubsub_state{items = ItemIds}} ->
 						node_action(Host, PType,
 							    remove_extra_items,
 							    [Nidx, 0, ItemIds]),
@@ -3821,6 +3820,8 @@ node_call(Host, Type, Function, Args) ->
 	true ->
 	    case apply(Module, Function, Args) of
 		{result, Result} ->
+		    {result, Result};
+		#pubsub_state{} = Result ->
 		    {result, Result};
 		{error, #stanza_error{}} = Err ->
 		    Err;
