@@ -1,8 +1,22 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
+{" (Add * to the end of field to match substring)"," (Aldonu * al la fino de la kampo por kongruigi subĉenon)"}.
 {" has set the subject to: "," ŝanĝis la temon al: "}.
-{"A friendly name for the node","Kromnomo por ĉi tiu nodo"}.
+{"# participants","Nombro de partoprenantoj"}.
+{"A description of the node","Priskribo de la nodo"}.
+{"A friendly name for the node","Kromnomo de la nodo"}.
 {"A password is required to enter this room","Pasvorto estas bezonata por eniri ĉi tiun babilejon"}.
+{"A Web Page","Retpaĝo"}.
+{"Accept","Akcepti"}.
 {"Access denied by service policy","Atingo rifuzita de serv-politiko"}.
+{"Access model of open","Atingomodelo de malfermo"}.
+{"Access model of presence","Atingomodelo de ĉeesto"}.
+{"Access model of whitelist","Atingomodelo de permesolisto"}.
+{"Access model","Atingomodelo"}.
+{"Account doesn't exist","Konto ne ekzistas"}.
 {"Action on user","Ago je uzanto"}.
 {"Add Jabber ID","Aldonu Jabber ID"}.
 {"Add New","Aldonu novan"}.
@@ -12,7 +26,8 @@
 {"Administrator privileges required","Administrantaj rajtoj bezonata"}.
 {"All activity","Ĉiu aktiveco"}.
 {"All Users","Ĉiuj Uzantoj"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Ĉu permesi ĉi tiun Jabber ID aboni al la jena PubAbo-nodo"}.
+{"Allow subscription","Permesi abonon"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Ĉu permesi ĉi tiun Jabber ID aboni al la jena PubAbo-nodo?"}.
 {"Allow users to change the subject","Permesu uzantojn ŝanĝi la temon"}.
 {"Allow users to query other users","Permesu uzantojn informpeti aliajn uzantojn"}.
 {"Allow users to send invites","Permesu uzantojn sendi invitojn"}.
@@ -22,7 +37,18 @@
 {"Allow visitors to send status text in presence updates","Permesu al vizitantoj sendi statmesaĝon en ĉeest-sciigoj"}.
 {"Allow visitors to send voice requests","Permesu uzantojn sendi voĉ-petojn"}.
 {"Announcements","Anoncoj"}.
+{"Answer associated with a picture","Respondo asociita kun bildo"}.
+{"Answer associated with a video","Respondo asociita kun filmeto"}.
+{"Answer associated with speech","Respondo asociita kun parolo"}.
+{"Answer to a question","Respondo al demando"}.
+{"Anyone may publish","Ĉiu rajtas publici"}.
+{"Anyone with Voice","Iu ajn kun Voĉo"}.
+{"Anyone","Iu ajn"}.
 {"April","Aprilo"}.
+{"Attribute 'channel' is required for this request","Atributo 'channel' necesas por ĉi tiu peto"}.
+{"Attribute 'id' is mandatory for MIX messages","Atributo 'id' estas deviga en MIX-mesaĝo"}.
+{"Attribute 'jid' is not allowed here","Atributo 'jid' ne estas permesita ĉi tie"}.
+{"Attribute 'node' is not allowed here","Atributo 'node' ne estas permesita ĉi tie"}.
 {"August","Aŭgusto"}.
 {"Backup Management","Mastrumado de sekurkopioj"}.
 {"Backup of ~p","Sekurkopio de ~p"}.
@@ -30,9 +56,14 @@
 {"Backup","Faru Sekurkopion"}.
 {"Bad format","Malĝusta formo"}.
 {"Birthday","Naskiĝtago"}.
+{"Cannot remove active list","Ne povas forigi aktivan liston"}.
 {"CAPTCHA web page","CAPTCHA teksaĵ-paĝo"}.
+{"Challenge ID","Identigilo de Defio"}.
 {"Change Password","Ŝanĝu pasvorton"}.
 {"Change User Password","Ŝanĝu pasvorton de uzanto"}.
+{"Channel already exists","Kanalo jam ekzistas"}.
+{"Channel does not exist","Kanalo ne ekzistas"}.
+{"Channels","Kanaloj"}.
 {"Characters not allowed:","Karaktroj ne permesata:"}.
 {"Chatroom configuration modified","Agordo de babilejo ŝanĝita"}.
 {"Chatroom is created","Babilejo kreita"}.
@@ -42,7 +73,7 @@
 {"Chatrooms","Babilejoj"}.
 {"Choose a username and password to register with this server","Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"}.
 {"Choose storage type of tables","Elektu konserv-tipon de tabeloj"}.
-{"Choose whether to approve this entity's subscription.","Elektu ĉu permesi la abonon de ĉi tiu ento"}.
+{"Choose whether to approve this entity's subscription.","Elektu ĉu permesi la abonon de ĉi tiu ento."}.
 {"City","Urbo"}.
 {"Commands","Ordonoj"}.
 {"Conference room does not exist","Babilejo ne ekzistas"}.
@@ -51,6 +82,7 @@
 {"Connected Resources:","Konektataj risurcoj:"}.
 {"Country","Lando"}.
 {"CPU Time:","CPU-tempo"}.
+{"Current Discussion Topic","Aktuala Diskuta Temo"}.
 {"Database Tables at ~p","Datumbaz-tabeloj je ~p"}.
 {"Database Tables Configuration at ","Agordo de datumbaz-tabeloj je "}.
 {"Database","Datumbazo"}.
@@ -66,6 +98,7 @@
 {"Disc only copy","Nur disk-kopio"}.
 {"Dump Backup to Text File at ","Skribu sekurkopion en plata teksto al "}.
 {"Dump to Text File","Skribu en plata tekst-dosiero"}.
+{"Duplicated groups are not allowed by RFC6121","RFC 6121 ne permesas duplikatajn grupojn"}.
 {"Edit Properties","Redaktu atributojn"}.
 {"Either approve or decline the voice request.","Ĉu aprobu, aŭ malaprobu la voĉ-peton."}.
 {"ejabberd MUC module","ejabberd MUC-modulo"}.
@@ -74,7 +107,9 @@
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bajtfluo modulo"}.
 {"ejabberd vCard module","ejabberd vCard-modulo"}.
 {"ejabberd Web Admin","ejabberd Teksaĵa Administro"}.
+{"ejabberd","ejabberd"}.
 {"Elements","Eroj"}.
+{"Email Address","Retpoŝta Adreso"}.
 {"Email","Retpoŝto"}.
 {"Enable logging","Ŝaltu protokoladon"}.
 {"Enable message archiving","Ŝaltu mesaĝo-arkivo"}.
@@ -93,6 +128,7 @@
 {"Failed to extract JID from your voice request approval","Malsukcesis ekstrakti JID-on de via voĉ-pet-aprobo"}.
 {"Family Name","Lasta Nomo"}.
 {"February","Februaro"}.
+{"File larger than ~w bytes","Dosiero pli granda ol ~w bajtoj"}.
 {"Friday","Vendredo"}.
 {"From","De"}.
 {"Full Name","Plena Nomo"}.
@@ -101,6 +137,7 @@
 {"Get User Last Login Time","Montru tempon de lasta ensaluto"}.
 {"Get User Password","Montru pasvorton de uzanto"}.
 {"Get User Statistics","Montru statistikojn de uzanto"}.
+{"Given Name","Persona Nomo"}.
 {"Grant voice to this person?","Koncedu voĉon al ĉi-persono?"}.
 {"Group","Grupo"}.
 {"Groups","Grupoj"}.
@@ -120,6 +157,7 @@
 {"Import Users from Dir at ","Importu uzantojn de dosierujo ĉe "}.
 {"Import Users From jabberd14 Spool Files","Importu uzantojn de jabberd14-uzantdosieroj"}.
 {"Improper message type","Malĝusta mesaĝo-tipo"}.
+{"Incorrect CAPTCHA submit","Neĝusta CAPTCHA-submeto"}.
 {"Incorrect password","Nekorekta pasvorto"}.
 {"IP addresses","IP-adresoj"}.
 {"is now known as","nun nomiĝas"}.
@@ -131,6 +169,8 @@
 {"joins the room","eniras la babilejo"}.
 {"July","Julio"}.
 {"June","Junio"}.
+{"Just created","Ĵus kreita"}.
+{"Label:","Etikedo:"}.
 {"Last Activity","Lasta aktiveco"}.
 {"Last login","Lasta ensaluto"}.
 {"Last month","Lasta monato"}.
@@ -139,7 +179,7 @@
 {"List of rooms","Listo de babilejoj"}.
 {"Low level update script","Bazanivela ĝisdatigo-skripto"}.
 {"Make participants list public","Farigu partoprento-liston publika"}.
-{"Make room CAPTCHA protected","Farigu babilejon protektata per CAPTCHA"}.
+{"Make room CAPTCHA protected","Protektu babilejon per CAPTCHA"}.
 {"Make room members-only","Farigu babilejon sole por membroj"}.
 {"Make room moderated","Farigu babilejon moderigata"}.
 {"Make room password protected","Farigu babilejon protektata per pasvorto"}.
@@ -148,6 +188,7 @@
 {"March","Marĉo"}.
 {"Max # of items to persist","Maksimuma kiomo de eroj en konservado"}.
 {"Max payload size in bytes","Maksimuma aĵo-grando je bajtoj"}.
+{"Maximum file size","Maksimuma grando de dosiero"}.
 {"Maximum Number of Occupants","Limigo de nombro de partoprenantoj"}.
 {"May","Majo"}.
 {"Membership is required to enter this room","Membreco estas bezonata por eniri ĉi tiun babilejon"}.
@@ -158,19 +199,30 @@
 {"Minimum interval between voice requests (in seconds)","Minimuma intervalo inter voĉ-petoj (je sekundoj)"}.
 {"Moderator privileges required","Moderantaj rajtoj bezonata"}.
 {"Modified modules","Ĝisdatigitaj moduloj"}.
+{"Module failed to handle the query","Modulo malsukcesis trakti la informpeton"}.
 {"Monday","Lundo"}.
 {"Multicast","Multicast"}.
+{"Multiple <item/> elements are not allowed by RFC6121","RFC 6121 ne permesas plurajn <item/>-elementojn"}.
 {"Multi-User Chat","Grupbabilado"}.
 {"Name","Nomo"}.
 {"Name:","Nomo:"}.
+{"Natural Language for Room Discussions","Homa Lingvo por Diskutoj en Babilejo"}.
 {"Never","Neniam"}.
 {"New Password:","Nova Pasvorto:"}.
 {"Nickname Registration at ","Kaŝnomo-registrado je "}.
 {"Nickname ~s does not exist in the room","Kaŝnomo ~s ne ekzistas en la babilejo"}.
 {"Nickname","Kaŝnomo"}.
+{"No address elements found","Adresa elemento ne trovita"}.
+{"No addresses element found","Adresa elemento ne trovita"}.
 {"No body provided for announce message","Neniu teksto donita por anonc-mesaĝo"}.
+{"No child elements found","Ida elemento ne trovita"}.
 {"No Data","Neniu datumo"}.
+{"No <forwarded/> element found","Elemento <forwarded/> ne trovita"}.
+{"No items found in this query","Neniu elemento <item/> trovita en ĉi tiu informpeto"}.
 {"No limit","Neniu limigo"}.
+{"No module is handling this query","Neniu modulo traktas ĉi tiun informpeton"}.
+{"No 'password' found in this query","Neniu pasvorto trovita en ĉi tiu informpeto"}.
+{"No private data found in this query","Neniu privata dateno trovita en ĉi tiu informpeto"}.
 {"Node ID","Nodo ID"}.
 {"Node not found","Nodo ne trovita"}.
 {"Node ~p","Nodo ~p"}.
@@ -193,12 +245,16 @@
 {"Online Users","Konektataj Uzantoj"}.
 {"Online","Konektata"}.
 {"Only deliver notifications to available users","Nur liveru sciigojn al konektataj uzantoj"}.
+{"Only <list/> element is allowed in this query","Nur la elemento <list/> estas permesita en ĉi tiu informpeto"}.
 {"Only moderators and participants are allowed to change the subject in this room","Nur moderigantoj kaj partoprenantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
 {"Only moderators are allowed to change the subject in this room","Nur moderigantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
 {"Only moderators can approve voice requests","Nur moderigantoj povas aprobi voĉ-petojn"}.
 {"Only occupants are allowed to send messages to the conference","Nur partoprenantoj rajtas sendi mesaĝojn al la babilejo"}.
 {"Only occupants are allowed to send queries to the conference","Nur partoprenantoj rajtas sendi informmendojn al la babilejoj"}.
+{"Only publishers may publish","Nur publicantoj rajtas publici"}.
 {"Only service administrators are allowed to send service messages","Nur servo-administrantoj rajtas sendi serv-mesaĝojn"}.
+{"Only those on a whitelist may associate leaf nodes with the collection","Nur tiuj en permesolisto rajtas asocii foliajn nodojn kun la kolekto"}.
+{"Only those on a whitelist may subscribe and retrieve items","Nur tiuj en permesolisto rajtas aboni kaj preni erojn"}.
 {"Organization Name","Organiz-nomo"}.
 {"Organization Unit","Organiz-parto"}.
 {"Outgoing s2s Connections","Elirantaj s-al-s-konektoj"}.
@@ -220,14 +276,16 @@
 {"Pong","Resondaĵo"}.
 {"Present real Jabber IDs to","Montru verajn Jabber ID-ojn al"}.
 {"private, ","privata, "}.
-{"Publish-Subscribe","Public-Abonado"}.
+{"Publish model","Publici modelon"}.
+{"Publish-Subscribe","Publici-Aboni"}.
 {"PubSub subscriber request","PubAbo abonpeto"}.
-{"Purge all items when the relevant publisher goes offline","Forigu ĉiujn erojn kiam la rilata publikanto malkonektiĝas"}.
+{"Purge all items when the relevant publisher goes offline","Forigu ĉiujn erojn kiam la rilata publicanto malkonektiĝas"}.
 {"Queries to the conference members are not allowed in this room","Malpermesas informmendoj al partoprenantoj en ĉi tiu babilejo"}.
+{"Query to another users is forbidden","Informpeto al aliaj uzantoj estas malpermesita"}.
 {"RAM and disc copy","RAM- kaj disk-kopio"}.
 {"RAM copy","RAM-kopio"}.
 {"Really delete message of the day?","Ĉu vere forigi mesaĝon de la tago?"}.
-{"Recipient is not in the conference room","Ricevanto ne ĉeestas en la babilejo "}.
+{"Recipient is not in the conference room","Ricevanto ne ĉeestas en la babilejo"}.
 {"Registered Users","Registritaj uzantoj"}.
 {"Registered Users:","Registritaj uzantoj:"}.
 {"Register","Registru"}.
@@ -283,15 +341,19 @@
 {"Submit","Sendu"}.
 {"Submitted","Sendita"}.
 {"Subscriber Address","Abonanta adreso"}.
+{"Subscribers may publish","Abonantoj rajtas publici"}.
 {"Subscription","Abono"}.
 {"Sunday","Dimanĉo"}.
 {"That nickname is already in use by another occupant","Tiu kaŝnomo jam estas uzata de alia partoprenanto"}.
 {"That nickname is registered by another person","Kaŝnomo estas registrita de alia persono"}.
-{"The CAPTCHA is valid.","La CAPTCHA ĝustas"}.
+{"The CAPTCHA is valid.","La CAPTCHA ĝustas."}.
 {"The CAPTCHA verification has failed","La CAPTCHA-kontrolado malsukcesis"}.
+{"The captcha you entered is wrong","La CAPTCHA enigita de vi malĝustas"}.
 {"The collections with which a node is affiliated","Aro kun kiu nodo estas filigita"}.
 {"The password is too weak","La pasvorto estas ne sufiĉe forta"}.
 {"the password is","la pasvorto estas"}.
+{"The query is only allowed from local users","La informpeto estas permesita nur de lokaj uzantoj"}.
+{"The query must not contain <item/> elements","La informpeto devas ne enhavi elementojn <item/>"}.
 {"There was an error creating the account: ","Estis eraro dum kreado de la konto:"}.
 {"There was an error deleting the account: ","Estis eraro dum forigado de la konto:"}.
 {"This room is not anonymous","Ĉi tiu babilejo ne estas anonima"}.
@@ -319,6 +381,7 @@
 {"Update script","Ĝisdatigo-skripto"}.
 {"Update","Ĝisdatigu"}.
 {"Uptime:","Daŭro de funkciado"}.
+{"URL for Archived Discussion Logs","Retpaĝa adreso de Enarkivigitaj Diskutprotokoloj"}.
 {"User JID","Uzant-JID"}.
 {"User Management","Uzanto-administrado"}.
 {"Username:","Uzantnomo"}.
@@ -336,6 +399,8 @@
 {"Wednesday","Merkredo"}.
 {"When to send the last published item","Kiam sendi la laste publicitan eron"}.
 {"Whether to allow subscriptions","Ĉu permesi aboni"}.
+{"Wrong xmlns","Malĝusta XML-nomspaco (xmlns)"}.
+{"XMPP Account Registration","Registrado de XMPP-Konto"}.
 {"You have been banned from this room","Vi estas malpermesata en ĉi tiu babilejo"}.
 {"You must fill in field \"Nickname\" in the form","Vi devas kompletigi la \"Kaŝnomo\" kampon"}.
 {"You need a client that supports x:data and CAPTCHA to register","Vi bezonas klienton subtenante x:data-funkcio kaj CAPTCHA por registri kaŝnomon"}.
