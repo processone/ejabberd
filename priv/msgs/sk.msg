@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" has set the subject to: ","zmenil(a) tému na: "}.
 {"A friendly name for the node","Prístupný názov pre uzol"}.
 {"A password is required to enter this room","Pre vstup do miestnosti je potrebné heslo"}.

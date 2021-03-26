@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" has set the subject to: "," đã đặt chủ đề thành: "}.
 {"Access denied by service policy","Sự truy cập bị chặn theo chính sách phục vụ"}.
 {"Action on user","Hành động đối với người sử dụng"}.

@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" has set the subject to: "," הגדיר/ה את הנושא אל: "}.
 {"A friendly name for the node","שם ידידותי עבור הצומת"}.
 {"A password is required to enter this room","נדרשת סיסמה כדי להיכנס אל חדר זה"}.

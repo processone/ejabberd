@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" has set the subject to: "," har satt ämnet till: "}.
 {"A friendly name for the node","Ett vänligt namn for noden"}.
 {"Access denied by service policy","Åtkomst nekad enligt lokal policy"}.

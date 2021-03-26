@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" (Add * to the end of field to match substring)"," (Adicione * no final do campo para combinar com a substring)"}.
 {" has set the subject to: "," mudou o assunto para: "}.
 {"# participants","# participantes"}.

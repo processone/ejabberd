@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" has set the subject to: "," a candjî l' tite a: "}.
 {"A friendly name for the node","On no uzeu-ahessåve pol nuk"}.
 {"A password is required to enter this room","I fåt dner on scret po poleur intrer dins cisse såle ci"}.

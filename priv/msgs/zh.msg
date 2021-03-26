@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" (Add * to the end of field to match substring)"," (在字段末添加*来匹配子串)"}.
 {" has set the subject to: ","已将标题设置为: "}.
 {"# participants","# 个参与人"}.

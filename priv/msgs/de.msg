@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" (Add * to the end of field to match substring)"," (Fügen Sie * am Ende des Feldes hinzu um nach Teilzeichenketten zu suchen)"}.
 {" has set the subject to: "," hat das Thema geändert auf: "}.
 {"# participants","# Teilnehmer"}.

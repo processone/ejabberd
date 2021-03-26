@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" has set the subject to: "," ตั้งหัวข้อว่า: "}.
 {"Access denied by service policy","การเข้าถึงถูกปฏิเสธโดยนโยบายการบริการ"}.
 {"Action on user","การดำเนินการกับผู้ใช้"}.

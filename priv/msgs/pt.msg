@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" has set the subject to: "," colocou o tópico: "}.
 {"Access denied by service policy","Acesso negado pela política de serviço"}.
 {"Action on user","Acção no utilizador"}.

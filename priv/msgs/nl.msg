@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" has set the subject to: "," veranderde het onderwerp in: "}.
 {"A friendly name for the node","Bijnaam voor deze knoop"}.
 {"A password is required to enter this room","U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"}.

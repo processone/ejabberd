@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" (Add * to the end of field to match substring)"," (Ajouter * à la fin du champ pour correspondre à la sous-chaîne)"}.
 {" has set the subject to: "," a défini le sujet sur : "}.
 {"A description of the node","Une description du nœud"}.

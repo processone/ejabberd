@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" (Add * to the end of field to match substring)"," (Добавьте * в конец поля для поиска подстроки)"}.
 {" has set the subject to: "," установил(а) тему: "}.
 {"A friendly name for the node","Легко запоминаемое имя для узла"}.

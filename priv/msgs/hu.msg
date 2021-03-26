@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" (Add * to the end of field to match substring)"," (adjon * karaktert a mező végéhez a részkarakterláncra illesztéshez)"}.
 {" has set the subject to: "," beállította a tárgyat erre: "}.
 {"A password is required to enter this room","Jelszó szükséges a szobába történő belépéshez"}.

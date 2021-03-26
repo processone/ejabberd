@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" (Add * to the end of field to match substring)"," Isi formulir untuk pencarian pengguna Jabber yang cocok (Tambahkan * ke mengakhiri pengisian untuk menyamakan kata)"}.
 {" has set the subject to: "," telah menetapkan topik yaitu: "}.
 {"# participants","# pengguna"}.

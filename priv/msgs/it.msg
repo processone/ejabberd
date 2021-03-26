@@ -1,4 +1,8 @@
-%% -*- coding: utf-8 -*-
+%% Generated automatically
+%% DO NOT EDIT: run `make translations` instead
+%% To improve translations please read:
+%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+
 {" has set the subject to: "," ha modificato l'oggetto in: "}.
 {"A friendly name for the node","Un nome comodo per il nodo"}.
 {"A password is required to enter this room","Per entrare in questa stanza è prevista una password"}.
