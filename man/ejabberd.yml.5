@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/27/2021
+.\"      Date: 03/26/2021
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "01/27/2021" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "03/26/2021" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -87,7 +87,7 @@ It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is bett
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 21\&.01
+This section describes top level options of ejabberd\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLRules|ACLName}}\fR
 .RS 4
@@ -1559,7 +1559,7 @@ The password for SQL authentication\&. The default is empty string\&.
 .PP
 \fBsql_pool_size\fR: \fISize\fR
 .RS 4
-A number of connections to the SQL server\&. By default ejabberd opens 10 connections to the database for each virtual host\&. WARNING: for SQLite this value is
+Number of connections to the SQL server that ejabberd will open for each virtual host\&. The default value is 10\&. WARNING: for SQLite this value is
 \fI1\fR
 by default and it\(cqs not recommended to change it due to potential race conditions\&.
 .RE
@@ -1722,7 +1722,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes options of all modules in ejabberd 21\&.01
+This section describes options of all ejabberd modules\&.
 .SS "mod_adhoc"
 .sp
 This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary module and is only needed by some of the other modules\&.
@@ -7162,7 +7162,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes options of all listeners in ejabberd 21\&.01
+This section describes options of all ejabberd listeners\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -7170,7 +7170,7 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 21\&.01\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 21\&.01\&.81\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
