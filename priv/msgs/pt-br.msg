@@ -324,6 +324,7 @@
 {"Node index not found","O índice do nó não foi encontrado"}.
 {"Node not found","Nó não encontrado"}.
 {"Node ~p","Nó ~p"}.
+{"Node","Nó"}.
 {"Nodeprep has failed","Processo de identificação de nó falhou (nodeprep)"}.
 {"Nodes","Nós"}.
 {"None","Nenhum"}.

@@ -324,6 +324,7 @@
 {"Node index not found","Knotenindex nicht gefunden"}.
 {"Node not found","Knoten nicht gefunden"}.
 {"Node ~p","Knoten ~p"}.
+{"Node","Knoten"}.
 {"Nodeprep has failed","Nodeprep fehlgeschlagen"}.
 {"Nodes","Knoten"}.
 {"None","Keine"}.
