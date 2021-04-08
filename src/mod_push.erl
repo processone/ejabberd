@@ -405,7 +405,7 @@ c2s_stanza(State, #stream_error{}, _SendResult) ->
 c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
 	   Pkt, _SendResult) ->
     ?DEBUG("Notifying client of stanza", []),
-    notify(State, unwrap_carbon(Pkt), get_direction(Pkt)),
+    notify(State, unwrap_message(Pkt), get_direction(Pkt)),
     State;
 c2s_stanza(State, _Pkt, _SendResult) ->
     State.
@@ -454,7 +454,7 @@ c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
 	    {Pkt, Dir} = case mod_stream_mgmt:queue_find(
 				fun is_incoming_chat_msg/1, Queue) of
 			     none -> {none, undefined};
-			     Pkt0 -> {unwrap_carbon(Pkt0), get_direction(Pkt0)}
+			     Pkt0 -> {unwrap_message(Pkt0), get_direction(Pkt0)}
 			 end,
 	    notify(State, Pkt, Dir),
 	    State;
@@ -555,7 +555,7 @@ notify(LServer, PushLJID, Node, XData, Pkt, Dir, HandleResponse) ->
 -spec is_incoming_chat_msg(stanza()) -> boolean().
 is_incoming_chat_msg(#message{} = Msg) ->
     case get_direction(Msg) of
-	recv -> get_body_text(unwrap_carbon(Msg)) /= none;
+	recv -> get_body_text(unwrap_message(Msg)) /= none;
 	send -> false
     end;
 is_incoming_chat_msg(_Stanza) ->
@@ -714,10 +714,17 @@ make_summary(Host, #message{from = From} = Pkt, recv) ->
 make_summary(_Host, _Pkt, _Dir) ->
     undefined.
 
--spec unwrap_carbon(stanza()) -> stanza().
-unwrap_carbon(#message{meta = #{carbon_copy := true}} = Msg) ->
+-spec unwrap_message(stanza()) -> stanza().
+unwrap_message(#message{meta = #{carbon_copy := true}} = Msg) ->
     misc:unwrap_carbon(Msg);
-unwrap_carbon(Stanza) ->
+unwrap_message(#message{type = normal} = Msg) ->
+    case misc:unwrap_mucsub_message(Msg) of
+	#message{} = InnerMsg ->
+	    InnerMsg;
+	false ->
+	    Msg
+    end;
+unwrap_message(Stanza) ->
     Stanza.
 
 -spec get_direction(stanza()) -> direction().
