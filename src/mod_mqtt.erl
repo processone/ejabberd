@@ -600,6 +600,23 @@ match([H|T1], [<<"%c">>|T2], U, S, R) ->
         R -> match(T1, T2, U, S, R);
         _ -> false
     end;
+match([H|T1], [<<"%g">>|T2], U, S, R) ->
+    case jid:resourceprep(H) of
+        H -> 
+            case acl:loaded_shared_roster_module(S) of
+                undefined -> false;
+                Mod ->
+                    case Mod:get_group_opts(S, H) of
+                        error -> false;
+                        _ ->
+                            case Mod:is_user_in_group({U, S}, H, S) of
+                                true -> match(T1, T2, U, S, R);
+                                _ -> false
+                            end
+                    end
+            end;
+        _ -> false
+    end;
 match([H|T1], [H|T2], U, S, R) ->
     match(T1, T2, U, S, R);
 match([], [], _, _, _) ->
