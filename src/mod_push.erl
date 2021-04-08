@@ -538,7 +538,13 @@ notify(LUser, LServer, Clients, Pkt, Dir) ->
 	     fun((iq() | timeout) -> any())) -> ok.
 notify(LServer, PushLJID, Node, XData, Pkt, Dir, HandleResponse) ->
     From = jid:make(LServer),
-    Summary = make_summary(LServer, Pkt, Dir),
+    Pkt1 = case misc:is_mucsub_message(Pkt) of
+        true -> 
+            misc:unwrap_mucsub_message(Pkt);
+        _ ->
+            Pkt
+    end,
+    Summary = make_summary(LServer, Pkt1, Dir),
     Item = #ps_item{sub_els = [#push_notification{xdata = Summary}]},
     PubSub = #pubsub{publish = #ps_publish{node = Node, items = [Item]},
 		     publish_options = XData},
