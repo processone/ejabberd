@@ -748,14 +748,13 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
     #ejabberd_commands{
 		     tags = TagsAtoms,
 		     desc = Desc,
+		     args = ArgsDef,
 		     longdesc = LongDesc,
 		     result = ResultDef} = C,
 
     NameFmt = ["  ", ?B("Command Name"), ": ", Cmd, "\n"],
 
     %% Initial indentation of result is 13 = length("  Arguments: ")
-    {ArgsDef, _, _} = ejabberd_commands:get_command_format(
-                     C#ejabberd_commands.name, admin),
     Args = [format_usage_ctype(ArgDef, 13) || ArgDef <- ArgsDef],
     ArgsMargin = lists:duplicate(13, $\s),
     ArgsListFmt = case Args of
