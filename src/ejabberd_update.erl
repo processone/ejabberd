@@ -173,7 +173,8 @@ build_script(Dir, UpdatedBeams) ->
 	 			%% integer() | infinity.
 	 mod = [],		%% [] | {Mod, StartArgs}, Mod= atom(),
 				%% StartArgs = list().
-	 start_phases = [],	%% [] | {Phase, PhaseArgs}, Phase = atom(),
+	 start_phases,          %% [{Phase, PhaseArgs}] | undefined,
+	                        %% Phase = atom(),
 				%% PhaseArgs = list().
          dir = ""		%% The directory where the .app file was
 				%% found (internal use).
