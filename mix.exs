@@ -71,6 +71,7 @@ defmodule Ejabberd.Mixfile do
              if_version_below('23', [{:d, :USE_OLD_CRYPTO_HMAC}]) ++
              if_version_below('23', [{:d, :USE_OLD_PG2}]) ++
              if_version_below('24', [{:d, :COMPILER_REPORTS_ONLY_LINES}]) ++
+             if_version_below('24', [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}]) ++
              if_function_exported(:erl_error, :format_exception, 6, [{:d, :HAVE_ERL_ERROR}])
     defines = for {:d, value} <- result, do: {:d, value}
     result ++ [{:d, :ALL_DEFS, defines}]
