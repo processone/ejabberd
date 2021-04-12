@@ -1,0 +1,6 @@
+ejabberd:
+  image: ejabberd/ecs
+  ports:
+    - 5222:5222
+    - 5269:5269
+    - 5280:5280
