@@ -1,5 +1,7 @@
 {
 	"name": "ejabberd",
+	"dockerFile": "Dockerfile",
+	"forwardPorts": [ 4369, 5222, 5269, 5280],
 	// "dockerComposeFile": "docker-compose.yml",
 	"workspaceFolder": "/workspace",
 
