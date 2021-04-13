@@ -1,8 +1,12 @@
 {
 	"name": "ejabberd",
-	"dockerFile": "Dockerfile",
-	"forwardPorts": [ 4369, 5222, 5269, 5280],
 	// "dockerComposeFile": "docker-compose.yml",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			"VARIANT": "1.11"
+		}	
+	},
 	"workspaceFolder": "/workspace",
 
 	// Set *default* container specific settings.json values on container create.
@@ -11,7 +15,13 @@
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.
-	// "extensions": [],
+	"extensions": [],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [5222, 5280, 5269],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "sh .devcontainer/post-create.sh",
 
 	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode"
