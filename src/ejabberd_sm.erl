@@ -985,7 +985,7 @@ get_commands_spec() ->
 			result_desc = "List of users sessions",
 			result_example = [<<"user1@example.com">>, <<"user2@example.com">>],
 			result = {connected_users, {list, {sessions, string}}}},
-     #ejabberd_commands{name = connected_users_number, tags = [session, stats],
+     #ejabberd_commands{name = connected_users_number, tags = [session, statistics],
 			desc = "Get the number of established sessions",
                         policy = admin,
 			module = ?MODULE, function = connected_users_number,
