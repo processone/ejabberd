@@ -2,7 +2,6 @@
 
 # define default configuration
 POLL=true
-SMP=auto
 ERL_MAX_PORTS=32000
 ERL_PROCESSES=250000
 ERL_MAX_ETS_TABLES=1400
@@ -69,7 +68,7 @@ done
 : "${EJABBERD_LOG_PATH:="$LOGS_DIR/ejabberd.log"}"
 
 # define erl parameters
-ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
+ERLANG_OPTS="+K $POLL +P $ERL_PROCESSES $ERL_OPTIONS"
 if [ -n "$FIREWALL_WINDOW" ] ; then
     ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
 fi

@@ -13,20 +13,6 @@
 #POLL=true
 
 #.
-#' SMP: SMP support ([enable|auto|disable])
-#
-# Explanation in Erlang/OTP documentation:
-# enable: starts the Erlang runtime system with SMP support enabled.
-#   This may fail if no runtime system with SMP support is available.
-# auto: starts the Erlang runtime system with SMP support enabled if it
-#   is available and more than one logical processor are detected.
-# disable: starts a runtime system without SMP support.
-#
-# Default: auto
-#
-#SMP=auto
-
-#.
 #' ERL_MAX_PORTS: Maximum number of simultaneously open Erlang ports
 #
 # ejabberd consumes two or three ports for every connection, either
