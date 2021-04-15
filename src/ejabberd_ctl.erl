@@ -174,27 +174,38 @@ process(["help" | Mode], Version) ->
     {MaxC, ShCode} = get_shell_info(),
     case Mode of
 	[] ->
-	    print_usage(dual, MaxC, ShCode, Version),
-	    ?STATUS_USAGE;
+	    print_usage_help(MaxC, ShCode),
+	    ?STATUS_SUCCESS;
 	["--dual"] ->
 	    print_usage(dual, MaxC, ShCode, Version),
 	    ?STATUS_USAGE;
 	["--long"] ->
 	    print_usage(long, MaxC, ShCode, Version),
 	    ?STATUS_USAGE;
-	["--tags"] ->
+	["tags"] ->
 	    print_usage_tags(MaxC, ShCode, Version),
 	    ?STATUS_SUCCESS;
-	["--tags", Tag] ->
+	["--tags"] -> % deprecated in favor of "tags"
+	    print_usage_tags(MaxC, ShCode, Version),
+	    ?STATUS_SUCCESS;
+	["commands"] ->
+	    print_usage_tags_long(MaxC, ShCode, Version),
+	    ?STATUS_SUCCESS;
+	["--tags", Tag] -> % deprecated in favor of simply "Tag"
 	    print_usage_tags(Tag, MaxC, ShCode, Version),
 	    ?STATUS_SUCCESS;
-	["help"] ->
-	    print_usage_help(MaxC, ShCode),
-	    ?STATUS_SUCCESS;
-	[CmdString | _] ->
-	    CmdStringU = ejabberd_regexp:greplace(
-                           list_to_binary(CmdString), <<"-">>, <<"_">>),
-	    print_usage_commands2(binary_to_list(CmdStringU), MaxC, ShCode, Version),
+	[String | _] ->
+            case determine_string_type(String, Version) of
+                no_idea ->
+                    io:format("No tag or command matches '~ts'~n", [String]);
+                both ->
+                    print_usage_tags(String, MaxC, ShCode, Version),
+                    print_usage_commands2(String, MaxC, ShCode, Version);
+                tag ->
+                    print_usage_tags(String, MaxC, ShCode, Version);
+                command ->
+                    print_usage_commands2(String, MaxC, ShCode, Version)
+            end,
 	    ?STATUS_SUCCESS
     end;
 
@@ -248,6 +259,21 @@ process2(Args, AccessCommands, Auth, Version) ->
 	    {"", Code};
 	Other ->
 	    {"Erroneous result: " ++ io_lib:format("~p", [Other]), ?STATUS_ERROR}
+    end.
+
+determine_string_type(String, Version) ->
+    TagsCommands = ejabberd_commands:get_tags_commands(Version),
+    CommandsNames = case lists:keysearch(String, 1, TagsCommands) of
+			{value, {String, CNs}} -> CNs;
+			false -> []
+		    end,
+    AllCommandsNames = [atom_to_list(Name) || {Name, _, _} <- ejabberd_commands:list_commands(Version)],
+    Cmds = filter_commands(AllCommandsNames, String),
+    case {CommandsNames, Cmds} of
+        {[], []} -> no_idea;
+        {[], _} -> command;
+        {_, []} -> tag;
+        {_, _} -> both
     end.
 
 %%-----------------------------
@@ -323,7 +349,8 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
 		    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};
 		    {L1, L2} when L1 > L2 -> {L1-L2, "more argument"}
 		end,
-	    {io_lib:format("Error: the command ~p requires ~p ~ts.",
+	    process(["help" | [CmdString]]),
+	    {io_lib:format("Error: the command '~ts' requires ~p ~ts.",
 			   [CmdString, NumCompa, TextCompa]),
 	     wrong_command_arguments}
     end.
@@ -472,15 +499,25 @@ is_supported_args(Args) ->
 %% Print help
 %%-----------------------------
 
-%% Bold
+%% Commands are Bold
 -define(B1, "\e[1m").
--define(B2, "\e[22m").
--define(B(S), case ShCode of true -> [?B1, S, ?B2]; false -> S end).
+-define(B2, "\e[21m").
+-define(C(S), case ShCode of true -> [?B1, S, ?B2]; false -> S end).
 
-%% Underline
+%% Arguments are Dim
+-define(D1, "\e[2m").
+-define(D2, "\e[22m").
+-define(A(S), case ShCode of true -> [?D1, S, ?D2]; false -> S end).
+
+%% Tags are Underline
 -define(U1, "\e[4m").
 -define(U2, "\e[24m").
--define(U(S), case ShCode of true -> [?U1, S, ?U2]; false -> S end).
+-define(T(S), case ShCode of true -> [?U1, S, ?U2]; false -> S end).
+
+%% B are Nothing
+-define(N1, "\e[0m").
+-define(N2, "\e[0m").
+-define(B(S), case ShCode of true -> [?N1, S, ?N2]; false -> S end).
 
 print_usage(Version) ->
     {MaxC, ShCode} = get_shell_info(),
@@ -491,22 +528,15 @@ print_usage(HelpMode, MaxC, ShCode, Version) ->
 	 {"status", [], "Get ejabberd status"},
 	 {"stop", [], "Stop ejabberd"},
 	 {"restart", [], "Restart ejabberd"},
-	 {"help", ["[--tags [tag] | com?*]"], "Show help (try: ejabberdctl help help)"},
 	 {"mnesia", ["[info]"], "show information of Mnesia system"}] ++
 	get_list_commands(Version),
 
     print(
-       ["Usage: ", ?B("ejabberdctl"), " [--no-timeout] [--node ", ?U("nodename"), "] [--version ", ?U("api_version"), "] ",
-	?U("command"), " [", ?U("options"), "]\n"
+       ["Usage: ", "ejabberdctl", " [--no-timeout] [--node ", ?A("nodename"), "] [--version ", ?A("api_version"), "] ",
+	?C("command"), " [", ?A("arguments"), "]\n"
 	"\n"
 	"Available commands in this ejabberd node:\n"], []),
-    print_usage_commands(HelpMode, MaxC, ShCode, AllCommands),
-    print(
-       ["\n"
-	"Examples:\n"
-	"  ejabberdctl restart\n"
-	"  ejabberdctl --node ejabberd@host restart\n"],
-       []).
+    print_usage_commands(HelpMode, MaxC, ShCode, AllCommands).
 
 print_usage_commands(HelpMode, MaxC, ShCode, Commands) ->
     CmdDescsSorted = lists:keysort(1, Commands),
@@ -550,8 +580,24 @@ get_shell_info() ->
 	_:_ -> {78, false}
     end.
 
+%% Erlang/OTP 20.0 introduced string:find/2, but we must support old 19.3
+string_find([], _SearchPattern) ->
+    nomatch;
+string_find([A | String], [A]) ->
+    String;
+string_find([_ | String], SearchPattern) ->
+    string_find(String, SearchPattern).
+
 %% Split this command description in several lines of proper length
 prepare_description(DescInit, MaxC, Desc) ->
+    case string_find(Desc, "\n") of
+        nomatch ->
+            prepare_description2(DescInit, MaxC, Desc);
+        _ ->
+            Desc
+    end.
+
+prepare_description2(DescInit, MaxC, Desc) ->
     Words = string:tokens(Desc, " "),
     prepare_long_line(DescInit, MaxC, Words).
 
@@ -598,21 +644,27 @@ format_command_lines(CALD, MaxCmdLen, MaxC, ShCode, dual)
     %% If the space available for descriptions is too narrow, enforce long help mode
     format_command_lines(CALD, MaxCmdLen, MaxC, ShCode, long);
 
+format_command_lines(CALD, _MaxCmdLen, _MaxC, ShCode, short) ->
+    lists:map(
+      fun({Cmd, Args, _CmdArgsL, _Desc}) ->
+	      ["    ", ?C(Cmd), [[" ", ?A(Arg)] || Arg <- Args], "\n"]
+      end, CALD);
+
 format_command_lines(CALD, MaxCmdLen, MaxC, ShCode, dual) ->
     lists:map(
       fun({Cmd, Args, CmdArgsL, Desc}) ->
 	      DescFmt = prepare_description(MaxCmdLen+4, MaxC, Desc),
-	      ["   ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args],
-               string:chars($\s, MaxCmdLen - CmdArgsL + 1),
+	      ["  ", ?C(Cmd), [[" ", ?A(Arg)] || Arg <- Args],
+               lists:duplicate(MaxCmdLen - CmdArgsL + 1, $\s),
 	       DescFmt, "\n"]
       end, CALD);
 
 format_command_lines(CALD, _MaxCmdLen, MaxC, ShCode, long) ->
     lists:map(
       fun({Cmd, Args, _CmdArgsL, Desc}) ->
-	      DescFmt = prepare_description(8, MaxC, Desc),
-	      ["\n   ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args], "\n", "        ",
-	       DescFmt, "\n"]
+	      DescFmt = prepare_description(13, MaxC, Desc),
+	      ["  ", ?C(Cmd), [[" ", ?A(Arg)] || Arg <- Args], "\n",
+               "            ", DescFmt, "\n"]
       end, CALD).
 
 
@@ -621,20 +673,42 @@ format_command_lines(CALD, _MaxCmdLen, MaxC, ShCode, long) ->
 %%-----------------------------
 
 print_usage_tags(MaxC, ShCode, Version) ->
-    print("Available tags and commands:", []),
+    print("Available tags and list of commands:", []),
     TagsCommands = ejabberd_commands:get_tags_commands(Version),
     lists:foreach(
       fun({Tag, Commands} = _TagCommands) ->
-	      print(["\n\n  ", ?B(Tag), "\n     "], []),
+	      print(["\n\n  ", ?T(Tag), "\n    "], []),
 	      Words = lists:sort(Commands),
 	      Desc = prepare_long_line(5, MaxC, Words),
-	      print(Desc, [])
+	      print(?C(Desc), [])
       end,
       TagsCommands),
     print("\n\n", []).
 
+print_usage_tags_long(MaxC, ShCode, Version) ->
+    print("Available tags and commands details:", []),
+    TagsCommands = ejabberd_commands:get_tags_commands(Version),
+    print("\n", []),
+    lists:foreach(
+      fun({Tag, CommandsNames} = _TagCommands) ->
+	      print(["\n  ", ?T(Tag), "\n"], []),
+                CommandsList = lists:map(
+                                 fun(NameString) ->
+                                         C = ejabberd_commands:get_command_definition(
+                                               list_to_atom(NameString), Version),
+                                         #ejabberd_commands{name = Name,
+                                                            args = Args,
+                                                            desc = Desc} = C,
+                                         tuple_command_help({Name, Args, Desc})
+                                 end,
+                                 CommandsNames),
+                print_usage_commands(short, MaxC, ShCode, CommandsList)
+      end,
+      TagsCommands),
+    print("\n", []).
+
 print_usage_tags(Tag, MaxC, ShCode, Version) ->
-    print(["Available commands with tag ", ?B(Tag), ":", "\n"], []),
+    print(["Available commands with tag ", ?T(Tag), ":", "\n", "\n"], []),
     HelpMode = long,
     TagsCommands = ejabberd_commands:get_tags_commands(Version),
     CommandsNames = case lists:keysearch(Tag, 1, TagsCommands) of
@@ -661,26 +735,29 @@ print_usage_tags(Tag, MaxC, ShCode, Version) ->
 
 print_usage_help(MaxC, ShCode) ->
     LongDesc =
-	["The special 'help' ejabberdctl command provides help of ejabberd commands.\n\n"
-	 "The format is:\n  ", ?B("ejabberdctl"), " ", ?B("help"), " [", ?B("--tags"), " ", ?U("[tag]"), " | ", ?U("com?*"), "]\n\n"
+	["This special ", ?C("help"), " command provides help of ejabberd commands.\n\n"
+	 "The format is:\n  ", ?B("ejabberdctl"), " ", ?C("help"),
+         " [", ?A("tags"), " | ", ?A("commands"), " | ", ?T("tag"), " | ", ?C("command"), " | ", ?C("com?*"), "]\n\n"
 	 "The optional arguments:\n"
-	 "  ",?B("--tags"),"      Show all tags and the names of commands in each tag\n"
-	 "  ",?B("--tags"), " ", ?U("tag"),"  Show description of commands in this tag\n"
-	 "  ",?U("command"),"     Show detailed description of the command\n"
-	 "  ",?U("com?*"),"       Show detailed description of commands that match this glob.\n"
-	 "              You can use ? to match a simple character,\n"
-	 "              and * to match several characters.\n"
+	 "  ",?A("tags"),"         Show all tags and commands names in each tag\n"
+	 "  ",?A("commands"),"     Show all tags and commands details in each tag\n"
+	 "  ",?T("tag"),"          Show commands related to this tag\n"
+	 "  ",?C("command"),"      Show detailed description of this command\n"
+	 "  ",?C("com?*"),"        Show commands that match this glob.\n"
+	 "               (? will match a simple character, and\n"
+	 "                * will match several characters)\n"
 	 "\n",
 	 "Some example usages:\n",
-	 "  ejabberdctl help\n",
-	 "  ejabberdctl help --tags\n",
-	 "  ejabberdctl help --tags accounts\n",
-	 "  ejabberdctl help register\n",
-	 "  ejabberdctl help regist*\n",
+	 "  ejabberdctl ", ?C("help"), "\n",
+	 "  ejabberdctl ", ?C("help"), " ", ?A("tags"), "\n",
+	 "  ejabberdctl ", ?C("help"), " ", ?A("commands"), "\n",
+	 "  ejabberdctl ", ?C("help"), " ", ?T("accounts"), "\n",
+	 "  ejabberdctl ", ?C("help"), " ", ?C("register"), "\n",
+	 "  ejabberdctl ", ?C("help"), " ", ?C("regist*"), "\n",
 	 "\n",
-	 "Please note that 'ejabberdctl help' shows all ejabberd commands,\n",
+	 "Please note that 'ejabberdctl' shows all ejabberd commands,\n",
 	 "even those that cannot be used in the shell with ejabberdctl.\n",
-	 "Those commands can be identified because the description starts with: *"],
+	 "Those commands can be identified because their description starts with: *"],
     ArgsDef = [],
     C = #ejabberd_commands{
 	   name = help,
@@ -701,23 +778,26 @@ print_usage_commands2(CmdSubString, MaxC, ShCode, Version) ->
     AllCommandsNames = [atom_to_list(Name) || {Name, _, _} <- ejabberd_commands:list_commands(Version)],
     Cmds = filter_commands(AllCommandsNames, CmdSubString),
     case Cmds of
-    	[] -> io:format("Error: no command found that match: ~p~n", [CmdSubString]);
+	[] -> io:format("Error: no command found that match '~ts'~n", [CmdSubString]);
 	_ -> print_usage_commands3(lists:sort(Cmds), MaxC, ShCode, Version)
     end.
 
+print_usage_commands3([Cmd], MaxC, ShCode, Version) ->
+    print_usage_command(Cmd, MaxC, ShCode, Version);
 print_usage_commands3(Cmds, MaxC, ShCode, Version) ->
-    %% Then for each one print it
-    lists:mapfoldl(
-      fun(Cmd, Remaining) ->
-	      print_usage_command(Cmd, MaxC, ShCode, Version),
-	      case Remaining > 1 of
-		  true -> print([" ", lists:duplicate(MaxC, 126), " \n"], []);
-		  false -> ok
-	      end,
-	      {ok, Remaining-1}
-      end,
-      length(Cmds),
-      Cmds).
+        CommandsList = lists:map(
+		     fun(NameString) ->
+			     C = ejabberd_commands:get_command_definition(
+                                   list_to_atom(NameString), Version),
+			     #ejabberd_commands{name = Name,
+						args = Args,
+						desc = Desc} = C,
+			     tuple_command_help({Name, Args, Desc})
+		     end,
+		     Cmds),
+
+	      print_usage_commands(long, MaxC, ShCode, CommandsList), %% que aqui solo muestre un par de lineas
+              ok.
 
 filter_commands(All, SubString) ->
     case lists:member(SubString, All) of
@@ -752,7 +832,7 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 		     longdesc = LongDesc,
 		     result = ResultDef} = C,
 
-    NameFmt = ["  ", ?B("Command Name"), ": ", Cmd, "\n"],
+    NameFmt = ["  ", ?B("Command Name"), ": ", ?C(Cmd), "\n"],
 
     %% Initial indentation of result is 13 = length("  Arguments: ")
     Args = [format_usage_ctype(ArgDef, 13) || ArgDef <- ArgsDef],
@@ -769,9 +849,9 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 
     XmlrpcFmt = "", %%+++ ["  ",?B("XML-RPC"),": ", format_usage_xmlrpc(ArgsDef, ResultDef), "\n\n"],
 
-    TagsFmt = ["  ",?B("Tags"),": ", prepare_long_line(8, MaxC, [atom_to_list(TagA) || TagA <- TagsAtoms])],
+    TagsFmt = ["  ",?B("Tags"),":", prepare_long_line(8, MaxC, [?T(atom_to_list(TagA)) || TagA <- TagsAtoms])],
 
-    DescFmt = ["  ",?B("Description"),": ", prepare_description(15, MaxC, Desc)],
+    DescFmt = ["  ",?B("Description"),":", prepare_description(15, MaxC, Desc)],
 
     LongDescFmt = case LongDesc of
 		      "" -> "";
@@ -783,7 +863,12 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 			  false -> ["  ", ?B("Note:"), " This command cannot be executed using ejabberdctl. Try ejabberd_xmlrpc.\n\n"]
 		      end,
 
-    print(["\n", NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt, "\n\n", XmlrpcFmt, TagsFmt, "\n\n", DescFmt, "\n\n", LongDescFmt, NoteEjabberdctl], []).
+    case Cmd of
+        "help" -> ok;
+        _ -> print([NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt,
+                    "\n\n", XmlrpcFmt, TagsFmt, "\n\n", DescFmt, "\n\n"], [])
+    end,
+    print([LongDescFmt, NoteEjabberdctl], []).
 
 format_usage_ctype(Type, _Indentation)
   when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary) or (Type==rescode) or (Type==restuple)->
