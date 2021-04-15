@@ -6,6 +6,9 @@ assignees: ''
 
 ---
 
+Before creating a ticket, please consider if this should fit the discussion forum better:
+https://github.com/processone/ejabberd/discussions
+
 ## Environment
 
 - ejabberd version: 18.09
