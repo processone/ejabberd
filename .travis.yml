@@ -35,31 +35,32 @@ before_script:
 
 cache:
   directories:
-  - deps/
+  - ~/.cache/rebar3/
 
 script:
   - ./autogen.sh
-  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-elixir
+  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-elixir --with-rebar=`which rebar3`
   - make update
   - make
   - make install -s
   - make xref
-  - ./tools/hook_deps.sh ebin
+  - make hooks
   - sed -i -e 's/ct:pal/ct:log/' test/suite.erl
   - ln -sf ../sql priv/
   - echo "" >> rebar.config
   - echo '{ct_extra_params, "-verbosity 20"}.' >> rebar.config
-  - escript ./rebar skip_deps=true ct -v
-  - grep -q 'TEST COMPLETE,.* 0 failed' logs/raw.log
-  - test $(find logs -empty -name error.log)
+  - rebar3 ct -v
+  - ln -s _build/test/logs/ logs
+  - grep -q 'TEST COMPLETE,.* 0 failed' `find logs/ -name suite.log`
+  - test $(find logs/ -empty -name error.log)
 
 after_script:
-  - find logs -name suite.log -exec cat '{}' ';'
+  - find logs/ -name suite.log -exec cat '{}' ';'
 
 after_failure:
-  - find logs -name exunit.log -exec cat '{}' ';'
-  - find logs -name ejabberd.log -exec cat '{}' ';'
-  - find logs -name suite.log -exec cat '{}' ';' | awk 'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+  - find logs/ -name exunit.log -exec cat '{}' ';'
+  - find logs/ -name ejabberd.log -exec cat '{}' ';'
+  - find logs/ -name suite.log -exec cat '{}' ';' | awk 'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
 
 after_success:
   - coveralls-merge erlang.json
