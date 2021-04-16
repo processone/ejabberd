@@ -166,9 +166,9 @@ init_cache(Mod, Host, Opts) ->
 
 -spec cache_opts(gen_mod:opts()) -> [proplists:property()].
 cache_opts(Opts) ->
-    MaxSize = mod_private_opt:cache_size(Opts),
-    CacheMissed = mod_private_opt:cache_missed(Opts),
-    LifeTime = mod_private_opt:cache_life_time(Opts),
+    MaxSize = mod_shared_roster_opt:cache_size(Opts),
+    CacheMissed = mod_shared_roster_opt:cache_missed(Opts),
+    LifeTime = mod_shared_roster_opt:cache_life_time(Opts),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
 -spec use_cache(module(), binary()) -> boolean().
