@@ -136,11 +136,13 @@ stop(Host) ->
 reload(Host, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
     OldMod = gen_mod:db_mod(OldOpts, ?MODULE),
-    if NewMod /= OldMod ->
+    if
+	NewMod /= OldMod ->
 	    NewMod:init(Host, NewOpts);
        true ->
 	    ok
     end,
+    init_cache(NewMod, Host, NewOpts),
     ok.
 
 depends(_Host, _Opts) ->
