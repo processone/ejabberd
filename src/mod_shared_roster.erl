@@ -150,18 +150,17 @@ depends(_Host, _Opts) ->
 
 -spec init_cache(module(), binary(), gen_mod:opts()) -> ok.
 init_cache(Mod, Host, Opts) ->
+    ets_cache:new(?SPECIAL_GROUPS_CACHE, [{max_size, 4}]),
     case use_cache(Mod, Host) of
         true ->
-            CacheOpts = cache_opts(Opts),
-            ets_cache:new(?GROUP_OPTS_CACHE, CacheOpts),
+	    CacheOpts = cache_opts(Opts),
+	    ets_cache:new(?GROUP_OPTS_CACHE, CacheOpts),
 	    ets_cache:new(?USER_GROUPS_CACHE, CacheOpts),
-	    ets_cache:new(?GROUP_EXPLICIT_USERS_CACHE, CacheOpts),
-	    ets_cache:new(?SPECIAL_GROUPS_CACHE, CacheOpts);
+	    ets_cache:new(?GROUP_EXPLICIT_USERS_CACHE, CacheOpts);
         false ->
 	    ets_cache:delete(?GROUP_OPTS_CACHE),
 	    ets_cache:delete(?USER_GROUPS_CACHE),
-	    ets_cache:delete(?GROUP_EXPLICIT_USERS_CACHE),
-	    ets_cache:delete(?SPECIAL_GROUPS_CACHE)
+	    ets_cache:delete(?GROUP_EXPLICIT_USERS_CACHE)
     end.
 
 -spec cache_opts(gen_mod:opts()) -> [proplists:property()].
@@ -186,45 +185,36 @@ cache_nodes(Mod, Host) ->
     end.
 
 -spec get_user_roster([#roster{}], {binary(), binary()}) -> [#roster{}].
-get_user_roster(Items, US) ->
-    {U, S} = US,
-    DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers = lists:foldl(fun (Group, Acc1) ->
-				  GroupLabel = get_group_label(S, Group), %++
-				  lists:foldl(fun (User, Acc2) ->
-						      if User == US -> Acc2;
-							 true ->
-							     dict:append(User,
-									 GroupLabel,
-									 Acc2)
-						      end
-					      end,
-					      Acc1, get_group_users(S, Group))
-			  end,
-			  dict:new(), DisplayedGroups),
-    {NewItems1, SRUsersRest} = lists:mapfoldl(fun (Item,
-						   SRUsers1) ->
-						      {_, _, {U1, S1, _}} =
-							  Item#roster.usj,
-						      US1 = {U1, S1},
-						      case dict:find(US1,
-								     SRUsers1)
-							  of
-							{ok, GroupLabels} ->
-							    {Item#roster{subscription
-									     =
-									     both,
-									 groups =
-									     Item#roster.groups ++ GroupLabels,
-									 ask =
-									     none},
-							     dict:erase(US1,
-									SRUsers1)};
-							error ->
-							    {Item, SRUsers1}
-						      end
-					      end,
-					      SRUsers, Items),
+get_user_roster(Items, {U, S} = US) ->
+    {DisplayedGroups, Cache} = get_user_displayed_groups(US),
+    SRUsers = lists:foldl(
+	fun(Group, Acc1) ->
+	    GroupLabel = get_group_label_cached(S, Group, Cache),
+	    lists:foldl(
+		fun(User, Acc2) ->
+		    if User == US -> Acc2;
+			true ->
+			    dict:append(User, GroupLabel, Acc2)
+		    end
+		end,
+		Acc1, get_group_users_cached(S, Group, Cache))
+	end,
+	dict:new(), DisplayedGroups),
+    {NewItems1, SRUsersRest} = lists:mapfoldl(
+	fun(Item, SRUsers1) ->
+	    {_, _, {U1, S1, _}} = Item#roster.usj,
+	    US1 = {U1, S1},
+	    case dict:find(US1, SRUsers1) of
+		{ok, GroupLabels} ->
+		    {Item#roster{subscription = both,
+				 groups = Item#roster.groups ++ GroupLabels,
+				 ask = none},
+		     dict:erase(US1, SRUsers1)};
+		error ->
+		    {Item, SRUsers1}
+	    end
+	end,
+	SRUsers, Items),
     SRItems = [#roster{usj = {U, S, {U1, S1, <<"">>}},
 		       us = US, jid = {U1, S1, <<"">>},
 		       name = get_rosteritem_name(U1, S1),
@@ -261,7 +251,7 @@ process_item(RosterItem, Host) ->
     {UserTo, ServerTo, ResourceTo} = RosterItem#roster.jid,
     NameTo = RosterItem#roster.name,
     USTo = {UserTo, ServerTo},
-    DisplayedGroups = get_user_displayed_groups(USFrom),
+    {DisplayedGroups, Cache} = get_user_displayed_groups(USFrom),
     CommonGroups = lists:filter(fun (Group) ->
 					is_user_in_group(USTo, Group, Host)
 				end,
@@ -271,7 +261,7 @@ process_item(RosterItem, Host) ->
       %% Roster item cannot be removed: We simply reset the original groups:
       _ when RosterItem#roster.subscription == remove ->
 	  GroupLabels = lists:map(fun (Group) ->
-					 get_group_label(Host, Group)
+					 get_group_label_cached(Host, Group, Cache)
 				 end,
 				 CommonGroups),
 	  RosterItem#roster{subscription = both, ask = none,
@@ -352,18 +342,16 @@ get_jid_info({Subscription, Ask, Groups}, User, Server,
     US = {LUser, LServer},
     {U1, S1, _} = jid:tolower(JID),
     US1 = {U1, S1},
-    DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers = lists:foldl(fun (Group, Acc1) ->
-				  GroupLabel = get_group_label(LServer, Group), %++
-				  lists:foldl(fun (User1, Acc2) ->
-						      dict:append(User1,
-								  GroupLabel,
-								  Acc2)
-					      end,
-					      Acc1,
-					      get_group_users(LServer, Group))
-			  end,
-			  dict:new(), DisplayedGroups),
+    {DisplayedGroups, Cache} = get_user_displayed_groups(US),
+    SRUsers = lists:foldl(
+	fun(Group, Acc1) ->
+	    GroupLabel = get_group_label_cached(LServer, Group, Cache), %++
+	    lists:foldl(
+		fun(User1, Acc2) ->
+		    dict:append(User1, GroupLabel, Acc2)
+		end, Acc1, get_group_users_cached(LServer, Group, Cache))
+	end,
+	dict:new(), DisplayedGroups),
     case dict:find(US1, SRUsers) of
       {ok, GroupLabels} ->
 	  NewGroups = if Groups == [] -> GroupLabels;
@@ -398,7 +386,7 @@ process_subscription(Direction, User, Server, JID,
     {U1, S1, _} =
 	jid:tolower(jid:remove_resource(JID)),
     US1 = {U1, S1},
-    DisplayedGroups = get_user_displayed_groups(US),
+    {DisplayedGroups, _} = get_user_displayed_groups(US),
     SRUsers = lists:usort(lists:flatmap(fun (Group) ->
 						get_group_users(LServer, Group)
 					end,
@@ -425,10 +413,16 @@ create_group(Host, Group) ->
 
 create_group(Host, Group, Opts) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
+    case proplists:get_value(all_users, Opts, false) orelse
+	 proplists:get_value(online_users, Opts, false) of
+	true ->
+	    update_wildcard_cache(Host, Group, Opts);
+	_ ->
+	    ok
+    end,
     case use_cache(Mod, Host) of
 	true ->
-	    ets_cache:insert(?GROUP_OPTS_CACHE, {Host, Group}, Opts, cache_nodes(Mod, Host)),
-	    ets_cache:clear(?SPECIAL_GROUPS_CACHE, cache_nodes(Mod, Host));
+	    ets_cache:insert(?GROUP_OPTS_CACHE, {Host, Group}, Opts, cache_nodes(Mod, Host));
 	_ ->
 	    ok
     end,
@@ -436,18 +430,32 @@ create_group(Host, Group, Opts) ->
 
 delete_group(Host, Group) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
+    update_wildcard_cache(Host, Group, []),
     case use_cache(Mod, Host) of
 	true ->
 	    ets_cache:delete(?GROUP_OPTS_CACHE, {Host, Group}, cache_nodes(Mod, Host)),
 	    ets_cache:clear(?USER_GROUPS_CACHE, cache_nodes(Mod, Host)),
-	    ets_cache:clear(?GROUP_EXPLICIT_USERS_CACHE, cache_nodes(Mod, Host)),
-	    ets_cache:clear(?SPECIAL_GROUPS_CACHE, cache_nodes(Mod, Host));
+	    ets_cache:delete(?GROUP_EXPLICIT_USERS_CACHE, {Host, Group}, cache_nodes(Mod, Host));
 	_ ->
 	    ok
     end,
     Mod:delete_group(Host, Group).
 
+get_groups_opts_cached(Host1, Group1, Cache) ->
+    {Host, Group} = split_grouphost(Host1, Group1),
+    case Cache of
+	#{{Group, Host} := Opts} ->
+	    {Opts, Cache};
+	_ ->
+	    Opts = get_group_opts_int(Host, Group),
+	    {Opts, Cache#{{Group, Host} => Opts}}
+    end.
+
 get_group_opts(Host1, Group1) ->
+    {Host, Group} = split_grouphost(Host1, Group1),
+    get_group_opts_int(Host, Group).
+
+get_group_opts_int(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
     Mod = gen_mod:db_mod(Host, ?MODULE),
     Res = case use_cache(Mod, Host) of
@@ -470,11 +478,11 @@ get_group_opts(Host1, Group1) ->
 
 set_group_opts(Host, Group, Opts) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
+    update_wildcard_cache(Host, Group, Opts),
     case use_cache(Mod, Host) of
 	true ->
 	    ets_cache:delete(?GROUP_OPTS_CACHE, {Host, Group}, cache_nodes(Mod, Host)),
-	    ets_cache:insert(?GROUP_OPTS_CACHE, {Host, Group}, Opts, cache_nodes(Mod, Host)),
-	    ets_cache:clear(?SPECIAL_GROUPS_CACHE, cache_nodes(Mod, Host));
+	    ets_cache:insert(?GROUP_OPTS_CACHE, {Host, Group}, Opts, cache_nodes(Mod, Host));
 	_ ->
 	    ok
     end,
@@ -493,13 +501,13 @@ get_user_groups(US) ->
 	     false ->
 		 Mod:get_user_groups(US, Host)
 	 end,
-    UG ++ get_special_users_groups(Host).
+    UG ++ get_groups_with_wildcards(Host, both).
 
-is_group_enabled(Host1, Group1) ->
-    {Host, Group} = split_grouphost(Host1, Group1),
-    case get_group_opts(Host, Group) of
-      error -> false;
-      Opts -> not lists:member(disabled, Opts)
+get_group_opt_cached(Host, Group, Opt, Default, Cache) ->
+    case get_groups_opts_cached(Host, Group, Cache) of
+	{error, _} -> Default;
+	{Opts, _} ->
+	    proplists:get_value(Opt, Opts, Default)
     end.
 
 %% @spec (Host::string(), Group::string(), Opt::atom(), Default) -> OptValue | Default
@@ -507,15 +515,16 @@ get_group_opt(Host, Group, Opt, Default) ->
     case get_group_opts(Host, Group) of
       error -> Default;
       Opts ->
-	  case lists:keysearch(Opt, 1, Opts) of
-	    {value, {_, Val}} -> Val;
-	    false -> Default
-	  end
+	  proplists:get_value(Opt, Opts, Default)
     end.
 
 get_online_users(Host) ->
     lists:usort([{U, S}
 		 || {U, S, _} <- ejabberd_sm:get_vh_session_list(Host)]).
+
+get_group_users_cached(Host, Group, Cache) ->
+    {Opts, _} = get_groups_opts_cached(Host, Group, Cache),
+    get_group_users(Host, Group, Opts).
 
 get_group_users(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
@@ -547,82 +556,69 @@ get_group_explicit_users(Host, Group) ->
 	    Mod:get_group_explicit_users(Host, Group)
     end.
 
-get_group_label(Host1, Group1) ->
-    {Host, Group} = split_grouphost(Host1, Group1),
-    get_group_opt(Host, Group, label, Group).
+get_group_label_cached(Host, Group, Cache) ->
+    get_group_opt_cached(Host, Group, label, Group, Cache).
 
-%% Get list of names of groups that have @all@/@online@/etc in the memberlist
-get_special_users_groups(Host) ->
-    Extract =
-    fun() ->
-	lists:filtermap(
-	    fun({Group, Opts}) ->
-		case proplists:get_value(all_users, Opts, false) orelse
-		     proplists:get_value(online_users, Opts, false) of
-		    true -> {true, Group};
-		    false -> false
-		end
-	    end,
-	    groups_with_opts(Host))
-    end,
+-spec update_wildcard_cache(binary(), binary(), list()) -> ok.
+update_wildcard_cache(Host, Group, NewOpts) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
-    case use_cache(Mod, Host) of
-	true ->
-	    ets_cache:lookup(
-		?SPECIAL_GROUPS_CACHE, {Host, false},
-		fun() ->
-		    {cache, Extract()}
-		end);
-	false ->
-	    Extract()
-    end.
+    Online = get_groups_with_wildcards(Host, online),
+    Both = get_groups_with_wildcards(Host, both),
+    IsOnline = proplists:get_value(online_users, NewOpts, false),
+    IsAll = proplists:get_value(all_users, NewOpts, false),
 
+    OnlineUpdated = lists:member(Group, Online) /= IsOnline,
+    BothUpdated = lists:member(Group, Both) /= (IsOnline orelse IsAll),
 
-%% Get list of names of groups that have @online@ in the memberlist
-get_special_users_groups_online(Host) ->
-    Extract =
-    fun() ->
-	lists:filtermap(
-	    fun({Group, Opts}) ->
-		case proplists:get_value(online_users, Opts, false) of
-		    true -> {true, Group};
-		    false -> false
-		end
-	    end,
-	    groups_with_opts(Host))
+    if
+	OnlineUpdated ->
+	    NewOnline = case IsOnline of
+			    true -> [Group | Online];
+			    _ -> Online -- [Group]
+			end,
+	    ets_cache:update(?SPECIAL_GROUPS_CACHE, {Host, online},
+			     NewOnline, fun() -> ok end, cache_nodes(Mod, Host));
+	true -> ok
     end,
-    Mod = gen_mod:db_mod(Host, ?MODULE),
-    case use_cache(Mod, Host) of
-	true ->
-	    ets_cache:lookup(
-		?SPECIAL_GROUPS_CACHE, {Host, true},
-		fun() ->
-		    {cache, Extract()}
-		end);
-	false ->
-	    Extract()
-    end.
+    if
+	BothUpdated ->
+	    NewBoth = case IsOnline orelse IsAll of
+			    true -> [Group | Both];
+			    _ -> Both -- [Group]
+			end,
+	    ets_cache:update(?SPECIAL_GROUPS_CACHE, {Host, both},
+			     NewBoth, fun() -> ok end, cache_nodes(Mod, Host));
+	true -> ok
+    end,
+    ok.
+
+-spec get_groups_with_wildcards(binary(), online | both) -> list(binary()).
+get_groups_with_wildcards(Host, Type) ->
+    ets_cache:lookup(
+	?SPECIAL_GROUPS_CACHE, {Host, Type},
+	fun() ->
+	    Res = lists:filtermap(
+		fun({Group, Opts}) ->
+		    case proplists:get_value(online_users, Opts, false) orelse
+			 (Type == both andalso proplists:get_value(all_users, Opts, false)) of
+			true -> {true, Group};
+			false -> false
+		    end
+		end,
+		groups_with_opts(Host)),
+	    {cache, Res}
+	end).
 
 %% Given two lists of groupnames and their options,
 %% return the list of displayed groups to the second list
 displayed_groups(GroupsOpts, SelectedGroupsOpts) ->
-    DisplayedGroups = lists:usort(lists:flatmap(fun
-						  ({_Group, Opts}) ->
-						      [G
-						       || G
-							      <- proplists:get_value(displayed_groups,
-										     Opts,
-										     []),
-							  not
-							    lists:member(disabled,
-									 Opts)]
-						end,
-						SelectedGroupsOpts)),
-    [G
-     || G <- DisplayedGroups,
-	not
-	  lists:member(disabled,
-		       proplists:get_value(G, GroupsOpts, []))].
+    DisplayedGroups = lists:usort(lists:flatmap(
+	fun
+	    ({_Group, Opts}) ->
+		[G || G <- proplists:get_value(displayed_groups, Opts, []),
+		 not lists:member(disabled, Opts)]
+	end, SelectedGroupsOpts)),
+    [G || G <- DisplayedGroups, not lists:member(disabled, proplists:get_value(G, GroupsOpts, []))].
 
 %% Given a list of group names with options,
 %% for those that have @all@ in memberlist,
@@ -645,24 +641,35 @@ get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
 %% @doc Get the list of groups that are displayed to this user
 get_user_displayed_groups(US) ->
     Host = element(2, US),
-    DisplayedGroups1 = lists:usort(lists:flatmap(fun
-						   (Group) ->
-						       case
-							 is_group_enabled(Host,
-									  Group)
-							   of
-							 true ->
-							     get_group_opt(Host,
-									   Group,
-									   displayed_groups,
-									   []);
-							 false -> []
-						       end
-						 end,
-						 get_user_groups(US))),
-    [Group
-     || Group <- DisplayedGroups1,
-	is_group_enabled(Host, Group)].
+    {Groups, Cache} =
+    lists:foldl(
+	fun(Group, {Groups, Cache}) ->
+	    case get_groups_opts_cached(Host, Group, Cache) of
+		{error, Cache2} ->
+		    {Groups, Cache2};
+		{Opts, Cache3} ->
+		    case lists:member(disabled, Opts) of
+			false ->
+			    {proplists:get_value(displayed_groups, Opts, []) ++ Groups, Cache3};
+			_ ->
+			    {Groups, Cache3}
+		    end
+	    end
+	end, {[], #{}}, get_user_groups(US)),
+    lists:foldl(
+	fun(Group, {Groups0, Cache0}) ->
+	    case get_groups_opts_cached(Host, Group, Cache0) of
+		{error, Cache1} ->
+		    {Groups0, Cache1};
+		{Opts, Cache2} ->
+		    case lists:member(disabled, Opts) of
+			false ->
+			    {[Group|Groups0], Cache2};
+			_ ->
+			    {Groups0, Cache2}
+		    end
+	    end
+	end, {[], Cache}, lists:usort(Groups)).
 
 is_user_in_group(US, Group, Host) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
@@ -865,7 +872,6 @@ unset_presence(LUser, LServer, Resource, Status) ->
 	   [LUser, LServer, Resource, Status, length(Resources)]),
     case length(Resources) of
       0 ->
-	  OnlineGroups = get_special_users_groups_online(LServer),
 	  lists:foreach(
 	      fun(OG) ->
 		  DisplayedToGroups = displayed_to_groups(OG, LServer),
@@ -873,8 +879,7 @@ unset_presence(LUser, LServer, Resource, Status) ->
 					 LServer, remove, DisplayedToGroups),
 		  push_displayed_to_user(LUser, LServer,
 					 LServer, remove, DisplayedToGroups)
-	      end,
-	      OnlineGroups);
+	      end, get_groups_with_wildcards(LServer, online));
       _ -> ok
     end.
 
