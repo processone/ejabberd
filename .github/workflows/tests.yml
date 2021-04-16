@@ -56,7 +56,6 @@ jobs:
         run: |
             ./autogen.sh
             ./configure --with-rebar=`which rebar3` \
-                        --enable-latest-deps \
                         --enable-all --disable-elixir
             make
 
