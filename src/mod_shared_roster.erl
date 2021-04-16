@@ -443,12 +443,13 @@ delete_group(Host, Group) ->
 
 get_groups_opts_cached(Host1, Group1, Cache) ->
     {Host, Group} = split_grouphost(Host1, Group1),
+    Key = {Group, Host},
     case Cache of
-	#{{Group, Host} := Opts} ->
+	#{Key := Opts} ->
 	    {Opts, Cache};
 	_ ->
 	    Opts = get_group_opts_int(Host, Group),
-	    {Opts, Cache#{{Group, Host} => Opts}}
+	    {Opts, Cache#{Key => Opts}}
     end.
 
 get_group_opts(Host1, Group1) ->
