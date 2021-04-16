@@ -578,7 +578,7 @@ update_wildcard_cache(Host, Group, NewOpts) ->
 			    _ -> Online -- [Group]
 			end,
 	    ets_cache:update(?SPECIAL_GROUPS_CACHE, {Host, online},
-			     NewOnline, fun() -> ok end, cache_nodes(Mod, Host));
+			     {ok, NewOnline}, fun() -> ok end, cache_nodes(Mod, Host));
 	true -> ok
     end,
     if
@@ -588,13 +588,14 @@ update_wildcard_cache(Host, Group, NewOpts) ->
 			    _ -> Both -- [Group]
 			end,
 	    ets_cache:update(?SPECIAL_GROUPS_CACHE, {Host, both},
-			     NewBoth, fun() -> ok end, cache_nodes(Mod, Host));
+			     {ok, NewBoth}, fun() -> ok end, cache_nodes(Mod, Host));
 	true -> ok
     end,
     ok.
 
 -spec get_groups_with_wildcards(binary(), online | both) -> list(binary()).
 get_groups_with_wildcards(Host, Type) ->
+    Res =
     ets_cache:lookup(
 	?SPECIAL_GROUPS_CACHE, {Host, Type},
 	fun() ->
@@ -607,8 +608,12 @@ get_groups_with_wildcards(Host, Type) ->
 		    end
 		end,
 		groups_with_opts(Host)),
-	    {cache, Res}
-	end).
+	    {cache, {ok, Res}}
+	end),
+    case Res of
+	{ok, List} -> List;
+	_ -> []
+    end.
 
 %% Given two lists of groupnames and their options,
 %% return the list of displayed groups to the second list
