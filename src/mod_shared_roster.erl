@@ -713,14 +713,14 @@ add_user_to_group2(Host, US, Group) ->
 	  push_user_to_displayed(LUser, LServer, Group, Host, both, DisplayedToGroups),
 	  push_displayed_to_user(LUser, LServer, Host, both, DisplayedGroups),
 	  Mod = gen_mod:db_mod(Host, ?MODULE),
+	  Mod:add_user_to_group(Host, US, Group),
 	  case use_cache(Mod, Host) of
 	      true ->
 		  ets_cache:delete(?USER_GROUPS_CACHE, {Host, US}, cache_nodes(Mod, Host)),
 		  ets_cache:delete(?GROUP_EXPLICIT_USERS_CACHE, {Host, Group}, cache_nodes(Mod, Host));
 	      false ->
 		  ok
-	  end,
-	  Mod:add_user_to_group(Host, US, Group)
+	  end
     end.
 
 get_displayed_groups(Group, LServer) ->
@@ -749,6 +749,7 @@ remove_user_from_group(Host, US, Group) ->
 	  set_group_opts(Host, Group, NewGroupOpts);
       nomatch ->
 	  Mod = gen_mod:db_mod(Host, ?MODULE),
+	  Result = Mod:remove_user_from_group(Host, US, Group),
 	  case use_cache(Mod, Host) of
 	      true ->
 		  ets_cache:delete(?USER_GROUPS_CACHE, {Host, US}, cache_nodes(Mod, Host)),
@@ -756,7 +757,6 @@ remove_user_from_group(Host, US, Group) ->
 	      false ->
 		  ok
 	  end,
-	  Result = Mod:remove_user_from_group(Host, US, Group),
 	  DisplayedToGroups = displayed_to_groups(Group, Host),
 	  DisplayedGroups = get_displayed_groups(Group, LServer),
 	  push_user_to_displayed(LUser, LServer, Group, Host, remove, DisplayedToGroups),
