@@ -19,8 +19,8 @@
 CREATE TABLE users (
     username varchar(191) PRIMARY KEY,
     password text NOT NULL,
-    serverkey varchar(64) NOT NULL DEFAULT '',
-    salt varchar(64) NOT NULL DEFAULT '',
+    serverkey varchar(128) NOT NULL DEFAULT '',
+    salt varchar(128) NOT NULL DEFAULT '',
     iterationcount integer NOT NULL DEFAULT 0,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
