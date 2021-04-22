@@ -394,8 +394,8 @@ format_result({error, ErrorAtom}, _) ->
 %% An error should always be allowed to return extended error to help with API.
 %% Extended error is of the form:
 %%  {error, type :: atom(), code :: int(), Desc :: string()}
-format_result({error, ErrorAtom, Code, _Msg}, _) ->
-    {io_lib:format("Error: ~p", [ErrorAtom]), make_status(Code)};
+format_result({error, ErrorAtom, Code, Msg}, _) ->
+    {io_lib:format("Error: ~p: ~s", [ErrorAtom, Msg]), make_status(Code)};
 
 format_result(Atom, {_Name, atom}) ->
     io_lib:format("~p", [Atom]);
