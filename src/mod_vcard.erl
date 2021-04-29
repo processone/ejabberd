@@ -424,9 +424,9 @@ set_vcard(User, LServer, VCARD) ->
 
 -spec string2lower(binary()) -> binary().
 string2lower(String) ->
-    case stringprep:tolower(String) of
+    case stringprep:tolower_nofilter(String) of
       Lower when is_binary(Lower) -> Lower;
-      error -> str:to_lower(String)
+      error -> String
     end.
 
 -spec mk_tfield(binary(), binary(), binary()) -> xdata_field().
