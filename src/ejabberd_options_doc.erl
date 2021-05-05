@@ -363,6 +363,7 @@ doc() ->
 	       "module's README file for details.")}},
      {auth_password_format,
       #{value => "plain | scram",
+        note => "improved in 20.01",
         desc =>
             ?T("The option defines in what format the users passwords "
                "are stored. 'plain': The password is stored as plain text "
@@ -869,6 +870,7 @@ doc() ->
                "only. If not set, the value from 'cache_missed' will be used.")}},
      {oauth_cache_rest_failure_life_time,
       #{value => "timeout()",
+        note => "added in 21.01",
         desc =>
             ?T("The time that a failure in OAuth ReST is cached. "
                "The default value is 'infinity'.")}},
@@ -935,12 +937,14 @@ doc() ->
                "connecting with IPv4, if that fails it tries using IPv6.")}},
      {outgoing_s2s_ipv4_address,
       #{value => "Address",
+        note => "added in 20.12",
         desc =>
             ?T("Specify the IPv4 address that will be used when establishing "
                "an outgoing S2S IPv4 connection, for example \"127.0.0.1\". "
                "The default value is 'undefined'.")}},
      {outgoing_s2s_ipv6_address,
       #{value => "Address",
+        note => "added in 20.12",
         desc =>
             ?T("Specify the IPv6 address that will be used when establishing "
                "an outgoing S2S IPv6 connection, for example "
@@ -1246,6 +1250,7 @@ doc() ->
                "keepalive requests are made.")}},
      {sql_odbc_driver,
       #{value => "Path",
+        note => "added in 20.12",
         desc =>
             ?T("Path to the ODBC driver to use to connect to a Microsoft SQL "
                "Server database. This option is only valid if the 'sql_type' "
@@ -1270,6 +1275,7 @@ doc() ->
                "'1433' for MS SQL. The option has no effect for SQLite.")}},
      {sql_prepared_statements,
       #{value => "true | false",
+        note => "added in 20.01",
         desc =>
 	    ?T("This option is 'true' by default, and is useful to disable "
 	       "prepared statements. The option is valid for PostgreSQL.")}},
@@ -1292,6 +1298,7 @@ doc() ->
                "The default value is 'localhost'.")}},
      {sql_ssl,
       #{value => "true | false",
+        note => "improved in 20.03",
         desc =>
             ?T("Whether to use SSL encrypted connections to the "
                "SQL server. The option is only available for "

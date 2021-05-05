@@ -393,10 +393,12 @@ get_commands_spec() ->
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = gc, tags = [server],
 			desc = "Force full garbage collection",
+			note = "added in 20.01",
 			module = ?MODULE, function = gc,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = man, tags = [documentation],
                         desc = "Generate Unix manpage for current ejabberd version",
+                        note = "added in 20.01",
                         module = ejabberd_doc, function = man,
                         args = [], result = {res, restuple}}
     ].

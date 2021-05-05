@@ -237,6 +237,7 @@ get_commands_spec() ->
 		        result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = get_user_subscriptions, tags = [muc],
 			desc = "Get the list of rooms where this user is subscribed",
+			note = "added in 21.04",
 			module = ?MODULE, function = get_user_subscriptions,
 		        args_desc = ["Username", "Server host"],
 		        args_example = ["tom", "example.com"],

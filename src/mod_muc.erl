@@ -1442,12 +1442,14 @@ mod_doc() ->
                      "The default value is 'infinity'.")}},
            {max_password,
             #{value => ?T("Number"),
+              note => "added in 21.01",
               desc =>
                   ?T("This option defines the maximum number of characters "
                      "that Password can have when configuring the room. "
                      "The default value is 'infinity'.")}},
            {max_captcha_whitelist,
             #{value => ?T("Number"),
+              note => "added in 21.01",
               desc =>
                   ?T("This option defines the maximum number of characters "
                      "that Captcha Whitelist can have when configuring the room. "
