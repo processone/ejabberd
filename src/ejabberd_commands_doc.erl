@@ -83,6 +83,8 @@ md_tag(h2, V) ->
     [<<"\n__">>, V, <<"__\n\n">>];
 md_tag(strong, V) ->
     [<<"*">>, V, <<"*">>];
+md_tag('div', V) ->
+    [<<"<div class='note-down'>">>, V, <<"</div>">>];
 md_tag(_, V) ->
     V.
 
@@ -359,7 +361,7 @@ gen_param(Name, Type, Desc, HTMLOutput) ->
      ?TAG(dd, ?RAW(Desc))].
 
 gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
-                           args=Args, args_desc=ArgsDesc,
+                           args=Args, args_desc=ArgsDesc, note=Note,
                            result=Result, result_desc=ResultDesc}=Cmd, HTMLOutput, Langs) ->
     try
         ArgsText = case ArgsDesc of
@@ -387,8 +389,13 @@ gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
                                  [?TAG(dl, [gen_param(RName, Type, ResultDesc, HTMLOutput)])]
                            end
                      end,
+        NoteEl = case Note of
+                       "" -> [];
+                       _ -> ?TAG('div', "note-down", ?RAW(Note))
+                   end,
 
-        [?TAG(h1, atom_to_list(Name)),
+        [NoteEl,
+         ?TAG(h1, atom_to_list(Name)),
          ?TAG(p, ?RAW(Desc)),
          case LongDesc of
              "" -> [];

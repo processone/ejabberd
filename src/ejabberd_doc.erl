@@ -159,6 +159,10 @@ opt_to_man(Lang, {Option, Options, Children}, Level) ->
                          lists:keysort(1, Children))]) ++
         [io_lib:nl()|format_example(Level, Lang, Options)].
 
+format_option(Lang, Option, #{note := Note, value := Val}) ->
+    "\n\n_Note_ about the next option: " ++ Note ++ ":\n\n"++
+    "*" ++ atom_to_list(Option) ++ "*: 'pass:[" ++
+        tr(Lang, Val) ++ "]'::";
 format_option(Lang, Option, #{value := Val}) ->
     "*" ++ atom_to_list(Option) ++ "*: 'pass:[" ++
         tr(Lang, Val) ++ "]'::";
