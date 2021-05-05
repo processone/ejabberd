@@ -1301,7 +1301,7 @@ doc() ->
         note => "improved in 20.03",
         desc =>
             ?T("Whether to use SSL encrypted connections to the "
-               "SQL server. The option is only available for "
+               "SQL server. The option is only available for MySQL and "
                "PostgreSQL. The default value is 'false'.")}},
      {sql_ssl_cafile,
       #{value => ?T("Path"),
