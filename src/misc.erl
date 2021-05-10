@@ -262,7 +262,7 @@ expr_to_term(Expr) ->
     Term.
 
 term_to_expr(Term) ->
-    list_to_binary(io_lib:print(Term)).
+    list_to_binary(io_lib:print(Term, 1, 999999, -1)).
 
 -spec now_to_usec(erlang:timestamp()) -> non_neg_integer().
 now_to_usec({MSec, Sec, USec}) ->
