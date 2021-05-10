@@ -185,6 +185,7 @@ remove_lists(LUser, LServer) ->
     end.
 
 export(Server) ->
+    SqlType = ejabberd_option:sql_type(Server),
     case catch ejabberd_sql:sql_query(jid:nameprep(Server),
 				 [<<"select id from privacy_list order by "
 				    "id desc limit 1;">>]) of
@@ -223,6 +224,21 @@ export(Server) ->
                                  "id=%(ID)d"]),
                              ?SQL("delete from privacy_list_data where"
                                   " id=%(ID)d;")] ++
+                            case SqlType of
+                                pgsql ->
+                                [?SQL("insert into privacy_list_data(id, t, "
+                                      "value, action, ord, match_all, match_iq, "
+                                      "match_message, match_presence_in, "
+                                      "match_presence_out) "
+                                      "values (%(ID)d, %(SType)s, %(SValue)s, %(SAction)s,"
+                                      " %(Order)d, CAST(%(MatchAll)b as boolean), CAST(%(MatchIQ)b as boolean),"
+                                      " CAST(%(MatchMessage)b as boolean), CAST(%(MatchPresenceIn)b as boolean),"
+                                      " CAST(%(MatchPresenceOut)b as boolean));")
+                                 || {SType, SValue, SAction, Order,
+                                     MatchAll, MatchIQ,
+                                     MatchMessage, MatchPresenceIn,
+                                     MatchPresenceOut} <- RItems];
+                                _ ->
                                 [?SQL("insert into privacy_list_data(id, t, "
                                       "value, action, ord, match_all, match_iq, "
                                       "match_message, match_presence_in, "
@@ -235,6 +251,7 @@ export(Server) ->
                                      MatchAll, MatchIQ,
                                      MatchMessage, MatchPresenceIn,
                                      MatchPresenceOut} <- RItems]
+                            end
                     end,
                     Lists);
          (_Host, _R) ->
