@@ -154,6 +154,7 @@ import_info(Mod) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 export(LServer, Table, IO, ConvertFun) ->
+    DbType = ejabberd_option:sql_type(LServer),
     F = fun () ->
                 mnesia:read_lock_table(Table),
                 {_N, SQLs} =
@@ -163,7 +164,7 @@ export(LServer, Table, IO, ConvertFun) ->
                                   [] ->
                                       Acc;
                                   SQL1 ->
-                                      SQL = format_queries(SQL1),
+                                      SQL = format_queries(DbType, SQL1),
                                       if N < (?MAX_RECORDS_PER_TRANSACTION) - 1 ->
                                               {N + 1, [SQL | SQLs]};
                                          true ->
@@ -368,10 +369,10 @@ format_error({error, eof}) ->
 format_error({error, Posix}) ->
     file:format_error(Posix).
 
-format_queries(SQLs) ->
+format_queries(DbType, SQLs) ->
     lists:map(
       fun(#sql_query{} = SQL) ->
-              ejabberd_sql:sql_query_to_iolist(SQL);
+              ejabberd_sql:sql_query_to_iolist(DbType, SQL);
          (SQL) ->
               SQL
       end, SQLs).

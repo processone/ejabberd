@@ -39,6 +39,7 @@
 	 restart/1,
 	 use_new_schema/0,
 	 sql_query_to_iolist/1,
+	 sql_query_to_iolist/2,
 	 escape/1,
 	 standard_escape/1,
 	 escape_like/1,
@@ -830,6 +831,11 @@ sql_query_format_res(Res, _SQLQuery) ->
     Res.
 
 sql_query_to_iolist(SQLQuery) ->
+    generic_sql_query_format(SQLQuery).
+
+sql_query_to_iolist(sqlite, SQLQuery) ->
+    sqlite_sql_query_format(SQLQuery);
+sql_query_to_iolist(_DbType, SQLQuery) ->
     generic_sql_query_format(SQLQuery).
 
 sql_begin() ->
