@@ -63,7 +63,7 @@ depends(_Host, _Opts) ->
 
 get_commands_spec() ->
     [#ejabberd_commands{name = update_sql, tags = [sql],
-                        desc = "Convert SQL DB to the new format",
+                        desc = "Convert PostgreSQL DB to the new format",
                         module = ?MODULE, function = update_sql,
                         args = [],
                         args_example = [],
@@ -365,4 +365,5 @@ mod_doc() ->
           ?T("This module can be used to update existing SQL database "
              "from the default to the new schema. Check the section "
              "http://../database-ldap/#default-and-new-schemas[Default and New Schemas] for details. "
+             "Please note that only PostgreSQL is supported. "
              "When the module is loaded use 'update_sql' ejabberdctl command.")}.
