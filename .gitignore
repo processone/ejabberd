@@ -32,3 +32,4 @@
 /.rebar
 /rebar.lock
 /log/
+Mnesia.nonode@nohost/
