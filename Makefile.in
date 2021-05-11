@@ -212,13 +212,16 @@ $(sort $(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS))):
 $(call TO_DEST,priv/sql/lite.sql): sql/lite.sql $(call TO_DEST,priv/sql)
 	$(INSTALL) -m 644 $< $@
 
+$(call TO_DEST,priv/sql/lite.new.sql): sql/lite.new.sql $(call TO_DEST,priv/sql)
+	$(INSTALL) -m 644 $< $@
+
 $(call TO_DEST,priv/bin/captcha.sh): tools/captcha.sh $(call TO_DEST,priv/bin)
 	$(INSTALL) -m 755 $(O_USER) $< $@
 
 $(call TO_DEST,priv/lua/redis_sm.lua): priv/lua/redis_sm.lua $(call TO_DEST,priv/lua)
 	$(INSTALL) -m 644 $< $@
 
-copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh priv/sql/lite.sql priv/lua/redis_sm.lua)
+copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh priv/sql/lite.sql priv/sql/lite.new.sql priv/lua/redis_sm.lua)
 
 .PHONY: $(call TO_DEST,$(DEPS_FILES) $(MAIN_DIRS) $(DEPS_DIRS))
 

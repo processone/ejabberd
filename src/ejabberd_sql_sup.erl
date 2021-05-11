@@ -188,7 +188,11 @@ check_sqlite_db(Host) ->
 
 create_sqlite_tables(DB) ->
     SqlDir = misc:sql_dir(),
-    File = filename:join(SqlDir, "lite.sql"),
+    Filename = case ejabberd_sql:use_new_schema() of
+        true -> "lite.new.sql";
+        false -> "lite.sql"
+    end,
+    File = filename:join(SqlDir, Filename),
     case file:open(File, [read, binary]) of
         {ok, Fd} ->
             Qs = read_lines(Fd, File, []),
