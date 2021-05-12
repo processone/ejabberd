@@ -4,7 +4,7 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
-			"VARIANT": "1.11"
+			"VARIANT": "latest" // 1.11.4
 		}	
 	},
 	"workspaceFolder": "/workspace",
