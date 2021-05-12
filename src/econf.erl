@@ -553,37 +553,42 @@ hosts() ->
 
 -spec vcard_temp() -> yconf:validator().
 vcard_temp() ->
-    vcard_validator(
-      vcard_temp, undefined,
-      [{version, undefined, binary()},
-       {fn, undefined, binary()},
-       {n, undefined, vcard_name()},
-       {nickname, undefined, binary()},
-       {photo, undefined, vcard_photo()},
-       {bday, undefined, binary()},
-       {adr, [], list(vcard_adr())},
-       {label, [], list(vcard_label())},
-       {tel, [], list(vcard_tel())},
-       {email, [], list(vcard_email())},
-       {jabberid, undefined, binary()},
-       {mailer, undefined, binary()},
-       {tz, undefined, binary()},
-       {geo, undefined, vcard_geo()},
-       {title, undefined, binary()},
-       {role, undefined, binary()},
-       {logo, undefined, vcard_logo()},
-       {org, undefined, vcard_org()},
-       {categories, [], list(binary())},
-       {note, undefined, binary()},
-       {prodid, undefined, binary()},
-       {rev, undefined, binary()},
-       {sort_string, undefined, binary()},
-       {sound, undefined, vcard_sound()},
-       {uid, undefined, binary()},
-       {url, undefined, binary()},
-       {class, undefined, enum([confidential, private, public])},
-       {key, undefined, vcard_key()},
-       {desc, undefined, binary()}]).
+    and_then(
+	vcard_validator(
+	    vcard_temp, undefined,
+	    [{version, undefined, binary()},
+	     {fn, undefined, binary()},
+	     {n, undefined, vcard_name()},
+	     {nickname, undefined, binary()},
+	     {photo, undefined, vcard_photo()},
+	     {bday, undefined, binary()},
+	     {adr, [], list(vcard_adr())},
+	     {label, [], list(vcard_label())},
+	     {tel, [], list(vcard_tel())},
+	     {email, [], list(vcard_email())},
+	     {jabberid, undefined, binary()},
+	     {mailer, undefined, binary()},
+	     {tz, undefined, binary()},
+	     {geo, undefined, vcard_geo()},
+	     {title, undefined, binary()},
+	     {role, undefined, binary()},
+	     {logo, undefined, vcard_logo()},
+	     {org, undefined, vcard_org()},
+	     {categories, [], list(binary())},
+	     {note, undefined, binary()},
+	     {prodid, undefined, binary()},
+	     {rev, undefined, binary()},
+	     {sort_string, undefined, binary()},
+	     {sound, undefined, vcard_sound()},
+	     {uid, undefined, binary()},
+	     {url, undefined, binary()},
+	     {class, undefined, enum([confidential, private, public])},
+	     {key, undefined, vcard_key()},
+	     {desc, undefined, binary()}]),
+	fun(Tuple) ->
+	    list_to_tuple(tuple_to_list(Tuple) ++ [[]])
+	end).
+
 
 -spec vcard_name() -> yconf:validator().
 vcard_name() ->
