@@ -104,12 +104,17 @@ delete(Server) ->
               delete(Server, Module)
       end, Modules).
 
-delete(Server, Module) ->
+delete(Server, Module1) ->
     LServer = jid:nameprep(iolist_to_binary(Server)),
+    Module = case Module1 of
+		 mod_pubsub -> pubsub_db;
+		 _ -> Module1
+	     end,
+    SQLMod = gen_mod:db_mod(sql, Module),
     lists:foreach(
       fun({Table, ConvertFun}) ->
               delete(LServer, Table, ConvertFun)
-      end, Module:export(Server)).
+      end, SQLMod:export(Server)).
 
 import(Server, Dir, ToType) ->
     lists:foreach(
@@ -192,7 +197,7 @@ output(_LServer, Table, Fd, SQLs) ->
 delete(LServer, Table, ConvertFun) ->
     F = fun () ->
                 mnesia:write_lock_table(Table),
-                {_N, SQLs} =
+                {_N, _SQLs} =
                     mnesia:foldl(
                       fun(R, Acc) ->
                               case ConvertFun(LServer, R) of
@@ -203,8 +208,7 @@ delete(LServer, Table, ConvertFun) ->
                                       Acc
                               end
                       end,
-                      {0, []}, Table),
-                delete(LServer, Table, SQLs)
+                      {0, []}, Table)
         end,
     mnesia:transaction(F).
 
