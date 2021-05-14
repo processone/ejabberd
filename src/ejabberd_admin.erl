@@ -282,8 +282,8 @@ get_commands_spec() ->
 			args = [{host, binary}], result = {res, rescode}},
      #ejabberd_commands{name = import_prosody, tags = [mnesia, sql],
 			desc = "Import data from Prosody",
-			longdesc = "Note: this method requires ejabberd compiled with optional tools support "
-				"and package must provide optional luerl dependency.",
+			longdesc = "Note: this requires ejabberd compiled with --enable-lua "
+				"and include the optional 'luerl' library.",
 			module = prosody2ejabberd, function = from_dir,
 			args_desc = ["Full path to the Prosody data directory"],
 			args_example = ["/var/lib/prosody/datadump/"],
@@ -318,7 +318,9 @@ get_commands_spec() ->
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL file",
 			longdesc = "Configure the modules to use SQL, then call this command. "
-			           "After correct export, check 'delete_mnesia' too.",
+			           "After correctly exported the database of a vhost, "
+                                   "you may want to delete from mnesia with "
+			           "the http://./#delete-mnesia[delete_mnesia] command.",
 			module = ejd2sql, function = export,
 			args_desc = ["Vhost", "Full path to the destination SQL file"],
 			args_example = ["example.com", "/var/lib/ejabberd/example.com.sql"],
