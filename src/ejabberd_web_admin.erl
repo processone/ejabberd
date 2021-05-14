@@ -1152,13 +1152,18 @@ get_node(global, Node, [<<"db">>], Query, Lang) ->
 							    _ -> {unknown, 0, 0}
 							  end,
 				   ?XE(<<"tr">>,
-				       [?XC(<<"td">>, STable),
+				       [?XE(<<"td">>,
+					  [?AC(<<"./", STable/binary,
+						 "/">>,
+					       STable)]),
 					?XE(<<"td">>,
 					    [db_storage_select(STable, Type,
 							       Lang)]),
-					?XAC(<<"td">>,
+				        ?XAE(<<"td">>,
 					     [{<<"class">>, <<"alignright">>}],
-					     (pretty_string_int(Size))),
+					      [?AC(<<"./", STable/binary,
+						 "/1/">>,
+					     (pretty_string_int(Size)))]),
 					?XAC(<<"td">>,
 					     [{<<"class">>, <<"alignright">>}],
 					     (pretty_string_int(Memory)))])
@@ -1189,6 +1194,10 @@ get_node(global, Node, [<<"db">>], Query, Lang) ->
 						      <<"submit">>,
 						      ?T("Submit"))])])]))])])]
     end;
+get_node(global, Node, [<<"db">>, TableName], _Query, Lang) ->
+    make_table_view(Node, TableName, Lang);
+get_node(global, Node, [<<"db">>, TableName, PageNumber], _Query, Lang) ->
+    make_table_elements_view(Node, TableName, Lang, binary_to_integer(PageNumber));
 get_node(global, Node, [<<"backup">>], Query, Lang) ->
     HomeDirRaw = case {os:getenv("HOME"), os:type()} of
 		   {EnvHome, _} when is_list(EnvHome) -> list_to_binary(EnvHome);
@@ -1731,6 +1740,94 @@ pretty_string_int(String) when is_binary(String) ->
 			      end,
 			      {0, <<"">>}, lists:reverse(binary_to_list(String))),
     Result.
+
+%%%==================================
+%%%% mnesia table view
+
+make_table_view(Node, STable, Lang) ->
+    Table = misc:binary_to_atom(STable),
+    TInfo = ejabberd_cluster:call(Node, mnesia, table_info, [Table, all]),
+    {value, {storage_type, Type}} = lists:keysearch(storage_type, 1, TInfo),
+    {value, {size, Size}} = lists:keysearch(size, 1, TInfo),
+    {value, {memory, Memory}} = lists:keysearch(memory, 1, TInfo),
+    TableInfo = str:format("~p", [TInfo]),
+    [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Database Tables at ~p"),
+                                             [Node]))),
+     ?XAE(<<"table">>, [],
+	  [?XE(<<"tbody">>,
+	       [?XE(<<"tr">>,
+		    [?XCT(<<"td">>, ?T("Name")),
+		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
+                          STable
+                         )]),
+		?XE(<<"tr">>,
+		    [?XCT(<<"td">>, ?T("Node")),
+		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
+                          misc:atom_to_binary(Node)
+                         )]),
+		?XE(<<"tr">>,
+		    [?XCT(<<"td">>, ?T("Storage Type")),
+		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
+                          misc:atom_to_binary(Type)
+                         )]),
+		?XE(<<"tr">>,
+		    [?XCT(<<"td">>, ?T("Elements")),
+                     ?XAE(<<"td">>,
+                          [{<<"class">>, <<"alignright">>}],
+                          [?AC(<<"1/">>,
+                               (pretty_string_int(Size)))])
+                    ]),
+		?XE(<<"tr">>,
+		    [?XCT(<<"td">>, ?T("Memory")),
+		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
+                          (pretty_string_int(Memory))
+                         )])
+               ])]),
+     ?XC(<<"pre">>, TableInfo)].
+
+make_table_elements_view(Node, STable, Lang, PageNumber) ->
+    Table = misc:binary_to_atom(STable),
+    TInfo = ejabberd_cluster:call(Node, mnesia, table_info, [Table, all]),
+    {value, {storage_type, Type}} = lists:keysearch(storage_type, 1, TInfo),
+    {value, {size, Size}} = lists:keysearch(size, 1, TInfo),
+    PageSize = 500,
+    TableContentErl = get_table_content(Node, Table, Type, PageNumber, PageSize),
+    TableContent = str:format("~p", [TableContentErl]),
+    PagesLinks = build_elements_pages_list(Size, PageNumber, PageSize),
+    [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Database Tables at ~p"),
+                                             [Node]))),
+     ?P, ?AC(<<"../">>, STable), ?P
+    ] ++ PagesLinks ++ [?XC(<<"pre">>, TableContent)].
+
+build_elements_pages_list(Size, PageNumber, PageSize) ->
+    PagesNumber = calculate_pages_number(Size, PageSize),
+    PagesSeq = lists:seq(1, PagesNumber),
+    PagesList = [?AC(<<"../", (integer_to_binary(N))/binary, "/">>,
+         <<(integer_to_binary(N))/binary, " ">>)
+     || N <- PagesSeq],
+    lists:keyreplace(
+        [?C(<<(integer_to_binary(PageNumber))/binary, " ">>)],
+        4,
+        PagesList,
+        ?C(<<" [", (integer_to_binary(PageNumber))/binary, "] ">>)).
+
+calculate_pages_number(Size, PageSize) ->
+    Remainer = case Size rem PageSize of
+                   0 -> 0;
+                   _ -> 1
+               end,
+    case (Size div PageSize) + Remainer of
+        1 -> 0;
+        Res -> Res
+    end.
+
+get_table_content(Node, Table, _Type, PageNumber, PageSize) ->
+    Keys1 = lists:sort(ejabberd_cluster:call(Node, mnesia, dirty_all_keys, [Table])),
+    FirstKeyPos = 1 - PageSize + PageNumber*PageSize,
+    Keys = lists:sublist(Keys1, FirstKeyPos, PageSize),
+    Res = [ejabberd_cluster:call(Node, mnesia, dirty_read, [Table, Key])
+           || Key <- Keys],
+    lists:flatten(Res).
 
 %%%==================================
 %%%% navigation menu
