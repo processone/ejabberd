@@ -512,7 +512,7 @@ is_supported_args(Args) ->
 %% Tags are Underline
 -define(U1, "\e[4m").
 -define(U2, "\e[24m").
--define(T(S), case ShCode of true -> [?U1, S, ?U2]; false -> S end).
+-define(G(S), case ShCode of true -> [?U1, S, ?U2]; false -> S end).
 
 %% B are Nothing
 -define(N1, "\e[0m").
@@ -677,7 +677,7 @@ print_usage_tags(MaxC, ShCode, Version) ->
     TagsCommands = ejabberd_commands:get_tags_commands(Version),
     lists:foreach(
       fun({Tag, Commands} = _TagCommands) ->
-	      print(["\n\n  ", ?T(Tag), "\n    "], []),
+	      print(["\n\n  ", ?G(Tag), "\n    "], []),
 	      Words = lists:sort(Commands),
 	      Desc = prepare_long_line(5, MaxC, Words),
 	      print(?C(Desc), [])
@@ -691,7 +691,7 @@ print_usage_tags_long(MaxC, ShCode, Version) ->
     print("\n", []),
     lists:foreach(
       fun({Tag, CommandsNames} = _TagCommands) ->
-	      print(["\n  ", ?T(Tag), "\n"], []),
+	      print(["\n  ", ?G(Tag), "\n"], []),
                 CommandsList = lists:map(
                                  fun(NameString) ->
                                          C = ejabberd_commands:get_command_definition(
@@ -708,7 +708,7 @@ print_usage_tags_long(MaxC, ShCode, Version) ->
     print("\n", []).
 
 print_usage_tags(Tag, MaxC, ShCode, Version) ->
-    print(["Available commands with tag ", ?T(Tag), ":", "\n", "\n"], []),
+    print(["Available commands with tag ", ?G(Tag), ":", "\n", "\n"], []),
     HelpMode = long,
     TagsCommands = ejabberd_commands:get_tags_commands(Version),
     CommandsNames = case lists:keysearch(Tag, 1, TagsCommands) of
@@ -737,11 +737,11 @@ print_usage_help(MaxC, ShCode) ->
     LongDesc =
 	["This special ", ?C("help"), " command provides help of ejabberd commands.\n\n"
 	 "The format is:\n  ", ?B("ejabberdctl"), " ", ?C("help"),
-         " [", ?A("tags"), " | ", ?A("commands"), " | ", ?T("tag"), " | ", ?C("command"), " | ", ?C("com?*"), "]\n\n"
+         " [", ?A("tags"), " | ", ?A("commands"), " | ", ?G("tag"), " | ", ?C("command"), " | ", ?C("com?*"), "]\n\n"
 	 "The optional arguments:\n"
 	 "  ",?A("tags"),"         Show all tags and commands names in each tag\n"
 	 "  ",?A("commands"),"     Show all tags and commands details in each tag\n"
-	 "  ",?T("tag"),"          Show commands related to this tag\n"
+	 "  ",?G("tag"),"          Show commands related to this tag\n"
 	 "  ",?C("command"),"      Show detailed description of this command\n"
 	 "  ",?C("com?*"),"        Show commands that match this glob.\n"
 	 "               (? will match a simple character, and\n"
@@ -751,7 +751,7 @@ print_usage_help(MaxC, ShCode) ->
 	 "  ejabberdctl ", ?C("help"), "\n",
 	 "  ejabberdctl ", ?C("help"), " ", ?A("tags"), "\n",
 	 "  ejabberdctl ", ?C("help"), " ", ?A("commands"), "\n",
-	 "  ejabberdctl ", ?C("help"), " ", ?T("accounts"), "\n",
+	 "  ejabberdctl ", ?C("help"), " ", ?G("accounts"), "\n",
 	 "  ejabberdctl ", ?C("help"), " ", ?C("register"), "\n",
 	 "  ejabberdctl ", ?C("help"), " ", ?C("regist*"), "\n",
 	 "\n",
@@ -849,7 +849,7 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 
     XmlrpcFmt = "", %%+++ ["  ",?B("XML-RPC"),": ", format_usage_xmlrpc(ArgsDef, ResultDef), "\n\n"],
 
-    TagsFmt = ["  ",?B("Tags"),":", prepare_long_line(8, MaxC, [?T(atom_to_list(TagA)) || TagA <- TagsAtoms])],
+    TagsFmt = ["  ",?B("Tags"),":", prepare_long_line(8, MaxC, [?G(atom_to_list(TagA)) || TagA <- TagsAtoms])],
 
     DescFmt = ["  ",?B("Description"),":", prepare_description(15, MaxC, Desc)],
 
