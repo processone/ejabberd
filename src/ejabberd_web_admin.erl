@@ -1151,6 +1151,7 @@ get_node(global, Node, [<<"db">>], Query, Lang) ->
 								{T, S, M};
 							    _ -> {unknown, 0, 0}
 							  end,
+				   MemoryB = Memory*erlang:system_info(wordsize),
 				   ?XE(<<"tr">>,
 				       [?XE(<<"td">>,
 					  [?AC(<<"./", STable/binary,
@@ -1166,7 +1167,7 @@ get_node(global, Node, [<<"db">>], Query, Lang) ->
 					     (pretty_string_int(Size)))]),
 					?XAC(<<"td">>,
 					     [{<<"class">>, <<"alignright">>}],
-					     (pretty_string_int(Memory)))])
+					     (pretty_string_int(MemoryB)))])
 			   end,
 			   STables),
 	  [?XC(<<"h1">>,
@@ -1750,6 +1751,7 @@ make_table_view(Node, STable, Lang) ->
     {value, {storage_type, Type}} = lists:keysearch(storage_type, 1, TInfo),
     {value, {size, Size}} = lists:keysearch(size, 1, TInfo),
     {value, {memory, Memory}} = lists:keysearch(memory, 1, TInfo),
+    MemoryB = Memory*erlang:system_info(wordsize),
     TableInfo = str:format("~p", [TInfo]),
     [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Database Tables at ~p"),
                                              [Node]))),
@@ -1780,7 +1782,7 @@ make_table_view(Node, STable, Lang) ->
 		?XE(<<"tr">>,
 		    [?XCT(<<"td">>, ?T("Memory")),
 		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-                          (pretty_string_int(Memory))
+                          (pretty_string_int(MemoryB))
                          )])
                ])]),
      ?XC(<<"pre">>, TableInfo)].
