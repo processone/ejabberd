@@ -218,6 +218,8 @@ CREATE TABLE sr_group (
     PRIMARY KEY (server_host, name)
 );
 
+CREATE UNIQUE INDEX i_sr_group_sh_name ON sr_group USING btree (server_host, name);
+
 CREATE TABLE sr_user (
     jid text NOT NULL,
     server_host text NOT NULL,
@@ -226,6 +228,7 @@ CREATE TABLE sr_user (
     PRIMARY KEY (server_host, jid, grp)
 );
 
+CREATE UNIQUE INDEX i_sr_user_sh_jid_grp ON sr_user USING btree (server_host, jid, grp);
 CREATE INDEX i_sr_user_sh_jid ON sr_user USING btree (server_host, jid);
 CREATE INDEX i_sr_user_sh_grp ON sr_user USING btree (server_host, grp);
 

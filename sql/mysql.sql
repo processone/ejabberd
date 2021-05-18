@@ -68,6 +68,8 @@ CREATE TABLE sr_group (
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+CREATE UNIQUE INDEX i_sr_group_name ON sr_group(name);
+
 CREATE TABLE sr_user (
     jid varchar(191) NOT NULL,
     grp varchar(191) NOT NULL,

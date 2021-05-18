@@ -65,6 +65,8 @@ CREATE TABLE sr_group (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE UNIQUE INDEX i_sr_group_name ON sr_group (name);
+
 CREATE TABLE sr_user (
     jid text NOT NULL,
     grp text NOT NULL,

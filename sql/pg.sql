@@ -69,6 +69,8 @@ CREATE TABLE sr_group (
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
+CREATE UNIQUE INDEX i_sr_group_name ON sr_group USING btree (name);
+
 CREATE TABLE sr_user (
     jid text NOT NULL,
     grp text NOT NULL,
