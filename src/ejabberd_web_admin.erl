@@ -1354,6 +1354,7 @@ get_node(global, Node, [<<"stats">>], _Query, Lang) ->
 		      [wall_clock]),
     UpTimeS = (str:format("~.3f",
                                            [element(1, UpTime) / 1000])),
+    UpTimeDate = uptime_date(Node),
     CPUTime = ejabberd_cluster:call(Node, erlang, statistics, [runtime]),
     CPUTimeS = (str:format("~.3f",
                                             [element(1, CPUTime) / 1000])),
@@ -1374,6 +1375,10 @@ get_node(global, Node, [<<"stats">>], _Query, Lang) ->
 		    [?XCT(<<"td">>, ?T("Uptime:")),
 		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
 			  UpTimeS)]),
+		?XE(<<"tr">>,
+		    [?X(<<"td">>),
+		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
+			  UpTimeDate)]),
 		?XE(<<"tr">>,
 		    [?XCT(<<"td">>, ?T("CPU Time:")),
 		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
@@ -1467,6 +1472,16 @@ get_node(Host, Node, NPath, Query, Lang) ->
       [] -> [?XC(<<"h1">>, <<"Not Found">>)];
       _ -> Res
     end.
+
+uptime_date(Node) ->
+    Localtime = ejabberd_cluster:call(Node, erlang, localtime, []),
+    Now = calendar:datetime_to_gregorian_seconds(Localtime),
+    {Wall, _} = ejabberd_cluster:call(Node, erlang, statistics, [wall_clock]),
+    LastRestart = Now - (Wall div 1000),
+    {{Year, Month, Day}, {Hour, Minute, Second}} =
+        calendar:gregorian_seconds_to_datetime(LastRestart),
+    str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+               [Year, Month, Day, Hour, Minute, Second]).
 
 %%%==================================
 %%%% node parse
