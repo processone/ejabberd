@@ -585,8 +585,12 @@ list_vhosts2(Lang, Hosts) ->
 	 [?XE(<<"thead">>,
 	      [?XE(<<"tr">>,
 		   [?XCT(<<"td">>, ?T("Host")),
-		    ?XCT(<<"td">>, ?T("Registered Users")),
-		    ?XCT(<<"td">>, ?T("Online Users"))])]),
+		    ?XACT(<<"td">>,
+                          [{<<"class">>, <<"alignright">>}],
+                          ?T("Registered Users")),
+		    ?XACT(<<"td">>,
+                          [{<<"class">>, <<"alignright">>}],
+                          ?T("Online Users"))])]),
 	  ?XE(<<"tbody">>,
 	      (lists:map(fun (Host) ->
 				 OnlineUsers =
@@ -598,9 +602,11 @@ list_vhosts2(Lang, Hosts) ->
 					  [?AC(<<"../server/", Host/binary,
 						 "/">>,
 					       Host)]),
-				      ?XC(<<"td">>,
+				      ?XAC(<<"td">>,
+                                           [{<<"class">>, <<"alignright">>}],
 					  (pretty_string_int(RegisteredUsers))),
-				      ?XC(<<"td">>,
+				      ?XAC(<<"td">>,
+                                           [{<<"class">>, <<"alignright">>}],
 					  (pretty_string_int(OnlineUsers)))])
 			 end,
 			 SHosts)))])].
@@ -706,7 +712,9 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
 	[?XE(<<"thead">>,
 	     [?XE(<<"tr">>,
 		  [?XCT(<<"td">>, ?T("User")),
-		   ?XCT(<<"td">>, ?T("Offline Messages")),
+		   ?XACT(<<"td">>,
+                         [{<<"class">>, <<"alignright">>}],
+                         ?T("Offline Messages")),
 		   ?XCT(<<"td">>, ?T("Last Activity"))])]),
 	 ?XE(<<"tbody">>,
 	     (lists:map(fun (_SU = {Server, User}) ->
@@ -749,7 +757,9 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
 							misc:url_encode(User),
 							Server})),
 					      (us_to_list(US)))]),
-				     ?XE(<<"td">>, FQueueLen),
+				     ?XAE(<<"td">>,
+                                          [{<<"class">>, <<"alignright">>}],
+                                          FQueueLen),
 				     ?XC(<<"td">>, FLast)])
 			end,
 			Users)))]).
@@ -808,16 +818,24 @@ get_stats(global, Lang) ->
 	  [?XE(<<"tbody">>,
 	       [?XE(<<"tr">>,
 		    [?XCT(<<"td">>, ?T("Registered Users:")),
-		     ?XC(<<"td">>, (pretty_string_int(RegisteredUsers)))]),
+		     ?XAC(<<"td">>,
+                          [{<<"class">>, <<"alignright">>}],
+                          (pretty_string_int(RegisteredUsers)))]),
 		?XE(<<"tr">>,
 		    [?XCT(<<"td">>, ?T("Online Users:")),
-		     ?XC(<<"td">>, (pretty_string_int(OnlineUsers)))]),
+		     ?XAC(<<"td">>,
+                          [{<<"class">>, <<"alignright">>}],
+                          (pretty_string_int(OnlineUsers)))]),
 		?XE(<<"tr">>,
 		    [?XCT(<<"td">>, ?T("Outgoing s2s Connections:")),
-		     ?XC(<<"td">>, (pretty_string_int(OutS2SNumber)))]),
+		     ?XAC(<<"td">>,
+                          [{<<"class">>, <<"alignright">>}],
+                          (pretty_string_int(OutS2SNumber)))]),
 		?XE(<<"tr">>,
 		    [?XCT(<<"td">>, ?T("Incoming s2s Connections:")),
-		     ?XC(<<"td">>, (pretty_string_int(InS2SNumber)))])])])];
+		     ?XAC(<<"td">>,
+                          [{<<"class">>, <<"alignright">>}],
+                          (pretty_string_int(InS2SNumber)))])])])];
 get_stats(Host, Lang) ->
     OnlineUsers =
 	length(ejabberd_sm:get_vh_session_list(Host)),
@@ -827,10 +845,14 @@ get_stats(Host, Lang) ->
 	  [?XE(<<"tbody">>,
 	       [?XE(<<"tr">>,
 		    [?XCT(<<"td">>, ?T("Registered Users:")),
-		     ?XC(<<"td">>, (pretty_string_int(RegisteredUsers)))]),
+		     ?XAC(<<"td">>,
+                          [{<<"class">>, <<"alignright">>}],
+                          (pretty_string_int(RegisteredUsers)))]),
 		?XE(<<"tr">>,
 		    [?XCT(<<"td">>, ?T("Online Users:")),
-		     ?XC(<<"td">>, (pretty_string_int(OnlineUsers)))])])])].
+		     ?XAC(<<"td">>,
+                          [{<<"class">>, <<"alignright">>}],
+                          (pretty_string_int(OnlineUsers)))])])])].
 
 list_online_users(Host, _Lang) ->
     Users = [{S, U}
@@ -1183,8 +1205,12 @@ get_node(global, Node, [<<"db">>], Query, Lang) ->
 			       [?XE(<<"tr">>,
 				    [?XCT(<<"td">>, ?T("Name")),
 				     ?XCT(<<"td">>, ?T("Storage Type")),
-				     ?XCT(<<"td">>, ?T("Elements")),
-				     ?XCT(<<"td">>, ?T("Memory"))])]),
+				     ?XACT(<<"td">>,
+                                           [{<<"class">>, <<"alignright">>}],
+                                           ?T("Elements")),
+				     ?XACT(<<"td">>,
+                                           [{<<"class">>, <<"alignright">>}],
+                                           ?T("Memory"))])]),
 			   ?XE(<<"tbody">>,
 			       (Rows ++
 				  [?XE(<<"tr">>,
