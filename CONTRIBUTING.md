@@ -96,10 +96,10 @@ Before you submit your pull request consider the following guidelines:
     git push origin my-fix-branch
     ```
 
-* In GitHub, send a pull request to `ejabberd:master`. This will trigger the Travis integration and run the test.
+* In GitHub, send a pull request to `ejabberd:master`. This will trigger the automated testing.
 We will also notify you if you have not yet signed the [contribution agreement][cla].
 
-* If you find that the Travis integration has failed, look into the logs on Travis to find out
+* If you find that the tests have failed, look into the logs to find out
 if your changes caused test failures, the commit message was malformed etc. If you find that the
 tests failed or times out for unrelated reasons, you can ping a team member so that the build can be
 restarted.
