@@ -1,8 +1,14 @@
 import sys
 import struct
 
+def read_from_stdin(bytes):
+  if hasattr(sys.stdin, 'buffer'):
+    return sys.stdin.buffer.read(bytes)
+  else:
+    return sys.stdin.read(bytes)
+
 def read():
-    (pkt_size,) = struct.unpack('>H', sys.stdin.read(2))
+    (pkt_size,) = struct.unpack('>H', read_from_stdin(2))
     pkt = sys.stdin.read(pkt_size)
     cmd = pkt.split(':')[0]
     if cmd == 'auth':
