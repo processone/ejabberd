@@ -1,0 +1,234 @@
+name: CI
+
+on:
+  push:
+    paths-ignore:
+    - '.devcontainer/**'
+    - 'examples/**'
+    - 'lib/**'
+    - 'man/**'
+    - 'priv/**'
+    - '**.md'
+  pull_request:
+    paths-ignore:
+    - '.devcontainer/**'
+    - 'examples/**'
+    - 'lib/**'
+    - 'man/**'
+    - 'priv/**'
+    - '**.md'
+
+jobs:
+
+  tests:
+    name: Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        otp: ['19.3', '24.0']
+        include:
+        - otp: '19.3'
+          rebar: 2
+          os: ubuntu-18.04
+        - otp: '24.0'
+          rebar: 3
+          os: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    services:
+      redis:
+        image: redis
+        ports:
+        - 6379:6379
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Get previous Erlang/OTP
+      uses: ErlGang/setup-erlang@master
+      if: matrix.otp != 24.0
+      with:
+        otp-version: ${{ matrix.otp }}
+
+    - name: Prepare databases
+      run: |
+        sudo systemctl start mysql.service
+        sudo systemctl start postgresql.service
+        mysql -u root -proot -e "CREATE USER 'ejabberd_test'@'localhost'
+                                 IDENTIFIED BY 'ejabberd_test';"
+        mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
+        mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
+                                 TO 'ejabberd_test'@'localhost';"
+        mysql -u root -proot ejabberd_test < sql/mysql.sql
+        pg_isready
+        sudo -u postgres psql -c "CREATE USER ejabberd_test
+                                  WITH PASSWORD 'ejabberd_test';"
+        sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -f sql/pg.sql
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES
+                                  ON DATABASE ejabberd_test TO ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
+                                                TABLES IN SCHEMA public
+                                                TO ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
+                                                SEQUENCES IN SCHEMA public
+                                                TO ejabberd_test;"
+
+    - name: Prepare libraries
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
+                                 libsqlite3-dev libwebp-dev libyaml-dev
+
+    - name: Prepare rebar
+      id: rebar
+      run: |
+        echo '{xref_ignores, [{eldap_filter_yecc, return_error, 2}
+                             ]}.' >>rebar.config
+        echo '{xref_checks, [deprecated_function_calls, deprecated_functions,
+              locals_not_used, undefined_function_calls, undefined_functions]}.
+              % Disabled: exports_not_used,' >>rebar.config
+        echo '{dialyzer, [{get_warnings, true}, {plt_extra_apps, [cache_tab,
+              eimp, epam, esip, ezlib, fast_tls, fast_xml, fast_yaml,
+              mqtree, p1_acme, p1_mysql, p1_oauth2, p1_pgsql, p1_utils, pkix,
+              sqlite3, stringprep, stun, xmpp, yconf]} ]}.' >>rebar.config
+        echo '{ct_extra_params, "-verbosity 20"}.' >>rebar.config
+
+    - name: Cache rebar2
+      if: matrix.rebar == 2
+      uses: actions/cache@v2
+      with:
+        path: |
+          deps/
+          dialyzer/
+          ebin/
+        key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
+
+    - name: Cache rebar3
+      if: matrix.rebar == 3
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/rebar3/
+          _build/default/
+        key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
+
+    - name: Compile
+      run: |
+        ./autogen.sh
+        [[ ${{ matrix.rebar }} = 2 ]] && REBAR=rebar || REBAR=`which rebar3`
+        ./configure --with-rebar=$REBAR \
+                    --prefix=/tmp/ejabberd \
+                    --enable-all \
+                    --disable-elixir \
+                    --disable-odbc
+        make update
+        make
+
+      # Right now 'make rel' works only with rebar2, not rebar3
+    - run: make rel
+      if: matrix.rebar == 2
+
+    - run: make install -s
+    - run: make hooks
+    - run: make options
+    - run: make xref
+    - run: make dialyzer
+    - run: make test
+
+    - name: Check results
+      if: always()
+      run: |
+        [[ -d _build ]] && ln -s _build/test/logs/ logs \
+                        && ln `find _build/ -name "*dialyzer_warnings"` \
+                              logs/dialyzer.log \
+                        || ln dialyzer/error.log logs/dialyzer.log
+        ln `find logs/ -name suite.log` logs/suite.log
+        grep 'TEST COMPLETE' logs/suite.log
+        grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
+        test $(find logs/ -empty -name error.log)
+
+    - name: View dialyzer report
+      run: cat logs/dialyzer.log
+
+    - name: View full suite.log
+      run: cat logs/suite.log
+
+    - name: View suite.log failures
+      if: failure()
+      run: cat logs/suite.log | awk
+           'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+
+    - name: View full ejabberd.log
+      if: failure()
+      run: find logs/ -name ejabberd.log -exec cat '{}' ';'
+
+    - name: View exunit.log
+      if: failure()
+      run: find logs/ -name exunit.log -exec cat '{}' ';'
+
+    - name: Send to coveralls
+      if: matrix.otp == 24.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: rebar3 as test coveralls send
+
+  binaries:
+    name: Binaries
+    needs: [tests]
+    strategy:
+      fail-fast: false
+      matrix:
+        otp: ['21.3']
+        include:
+        - otp: '21.3'
+          rebar: 3
+          os: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 150
+    - name: Get last git tag
+      run: |
+        export TAGLAST=`git ls-remote --tags --refs origin 'refs/tags/2*' \
+          | tail -1 | awk '{print $2}'`
+        git fetch origin "$TAGLAST:$TAGLAST"
+        git describe
+    - name: Get previous Erlang/OTP
+      uses: ErlGang/setup-erlang@master
+      with:
+        otp-version: ${{ matrix.otp }}
+    - name: Cache Rebar3
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/rebar3/
+          _build/default/lib/
+        key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
+    - name: Prepare libraries
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
+                                 libsqlite3-dev libwebp-dev libyaml-dev
+    - name: Compile
+      run: |
+        ./autogen.sh
+        ./configure --with-rebar=`which rebar3` \
+                    --prefix=/tmp/ejabberd \
+                    --disable-debug \
+                    --enable-all \
+                    --disable-elixir
+        make update
+        make
+    - run: make install -s
+    - name: Strip binaries
+      run: echo 'beam_lib:strip_files(filelib:wildcard(
+                "/tmp/ejabberd/lib/*/ebin/*beam")), init:stop().' \
+                | erl -boot start_clean
+    - name: Upload binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: ejabberd-binaries
+        path: /tmp/ejabberd/lib
+        retention-days: 7

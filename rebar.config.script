@@ -339,17 +339,21 @@ fun(Deps, FDeps) ->
 		  end, Deps)
 end,
 
-TravisPostHooks =
-fun(true) ->
-	[{ct, "echo '\n%%! -pa ebin/ deps/coveralls/ebin\n" ++
-	      "main(_)->{ok,F}=file:open(\"erlang.json\",[write])," ++
-	      "io:fwrite(F,\"~s\",[coveralls:convert_file(" ++
-	      "\"logs/all.coverdata\", \"" ++
-	      os:getenv("TRAVIS_JOB_ID") ++
-	      "\", \"travis-ci\",\"\")]).' > getcover.erl"},
-	 {ct, "escript ./getcover.erl"}];
-   (_) ->
-	[]
+GithubConfig = case {os:getenv("GITHUB_ACTIONS"), os:getenv("GITHUB_TOKEN")} of
+  {"true", Token} when is_list(Token) ->
+    CONFIG1 = [{coveralls_repo_token, Token},
+               {coveralls_service_job_id, os:getenv("GITHUB_RUN_ID")},
+               {coveralls_commit_sha, os:getenv("GITHUB_SHA")},
+               {coveralls_service_number, os:getenv("GITHUB_RUN_NUMBER")}],
+    case os:getenv("GITHUB_EVENT_NAME") =:= "pull_request"
+        andalso string:tokens(os:getenv("GITHUB_REF"), "/") of
+        [_, "pull", PRNO, _] ->
+            [{coveralls_service_pull_request, PRNO} | CONFIG1];
+        _ ->
+            CONFIG1
+    end;
+  _ ->
+    []
 end,
 
 Rules = [
@@ -358,10 +362,8 @@ Rules = [
 			     {compile, {asn, compile}},
 			     {clean, {asn, clean}}
 			    ]}]), []},
-	 {[deps], os:getenv("TRAVIS") == "true",
-	  AppendList([{coveralls, ".*", {git, "https://github.com/markusn/coveralls-erl", {tag, "v2.0.1"}}}]), []},
-	 {[post_hooks], [cover_enabled], os:getenv("TRAVIS") == "true",
-	  AppendList2(TravisPostHooks), [], false},
+	 {[plugins], IsRebar3 and (os:getenv("GITHUB_ACTIONS") == "true"),
+	  AppendList([coveralls]), []},
 	 {[overrides], [post_hook_configure], SystemDeps == false,
 	  AppendList2(GenDepsConfigure), [], []},
 	 {[ct_extra_params], [eunit_compile_opts], true,
@@ -379,7 +381,8 @@ Rules = [
 	],
 
 Config = [{plugin_dir, filename:join([filename:dirname(SCRIPT),"plugins"])}]++
-FilterConfig(ProcessVars(CONFIG, []), Rules),
+FilterConfig(ProcessVars(CONFIG, []), Rules)++
+GithubConfig,
 
 %io:format("ejabberd configuration:~n  ~p~n", [Config]),
 
