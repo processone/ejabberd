@@ -199,6 +199,8 @@ jobs:
       uses: ErlGang/setup-erlang@master
       with:
         otp-version: ${{ matrix.otp }}
+    - name: Get a compatible Rebar3
+      run: wget https://s3.amazonaws.com/rebar3/rebar3 && chmod +x rebar3
     - name: Cache Rebar3
       uses: actions/cache@v2
       with:
@@ -214,7 +216,7 @@ jobs:
     - name: Compile
       run: |
         ./autogen.sh
-        ./configure --with-rebar=`which rebar3` \
+        ./configure --with-rebar=./rebar3 \
                     --prefix=/tmp/ejabberd \
                     --disable-debug \
                     --enable-all \
