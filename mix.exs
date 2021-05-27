@@ -99,7 +99,7 @@ defmodule Ejabberd.Mixfile do
      {:idna, "~> 6.0"},
      {:jiffy, "~> 1.0.5"},
      {:jose, "~> 1.8"},
-     {:lager, "~> 3.6.0"},
+     {:lager, "~> 3.9.1"},
      {:mqtree, "~> 1.0"},
      {:p1_acme, "~> 1.0"},
      {:p1_mysql, "~> 1.0"},
