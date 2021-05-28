@@ -1482,17 +1482,6 @@ expulse_participant(Packet, From, StateData, Reason1) ->
     end,
     remove_online_user(From, NewState).
 
--spec get_owners(state()) -> [jid:jid()].
-get_owners(StateData) ->
-    maps:fold(
-       fun(LJID, owner, Acc) ->
-	       [jid:make(LJID)|Acc];
-	  (LJID, {owner, _}, Acc) ->
-	       [jid:make(LJID)|Acc];
-	  (_, _, Acc) ->
-	       Acc
-       end, [], StateData#state.affiliations).
-
 -spec set_affiliation(jid(), affiliation(), state()) -> state().
 set_affiliation(JID, Affiliation, StateData) ->
     set_affiliation(JID, Affiliation, StateData, <<"">>).
@@ -4132,7 +4121,6 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 	      end,
     Fs1 = [{roomname, Config#config.title},
 	   {description, Config#config.description},
-	   {contactjid, get_owners(StateData)},
 	   {changesubject, Config#config.allow_change_subj},
 	   {allowinvites, Config#config.allow_user_invites},
 	   {allowpm, AllowPM},
