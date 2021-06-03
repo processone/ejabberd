@@ -363,7 +363,9 @@ Rules = [
 			     {clean, {asn, clean}}
 			    ]}]), []},
 	 {[plugins], IsRebar3 and (os:getenv("GITHUB_ACTIONS") == "true"),
-	  AppendList([coveralls]), []},
+	  AppendList([{coveralls, {git,
+                                   "https://github.com/RoadRunnr/coveralls-erl.git",
+                                   {branch, "feature/git-info"}}} ]), []},
 	 {[overrides], [post_hook_configure], SystemDeps == false,
 	  AppendList2(GenDepsConfigure), [], []},
 	 {[ct_extra_params], [eunit_compile_opts], true,

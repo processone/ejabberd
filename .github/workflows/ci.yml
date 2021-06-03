@@ -171,7 +171,14 @@ jobs:
       if: matrix.otp == 24.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: rebar3 as test coveralls send
+      run: |
+        rebar3 as test coveralls send
+        curl -v -k https://coveralls.io/webhook \
+             --header "Content-Type: application/json" \
+             --data '{"repo_name":"$GITHUB_REPOSITORY",
+                      "repo_token":"$GITHUB_TOKEN",
+                      "payload":{"build_num":$GITHUB_RUN_ID,
+                                 "status":"done"}}'
 
   binaries:
     name: Binaries
