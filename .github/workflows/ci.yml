@@ -207,7 +207,9 @@ jobs:
       with:
         otp-version: ${{ matrix.otp }}
     - name: Get a compatible Rebar3
-      run: wget https://s3.amazonaws.com/rebar3/rebar3 && chmod +x rebar3
+      run: |
+        wget https://github.com/erlang/rebar3/releases/download/3.15.2/rebar3 \
+          && chmod +x rebar3
     - name: Cache Rebar3
       uses: actions/cache@v2
       with:
