@@ -750,6 +750,8 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
                     end,
             {Offset, ItemsPage} =
                 case {IncIndex, Before, After} of
+                    {undefined, undefined, undefined} ->
+                        {0, lists:sublist(RItems, Limit)};
                     {I, undefined, undefined} ->
                         SubList = lists:nthtail(I, RItems),
                         {I, lists:sublist(SubList, Limit)};
