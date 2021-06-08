@@ -758,7 +758,7 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
                     {_, <<>>, undefined} ->
                         %% 2.5 Requesting the Last Page in a Result Set
                         SubList = lists:reverse(RItems),
-                        {0, lists:sublist(SubList, Limit)};
+                        {Count, lists:sublist(SubList, Limit)};
                     {_, Stamp, undefined} ->
                         BeforeNow = encode_stamp(Stamp),
                         SubList = lists:dropwhile(
