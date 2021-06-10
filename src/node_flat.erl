@@ -758,12 +758,12 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
                     {_, <<>>, undefined} ->
                         %% 2.5 Requesting the Last Page in a Result Set
                         SubList = lists:reverse(RItems),
-                        {Count, lists:sublist(SubList, Limit)};
+                        {Count-Limit, lists:reverse(lists:sublist(SubList, Limit))};
                     {_, Stamp, undefined} ->
                         BeforeNow = encode_stamp(Stamp),
                         {NewIndex, SubList} = extract_sublist(before_now, BeforeNow,
                                                               0, lists:reverse(RItems)),
-                        {Count-NewIndex-1, lists:sublist(SubList, Limit)};
+                        {Count-NewIndex-Limit, lists:reverse(lists:sublist(SubList, Limit))};
                     {_, undefined, Stamp} ->
                         AfterNow = encode_stamp(Stamp),
                         {NewIndex, SubList} = extract_sublist(after_now, AfterNow,
