@@ -544,3 +544,23 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 
 CREATE UNIQUE INDEX [i_push_ut] ON [push_session] (username, timestamp)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE TABLE [dbo].[mqtt_pub](
+	[username] [varchar](191) NOT NULL,
+	[server_host] [varchar](191) NOT NULL,
+	[resource] [varchar](191) NOT NULL,
+	[topic] [varchar](191) NOT NULL,
+	[qos] [tinyint] NOT NULL,
+	[payload] [varbinary](max) NOT NULL,
+	[payload_format] [tinyint] NOT NULL,
+	[content_type] [text] NOT NULL,
+	[response_topic] [text] NOT NULL,
+	[correlation_data] [varbinary](max) NOT NULL,
+	[user_properties] [varbinary](max) NOT NULL,
+	[expiry] [int] NOT NULL,
+ CONSTRAINT [i_mqtt_topic_server] PRIMARY KEY CLUSTERED
+(
+	[topic] ASC,
+	[server_host] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY];
