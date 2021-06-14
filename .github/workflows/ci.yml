@@ -111,6 +111,7 @@ jobs:
         path: |
           ~/.cache/rebar3/
           _build/default/
+          !_build/default/*dialyzer_warnings
         key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
 
     - name: Compile
