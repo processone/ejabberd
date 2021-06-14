@@ -150,11 +150,17 @@ route(Packet) ->
 -spec open_session(sid(), binary(), binary(), binary(), prio(), info()) -> ok.
 
 open_session(SID, User, Server, Resource, Priority, Info) ->
-    set_session(SID, User, Server, Resource, Priority, Info),
+    Info2 = ejabberd_hooks:run_fold(
+        sm_pre_register_connection_hook,
+        Server,
+        Info,
+        [SID, User, Server, Resource, Priority]
+    ),
+    set_session(SID, User, Server, Resource, Priority, Info2),
     check_for_sessions_to_replace(User, Server, Resource),
     JID = jid:make(User, Server, Resource),
     ejabberd_hooks:run(sm_register_connection_hook,
-		       JID#jid.lserver, [SID, JID, Info]).
+		       JID#jid.lserver, [SID, JID, Info2]).
 
 -spec open_session(sid(), binary(), binary(), binary(), info()) -> ok.
 
