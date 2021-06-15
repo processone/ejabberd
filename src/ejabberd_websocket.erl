@@ -187,32 +187,32 @@ find_subprotocol(Headers) ->
     end.
 
 
-ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode, Shaper) ->
+ws_loop(FrameInfo, Socket, WsHandleLoopPid, SockMod, Shaper) ->
     receive
         {DataType, _Socket, Data} when DataType =:= tcp orelse DataType =:= raw ->
-            case handle_data(DataType, FrameInfo, Data, Socket, WsHandleLoopPid, SocketMode, Shaper) of
+            case handle_data(DataType, FrameInfo, Data, Socket, WsHandleLoopPid, SockMod, Shaper) of
                 {error, Error} ->
                     ?DEBUG("TLS decode error ~p", [Error]),
-                    websocket_close(Socket, WsHandleLoopPid, SocketMode, 1002); % protocol error
+                    websocket_close(Socket, WsHandleLoopPid, SockMod, 1002); % protocol error
                 {NewFrameInfo, ToSend, NewShaper} ->
-                    lists:foreach(fun(Pkt) -> SocketMode:send(Socket, Pkt)
+                    lists:foreach(fun(Pkt) -> SockMod:send(Socket, Pkt)
                                   end, ToSend),
-                    ws_loop(NewFrameInfo, Socket, WsHandleLoopPid, SocketMode, NewShaper)
+                    ws_loop(NewFrameInfo, Socket, WsHandleLoopPid, SockMod, NewShaper)
             end;
         {new_shaper, NewShaper} ->
             NewShaper = case NewShaper of
                 none when Shaper /= none ->
-                    activate(Socket, SocketMode, true), none;
+                    activate(Socket, SockMod, true), none;
                 _ ->
                     NewShaper
             end,
-            ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode, NewShaper);
+            ws_loop(FrameInfo, Socket, WsHandleLoopPid, SockMod, NewShaper);
         {tcp_closed, _Socket} ->
             ?DEBUG("TCP connection was closed, exit", []),
-            websocket_close(Socket, WsHandleLoopPid, SocketMode, 0);
+            websocket_close(Socket, WsHandleLoopPid, SockMod, 0);
 	{tcp_error, Socket, Reason} ->
 	    ?DEBUG("TCP connection error: ~ts", [inet:format_error(Reason)]),
-	    websocket_close(Socket, WsHandleLoopPid, SocketMode, 0);
+	    websocket_close(Socket, WsHandleLoopPid, SockMod, 0);
         {'DOWN', Ref, process, WsHandleLoopPid, Reason} ->
             Code = case Reason of
                        normal ->
@@ -224,39 +224,39 @@ ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode, Shaper) ->
                            1011 % internal error
                    end,
             erlang:demonitor(Ref),
-            websocket_close(Socket, WsHandleLoopPid, SocketMode, Code);
+            websocket_close(Socket, WsHandleLoopPid, SockMod, Code);
         {text_with_reply, Data, Sender} ->
-            SocketMode:send(Socket, encode_frame(Data, 1)),
+            SockMod:send(Socket, encode_frame(Data, 1)),
             Sender ! {text_reply, self()},
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
-                    SocketMode, Shaper);
+                    SockMod, Shaper);
         {data_with_reply, Data, Sender} ->
-            SocketMode:send(Socket, encode_frame(Data, 2)),
+            SockMod:send(Socket, encode_frame(Data, 2)),
             Sender ! {data_reply, self()},
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
-                    SocketMode, Shaper);
+                    SockMod, Shaper);
         {text, Data} ->
-            SocketMode:send(Socket, encode_frame(Data, 1)),
+            SockMod:send(Socket, encode_frame(Data, 1)),
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
-                    SocketMode, Shaper);
+                    SockMod, Shaper);
 	{data, Data} ->
-	    SocketMode:send(Socket, encode_frame(Data, 2)),
+	    SockMod:send(Socket, encode_frame(Data, 2)),
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
-                    SocketMode, Shaper);
+                    SockMod, Shaper);
         {ping, Data} ->
-            SocketMode:send(Socket, encode_frame(Data, 9)),
+            SockMod:send(Socket, encode_frame(Data, 9)),
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
-                    SocketMode, Shaper);
+                    SockMod, Shaper);
         shutdown ->
 	  ?DEBUG("Shutdown request received, closing websocket "
 		 "with pid ~p",
 		 [self()]),
-            websocket_close(Socket, WsHandleLoopPid, SocketMode, 1001); % going away
+            websocket_close(Socket, WsHandleLoopPid, SockMod, 1001); % going away
         _Ignored ->
             ?WARNING_MSG("Received unexpected message, ignoring: ~p",
                          [_Ignored]),
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
-                    SocketMode, Shaper)
+                    SockMod, Shaper)
     end.
 
 encode_frame(Data, Opcode) ->
@@ -421,7 +421,7 @@ handle_data(tcp, FrameInfo, Data, Socket, WsHandleLoopPid, fast_tls, Shaper) ->
 handle_data(_, FrameInfo, Data, Socket, WsHandleLoopPid, SockMod, Shaper) ->
     handle_data_int(FrameInfo, Data, Socket, WsHandleLoopPid, SockMod, Shaper).
 
-handle_data_int(FrameInfo, Data, Socket, WsHandleLoopPid, SocketMode, Shaper) ->
+handle_data_int(FrameInfo, Data, Socket, WsHandleLoopPid, SockMod, Shaper) ->
     {NewFrameInfo, Recv, Send} = process_frame(FrameInfo, Data),
     lists:foreach(fun (El) ->
                           case El of
@@ -434,27 +434,27 @@ handle_data_int(FrameInfo, Data, Socket, WsHandleLoopPid, SocketMode, Shaper) ->
                           end
 		  end,
 		  Recv),
-    {NewFrameInfo, Send, handle_shaping(Data, Socket, SocketMode, Shaper)}.
+    {NewFrameInfo, Send, handle_shaping(Data, Socket, SockMod, Shaper)}.
 
 websocket_close(Socket, WsHandleLoopPid,
-                SocketMode, CloseCode) when CloseCode > 0 ->
+                SockMod, CloseCode) when CloseCode > 0 ->
     Frame = encode_frame(<<CloseCode:16/integer-big>>, 8),
-    SocketMode:send(Socket, Frame),
-    websocket_close(Socket, WsHandleLoopPid, SocketMode, 0);
-websocket_close(Socket, WsHandleLoopPid, SocketMode, _CloseCode) ->
+    SockMod:send(Socket, Frame),
+    websocket_close(Socket, WsHandleLoopPid, SockMod, 0);
+websocket_close(Socket, WsHandleLoopPid, SockMod, _CloseCode) ->
     WsHandleLoopPid ! closed,
-    SocketMode:close(Socket).
+    SockMod:close(Socket).
 
 get_origin() ->
     ejabberd_option:websocket_origin().
 
-handle_shaping(_Data, _Socket, _SocketMode, none) ->
+handle_shaping(_Data, _Socket, _SockMod, none) ->
     none;
-handle_shaping(Data, Socket, SocketMode, Shaper) ->
+handle_shaping(Data, Socket, SockMod, Shaper) ->
     {NewShaper, Pause} = ejabberd_shaper:update(Shaper, byte_size(Data)),
     if Pause > 0 ->
         activate_after(Socket, self(), Pause);
-        true -> activate(Socket, SocketMode, once)
+        true -> activate(Socket, SockMod, once)
     end,
     NewShaper.
 
