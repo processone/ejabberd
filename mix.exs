@@ -107,7 +107,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_pgsql, "~> 1.1"},
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
-     {:stringprep, "~> 1.0"},
+     {:stringprep, ">= 1.0.26", override: true},
      {:stun, "~> 1.0"},
      {:xmpp, "~> 1.5"},
      {:yconf, "~> 1.0"}]
