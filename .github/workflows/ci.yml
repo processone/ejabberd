@@ -108,10 +108,7 @@ jobs:
       if: matrix.rebar == 3
       uses: actions/cache@v2
       with:
-        path: |
-          ~/.cache/rebar3/
-          _build/default/
-          !_build/default/*dialyzer_warnings
+        path: ~/.cache/rebar3/
         key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
 
     - name: Compile
@@ -214,9 +211,7 @@ jobs:
     - name: Cache Rebar3
       uses: actions/cache@v2
       with:
-        path: |
-          ~/.cache/rebar3/
-          _build/default/lib/
+        path: ~/.cache/rebar3/
         key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
     - name: Prepare libraries
       run: |
