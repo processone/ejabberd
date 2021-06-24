@@ -87,7 +87,7 @@ mod_opt_type(wake_on_timeout) ->
     econf:bool().
 
 mod_options(_Host) ->
-    [{resume_timeout, timer:seconds(259200)},
+    [{resume_timeout, timer:hours(72)},
      {wake_on_start, false},
      {wake_on_timeout, true}].
 
@@ -111,7 +111,7 @@ mod_doc() ->
                      "notification is issued. Once that happened, the "
                      "resumption timeout configured for the 'mod_stream_mgmt' "
                      "module is restored. "
-                     "The default value is '72' minutes.")}},
+                     "The default value is '72' hours.")}},
            {wake_on_start,
             #{value => "true | false",
               desc =>
