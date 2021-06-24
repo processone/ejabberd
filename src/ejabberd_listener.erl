@@ -113,10 +113,11 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 			     _ ->
 				 {Port, SockOpts}
 			 end,
+    ExtraOpts2 = lists:keydelete(socket_timeout, 1, ExtraOpts),
     case gen_udp:open(Port2, [binary,
 			     {active, false},
 			     {reuseaddr, true} |
-			     ExtraOpts]) of
+			     ExtraOpts2]) of
 	{ok, Socket} ->
 	    case inet:sockname(Socket) of
 		{ok, {Addr, Port1}} ->
@@ -195,7 +196,6 @@ listen_tcp(Port, SockOpts) ->
 				{active, false},
 				{reuseaddr, true},
 				{nodelay, true},
-				{send_timeout, ?TCP_SEND_TIMEOUT},
 				{send_timeout_close, true},
 				{keepalive, true} | ExtraOpts]),
     case Res of
@@ -682,6 +682,8 @@ listen_opt_type(max_stanza_size) ->
     econf:pos_int(infinity);
 listen_opt_type(max_fsm_queue) ->
     econf:pos_int();
+listen_opt_type(send_timeout) ->
+    econf:timeout(seconds, true);
 listen_opt_type(shaper) ->
     econf:shaper();
 listen_opt_type(access) ->
@@ -694,6 +696,7 @@ listen_options() ->
      {transport, tcp},
      {ip, {0,0,0,0}},
      {accept_interval, 0},
+     {send_timeout, 15000},
      {backlog, 5},
      {use_proxy_protocol, false},
      {supervisor, true}].
