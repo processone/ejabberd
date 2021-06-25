@@ -17,6 +17,7 @@
 /ebin/
 /ejabberd.init
 /ejabberd.service
+/ejabberdctl
 /ejabberdctl.example
 /rel/ejabberd/
 /src/eldap_filter_yecc.erl

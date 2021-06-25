@@ -362,6 +362,11 @@ distclean: clean clean-rel
 rel:
 	$(REBAR) $(REBARREL)
 
+DEV_CONFIG = _build/dev/rel/ejabberd/etc/ejabberd/ejabberd.yml
+
+dev $(DEV_CONFIG):
+	REBAR_PROFILE=dev rebar3 release
+
 TAGS:
 	etags *.erl
 
