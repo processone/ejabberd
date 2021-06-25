@@ -107,6 +107,7 @@ ifeq "$(IS_REBAR3)" "1"
   DEPSBASE=_build
   DEPSDIR=$(DEPSBASE)/default/lib
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
+  REBARREL=as prod tar
 else
   SKIPDEPS=skip_deps=true
   LISTDEPS=-q list-deps
@@ -115,6 +116,7 @@ else
   DEPSBASE=deps
   DEPSDIR=$(DEPSBASE)
   EBINDIR=ebin
+  REBARREL=generate
 endif
 
 all: deps src
@@ -357,8 +359,8 @@ distclean: clean clean-rel
 	rm -f ejabberdctl.example ejabberd.init ejabberd.service
 	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 
-rel: all
-	$(REBAR) generate
+rel:
+	$(REBAR) $(REBARREL)
 
 TAGS:
 	etags *.erl

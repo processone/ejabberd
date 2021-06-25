@@ -20,10 +20,14 @@ Vars = case file:consult(filename:join([filename:dirname(SCRIPT), "..", "vars.co
      cache_tab,
      eimp,
      fast_tls,
+     fast_xml,
      fast_yaml,
      lager,
+     p1_acme,
      p1_utils,
      pkix,
+     stringprep,
+     yconf,
      xmpp]},
   {mod, {ejabberd_app, []}}]}.
 

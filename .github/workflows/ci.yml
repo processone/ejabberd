@@ -123,10 +123,7 @@ jobs:
         make update
         make
 
-      # Right now 'make rel' works only with rebar2, not rebar3
     - run: make rel
-      if: matrix.rebar == 2
-
     - run: make install -s
     - run: make hooks
     - run: make options

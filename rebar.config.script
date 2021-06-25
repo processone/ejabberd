@@ -339,6 +339,14 @@ fun(Deps, FDeps) ->
 		  end, Deps)
 end,
 
+ProcessRelx = fun(Relx, Deps) ->
+    {value, {release, NameVersion, DefaultApps}, RelxTail} = lists:keytake(release, 1, Relx),
+    DepApps = lists:map(fun({DepName, _, _}) -> DepName;
+                        ({DepName, _}) -> DepName
+                end, Deps),
+    [{release, NameVersion, DefaultApps ++ DepApps} | RelxTail]
+    end,
+
 GithubConfig = case {os:getenv("GITHUB_ACTIONS"), os:getenv("GITHUB_TOKEN")} of
   {"true", Token} when is_list(Token) ->
     CONFIG1 = [{coveralls_repo_token, Token},
@@ -374,6 +382,8 @@ Rules = [
 	  ProcessErlOpt, []},
 	 {[xref_queries], [xref_exclusions], true,
 	  AppendList2(ProcssXrefExclusions), [], []},
+	 {[relx], [deps], IsRebar3,
+	  ProcessRelx, [], []},
 	 {[deps], [floating_deps], true,
 	  ProcessFloatingDeps, [], []},
 	 {[deps], [gitonly_deps], IsRebar3,
