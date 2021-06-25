@@ -8,8 +8,9 @@ CTLPATH=$BIN_DIR/ejabberdctl
 
 [ ! -f "ejabberdctl" ] \
     && echo -n "ejabberdctl " \
-    && ln -s $CTLPATH ejabberdctl \
-    && (cd $BIN_DIR && sed -i "s|^SCRIPT_DIR=.*|SCRIPT_DIR=`pwd`|g" ejabberdctl)
+    && ln -s $CTLPATH ejabberdctl
+
+(cd $BIN_DIR && sed -i "s|^SCRIPT_DIR=.*|SCRIPT_DIR=`pwd`|g" ejabberdctl)
 
 cd $CON_DIR
 
