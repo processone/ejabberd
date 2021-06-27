@@ -339,6 +339,17 @@ fun(Deps, FDeps) ->
 		  end, Deps)
 end,
 
+
+VarsApps = case file:consult(filename:join([filename:dirname(SCRIPT),"vars.config"])) of
+    {ok, TermsV} ->
+        case proplists:get_bool(odbc, TermsV) of
+            true -> [odbc];
+            false -> []
+        end;
+    _->
+        []
+    end,
+
 ProcessRelx = fun(Relx, Deps) ->
     {value, {release, NameVersion, DefaultApps}, RelxTail} = lists:keytake(release, 1, Relx),
     ProfileApps = case os:getenv("REBAR_PROFILE") of
@@ -348,7 +359,7 @@ ProcessRelx = fun(Relx, Deps) ->
     DepApps = lists:map(fun({DepName, _, _}) -> DepName;
                         ({DepName, _}) -> DepName
                 end, Deps),
-    [{release, NameVersion, DefaultApps ++ ProfileApps ++ DepApps} | RelxTail]
+    [{release, NameVersion, DefaultApps ++ VarsApps ++ ProfileApps ++ DepApps} | RelxTail]
     end,
 
 GithubConfig = case {os:getenv("GITHUB_ACTIONS"), os:getenv("GITHUB_TOKEN")} of
