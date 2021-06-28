@@ -683,7 +683,7 @@ listen_opt_type(max_stanza_size) ->
 listen_opt_type(max_fsm_queue) ->
     econf:pos_int();
 listen_opt_type(send_timeout) ->
-    econf:timeout(second, true);
+    econf:timeout(second, infinity);
 listen_opt_type(shaper) ->
     econf:shaper();
 listen_opt_type(access) ->
