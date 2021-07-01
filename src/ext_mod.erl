@@ -638,6 +638,7 @@ install(Module, Spec, SrcDir, LibDir) ->
     Errors = lists:dropwhile(fun({_, ok}) -> true;
                                 (_) -> false
             end, Files1++Files2),
+    inform_module_configuration(Module, LibDir, Files1),
     Result = case Errors of
         [{F, {error, E}}|_] ->
             {error, {F, E}};
@@ -648,6 +649,24 @@ install(Module, Spec, SrcDir, LibDir) ->
     end,
     file:set_cwd(CurDir),
     Result.
+
+inform_module_configuration(Module, LibDir, Files1) ->
+    Res = lists:filter(fun({[$c, $o, $n, $f |_], ok}) -> true;
+                          (_) -> false
+            end, Files1),
+    case Res of
+        [{ConfigPath, ok}] ->
+            FullConfigPath = filename:join(LibDir, ConfigPath),
+            io:format("Module ~p has been installed and started.~n"
+                      "It's configured in the file:~n  ~s~n"
+                      "Configure the module in that file, or remove it~n"
+                      "and configure in your main ejabberd.yml~n",
+                      [Module, FullConfigPath]);
+        [] ->
+            io:format("Module ~p has been installed.~n"
+                      "Now you can configure it in your ejabberd.yml~n",
+                      [Module])
+    end.
 
 %% -- minimalist rebar spec parser, only support git
 
