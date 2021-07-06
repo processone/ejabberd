@@ -26,6 +26,7 @@
 /test/*.beam
 /test/*.ctc
 /logs/
+/priv/bin/captcha*sh
 /priv/sql
 /rel/ejabberd
 /_build
