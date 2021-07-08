@@ -700,6 +700,8 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 			{error, _} ->
 			    throw({error, "Unable to start room"})
 		    end;
+		invalid_service ->
+		    throw({error, "Invalid 'service'"});
 		_ ->
 		    throw({error, "Room already exists"})
 	    end
