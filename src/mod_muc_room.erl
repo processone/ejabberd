@@ -4624,37 +4624,55 @@ store_room_no_checks(StateData, ChangesHints) ->
 
 -spec send_subscriptions_change_notifications(jid(), binary(), subscribe|unsubscribe, state()) -> ok.
 send_subscriptions_change_notifications(From, Nick, Type, State) ->
-    maps:fold(fun(_, #subscriber{nodes = Nodes, jid = JID}, _) ->
-		    case lists:member(?NS_MUCSUB_NODES_SUBSCRIBERS, Nodes) of
+    {WJ, WN} =
+    maps:fold(
+	fun({WithJid, WithNick} = Res, #subscriber{nodes = Nodes, jid = JID}, _) ->
+	    case lists:member(?NS_MUCSUB_NODES_SUBSCRIBERS, Nodes) of
+		true ->
+		    case (State#state.config)#config.anonymous == false orelse
+			 get_role(JID, State) == moderator orelse
+			get_default_role(get_affiliation(JID, State), State) == moderator of
 			true ->
-			    ShowJid = case (State#state.config)#config.anonymous == false orelse
-					   get_role(JID, State) == moderator orelse
-					   get_default_role(get_affiliation(JID, State), State) == moderator of
-					  true -> true;
-					  _ -> false
-				      end,
-			    Payload = case {Type, ShowJid} of
-					 {subscribe, true} ->
-					     #muc_subscribe{jid = From, nick = Nick};
-					 {subscribe, _} ->
-					     #muc_subscribe{nick = Nick};
-					 {unsubscribe, true} ->
-					     #muc_unsubscribe{jid = From, nick = Nick};
-					 {unsubscribe, _} ->
-					     #muc_unsubscribe{nick = Nick}
-				     end,
-			    Packet = #message{
-				sub_els = [#ps_event{
-				    items = #ps_items{
-					node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
-					items = [#ps_item{
-					    id = p1_rand:get_string(),
-					    sub_els = [Payload]}]}}]},
-			    ejabberd_router:route(xmpp:set_from_to(Packet, State#state.jid, JID));
-			false ->
-			    ok
-		    end
-	       end, ok, State#state.subscribers).
+			    {[JID | WithJid], WithNick};
+			_ ->
+			    {WithJid, [JID | WithNick]}
+		    end;
+		false ->
+		    Res
+	    end
+	end, ok, State#state.subscribers),
+    if WJ /= [] ->
+	Payload1 = case Type of
+		       subscribe -> #muc_subscribe{jid = From, nick = Nick};
+		       _ -> #muc_unsubscribe{jid = From, nick = Nick}
+		   end,
+	Packet1 = #message{
+	    sub_els = [#ps_event{
+		items = #ps_items{
+		    node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
+		    items = [#ps_item{
+			id = p1_rand:get_string(),
+			sub_els = [Payload1]}]}}]},
+	ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
+						  WJ, Packet1, true);
+	true -> ok
+    end,
+    if WN /= [] ->
+	Payload2 = case Type of
+		       subscribe -> #muc_subscribe{nick = Nick};
+		       _ -> #muc_unsubscribe{nick = Nick}
+		   end,
+	Packet2 = #message{
+	    sub_els = [#ps_event{
+		items = #ps_items{
+		    node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
+		    items = [#ps_item{
+			id = p1_rand:get_string(),
+			sub_els = [Payload2]}]}}]},
+	ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
+					       WN, Packet2, true);
+	true -> ok
+    end.
 
 -spec send_wrapped(jid(), jid(), stanza(), binary(), state()) -> ok.
 send_wrapped(From, To, Packet, Node, State) ->
@@ -4727,10 +4745,70 @@ wrap(From, To, Packet, Node, Id) ->
 
 -spec send_wrapped_multiple(jid(), users(), stanza(), binary(), state()) -> ok.
 send_wrapped_multiple(From, Users, Packet, Node, State) ->
+    {Dir, Wra} =
     maps:fold(
-      fun(_, #user{jid = To}, _) ->
-	      send_wrapped(From, To, Packet, Node, State)
-      end, ok, Users).
+	fun(_, #user{jid = To, last_presence = LP}, {Direct, Wrapped} = Res) ->
+	    IsOffline = LP == undefined,
+	    if IsOffline ->
+		LBareTo = jid:tolower(jid:remove_resource(To)),
+		case maps:find(LBareTo, State#state.subscribers) of
+		    {ok, #subscriber{nodes = Nodes}} ->
+			case lists:member(Node, Nodes) of
+			    true ->
+				{Direct, [To | Wrapped]};
+			    _ ->
+				Res
+			end;
+		    _ ->
+			Res
+		end;
+		true ->
+		    {[To | Direct], Wrapped}
+	    end
+	end, {[],[]}, Users),
+    case Dir of
+	[] -> ok;
+	_ ->
+	    case Packet of
+		#presence{type = unavailable} ->
+		    case xmpp:get_subtag(Packet, #muc_user{}) of
+			#muc_user{destroy = Destroy,
+				  status_codes = Codes} ->
+			    case Destroy /= undefined orelse
+				 (lists:member(110,Codes) andalso
+				  not lists:member(303, Codes)) of
+				true ->
+				    ejabberd_router_multicast:route_multicast(
+					State#state.jid, State#state.server_host, Dir,
+					#presence{id = p1_rand:get_string(),
+						  type = unavailable}, false);
+				false ->
+				    ok
+			    end;
+			_ ->
+			    false
+		    end;
+		_ ->
+		    ok
+	    end,
+	    ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
+						      Dir, Packet, false)
+    end,
+    case Wra of
+	[] -> ok;
+	_ ->
+	    MamEnabled = (State#state.config)#config.mam,
+	    Id = case xmpp:get_subtag(Packet, #stanza_id{by = #jid{}}) of
+		     #stanza_id{id = Id2} ->
+			 Id2;
+		     _ ->
+			 p1_rand:get_string()
+		 end,
+	    NewPacket = wrap(From, State#state.jid, Packet, Node, Id),
+	    NewPacket2 = xmpp:put_meta(NewPacket, in_muc_mam, MamEnabled),
+	    ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
+						      Wra, NewPacket2, true)
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Detect messange stanzas that don't have meaningful content
