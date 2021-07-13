@@ -429,8 +429,8 @@ choose_pid(From, Pids) ->
 		Ps -> Ps
 	    end,
     Pid =
-	lists:nth(erlang:phash(jid:remove_resource(From),
-			       length(Pids1)),
+	lists:nth(erlang:phash2(jid:remove_resource(From),
+			       length(Pids1))+1,
 		  Pids1),
     ?DEBUG("Using ejabberd_s2s_out ~p~n", [Pid]),
     Pid.

@@ -424,15 +424,15 @@ balancing_route(From, To, Packet, Rs) ->
 	    Value = erlang:system_time(),
 	    case [R || R <- Rs, node(R#route.pid) == node()] of
 		[] ->
-		    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
+		    R = lists:nth(erlang:phash2(Value, length(Rs))+1, Rs),
 		    do_route(Packet, R);
 		LRs ->
-		    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
+		    R = lists:nth(erlang:phash2(Value, length(LRs))+1, LRs),
 		    do_route(Packet, R)
 	    end;
 	Value ->
 	    SRs = lists:ukeysort(#route.local_hint, Rs),
-	    R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
+	    R = lists:nth(erlang:phash2(Value, length(SRs))+1, SRs),
 	    do_route(Packet, R)
     end.
 
