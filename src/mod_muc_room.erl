@@ -4626,7 +4626,7 @@ store_room_no_checks(StateData, ChangesHints) ->
 send_subscriptions_change_notifications(From, Nick, Type, State) ->
     {WJ, WN} =
     maps:fold(
-	fun({WithJid, WithNick} = Res, #subscriber{nodes = Nodes, jid = JID}, _) ->
+	fun(_, #subscriber{nodes = Nodes, jid = JID}, {WithJid, WithNick} = Res) ->
 	    case lists:member(?NS_MUCSUB_NODES_SUBSCRIBERS, Nodes) of
 		true ->
 		    case (State#state.config)#config.anonymous == false orelse
@@ -4640,7 +4640,7 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
 		false ->
 		    Res
 	    end
-	end, ok, State#state.subscribers),
+	end, {[], []}, State#state.subscribers),
     if WJ /= [] ->
 	Payload1 = case Type of
 		       subscribe -> #muc_subscribe{jid = From, nick = Nick};
@@ -4779,7 +4779,7 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 				  not lists:member(303, Codes)) of
 				true ->
 				    ejabberd_router_multicast:route_multicast(
-					State#state.jid, State#state.server_host, Dir,
+					From, State#state.server_host, Dir,
 					#presence{id = p1_rand:get_string(),
 						  type = unavailable}, false);
 				false ->
@@ -4791,7 +4791,7 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 		_ ->
 		    ok
 	    end,
-	    ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
+	    ejabberd_router_multicast:route_multicast(From, State#state.server_host,
 						      Dir, Packet, false)
     end,
     case Wra of
@@ -4804,7 +4804,7 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 		     _ ->
 			 p1_rand:get_string()
 		 end,
-	    NewPacket = wrap(From, State#state.jid, Packet, Node, Id),
+	    NewPacket = wrap(From, undefined, Packet, Node, Id),
 	    NewPacket2 = xmpp:put_meta(NewPacket, in_muc_mam, MamEnabled),
 	    ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
 						      Wra, NewPacket2, true)

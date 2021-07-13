@@ -217,12 +217,12 @@ update_to_in_wrapped(Packet, To) ->
 	    } = PSItems
 	} = PSEvent]} ->
 	    Internal2 = xmpp:set_to(Internal, To),
-	    PSItem2 = PSItem#ps_item{sub_els = Internal2},
-	    PSItems2 = PSItems#ps_items{items = PSItem2},
+	    PSItem2 = PSItem#ps_item{sub_els = [Internal2]},
+	    PSItems2 = PSItems#ps_items{items = [PSItem2]},
 	    PSEvent2 = PSEvent#ps_event{items = PSItems2},
-	    Packet#message{sub_els = [PSEvent2]};
+	    xmpp:set_to(Packet#message{sub_els = [PSEvent2]}, To);
 	_ ->
-	    Packet
+	    xmpp:set_to(Packet, To)
     end.
 
 %%--------------------------------------------------------------------
