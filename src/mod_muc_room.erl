@@ -4731,7 +4731,7 @@ send_wrapped(From, To, Packet, Node, State) ->
 	    ejabberd_router:route(xmpp:set_from_to(Packet, From, To))
     end.
 
--spec wrap(jid(), jid(), stanza(), binary(), binary()) -> message().
+-spec wrap(jid(), undefined | jid(), stanza(), binary(), binary()) -> message().
 wrap(From, To, Packet, Node, Id) ->
     El = xmpp:set_from_to(Packet, From, To),
     #message{
