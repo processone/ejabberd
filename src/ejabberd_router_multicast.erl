@@ -39,7 +39,7 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+	 terminate/2, code_change/3, update_to_in_wrapped/2]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -61,7 +61,7 @@ start_link() ->
 -spec route_multicast(jid(), binary(), [jid()], stanza(), boolean()) -> ok.
 route_multicast(From0, Domain0, Destinations0, Packet0, Wrapped0) ->
     {From, Domain, Destinations, Packet, Wrapped} =
-    ejabberd_hooks:run_fold(multicast_route, {From0, Domain0, Destinations0, Packet0, Wrapped0}, []),
+    ejabberd_hooks:run_fold(multicast_route, Domain0, {From0, Domain0, Destinations0, Packet0, Wrapped0}, []),
     case catch do_route(Domain, Destinations, xmpp:set_from(Packet, From), Wrapped) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
