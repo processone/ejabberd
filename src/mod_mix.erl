@@ -24,7 +24,7 @@
 -module(mod_mix).
 -behaviour(gen_mod).
 -behaviour(gen_server).
--protocol({xep, 369, '0.13.0'}).
+-protocol({xep, 369, '0.14.1'}).
 
 %% API
 -export([route/1]).
