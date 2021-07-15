@@ -1,4 +1,4 @@
-defmodule Ejabberd.Mixfile do
+defmodule Ejabberd.MixProject do
   use Mix.Project
 
   def project do
@@ -13,6 +13,8 @@ defmodule Ejabberd.Mixfile do
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
      aliases: [test: "test --no-start"],
+     start_permanent: Mix.env() == :prod,
+     language: :erlang,
      releases: releases(),
      package: package(),
      deps: deps()]
