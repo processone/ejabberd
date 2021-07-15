@@ -30,7 +30,7 @@ fi
 
 AC_ARG_WITH(rebar,
 	AC_HELP_STRING([--with-rebar=bin],
-		[use rebar specified]),
+		[use the rebar/rebar3/mix binary specified]),
 [if test "$withval" = "yes" -o "$withval" = "no" -o "X$with_rebar" = "X"; then
     rebar="rebar"
 else
