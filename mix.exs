@@ -25,12 +25,13 @@ defmodule Ejabberd.Mixfile do
 
   def application do
     [mod: {:ejabberd_app, []},
-     applications: [:kernel, :stdlib, :sasl, :ssl],
-     included_applications: [:lager, :mnesia, :inets, :p1_utils, :cache_tab,
-                             :fast_tls, :stringprep, :fast_xml, :xmpp, :mqtree,
-                             :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2,
-                             :eimp, :base64url, :jose, :pkix, :os_mon, :yconf,
-                             :p1_acme, :idna]
+     extra_applications: [:mix],
+     applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib,
+                    :base64url, :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
+                    :p1_utils, :stringprep, :stun, :yconf],
+     included_applications: [:lager, :mnesia, :os_mon,
+                             :cache_tab, :eimp, :esip, :mqtree, :p1_acme,
+                             :p1_oauth2, :pkix, :xmpp]
      ++ cond_apps()]
   end
 
@@ -140,8 +141,7 @@ defmodule Ejabberd.Mixfile do
                          {config(:mysql), :p1_mysql},
                          {config(:odbc), :odbc},
                          {config(:pgsql), :p1_pgsql},
-                         {config(:sqlite), :sqlite3},
-                         {config(:zlib), :ezlib}], do:
+                         {config(:sqlite), :sqlite3}], do:
       app
   end
 
