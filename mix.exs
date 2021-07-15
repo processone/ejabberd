@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "21.4.0",
+     version: version(),
      description: description(),
      elixir: "~> 1.4",
      elixirc_paths: ["lib"],
@@ -15,6 +15,14 @@ defmodule Ejabberd.Mixfile do
      aliases: [test: "test --no-start"],
      package: package(),
      deps: deps()]
+  end
+
+  def version do
+    case config(:vsn) do
+      :false -> "0.0.0" # ./configure wasn't run: vars.config not created
+      '0.0' -> "0.0.0" # the full git repository wasn't downloaded
+      vsn -> String.replace(:erlang.list_to_binary(vsn), ".0", ".")
+    end
   end
 
   def description do
