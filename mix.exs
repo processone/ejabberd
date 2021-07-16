@@ -215,11 +215,29 @@ defmodule Ejabberd.MixProject do
     ro = "rel/overlays"
     File.rm_rf(ro)
 
-    System.shell("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.template > ejabberdctl.example1")
+    # Elixir lower than 1.12.0 don't have System.shell
+    execute = fn(command) ->
+      case function_exported?(System, :shell, 1) do
+        true ->
+          System.shell(command)
+        false ->
+          :os.cmd(to_charlist(command))
+      end
+    end
+
+    # Mix/Elixir lower than 1.11.0 use config/releases.exs instead of runtime.exs
+    case Version.match?(System.version, ">= 1.11.0") do
+      true ->
+        :ok
+      false ->
+        execute.("cp config/runtime.exs config/releases.exs")
+    end
+
+    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.template > ejabberdctl.example1")
     Mix.Generator.copy_template("ejabberdctl.example1", "ejabberdctl.example2", assigns)
-    System.shell("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2 > ejabberdctl.example3")
-    System.shell("sed -e 's|ERLANG_NODE=ejabberd@localhost|ERLANG_NODE=ejabberd|g' ejabberdctl.example3 > ejabberdctl.example4")
-    System.shell("sed -e 's|INSTALLUSER=|ERL_OPTIONS=\"-setcookie \\$\\(cat \"\\${SCRIPT_DIR%/*}/releases/COOKIE\")\"\\nINSTALLUSER=|g' ejabberdctl.example4 > ejabberdctl.example5")
+    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2 > ejabberdctl.example3")
+    execute.("sed -e 's|ERLANG_NODE=ejabberd@localhost|ERLANG_NODE=ejabberd|g' ejabberdctl.example3 > ejabberdctl.example4")
+    execute.("sed -e 's|INSTALLUSER=|ERL_OPTIONS=\"-setcookie \\$\\(cat \"\\${SCRIPT_DIR%/*}/releases/COOKIE\")\"\\nINSTALLUSER=|g' ejabberdctl.example4 > ejabberdctl.example5")
     Mix.Generator.copy_template("ejabberdctl.example5", "#{ro}/bin/ejabberdctl", assigns)
     File.chmod("#{ro}/bin/ejabberdctl", 0o755)
 
@@ -250,7 +268,7 @@ defmodule Ejabberd.MixProject do
     Mix.Generator.create_directory("#{ro}/var/lib/ejabberd")
 
     case Mix.env() do
-      :dev -> System.shell("REL_DIR_TEMP=$PWD/rel/overlays/ rel/setup-dev.sh")
+      :dev -> execute.("REL_DIR_TEMP=$PWD/rel/overlays/ rel/setup-dev.sh")
       _ -> :ok
     end
 

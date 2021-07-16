@@ -9,6 +9,7 @@
 /Makefile
 /config.log
 /config.status
+/config/releases.exs
 /configure
 /aclocal.m4
 /*.cache
