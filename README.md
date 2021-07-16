@@ -118,6 +118,7 @@ To compile ejabberd you need:
  - PAM library. Optional. For Pluggable Authentication Modules (PAM).
  - ImageMagick's Convert program and Ghostscript fonts. Optional. For CAPTCHA
    challenges.
+ - Elixir ≥ 1.10.3. Optional. Alternative to build ejabberd
 
 If your system splits packages in libraries and development headers, you must
 install the development packages also.
@@ -155,9 +156,25 @@ start and stop ejabberd. For example:
     ejabberdctl start
 
 
-For detailed information please refer to the ejabberd Installation and
-Operation Guide available online and in the `doc` directory of the source
-tarball.
+For detailed information please refer to the
+[ejabberd Documentation](https://docs.ejabberd.im)
+
+
+### 3. Use ejabberd locally
+
+Alternatively, you can setup ejabberd without installing in your system:
+
+    ./configure --with-rebar=./rebar3
+    make dev
+
+Or, if you have Elixir available and plan to develop Elixir code:
+
+    ./configure --with-rebar=mix
+    make dev
+
+Check the full list of targets:
+
+    make help
 
 
 Development
