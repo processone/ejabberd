@@ -1,8 +1,81 @@
+# Version 21.04
+
+API Commands:
+- `add_rosteritem/...`: Add argument guards to roster commands
+- `get_user_subscriptions`: New command for MUC/Sub
+- `remove_mam_for_user_with_peer`: Fix when removing room archive
+- `send_message`: Fix bug introduced in ejabberd 21.01
+- `set_vcard`: Return modules errors
+
+Build and setup:
+- Allow ejabberd to be compatible as a dependency for an Erlang project using rebar3
+- CAPTCHA: New question/answer-based CAPTCHA script
+- `--enable-lua`: new configure option for luerl instead of --enable-tools
+- Remove support for HiPE, it was experimental and Erlang/OTP 24 removes it
+- Update `sql_query` record to handle the Erlang/OTP 24 compiler reports
+- Updated dependencies to fix Dialyzer warnings
+
+Miscellaneous:
+- CAPTCHA: Update `FORM_TYPE` from captcha to register
+- LDAP: fix eldap certificate verification
+- MySQL: Fix for "specified key was too long"
+- Translations: updated the Esperanto, Greek, and Japanese translations
+- Websocket: Fix PONG responses
+
+Modules:
+- `mod_block_strangers`: If stanza is type error, allow it passing
+- `mod_caps`: Don't request roster when not needed
+- `mod_caps`: Skip reading roster in one more case
+- `mod_mam`: Remove `queryid` from MAM fin element
+- `mod_mqtt`: When deregistering XMPP account, close its MQTT sessions
+- `mod_muc`: Take in account subscriber's affiliation when checking access to moderated room
+- `mod_muc`: Use monitors to track online and hard-killed rooms
+- `mod_muc`: When occupant is banned, remove his subscriptions too
+- `mod_privacy`: Make fetching roster lazy
+- `mod_pubsub`: Don't fail on PEP unsubscribe
+- `mod_pubsub`: Fix `gen_pubsub_node:get_state` return value
+- `mod_vcard`: Obtain and provide photo type in vCard LDAP
+
+# Version 21.01
+
+Miscellaneous changes:
+- `log_rotate_size` option: Fix handling of ‘infinity’ value
+- `mod_time`: Fix invalid timezone
+- Auth JWT: New `check_decoded_jwt` hook runs the default JWT verifier
+- MUC: Allow non-occupant non-subscribed service admin send private MUC message
+- MUC: New `max_password` and `max_captcha_whitelist` options
+- OAuth: New `oauth_cache_rest_failure_life_time` option
+- PEP: Skip reading pep nodes that we know won’t be requested due to caps
+- SQL: Add sql script to migrate mysql from old schema to new
+- SQL: Don’t use REPLACE for upsert when there are “-” fields.
+- Shared Rosters LDAP: Add multi-domain support (and flexibility)
+- Sqlite3: Fix dependency version
+- Stun: Block loopback addresses by default
+- Several documentation fixes and clarifications
+
+Commands:
+- `decide_room`: Use better fallback value for room activity time when skipping room
+- `delete_old_message`: Fix when using sqlite spool table
+- `module_install`: Make ext_mod compile module with debug_info flags
+- `room_unused_*`: Don’t fetch subscribers list
+- `send_message`: Don’t include empty in messages
+- `set_room_affiliation`: Validate affiliations
+
+Running:
+- Docker: New `Dockerfile` and `devcontainer.json`
+- New `ejabberdctl foreground-quiet`
+- Systemd: Allow for listening on privileged ports
+- Systemd: Integrate nicely with systemd
+
+Translations:
+- Moved gettext PO files to a new `ejabberd-po` repository
+- Improved several translations: Catalan, Chinese, German, Greek, Indonesian, Norwegian, Portuguese (Brazil), Spanish.
+
 # Version 20.12
 
 - Add support for `SCRAM-SHA-{256,512}-{PLUS}` authentication
 - Don't use same value in cache for user don't exist and wrong password
-- outgoing_s2s_ipv*_address: New options to set ipv4/ipv6 outbound s2s out interface
+- `outgoing_s2s_ipv*_address`: New options to set ipv4/ipv6 outbound s2s out interface
 - s2s_send_packet: this hook now filters outgoing s2s stanzas
 - start_room: new hook runs when a room process is started
 - check_decoded_jwt: new hook to check decoded JWT after success authentication
@@ -10,7 +83,7 @@
 * Admin
 - Docker: Fix DB initialization
 - New sql_odbc_driver option: choose the mssql ODBC driver
-- Rebar3: Fully supported. Enable with ./configure --with-rebar=/path/to/rebar3
+- Rebar3: Fully supported. Enable with `./configure --with-rebar=/path/to/rebar3`
 - systemd: start ejabberd in foreground
 
 * Modules:
