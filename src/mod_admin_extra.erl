@@ -662,6 +662,7 @@ get_commands_spec() ->
 			"For example:\n"
 			"  ejabberdctl srg_create group3 myserver.com "
 			"name desc \\\"group1\\\\ngroup2\\\"",
+			note = "changed in 21.07",
 			module = ?MODULE, function = srg_create,
 			args = [{group, binary}, {host, binary},
 				{label, binary}, {description, binary}, {display, binary}],
