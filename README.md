@@ -164,7 +164,7 @@ For detailed information please refer to the
 
 Alternatively, you can setup ejabberd without installing in your system:
 
-    ./configure --with-rebar=./rebar3
+    ./configure --with-rebar=rebar3
     make dev
 
 Or, if you have Elixir available and plan to develop Elixir code:
