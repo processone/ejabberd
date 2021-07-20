@@ -113,7 +113,7 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 			     _ ->
 				 {Port, SockOpts}
 			 end,
-    ExtraOpts2 = lists:keydelete(socket_timeout, 1, ExtraOpts),
+    ExtraOpts2 = lists:keydelete(send_timeout, 1, ExtraOpts),
     case gen_udp:open(Port2, [binary,
 			     {active, false},
 			     {reuseaddr, true} |
