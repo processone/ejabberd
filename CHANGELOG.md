@@ -1,3 +1,50 @@
+# Version 21.07
+
+Compilation
+- Add rebar3 3.15.2 binary
+- Add support for mix to: `./configure --enable-rebar=mix`
+- Add workaround so rebar2 can use Elixir 1.12.0
+- Improved `make rel` to work with rebar3 and mix
+- Add `make dev` to build a development release with rebar3 or mix
+- Hex: Add `sql/` and `vars.config` to Hex package files
+- Hex: Update mix applications list to fix error `p1_utils is listed as both...`
+- There are so many targets in Makefile... add `make help`
+- Fix extauth.py failure in test suite with Python 3
+- Added experimental support for GitHub Codespaces
+- Switch test service from TravisCI to GitHub Actions
+
+Commands:
+- Display extended error message in ejabberdctl
+- Remove SMP option from ejabberdctl.cfg, `-smp` was removed in OTP 21
+- `create_room`: After creating room, store in DB if it's persistent
+- `help`: Major changes in its usage and output
+- `srg_create`: Update to use `label` parameter instead of `name`
+
+Modules:
+- ejabberd_listener: New `send_timeout` option
+- mod_mix: Improvements to update to 0.14.1
+- mod_muc_room: Don't leak owner JIDs
+- mod_multicast: Routing for more MUC packets
+- mod_multicast: Correctly strip only other bcc addresses
+- mod_mqtt: Allow shared roster group placeholder in mqtt topic
+- mod_pubsub: Several fixes when using PubSub with RSM
+- mod_push: Handle MUC/Sub events correctly
+- mod_shared_roster: Delete cache after performing change to be sure that in cache will be up to date data
+- mod_shared_roster: Improve database and caching
+- mod_shared_roster: Reconfigure cache when options change
+- mod_vcard: Fix invalid_encoding error when using extended plane characters in vcard
+- mod_vcard: Update econf:vcard() to generate correct vcard_temp record
+- WebAdmin: New simple pages to view mnesia tables information and content
+- WebSocket: Fix typos
+
+SQL:
+- MySQL Backend Patch for scram-sha512
+- SQLite: When exporting for SQLite, use its specific escape options
+- SQLite: Minor fixes for new_sql_schema support
+- mod_privacy: Cast as boolean when exporting privacy_list_data to PostgreSQL
+- mod_mqtt: Add mqtt_pub table definition for MSSQL
+- mod_shared_roster: Add missing indexes to `sr_group` tables in all SQL databases
+
 # Version 21.04
 
 API Commands:
