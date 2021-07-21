@@ -3,18 +3,10 @@ echo -n "===> Preparing dev configuration files: "
 PWD_DIR=`pwd`
 REL_DIR=$PWD_DIR/_build/dev/rel/ejabberd/
 CON_DIR=$REL_DIR/etc/ejabberd/
-BIN_DIR=$REL_DIR/bin/
-CTLPATH=$BIN_DIR/ejabberdctl
 
 [ -z "$REL_DIR_TEMP" ] && REL_DIR_TEMP=$REL_DIR
 CON_DIR_TEMP=$REL_DIR_TEMP/etc/ejabberd/
 BIN_DIR_TEMP=$REL_DIR_TEMP/bin/
-
-[ ! -e "ejabberdctl" ] \
-    && echo -n "ejabberdctl " \
-    && ln -s $CTLPATH ejabberdctl
-
-# (cd $BIN_DIR_TEMP && sed -i "s|^SCRIPT_DIR=.*|SCRIPT_DIR=$REL_DIR|g" ejabberdctl)
 
 cd $CON_DIR_TEMP
 
@@ -31,4 +23,6 @@ sed -i "s|#' POLL|EJABBERD_BYPASS_WARNINGS=true\n\n#' POLL|g" ejabberdctl.cfg.ex
     && mv ejabberdctl.cfg.example ejabberdctl.cfg
 
 echo ""
-echo "===> Now you can start this ejabberd dev with: ./ejabberdctl live"
+echo "===> Some example ways to start this ejabberd dev:"
+echo "     _build/dev/rel/ejabberd/bin/ejabberd console"
+echo "     _build/dev/rel/ejabberd/bin/ejabberdctl live"
