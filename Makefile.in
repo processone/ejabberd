@@ -130,7 +130,6 @@ ifeq "$(IS_REBAR)" "3"
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
   REBARREL=$(REBAR) as prod tar
   REBARDEV=REBAR_PROFILE=dev $(REBAR) release
-  ELIXIR_WARNING="\033[32m===>\033[00m If you get \033[1;91mDependency failure: source for elixir...\033[00m, please run \033[4;37mmake\033[00m again"
 else
   SKIPDEPS=skip_deps=true
   LISTDEPS=-q list-deps
@@ -143,23 +142,12 @@ else
   EBINDIR=ebin
   REBARREL=$(REBAR) generate
   REBARDEV=
-  ELIXIR_WARNING="\033[32m===>\033[00m If you get \033[1;91mERROR: Dependency dir .../elixir failed...\033[00m, please run \033[4;37mmake\033[00m again"
 endif
 endif
 
 all: deps src
 
-deps: elixir-rebar $(DEPSDIR)/.got
-
-elixir-rebar:
-	@[ @elixir@ = true ] \
-	 && ( [ ! -d $(DEPSDIR)/elixir/ ] \
-	 && echo $(ELIXIR_WARNING) \
-	      || ( [ ! -f $(DEPSDIR)/elixir/rebar.config ] \
-		   && { mkdir $(DEPSDIR)/elixir/src ; \
-			cp lib/elixir.app.src $(DEPSDIR)/elixir/src/ ; \
-			cp lib/rebar.config $(DEPSDIR)/elixir/ ; } \
-		   || true ) ) || true
+deps: $(DEPSDIR)/.got
 
 $(DEPSDIR)/.got:
 	rm -rf $(DEPSDIR)/.got
