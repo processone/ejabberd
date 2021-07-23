@@ -1166,6 +1166,7 @@ change_option(Option, Value, Config) ->
 	anonymous -> Config#config{anonymous = Value};
 	captcha_protected -> Config#config{captcha_protected = Value};
 	description -> Config#config{description = Value};
+	lang -> Config#config{lang = Value};
 	logging -> Config#config{logging = Value};
 	mam -> Config#config{mam = Value};
 	max_users -> Config#config{max_users = Value};
@@ -1178,8 +1179,10 @@ change_option(Option, Value, Config) ->
 	presence_broadcast -> Config#config{presence_broadcast = Value};
 	public -> Config#config{public = Value};
 	public_list -> Config#config{public_list = Value};
+	pubsub -> Config#config{pubsub = Value};
 	title -> Config#config{title = Value};
 	vcard -> Config#config{vcard = Value};
+	vcard_xupdate -> Config#config{vcard_xupdate = Value};
 	voice_request_min_interval -> Config#config{voice_request_min_interval = Value}
     end.
 
