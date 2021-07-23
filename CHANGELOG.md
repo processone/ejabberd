@@ -3,7 +3,6 @@
 Compilation
 - Add rebar3 3.15.2 binary
 - Add support for mix to: `./configure --enable-rebar=mix`
-- Add workaround so rebar2 can use Elixir 1.12.0
 - Improved `make rel` to work with rebar3 and mix
 - Add `make dev` to build a development release with rebar3 or mix
 - Hex: Add `sql/` and `vars.config` to Hex package files
