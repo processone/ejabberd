@@ -119,7 +119,7 @@ defmodule Ejabberd.MixProject do
      {:p1_pgsql, "~> 1.1"},
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
-     {:stringprep, ">= 1.0.26", override: true},
+     {:stringprep, ">= 1.0.26"},
      {:stun, "~> 1.0"},
      {:xmpp, "~> 1.5"},
      {:yconf, "~> 1.0"}]
