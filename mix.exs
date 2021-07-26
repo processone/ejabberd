@@ -24,6 +24,9 @@ defmodule Ejabberd.MixProject do
     case config(:vsn) do
       :false -> "0.0.0" # ./configure wasn't run: vars.config not created
       '0.0' -> "0.0.0" # the full git repository wasn't downloaded
+      [_, _, ?., _, _] = x ->
+        head = String.replace(:erlang.list_to_binary(x), ~r/0+([0-9])/, "\\1")
+        <<head::binary, ".0">>
       vsn -> String.replace(:erlang.list_to_binary(vsn), ~r/0+([0-9])/, "\\1")
     end
   end
