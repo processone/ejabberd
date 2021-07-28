@@ -3406,7 +3406,7 @@ max_items(Host, Options) ->
 	    case get_option(Options, max_items) of
 		I when is_integer(I), I < 0 -> 0;
 		I when is_integer(I) -> I;
-		_ -> ?MAXITEMS
+		_ -> get_max_items_node(Host)
 	    end;
 	false ->
 	    case get_option(Options, send_last_published_item) of
