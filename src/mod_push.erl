@@ -98,7 +98,7 @@ start(Host, Opts) ->
     init_cache(Mod, Host, Opts),
     register_iq_handlers(Host),
     register_hooks(Host),
-    ejabberd_commands:register_commands(get_commands_spec()).
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()).
 
 -spec stop(binary()) -> ok.
 stop(Host) ->

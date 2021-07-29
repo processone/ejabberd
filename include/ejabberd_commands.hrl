@@ -59,6 +59,7 @@
          policy = restricted     :: open | restricted | admin | user,
         %% access is: [accessRuleName] or [{Module, AccessOption, DefaultAccessRuleName}]
          access = []             :: [{atom(),atom(),atom()}|atom()],
+         definer = unknown       :: atom(),
          result = {res, rescode} :: rterm() | '_' | '$2',
          args_rename = []        :: [{atom(),atom()}],
          args_desc = none        :: none | [string()] | '_',

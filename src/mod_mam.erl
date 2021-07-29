@@ -148,7 +148,7 @@ start(Host, Opts) ->
 		    ejabberd_hooks:add(check_create_room, Host, ?MODULE,
 				       check_create_room, 50)
 	    end,
-	    ejabberd_commands:register_commands(get_commands_spec()),
+	    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
 	    ok;
 	Err ->
 	    Err

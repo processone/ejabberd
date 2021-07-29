@@ -41,6 +41,7 @@
 	 get_tags_commands/0,
 	 get_tags_commands/1,
 	 register_commands/1,
+	 register_commands/2,
 	 unregister_commands/1,
 	 get_commands_spec/0,
 	 get_commands_definition/0,
@@ -129,10 +130,13 @@ code_change(_OldVsn, State, _Extra) ->
 -spec register_commands([ejabberd_commands()]) -> ok.
 
 register_commands(Commands) ->
+    register_commands(unknown, Commands).
+
+register_commands(Definer, Commands) ->
     lists:foreach(
       fun(Command) ->
               %% XXX check if command exists
-              mnesia:dirty_write(Command)
+              mnesia:dirty_write(Command#ejabberd_commands{definer = Definer})
               %% ?DEBUG("This command is already defined:~n~p", [Command])
       end,
       Commands),
