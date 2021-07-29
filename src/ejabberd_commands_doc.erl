@@ -360,8 +360,8 @@ gen_param(Name, Type, Desc, HTMLOutput) ->
     [?TAG(dt, [?TAG_R(strong, atom_to_list(Name)), <<" :: ">>, ?RAW(format_type(Type))]),
      ?TAG(dd, ?RAW(Desc))].
 
-gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
-                           args=Args, args_desc=ArgsDesc, note=Note,
+gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
+                           args=Args, args_desc=ArgsDesc, note=Note, definer=Definer,
                            result=Result, result_desc=ResultDesc}=Cmd, HTMLOutput, Langs) ->
     try
         ArgsText = case ArgsDesc of
@@ -389,6 +389,17 @@ gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
                                  [?TAG(dl, [gen_param(RName, Type, ResultDesc, HTMLOutput)])]
                            end
                      end,
+        TagsText = [?RAW(atom_to_list(Tag) ++ " ") || Tag <- Tags],
+        IsDefinerMod = case Definer of
+                         unknown -> true;
+                         _ -> lists:member(gen_mod, proplists:get_value(behaviour, Definer:module_info(attributes)))
+                     end,
+        ModuleText = case IsDefinerMod of
+                       true ->
+                           [?TAG(h2, <<"Module:">>), ?TAG(p, ?RAW(atom_to_list(Definer)))];
+                       false ->
+                           []
+                   end,
         NoteEl = case Note of
                        "" -> [];
                        _ -> ?TAG('div', "note-down", ?RAW(Note))
@@ -403,6 +414,8 @@ gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
          end,
          ?TAG(h2, <<"Arguments:">>), ArgsText,
          ?TAG(h2, <<"Result:">>), ResultText,
+         ?TAG(h2, <<"Tags:">>), ?TAG(p, TagsText)]
+         ++ ModuleText ++ [
          ?TAG(h2, <<"Examples:">>), gen_calls(Cmd, HTMLOutput, Langs)]
     catch
 	_:Ex ->
@@ -421,12 +434,13 @@ find_commands_definitions() ->
             lists:flatmap(fun(P) ->
                                   Mod = list_to_atom(filename:rootname(P)),
                                   code:ensure_loaded(Mod),
-                                  case erlang:function_exported(Mod, get_commands_spec, 0) of
+                                  Cs = case erlang:function_exported(Mod, get_commands_spec, 0) of
                                       true ->
                                           apply(Mod, get_commands_spec, []);
                                       _ ->
                                           []
-                                  end
+                                  end,
+                                  [C#ejabberd_commands{definer = Mod} || C <- Cs]
                           end, filelib:wildcard("*.beam", Path))
     end.
 
