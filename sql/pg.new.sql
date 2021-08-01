@@ -156,6 +156,12 @@
 -- CREATE INDEX i_sm_sh_username ON sm USING btree (server_host, username);
 -- ALTER TABLE sm ALTER COLUMN server_host DROP DEFAULT;
 
+-- ALTER TABLE push_session ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
+-- DROP INDEX i_push_usn;
+-- DROP INDEX i_push_ut;
+-- ALTER TABLE push_session ADD PRIMARY KEY (server_host, username, timestamp);
+-- CREATE UNIQUE INDEX i_push_session_susn ON push_session USING btree (server_host, username, service, node);
+
 
 CREATE TABLE users (
     username text NOT NULL,
