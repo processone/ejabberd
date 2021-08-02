@@ -3548,7 +3548,8 @@ decode_get_pending(#xdata{fields = Fs}, Lang) ->
 	    {error, xmpp:err_resource_constraint(Txt, Lang)}
     end.
 
--spec check_opt_range(atom(), [proplists:property()], non_neg_integer()) -> boolean().
+-spec check_opt_range(atom(), [proplists:property()],
+		      non_neg_integer() | undefined) -> boolean().
 check_opt_range(_Opt, _Opts, undefined) ->
     true;
 check_opt_range(Opt, Opts, Max) ->
