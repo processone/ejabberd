@@ -288,10 +288,11 @@ start(Level) ->
     ConsoleFmtConfig = FmtConfig#{template => console_template()},
     try
 	ok = logger:set_primary_config(level, Level),
-	ok = logger:update_formatter_config(default, ConsoleFmtConfig),
+	DefaultHandlerId = get_default_handlerid(),
+	ok = logger:update_formatter_config(DefaultHandlerId, ConsoleFmtConfig),
 	case quiet_mode() of
 	    true ->
-		ok = logger:set_handler_config(default, level, critical);
+		ok = logger:set_handler_config(DefaultHandlerId, level, critical);
 	    _ ->
 		ok
 	end,
@@ -317,6 +318,13 @@ start(Level) ->
     catch _:{Tag, Err} when Tag == badmatch; Tag == case_clause ->
 	    ?LOG_CRITICAL("Failed to set logging: ~p", [Err]),
 	    Err
+    end.
+
+get_default_handlerid() ->
+    Ids = logger:get_handler_ids(),
+    case lists:member(default, Ids) of
+        true -> default;
+        false -> hd(Ids)
     end.
 
 -spec restart() -> ok.
