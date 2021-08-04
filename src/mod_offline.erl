@@ -572,6 +572,16 @@ check_event(#message{from = From, to = To, id = ID, type = Type} = Msg) ->
 			      sub_els = [#xevent{id = ID, offline = true}]},
 	    ejabberd_router:route(NewMsg),
 	    true;
+	% Don't store composing events
+	#xevent{id = V, composing = true} when V /= undefined ->
+	    false;
+	% Nor composing stopped events
+	#xevent{id = V, composing = false, delivered = false,
+		displayed = false, offline = false} when V /= undefined ->
+	    false;
+	% But store other received notifications
+	#xevent{id = V} when V /= undefined ->
+	    true;
 	_ ->
 	    false
     end.
