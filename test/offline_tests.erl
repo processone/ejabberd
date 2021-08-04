@@ -489,6 +489,14 @@ wait_for_complete(Config, N) ->
 	      end
       end, error, [0, 100, 200, 2000, 5000, 10000]).
 
+xevent_stored(#message{body = [], subject = []}, _) -> false;
+xevent_stored(#message{type = T}, _) when T /= chat, T /= normal -> false;
+xevent_stored(_, #xevent{id = undefined}) -> true;
+xevent_stored(_, #xevent{offline = true}) -> true;
+xevent_stored(_, #xevent{delivered = true}) -> true;
+xevent_stored(_, #xevent{displayed = true}) -> true;
+xevent_stored(_, _) -> false.
+
 message_iterator(Config) ->
     ServerJID = server_jid(Config),
     ChatStates = [[#chatstate{type = composing}]],
@@ -511,8 +519,14 @@ message_iterator(Config) ->
       fun(#message{type = error}) -> true;
 	 (#message{type = groupchat}) -> false;
 	 (#message{sub_els = [#hint{type = store}|_]}) when MamEnabled -> true;
+	 (#message{sub_els = [#hint{type = 'no-store'}|_]}) -> false;
 	 (#message{sub_els = [#offline{}|_]}) when not MamEnabled -> false;
-	 (#message{sub_els = [_, #xevent{id = I}]}) when I /= undefined, not MamEnabled -> false;
+	 (#message{sub_els = [#hint{type = store}, #xevent{} = Event | _]} = Msg) when not MamEnabled ->
+	     xevent_stored(Msg#message{body = body, type = chat}, Event);
+	 (#message{sub_els = [#xevent{} = Event]} = Msg) when not MamEnabled ->
+	     xevent_stored(Msg, Event);
+	 (#message{sub_els = [_, #xevent{} = Event | _]} = Msg) when not MamEnabled ->
+	     xevent_stored(Msg, Event);
 	 (#message{sub_els = [#xevent{id = I}]}) when I /= undefined, not MamEnabled -> false;
 	 (#message{sub_els = [#hint{type = store}|_]}) -> true;
 	 (#message{sub_els = [#hint{type = 'no-store'}|_]}) -> false;
