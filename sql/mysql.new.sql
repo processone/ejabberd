@@ -86,7 +86,7 @@ CREATE TABLE sr_user (
     PRIMARY KEY (server_host(191), jid, grp)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE UNIQUE INDEX i_sr_user_sh_jid_group ON sr_group(server_host(191), jid, grp);
+CREATE UNIQUE INDEX i_sr_user_sh_jid_group ON sr_user(server_host(191), jid, grp);
 CREATE INDEX i_sr_user_sh_jid ON sr_user(server_host(191), jid);
 CREATE INDEX i_sr_user_sh_grp ON sr_user(server_host(191), grp);
 
