@@ -72,7 +72,7 @@ remove_from_archive(LUser, LServer, WithJid) ->
     end.
 
 delete_old_messages(ServerHost, TimeStamp, Type) ->
-    TS = now_to_usec(TimeStamp),
+    TS = misc:now_to_usec(TimeStamp),
     case Type of
         all ->
             ejabberd_sql:sql_query(
@@ -315,7 +315,7 @@ export(_Server) ->
                 id = _ID, timestamp = TS, peer = Peer,
                 type = Type, nick = Nick, packet = Pkt})
           when LServer == Host ->
-                TStmp = now_to_usec(TS),
+                TStmp = misc:now_to_usec(TS),
                 SUser = case Type of
                       chat -> LUser;
                       groupchat -> jid:encode({LUser, LServer, <<>>})
@@ -372,16 +372,6 @@ is_empty_for_room(LServer, LName, LHost) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-now_to_usec({MSec, Sec, USec}) ->
-    (MSec*1000000 + Sec)*1000000 + USec.
-
-usec_to_now(Int) ->
-    Secs = Int div 1000000,
-    USec = Int rem 1000000,
-    MSec = Secs div 1000000,
-    Sec = Secs rem 1000000,
-    {MSec, Sec, USec}.
-
 make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     Start = proplists:get_value(start, MAMQuery),
     End = proplists:get_value('end', MAMQuery),
@@ -432,14 +422,14 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     StartClause = case Start of
 		      {_, _, _} ->
 			  [<<" and timestamp >= ">>,
-			   integer_to_binary(now_to_usec(Start))];
+			   integer_to_binary(misc:now_to_usec(Start))];
 		      _ ->
 			  []
 		  end,
     EndClause = case End of
 		    {_, _, _} ->
 			[<<" and timestamp <= ">>,
-			 integer_to_binary(now_to_usec(End))];
+			 integer_to_binary(misc:now_to_usec(End))];
 		    _ ->
 			[]
 		end,
@@ -526,7 +516,7 @@ make_archive_el(User, TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchi
 		TSInt ->
 		    try jid:decode(Peer) of
 			PeerJID ->
-			    Now = usec_to_now(TSInt),
+			    Now = misc:usec_to_now(TSInt),
 			    PeerLJID = jid:tolower(PeerJID),
 			    T = case Kind of
 				    <<"">> -> chat;
