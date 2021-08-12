@@ -42,7 +42,8 @@ INTRUDER()
 {
 NUMBERS=$(echo "$INPUT" | grep -o . | tr '\n' ' ')
 SORTED_UNIQ_NUM=$(echo "${NUMBERS[@]}" | sort -u | tr '\n' ' ')
-RANDOM_DIGITS=$(echo 123456789 | grep -o . | sort -R | tr '\n' ' ')
+SORT_RANDOM_CMD="$( ( echo x|sort -R >&/dev/null && echo "sort -R" ) || ( echo x|shuf >&/dev/null && echo shuf ) || echo cat)"
+RANDOM_DIGITS=$(echo 123456789 | grep -o . | eval "$SORT_RANDOM_CMD" | tr '\n' ' ')
 INTRUDER=-1
 
 for i in $RANDOM_DIGITS
