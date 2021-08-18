@@ -533,4 +533,14 @@ mod_doc() ->
 	      "in the request_handlers, add a 'vN'. "
 	      "For example: '/api/v2: mod_http_api'"), "",
 	   ?T("To run a command, send a POST request to the corresponding "
-	      "URL: 'http://localhost:5280/api/<command_name>'")]}.
+	      "URL: 'http://localhost:5280/api/<command_name>'")],
+     example =>
+         ["listen:",
+          "  -",
+          "    port: 5280",
+          "    module: ejabberd_http",
+          "    request_handlers:",
+          "      /api: mod_http_api",
+          "",
+          "modules:",
+          "  mod_http_api: {}"]}.
