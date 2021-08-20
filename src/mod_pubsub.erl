@@ -3553,8 +3553,10 @@ decode_get_pending(#xdata{fields = Fs}, Lang) ->
 check_opt_range(_Opt, _Opts, undefined) ->
     true;
 check_opt_range(Opt, Opts, Max) ->
-    Val = proplists:get_value(Opt, Opts, Max),
-    Val =< Max.
+    case proplists:get_value(Opt, Opts, Max) of
+	max -> true;
+	Val -> Val =< Max
+    end.
 
 -spec get_max_items_node(host()) -> undefined | non_neg_integer().
 get_max_items_node(Host) ->
@@ -3708,6 +3710,7 @@ features() ->
      <<"access-whitelist">>,   % OPTIONAL
      <<"collections">>,   % RECOMMENDED
      <<"config-node">>,   % RECOMMENDED
+     <<"config-node-max">>,
      <<"create-and-configure">>,   % RECOMMENDED
      <<"item-ids">>,   % RECOMMENDED
      <<"last-published">>,   % RECOMMENDED
