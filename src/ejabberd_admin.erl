@@ -326,7 +326,7 @@ get_commands_spec() ->
 			args_example = ["example.com", "/var/lib/ejabberd/example.com.sql"],
 			args = [{host, string}, {file, string}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = set_master, tags = [mnesia],
+     #ejabberd_commands{name = set_master, tags = [cluster],
 			desc = "Set master node of the clustered Mnesia tables",
 			longdesc = "If you provide as nodename \"self\", this "
 			"node will be set as its own master.",
