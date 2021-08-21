@@ -228,26 +228,26 @@ mod_doc() ->
               "frequently their presence. However, the overhead is significantly "
               "reduced by the use of caching, so you probably don't want "
               "to set 'use_cache' to 'false'."), "",
-           ?T("The module depends on 'mod_vcard'."), "",
+           ?T("The module depends on _`mod_vcard`_."), "",
            ?T("NOTE: Nowadays https://xmpp.org/extensions/xep-0153.html"
               "[XEP-0153] is used mostly as \"read-only\", i.e. modern "
               "clients don't publish their avatars inside vCards. Thus "
               "in the majority of cases the module is only used along "
-              "with 'mod_avatar' module for providing backward compatibility.")],
+              "with _`mod_avatar`_ for providing backward compatibility.")],
       opts =>
           [{use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}]}.

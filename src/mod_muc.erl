@@ -1517,7 +1517,7 @@ mod_doc() ->
            {queue_type,
             #{value => "ram | file",
               desc =>
-                  ?T("Same as top-level 'queue_type' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`queue_type`_ option, but applied to this module only.")}},
            {regexp_room_id,
             #{value => "string()",
               desc =>
@@ -1634,7 +1634,7 @@ mod_doc() ->
              {logging,
               #{value => "true | false",
                 desc =>
-                    ?T("The public messages are logged using 'mod_muc_log'. "
+                    ?T("The public messages are logged using _`mod_muc_log`_. "
                        "The default value is 'false'.")}},
              {members_by_default,
               #{value => "true | false",

@@ -106,7 +106,7 @@ mod_doc() ->
 	   ?T("WARNING: Security issue: Privileged access gives components "
 	      "access to sensitive data, so permission should be granted "
 	      "carefully, only if you trust a component."), "",
-           ?T("NOTE: This module is complementary to 'mod_delegation', "
+           ?T("NOTE: This module is complementary to _`mod_delegation`_, "
               "but can also be used separately.")],
       opts =>
           [{roster,

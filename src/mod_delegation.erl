@@ -95,7 +95,7 @@ mod_doc() ->
 	   ?T("WARNING: Security issue: Namespace delegation gives components "
 	      "access to sensitive data, so permission should be granted "
 	      "carefully, only if you trust the component."), "",
-	   ?T("NOTE: This module is complementary to 'mod_privilege' but can "
+	   ?T("NOTE: This module is complementary to _`mod_privilege`_ but can "
 	      "also be used separately.")],
       opts =>
           [{namespaces,

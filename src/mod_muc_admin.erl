@@ -1413,4 +1413,4 @@ mod_doc() ->
 	  [?T("This module provides commands to administer local MUC "
 	      "services and their MUC rooms. It also provides simple "
 	      "WebAdmin pages to view the existing rooms."), "",
-	   ?T("This module depends on 'mod_muc'.")]}.
+	   ?T("This module depends on _`mod_muc`_.")]}.

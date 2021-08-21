@@ -4269,7 +4269,7 @@ mod_doc() ->
 	      "(https://xmpp.org/extensions/xep-0163.html"
 	      "[XEP-0163: Personal Eventing via Pubsub]) "
 	      "is enabled in the default ejabberd configuration file, "
-	      "and it requires 'mod_caps'.")],
+	      "and it requires _`mod_caps`_.")],
       opts =>
 	  [{access_createnode,
 	    #{value => "AccessName",
@@ -4282,7 +4282,7 @@ mod_doc() ->
 	   {db_type,
 	    #{value => "mnesia | sql",
 	      desc =>
-		  ?T("Same as top-level 'default_db' option, but applied to "
+		  ?T("Same as top-level _`default_db`_ option, but applied to "
 		     "this module only.")}},
 	   {default_node_config,
 	    #{value => "List of Key:Value",

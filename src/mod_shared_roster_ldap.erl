@@ -796,7 +796,7 @@ mod_doc() ->
 		     "disable the check. Default value is 'true'.")}}] ++
           [{Opt,
             #{desc =>
-                  {?T("Same as top-level '~s' option, but "
+                  {?T("Same as top-level _`~s`_ option, but "
                       "applied to this module only."), [Opt]}}}
            || Opt <- [ldap_backups, ldap_base, ldap_uids, ldap_deref_aliases,
 		      ldap_encrypt, ldap_password, ldap_port, ldap_rootdn,

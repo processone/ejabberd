@@ -1345,29 +1345,29 @@ mod_doc() ->
                      "This option does not affect the client in any way. "
                      "This option is only useful if option 'versioning' is "
                      "set to 'true'. The default value is 'false'. "
-                     "IMPORTANT: if you use 'mod_shared_roster' or "
-                     "'mod_shared_roster_ldap', you must set the value "
+                     "IMPORTANT: if you use _`mod_shared_roster`_ or "
+                     " _`mod_shared_roster_ldap`_, you must set the value "
                      "of the option to 'false'.")}},
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}],
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}],
       example =>
           ["modules:",
            "  ...",

@@ -366,4 +366,4 @@ mod_doc() ->
              "from the default to the new schema. Check the section "
              "http://../database/#default-and-new-schemas[Default and New Schemas] for details. "
              "Please note that only PostgreSQL is supported. "
-             "When the module is loaded use 'update_sql' ejabberdctl command.")}.
+             "When the module is loaded use _`update_sql`_ API.")}.

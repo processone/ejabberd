@@ -1456,7 +1456,7 @@ mod_doc() ->
             #{value => "true | false",
               desc =>
                   ?T("This option determines how ejabberd's "
-                     "stream management code (see 'mod_stream_mgmt') "
+                     "stream management code (see _`mod_stream_mgmt`_) "
                      "handles unacknowledged messages when the "
                      "connection is lost. Usually, such messages are "
                      "either bounced or resent. However, neither is "
@@ -1495,28 +1495,28 @@ mod_doc() ->
             #{value => "true | false",
               desc =>
                   ?T("Whether to destroy message archive of a room "
-                     "(see 'mod_muc') when it gets destroyed. "
+                     "(see _`mod_muc`_) when it gets destroyed. "
                      "The default value is 'true'.")}},
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}},
            {user_mucsub_from_muc_archive,
             #{value => "true | false",
               desc =>

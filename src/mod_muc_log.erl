@@ -1021,7 +1021,7 @@ mod_doc() ->
            ?T("- URLs on messages and subjects are converted to hyperlinks."), "",
            ?T("- Timezone used on timestamps is shown on the log files."), "",
            ?T("- A custom link can be added on top of each page."), "",
-           ?T("The module depends on 'mod_muc'.")],
+           ?T("The module depends on _`mod_muc`_.")],
       opts =>
           [{access_log,
             #{value => ?T("AccessName"),

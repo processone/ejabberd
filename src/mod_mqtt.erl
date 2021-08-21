@@ -327,37 +327,37 @@ mod_doc() ->
            {queue_type,
             #{value => "ram | file",
               desc =>
-                  ?T("Same as top-level 'queue_type' option, "
+                  ?T("Same as top-level _`queue_type`_ option, "
                      "but applied to this module only.")}},
            {ram_db_type,
             #{value => "mnesia",
               desc =>
-                  ?T("Same as top-level 'default_ram_db' option, "
+                  ?T("Same as top-level _`default_ram_db`_ option, "
                      "but applied to this module only.")}},
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, "
+                  ?T("Same as top-level _`default_db`_ option, "
                      "but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, "
+                  ?T("Same as top-level _`use_cache`_ option, "
                      "but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, "
+                  ?T("Same as top-level _`cache_size`_ option, "
                      "but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, "
+                  ?T("Same as top-level _`cache_missed`_ option, "
                      "but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, "
+                  ?T("Same as top-level _`cache_life_time`_ option, "
                      "but applied to this module only.")}}]}.
 
 %%%===================================================================

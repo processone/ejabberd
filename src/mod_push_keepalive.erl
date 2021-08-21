@@ -94,13 +94,13 @@ mod_options(_Host) ->
 mod_doc() ->
     #{desc =>
           [?T("This module tries to keep the stream management "
-              "session (see 'mod_stream_mgmt') of a disconnected "
+              "session (see _`mod_stream_mgmt`_) of a disconnected "
               "mobile client alive if the client enabled push "
               "notifications for that session. However, the normal "
               "session resumption timeout is restored once a push "
               "notification is issued, so the session will be closed "
               "if the client doesn't respond to push notifications."), "",
-           ?T("The module depends on 'mod_push'.")],
+           ?T("The module depends on _`mod_push`_.")],
       opts =>
           [{resume_timeout,
             #{value => "timeout()",
@@ -109,8 +109,8 @@ mod_doc() ->
                      "the session of a disconnected push client times out. "
                      "This timeout is only in effect as long as no push "
                      "notification is issued. Once that happened, the "
-                     "resumption timeout configured for the 'mod_stream_mgmt' "
-                     "module is restored. "
+                     "resumption timeout configured for _`mod_stream_mgmt`_ "
+                     "is restored. "
                      "The default value is '72' hours.")}},
            {wake_on_start,
             #{value => "true | false",

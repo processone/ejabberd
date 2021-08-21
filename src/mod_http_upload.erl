@@ -331,7 +331,7 @@ mod_doc() ->
                      "replaced with the virtual host name. NOTE: if GET requests "
                      "are handled by 'mod_http_upload', the 'get_url' must match the "
                      "'put_url'. Setting it to a different value only makes "
-                     "sense if an external web server or 'mod_http_fileserver' "
+                     "sense if an external web server or _`mod_http_fileserver`_ "
                      "is used to serve the uploaded files.")}},
            {service_url,
             #{desc => ?T("Deprecated.")}},
