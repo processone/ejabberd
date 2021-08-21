@@ -375,7 +375,8 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 		    or (Subscribed == true)) ->
 	    {error, xmpp:err_forbidden()};
 	true ->
-	    if MaxItems > 0 ->
+	    if MaxItems > 0;
+	       MaxItems == unlimited ->
 		    Now = erlang:timestamp(),
 		    case get_item(Nidx, ItemId) of
 			{result, #pubsub_item{creation = {_, GenKey}} = OldItem} ->

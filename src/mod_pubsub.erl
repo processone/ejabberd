@@ -210,7 +210,7 @@
 	pep_mapping             :: [{binary(), binary()}],
 	ignore_pep_from_offline :: boolean(),
 	last_item_cache         :: boolean(),
-	max_items_node          :: non_neg_integer(),
+	max_items_node          :: non_neg_integer()|unlimited,
 	max_subscriptions_node  :: non_neg_integer()|undefined,
 	default_node_config     :: [{atom(), binary()|boolean()|integer()|atom()}],
 	nodetree                :: binary(),
@@ -3399,7 +3399,7 @@ node_config(_, _, []) ->
 %% @doc <p>Return the maximum number of items for a given node.</p>
 %% <p>Unlimited means that there is no limit in the number of items that can
 %% be stored.</p>
--spec max_items(host(), [{atom(), any()}]) -> non_neg_integer().
+-spec max_items(host(), [{atom(), any()}]) -> non_neg_integer() | unlimited.
 max_items(Host, Options) ->
     case get_option(Options, persist_items) of
 	true ->
@@ -3549,8 +3549,10 @@ decode_get_pending(#xdata{fields = Fs}, Lang) ->
     end.
 
 -spec check_opt_range(atom(), [proplists:property()],
-		      non_neg_integer() | undefined) -> boolean().
+		      non_neg_integer() | unlimited | undefined) -> boolean().
 check_opt_range(_Opt, _Opts, undefined) ->
+    true;
+check_opt_range(_Opt, _Opts, unlimited) ->
     true;
 check_opt_range(Opt, Opts, Max) ->
     case proplists:get_value(Opt, Opts, Max) of
@@ -3558,7 +3560,7 @@ check_opt_range(Opt, Opts, Max) ->
 	Val -> Val =< Max
     end.
 
--spec get_max_items_node(host()) -> undefined | non_neg_integer().
+-spec get_max_items_node(host()) -> undefined | unlimited | non_neg_integer().
 get_max_items_node(Host) ->
     config(Host, max_items_node, undefined).
 
@@ -4150,7 +4152,7 @@ mod_opt_type(ignore_pep_from_offline) ->
 mod_opt_type(last_item_cache) ->
     econf:bool();
 mod_opt_type(max_items_node) ->
-    econf:non_neg_int();
+    econf:non_neg_int(unlimited);
 mod_opt_type(max_nodes_discoitems) ->
     econf:non_neg_int(infinity);
 mod_opt_type(max_subscriptions_node) ->
@@ -4277,7 +4279,7 @@ mod_doc() ->
 		     "and allows to raise user connection rate. The cost "
 		     "is memory usage, as every item is stored in memory.")}},
 	   {max_items_node,
-	    #{value => "MaxItems",
+	    #{value => "non_neg_integer() | infinity",
 	      desc =>
 		  ?T("Define the maximum number of items that can be "
 		     "stored in a node. Default value is: '10'.")}},
