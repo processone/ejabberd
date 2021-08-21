@@ -259,14 +259,14 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 			{result, _} ->
 			    {error, xmpp:err_forbidden()};
 			_ ->
-			    Items = [ItemId | itemids(Nidx, GenKey)],
-			    {result, {_NI, OI}} = remove_extra_items(Nidx, MaxItems, Items),
+			    OldIds = maybe_remove_extra_items(Nidx, MaxItems,
+							      GenKey, ItemId),
 			    set_item(#pubsub_item{
 					itemid = {ItemId, Nidx},
 					creation = {Now, GenKey},
 					modification = {Now, SubKey},
 					payload = Payload}),
-			    {result, {default, broadcast, OI}}
+			    {result, {default, broadcast, OldIds}}
 		    end;
 		true ->
 		    {result, {default, broadcast, []}}
@@ -933,6 +933,16 @@ update_subscription(Nidx, JID, Subscription) ->
         "subscriptions=%(S)s",
         "-affiliation='n'"
        ]).
+
+-spec maybe_remove_extra_items(mod_pubsub:nodeIdx(),
+			       non_neg_integer() | unlimited, ljid(),
+			       mod_pubsub:itemId()) -> [mod_pubsub:itemId()].
+maybe_remove_extra_items(_Nidx, unlimited, _GenKey, _ItemId) ->
+    [];
+maybe_remove_extra_items(Nidx, MaxItems, GenKey, ItemId) ->
+    ItemIds = [ItemId | itemids(Nidx, GenKey)],
+    {result, {_NewIds, OldIds}} = remove_extra_items(Nidx, MaxItems, ItemIds),
+    OldIds.
 
 -spec decode_jid(SJID :: binary()) -> ljid().
 decode_jid(SJID) ->
