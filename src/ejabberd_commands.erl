@@ -91,6 +91,16 @@ get_commands_spec() ->
                                         "that will have example invocation include in markdown document"],
                            result_desc = "0 if command failed, 1 when succeeded",
                            args_example = ["/home/me/docs/api.html", "mod_admin", "java,json"],
+                           result_example = ok},
+        #ejabberd_commands{name = gen_markdown_doc_for_tags, tags = [documentation],
+                           desc = "Generates markdown documentation for ejabberd_commands",
+                           module = ejabberd_commands_doc, function = generate_tags_md,
+                           args = [{file, binary}],
+                           result = {res, rescode},
+                           args_desc = ["Path to file where generated "
+                                        "documentation should be stored"],
+                           result_desc = "0 if command failed, 1 when succeeded",
+                           args_example = ["/home/me/docs/tags.md"],
                            result_example = ok}].
 
 start_link() ->
