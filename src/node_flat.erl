@@ -39,7 +39,8 @@
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
     purge_node/2, subscribe_node/8, unsubscribe_node/4,
-    publish_item/7, delete_item/4, remove_extra_items/3,
+    publish_item/7, delete_item/4,
+    remove_extra_items/2, remove_extra_items/3,
     get_entity_affiliations/2, get_node_affiliations/1,
     get_affiliation/2, set_affiliation/3,
     get_entity_subscriptions/2, get_node_subscriptions/1,
@@ -375,7 +376,8 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 		    or (Subscribed == true)) ->
 	    {error, xmpp:err_forbidden()};
 	true ->
-	    if MaxItems > 0 ->
+	    if MaxItems > 0;
+	       MaxItems == unlimited ->
 		    Now = erlang:timestamp(),
 		    case get_item(Nidx, ItemId) of
 			{result, #pubsub_item{creation = {_, GenKey}} = OldItem} ->
@@ -401,6 +403,16 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 		    {result, {default, broadcast, []}}
 	    end
     end.
+
+remove_extra_items(Nidx, MaxItems) ->
+    {result, States} = get_states(Nidx),
+    Records = States ++ mnesia:read({pubsub_orphan, Nidx}),
+    ItemIds = lists:flatmap(fun(#pubsub_state{items = Is}) ->
+				    Is;
+			       (#pubsub_orphan{items = Is}) ->
+				    Is
+			    end, Records),
+    remove_extra_items(Nidx, MaxItems, ItemIds).
 
 %% @doc <p>This function is used to remove extra items, most notably when the
 %% maximum number of items has been reached.</p>
