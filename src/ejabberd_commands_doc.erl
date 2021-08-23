@@ -365,6 +365,7 @@ make_tags(HTMLOutput) ->
     TagsList = ejabberd_commands:get_tags_commands(1000000),
     lists:map(fun(T) -> gen_tags(T, HTMLOutput) end, TagsList).
 
+-dialyzer({no_match, gen_tags/2}).
 gen_tags({TagName, Commands}, HTMLOutput) ->
     [?TAG(h1, TagName) | [?TAG(p, ?RAW("* *`"++C++"`*")) || C <- Commands]].
 
