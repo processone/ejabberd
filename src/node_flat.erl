@@ -957,15 +957,12 @@ rsm_page(Count, Index, Offset, Items) ->
 	     last = Last}.
 
 encode_stamp(Stamp) ->
-    case catch xmpp_util:decode_timestamp(Stamp) of
-	{MS,S,US} -> {MS,S,US};
-	_ -> Stamp
+    try xmpp_util:decode_timestamp(Stamp)
+    catch _:{bad_timestamp, _} ->
+	    Stamp % We should return a proper error to the client instead.
     end.
 decode_stamp(Stamp) ->
-    case catch xmpp_util:encode_timestamp(Stamp) of
-	TimeStamp when is_binary(TimeStamp) -> TimeStamp;
-	_ -> Stamp
-    end.
+    xmpp_util:encode_timestamp(Stamp).
 
 transform({pubsub_state, {Id, Nidx}, Is, A, Ss}) ->
     {pubsub_state, {Id, Nidx}, Nidx, Is, A, Ss};
