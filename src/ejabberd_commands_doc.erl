@@ -396,7 +396,7 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
                      end,
         ModuleText = case IsDefinerMod of
                        true ->
-                           [?TAG(h2, <<"Module:">>), ?TAG(p, ?RAW(atom_to_list(Definer)))];
+                           [?TAG(h2, <<"Module:">>), ?TAG(p, ?RAW("*`"++atom_to_list(Definer)++"`*"))];
                        false ->
                            []
                    end,
