@@ -799,7 +799,8 @@ doc() ->
       #{value => ?T("Number"),
         desc =>
             ?T("The number of rotated log files to keep. "
-               "The default value is '1'.")}},
+               "The default value is '1', which means that only keeps "
+               "`ejabberd.log.0`, `error.log.0` and `crash.log.0`.")}},
      {log_rotate_size,
       #{value => "pos_integer() | infinity",
         desc =>
