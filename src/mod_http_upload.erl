@@ -232,8 +232,9 @@ mod_doc() ->
               "[XEP-0363: HTTP File Upload]. If the request is accepted, "
               "the client receives a URL for uploading the file and "
               "another URL from which that file can later be downloaded."), "",
-           ?T("In order to use this module, it must be configured as "
-              "a 'request_handler' for 'ejabberd_http' listener.")],
+           ?T("In order to use this module, it must be enabled "
+              "in 'listen' -> 'ejabberd_http' -> "
+              "http://../listen-options/#request-handlers[request_handlers].")],
       opts =>
           [{host,
             #{desc => ?T("Deprecated. Use 'hosts' instead.")}},

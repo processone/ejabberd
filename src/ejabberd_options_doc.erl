@@ -313,10 +313,12 @@ doc() ->
      {anonymous_protocol,
       #{value => "login_anon | sasl_anon | both",
         desc =>
-            ?T("'login_anon' means that the anonymous login method will be used. "
-               "'sasl_anon' means that the SASL Anonymous method will be used. "
-               "'both' means that SASL Anonymous and login anonymous are both "
-               "enabled. The default value is 'sasl_anon'.")}},
+            [?T("Define what anonymous protocol will be used: "), "",
+            ?T("* 'login_anon' means that the anonymous login method will be used. "), "",
+            ?T("* 'sasl_anon' means that the SASL Anonymous method will be used. "), "",
+            ?T("* 'both' means that SASL Anonymous and login anonymous are both "
+               "enabled."), "",
+            ?T("The default value is 'sasl_anon'."), ""]}},
      {api_permissions,
       #{value => "[Permission, ...]",
         desc =>
@@ -359,26 +361,28 @@ doc() ->
         desc =>
             ?T("This is used by the contributed module "
 	       "'ejabberd_auth_http' that can be installed from the "
-	       "'ejabberd-contrib' Git repository. Please refer to that "
+	       "https://github.com/processone/ejabberd-contrib[ejabberd-contrib] "
+               "Git repository. Please refer to that "
 	       "module's README file for details.")}},
      {auth_password_format,
       #{value => "plain | scram",
         note => "improved in 20.01",
         desc =>
-            ?T("The option defines in what format the users passwords "
-               "are stored. 'plain': The password is stored as plain text "
+            [?T("The option defines in what format the users passwords "
+               "are stored:"), "",
+            ?T("* 'plain': The password is stored as plain text "
                "in the database. This is risky because the passwords "
                "can be read if your database gets compromised. "
                "This is the default value. This format allows clients to "
                "authenticate using: the old Jabber Non-SASL (XEP-0078), "
-               "SASL PLAIN, SASL DIGEST-MD5, and SASL SCRAM-SHA-1. "
-               "'scram': The password is not stored, only some information "
+               "SASL PLAIN, SASL DIGEST-MD5, and SASL SCRAM-SHA-1. "), "",
+            ?T("* 'scram': The password is not stored, only some information "
                "that allows to verify the hash provided by the client. "
                "It is impossible to obtain the original plain password "
                "from the stored information; for this reason, when this "
                "value is configured it cannot be changed to plain anymore. "
                "This format allows clients to authenticate using: "
-               "SASL PLAIN and SASL SCRAM-SHA-1.")}},
+               "SASL PLAIN and SASL SCRAM-SHA-1.")]}},
      {auth_scram_hash,
       #{value => "sha | sha256 | sha512",
         desc =>
@@ -449,13 +453,13 @@ doc() ->
      {captcha_cmd,
       #{value => ?T("Path"),
         desc =>
-            ?T("Full path to a script that generates CAPTCHA images. "
+            ?T("Full path to a script that generates http://../basic/#captcha[CAPTCHA] images. "
                "There is no default value: when this option is not "
                "set, CAPTCHA functionality is completely disabled.")}},
      {captcha_limit,
       #{value => "pos_integer() | infinity",
         desc =>
-            ?T("Maximum number of CAPTCHA generated images per minute for "
+            ?T("Maximum number of http://../basic/#captcha[CAPTCHA] generated images per minute for "
                "any given JID. The option is intended to protect the server "
                "from CAPTCHA DoS. The default value is 'infinity'.")}},
      {captcha_host,
@@ -464,7 +468,7 @@ doc() ->
      {captcha_url,
       #{value => ?T("URL"),
         desc =>
-            ?T("An URL where CAPTCHA requests should be sent. NOTE: you need "
+            ?T("An URL where http://../basic/#captcha[CAPTCHA] requests should be sent. NOTE: you need "
                "to configure 'request_handlers' for 'ejabberd_http' listener "
                "as well. There is no default value.")}},
      {certfiles,

@@ -364,6 +364,6 @@ mod_doc() ->
     #{desc =>
           ?T("This module can be used to update existing SQL database "
              "from the default to the new schema. Check the section "
-             "http://../database-ldap/#default-and-new-schemas[Default and New Schemas] for details. "
+             "http://../database/#default-and-new-schemas[Default and New Schemas] for details. "
              "Please note that only PostgreSQL is supported. "
              "When the module is loaded use 'update_sql' ejabberdctl command.")}.

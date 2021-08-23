@@ -278,8 +278,9 @@ listen_options() ->
 %%%===================================================================
 mod_doc() ->
     #{desc =>
-          ?T("This module adds support for the MQTT protocol "
-             "version '3.1.1' and '5.0'. Remember to configure "
+          ?T("This module adds "
+             "https://docs.ejabberd.im/admin/guide/mqtt/[support for the MQTT] "
+             "protocol version '3.1.1' and '5.0'. Remember to configure "
 	     "'mod_mqtt' in 'modules' and  'listen' sections."),
       opts =>
           [{access_subscribe,
