@@ -99,12 +99,12 @@ ifneq ($(INSTALLGROUP),)
 endif
 
 ifeq "$(MIX)" "mix"
-IS_REBAR:=6
+REBAR_VER:=6
 else
-IS_REBAR:=$(shell expr `$(REBAR) --version | awk -F '[ .]' '/rebar / {print $$2}'`)
+REBAR_VER:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print $$2}')
 endif
 
-ifeq "$(IS_REBAR)" "6"
+ifeq "$(REBAR_VER)" "6"
   REBAR=$(MIX)
   SKIPDEPS=
   LISTDEPS=deps.tree
@@ -118,7 +118,7 @@ ifeq "$(IS_REBAR)" "6"
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
 else
-ifeq "$(IS_REBAR)" "3"
+ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
   LISTDEPS=tree
   UPDATEDEPS=upgrade
@@ -398,7 +398,7 @@ TAGS:
 
 Makefile: Makefile.in
 
-ifeq "$(IS_REBAR)" "3"
+ifeq "$(REBAR_VER)" "3"
 dialyzer:
 	$(REBAR) dialyzer
 else
