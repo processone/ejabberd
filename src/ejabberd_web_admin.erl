@@ -608,8 +608,8 @@ list_vhosts2(Lang, Hosts) ->
                                                 pretty_string_int(RegisteredUsers))]),
 				      ?XAE(<<"td">>,
                                            [{<<"class">>, <<"alignright">>}],
-                                           [?AC(<<"../server/", Host/binary, "/users/">>,
-                                                pretty_string_int(RegisteredUsers))]),
+                                           [?AC(<<"../server/", Host/binary, "/online-users/">>,
+                                                pretty_string_int(OnlineUsers))])])
 			 end,
 			 SHosts)))])].
 
