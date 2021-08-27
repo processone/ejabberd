@@ -362,10 +362,10 @@ export(_Server) ->
               []
       end},
      {archive_msg,
-      fun(Host, #archive_msg{us ={LUser, LServer},
+      fun([Host | HostTail], #archive_msg{us ={LUser, LServer},
                 id = _ID, timestamp = TS, peer = Peer,
                 type = Type, nick = Nick, packet = Pkt})
-          when LServer == Host ->
+          when (LServer == Host) or ([LServer] == HostTail)  ->
                 TStmp = misc:now_to_usec(TS),
                 SUser = case Type of
                       chat -> LUser;

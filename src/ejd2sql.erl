@@ -165,12 +165,18 @@ import_info(Mod) ->
 %%%----------------------------------------------------------------------
 export(LServer, Table, IO, ConvertFun) ->
     DbType = ejabberd_option:sql_type(LServer),
+    LServerConvert = case Table of
+                         archive_msg ->
+                             [LServer | mod_muc_admin:find_hosts(LServer)];
+                         _ ->
+                             LServer
+                     end,
     F = fun () ->
                 mnesia:read_lock_table(Table),
                 {_N, SQLs} =
                     mnesia:foldl(
                       fun(R, {N, SQLs} = Acc) ->
-                              case ConvertFun(LServer, R) of
+                              case ConvertFun(LServerConvert, R) of
                                   [] ->
                                       Acc;
                                   SQL1 ->
