@@ -507,14 +507,18 @@ form_del_get(Host, Lang) ->
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
-    Access = mod_register_opt:access(Host),
-    case jid:make(Username, Host) of
-      error -> {error, invalid_jid};
-      JID ->
-        case acl:match_rule(Host, Access, JID) of
-          deny -> {error, not_allowed};
-          allow -> register_account2(Username, Host, Password)
-        end
+    try mod_register_opt:access(Host) of
+	Access ->
+	    case jid:make(Username, Host) of
+		error -> {error, invalid_jid};
+		JID ->
+		    case acl:match_rule(Host, Access, JID) of
+			deny -> {error, not_allowed};
+			allow -> register_account2(Username, Host, Password)
+		    end
+	    end
+    catch _:{module_not_loaded, mod_register, _Host} ->
+	    {error, host_unknown}
     end.
 
 register_account2(Username, Host, Password) ->
@@ -577,6 +581,8 @@ get_error_text({error, password_incorrect}) ->
     ?T("Incorrect password");
 get_error_text({error, invalid_jid}) ->
     ?T("The username is not valid");
+get_error_text({error, host_unknown}) ->
+    ?T("Host unknown");
 get_error_text({error, not_allowed}) ->
     ?T("Not allowed");
 get_error_text({error, account_doesnt_exist}) ->
