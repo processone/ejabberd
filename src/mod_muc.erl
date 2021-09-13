@@ -40,6 +40,7 @@
 	 room_destroyed/4,
 	 store_room/4,
 	 store_room/5,
+	 store_changes/4,
 	 restore_room/3,
 	 forget_room/3,
 	 create_room/3,
@@ -91,6 +92,7 @@
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), binary(), [binary()]) -> ok.
 -callback store_room(binary(), binary(), binary(), list(), list()|undefined) -> {atomic, any()}.
+-callback store_changes(binary(), binary(), binary(), list()) -> {atomic, any()}.
 -callback restore_room(binary(), binary(), binary()) -> muc_room_opts() | error.
 -callback forget_room(binary(), binary(), binary()) -> {atomic, any()}.
 -callback can_use_nick(binary(), binary(), jid(), binary()) -> boolean().
@@ -111,7 +113,8 @@
 -callback get_subscribed_rooms(binary(), binary(), jid()) ->
           {ok, [{jid(), binary(), [binary()]}]} | {error, db_failure}.
 
--optional_callbacks([get_subscribed_rooms/3]).
+-optional_callbacks([get_subscribed_rooms/3,
+                     store_changes/4]).
 
 %%====================================================================
 %% API
@@ -312,6 +315,11 @@ store_room(ServerHost, Host, Name, Opts, ChangesHints) ->
     LServer = jid:nameprep(ServerHost),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:store_room(LServer, Host, Name, Opts, ChangesHints).
+
+store_changes(ServerHost, Host, Name, ChangesHints) ->
+    LServer = jid:nameprep(ServerHost),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:store_changes(LServer, Host, Name, ChangesHints).
 
 restore_room(ServerHost, Host, Name) ->
     LServer = jid:nameprep(ServerHost),
@@ -570,7 +578,7 @@ unhibernate_room(ServerHost, Host, Room) ->
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
 	    Proc = procname(ServerHost, {Room, Host}),
-	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host}) of
+	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host}, 20000) of
 		{ok, _} = R -> R;
 		_ -> error
 	    end;

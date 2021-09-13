@@ -87,6 +87,16 @@
 		     nick = <<>> :: binary(),
 		     nodes = [] :: [binary()]}).
 
+-record(muc_subscribers,
+        {subscribers             = #{} :: subscribers(),
+         subscriber_nicks        = #{} :: subscriber_nicks(),
+         subscriber_nodes        = #{} :: subscriber_nodes()
+        }).
+
+-type subscribers() :: #{ljid() => #subscriber{}}.
+-type subscriber_nicks() :: #{binary() => [ljid()]}.
+-type subscriber_nodes() :: #{binary() => subscribers()}.
+
 -record(activity,
 {
     message_time    = 0 :: integer(),
@@ -106,8 +116,7 @@
     jid                     = #jid{} :: jid(),
     config                  = #config{} :: config(),
     users                   = #{} :: users(),
-    subscribers             = #{} :: subscribers(),
-    subscriber_nicks        = #{} :: subscriber_nicks(),
+    muc_subscribers         = #muc_subscribers{} :: #muc_subscribers{},
     last_voice_request_time = treap:empty() :: treap:treap(),
     robots                  = #{} :: robots(),
     nicks                   = #{} :: nicks(),
@@ -126,5 +135,3 @@
 -type robots() :: #{jid() => {binary(), stanza()}}.
 -type nicks() :: #{binary() => [ljid()]}.
 -type affiliations() :: #{ljid() => affiliation() | {affiliation(), binary()}}.
--type subscribers() :: #{ljid() => #subscriber{}}.
--type subscriber_nicks() :: #{binary() => [ljid()]}.

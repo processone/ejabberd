@@ -641,7 +641,7 @@ handle_event({service_message, Msg}, _StateName,
     MessagePkt = #message{type = groupchat, body = xmpp:mk_text(Msg)},
     send_wrapped_multiple(
       StateData#state.jid,
-      get_users_and_subscribers(StateData),
+      get_users_and_subscribers_with_node(?NS_MUCSUB_NODES_MESSAGES, StateData),
       MessagePkt,
       ?NS_MUCSUB_NODES_MESSAGES,
       StateData),
@@ -705,7 +705,7 @@ handle_sync_event({change_state, NewStateData}, _From,
 	true ->
 	    ok;
 	_ ->
-	    erlang:put(muc_subscribers, NewStateData#state.subscribers)
+	    erlang:put(muc_subscribers, NewStateData#state.muc_subscribers#muc_subscribers.subscribers)
     end,
     {reply, {ok, NewStateData}, StateName, NewStateData};
 handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData) ->
@@ -717,8 +717,10 @@ handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData
 	    {reply, {ok, NSD}, StateName, NSD}
     end;
 handle_sync_event(get_subscribers, _From, StateName, StateData) ->
-    JIDs = lists:map(fun jid:make/1,
-		     maps:keys(StateData#state.subscribers)),
+    JIDs = muc_subscribers_fold(
+             fun(_LBareJID, #subscriber{jid = JID}, Acc) ->
+                     [JID | Acc]
+             end, [], StateData#state.muc_subscribers),
     {reply, {ok, JIDs}, StateName, StateData};
 handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
 		  StateName, StateData) ->
@@ -762,7 +764,8 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName,
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
     end;
 handle_sync_event({is_subscribed, From}, _From, StateName, StateData) ->
-    IsSubs = try maps:get(jid:split(From), StateData#state.subscribers) of
+    IsSubs = try muc_subscribers_get(
+                   jid:split(From), StateData#state.muc_subscribers) of
 		 #subscriber{nick = Nick, nodes = Nodes} -> {true, Nick, Nodes}
 	     catch _:{badkey, _} -> false
 	     end,
@@ -899,7 +902,8 @@ terminate(Reason, _StateName,
 		      _ -> ok
 		  end,
 		  tab_remove_online_user(JID, StateData)
-	  end, [], get_users_and_subscribers(StateData)),
+	  end, [], get_users_and_subscribers_with_node(
+                     ?NS_MUCSUB_NODES_PARTICIPANTS, StateData)),
 
 	disable_hibernate_timer(StateData),
 	case StateData#state.hibernate_timer of
@@ -991,7 +995,7 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 				    end,
 			     send_wrapped_multiple(
 			       jid:replace_resource(StateData#state.jid, FromNick),
-			       get_users_and_subscribers(StateData),
+			       get_users_and_subscribers_with_node(Node, StateData),
 			       NewPacket, Node, NewStateData1),
 			     NewStateData2 = case has_body_or_subject(NewPacket) of
 					       true ->
@@ -1197,8 +1201,8 @@ get_participant_data(From, StateData) ->
 	#user{nick = FromNick, role = Role} ->
 	    {FromNick, Role}
     catch _:{badkey, _} ->
-	    try maps:get(jid:tolower(jid:remove_resource(From)),
-			 StateData#state.subscribers) of
+	    try muc_subscribers_get(jid:tolower(jid:remove_resource(From)),
+                                    StateData#state.muc_subscribers) of
 		#subscriber{nick = FromNick} ->
 		    {FromNick, none}
 	    catch _:{badkey, _} ->
@@ -1329,7 +1333,7 @@ maybe_strip_status_from_presence(From, Packet, StateData) ->
 close_room_if_temporary_and_empty(StateData1) ->
     case not (StateData1#state.config)#config.persistent
 	andalso maps:size(StateData1#state.users) == 0
-	andalso maps:size(StateData1#state.subscribers) == 0 of
+	andalso muc_subscribers_size(StateData1#state.muc_subscribers) == 0 of
       true ->
 	  ?INFO_MSG("Destroyed MUC room ~ts because it's temporary "
 		    "and empty",
@@ -1342,6 +1346,17 @@ close_room_if_temporary_and_empty(StateData1) ->
 
 -spec get_users_and_subscribers(state()) -> users().
 get_users_and_subscribers(StateData) ->
+    get_users_and_subscribers_aux(
+      StateData#state.muc_subscribers#muc_subscribers.subscribers,
+      StateData).
+
+-spec get_users_and_subscribers_with_node(binary(), state()) -> users().
+get_users_and_subscribers_with_node(Node, StateData) ->
+    get_users_and_subscribers_aux(
+      muc_subscribers_get_by_node(Node, StateData#state.muc_subscribers),
+      StateData).
+
+get_users_and_subscribers_aux(Subscribers, StateData) ->
     OnlineSubscribers = maps:fold(
 			   fun(LJID, _, Acc) ->
 				   LBareJID = jid:remove_resource(LJID),
@@ -1365,7 +1380,7 @@ get_users_and_subscribers(StateData) ->
 		   true ->
 		       Acc
 	       end
-       end, StateData#state.users, StateData#state.subscribers).
+       end, StateData#state.users, Subscribers).
 
 -spec is_user_online(jid(), state()) -> boolean().
 is_user_online(JID, StateData) ->
@@ -1375,7 +1390,7 @@ is_user_online(JID, StateData) ->
 -spec is_subscriber(jid(), state()) -> boolean().
 is_subscriber(JID, StateData) ->
     LJID = jid:tolower(jid:remove_resource(JID)),
-    maps:is_key(LJID, StateData#state.subscribers).
+    muc_subscribers_is_key(LJID, StateData#state.muc_subscribers).
 
 %% Check if the user is occupant of the room, or at least is an admin or owner.
 -spec is_occupant_or_admin(jid(), state()) -> boolean().
@@ -1869,16 +1884,15 @@ set_subscriber(JID, Nick, Nodes,
 	       #state{room = Room, host = Host, server_host = ServerHost} = StateData) ->
     BareJID = jid:remove_resource(JID),
     LBareJID = jid:tolower(BareJID),
-    Subscribers = maps:put(LBareJID,
-			   #subscriber{jid = BareJID,
-				       nick = Nick,
-				       nodes = Nodes},
-			   StateData#state.subscribers),
-    Nicks = maps:put(Nick, [LBareJID], StateData#state.subscriber_nicks),
-    NewStateData = StateData#state{subscribers = Subscribers,
-				   subscriber_nicks = Nicks},
+    MUCSubscribers =
+        muc_subscribers_put(
+          #subscriber{jid = BareJID,
+                      nick = Nick,
+                      nodes = Nodes},
+          StateData#state.muc_subscribers),
+    NewStateData = StateData#state{muc_subscribers = MUCSubscribers},
     store_room(NewStateData, [{add_subscription, BareJID, Nick, Nodes}]),
-    case not maps:is_key(LBareJID, StateData#state.subscribers) of
+    case not muc_subscribers_is_key(LBareJID, StateData#state.muc_subscribers) of
 	true ->
 	    send_subscriptions_change_notifications(BareJID, Nick, subscribe, NewStateData),
 	    ejabberd_hooks:run(muc_subscribed, ServerHost, [ServerHost, Room, Host, BareJID]);
@@ -1956,7 +1970,8 @@ add_user_presence_un(JID, Presence, StateData) ->
 -spec find_jids_by_nick(binary(), state()) -> [jid()].
 find_jids_by_nick(Nick, StateData) ->
     Users = case maps:get(Nick, StateData#state.nicks, []) of
-		[] -> maps:get(Nick, StateData#state.subscriber_nicks, []);
+                [] -> muc_subscribers_get_by_nick(
+                        Nick, StateData#state.muc_subscribers);
 		Us -> Us
 	    end,
     [jid:make(LJID) || LJID <- Users].
@@ -2020,10 +2035,10 @@ is_nick_change(JID, Nick, StateData) ->
 nick_collision(User, Nick, StateData) ->
     UserOfNick = case find_jid_by_nick(Nick, StateData) of
 		     false ->
-			 try maps:get(Nick, StateData#state.subscriber_nicks) of
-			     [J] -> J
-			 catch _:{badkey, _} -> false
-			 end;
+                         case muc_subscribers_get_by_nick(Nick, StateData#state.muc_subscribers) of
+                             [J] -> J;
+                             [] -> false
+                         end;
 		     J -> J
 		 end,
     (UserOfNick /= false andalso
@@ -2433,6 +2448,11 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
             false -> {none, #presence{type = unavailable}}
         end,
     Affiliation = get_affiliation(LJID, StateData),
+    Node1 = case is_ra_changed(NJID, IsInitialPresence, StateData, OldStateData) of
+                true -> ?NS_MUCSUB_NODES_AFFILIATIONS;
+                false -> ?NS_MUCSUB_NODES_PRESENCE
+            end,
+    Node2 = ?NS_MUCSUB_NODES_PARTICIPANTS,
     UserMap =
         case is_room_overcrowded(StateData) orelse
 	     (not (presence_broadcast_allowed(NJID, StateData) orelse
@@ -2440,7 +2460,10 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
             true ->
                 #{LNJID => UserInfo};
             false ->
-                get_users_and_subscribers(StateData)
+                %% TODO: optimize further
+                UM1 = get_users_and_subscribers_with_node(Node1, StateData),
+                UM2 = get_users_and_subscribers_with_node(Node2, StateData),
+                maps:merge(UM1, UM2)
         end,
     maps:fold(
       fun(LUJID, Info, _) ->
@@ -2465,10 +2488,6 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
 	      Packet = xmpp:set_subtag(
 			 Pres, #muc_user{items = [Item],
 					 status_codes = StatusCodes}),
-	      Node1 = case is_ra_changed(NJID, IsInitialPresence, StateData, OldStateData) of
-			  true -> ?NS_MUCSUB_NODES_AFFILIATIONS;
-			  false -> ?NS_MUCSUB_NODES_PRESENCE
-		      end,
 	      send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
 			   Info#user.jid, Packet, Node1, StateData),
 	      Type = xmpp:get_type(Packet),
@@ -2476,7 +2495,6 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
 	      IsOccupant = Info#user.last_presence /= undefined,
 	      if (IsSubscriber and not IsOccupant) and
 		 (IsInitialPresence or (Type == unavailable)) ->
-		      Node2 = ?NS_MUCSUB_NODES_PARTICIPANTS,
 		      send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
 				   Info#user.jid, Packet, Node2, StateData);
 		 true ->
@@ -2607,11 +2625,13 @@ send_nick_changing(JID, OldNick, StateData,
 	      end;
 	 (_, _, _) ->
 	      ok
-      end, ok, get_users_and_subscribers(StateData)).
+      end, ok, get_users_and_subscribers_with_node(
+                 ?NS_MUCSUB_NODES_PRESENCE, StateData)).
 
 -spec maybe_send_affiliation(jid(), affiliation(), state()) -> ok.
 maybe_send_affiliation(JID, Affiliation, StateData) ->
     LJID = jid:tolower(JID),
+    %% TODO: there should be a better way to check IsOccupant
     Users = get_users_and_subscribers(StateData),
     IsOccupant = case LJID of
 		     {LUser, LServer, <<"">>} ->
@@ -2637,7 +2657,8 @@ send_affiliation(JID, Affiliation, StateData) ->
 		     role = none},
     Message = #message{id = p1_rand:get_string(),
 		       sub_els = [#muc_user{items = [Item]}]},
-    Users = get_users_and_subscribers(StateData),
+    Users = get_users_and_subscribers_with_node(
+              ?NS_MUCSUB_NODES_AFFILIATIONS, StateData),
     Recipients = case (StateData#state.config)#config.anonymous of
 		   true ->
 		       maps:filter(fun(_, #user{role = moderator}) ->
@@ -3271,6 +3292,13 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		       StateData) ->
     #user{jid = RealJID, nick = Nick} = maps:get(jid:tolower(UJID), StateData#state.users),
     ActorNick = get_actor_nick(MJID, StateData),
+    %% TODO: optimize further
+    UserMap =
+        maps:merge(
+          get_users_and_subscribers_with_node(
+            ?NS_MUCSUB_NODES_AFFILIATIONS, StateData),
+          get_users_and_subscribers_with_node(
+            ?NS_MUCSUB_NODES_PARTICIPANTS, StateData)),
     maps:fold(
       fun(LJID, Info, _) ->
 	      IsSelfPresence = jid:tolower(UJID) == LJID,
@@ -3304,7 +3332,7 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		 true ->
 		      ok
 	      end
-      end, ok, get_users_and_subscribers(StateData)).
+      end, ok, UserMap).
 
 -spec get_actor_nick(undefined | jid(), state()) -> binary().
 get_actor_nick(undefined, _StateData) ->
@@ -3720,7 +3748,8 @@ send_config_change_info(New, #state{config = Old} = StateData) ->
 			       id = p1_rand:get_string(),
 			       sub_els = [#muc_user{status_codes = Codes}]},
 	    send_wrapped_multiple(StateData#state.jid,
-				  get_users_and_subscribers(StateData),
+				  get_users_and_subscribers_with_node(
+                                    ?NS_MUCSUB_NODES_CONFIG, StateData),
 				  Message,
 				  ?NS_MUCSUB_NODES_CONFIG,
 				  StateData);
@@ -3872,26 +3901,23 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 		StateData#state{config =
 				    (StateData#state.config)#config{lang = Val}};
 	    subscribers ->
-		  {Subscribers, Nicks} =
-		      lists:foldl(
-			fun({JID, Nick, Nodes}, {SubAcc, NickAcc}) ->
-			    BareJID = case JID of
-					  #jid{} -> jid:remove_resource(JID);
-					  _ ->
-					      ?ERROR_MSG("Invalid subscriber JID in set_opts ~p", [JID]),
-					      jid:remove_resource(jid:make(JID))
-				      end,
-			    LBareJID = jid:tolower(BareJID),
-			    {maps:put(
-				LBareJID,
-				#subscriber{jid = BareJID,
-					    nick = Nick,
-					    nodes = Nodes},
-				SubAcc),
-			     maps:put(Nick, [LBareJID], NickAcc)}
-			end, {#{}, #{}}, Val),
-		  StateData#state{subscribers = Subscribers,
-				  subscriber_nicks = Nicks};
+                  MUCSubscribers =
+                      lists:foldl(
+                        fun({JID, Nick, Nodes}, MUCSubs) ->
+                                BareJID =
+                                    case JID of
+                                        #jid{} -> jid:remove_resource(JID);
+                                        _ ->
+                                            ?ERROR_MSG("Invalid subscriber JID in set_opts ~p", [JID]),
+                                            jid:remove_resource(jid:make(JID))
+                                    end,
+                                muc_subscribers_put(
+                                  #subscriber{jid = BareJID,
+                                              nick = Nick,
+                                              nodes = Nodes},
+                                  MUCSubs)
+                        end, muc_subscribers_new(), Val),
+                  StateData#state{muc_subscribers = MUCSubscribers};
 	    affiliations ->
 		StateData#state{affiliations = maps:from_list(Val)};
 	    subject ->
@@ -3926,12 +3952,12 @@ set_vcard_xupdate(State) ->
 -spec make_opts(state()) -> [{atom(), any()}].
 make_opts(StateData) ->
     Config = StateData#state.config,
-    Subscribers = maps:fold(
+    Subscribers = muc_subscribers_fold(
 		    fun(_LJID, Sub, Acc) ->
 			    [{Sub#subscriber.jid,
 			      Sub#subscriber.nick,
 			      Sub#subscriber.nodes}|Acc]
-		    end, [], StateData#state.subscribers),
+		    end, [], StateData#state.muc_subscribers),
     [?MAKE_CONFIG_OPT(#config.title), ?MAKE_CONFIG_OPT(#config.description),
      ?MAKE_CONFIG_OPT(#config.allow_change_subj),
      ?MAKE_CONFIG_OPT(#config.allow_query_users),
@@ -4013,7 +4039,8 @@ destroy_room(DEl, StateData) ->
 	      send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
 			   Info#user.jid, Packet,
 			   ?NS_MUCSUB_NODES_CONFIG, StateData)
-      end, ok, get_users_and_subscribers(StateData)),
+      end, ok, get_users_and_subscribers_with_node(
+                 ?NS_MUCSUB_NODES_CONFIG, StateData)),
     forget_room(StateData),
     {result, undefined, stop}.
 
@@ -4248,30 +4275,35 @@ process_iq_mucsub(From,
 		      sub_els = [#muc_subscribe{nick = Nick}]} = Packet,
 		  StateData) ->
     LBareJID = jid:tolower(jid:remove_resource(From)),
-    try maps:get(LBareJID, StateData#state.subscribers) of
+    try muc_subscribers_get(LBareJID, StateData#state.muc_subscribers) of
 	#subscriber{nick = Nick1} when Nick1 /= Nick ->
 	    Nodes = get_subscription_nodes(Packet),
-	    case {nick_collision(From, Nick, StateData),
-		  mod_muc:can_use_nick(StateData#state.server_host,
-				       StateData#state.host,
-				       From, Nick)} of
-		{true, _} ->
+	    case nick_collision(From, Nick, StateData) of
+                true ->
 		    ErrText = ?T("That nickname is already in use by another occupant"),
 		    {error, xmpp:err_conflict(ErrText, Lang)};
-		{_, false} ->
-		    Err = case Nick of
-			      <<>> ->
-				  xmpp:err_jid_malformed(?T("Nickname can't be empty"),
-							 Lang);
-			      _ ->
-				  xmpp:err_conflict(?T("That nickname is registered"
-						       " by another person"), Lang)
-			  end,
-		    {error, Err};
-		_ ->
-		    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
-		    {result, subscribe_result(Packet), NewStateData}
-	    end;
+                false ->
+                    case mod_muc:can_use_nick(StateData#state.server_host,
+                                              StateData#state.host,
+                                              From, Nick) of
+                        false ->
+                            Err = case Nick of
+                                      <<>> ->
+                                          xmpp:err_jid_malformed(
+                                            ?T("Nickname can't be empty"),
+                                            Lang);
+                                      _ ->
+                                          xmpp:err_conflict(
+                                            ?T("That nickname is registered"
+                                               " by another person"), Lang)
+                                  end,
+                            {error, Err};
+                        true ->
+                            NewStateData =
+                                set_subscriber(From, Nick, Nodes, StateData),
+                            {result, subscribe_result(Packet), NewStateData}
+                    end
+            end;
 	#subscriber{} ->
 	    Nodes = get_subscription_nodes(Packet),
 	    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
@@ -4298,12 +4330,9 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		  #state{room = Room, host = Host, server_host = ServerHost} = StateData) ->
     BareJID = jid:remove_resource(From),
     LBareJID = jid:tolower(BareJID),
-    try maps:get(LBareJID, StateData#state.subscribers) of
-	#subscriber{nick = Nick} ->
-	    Nicks = maps:remove(Nick, StateData#state.subscriber_nicks),
-	    Subscribers = maps:remove(LBareJID, StateData#state.subscribers),
-	    NewStateData = StateData#state{subscribers = Subscribers,
-					   subscriber_nicks = Nicks},
+    try muc_subscribers_remove_exn(LBareJID, StateData#state.muc_subscribers) of
+	{MUCSubscribers, #subscriber{nick = Nick}} ->
+	    NewStateData = StateData#state{muc_subscribers = MUCSubscribers},
 	    store_room(NewStateData, [{del_subscription, LBareJID}]),
 	    send_subscriptions_change_notifications(BareJID, Nick, unsubscribe, StateData),
 	    ejabberd_hooks:run(muc_unsubscribed, ServerHost, [ServerHost, Room, Host, BareJID]),
@@ -4326,7 +4355,7 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
 	true ->
 	    ShowJid = IsModerator orelse
 		      (StateData#state.config)#config.anonymous == false,
-	    Subs = maps:fold(
+	    Subs = muc_subscribers_fold(
 		     fun(_, #subscriber{jid = J, nick = N, nodes = Nodes}, Acc) ->
 			 case ShowJid of
 			     true ->
@@ -4334,7 +4363,7 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
 			     _ ->
 				 [#muc_subscription{nick = N, events = Nodes}|Acc]
 			 end
-		     end, [], StateData#state.subscribers),
+		     end, [], StateData#state.muc_subscribers),
 	    {result, #muc_subscriptions{list = Subs}, StateData};
 	_ ->
 	    Txt = ?T("Moderator privileges required"),
@@ -4347,8 +4376,7 @@ process_iq_mucsub(_From, #iq{type = get, lang = Lang}, _StateData) ->
 -spec remove_subscriptions(state()) -> state().
 remove_subscriptions(StateData) ->
     if not (StateData#state.config)#config.allow_subscription ->
-	    StateData#state{subscribers = #{},
-			    subscriber_nicks = #{}};
+	    StateData#state{muc_subscribers = muc_subscribers_new()};
        true ->
 	    StateData
     end.
@@ -4597,7 +4625,7 @@ store_room(StateData, ChangesHints) ->
 	true ->
 	    ok;
 	_ ->
-	    erlang:put(muc_subscribers, StateData#state.subscribers)
+	    erlang:put(muc_subscribers, StateData#state.muc_subscribers#muc_subscribers.subscribers)
     end,
     ShouldStore = case (StateData#state.config)#config.persistent of
 		      true ->
@@ -4611,7 +4639,15 @@ store_room(StateData, ChangesHints) ->
 			  end
 		  end,
     if ShouldStore ->
-	    store_room_no_checks(StateData, ChangesHints);
+            case erlang:function_exported(Mod, store_changes, 4) of
+                true when ChangesHints /= [] ->
+                    mod_muc:store_changes(
+                      StateData#state.server_host,
+                      StateData#state.host, StateData#state.room,
+                      ChangesHints);
+                _ ->
+                    store_room_no_checks(StateData, ChangesHints)
+            end;
        true ->
 	    ok
     end.
@@ -4625,22 +4661,19 @@ store_room_no_checks(StateData, ChangesHints) ->
 -spec send_subscriptions_change_notifications(jid(), binary(), subscribe|unsubscribe, state()) -> ok.
 send_subscriptions_change_notifications(From, Nick, Type, State) ->
     {WJ, WN} =
-    maps:fold(
-	fun(_, #subscriber{nodes = Nodes, jid = JID}, {WithJid, WithNick} = Res) ->
-	    case lists:member(?NS_MUCSUB_NODES_SUBSCRIBERS, Nodes) of
-		true ->
-		    case (State#state.config)#config.anonymous == false orelse
-			 get_role(JID, State) == moderator orelse
-			get_default_role(get_affiliation(JID, State), State) == moderator of
-			true ->
-			    {[JID | WithJid], WithNick};
-			_ ->
-			    {WithJid, [JID | WithNick]}
-		    end;
-		false ->
-		    Res
-	    end
-	end, {[], []}, State#state.subscribers),
+        maps:fold(
+          fun(_, #subscriber{jid = JID}, {WithJid, WithNick}) ->
+                  case (State#state.config)#config.anonymous == false orelse
+                      get_role(JID, State) == moderator orelse
+                      get_default_role(get_affiliation(JID, State), State) == moderator of
+                      true ->
+                          {[JID | WithJid], WithNick};
+                      _ ->
+                          {WithJid, [JID | WithNick]}
+                  end
+          end, {[], []},
+          muc_subscribers_get_by_node(?NS_MUCSUB_NODES_SUBSCRIBERS,
+                                      State#state.muc_subscribers)),
     if WJ /= [] ->
 	Payload1 = case Type of
 		       subscribe -> #muc_subscribe{jid = From, nick = Nick};
@@ -4684,7 +4717,7 @@ send_wrapped(From, To, Packet, Node, State) ->
 		    _ -> false
 		end,
     if IsOffline ->
-	    try maps:get(LBareTo, State#state.subscribers) of
+	    try muc_subscribers_get(LBareTo, State#state.muc_subscribers) of
 		#subscriber{nodes = Nodes, jid = JID} ->
 		    case lists:member(Node, Nodes) of
 			true ->
@@ -4751,12 +4784,13 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 	    IsOffline = LP == undefined,
 	    if IsOffline ->
 		LBareTo = jid:tolower(jid:remove_resource(To)),
-		case maps:find(LBareTo, State#state.subscribers) of
+		case muc_subscribers_find(LBareTo, State#state.muc_subscribers) of
 		    {ok, #subscriber{nodes = Nodes}} ->
 			case lists:member(Node, Nodes) of
 			    true ->
 				{Direct, [To | Wrapped]};
 			    _ ->
+                                %% TODO: check that this branch is never called
 				Res
 			end;
 		    _ ->
@@ -4809,6 +4843,90 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 	    ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
 						      Wra, NewPacket2, true)
     end.
+
+%%%----------------------------------------------------------------------
+%%% #muc_subscribers API
+%%%----------------------------------------------------------------------
+
+-spec muc_subscribers_new() -> #muc_subscribers{}.
+muc_subscribers_new() ->
+    #muc_subscribers{}.
+
+-spec muc_subscribers_get(ljid(), #muc_subscribers{}) -> #subscriber{}.
+muc_subscribers_get({_, _, _} = LJID, MUCSubscribers) ->
+    maps:get(LJID, MUCSubscribers#muc_subscribers.subscribers).
+
+-spec muc_subscribers_find(ljid(), #muc_subscribers{}) ->
+                                  {ok, #subscriber{}} | error.
+muc_subscribers_find({_, _, _} = LJID, MUCSubscribers) ->
+    maps:find(LJID, MUCSubscribers#muc_subscribers.subscribers).
+
+-spec muc_subscribers_is_key(ljid(), #muc_subscribers{}) -> boolean().
+muc_subscribers_is_key({_, _, _} = LJID, MUCSubscribers) ->
+    maps:is_key(LJID, MUCSubscribers#muc_subscribers.subscribers).
+
+-spec muc_subscribers_size(#muc_subscribers{}) -> integer().
+muc_subscribers_size(MUCSubscribers) ->
+    maps:size(MUCSubscribers#muc_subscribers.subscribers).
+
+-spec muc_subscribers_fold(Fun, Acc, #muc_subscribers{}) -> Acc when
+    Fun :: fun((ljid(), #subscriber{}, Acc) -> Acc).
+muc_subscribers_fold(Fun, Init, MUCSubscribers) ->
+    maps:fold(Fun, Init, MUCSubscribers#muc_subscribers.subscribers).
+
+-spec muc_subscribers_get_by_nick(binary(), #muc_subscribers{}) -> [#subscriber{}].
+muc_subscribers_get_by_nick(Nick, MUCSubscribers) ->
+    maps:get(Nick, MUCSubscribers#muc_subscribers.subscriber_nicks, []).
+
+-spec muc_subscribers_get_by_node(binary(), #muc_subscribers{}) -> subscribers().
+muc_subscribers_get_by_node(Node, MUCSubscribers) ->
+    maps:get(Node, MUCSubscribers#muc_subscribers.subscriber_nodes, #{}).
+
+-spec muc_subscribers_remove_exn(ljid(), #muc_subscribers{}) ->
+                                        {#muc_subscribers{}, #subscriber{}}.
+muc_subscribers_remove_exn({_, _, _} = LJID, MUCSubscribers) ->
+    #muc_subscribers{subscribers = Subs,
+                     subscriber_nicks = SubNicks,
+                     subscriber_nodes = SubNodes} = MUCSubscribers,
+    Subscriber = maps:get(LJID, Subs),
+    #subscriber{nick = Nick, nodes = Nodes} = Subscriber,
+    NewSubNicks = maps:remove(Nick, SubNicks),
+    NewSubs = maps:remove(LJID, Subs),
+    NewSubNodes =
+        lists:foldl(
+          fun(Node, Acc) ->
+                  NodeSubs = maps:get(Node, Acc, #{}),
+                  NodeSubs2 = maps:remove(LJID, NodeSubs),
+                  maps:put(Node, NodeSubs2, Acc)
+          end, SubNodes, Nodes),
+    {#muc_subscribers{subscribers = NewSubs,
+                      subscriber_nicks = NewSubNicks,
+                      subscriber_nodes = NewSubNodes}, Subscriber}.
+
+-spec muc_subscribers_put(#subscriber{}, #muc_subscribers{}) ->
+                                 #muc_subscribers{}.
+muc_subscribers_put(Subscriber, MUCSubscribers) ->
+    #subscriber{jid = JID,
+                nick = Nick,
+                nodes = Nodes} = Subscriber,
+    #muc_subscribers{subscribers = Subs,
+                     subscriber_nicks = SubNicks,
+                     subscriber_nodes = SubNodes} = MUCSubscribers,
+    LJID = jid:tolower(JID),
+    NewSubs = maps:put(LJID, Subscriber, Subs),
+    NewSubNicks = maps:put(Nick, [LJID], SubNicks),
+    NewSubNodes =
+        lists:foldl(
+          fun(Node, Acc) ->
+                  NodeSubs = maps:get(Node, Acc, #{}),
+                  NodeSubs2 = maps:put(LJID, Subscriber, NodeSubs),
+                  maps:put(Node, NodeSubs2, Acc)
+          end, SubNodes, Nodes),
+    #muc_subscribers{subscribers = NewSubs,
+                     subscriber_nicks = NewSubNicks,
+                     subscriber_nodes = NewSubNodes}.
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Detect messange stanzas that don't have meaningful content
