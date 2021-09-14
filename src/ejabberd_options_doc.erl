@@ -61,7 +61,7 @@ doc() ->
         desc =>
             ?T("The time of a cached item to keep in cache. "
 	       "Once it's expired, the corresponding item is "
-	       "erased from cache. The default value is 'one hour'. "
+	       "erased from cache. The default value is '1 hour'. "
 	       "Several modules have a similar option; and some core "
 	       "ejabberd parts support similar options too, see "
 	       "_`auth_cache_life_time`_, _`oauth_cache_life_time`_, "
@@ -382,14 +382,15 @@ doc() ->
                "from the stored information; for this reason, when this "
                "value is configured it cannot be changed to plain anymore. "
                "This format allows clients to authenticate using: "
-               "SASL PLAIN and SASL SCRAM-SHA-1.")]}},
+               "SASL PLAIN and SASL SCRAM-SHA-1."),
+            ?T("The default value is 'plain'.")]}},
      {auth_scram_hash,
       #{value => "sha | sha256 | sha512",
         desc =>
         ?T("Hash algorith that should be used to store password in SCRAM format. "
            "You shouldn't change this if you already have passwords generated with "
            "a different algorithm - users that have such passwords will not be able "
-           "to authenticate.")}},
+           "to authenticate. The default value is 'sha'.")}},
      {auth_use_cache,
       #{value => "true | false",
         desc =>
@@ -678,7 +679,8 @@ doc() ->
         desc =>
             ?T("The option defines the default language of server strings "
                "that can be seen by XMPP clients. If an XMPP client does not "
-               "possess 'xml:lang' attribute, the specified language is used.")}},
+               "possess 'xml:lang' attribute, the specified language is used. "
+               "The default value is '\"en\"'.")}},
      {ldap_servers,
       #{value => "[Host, ...]",
         desc =>
@@ -840,7 +842,7 @@ doc() ->
                "must have identical value on all nodes, or it will lead to subtle "
                "bugs. Usually leaving default value of this is option is best, "
                "tweak it only if you know what you are doing. "
-               "The default value is '1' minute.")}},
+               "The default value is '1 minute'.")}},
      {new_sql_schema,
       #{value => "true | false",
         desc =>
@@ -1154,7 +1156,7 @@ doc() ->
       #{value => "timeout()",
         desc =>
             ?T("A time to wait before closing an idle s2s connection. "
-               "The default value is '10' minutes.")}},
+               "The default value is '10 minutes'.")}},
      {s2s_use_starttls,
       #{value => "true | false | optional | required",
         desc =>

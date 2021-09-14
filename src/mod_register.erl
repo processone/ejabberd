@@ -679,7 +679,7 @@ mod_doc() ->
                      "https://en.wikipedia.org/wiki/Entropy_(information_theory)"
                      "[Shannon entropy] for passwords. The value 'Entropy' is a "
                      "number of bits of entropy. The recommended minimum is 32 bits. "
-                     "The default is 0, i.e. no checks are performed.")}},
+                     "The default is '0', i.e. no checks are performed.")}},
            {registration_watchers,
             #{value => "[JID, ...]",
               desc =>

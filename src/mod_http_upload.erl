@@ -321,12 +321,13 @@ mod_doc() ->
                      "used for file uploads. The keyword @HOST@ is replaced "
                      "with the virtual host name. NOTE: different virtual "
                      "hosts cannot use the same PUT URL. "
-                     "The default value is \"https://@HOST@:5443\".")}},
+                     "The default value is \"https://@HOST@:5443/upload\".")}},
            {get_url,
             #{value => ?T("URL"),
               desc =>
                   ?T("This option specifies the initial part of the GET URLs "
-                     "used for downloading the files. By default, it is set "
+                     "used for downloading the files. The default value is 'undefined'. "
+                     "When this option is 'undefined', this option is set "
                      "to the same value as 'put_url'. The keyword @HOST@ is "
                      "replaced with the virtual host name. NOTE: if GET requests "
                      "are handled by 'mod_http_upload', the 'get_url' must match the "

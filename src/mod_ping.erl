@@ -300,7 +300,7 @@ mod_doc() ->
               desc =>
                   ?T("How long to wait before deeming that a client "
                      "has not answered a given server ping request. "
-                     "The default value is '32' seconds.")}},
+                     "The default value is 'undefined'.")}},
            {send_pings,
             #{value => "true | false",
               desc =>

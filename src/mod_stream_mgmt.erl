@@ -970,4 +970,6 @@ mod_doc() ->
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level _`cache_life_time`_ option, "
+                     "but applied to this module only. "
+                     "The default value is '48 hours'.")}}]}.

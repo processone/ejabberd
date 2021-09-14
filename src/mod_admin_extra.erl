@@ -1652,14 +1652,6 @@ mod_doc() ->
            ?T("If you want to put a group Name with blankspaces, use the "
 	      "characters \"\' and \'\" to define when the Name starts and "
 	      "ends. See an example below.")],
-      opts =>
-          [{module_resource,
-            #{value => ?T("Resource"),
-              desc =>
-                  ?T("Indicate the resource that the XMPP stanzas must use "
-		     "in the FROM or TO JIDs. This is only useful in the "
-		     "'get_vcard*' and 'set_vcard*' commands. The default "
-		     "value is 'mod_admin_extra'.")}}],
       example =>
 	  [{?T("With this configuration, vCards can only be modified with "
 	       "mod_admin_extra commands:"),
@@ -1670,8 +1662,7 @@ mod_doc() ->
 	     "  vcard_set:",
 	     "    - allow: adminextraresource",
 	     "modules:",
-	     "  mod_admin_extra:",
-	     "    module_resource: \"modadminextraf8x,31ad\"",
+	     "  mod_admin_extra: {}",
 	     "  mod_vcard:",
 	     "    access_set: vcard_set"]},
 	   {?T("Content of roster file for 'pushroster' command:"),

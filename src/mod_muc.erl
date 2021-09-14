@@ -1366,19 +1366,19 @@ mod_doc() ->
               desc =>
                   ?T("To configure who is allowed to create new rooms at the "
                      "Multi-User Chat service, this option can be used. "
-                     "By default any account in the local ejabberd server is "
+                     "The default value is 'all', which means everyone is "
                      "allowed to create rooms.")}},
            {access_persistent,
             #{value => ?T("AccessName"),
               desc =>
                   ?T("To configure who is allowed to modify the 'persistent' room option. "
-                     "By default any account in the local ejabberd server is allowed to "
+                     "The default value is 'all', which means everyone is allowed to"
                      "modify that option.")}},
            {access_mam,
             #{value => ?T("AccessName"),
               desc =>
                   ?T("To configure who is allowed to modify the 'mam' room option. "
-                     "By default any account in the local ejabberd server is allowed to "
+                     "The default value is 'all', which means everyone is allowed to"
                      "modify that option.")}},
            {access_register,
             #{value => ?T("AccessName"),
@@ -1494,7 +1494,8 @@ mod_doc() ->
                   ?T("This option defines after how many users in the room, "
                      "it is considered overcrowded. When a MUC room is considered "
                      "overcrowed, presence broadcasts are limited to reduce load, "
-                     "traffic and excessive presence \"storm\" received by participants.")}},
+                     "traffic and excessive presence \"storm\" received by participants. "
+                     "The default value is '1000'.")}},
            {min_message_interval,
             #{value => ?T("Number"),
               desc =>
