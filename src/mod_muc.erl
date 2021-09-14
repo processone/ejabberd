@@ -1372,13 +1372,13 @@ mod_doc() ->
             #{value => ?T("AccessName"),
               desc =>
                   ?T("To configure who is allowed to modify the 'persistent' room option. "
-                     "The default value is 'all', which means everyone is allowed to"
+                     "The default value is 'all', which means everyone is allowed to "
                      "modify that option.")}},
            {access_mam,
             #{value => ?T("AccessName"),
               desc =>
                   ?T("To configure who is allowed to modify the 'mam' room option. "
-                     "The default value is 'all', which means everyone is allowed to"
+                     "The default value is 'all', which means everyone is allowed to "
                      "modify that option.")}},
            {access_register,
             #{value => ?T("AccessName"),
