@@ -1,9 +1,9 @@
-defmodule Ejabberd.Mixfile do
+defmodule Ejabberd.MixProject do
   use Mix.Project
 
   def project do
     [app: :ejabberd,
-     version: "21.4.0",
+     version: version(),
      description: description(),
      elixir: "~> 1.4",
      elixirc_paths: ["lib"],
@@ -13,8 +13,22 @@ defmodule Ejabberd.Mixfile do
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
      aliases: [test: "test --no-start"],
+     start_permanent: Mix.env() == :prod,
+     language: :erlang,
+     releases: releases(),
      package: package(),
      deps: deps()]
+  end
+
+  def version do
+    case config(:vsn) do
+      :false -> "0.0.0" # ./configure wasn't run: vars.config not created
+      '0.0' -> "0.0.0" # the full git repository wasn't downloaded
+      [_, _, ?., _, _] = x ->
+        head = String.replace(:erlang.list_to_binary(x), ~r/0+([0-9])/, "\\1")
+        <<head::binary, ".0">>
+      vsn -> String.replace(:erlang.list_to_binary(vsn), ~r/0+([0-9])/, "\\1")
+    end
   end
 
   def description do
@@ -25,12 +39,13 @@ defmodule Ejabberd.Mixfile do
 
   def application do
     [mod: {:ejabberd_app, []},
-     applications: [:kernel, :stdlib, :sasl, :ssl],
-     included_applications: [:lager, :mnesia, :inets, :p1_utils, :cache_tab,
-                             :fast_tls, :stringprep, :fast_xml, :xmpp, :mqtree,
-                             :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2,
-                             :eimp, :base64url, :jose, :pkix, :os_mon, :yconf,
-                             :p1_acme, :idna]
+     extra_applications: [:mix],
+     applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib,
+                    :base64url, :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
+                    :p1_utils, :stringprep, :stun, :yconf],
+     included_applications: [:lager, :mnesia, :os_mon,
+                             :cache_tab, :eimp, :esip, :mqtree, :p1_acme,
+                             :p1_oauth2, :pkix, :xmpp]
      ++ cond_apps()]
   end
 
@@ -107,9 +122,9 @@ defmodule Ejabberd.Mixfile do
      {:p1_pgsql, "~> 1.1"},
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
-     {:stringprep, "~> 1.0"},
+     {:stringprep, ">= 1.0.26"},
      {:stun, "~> 1.0"},
-     {:xmpp, "~> 1.5"},
+     {:xmpp, git: "https://github.com/processone/xmpp", ref: "e943c0285aa85e3cbd4bfb9259f6b7de32b00395", override: true},
      {:yconf, "~> 1.0"}]
     ++ cond_deps()
   end
@@ -140,14 +155,15 @@ defmodule Ejabberd.Mixfile do
                          {config(:mysql), :p1_mysql},
                          {config(:odbc), :odbc},
                          {config(:pgsql), :p1_pgsql},
-                         {config(:sqlite), :sqlite3},
-                         {config(:zlib), :ezlib}], do:
+                         {config(:sqlite), :sqlite3}], do:
       app
   end
 
   defp package do
     [# These are the default files included in the package
-      files: ["lib", "src", "priv", "mix.exs", "include", "README.md", "COPYING", "rebar.config", "rebar.config.script"],
+      files: ["include", "lib", "priv", "sql", "src",
+              "COPYING", "README.md",
+              "mix.exs", "rebar.config", "rebar.config.script", "vars.config"],
       maintainers: ["ProcessOne"],
       licenses: ["GPLv2"],
       links: %{"Site" => "https://www.ejabberd.im",
@@ -168,6 +184,98 @@ defmodule Ejabberd.Mixfile do
       nil -> false
       value -> value
     end
+  end
+
+  defp releases do
+    maybe_tar = case Mix.env() do
+      :prod -> [:tar]
+      _ -> []
+    end
+    [
+      ejabberd: [
+        include_executables_for: [:unix],
+        # applications: [runtime_tools: :permanent]
+        steps: [&copy_extra_files/1, :assemble | maybe_tar]
+      ]
+    ]
+  end
+
+  defp copy_extra_files(release) do
+    assigns = [
+      version: version(),
+      rootdir: config(:rootdir),
+      installuser: config(:installuser),
+      libdir: config(:libdir),
+      sysconfdir: config(:sysconfdir),
+      localstatedir: config(:localstatedir),
+      docdir: config(:docdir),
+      erl: config(:erl),
+      epmd: config(:epmd),
+      bindir: Path.join([config(:release_dir), "releases", version()]),
+      release_dir: config(:release_dir),
+      erts_vsn: "erts-#{release.erts_version}"
+    ]
+    ro = "rel/overlays"
+    File.rm_rf(ro)
+
+    # Elixir lower than 1.12.0 don't have System.shell
+    execute = fn(command) ->
+      case function_exported?(System, :shell, 1) do
+        true ->
+          System.shell(command)
+        false ->
+          :os.cmd(to_charlist(command))
+      end
+    end
+
+    # Mix/Elixir lower than 1.11.0 use config/releases.exs instead of runtime.exs
+    case Version.match?(System.version, ">= 1.11.0") do
+      true ->
+        :ok
+      false ->
+        execute.("cp config/runtime.exs config/releases.exs")
+    end
+
+    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.template > ejabberdctl.example1")
+    Mix.Generator.copy_template("ejabberdctl.example1", "ejabberdctl.example2", assigns)
+    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2 > ejabberdctl.example3")
+    execute.("sed -e 's|ERLANG_NODE=ejabberd@localhost|ERLANG_NODE=ejabberd|g' ejabberdctl.example3 > ejabberdctl.example4")
+    execute.("sed -e 's|INSTALLUSER=|ERL_OPTIONS=\"-setcookie \\$\\(cat \"\\${SCRIPT_DIR%/*}/releases/COOKIE\")\"\\nINSTALLUSER=|g' ejabberdctl.example4 > ejabberdctl.example5")
+    Mix.Generator.copy_template("ejabberdctl.example5", "#{ro}/bin/ejabberdctl", assigns)
+    File.chmod("#{ro}/bin/ejabberdctl", 0o755)
+
+    File.rm("ejabberdctl.example1")
+    File.rm("ejabberdctl.example2")
+    File.rm("ejabberdctl.example3")
+    File.rm("ejabberdctl.example4")
+    File.rm("ejabberdctl.example5")
+
+    suffix = case Mix.env() do
+      :dev ->
+        Mix.Generator.copy_file("test/ejabberd_SUITE_data/ca.pem", "#{ro}/etc/ejabberd/ca.pem")
+        Mix.Generator.copy_file("test/ejabberd_SUITE_data/cert.pem", "#{ro}/etc/ejabberd/cert.pem")
+        ".example"
+      _ -> ""
+    end
+
+    Mix.Generator.copy_file("ejabberd.yml.example", "#{ro}/etc/ejabberd/ejabberd.yml#{suffix}")
+    Mix.Generator.copy_file("ejabberdctl.cfg.example", "#{ro}/etc/ejabberd/ejabberdctl.cfg#{suffix}")
+    Mix.Generator.copy_file("inetrc", "#{ro}/etc/ejabberd/inetrc")
+    Mix.Generator.copy_template("rel/vm.args.mix", "#{ro}/etc/ejabberd/vm.args", assigns)
+
+    Enum.each(File.ls!("sql"),
+      fn x ->
+        Mix.Generator.copy_file("sql/#{x}", "#{ro}/lib/ejabberd-#{release.version}/priv/sql/#{x}")
+      end)
+
+    Mix.Generator.create_directory("#{ro}/var/lib/ejabberd")
+
+    case Mix.env() do
+      :dev -> execute.("REL_DIR_TEMP=$PWD/rel/overlays/ rel/setup-dev.sh")
+      _ -> :ok
+    end
+
+    release
   end
 
 end

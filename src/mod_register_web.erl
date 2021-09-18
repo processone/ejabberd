@@ -23,32 +23,6 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%%% IDEAS:
-%%%
-%%% * Implement those options, already present in mod_register:
-%%%   + access
-%%%   + captcha_protected
-%%%   + password_strength
-%%%   + welcome_message
-%%%   + registration_timeout
-%%%
-%%% * Improve this module to allow each virtual host to have different
-%%%   options. See http://support.process-one.net/browse/EJAB-561
-%%%
-%%% * Check that all the text is translatable.
-%%%
-%%% * Add option to use a custom CSS file, or custom CSS lines.
-%%%
-%%% * Don't hardcode the "register" path in URL.
-%%%
-%%% * Allow private email during register, and store in custom table.
-%%% * Optionally require private email to register.
-%%% * Optionally require email confirmation to register.
-%%% * Allow to set a private email address anytime.
-%%% * Allow to recover password using private email to confirm (mod_passrecover)
-%%% * Optionally require invitation
-%%% * Optionally register request is forwarded to admin, no account created.
-
 -module(mod_register_web).
 
 -author('badlop@process-one.net').
@@ -533,14 +507,18 @@ form_del_get(Host, Lang) ->
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
-    Access = mod_register_opt:access(Host),
-    case jid:make(Username, Host) of
-      error -> {error, invalid_jid};
-      JID ->
-        case acl:match_rule(Host, Access, JID) of
-          deny -> {error, not_allowed};
-          allow -> register_account2(Username, Host, Password)
-        end
+    try mod_register_opt:access(Host) of
+	Access ->
+	    case jid:make(Username, Host) of
+		error -> {error, invalid_jid};
+		JID ->
+		    case acl:match_rule(Host, Access, JID) of
+			deny -> {error, not_allowed};
+			allow -> register_account2(Username, Host, Password)
+		    end
+	    end
+    catch _:{module_not_loaded, mod_register, _Host} ->
+	    {error, host_unknown}
     end.
 
 register_account2(Username, Host, Password) ->
@@ -603,6 +581,8 @@ get_error_text({error, password_incorrect}) ->
     ?T("Incorrect password");
 get_error_text({error, invalid_jid}) ->
     ?T("The username is not valid");
+get_error_text({error, host_unknown}) ->
+    ?T("Host unknown");
 get_error_text({error, not_allowed}) ->
     ?T("Not allowed");
 get_error_text({error, account_doesnt_exist}) ->
@@ -625,13 +605,27 @@ mod_doc() ->
            ?T("- Register a new account on the server."), "",
            ?T("- Change the password from an existing account on the server."), "",
            ?T("- Unregister an existing account on the server."), "",
-	   ?T("This module supports CAPTCHA image to register a new account. "
-	      "To enable this feature, configure the options 'captcha\_cmd' "
-	      "and 'captcha\_url', which are documented in the section with "
-	      "top-level options."), "",
-	   ?T("As an example usage, the users of the host 'example.org' can "
-	      "visit the page: 'https://example.org:5281/register/' It is "
+	   ?T("This module supports http://../basic/#captcha[CAPTCHA] "
+              "to register a new account. "
+	      "To enable this feature, configure the "
+              "top-level _`captcha_cmd`_ and "
+	      "top-level _`captcha_url`_ options."), "",
+	   ?T("As an example usage, the users of the host 'localhost' can "
+	      "visit the page: 'https://localhost:5280/register/' It is "
 	      "important to include the last / character in the URL, "
 	      "otherwise the subpages URL will be incorrect."), "",
-           ?T("The module depends on 'mod_register' where all the configuration "
-              "is performed.")]}.
+           ?T("This module is enabled in 'listen' -> 'ejabberd_http' -> "
+              "http://../listen-options/#request-handlers[request_handlers], "
+              "no need to enable in 'modules'."),
+           ?T("The module depends on _`mod_register`_ where all the "
+              "configuration is performed.")],
+     example =>
+         ["listen:",
+          "  -",
+          "    port: 5280",
+          "    module: ejabberd_http",
+          "    request_handlers:",
+          "      /register: mod_register_web",
+          "",
+          "modules:",
+          "  mod_register: {}"]}.

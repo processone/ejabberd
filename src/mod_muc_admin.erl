@@ -57,7 +57,7 @@
 %%----------------------------
 
 start(Host, _Opts) ->
-    ejabberd_commands:register_commands(get_commands_spec()),
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
     ejabberd_hooks:add(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_main, ?MODULE, web_page_main, 50),
@@ -696,13 +696,24 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 					       lists:keysort(1, DefRoomOpts)),
 		    case mod_muc:create_room(Host, Name, RoomOpts) of
 			ok ->
-			    ok;
+                            maybe_store_room(ServerHost, Host, Name, RoomOpts);
 			{error, _} ->
 			    throw({error, "Unable to start room"})
 		    end;
+		invalid_service ->
+		    throw({error, "Invalid 'service'"});
 		_ ->
 		    throw({error, "Room already exists"})
 	    end
+    end.
+
+maybe_store_room(ServerHost, Host, Name, RoomOpts) ->
+    case proplists:get_bool(persistent, RoomOpts) of
+        true ->
+            {atomic, ok} = mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
+            ok;
+        false ->
+            ok
     end.
 
 %% Create the room only in the database.
@@ -1155,6 +1166,7 @@ change_option(Option, Value, Config) ->
 	anonymous -> Config#config{anonymous = Value};
 	captcha_protected -> Config#config{captcha_protected = Value};
 	description -> Config#config{description = Value};
+	lang -> Config#config{lang = Value};
 	logging -> Config#config{logging = Value};
 	mam -> Config#config{mam = Value};
 	max_users -> Config#config{max_users = Value};
@@ -1167,8 +1179,10 @@ change_option(Option, Value, Config) ->
 	presence_broadcast -> Config#config{presence_broadcast = Value};
 	public -> Config#config{public = Value};
 	public_list -> Config#config{public_list = Value};
+	pubsub -> Config#config{pubsub = Value};
 	title -> Config#config{title = Value};
 	vcard -> Config#config{vcard = Value};
+	vcard_xupdate -> Config#config{vcard_xupdate = Value};
 	voice_request_min_interval -> Config#config{voice_request_min_interval = Value}
     end.
 
@@ -1399,4 +1413,4 @@ mod_doc() ->
 	  [?T("This module provides commands to administer local MUC "
 	      "services and their MUC rooms. It also provides simple "
 	      "WebAdmin pages to view the existing rooms."), "",
-	   ?T("This module depends on 'mod_muc'.")]}.
+	   ?T("This module depends on _`mod_muc`_.")]}.

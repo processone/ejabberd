@@ -278,8 +278,9 @@ listen_options() ->
 %%%===================================================================
 mod_doc() ->
     #{desc =>
-          ?T("This module adds support for the MQTT protocol "
-             "version '3.1.1' and '5.0'. Remember to configure "
+          ?T("This module adds "
+             "https://docs.ejabberd.im/admin/guide/mqtt/[support for the MQTT] "
+             "protocol version '3.1.1' and '5.0'. Remember to configure "
 	     "'mod_mqtt' in 'modules' and  'listen' sections."),
       opts =>
           [{access_subscribe,
@@ -326,37 +327,37 @@ mod_doc() ->
            {queue_type,
             #{value => "ram | file",
               desc =>
-                  ?T("Same as top-level 'queue_type' option, "
+                  ?T("Same as top-level _`queue_type`_ option, "
                      "but applied to this module only.")}},
            {ram_db_type,
             #{value => "mnesia",
               desc =>
-                  ?T("Same as top-level 'default_ram_db' option, "
+                  ?T("Same as top-level _`default_ram_db`_ option, "
                      "but applied to this module only.")}},
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, "
+                  ?T("Same as top-level _`default_db`_ option, "
                      "but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, "
+                  ?T("Same as top-level _`use_cache`_ option, "
                      "but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, "
+                  ?T("Same as top-level _`cache_size`_ option, "
                      "but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, "
+                  ?T("Same as top-level _`cache_missed`_ option, "
                      "but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, "
+                  ?T("Same as top-level _`cache_life_time`_ option, "
                      "but applied to this module only.")}}]}.
 
 %%%===================================================================
@@ -598,6 +599,23 @@ match([H|T1], [<<"%d">>|T2], U, S, R) ->
 match([H|T1], [<<"%c">>|T2], U, S, R) ->
     case jid:resourceprep(H) of
         R -> match(T1, T2, U, S, R);
+        _ -> false
+    end;
+match([H|T1], [<<"%g">>|T2], U, S, R) ->
+    case jid:resourceprep(H) of
+        H -> 
+            case acl:loaded_shared_roster_module(S) of
+                undefined -> false;
+                Mod ->
+                    case Mod:get_group_opts(S, H) of
+                        error -> false;
+                        _ ->
+                            case Mod:is_user_in_group({U, S}, H, S) of
+                                true -> match(T1, T2, U, S, R);
+                                _ -> false
+                            end
+                    end
+            end;
         _ -> false
     end;
 match([H|T1], [H|T2], U, S, R) ->

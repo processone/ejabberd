@@ -24,7 +24,7 @@
 -module(mod_mix).
 -behaviour(gen_mod).
 -behaviour(gen_server).
--protocol({xep, 369, '0.13.0'}).
+-protocol({xep, 369, '0.14.1'}).
 
 %% API
 -export([route/1]).
@@ -106,12 +106,12 @@ mod_doc() ->
               "experimental feature, updated in 19.02, and is not "
               "yet ready to use in production. It's asserted that "
               "the MIX protocol is going to replace the MUC protocol "
-              "in the future (see 'mod_muc')."), "",
+              "in the future (see _`mod_muc`_)."), "",
            ?T("To learn more about how to use that feature, you can refer to "
 	      "our tutorial: https://docs.ejabberd.im/tutorials/mix-010/"
 	      "[Getting started with XEP-0369: Mediated Information "
 	      "eXchange (MIX) v0.1]."), "",
-           ?T("The module depends on 'mod_mam'.")],
+           ?T("The module depends on _`mod_mam`_.")],
       opts =>
           [{access_create,
             #{value => ?T("AccessName"),
@@ -136,7 +136,7 @@ mod_doc() ->
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}}]}.
 
 -spec route(stanza()) -> ok.
 route(#iq{} = IQ) ->
@@ -166,7 +166,7 @@ process_disco_info(#iq{type = get, to = #jid{luser = <<>>} = To,
 				[ServerHost, ?MODULE, <<"">>, Lang]),
     Name = mod_mix_opt:name(ServerHost),
     Identity = #identity{category = <<"conference">>,
-			 type = <<"text">>,
+			 type = <<"mix">>,
 			 name = translate:translate(Lang, Name)},
     Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
 		?NS_MIX_CORE_0, ?NS_MIX_CORE_SEARCHABLE_0,

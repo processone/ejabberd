@@ -469,8 +469,8 @@ mod_doc() ->
               "[XEP-0398: User Avatar to vCard-Based Avatars Conversion]."), "",
            ?T("Also, the module supports conversion between avatar "
               "image formats on the fly."), "",
-           ?T("The module depends on 'mod_vcard', 'mod_vcard_xupdate' and "
-              "'mod_pubsub'.")],
+           ?T("The module depends on _`mod_vcard`_, _`mod_vcard_xupdate`_ and "
+              "_`mod_pubsub`_.")],
       opts =>
           [{convert,
             #{value => "{From: To}",

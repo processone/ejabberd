@@ -176,7 +176,7 @@ mod_doc() ->
 		     "clients. If ejabberd's built-in TURN service is used, "
 		     "TURN relays allocated using temporary credentials will "
 		     "be terminated shortly after the credentials expired. The "
-		     "default value is '12' hours. Note that restarting the "
+		     "default value is '12 hours'. Note that restarting the "
 		     "ejabberd node invalidates any temporary credentials "
 		     "offered before the restart unless a 'secret' is "
 		     "specified (see below).")}},

@@ -154,7 +154,7 @@ handle_info({iq_reply, timeout, JID}, State) ->
     {noreply, State#state{timers = Timers}};
 handle_info({timeout, _TRef, {ping, JID}}, State) ->
     Host = State#state.host,
-    From = jid:remove_resource(JID),
+    From = jid:make(Host),
     IQ = #iq{from = From, to = JID, type = get, sub_els = [#ping{}]},
     ejabberd_router:route_iq(IQ, JID,
 			     gen_mod:get_module_proc(Host, ?MODULE),
@@ -300,7 +300,7 @@ mod_doc() ->
               desc =>
                   ?T("How long to wait before deeming that a client "
                      "has not answered a given server ping request. "
-                     "The default value is '32' seconds.")}},
+                     "The default value is 'undefined'.")}},
            {send_pings,
             #{value => "true | false",
               desc =>
@@ -317,8 +317,8 @@ mod_doc() ->
                      "server ping request in less than period defined "
                      "in 'ping_ack_timeout' option: "
                      "'kill' means destroying the underlying connection, "
-                     "'none' means to do nothing. NOTE: when 'mod_stream_mgmt' "
-                     "module is loaded and stream management is enabled by "
+                     "'none' means to do nothing. NOTE: when _`mod_stream_mgmt`_ "
+                     "is loaded and stream management is enabled by "
                      "a client, killing the client connection doesn't mean "
                      "killing the client session - the session will be kept "
                      "alive in order to give the client a chance to resume it. "

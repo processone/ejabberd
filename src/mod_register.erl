@@ -638,9 +638,9 @@ mod_doc() ->
            ?T("* Register a new account on the server."), "",
            ?T("* Change the password from an existing account on the server."), "",
            ?T("* Delete an existing account on the server."), "",
-           ?T("This module reads also another option defined globally for the "
-	      "server: 'registration_timeout'. Please check that option "
-	      "documentation in the section with top-level options.")],
+           ?T("This module reads also the top-level _`registration_timeout`_ "
+              "option defined globally for the server, "
+              "so please check that option documentation too.")],
       opts =>
           [{access,
             #{value => ?T("AccessName"),
@@ -664,9 +664,8 @@ mod_doc() ->
            {captcha_protected,
             #{value => "true | false",
               desc =>
-                  ?T("Protect registrations with CAPTCHA (see section "
-                     "https://docs.ejabberd.im/admin/configuration/basic/#captcha[CAPTCHA] "
-                     "of the Configuration Guide). The default is 'false'.")}},
+                  ?T("Protect registrations with http://../basic/#captcha[CAPTCHA]. "
+                     "The default is 'false'.")}},
            {ip_access,
             #{value => ?T("AccessName"),
               desc =>
@@ -680,7 +679,7 @@ mod_doc() ->
                      "https://en.wikipedia.org/wiki/Entropy_(information_theory)"
                      "[Shannon entropy] for passwords. The value 'Entropy' is a "
                      "number of bits of entropy. The recommended minimum is 32 bits. "
-                     "The default is 0, i.e. no checks are performed.")}},
+                     "The default is '0', i.e. no checks are performed.")}},
            {registration_watchers,
             #{value => "[JID, ...]",
               desc =>

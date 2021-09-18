@@ -392,8 +392,9 @@ perform(From, Packet, _,
 	{route_single, Group}) ->
     lists:foreach(
 	fun(ToUser) ->
+	    Group_others = strip_other_bcc(ToUser, Group#group.others),
 	    route_packet(From, ToUser, Packet,
-			 Group#group.others, Group#group.addresses)
+			 Group_others, Group#group.addresses)
 	end, Group#group.dests);
 perform(From, Packet, _,
 	{{route_multicast, JID, RLimits}, Group}) ->
@@ -423,6 +424,21 @@ strip_addresses_element(Packet) ->
 	false ->
 	    throw(eadsele)
     end.
+
+%%%-------------------------
+%%% Strip third-party bcc 'addresses'
+%%%-------------------------
+
+strip_other_bcc(#dest{jid_jid = ToUserJid}, Group_others) ->
+    lists:filter(
+        fun(#address{jid = JID, type = Type}) ->
+            case {JID, Type} of
+                {ToUserJid, bcc} -> true;
+                {_, bcc} -> false;
+                _ -> true
+            end
+        end,
+    Group_others).
 
 %%%-------------------------
 %%% Split Addresses
@@ -545,7 +561,6 @@ build_other_xml(Dests) ->
 			case Dest#dest.type of
 			  to -> [add_delivered(XML) | R];
 			  cc -> [add_delivered(XML) | R];
-			  bcc -> R;
 			  _ -> [XML | R]
 			end
 		end,

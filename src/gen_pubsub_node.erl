@@ -123,6 +123,11 @@
     {error, stanza_error()}.
 
 -callback remove_extra_items(NodeIdx :: nodeIdx(),
+	Max_Items :: unlimited | non_neg_integer()) ->
+    {result, {[itemId()], [itemId()]}
+	}.
+
+-callback remove_extra_items(NodeIdx :: nodeIdx(),
 	Max_Items :: unlimited | non_neg_integer(),
 	ItemIds :: [itemId()]) ->
     {result, {[itemId()], [itemId()]}

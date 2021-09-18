@@ -527,10 +527,20 @@ mod_doc() ->
 	  [?T("This module provides a ReST API to call ejabberd commands "
 	      "using JSON data."), "",
 	   ?T("To use this module, in addition to adding it to the 'modules' "
-	      "section, you must also add it to 'request_handlers' of some "
-	      "listener."), "",
+	      "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
+              "http://../listen-options/#request-handlers[request_handlers]."), "",
 	   ?T("To use a specific API version N, when defining the URL path "
 	      "in the request_handlers, add a 'vN'. "
 	      "For example: '/api/v2: mod_http_api'"), "",
 	   ?T("To run a command, send a POST request to the corresponding "
-	      "URL: 'http://localhost:5280/api/<command_name>'")]}.
+	      "URL: 'http://localhost:5280/api/<command_name>'")],
+     example =>
+         ["listen:",
+          "  -",
+          "    port: 5280",
+          "    module: ejabberd_http",
+          "    request_handlers:",
+          "      /api: mod_http_api",
+          "",
+          "modules:",
+          "  mod_http_api: {}"]}.

@@ -9,6 +9,7 @@
 /Makefile
 /config.log
 /config.status
+/config/releases.exs
 /configure
 /aclocal.m4
 /*.cache
@@ -17,14 +18,17 @@
 /ebin/
 /ejabberd.init
 /ejabberd.service
+/ejabberdctl
 /ejabberdctl.example
 /rel/ejabberd/
+/rel/overlays/
 /src/eldap_filter_yecc.erl
 /vars.config
 /dialyzer/
 /test/*.beam
 /test/*.ctc
 /logs/
+/priv/bin/captcha*sh
 /priv/sql
 /rel/ejabberd
 /_build

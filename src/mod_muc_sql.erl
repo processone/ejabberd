@@ -29,7 +29,8 @@
 -behaviour(mod_muc_room).
 
 %% API
--export([init/2, store_room/5, restore_room/3, forget_room/3,
+-export([init/2, store_room/5, store_changes/4,
+         restore_room/3, forget_room/3,
 	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4,
 	 import/3, export/1]).
 -export([register_online_room/4, unregister_online_room/4, find_online_room/3,
@@ -80,6 +81,12 @@ store_room(LServer, Host, Name, Opts, ChangesHints) ->
                         [change_room(Host, Name, {add_subscription, JID, Nick, Nodes})
                          || {JID, Nick, Nodes} <- Subs]
                 end
+	end,
+    ejabberd_sql:sql_transaction(LServer, F).
+
+store_changes(LServer, Host, Name, Changes) ->
+    F = fun () ->
+                [change_room(Host, Name, Change) || Change <- Changes]
 	end,
     ejabberd_sql:sql_transaction(LServer, F).
 
@@ -185,13 +192,20 @@ get_rooms(LServer, Host) ->
 		{selected, Subs} ->
 		    SubsD = lists:foldl(
 			fun({Room, Jid, Nick, Nodes}, Dict) ->
-			    dict:append(Room, {jid:decode(Jid),
-					       Nick, ejabberd_sql:decode_term(Nodes)}, Dict)
-			end, dict:new(), Subs),
+                                Sub = {jid:decode(Jid),
+                                       Nick, ejabberd_sql:decode_term(Nodes)},
+                                maps:update_with(
+                                  Room,
+                                  fun(SubAcc) ->
+                                          [Sub | SubAcc]
+                                  end,
+                                  [Sub],
+                                  Dict)
+			end, maps:new(), Subs),
 	    lists:map(
 	      fun({Room, Opts}) ->
 			    OptsD = ejabberd_sql:decode_term(Opts),
-			    OptsD2 = case {dict:find(Room, SubsD), lists:keymember(subscribers, 1, OptsD)} of
+			    OptsD2 = case {maps:find(Room, SubsD), lists:keymember(subscribers, 1, OptsD)} of
 					 {_, true} ->
 					     store_room(LServer, Host, Room, mod_muc:opts_to_binary(OptsD), undefined),
 					     OptsD;

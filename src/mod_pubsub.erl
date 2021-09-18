@@ -45,6 +45,7 @@
 -include("mod_roster.hrl").
 -include("translate.hrl").
 -include("ejabberd_stacktrace.hrl").
+-include("ejabberd_commands.hrl").
 
 -define(STDTREE, <<"tree">>).
 -define(STDNODE, <<"flat">>).
@@ -92,6 +93,9 @@
 -export([start/2, stop/1, init/1,
     handle_call/3, handle_cast/2, handle_info/2, mod_doc/0,
     terminate/2, code_change/3, depends/2, mod_opt_type/1, mod_options/1]).
+
+%% ejabberd commands
+-export([get_commands_spec/0, delete_old_items/1]).
 
 -export([route/1]).
 
@@ -210,7 +214,7 @@
 	pep_mapping             :: [{binary(), binary()}],
 	ignore_pep_from_offline :: boolean(),
 	last_item_cache         :: boolean(),
-	max_items_node          :: non_neg_integer(),
+	max_items_node          :: non_neg_integer()|unlimited,
 	max_subscriptions_node  :: non_neg_integer()|undefined,
 	default_node_config     :: [{atom(), binary()|boolean()|integer()|atom()}],
 	nodetree                :: binary(),
@@ -337,6 +341,7 @@ init([ServerHost|_]) ->
 	false ->
 	    ok
     end,
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
     NodeTree = config(ServerHost, nodetree),
     Plugins = config(ServerHost, plugins),
     PepMapping = config(ServerHost, pep_mapping),
@@ -806,7 +811,13 @@ terminate(_Reason,
 	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS),
 	      terminate_plugins(Host, ServerHost, Plugins, TreePlugin),
 	      ejabberd_router:unregister_route(Host)
-      end, Hosts).
+      end, Hosts),
+    case gen_mod:is_loaded_elsewhere(ServerHost, ?MODULE) of
+	false ->
+	    ejabberd_commands:unregister_commands(get_commands_spec());
+	true ->
+	    ok
+    end.
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
@@ -3399,14 +3410,14 @@ node_config(_, _, []) ->
 %% @doc <p>Return the maximum number of items for a given node.</p>
 %% <p>Unlimited means that there is no limit in the number of items that can
 %% be stored.</p>
--spec max_items(host(), [{atom(), any()}]) -> non_neg_integer().
+-spec max_items(host(), [{atom(), any()}]) -> non_neg_integer() | unlimited.
 max_items(Host, Options) ->
     case get_option(Options, persist_items) of
 	true ->
 	    case get_option(Options, max_items) of
 		I when is_integer(I), I < 0 -> 0;
 		I when is_integer(I) -> I;
-		_ -> ?MAXITEMS
+		_ -> get_max_items_node(Host)
 	    end;
 	false ->
 	    case get_option(Options, send_last_published_item) of
@@ -3548,14 +3559,19 @@ decode_get_pending(#xdata{fields = Fs}, Lang) ->
 	    {error, xmpp:err_resource_constraint(Txt, Lang)}
     end.
 
--spec check_opt_range(atom(), [proplists:property()], non_neg_integer()) -> boolean().
+-spec check_opt_range(atom(), [proplists:property()],
+		      non_neg_integer() | unlimited | undefined) -> boolean().
 check_opt_range(_Opt, _Opts, undefined) ->
     true;
+check_opt_range(_Opt, _Opts, unlimited) ->
+    true;
 check_opt_range(Opt, Opts, Max) ->
-    Val = proplists:get_value(Opt, Opts, Max),
-    Val =< Max.
+    case proplists:get_value(Opt, Opts, Max) of
+	max -> true;
+	Val -> Val =< Max
+    end.
 
--spec get_max_items_node(host()) -> undefined | non_neg_integer().
+-spec get_max_items_node(host()) -> undefined | unlimited | non_neg_integer().
 get_max_items_node(Host) ->
     config(Host, max_items_node, undefined).
 
@@ -3707,6 +3723,7 @@ features() ->
      <<"access-whitelist">>,   % OPTIONAL
      <<"collections">>,   % RECOMMENDED
      <<"config-node">>,   % RECOMMENDED
+     <<"config-node-max">>,
      <<"create-and-configure">>,   % RECOMMENDED
      <<"item-ids">>,   % RECOMMENDED
      <<"last-published">>,   % RECOMMENDED
@@ -4136,6 +4153,46 @@ purge_offline(Host, LJID, Node) ->
 	    {error, xmpp:err_internal_server_error(Txt, Lang)}
     end.
 
+-spec delete_old_items(non_neg_integer()) -> ok | error.
+delete_old_items(N) ->
+    Results = lists:flatmap(
+		fun(Host) ->
+			case tree_action(Host, get_all_nodes, [Host]) of
+			    Nodes when is_list(Nodes) ->
+				lists:map(
+				  fun(#pubsub_node{id = Nidx, type = Type}) ->
+					  case node_action(Host, Type,
+							   remove_extra_items,
+							   [Nidx , N]) of
+					      {result, _} ->
+						  ok;
+					      {error, _} ->
+						  error
+					  end
+				  end, Nodes);
+			    _ ->
+				error
+			end
+		end, ejabberd_option:hosts()),
+    case lists:member(error, Results) of
+	true ->
+	    error;
+	false ->
+	    ok
+    end.
+
+-spec get_commands_spec() -> [ejabberd_commands()].
+get_commands_spec() ->
+    [#ejabberd_commands{name = delete_old_pubsub_items, tags = [purge],
+			desc = "Keep only NUMBER of PubSub items per node",
+			module = ?MODULE, function = delete_old_items,
+			args_desc = ["Number of items to keep per node"],
+			args = [{number, integer}],
+			result = {res, rescode},
+			result_desc = "0 if command failed, 1 when succeeded",
+			args_example = [1000],
+			result_example = ok}].
+
 -spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(access_createnode) ->
     econf:acl();
@@ -4146,7 +4203,7 @@ mod_opt_type(ignore_pep_from_offline) ->
 mod_opt_type(last_item_cache) ->
     econf:bool();
 mod_opt_type(max_items_node) ->
-    econf:non_neg_int();
+    econf:non_neg_int(unlimited);
 mod_opt_type(max_nodes_discoitems) ->
     econf:non_neg_int(infinity);
 mod_opt_type(max_subscriptions_node) ->
@@ -4212,7 +4269,7 @@ mod_doc() ->
 	      "(https://xmpp.org/extensions/xep-0163.html"
 	      "[XEP-0163: Personal Eventing via Pubsub]) "
 	      "is enabled in the default ejabberd configuration file, "
-	      "and it requires 'mod_caps'.")],
+	      "and it requires _`mod_caps`_.")],
       opts =>
 	  [{access_createnode,
 	    #{value => "AccessName",
@@ -4225,7 +4282,7 @@ mod_doc() ->
 	   {db_type,
 	    #{value => "mnesia | sql",
 	      desc =>
-		  ?T("Same as top-level 'default_db' option, but applied to "
+		  ?T("Same as top-level _`default_db`_ option, but applied to "
 		     "this module only.")}},
 	   {default_node_config,
 	    #{value => "List of Key:Value",
@@ -4273,7 +4330,7 @@ mod_doc() ->
 		     "and allows to raise user connection rate. The cost "
 		     "is memory usage, as every item is stored in memory.")}},
 	   {max_items_node,
-	    #{value => "MaxItems",
+	    #{value => "non_neg_integer() | infinity",
 	      desc =>
 		  ?T("Define the maximum number of items that can be "
 		     "stored in a node. Default value is: '10'.")}},

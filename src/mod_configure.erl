@@ -1564,4 +1564,4 @@ mod_doc() ->
           ?T("The module provides server configuration functionality via "
              "https://xmpp.org/extensions/xep-0050.html"
              "[XEP-0050: Ad-Hoc Commands]. This module requires "
-             "'mod_adhoc' to be loaded.")}.
+             "_`mod_adhoc`_ to be loaded.")}.

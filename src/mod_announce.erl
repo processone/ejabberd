@@ -930,7 +930,7 @@ mod_doc() ->
 	      "should be disabled for instances of ejabberd with hundreds of "
 	      "thousands users."), "",
            ?T("The Ad-hoc Commands are listed in the Server Discovery. "
-              "For this feature to work, 'mod_adhoc' must be enabled."), "",
+              "For this feature to work, _`mod_adhoc`_ must be enabled."), "",
            ?T("The specific JIDs where messages can be sent are listed below. "
               "The first JID in each entry will apply only to the specified "
               "virtual host example.org, while the JID between brackets "
@@ -940,7 +940,7 @@ mod_doc() ->
               "online and connected to several resources, only the resource "
               "with the highest priority will receive the message. "
               "If the registered user is not connected, the message will be "
-              "stored offline in assumption that offline storage (see 'mod_offline') "
+              "stored offline in assumption that offline storage (see _`mod_offline`_) "
               "is enabled."),
            "- example.org/announce/online (example.org/announce/all-hosts/online)::",
            ?T("The message is sent to all connected users. If the user is "
@@ -965,20 +965,20 @@ mod_doc() ->
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}]}.

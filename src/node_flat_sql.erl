@@ -40,9 +40,10 @@
 -include("translate.hrl").
 
 -export([init/3, terminate/2, options/0, features/0,
-    create_node_permission/6, create_node/2, delete_node/1,
-    purge_node/2, subscribe_node/8, unsubscribe_node/4,
-    publish_item/7, delete_item/4, remove_extra_items/3,
+    create_node_permission/6, create_node/2, delete_node/1, purge_node/2,
+    subscribe_node/8, unsubscribe_node/4,
+    publish_item/7, delete_item/4,
+    remove_extra_items/2, remove_extra_items/3,
     get_entity_affiliations/2, get_node_affiliations/1,
     get_affiliation/2, set_affiliation/3,
     get_entity_subscriptions/2, get_node_subscriptions/1,
@@ -247,7 +248,8 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 		    or (Subscribed == true)) ->
 	    {error, xmpp:err_forbidden()};
 	true ->
-	    if MaxItems > 0 ->
+	    if MaxItems > 0;
+	       MaxItems == unlimited ->
 		    Now = erlang:timestamp(),
 		    case get_item(Nidx, ItemId) of
 			{result, #pubsub_item{creation = {_, GenKey}} = OldItem} ->
@@ -258,19 +260,22 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 			{result, _} ->
 			    {error, xmpp:err_forbidden()};
 			_ ->
-			    Items = [ItemId | itemids(Nidx, GenKey)],
-			    {result, {_NI, OI}} = remove_extra_items(Nidx, MaxItems, Items),
+			    OldIds = maybe_remove_extra_items(Nidx, MaxItems,
+							      GenKey, ItemId),
 			    set_item(#pubsub_item{
 					itemid = {ItemId, Nidx},
 					creation = {Now, GenKey},
 					modification = {Now, SubKey},
 					payload = Payload}),
-			    {result, {default, broadcast, OI}}
+			    {result, {default, broadcast, OldIds}}
 		    end;
 		true ->
 		    {result, {default, broadcast, []}}
 	    end
     end.
+
+remove_extra_items(Nidx, MaxItems) ->
+    remove_extra_items(Nidx, MaxItems, itemids(Nidx)).
 
 remove_extra_items(_Nidx, unlimited, ItemIds) ->
     {result, {ItemIds, []}};
@@ -862,6 +867,18 @@ first_in_list(Pred, [H | T]) ->
 	_ -> first_in_list(Pred, T)
     end.
 
+itemids(Nidx) ->
+    case catch
+	ejabberd_sql:sql_query_t(
+	  ?SQL("select @(itemid)s from pubsub_item where "
+	       "nodeid=%(Nidx)d order by modification desc"))
+    of
+	{selected, RItems} ->
+	    [ItemId || {ItemId} <- RItems];
+	_ ->
+	    []
+    end.
+
 itemids(Nidx, {_U, _S, _R} = JID) ->
     SJID = encode_jid(JID),
     SJIDLike = <<(encode_jid_like(JID))/binary, "/%">>,
@@ -932,6 +949,16 @@ update_subscription(Nidx, JID, Subscription) ->
         "subscriptions=%(S)s",
         "-affiliation='n'"
        ]).
+
+-spec maybe_remove_extra_items(mod_pubsub:nodeIdx(),
+			       non_neg_integer() | unlimited, ljid(),
+			       mod_pubsub:itemId()) -> [mod_pubsub:itemId()].
+maybe_remove_extra_items(_Nidx, unlimited, _GenKey, _ItemId) ->
+    [];
+maybe_remove_extra_items(Nidx, MaxItems, GenKey, ItemId) ->
+    ItemIds = [ItemId | itemids(Nidx, GenKey)],
+    {result, {_NewIds, OldIds}} = remove_extra_items(Nidx, MaxItems, ItemIds),
+    OldIds.
 
 -spec decode_jid(SJID :: binary()) -> ljid().
 decode_jid(SJID) ->
@@ -1037,15 +1064,14 @@ rsm_page(Count, Index, Offset, Items) ->
 	     last = Last}.
 
 encode_stamp(Stamp) ->
-    case catch xmpp_util:decode_timestamp(Stamp) of
-	{MS,S,US} -> encode_now({MS,S,US});
-	_ -> Stamp
+    try xmpp_util:decode_timestamp(Stamp) of
+	Now ->
+	    encode_now(Now)
+    catch _:{bad_timestamp, _} ->
+	    Stamp % We should return a proper error to the client instead.
     end.
 decode_stamp(Stamp) ->
-    case catch xmpp_util:encode_timestamp(decode_now(Stamp)) of
-	TimeStamp when is_binary(TimeStamp) -> TimeStamp;
-	_ -> Stamp
-    end.
+    xmpp_util:encode_timestamp(decode_now(Stamp)).
 
 encode_now({T1, T2, T3}) ->
     <<(misc:i2l(T1, 6))/binary, ":",

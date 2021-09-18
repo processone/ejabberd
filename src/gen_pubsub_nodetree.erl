@@ -67,6 +67,9 @@
 -callback get_nodes(Host :: host())->
     [pubsubNode()].
 
+-callback get_all_nodes(Host :: host()) ->
+    [pubsubNode()].
+
 -callback get_parentnodes(Host :: host(),
 	NodeId :: nodeId(),
 	From :: jid:jid()) ->

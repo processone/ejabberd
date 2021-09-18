@@ -27,7 +27,8 @@
 %% Hooks
 -export([ejabberd_started/0, register_certfiles/0, cert_expired/2]).
 %% ejabberd commands
--export([request_certificate/1, revoke_certificate/1, list_certificates/0]).
+-export([get_commands_spec/0, request_certificate/1,
+         revoke_certificate/1, list_certificates/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3, format_status/2]).

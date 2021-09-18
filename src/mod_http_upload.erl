@@ -232,8 +232,9 @@ mod_doc() ->
               "[XEP-0363: HTTP File Upload]. If the request is accepted, "
               "the client receives a URL for uploading the file and "
               "another URL from which that file can later be downloaded."), "",
-           ?T("In order to use this module, it must be configured as "
-              "a 'request_handler' for 'ejabberd_http' listener.")],
+           ?T("In order to use this module, it must be enabled "
+              "in 'listen' -> 'ejabberd_http' -> "
+              "http://../listen-options/#request-handlers[request_handlers].")],
       opts =>
           [{host,
             #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
@@ -320,17 +321,18 @@ mod_doc() ->
                      "used for file uploads. The keyword @HOST@ is replaced "
                      "with the virtual host name. NOTE: different virtual "
                      "hosts cannot use the same PUT URL. "
-                     "The default value is \"https://@HOST@:5443\".")}},
+                     "The default value is \"https://@HOST@:5443/upload\".")}},
            {get_url,
             #{value => ?T("URL"),
               desc =>
                   ?T("This option specifies the initial part of the GET URLs "
-                     "used for downloading the files. By default, it is set "
+                     "used for downloading the files. The default value is 'undefined'. "
+                     "When this option is 'undefined', this option is set "
                      "to the same value as 'put_url'. The keyword @HOST@ is "
                      "replaced with the virtual host name. NOTE: if GET requests "
                      "are handled by 'mod_http_upload', the 'get_url' must match the "
                      "'put_url'. Setting it to a different value only makes "
-                     "sense if an external web server or 'mod_http_fileserver' "
+                     "sense if an external web server or _`mod_http_fileserver`_ "
                      "is used to serve the uploaded files.")}},
            {service_url,
             #{desc => ?T("Deprecated.")}},

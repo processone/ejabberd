@@ -571,7 +571,7 @@ mod_doc() ->
 		   }]}}] ++
           [{Opt,
             #{desc =>
-                  {?T("Same as top-level '~s' option, but "
+                  {?T("Same as top-level _`~s`_ option, but "
                       "applied to this module only."), [Opt]}}}
            || Opt <- [ldap_base, ldap_servers, ldap_uids,
                       ldap_deref_aliases, ldap_encrypt, ldap_password,

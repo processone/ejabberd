@@ -84,14 +84,14 @@ code_change(_OldVsn, State, _Extra) ->
 %% -- ejabberd commands
 get_commands_spec() ->
     [#ejabberd_commands{name = modules_update_specs,
-                        tags = [admin,modules],
+                        tags = [modules],
                         desc = "Update the module source code from Git",
                         longdesc = "A connection to Internet is required",
                         module = ?MODULE, function = update,
                         args = [],
                         result = {res, rescode}},
      #ejabberd_commands{name = modules_available,
-                        tags = [admin,modules],
+                        tags = [modules],
                         desc = "List the contributed modules available to install",
                         module = ?MODULE, function = available_command,
                         result_desc = "List of tuples with module name and description",
@@ -103,7 +103,7 @@ get_commands_spec() ->
                                    [{name, atom},
                                     {summary, string}]}}}}},
      #ejabberd_commands{name = modules_installed,
-                        tags = [admin,modules],
+                        tags = [modules],
                         desc = "List the contributed modules already installed",
                         module = ?MODULE, function = installed_command,
                         result_desc = "List of tuples with module name and description",
@@ -115,7 +115,7 @@ get_commands_spec() ->
                                    [{name, atom},
                                     {summary, string}]}}}}},
      #ejabberd_commands{name = module_install,
-                        tags = [admin,modules],
+                        tags = [modules],
                         desc = "Compile, install and start an available contributed module",
                         module = ?MODULE, function = install,
                         args_desc = ["Module name"],
@@ -123,7 +123,7 @@ get_commands_spec() ->
                         args = [{module, binary}],
                         result = {res, rescode}},
      #ejabberd_commands{name = module_uninstall,
-                        tags = [admin,modules],
+                        tags = [modules],
                         desc = "Uninstall a contributed module",
                         module = ?MODULE, function = uninstall,
                         args_desc = ["Module name"],
@@ -131,7 +131,7 @@ get_commands_spec() ->
                         args = [{module, binary}],
                         result = {res, rescode}},
      #ejabberd_commands{name = module_upgrade,
-                        tags = [admin,modules],
+                        tags = [modules],
                         desc = "Upgrade the running code of an installed module",
                         longdesc = "In practice, this uninstalls and installs the module",
                         module = ?MODULE, function = upgrade,
@@ -140,7 +140,7 @@ get_commands_spec() ->
                         args = [{module, binary}],
                         result = {res, rescode}},
      #ejabberd_commands{name = module_check,
-                        tags = [admin,modules],
+                        tags = [modules],
                         desc = "Check the contributed module repository compliance",
                         module = ?MODULE, function = check,
                         args_desc = ["Module name"],
@@ -638,6 +638,7 @@ install(Module, Spec, SrcDir, LibDir) ->
     Errors = lists:dropwhile(fun({_, ok}) -> true;
                                 (_) -> false
             end, Files1++Files2),
+    inform_module_configuration(Module, LibDir, Files1),
     Result = case Errors of
         [{F, {error, E}}|_] ->
             {error, {F, E}};
@@ -648,6 +649,24 @@ install(Module, Spec, SrcDir, LibDir) ->
     end,
     file:set_cwd(CurDir),
     Result.
+
+inform_module_configuration(Module, LibDir, Files1) ->
+    Res = lists:filter(fun({[$c, $o, $n, $f |_], ok}) -> true;
+                          (_) -> false
+            end, Files1),
+    case Res of
+        [{ConfigPath, ok}] ->
+            FullConfigPath = filename:join(LibDir, ConfigPath),
+            io:format("Module ~p has been installed and started.~n"
+                      "It's configured in the file:~n  ~s~n"
+                      "Configure the module in that file, or remove it~n"
+                      "and configure in your main ejabberd.yml~n",
+                      [Module, FullConfigPath]);
+        [] ->
+            io:format("Module ~p has been installed.~n"
+                      "Now you can configure it in your ejabberd.yml~n",
+                      [Module])
+    end.
 
 %% -- minimalist rebar spec parser, only support git
 

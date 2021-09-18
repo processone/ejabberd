@@ -827,6 +827,7 @@ print_usage_command(Cmd, MaxC, ShCode, Version) ->
 print_usage_command2(Cmd, C, MaxC, ShCode) ->
     #ejabberd_commands{
 		     tags = TagsAtoms,
+		     definer = Definer,
 		     desc = Desc,
 		     args = ArgsDef,
 		     longdesc = LongDesc,
@@ -851,6 +852,15 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 
     TagsFmt = ["  ",?B("Tags"),":", prepare_long_line(8, MaxC, [?G(atom_to_list(TagA)) || TagA <- TagsAtoms])],
 
+    IsDefinerMod = case Definer of
+                     unknown -> true;
+                     _ -> lists:member(gen_mod, proplists:get_value(behaviour, Definer:module_info(attributes)))
+                 end,
+    ModuleFmt = case IsDefinerMod of
+                    true -> ["  ",?B("Module"),": ", atom_to_list(Definer), "\n\n"];
+                    false -> []
+                end,
+
     DescFmt = ["  ",?B("Description"),":", prepare_description(15, MaxC, Desc)],
 
     LongDescFmt = case LongDesc of
@@ -866,7 +876,7 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
     case Cmd of
         "help" -> ok;
         _ -> print([NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt,
-                    "\n\n", XmlrpcFmt, TagsFmt, "\n\n", DescFmt, "\n\n"], [])
+                    "\n\n", XmlrpcFmt, TagsFmt, "\n\n", ModuleFmt, DescFmt, "\n\n"], [])
     end,
     print([LongDescFmt, NoteEjabberdctl], []).
 

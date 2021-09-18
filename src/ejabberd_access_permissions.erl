@@ -46,6 +46,7 @@
 	 code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(CACHE_TAB, access_permissions_cache).
 
 -record(state,
 	{definitions = none :: none | [definition()]}).
@@ -71,17 +72,45 @@
 %%%===================================================================
 -spec can_access(atom(), caller_info()) -> allow | deny.
 can_access(Cmd, CallerInfo) ->
-    gen_server:call(?MODULE, {can_access, Cmd, CallerInfo}).
+    Defs0 = show_current_definitions(),
+    CallerModule = maps:get(caller_module, CallerInfo, none),
+    Host = maps:get(caller_host, CallerInfo, global),
+    Tag = maps:get(tag, CallerInfo, none),
+    Defs = maps:get(extra_permissions, CallerInfo, []) ++ Defs0,
+    Res = lists:foldl(
+	fun({Name, _} = Def, none) ->
+	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo) of
+		true ->
+		    ?DEBUG("Command '~p' execution allowed by rule "
+			   "'~ts' (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
+		    allow;
+		_ ->
+		    none
+	    end;
+	   (_, Val) ->
+	       Val
+	end, none, Defs),
+    case Res of
+	allow -> allow;
+	_ ->
+	    ?DEBUG("Command '~p' execution denied "
+		   "(CallerInfo=~p)", [Cmd, CallerInfo]),
+	    deny
+    end.
 
 -spec invalidate() -> ok.
 invalidate() ->
-    gen_server:cast(?MODULE, invalidate).
+    gen_server:cast(?MODULE, invalidate),
+    ets_cache:delete(?CACHE_TAB, definitions).
 
 -spec show_current_definitions() -> [definition()].
 show_current_definitions() ->
-    gen_server:call(?MODULE, show_current_definitions).
-
+    ets_cache:lookup(?CACHE_TAB, definitions,
+		     fun() ->
+			 {cache, gen_server:call(?MODULE, show_current_definitions)}
+		     end).
 start_link() ->
+    ets_cache:new(?CACHE_TAB, [{max_size, 2}]),
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %%%===================================================================
@@ -90,38 +119,11 @@ start_link() ->
 -spec init([]) -> {ok, state()}.
 init([]) ->
     ejabberd_hooks:add(config_reloaded, ?MODULE, invalidate, 90),
+    ets_cache:new(access_permissions),
     {ok, #state{}}.
 
--spec handle_call({can_access, atom(), caller_info()} |
-		  show_current_definitions | term(),
+-spec handle_call(show_current_definitions | term(),
 		  term(), state()) -> {reply, term(), state()}.
-handle_call({can_access, Cmd, CallerInfo}, _From, State) ->
-    CallerModule = maps:get(caller_module, CallerInfo, none),
-    Host = maps:get(caller_host, CallerInfo, global),
-    Tag = maps:get(tag, CallerInfo, none),
-    {State2, Defs0} = get_definitions(State),
-    Defs = maps:get(extra_permissions, CallerInfo, []) ++ Defs0,
-    Res = lists:foldl(
-	    fun({Name, _} = Def, none) ->
-		    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo) of
-			true ->
-			    ?DEBUG("Command '~p' execution allowed by rule "
-				   "'~ts' (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
-			    allow;
-			_ ->
-			    none
-		    end;
-	       (_, Val) ->
-		    Val
-	    end, none, Defs),
-    Res2 = case Res of
-	       allow -> allow;
-	       _ ->
-		   ?DEBUG("Command '~p' execution denied "
-			  "(CallerInfo=~p)", [Cmd, CallerInfo]),
-		   deny
-	   end,
-    {reply, Res2, State2};
 handle_call(show_current_definitions, _From, State) ->
     {State2, Defs} = get_definitions(State),
     {reply, Defs, State2};

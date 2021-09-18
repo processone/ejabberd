@@ -27,7 +27,6 @@
 -author('holger@zedat.fu-berlin.de').
 
 -define(TIMEOUT, timer:hours(24)).
--define(INITIAL_TIMEOUT, timer:minutes(10)).
 -define(FORMAT(Error), file:format_error(Error)).
 
 -behaviour(gen_server).
@@ -64,7 +63,7 @@
 	 max_days                       :: pos_integer() | infinity,
 	 docroot                        :: binary(),
 	 disk_usage = #{}               :: disk_usage(),
-	 timers                         :: [timer:tref()]}).
+	 timer                          :: reference() | undefined}).
 
 -type disk_usage() :: #{{binary(), binary()} => non_neg_integer()}.
 -type state() :: #state{}.
@@ -166,12 +165,11 @@ init([ServerHost|_]) ->
     DocRoot1 = mod_http_upload_opt:docroot(ServerHost),
     DocRoot2 = mod_http_upload:expand_home(str:strip(DocRoot1, right, $/)),
     DocRoot3 = mod_http_upload:expand_host(DocRoot2, ServerHost),
-    Timers = if MaxDays == infinity -> [];
-		true ->
-		     {ok, T1} = timer:send_after(?INITIAL_TIMEOUT, sweep),
-		     {ok, T2} = timer:send_interval(?TIMEOUT, sweep),
-		     [T1, T2]
-	     end,
+    Timer = if MaxDays == infinity -> undefined;
+	       true ->
+		   Timeout = p1_rand:uniform(?TIMEOUT div 2),
+		   erlang:send_after(Timeout, self(), sweep)
+	    end,
     ejabberd_hooks:add(http_upload_slot_request, ServerHost, ?MODULE,
 		       handle_slot_request, 50),
     {ok, #state{server_host = ServerHost,
@@ -179,7 +177,7 @@ init([ServerHost|_]) ->
 		access_hard_quota = AccessHardQuota,
 		max_days = MaxDays,
 		docroot = DocRoot3,
-		timers = Timers}}.
+		timer = Timer}}.
 
 -spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
 handle_call(Request, From, State) ->
@@ -249,6 +247,7 @@ handle_info(sweep, #state{server_host = ServerHost,
 			  max_days = MaxDays} = State)
     when is_integer(MaxDays), MaxDays > 0 ->
     ?DEBUG("Got 'sweep' message for ~ts", [ServerHost]),
+    Timer = erlang:send_after(?TIMEOUT, self(), sweep),
     case file:list_dir(DocRoot) of
 	{ok, Entries} ->
 	    BackThen = secs_since_epoch() - (MaxDays * 86400),
@@ -264,17 +263,17 @@ handle_info(sweep, #state{server_host = ServerHost,
 	    ?ERROR_MSG("Cannot open document root ~ts: ~ts",
 		       [DocRoot, ?FORMAT(Error)])
     end,
-    {noreply, State};
+    {noreply, State#state{timer = Timer}};
 handle_info(Info, State) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 -spec terminate(normal | shutdown | {shutdown, _} | _, state()) -> ok.
-terminate(Reason, #state{server_host = ServerHost, timers = Timers}) ->
+terminate(Reason, #state{server_host = ServerHost, timer = Timer}) ->
     ?DEBUG("Stopping upload quota process for ~ts: ~p", [ServerHost, Reason]),
     ejabberd_hooks:delete(http_upload_slot_request, ServerHost, ?MODULE,
 			  handle_slot_request, 50),
-    lists:foreach(fun timer:cancel/1, Timers).
+    misc:cancel_timer(Timer).
 
 -spec code_change({down, _} | _, state(), _) -> {ok, state()}.
 code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->

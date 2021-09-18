@@ -240,27 +240,27 @@ mod_doc() ->
            {queue_type,
             #{value => "ram | file",
               desc =>
-                  ?T("Same as top-level 'queue_type' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`queue_type`_ option, but applied to this module only.")}},
            {ram_db_type,
             #{value => "mnesia | sql | redis",
               desc =>
-                  ?T("Same as 'default_ram_db' but applied to this module only.")}},
+                  ?T("Same as _`default_ram_db`_ but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}],
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}],
      example =>
          ["listen:",
           "  -",

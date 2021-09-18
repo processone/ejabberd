@@ -45,7 +45,8 @@
 
 -export([init/3, terminate/2, options/0, set_node/1,
     get_node/3, get_node/2, get_node/1, get_nodes/2,
-    get_nodes/1, get_parentnodes/3, get_parentnodes_tree/3,
+    get_nodes/1, get_all_nodes/1,
+    get_parentnodes/3, get_parentnodes_tree/3,
     get_subnodes/3, get_subnodes_tree/3, create_node/6,
     delete_node/2]).
 
@@ -159,6 +160,34 @@ get_nodes(Host, Limit) ->
 			   "from pubsub_node where host=%(H)s"))
 	    end,
     case ejabberd_sql:sql_query_t(Query) of
+	{selected, RItems} ->
+	    [raw_to_node(Host, Item) || Item <- RItems];
+	_ ->
+	    []
+    end.
+
+get_all_nodes({_U, _S, _R} = JID) ->
+    SubKey = jid:tolower(JID),
+    GenKey = jid:remove_resource(SubKey),
+    EncKey = node_flat_sql:encode_jid(GenKey),
+    Pattern = <<(node_flat_sql:encode_jid_like(GenKey))/binary, "/%">>,
+    case ejabberd_sql:sql_query_t(
+	   ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
+		"from pubsub_node where host=%(EncKey)s "
+		"or host like %(Pattern)s %ESCAPE")) of
+	{selected, RItems} ->
+	    [raw_to_node(GenKey, Item) || Item <- RItems];
+	_ ->
+	    []
+    end;
+get_all_nodes(Host) ->
+    Pattern1 = <<"%@", Host/binary>>,
+    Pattern2 = <<"%@", Host/binary, "/%">>,
+    case ejabberd_sql:sql_query_t(
+	   ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
+		"from pubsub_node where host=%(Host)s "
+		"or host like %(Pattern1)s "
+		"or host like %(Pattern2)s %ESCAPE")) of
 	{selected, RItems} ->
 	    [raw_to_node(Host, Item) || Item <- RItems];
 	_ ->

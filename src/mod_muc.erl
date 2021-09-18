@@ -40,6 +40,7 @@
 	 room_destroyed/4,
 	 store_room/4,
 	 store_room/5,
+	 store_changes/4,
 	 restore_room/3,
 	 forget_room/3,
 	 create_room/3,
@@ -91,6 +92,7 @@
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), binary(), [binary()]) -> ok.
 -callback store_room(binary(), binary(), binary(), list(), list()|undefined) -> {atomic, any()}.
+-callback store_changes(binary(), binary(), binary(), list()) -> {atomic, any()}.
 -callback restore_room(binary(), binary(), binary()) -> muc_room_opts() | error.
 -callback forget_room(binary(), binary(), binary()) -> {atomic, any()}.
 -callback can_use_nick(binary(), binary(), jid(), binary()) -> boolean().
@@ -111,7 +113,8 @@
 -callback get_subscribed_rooms(binary(), binary(), jid()) ->
           {ok, [{jid(), binary(), [binary()]}]} | {error, db_failure}.
 
--optional_callbacks([get_subscribed_rooms/3]).
+-optional_callbacks([get_subscribed_rooms/3,
+                     store_changes/4]).
 
 %%====================================================================
 %% API
@@ -312,6 +315,11 @@ store_room(ServerHost, Host, Name, Opts, ChangesHints) ->
     LServer = jid:nameprep(ServerHost),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:store_room(LServer, Host, Name, Opts, ChangesHints).
+
+store_changes(ServerHost, Host, Name, ChangesHints) ->
+    LServer = jid:nameprep(ServerHost),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:store_changes(LServer, Host, Name, ChangesHints).
 
 restore_room(ServerHost, Host, Name) ->
     LServer = jid:nameprep(ServerHost),
@@ -570,7 +578,7 @@ unhibernate_room(ServerHost, Host, Room) ->
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
 	    Proc = procname(ServerHost, {Room, Host}),
-	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host}) of
+	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host}, 20000) of
 		{ok, _} = R -> R;
 		_ -> error
 	    end;
@@ -1358,19 +1366,19 @@ mod_doc() ->
               desc =>
                   ?T("To configure who is allowed to create new rooms at the "
                      "Multi-User Chat service, this option can be used. "
-                     "By default any account in the local ejabberd server is "
+                     "The default value is 'all', which means everyone is "
                      "allowed to create rooms.")}},
            {access_persistent,
             #{value => ?T("AccessName"),
               desc =>
                   ?T("To configure who is allowed to modify the 'persistent' room option. "
-                     "By default any account in the local ejabberd server is allowed to "
+                     "The default value is 'all', which means everyone is allowed to "
                      "modify that option.")}},
            {access_mam,
             #{value => ?T("AccessName"),
               desc =>
                   ?T("To configure who is allowed to modify the 'mam' room option. "
-                     "By default any account in the local ejabberd server is allowed to "
+                     "The default value is 'all', which means everyone is allowed to "
                      "modify that option.")}},
            {access_register,
             #{value => ?T("AccessName"),
@@ -1386,11 +1394,10 @@ mod_doc() ->
                      "store room information. The default is the storage defined "
                      "by the global option 'default_db', or 'mnesia' if omitted.")}},
            {ram_db_type,
-            #{value => "mnesia",
+            #{value => "mnesia | sql",
               desc =>
                   ?T("Define the type of volatile (in-memory) storage where the module "
-                     "will store room information. The only available value for this "
-                     "module is 'mnesia'.")}},
+                     "will store room information ('muc_online_room' and 'muc_online_users').")}},
            {hibernation_timeout,
             #{value => "infinity | Seconds",
               desc =>
@@ -1487,7 +1494,8 @@ mod_doc() ->
                   ?T("This option defines after how many users in the room, "
                      "it is considered overcrowded. When a MUC room is considered "
                      "overcrowed, presence broadcasts are limited to reduce load, "
-                     "traffic and excessive presence \"storm\" received by participants.")}},
+                     "traffic and excessive presence \"storm\" received by participants. "
+                     "The default value is '1000'.")}},
            {min_message_interval,
             #{value => ?T("Number"),
               desc =>
@@ -1518,7 +1526,7 @@ mod_doc() ->
            {queue_type,
             #{value => "ram | file",
               desc =>
-                  ?T("Same as top-level 'queue_type' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`queue_type`_ option, but applied to this module only.")}},
            {regexp_room_id,
             #{value => "string()",
               desc =>
@@ -1635,7 +1643,7 @@ mod_doc() ->
              {logging,
               #{value => "true | false",
                 desc =>
-                    ?T("The public messages are logged using 'mod_muc_log'. "
+                    ?T("The public messages are logged using _`mod_muc_log`_. "
                        "The default value is 'false'.")}},
              {members_by_default,
               #{value => "true | false",

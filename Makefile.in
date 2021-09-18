@@ -1,4 +1,5 @@
 REBAR = @ESCRIPT@ @rebar@
+MIX = @rebar@
 INSTALL = @INSTALL@
 SED = @SED@
 ERL = @ERL@
@@ -97,16 +98,38 @@ ifneq ($(INSTALLGROUP),)
   G_USER=-g $(INSTALLGROUP)
 endif
 
-IS_REBAR3:=$(shell expr `$(REBAR) --version | awk -F '[ .]' '/rebar / {print $$2}'` '>=' 3)
+ifeq "$(MIX)" "mix"
+REBAR_VER:=6
+else
+REBAR_VER:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print $$2}')
+endif
 
-ifeq "$(IS_REBAR3)" "1"
+ifeq "$(REBAR_VER)" "6"
+  REBAR=$(MIX)
+  SKIPDEPS=
+  LISTDEPS=deps.tree
+  UPDATEDEPS=deps.update
+  DEPSPATTERN="s/.*─ \([a-z0-9_]*\) .*/\1/p;"
+  DEPSBASE=_build
+  DEPSDIR=$(DEPSBASE)/dev/lib
+  GET_DEPS= deps.get
+  CONFIGURE_DEPS=
+  EBINDIR=$(DEPSDIR)/ejabberd/ebin
+  REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
+  REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
+else
+ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
   LISTDEPS=tree
   UPDATEDEPS=upgrade
   DEPSPATTERN="s/ (.*//; /^ / s/.* \([a-z0-9_]*\).*/\1/p;"
   DEPSBASE=_build
   DEPSDIR=$(DEPSBASE)/default/lib
+  GET_DEPS= get-deps
+  CONFIGURE_DEPS=$(REBAR) configure-deps
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
+  REBARREL=$(REBAR) as prod tar
+  REBARDEV=REBAR_PROFILE=dev $(REBAR) release
 else
   SKIPDEPS=skip_deps=true
   LISTDEPS=-q list-deps
@@ -114,7 +137,12 @@ else
   DEPSPATTERN="/ TAG / s/ .*// p; / REV / s/ .*// p; / BRANCH / s/ .*// p;"
   DEPSBASE=deps
   DEPSDIR=$(DEPSBASE)
+  GET_DEPS= get-deps
+  CONFIGURE_DEPS=$(REBAR) configure-deps
   EBINDIR=ebin
+  REBARREL=$(REBAR) generate
+  REBARDEV=
+endif
 endif
 
 all: deps src
@@ -125,10 +153,10 @@ $(DEPSDIR)/.got:
 	rm -rf $(DEPSDIR)/.got
 	rm -rf $(DEPSDIR)/.built
 	mkdir -p $(DEPSDIR)
-	$(REBAR) get-deps && :> $(DEPSDIR)/.got
+	$(REBAR) $(GET_DEPS) && :> $(DEPSDIR)/.got
 
 $(DEPSDIR)/.built: $(DEPSDIR)/.got
-	$(REBAR) configure-deps
+	$(CONFIGURE_DEPS)
 	$(REBAR) compile && :> $(DEPSDIR)/.built
 
 src: $(DEPSDIR)/.built
@@ -357,15 +385,20 @@ distclean: clean clean-rel
 	rm -f ejabberdctl.example ejabberd.init ejabberd.service
 	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 
-rel: all
-	$(REBAR) generate
+rel:
+	$(REBARREL)
+
+DEV_CONFIG = _build/dev/rel/ejabberd/etc/ejabberd/ejabberd.yml
+
+dev $(DEV_CONFIG):
+	$(REBARDEV)
 
 TAGS:
 	etags *.erl
 
 Makefile: Makefile.in
 
-ifeq "$(IS_REBAR3)" "1"
+ifeq "$(REBAR_VER)" "3"
 dialyzer:
 	$(REBAR) dialyzer
 else
@@ -419,3 +452,29 @@ test:
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
 	install uninstall uninstall-binary uninstall-all translations deps test \
 	quicktest erlang_plt deps_plt ejabberd_plt xref hooks options
+
+help:
+	@echo ""
+	@echo "  [all]          Compile dependencies and ejabberd"
+	@echo "  src            Compile ejabberd"
+	@echo "  deps           Get dependencies"
+	@echo "  update         Update dependencies' source code"
+	@echo "  clean          Clean binary files"
+	@echo "  distclean      Clean completely the development files"
+	@echo ""
+	@echo "  install        Install ejabberd to /usr/local"
+	@echo "  uninstall      Uninstall ejabberd (buggy)"
+	@echo "  uninstall-all  Uninstall also configuration, logs, mnesia... (buggy)"
+	@echo ""
+	@echo "  rel            Build a production release"
+	@echo "  dev            Build a development release"
+	@echo ""
+	@echo "  edoc           Generate edoc documentation (unused)"
+	@echo "  options        Generate ejabberd_option.erl"
+	@echo "  translations   Extract translation files (requires --enable-tools)"
+	@echo "  tags           Generate tags file for text editors"
+	@echo ""
+	@echo "  dialyzer       Run Dialyzer static analyzer"
+	@echo "  hooks          Run hooks validator"
+	@echo "  test           Run Common Tests suite"
+	@echo "  xref           Run cross reference analysis"

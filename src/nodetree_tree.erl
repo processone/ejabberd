@@ -46,7 +46,8 @@
 
 -export([init/3, terminate/2, options/0, set_node/1,
     get_node/3, get_node/2, get_node/1, get_nodes/2,
-    get_nodes/1, get_parentnodes/3, get_parentnodes_tree/3,
+    get_nodes/1, get_all_nodes/1,
+    get_parentnodes/3, get_parentnodes_tree/3,
     get_subnodes/3, get_subnodes_tree/3, create_node/6,
     delete_node/2]).
 
@@ -97,6 +98,14 @@ get_nodes(Host, Limit) ->
 	'$end_of_table' -> [];
 	{Nodes, _} -> Nodes
     end.
+
+get_all_nodes({_U, _S, _R} = Owner) ->
+    Host = jid:tolower(jid:remove_resource(Owner)),
+    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'});
+get_all_nodes(Host) ->
+    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'})
+	++ mnesia:match_object(#pubsub_node{nodeid = {{'_', Host, '_'}, '_'},
+					    _ = '_'}).
 
 get_parentnodes(Host, Node, _From) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of

@@ -602,12 +602,14 @@ list_vhosts2(Lang, Hosts) ->
 					  [?AC(<<"../server/", Host/binary,
 						 "/">>,
 					       Host)]),
-				      ?XAC(<<"td">>,
+				      ?XAE(<<"td">>,
                                            [{<<"class">>, <<"alignright">>}],
-					  (pretty_string_int(RegisteredUsers))),
-				      ?XAC(<<"td">>,
+                                           [?AC(<<"../server/", Host/binary, "/users/">>,
+                                                pretty_string_int(RegisteredUsers))]),
+				      ?XAE(<<"td">>,
                                            [{<<"class">>, <<"alignright">>}],
-					  (pretty_string_int(OnlineUsers)))])
+                                           [?AC(<<"../server/", Host/binary, "/online-users/">>,
+                                                pretty_string_int(OnlineUsers))])])
 			 end,
 			 SHosts)))])].
 

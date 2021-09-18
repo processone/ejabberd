@@ -1266,7 +1266,7 @@ mod_doc() ->
 	   ?T("- Displayed: A list of groups that will be in the "
 	      "rosters of this group's members. A group of other vhost can "
 	      "be identified with 'groupid@vhost'."), "",
-	   ?T("This module depends on 'mod_roster'. "
+	   ?T("This module depends on _`mod_roster`_. "
 	      "If not enabled, roster queries will return 503 errors.")],
       opts =>
           [{db_type,
@@ -1274,25 +1274,25 @@ mod_doc() ->
               desc =>
                   ?T("Define the type of storage where the module will create "
 		     "the tables and store user information. The default is "
-		     "the storage defined by the global option 'default_db', "
+		     "the storage defined by the top-level _`default_db`_ option, "
 		     "or 'mnesia' if omitted. If 'sql' value is defined, "
 		     "make sure you have defined the database.")}},
-	   {use_cache,
+           {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}],
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}],
       example =>
 	  [{?T("Take the case of a computer club that wants all its members "
 	       "seeing each other in their rosters. To achieve this, they "

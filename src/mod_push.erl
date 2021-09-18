@@ -98,7 +98,7 @@ start(Host, Opts) ->
     init_cache(Mod, Host, Opts),
     register_iq_handlers(Host),
     register_hooks(Host),
-    ejabberd_commands:register_commands(get_commands_spec()).
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()).
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
@@ -191,23 +191,23 @@ mod_doc() ->
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}]}.
 
 %%--------------------------------------------------------------------
 %% ejabberd command callback.
@@ -405,7 +405,7 @@ c2s_stanza(State, #stream_error{}, _SendResult) ->
 c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
 	   Pkt, _SendResult) ->
     ?DEBUG("Notifying client of stanza", []),
-    notify(State, unwrap_message(Pkt), get_direction(Pkt)),
+    notify(State, Pkt, get_direction(Pkt)),
     State;
 c2s_stanza(State, _Pkt, _SendResult) ->
     State.
@@ -454,7 +454,7 @@ c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
 	    {Pkt, Dir} = case mod_stream_mgmt:queue_find(
 				fun is_incoming_chat_msg/1, Queue) of
 			     none -> {none, undefined};
-			     Pkt0 -> {unwrap_message(Pkt0), get_direction(Pkt0)}
+			     Pkt0 -> {Pkt0, get_direction(Pkt0)}
 			 end,
 	    notify(State, Pkt, Dir),
 	    State;
@@ -536,7 +536,8 @@ notify(LUser, LServer, Clients, Pkt, Dir) ->
 -spec notify(binary(), ljid(), binary(), xdata(),
 	     xmpp_element() | xmlel() | none, direction(),
 	     fun((iq() | timeout) -> any())) -> ok.
-notify(LServer, PushLJID, Node, XData, Pkt, Dir, HandleResponse) ->
+notify(LServer, PushLJID, Node, XData, Pkt0, Dir, HandleResponse) ->
+    Pkt = unwrap_message(Pkt0),
     From = jid:make(LServer),
     Summary = make_summary(LServer, Pkt, Dir),
     Item = #ps_item{sub_els = [#push_notification{xdata = Summary}]},
@@ -714,7 +715,7 @@ make_summary(Host, #message{from = From} = Pkt, recv) ->
 make_summary(_Host, _Pkt, _Dir) ->
     undefined.
 
--spec unwrap_message(stanza()) -> stanza().
+-spec unwrap_message(Stanza) -> Stanza when Stanza :: stanza() | none.
 unwrap_message(#message{meta = #{carbon_copy := true}} = Msg) ->
     misc:unwrap_carbon(Msg);
 unwrap_message(#message{type = normal} = Msg) ->
