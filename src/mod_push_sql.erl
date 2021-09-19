@@ -52,7 +52,7 @@ store_session(LUser, LServer, NowTS, PushJID, Node, XData) ->
     case ?SQL_UPSERT(LServer, "push_session",
 		     ["!username=%(LUser)s",
                       "!server_host=%(LServer)s",
-		      "!timestamp=%(TS)d",
+		      "timestamp=%(TS)d",
 		      "!service=%(Service)s",
 		      "!node=%(Node)s",
 		      "xml=%(XML)s"]) of
