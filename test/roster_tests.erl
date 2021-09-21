@@ -224,12 +224,20 @@ get_items(Config, Version) ->
 			       sub_els = [#roster_query{ver = Version}]}) of
 	#iq{type = result,
 	    sub_els = [#roster_query{ver = NewVersion, items = Items}]} ->
-	    {NewVersion, Items};
+	    {NewVersion, normalize_items(Items)};
 	#iq{type = result, sub_els = []} ->
 	    {empty, []};
 	#iq{type = error} = Err ->
 	    xmpp:get_error(Err)
     end.
+
+normalize_items(Items) ->
+    Items2 =
+        lists:map(
+          fun(I) ->
+                  I#roster_item{groups = lists:sort(I#roster_item.groups)}
+          end, Items),
+    lists:sort(Items2).
 
 get_item(Config, JID) ->
     case get_items(Config) of
