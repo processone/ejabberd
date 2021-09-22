@@ -214,26 +214,30 @@ parse_scram_password(PassData) ->
 get_vcard(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    case mod_vcard:get_vcard(LUser, LServer) of
+    try mod_vcard:get_vcard(LUser, LServer) of
 	error -> [];
 	Els -> Els
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 -spec get_offline(binary(), binary()) -> [xmlel()].
 get_offline(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    case mod_offline:get_offline_els(LUser, LServer) of
+    try mod_offline:get_offline_els(LUser, LServer) of
         [] ->
             [];
         Els ->
             NewEls = lists:map(fun xmpp:encode/1, Els),
             [#xmlel{name = <<"offline-messages">>, children = NewEls}]
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 -spec get_privacy(binary(), binary()) -> [xmlel()].
 get_privacy(User, Server) ->
-    case mod_privacy:get_user_lists(User, Server) of
+    try mod_privacy:get_user_lists(User, Server) of
         {ok, #privacy{default = Default,
                       lists = [_|_] = Lists}} ->
             XLists = lists:map(
@@ -246,12 +250,14 @@ get_privacy(User, Server) ->
 	    [xmpp:encode(#privacy_query{default = Default, lists = XLists})];
         _ ->
             []
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 -spec get_roster(binary(), binary()) -> [xmlel()].
 get_roster(User, Server) ->
     JID = jid:make(User, Server),
-    case mod_roster:get_roster(User, Server) of
+    try mod_roster:get_roster(User, Server) of
         [_|_] = Items ->
             Subs =
                 lists:flatmap(
@@ -278,15 +284,19 @@ get_roster(User, Server) ->
 	    [xmpp:encode(#roster_query{items = Rs}) | Subs];
         _ ->
             []
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 -spec get_private(binary(), binary()) -> [xmlel()].
 get_private(User, Server) ->
-    case mod_private:get_data(User, Server) of
+    try mod_private:get_data(User, Server) of
         [_|_] = Els ->
 	    [xmpp:encode(#private{sub_els = Els})];
         _ ->
             []
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 process(#state{xml_stream_state = XMLStreamState, fd = Fd} = State) ->
