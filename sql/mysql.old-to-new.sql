@@ -77,6 +77,7 @@ BEGIN
                 ALTER TABLE `last` ADD PRIMARY KEY (`server_host`, `username`);
                 ALTER TABLE `sr_group` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `name`;
                 ALTER TABLE `sr_group` ALTER COLUMN `server_host` DROP DEFAULT;
+                ALTER TABLE `sr_group` ADD UNIQUE INDEX `i_sr_group_sh_name` (`server_host`, `name`);
                 ALTER TABLE `sr_group` ADD PRIMARY KEY (`server_host`, `name`);
                 ALTER TABLE `muc_registered` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `host`;
                 ALTER TABLE `muc_registered` ALTER COLUMN `server_host` DROP DEFAULT;
@@ -99,6 +100,7 @@ BEGIN
                 ALTER TABLE `sr_user` DROP INDEX `i_sr_user_jid_group`;
                 ALTER TABLE `sr_user` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `jid`;
                 ALTER TABLE `sr_user` ALTER COLUMN `server_host` DROP DEFAULT;
+                ALTER TABLE `sr_user` ADD UNIQUE INDEX `i_sr_user_sh_jid_group` (`server_host`, `jid`, `grp`);
                 ALTER TABLE `sr_user` ADD INDEX `i_sr_user_sh_jid` (`server_host`, `jid`);
                 ALTER TABLE `sr_user` ADD INDEX `i_sr_user_sh_grp` (`server_host`, `grp`);
                 ALTER TABLE `sr_user` ADD PRIMARY KEY (`server_host`, `jid`, `grp`);
