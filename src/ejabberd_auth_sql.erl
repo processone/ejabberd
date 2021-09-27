@@ -299,6 +299,20 @@ export(_Server) ->
                   ["username=%(LUser)s",
                    "server_host=%(LServer)s",
                    "password=%(Password)s"])];
+         (Host, #passwd{us = {LUser, LServer},
+                        password = {scram, StoredKey1, ServerKey, Salt, IterationCount}})
+            when LServer == Host ->
+              Hash = sha,
+              StoredKey = scram_hash_encode(Hash, StoredKey1),
+              [?SQL("delete from users where username=%(LUser)s and %(LServer)H;"),
+               ?SQL_INSERT(
+                  "users",
+                  ["username=%(LUser)s",
+                   "server_host=%(LServer)s",
+                   "password=%(StoredKey)s",
+                   "serverkey=%(ServerKey)s",
+                   "salt=%(Salt)s",
+                   "iterationcount=%(IterationCount)d"])];
          (Host, #passwd{us = {LUser, LServer}, password = #scram{} = Scram})
             when LServer == Host ->
 	      StoredKey = scram_hash_encode(Scram#scram.hash, Scram#scram.storedkey),
