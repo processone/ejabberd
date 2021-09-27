@@ -140,6 +140,7 @@ update_tables(State) ->
 
     add_sh_column(State, "sr_group"),
     add_pkey(State, "sr_group", ["server_host", "name"]),
+    create_unique_index(State, "sr_group", "i_sr_group_sh_name", ["server_host", "name"]),
     drop_sh_default(State, "sr_group"),
 
     add_sh_column(State, "sr_user"),
@@ -147,6 +148,7 @@ update_tables(State) ->
     drop_index(State, "i_sr_user_jid"),
     drop_index(State, "i_sr_user_grp"),
     add_pkey(State, "sr_user", ["server_host", "jid", "grp"]),
+    create_unique_index(State, "sr_user", "i_sr_user_sh_jid_grp", ["server_host", "jid", "grp"]),
     create_index(State, "sr_user", "i_sr_user_sh_jid", ["server_host", "jid"]),
     create_index(State, "sr_user", "i_sr_user_sh_grp", ["server_host", "grp"]),
     drop_sh_default(State, "sr_user"),
