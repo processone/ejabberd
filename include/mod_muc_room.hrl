@@ -122,6 +122,7 @@
     robots                  = #{} :: robots(),
     nicks                   = #{} :: nicks(),
     affiliations            = #{} :: affiliations(),
+    roles                   = #{} :: roles(),
     history                 = #lqueue{} :: lqueue(),
     subject                 = [] :: [text()],
     subject_author          = <<"">> :: binary(),
@@ -137,3 +138,4 @@
 -type robots() :: #{jid() => {binary(), stanza()}}.
 -type nicks() :: #{binary() => [ljid()]}.
 -type affiliations() :: #{ljid() => affiliation() | {affiliation(), binary()}}.
+-type roles() :: #{ljid() => role() | {role(), binary()}}.

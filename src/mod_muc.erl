@@ -1177,7 +1177,7 @@ opts_to_binary(Opts) ->
               {subject, iolist_to_binary(Subj)};
          ({subject_author, Author}) ->
               {subject_author, iolist_to_binary(Author)};
-         ({affiliations, Affs}) ->
+         ({AffOrRole, Affs}) when (AffOrRole == affiliation) or (AffOrRole == role) ->
               {affiliations, lists:map(
                                fun({{U, S, R}, Aff}) ->
                                        NewAff =
