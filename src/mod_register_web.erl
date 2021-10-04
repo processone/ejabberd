@@ -579,12 +579,8 @@ get_error_text({error, exists}) ->
     ?T("The account already exists");
 get_error_text({error, password_incorrect}) ->
     ?T("Incorrect password");
-get_error_text({error, invalid_jid}) ->
-    ?T("The username is not valid");
 get_error_text({error, host_unknown}) ->
     ?T("Host unknown");
-get_error_text({error, not_allowed}) ->
-    ?T("Not allowed");
 get_error_text({error, account_doesnt_exist}) ->
     ?T("Account doesn't exist");
 get_error_text({error, account_exists}) ->
@@ -594,7 +590,9 @@ get_error_text({error, password_not_changed}) ->
 get_error_text({error, passwords_not_identical}) ->
     ?T("The passwords are different");
 get_error_text({error, wrong_parameters}) ->
-    ?T("Wrong parameters in the web formulary").
+    ?T("Wrong parameters in the web formulary");
+get_error_text({error, Why}) ->
+    mod_register:format_error(Why).
 
 mod_options(_) ->
     [].
