@@ -85,7 +85,7 @@ process([Section],
 process([<<"new">>],
 	#request{method = 'POST', q = Q, ip = {Ip, _Port},
 		 lang = Lang, host = _HTTPHost}) ->
-    case form_new_post(Q) of
+    case form_new_post(Q, Ip) of
       {success, ok, {Username, Host, _Password}} ->
 	  Jid = jid:make(Username, Host),
           mod_register:send_registration_notifications(?MODULE, Jid, Ip),
@@ -290,10 +290,10 @@ form_new_get2(Host, Lang, CaptchaEls) ->
 %%% Formulary new POST
 %%%----------------------------------------------------------------------
 
-form_new_post(Q) ->
+form_new_post(Q, Ip) ->
     case catch get_register_parameters(Q) of
       [Username, Host, Password, Password, Id, Key] ->
-	  form_new_post(Username, Host, Password, {Id, Key});
+	  form_new_post(Username, Host, Password, {Id, Key}, Ip);
       [_Username, _Host, _Password, _Password2, false, false] ->
 	  {error, passwords_not_identical};
       [_Username, _Host, _Password, _Password2, Id, Key] ->
@@ -312,13 +312,12 @@ get_register_parameters(Q) ->
 	      [<<"username">>, <<"host">>, <<"password">>, <<"password2">>,
 	       <<"id">>, <<"key">>]).
 
-form_new_post(Username, Host, Password,
-	      {false, false}) ->
-    register_account(Username, Host, Password);
-form_new_post(Username, Host, Password, {Id, Key}) ->
+form_new_post(Username, Host, Password, {false, false}, Ip) ->
+    register_account(Username, Host, Password, Ip);
+form_new_post(Username, Host, Password, {Id, Key}, Ip) ->
     case ejabberd_captcha:check_captcha(Id, Key) of
       captcha_valid ->
-	  register_account(Username, Host, Password);
+	  register_account(Username, Host, Password, Ip);
       captcha_non_valid -> {error, captcha_non_valid};
       captcha_not_found -> {error, captcha_non_valid}
     end.
@@ -502,11 +501,11 @@ form_del_get(Host, Lang) ->
       {<<"Content-Type">>, <<"text/html">>}],
      ejabberd_web:make_xhtml(HeadEls, Els)}.
 
-%% @spec(Username, Host, Password) -> {success, ok, {Username, Host, Password} |
+%% @spec(Username, Host, Password, Ip) -> {success, ok, {Username, Host, Password} |
 %%                                    {success, exists, {Username, Host, Password}} |
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
-register_account(Username, Host, Password) ->
+register_account(Username, Host, Password, Ip) ->
     try mod_register_opt:access(Host) of
 	Access ->
 	    case jid:make(Username, Host) of
@@ -514,16 +513,15 @@ register_account(Username, Host, Password) ->
 		JID ->
 		    case acl:match_rule(Host, Access, JID) of
 			deny -> {error, not_allowed};
-			allow -> register_account2(Username, Host, Password)
+			allow -> register_account2(Username, Host, Password, Ip)
 		    end
 	    end
     catch _:{module_not_loaded, mod_register, _Host} ->
 	    {error, host_unknown}
     end.
 
-register_account2(Username, Host, Password) ->
-    case ejabberd_auth:try_register(Username, Host,
-				    Password)
+register_account2(Username, Host, Password, Ip) ->
+    case mod_register:try_register(Username, Host, Password, Ip)
 	of
       ok ->
 	  {success, ok, {Username, Host, Password}};
