@@ -306,7 +306,8 @@ install: copy-files
 	chmod 755 ejabberd.init
 	#
 	# Service script
-	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" ejabberd.service.template \
+	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \
+		-e "s*@installuser@*$(INIT_USER)*g" ejabberd.service.template \
 		> ejabberd.service
 	chmod 644 ejabberd.service
 	#
