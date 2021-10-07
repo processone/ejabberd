@@ -52,6 +52,8 @@ jobs:
 
     - name: Prepare databases
       run: |
+        sudo sed -i 's|#password_encryption.*|password_encryption = md5|g' /etc/postgresql/14/main/postgresql.conf
+        sudo sed -i 's|scram-sha-256|md5|g' /etc/postgresql/14/main/pg_hba.conf
         sudo systemctl start mysql.service
         sudo systemctl start postgresql.service
         mysql -u root -proot -e "CREATE USER 'ejabberd_test'@'localhost'
