@@ -249,7 +249,15 @@ $(call TO_DEST,priv/bin/captcha.sh): tools/captcha.sh $(call TO_DEST,priv/bin)
 $(call TO_DEST,priv/lua/redis_sm.lua): priv/lua/redis_sm.lua $(call TO_DEST,priv/lua)
 	$(INSTALL) -m 644 $< $@
 
-copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh priv/sql/lite.sql priv/sql/lite.new.sql priv/lua/redis_sm.lua)
+ifeq (@sqlite@,true)
+SQLITE_FILES = priv/sql/lite.sql priv/sql/lite.new.sql
+endif
+
+ifeq (@redis@,true)
+REDIS_FILES = priv/lua/redis_sm.lua
+endif
+
+copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh $(SQLITE_FILES) $(REDIS_FILES))
 
 .PHONY: $(call TO_DEST,$(DEPS_FILES) $(MAIN_DIRS) $(DEPS_DIRS))
 
