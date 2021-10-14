@@ -311,7 +311,7 @@ CREATE TABLE vcard_search (
     lorgname text NOT NULL,
     orgunit text NOT NULL,
     lorgunit text NOT NULL,
-    PRIMARY KEY (server_host, username)
+    PRIMARY KEY (server_host, lusername)
 );
 
 CREATE INDEX i_vcard_search_sh_lfn       ON vcard_search(server_host, lfn);
