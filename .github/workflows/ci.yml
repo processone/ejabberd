@@ -160,6 +160,10 @@ jobs:
       if: failure()
       run: find logs/ -name ejabberd.log -exec cat '{}' ';'
 
+    - name: View error.log
+      if: failure()
+      run: find logs/ -name error.log -exec cat '{}' ';'
+
     - name: View exunit.log
       if: failure()
       run: find logs/ -name exunit.log -exec cat '{}' ';'
