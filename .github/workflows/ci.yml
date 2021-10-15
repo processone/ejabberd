@@ -181,6 +181,53 @@ jobs:
                       "payload":{"build_num":$GITHUB_RUN_ID,
                                  "status":"done"}}'
 
+    - name: Prepare new schema
+      run: |
+        [[ -d logs ]] && rm -rf logs
+        [[ -d _build/test/logs ]] && rm -rf _build/test/logs
+        mysql -u root -proot -e "DROP DATABASE ejabberd_test;"
+        sudo -u postgres psql -c "DROP DATABASE ejabberd_test;"
+        mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
+        mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
+                                 TO 'ejabberd_test'@'localhost';"
+        mysql -u root -proot ejabberd_test < sql/mysql.new.sql
+        sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -f sql/pg.new.sql
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES
+                                  ON DATABASE ejabberd_test TO ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
+                                                TABLES IN SCHEMA public
+                                                TO ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
+                                                SEQUENCES IN SCHEMA public
+                                                TO ejabberd_test;"
+        sudo sed -i 's|new_schema, false|new_schema, true|g' test/suite.erl
+    - run: CT_BACKENDS=mysql,pgsql make test
+    - name: Check results
+      if: always()
+      run: |
+        [[ -d _build ]] && ln -s _build/test/logs/ logs \
+                        || ln dialyzer/error.log logs/dialyzer.log
+        ln `find logs/ -name suite.log` logs/suite.log
+        grep 'TEST COMPLETE' logs/suite.log
+        grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
+        test $(find logs/ -empty -name error.log)
+    - name: View full suite.log
+      run: cat logs/suite.log
+    - name: View suite.log failures
+      if: failure()
+      run: cat logs/suite.log | awk
+           'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+    - name: View full ejabberd.log
+      if: failure()
+      run: find logs/ -name ejabberd.log -exec cat '{}' ';'
+    - name: View error.log
+      if: failure()
+      run: find logs/ -name error.log -exec cat '{}' ';'
+    - name: View exunit.log
+      if: failure()
+      run: find logs/ -name exunit.log -exec cat '{}' ';'
+
   binaries:
     name: Binaries
     needs: [tests]
