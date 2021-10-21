@@ -710,7 +710,7 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 maybe_store_room(ServerHost, Host, Name, RoomOpts) ->
     case proplists:get_bool(persistent, RoomOpts) of
         true ->
-            {atomic, ok} = mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
+            {atomic, _} = mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
             ok;
         false ->
             ok
