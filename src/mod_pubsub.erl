@@ -3579,9 +3579,9 @@ check_opt_range(Opt, Opts, Max) ->
 	Val -> Val =< Max
     end.
 
--spec get_max_items_node(host()) -> undefined | unlimited | non_neg_integer().
+-spec get_max_items_node(host()) -> unlimited | non_neg_integer().
 get_max_items_node(Host) ->
-    config(Host, max_items_node, undefined).
+    config(Host, max_items_node, ?MAXITEMS).
 
 -spec get_max_item_expire_node(host()) -> infinity | non_neg_integer().
 get_max_item_expire_node(Host) ->
