@@ -43,7 +43,7 @@
     create_node_permission/6, create_node/2, delete_node/1, purge_node/2,
     subscribe_node/8, unsubscribe_node/4,
     publish_item/7, delete_item/4,
-    remove_extra_items/2, remove_extra_items/3,
+    remove_extra_items/2, remove_extra_items/3, remove_expired_items/2,
     get_entity_affiliations/2, get_node_affiliations/1,
     get_affiliation/2, set_affiliation/3,
     get_entity_subscriptions/2, get_node_subscriptions/1,
@@ -284,6 +284,23 @@ remove_extra_items(Nidx, MaxItems, ItemIds) ->
     OldItems = lists:nthtail(length(NewItems), ItemIds),
     del_items(Nidx, OldItems),
     {result, {NewItems, OldItems}}.
+
+remove_expired_items(_Nidx, infinity) ->
+    {result, []};
+remove_expired_items(Nidx, Seconds) ->
+    ExpT = encode_now(
+	     misc:usec_to_now(
+	       erlang:system_time(microsecond) - (Seconds * 1000000))),
+    case ejabberd_sql:sql_query_t(
+	   ?SQL("select @(itemid)s from pubsub_item where nodeid=%(Nidx)d "
+		"and creation < %(ExpT)s")) of
+	{selected, RItems} ->
+	    ItemIds = [ItemId || {ItemId} <- RItems],
+	    del_items(Nidx, ItemIds),
+	    {result, ItemIds};
+	_ ->
+	    {result, []}
+    end.
 
 delete_item(Nidx, Publisher, PublishModel, ItemId) ->
     SubKey = jid:tolower(Publisher),
