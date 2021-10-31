@@ -142,8 +142,8 @@ remove_extra_items(Nidx, MaxItems) ->
 remove_extra_items(Nidx, MaxItems, ItemIds) ->
     node_flat:remove_extra_items(Nidx, MaxItems, ItemIds).
 
-remove_expired_items(Nidx, ItemIds) ->
-    node_flat:remove_expired_items(Nidx, ItemIds).
+remove_expired_items(Nidx, Seconds) ->
+    node_flat:remove_expired_items(Nidx, Seconds).
 
 delete_item(Nidx, Publisher, PublishModel, ItemId) ->
     node_flat:delete_item(Nidx, Publisher, PublishModel, ItemId).
