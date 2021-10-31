@@ -3568,9 +3568,7 @@ decode_get_pending(#xdata{fields = Fs}, Lang) ->
     end.
 
 -spec check_opt_range(atom(), [proplists:property()],
-		      non_neg_integer() | unlimited | undefined) -> boolean().
-check_opt_range(_Opt, _Opts, undefined) ->
-    true;
+		      non_neg_integer() | unlimited) -> boolean().
 check_opt_range(_Opt, _Opts, unlimited) ->
     true;
 check_opt_range(Opt, Opts, Max) ->
