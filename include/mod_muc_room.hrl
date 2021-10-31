@@ -125,7 +125,7 @@
     history                 = #lqueue{} :: lqueue(),
     subject                 = [] :: [text()],
     subject_author          = <<"">> :: binary(),
-    hats_users              = #{} :: #{ljid() => #{binary() => binary()}},
+    hats_users              = #{} :: map(), % FIXME on OTP 21+: #{ljid() => #{binary() => binary()}},
     just_created            = erlang:system_time(microsecond) :: true | integer(),
     activity                = treap:empty() :: treap:treap(),
     room_shaper             = none :: ejabberd_shaper:shaper(),
