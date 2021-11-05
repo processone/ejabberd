@@ -27,6 +27,8 @@
 
 -author('alexey@process-one.net').
 
+-protocol({xep, 317, '0.1'}).
+
 -behaviour(p1_fsm).
 
 %% External exports
