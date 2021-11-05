@@ -525,6 +525,7 @@ print_usage(Version) ->
 print_usage(HelpMode, MaxC, ShCode, Version) ->
     AllCommands =
 	[
+	 {"help", ["[arguments]"], "Get help"},
 	 {"status", [], "Get ejabberd status"},
 	 {"stop", [], "Stop ejabberd"},
 	 {"restart", [], "Restart ejabberd"},
