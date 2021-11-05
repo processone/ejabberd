@@ -120,7 +120,10 @@ get_commands_spec() ->
 			module = init, function = restart,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = reopen_log, tags = [logs],
-			desc = "Reopen the log files",
+			desc = "Reopen the log files after being renamed",
+			longdesc = "This can be useful when an external tool is "
+			"used for log rotation. See "
+			"https://docs.ejabberd.im/admin/guide/troubleshooting/#log-files",
 			policy = admin,
 			module = ?MODULE, function = reopen_log,
 			args = [], result = {res, rescode}},
@@ -345,31 +348,41 @@ get_commands_spec() ->
 				{oldbackup, string}, {newbackup, string}],
 			result = {res, restuple}},
      #ejabberd_commands{name = backup, tags = [mnesia],
-			desc = "Store the database to backup file",
+			desc = "Backup the Mnesia database to a binary file",
 			module = ?MODULE, function = backup_mnesia,
 			args_desc = ["Full path for the destination backup file"],
 			args_example = ["/var/lib/ejabberd/database.backup"],
 			args = [{file, string}], result = {res, restuple}},
      #ejabberd_commands{name = restore, tags = [mnesia],
-			desc = "Restore the database from backup file",
+			desc = "Restore the Mnesia database from a binary backup file",
+			longdesc = "This restores immediately from a "
+			"binary backup file the internal Mnesia "
+			"database. This will consume a lot of memory if "
+			"you have a large database, you may prefer "
+			"'install_fallback'.",
 			module = ?MODULE, function = restore_mnesia,
 			args_desc = ["Full path to the backup file"],
 			args_example = ["/var/lib/ejabberd/database.backup"],
 			args = [{file, string}], result = {res, restuple}},
      #ejabberd_commands{name = dump, tags = [mnesia],
-			desc = "Dump the database to a text file",
+			desc = "Dump the Mnesia database to a text file",
 			module = ?MODULE, function = dump_mnesia,
 			args_desc = ["Full path for the text file"],
 			args_example = ["/var/lib/ejabberd/database.txt"],
 			args = [{file, string}], result = {res, restuple}},
      #ejabberd_commands{name = dump_table, tags = [mnesia],
-			desc = "Dump a table to a text file",
+			desc = "Dump a Mnesia table to a text file",
 			module = ?MODULE, function = dump_table,
 			args_desc = ["Full path for the text file", "Table name"],
 			args_example = ["/var/lib/ejabberd/table-muc-registered.txt", "muc_registered"],
 			args = [{file, string}, {table, string}], result = {res, restuple}},
      #ejabberd_commands{name = load, tags = [mnesia],
-			desc = "Restore the database from a text file",
+			desc = "Restore Mnesia database from a text dump file",
+			longdesc = "Restore immediately. This is not "
+			"recommended for big databases, as it will "
+			"consume much time, memory and processor. In "
+			"that case it's preferable to use 'backup' and "
+			"'install_fallback'.",
 			module = ?MODULE, function = load_mnesia,
 			args_desc = ["Full path to the text file"],
 			args_example = ["/var/lib/ejabberd/database.txt"],
@@ -385,7 +398,14 @@ get_commands_spec() ->
 			args_example = ["roster"],
 			args = [{table, string}], result = {res, string}},
      #ejabberd_commands{name = install_fallback, tags = [mnesia],
-			desc = "Install the database from a fallback file",
+			desc = "Install Mnesia database from a binary backup file",
+			longdesc = "The binary backup file is "
+			"installed as fallback: it will be used to "
+			"restore the database at the next ejabberd "
+			"start. This means that, after running this "
+			"command, you have to restart ejabberd. This "
+			"command requires less memory than
+			'restore'.",
 			module = ?MODULE, function = install_fallback_mnesia,
 			args_desc = ["Full path to the fallback file"],
 			args_example = ["/var/lib/ejabberd/database.fallback"],
