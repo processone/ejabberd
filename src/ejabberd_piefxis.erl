@@ -166,6 +166,7 @@ export_user(User, Server, Fd) ->
     LServer = jid:nameprep(Server),
     {PassPlain, PassScram} = case ejabberd_auth:password_format(LServer) of
 	       scram -> {[], [format_scram_password(Password)]};
+	       _ when Password == <<"">> -> {[], []};
 	       _ -> {[{<<"password">>, Password}], []}
 	   end,
     Els =
