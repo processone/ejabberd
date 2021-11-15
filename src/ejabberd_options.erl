@@ -614,7 +614,7 @@ options() ->
      {oom_killer, true},
      {oom_queue, 10000},
      {oom_watermark, 80},
-     {outgoing_s2s_families, [inet, inet6]},
+     {outgoing_s2s_families, [inet6, inet]},
      {outgoing_s2s_ipv4_address, undefined},
      {outgoing_s2s_ipv6_address, undefined},
      {outgoing_s2s_port, 5269},

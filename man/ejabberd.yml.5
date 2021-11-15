@@ -1203,11 +1203,11 @@ option)\&. Later, when memory drops below this
 percents\&.
 .RE
 .PP
-\fBoutgoing_s2s_families\fR: \fI[ipv4 | ipv6, \&.\&.\&.]\fR
+\fBoutgoing_s2s_families\fR: \fI[ipv6 | ipv4, \&.\&.\&.]\fR
 .RS 4
 Specify which address families to try, in what order\&. The default is
-\fI[ipv4, ipv6]\fR
-which means it first tries connecting with IPv4, if that fails it tries using IPv6\&.
+\fI[ipv6, ipv4]\fR
+which means it first tries connecting with IPv6, if that fails it tries using IPv4\&.
 .RE
 .sp
 \fINote\fR about the next option: added in 20\&.12:
