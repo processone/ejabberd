@@ -249,7 +249,7 @@ handle_info({route, Packet}, State) ->
     end,
     {noreply, State};
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, State) ->
-    case mnesia:dirty_match_object(s2s, #s2s{pid = Pid, fromto = '_'}) of
+    case mnesia:dirty_match_object(s2s, {s2s, '_', Pid}) of
 	[#s2s{pid = Pid, fromto = {From, To}} = Obj] ->
 	    F = fun() -> mnesia:delete_object(Obj) end,
 	    case mnesia:transaction(F) of
