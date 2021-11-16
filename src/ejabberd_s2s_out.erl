@@ -318,7 +318,6 @@ handle_info(Info, #{server_host := ServerHost} = State) ->
 
 terminate(Reason, #{server := LServer,
 		    remote_server := RServer} = State) ->
-    ejabberd_s2s:remove_connection({LServer, RServer}, self()),
     State1 = case Reason of
 		 normal -> State;
 		 _ -> State#{stop_reason => internal_failure}
@@ -351,21 +350,12 @@ bounce_queue(State) ->
       end, State).
 
 -spec bounce_message_queue({binary(), binary()}, state()) -> state().
-bounce_message_queue({LServer, RServer} = FromTo, State) ->
-    Pids = ejabberd_s2s:get_connections_pids(FromTo),
-    case lists:member(self(), Pids) of
-	true ->
-	    ?WARNING_MSG("Outgoing s2s connection ~ts -> ~ts is supposed "
-			 "to be unregistered, but pid ~p still presents "
-			 "in 's2s' table", [LServer, RServer, self()]),
-	    State;
-	false ->
-	    receive {route, Pkt} ->
-		    State1 = bounce_packet(Pkt, State),
-		    bounce_message_queue(FromTo, State1)
-	    after 0 ->
-		    State
-	    end
+bounce_message_queue(FromTo, State) ->
+    receive {route, Pkt} ->
+	    State1 = bounce_packet(Pkt, State),
+	    bounce_message_queue(FromTo, State1)
+    after 0 ->
+	    State
     end.
 
 -spec bounce_packet(xmpp_element(), state()) -> state().
