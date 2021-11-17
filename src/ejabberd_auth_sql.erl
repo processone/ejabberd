@@ -299,8 +299,8 @@ export(_Server) ->
                   ["username=%(LUser)s",
                    "server_host=%(LServer)s",
                    "password=%(Password)s"])];
-         (Host, #passwd{us = {LUser, LServer},
-                        password = {scram, StoredKey1, ServerKey, Salt, IterationCount}})
+         (Host, {passwd, {LUser, LServer},
+                         {scram, StoredKey1, ServerKey, Salt, IterationCount}})
             when LServer == Host ->
               Hash = sha,
               StoredKey = scram_hash_encode(Hash, StoredKey1),
