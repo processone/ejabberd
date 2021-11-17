@@ -173,7 +173,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        rebar3 as test coveralls send
+        DIAGNOSTIC=1 rebar3 as test coveralls send
         curl -v -k https://coveralls.io/webhook \
              --header "Content-Type: application/json" \
              --data '{"repo_name":"$GITHUB_REPOSITORY",
