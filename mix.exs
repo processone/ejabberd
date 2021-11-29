@@ -102,7 +102,7 @@ defmodule Ejabberd.MixProject do
   end
 
   defp deps do
-    [{:base64url, "~> 0.0.1"},
+    [{:base64url, "~> 1.0"},
      {:cache_tab, "~> 1.0"},
      {:distillery, "~> 2.0"},
      {:eimp, "~> 1.0"},
@@ -124,7 +124,7 @@ defmodule Ejabberd.MixProject do
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
      {:stun, "~> 1.0"},
-     {:xmpp, git: "https://github.com/processone/xmpp", ref: "a85dc699ff02471ecad08d85e3bed87c57c48aba", override: true},
+     {:xmpp, ">= 1.5.5"},
      {:yconf, "~> 1.0"}]
     ++ cond_deps()
   end
