@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_conversejs.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Implements REST API for ejabberd using JSON data
+%%% Purpose : Serve simple page for Converse.js XMPP web browser client
 %%% Created :  8 Nov 2021 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -103,23 +103,29 @@ mod_options(_) ->
     [{bosh_service_url, undefined},
      {websocket_url, undefined},
      {default_domain, ejabberd_config:get_myname()},
-     {conversejs_script, <<"https://cdn.conversejs.org/8.0.1/dist/converse.min.js">>},
-     {conversejs_css, <<"https://cdn.conversejs.org/8.0.1/dist/converse.min.css">>}].
+     {conversejs_script, <<"https://cdn.conversejs.org/dist/converse.min.js">>},
+     {conversejs_css, <<"https://cdn.conversejs.org/dist/converse.min.css">>}].
 
 mod_doc() ->
     #{desc =>
-          [?T("This module serves a simple Converse.js page."), "",
+          [?T("This module serves a simple page for the "
+              "https://conversejs.org/[Converse] XMPP web browser client."), "",
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
-              "http://../listen-options/#request-handlers[request_handlers].")],
+              "http://../listen-options/#request-handlers[request_handlers]."), "",
+           ?T("You must also setup either the option 'websocket_url' or 'bosh_service_url'."), "",
+           ?T("By default, the options 'conversejs_css' and 'conversejs_script'"
+              " point to the public Converse.js client. Alternatively, you can"
+              " host the client locally using _`mod_http_fileserver`_.")
+          ],
      example =>
          ["listen:",
           "  -",
           "    port: 5280",
           "    module: ejabberd_http",
           "    request_handlers:",
-          "      \"/websocket\": ejabberd_http_ws"
-          "      \"/conversejs\": mod_conversejs",
+          "      /websocket: ejabberd_http_ws",
+          "      /conversejs: mod_conversejs",
           "",
           "modules:",
           "  mod_conversejs:",
@@ -136,7 +142,9 @@ mod_doc() ->
            {default_domain,
             #{value => ?T("Domain"),
               desc =>
-                  ?T("Specify a domain to act as the default for user JIDs.")}},
+                  ?T("Specify a domain to act as the default for user JIDs. "
+                     "The default value is the first domain defined in the "
+                     "ejabberd configuration file.")}},
            {conversejs_script,
             #{value => ?T("URL"),
               desc =>
