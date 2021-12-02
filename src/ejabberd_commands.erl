@@ -94,6 +94,7 @@ get_commands_spec() ->
                            result_example = ok},
         #ejabberd_commands{name = gen_markdown_doc_for_tags, tags = [documentation],
                            desc = "Generates markdown documentation for ejabberd_commands",
+                           note = "added in 21.12",
                            module = ejabberd_commands_doc, function = generate_tags_md,
                            args = [{file, binary}],
                            result = {res, rescode},

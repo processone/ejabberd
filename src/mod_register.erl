@@ -675,6 +675,7 @@ mod_doc() ->
                      "By default any user is able to unregister their account.")}},
            {allow_modules,
             #{value => "all | [Module, ...]",
+              note => "added in 21.12",
               desc =>
                   ?T("List of modules that can register accounts, or 'all'. "
                      "The default value is 'all', which is equivalent to "

@@ -110,6 +110,7 @@ mod_doc() ->
     #{desc =>
           [?T("This module serves a simple page for the "
               "https://conversejs.org/[Converse] XMPP web browser client."), "",
+           ?T("This module is available since ejabberd 21.12."), "",
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
               "http://../listen-options/#request-handlers[request_handlers]."), "",
