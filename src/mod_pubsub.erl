@@ -4396,7 +4396,7 @@ mod_doc() ->
 	    #{value => "non_neg_integer() | infinity",
 	      desc =>
 		  ?T("Define the maximum number of items that can be "
-		     "stored in a node. Default value is: '10'.")}},
+		     "stored in a node. Default value is: '1000'.")}},
 	   {max_nodes_discoitems,
 	    #{value => "pos_integer() | infinity",
 	      desc =>
