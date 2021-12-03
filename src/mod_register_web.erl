@@ -521,7 +521,7 @@ register_account(Username, Host, Password, Ip) ->
     end.
 
 register_account2(Username, Host, Password, Ip) ->
-    case mod_register:try_register(Username, Host, Password, Ip)
+    case mod_register:try_register(Username, Host, Password, Ip, ?MODULE)
 	of
       ok ->
 	  {success, ok, {Username, Host, Password}};
