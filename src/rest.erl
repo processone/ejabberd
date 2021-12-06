@@ -191,6 +191,18 @@ base_url(Server, Path) ->
         _ -> Url
     end.
 
+-ifdef(HAVE_URI_STRING).
+uri_hack(Str) ->
+    case uri_string:normalize("%25") of
+        "%" -> % This hack around bug in httpc >21 <23.2
+            binary:replace(Str, <<"%25">>, <<"%2525">>, [global]);
+        _ -> Str
+    end.
+-else.
+uri_hack(Str) ->
+    Str.
+-endif.
+
 url(Url, []) ->
     Url;
 url(Url, Params) ->
@@ -198,17 +210,7 @@ url(Url, Params) ->
           (misc:url_encode(Value))/binary>>
             || {Key, Value} <- Params],
     <<$&, Encoded0/binary>> = iolist_to_binary(L),
-    Encoded =
-    case erlang:function_exported(uri_string, normalize, 1) of
-        true ->
-            case uri_string:normalize("%25") of
-                "%" -> % This hack around bug in httpc >21 <23.2
-                    binary:replace(Encoded0, <<"%25">>, <<"%2525">>, [global]);
-                _ -> Encoded0
-            end;
-        _ ->
-            Encoded0
-    end,
+    Encoded = uri_hack(Encoded0),
     <<Url/binary, $?, Encoded/binary>>.
 url(Server, Path, Params) ->
     case binary:split(base_url(Server, Path), <<"?">>) of
