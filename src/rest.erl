@@ -197,7 +197,18 @@ url(Url, Params) ->
     L = [<<"&", (iolist_to_binary(Key))/binary, "=",
           (misc:url_encode(Value))/binary>>
             || {Key, Value} <- Params],
-    <<$&, Encoded/binary>> = iolist_to_binary(L),
+    <<$&, Encoded0/binary>> = iolist_to_binary(L),
+    Encoded =
+    case erlang:function_exported(uri_string, normalize, 1) of
+        true ->
+            case uri_string:normalize("%25") of
+                "%" -> % This hack around bug in httpc >21 <23.2
+                    binary:replace(Encoded0, <<"%25">>, <<"%2525">>, [global]);
+                _ -> Encoded0
+            end;
+        _ ->
+            Encoded0
+    end,
     <<Url/binary, $?, Encoded/binary>>.
 url(Server, Path, Params) ->
     case binary:split(base_url(Server, Path), <<"?">>) of
