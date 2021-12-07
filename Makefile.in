@@ -68,9 +68,6 @@ LUADIR = $(PRIVDIR)/lua
 # /var/lib/ejabberd/
 SPOOLDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
 
-# /var/lock/ejabberdctl
-CTLLOCKDIR = $(DESTDIR)@localstatedir@/lock/ejabberdctl
-
 # /var/log/ejabberd/
 LOGDIR = $(DESTDIR)@localstatedir@/log/ejabberd
 
@@ -313,11 +310,6 @@ install: copy-files
 	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(SPOOLDIR) >$(CHOWN_OUTPUT)
 	chmod -R 750 $(SPOOLDIR)
 	#
-	# ejabberdctl lock directory
-	$(INSTALL) -d -m 750 $(O_USER) $(CTLLOCKDIR)
-	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(CTLLOCKDIR) >$(CHOWN_OUTPUT)
-	chmod -R 750 $(CTLLOCKDIR)
-	#
 	# Log directory
 	$(INSTALL) -d -m 750 $(O_USER) $(LOGDIR)
 	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(LOGDIR) >$(CHOWN_OUTPUT)
@@ -366,7 +358,6 @@ uninstall-all: uninstall-binary
 	rm -rf $(ETCDIR)
 	rm -rf $(EJABBERDDIR)
 	rm -rf $(SPOOLDIR)
-	rm -rf $(CTLLOCKDIR)
 	rm -rf $(LOGDIR)
 
 clean:
