@@ -125,7 +125,7 @@ defmodule Ejabberd.MixProject do
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
      {:stun, "~> 1.0"},
-     {:xmpp, ">= 1.5.5"},
+     {:xmpp, "~> 1.5"},
      {:yconf, "~> 1.0"}]
     ++ cond_deps()
   end
