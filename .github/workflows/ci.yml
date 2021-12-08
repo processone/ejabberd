@@ -25,12 +25,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['19.3', '24.0']
+        otp: ['19.3', '24']
         include:
         - otp: '19.3'
           rebar: 2
           os: ubuntu-18.04
-        - otp: '24.0'
+        - otp: '24'
           rebar: 3
           os: ubuntu-20.04
     runs-on: ${{ matrix.os }}
@@ -46,7 +46,7 @@ jobs:
 
     - name: Get previous Erlang/OTP
       uses: ErlGang/setup-erlang@master
-      if: matrix.otp != 24.0
+      if: matrix.otp != 24
       with:
         otp-version: ${{ matrix.otp }}
 
@@ -169,7 +169,7 @@ jobs:
       run: find logs/ -name exunit.log -exec cat '{}' ';'
 
     - name: Send to coveralls
-      if: matrix.otp == 24.0
+      if: matrix.otp == 24
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
