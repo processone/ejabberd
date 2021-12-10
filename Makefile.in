@@ -115,7 +115,7 @@ else
 ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
   LISTDEPS=tree
-  UPDATEDEPS=upgrade
+  UPDATEDEPS=upgrade --all
   DEPSPATTERN="s/ (.*//; /^ / s/.* \([a-z0-9_]*\).*/\1/p;"
   DEPSBASE=_build
   DEPSDIR=$(DEPSBASE)/default/lib
