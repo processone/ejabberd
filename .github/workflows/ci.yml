@@ -112,6 +112,14 @@ jobs:
           ~/.cache/rebar3/
         key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
 
+    - name: Download test logs
+      if: matrix.otp == 24 && github.repository == 'processone/ejabberd'
+      continue-on-error: true
+      run: |
+        mkdir -p _build/test
+        curl -sSL https://github.com/processone/ecil/tarball/gh-pages |
+          tar -C _build/test --strip-components=1 --wildcards -xzf -
+        rm -rf _build/test/logs/last/
 
     - name: Compile
       run: |
@@ -134,7 +142,22 @@ jobs:
         make dialyzer
         [ ${{ matrix.rebar }} = 3 ] && true \
           || { cat dialyzer/error.log ; test ! -s dialyzer/error.log ; }
-    - run: make test
+
+    - name: Run tests
+      if: matrix.otp != 24
+      run: make test
+    - name: Run tests (OTP 24)
+      if: matrix.otp == 24
+      id: ct
+      run: |
+        (cd priv && ln -sf ../sql)
+        COMMIT=`echo $GITHUB_SHA | cut -c 1-7`
+        DATE=`date +%s`
+        REF_NAME=`echo $GITHUB_REF_NAME | tr "/" "_"`
+        NODENAME=$DATE@$GITHUB_RUN_NUMBER-$GITHUB_ACTOR-$REF_NAME-$COMMIT
+        LABEL=`git show -s --format=%s | cut -c 1-30`
+        rebar3 ct --name $NODENAME --label "$LABEL"
+        rebar3 cover
 
     - name: Check results
       if: always()
@@ -165,6 +188,22 @@ jobs:
                       "repo_token":"$GITHUB_TOKEN",
                       "payload":{"build_num":$GITHUB_RUN_ID,
                                  "status":"done"}}'
+
+    - name: Upload test logs
+      if: always() && steps.ct.outcome == 'failure' && github.repository == 'processone/ejabberd'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        publish_dir: _build/test
+        exclude_assets: '.github,lib,plugins'
+        external_repository: processone/ecil
+        deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+        keep_files: true
+
+    - name: View ECIL address
+      if: always() && steps.ct.outcome == 'failure' && github.repository == 'processone/ejabberd'
+      run: |
+        CTRUN=`ls -la _build/test/logs/last | sed 's|.*-> ||'`
+        echo "::notice::View CT results: https://processone.github.io/ecil/logs/$CTRUN/"
 
     - name: Prepare new schema
       run: |
