@@ -89,7 +89,6 @@ jobs:
                                  libsqlite3-dev libwebp-dev libyaml-dev
 
     - name: Prepare rebar
-      id: rebar
       run: |
         echo '{xref_ignores, [{eldap_filter_yecc, return_error, 2}
                              ]}.' >>rebar.config
@@ -101,23 +100,18 @@ jobs:
               mqtree, p1_acme, p1_mysql, p1_oauth2, p1_pgsql, p1_utils, pkix,
               sqlite3, stringprep, stun, xmpp, yconf]} ]}.' >>rebar.config
         echo '{ct_extra_params, "-verbosity 20"}.' >>rebar.config
+        echo "{ct_opts, [{verbosity, 20}, {keep_logs, 20}]}." >>rebar.config
 
-    - name: Cache rebar2
-      if: matrix.rebar == 2
+    - name: Cache rebar
       uses: actions/cache@v2
       with:
         path: |
           deps/
           dialyzer/
           ebin/
+          ~/.cache/rebar3/
         key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
 
-    - name: Cache rebar3
-      if: matrix.rebar == 3
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/rebar3/
-        key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
 
     - name: Compile
       run: |
@@ -151,28 +145,13 @@ jobs:
         grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
         test $(find logs/ -empty -name error.log)
 
-    - name: View dialyzer report
-      run: cat logs/dialyzer.log
-
-    - name: View full suite.log
-      run: cat logs/suite.log
-
-    - name: View suite.log failures
+    - name: View logs failures
       if: failure()
-      run: cat logs/suite.log | awk
-           'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
-
-    - name: View full ejabberd.log
-      if: failure()
-      run: find logs/ -name ejabberd.log -exec cat '{}' ';'
-
-    - name: View error.log
-      if: failure()
-      run: find logs/ -name error.log -exec cat '{}' ';'
-
-    - name: View exunit.log
-      if: failure()
-      run: find logs/ -name exunit.log -exec cat '{}' ';'
+      run: |
+        cat logs/suite.log | awk \
+          'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+        find logs/ -name error.log -exec cat '{}' ';'
+        find logs/ -name exunit.log -exec cat '{}' ';'
 
     - name: Send to coveralls
       if: matrix.otp == 24
@@ -218,21 +197,13 @@ jobs:
         grep 'TEST COMPLETE' logs/suite.log
         grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
         test $(find logs/ -empty -name error.log)
-    - name: View full suite.log
-      run: cat logs/suite.log
-    - name: View suite.log failures
+    - name: View logs failures
       if: failure()
-      run: cat logs/suite.log | awk
-           'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
-    - name: View full ejabberd.log
-      if: failure()
-      run: find logs/ -name ejabberd.log -exec cat '{}' ';'
-    - name: View error.log
-      if: failure()
-      run: find logs/ -name error.log -exec cat '{}' ';'
-    - name: View exunit.log
-      if: failure()
-      run: find logs/ -name exunit.log -exec cat '{}' ';'
+      run: |
+        cat logs/suite.log | awk \
+          'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+        find logs/ -name error.log -exec cat '{}' ';'
+        find logs/ -name exunit.log -exec cat '{}' ';'
 
   binaries:
     name: Binaries
