@@ -38,7 +38,7 @@
 	 register_online_user/4, unregister_online_user/4,
 	 count_online_rooms_by_user/3, get_online_rooms_by_user/3,
 	 get_subscribed_rooms/3, get_rooms_without_subscribers/2,
-	 find_online_room_by_pid/2]).
+	 find_online_room_by_pid/2, remove_user/2]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
@@ -464,6 +464,13 @@ get_subscribed_rooms(LServer, Host, Jid) ->
 	_Error ->
 	    {error, db_failure}
     end.
+
+remove_user(LUser, LServer) ->
+    SJID = jid:encode(jid:make(LUser, LServer)),
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("delete from muc_room_subscribers where jid=%(SJID)s")),
+    ok.
 
 %%%===================================================================
 %%% Internal functions

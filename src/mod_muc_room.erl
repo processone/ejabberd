@@ -306,7 +306,8 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType])
 				  room_shaper = Shaper}),
     add_to_log(room_existence, started, State),
     ejabberd_hooks:run(start_room, ServerHost, [ServerHost, Room, Host]),
-    {ok, normal_state, reset_hibernate_timer(State)}.
+    State1 = cleanup_affiliations(State),
+    {ok, normal_state, reset_hibernate_timer(State1)}.
 
 normal_state({route, <<"">>,
 	      #message{from = From, type = Type, lang = Lang} = Packet},
@@ -5337,6 +5338,23 @@ muc_subscribers_put(Subscriber, MUCSubscribers) ->
                      subscriber_nodes = NewSubNodes}.
 
 
+cleanup_affiliations(State) ->
+    case mod_muc_opt:cleanup_affiliations_on_start(State#state.server_host) of
+        true ->
+            Affiliations =
+                maps:filter(
+                  fun({LUser, LServer, _}, _) ->
+                          case ejabberd_router:is_my_host(LServer) of
+                              true ->
+                                  ejabberd_auth:user_exists(LUser, LServer);
+                              false ->
+                                  true
+                          end
+                  end, State#state.affiliations),
+            State#state{affiliations = Affiliations};
+        false ->
+            State
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Detect messange stanzas that don't have meaningful content

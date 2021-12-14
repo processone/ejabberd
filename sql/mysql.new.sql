@@ -347,6 +347,7 @@ CREATE TABLE muc_room_subscribers (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX i_muc_room_subscribers_host_jid USING BTREE ON muc_room_subscribers(host, jid);
+CREATE INDEX i_muc_room_subscribers_jid USING BTREE ON muc_room_subscribers(jid);
 
 CREATE TABLE motd (
     username varchar(191) NOT NULL,
