@@ -130,16 +130,16 @@ jobs:
     - run: make hooks
     - run: make options
     - run: make xref
-    - run: make dialyzer
+    - run: |
+        make dialyzer
+        [ ${{ matrix.rebar }} = 3 ] && true \
+          || { cat dialyzer/error.log ; test ! -s dialyzer/error.log ; }
     - run: make test
 
     - name: Check results
       if: always()
       run: |
-        [[ -d _build ]] && ln -s _build/test/logs/ logs \
-                        && ln `find _build/ -name "*dialyzer_warnings"` \
-                              logs/dialyzer.log \
-                        || ln dialyzer/error.log logs/dialyzer.log
+        [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
         ln `find logs/ -name suite.log` logs/suite.log
         grep 'TEST COMPLETE' logs/suite.log
         grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
@@ -169,7 +169,7 @@ jobs:
     - name: Prepare new schema
       run: |
         [[ -d logs ]] && rm -rf logs
-        [[ -d _build/test/logs ]] && rm -rf _build/test/logs
+        [[ -d _build/test/logs ]] && rm -rf _build/test/logs || true
         mysql -u root -proot -e "DROP DATABASE ejabberd_test;"
         sudo -u postgres psql -c "DROP DATABASE ejabberd_test;"
         mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
@@ -192,8 +192,7 @@ jobs:
     - name: Check results
       if: always() && steps.ctnewschema.outcome != 'skipped'
       run: |
-        [[ -d _build ]] && ln -s _build/test/logs/ logs \
-                        || ln dialyzer/error.log logs/dialyzer.log
+        [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
         ln `find logs/ -name suite.log` logs/suite.log
         grep 'TEST COMPLETE' logs/suite.log
         grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
