@@ -188,8 +188,9 @@ jobs:
                                                 TO ejabberd_test;"
         sudo sed -i 's|new_schema, false|new_schema, true|g' test/suite.erl
     - run: CT_BACKENDS=mysql,pgsql make test
+      id: ctnewschema
     - name: Check results
-      if: always()
+      if: always() && steps.ctnewschema.outcome != 'skipped'
       run: |
         [[ -d _build ]] && ln -s _build/test/logs/ logs \
                         || ln dialyzer/error.log logs/dialyzer.log
@@ -198,7 +199,7 @@ jobs:
         grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
         test $(find logs/ -empty -name error.log)
     - name: View logs failures
-      if: failure()
+      if: failure() && steps.ctnewschema.outcome != 'skipped'
       run: |
         cat logs/suite.log | awk \
           'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
