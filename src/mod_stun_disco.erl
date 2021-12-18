@@ -646,7 +646,7 @@ get_listener_ips(#{ip := {0, 0, 0, 0, 0, 0, 0, 1}} = Opts) ->
     {undefined, get_turn_ipv6_addr(Opts)};
 get_listener_ips(#{ip := {_, _, _, _} = IP}) ->
     {IP, undefined};
-get_listener_ips(#{ip := {_, _, _, _, _,_, _, _, _} = IP}) ->
+get_listener_ips(#{ip := {_, _, _, _, _, _, _, _} = IP}) ->
     {undefined, IP}.
 
 -spec get_turn_ipv4_addr(map()) -> inet:ip4_address() | undefined.
