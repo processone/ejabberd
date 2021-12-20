@@ -378,7 +378,11 @@ format_arg("", string) ->
 format_arg(Arg, string) ->
     NumChars = integer_to_list(length(Arg)),
     Parse = "~" ++ NumChars ++ "c",
-    format_arg2(Arg, Parse).
+    format_arg2(Arg, Parse);
+format_arg(Arg, Format) ->
+    S = unicode:characters_to_binary(Arg, utf8),
+    JSON = jiffy:decode(S),
+    mod_http_api:format_arg(JSON, Format).
 
 format_arg2(Arg, Parse)->
     {ok, [Arg2], _RemainingArguments} = io_lib:fread(Parse, Arg),

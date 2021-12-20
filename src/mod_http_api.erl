@@ -30,6 +30,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process/2, depends/2,
+         format_arg/2,
 	 mod_options/1, mod_doc/0]).
 
 -include_lib("xmpp/include/xmpp.hrl").
