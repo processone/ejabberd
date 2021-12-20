@@ -1143,9 +1143,9 @@ remove_user(User, Server) ->
       fun(Host) ->
               lists:foreach(
                 fun({_, _, Pid}) ->
-                        mod_muc_room:change_item(
+                        mod_muc_room:change_item_async(
                           Pid, JID, affiliation, none, <<"User removed">>),
-                        mod_muc_room:change_item(
+                        mod_muc_room:change_item_async(
                           Pid, JID, role, none, <<"User removed">>)
                 end,
                 get_online_rooms(LServer, Host))

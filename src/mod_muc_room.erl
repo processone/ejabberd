@@ -50,6 +50,7 @@
 	 set_config/2,
 	 get_state/1,
 	 change_item/5,
+	 change_item_async/5,
 	 config_reloaded/1,
 	 subscribe/4,
 	 unsubscribe/2,
@@ -201,6 +202,11 @@ change_item(Pid, JID, Type, AffiliationOrRole, Reason) ->
 	  _:{_, {p1_fsm, _, _}} ->
 	    {error, notfound}
     end.
+
+-spec change_item_async(pid(), jid(), affiliation | role, affiliation() | role(), binary()) -> ok.
+change_item_async(Pid, JID, Type, AffiliationOrRole, Reason) ->
+    p1_fsm:send_all_state_event(
+      Pid, {process_item_change, {JID, Type, AffiliationOrRole, Reason}, undefined}).
 
 -spec get_state(pid()) -> {ok, state()} | {error, notfound | timeout}.
 get_state(Pid) ->
@@ -675,6 +681,16 @@ handle_event({set_affiliations, Affiliations},
 	     StateName, StateData) ->
     NewStateData = set_affiliations(Affiliations, StateData),
     {next_state, StateName, NewStateData};
+handle_event({process_item_change, Item, UJID}, StateName, StateData) ->
+    case process_item_change(Item, StateData, UJID) of
+	{error, _} ->
+            {next_state, StateName, StateData};
+        StateData ->
+            {next_state, StateName, StateData};
+	NSD ->
+	    store_room(NSD),
+            {next_state, StateName, NSD}
+    end;
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -723,6 +739,8 @@ handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData
     case process_item_change(Item, StateData, UJID) of
 	{error, _} = Err ->
 	    {reply, Err, StateName, StateData};
+        StateData ->
+            {reply, {ok, StateData}, StateName, StateData};
 	NSD ->
 	    store_room(NSD),
 	    {reply, {ok, NSD}, StateName, NSD}
