@@ -128,14 +128,6 @@ exec_iex()
 # usage
 debugwarning()
 {
-    if [ "$OSTYPE" != "cygwin" ] && [ "$OSTYPE" != "win32" ] ; then
-        if [ "a$TERM" = "a" ] || [ "$TERM" = "dumb" ] ; then
-            echo "Terminal type not supported."
-            echo "You may have to set the TERM environment variable to fix this."
-            exit 8
-        fi
-    fi
-
     if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
         echo "--------------------------------------------------------------------"
         echo ""
