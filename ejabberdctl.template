@@ -105,6 +105,7 @@ export ERL_MAX_ETS_TABLES
 export CONTRIB_MODULES_PATH
 export CONTRIB_MODULES_CONF_DIR
 export ERL_LIBS
+export SCRIPT_DIR
 
 # run command either directly or via su $INSTALLUSER
 exec_cmd()
