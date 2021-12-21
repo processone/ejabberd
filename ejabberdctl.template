@@ -198,8 +198,9 @@ help()
 uid()
 {
     uuid=$(uuidgen 2>/dev/null)
+    random=$(awk 'BEGIN { srand(); print int(rand()*32768) }' /dev/null)
     [ -z "$uuid" ] && [ -f /proc/sys/kernel/random/uuid ] && uuid=$(cat /proc/sys/kernel/random/uuid)
-    [ -z "$uuid" ] && uuid=$(printf "%X" "${RANDOM:-$$}$(date +%M%S)")
+    [ -z "$uuid" ] && uuid=$(printf "%X" "${random:-$$}$(date +%M%S)")
     uuid=$(printf '%s' $uuid | sed 's/^\(...\).*$/\1/')
     [ $# -eq 0 ] && echo "${uuid}-${ERLANG_NODE}"
     [ $# -eq 1 ] && echo "${uuid}-${1}-${ERLANG_NODE}"
