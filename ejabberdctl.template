@@ -81,7 +81,7 @@ if [ -n "$INET_DIST_INTERFACE" ] ; then
 fi
 # if vm.args file exists in config directory, pass it to Erlang VM
 [ -f "$VMARGS" ] && ERLANG_OPTS="$ERLANG_OPTS -args_file $VMARGS"
-ERL_LIBS={{libdir}}
+ERL_LIBS='{{libdir}}'
 ERL_CRASH_DUMP="$LOGS_DIR"/erl_crash_$(date "+%Y%m%d-%H%M%S").dump
 ERL_INETRC="$ETC_DIR"/inetrc
 
