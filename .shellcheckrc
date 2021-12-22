@@ -1,1 +1,3 @@
+external-sources=true
+source=ejabberdctl.cfg.example
 shell=sh
