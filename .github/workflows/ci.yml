@@ -44,6 +44,14 @@ jobs:
 
     - uses: actions/checkout@v2
 
+    - name: Test shell scripts
+      if: matrix.otp == 24
+      run: |
+        shellcheck test/ejabberd_SUITE_data/gencerts.sh
+        shellcheck tools/captcha.sh
+        shellcheck ejabberd.init.template
+        shellcheck ejabberdctl.template
+
     - name: Get previous Erlang/OTP
       uses: ErlGang/setup-erlang@master
       if: matrix.otp != 24
