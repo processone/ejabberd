@@ -21,7 +21,7 @@ if test -n ${BASH_VERSION:-''} ; then
 	R=$RANDOM
     }
 else
-    for n in `od -A n -t u2 -N 48 /dev/urandom`; do RL="$RL$n "; done
+    for n in $(od -A n -t u2 -N 48 /dev/urandom); do RL="$RL$n "; done
     get_random ()
     {  
 	R=${RL%% *}
