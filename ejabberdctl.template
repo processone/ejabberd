@@ -62,6 +62,7 @@ done
 : "${EJABBERDCTL_CONFIG_PATH:="$ETC_DIR/ejabberdctl.cfg"}"
 # Allows passing extra Erlang command-line arguments in vm.args file
 : "${VMARGS:="$ETC_DIR/vm.args"}"
+# shellcheck source=ejabberdctl.cfg.example
 [ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
 [ -n "$ERLANG_NODE_ARG" ] && ERLANG_NODE="$ERLANG_NODE_ARG"
 [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && S="-s"

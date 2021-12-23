@@ -50,7 +50,7 @@ jobs:
         shellcheck test/ejabberd_SUITE_data/gencerts.sh
         shellcheck tools/captcha.sh
         shellcheck ejabberd.init.template
-        shellcheck ejabberdctl.template
+        shellcheck -x ejabberdctl.template
 
     - name: Get previous Erlang/OTP
       uses: ErlGang/setup-erlang@master
