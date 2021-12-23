@@ -15,19 +15,12 @@
 
 INPUT=$1
 
-if test -n ${BASH_VERSION:-''} ; then
-    get_random ()
-    {  
-	R=$RANDOM
-    }
-else
-    for n in $(od -A n -t u2 -N 48 /dev/urandom); do RL="$RL$n "; done
-    get_random ()
-    {  
-	R=${RL%% *}
-	RL=${RL#* }
-    }
-fi
+for n in $(od -A n -t u2 -N 48 /dev/urandom); do RL="$RL$n "; done
+get_random ()
+{
+    R=${RL%% *}
+    RL=${RL#* }
+}
 
 get_random
 WAVE1_AMPLITUDE=$((2 + R % 5))
