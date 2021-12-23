@@ -50,7 +50,7 @@ single_cases() ->
 feature_enabled(Config) ->
     Features = get_features(Config),
     ct:comment("Checking if offline features are set"),
-    true = lists:member(?NS_FEATURE_MSGOFFLINE, Features),
+    false = lists:member(?NS_FEATURE_MSGOFFLINE, Features),
     true = lists:member(?NS_FLEX_OFFLINE, Features),
     disconnect(Config).
 
