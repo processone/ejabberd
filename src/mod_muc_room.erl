@@ -1637,7 +1637,7 @@ do_get_affiliation_fallback(JID, StateData) ->
 
 -spec get_affiliations(state()) -> affiliations().
 get_affiliations(#state{config = #config{persistent = false}} = StateData) ->
-    get_affiliations_callback(StateData);
+    get_affiliations_fallback(StateData);
 get_affiliations(StateData) ->
     Room = StateData#state.room,
     Host = StateData#state.host,
@@ -1645,13 +1645,13 @@ get_affiliations(StateData) ->
     Mod = gen_mod:db_mod(ServerHost, mod_muc),
     case Mod:get_affiliations(ServerHost, Room, Host) of
 	{error, _} ->
-	    get_affiliations_callback(StateData);
+	    get_affiliations_fallback(StateData);
 	{ok, Affiliations} ->
 	    Affiliations
     end.
 
--spec get_affiliations_callback(state()) -> affiliations().
-get_affiliations_callback(StateData) ->
+-spec get_affiliations_fallback(state()) -> affiliations().
+get_affiliations_fallback(StateData) ->
     StateData#state.affiliations.
 
 -spec get_service_affiliation(jid(), state()) -> owner | none.
