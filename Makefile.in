@@ -94,8 +94,10 @@ endif
 
 ifeq "$(MIX)" "mix"
 REBAR_VER:=6
+REBAR_VER_318:=0
 else
 REBAR_VER:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print $$2}')
+REBAR_VER_318:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print ($$2 == 3 && $$3 >= 18 ? 1 : 0)}')
 endif
 
 ifeq "$(REBAR_VER)" "6"
@@ -115,7 +117,11 @@ else
 ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
   LISTDEPS=tree
+ifeq "$(REBAR_VER_318)" "1"
+  UPDATEDEPS=upgrade --all
+else
   UPDATEDEPS=upgrade
+endif
   DEPSPATTERN="s/ (.*//; /^ / s/.* \([a-z0-9_]*\).*/\1/p;"
   DEPSBASE=_build
   DEPSDIR=$(DEPSBASE)/default/lib
