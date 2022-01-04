@@ -215,6 +215,7 @@ defmodule Ejabberd.MixProject do
       epmd: config(:epmd),
       bindir: Path.join([config(:release_dir), "releases", version()]),
       release_dir: config(:release_dir),
+      erts_dir: config(:erts_dir),
       erts_vsn: "erts-#{release.erts_version}"
     ]
     ro = "rel/overlays"
@@ -240,7 +241,9 @@ defmodule Ejabberd.MixProject do
 
     execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.template > ejabberdctl.example1")
     Mix.Generator.copy_template("ejabberdctl.example1", "ejabberdctl.example2", assigns)
-    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2 > ejabberdctl.example3")
+    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2> ejabberdctl.example2a")
+    Mix.Generator.copy_template("ejabberdctl.example2a", "ejabberdctl.example2b", assigns)
+    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2b > ejabberdctl.example3")
     execute.("sed -e 's|ERLANG_NODE=ejabberd@localhost|ERLANG_NODE=ejabberd|g' ejabberdctl.example3 > ejabberdctl.example4")
     execute.("sed -e 's|INSTALLUSER=|ERL_OPTIONS=\"-setcookie \\$\\(cat \"\\${SCRIPT_DIR%/*}/releases/COOKIE\")\"\\nINSTALLUSER=|g' ejabberdctl.example4 > ejabberdctl.example5")
     Mix.Generator.copy_template("ejabberdctl.example5", "#{ro}/bin/ejabberdctl", assigns)
@@ -248,6 +251,8 @@ defmodule Ejabberd.MixProject do
 
     File.rm("ejabberdctl.example1")
     File.rm("ejabberdctl.example2")
+    File.rm("ejabberdctl.example2a")
+    File.rm("ejabberdctl.example2b")
     File.rm("ejabberdctl.example3")
     File.rm("ejabberdctl.example4")
     File.rm("ejabberdctl.example5")
