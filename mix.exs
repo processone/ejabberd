@@ -147,7 +147,7 @@ defmodule Ejabberd.MixProject do
     for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0"}},
                          {config(:redis), {:eredis, "~> 1.2.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
-                         {config(:lua), {:luerl, "~> 0.3.1"}},
+                         {config(:lua), {:luerl, "~> 1.0"}},
                          {config(:sqlite), {:sqlite3, "~> 1.1"}}], do:
       dep
   end
