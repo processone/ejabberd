@@ -118,7 +118,7 @@ eval_file(Path) ->
 	    case luerl:eval(NewData, State1) of
 		{ok, _} = Res ->
 		    Res;
-		{error, Why} = Err ->
+		{error, Why, _} = Err ->
 		    ?ERROR_MSG("Failed to eval ~ts: ~p", [Path, Why]),
 		    Err
 	    end;
