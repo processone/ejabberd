@@ -284,7 +284,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = send_direct_invitation, tags = [muc_room],
 			desc = "Send a direct invitation to several destinations",
-			longdesc = "Since ejabberd 20.10, this command is "
+			longdesc = "Since ejabberd 20.12, this command is "
                         "asynchronous: the API call may return before the "
                         "server has send all the invitations.\n\n"
                         "Password and Message can also be: none. "
