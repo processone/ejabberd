@@ -1134,8 +1134,8 @@ is_expired(#publish{meta = Meta, properties = Props} = Pkt) ->
 %%% Authentication
 %%%===================================================================
 -spec parse_credentials(connect()) -> {ok, jid:jid()} | {error, reason_code()}.
-parse_credentials(#connect{client_id = <<>>}) ->
-    parse_credentials(#connect{client_id = p1_rand:get_string()});
+parse_credentials(#connect{client_id = <<>>} = C) ->
+    parse_credentials(C#connect{client_id = p1_rand:get_string()});
 parse_credentials(#connect{username = <<>>, client_id = ClientID}) ->
     Host = ejabberd_config:get_myname(),
     JID = case jid:make(ClientID, Host) of
