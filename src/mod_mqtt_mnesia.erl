@@ -103,7 +103,7 @@ lookup_published({_, S, _}, Topic) ->
                    correlation_data = CorrelationData,
                    content_type = ContentType,
                    user_properties = UserProps}] ->
-            Props = #{payload_format => PayloadFormat,
+            Props = #{payload_format_indicator => PayloadFormat,
                       response_topic => ResponseTopic,
                       correlation_data => CorrelationData,
                       content_type => ContentType,
