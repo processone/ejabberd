@@ -181,6 +181,8 @@ get_commands_spec() ->
 			result = {res, restuple}},
      #ejabberd_commands{name = unregister, tags = [accounts],
 			desc = "Unregister a user",
+			longdesc = "This deletes the authentication and all the "
+                        "data associated to the account (roster, vcard...).",
                         policy = admin,
 			module = ?MODULE, function = unregister,
 			args_desc = ["Username", "Local vhost served by ejabberd"],
