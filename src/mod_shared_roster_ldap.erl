@@ -689,9 +689,9 @@ mod_doc() ->
            ?T("- Connection parameters: The module also accepts the "
 	      "connection parameters, all of which default to the top-level "
 	      "parameter of the same name, if unspecified. "
-	      "See http://../database-ldap/#ldap-connection[LDAP Connection] "
+	      "See http://../ldap/#ldap-connection[LDAP Connection] "
 	      "section for more information about them."), "",
-           ?T("Check also the http://../database-ldap/#configuration-examples"
+           ?T("Check also the http://../ldap/#ldap-examples"
 	      "[Configuration examples] section to get details about "
 	      "retrieving the roster, "
 	      "and configuration examples including Flat DIT and Deep DIT.")],
@@ -721,13 +721,13 @@ mod_doc() ->
 		     "name of roster entries (usually full names of people in "
 		     "the roster). See also the parameters 'ldap_userdesc' and "
 		     "'ldap_useruid'. For more information check the LDAP "
-		     "http://../database-ldap/#filters[Filters] section.")}},
+		     "http://../ldap/#filters[Filters] section.")}},
            {ldap_filter,
             #{desc =>
 		  ?T("Additional filter which is AND-ed together "
 		     "with \"User Filter\" and \"Group Filter\". "
 		     "For more information check the LDAP "
-		     "http://../database-ldap/#filters[Filters] section.")}},
+		     "http://../ldap/#filters[Filters] section.")}},
 	   %% Attributes:
            {ldap_groupattr,
             #{desc =>
@@ -785,7 +785,7 @@ mod_doc() ->
             #{desc =>
 		  ?T("A regex for extracting user ID from the value of the "
 		     "attribute named by 'ldap_memberattr'. Check the LDAP "
-		     "http://../database-ldap/#control-parameters"
+		     "http://../ldap/#control-parameters"
 		     "[Control Parameters] section.")}},
            {ldap_auth_check,
             #{value => "true | false",
