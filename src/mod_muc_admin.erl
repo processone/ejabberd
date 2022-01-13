@@ -1459,4 +1459,11 @@ mod_doc() ->
 	  [?T("This module provides commands to administer local MUC "
 	      "services and their MUC rooms. It also provides simple "
 	      "WebAdmin pages to view the existing rooms."), "",
-	   ?T("This module depends on _`mod_muc`_.")]}.
+	   ?T("This module depends on _`mod_muc`_.")],
+    opts =>
+          [{subscribe_room_many_max_users,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("How many users can be subscribed to a room at once using "
+                     "the 'subscribe_room_many' command. "
+                     "The default value is '50'.")}}]}.
