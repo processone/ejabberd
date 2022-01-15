@@ -870,12 +870,15 @@ c2s_self_presence(Acc) ->
     Acc.
 
 -spec unset_presence(binary(), binary(), binary(), binary()) -> ok.
-unset_presence(LUser, LServer, Resource, Status) ->
+unset_presence(User, Server, Resource, Status) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    LResource = jid:resourceprep(Resource),
     Resources = ejabberd_sm:get_user_resources(LUser,
 					       LServer),
     ?DEBUG("Unset_presence for ~p @ ~p / ~p -> ~p "
 	   "(~p resources)",
-	   [LUser, LServer, Resource, Status, length(Resources)]),
+	   [LUser, LServer, LResource, Status, length(Resources)]),
     case length(Resources) of
       0 ->
 	  lists:foreach(
