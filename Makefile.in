@@ -113,6 +113,7 @@ ifeq "$(REBAR_VER)" "6"
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
+  RELIVECMD=escript rel/relive.escript && MIX_ENV=dev RELIVE=true iex --name ejabberd@localhost -S mix run
 else
 ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
@@ -130,6 +131,7 @@ endif
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
   REBARREL=$(REBAR) as prod tar
   REBARDEV=REBAR_PROFILE=dev $(REBAR) release
+  RELIVECMD=$(REBAR) relive
 else
   SKIPDEPS=skip_deps=true
   LISTDEPS=-q list-deps
@@ -142,6 +144,8 @@ else
   EBINDIR=ebin
   REBARREL=$(REBAR) generate
   REBARDEV=
+  RELIVECMD=@echo "Rebar2 detected... relive not supported.\
+	 \nTry: ./configure --with-rebar=./rebar3 ; make relive"
 endif
 endif
 
@@ -268,13 +272,27 @@ copy-files:
 
 copy-files-sub: copy-files-sub2
 
-install: copy-files
-	#
-	# Configuration files
-	$(INSTALL) -d -m 750 $(G_USER) $(ETCDIR)
-	[ -f $(ETCDIR)/ejabberd.yml ] \
-		&& $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml-new \
-		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml
+relive:
+	$(RELIVECMD)
+
+relivedir=$(shell pwd)/_build/relive
+iexpath=$(shell which iex)
+
+ejabberdctl.relive:
+	$(SED) -e "s*{{rootdir}}*@prefix@*g" \
+		-e "s*{{installuser}}*@INSTALLUSER@*g" \
+		-e "s*{{bindir}}/iex*$(iexpath)*g" \
+		-e "s*{{bindir}}*@bindir@*g" \
+		-e "s*{{libdir}}*@libdir@*g" \
+		-e "s*{{sysconfdir}}/ejabberd*$(relivedir)/conf*g" \
+		-e "s*{{localstatedir}}/log/ejabberd*$(relivedir)/logs*g" \
+		-e "s*{{localstatedir}}/lib/ejabberd*$(relivedir)/database*g" \
+		-e "s*{{docdir}}*@docdir@*g" \
+		-e "s*{{erl}}*@ERL@*g" \
+		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
+		> ejabberdctl.relive
+
+ejabberdctl.example:
 	$(SED) -e "s*{{rootdir}}*@prefix@*g" \
 		-e "s*{{installuser}}*@INSTALLUSER@*g" \
 		-e "s*{{bindir}}*@bindir@*g" \
@@ -285,6 +303,14 @@ install: copy-files
 		-e "s*{{erl}}*@ERL@*g" \
 		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
 		> ejabberdctl.example
+
+install: copy-files ejabberdctl.example
+	#
+	# Configuration files
+	$(INSTALL) -d -m 750 $(G_USER) $(ETCDIR)
+	[ -f $(ETCDIR)/ejabberd.yml ] \
+		&& $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml-new \
+		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
 		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
 		|| $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
@@ -470,6 +496,7 @@ help:
 	@echo ""
 	@echo "  rel            Build a production release"
 	@echo "  dev            Build a development release"
+	@echo "  relive         Start a live ejabberd in _build/relive/"
 	@echo ""
 	@echo "  edoc           Generate edoc documentation (unused)"
 	@echo "  options        Generate ejabberd_option.erl"

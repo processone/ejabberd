@@ -40,7 +40,7 @@
 	 %% Cluster
 	 join_cluster/1, leave_cluster/1, list_cluster/0,
 	 %% Erlang
-	 update_list/0, update/1,
+	 update_list/0, update/1, update/0,
 	 %% Accounts
 	 register/3, unregister/2,
 	 registered_users/1,
@@ -539,6 +539,15 @@ update_module(ModuleNameString) ->
 	{ok, _Res} -> {ok, []};
 	{error, Reason} -> {error, Reason}
     end.
+
+update() ->
+    io:format("Compiling ejabberd...~n", []),
+    os:cmd("make"),
+    Mods = ejabberd_admin:update_list(),
+    io:format("Updating modules: ~p~n", [Mods]),
+    ejabberd_admin:update("all"),
+    io:format("Updated modules: ", []),
+    Mods -- ejabberd_admin:update_list().
 
 %%%
 %%% Account management
