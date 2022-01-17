@@ -3512,17 +3512,24 @@ decode_node_config(undefined, _, _) ->
 decode_node_config(#xdata{fields = Fs}, Host, Lang) ->
     try
 	Config = pubsub_node_config:decode(Fs),
-	Max = get_max_items_node(Host),
-	case {check_opt_range(max_items, Config, Max),
+	MaxItems = get_max_items_node(Host),
+	MaxExpiry = get_max_item_expire_node(Host),
+	case {check_opt_range(max_items, Config, MaxItems),
+	      check_opt_range(item_expire, Config, MaxExpiry),
 	      check_opt_range(max_payload_size, Config, ?MAX_PAYLOAD_SIZE)} of
-	    {true, true} ->
+	    {true, true, true} ->
 		Config;
-	    {true, false} ->
+	    {true, true, false} ->
 		erlang:error(
 		  {pubsub_node_config,
 		   {bad_var_value, <<"pubsub#max_payload_size">>,
 		    ?NS_PUBSUB_NODE_CONFIG}});
-	    {false, _} ->
+	    {true, false, _} ->
+		erlang:error(
+		  {pubsub_node_config,
+		   {bad_var_value, <<"pubsub#item_expire">>,
+		    ?NS_PUBSUB_NODE_CONFIG}});
+	    {false, _, _} ->
 		erlang:error(
 		  {pubsub_node_config,
 		   {bad_var_value, <<"pubsub#max_items">>,
@@ -3568,8 +3575,10 @@ decode_get_pending(#xdata{fields = Fs}, Lang) ->
     end.
 
 -spec check_opt_range(atom(), [proplists:property()],
-		      non_neg_integer() | unlimited) -> boolean().
+		      non_neg_integer() | unlimited | infinity) -> boolean().
 check_opt_range(_Opt, _Opts, unlimited) ->
+    true;
+check_opt_range(_Opt, _Opts, infinity) ->
     true;
 check_opt_range(Opt, Opts, Max) ->
     case proplists:get_value(Opt, Opts, Max) of
