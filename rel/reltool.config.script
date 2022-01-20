@@ -89,7 +89,6 @@ Sys = [{lib_dirs, []},
 
 Overlay = [
            {mkdir, "var/log/ejabberd"},
-           {mkdir, "var/lock"},
            {mkdir, "var/lib/ejabberd"},
            {mkdir, "etc/ejabberd"},
            {mkdir, "doc"},

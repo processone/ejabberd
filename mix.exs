@@ -24,6 +24,7 @@ defmodule Ejabberd.MixProject do
     case config(:vsn) do
       :false -> "0.0.0" # ./configure wasn't run: vars.config not created
       '0.0' -> "0.0.0" # the full git repository wasn't downloaded
+      'latest.0' -> "0.0.0" # running 'docker-ejabberd/ecs/build.sh latest'
       [_, _, ?., _, _] = x ->
         head = String.replace(:erlang.list_to_binary(x), ~r/0+([0-9])/, "\\1")
         <<head::binary, ".0">>
@@ -87,6 +88,7 @@ defmodule Ejabberd.MixProject do
              if_version_below('23', [{:d, :USE_OLD_PG2}]) ++
              if_version_below('24', [{:d, :COMPILER_REPORTS_ONLY_LINES}]) ++
              if_version_below('24', [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}]) ++
+             if_function_exported(:uri_string, :normalize, 1, [{:d, :HAVE_URI_STRING}])
              if_function_exported(:erl_error, :format_exception, 6, [{:d, :HAVE_ERL_ERROR}])
     defines = for {:d, value} <- result, do: {:d, value}
     result ++ [{:d, :ALL_DEFS, defines}]
@@ -102,7 +104,7 @@ defmodule Ejabberd.MixProject do
   end
 
   defp deps do
-    [{:base64url, "~> 0.0.1"},
+    [{:base64url, "~> 1.0"},
      {:cache_tab, "~> 1.0"},
      {:distillery, "~> 2.0"},
      {:eimp, "~> 1.0"},
@@ -113,7 +115,7 @@ defmodule Ejabberd.MixProject do
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
      {:jiffy, "~> 1.0.5"},
-     {:jose, "~> 1.8"},
+     {:jose, "~> 1.11.1"},
      {:lager, "~> 3.9.1"},
      {:mqtree, "~> 1.0"},
      {:p1_acme, "~> 1.0"},
@@ -124,7 +126,7 @@ defmodule Ejabberd.MixProject do
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
      {:stun, "~> 1.0"},
-     {:xmpp, git: "https://github.com/processone/xmpp", ref: "e943c0285aa85e3cbd4bfb9259f6b7de32b00395", override: true},
+     {:xmpp, "~> 1.5"},
      {:yconf, "~> 1.0"}]
     ++ cond_deps()
   end
@@ -145,7 +147,7 @@ defmodule Ejabberd.MixProject do
     for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0"}},
                          {config(:redis), {:eredis, "~> 1.2.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
-                         {config(:lua), {:luerl, "~> 0.3.1"}},
+                         {config(:lua), {:luerl, "~> 1.0"}},
                          {config(:sqlite), {:sqlite3, "~> 1.1"}}], do:
       dep
   end
@@ -213,6 +215,7 @@ defmodule Ejabberd.MixProject do
       epmd: config(:epmd),
       bindir: Path.join([config(:release_dir), "releases", version()]),
       release_dir: config(:release_dir),
+      erts_dir: config(:erts_dir),
       erts_vsn: "erts-#{release.erts_version}"
     ]
     ro = "rel/overlays"
@@ -238,7 +241,9 @@ defmodule Ejabberd.MixProject do
 
     execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.template > ejabberdctl.example1")
     Mix.Generator.copy_template("ejabberdctl.example1", "ejabberdctl.example2", assigns)
-    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2 > ejabberdctl.example3")
+    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2> ejabberdctl.example2a")
+    Mix.Generator.copy_template("ejabberdctl.example2a", "ejabberdctl.example2b", assigns)
+    execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2b > ejabberdctl.example3")
     execute.("sed -e 's|ERLANG_NODE=ejabberd@localhost|ERLANG_NODE=ejabberd|g' ejabberdctl.example3 > ejabberdctl.example4")
     execute.("sed -e 's|INSTALLUSER=|ERL_OPTIONS=\"-setcookie \\$\\(cat \"\\${SCRIPT_DIR%/*}/releases/COOKIE\")\"\\nINSTALLUSER=|g' ejabberdctl.example4 > ejabberdctl.example5")
     Mix.Generator.copy_template("ejabberdctl.example5", "#{ro}/bin/ejabberdctl", assigns)
@@ -246,6 +251,8 @@ defmodule Ejabberd.MixProject do
 
     File.rm("ejabberdctl.example1")
     File.rm("ejabberdctl.example2")
+    File.rm("ejabberdctl.example2a")
+    File.rm("ejabberdctl.example2b")
     File.rm("ejabberdctl.example3")
     File.rm("ejabberdctl.example4")
     File.rm("ejabberdctl.example5")

@@ -11,6 +11,7 @@
 -export([hosts/1]).
 -export([ignore_pep_from_offline/1]).
 -export([last_item_cache/1]).
+-export([max_item_expire_node/1]).
 -export([max_items_node/1]).
 -export([max_nodes_discoitems/1]).
 -export([max_subscriptions_node/1]).
@@ -68,7 +69,13 @@ last_item_cache(Opts) when is_map(Opts) ->
 last_item_cache(Host) ->
     gen_mod:get_module_opt(Host, mod_pubsub, last_item_cache).
 
--spec max_items_node(gen_mod:opts() | global | binary()) -> non_neg_integer().
+-spec max_item_expire_node(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
+max_item_expire_node(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(max_item_expire_node, Opts);
+max_item_expire_node(Host) ->
+    gen_mod:get_module_opt(Host, mod_pubsub, max_item_expire_node).
+
+-spec max_items_node(gen_mod:opts() | global | binary()) -> 'unlimited' | non_neg_integer().
 max_items_node(Opts) when is_map(Opts) ->
     gen_mod:get_opt(max_items_node, Opts);
 max_items_node(Host) ->

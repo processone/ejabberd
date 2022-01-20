@@ -95,7 +95,7 @@
     terminate/2, code_change/3, depends/2, mod_opt_type/1, mod_options/1]).
 
 %% ejabberd commands
--export([get_commands_spec/0, delete_old_items/1]).
+-export([get_commands_spec/0, delete_old_items/1, delete_expired_items/0]).
 
 -export([route/1]).
 
@@ -3431,6 +3431,14 @@ max_items(Host, Options) ->
 	    end
     end.
 
+-spec item_expire(host(), [{atom(), any()}]) -> non_neg_integer() | infinity.
+item_expire(Host, Options) ->
+    case get_option(Options, item_expire) of
+	I when is_integer(I), I < 0 -> 0;
+	I when is_integer(I) -> I;
+	_ -> get_max_item_expire_node(Host)
+    end.
+
 -spec get_configure_xfields(_, pubsub_node_config:result(),
 			    binary(), [binary()]) -> [xdata_field()].
 get_configure_xfields(_Type, Options, Lang, Groups) ->
@@ -3504,17 +3512,24 @@ decode_node_config(undefined, _, _) ->
 decode_node_config(#xdata{fields = Fs}, Host, Lang) ->
     try
 	Config = pubsub_node_config:decode(Fs),
-	Max = get_max_items_node(Host),
-	case {check_opt_range(max_items, Config, Max),
+	MaxItems = get_max_items_node(Host),
+	MaxExpiry = get_max_item_expire_node(Host),
+	case {check_opt_range(max_items, Config, MaxItems),
+	      check_opt_range(item_expire, Config, MaxExpiry),
 	      check_opt_range(max_payload_size, Config, ?MAX_PAYLOAD_SIZE)} of
-	    {true, true} ->
+	    {true, true, true} ->
 		Config;
-	    {true, false} ->
+	    {true, true, false} ->
 		erlang:error(
 		  {pubsub_node_config,
 		   {bad_var_value, <<"pubsub#max_payload_size">>,
 		    ?NS_PUBSUB_NODE_CONFIG}});
-	    {false, _} ->
+	    {true, false, _} ->
+		erlang:error(
+		  {pubsub_node_config,
+		   {bad_var_value, <<"pubsub#item_expire">>,
+		    ?NS_PUBSUB_NODE_CONFIG}});
+	    {false, _, _} ->
 		erlang:error(
 		  {pubsub_node_config,
 		   {bad_var_value, <<"pubsub#max_items">>,
@@ -3560,10 +3575,10 @@ decode_get_pending(#xdata{fields = Fs}, Lang) ->
     end.
 
 -spec check_opt_range(atom(), [proplists:property()],
-		      non_neg_integer() | unlimited | undefined) -> boolean().
-check_opt_range(_Opt, _Opts, undefined) ->
-    true;
+		      non_neg_integer() | unlimited | infinity) -> boolean().
 check_opt_range(_Opt, _Opts, unlimited) ->
+    true;
+check_opt_range(_Opt, _Opts, infinity) ->
     true;
 check_opt_range(Opt, Opts, Max) ->
     case proplists:get_value(Opt, Opts, Max) of
@@ -3571,9 +3586,13 @@ check_opt_range(Opt, Opts, Max) ->
 	Val -> Val =< Max
     end.
 
--spec get_max_items_node(host()) -> undefined | unlimited | non_neg_integer().
+-spec get_max_items_node(host()) -> unlimited | non_neg_integer().
 get_max_items_node(Host) ->
-    config(Host, max_items_node, undefined).
+    config(Host, max_items_node, ?MAXITEMS).
+
+-spec get_max_item_expire_node(host()) -> infinity | non_neg_integer().
+get_max_item_expire_node(Host) ->
+    config(Host, max_item_expire_node, infinity).
 
 -spec get_max_subscriptions_node(host()) -> undefined | non_neg_integer().
 get_max_subscriptions_node(Host) ->
@@ -4181,16 +4200,63 @@ delete_old_items(N) ->
 	    ok
     end.
 
+-spec delete_expired_items() -> ok | error.
+delete_expired_items() ->
+    Results = lists:flatmap(
+		fun(Host) ->
+			case tree_action(Host, get_all_nodes, [Host]) of
+			    Nodes when is_list(Nodes) ->
+				lists:map(
+				  fun(#pubsub_node{id = Nidx, type = Type,
+						   options = Options}) ->
+					  case item_expire(Host, Options) of
+					      infinity ->
+						  ok;
+					      Seconds ->
+						  case node_action(
+							 Host, Type,
+							 remove_expired_items,
+							 [Nidx, Seconds]) of
+						      {result, []} ->
+							  ok;
+						      {result, [_|_]} ->
+							  unset_cached_item(
+							    Host, Nidx);
+						      {error, _} ->
+							  error
+						  end
+					  end
+				  end, Nodes);
+			    _ ->
+				error
+			end
+		end, ejabberd_option:hosts()),
+    case lists:member(error, Results) of
+	true ->
+	    error;
+	false ->
+	    ok
+    end.
+
 -spec get_commands_spec() -> [ejabberd_commands()].
 get_commands_spec() ->
     [#ejabberd_commands{name = delete_old_pubsub_items, tags = [purge],
 			desc = "Keep only NUMBER of PubSub items per node",
+		        note = "added in 21.12",
 			module = ?MODULE, function = delete_old_items,
 			args_desc = ["Number of items to keep per node"],
 			args = [{number, integer}],
 			result = {res, rescode},
 			result_desc = "0 if command failed, 1 when succeeded",
 			args_example = [1000],
+			result_example = ok},
+     #ejabberd_commands{name = delete_expired_pubsub_items, tags = [purge],
+			desc = "Delete expired PubSub items",
+		        note = "added in 21.12",
+			module = ?MODULE, function = delete_expired_items,
+			args = [],
+			result = {res, rescode},
+			result_desc = "0 if command failed, 1 when succeeded",
 			result_example = ok}].
 
 -spec mod_opt_type(atom()) -> econf:validator().
@@ -4204,6 +4270,8 @@ mod_opt_type(last_item_cache) ->
     econf:bool();
 mod_opt_type(max_items_node) ->
     econf:non_neg_int(unlimited);
+mod_opt_type(max_item_expire_node) ->
+    econf:timeout(second, infinity);
 mod_opt_type(max_nodes_discoitems) ->
     econf:non_neg_int(infinity);
 mod_opt_type(max_subscriptions_node) ->
@@ -4251,6 +4319,7 @@ mod_options(Host) ->
      {ignore_pep_from_offline, true},
      {last_item_cache, false},
      {max_items_node, ?MAXITEMS},
+     {max_item_expire_node, infinity},
      {max_nodes_discoitems, 100},
      {nodetree, ?STDTREE},
      {pep_mapping, []},
@@ -4329,11 +4398,17 @@ mod_doc() ->
 		     " so many nodes, caching last items speeds up pubsub "
 		     "and allows to raise user connection rate. The cost "
 		     "is memory usage, as every item is stored in memory.")}},
+	   {max_item_expire_node,
+	    #{value => "timeout() | infinity",
+	      note => "added in 21.12",
+	      desc =>
+		  ?T("Specify the maximum item epiry time. Default value "
+		     "is: 'infinity'.")}},
 	   {max_items_node,
 	    #{value => "non_neg_integer() | infinity",
 	      desc =>
 		  ?T("Define the maximum number of items that can be "
-		     "stored in a node. Default value is: '10'.")}},
+		     "stored in a node. Default value is: '1000'.")}},
 	   {max_nodes_discoitems,
 	    #{value => "pos_integer() | infinity",
 	      desc =>

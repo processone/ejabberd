@@ -24,17 +24,15 @@
 %%%----------------------------------------------------------------------
 
 %%% Not implemented:
+%%% - PEP nodes export/import
+%%% - message archives export/import
 %%% - write mod_piefxis with ejabberdctl commands
-%%% - Export from mod_offline_sql.erl
-%%% - Export from mod_private_sql.erl
-%%% - XEP-227: 6. Security Considerations
 %%% - Other schemas of XInclude are not tested, and may not be imported correctly.
 %%% - If a host has many users, split that host in XML files with 50 users each.
-%%%% Headers
 
 -module(ejabberd_piefxis).
 
--protocol({xep, 227, '1.0'}).
+-protocol({xep, 227, '1.1'}).
 
 -export([import_file/1, export_server/1, export_host/2]).
 
@@ -166,33 +164,66 @@ export_users([], _Server, _Fd) ->
 export_user(User, Server, Fd) ->
     Password = ejabberd_auth:get_password_s(User, Server),
     LServer = jid:nameprep(Server),
-    Pass = case ejabberd_auth:password_format(LServer) of
-	       scram -> format_scram_password(Password);
-	       _ -> Password
+    {PassPlain, PassScram} = case ejabberd_auth:password_format(LServer) of
+	       scram -> {[], [format_scram_password(Password)]};
+	       _ -> {[{<<"password">>, Password}], []}
 	   end,
-    Els = get_offline(User, Server) ++
+    Els =
+        PassScram ++
+        get_offline(User, Server) ++
         get_vcard(User, Server) ++
         get_privacy(User, Server) ++
         get_roster(User, Server) ++
         get_private(User, Server),
     print(Fd, fxml:element_to_binary(
                 #xmlel{name = <<"user">>,
-                       attrs = [{<<"name">>, User},
-                                {<<"password">>, Pass}],
+                       attrs = [{<<"name">>, User} | PassPlain],
                        children = Els})).
 
 format_scram_password(#scram{hash = Hash, storedkey = StoredKey, serverkey = ServerKey,
 			     salt = Salt, iterationcount = IterationCount}) ->
-  StoredKeyB64 = base64:encode(StoredKey),
-  ServerKeyB64 = base64:encode(ServerKey),
-  SaltB64 = base64:encode(Salt),
-  IterationCountBin = (integer_to_binary(IterationCount)),
-  Hash2 = case Hash of
-              sha -> <<>>;
-              sha256 -> <<"sha256,">>;
-              sha512 -> <<"sha512,">>
-          end,
-  <<"scram:", Hash2/binary, StoredKeyB64/binary, ",", ServerKeyB64/binary, ",", SaltB64/binary, ",", IterationCountBin/binary>>.
+    StoredKeyB64 = base64:encode(StoredKey),
+    ServerKeyB64 = base64:encode(ServerKey),
+    SaltB64 = base64:encode(Salt),
+    IterationCountBin = (integer_to_binary(IterationCount)),
+    MechanismB = case Hash of
+                     sha -> <<"SCRAM-SHA-1">>;
+                     sha256 -> <<"SCRAM-SHA-256">>;
+                     sha512 -> <<"SCRAM-SHA-512">>
+                 end,
+    Children =
+        [
+         #xmlel{name = <<"iter-count">>,
+                children = [{xmlcdata, IterationCountBin}]},
+         #xmlel{name = <<"salt">>,
+                children = [{xmlcdata, SaltB64}]},
+         #xmlel{name = <<"server-key">>,
+                children = [{xmlcdata, ServerKeyB64}]},
+         #xmlel{name = <<"stored-key">>,
+                children = [{xmlcdata, StoredKeyB64}]}
+        ],
+    #xmlel{name = <<"scram-credentials">>,
+           attrs = [{<<"xmlns">>, <<?NS_PIE/binary, "#scram">>},
+                    {<<"mechanism">>, MechanismB}],
+           children = Children}.
+
+parse_scram_password(#xmlel{attrs = Attrs} = El) ->
+    Hash = case fxml:get_attr_s(<<"mechanism">>, Attrs) of
+               <<"SCRAM-SHA-1">> -> sha;
+               <<"SCRAM-SHA-256">> -> sha256;
+               <<"SCRAM-SHA-512">> -> sha512
+           end,
+    StoredKeyB64 = fxml:get_path_s(El, [{elem, <<"stored-key">>}, cdata]),
+    ServerKeyB64 = fxml:get_path_s(El, [{elem, <<"server-key">>}, cdata]),
+    IterationCountBin = fxml:get_path_s(El, [{elem, <<"iter-count">>}, cdata]),
+    SaltB64 = fxml:get_path_s(El, [{elem, <<"salt">>}, cdata]),
+    #scram{
+       storedkey = base64:decode(StoredKeyB64),
+       serverkey = base64:decode(ServerKeyB64),
+       salt      = base64:decode(SaltB64),
+       hash      = Hash,
+       iterationcount = (binary_to_integer(IterationCountBin))
+      };
 
 parse_scram_password(PassData) ->
   Split = binary:split(PassData, <<",">>, [global]),
@@ -214,26 +245,30 @@ parse_scram_password(PassData) ->
 get_vcard(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    case mod_vcard:get_vcard(LUser, LServer) of
+    try mod_vcard:get_vcard(LUser, LServer) of
 	error -> [];
 	Els -> Els
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 -spec get_offline(binary(), binary()) -> [xmlel()].
 get_offline(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    case mod_offline:get_offline_els(LUser, LServer) of
+    try mod_offline:get_offline_els(LUser, LServer) of
         [] ->
             [];
         Els ->
             NewEls = lists:map(fun xmpp:encode/1, Els),
             [#xmlel{name = <<"offline-messages">>, children = NewEls}]
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 -spec get_privacy(binary(), binary()) -> [xmlel()].
 get_privacy(User, Server) ->
-    case mod_privacy:get_user_lists(User, Server) of
+    try mod_privacy:get_user_lists(User, Server) of
         {ok, #privacy{default = Default,
                       lists = [_|_] = Lists}} ->
             XLists = lists:map(
@@ -246,12 +281,14 @@ get_privacy(User, Server) ->
 	    [xmpp:encode(#privacy_query{default = Default, lists = XLists})];
         _ ->
             []
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 -spec get_roster(binary(), binary()) -> [xmlel()].
 get_roster(User, Server) ->
     JID = jid:make(User, Server),
-    case mod_roster:get_roster(User, Server) of
+    try mod_roster:get_roster(User, Server) of
         [_|_] = Items ->
             Subs =
                 lists:flatmap(
@@ -278,15 +315,19 @@ get_roster(User, Server) ->
 	    [xmpp:encode(#roster_query{items = Rs}) | Subs];
         _ ->
             []
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 -spec get_private(binary(), binary()) -> [xmlel()].
 get_private(User, Server) ->
-    case mod_private:get_data(User, Server) of
+    try mod_private:get_data(User, Server) of
         [_|_] = Els ->
 	    [xmpp:encode(#private{sub_els = Els})];
         _ ->
             []
+    catch
+        error:{module_not_loaded, _, _} -> []
     end.
 
 process(#state{xml_stream_state = XMLStreamState, fd = Fd} = State) ->
@@ -398,21 +439,10 @@ process_users([_|Els], State) ->
 process_users([], State) ->
     {ok, State}.
 
-process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els},
+process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els} = El,
              #state{server = LServer} = State) ->
     Name = fxml:get_attr_s(<<"name">>, Attrs),
-    Password = fxml:get_attr_s(<<"password">>, Attrs),
-    PasswordFormat = ejabberd_auth:password_format(LServer),
-    Pass = case PasswordFormat of
-      scram ->
-        case Password of
-          <<"scram:", PassData/binary>> ->
-            parse_scram_password(PassData);
-          P -> P
-        end;
-      _ -> Password
-    end,
-
+    Pass = process_password(El, LServer),
     case jid:nodeprep(Name) of
         error ->
             stop("Invalid 'user': ~ts", [Name]);
@@ -420,11 +450,27 @@ process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els},
             case ejabberd_auth:try_register(LUser, LServer, Pass) of
                 ok ->
                     process_user_els(Els, State#state{user = LUser});
-                {error, invalid_password} when (Password == <<>>) ->
+                {error, invalid_password} when (Pass == <<>>) ->
                     process_user_els(Els, State#state{user = LUser});
                 {error, Err} ->
                     stop("Failed to create user '~ts': ~p", [Name, Err])
             end
+    end.
+
+process_password(#xmlel{name = <<"user">>, attrs = Attrs} = El, LServer) ->
+    {PassPlain, PassOldScram} = case fxml:get_attr_s(<<"password">>, Attrs) of
+          <<"scram:", PassData/binary>> -> {<<"">>, PassData};
+          P -> {P, false}
+    end,
+    ScramCred = fxml:get_subtag(El, <<"scram-credentials">>),
+    PasswordFormat = ejabberd_auth:password_format(LServer),
+    case {PassPlain, PassOldScram, ScramCred, PasswordFormat} of
+        {PassPlain, false, false, plain} -> PassPlain;
+        {<<"">>, false, ScramCred, plain} -> parse_scram_password(ScramCred);
+        {<<"">>, PassOldScram, false, plain} -> parse_scram_password(PassOldScram);
+        {PassPlain, false, false, scram} -> PassPlain;
+        {<<"">>, false, ScramCred, scram} -> parse_scram_password(ScramCred);
+        {<<"">>, PassOldScram, false, scram} -> parse_scram_password(PassOldScram)
     end.
 
 process_user_els([#xmlel{} = El|Els], State) ->

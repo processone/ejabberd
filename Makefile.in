@@ -68,12 +68,6 @@ LUADIR = $(PRIVDIR)/lua
 # /var/lib/ejabberd/
 SPOOLDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
 
-# /var/lock/ejabberdctl
-CTLLOCKDIR = $(DESTDIR)@localstatedir@/lock/ejabberdctl
-
-# /var/lib/ejabberd/.erlang.cookie
-COOKIEFILE = $(SPOOLDIR)/.erlang.cookie
-
 # /var/log/ejabberd/
 LOGDIR = $(DESTDIR)@localstatedir@/log/ejabberd
 
@@ -100,8 +94,10 @@ endif
 
 ifeq "$(MIX)" "mix"
 REBAR_VER:=6
+REBAR_VER_318:=0
 else
 REBAR_VER:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print $$2}')
+REBAR_VER_318:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print ($$2 == 3 && $$3 >= 18 ? 1 : 0)}')
 endif
 
 ifeq "$(REBAR_VER)" "6"
@@ -121,7 +117,11 @@ else
 ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
   LISTDEPS=tree
+ifeq "$(REBAR_VER_318)" "1"
+  UPDATEDEPS=upgrade --all
+else
   UPDATEDEPS=upgrade
+endif
   DEPSPATTERN="s/ (.*//; /^ / s/.* \([a-z0-9_]*\).*/\1/p;"
   DEPSBASE=_build
   DEPSDIR=$(DEPSBASE)/default/lib
@@ -249,7 +249,15 @@ $(call TO_DEST,priv/bin/captcha.sh): tools/captcha.sh $(call TO_DEST,priv/bin)
 $(call TO_DEST,priv/lua/redis_sm.lua): priv/lua/redis_sm.lua $(call TO_DEST,priv/lua)
 	$(INSTALL) -m 644 $< $@
 
-copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh priv/sql/lite.sql priv/sql/lite.new.sql priv/lua/redis_sm.lua)
+ifeq (@sqlite@,true)
+SQLITE_FILES = priv/sql/lite.sql priv/sql/lite.new.sql
+endif
+
+ifeq (@redis@,true)
+REDIS_FILES = priv/lua/redis_sm.lua
+endif
+
+copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh $(SQLITE_FILES) $(REDIS_FILES))
 
 .PHONY: $(call TO_DEST,$(DEPS_FILES) $(MAIN_DIRS) $(DEPS_DIRS))
 
@@ -298,7 +306,8 @@ install: copy-files
 	chmod 755 ejabberd.init
 	#
 	# Service script
-	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" ejabberd.service.template \
+	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \
+		-e "s*@installuser@*$(INIT_USER)*g" ejabberd.service.template \
 		> ejabberd.service
 	chmod 644 ejabberd.service
 	#
@@ -306,12 +315,6 @@ install: copy-files
 	$(INSTALL) -d -m 750 $(O_USER) $(SPOOLDIR)
 	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(SPOOLDIR) >$(CHOWN_OUTPUT)
 	chmod -R 750 $(SPOOLDIR)
-	[ ! -f $(COOKIEFILE) ] || { $(CHOWN_COMMAND) @INSTALLUSER@ $(COOKIEFILE) >$(CHOWN_OUTPUT) ; chmod 400 $(COOKIEFILE) ; }
-	#
-	# ejabberdctl lock directory
-	$(INSTALL) -d -m 750 $(O_USER) $(CTLLOCKDIR)
-	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(CTLLOCKDIR) >$(CHOWN_OUTPUT)
-	chmod -R 750 $(CTLLOCKDIR)
 	#
 	# Log directory
 	$(INSTALL) -d -m 750 $(O_USER) $(LOGDIR)
@@ -361,7 +364,6 @@ uninstall-all: uninstall-binary
 	rm -rf $(ETCDIR)
 	rm -rf $(EJABBERDDIR)
 	rm -rf $(SPOOLDIR)
-	rm -rf $(CTLLOCKDIR)
 	rm -rf $(LOGDIR)
 
 clean:

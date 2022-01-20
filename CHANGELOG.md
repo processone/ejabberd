@@ -1,3 +1,50 @@
+# Version 21.12
+
+Commands
+- `create_room_with_opts`: Fixed when using SQL storage
+- `change_room_option`: Add missing fields from config inside `mod_muc_admin:change_options`
+- piefxis: Fixed arguments of all commands
+
+Modules
+- mod_caps: Don't forget caps on XEP-0198 resumption
+- mod_conversejs: New module to serve a simple page for Converse.js
+- mod_http_upload_quota: Avoid `max_days` race
+- mod_muc: Support MUC hats (XEP-0317, conversejs/prosody compatible)
+- mod_muc: Optimize MucSub processing
+- mod_muc: Fix exception in mucsub {un}subscription events multicast handler
+- mod_multicast: Improve and optimize multicast routing code
+- mod_offline: Allow storing non-composing x:events in offline
+- mod_ping: Send ping from server, not bare user JID
+- mod_push: Fix handling of MUC/Sub messages
+- mod_register: New allow_modules option to restrict registration modules
+- mod_register_web: Handle unknown host gracefully
+- mod_register_web: Use mod_register configured restrictions
+
+PubSub
+- Add `delete_expired_pubsub_items` command
+- Add `delete_old_pubsub_items` command
+- Optimize publishing on large nodes (SQL)
+- Support unlimited number of items
+- Support `max_items=max` node configuration
+- Bump default value for `max_items` limit from 10 to 1000
+- Use configured `max_items` by default
+- node_flat: Avoid catch-all clauses for RSM
+- node_flat_sql: Avoid catch-all clauses for RSM
+
+SQL
+- Use `INSERT ... ON CONFLICT` in SQL_UPSERT for PostgreSQL >= 9.5
+- mod_mam export: assign MUC entries to the MUC service
+- MySQL: Fix typo when creating index
+- PgSQL: Add SASL auth support, PostgreSQL 14
+- PgSQL: Add missing SQL migration for table `push_session`
+- PgSQL: Fix `vcard_search` definition in pgsql new schema
+
+Other
+- `captcha-ng.sh`: "sort -R" command not POSIX, added "shuf" and "cat" as fallback
+- Make s2s connection table cleanup more robust
+- Update export/import of scram password to XEP-0227 1.1
+- Update Jose to 1.11.1 (the last in hex.pm correctly versioned)
+
 # Version 21.07
 
 Compilation

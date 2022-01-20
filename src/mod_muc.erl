@@ -69,6 +69,7 @@
 	 get_online_rooms_by_user/3,
 	 can_use_nick/4,
 	 get_subscribed_rooms/2,
+         remove_user/2,
 	 procname/2,
 	 route/1, unhibernate_room/3]).
 
@@ -122,6 +123,8 @@
 start(Host, Opts) ->
     case mod_muc_sup:start(Host) of
 	{ok, _} ->
+            ejabberd_hooks:add(remove_user, Host, ?MODULE,
+                               remove_user, 50),
 	    MyHosts = gen_mod:get_opt_hosts(Opts),
 	    Mod = gen_mod:db_mod(Opts, ?MODULE),
 	    RMod = gen_mod:ram_db_mod(Opts, ?MODULE),
@@ -133,6 +136,8 @@ start(Host, Opts) ->
     end.
 
 stop(Host) ->
+    ejabberd_hooks:delete(remove_user, Host, ?MODULE,
+                          remove_user, 50),
     Proc = mod_muc_sup:procname(Host),
     supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
     supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
@@ -1122,6 +1127,32 @@ count_online_rooms(ServerHost, Host) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     RMod:count_online_rooms(ServerHost, Host).
 
+-spec remove_user(binary(), binary()) -> ok.
+remove_user(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case erlang:function_exported(Mod, remove_user, 2) of
+	true ->
+            Mod:remove_user(LUser, LServer);
+        false ->
+            ok
+    end,
+    JID = jid:make(User, Server),
+    lists:foreach(
+      fun(Host) ->
+              lists:foreach(
+                fun({_, _, Pid}) ->
+                        mod_muc_room:change_item_async(
+                          Pid, JID, affiliation, none, <<"User removed">>),
+                        mod_muc_room:change_item_async(
+                          Pid, JID, role, none, <<"User removed">>)
+                end,
+                get_online_rooms(LServer, Host))
+      end,
+      gen_mod:get_module_opt_hosts(LServer, mod_muc)),
+    ok.
+
 opts_to_binary(Opts) ->
     lists:map(
       fun({title, Title}) ->
@@ -1225,6 +1256,8 @@ mod_opt_type(user_message_shaper) ->
     econf:atom();
 mod_opt_type(user_presence_shaper) ->
     econf:atom();
+mod_opt_type(cleanup_affiliations_on_start) ->
+    econf:bool();
 mod_opt_type(default_room_options) ->
     econf:options(
       #{allow_change_subj => econf:bool(),
@@ -1302,6 +1335,7 @@ mod_options(Host) ->
      {preload_rooms, true},
      {hibernation_timeout, infinity},
      {vcard, undefined},
+     {cleanup_affiliations_on_start, false},
      {default_room_options,
       [{allow_change_subj,true},
        {allow_private_messages,true},
@@ -1580,6 +1614,11 @@ mod_doc() ->
                      "    -",
                      "      work: true",
                      "      street: Elm Street"]}]}},
+           {cleanup_affiliations_on_start,
+            #{value => "true | false",
+              desc =>
+                  ?T("Remove affiliations for non-existing local users on startup. "
+                     "The default value is 'false'.")}},
            {default_room_options,
             #{value => ?T("Options"),
               desc =>

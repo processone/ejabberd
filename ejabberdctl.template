@@ -12,6 +12,8 @@ ERLANG_NODE=ejabberd@localhost
 # define default environment variables
 [ -z "$SCRIPT" ] && SCRIPT=$0
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT")" && pwd -P)"
+# shellcheck disable=SC2034
+ERTS_VSN="{{erts_vsn}}"
 ERL="{{erl}}"
 IEX="{{bindir}}/iex"
 EPMD="{{epmd}}"
@@ -62,6 +64,7 @@ done
 : "${EJABBERDCTL_CONFIG_PATH:="$ETC_DIR/ejabberdctl.cfg"}"
 # Allows passing extra Erlang command-line arguments in vm.args file
 : "${VMARGS:="$ETC_DIR/vm.args"}"
+# shellcheck source=ejabberdctl.cfg.example
 [ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
 [ -n "$ERLANG_NODE_ARG" ] && ERLANG_NODE="$ERLANG_NODE_ARG"
 [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && S="-s"
@@ -81,7 +84,7 @@ if [ -n "$INET_DIST_INTERFACE" ] ; then
 fi
 # if vm.args file exists in config directory, pass it to Erlang VM
 [ -f "$VMARGS" ] && ERLANG_OPTS="$ERLANG_OPTS -args_file $VMARGS"
-ERL_LIBS={{libdir}}
+ERL_LIBS='{{libdir}}'
 ERL_CRASH_DUMP="$LOGS_DIR"/erl_crash_$(date "+%Y%m%d-%H%M%S").dump
 ERL_INETRC="$ETC_DIR"/inetrc
 
@@ -105,6 +108,7 @@ export ERL_MAX_ETS_TABLES
 export CONTRIB_MODULES_PATH
 export CONTRIB_MODULES_CONF_DIR
 export ERL_LIBS
+export SCRIPT_DIR
 
 # run command either directly or via su $INSTALLUSER
 exec_cmd()
@@ -128,14 +132,6 @@ exec_iex()
 # usage
 debugwarning()
 {
-    if [ "$OSTYPE" != "cygwin" ] && [ "$OSTYPE" != "win32" ] ; then
-        if [ "a$TERM" = "a" ] || [ "$TERM" = "dumb" ] ; then
-            echo "Terminal type not supported."
-            echo "You may have to set the TERM environment variable to fix this."
-            exit 8
-        fi
-    fi
-
     if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
         echo "--------------------------------------------------------------------"
         echo ""
@@ -153,7 +149,7 @@ debugwarning()
         echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
         echo "Press return to continue"
-        read -r input
+        read -r _
         echo ""
     fi
 }
@@ -176,7 +172,7 @@ livewarning()
         echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
         echo "Press return to continue"
-        read -r input
+        read -r _
         echo ""
     fi
 }
@@ -206,8 +202,9 @@ help()
 uid()
 {
     uuid=$(uuidgen 2>/dev/null)
+    random=$(awk 'BEGIN { srand(); print int(rand()*32768) }' /dev/null)
     [ -z "$uuid" ] && [ -f /proc/sys/kernel/random/uuid ] && uuid=$(cat /proc/sys/kernel/random/uuid)
-    [ -z "$uuid" ] && uuid=$(printf "%X" "${RANDOM:-$$}$(date +%M%S)")
+    [ -z "$uuid" ] && uuid=$(printf "%X" "${random:-$$}$(date +%M%S)")
     uuid=$(printf '%s' $uuid | sed 's/^\(...\).*$/\1/')
     [ $# -eq 0 ] && echo "${uuid}-${ERLANG_NODE}"
     [ $# -eq 1 ] && echo "${uuid}-${1}-${ERLANG_NODE}"

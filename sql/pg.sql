@@ -320,6 +320,7 @@ CREATE TABLE muc_room_subscribers (
 );
 
 CREATE INDEX i_muc_room_subscribers_host_jid ON muc_room_subscribers USING btree (host, jid);
+CREATE INDEX i_muc_room_subscribers_jid ON muc_room_subscribers USING btree (jid);
 CREATE UNIQUE INDEX i_muc_room_subscribers_host_room_jid ON muc_room_subscribers USING btree (host, room, jid);
 
 CREATE TABLE motd (

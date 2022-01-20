@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 Type=notify
-User=ejabberd
-Group=ejabberd
+User=@installuser@
+Group=@installuser@
 LimitNOFILE=65536
 Restart=on-failure
 RestartSec=5

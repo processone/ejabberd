@@ -51,9 +51,10 @@
 {release, true}.
 {release_dir, "${SCRIPT_DIR%/*}"}.
 {sysconfdir, "{{release_dir}}/etc"}.
+{erts_dir, "{{release_dir}}/erts-${ERTS_VSN#erts-}"}.
 {installuser, "@INSTALLUSER@"}.
-{erl, "{{release_dir}}/{{erts_vsn}}/bin/erl"}.
-{epmd, "{{release_dir}}/{{erts_vsn}}/bin/epmd"}.
+{erl, "{{erts_dir}}/bin/erl"}.
+{epmd, "{{erts_dir}}/bin/epmd"}.
 {localstatedir, "{{release_dir}}/var"}.
 {libdir, "{{release_dir}}/lib"}.
 {docdir, "{{release_dir}}/doc"}.

@@ -1,0 +1,4 @@
+disable=SC2016,SC2086,SC2089,SC2090
+external-sources=true
+source=ejabberdctl.cfg.example
+shell=sh

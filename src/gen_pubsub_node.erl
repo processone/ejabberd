@@ -133,6 +133,10 @@
     {result, {[itemId()], [itemId()]}
 	}.
 
+-callback remove_expired_items(NodeIdx :: nodeIdx(),
+	Seconds :: infinity | non_neg_integer()) ->
+    {result, [itemId()]}.
+
 -callback get_node_affiliations(NodeIdx :: nodeIdx()) ->
     {result, [{ljid(), affiliation()}]}.
 

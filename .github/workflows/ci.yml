@@ -25,12 +25,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['19.3', '24.0']
+        otp: ['19.3', '24']
         include:
         - otp: '19.3'
           rebar: 2
           os: ubuntu-18.04
-        - otp: '24.0'
+        - otp: '24'
           rebar: 3
           os: ubuntu-20.04
     runs-on: ${{ matrix.os }}
@@ -44,9 +44,17 @@ jobs:
 
     - uses: actions/checkout@v2
 
+    - name: Test shell scripts
+      if: matrix.otp == 24
+      run: |
+        shellcheck test/ejabberd_SUITE_data/gencerts.sh
+        shellcheck tools/captcha.sh
+        shellcheck ejabberd.init.template
+        shellcheck -x ejabberdctl.template
+
     - name: Get previous Erlang/OTP
       uses: ErlGang/setup-erlang@master
-      if: matrix.otp != 24.0
+      if: matrix.otp != 24
       with:
         otp-version: ${{ matrix.otp }}
 
@@ -81,7 +89,6 @@ jobs:
                                  libsqlite3-dev libwebp-dev libyaml-dev
 
     - name: Prepare rebar
-      id: rebar
       run: |
         echo '{xref_ignores, [{eldap_filter_yecc, return_error, 2}
                              ]}.' >>rebar.config
@@ -93,23 +100,26 @@ jobs:
               mqtree, p1_acme, p1_mysql, p1_oauth2, p1_pgsql, p1_utils, pkix,
               sqlite3, stringprep, stun, xmpp, yconf]} ]}.' >>rebar.config
         echo '{ct_extra_params, "-verbosity 20"}.' >>rebar.config
+        echo "{ct_opts, [{verbosity, 20}, {keep_logs, 20}]}." >>rebar.config
 
-    - name: Cache rebar2
-      if: matrix.rebar == 2
+    - name: Cache rebar
       uses: actions/cache@v2
       with:
         path: |
           deps/
           dialyzer/
           ebin/
+          ~/.cache/rebar3/
         key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
 
-    - name: Cache rebar3
-      if: matrix.rebar == 3
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/rebar3/
-        key: ${{matrix.otp}}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
+    - name: Download test logs
+      if: matrix.otp == 24 && github.repository == 'processone/ejabberd'
+      continue-on-error: true
+      run: |
+        mkdir -p _build/test
+        curl -sSL https://github.com/processone/ecil/tarball/gh-pages |
+          tar -C _build/test --strip-components=1 --wildcards -xzf -
+        rm -rf _build/test/logs/last/
 
     - name: Compile
       run: |
@@ -128,52 +138,111 @@ jobs:
     - run: make hooks
     - run: make options
     - run: make xref
-    - run: make dialyzer
-    - run: make test
+    - run: |
+        make dialyzer
+        [ ${{ matrix.rebar }} = 3 ] && true \
+          || { cat dialyzer/error.log ; test ! -s dialyzer/error.log ; }
+
+    - name: Run tests
+      if: matrix.otp != 24
+      run: make test
+    - name: Run tests (OTP 24)
+      if: matrix.otp == 24
+      id: ct
+      run: |
+        (cd priv && ln -sf ../sql)
+        COMMIT=`echo $GITHUB_SHA | cut -c 1-7`
+        DATE=`date +%s`
+        REF_NAME=`echo $GITHUB_REF_NAME | tr "/" "_"`
+        NODENAME=$DATE@$GITHUB_RUN_NUMBER-$GITHUB_ACTOR-$REF_NAME-$COMMIT
+        LABEL=`git show -s --format=%s | cut -c 1-30`
+        rebar3 ct --name $NODENAME --label "$LABEL"
+        rebar3 cover
 
     - name: Check results
       if: always()
       run: |
-        [[ -d _build ]] && ln -s _build/test/logs/ logs \
-                        && ln `find _build/ -name "*dialyzer_warnings"` \
-                              logs/dialyzer.log \
-                        || ln dialyzer/error.log logs/dialyzer.log
+        [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
         ln `find logs/ -name suite.log` logs/suite.log
         grep 'TEST COMPLETE' logs/suite.log
         grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
         test $(find logs/ -empty -name error.log)
 
-    - name: View dialyzer report
-      run: cat logs/dialyzer.log
-
-    - name: View full suite.log
-      run: cat logs/suite.log
-
-    - name: View suite.log failures
+    - name: View logs failures
       if: failure()
-      run: cat logs/suite.log | awk
-           'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
-
-    - name: View full ejabberd.log
-      if: failure()
-      run: find logs/ -name ejabberd.log -exec cat '{}' ';'
-
-    - name: View exunit.log
-      if: failure()
-      run: find logs/ -name exunit.log -exec cat '{}' ';'
+      run: |
+        cat logs/suite.log | awk \
+          'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+        find logs/ -name error.log -exec cat '{}' ';'
+        find logs/ -name exunit.log -exec cat '{}' ';'
 
     - name: Send to coveralls
-      if: matrix.otp == 24.0
+      if: matrix.otp == 24
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        rebar3 as test coveralls send
+        DIAGNOSTIC=1 rebar3 as test coveralls send
         curl -v -k https://coveralls.io/webhook \
              --header "Content-Type: application/json" \
              --data '{"repo_name":"$GITHUB_REPOSITORY",
                       "repo_token":"$GITHUB_TOKEN",
                       "payload":{"build_num":$GITHUB_RUN_ID,
                                  "status":"done"}}'
+
+    - name: Upload test logs
+      if: always() && steps.ct.outcome == 'failure' && github.repository == 'processone/ejabberd'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        publish_dir: _build/test
+        exclude_assets: '.github,lib,plugins'
+        external_repository: processone/ecil
+        deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+        keep_files: true
+
+    - name: View ECIL address
+      if: always() && steps.ct.outcome == 'failure' && github.repository == 'processone/ejabberd'
+      run: |
+        CTRUN=`ls -la _build/test/logs/last | sed 's|.*-> ||'`
+        echo "::notice::View CT results: https://processone.github.io/ecil/logs/$CTRUN/"
+
+    - name: Prepare new schema
+      run: |
+        [[ -d logs ]] && rm -rf logs
+        [[ -d _build/test/logs ]] && rm -rf _build/test/logs || true
+        mysql -u root -proot -e "DROP DATABASE ejabberd_test;"
+        sudo -u postgres psql -c "DROP DATABASE ejabberd_test;"
+        mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
+        mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
+                                 TO 'ejabberd_test'@'localhost';"
+        mysql -u root -proot ejabberd_test < sql/mysql.new.sql
+        sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -f sql/pg.new.sql
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES
+                                  ON DATABASE ejabberd_test TO ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
+                                                TABLES IN SCHEMA public
+                                                TO ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
+                                                SEQUENCES IN SCHEMA public
+                                                TO ejabberd_test;"
+        sudo sed -i 's|new_schema, false|new_schema, true|g' test/suite.erl
+    - run: CT_BACKENDS=mysql,pgsql make test
+      id: ctnewschema
+    - name: Check results
+      if: always() && steps.ctnewschema.outcome != 'skipped'
+      run: |
+        [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
+        ln `find logs/ -name suite.log` logs/suite.log
+        grep 'TEST COMPLETE' logs/suite.log
+        grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
+        test $(find logs/ -empty -name error.log)
+    - name: View logs failures
+      if: failure() && steps.ctnewschema.outcome != 'skipped'
+      run: |
+        cat logs/suite.log | awk \
+          'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+        find logs/ -name error.log -exec cat '{}' ';'
+        find logs/ -name exunit.log -exec cat '{}' ';'
 
   binaries:
     name: Binaries

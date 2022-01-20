@@ -311,7 +311,7 @@ CREATE TABLE vcard_search (
     lorgname text NOT NULL,
     orgunit text NOT NULL,
     lorgunit text NOT NULL,
-    PRIMARY KEY (server_host, username)
+    PRIMARY KEY (server_host, lusername)
 );
 
 CREATE INDEX i_vcard_search_sh_lfn       ON vcard_search(server_host, lfn);
@@ -495,6 +495,7 @@ CREATE TABLE muc_room_subscribers (
 );
 
 CREATE INDEX i_muc_room_subscribers_host_jid ON muc_room_subscribers USING btree (host, jid);
+CREATE INDEX i_muc_room_subscribers_jid ON muc_room_subscribers USING btree (jid);
 CREATE UNIQUE INDEX i_muc_room_subscribers_host_room_jid ON muc_room_subscribers USING btree (host, room, jid);
 
 CREATE TABLE motd (

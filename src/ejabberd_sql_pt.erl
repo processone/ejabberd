@@ -564,15 +564,23 @@ make_sql_upsert(Table, ParseRes, Pos) ->
                            []
                    end,
     erl_syntax:fun_expr(
-        [erl_syntax:clause(
-            [erl_syntax:atom(pgsql), erl_syntax:variable("__Version")],
-            [erl_syntax:infix_expr(
-                erl_syntax:variable("__Version"),
-                erl_syntax:operator('>='),
-                erl_syntax:integer(90100))],
-            [make_sql_upsert_pgsql901(Table, ParseRes),
-             erl_syntax:atom(ok)])] ++
-            MySqlReplace ++
+      [erl_syntax:clause(
+         [erl_syntax:atom(pgsql), erl_syntax:variable("__Version")],
+         [erl_syntax:infix_expr(
+            erl_syntax:variable("__Version"),
+            erl_syntax:operator('>='),
+            erl_syntax:integer(90500))],
+         [make_sql_upsert_pgsql905(Table, ParseRes),
+          erl_syntax:atom(ok)]),
+       erl_syntax:clause(
+         [erl_syntax:atom(pgsql), erl_syntax:variable("__Version")],
+         [erl_syntax:infix_expr(
+            erl_syntax:variable("__Version"),
+            erl_syntax:operator('>='),
+            erl_syntax:integer(90100))],
+         [make_sql_upsert_pgsql901(Table, ParseRes),
+          erl_syntax:atom(ok)])] ++
+          MySqlReplace ++
             [erl_syntax:clause(
                 [erl_syntax:underscore(), erl_syntax:underscore()],
                 none,
@@ -706,6 +714,57 @@ make_sql_upsert_pgsql901(Table, ParseRes0) ->
            Update,
            #state{'query' = [{str, " RETURNING *) "}]},
            Insert
+          ]),
+    Upsert = make_sql_query(State),
+    erl_syntax:application(
+      erl_syntax:atom(ejabberd_sql),
+      erl_syntax:atom(sql_query_t),
+      [Upsert]).
+
+make_sql_upsert_pgsql905(Table, ParseRes0) ->
+    ParseRes = lists:map(
+        fun({"family", A2, A3}) -> {"\"family\"", A2, A3};
+           (Other) -> Other
+        end, ParseRes0),
+    Vals =
+        lists:map(
+          fun({_Field, _, ST}) ->
+                  ST
+          end, ParseRes),
+    Fields =
+        lists:map(
+          fun({Field, _, _ST}) ->
+                  #state{'query' = [{str, Field}]}
+          end, ParseRes),
+    SPairs =
+        lists:flatmap(
+          fun({_Field, key, _ST}) ->
+                  [];
+             ({_Field, {false}, _ST}) ->
+                  [];
+             ({Field, {true}, ST}) ->
+                  [ST#state{
+                     'query' = [{str, Field}, {str, "="}] ++ ST#state.'query'
+                    }]
+          end, ParseRes),
+    Set = join_states(SPairs, ", "),
+    KeyFields =
+        lists:flatmap(
+          fun({Field, key, _ST}) ->
+                  [#state{'query' = [{str, Field}]}];
+             ({_Field, _, _ST}) ->
+                  []
+          end, ParseRes),
+    State =
+        concat_states(
+          [#state{'query' = [{str, "INSERT INTO "}, {str, Table}, {str, "("}]},
+           join_states(Fields, ", "),
+           #state{'query' = [{str, ") VALUES ("}]},
+           join_states(Vals, ", "),
+           #state{'query' = [{str, ") ON CONFLICT ("}]},
+           join_states(KeyFields, ", "),
+           #state{'query' = [{str, ") DO UPDATE SET "}]},
+           Set
           ]),
     Upsert = make_sql_query(State),
     erl_syntax:application(

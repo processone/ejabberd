@@ -40,7 +40,7 @@
     create_node_permission/6, create_node/2, delete_node/1,
     purge_node/2, subscribe_node/8, unsubscribe_node/4,
     publish_item/7, delete_item/4,
-    remove_extra_items/2, remove_extra_items/3,
+    remove_extra_items/2, remove_extra_items/3, remove_expired_items/2,
     get_entity_affiliations/2, get_node_affiliations/1,
     get_affiliation/2, set_affiliation/3,
     get_entity_subscriptions/2, get_node_subscriptions/1,
@@ -431,6 +431,22 @@ remove_extra_items(Nidx, MaxItems, ItemIds) ->
     OldItems = lists:nthtail(length(NewItems), ItemIds),
     del_items(Nidx, OldItems),
     {result, {NewItems, OldItems}}.
+
+remove_expired_items(_Nidx, infinity) ->
+    {result, []};
+remove_expired_items(Nidx, Seconds) ->
+    Items = mnesia:index_read(pubsub_item, Nidx, #pubsub_item.nodeidx),
+    ExpT = misc:usec_to_now(
+	     erlang:system_time(microsecond) - (Seconds * 1000000)),
+    ExpItems = lists:filtermap(
+		 fun(#pubsub_item{itemid = {ItemId, _},
+				  modification = {ModT, _}}) when ModT < ExpT ->
+			 {true, ItemId};
+		    (#pubsub_item{}) ->
+			 false
+		 end, Items),
+    del_items(Nidx, ExpItems),
+    {result, ExpItems}.
 
 %% @doc <p>Triggers item deletion.</p>
 %% <p>Default plugin: The user performing the deletion must be the node owner

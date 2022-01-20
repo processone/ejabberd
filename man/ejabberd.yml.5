@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 07/21/2021
+.\"      Date: 12/08/2021
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "07/21/2021" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "12/08/2021" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,7 +82,7 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/21\&.07/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/21\&.12/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
@@ -316,14 +316,46 @@ means that the same username can be taken multiple times in anonymous login mode
 .PP
 \fBanonymous_protocol\fR: \fIlogin_anon | sasl_anon | both\fR
 .RS 4
+Define what anonymous protocol will be used:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 \fIlogin_anon\fR
 means that the anonymous login method will be used\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 \fIsasl_anon\fR
 means that the SASL Anonymous method will be used\&.
-\fIboth\fR
-means that SASL Anonymous and login anonymous are both enabled\&. The default value is
-\fIsasl_anon\fR\&.
 .RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIboth\fR
+means that SASL Anonymous and login anonymous are both enabled\&.
+.RE
+.RE
+.sp
+The default value is \fIsasl_anon\fR\&.
 .PP
 \fBapi_permissions\fR: \fI[Permission, \&.\&.\&.]\fR
 .RS 4
@@ -375,7 +407,7 @@ A list of authentication methods to use\&. If several methods are defined, authe
 This is used by the contributed module
 \fIejabberd_auth_http\fR
 that can be installed from the
-\fIejabberd\-contrib\fR
+ejabberd\-contrib
 Git repository\&. Please refer to that module\(cqs README file for details\&.
 .RE
 .sp
@@ -383,14 +415,36 @@ Git repository\&. Please refer to that module\(cqs README file for details\&.
 .PP
 \fBauth_password_format\fR: \fIplain | scram\fR
 .RS 4
-The option defines in what format the users passwords are stored\&.
+The option defines in what format the users passwords are stored:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 \fIplain\fR: The password is stored as plain text in the database\&. This is risky because the passwords can be read if your database gets compromised\&. This is the default value\&. This format allows clients to authenticate using: the old Jabber Non\-SASL (XEP\-0078), SASL PLAIN, SASL DIGEST\-MD5, and SASL SCRAM\-SHA\-1\&.
-\fIscram\fR: The password is not stored, only some information that allows to verify the hash provided by the client\&. It is impossible to obtain the original plain password from the stored information; for this reason, when this value is configured it cannot be changed to plain anymore\&. This format allows clients to authenticate using: SASL PLAIN and SASL SCRAM\-SHA\-1\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIscram\fR: The password is not stored, only some information that allows to verify the hash provided by the client\&. It is impossible to obtain the original plain password from the stored information; for this reason, when this value is configured it cannot be changed to plain anymore\&. This format allows clients to authenticate using: SASL PLAIN and SASL SCRAM\-SHA\-1\&. The default value is
+\fIplain\fR\&.
+.RE
 .RE
 .PP
 \fBauth_scram_hash\fR: \fIsha | sha256 | sha512\fR
 .RS 4
-Hash algorith that should be used to store password in SCRAM format\&. You shouldn\(cqt change this if you already have passwords generated with a different algorithm \- users that have such passwords will not be able to authenticate\&.
+Hash algorith that should be used to store password in SCRAM format\&. You shouldn\(cqt change this if you already have passwords generated with a different algorithm \- users that have such passwords will not be able to authenticate\&. The default value is
+\fIsha\fR\&.
 .RE
 .PP
 \fBauth_use_cache\fR: \fItrue | false\fR
@@ -476,7 +530,7 @@ For server conections, this \fIca_file\fR option is overriden by the s2s_cafile 
 \fBcache_life_time\fR: \fItimeout()\fR
 .RS 4
 The time of a cached item to keep in cache\&. Once it\(cqs expired, the corresponding item is erased from cache\&. The default value is
-\fIone hour\fR\&. Several modules have a similar option; and some core ejabberd parts support similar options too, see
+\fI1 hour\fR\&. Several modules have a similar option; and some core ejabberd parts support similar options too, see
 \fIauth_cache_life_time\fR,
 \fIoauth_cache_life_time\fR,
 \fIrouter_cache_life_time\fR, and
@@ -507,7 +561,9 @@ A maximum number of items (not memory!) in cache\&. The rule of thumb, for all t
 .PP
 \fBcaptcha_cmd\fR: \fIPath\fR
 .RS 4
-Full path to a script that generates CAPTCHA images\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
+Full path to a script that generates
+CAPTCHA
+images\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
 .RE
 .PP
 \fBcaptcha_host\fR: \fIString\fR
@@ -519,13 +575,17 @@ instead\&.
 .PP
 \fBcaptcha_limit\fR: \fIpos_integer() | infinity\fR
 .RS 4
-Maximum number of CAPTCHA generated images per minute for any given JID\&. The option is intended to protect the server from CAPTCHA DoS\&. The default value is
+Maximum number of
+CAPTCHA
+generated images per minute for any given JID\&. The option is intended to protect the server from CAPTCHA DoS\&. The default value is
 \fIinfinity\fR\&.
 .RE
 .PP
 \fBcaptcha_url\fR: \fIURL\fR
 .RS 4
-An URL where CAPTCHA requests should be sent\&. NOTE: you need to configure
+An URL where
+CAPTCHA
+requests should be sent\&. NOTE: you need to configure
 \fIrequest_handlers\fR
 for
 \fIejabberd_http\fR
@@ -815,7 +875,8 @@ Path to the file that contains the JWK Key\&. The default value is
 .RS 4
 The option defines the default language of server strings that can be seen by XMPP clients\&. If an XMPP client does not possess
 \fIxml:lang\fR
-attribute, the specified language is used\&.
+attribute, the specified language is used\&. The default value is
+\fI"en"\fR\&.
 .RE
 .PP
 \fBldap_backups\fR: \fI[Host, \&.\&.\&.]\fR
@@ -948,7 +1009,11 @@ section for details\&.
 \fBlog_rotate_count\fR: \fINumber\fR
 .RS 4
 The number of rotated log files to keep\&. The default value is
-\fI1\fR\&.
+\fI1\fR, which means that only keeps
+ejabberd\&.log\&.0,
+error\&.log\&.0
+and
+crash\&.log\&.0\&.
 .RE
 .PP
 \fBlog_rotate_size\fR: \fIpos_integer() | infinity\fR
@@ -989,8 +1054,7 @@ seconds\&.
 .RS 4
 This option can be used to tune tick time parameter of
 \fInet_kernel\fR\&. It tells Erlang VM how often nodes should check if intra\-node communication was not interrupted\&. This option must have identical value on all nodes, or it will lead to subtle bugs\&. Usually leaving default value of this is option is best, tweak it only if you know what you are doing\&. The default value is
-\fI1\fR
-minute\&.
+\fI1 minute\fR\&.
 .RE
 .PP
 \fBnew_sql_schema\fR: \fItrue | false\fR
@@ -998,7 +1062,7 @@ minute\&.
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/21\&.07/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/21\&.12/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1392,8 +1456,7 @@ if the latter is not set\&.
 \fBs2s_timeout\fR: \fItimeout()\fR
 .RS 4
 A time to wait before closing an idle s2s connection\&. The default value is
-\fI10\fR
-minutes\&.
+\fI10 minutes\fR\&.
 .RE
 .PP
 \fBs2s_tls_compression\fR: \fItrue | false\fR
@@ -1795,24 +1858,7 @@ Details for some commands:
 \fIsrg\-create\fR: If you want to put a group Name with blankspaces, use the characters "\*(Aq and \*(Aq" to define when the Name starts and ends\&. See an example below\&.
 .RE
 .sp
-.it 1 an-trap
-.nr an-no-space-flag 1
-.nr an-break-flag 1
-.br
-.ps +1
-\fBAvailable options:\fR
-.RS 4
-.PP
-\fBmodule_resource\fR: \fIResource\fR
-.RS 4
-Indicate the resource that the XMPP stanzas must use in the FROM or TO JIDs\&. This is only useful in the
-\fIget_vcard*\fR
-and
-\fIset_vcard*\fR
-commands\&. The default value is
-\fImod_admin_extra\fR\&.
-.RE
-.RE
+The module has no options\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -1835,8 +1881,7 @@ access_rules:
   vcard_set:
     \- allow: adminextraresource
 modules:
-  mod_admin_extra:
-    module_resource: "modadminextraf8x,31ad"
+  mod_admin_extra: {}
   mod_vcard:
     access_set: vcard_set
 .fi
@@ -1884,7 +1929,7 @@ ejabberdctl srg\-create g1 example\&.org "\*(AqGroup number 1\*(Aq" this_is_g1 g
 .RE
 .SS "mod_admin_update_sql"
 .sp
-This module can be used to update existing SQL database from the default to the new schema\&. Check the section Default and New Schemas for details\&. Please note that only PostgreSQL is supported\&. When the module is loaded use \fIupdate_sql\fR ejabberdctl command\&.
+This module can be used to update existing SQL database from the default to the new schema\&. Check the section Default and New Schemas for details\&. Please note that only PostgreSQL is supported\&. When the module is loaded use \fIupdate_sql\fR API\&.
 .sp
 The module has no options\&.
 .SS "mod_announce"
@@ -2321,6 +2366,78 @@ While a client is inactive, queue presence stanzas that indicate (un)availabilit
 The module provides server configuration functionality via XEP\-0050: Ad\-Hoc Commands\&. This module requires \fImod_adhoc\fR to be loaded\&.
 .sp
 The module has no options\&.
+.SS "mod_conversejs"
+.sp
+This module serves a simple page for the Converse XMPP web browser client\&.
+.sp
+To use this module, in addition to adding it to the \fImodules\fR section, you must also enable it in \fIlisten\fR → \fIejabberd_http\fR → request_handlers\&.
+.sp
+You must also setup either the option \fIwebsocket_url\fR or \fIbosh_service_url\fR\&.
+.sp
+By default, the options \fIconversejs_css\fR and \fIconversejs_script\fR point to the public Converse\&.js client\&. Alternatively, you can host the client locally using \fImod_http_fileserver\fR\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBbosh_service_url\fR: \fIBoshURL\fR
+.RS 4
+BOSH service URL to which Converse\&.js can connect to\&.
+.RE
+.PP
+\fBconversejs_css\fR: \fIURL\fR
+.RS 4
+Converse\&.js CSS URL\&.
+.RE
+.PP
+\fBconversejs_script\fR: \fIURL\fR
+.RS 4
+Converse\&.js main script URL\&.
+.RE
+.PP
+\fBdefault_domain\fR: \fIDomain\fR
+.RS 4
+Specify a domain to act as the default for user JIDs\&. The default value is the first domain defined in the ejabberd configuration file\&.
+.RE
+.PP
+\fBwebsocket_url\fR: \fIWebsocketURL\fR
+.RS 4
+A websocket URL to which Converse\&.js can connect to\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+listen:
+  \-
+    port: 5280
+    module: ejabberd_http
+    request_handlers:
+      /websocket: ejabberd_http_ws
+      /conversejs: mod_conversejs
+
+modules:
+  mod_conversejs:
+    websocket_url: "ws://example\&.org:5280/websocket"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SS "mod_delegation"
 .sp
 This module is an implementation of XEP\-0355: Namespace Delegation\&. Only admin mode has been implemented by now\&. Namespace delegation allows external services to handle IQ using specific namespace\&. This may be applied for external PEP service\&.
@@ -2479,11 +2596,11 @@ server_info:
   \-
     modules: all
     name: abuse\-addresses
-    urls: [mailto:abuse@shakespeare\&.lit]
+    urls: ["mailto:abuse@shakespeare\&.lit"]
   \-
     modules: [mod_muc]
     name: "Web chatroom logs"
-    urls: [http://www\&.example\&.org/muc\-logs]
+    urls: ["http://www\&.example\&.org/muc\-logs"]
   \-
     modules: [mod_disco]
     name: feedback\-addresses
@@ -2563,13 +2680,40 @@ The number of C2S authentication failures to trigger the IP ban\&. The default v
 .sp
 This module provides a ReST API to call ejabberd commands using JSON data\&.
 .sp
-To use this module, in addition to adding it to the \fImodules\fR section, you must also add it to \fIrequest_handlers\fR of some listener\&.
+To use this module, in addition to adding it to the \fImodules\fR section, you must also enable it in \fIlisten\fR → \fIejabberd_http\fR → request_handlers\&.
 .sp
 To use a specific API version N, when defining the URL path in the request_handlers, add a \fIvN\fR\&. For example: \fI/api/v2: mod_http_api\fR
 .sp
 To run a command, send a POST request to the corresponding URL: \fIhttp://localhost:5280/api/<command_name>\fR
 .sp
 The module has no options\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+listen:
+  \-
+    port: 5280
+    module: ejabberd_http
+    request_handlers:
+      /api: mod_http_api
+
+modules:
+  mod_http_api: {}
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SS "mod_http_fileserver"
 .sp
 This simple module serves files from the local disk over HTTP\&.
@@ -2697,7 +2841,7 @@ modules:
 .sp
 This module allows for requesting permissions to upload a file via HTTP as described in XEP\-0363: HTTP File Upload\&. If the request is accepted, the client receives a URL for uploading the file and another URL from which that file can later be downloaded\&.
 .sp
-In order to use this module, it must be configured as a \fIrequest_handler\fR for \fIejabberd_http\fR listener\&.
+In order to use this module, it must be enabled in \fIlisten\fR → \fIejabberd_http\fR → request_handlers\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -2746,7 +2890,9 @@ This option defines the permission bits of uploaded files\&. The bits are specif
 .PP
 \fBget_url\fR: \fIURL\fR
 .RS 4
-This option specifies the initial part of the GET URLs used for downloading the files\&. By default, it is set to the same value as
+This option specifies the initial part of the GET URLs used for downloading the files\&. The default value is
+\fIundefined\fR\&. When this option is
+\fIundefined\fR, this option is set to the same value as
 \fIput_url\fR\&. The keyword @HOST@ is replaced with the virtual host name\&. NOTE: if GET requests are handled by
 \fImod_http_upload\fR, the
 \fIget_url\fR
@@ -2795,7 +2941,7 @@ A name of the service in the Service Discovery\&. This will only be displayed by
 .PP
 \fBput_url\fR: \fIURL\fR
 .RS 4
-This option specifies the initial part of the PUT URLs used for file uploads\&. The keyword @HOST@ is replaced with the virtual host name\&. NOTE: different virtual hosts cannot use the same PUT URL\&. The default value is "https://@HOST@:5443"\&.
+This option specifies the initial part of the PUT URLs used for file uploads\&. The keyword @HOST@ is replaced with the virtual host name\&. NOTE: different virtual hosts cannot use the same PUT URL\&. The default value is "https://@HOST@:5443/upload"\&.
 .RE
 .PP
 \fBrm_on_unregister\fR: \fItrue | false\fR
@@ -3530,21 +3676,24 @@ This option specifies who is allowed to administrate the Multi\-User Chat servic
 .PP
 \fBaccess_create\fR: \fIAccessName\fR
 .RS 4
-To configure who is allowed to create new rooms at the Multi\-User Chat service, this option can be used\&. By default any account in the local ejabberd server is allowed to create rooms\&.
+To configure who is allowed to create new rooms at the Multi\-User Chat service, this option can be used\&. The default value is
+\fIall\fR, which means everyone is allowed to create rooms\&.
 .RE
 .PP
 \fBaccess_mam\fR: \fIAccessName\fR
 .RS 4
 To configure who is allowed to modify the
 \fImam\fR
-room option\&. By default any account in the local ejabberd server is allowed to modify that option\&.
+room option\&. The default value is
+\fIall\fR, which means everyone is allowed to modify that option\&.
 .RE
 .PP
 \fBaccess_persistent\fR: \fIAccessName\fR
 .RS 4
 To configure who is allowed to modify the
 \fIpersistent\fR
-room option\&. By default any account in the local ejabberd server is allowed to modify that option\&.
+room option\&. The default value is
+\fIall\fR, which means everyone is allowed to modify that option\&.
 .RE
 .PP
 \fBaccess_register\fR: \fIAccessName\fR
@@ -3825,7 +3974,8 @@ This option defines the number of service admins or room owners allowed to enter
 .PP
 \fBmax_users_presence\fR: \fINumber\fR
 .RS 4
-This option defines after how many users in the room, it is considered overcrowded\&. When a MUC room is considered overcrowed, presence broadcasts are limited to reduce load, traffic and excessive presence "storm" received by participants\&.
+This option defines after how many users in the room, it is considered overcrowded\&. When a MUC room is considered overcrowed, presence broadcasts are limited to reduce load, traffic and excessive presence "storm" received by participants\&. The default value is
+\fI1000\fR\&.
 .RE
 .PP
 \fBmin_message_interval\fR: \fINumber\fR
@@ -4498,8 +4648,7 @@ This module implements support for XEP\-0199: XMPP Ping and periodic keepalives\
 \fBping_ack_timeout\fR: \fItimeout()\fR
 .RS 4
 How long to wait before deeming that a client has not answered a given server ping request\&. The default value is
-\fI32\fR
-seconds\&.
+\fIundefined\fR\&.
 .RE
 .PP
 \fBping_interval\fR: \fItimeout()\fR
@@ -4531,7 +4680,7 @@ means destroying the underlying connection,
 \fInone\fR
 means to do nothing\&. NOTE: when
 \fImod_stream_mgmt\fR
-module is loaded and stream management is enabled by a client, killing the client connection doesn\(cqt mean killing the client session \- the session will be kept alive in order to give the client a chance to resume it\&. The default value is
+is loaded and stream management is enabled by a client, killing the client connection doesn\(cqt mean killing the client session \- the session will be kept alive in order to give the client a chance to resume it\&. The default value is
 \fInone\fR\&.
 .RE
 .RE
@@ -5136,10 +5285,16 @@ or
 \fIfalse\fR\&. If not defined, pubsub does not cache last items\&. On systems with not so many nodes, caching last items speeds up pubsub and allows to raise user connection rate\&. The cost is memory usage, as every item is stored in memory\&.
 .RE
 .PP
-\fBmax_items_node\fR: \fIMaxItems\fR
+\fBmax_item_expire_node\fR: \fItimeout() | infinity\fR
+.RS 4
+Specify the maximum item epiry time\&. Default value is:
+\fIinfinity\fR\&.
+.RE
+.PP
+\fBmax_items_node\fR: \fInon_neg_integer() | infinity\fR
 .RS 4
 Define the maximum number of items that can be stored in a node\&. Default value is:
-\fI10\fR\&.
+\fI1000\fR\&.
 .RE
 .PP
 \fBmax_nodes_discoitems\fR: \fIpos_integer() | infinity\fR
@@ -5437,9 +5592,9 @@ The module depends on \fImod_push\fR\&.
 .PP
 \fBresume_timeout\fR: \fItimeout()\fR
 .RS 4
-This option specifies the period of time until the session of a disconnected push client times out\&. This timeout is only in effect as long as no push notification is issued\&. Once that happened, the resumption timeout configured for the
+This option specifies the period of time until the session of a disconnected push client times out\&. This timeout is only in effect as long as no push notification is issued\&. Once that happened, the resumption timeout configured for
 \fImod_stream_mgmt\fR
-module is restored\&. The default value is
+is restored\&. The default value is
 \fI72\fR
 hours\&.
 .RE
@@ -5499,7 +5654,7 @@ Change the password from an existing account on the server\&.
 Delete an existing account on the server\&.
 .RE
 .sp
-This module reads also another option defined globally for the server: \fIregistration_timeout\fR\&. Please check that option documentation in the section with top\-level options\&.
+This module reads also the top\-level \fIregistration_timeout\fR option defined globally for the server, so please check that option documentation too\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -5528,11 +5683,18 @@ doesn\(cqt allow to register new accounts from s2s or existing c2s sessions\&. Y
 Specify rules to restrict access for user unregistration\&. By default any user is able to unregister their account\&.
 .RE
 .PP
+\fBallow_modules\fR: \fIall | [Module, \&.\&.\&.]\fR
+.RS 4
+List of modules that can register accounts, or
+\fIall\fR\&. The default value is
+\fIall\fR, which is equivalent to something like
+\fI[mod_register, mod_register_web]\fR\&.
+.RE
+.PP
 \fBcaptcha_protected\fR: \fItrue | false\fR
 .RS 4
-Protect registrations with CAPTCHA (see section
-CAPTCHA
-of the Configuration Guide)\&. The default is
+Protect registrations with
+CAPTCHA\&. The default is
 \fIfalse\fR\&.
 .RE
 .PP
@@ -5551,7 +5713,8 @@ This option sets the minimum
 Shannon entropy
 for passwords\&. The value
 \fIEntropy\fR
-is a number of bits of entropy\&. The recommended minimum is 32 bits\&. The default is 0, i\&.e\&. no checks are performed\&.
+is a number of bits of entropy\&. The recommended minimum is 32 bits\&. The default is
+\fI0\fR, i\&.e\&. no checks are performed\&.
 .RE
 .PP
 \fBredirect_url\fR: \fIURL\fR
@@ -5610,13 +5773,40 @@ Change the password from an existing account on the server\&.
 Unregister an existing account on the server\&.
 .RE
 .sp
-This module supports CAPTCHA image to register a new account\&. To enable this feature, configure the options \fIcaptcha_cmd\fR and \fIcaptcha_url\fR, which are documented in the section with top\-level options\&.
+This module supports CAPTCHA to register a new account\&. To enable this feature, configure the top\-level \fIcaptcha_cmd\fR and top\-level \fIcaptcha_url\fR options\&.
 .sp
-As an example usage, the users of the host \fIexample\&.org\fR can visit the page: \fIhttps://example\&.org:5281/register/\fR It is important to include the last / character in the URL, otherwise the subpages URL will be incorrect\&.
+As an example usage, the users of the host \fIlocalhost\fR can visit the page: \fIhttps://localhost:5280/register/\fR It is important to include the last / character in the URL, otherwise the subpages URL will be incorrect\&.
 .sp
-The module depends on \fImod_register\fR where all the configuration is performed\&.
+This module is enabled in \fIlisten\fR → \fIejabberd_http\fR → request_handlers, no need to enable in \fImodules\fR\&. The module depends on \fImod_register\fR where all the configuration is performed\&.
 .sp
 The module has no options\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+listen:
+  \-
+    port: 5280
+    module: ejabberd_http
+    request_handlers:
+      /register: mod_register_web
+
+modules:
+  mod_register: {}
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SS "mod_roster"
 .sp
 This module implements roster management as defined in RFC6121 Section 2\&. The module also adds support for XEP\-0237: Roster Versioning\&.
@@ -5910,8 +6100,9 @@ option, but applied to this module only\&.
 .PP
 \fBdb_type\fR: \fImnesia | sql\fR
 .RS 4
-Define the type of storage where the module will create the tables and store user information\&. The default is the storage defined by the global option
-\fIdefault_db\fR, or
+Define the type of storage where the module will create the tables and store user information\&. The default is the storage defined by the top\-level
+\fIdefault_db\fR
+option, or
 \fImnesia\fR
 if omitted\&. If
 \fIsql\fR
@@ -6521,7 +6712,8 @@ minute\&.
 .RS 4
 Same as top\-level
 \fIcache_life_time\fR
-option, but applied to this module only\&.
+option, but applied to this module only\&. The default value is
+\fI48 hours\fR\&.
 .RE
 .PP
 \fBcache_size\fR: \fIpos_integer() | infinity\fR
@@ -6594,8 +6786,7 @@ This option defines which access rule will be used to control who is allowed to 
 \fBcredentials_lifetime\fR: \fItimeout()\fR
 .RS 4
 The lifetime of temporary credentials offered to clients\&. If ejabberd\(cqs built\-in TURN service is used, TURN relays allocated using temporary credentials will be terminated shortly after the credentials expired\&. The default value is
-\fI12\fR
-hours\&. Note that restarting the ejabberd node invalidates any temporary credentials offered before the restart unless a
+\fI12 hours\fR\&. Note that restarting the ejabberd node invalidates any temporary credentials offered before the restart unless a
 \fIsecret\fR
 is specified (see below)\&.
 .RE
@@ -7121,7 +7312,7 @@ The module depends on \fImod_vcard\fR\&.
 .ps -1
 .br
 .sp
-Nowadays XEP\-0153 is used mostly as "read\-only", i\&.e\&. modern clients don\(cqt publish their avatars inside vCards\&. Thus in the majority of cases the module is only used along with \fImod_avatar\fR module for providing backward compatibility\&.
+Nowadays XEP\-0153 is used mostly as "read\-only", i\&.e\&. modern clients don\(cqt publish their avatars inside vCards\&. Thus in the majority of cases the module is only used along with \fImod_avatar\fR for providing backward compatibility\&.
 .sp .5v
 .RE
 .sp
@@ -7189,13 +7380,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 21\&.04\&.131\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 21\&.12\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/21\&.07/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/21\&.12/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp

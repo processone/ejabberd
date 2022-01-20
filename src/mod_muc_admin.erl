@@ -40,8 +40,11 @@
 	 change_room_option/4, get_room_options/2,
 	 set_room_affiliation/4, get_room_affiliations/2, get_room_affiliation/3,
 	 web_menu_main/2, web_page_main/2, web_menu_host/3,
-	 subscribe_room/4, unsubscribe_room/2, get_subscribers/2,
-	 web_page_host/3, mod_options/1, get_commands_spec/0, find_hosts/1]).
+	 subscribe_room/4, subscribe_room_many/3,
+         unsubscribe_room/2, get_subscribers/2,
+         web_page_host/3,
+         mod_opt_type/1, mod_options/1,
+         get_commands_spec/0, find_hosts/1]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -281,7 +284,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = send_direct_invitation, tags = [muc_room],
 			desc = "Send a direct invitation to several destinations",
-			longdesc = "Since ejabberd 20.10, this command is "
+			longdesc = "Since ejabberd 20.12, this command is "
                         "asynchronous: the API call may return before the "
                         "server has send all the invitations.\n\n"
                         "Password and Message can also be: none. "
@@ -331,6 +334,26 @@ get_commands_spec() ->
 			args = [{user, binary}, {nick, binary}, {room, binary},
 				{nodes, binary}],
 			result = {nodes, {list, {node, string}}}},
+     #ejabberd_commands{name = subscribe_room_many, tags = [muc_room],
+			desc = "Subscribe several users to a MUC conference",
+			longdesc = "This command accept up to 50 users at once (this is configurable with `subscribe_room_many_max_users` option)",
+			module = ?MODULE, function = subscribe_room_many,
+			args_desc = ["Users JIDs and nicks",
+                                     "the room to subscribe",
+                                     "nodes separated by commas: ,"],
+			args_example = [[{"tom@localhost", "Tom"},
+                                         {"jerry@localhost", "Jerry"}],
+                                        "room1@conference.localhost",
+                                        "urn:xmpp:mucsub:nodes:messages,urn:xmpp:mucsub:nodes:affiliations"],
+			args = [{users, {list,
+                                         {user, {tuple,
+                                                 [{jid, binary},
+                                                  {nick, binary}
+                                                 ]}}
+                                        }},
+                                {room, binary},
+				{nodes, binary}],
+			result = {res, rescode}},
      #ejabberd_commands{name = unsubscribe_room, tags = [muc_room],
 			desc = "Unsubscribe from a MUC conference",
 			module = ?MODULE, function = unsubscribe_room,
@@ -710,7 +733,7 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 maybe_store_room(ServerHost, Host, Name, RoomOpts) ->
     case proplists:get_bool(persistent, RoomOpts) of
         true ->
-            {atomic, ok} = mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
+            {atomic, _} = mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
             ok;
         false ->
             ok
@@ -860,7 +883,14 @@ get_online_rooms(ServiceArg) ->
 	   || {RoomName, RoomHost, Pid} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
-get_all_rooms(Host) ->
+get_all_rooms(ServiceArg) ->
+    Hosts = find_services(ServiceArg),
+    lists:flatmap(
+      fun(Host) ->
+              get_all_rooms2(Host)
+      end, Hosts).
+
+get_all_rooms2(Host) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     OnlineRooms = get_online_rooms(Host),
     OnlineMap = lists:foldl(
@@ -1324,6 +1354,18 @@ subscribe_room(User, Nick, Room, Nodes) ->
 	    throw({error, "Malformed room JID"})
     end.
 
+subscribe_room_many(Users, Room, Nodes) ->
+    MaxUsers = mod_muc_admin_opt:subscribe_room_many_max_users(global),
+    if
+        length(Users) > MaxUsers ->
+            throw({error, "Too many users in subscribe_room_many command"});
+        true ->
+            lists:foreach(
+              fun({User, Nick}) ->
+                      subscribe_room(User, Nick, Room, Nodes)
+              end, Users)
+    end.
+
 unsubscribe_room(User, Room) ->
     try jid:decode(Room) of
 	#jid{luser = Name, lserver = Host} when Name /= <<"">> ->
@@ -1406,11 +1448,22 @@ find_hosts(ServerHost) ->
 	    []
     end.
 
-mod_options(_) -> [].
+mod_opt_type(subscribe_room_many_max_users) ->
+    econf:int().
+
+mod_options(_) ->
+    [{subscribe_room_many_max_users, 50}].
 
 mod_doc() ->
     #{desc =>
 	  [?T("This module provides commands to administer local MUC "
 	      "services and their MUC rooms. It also provides simple "
 	      "WebAdmin pages to view the existing rooms."), "",
-	   ?T("This module depends on _`mod_muc`_.")]}.
+	   ?T("This module depends on _`mod_muc`_.")],
+    opts =>
+          [{subscribe_room_many_max_users,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("How many users can be subscribed to a room at once using "
+                     "the 'subscribe_room_many' command. "
+                     "The default value is '50'.")}}]}.

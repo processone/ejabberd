@@ -5,11 +5,20 @@
 
 {" (Add * to the end of field to match substring)"," (Ajouter * à la fin du champ pour correspondre à la sous-chaîne)"}.
 {" has set the subject to: "," a défini le sujet sur : "}.
+{"# participants","# participants"}.
 {"A description of the node","Une description du nœud"}.
 {"A friendly name for the node","Un nom convivial pour le nœud"}.
 {"A password is required to enter this room","Un mot de passe est nécessaire pour accéder à ce salon"}.
+{"A Web Page","Une page Web"}.
 {"Accept","Accepter"}.
 {"Access denied by service policy","L'accès au service est refusé"}.
+{"Access model of authorize","Modèle d’accès de « autoriser »"}.
+{"Access model of open","Modèle d’accès de « ouvrir »"}.
+{"Access model of presence","Modèle d’accès de « présence »"}.
+{"Access model of roster","Modèle d’accès de « liste »"}.
+{"Access model of whitelist","Modèle d’accès de « liste blanche »"}.
+{"Access model","Modèle d’accès"}.
+{"Account doesn't exist","Le compte n’existe pas"}.
 {"Action on user","Action sur l'utilisateur"}.
 {"Add Jabber ID","Ajouter un Jabber ID"}.
 {"Add New","Ajouter"}.
@@ -19,7 +28,9 @@
 {"Administrator privileges required","Les droits d'administrateur sont nécessaires"}.
 {"All activity","Toute activité"}.
 {"All Users","Tous les utilisateurs"}.
+{"Allow subscription","Autoriser l’abonnement"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Autoriser ce Jabber ID à s'abonner à ce nœud PubSub ?"}.
+{"Allow this person to register with the room?","Autoriser cette personne à enregistrer ce salon ?"}.
 {"Allow users to change the subject","Autoriser les utilisateurs à changer le sujet"}.
 {"Allow users to query other users","Autoriser les utilisateurs à envoyer des requêtes aux autres utilisateurs"}.
 {"Allow users to send invites","Autoriser les utilisateurs à envoyer des invitations"}.
@@ -28,8 +39,25 @@
 {"Allow visitors to send private messages to","Autoriser les visiteurs à envoyer des messages privés"}.
 {"Allow visitors to send status text in presence updates","Autoriser les visiteurs à envoyer un message d'état avec leur présence"}.
 {"Allow visitors to send voice requests","Permettre aux visiteurs d'envoyer des demandes de 'voice'"}.
+{"An associated LDAP group that defines room membership; this should be an LDAP Distinguished Name according to an implementation-specific or deployment-specific definition of a group.","Un groupe LDAP associé qui définit l’adhésion à un salon ; cela devrait être un nom distingué LDAP selon la définition spécifique à l’implémentation ou au déploiement d’un groupe."}.
 {"Announcements","Annonces"}.
+{"Answer associated with a picture","Réponse associée à une image"}.
+{"Answer associated with a video","Réponse associée à une vidéo"}.
+{"Answer associated with speech","Réponse associée à un discours"}.
+{"Answer to a question","Réponse à une question"}.
+{"Anyone in the specified roster group(s) may subscribe and retrieve items","N’importe qui dans le groupe de la liste spécifiée peut s’abonner et récupérer les items"}.
+{"Anyone may associate leaf nodes with the collection","N’importe qui peut associer les feuilles avec la collection"}.
+{"Anyone may publish","N’importe qui peut publier"}.
+{"Anyone may subscribe and retrieve items","N’importe qui peut s’abonner et récupérer les items"}.
+{"Anyone with a presence subscription of both or from may subscribe and retrieve items","N’importe qui avec un abonnement de présence peut s’abonner et récupérer les items"}.
+{"Anyone with Voice","N’importe qui avec Voice"}.
+{"Anyone","N’importe qui"}.
 {"April","Avril"}.
+{"Attribute 'channel' is required for this request","L’attribut « channel » est requis pour la requête"}.
+{"Attribute 'id' is mandatory for MIX messages","L’attribut « id » est obligatoire pour les messages MIX"}.
+{"Attribute 'jid' is not allowed here","L’attribut « jid » n’est pas autorisé ici"}.
+{"Attribute 'node' is not allowed here","L’attribut « node » n’est pas autorisé ici"}.
+{"Attribute 'to' of stanza that triggered challenge","L’attribut « to » de la strophe qui a déclenché le défi"}.
 {"August","Août"}.
 {"Automatic node creation is not enabled","La creation implicite de nœud n'est pas disponible"}.
 {"Backup Management","Gestion des sauvegardes"}.
@@ -43,10 +71,14 @@
 {"Cannot remove active list","La liste active ne peut être supprimée"}.
 {"Cannot remove default list","La liste par défaut ne peut être supprimée"}.
 {"CAPTCHA web page","Page web de CAPTCHA"}.
+{"Challenge ID","Identifiant du défi"}.
 {"Change Password","Modifier le mot de passe"}.
 {"Change User Password","Changer le mot de passe de l'utilisateur"}.
 {"Changing password is not allowed","La modification du mot de passe n'est pas autorisée"}.
 {"Changing role/affiliation is not allowed","La modification role/affiliation n'est pas autorisée"}.
+{"Channel already exists","Ce canal existe déjà"}.
+{"Channel does not exist","Le canal n’existe pas"}.
+{"Channels","Canaux"}.
 {"Characters not allowed:","Caractères non autorisés :"}.
 {"Chatroom configuration modified","Configuration du salon modifiée"}.
 {"Chatroom is created","Le salon de discussion est créé"}.
@@ -58,30 +90,39 @@
 {"Choose storage type of tables","Choisissez un type de stockage pour les tables"}.
 {"Choose whether to approve this entity's subscription.","Choisissez d'approuver ou non l'abonnement de cette entité."}.
 {"City","Ville"}.
+{"Client acknowledged more stanzas than sent by server","Le client accuse réception de plus de strophes que ce qui est envoyé par le serveur"}.
 {"Commands","Commandes"}.
 {"Conference room does not exist","Le salon de discussion n'existe pas"}.
 {"Configuration of room ~s","Configuration pour le salon ~s"}.
 {"Configuration","Configuration"}.
 {"Connected Resources:","Ressources connectées :"}.
+{"Contact Addresses (normally, room owner or owners)","Adresses de contact (normalement les administrateurs du salon)"}.
 {"Country","Pays"}.
 {"CPU Time:","Temps CPU :"}.
+{"Current Discussion Topic","Sujet de discussion courant"}.
 {"Database failure","Échec sur la base de données"}.
 {"Database Tables at ~p","Tables de base de données sur ~p"}.
 {"Database Tables Configuration at ","Configuration des tables de base de données sur "}.
 {"Database","Base de données"}.
 {"December","Décembre"}.
 {"Default users as participants","Les utilisateurs sont participant par défaut"}.
+{"Delete content","Supprimer le contenu"}.
 {"Delete message of the day on all hosts","Supprimer le message du jour sur tous les domaines"}.
 {"Delete message of the day","Supprimer le message du jour"}.
 {"Delete Selected","Suppression des éléments sélectionnés"}.
+{"Delete table","Supprimer la table"}.
 {"Delete User","Supprimer l'utilisateur"}.
 {"Deliver event notifications","Envoyer les notifications d'événement"}.
 {"Deliver payloads with event notifications","Inclure le contenu du message avec la notification"}.
 {"Description:","Description :"}.
 {"Disc only copy","Copie sur disque uniquement"}.
+{"'Displayed groups' not added (they do not exist!): ","« Groupes affichés » non ajoutés (ils n’existent pas !) : "}.
 {"Displayed:","Affichés :"}.
+{"Don't tell your password to anybody, not even the administrators of the XMPP server.","Ne révélez votre mot de passe à personne, pas même aux administrateurs du serveur XMPP."}.
 {"Dump Backup to Text File at ","Enregistrer la sauvegarde dans un fichier texte sur "}.
 {"Dump to Text File","Sauvegarder dans un fichier texte"}.
+{"Duplicated groups are not allowed by RFC6121","Les groupes dupliqués ne sont pas autorisés par la RFC6121"}.
+{"Dynamically specify a replyto of the item publisher","Spécifie dynamiquement un « réponse à » de l’item de l’éditeur"}.
 {"Edit Properties","Modifier les propriétés"}.
 {"Either approve or decline the voice request.","Accepter ou refuser la demande de voix."}.
 {"ejabberd MUC module","Module MUC ejabberd"}.
@@ -116,6 +157,7 @@
 {"Failed to parse HTTP response","Échec de lecture de la réponse HTTP"}.
 {"Failed to process option '~s'","Échec de traitement de l'option '~s'"}.
 {"Family Name","Nom de famille"}.
+{"FAQ Entry","Entrée FAQ"}.
 {"February","Février"}.
 {"File larger than ~w bytes","Taille de fichier suppérieur à ~w octets"}.
 {"Fill in the form to search for any matching XMPP User","Complétez le formulaire pour rechercher un utilisateur XMPP correspondant"}.
@@ -176,6 +218,7 @@
 {"July","Juillet"}.
 {"June","Juin"}.
 {"Just created","Vient d'être créé"}.
+{"Label:","Étiquette :"}.
 {"Last Activity","Dernière activité"}.
 {"Last login","Dernière connexion"}.
 {"Last month","Dernier mois"}.
@@ -192,7 +235,6 @@
 {"Make room public searchable","Rendre le salon public"}.
 {"Malformed username","Nom d'utilisateur invalide"}.
 {"March","Mars"}.
-{"Max # of items to persist","Nombre maximum d'éléments à stocker"}.
 {"Max payload size in bytes","Taille maximum pour le contenu du message en octet"}.
 {"Maximum file size","Taille maximale du fichier"}.
 {"Maximum Number of History Messages Returned by Room","Nombre maximal de messages d'historique renvoyés par salle"}.
@@ -274,6 +316,7 @@
 {"Online Users:","Utilisateurs connectés :"}.
 {"Online Users","Utilisateurs en ligne"}.
 {"Online","En ligne"}.
+{"Only admins can see this","Seuls les administrateurs peuvent voir cela"}.
 {"Only deliver notifications to available users","Envoyer les notifications uniquement aux utilisateurs disponibles"}.
 {"Only <enable/> or <disable/> tags are allowed","Seul le tag <enable/> ou <disable/> est autorisé"}.
 {"Only <list/> element is allowed in this query","Seul l'élément <list/> est autorisé dans cette requête"}.
@@ -283,6 +326,7 @@
 {"Only moderators can approve voice requests","Seuls les modérateurs peuvent accépter les requêtes voix"}.
 {"Only occupants are allowed to send messages to the conference","Seuls les occupants peuvent envoyer des messages à la conférence"}.
 {"Only occupants are allowed to send queries to the conference","Seuls les occupants sont autorisés à envoyer des requêtes à la conférence"}.
+{"Only publishers may publish","Seuls les éditeurs peuvent publier"}.
 {"Only service administrators are allowed to send service messages","Seuls les administrateurs du service sont autoriser à envoyer des messages de service"}.
 {"Organization Name","Nom de l'organisation"}.
 {"Organization Unit","Unité de l'organisation"}.
@@ -290,6 +334,7 @@
 {"Outgoing s2s Connections:","Connexions s2s sortantes :"}.
 {"Owner privileges required","Les droits de propriétaire sont nécessaires"}.
 {"Packet","Paquet"}.
+{"Participant","Participant"}.
 {"Password Verification","Vérification du mot de passe"}.
 {"Password Verification:","Vérification du mot de passe :"}.
 {"Password","Mot de passe"}.
@@ -323,6 +368,9 @@
 {"Remove User","Supprimer l'utilisateur"}.
 {"Remove","Supprimer"}.
 {"Replaced by new connection","Remplacé par une nouvelle connexion"}.
+{"Request has timed out","La demande a expiré"}.
+{"Request is ignored","La demande est ignorée"}.
+{"Requested role","Rôle demandé"}.
 {"Resources","Ressources"}.
 {"Restart Service","Redémarrer le service"}.
 {"Restart","Redémarrer"}.

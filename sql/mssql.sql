@@ -150,6 +150,7 @@ CREATE TABLE [dbo].[muc_room_subscribers] (
 
 CREATE UNIQUE CLUSTERED INDEX [muc_room_subscribers_host_room_jid] ON [muc_room_subscribers] (host, room, jid);
 CREATE INDEX [muc_room_subscribers_host_jid] ON [muc_room_subscribers] (host, jid);
+CREATE INDEX [muc_room_subscribers_jid] ON [muc_room_subscribers] (jid);
 
 CREATE TABLE [dbo].[privacy_default_list] (
         [username] [varchar] (250) NOT NULL,
