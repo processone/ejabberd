@@ -51,7 +51,7 @@
     [
         get_tracing_options/3,
         trace_off/3,
-        trace_on/5
+        trace_on/5,human_readable_time_string/1
     ]
 ).
 
@@ -336,22 +336,24 @@ safe_apply(Hook, Module, Function, Args) ->
 %%% Internal tracing functions
 %%%----------------------------------------------------------------------
 
+do_trace_on(Hook, Host, Opts, Timeout) when erlang:is_list(Host) ->
+    do_trace_on(Hook, erlang:list_to_binary(Host), Opts, Timeout);
 do_trace_on(Hook, Host, Opts, undefined) ->
     case erlang:get(?TRACE_HOOK_KEY) of
-        _ when Hook == '_' andalso Host == <<"*">> ->
+        _ when Hook == all andalso Host == <<"*">> ->
             % Trace everything:
-            erlang:put(?TRACE_HOOK_KEY, #{'_' => #{<<"*">> => Opts}});
-        #{'_' := #{<<"*">> := _}} -> % Already tracing everything
+            erlang:put(?TRACE_HOOK_KEY, #{all => #{<<"*">> => Opts}});
+        #{all := #{<<"*">> := _}} -> % Already tracing everything
             % Update Opts:
-            erlang:put(?TRACE_HOOK_KEY, #{'_' => #{<<"*">> => Opts}});
-        #{'_' := HostOpts} when Hook == '_' -> % Already Tracing everything for some hosts
+            erlang:put(?TRACE_HOOK_KEY, #{all => #{<<"*">> => Opts}});
+        #{all := HostOpts} when Hook == all -> % Already Tracing everything for some hosts
             % Add/Update Host and Opts:
-            erlang:put(?TRACE_HOOK_KEY, #{'_' => HostOpts#{Host => Opts}});
-        #{'_' := _} -> % Already tracing everything and Hook is not '_'
+            erlang:put(?TRACE_HOOK_KEY, #{all => HostOpts#{Host => Opts}});
+        #{all := _} -> % Already tracing everything and Hook is not all
             ok;
-        #{} when Hook == '_' ->
-            % Remove other hooks by just adding '_':
-            erlang:put(?TRACE_HOOK_KEY, #{'_' => #{Host => Opts}});
+        #{} when Hook == all ->
+            % Remove other hooks by just adding all:
+            erlang:put(?TRACE_HOOK_KEY, #{all => #{Host => Opts}});
         #{}=TraceHooksOpts when Host == <<"*">> -> % Want to trace a hook for all hosts
             erlang:put(?TRACE_HOOK_KEY, TraceHooksOpts#{Hook => #{Host => Opts}});
         #{}=TraceHooksOpts ->
@@ -365,7 +367,8 @@ do_trace_on(Hook, Host, Opts, undefined) ->
             erlang:put(?TRACE_HOOK_KEY, #{Hook => #{Host => Opts}})
     end,
     ok;
-do_trace_on(Hook, Host, Opts, Timeout) -> % Trace myself `Timeout` time
+do_trace_on(Hook, Host, Opts, TimeoutSeconds) -> % Trace myself `Timeout` time
+    Timeout = timer:seconds(TimeoutSeconds),
     ParentPid = erlang:self(),
     try erlang:spawn(
         fun() ->
@@ -386,12 +389,14 @@ do_trace_on(Hook, Host, Opts, Timeout) -> % Trace myself `Timeout` time
             {error, Reason}
     end.
 
+do_trace_off(Hook, Host) when erlang:is_list(Host) ->
+    do_trace_off(Hook, erlang:list_to_binary(Host));
 do_trace_off(Hook, Host) ->
     case erlang:get(?TRACE_HOOK_KEY) of
-        _ when Hook == '_' andalso Host == <<"*">> ->
+        _ when Hook == all andalso Host == <<"*">> ->
             % Remove all tracing:
             erlang:erase(?TRACE_HOOK_KEY);
-        #{'_' := HostOpts} when Hook == '_' -> % Already tracing all hooks
+        #{all := HostOpts} when Hook == all -> % Already tracing all hooks
             % Remove Host:
             HostOpts2 = maps:remove(Host, HostOpts),
             if
@@ -399,7 +404,7 @@ do_trace_off(Hook, Host) ->
                     % Remove all tracing:
                     erlang:erase(?TRACE_HOOK_KEY);
                 true ->
-                    erlang:put(?TRACE_HOOK_KEY, #{'_' => HostOpts2})
+                    erlang:put(?TRACE_HOOK_KEY, #{all => HostOpts2})
             end;
         #{}=TraceHooksOpts when Host == <<"*">> ->
             % Remove tracing of this hook for all hosts:
@@ -434,9 +439,9 @@ do_get_tracing_options(Hook, Host, MaybeMap) ->
     case MaybeMap of
         undefined ->
             undefined;
-        #{'_' := #{<<"*">> := Opts}} -> % Tracing everything
+        #{all := #{<<"*">> := Opts}} -> % Tracing everything
             Opts;
-        #{'_' := HostOpts} -> % Tracing all hooks for some hosts
+        #{all := HostOpts} -> % Tracing all hooks for some hosts
             maps:get(Host, HostOpts, undefined);
         #{}=TraceHooksOpts ->
             HostOpts = maps:get(Hook, TraceHooksOpts, #{}),
@@ -486,60 +491,119 @@ run_fold2([{Seq, Module, Function} | Ls], Hook, Val, Args, Host, TracingOpts) ->
     end.
 
 foreach_start_hook_tracing(TracingOpts, Hook, Host, Args) ->
-    run_event_handler(TracingOpts, Hook, Host, start_hook, [Args], foreach).
+    run_event_handlers(TracingOpts, Hook, Host, start_hook, [Args], foreach).
 
 foreach_stop_hook_tracing(TracingOpts, Hook, Host, Args, BreakCallback) ->
-    run_event_handler(TracingOpts, Hook, Host, stop_hook, [Args, BreakCallback], foreach).
+    run_event_handlers(TracingOpts, Hook, Host, stop_hook, [Args, BreakCallback], foreach).
 
 foreach_start_callback_tracing(TracingOpts, Hook, Host, Mod, Func, Args, Seq) ->
-    run_event_handler(TracingOpts, Hook, Host, start_callback, [Mod, Func, Args, Seq], foreach).
+    run_event_handlers(TracingOpts, Hook, Host, start_callback, [Mod, Func, Args, Seq], foreach).
 
 foreach_stop_callback_tracing(TracingOpts, Hook, Host, Mod, Func, Args, Seq, Res) ->
-    run_event_handler(TracingOpts, Hook, Host, stop_callback, [Mod, Func, Args, Seq, Res], foreach).
+    run_event_handlers(TracingOpts, Hook, Host, stop_callback, [Mod, Func, Args, Seq, Res], foreach).
 
 fold_start_hook_tracing(TracingOpts, Hook, Host, Args) ->
-    run_event_handler(TracingOpts, Hook, Host, start_hook, [Args], fold).
+    run_event_handlers(TracingOpts, Hook, Host, start_hook, [Args], fold).
 
 fold_stop_hook_tracing(TracingOpts, Hook, Host, Args, BreakCallback) ->
-    run_event_handler(TracingOpts, Hook, Host, stop_hook, [Args, BreakCallback], fold).
+    run_event_handlers(TracingOpts, Hook, Host, stop_hook, [Args, BreakCallback], fold).
 
 fold_start_callback_tracing(TracingOpts, Hook, Host, Mod, Func, Args, Seq) ->
-    run_event_handler(TracingOpts, Hook, Host, start_callback, [Mod, Func, Args, Seq], fold).
+    run_event_handlers(TracingOpts, Hook, Host, start_callback, [Mod, Func, Args, Seq], fold).
 
 fold_stop_callback_tracing(TracingOpts, Hook, Host, Mod, Func, Args, Seq, Res) ->
-    run_event_handler(TracingOpts, Hook, Host, stop_callback, [Mod, Func, Args, Seq, Res], fold).
+    run_event_handlers(TracingOpts, Hook, Host, stop_callback, [Mod, Func, Args, Seq, Res], fold).
 
-run_event_handler(TracingOpts, Hook, Host, Event, EventArgs, RunType) ->
-    EventHandler = maps:get(event_handler, TracingOpts, fun default_tracing_event_handler/6),
+run_event_handlers(TracingOpts, Hook, Host, Event, EventArgs, RunType) ->
+    EventHandlerList = maps:get(event_handler_list, TracingOpts, default_tracing_event_handler_list()),
     EventHandlerOpts = maps:get(event_handler_options, TracingOpts, #{}),
-    try
-        if
-            erlang:is_function(EventHandler) ->
-                erlang:apply(EventHandler, [Event, EventArgs, RunType, Hook, Host, EventHandlerOpts]);
-            true ->
-                EventHandler:handle_hook_tracing_event(Event, EventArgs, RunType, Hook, Host, EventHandlerOpts)
-        end
-    of
-        _ ->
-            ok
-    catch
-        ?EX_RULE(E, R, St) ->
-            ?ERROR_MSG("Tracing event handler exception(~0p): ~0p: ~0p", [E, R, St]),
-            ok
-    end.
-
-default_tracing_event_handler(Event, EventArgs, RunType, Hook, Host, EventHandlerOpts) ->
-    % For now:
-    case maps:get(timing, EventHandlerOpts, true) of
+    if
+        erlang:is_list(EventHandlerList) ->
+            lists:foreach(
+                fun(EventHandler) ->
+                    try
+                        if
+                            erlang:is_function(EventHandler) ->
+                                erlang:apply(
+                                    EventHandler,
+                                    [Event, EventArgs, RunType, Hook, Host, EventHandlerOpts, TracingOpts]
+                                );
+                            true ->
+                                EventHandler:handle_hook_tracing_event(
+                                    Event,
+                                    EventArgs,
+                                    RunType,
+                                    Hook,
+                                    Host,
+                                    EventHandlerOpts,
+                                    TracingOpts
+                                )
+                        end
+                    of
+                        _ ->
+                            ok
+                    catch
+                        ?EX_RULE(E, R, St) ->
+                            ?ERROR_MSG(
+                                "(~0p|~ts|~0p) Tracing event '~0p' handler exception(~0p): ~0p: ~0p",
+                                [Hook, Host, erlang:self(), EventHandler, E, R, St]
+                            ),
+                            ok
+                    end
+                end,
+                EventHandlerList
+            ); % ok
         true ->
-            tracing_timing_event_handler(Event, EventArgs, RunType, Hook, Host, EventHandlerOpts);
-        _ ->
+            ?ERROR_MSG("(~0p|~ts|~0p) Bad event handler list: ~0p", [Hook, Host, erlang:self(), EventHandlerList]),
             ok
     end.
 
-tracing_timing_event_handler(start_hook, _, _, Hook, Host, EventHandlerOpts) ->
+default_tracing_event_handler_list() ->
+    [fun tracing_timing_event_handler/7].
+
+tracing_timing_event_handler(start_hook, EventArgs, RunType, Hook, Host, _, TracingOpts) ->
     HookStart = erlang:system_time(nanosecond),
-    tracing_output(EventHandlerOpts, "(~0p|~ts) Timing started\n", [Hook, Host]),
+    % Generate new event:
+    run_event_handlers(TracingOpts, Hook, Host, start_hook_timing, EventArgs ++ [HookStart], RunType);
+tracing_timing_event_handler(stop_hook, EventArgs, RunType, Hook, Host, _, TracingOpts) ->
+    HookStop = erlang:system_time(nanosecond),
+    TimingMap = #{} = erlang:get(?TIMING_KEY),
+    {HookStart, CallbackList} = maps:get({Hook, Host}, TimingMap),
+    {CallbackListTiming, CallbackListTotal} = lists:foldl(
+        fun({_, _, _, CallbackStart, CallbackStop}=CallbackTimingInfo, {CallbackListTimingX, Total}) ->
+            {CallbackListTimingX ++ [CallbackTimingInfo], Total + (CallbackStop - CallbackStart)}
+        end,
+        {[], 0},
+        CallbackList
+    ),
+    % Generate new event:
+    run_event_handlers(
+        TracingOpts,
+        Hook,
+        Host,
+        stop_hook_timing,
+        EventArgs ++ [HookStart, HookStop, CallbackListTiming, CallbackListTotal],
+        RunType
+    );
+tracing_timing_event_handler(start_callback, EventArgs, RunType, Hook, Host, _, TracingOpts) ->
+    CallbackStart = erlang:system_time(nanosecond),
+    % Generate new event:
+    run_event_handlers(TracingOpts, Hook, Host, start_callback_timing, EventArgs ++ [CallbackStart], RunType);
+tracing_timing_event_handler(stop_callback, EventArgs, RunType, Hook, Host, _, TracingOpts) ->
+    CallbackStop = erlang:system_time(nanosecond),
+    TimingMap = #{} = erlang:get(?TIMING_KEY),
+    {_, [{_, _, _, CallbackStart} | _]} = maps:get({Hook, Host}, TimingMap),
+    run_event_handlers(
+        TracingOpts,
+        Hook,
+        Host,
+        stop_callback_timing,
+        EventArgs ++ [CallbackStart, CallbackStop],
+        RunType
+    ),
+    ok;
+tracing_timing_event_handler(start_hook_timing, [_, HookStart], RunType, Hook, Host, EventHandlerOpts, _) ->
+    tracing_output(EventHandlerOpts, "(~0p|~ts|~0p|~0p) Timing started\n", [Hook, Host, erlang:self(), RunType]),
     case erlang:get(?TIMING_KEY) of
         #{}=TimingMap ->
             erlang:put(?TIMING_KEY, TimingMap#{{Hook, Host} => {HookStart, []}});
@@ -547,44 +611,58 @@ tracing_timing_event_handler(start_hook, _, _, Hook, Host, EventHandlerOpts) ->
             erlang:put(?TIMING_KEY, #{{Hook, Host} => {HookStart, []}})
     end,
     ok;
-tracing_timing_event_handler(stop_hook, _, _, Hook, Host, EventHandlerOpts) ->
-    HookStop = erlang:system_time(nanosecond),
-    TimingMap = #{} = erlang:get(?TIMING_KEY),
-    {HookStart, CallbackList} = maps:get({Hook, Host}, TimingMap),
+tracing_timing_event_handler(
+    stop_hook_timing,
+    [_, _, HookStart, HookStop, CallbackListTiming, CallbackListTotal],
+    RunType,
+    Hook,
+    Host,
+    EventHandlerOpts,
+    _
+) ->
     if
-        erlang:length(CallbackList) < 2 -> % We don't need sorted timing result
+        erlang:length(CallbackListTiming) < 2 -> % We don't need sorted timing result
             ok;
         true ->
-            {CallbackListText, CallbackListTotal} =
+            CallbackListTimingText =
                 lists:foldl(
-                    fun({Mod, Func, Arity, Diff}, {CallbackText, Total}) ->
-                        {
-                            CallbackText
-                                ++ "\n\t"
-                                ++ mfa_string({Mod, Func, Arity})
-                                ++ " -> "
-                                ++ erlang:integer_to_list(Diff)
-                                ++ "ns",
-                            Total + Diff
-                        }
+                    fun({Mod, Func, Arity, Diff}, CallbackListTimingText) ->
+                        CallbackListTimingText
+                            ++ "\n\t"
+                            ++ mfa_string({Mod, Func, Arity})
+                            ++ " -> "
+                            ++ human_readable_time_string(Diff)
                     end,
-                    {"", 0},
-                    lists:keysort(4, CallbackList)
+                    "",
+                    lists:keysort(
+                        4,
+                        [
+                            {Mod, Func, Arity, CallbackStop - CallbackStart} ||
+                            {Mod, Func, Arity, CallbackStart, CallbackStop} <- CallbackListTiming
+                        ]
+                    )
                 ),
             tracing_output(
                 EventHandlerOpts,
-                "(~0p|~ts) All callbacks got ~0pns to run. Sorted running time:"
-                    ++ CallbackListText
+                "(~0p|~ts|~0p|~0p) All callbacks took ~ts to run. Sorted running time:"
+                    ++ CallbackListTimingText
                     ++ "\n",
-                [Hook, Host, CallbackListTotal]
+                [Hook, Host, erlang:self(), RunType, human_readable_time_string(CallbackListTotal)]
             ),
             tracing_output(
                 EventHandlerOpts,
-                "(~0p|~ts) Time calculations for all callbacks got ~0pns\n",
-                [Hook, Host, (HookStop - HookStart) - CallbackListTotal]
+                "(~0p|~ts|~0p|~0p) Time calculations for all callbacks took ~ts\n",
+                [
+                    Hook,
+                    Host,
+                    erlang:self(),
+                    RunType,
+                    human_readable_time_string((HookStop - HookStart) - CallbackListTotal)
+                ]
             )
     end,
-    tracing_output(EventHandlerOpts, "(~0p|~ts) Timing stopped\n", [Hook, Host]),
+    tracing_output(EventHandlerOpts, "(~0p|~ts|~0p|~0p) Timing stopped\n", [Hook, Host, erlang:self(), RunType]),
+    TimingMap = #{} = erlang:get(?TIMING_KEY),
     NewTimingMap = maps:remove({Hook, Host}, TimingMap),
     if
         NewTimingMap == #{} ->
@@ -593,8 +671,7 @@ tracing_timing_event_handler(stop_hook, _, _, Hook, Host, EventHandlerOpts) ->
             erlang:put(?TIMING_KEY, NewTimingMap)
     end,
     ok;
-tracing_timing_event_handler(start_callback, [Mod, Func, Args | _], _, Hook, Host, _) ->
-    CallbackStart = erlang:system_time(nanosecond),
+tracing_timing_event_handler(start_callback_timing, [Mod, Func, Args, _, CallbackStart], _, Hook, Host, _, _) ->
     TimingMap = #{} = erlang:get(?TIMING_KEY),
     {HookStart, Callbacks} = maps:get({Hook, Host}, TimingMap),
     erlang:put(
@@ -604,25 +681,34 @@ tracing_timing_event_handler(start_callback, [Mod, Func, Args | _], _, Hook, Hos
         }
     ),
     ok;
-tracing_timing_event_handler(stop_callback, _, _, Hook, Host, EventHandlerOpts) ->
-    CallbackStop = erlang:system_time(nanosecond),
+tracing_timing_event_handler(
+    stop_callback_timing,
+    [Mod, Func, _, _, _, CallbackStart, CallbackStop],
+    RunType,
+    Hook,
+    Host,
+    EventHandlerOpts,
+    _
+) ->
     TimingMap = #{} = erlang:get(?TIMING_KEY),
     {HookStart, [{Mod, Func, Arity, CallbackStart} | Callbacks]} = maps:get({Hook, Host}, TimingMap),
-    tracing_output(
+    maps:get(output_for_each_callback, maps:get(timing, EventHandlerOpts, #{}), false) andalso tracing_output(
         EventHandlerOpts,
-        "(~0p|~ts) " ++
-            mfa_string({Mod, Func, Arity}) ++
-            " got " ++
-            erlang:integer_to_list(CallbackStop - CallbackStart) ++
-            "ns\n",
-        [Hook, Host]
+        "(~0p|~ts|~0p|~0p) "
+            ++ mfa_string({Mod, Func, Arity})
+            ++ " took "
+            ++ human_readable_time_string(CallbackStop - CallbackStart)
+            ++ "\n",
+        [Hook, Host, erlang:self(), RunType]
     ),
     erlang:put(
         ?TIMING_KEY,
         TimingMap#{
-            {Hook, Host} => {HookStart, [{Mod, Func, Arity, CallbackStop - CallbackStart} | Callbacks]}
+            {Hook, Host} => {HookStart, [{Mod, Func, Arity, CallbackStart, CallbackStop} | Callbacks]}
         }
     ),
+    ok;
+tracing_timing_event_handler(_, _, _, _, _, _, _) ->
     ok.
 
 tracing_output(#{output_function := OutputF}, Text, Args) ->
@@ -651,3 +737,17 @@ mfa_string({_, Fun, _}) when erlang:is_function(Fun) ->
     io_lib:format("~0p", [Fun]);
 mfa_string({Mod, Func, Arity}) ->
     erlang:atom_to_list(Mod) ++ ":" ++ erlang:atom_to_list(Func) ++ "/" ++ erlang:integer_to_list(Arity).
+
+human_readable_time_string(TimeNS) ->
+    {Time, Unit, Decimals} =
+        if
+            TimeNS >= 1000000000 ->
+                {TimeNS / 1000000000, "", 10};
+            TimeNS >= 1000000  ->
+                {TimeNS / 1000000, "m", 7};
+            TimeNS >= 1000 ->
+                {TimeNS / 1000, "μ", 4};
+            true ->
+                {TimeNS / 1, "n", 0}
+    end,
+    erlang:float_to_list(Time, [{decimals, Decimals}, compact]) ++ Unit ++ "s".
