@@ -4474,7 +4474,7 @@ mod_doc() ->
 			  "to the 'create' stanza element."),
 		       ?T("- 'flat' plugin handles the default behaviour and "
 			  "follows standard XEP-0060 implementation."),
-		       ?T("- 'pep' plugin adds extention to handle Personal "
+		       ?T("- 'pep' plugin adds extension to handle Personal "
 			  "Eventing Protocol (XEP-0163) to the PubSub engine. "
 			  "Adding pep allows to handle PEP automatically.")]}},
 	   {vcard,

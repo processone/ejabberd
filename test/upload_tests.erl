@@ -55,7 +55,7 @@ feature_enabled(Config) ->
 
 service_vcard(Config) ->
     Upload = upload_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:encode(Upload)]),
+    ct:comment("Retrieving vCard from ~s", [jid:encode(Upload)]),
     VCard = mod_http_upload_opt:vcard(?config(server, Config)),
     #iq{type = result, sub_els = [VCard]} =
 	send_recv(Config, #iq{type = get, to = Upload, sub_els = [#vcard_temp{}]}),

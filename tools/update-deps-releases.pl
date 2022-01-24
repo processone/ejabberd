@@ -413,7 +413,7 @@ while (1) {
     my $cmd = show_commands($old_deps ? (U => "Update dependency") : (),
         $changed_deps ? (T => "Tag new release") : (),
         @operations ? (A => "Apply changes") : (),
-        R => "Refresh repositiories",
+        R => "Refresh repositories",
         H => "What release to Hex",
         E => "Exit");
     last if $cmd eq "E";

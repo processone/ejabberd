@@ -387,7 +387,7 @@ start_connection(From, To, Opts) ->
 					     MaxS2SConnectionsNumber,
 					     MaxS2SConnectionsNumberPerNode, Opts);
 	       true ->
-		    %% We choose a connexion from the pool of opened ones.
+		    %% We choose a connection from the pool of opened ones.
 		    {ok, choose_connection(From, L)}
 	    end
     end.

@@ -213,7 +213,7 @@ Translations:
 - Fix problem with leaving old data when updating shared rosters
 - Fix edge case that caused failure of resuming old sessions with
   stream management.
-- Fix crash when room that was started with loging enabled was later
+- Fix crash when room that was started with logging enabled was later
   changed to logging disabled
 - Increase default shaper limits (this should help with delays for
   clients that are using jingle)
@@ -278,7 +278,7 @@ Translations:
   for all backends not only SQL
 - Add infrastructure for having module documentation directly
   in individual module source code
-- Generate man page automaticaly
+- Generate man page automatically
 - Implement copy feature in mod_carboncopy
 
 * Fixes
@@ -286,7 +286,7 @@ Translations:
 - Fix handling of result in xmlrpc module
 - Make webadmin work even when accessed through not declared domain
 - Better error reporting in xmlrpc
-- Limit ammount of results returned by disco queries to pubsub nodes
+- Limit amount of results returned by disco queries to pubsub nodes
 - Improve validation of configured JWT keys
 - Fix race condition in Redis/SQL startup
 - Fix loading order of third party modules
@@ -387,7 +387,7 @@ Translations:
 - Improve handling of unexpected iq in mod_muc_room
 - Attach mod_muc_room processes to a supervisor
 - Restore room when receiving message or generic iq for not started room
-- Distribute routing of MUC messages accross all CPU cores
+- Distribute routing of MUC messages across all CPU cores
 
 * PubSub
 - Fix pending nodes retrieval for SQL backend
@@ -421,7 +421,7 @@ Translations:
 - Make static hooks analyzer working again
 
 * MUC
-- Service admins are allowed to recreate room even if archiv is nonempty
+- Service admins are allowed to recreate room even if archive is nonempty
 - New option user_mucsub_from_muc_archive
 - Avoid late arrival of get_disco_item response
 - Handle get_subscribed_rooms call from mod_muc_room pid

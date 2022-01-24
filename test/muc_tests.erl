@@ -191,7 +191,7 @@ service_disco_items(Config) ->
 
 service_vcard(Config) ->
     MUC = muc_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:encode(MUC)]),
+    ct:comment("Retrieving vCard from ~s", [jid:encode(MUC)]),
     VCard = mod_muc_opt:vcard(?config(server, Config)),
     #iq{type = result, sub_els = [VCard]} =
 	send_recv(Config, #iq{type = get, to = MUC, sub_els = [#vcard_temp{}]}),
@@ -1474,7 +1474,7 @@ config_voice_request_interval_slave(Config) ->
     denied = get_event(Config),
     ct:comment("Requesting voice again"),
     send(Config, #message{to = Room, sub_els = [X]}),
-    ct:comment("Receving voice request error because we're sending to fast"),
+    ct:comment("Receiving voice request error because we're sending to fast"),
     #message{from = Room, type = error} = Err = recv_message(Config),
     #stanza_error{reason = 'resource-constraint'} = xmpp:get_error(Err),
     ct:comment("Waiting for 5 seconds"),
@@ -1872,7 +1872,7 @@ set_vcard(Config, VCard) ->
 
 get_vcard(Config) ->
     Room = muc_room_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:encode(Room)]),
+    ct:comment("Retrieving vCard from ~s", [jid:encode(Room)]),
     case send_recv(Config, #iq{type = get, to = Room,
 			       sub_els = [#vcard_temp{}]}) of
 	#iq{type = result, sub_els = [VCard]} ->

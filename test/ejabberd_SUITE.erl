@@ -76,7 +76,7 @@ init_per_group(Group, Config) ->
                     %% All backends enabled
                     do_init_per_group(Group, Config);
                 Backends ->
-                    %% Skipped backends that were not explicitely enabled
+                    %% Skipped backends that were not explicitly enabled
 		    case lists:member(Group, Backends) of
 			true ->
 			    do_init_per_group(Group, Config);

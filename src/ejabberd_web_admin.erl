@@ -1857,11 +1857,11 @@ build_elements_pages_list(Size, PageNumber, PageSize) ->
         ?C(<<" [", (integer_to_binary(PageNumber))/binary, "] ">>)).
 
 calculate_pages_number(Size, PageSize) ->
-    Remainer = case Size rem PageSize of
+    Remainder = case Size rem PageSize of
                    0 -> 0;
                    _ -> 1
                end,
-    case (Size div PageSize) + Remainer of
+    case (Size div PageSize) + Remainder of
         1 -> 0;
         Res -> Res
     end.

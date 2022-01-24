@@ -475,7 +475,7 @@ mod_doc() ->
           [{convert,
             #{value => "{From: To}",
               desc =>
-                  ?T("Defines image convertion rules: the format in 'From' "
+                  ?T("Defines image conversion rules: the format in 'From' "
                      "will be converted to format in 'To'. The value of 'From' "
                      "can also be 'default', which is match-all rule. NOTE: "
                      "the list of supported formats is detected at compile time "
@@ -489,4 +489,4 @@ mod_doc() ->
               desc =>
                   ?T("Limit any given JID by the number of avatars it is able "
                      "to convert per minute. This is to protect the server from "
-                     "image convertion DoS. The default value is '10'.")}}]}.
+                     "image conversion DoS. The default value is '10'.")}}]}.
