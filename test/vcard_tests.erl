@@ -90,7 +90,7 @@ get_set(Config) ->
 
 service_vcard(Config) ->
     JID = server_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:encode(JID)]),
+    ct:comment("Retrieving vCard from ~s", [jid:encode(JID)]),
     VCard = mod_vcard_opt:vcard(?config(server, Config)),
     #iq{type = result, sub_els = [VCard]} =
 	send_recv(Config, #iq{type = get, to = JID, sub_els = [#vcard_temp{}]}),

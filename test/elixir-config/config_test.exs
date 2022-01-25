@@ -47,7 +47,7 @@ defmodule Ejabberd.ConfigTest do
     assert is_function(register_hook.fun)
   end
 
-  # TODO: When enalbed, this test causes the evaluation of a different config file, so
+  # TODO: When enabled, this test causes the evaluation of a different config file, so
   # the other tests, that uses the store, are compromised because the data is different.
   # So, until a good way is found, this test should remain disabed.
   #

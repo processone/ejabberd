@@ -454,7 +454,7 @@ recv_archived_messages(Config, From, To, QID, Range) ->
     MyJID = my_jid(Config),
     lists:foreach(
       fun(N) ->
-	      ct:comment("Retreiving ~pth message in range ~p",
+	      ct:comment("Retrieving ~pth message in range ~p",
 			 [N, Range]),
               Body = xmpp:mk_text(integer_to_binary(N)),
               #message{to = MyJID,

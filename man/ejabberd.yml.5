@@ -52,7 +52,7 @@ YAML is indentation sensitive, so make sure you respect indentation, or otherwis
 .sp .5v
 .RE
 .sp
-Logically, configuration options are splitted into 3 main categories: \fIModules\fR, \fIListeners\fR and everything else called \fITop Level\fR options\&. Thus this document is splitted into 3 main chapters describing each category separately\&. So, the contents of ejabberd\&.yml will typically look like this:
+Logically, configuration options are split into 3 main categories: \fIModules\fR, \fIListeners\fR and everything else called \fITop Level\fR options\&. Thus this document is split into 3 main chapters describing each category separately\&. So, the contents of ejabberd\&.yml will typically look like this:
 .sp
 .if n \{\
 .RS 4
@@ -443,7 +443,7 @@ The option defines in what format the users passwords are stored:
 .PP
 \fBauth_scram_hash\fR: \fIsha | sha256 | sha512\fR
 .RS 4
-Hash algorith that should be used to store password in SCRAM format\&. You shouldn\(cqt change this if you already have passwords generated with a different algorithm \- users that have such passwords will not be able to authenticate\&. The default value is
+Hash algorithm that should be used to store password in SCRAM format\&. You shouldn\(cqt change this if you already have passwords generated with a different algorithm \- users that have such passwords will not be able to authenticate\&. The default value is
 \fIsha\fR\&.
 .RE
 .PP
@@ -525,7 +525,7 @@ Whether to enable or disable TLS compression for c2s connections\&. The default 
 Path to a file of CA root certificates\&. The default is to use system defined file if possible\&.
 .RE
 .sp
-For server conections, this \fIca_file\fR option is overriden by the s2s_cafile option\&.
+For server connections, this \fIca_file\fR option is overridden by the s2s_cafile option\&.
 .PP
 \fBcache_life_time\fR: \fItimeout()\fR
 .RS 4
@@ -2066,7 +2066,7 @@ The module depends on \fImod_vcard\fR, \fImod_vcard_xupdate\fR and \fImod_pubsub
 .PP
 \fBconvert\fR: \fI{From: To}\fR
 .RS 4
-Defines image convertion rules: the format in
+Defines image conversion rules: the format in
 \fIFrom\fR
 will be converted to format in
 \fITo\fR\&. The value of
@@ -2091,7 +2091,7 @@ convert:
 .PP
 \fBrate_limit\fR: \fINumber\fR
 .RS 4
-Limit any given JID by the number of avatars it is able to convert per minute\&. This is to protect the server from image convertion DoS\&. The default value is
+Limit any given JID by the number of avatars it is able to convert per minute\&. This is to protect the server from image conversion DoS\&. The default value is
 \fI10\fR\&.
 .RE
 .RE
@@ -5414,7 +5414,7 @@ plugin handles the default behaviour and follows standard XEP\-0060 implementati
 .IP \(bu 2.3
 .\}
 \fIpep\fR
-plugin adds extention to handle Personal Eventing Protocol (XEP\-0163) to the PubSub engine\&. Adding pep allows to handle PEP automatically\&.
+plugin adds extension to handle Personal Eventing Protocol (XEP\-0163) to the PubSub engine\&. Adding pep allows to handle PEP automatically\&.
 .RE
 .RE
 .PP

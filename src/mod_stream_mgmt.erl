@@ -268,7 +268,7 @@ c2s_handle_info(State, {timeout, _, Timeout}) when Timeout == ack_timeout;
 						   Timeout == pending_timeout ->
     %% Late arrival of an already cancelled timer: we just ignore it.
     %% This might happen because misc:cancel_timer/1 doesn't guarantee
-    %% timer cancelation in the case when p1_server is used.
+    %% timer cancellation in the case when p1_server is used.
     {stop, State};
 c2s_handle_info(State, _) ->
     State.

@@ -87,7 +87,7 @@ test_features(Config) ->
 
 test_vcard(Config) ->
     JID = pubsub_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:encode(JID)]),
+    ct:comment("Retrieving vCard from ~s", [jid:encode(JID)]),
     VCard = mod_pubsub_opt:vcard(?config(server, Config)),
     #iq{type = result, sub_els = [VCard]} =
 	send_recv(Config, #iq{type = get, to = JID, sub_els = [#vcard_temp{}]}),

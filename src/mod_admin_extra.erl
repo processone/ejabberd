@@ -695,7 +695,7 @@ get_commands_spec() ->
 			args_example = [<<"group3">>, <<"myserver.com">>],
 			args_desc = ["Group identifier", "Group server name"],
 			result_example = [{<<"name">>, "Group 3"}, {<<"displayed_groups">>, "group1"}],
-			result_desc = "List of group informations, as key and value",
+			result_desc = "List of group information, as key and value",
 			result = {informations, {list, {information, {tuple, [{key, string}, {value, string}]}}}}},
      #ejabberd_commands{name = srg_get_members, tags = [shared_roster_group],
 			desc = "Get members of a Shared Roster Group",
