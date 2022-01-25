@@ -150,7 +150,8 @@ depends(_Host, _Opts) ->
 
 -spec init_cache(module(), binary(), gen_mod:opts()) -> ok.
 init_cache(Mod, Host, Opts) ->
-    ets_cache:new(?SPECIAL_GROUPS_CACHE, [{max_size, 4}]),
+    NumHosts = length(ejabberd_option:hosts()),
+    ets_cache:new(?SPECIAL_GROUPS_CACHE, [{max_size, NumHosts * 4}]),
     case use_cache(Mod, Host) of
         true ->
 	    CacheOpts = cache_opts(Opts),
