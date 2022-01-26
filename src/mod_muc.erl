@@ -1424,14 +1424,13 @@ mod_doc() ->
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Define the type of persistent storage where the module will "
-                     "store room information. The default is the storage defined "
-                     "by the global option 'default_db', or 'mnesia' if omitted.")}},
+                  ?T("Same as top-level _`default_db`_ option, "
+                     "but applied to this module only.")}},
            {ram_db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Define the type of volatile (in-memory) storage where the module "
-                     "will store room information ('muc_online_room' and 'muc_online_users').")}},
+                  ?T("Same as top-level _`default_ram_db`_ option, "
+                     "but applied to this module only.")}},
            {hibernation_timeout,
             #{value => "infinity | Seconds",
               desc =>

@@ -244,7 +244,8 @@ mod_doc() ->
            {ram_db_type,
             #{value => "mnesia | sql | redis",
               desc =>
-                  ?T("Same as _`default_ram_db`_ but applied to this module only.")}},
+                  ?T("Same as top-level _`default_ram_db`_ option, "
+                     "but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>

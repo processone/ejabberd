@@ -173,8 +173,8 @@ mod_doc() ->
            {ram_db_type,
             #{value => "mnesia | redis | sql",
               desc =>
-                  ?T("Define the type of volatile (in-memory) storage where the module "
-                     "will store room information.")}},
+                  ?T("Same as top-level _`default_ram_db`_ option, "
+                     "but applied to this module only.")}},
            {ip,
             #{value => ?T("IPAddress"),
               desc =>

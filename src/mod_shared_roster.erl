@@ -1276,11 +1276,8 @@ mod_doc() ->
           [{db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Define the type of storage where the module will create "
-		     "the tables and store user information. The default is "
-		     "the storage defined by the top-level _`default_db`_ option, "
-		     "or 'mnesia' if omitted. If 'sql' value is defined, "
-		     "make sure you have defined the database.")}},
+                  ?T("Same as top-level _`default_db`_ option, "
+                     "but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
