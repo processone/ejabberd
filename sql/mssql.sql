@@ -546,7 +546,7 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 CREATE UNIQUE INDEX [i_push_ut] ON [push_session] (username, timestamp)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
-CREATE TABLE [dbo].[mqtt_pub](
+CREATE TABLE [dbo].[mqtt_pub] (
 	[username] [varchar](191) NOT NULL,
 	[server_host] [varchar](191) NOT NULL,
 	[resource] [varchar](191) NOT NULL,

@@ -30,6 +30,7 @@
 
 %% Dependencies
 {odbc, @odbc@}.
+{mssql, @mssql@}.
 {mysql, @mysql@}.
 {pgsql, @pgsql@}.
 {sqlite, @sqlite@}.

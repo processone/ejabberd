@@ -146,7 +146,7 @@ AC_ARG_ENABLE(mssql,
   yes) db_type=mssql; mssql=true ;;
   no)  db_type=generic; mssql=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
-esac],[db_type=generic])
+esac],[if test "x$mssql" = "x"; then db_type=generic; mysql=false; fi])
 
 AC_ARG_ENABLE(mysql,
 [AS_HELP_STRING([--enable-mysql],[enable MySQL support (default: no)])],
@@ -285,6 +285,7 @@ AC_SUBST(new_sql_schema)
 AC_SUBST(full_xml)
 AC_SUBST(db_type)
 AC_SUBST(odbc)
+AC_SUBST(mssql)
 AC_SUBST(mysql)
 AC_SUBST(pgsql)
 AC_SUBST(sqlite)
