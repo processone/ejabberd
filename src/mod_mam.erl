@@ -740,7 +740,7 @@ should_archive(#message{body = Body, subject = Subject,
 				#message{} = Msg ->
 				    should_archive(Msg, LServer);
 				_ ->
-				    false
+				    misc:is_mucsub_message(Pkt)
 			    end
 		    end
 	    end
