@@ -285,12 +285,12 @@ process_closed(State, Reason) ->
     stop_async(self()),
     State#{stop_reason => Reason}.
 
-process_terminated(#{sid := SID, socket := Socket,
-		     jid := JID, user := U, server := S, resource := R} = State,
+process_terminated(#{sid := SID, jid := JID, user := U, server := S, resource := R} = State,
 		   Reason) ->
     Status = format_reason(State, Reason),
     ?INFO_MSG("(~ts) Closing c2s session for ~ts: ~ts",
-	      [xmpp_socket:pp(Socket), jid:encode(JID), Status]),
+	      [case State of #{socket := Socket} -> xmpp_socket:pp(Socket); _ -> <<"unknown">> end,
+	       jid:encode(JID), Status]),
     Pres = #presence{type = unavailable,
 		     from = JID,
 		     to = jid:remove_resource(JID)},
