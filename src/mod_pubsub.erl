@@ -2262,10 +2262,11 @@ get_affiliations(Host, Node, JID) ->
 set_affiliations(Host, Node, From, Affs) ->
     Owner = jid:tolower(jid:remove_resource(From)),
     Action =
-	fun(#pubsub_node{type = Type, id = Nidx, owners = O} = N) ->
+	fun(#pubsub_node{type = Type, id = Nidx, owners = O, options = Options} = N) ->
 		Owners = node_owners_call(Host, Type, Nidx, O),
 		case lists:member(Owner, Owners) of
 		    true ->
+			AccessModel = get_option(Options, access_model),
 			OwnerJID = jid:make(Owner),
 			FilteredAffs =
 			    case Owners of
@@ -2296,6 +2297,17 @@ set_affiliations(Host, Node, From, Affs) ->
 					      _ ->
 						  ok
 					  end;
+				      _ ->
+					  ok
+				  end,
+				  case AccessModel of
+				      whitelist when Affiliation /= owner,
+						     Affiliation /= publisher,
+						     Affiliation /= member ->
+					  node_action(Host, Type,
+						      unsubscribe_node,
+						      [Nidx, OwnerJID, JID,
+						       all]);
 				      _ ->
 					  ok
 				  end
