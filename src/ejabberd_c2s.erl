@@ -289,8 +289,10 @@ process_terminated(#{sid := SID, jid := JID, user := U, server := S, resource :=
 		   Reason) ->
     Status = format_reason(State, Reason),
     ?INFO_MSG("(~ts) Closing c2s session for ~ts: ~ts",
-	      [case State of #{socket := Socket} -> xmpp_socket:pp(Socket); _ -> <<"unknown">> end,
-	       jid:encode(JID), Status]),
+	      [case maps:find(socket, State) of
+		   {ok, Socket} -> xmpp_socket:pp(Socket);
+		   _ -> <<"unknown">>
+	       end, jid:encode(JID), Status]),
     Pres = #presence{type = unavailable,
 		     from = JID,
 		     to = jid:remove_resource(JID)},
@@ -307,8 +309,10 @@ process_terminated(#{sid := SID, jid := JID, user := U, server := S, resource :=
     State1;
 process_terminated(#{stop_reason := {tls, _}} = State, Reason) ->
     ?WARNING_MSG("(~ts) Failed to secure c2s connection: ~ts",
-		 [case State of #{socket := Socket} -> xmpp_socket:pp(Socket); _ -> <<"unknown">> end,
-format_reason(State, Reason)]),
+		 [case maps:find(socket, State) of
+		      {ok, Socket} -> xmpp_socket:pp(Socket);
+		      _ -> <<"unknown">>
+		  end, format_reason(State, Reason)]),
     State;
 process_terminated(State, _Reason) ->
     State.
