@@ -220,7 +220,9 @@ doc() ->
      {access_rules,
       #{value => "{AccessName: {allow|deny: ACLRules|ACLName}}",
         desc =>
-            ?T("The option specifies access rules. Each access rule is "
+            ?T("This option defines "
+               "http://../basic/#access-rules[Access Rules]. "
+               "Each access rule is "
                "assigned a name that can be referenced from other parts "
                "of the configuration file (mostly from 'access' options of "
                "ejabberd modules). Each rule definition may contain "
@@ -1083,9 +1085,10 @@ doc() ->
      {s2s_access,
       #{value => ?T("Access"),
         desc =>
-            ?T("The access rule to restrict server-to-server connections. "
-               "The default value is 'all' which means no restrictions "
-               "are applied.")}},
+            ?T("This http://../basic/#access-rules[Access Rule] defines to "
+               "what remote servers can s2s connections be established. "
+               "The default value is 'all'; no restrictions are applied, it is"
+               " allowed to connect s2s to/from all remote servers.")}},
      {s2s_cafile,
       #{value => ?T("Path"),
         desc =>
