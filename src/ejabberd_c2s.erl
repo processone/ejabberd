@@ -305,10 +305,10 @@ process_terminated(#{sid := SID, jid := JID, user := U, server := S, resource :=
 	     end,
     bounce_message_queue(SID, JID),
     State1;
-process_terminated(#{socket := Socket,
-		     stop_reason := {tls, _}} = State, Reason) ->
+process_terminated(#{stop_reason := {tls, _}} = State, Reason) ->
     ?WARNING_MSG("(~ts) Failed to secure c2s connection: ~ts",
-		 [xmpp_socket:pp(Socket), format_reason(State, Reason)]),
+		 [case State of #{socket := Socket} -> xmpp_socket:pp(Socket); _ -> <<"unknown">> end,
+format_reason(State, Reason)]),
     State;
 process_terminated(State, _Reason) ->
     State.
