@@ -71,7 +71,7 @@ AC_ARG_ENABLE(all,
 [AS_HELP_STRING([--enable-all],[same as --enable-odbc --enable-mssql --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-redis --enable-elixir --enable-stun --enable-sip --enable-debug --enable-lua --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
   yes) odbc=true mssql=true mysql=true pgsql=true sqlite=true pam=true zlib=true redis=true elixir=true stun=true sip=true debug=true lua=true tools=true ;;
-  no) odbc=false mssql=false ysql=false pgsql=false sqlite=false pam=false zlib=false redis=false elixir=false stun=false sip=false debug=false lua=false tools=false ;;
+  no) odbc=false mssql=false mysql=false pgsql=false sqlite=false pam=false zlib=false redis=false elixir=false stun=false sip=false debug=false lua=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -146,7 +146,7 @@ AC_ARG_ENABLE(mssql,
   yes) db_type=mssql; mssql=true ;;
   no)  db_type=generic; mssql=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
-esac],[if test "x$mssql" = "x"; then db_type=generic; mssql=false; fi])
+esac],[db_type=generic; if test "x$mssql" = "x"; then mssql=false; fi])
 
 AC_ARG_ENABLE(mysql,
 [AS_HELP_STRING([--enable-mysql],[enable MySQL support (default: no)])],
