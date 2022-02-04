@@ -21,7 +21,6 @@
 %% Macros
 {roster_gateway_workaround, @roster_gateway_workaround@}.
 {full_xml, @full_xml@}.
-{db_type, @db_type@}.
 {debug, @debug@}.
 {new_sql_schema, @new_sql_schema@}.
 

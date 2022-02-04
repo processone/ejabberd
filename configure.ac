@@ -143,10 +143,10 @@ esac],[if test "x$lua" = "x"; then lua=false; fi])
 AC_ARG_ENABLE(mssql,
 [AS_HELP_STRING([--enable-mssql],[use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
 [case "${enableval}" in
-  yes) db_type=mssql; mssql=true ;;
-  no)  db_type=generic; mssql=false ;;
+  yes) mssql=true ;;
+  no)  mssql=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
-esac],[db_type=generic; if test "x$mssql" = "x"; then mssql=false; fi])
+esac],[if test "x$mssql" = "x"; then mssql=false; fi])
 
 AC_ARG_ENABLE(mysql,
 [AS_HELP_STRING([--enable-mysql],[enable MySQL support (default: no)])],
@@ -283,7 +283,6 @@ esac
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(new_sql_schema)
 AC_SUBST(full_xml)
-AC_SUBST(db_type)
 AC_SUBST(odbc)
 AC_SUBST(mssql)
 AC_SUBST(mysql)
