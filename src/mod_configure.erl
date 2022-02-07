@@ -171,9 +171,14 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 	  ?INFO_COMMAND(?T("Get User Last Login Time"), Lang);
       ?NS_ADMINL(<<"user-stats">>) ->
 	  ?INFO_COMMAND(?T("Get User Statistics"), Lang);
+      ?NS_ADMINL(<<"get-registered-users-list">>) ->
+	  ?INFO_COMMAND(?T("Get List of Registered Users"),
+			Lang);
       ?NS_ADMINL(<<"get-registered-users-num">>) ->
 	  ?INFO_COMMAND(?T("Get Number of Registered Users"),
 			Lang);
+      ?NS_ADMINL(<<"get-online-users-list">>) ->
+	  ?INFO_COMMAND(?T("Get List of Online Users"), Lang);
       ?NS_ADMINL(<<"get-online-users-num">>) ->
 	  ?INFO_COMMAND(?T("Get Number of Online Users"), Lang);
       _ -> Acc
@@ -252,7 +257,11 @@ get_local_features(Acc, From,
 		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"user-stats">>) ->
 		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
+	    ?NS_ADMINL(<<"get-registered-users-list">>) ->
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"get-registered-users-num">>) ->
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
+	    ?NS_ADMINL(<<"get-online-users-list">>) ->
 		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"get-online-users-num">>) ->
 		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
@@ -476,7 +485,11 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To,
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"user-stats">>) ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
+	    ?NS_ADMINL(<<"get-registered-users-list">>) ->
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"get-registered-users-num">>) ->
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
+	    ?NS_ADMINL(<<"get-online-users-list">>) ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"get-online-users-num">>) ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
@@ -515,8 +528,12 @@ get_local_items(_Host, [<<"user">>], Server, Lang) ->
 	    (?NS_ADMINX(<<"get-user-lastlogin">>))),
       ?NODE(?T("Get User Statistics"),
 	    (?NS_ADMINX(<<"user-stats">>))),
+      ?NODE(?T("Get List of Registered Users"),
+	    (?NS_ADMINX(<<"get-registered-users-list">>))),
       ?NODE(?T("Get Number of Registered Users"),
 	    (?NS_ADMINX(<<"get-registered-users-num">>))),
+      ?NODE(?T("Get List of Online Users"),
+	    (?NS_ADMINX(<<"get-online-users-list">>))),
       ?NODE(?T("Get Number of Online Users"),
 	    (?NS_ADMINX(<<"get-online-users-num">>)))]};
 get_local_items(_Host, [<<"http:">> | _], _Server,
@@ -1065,6 +1082,16 @@ get_form(_Host, ?NS_ADMINL(<<"user-stats">>), Lang) ->
 				   label = tr(Lang, ?T("Jabber ID")),
 				   var = <<"accountjid">>,
 				   required = true}]}};
+get_form(Host, ?NS_ADMINL(<<"get-registered-users-list">>), Lang) ->
+    Values = [jid:encode(jid:make(U, Host))
+              || {U, _} <- ejabberd_auth:get_users(Host)],
+    {result, completed,
+     #xdata{type = form,
+	    fields = [?HFIELD(),
+		      #xdata_field{type = 'jid-multi',
+				   label = tr(Lang, ?T("The list of all users")),
+				   var = <<"registereduserjids">>,
+				   values = Values}]}};
 get_form(Host,
 	 ?NS_ADMINL(<<"get-registered-users-num">>), Lang) ->
     Num = integer_to_binary(ejabberd_auth:count_users(Host)),
@@ -1075,6 +1102,17 @@ get_form(Host,
 				   label = tr(Lang, ?T("Number of registered users")),
 				   var = <<"registeredusersnum">>,
 				   values = [Num]}]}};
+get_form(Host, ?NS_ADMINL(<<"get-online-users-list">>), Lang) ->
+    Accounts = [jid:encode(jid:make(U, Host))
+              || {U, _, _} <- ejabberd_sm:get_vh_session_list(Host)],
+    Values = lists:usort(Accounts),
+    {result, completed,
+     #xdata{type = form,
+	    fields = [?HFIELD(),
+		      #xdata_field{type = 'jid-multi',
+				   label = tr(Lang, ?T("The list of all online users")),
+				   var = <<"onlineuserjids">>,
+				   values = Values}]}};
 get_form(Host, ?NS_ADMINL(<<"get-online-users-num">>),
 	 Lang) ->
     Num = integer_to_binary(ejabberd_sm:get_vh_session_number(Host)),
