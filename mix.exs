@@ -78,7 +78,7 @@ defmodule Ejabberd.MixProject do
   defp erlc_options do
     # Use our own includes + includes from all dependencies
     includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
-    result = [:debug_info, {:d, :ELIXIR_ENABLED}] ++
+    result = [{:d, :ELIXIR_ENABLED}] ++
              cond_options() ++
              Enum.map(includes, fn (path) -> {:i, path} end) ++
              if_version_above('20', [{:d, :DEPRECATED_GET_STACKTRACE}]) ++
@@ -98,6 +98,8 @@ defmodule Ejabberd.MixProject do
   defp cond_options do
     for {:true, option} <- [{config(:sip), {:d, :SIP}},
                             {config(:stun), {:d, :STUN}},
+                            {config(:debug), :debug_info},
+                            {not config(:debug), {:debug_info, false}},
                             {config(:roster_gateway_workaround), {:d, :ROSTER_GATEWAY_WORKAROUND}},
                             {config(:new_sql_schema), {:d, :NEW_SQL_SCHEMA}}
                            ], do:
