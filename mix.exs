@@ -84,6 +84,7 @@ defmodule Ejabberd.MixProject do
              if_version_above('20', [{:d, :DEPRECATED_GET_STACKTRACE}]) ++
              if_version_below('21', [{:d, :USE_OLD_HTTP_URI}]) ++
              if_version_below('22', [{:d, :LAGER}]) ++
+             if_version_below('21', [{:d, :NO_CUSTOMIZE_HOSTNAME_CHECK}]) ++
              if_version_below('23', [{:d, :USE_OLD_CRYPTO_HMAC}]) ++
              if_version_below('23', [{:d, :USE_OLD_PG2}]) ++
              if_version_below('24', [{:d, :COMPILER_REPORTS_ONLY_LINES}]) ++
