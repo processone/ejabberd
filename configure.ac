@@ -157,7 +157,7 @@ AC_ARG_ENABLE(mysql,
 esac],[if test "x$mysql" = "x"; then mysql=false; fi])
 
 AC_ARG_ENABLE(new_sql_schema,
-[AS_HELP_STRING([--enable-new-sql-schema],[use new SQL schema (default: no)])],
+[AS_HELP_STRING([--enable-new-sql-schema],[use new SQL schema by default (default: no)])],
 [case "${enableval}" in
   yes) new_sql_schema=true ;;
   no)  new_sql_schema=false ;;
