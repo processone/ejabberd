@@ -43,7 +43,7 @@ defmodule Ejabberd.MixProject do
      extra_applications: [:mix],
      applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib,
                     :base64url, :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
-                    :p1_utils, :stringprep, :stun, :yconf],
+                    :p1_utils, :stringprep, :yconf],
      included_applications: [:lager, :mnesia, :os_mon,
                              :cache_tab, :eimp, :esip, :mqtree, :p1_acme,
                              :p1_oauth2, :pkix, :xmpp]
@@ -108,7 +108,6 @@ defmodule Ejabberd.MixProject do
      {:cache_tab, "~> 1.0"},
      {:distillery, "~> 2.0"},
      {:eimp, "~> 1.0"},
-     {:esip, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
      {:fast_tls, "~> 1.1"},
      {:fast_xml, "~> 1.1"},
@@ -119,13 +118,10 @@ defmodule Ejabberd.MixProject do
      {:lager, "~> 3.9.1"},
      {:mqtree, "~> 1.0"},
      {:p1_acme, "~> 1.0"},
-     {:p1_mysql, "~> 1.0"},
      {:p1_oauth2, "~> 0.6"},
-     {:p1_pgsql, "~> 1.1"},
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
-     {:stun, "~> 1.0"},
      {:xmpp, "~> 1.5"},
      {:yconf, "~> 1.0"}]
     ++ cond_deps()
@@ -146,9 +142,13 @@ defmodule Ejabberd.MixProject do
   defp cond_deps do
     for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0"}},
                          {config(:redis), {:eredis, "~> 1.2.0"}},
+                         {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {config(:lua), {:luerl, "~> 1.0"}},
-                         {config(:sqlite), {:sqlite3, "~> 1.1"}}], do:
+                         {config(:mysql), {:p1_mysql, "~> 1.0"}},
+                         {config(:pgsql), {:p1_pgsql, "~> 1.1"}},
+                         {config(:sqlite), {:sqlite3, "~> 1.1"}},
+                         {config(:stun), {:stun, "~> 1.0"}}], do:
       dep
   end
 
