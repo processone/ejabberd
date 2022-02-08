@@ -50,12 +50,6 @@
 
 -define(MOD, sql__module_).
 
--ifdef(NEW_SQL_SCHEMA).
--define(USE_NEW_SCHEMA, true).
--else.
--define(USE_NEW_SCHEMA, false).
--endif.
-
 %%====================================================================
 %% API
 %%====================================================================
