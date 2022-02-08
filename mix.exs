@@ -44,7 +44,7 @@ defmodule Ejabberd.MixProject do
      applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib,
                     :base64url, :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
                     :p1_utils, :stringprep, :yconf],
-     included_applications: [:lager, :mnesia, :os_mon,
+     included_applications: [:mnesia, :os_mon,
                              :cache_tab, :eimp, :mqtree, :p1_acme,
                              :p1_oauth2, :pkix, :xmpp]
      ++ cond_apps()]
@@ -118,7 +118,6 @@ defmodule Ejabberd.MixProject do
      {:idna, "~> 6.0"},
      {:jiffy, "~> 1.0.5"},
      {:jose, "~> 1.11.1"},
-     {:lager, "~> 3.9.1"},
      {:mqtree, "~> 1.0"},
      {:p1_acme, "~> 1.0"},
      {:p1_oauth2, "~> 0.6"},
@@ -147,6 +146,7 @@ defmodule Ejabberd.MixProject do
                          {config(:redis), {:eredis, "~> 1.2.0"}},
                          {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
+                         {if_version_below('22', true), {:lager, "~> 3.9.1"}},
                          {config(:lua), {:luerl, "~> 1.0"}},
                          {config(:mysql), {:p1_mysql, "~> 1.0"}},
                          {config(:pgsql), {:p1_pgsql, "~> 1.1"}},
@@ -159,6 +159,7 @@ defmodule Ejabberd.MixProject do
     for {:true, app} <- [{config(:pam), :epam},
                          {config(:lua), :luerl},
                          {config(:redis), :eredis},
+                         {if_version_below('22', true), :lager},
                          {config(:mysql), :p1_mysql},
                          {config(:sip), :esip},
                          {config(:odbc), :odbc},
