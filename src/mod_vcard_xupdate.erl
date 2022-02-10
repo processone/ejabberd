@@ -5,7 +5,7 @@
 %%% Created : 9 Mar 2007 by Igor Goryachev <igor@goryachev.org>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
