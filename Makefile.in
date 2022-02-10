@@ -275,6 +275,7 @@ copy-files-sub: copy-files-sub2
 relive:
 	$(RELIVECMD)
 
+relivelibdir=$(shell pwd)/$(DEPSDIR)
 relivedir=$(shell pwd)/_build/relive
 iexpath=$(shell which iex)
 
@@ -283,7 +284,7 @@ ejabberdctl.relive:
 		-e "s*{{installuser}}*@INSTALLUSER@*g" \
 		-e "s*{{bindir}}/iex*$(iexpath)*g" \
 		-e "s*{{bindir}}*@bindir@*g" \
-		-e "s*{{libdir}}*@libdir@*g" \
+		-e "s*{{libdir}}*${relivelibdir}*g" \
 		-e "s*{{sysconfdir}}/ejabberd*$(relivedir)/conf*g" \
 		-e "s*{{localstatedir}}/log/ejabberd*$(relivedir)/logs*g" \
 		-e "s*{{localstatedir}}/lib/ejabberd*$(relivedir)/database*g" \
