@@ -184,7 +184,8 @@ jobs:
         rebar3 cover
 
     - name: Check results
-      if: always()
+      if: always() && steps.ct.outcome != 'skipped'
+      id: ctresults
       run: |
         [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
         ln `find logs/ -name suite.log` logs/suite.log
@@ -193,7 +194,7 @@ jobs:
         test $(find logs/ -empty -name error.log)
 
     - name: View logs failures
-      if: failure()
+      if: failure() && steps.ctresults.outcome == 'failure'
       run: |
         cat logs/suite.log | awk \
           'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
