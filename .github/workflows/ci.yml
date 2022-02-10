@@ -134,7 +134,6 @@ jobs:
         make update
         make
 
-    - run: make rel
     - run: make install -s
     - run: make hooks
     - run: make options
@@ -143,6 +142,30 @@ jobs:
         make dialyzer
         [ ${{ matrix.rebar }} = 3 ] && true \
           || { cat dialyzer/error.log ; test ! -s dialyzer/error.log ; }
+
+    - name: Check Production Release
+      if: matrix.rebar == 3
+      run: |
+        make rel
+        RE=_build/prod/rel/ejabberd
+        $RE/bin/ejabberdctl start
+        $RE/bin/ejabberdctl started
+        $RE/bin/ejabberdctl stop
+        $RE/bin/ejabberdctl stopped
+        cat $RE/var/log/ejabberd/ejabberd.log
+        grep -q "is stopped in" $RE/var/log/ejabberd/ejabberd.log
+
+    - name: Check Development Release
+      if: matrix.rebar == 3
+      run: |
+        make dev
+        RE=_build/dev/rel/ejabberd
+        $RE/bin/ejabberdctl start
+        $RE/bin/ejabberdctl started
+        $RE/bin/ejabberdctl stop
+        $RE/bin/ejabberdctl stopped
+        cat $RE/var/log/ejabberd/ejabberd.log
+        grep -q "is stopped in" $RE/var/log/ejabberd/ejabberd.log
 
     - name: Run tests
       if: matrix.otp != 24
