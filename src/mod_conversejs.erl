@@ -133,9 +133,9 @@ mod_doc() ->
           "    websocket_url: \"ws://example.org:5280/websocket\""],
       opts =>
           [{websocket_url,
-            #{value => ?T("WebsocketURL"),
+            #{value => ?T("WebSocketURL"),
               desc =>
-                  ?T("A websocket URL to which Converse.js can connect to.")}},
+                  ?T("A WebSocket URL to which Converse.js can connect to.")}},
            {bosh_service_url,
             #{value => ?T("BoshURL"),
               desc =>

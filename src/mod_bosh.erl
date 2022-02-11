@@ -207,7 +207,7 @@ mod_doc() ->
              "It makes it possible to simulate long lived connections "
              "required by XMPP over the HTTP protocol. In practice, "
              "this module makes it possible to use XMPP in a browser without "
-             "Websocket support and more generally to have a way to use "
+             "WebSocket support and more generally to have a way to use "
              "XMPP while having to get through an HTTP proxy."),
       opts =>
           [{json,
