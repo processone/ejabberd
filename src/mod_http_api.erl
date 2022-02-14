@@ -525,8 +525,9 @@ mod_options(_) ->
 
 mod_doc() ->
     #{desc =>
-	  [?T("This module provides a ReST API to call ejabberd commands "
-	      "using JSON data."), "",
+	  [?T("This module provides a ReST interface to call "
+              "https://docs.ejabberd.im/developer/ejabberd-api[ejabberd API] "
+	      "commands using JSON data."), "",
 	   ?T("To use this module, in addition to adding it to the 'modules' "
 	      "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
               "http://../listen-options/#request-handlers[request_handlers]."), "",
