@@ -67,7 +67,7 @@ store_room(LServer, Host, Name, Opts, ChangesHints) ->
     SOpts = misc:term_to_expr(Opts2),
     Timestamp = case lists:keyfind(hibernation_time, 1, Opts) of
 		    false -> <<"1900-01-01 00:00:00">>;
-		    {_, undefined} -> <<"1900-01-01 00:00:00">>;
+		    {_, undefined} -> <<"1970-01-02 00:00:00">>;
 		    {_, Time} -> usec_to_sql_timestamp(Time)
 		end,
     F = fun () ->
@@ -77,7 +77,7 @@ store_room(LServer, Host, Name, Opts, ChangesHints) ->
                     "!host=%(Host)s",
                     "server_host=%(LServer)s",
                     "opts=%(SOpts)s",
-		    "created_at=%(Timestamp)s"]),
+		    "created_at=%(Timestamp)t"]),
                 case ChangesHints of
                     Changes when is_list(Changes) ->
                         [change_room(Host, Name, Change) || Change <- Changes];
@@ -191,7 +191,7 @@ get_hibernated_rooms_older_than(LServer, Host, Timestamp) ->
     case catch ejabberd_sql:sql_query(
 	LServer,
 	?SQL("select @(name)s, @(opts)s from muc_room"
-	     " where host=%(Host)s and created_at < %(TimestampS)s and created_at > '1900-01-01 00:00:00'")) of
+	     " where host=%(Host)s and created_at < %(TimestampS)t and created_at > '1970-01-02 00:00:00'")) of
 	{selected, RoomOpts} ->
 	    lists:map(
 		fun({Room, Opts}) ->

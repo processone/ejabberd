@@ -41,6 +41,7 @@
                 server_host_used = false,
                 used_vars = [],
                 use_new_schema,
+                need_timestamp_pass = false,
                 need_array_pass = false}).
 
 -define(QUERY_RECORD, "sql_query").
@@ -169,17 +170,24 @@ transform_sql(Arg) ->
               Pos, no_server_host),
             []
     end,
-    case ParseRes#state.need_array_pass of
-        true ->
+    case {ParseRes#state.need_array_pass, ParseRes#state.need_timestamp_pass} of
+        {true, _} ->
             {PR1, PR2} = perform_array_pass(ParseRes),
             {PRO1, PRO2} = perform_array_pass(ParseResOld),
             set_pos(make_schema_check(
-                    erl_syntax:list([erl_syntax:tuple([erl_syntax:atom(pgsql), make_sql_query(PR2)]),
+                    erl_syntax:list([erl_syntax:tuple([erl_syntax:atom(pgsql), make_sql_query(PR2, pgsql)]),
                                      erl_syntax:tuple([erl_syntax:atom(any), make_sql_query(PR1)])]),
-                    erl_syntax:list([erl_syntax:tuple([erl_syntax:atom(pgsql), make_sql_query(PRO2)]),
+                    erl_syntax:list([erl_syntax:tuple([erl_syntax:atom(pgsql), make_sql_query(PRO2, pgsql)]),
                                      erl_syntax:tuple([erl_syntax:atom(any), make_sql_query(PRO1)])])),
                 Pos);
-        false ->
+        {_, true} ->
+            set_pos(make_schema_check(
+                erl_syntax:list([erl_syntax:tuple([erl_syntax:atom(pgsql), make_sql_query(ParseRes, pgsql)]),
+                                 erl_syntax:tuple([erl_syntax:atom(any), make_sql_query(ParseRes)])]),
+                erl_syntax:list([erl_syntax:tuple([erl_syntax:atom(pgsql), make_sql_query(ParseResOld, pgsql)]),
+                                 erl_syntax:tuple([erl_syntax:atom(any), make_sql_query(ParseResOld)])])),
+                    Pos);
+        _ ->
             set_pos(
                 make_schema_check(
                     make_sql_query(ParseRes),
@@ -265,6 +273,8 @@ parse1([$@, $( | S], Acc, State) ->
                   [EVar]);
             string ->
                 EVar;
+            timestamp ->
+                EVar;
             boolean ->
                 erl_syntax:application(
                   erl_syntax:atom(ejabberd_sql),
@@ -295,7 +305,7 @@ parse1([$%, $( | S], Acc, State) ->
                                 erl_syntax:atom(?ESCAPE_RECORD),
                                 erl_syntax:atom(string)),
                               [erl_syntax:variable(Name)]),
-                        State3#state{'query' = [{var, Var},
+                        State3#state{'query' = [{var, Var, Type},
                                                 {str, "server_host="} |
                                                 State3#state.'query'],
                                      args = [Convert | State3#state.args],
@@ -327,21 +337,26 @@ parse1([$%, $( | S], Acc, State) ->
                         erl_syntax:atom(?ESCAPE_RECORD),
                         erl_syntax:atom(IT2)),
                      erl_syntax:variable(Name)]),
-                State2#state{'query' = [[{var, Var}] | State2#state.'query'],
+                State2#state{'query' = [[{var, Var, Type}] | State2#state.'query'],
                              need_array_pass = true,
                              args = [[Convert, ConvertArr] | State2#state.args],
                              params = [Var | State2#state.params],
                              param_pos = State2#state.param_pos + 1,
                              used_vars = [Name | State2#state.used_vars]};
             _ ->
+                {TS, Type2} = case Type of
+                            timestamp -> {true, string};
+                            Other -> {State2#state.need_timestamp_pass, Other}
+                        end,
                 Convert =
                     erl_syntax:application(
                       erl_syntax:record_access(
                         erl_syntax:variable(?ESCAPE_VAR),
                         erl_syntax:atom(?ESCAPE_RECORD),
-                        erl_syntax:atom(Type)),
+                        erl_syntax:atom(Type2)),
                       [erl_syntax:variable(Name)]),
-                State2#state{'query' = [{var, Var} | State2#state.'query'],
+                State2#state{'query' = [{var, Var, Type} | State2#state.'query'],
+                             need_timestamp_pass = TS,
                              args = [Convert | State2#state.args],
                              params = [Var | State2#state.params],
                              param_pos = State2#state.param_pos + 1,
@@ -359,7 +374,7 @@ parse1("%ESCAPE" ++ S, Acc, State) ->
           []),
     Var = State1#state.param_pos,
     State2 =
-        State1#state{'query' = [{var, Var} | State1#state.'query'],
+        State1#state{'query' = [{var, Var, string} | State1#state.'query'],
                      args = [Convert | State1#state.args],
                      params = [Var | State1#state.params],
                      param_pos = State1#state.param_pos + 1},
@@ -397,6 +412,7 @@ parse_name([$), T | S], Acc, 0, IsArg, State) ->
             $d -> integer;
             $s -> string;
             $b -> boolean;
+            $t -> timestamp;
             $H when IsArg -> host;
             _ ->
                 throw({error, State#state.loc,
@@ -420,10 +436,10 @@ make_var(V) ->
 
 perform_array_pass(State) ->
     {NQ, PQ, Rest} = lists:foldl(
-        fun([{var, _} = Var], {N, P, {str, Str} = Prev}) ->
+        fun([{var, _, _} = Var], {N, P, {str, Str} = Prev}) ->
             Str2 = re:replace(Str, "(^|\s+)in\s*$", " = any(", [{return, list}]),
             {[Var, Prev | N], [{str, ")"}, Var, {str, Str2} | P], none};
-           ([{var, _}], _) ->
+           ([{var, _, _}], _) ->
                throw({error, State#state.loc, ["List variable not following 'in' operator"]});
            (Other, {N, P, none}) ->
                {N, P, Other};
@@ -445,16 +461,27 @@ perform_array_pass(State) ->
      State#state{query = lists:reverse(PQ2), args = lists:reverse(PA), need_array_pass = false}}.
 
 make_sql_query(State) ->
+    make_sql_query(State, unknown).
+
+make_sql_query(State, Type) ->
     Hash = erlang:phash2(State#state{loc = undefined, use_new_schema = true}),
     SHash = <<"Q", (integer_to_binary(Hash))/binary>>,
     Query = pack_query(State#state.'query'),
     EQuery =
-        lists:map(
+        lists:flatmap(
           fun({str, S}) ->
-                  erl_syntax:binary(
+                  [erl_syntax:binary(
                     [erl_syntax:binary_field(
-                       erl_syntax:string(S))]);
-             ({var, V}) -> make_var(V)
+                       erl_syntax:string(S))])];
+             ({var, V, timestamp}) when Type == pgsql ->
+                 [erl_syntax:binary(
+                     [erl_syntax:binary_field(
+                         erl_syntax:string("to_timestamp("))]),
+                  make_var(V),
+                  erl_syntax:binary(
+                     [erl_syntax:binary_field(
+                         erl_syntax:string(", 'YYYY-MM-DD HH24:MI:SS')"))])];
+             ({var, V, _}) -> [make_var(V)]
           end, Query),
     erl_syntax:record_expr(
      erl_syntax:atom(?QUERY_RECORD),
@@ -709,7 +736,7 @@ make_sql_upsert_pgsql901(Table, ParseRes0) ->
            #state{'query' = [{str, " RETURNING *) "}]},
            Insert
           ]),
-    Upsert = make_sql_query(State),
+    Upsert = make_sql_query(State, pgsql),
     erl_syntax:application(
       erl_syntax:atom(ejabberd_sql),
       erl_syntax:atom(sql_query_t),
@@ -760,7 +787,7 @@ make_sql_upsert_pgsql905(Table, ParseRes0) ->
            #state{'query' = [{str, ") DO UPDATE SET "}]},
            Set
           ]),
-    Upsert = make_sql_query(State),
+    Upsert = make_sql_query(State, pgsql),
     erl_syntax:application(
       erl_syntax:atom(ejabberd_sql),
       erl_syntax:atom(sql_query_t),
@@ -884,12 +911,12 @@ resolve_vars(ST1, ST2) ->
           end, ST1#state.params),
     NewQuery =
         lists:map(
-          fun({var, Var}) ->
+          fun({var, Var, Type}) ->
                   case dict:find(Var, Map) of
                       {ok, New} ->
-                          {var, New};
+                          {var, New, Type};
                       error ->
-                          {var, Var}
+                          {var, Var, Type}
                   end;
              (S) -> S
           end, ST1#state.'query'),
