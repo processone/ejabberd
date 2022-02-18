@@ -45,7 +45,7 @@ defmodule Ejabberd.MixProject do
                     :base64url, :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
                     :p1_utils, :stringprep, :yconf],
      included_applications: [:lager, :mnesia, :os_mon,
-                             :cache_tab, :eimp, :esip, :mqtree, :p1_acme,
+                             :cache_tab, :eimp, :mqtree, :p1_acme,
                              :p1_oauth2, :pkix, :xmpp]
      ++ cond_apps()]
   end
@@ -158,6 +158,7 @@ defmodule Ejabberd.MixProject do
   defp cond_apps do
     for {:true, app} <- [{config(:redis), :eredis},
                          {config(:mysql), :p1_mysql},
+                         {config(:sip), :esip},
                          {config(:odbc), :odbc},
                          {config(:pgsql), :p1_pgsql},
                          {config(:sqlite), :sqlite3}], do:
