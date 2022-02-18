@@ -523,7 +523,8 @@ clean_tables(ServerHost) ->
     end.
 
 usec_to_sql_timestamp(Timestamp) ->
-    case calendar:system_time_to_universal_time(Timestamp, microsecond) of
+    TS = misc:usec_to_now(Timestamp),
+    case calendar:now_to_universal_time(TS) of
 	{{Year, Month, Day}, {Hour, Minute, Second}} ->
 	    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B "
 					 "~2..0B:~2..0B:~2..0B",

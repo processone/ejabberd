@@ -644,7 +644,7 @@ normal_state({route, ToNick,
 normal_state(hibernate, StateData) ->
     case maps:size(StateData#state.users) of
 	0 ->
-	    store_room_no_checks(StateData, [], erlang:system_time(microsecond)),
+	    store_room_no_checks(StateData, [], true),
 	    ?INFO_MSG("Hibernating room ~ts@~ts", [StateData#state.room, StateData#state.host]),
 	    {stop, normal, StateData#state{hibernate_timer = hibernating}};
 	_ ->
@@ -3997,8 +3997,8 @@ set_vcard_xupdate(State) ->
 -define(MAKE_CONFIG_OPT(Opt),
 	{get_config_opt_name(Opt), element(Opt, Config)}).
 
--spec make_opts(state(), integer | undefined) -> [{atom(), any()}].
-make_opts(StateData, HibernationTime) ->
+-spec make_opts(state(), boolean()) -> [{atom(), any()}].
+make_opts(StateData, Hibernation) ->
     Config = StateData#state.config,
     Subscribers = muc_subscribers_fold(
 		    fun(_LJID, Sub, Acc) ->
@@ -4042,7 +4042,7 @@ make_opts(StateData, HibernationTime) ->
      {hats_users,
       lists:map(fun({U, H}) -> {U, maps:to_list(H)} end,
                 maps:to_list(StateData#state.hats_users))},
-     {hibernation_time, HibernationTime},
+     {hibernation_time, if Hibernation -> erlang:system_time(microsecond); true -> undefined end},
      {subscribers, Subscribers}].
 
 expand_opts(CompactOpts) ->
@@ -5004,13 +5004,13 @@ add_to_log(Type, Data, StateData)
     when Type == roomconfig_change_disabledlogging ->
     mod_muc_log:add_to_log(StateData#state.server_host,
 			   roomconfig_change, Data, StateData#state.jid,
-			   make_opts(StateData, undefined));
+			   make_opts(StateData, false));
 add_to_log(Type, Data, StateData) ->
     case (StateData#state.config)#config.logging of
       true ->
 	  mod_muc_log:add_to_log(StateData#state.server_host,
 				 Type, Data, StateData#state.jid,
-				 make_opts(StateData, undefined));
+				 make_opts(StateData, false));
       false -> ok
     end.
 
@@ -5075,16 +5075,18 @@ store_room(StateData, ChangesHints) ->
                       StateData#state.host, StateData#state.room,
                       ChangesHints);
                 _ ->
-                    store_room_no_checks(StateData, ChangesHints, undefined)
+                    store_room_no_checks(StateData, ChangesHints, false),
+		    ok
             end;
        true ->
 	    ok
     end.
 
-store_room_no_checks(StateData, ChangesHints, HibernationTime) ->
+-spec store_room_no_checks(state(), list(), boolean()) -> {atomic, any()}.
+store_room_no_checks(StateData, ChangesHints, Hibernation) ->
     mod_muc:store_room(StateData#state.server_host,
 		       StateData#state.host, StateData#state.room,
-		       make_opts(StateData, HibernationTime),
+		       make_opts(StateData, Hibernation),
 		       ChangesHints).
 
 -spec send_subscriptions_change_notifications(jid(), binary(), subscribe|unsubscribe, state()) -> ok.
