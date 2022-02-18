@@ -402,10 +402,10 @@ init([Host, Worker]) ->
 			 {stop, normal, ok, state()}.
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
-handle_call({unhibernate, Room, Host}, _From,
+handle_call({unhibernate, Room, Host, ResetHibernationTime}, _From,
     #{server_host := ServerHost} = State) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    {reply, load_room(RMod, Host, ServerHost, Room), State};
+    {reply, load_room(RMod, Host, ServerHost, Room, ResetHibernationTime), State};
 handle_call({create, Room, Host, Opts}, _From,
 	    #{server_host := ServerHost} = State) ->
     ?DEBUG("MUC: create new room '~ts'~n", [Room]),
@@ -579,11 +579,15 @@ extract_password(#iq{} = IQ) ->
 
 -spec unhibernate_room(binary(), binary(), binary()) -> {ok, pid()} | error.
 unhibernate_room(ServerHost, Host, Room) ->
+    unhibernate_room(ServerHost, Host, Room, true).
+
+-spec unhibernate_room(binary(), binary(), binary(), boolean()) -> {ok, pid()} | error.
+unhibernate_room(ServerHost, Host, Room, ResetHibernationTime) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
 	    Proc = procname(ServerHost, {Room, Host}),
-	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host}, 20000) of
+	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host, ResetHibernationTime}, 20000) of
 		{ok, _} = R -> R;
 		_ -> error
 	    end;
@@ -605,7 +609,7 @@ route_to_room(Packet, ServerHost) ->
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err);
 		StartType ->
-		    case load_room(RMod, Host, ServerHost, Room) of
+		    case load_room(RMod, Host, ServerHost, Room, true) of
 			{error, notfound} when StartType == start ->
 			    case check_create_room(ServerHost, Host, Room, From) of
 				true ->
@@ -849,28 +853,36 @@ load_permanent_rooms(Hosts, ServerHost, Opts) ->
 		    lists:foreach(
 			fun(R) ->
 			    {Room, _} = R#muc_room.name_host,
-			    unhibernate_room(ServerHost, Host, Room)
+			    unhibernate_room(ServerHost, Host, Room, false)
 			end, get_rooms(ServerHost, Host))
 		end, Hosts);
 	false ->
 	    ok
     end.
 
--spec load_room(module(), binary(), binary(), binary()) -> {ok, pid()} |
-							   {error, notfound | term()}.
-load_room(RMod, Host, ServerHost, Room) ->
+-spec load_room(module(), binary(), binary(), binary(), boolean()) ->
+    {ok, pid()} | {error, notfound | term()}.
+load_room(RMod, Host, ServerHost, Room, ResetHibernationTime) ->
     case restore_room(ServerHost, Host, Room) of
 	error ->
 	    {error, notfound};
 	Opts0 ->
+	    Mod = gen_mod:db_mod(ServerHost, mod_muc),
 	    case proplists:get_bool(persistent, Opts0) of
 		true ->
 		    ?DEBUG("Restore room: ~ts", [Room]),
-		    start_room(RMod, Host, ServerHost, Room, Opts0);
+		    Res2 = start_room(RMod, Host, ServerHost, Room, Opts0),
+		    case {Res2, ResetHibernationTime} of
+			{{ok, _}, true} ->
+			    NewOpts = lists:keyreplace(hibernation_time, 1, Opts0, {hibernation_time, undefined}),
+			    store_room(ServerHost, Host, Room, NewOpts, []);
+			_ ->
+			    ok
+		    end,
+		    Res2;
 		_ ->
 		    ?DEBUG("Restore hibernated non-persistent room: ~ts", [Room]),
 		    Res = start_room(RMod, Host, ServerHost, Room, Opts0),
-		    Mod = gen_mod:db_mod(ServerHost, mod_muc),
 		    case erlang:function_exported(Mod, get_subscribed_rooms, 3) of
 			true ->
 			    ok;

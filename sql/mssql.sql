@@ -32,7 +32,7 @@ CREATE TABLE [dbo].[archive] (
         [kind] [varchar] (10) NULL,
         [nick] [varchar] (250) NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [archive_PK] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [archive_PK] PRIMARY KEY CLUSTERED
 (
         [id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -56,7 +56,7 @@ CREATE TABLE [dbo].[archive_prefs] (
         [always] [text] NOT NULL,
         [never] [text] NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [archive_prefs_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [archive_prefs_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -76,7 +76,7 @@ CREATE TABLE [dbo].[last] (
         [username] [varchar] (250) NOT NULL,
         [seconds] [text] NOT NULL,
         [state] [text] NOT NULL,
- CONSTRAINT [last_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [last_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -86,7 +86,7 @@ CREATE TABLE [dbo].[motd] (
         [username] [varchar] (250) NOT NULL,
         [xml] [text] NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [motd_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [motd_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -114,6 +114,8 @@ CREATE TABLE [dbo].[muc_room] (
 
 CREATE UNIQUE CLUSTERED INDEX [muc_room_name_host] ON [muc_room] (name, host)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+CREATE INDEX [muc_room_host_created_at] ON [muc_registered] (host, nick)
+    WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE TABLE [dbo].[muc_online_room] (
         [name] [varchar] (250) NOT NULL,
@@ -155,7 +157,7 @@ CREATE INDEX [muc_room_subscribers_jid] ON [muc_room_subscribers] (jid);
 CREATE TABLE [dbo].[privacy_default_list] (
         [username] [varchar] (250) NOT NULL,
         [name] [varchar] (250) NOT NULL,
- CONSTRAINT [privacy_default_list_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [privacy_default_list_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -166,7 +168,7 @@ CREATE TABLE [dbo].[privacy_list] (
         [name] [varchar] (250) NOT NULL,
         [id] [bigint] IDENTITY(1,1) NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [privacy_list_PK] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [privacy_list_PK] PRIMARY KEY CLUSTERED
 (
         [id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -245,7 +247,7 @@ CREATE TABLE [dbo].[pubsub_state] (
         [affiliation] [char] (1) NOT NULL,
         [subscriptions] [text] NOT NULL DEFAULT '',
         [stateid] [bigint] IDENTITY(1,1) NOT NULL,
- CONSTRAINT [pubsub_state_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [pubsub_state_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [stateid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -272,7 +274,7 @@ CREATE TABLE [dbo].[pubsub_node] (
         [parent] [varchar] (255) NOT NULL DEFAULT '',
         [plugin] [text] NOT NULL,
         [nodeid] [bigint] IDENTITY(1,1) NOT NULL,
- CONSTRAINT [pubsub_node_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [pubsub_node_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [nodeid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -287,7 +289,7 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 CREATE TABLE [dbo].[roster_version] (
         [username] [varchar] (250) NOT NULL,
         [version] [text] NOT NULL,
- CONSTRAINT [roster_version_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [roster_version_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -348,7 +350,7 @@ CREATE TABLE [dbo].[spool] (
         [xml] [text] NOT NULL,
         [seq] [bigint] IDENTITY(1,1) NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [spool_PK] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [spool_PK] PRIMARY KEY CLUSTERED
 (
         [seq] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -365,7 +367,7 @@ CREATE TABLE [dbo].[sr_group] (
         [name] [varchar] (250) NOT NULL,
         [opts] [text] NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [sr_group_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [sr_group_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [name] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -393,7 +395,7 @@ CREATE TABLE [dbo].[users] (
         [salt] [text] NOT NULL DEFAULT '',
         [iterationcount] [smallint] NOT NULL DEFAULT 0,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [users_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [users_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -403,7 +405,7 @@ CREATE TABLE [dbo].[vcard] (
         [username] [varchar] (250) NOT NULL,
         [vcard] [text] NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [vcard_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [vcard_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -434,7 +436,7 @@ CREATE TABLE [dbo].[vcard_search] (
         [lorgname] [varchar] (250) NOT NULL,
         [orgunit] [text] NOT NULL,
         [lorgunit] [varchar] (250) NOT NULL,
- CONSTRAINT [vcard_search_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [vcard_search_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [lusername] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -502,7 +504,7 @@ CREATE TABLE [dbo].[oauth_token] (
     [jid] [text] NOT NULL,
     [scope] [text] NOT NULL,
     [expire] [bigint] NOT NULL,
- CONSTRAINT [oauth_token_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [oauth_token_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [token] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -526,7 +528,7 @@ CREATE TABLE [dbo].[bosh] (
     [sid] [varchar] (255) NOT NULL,
     [node] [varchar] (255) NOT NULL,
     [pid] [varchar](100) NOT NULL
- CONSTRAINT [bosh_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [bosh_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [sid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)

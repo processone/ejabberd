@@ -858,7 +858,7 @@ rooms_report(Method, Action, Service, Days) ->
 
 muc_unused(Method, Action, Service, Last_allowed) ->
     %% Get all required info about all existing rooms
-    Rooms_all = get_all_rooms(Service),
+    Rooms_all = get_all_rooms(Service, erlang:system_time(microsecond) - Last_allowed*24*60*60*1000),
 
     %% Decide which ones pass the requirements
     Rooms_pass = decide_rooms(Method, Rooms_all, Last_allowed),
@@ -883,14 +883,14 @@ get_online_rooms(ServiceArg) ->
 	   || {RoomName, RoomHost, Pid} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
-get_all_rooms(ServiceArg) ->
+get_all_rooms(ServiceArg, Timestamp) ->
     Hosts = find_services(ServiceArg),
     lists:flatmap(
       fun(Host) ->
-              get_all_rooms2(Host)
+              get_all_rooms2(Host, Timestamp)
       end, Hosts).
 
-get_all_rooms2(Host) ->
+get_all_rooms2(Host, Timestamp) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     OnlineRooms = get_online_rooms(Host),
     OnlineMap = lists:foldl(
@@ -900,8 +900,11 @@ get_all_rooms2(Host) ->
 
     Mod = gen_mod:db_mod(ServerHost, mod_muc),
     DbRooms =
-    case erlang:function_exported(Mod, get_rooms_without_subscribers, 2) of
-	true ->
+    case {erlang:function_exported(Mod, get_rooms_without_subscribers, 2),
+	  erlang:function_exported(Mod, get_hibernated_rooms_older_than, 3)} of
+	{_, true} ->
+	    Mod:get_hibernated_rooms_older_than(ServerHost, Host, Timestamp);
+	{true, _} ->
 	    Mod:get_rooms_without_subscribers(ServerHost, Host);
 	_ ->
 	    Mod:get_rooms(ServerHost, Host)
@@ -955,6 +958,8 @@ decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
 	Opts ->
 	    case lists:keyfind(hibernation_time, 1, Opts) of
 		false ->
+		    {NodeStartTime, 0};
+		{_, undefined} ->
 		    {NodeStartTime, 0};
 		{_, T} ->
 		    {T, 0}

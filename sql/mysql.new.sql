@@ -301,6 +301,7 @@ CREATE TABLE muc_room (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE UNIQUE INDEX i_muc_room_name_host USING BTREE ON muc_room(name(75), host(75));
+CREATE INDEX i_muc_room_host_created_at ON muc_room(host(75), created_at);
 
 CREATE TABLE muc_registered (
     jid text NOT NULL,

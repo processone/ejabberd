@@ -260,6 +260,7 @@ CREATE TABLE muc_room (
 );
 
 CREATE UNIQUE INDEX i_muc_room_name_host ON muc_room (name, host);
+CREATE INDEX i_muc_room_host_created_at ON muc_room USING btree (host, created_at);
 
 CREATE TABLE muc_registered (
     jid text NOT NULL,
