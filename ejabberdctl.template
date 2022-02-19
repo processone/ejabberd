@@ -68,7 +68,6 @@ done
 [ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
 [ -n "$ERLANG_NODE_ARG" ] && ERLANG_NODE="$ERLANG_NODE_ARG"
 [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && S="-s"
-: "${EJABBERD_DOC_PATH:="{{docdir}}"}"
 : "${EJABBERD_LOG_PATH:="$LOGS_DIR/ejabberd.log"}"
 
 # define erl parameters
@@ -98,7 +97,6 @@ EJABBERD_OPTS="-mnesia dir \"$SPOOL_DIR\" $MNESIA_OPTIONS $EJABBERD_OPTS -s ejab
 # export global variables
 export EJABBERD_CONFIG_PATH
 export EJABBERD_LOG_PATH
-export EJABBERD_DOC_PATH
 export EJABBERD_PID_PATH
 export ERL_CRASH_DUMP
 export ERL_EPMD_ADDRESS
