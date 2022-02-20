@@ -156,7 +156,9 @@ defmodule Ejabberd.MixProject do
   end
 
   defp cond_apps do
-    for {:true, app} <- [{config(:redis), :eredis},
+    for {:true, app} <- [{config(:pam), :epam},
+                         {config(:lua), :luerl},
+                         {config(:redis), :eredis},
                          {config(:mysql), :p1_mysql},
                          {config(:sip), :esip},
                          {config(:odbc), :odbc},
