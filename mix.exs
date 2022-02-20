@@ -26,9 +26,9 @@ defmodule Ejabberd.MixProject do
       '0.0' -> "0.0.0" # the full git repository wasn't downloaded
       'latest.0' -> "0.0.0" # running 'docker-ejabberd/ecs/build.sh latest'
       [_, _, ?., _, _] = x ->
-        head = String.replace(:erlang.list_to_binary(x), ~r/0+([0-9])/, "\\1")
+        head = String.replace(:erlang.list_to_binary(x), ~r/\.0+([0-9])/, ".\\1")
         <<head::binary, ".0">>
-      vsn -> String.replace(:erlang.list_to_binary(vsn), ~r/0+([0-9])/, "\\1")
+      vsn -> String.replace(:erlang.list_to_binary(vsn), ~r/\.0+([0-9])/, ".\\1")
     end
   end
 
