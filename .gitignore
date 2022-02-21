@@ -37,3 +37,5 @@
 /rebar.lock
 /log/
 Mnesia.nonode@nohost/
+# Binaries created with tools/make-binaries:
+/ejabberd-*.tar.gz

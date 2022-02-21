@@ -1,0 +1,1444 @@
+#!/bin/sh
+
+# Build portable binary release tarballs for Linux/x64 and Linux/arm64.
+#
+# Author: Holger Weiss <holger@zedat.fu-berlin.de>.
+#
+# Copyright (c) 2022 ProcessOne, SARL.
+# All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -e
+set -u
+
+export PATH='/usr/local/bin:/usr/bin:/bin'
+
+myself=${0##*/}
+
+info()
+{
+	echo "$myself: $*"
+}
+
+error()
+{
+	echo >&2 "$myself: $*"
+}
+
+usage()
+{
+	echo >&2 "Usage: $myself"
+	exit 2
+}
+
+mix_version()
+{
+	# Mix insists on SemVer format.
+	local vsn="$(printf '%s' "$1" | sed 's/\.0/./')"
+
+	case $vsn in
+	*.*.*) printf '%s' "$vsn" ;;
+	*.*) printf '%s.0' "$vsn" ;;
+	esac
+}
+
+if ! [ -e 'mix.exs' ] || ! [ -e "tools/$myself" ]
+then
+	error "Please call this script from the repository's root directory."
+	exit 2
+elif [ $# -ne 0 ]
+then
+	usage
+fi
+
+rel_name='ejabberd'
+rel_vsn=$(git describe | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
+mix_vsn=$(mix_version "$rel_vsn")
+crosstool_vsn='1.24.0'
+termcap_vsn='1.3.1'
+expat_vsn='2.4.8'
+zlib_vsn='1.2.12'
+yaml_vsn='0.2.5'
+ssl_vsn='1.1.1o'
+otp_vsn='24.3.4'
+elixir_vsn='1.13.4'
+pam_vsn='1.5.2'
+png_vsn='1.6.37'
+jpeg_vsn='9e'
+webp_vsn='1.2.2'
+gd_vsn='2.3.3'
+odbc_vsn='2.3.10'
+sqlite_vsn='3380300'
+root_dir="${BUILD_DIR:-$HOME/build}"
+bootstrap_dir="$root_dir/bootstrap"
+ct_prefix_dir="$root_dir/x-tools"
+build_dir="$root_dir/$rel_name"
+crosstool_dir="crosstool-ng-$crosstool_vsn"
+termcap_dir="termcap-$termcap_vsn"
+expat_dir="expat-$expat_vsn"
+zlib_dir="zlib-$zlib_vsn"
+yaml_dir="yaml-$yaml_vsn"
+ssl_dir="openssl-$ssl_vsn"
+otp_dir="otp_src_$otp_vsn"
+elixir_dir="elixir-$elixir_vsn"
+pam_dir="Linux-PAM-$pam_vsn"
+png_dir="libpng-$png_vsn"
+jpeg_dir="jpeg-$jpeg_vsn"
+webp_dir="libwebp-$webp_vsn"
+gd_dir="libgd-$gd_vsn"
+odbc_dir="unixODBC-$odbc_vsn"
+sqlite_dir="sqlite-autoconf-$sqlite_vsn"
+crosstool_tar="$crosstool_dir.tar.xz"
+termcap_tar="$termcap_dir.tar.gz"
+expat_tar="$expat_dir.tar.gz"
+zlib_tar="$zlib_dir.tar.gz"
+yaml_tar="$yaml_dir.tar.gz"
+ssl_tar="$ssl_dir.tar.gz"
+otp_tar="$otp_dir.tar.gz"
+elixir_tar="v$elixir_vsn.tar.gz"
+pam_tar="$pam_dir.tar.xz"
+png_tar="$png_dir.tar.gz"
+jpeg_tar="jpegsrc.v$jpeg_vsn.tar.gz"
+webp_tar="$webp_dir.tar.gz"
+gd_tar="$gd_dir.tar.gz"
+sqlite_tar="$sqlite_dir.tar.gz"
+odbc_tar="$odbc_dir.tar.gz"
+rel_tar="$rel_name-$mix_vsn.tar.gz"
+ct_jobs=$(nproc)
+src_dir="$root_dir/src"
+platform='x86_64-pc-linux-gnu'
+targets='x86_64-linux-gnu aarch64-linux-gnu'
+build_start=$(date '+%F %T')
+
+umask 022
+
+#' Try to find a browser for checking dependency versions.
+have_browser()
+{
+	for browser in 'lynx' 'links' 'elinks'
+	do
+		$browser -dump 'https://ejabberd.im/' >'/dev/null' && return 0
+	done
+	return 1
+}
+#.
+
+#' Check whether the given dependency version is up-to-date.
+check_vsn()
+{
+	local name="$1"
+	local our_vsn="$2"
+	local src_url="$3"
+	local reg_exp="$4"
+	local cur_vsn=$($browser -dump "$src_url" |
+	                sed -n "s/.*$reg_exp.*/\\1/p" |
+	                head -1)
+
+	if [ "$our_vsn" = "$cur_vsn" ]
+	then
+		return 0
+	else
+		error "Current $name version is: $cur_vsn"
+		error "But our $name version is: $our_vsn"
+		error "Update $0 or set CHECK_DEPS=false"
+		exit 1
+	fi
+}
+#.
+
+#' Check whether our dependency versions are up-to-date.
+check_deps()
+{
+	check_vsn 'OpenSSL' "$ssl_vsn" \
+	          'https://www.openssl.org/source/' \
+	          'openssl-\(1\.[0-9][0-9a-z.]*\)\.tar\.gz'
+	check_vsn 'LibYAML' "$yaml_vsn" \
+	          'https://pyyaml.org/wiki/LibYAML' \
+	          'yaml-\([0-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'zlib' "$zlib_vsn" \
+	          'https://zlib.net/' \
+	          'zlib-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'Expat' "$expat_vsn" \
+	          'https://github.com/libexpat/libexpat/releases' \
+	          'expat-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'Termcap' "$termcap_vsn" \
+	          'https://ftp.gnu.org/gnu/termcap/' \
+	          'termcap-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'SQLite' "$sqlite_vsn" \
+	          'https://www.sqlite.org/download.html' \
+	          'sqlite-autoconf-\([1-9][0-9]*\)\.tar\.gz'
+	check_vsn 'ODBC' "$odbc_vsn" \
+	          'http://www.unixodbc.org/download.html' \
+	          'unixODBC-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'Linux-PAM' "$pam_vsn" \
+	          'https://github.com/linux-pam/linux-pam/releases' \
+	          'Linux-PAM-\([1-9][0-9.]*\)\.tar\.xz'
+	check_vsn 'libpng' "$png_vsn" \
+	          'http://www.libpng.org/pub/png/libpng.html' \
+		  'libpng-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'JPEG' "$jpeg_vsn" \
+	          'https://www.ijg.org' \
+	          'jpegsrc.v\([1-9][0-9a-z]*\)\.tar\.gz'
+	check_vsn 'WebP' "$webp_vsn" \
+	          'https://developers.google.com/speed/webp/download' \
+	          'libwebp-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'LibGD' "$gd_vsn" \
+	          'https://github.com/libgd/libgd/releases' \
+	          'libgd-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'Elixir' "$elixir_vsn" \
+	          'https://elixir-lang.org/install.html' \
+	          'v\([1-9][0-9.]*\)\.tar\.gz'
+}
+#.
+
+#' Create common part of Crosstool-NG configuration file.
+create_common_config()
+{
+	local file="$1"
+
+	cat >"$file" <<-'EOF'
+		#
+		# crosstool-NG Configuration
+		#
+		CT_CONFIGURE_has_static_link=y
+		CT_CONFIGURE_has_cxx11=y
+		CT_CONFIGURE_has_wget=y
+		CT_CONFIGURE_has_curl=y
+		CT_CONFIGURE_has_make_3_81_or_newer=y
+		CT_CONFIGURE_has_make_4_0_or_newer=y
+		CT_CONFIGURE_has_libtool_2_4_or_newer=y
+		CT_CONFIGURE_has_libtoolize_2_4_or_newer=y
+		CT_CONFIGURE_has_autoconf_2_65_or_newer=y
+		CT_CONFIGURE_has_autoreconf_2_65_or_newer=y
+		CT_CONFIGURE_has_gnu_m4_1_4_12_or_newer=y
+		CT_CONFIGURE_has_python_3_4_or_newer=y
+		CT_CONFIGURE_has_bison_2_7_or_newer=y
+		CT_CONFIGURE_has_python=y
+		CT_CONFIGURE_has_git=y
+		CT_CONFIGURE_has_md5sum=y
+		CT_CONFIGURE_has_sha1sum=y
+		CT_CONFIGURE_has_sha256sum=y
+		CT_CONFIGURE_has_sha512sum=y
+		CT_CONFIGURE_has_install_with_strip_program=y
+		CT_CONFIG_VERSION_CURRENT="3"
+		CT_CONFIG_VERSION="3"
+		CT_MODULES=y
+
+		#
+		# Paths
+		#
+		CT_LOCAL_TARBALLS_DIR="${HOME}/src"
+		CT_WORK_DIR="${CT_TOP_DIR}/.build"
+		CT_BUILD_TOP_DIR="${CT_WORK_DIR:-${CT_TOP_DIR}/.build}/${CT_HOST:+HOST-${CT_HOST}/}${CT_TARGET}"
+		CT_PREFIX_DIR="${CT_PREFIX:-${HOME}/x-tools}/${CT_HOST:+HOST-${CT_HOST}/}${CT_TARGET}"
+		CT_REMOVE_DOCS=y
+		CT_PREFIX_DIR_RO=y
+		CT_STRIP_HOST_TOOLCHAIN_EXECUTABLES=y
+		CT_STRIP_TARGET_TOOLCHAIN_EXECUTABLES=y
+
+		#
+		# Downloading
+		#
+		CT_DOWNLOAD_AGENT_CURL=y
+		CT_CONNECT_TIMEOUT=10
+		CT_DOWNLOAD_CURL_OPTIONS="--location --ftp-pasv --retry 3 --fail --silent"
+		CT_VERIFY_DOWNLOAD_DIGEST=y
+		CT_VERIFY_DOWNLOAD_DIGEST_SHA512=y
+		CT_VERIFY_DOWNLOAD_DIGEST_ALG="sha512"
+
+		#
+		# Extracting
+		#
+		CT_OVERRIDE_CONFIG_GUESS_SUB=y
+		CT_PATCH_BUNDLED=y
+		CT_PATCH_ORDER="bundled"
+
+		#
+		# Build behavior
+		#
+		CT_PARALLEL_JOBS=0
+		CT_LOAD=""
+		CT_USE_PIPES=y
+		CT_EXTRA_CFLAGS_FOR_BUILD=""
+		CT_EXTRA_LDFLAGS_FOR_BUILD=""
+		CT_EXTRA_CFLAGS_FOR_HOST=""
+		CT_EXTRA_LDFLAGS_FOR_HOST=""
+		CT_CONFIG_SHELL_BASH=y
+		CT_CONFIG_SHELL="${bash}"
+
+		#
+		# Logging
+		#
+		CT_LOG_EXTRA=y
+		CT_LOG_LEVEL_MAX="EXTRA"
+		CT_LOG_PROGRESS_BAR=y
+
+		#
+		# Target options
+		#
+		CT_ARCH_CPU=""
+		CT_ARCH_TUNE=""
+
+		#
+		# Options for the CPU architecture
+		#
+		CT_ALL_ARCH_CHOICES="ALPHA ARC ARM AVR M68K MICROBLAZE MIPS MOXIE MSP430 NIOS2 POWERPC RISCV S390 SH SPARC X86 XTENSA"
+		CT_ARCH_SUFFIX=""
+		CT_OMIT_TARGET_VENDOR=y
+
+		#
+		# Generic target options
+		#
+		CT_DEMULTILIB=y
+		CT_ARCH_USE_MMU=y
+		CT_ARCH_SUPPORTS_32=y
+		CT_ARCH_SUPPORTS_64=y
+		CT_ARCH_DEFAULT_32=y
+		CT_ARCH_BITNESS=64
+		CT_ARCH_64=y
+
+		#
+		# Target optimisations
+		#
+		CT_ARCH_SUPPORTS_WITH_ARCH=y
+		CT_ARCH_SUPPORTS_WITH_CPU=y
+		CT_ARCH_SUPPORTS_WITH_TUNE=y
+		CT_ARCH_ARCH=""
+		CT_TARGET_CFLAGS=""
+		CT_TARGET_LDFLAGS=""
+
+		#
+		# General toolchain options
+		#
+		CT_FORCE_SYSROOT=y
+		CT_USE_SYSROOT=y
+		CT_SYSROOT_NAME="sysroot"
+		CT_SYSROOT_DIR_PREFIX=""
+		CT_WANTS_STATIC_LINK=y
+		CT_WANTS_STATIC_LINK_CXX=y
+		CT_SHOW_CT_VERSION=y
+		CT_TOOLCHAIN_PKGVERSION=""
+		CT_TOOLCHAIN_BUGURL=""
+
+		#
+		# Tuple completion and aliasing
+		#
+		CT_TARGET_ALIAS_SED_EXPR=""
+		CT_TARGET_ALIAS=""
+
+		#
+		# Toolchain type
+		#
+		CT_CROSS=y
+		CT_TOOLCHAIN_TYPE="cross"
+
+		#
+		# Build system
+		#
+		CT_BUILD=""
+		CT_BUILD_PREFIX=""
+		CT_BUILD_SUFFIX=""
+
+		#
+		# Operating System
+		#
+		CT_KERNEL_SUPPORTS_SHARED_LIBS=y
+		CT_KERNEL_LINUX=y
+		CT_KERNEL="linux"
+		CT_KERNEL_CHOICE_KSYM="LINUX"
+		CT_KERNEL_LINUX_SHOW=y
+
+		#
+		# Options for linux
+		#
+		CT_KERNEL_LINUX_PKG_KSYM="LINUX"
+		CT_LINUX_DIR_NAME="linux"
+		CT_LINUX_PKG_NAME="linux"
+		CT_LINUX_SRC_RELEASE=y
+		CT_LINUX_PATCH_ORDER="global"
+		CT_LINUX_V_3_16=y
+		CT_LINUX_VERSION="3.16.63"
+		CT_LINUX_MIRRORS="$(CT_Mirrors kernel.org linux ${CT_LINUX_VERSION})"
+		CT_LINUX_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_LINUX_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_LINUX_ARCHIVE_FORMATS=".tar.xz .tar.gz"
+		CT_LINUX_SIGNATURE_FORMAT="unpacked/.sign"
+		CT_LINUX_4_8_or_older=y
+		CT_LINUX_older_than_4_8=y
+		CT_LINUX_later_than_3_7=y
+		CT_LINUX_3_7_or_later=y
+		CT_LINUX_later_than_3_2=y
+		CT_LINUX_3_2_or_later=y
+		CT_KERNEL_LINUX_VERBOSITY_0=y
+		CT_KERNEL_LINUX_VERBOSE_LEVEL=0
+		CT_KERNEL_LINUX_INSTALL_CHECK=y
+		CT_ALL_KERNEL_CHOICES="BARE_METAL LINUX WINDOWS"
+
+		#
+		# Common kernel options
+		#
+		CT_SHARED_LIBS=y
+
+		#
+		# Binary utilities
+		#
+		CT_ARCH_BINFMT_ELF=y
+		CT_BINUTILS_BINUTILS=y
+		CT_BINUTILS="binutils"
+		CT_BINUTILS_CHOICE_KSYM="BINUTILS"
+		CT_BINUTILS_BINUTILS_SHOW=y
+
+		#
+		# Options for binutils
+		#
+		CT_BINUTILS_BINUTILS_PKG_KSYM="BINUTILS"
+		CT_BINUTILS_DIR_NAME="binutils"
+		CT_BINUTILS_USE_GNU=y
+		CT_BINUTILS_USE="BINUTILS"
+		CT_BINUTILS_PKG_NAME="binutils"
+		CT_BINUTILS_SRC_RELEASE=y
+		CT_BINUTILS_PATCH_ORDER="global"
+		CT_BINUTILS_MIRRORS="$(CT_Mirrors GNU binutils) $(CT_Mirrors sourceware binutils/releases)"
+		CT_BINUTILS_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_BINUTILS_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_BINUTILS_ARCHIVE_FORMATS=".tar.xz .tar.bz2 .tar.gz"
+		CT_BINUTILS_SIGNATURE_FORMAT="packed/.sig"
+		CT_BINUTILS_later_than_2_27=y
+		CT_BINUTILS_2_27_or_later=y
+		CT_BINUTILS_later_than_2_25=y
+		CT_BINUTILS_2_25_or_later=y
+		CT_BINUTILS_later_than_2_23=y
+		CT_BINUTILS_2_23_or_later=y
+
+		#
+		# GNU binutils
+		#
+		CT_BINUTILS_HAS_HASH_STYLE=y
+		CT_BINUTILS_HAS_GOLD=y
+		CT_BINUTILS_HAS_PLUGINS=y
+		CT_BINUTILS_HAS_PKGVERSION_BUGURL=y
+		CT_BINUTILS_GOLD_SUPPORTS_ARCH=y
+		CT_BINUTILS_GOLD_SUPPORT=y
+		CT_BINUTILS_FORCE_LD_BFD_DEFAULT=y
+		CT_BINUTILS_LINKER_LD_GOLD=y
+		CT_BINUTILS_GOLD_INSTALLED=y
+		CT_BINUTILS_GOLD_THREADS=y
+		CT_BINUTILS_LINKER_BOTH=y
+		CT_BINUTILS_LINKERS_LIST="ld,gold"
+		CT_BINUTILS_LD_WRAPPER=y
+		CT_BINUTILS_LINKER_DEFAULT="bfd"
+		CT_BINUTILS_PLUGINS=y
+		CT_BINUTILS_RELRO=m
+		CT_BINUTILS_EXTRA_CONFIG_ARRAY=""
+		CT_ALL_BINUTILS_CHOICES="BINUTILS"
+
+		#
+		# C-library
+		#
+		CT_LIBC_GLIBC=y
+		CT_LIBC="glibc"
+		CT_LIBC_CHOICE_KSYM="GLIBC"
+		CT_THREADS="nptl"
+		CT_LIBC_GLIBC_SHOW=y
+
+		#
+		# Options for glibc
+		#
+		CT_LIBC_GLIBC_PKG_KSYM="GLIBC"
+		CT_GLIBC_DIR_NAME="glibc"
+		CT_GLIBC_USE_GNU=y
+		CT_GLIBC_USE="GLIBC"
+		CT_GLIBC_PKG_NAME="glibc"
+		CT_GLIBC_SRC_RELEASE=y
+		CT_GLIBC_PATCH_ORDER="global"
+		CT_GLIBC_V_2_17=y
+		CT_GLIBC_VERSION="2.17"
+		CT_GLIBC_MIRRORS="$(CT_Mirrors GNU glibc)"
+		CT_GLIBC_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_GLIBC_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_GLIBC_ARCHIVE_FORMATS=".tar.xz .tar.bz2 .tar.gz"
+		CT_GLIBC_SIGNATURE_FORMAT="packed/.sig"
+		CT_GLIBC_2_29_or_older=y
+		CT_GLIBC_older_than_2_29=y
+		CT_GLIBC_2_27_or_older=y
+		CT_GLIBC_older_than_2_27=y
+		CT_GLIBC_2_26_or_older=y
+		CT_GLIBC_older_than_2_26=y
+		CT_GLIBC_2_25_or_older=y
+		CT_GLIBC_older_than_2_25=y
+		CT_GLIBC_2_24_or_older=y
+		CT_GLIBC_older_than_2_24=y
+		CT_GLIBC_2_23_or_older=y
+		CT_GLIBC_older_than_2_23=y
+		CT_GLIBC_2_20_or_older=y
+		CT_GLIBC_older_than_2_20=y
+		CT_GLIBC_2_17_or_later=y
+		CT_GLIBC_2_17_or_older=y
+		CT_GLIBC_later_than_2_14=y
+		CT_GLIBC_2_14_or_later=y
+		CT_GLIBC_DEP_KERNEL_HEADERS_VERSION=y
+		CT_GLIBC_DEP_BINUTILS=y
+		CT_GLIBC_DEP_GCC=y
+		CT_GLIBC_DEP_PYTHON=y
+		CT_GLIBC_HAS_NPTL_ADDON=y
+		CT_GLIBC_HAS_PORTS_ADDON=y
+		CT_GLIBC_HAS_LIBIDN_ADDON=y
+		CT_GLIBC_USE_NPTL_ADDON=y
+		CT_GLIBC_HAS_OBSOLETE_RPC=y
+		CT_GLIBC_EXTRA_CONFIG_ARRAY=""
+		CT_GLIBC_CONFIGPARMS=""
+		CT_GLIBC_EXTRA_CFLAGS=""
+		CT_GLIBC_ENABLE_OBSOLETE_RPC=y
+		CT_GLIBC_OLDEST_ABI=""
+		CT_GLIBC_FORCE_UNWIND=y
+		CT_GLIBC_KERNEL_VERSION_NONE=y
+		CT_GLIBC_MIN_KERNEL=""
+		CT_ALL_LIBC_CHOICES="AVR_LIBC BIONIC GLIBC MINGW_W64 MOXIEBOX MUSL NEWLIB NONE UCLIBC"
+		CT_LIBC_SUPPORT_THREADS_ANY=y
+		CT_LIBC_SUPPORT_THREADS_NATIVE=y
+
+		#
+		# Common C library options
+		#
+		CT_THREADS_NATIVE=y
+
+		#
+		# C compiler
+		#
+		CT_CC_CORE_PASSES_NEEDED=y
+		CT_CC_CORE_PASS_1_NEEDED=y
+		CT_CC_CORE_PASS_2_NEEDED=y
+		CT_CC_SUPPORT_CXX=y
+		CT_CC_SUPPORT_FORTRAN=y
+		CT_CC_SUPPORT_ADA=y
+		CT_CC_SUPPORT_OBJC=y
+		CT_CC_SUPPORT_OBJCXX=y
+		CT_CC_SUPPORT_GOLANG=y
+		CT_CC_GCC=y
+		CT_CC="gcc"
+		CT_CC_CHOICE_KSYM="GCC"
+		CT_CC_GCC_SHOW=y
+
+		#
+		# Options for gcc
+		#
+		CT_CC_GCC_PKG_KSYM="GCC"
+		CT_GCC_DIR_NAME="gcc"
+		CT_GCC_USE_GNU=y
+		CT_GCC_USE="GCC"
+		CT_GCC_PKG_NAME="gcc"
+		CT_GCC_SRC_RELEASE=y
+		CT_GCC_PATCH_ORDER="global"
+		CT_GCC_V_8=y
+		CT_GCC_VERSION="8.3.0"
+		CT_GCC_MIRRORS="$(CT_Mirrors GNU gcc/gcc-${CT_GCC_VERSION}) $(CT_Mirrors sourceware gcc/releases/gcc-${CT_GCC_VERSION})"
+		CT_GCC_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_GCC_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_GCC_ARCHIVE_FORMATS=".tar.xz .tar.gz"
+		CT_GCC_SIGNATURE_FORMAT=""
+		CT_GCC_later_than_7=y
+		CT_GCC_7_or_later=y
+		CT_GCC_later_than_6=y
+		CT_GCC_6_or_later=y
+		CT_GCC_later_than_5=y
+		CT_GCC_5_or_later=y
+		CT_GCC_later_than_4_9=y
+		CT_GCC_4_9_or_later=y
+		CT_GCC_later_than_4_8=y
+		CT_GCC_4_8_or_later=y
+		CT_CC_GCC_ENABLE_PLUGINS=y
+		CT_CC_GCC_GOLD=y
+		CT_CC_GCC_HAS_LIBMPX=y
+		CT_CC_GCC_ENABLE_CXX_FLAGS=""
+		CT_CC_GCC_CORE_EXTRA_CONFIG_ARRAY=""
+		CT_CC_GCC_EXTRA_CONFIG_ARRAY=""
+		CT_CC_GCC_STATIC_LIBSTDCXX=y
+		CT_CC_GCC_CONFIG_TLS=m
+
+		#
+		# Optimisation features
+		#
+		CT_CC_GCC_USE_GRAPHITE=y
+		CT_CC_GCC_USE_LTO=y
+
+		#
+		# Settings for libraries running on target
+		#
+		CT_CC_GCC_ENABLE_TARGET_OPTSPACE=y
+
+		#
+		# Misc. obscure options.
+		#
+		CT_CC_CXA_ATEXIT=y
+		CT_CC_GCC_SJLJ_EXCEPTIONS=m
+		CT_CC_GCC_LDBL_128=m
+		CT_CC_GCC_LNK_HASH_STYLE_BOTH=y
+		CT_CC_GCC_LNK_HASH_STYLE="both"
+		CT_CC_GCC_DEC_FLOAT_AUTO=y
+		CT_ALL_CC_CHOICES="GCC"
+
+		#
+		# Additional supported languages:
+		#
+		CT_CC_LANG_CXX=y
+
+		#
+		# Debug facilities
+		#
+		CT_ALL_DEBUG_CHOICES="DUMA GDB LTRACE STRACE"
+
+		#
+		# Companion libraries
+		#
+		CT_COMP_LIBS_GETTEXT=y
+		CT_COMP_LIBS_GETTEXT_PKG_KSYM="GETTEXT"
+		CT_GETTEXT_DIR_NAME="gettext"
+		CT_GETTEXT_PKG_NAME="gettext"
+		CT_GETTEXT_SRC_RELEASE=y
+		CT_GETTEXT_PATCH_ORDER="global"
+		CT_GETTEXT_V_0_19_8_1=y
+		CT_GETTEXT_VERSION="0.19.8.1"
+		CT_GETTEXT_MIRRORS="$(CT_Mirrors GNU gettext)"
+		CT_GETTEXT_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_GETTEXT_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_GETTEXT_ARCHIVE_FORMATS=".tar.xz .tar.lz .tar.gz"
+		CT_GETTEXT_SIGNATURE_FORMAT="packed/.sig"
+		CT_COMP_LIBS_GMP=y
+		CT_COMP_LIBS_GMP_PKG_KSYM="GMP"
+		CT_GMP_DIR_NAME="gmp"
+		CT_GMP_PKG_NAME="gmp"
+		CT_GMP_SRC_RELEASE=y
+		CT_GMP_PATCH_ORDER="global"
+		CT_GMP_V_6_1=y
+		CT_GMP_VERSION="6.1.2"
+		CT_GMP_MIRRORS="https://gmplib.org/download/gmp https://gmplib.org/download/gmp/archive $(CT_Mirrors GNU gmp)"
+		CT_GMP_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_GMP_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_GMP_ARCHIVE_FORMATS=".tar.xz .tar.lz .tar.bz2"
+		CT_GMP_SIGNATURE_FORMAT="packed/.sig"
+		CT_GMP_later_than_5_1_0=y
+		CT_GMP_5_1_0_or_later=y
+		CT_GMP_later_than_5_0_0=y
+		CT_GMP_5_0_0_or_later=y
+		CT_GMP_REQUIRE_5_0_0_or_later=y
+		CT_COMP_LIBS_ISL=y
+		CT_COMP_LIBS_ISL_PKG_KSYM="ISL"
+		CT_ISL_DIR_NAME="isl"
+		CT_ISL_PKG_NAME="isl"
+		CT_ISL_SRC_RELEASE=y
+		CT_ISL_PATCH_ORDER="global"
+		CT_ISL_V_0_20=y
+		CT_ISL_VERSION="0.20"
+		CT_ISL_MIRRORS="https://libisl.sourceforge.io"
+		CT_ISL_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_ISL_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_ISL_ARCHIVE_FORMATS=".tar.xz .tar.bz2 .tar.gz"
+		CT_ISL_SIGNATURE_FORMAT=""
+		CT_ISL_later_than_0_18=y
+		CT_ISL_0_18_or_later=y
+		CT_ISL_later_than_0_15=y
+		CT_ISL_0_15_or_later=y
+		CT_ISL_REQUIRE_0_15_or_later=y
+		CT_ISL_later_than_0_14=y
+		CT_ISL_0_14_or_later=y
+		CT_ISL_REQUIRE_0_14_or_later=y
+		CT_ISL_later_than_0_13=y
+		CT_ISL_0_13_or_later=y
+		CT_ISL_later_than_0_12=y
+		CT_ISL_0_12_or_later=y
+		CT_ISL_REQUIRE_0_12_or_later=y
+		CT_COMP_LIBS_LIBICONV=y
+		CT_COMP_LIBS_LIBICONV_PKG_KSYM="LIBICONV"
+		CT_LIBICONV_DIR_NAME="libiconv"
+		CT_LIBICONV_PKG_NAME="libiconv"
+		CT_LIBICONV_SRC_RELEASE=y
+		CT_LIBICONV_PATCH_ORDER="global"
+		CT_LIBICONV_V_1_15=y
+		CT_LIBICONV_VERSION="1.15"
+		CT_LIBICONV_MIRRORS="$(CT_Mirrors GNU libiconv)"
+		CT_LIBICONV_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_LIBICONV_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_LIBICONV_ARCHIVE_FORMATS=".tar.gz"
+		CT_LIBICONV_SIGNATURE_FORMAT="packed/.sig"
+		CT_COMP_LIBS_MPC=y
+		CT_COMP_LIBS_MPC_PKG_KSYM="MPC"
+		CT_MPC_DIR_NAME="mpc"
+		CT_MPC_PKG_NAME="mpc"
+		CT_MPC_SRC_RELEASE=y
+		CT_MPC_PATCH_ORDER="global"
+		CT_MPC_V_1_1=y
+		CT_MPC_VERSION="1.1.0"
+		CT_MPC_MIRRORS="http://www.multiprecision.org/downloads $(CT_Mirrors GNU mpc)"
+		CT_MPC_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_MPC_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_MPC_ARCHIVE_FORMATS=".tar.gz"
+		CT_MPC_SIGNATURE_FORMAT="packed/.sig"
+		CT_MPC_1_1_0_or_later=y
+		CT_MPC_1_1_0_or_older=y
+		CT_COMP_LIBS_MPFR=y
+		CT_COMP_LIBS_MPFR_PKG_KSYM="MPFR"
+		CT_MPFR_DIR_NAME="mpfr"
+		CT_MPFR_PKG_NAME="mpfr"
+		CT_MPFR_SRC_RELEASE=y
+		CT_MPFR_PATCH_ORDER="global"
+		CT_MPFR_V_4_0=y
+		CT_MPFR_VERSION="4.0.2"
+		CT_MPFR_MIRRORS="http://www.mpfr.org/mpfr-${CT_MPFR_VERSION} $(CT_Mirrors GNU mpfr)"
+		CT_MPFR_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_MPFR_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_MPFR_ARCHIVE_FORMATS=".tar.xz .tar.bz2 .tar.gz .zip"
+		CT_MPFR_SIGNATURE_FORMAT="packed/.asc"
+		CT_MPFR_later_than_4_0_0=y
+		CT_MPFR_4_0_0_or_later=y
+		CT_MPFR_later_than_3_0_0=y
+		CT_MPFR_3_0_0_or_later=y
+		CT_MPFR_REQUIRE_3_0_0_or_later=y
+		CT_COMP_LIBS_NCURSES=y
+		CT_COMP_LIBS_NCURSES_PKG_KSYM="NCURSES"
+		CT_NCURSES_DIR_NAME="ncurses"
+		CT_NCURSES_PKG_NAME="ncurses"
+		CT_NCURSES_SRC_RELEASE=y
+		CT_NCURSES_PATCH_ORDER="global"
+		CT_NCURSES_V_6_1=y
+		CT_NCURSES_VERSION="6.1"
+		CT_NCURSES_MIRRORS="ftp://invisible-island.net/ncurses $(CT_Mirrors GNU ncurses)"
+		CT_NCURSES_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_NCURSES_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_NCURSES_ARCHIVE_FORMATS=".tar.gz"
+		CT_NCURSES_SIGNATURE_FORMAT="packed/.sig"
+		CT_NCURSES_HOST_CONFIG_ARGS=""
+		CT_NCURSES_HOST_DISABLE_DB=y
+		CT_NCURSES_HOST_FALLBACKS="linux,xterm,xterm-color,xterm-256color,vt100"
+		CT_NCURSES_TARGET_CONFIG_ARGS=""
+		CT_NCURSES_TARGET_FALLBACKS=""
+		CT_COMP_LIBS_ZLIB=y
+		CT_COMP_LIBS_ZLIB_PKG_KSYM="ZLIB"
+		CT_ZLIB_DIR_NAME="zlib"
+		CT_ZLIB_PKG_NAME="zlib"
+		CT_ZLIB_SRC_RELEASE=y
+		CT_ZLIB_PATCH_ORDER="global"
+		CT_ZLIB_V_1_2_11=y
+		CT_ZLIB_VERSION="1.2.11"
+		CT_ZLIB_MIRRORS="http://downloads.sourceforge.net/project/libpng/zlib/${CT_ZLIB_VERSION}"
+		CT_ZLIB_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_ZLIB_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_ZLIB_ARCHIVE_FORMATS=".tar.xz .tar.gz"
+		CT_ZLIB_SIGNATURE_FORMAT="packed/.asc"
+		CT_ALL_COMP_LIBS_CHOICES="CLOOG EXPAT GETTEXT GMP ISL LIBELF LIBICONV MPC MPFR NCURSES ZLIB"
+		CT_LIBICONV_NEEDED=y
+		CT_GETTEXT_NEEDED=y
+		CT_GMP_NEEDED=y
+		CT_MPFR_NEEDED=y
+		CT_ISL_NEEDED=y
+		CT_MPC_NEEDED=y
+		CT_NCURSES_NEEDED=y
+		CT_ZLIB_NEEDED=y
+		CT_LIBICONV=y
+		CT_GETTEXT=y
+		CT_GMP=y
+		CT_MPFR=y
+		CT_ISL=y
+		CT_MPC=y
+		CT_NCURSES=y
+		CT_ZLIB=y
+
+		#
+		# Companion tools
+		#
+		CT_COMP_TOOLS_FOR_HOST=y
+		CT_COMP_TOOLS_AUTOCONF=y
+		CT_COMP_TOOLS_AUTOCONF_PKG_KSYM="AUTOCONF"
+		CT_AUTOCONF_DIR_NAME="autoconf"
+		CT_AUTOCONF_PKG_NAME="autoconf"
+		CT_AUTOCONF_SRC_RELEASE=y
+		CT_AUTOCONF_PATCH_ORDER="global"
+		CT_AUTOCONF_V_2_69=y
+		CT_AUTOCONF_VERSION="2.69"
+		CT_AUTOCONF_MIRRORS="$(CT_Mirrors GNU autoconf)"
+		CT_AUTOCONF_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_AUTOCONF_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_AUTOCONF_ARCHIVE_FORMATS=".tar.xz .tar.gz"
+		CT_AUTOCONF_SIGNATURE_FORMAT="packed/.sig"
+		CT_COMP_TOOLS_AUTOMAKE=y
+		CT_COMP_TOOLS_AUTOMAKE_PKG_KSYM="AUTOMAKE"
+		CT_AUTOMAKE_DIR_NAME="automake"
+		CT_AUTOMAKE_PKG_NAME="automake"
+		CT_AUTOMAKE_SRC_RELEASE=y
+		CT_AUTOMAKE_PATCH_ORDER="global"
+		CT_AUTOMAKE_V_1_16=y
+		CT_AUTOMAKE_VERSION="1.16.1"
+		CT_AUTOMAKE_MIRRORS="$(CT_Mirrors GNU automake)"
+		CT_AUTOMAKE_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_AUTOMAKE_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_AUTOMAKE_ARCHIVE_FORMATS=".tar.xz .tar.gz"
+		CT_AUTOMAKE_SIGNATURE_FORMAT="packed/.sig"
+		CT_COMP_TOOLS_BISON=y
+		CT_COMP_TOOLS_BISON_PKG_KSYM="BISON"
+		CT_BISON_DIR_NAME="bison"
+		CT_BISON_PKG_NAME="bison"
+		CT_BISON_SRC_RELEASE=y
+		CT_BISON_PATCH_ORDER="global"
+		CT_BISON_V_3_3=y
+		CT_BISON_VERSION="3.3.2"
+		CT_BISON_MIRRORS="$(CT_Mirrors GNU bison)"
+		CT_BISON_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_BISON_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_BISON_ARCHIVE_FORMATS=".tar.xz .tar.gz"
+		CT_BISON_SIGNATURE_FORMAT="packed/.sig"
+		CT_COMP_TOOLS_LIBTOOL=y
+		CT_COMP_TOOLS_LIBTOOL_PKG_KSYM="LIBTOOL"
+		CT_LIBTOOL_DIR_NAME="libtool"
+		CT_LIBTOOL_PKG_NAME="libtool"
+		CT_LIBTOOL_SRC_RELEASE=y
+		CT_LIBTOOL_PATCH_ORDER="global"
+		CT_LIBTOOL_V_2_4=y
+		CT_LIBTOOL_VERSION="2.4.6"
+		CT_LIBTOOL_MIRRORS="$(CT_Mirrors GNU libtool)"
+		CT_LIBTOOL_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_LIBTOOL_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_LIBTOOL_ARCHIVE_FORMATS=".tar.xz .tar.gz"
+		CT_LIBTOOL_SIGNATURE_FORMAT="packed/.sig"
+		CT_COMP_TOOLS_M4=y
+		CT_COMP_TOOLS_M4_PKG_KSYM="M4"
+		CT_M4_DIR_NAME="m4"
+		CT_M4_PKG_NAME="m4"
+		CT_M4_SRC_RELEASE=y
+		CT_M4_PATCH_ORDER="global"
+		CT_M4_V_1_4=y
+		CT_M4_VERSION="1.4.18"
+		CT_M4_MIRRORS="$(CT_Mirrors GNU m4)"
+		CT_M4_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_M4_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_M4_ARCHIVE_FORMATS=".tar.xz .tar.bz2 .tar.gz"
+		CT_M4_SIGNATURE_FORMAT="packed/.sig"
+		CT_COMP_TOOLS_MAKE=y
+		CT_COMP_TOOLS_MAKE_PKG_KSYM="MAKE"
+		CT_MAKE_DIR_NAME="make"
+		CT_MAKE_PKG_NAME="make"
+		CT_MAKE_SRC_RELEASE=y
+		CT_MAKE_PATCH_ORDER="global"
+		CT_MAKE_V_4_2=y
+		CT_MAKE_VERSION="4.2.1"
+		CT_MAKE_MIRRORS="$(CT_Mirrors GNU make)"
+		CT_MAKE_ARCHIVE_FILENAME="@{pkg_name}-@{version}"
+		CT_MAKE_ARCHIVE_DIRNAME="@{pkg_name}-@{version}"
+		CT_MAKE_ARCHIVE_FORMATS=".tar.bz2 .tar.gz"
+		CT_MAKE_SIGNATURE_FORMAT="packed/.sig"
+		CT_MAKE_later_than_4_0=y
+		CT_MAKE_4_0_or_later=y
+		CT_ALL_COMP_TOOLS_CHOICES="AUTOCONF AUTOMAKE BISON DTC LIBTOOL M4 MAKE"
+	EOF
+}
+#.
+
+#' Create Crosstool-NG configuration file for x64.
+create_x64_config()
+{
+	local file="$1"
+
+	create_common_config "$file"
+
+	cat >>"$file" <<-'EOF'
+		#
+		# x64
+		#
+		CT_ARCH_X86=y
+		CT_ARCH="x86"
+		CT_ARCH_CHOICE_KSYM="X86"
+		CT_ARCH_X86_SHOW=y
+		CT_ARCH_X86_PKG_KSYM=""
+		CT_BINUTILS_V_2_32=y
+		CT_BINUTILS_VERSION="2.32"
+		CT_BINUTILS_later_than_2_30=y
+		CT_BINUTILS_2_30_or_later=y
+		CT_CC_GCC_LIBMPX=y
+		CT_CONFIGURE_has_lzip=y
+	EOF
+}
+#.
+
+#' Create Crosstool-NG configuration file for arm64.
+create_arm64_config()
+{
+	local file="$1"
+
+	create_common_config "$file"
+
+	cat >>"$file" <<-'EOF'
+		#
+		# arm64
+		#
+		CT_ARCH_ARM=y
+		CT_ARCH="arm"
+		CT_ARCH_CHOICE_KSYM="ARM"
+		CT_ARCH_ARM_SHOW=y
+		CT_ARCH_ARM_PKG_KSYM=""
+		CT_ARCH_SUPPORTS_BOTH_MMU=y
+		CT_ARCH_DEFAULT_HAS_MMU=y
+		CT_ARCH_SUPPORTS_FLAT_FORMAT=y
+		CT_ARCH_SUPPORTS_EITHER_ENDIAN=y
+		CT_ARCH_DEFAULT_LE=y
+		CT_ARCH_LE=y
+		CT_ARCH_ENDIAN="little"
+		CT_ARCH_EXCLUSIVE_WITH_CPU=y
+		CT_LINUX_REQUIRE_3_7_or_later=y
+		CT_BINUTILS_V_2_29=y
+		CT_BINUTILS_VERSION="2.29.1"
+		CT_BINUTILS_2_30_or_older=y
+		CT_BINUTILS_older_than_2_30=y
+		CT_BINUTILS_REQUIRE_older_than_2_30=y
+		CT_GLIBC_USE_PORTS_ADDON=y
+		CT_CONFIGURE_has_automake_1_15_or_newer=y
+	EOF
+}
+#.
+
+#' Return our name for the given platform.
+arch_name()
+{
+	local target="$1"
+
+	case $target in
+	x86_64*)
+		printf 'x64'
+		;;
+	aarch64*)
+		printf 'arm64'
+		;;
+	*)
+		error "Unsupported target platform: $target"
+		exit 1
+		;;
+	esac
+}
+#.
+
+#' Create and populate /opt/ejabberd directory.
+create_data_dir()
+{
+	local code_dir="$1"
+	local data_dir="$2"
+
+	mkdir "$data_dir" "$data_dir/database" "$data_dir/logs"
+	mv "$code_dir/conf" "$data_dir"
+	chmod 'o-rwx' "$data_dir/"*
+	curl -o "$data_dir/conf/cacert.pem" 'https://curl.se/ca/cacert.pem'
+	sed -i '/^loglevel:/a\
+\
+ca_file: /opt/ejabberd/conf/cacert.pem\
+\
+certfiles:\
+  - /opt/ejabberd/conf/server.pem' "$data_dir/conf/$rel_name.yml"
+}
+#.
+
+#' Add systemd unit and init script.
+add_systemd_unit()
+{
+	local code_dir="$1"
+
+	sed -e "s|@ctlscriptpath@|/opt/$rel_name-$rel_vsn/bin|g" \
+	    -e "s|@installuser@|$rel_name|g" 'ejabberd.service.template' \
+	    >"$code_dir/bin/ejabberd.service"
+	sed -e "s|@ctlscriptpath@|/opt/$rel_name-$rel_vsn/bin|g" \
+	    -e "s|@installuser@|$rel_name|g" 'ejabberd.init.template' \
+	    >"$code_dir/bin/ejabberd.init"
+	chmod '+x' "$code_dir/bin/ejabberd.init"
+}
+#.
+
+#' Use our VT100 to avoid depending on Terminfo, adjust options/paths.
+edit_ejabberdctl()
+{
+	local code_dir="$1"
+
+	sed -i \
+	    -e "2iexport TERM='internal'" \
+	    -e '/ERL_OPTIONS=/d' \
+	    -e 's|^ERLANG_NODE=ejabberd$|ERLANG_NODE=ejabberd@localhost|' \
+	    -e 's|_DIR:=".*}/|_DIR:="/opt/ejabberd/|' \
+	    "$code_dir/bin/${rel_name}ctl"
+}
+#.
+
+#' Delete unused files and directories, just to save some space.
+remove_unused_files()
+{
+	local code_dir="$1"
+
+	# Remove shared object file used only in test suite:
+	find "$code_dir/lib" -name 'otp_test_engine.so' -delete
+
+	# Remove shared object files of statically linked NIFs:
+	find "$code_dir/lib/crypto-"* "$code_dir/lib/asn1-"* \
+	    '(' -name 'asn1rt_nif.so' -o \
+	        -name 'crypto.so' -o \
+	        -name 'lib' -o \
+	        -name 'priv' ')' \
+	    -delete
+
+	# Remove unused ERTS binaries (see systools_make:erts_binary_filter/0):
+	find "$code_dir/erts-"*'/bin' \
+	    '(' -name 'ct_run' -o \
+	        -name 'dialyzer' -o \
+	        -name 'erlc' -o \
+	        -name 'typer' -o \
+	        -name 'yielding_c_fun' ')' \
+	    -delete
+
+	# Remove unused Mix stuff:
+	find "$code_dir/bin" -name 'ejabberd' -delete
+	find "$code_dir/releases" -name 'COOKIE' -delete
+}
+#.
+
+#' Strip ERTS binaries, shared objects, and BEAM files.
+strip_files()
+{
+	local code_dir="$1"
+	local strip_cmd="$2"
+
+	find "$code_dir/lib" \
+	    -type f \
+	    -name '*.so' \
+	    -exec "$strip_cmd" -s '{}' '+'
+	find "$code_dir/erts-"*'/bin' "$code_dir/lib/"*'/priv/bin' \
+	    -type f \
+	    -perm '-u+x' \
+	    -exec "$strip_cmd" -s '{}' '+' 2>'/dev/null' || :
+	erl -noinput -eval \
+	    "{ok, _} = beam_lib:strip_release('$code_dir'), halt()"
+}
+#.
+
+#' Build toochain for a given target.
+build_toolchain()
+{
+	local target="$1"
+	local prefix="$2"
+	local arch=$(arch_name "$target")
+
+	if [ -d "$prefix" ]
+	then
+		info "Using existing toolchain in $prefix ..."
+	else
+		if ! [ -x "$bootstrap_dir/bin/ct-ng" ]
+		then
+			info "Extracting Crosstool-NG $crosstool_vsn ..."
+			cd "$src_dir"
+			tar -xJf "$crosstool_tar"
+			cd "$OLDPWD"
+
+			info "Building Crosstool-NG $crosstool_vsn ..."
+			cd "$src_dir/$crosstool_dir"
+			./configure --prefix="$bootstrap_dir"
+			make
+			make install
+			cd "$OLDPWD"
+		fi
+
+		info "Building toolchain for $arch ..."
+		cd "$root_dir"
+		create_${arch}_config '.config'
+		ct-ng build CT_PREFIX="$ct_prefix_dir" CT_JOBS="$ct_jobs"
+		rm -rf '.config' '.build' 'build.log'
+		cd "$OLDPWD"
+	fi
+}
+#.
+
+#' Build target dependencies and the actual release.
+build_rel()
+{
+	local mode="$1"
+	local target="$2"
+	local prefix="$3"
+	local arch="$(arch_name "$target")"
+	local rel_dir="$PWD/_build/prod"
+	local target_src_dir="$prefix/src"
+	local target_dst_dir="$prefix/$rel_name-$rel_vsn"
+	local target_dst_tar="$rel_name-$rel_vsn-linux-$arch.tar.gz"
+	local saved_path="$PATH"
+
+	#
+	# The "$ct_prefix_dir/$target/$target/bin" directory contains cross
+	# compilation tools without "$target-" prefix. We add it to the PATH,
+	# just in case tools are called without prefix somewhere. However, we
+	# try to use the prefixed tools everywhere, so it should be possible to
+	# omit this directory from the path if desired. See also:
+	#
+	# https://stackoverflow.com/a/24243789
+	#
+	export PATH="$ct_prefix_dir/$target/bin:$ct_prefix_dir/$target/$target/bin:$PATH"
+	export CC="$target-gcc"
+	export CXX="$target-g++"
+	export CPP="$target-cpp"
+	export LD="$target-ld"
+	export AS="$target-as"
+	export AR="$target-ar"
+	export NM="$target-nm"
+	export RANLIB="$target-ranlib"
+	export OBJCOPY="$target-objcopy"
+	export STRIP="$target-strip"
+	export CPPFLAGS="-I$prefix/include"
+	export CFLAGS="-g0 -O2 -pipe -fomit-frame-pointer -static-libgcc $CPPFLAGS"
+	export CXXFLAGS="$CFLAGS -static-libstdc++"
+	export LDFLAGS="-L$prefix/lib -static-libgcc -static-libstdc++"
+	export ERL_COMPILER_OPTIONS='[deterministic, no_debug_info]'
+
+	if [ "$mode" = 'cross' ]
+	then configure="./configure --host=$target --build=$platform"
+	else configure='./configure'
+	fi
+
+	mkdir "$prefix"
+
+	info 'Extracting dependencies ...'
+	mkdir "$target_src_dir"
+	cd "$target_src_dir"
+	tar -xzf "$src_dir/$termcap_tar"
+	tar -xzf "$src_dir/$sqlite_tar"
+	tar -xzf "$src_dir/$odbc_tar"
+	tar -xzf "$src_dir/$expat_tar"
+	tar -xzf "$src_dir/$zlib_tar"
+	tar -xzf "$src_dir/$yaml_tar"
+	tar -xzf "$src_dir/$ssl_tar"
+	tar -xzf "$src_dir/$otp_tar"
+	tar -xzf "$src_dir/$elixir_tar"
+	tar -xzf "$src_dir/$png_tar"
+	tar -xzf "$src_dir/$jpeg_tar"
+	tar -xzf "$src_dir/$webp_tar"
+	tar -xzf "$src_dir/$gd_tar"
+	tar -xJf "$src_dir/$pam_tar"
+	cd "$OLDPWD"
+
+	info "Building Termcap $termcap_vsn for $arch ..."
+	cd "$target_src_dir/$termcap_dir"
+	$configure --prefix="$prefix"
+	cat >'config.h' <<-'EOF'
+		#ifndef CONFIG_H
+		#define CONFIG_H
+		#define INTERNAL_TERMINAL "internal:\\\n" \
+			"\t:am:bs:ms:xn:xo:\\\n" \
+			"\t:co#80:it#8:li#24:vt#3:\\\n" \
+			"\t:@8=\\EOM:DO=\\E[%dB:K1=\\EOq:K2=\\EOr:K3=\\EOs:K4=\\EOp:K5=\\EOn:\\\n" \
+			"\t:LE=\\E[%dD:RA=\\E[?7l:RI=\\E[%dC:SA=\\E[?7h:UP=\\E[%dA:\\\n" \
+			"\t:ac=``aaffggjjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~:\\\n" \
+			"\t:ae=^O:as=^N:bl=^G:cb=\\E[1K:cd=\\E[J:ce=\\E[K:cl=\\E[H\\E[J:\\\n" \
+			"\t:cm=\\E[%i%d;%dH:cr=^M:cs=\\E[%i%d;%dr:ct=\\E[3g:do=^J:\\\n" \
+			"\t:eA=\\E(B\\E)0:ho=\\E[H:k0=\\EOy:k1=\\EOP:k2=\\EOQ:k3=\\EOR:\\\n" \
+			"\t:k4=\\EOS:k5=\\EOt:k6=\\EOu:k7=\\EOv:k8=\\EOl:k9=\\EOw:k;=\\EOx:\\\n" \
+			"\t:kb=^H:kd=\\EOB:ke=\\E[?1l\\E>:kl=\\EOD:kr=\\EOC:ks=\\E[?1h\\E=:\\\n" \
+			"\t:ku=\\EOA:le=^H:mb=\\E[5m:md=\\E[1m:me=\\E[m\\017:mr=\\E[7m:\\\n" \
+			"\t:nd=\\E[C:rc=\\E8:rs=\\E>\\E[?3l\\E[?4l\\E[?5l\\E[?7h\\E[?8h:\\\n" \
+			"\t:..sa=\\E[0%?%p1%p6%|%t;1%;%?%p2%t;4%;%?%p1%p3%|%t;7%;%?%p4%t;5%;m%?%p9%t\\016%e\\017%;:\\\n" \
+			"\t:sc=\\E7:se=\\E[m:sf=^J:so=\\E[7m:sr=\\EM:st=\\EH:ta=^I:ue=\\E[m:\\\n" \
+			"\t:up=\\E[A:us=\\E[4m:"
+		#endif
+	EOF
+	make CPPFLAGS="$CPPFLAGS -DHAVE_CONFIG_H=1"
+	make install
+	cd "$OLDPWD"
+
+	info "Building zlib $zlib_vsn for $arch ..."
+	cd "$target_src_dir/$zlib_dir"
+	CFLAGS="$CFLAGS -O3 -fPIC" ./configure --prefix="$prefix" --static
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building OpenSSL $ssl_vsn for $arch ..."
+	cd "$target_src_dir/$ssl_dir"
+	CFLAGS="$CFLAGS -O3 -fPIC" ./Configure no-shared no-ui-console \
+	    --prefix="$prefix" \
+	    --openssldir="$prefix" \
+	    "linux-${target%-linux-gnu}"
+	make build_libs
+	make install_dev
+	cd "$OLDPWD"
+
+	info "Building Expat $expat_vsn for $arch ..."
+	cd "$target_src_dir/$expat_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    --without-docbook \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building LibYAML $yaml_vsn for $arch ..."
+	cd "$target_src_dir/$yaml_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building SQLite $sqlite_vsn for $arch ..."
+	cd "$target_src_dir/$sqlite_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building ODBC $odbc_vsn for $arch ..."
+	cd "$target_src_dir/$odbc_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building Linux-PAM $pam_vsn for $arch ..."
+	cd "$target_src_dir/$pam_dir"
+	$configure --prefix="$prefix" --includedir="$prefix/include/security" \
+	    --enable-static --disable-shared --disable-doc --enable-db=no \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building libpng $png_vsn for $arch ..."
+	cd "$target_src_dir/$png_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building JPEG $jpeg_vsn for $arch ..."
+	cd "$target_src_dir/$jpeg_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building WebP $webp_vsn for $arch ..."
+	cd "$target_src_dir/$webp_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building LibGD $gd_vsn for $arch ..."
+	cd "$target_src_dir/$gd_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    --with-zlib="$prefix" \
+	    --with-webp="$prefix" \
+	    --with-jpeg="$prefix" \
+	    --with-png="$prefix" \
+	    --without-avif \
+	    --without-fontconfig \
+	    --without-freetype \
+	    --without-heif \
+	    --without-libiconv-prefix \
+	    --without-liq \
+	    --without-raqm \
+	    --without-tiff \
+	    --without-x \
+	    --without-xpm \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building Erlang/OTP $otp_vsn for $arch ..."
+	if [ "$mode" = 'cross' ]
+	then
+		export PATH="$native_otp_bin:$PATH" # For Bootstrapping/Mix.
+		export erl_xcomp_sysroot="$prefix"
+	fi
+	cd "$target_src_dir/$otp_dir"
+	# Don't link against libnsl: https://github.com/erlang/otp/pull/5558
+	sed -i -e '/LIBS="-lnsl/d' -e '/LIBS="-lsocket/d' \
+	    'lib/erl_interface/configure'
+	# The additional CFLAGS/LIBS below are required by --enable-static-nifs.
+	# The "-ldl" flag specifically is only needed for ODBC, though.
+	$configure \
+	    --prefix="$prefix" \
+	    --with-ssl="$prefix" \
+	    --with-odbc="$prefix" \
+	    --without-javac \
+	    --disable-dynamic-ssl-lib \
+	    --enable-static-nifs \
+	    CFLAGS="$CFLAGS -Wl,-L$prefix/lib" \
+	    LIBS='-lcrypto -ldl'
+	make
+	make install
+	if [ "$mode" = 'native' ]
+	then
+		native_otp_bin="$prefix/bin"
+		export PATH="$native_otp_bin:$PATH" # For Mix.
+	else
+		unset erl_xcomp_sysroot
+	fi
+	cd "$OLDPWD"
+
+	info "Building Elixir $elixir_vsn for $arch ..."
+	cd "$target_src_dir/$elixir_dir"
+	make install PREFIX="$prefix"
+	cd "$OLDPWD"
+
+	if [ "$mode" = 'native' ] # In order to only do this once.
+	then
+		info "Fetching Mix dependencies"
+		mix local.hex --force
+		mix local.rebar --force
+	fi
+
+	info "Removing old $rel_name builds"
+	rm -rf '_build' 'deps'
+
+	info "Building $rel_name $rel_vsn for $arch ..."
+	./autogen.sh
+	eimp_defs='-DHAVE_GD -DHAVE_WEBP -DHAVE_JPEG -DHAVE_PNG'
+	eimp_libs='-lwebp -ljpeg -lpng -lz -lm'
+	export CC="$CC -Wl,-ldl" # Required by (statically linking) epam.
+	export LIBS="$eimp_libs -lcrypto -lpthread -ldl"
+	export CFLAGS="$CFLAGS $eimp_defs"
+	export LDFLAGS="$LDFLAGS $eimp_libs"
+	if [ "$mode" = 'cross' ]
+	then
+		# Hand over --host/--build to configure scripts of dependencies.
+		export host_alias="$target"
+		export build_alias="$platform"
+	fi
+	# The cache variable makes cross compilation work.
+	ac_cv_erlang_root_dir="$prefix/lib/erlang" $configure \
+	    --with-rebar='mix' \
+	    --with-sqlite3="$prefix" \
+	    --enable-user="$rel_name" \
+	    --enable-all \
+	    --disable-erlang-version-check
+	make deps
+	sed -i 's/ *-lstdc++ *//g' 'deps/'*'/rebar.config'* # Link statically.
+	if [ "$mode" = 'cross' ]
+	then
+		ln -s "$prefix/lib/erlang" 'lib/erlang'
+		erts_dir=$(ls -1d 'lib/erlang/erts-'*)
+		ei_inc="$prefix/lib/erlang/lib/erl_interface-"*'/include'
+		ei_lib="$prefix/lib/erlang/lib/erl_interface-"*'/lib'
+		export LDLIBS='-lpthread'
+		export ERL_EI_INCLUDE_DIR=$(ls -1d $ei_inc)
+		export ERL_EI_LIBDIR=$(ls -1d $ei_lib)
+		sed -i "/include_executables/a\\
+		    include_erts: \"$erts_dir\"," 'mix.exs'
+	fi
+	make rel
+	if [ "$mode" = 'cross' ]
+	then
+		sed -i '/include_erts/d' 'mix.exs'
+		rm 'lib/erlang'
+		unset LDLIBS ERL_EI_INCLUDE_DIR ERL_EI_LIBDIR
+		unset host_alias build_alias
+	fi
+
+	info "Putting together $rel_name $rel_vsn archive for $arch ..."
+	mkdir "$target_dst_dir"
+	tar -C "$target_dst_dir" -xzf "$rel_dir/$rel_tar"
+	create_data_dir "$target_dst_dir" "$prefix/$rel_name"
+	add_systemd_unit "$target_dst_dir"
+	edit_ejabberdctl "$target_dst_dir"
+	remove_unused_files "$target_dst_dir"
+	strip_files "$target_dst_dir" "$STRIP"
+	tar -C "$prefix" --owner="$rel_name" --group="$rel_name" -cf - \
+	    "$rel_name" "$rel_name-$rel_vsn" | gzip -9 >"$target_dst_tar"
+
+	info "Created $target_dst_tar successfully."
+
+	unset CC CXX CPP LD AS AR NM RANLIB OBJCOPY STRIP
+	unset CFLAGS CXXFLAGS LDFLAGS LIBS ERL_COMPILER_OPTIONS
+	export PATH="$saved_path"
+}
+#.
+
+if [ "${CHECK_DEPS:-true}" = 'true' ]
+then
+	if have_browser
+	then
+		check_deps
+	else
+		error 'Cannot check dependency versions.'
+		error 'Install a browser or set CHECK_DEPS=false'
+		exit 1
+	fi
+else
+	info "Won't check dependency versions."
+fi
+
+if ! mkdir -p "$root_dir"
+then
+	error 'Set BUILD_DIR to a usable build directory path.'
+	exit 1
+fi
+
+# Keep existing toolchains but rebuild everything else.
+
+info 'Removing old bootstrap tools ...'
+rm -rf "$bootstrap_dir"
+mkdir "$bootstrap_dir"
+
+info 'Removing old builds ...'
+rm -rf "$build_dir"
+mkdir "$build_dir"
+
+info 'Removing old source ...'
+rm -rf "$src_dir"
+mkdir "$src_dir"
+
+info 'Downloading dependencies ...'
+cd "$src_dir"
+curl -LO "http://crosstool-ng.org/download/crosstool-ng/$crosstool_tar"
+curl -LO "https://ftp.gnu.org/gnu/termcap/$termcap_tar"
+curl -LO "https://github.com/libexpat/libexpat/releases/download/R_$(printf '%s' "$expat_vsn" | sed 's/\./_/g')/$expat_tar"
+curl -LO "https://zlib.net/$zlib_tar"
+curl -LO "https://pyyaml.org/download/libyaml/$yaml_tar"
+curl -LO "https://www.openssl.org/source/$ssl_tar"
+curl -LO "https://github.com/erlang/otp/releases/download/OTP-$otp_vsn/$otp_tar"
+curl -LO "https://github.com/elixir-lang/elixir/archive/v$elixir_vsn.tar.gz"
+curl -LO "https://github.com/linux-pam/linux-pam/releases/download/v$pam_vsn/$pam_tar"
+curl -LO "https://download.sourceforge.net/libpng/$png_tar"
+curl -LO "https://www.ijg.org/files/$jpeg_tar"
+curl -LO "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/$webp_tar"
+curl -LO "https://github.com/libgd/libgd/releases/download/gd-$gd_vsn/$gd_tar"
+curl -LO "http://www.unixodbc.org/$odbc_tar"
+curl -LO "https://www.sqlite.org/$(date '+%Y')/$sqlite_tar" \
+    || curl -LO "https://www.sqlite.org/$(date -d '1 year ago' '+%Y')/$sqlite_tar" \
+    || curl -LO "https://www.sqlite.org/$(date -d '2 years ago' '+%Y')/$sqlite_tar"
+cd "$OLDPWD"
+
+mkdir "$bootstrap_dir/bin"
+export PATH="$bootstrap_dir/bin:$PATH" # For ct-ng.
+export LC_ALL='C.UTF-8' # Elixir insists on a UTF-8 environment.
+
+for target in $targets
+do
+	prefix="$build_dir/$(arch_name "$target")"
+	toolchain_dir="$ct_prefix_dir/$target"
+
+	if [ "$(uname -m)-linux-gnu" = "$target" ]
+	then mode='native'
+	else mode='cross'
+	fi
+	build_toolchain "$target" "$toolchain_dir"
+	build_rel "$mode" "$target" "$prefix"
+done
+
+info "Build started: $build_start"
+info "Build ended: $(date '+%F %T')"
+
+# vim:set foldmarker=#',#. foldmethod=marker:
