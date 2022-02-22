@@ -1,0 +1,237 @@
+#!/bin/sh
+
+# Build DEB and RPM packages for Linux/x64 and Linux/arm64.
+#
+# Author: Holger Weiss <holger@zedat.fu-berlin.de>.
+#
+# Copyright (c) 2022 ProcessOne, SARL.
+# All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -e
+set -u
+
+myself=${0##*/}
+architectures='x64 arm64'
+iteration=1
+
+usage()
+{
+	echo >&2 "Usage: $myself [-i <iteration>]"
+	exit 2
+}
+
+while getopts i: opt
+do
+	case $opt in
+	i)
+		iteration="$OPTARG"
+		;;
+	\?)
+		usage
+		;;
+	esac
+done
+shift $((OPTIND - 1))
+
+if ! [ -e 'mix.exs' ] || ! [ -e "tools/$myself" ]
+then
+	echo >&2 "Please call this script from the repository's root directory."
+	exit 2
+elif [ $# -ne 0 ]
+then
+	usage
+fi
+if ! type fpm >'/dev/null'
+then
+	echo >&2 'This script requires fpm: https://fpm.readthedocs.io'
+	exit 1
+fi
+
+rel_name='ejabberd'
+rel_vsn=$(git describe | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
+conf_dir="/opt/$rel_name/conf"
+pem_file="$conf_dir/server.pem"
+tmp_dir=$(mktemp -d "/tmp/.$myself.XXXXXX")
+
+trap 'rm -rf "$tmp_dir"' INT TERM EXIT
+umask 022
+
+create_scripts()
+{
+	local dir="$1"
+
+	cat >"$dir/before-install" <<-EOF
+	if ! getent group '$rel_name' >'/dev/null'
+	then groupadd -r '$rel_name'
+	fi
+	if ! getent passwd '$rel_name' >'/dev/null'
+	then useradd -r -m -d '/opt/$rel_name' -g '$rel_name' '$rel_name'
+	fi
+	if ! [ -e '$pem_file' ]
+	then
+		if ! [ -e '/opt/$rel_name' ] # Huh?
+		then install -o '$rel_name' -g '$rel_name' -m 750 -d '/opt/$rel_name'
+		fi
+		if ! [ -e '$conf_dir' ]
+		then install -o '$rel_name' -g '$rel_name' -m 750 -d '$conf_dir'
+		fi
+		host=\$(hostname --fqdn 2>'/dev/null' || :)
+		if [ -z "\$host" ]
+		then host='localhost'
+		fi
+		openssl req -x509 \
+		            -batch \
+		            -nodes \
+		            -newkey rsa:4096 \
+		            -keyout '$pem_file' \
+		            -out '$pem_file' \
+		            -days 3650 \
+		            -subj "/CN=\$host" >'/dev/null' 2>&1 || :
+		if [ -e '$pem_file' ]
+		then chown '$rel_name:$rel_name' '$pem_file'
+		else echo 'Failed to create a TLS certificate for ejabberd.' >&2
+		fi
+	fi
+	if ! [ -e '/opt/$rel_name/database' ]
+	then install -o '$rel_name' -g '$rel_name' -m 750 -d '/opt/$rel_name/database'
+	fi
+	if ! [ -e '/opt/$rel_name/logs' ]
+	then install -o '$rel_name' -g '$rel_name' -m 750 -d '/opt/$rel_name/logs'
+	fi
+	EOF
+
+	cat >"$dir/after-install" <<-EOF
+	host=\$(hostname --fqdn 2>'/dev/null' || :)
+	if [ -n "\$host" ]
+	then sed -i "s/ - localhost$/ - \$host/" '$conf_dir/$rel_name.yml'
+	fi
+	chown 'root:$rel_name' '/opt/$rel_name-$rel_vsn/lib/epam-'*'/priv/bin/epam'
+	chmod '4750' '/opt/$rel_name-$rel_vsn/lib/epam-'*'/priv/bin/epam'
+	EOF
+
+	cat >"$dir/after-upgrade" <<-EOF
+	chown 'root:$rel_name' '/opt/$rel_name-$rel_vsn/lib/epam-'*'/priv/bin/epam'
+	chmod '4750' '/opt/$rel_name-$rel_vsn/lib/epam-'*'/priv/bin/epam'
+	EOF
+
+	cat >"$dir/after-remove" <<-EOF
+	rm -f '/opt/$rel_name/.erlang.cookie'
+	if getent passwd '$rel_name' >'/dev/null'
+	then userdel '$rel_name'
+	fi
+	if getent group '$rel_name' >'/dev/null'
+	then groupdel '$rel_name'
+	fi
+	EOF
+}
+
+package_architecture()
+{
+	local target="$1"
+	local host_target="$(uname -m)-$target"
+
+	case $host_target in
+	x86_64-x64)
+		printf 'native'
+		;;
+	x86_64-arm64)
+		printf 'arm64'
+		;;
+	*)
+		echo >&2 "Unsupported host/target combination: $host_target"
+		exit 1
+		;;
+	esac
+}
+
+make_package()
+{
+	local output_type="$1"
+	local architecture="$(package_architecture "$2")"
+	local dir="$3"
+
+	cd "$dir" # FPM's "--chdir" option doesn't work (as I'd expect).
+	fpm --output-type "$output_type" \
+	    --input-type 'dir' \
+	    --name "$rel_name" \
+	    --version "$rel_vsn" \
+	    --iteration "$iteration" \
+	    --license 'GPL-2+' \
+	    --category 'net' \
+	    --provides 'stun-server' \
+	    --provides 'turn-server' \
+	    --provides 'xmpp-server' \
+	    --no-depends \
+	    --no-auto-depends \
+	    --deb-maintainerscripts-force-errorchecks \
+	    --deb-systemd-enable \
+	    --deb-systemd-auto-start \
+	    --deb-systemd "./$rel_name.service" \
+	    --deb-init "./$rel_name" \
+	    --rpm-init "./$rel_name" \
+	    --config-files "$conf_dir" \
+	    --directories "/opt/$rel_name" \
+	    --directories "/opt/$rel_name-$rel_vsn" \
+	    --architecture "$architecture" \
+	    --maintainer 'ejabberd Maintainers <ejabberd@process-one.net>' \
+	    --vendor 'ProcessOne, SARL' \
+	    --description 'Robust and scalable XMPP/MQTT/SIP server.' \
+	    --url 'https://ejabberd.im' \
+	    --before-install './before-install' \
+	    --after-install './after-install' \
+	    --before-upgrade './before-install' \
+	    --after-upgrade './after-upgrade' \
+	    --after-remove './after-remove' \
+	    './opt' './usr'
+	cd "$OLDPWD"
+}
+
+for arch in $architectures
+do
+	tar_name="$rel_name-$rel_vsn-linux-$arch.tar.gz"
+	arch_dir="$tmp_dir/$arch"
+	opt_dir="$arch_dir/opt"
+	etc_dir="$arch_dir/etc"
+	bin_dir="$arch_dir/usr/sbin"
+	dst_dir="$opt_dir/$rel_name-$rel_vsn"
+
+	test -e "$tar_name" || tools/make-binaries
+
+	echo "$myself: Putting together DEB and RPM packages for $arch ..."
+
+	mkdir -p "$opt_dir" "$bin_dir"
+	tar -C "$opt_dir" -xzf "$tar_name"
+
+	cat >"$bin_dir/${rel_name}ctl" <<-EOF
+	#!/bin/sh
+	exec '/opt/$rel_name-$rel_vsn/bin/${rel_name}ctl' "\$@"
+	EOF
+	chmod +x "$bin_dir/${rel_name}ctl"
+
+	mkdir -p "$etc_dir/systemd/system"
+	mv "$dst_dir/bin/$rel_name.service" "$etc_dir/systemd/system"
+	mv "$dst_dir/bin/$rel_name.init" "$arch_dir/$rel_name"
+	sed -i \
+	    "s|opt/$rel_name-$rel_vsn/bin/${rel_name}ctl|usr/sbin/${rel_name}ctl|g" \
+	    "$etc_dir/systemd/system/$rel_name.service" "$arch_dir/$rel_name"
+
+	create_scripts "$arch_dir"
+	make_package 'rpm' "$arch" "$arch_dir"
+	mv "$etc_dir/systemd/system/$rel_name.service" "$arch_dir"
+	rm -r "$etc_dir"
+	make_package 'deb' "$arch" "$arch_dir"
+	mv "$arch_dir/$rel_name"?$rel_vsn*.??? .
+done
+echo "$myself: Created DEB and RPM packages successfully."
