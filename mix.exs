@@ -116,7 +116,7 @@ defmodule Ejabberd.MixProject do
      {:fast_xml, "~> 1.1"},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
-     {:jiffy, "~> 1.0.5"},
+     {:jiffy, "~> 1.1.1"},
      {:jose, "~> 1.11.1"},
      {:mqtree, "~> 1.0"},
      {:p1_acme, "~> 1.0"},
