@@ -50,15 +50,6 @@ defmodule Ejabberd.MixProject do
      ++ cond_apps()]
   end
 
-  defp if_function_exported(mod, fun, arity, okResult) do
-    :code.ensure_loaded(mod)
-    if :erlang.function_exported(mod, fun, arity) do
-      okResult
-    else
-      []
-    end
-  end
-
   defp if_version_above(ver, okResult) do
     if :erlang.system_info(:otp_release) > ver do
       okResult
@@ -82,15 +73,15 @@ defmodule Ejabberd.MixProject do
              cond_options() ++
              Enum.map(includes, fn (path) -> {:i, path} end) ++
              if_version_above('20', [{:d, :DEPRECATED_GET_STACKTRACE}]) ++
+             if_version_above('20', [{:d, :HAVE_URI_STRING}]) ++
+             if_version_above('20', [{:d, :HAVE_ERL_ERROR}]) ++
              if_version_below('21', [{:d, :USE_OLD_HTTP_URI}]) ++
              if_version_below('22', [{:d, :LAGER}]) ++
              if_version_below('21', [{:d, :NO_CUSTOMIZE_HOSTNAME_CHECK}]) ++
              if_version_below('23', [{:d, :USE_OLD_CRYPTO_HMAC}]) ++
              if_version_below('23', [{:d, :USE_OLD_PG2}]) ++
              if_version_below('24', [{:d, :COMPILER_REPORTS_ONLY_LINES}]) ++
-             if_version_below('24', [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}]) ++
-             if_function_exported(:uri_string, :normalize, 1, [{:d, :HAVE_URI_STRING}]) ++
-             if_function_exported(:erl_error, :format_exception, 6, [{:d, :HAVE_ERL_ERROR}])
+             if_version_below('24', [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}])
     defines = for {:d, value} <- result, do: {:d, value}
     result ++ [{:d, :ALL_DEFS, defines}]
   end
