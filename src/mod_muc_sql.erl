@@ -66,7 +66,7 @@ store_room(LServer, Host, Name, Opts, ChangesHints) ->
 		    end,
     SOpts = misc:term_to_expr(Opts2),
     Timestamp = case lists:keyfind(hibernation_time, 1, Opts) of
-		    false -> <<"1900-01-01 00:00:00">>;
+		    false -> <<"1970-01-02 00:00:00">>;
 		    {_, undefined} -> <<"1970-01-02 00:00:00">>;
 		    {_, Time} -> usec_to_sql_timestamp(Time)
 		end,
