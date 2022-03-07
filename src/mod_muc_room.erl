@@ -49,6 +49,7 @@
 	 get_config/1,
 	 set_config/2,
 	 get_state/1,
+	 get_info/1,
 	 change_item/5,
 	 change_item_async/5,
 	 config_reloaded/1,
@@ -211,6 +212,17 @@ change_item_async(Pid, JID, Type, AffiliationOrRole, Reason) ->
 -spec get_state(pid()) -> {ok, state()} | {error, notfound | timeout}.
 get_state(Pid) ->
     try p1_fsm:sync_send_all_state_event(Pid, get_state)
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, timeout};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, notfound}
+    end.
+
+-spec get_info(pid()) -> {ok, #{occupants_number => integer()}} |
+                         {error, notfound | timeout}.
+get_info(Pid) ->
+    try
+        {ok, p1_fsm:sync_send_all_state_event(Pid, get_info)}
     catch _:{timeout, {p1_fsm, _, _}} ->
 	    {error, timeout};
 	  _:{_, {p1_fsm, _, _}} ->
@@ -721,6 +733,10 @@ handle_sync_event(get_config, _From, StateName,
 handle_sync_event(get_state, _From, StateName,
 		  StateData) ->
     {reply, {ok, StateData}, StateName, StateData};
+handle_sync_event(get_info, _From, StateName,
+		  StateData) ->
+    Result = #{occupants_number => maps:size(StateData#state.users)},
+    {reply, Result, StateName, StateData};
 handle_sync_event({change_config, Config}, _From,
 		  StateName, StateData) ->
     {result, undefined, NSD} = change_config(Config, StateData),

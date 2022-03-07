@@ -1050,8 +1050,8 @@ get_room_occupants(Pid) ->
 get_room_occupants_number(Room, Host) ->
     case get_room_pid(Room, Host) of
 	Pid when is_pid(Pid )->
-	    S = get_room_state(Pid),
-	    maps:size(S#state.users);
+	    {ok, #{occupants_number := N}} = mod_muc_room:get_info(Pid),
+	    N;
 	_ ->
 	    throw({error, room_not_found})
     end.
