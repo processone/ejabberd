@@ -161,6 +161,24 @@
 -- DROP INDEX i_push_ut;
 -- ALTER TABLE push_session ADD PRIMARY KEY (server_host, username, timestamp);
 -- CREATE UNIQUE INDEX i_push_session_susn ON push_session USING btree (server_host, username, service, node);
+-- ALTER TABLE push_session ALTER COLUMN server_host DROP DEFAULT;
+
+-- ALTER TABLE mix_pam ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
+-- DROP INDEX i_mix_pam;
+-- DROP INDEX i_mix_pam_us;
+-- CREATE UNIQUE INDEX i_mix_pam ON mix_pam (username, server_host, channel, service);
+-- CREATE INDEX i_mix_pam_us ON mix_pam (username, server_host);
+-- ALTER TABLE mix_pam ALTER COLUMN server_host DROP DEFAULT;
+
+-- ALTER TABLE route ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
+-- DROP INDEX i_route;
+-- CREATE UNIQUE INDEX i_route ON route USING btree (domain, server_host, node, pid);
+-- ALTER TABLE i_route ALTER COLUMN server_host DROP DEFAULT;
+
+-- ALTER TABLE mqtt_pub ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
+-- DROP INDEX i_mqtt_topic;
+-- CREATE UNIQUE INDEX i_mqtt_topic_server ON mqtt_pub (topic, server_host);
+-- ALTER TABLE mqtt_pub ALTER COLUMN server_host DROP DEFAULT;
 
 
 CREATE TABLE users (
