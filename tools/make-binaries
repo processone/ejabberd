@@ -120,6 +120,24 @@ src_dir="$root_dir/src"
 platform='x86_64-pc-linux-gnu'
 targets='x86_64-linux-gnu aarch64-linux-gnu'
 build_start=$(date '+%F %T')
+have_current_deps='false'
+dep_vsns_file="$build_dir/.dep_vsns"
+dep_vsns=''
+deps='crosstool
+      termcap
+      expat
+      zlib
+      yaml
+      ssl
+      otp
+      elixir
+      pam
+      png
+      jpeg
+      webp
+      gd
+      odbc
+      sqlite'
 
 umask 022
 
@@ -158,7 +176,7 @@ check_vsn()
 #.
 
 #' Check whether our dependency versions are up-to-date.
-check_deps()
+check_configured_dep_vsns()
 {
 	check_vsn 'OpenSSL' "$ssl_vsn" \
 	          'https://www.openssl.org/source/' \
@@ -199,6 +217,31 @@ check_deps()
 	check_vsn 'Elixir' "$elixir_vsn" \
 	          'https://elixir-lang.org/install.html' \
 	          'v\([1-9][0-9.]*\)\.tar\.gz'
+}
+#.
+
+#' Check whether existing dependencies are up-to-date.
+check_built_dep_vsns()
+{
+	for dep in $deps
+	do
+		eval dep_vsns=\"\$dep_vsns\$${dep}_vsn\"
+	done
+
+	if [ -e "$dep_vsns_file" ]
+	then
+		if [ "$dep_vsns" = "$(cat "$dep_vsns_file")" ]
+		then have_current_deps='true'
+		fi
+		rm "$dep_vsns_file"
+	fi
+}
+#.
+
+#' Save built dependency versions.
+save_built_dep_vsns()
+{
+	echo "$dep_vsns" >"$dep_vsns_file"
 }
 #.
 
@@ -924,6 +967,19 @@ arch_name()
 }
 #.
 
+#' Add native Erlang/OTP "bin" directory to PATH (for bootstrapping and Mix).
+add_otp_path()
+{
+	local mode="$1"
+	local prefix="$2"
+
+	if [ "$mode" = 'native' ]
+	then native_otp_bin="$prefix/bin"
+	fi
+	export PATH="$native_otp_bin:$PATH"
+}
+#.
+
 #' Create and populate /opt/ejabberd directory.
 create_data_dir()
 {
@@ -1058,44 +1114,15 @@ build_toolchain()
 }
 #.
 
-#' Build target dependencies and the actual release.
-build_rel()
+#' Build target dependencies.
+build_deps()
 {
 	local mode="$1"
 	local target="$2"
 	local prefix="$3"
 	local arch="$(arch_name "$target")"
-	local rel_dir="$PWD/_build/prod"
 	local target_src_dir="$prefix/src"
-	local target_dst_dir="$prefix/$rel_name-$rel_vsn"
-	local target_dst_tar="$rel_name-$rel_vsn-linux-$arch.tar.gz"
 	local saved_path="$PATH"
-
-	#
-	# The "$ct_prefix_dir/$target/$target/bin" directory contains cross
-	# compilation tools without "$target-" prefix. We add it to the PATH,
-	# just in case tools are called without prefix somewhere. However, we
-	# try to use the prefixed tools everywhere, so it should be possible to
-	# omit this directory from the path if desired. See also:
-	#
-	# https://stackoverflow.com/a/24243789
-	#
-	export PATH="$ct_prefix_dir/$target/bin:$ct_prefix_dir/$target/$target/bin:$PATH"
-	export CC="$target-gcc"
-	export CXX="$target-g++"
-	export CPP="$target-cpp"
-	export LD="$target-ld"
-	export AS="$target-as"
-	export AR="$target-ar"
-	export NM="$target-nm"
-	export RANLIB="$target-ranlib"
-	export OBJCOPY="$target-objcopy"
-	export STRIP="$target-strip"
-	export CPPFLAGS="-I$prefix/include"
-	export CFLAGS="-g0 -O2 -pipe -fomit-frame-pointer -static-libgcc $CPPFLAGS"
-	export CXXFLAGS="$CFLAGS -static-libstdc++"
-	export LDFLAGS="-L$prefix/lib -static-libgcc -static-libstdc++"
-	export ERL_COMPILER_OPTIONS='[deterministic, no_debug_info]'
 
 	if [ "$mode" = 'cross' ]
 	then configure="./configure --host=$target --build=$platform"
@@ -1259,7 +1286,7 @@ build_rel()
 	info "Building Erlang/OTP $otp_vsn for $arch ..."
 	if [ "$mode" = 'cross' ]
 	then
-		export PATH="$native_otp_bin:$PATH" # For Bootstrapping/Mix.
+		add_otp_path "$mode" "$prefix"
 		export erl_xcomp_sysroot="$prefix"
 	fi
 	cd "$target_src_dir/$otp_dir"
@@ -1280,11 +1307,8 @@ build_rel()
 	make
 	make install
 	if [ "$mode" = 'native' ]
-	then
-		native_otp_bin="$prefix/bin"
-		export PATH="$native_otp_bin:$PATH" # For Mix.
-	else
-		unset erl_xcomp_sysroot
+	then add_otp_path "$mode" "$prefix"
+	else unset erl_xcomp_sysroot
 	fi
 	cd "$OLDPWD"
 
@@ -1292,6 +1316,60 @@ build_rel()
 	cd "$target_src_dir/$elixir_dir"
 	make install PREFIX="$prefix"
 	cd "$OLDPWD"
+
+	export PATH="$saved_path"
+}
+#.
+
+#' Build the actual release.
+build_rel()
+{
+	local mode="$1"
+	local target="$2"
+	local prefix="$3"
+	local arch="$(arch_name "$target")"
+	local rel_dir="$PWD/_build/prod"
+	local target_data_dir="$prefix/$rel_name"
+	local target_dst_dir="$prefix/$rel_name-$rel_vsn"
+	local target_dst_tar="$rel_name-$rel_vsn-linux-$arch.tar.gz"
+	local saved_path="$PATH"
+
+	#
+	# The "$ct_prefix_dir/$target/$target/bin" directory contains cross
+	# compilation tools without "$target-" prefix. We add it to the PATH,
+	# just in case tools are called without prefix somewhere. However, we
+	# try to use the prefixed tools everywhere, so it should be possible to
+	# omit this directory from the path if desired. See also:
+	#
+	# https://stackoverflow.com/a/24243789
+	#
+	export PATH="$ct_prefix_dir/$target/bin:$ct_prefix_dir/$target/$target/bin:$PATH"
+	export CC="$target-gcc"
+	export CXX="$target-g++"
+	export CPP="$target-cpp"
+	export LD="$target-ld"
+	export AS="$target-as"
+	export AR="$target-ar"
+	export NM="$target-nm"
+	export RANLIB="$target-ranlib"
+	export OBJCOPY="$target-objcopy"
+	export STRIP="$target-strip"
+	export CPPFLAGS="-I$prefix/include"
+	export CFLAGS="-g0 -O2 -pipe -fomit-frame-pointer -static-libgcc $CPPFLAGS"
+	export CXXFLAGS="$CFLAGS -static-libstdc++"
+	export LDFLAGS="-L$prefix/lib -static-libgcc -static-libstdc++"
+	export ERL_COMPILER_OPTIONS='[deterministic, no_debug_info]'
+
+	if [ "$mode" = 'cross' ]
+	then configure="./configure --host=$target --build=$platform"
+	else configure='./configure'
+	fi
+
+	if [ $have_current_deps = false ]
+	then build_deps "$mode" "$target" "$prefix"
+	fi
+
+	add_otp_path "$mode" "$prefix"
 
 	if [ "$mode" = 'native' ] # In order to only do this once.
 	then
@@ -1350,13 +1428,14 @@ build_rel()
 	info "Putting together $rel_name $rel_vsn archive for $arch ..."
 	mkdir "$target_dst_dir"
 	tar -C "$target_dst_dir" -xzf "$rel_dir/$rel_tar"
-	create_data_dir "$target_dst_dir" "$prefix/$rel_name"
+	create_data_dir "$target_dst_dir" "$target_data_dir"
 	add_systemd_unit "$target_dst_dir"
 	edit_ejabberdctl "$target_dst_dir"
 	remove_unused_files "$target_dst_dir"
 	strip_files "$target_dst_dir" "$STRIP"
 	tar -C "$prefix" --owner="$rel_name" --group="$rel_name" -cf - \
 	    "$rel_name" "$rel_name-$rel_vsn" | gzip -9 >"$target_dst_tar"
+	rm -rf "$target_dst_dir" "$target_data_dir"
 
 	info "Created $target_dst_tar successfully."
 
@@ -1370,7 +1449,7 @@ if [ "${CHECK_DEPS:-true}" = 'true' ]
 then
 	if have_browser
 	then
-		check_deps
+		check_configured_dep_vsns
 	else
 		error 'Cannot check dependency versions.'
 		error 'Install a browser or set CHECK_DEPS=false'
@@ -1386,40 +1465,46 @@ then
 	exit 1
 fi
 
-# Keep existing toolchains but rebuild everything else.
+check_built_dep_vsns
 
 info 'Removing old bootstrap tools ...'
 rm -rf "$bootstrap_dir"
 mkdir "$bootstrap_dir"
 
-info 'Removing old builds ...'
-rm -rf "$build_dir"
-mkdir "$build_dir"
+if [ $have_current_deps = true ]
+then
+	info 'Dependencies are up-to-date ...'
+else
+	# Keep existing toolchains but rebuild everything else.
+	info 'Removing old builds ...'
+	rm -rf "$build_dir"
+	mkdir "$build_dir"
 
-info 'Removing old source ...'
-rm -rf "$src_dir"
-mkdir "$src_dir"
+	info 'Removing old source ...'
+	rm -rf "$src_dir"
+	mkdir "$src_dir"
 
-info 'Downloading dependencies ...'
-cd "$src_dir"
-curl -LO "http://crosstool-ng.org/download/crosstool-ng/$crosstool_tar"
-curl -LO "https://ftp.gnu.org/gnu/termcap/$termcap_tar"
-curl -LO "https://github.com/libexpat/libexpat/releases/download/R_$(printf '%s' "$expat_vsn" | sed 's/\./_/g')/$expat_tar"
-curl -LO "https://zlib.net/$zlib_tar"
-curl -LO "https://pyyaml.org/download/libyaml/$yaml_tar"
-curl -LO "https://www.openssl.org/source/$ssl_tar"
-curl -LO "https://github.com/erlang/otp/releases/download/OTP-$otp_vsn/$otp_tar"
-curl -LO "https://github.com/elixir-lang/elixir/archive/v$elixir_vsn.tar.gz"
-curl -LO "https://github.com/linux-pam/linux-pam/releases/download/v$pam_vsn/$pam_tar"
-curl -LO "https://download.sourceforge.net/libpng/$png_tar"
-curl -LO "https://www.ijg.org/files/$jpeg_tar"
-curl -LO "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/$webp_tar"
-curl -LO "https://github.com/libgd/libgd/releases/download/gd-$gd_vsn/$gd_tar"
-curl -LO "http://www.unixodbc.org/$odbc_tar"
-curl -LO "https://www.sqlite.org/$(date '+%Y')/$sqlite_tar" \
-    || curl -LO "https://www.sqlite.org/$(date -d '1 year ago' '+%Y')/$sqlite_tar" \
-    || curl -LO "https://www.sqlite.org/$(date -d '2 years ago' '+%Y')/$sqlite_tar"
-cd "$OLDPWD"
+	info 'Downloading dependencies ...'
+	cd "$src_dir"
+	curl -LO "http://crosstool-ng.org/download/crosstool-ng/$crosstool_tar"
+	curl -LO "https://ftp.gnu.org/gnu/termcap/$termcap_tar"
+	curl -LO "https://github.com/libexpat/libexpat/releases/download/R_$(printf '%s' "$expat_vsn" | sed 's/\./_/g')/$expat_tar"
+	curl -LO "https://zlib.net/$zlib_tar"
+	curl -LO "https://pyyaml.org/download/libyaml/$yaml_tar"
+	curl -LO "https://www.openssl.org/source/$ssl_tar"
+	curl -LO "https://github.com/erlang/otp/releases/download/OTP-$otp_vsn/$otp_tar"
+	curl -LO "https://github.com/elixir-lang/elixir/archive/v$elixir_vsn.tar.gz"
+	curl -LO "https://github.com/linux-pam/linux-pam/releases/download/v$pam_vsn/$pam_tar"
+	curl -LO "https://download.sourceforge.net/libpng/$png_tar"
+	curl -LO "https://www.ijg.org/files/$jpeg_tar"
+	curl -LO "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/$webp_tar"
+	curl -LO "https://github.com/libgd/libgd/releases/download/gd-$gd_vsn/$gd_tar"
+	curl -LO "http://www.unixodbc.org/$odbc_tar"
+	curl -LO "https://www.sqlite.org/$(date '+%Y')/$sqlite_tar" \
+	    || curl -LO "https://www.sqlite.org/$(date -d '1 year ago' '+%Y')/$sqlite_tar" \
+	    || curl -LO "https://www.sqlite.org/$(date -d '2 years ago' '+%Y')/$sqlite_tar"
+	cd "$OLDPWD"
+fi
 
 mkdir "$bootstrap_dir/bin"
 export PATH="$bootstrap_dir/bin:$PATH" # For ct-ng.
@@ -1437,6 +1522,8 @@ do
 	build_toolchain "$target" "$toolchain_dir"
 	build_rel "$mode" "$target" "$prefix"
 done
+
+save_built_dep_vsns
 
 info "Build started: $build_start"
 info "Build ended: $(date '+%F %T')"
