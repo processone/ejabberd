@@ -241,7 +241,7 @@ defmodule Ejabberd.MixProject do
     Mix.Generator.copy_template("ejabberdctl.example2a", "ejabberdctl.example2b", assigns)
     execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.example2b > ejabberdctl.example3")
     execute.("sed -e 's|ERLANG_NODE=ejabberd@localhost|ERLANG_NODE=ejabberd|g' ejabberdctl.example3 > ejabberdctl.example4")
-    execute.("sed -e 's|INSTALLUSER=|ERL_OPTIONS=\"-setcookie \\$\\(cat \"\\${SCRIPT_DIR%/*}/releases/COOKIE\")\"\\nINSTALLUSER=|g' ejabberdctl.example4 > ejabberdctl.example5")
+    execute.("sed -e 's|INSTALLUSER=|ERL_OPTIONS=\"-boot ../releases/#{release.version}/start_clean -boot_var RELEASE_LIB ../lib -setcookie \\$\\(cat \"\\${SCRIPT_DIR%/*}/releases/COOKIE\")\"\\nINSTALLUSER=|g' ejabberdctl.example4 > ejabberdctl.example5")
     Mix.Generator.copy_template("ejabberdctl.example5", "#{ro}/bin/ejabberdctl", assigns)
     File.chmod("#{ro}/bin/ejabberdctl", 0o755)
 
@@ -264,7 +264,6 @@ defmodule Ejabberd.MixProject do
     Mix.Generator.copy_file("ejabberd.yml.example", "#{ro}/etc/ejabberd/ejabberd.yml#{suffix}")
     Mix.Generator.copy_file("ejabberdctl.cfg.example", "#{ro}/etc/ejabberd/ejabberdctl.cfg#{suffix}")
     Mix.Generator.copy_file("inetrc", "#{ro}/etc/ejabberd/inetrc")
-    Mix.Generator.copy_template("rel/vm.args.mix", "#{ro}/etc/ejabberd/vm.args", assigns)
 
     Enum.each(File.ls!("sql"),
       fn x ->
