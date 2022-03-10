@@ -5,7 +5,7 @@ defmodule Ejabberd.MixProject do
     [app: :ejabberd,
      version: version(),
      description: description(),
-     elixir: "~> 1.4",
+     elixir: elixir_required_version(),
      elixirc_paths: ["lib"],
      compile_path: ".",
      compilers: [:asn1] ++ Mix.compilers,
@@ -184,6 +184,35 @@ defmodule Ejabberd.MixProject do
     end
   end
 
+  defp elixir_required_version do
+    case {System.get_env("RELIVE", "false"),
+          MapSet.member?(MapSet.new(System.argv()), "release")}
+      do
+      {"true", _} ->
+        case Version.match?(System.version(), "~> 1.11") do
+          false ->
+            IO.puts("ERROR: To use 'make relive', Elixir 1.11.0 or higher is required.")
+          _ -> :ok
+        end
+        "~> 1.11"
+      {_, true} ->
+        case Version.match?(System.version(), "~> 1.10") do
+          false ->
+            IO.puts("ERROR: To build releases, Elixir 1.10.0 or higher is required.")
+          _ -> :ok
+        end
+        case Version.match?(System.version(), "< 1.11.4")
+          and :erlang.system_info(:otp_release) > '23' do
+          true ->
+            IO.puts("ERROR: To build releases with Elixir lower than 1.11.4, Erlang/OTP lower than 24 is required.")
+          _ -> :ok
+        end
+        "~> 1.10"
+      _ ->
+        "~> 1.4"
+    end
+  end
+
   defp releases do
     maybe_tar = case Mix.env() do
       :prod -> [:tar]
@@ -228,7 +257,7 @@ defmodule Ejabberd.MixProject do
     end
 
     # Mix/Elixir lower than 1.11.0 use config/releases.exs instead of runtime.exs
-    case Version.match?(System.version, ">= 1.11.0") do
+    case Version.match?(System.version, "~> 1.11") do
       true ->
         :ok
       false ->
