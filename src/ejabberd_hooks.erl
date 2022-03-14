@@ -544,9 +544,10 @@ run_event_handlers(TracingOpts, Hook, Host, Event, EventArgs, RunType) ->
                             ok
                     catch
                         ?EX_RULE(E, R, St) ->
+                            Stack = ?EX_STACK(St),
                             ?ERROR_MSG(
                                 "(~0p|~ts|~0p) Tracing event '~0p' handler exception(~0p): ~0p: ~0p",
-                                [Hook, Host, erlang:self(), EventHandler, E, R, St]
+                                [Hook, Host, erlang:self(), EventHandler, E, R, Stack]
                             ),
                             ok
                     end
@@ -719,7 +720,8 @@ tracing_output(#{output_function := OutputF}, Text, Args) ->
             ok
     catch
         ?EX_RULE(E, R, St) ->
-            ?ERROR_MSG("Tracing output function exception(~0p): ~0p: ~0p", [E, R, St]),
+            Stack = ?EX_STACK(St),
+            ?ERROR_MSG("Tracing output function exception(~0p): ~0p: ~0p", [E, R, Stack]),
             ok
     end;
 tracing_output(#{output_log_level := Output}, Text, Args) ->
