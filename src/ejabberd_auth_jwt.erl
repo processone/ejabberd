@@ -85,7 +85,14 @@ check_password(User, AuthzId, Server, Token) ->
             end
     end.
 
-user_exists(_User, _Host) -> {nocache, false}.
+user_exists(User, Host) ->
+  %% Checking that the user has an active session
+  %% If the session was negociated by the JWT auth method then we define that the user exists
+  %% Any other cases will return that the user doesn't exist
+  {nocache, case ejabberd_sm:get_user_info(User, Host) of
+              [{_, Info}] -> proplists:get_value(auth_module, Info) == ejabberd_auth_jwt;
+              _ -> false
+            end}.
 
 use_cache(_) ->
     false.
