@@ -170,11 +170,12 @@ jobs:
         cat $RE/var/log/ejabberd/ejabberd.log
         grep -q "is stopped in" $RE/var/log/ejabberd/ejabberd.log
 
-    - name: Run tests
-      if: matrix.otp != 24
+    - name: Run tests (OTP 19.3)
+      if: matrix.otp == '19.3'
+      id: ct2
       run: make test
-    - name: Run tests (OTP 24)
-      if: matrix.otp == 24
+    - name: Run tests
+      if: matrix.otp != '19.3'
       id: ct
       run: |
         (cd priv && ln -sf ../sql)
@@ -187,7 +188,7 @@ jobs:
         rebar3 cover
 
     - name: Check results
-      if: always() && steps.ct.outcome != 'skipped'
+      if: always() && (steps.ct.outcome != 'skipped' || steps.ct2.outcome != 'skipped')
       id: ctresults
       run: |
         [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
