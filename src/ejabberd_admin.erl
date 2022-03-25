@@ -30,7 +30,8 @@
 
 -export([start_link/0,
 	 %% Server
-	 status/0, reopen_log/0, rotate_log/0,
+	 status/0, stop/0, restart/0,
+	 reopen_log/0, rotate_log/0,
 	 set_loglevel/1,
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 registered_vhosts/0,
@@ -113,11 +114,11 @@ get_commands_spec() ->
 			args = [], result = {res, restuple}},
      #ejabberd_commands{name = stop, tags = [server],
 			desc = "Stop ejabberd gracefully",
-			module = init, function = stop,
+			module = ?MODULE, function = stop,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = restart, tags = [server],
 			desc = "Restart ejabberd gracefully",
-			module = init, function = restart,
+			module = ?MODULE, function = restart,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = reopen_log, tags = [logs],
 			desc = "Reopen the log files after being renamed",
@@ -445,6 +446,16 @@ status() ->
 		{ok, io_lib:format("ejabberd ~s is running in that node", [Version])}
 	end,
     {Is_running, String1 ++ String2}.
+
+stop() ->
+    _ = supervisor:terminate_child(ejabberd_sup, ejabberd_sm),
+    timer:sleep(1000),
+    init:stop().
+
+restart() ->
+    _ = supervisor:terminate_child(ejabberd_sup, ejabberd_sm),
+    timer:sleep(1000),
+    init:restart().
 
 reopen_log() ->
     ejabberd_hooks:run(reopen_log_hook, []).
