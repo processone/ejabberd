@@ -141,15 +141,6 @@ process(["status"], _Version) ->
             ?STATUS_SUCCESS
     end;
 
-process(["stop"], _Version) ->
-    %%ejabberd_cover:stop(),
-    init:stop(),
-    ?STATUS_SUCCESS;
-
-process(["restart"], _Version) ->
-    init:restart(),
-    ?STATUS_SUCCESS;
-
 %% TODO: Mnesia operations should not be hardcoded in ejabberd_ctl module.
 %% For now, I leave them there to avoid breaking those commands for people that
 %% may be using it (as format of response is going to change).
