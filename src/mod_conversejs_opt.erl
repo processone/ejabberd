@@ -5,6 +5,7 @@
 
 -export([bosh_service_url/1]).
 -export([conversejs_css/1]).
+-export([conversejs_resources/1]).
 -export([conversejs_script/1]).
 -export([default_domain/1]).
 -export([websocket_url/1]).
@@ -15,13 +16,19 @@ bosh_service_url(Opts) when is_map(Opts) ->
 bosh_service_url(Host) ->
     gen_mod:get_module_opt(Host, mod_conversejs, bosh_service_url).
 
--spec conversejs_css(gen_mod:opts() | global | binary()) -> binary().
+-spec conversejs_css(gen_mod:opts() | global | binary()) -> 'auto' | binary().
 conversejs_css(Opts) when is_map(Opts) ->
     gen_mod:get_opt(conversejs_css, Opts);
 conversejs_css(Host) ->
     gen_mod:get_module_opt(Host, mod_conversejs, conversejs_css).
 
--spec conversejs_script(gen_mod:opts() | global | binary()) -> binary().
+-spec conversejs_resources(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
+conversejs_resources(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(conversejs_resources, Opts);
+conversejs_resources(Host) ->
+    gen_mod:get_module_opt(Host, mod_conversejs, conversejs_resources).
+
+-spec conversejs_script(gen_mod:opts() | global | binary()) -> 'auto' | binary().
 conversejs_script(Opts) when is_map(Opts) ->
     gen_mod:get_opt(conversejs_script, Opts);
 conversejs_script(Host) ->
