@@ -5,6 +5,7 @@
 
 -export([bosh_service_url/1]).
 -export([conversejs_css/1]).
+-export([conversejs_options/1]).
 -export([conversejs_resources/1]).
 -export([conversejs_script/1]).
 -export([default_domain/1]).
@@ -21,6 +22,12 @@ conversejs_css(Opts) when is_map(Opts) ->
     gen_mod:get_opt(conversejs_css, Opts);
 conversejs_css(Host) ->
     gen_mod:get_module_opt(Host, mod_conversejs, conversejs_css).
+
+-spec conversejs_options(gen_mod:opts() | global | binary()) -> [{binary(),binary() | integer()}].
+conversejs_options(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(conversejs_options, Opts);
+conversejs_options(Host) ->
+    gen_mod:get_module_opt(Host, mod_conversejs, conversejs_options).
 
 -spec conversejs_resources(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
 conversejs_resources(Opts) when is_map(Opts) ->

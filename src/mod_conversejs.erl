@@ -51,6 +51,7 @@ depends(_Host, _Opts) ->
     [].
 
 process([], #request{method = 'GET', host = Host, raw_path = RawPath}) ->
+    ExtraOptions = get_extra_options(Host),
     DomainRaw = gen_mod:get_module_opt(Host, ?MODULE, default_domain),
     Domain = misc:expand_keyword(<<"@HOST@">>, DomainRaw, Host),
     Script = get_file_url(Host, conversejs_script,
@@ -66,7 +67,8 @@ process([], #request{method = 'GET', host = Host, raw_path = RawPath}) ->
             {<<"registration_domain">>, Domain},
             {<<"assets_path">>, RawPath},
             {<<"i18n">>, ejabberd_option:language(Host)},
-            {<<"view_mode">>, <<"fullscreen">>}],
+            {<<"view_mode">>, <<"fullscreen">>}
+           | ExtraOptions],
     Init2 =
         case mod_host_meta:get_url(?MODULE, websocket, any, Host) of
             undefined -> Init;
@@ -159,6 +161,17 @@ content_type(Filename) ->
 %% Options parsing
 %%----------------------------------------------------------------------
 
+get_extra_options(Host) ->
+    RawOpts = gen_mod:get_module_opt(Host, ?MODULE, conversejs_options),
+    lists:map(fun({Name, <<"true">>}) -> {Name, true};
+                 ({Name, <<"false">>}) -> {Name, false};
+                 ({<<"locked_domain">> = Name, Value}) ->
+                      {Name, misc:expand_keyword(<<"@HOST@">>, Value, Host)};
+                 ({Name, Value}) ->
+                      {Name, Value}
+              end,
+              RawOpts).
+
 get_file_url(Host, Option, Filename, Default) ->
     FileRaw = case gen_mod:get_module_opt(Host, ?MODULE, Option) of
                   auto -> get_auto_file_url(Host, Filename, Default);
@@ -182,6 +195,8 @@ mod_opt_type(websocket_url) ->
     econf:either(auto, econf:binary());
 mod_opt_type(conversejs_resources) ->
     econf:either(undefined, econf:directory());
+mod_opt_type(conversejs_options) ->
+    econf:map(econf:binary(), econf:either(econf:binary(), econf:int()));
 mod_opt_type(conversejs_script) ->
     econf:binary();
 mod_opt_type(conversejs_css) ->
@@ -194,6 +209,7 @@ mod_options(_) ->
      {websocket_url, auto},
      {default_domain, <<"@HOST@">>},
      {conversejs_resources, undefined},
+     {conversejs_options, []},
      {conversejs_script, auto},
      {conversejs_css, auto}].
 
@@ -223,7 +239,14 @@ mod_doc() ->
           "modules:",
           "  mod_conversejs:",
           "    conversejs_resources: \"/home/ejabberd/conversejs-9.0.0/package/dist\"",
-          "    websocket_url: \"ws://example.org:5280/websocket\""],
+          "    websocket_url: \"ws://example.org:5280/websocket\""
+          "    conversejs_options:"
+          "      auto_away: 30"
+          "      clear_cache_on_logout: true"
+          "      i18n: \"pt\""
+          "      locked_domain: \"@HOST@\""
+          "      message_archiving: always"
+          "      theme: concord"],
       opts =>
           [{websocket_url,
             #{value => ?T("auto | WebSocketURL"),
@@ -254,6 +277,13 @@ mod_doc() ->
               desc =>
                   ?T("Local path to the Converse files. "
                      "If not set, the public Converse client will be used instead.")}},
+           {conversejs_options,
+            #{value => "{Name: Value}",
+              desc =>
+                  ?T("Specify additional options to be passed to Converse. "
+                     "See https://conversejs.org/docs/html/configuration.html[Converse configuration]. "
+                     "Only boolean, integer and string values are supported; "
+                     "lists are not supported.")}},
            {conversejs_script,
             #{value => ?T("auto | URL"),
               desc =>
