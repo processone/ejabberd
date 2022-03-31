@@ -68,12 +68,12 @@ process([], #request{method = 'GET', host = Host, raw_path = RawPath}) ->
             {<<"i18n">>, ejabberd_option:language(Host)},
             {<<"view_mode">>, <<"fullscreen">>}],
     Init2 =
-        case gen_mod:get_module_opt(Host, ?MODULE, websocket_url) of
+        case mod_host_meta:get_url(?MODULE, websocket, any, Host) of
             undefined -> Init;
             WSURL -> [{<<"websocket_url">>, WSURL} | Init]
         end,
     Init3 =
-        case gen_mod:get_module_opt(Host, ?MODULE, bosh_service_url) of
+        case mod_host_meta:get_url(?MODULE, bosh, any, Host) of
             undefined -> Init2;
             BoshURL -> [{<<"bosh_service_url">>, BoshURL} | Init2]
         end,
@@ -177,9 +177,9 @@ get_auto_file_url(Host, Filename, Default) ->
 %%----------------------------------------------------------------------
 
 mod_opt_type(bosh_service_url) ->
-    econf:either(undefined, econf:binary());
+    econf:either(auto, econf:binary());
 mod_opt_type(websocket_url) ->
-    econf:either(undefined, econf:binary());
+    econf:either(auto, econf:binary());
 mod_opt_type(conversejs_resources) ->
     econf:either(undefined, econf:directory());
 mod_opt_type(conversejs_script) ->
@@ -190,8 +190,8 @@ mod_opt_type(default_domain) ->
     econf:binary().
 
 mod_options(_) ->
-    [{bosh_service_url, undefined},
-     {websocket_url, undefined},
+    [{bosh_service_url, auto},
+     {websocket_url, auto},
      {default_domain, <<"@HOST@">>},
      {conversejs_resources, undefined},
      {conversejs_script, auto},
@@ -205,7 +205,9 @@ mod_doc() ->
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
               "http://../listen-options/#request-handlers[request_handlers]."), "",
-           ?T("You must also setup either the option 'websocket_url' or 'bosh_service_url'."), "",
+           ?T("Make sure either 'mod_bosh' or 'ejabberd_http_ws' "
+              "http://../listen-options/#request-handlers[request_handlers] "
+              "are enabled."), "",
            ?T("When 'conversejs_css' and 'conversejs_script' are 'auto', "
               "by default they point to the public Converse client.")
           ],
@@ -224,13 +226,23 @@ mod_doc() ->
           "    websocket_url: \"ws://example.org:5280/websocket\""],
       opts =>
           [{websocket_url,
-            #{value => ?T("WebSocketURL"),
+            #{value => ?T("auto | WebSocketURL"),
               desc =>
-                  ?T("A WebSocket URL to which Converse.js can connect to.")}},
+                  ?T("A WebSocket URL to which Converse can connect to. "
+                     "The keyword '@HOST@' is replaced with the real virtual "
+                     "host name. "
+                     "If set to 'auto', it will build the URL of the first "
+                     "configured WebSocket request handler. "
+                     "The default value is 'auto'.")}},
            {bosh_service_url,
-            #{value => ?T("BoshURL"),
+            #{value => ?T("auto | BoshURL"),
               desc =>
-                  ?T("BOSH service URL to which Converse.js can connect to.")}},
+                  ?T("BOSH service URL to which Converse can connect to. "
+                     "The keyword '@HOST@' is replaced with the real "
+                     "virtual host name. "
+                     "If set to 'auto', it will build the URL of the first "
+                     "configured BOSH request handler. "
+                     "The default value is 'auto'.")}},
            {default_domain,
             #{value => ?T("Domain"),
               desc =>

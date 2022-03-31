@@ -10,7 +10,7 @@
 -export([default_domain/1]).
 -export([websocket_url/1]).
 
--spec bosh_service_url(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
+-spec bosh_service_url(gen_mod:opts() | global | binary()) -> 'auto' | binary().
 bosh_service_url(Opts) when is_map(Opts) ->
     gen_mod:get_opt(bosh_service_url, Opts);
 bosh_service_url(Host) ->
@@ -40,7 +40,7 @@ default_domain(Opts) when is_map(Opts) ->
 default_domain(Host) ->
     gen_mod:get_module_opt(Host, mod_conversejs, default_domain).
 
--spec websocket_url(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
+-spec websocket_url(gen_mod:opts() | global | binary()) -> 'auto' | binary().
 websocket_url(Opts) when is_map(Opts) ->
     gen_mod:get_opt(websocket_url, Opts);
 websocket_url(Host) ->
