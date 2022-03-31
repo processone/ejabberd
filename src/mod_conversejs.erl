@@ -227,26 +227,46 @@ mod_doc() ->
            ?T("When 'conversejs_css' and 'conversejs_script' are 'auto', "
               "by default they point to the public Converse client.")
           ],
-     example =>
-         ["listen:",
-          "  -",
-          "    port: 5280",
-          "    module: ejabberd_http",
-          "    request_handlers:",
-          "      /websocket: ejabberd_http_ws",
-          "      /conversejs: mod_conversejs",
-          "",
-          "modules:",
-          "  mod_conversejs:",
-          "    conversejs_resources: \"/home/ejabberd/conversejs-9.0.0/package/dist\"",
-          "    websocket_url: \"ws://example.org:5280/websocket\""
-          "    conversejs_options:"
-          "      auto_away: 30"
-          "      clear_cache_on_logout: true"
-          "      i18n: \"pt\""
-          "      locked_domain: \"@HOST@\""
-          "      message_archiving: always"
-          "      theme: concord"],
+      example =>
+          [{?T("Manually setup WebSocket url, and use the public Converse client:"),
+            ["listen:",
+             "  -",
+             "    port: 5280",
+             "    module: ejabberd_http",
+             "    request_handlers:",
+             "      /bosh: mod_bosh",
+             "      /websocket: ejabberd_http_ws",
+             "      /conversejs: mod_conversejs",
+             "",
+             "modules:",
+             "  mod_bosh: {}",
+             "  mod_conversejs:",
+             "    websocket_url: \"ws://@HOST@:5280/websocket\""]},
+           {?T("Host Converse locally and let auto detection of WebSocket and Converse URLs:"),
+            ["listen:",
+             "  -",
+             "    port: 443",
+             "    module: ejabberd_http",
+             "    tls: true",
+             "    request_handlers:",
+             "      /websocket: ejabberd_http_ws",
+             "      /conversejs: mod_conversejs",
+             "",
+             "modules:",
+             "  mod_conversejs:",
+             "    conversejs_resources: \"/home/ejabberd/conversejs-9.0.0/package/dist\""]},
+           {?T("Configure some additional options for Converse"),
+            ["modules:",
+             "  mod_conversejs:",
+             "    websocket_url: auto",
+             "    conversejs_options:",
+             "      auto_away: 30",
+             "      clear_cache_on_logout: true",
+             "      i18n: \"pt\"",
+             "      locked_domain: \"@HOST@\"",
+             "      message_archiving: always",
+             "      theme: concord"]}
+          ],
       opts =>
           [{websocket_url,
             #{value => ?T("auto | WebSocketURL"),
