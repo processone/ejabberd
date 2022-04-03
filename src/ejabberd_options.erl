@@ -141,7 +141,7 @@ opt_type(domain_balancing) ->
 	#{component_number => econf:int(2, 1000),
 	  type => econf:enum([random, source, destination,
 			      bare_source, bare_destination])},
-	[{required, [component_number]}, {return, map}, unique]),
+	[{return, map}, unique]),
       [{return, map}]);
 opt_type(ext_api_path_oauth) ->
     econf:binary();
