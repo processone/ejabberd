@@ -51,7 +51,9 @@ depends(_Host, _Opts) ->
     [].
 
 process([], #request{method = 'GET', host = Host, raw_path = RawPath}) ->
-    ExtraOptions = get_extra_options(Host),
+    ExtraOptions = get_auth_options(Host)
+        ++ get_register_options(Host)
+        ++ get_extra_options(Host),
     DomainRaw = gen_mod:get_module_opt(Host, ?MODULE, default_domain),
     Domain = misc:expand_keyword(<<"@HOST@">>, DomainRaw, Host),
     Script = get_file_url(Host, conversejs_script,
@@ -61,7 +63,6 @@ process([], #request{method = 'GET', host = Host, raw_path = RawPath}) ->
                        <<RawPath/binary, "/converse.min.css">>,
                        <<"https://cdn.conversejs.org/dist/converse.min.css">>),
     Init = [{<<"discover_connection_methods">>, false},
-            {<<"jid">>, Domain},
             {<<"default_domain">>, Domain},
             {<<"domain_placeholder">>, Domain},
             {<<"registration_domain">>, Domain},
@@ -160,6 +161,31 @@ content_type(Filename) ->
 %%----------------------------------------------------------------------
 %% Options parsing
 %%----------------------------------------------------------------------
+
+get_auth_options(Domain) ->
+    case {ejabberd_auth_anonymous:is_login_anonymous_enabled(Domain),
+          ejabberd_auth_anonymous:is_sasl_anonymous_enabled(Domain)} of
+        {false, false} ->
+            [{<<"authentication">>, <<"login">>}];
+        {true, false} ->
+            [{<<"authentication">>, <<"external">>}];
+        {_, true} ->
+            [{<<"authentication">>, <<"anonymous">>},
+             {<<"jid">>, Domain}]
+    end.
+
+get_register_options(Server) ->
+    AuthSupportsRegister =
+        lists:any(
+          fun(ejabberd_auth_mnesia) -> true;
+             (ejabberd_auth_external) -> true;
+             (ejabberd_auth_sql) -> true;
+             (_) -> false
+          end,
+          ejabberd_auth:auth_modules(Server)),
+    Modules = mod_register_opt:allow_modules(Server),
+    ModRegisterAllowsMe = (Modules == all) orelse lists:member(?MODULE, Modules),
+    [{<<"allow_registration">>, AuthSupportsRegister and ModRegisterAllowsMe}].
 
 get_extra_options(Host) ->
     RawOpts = gen_mod:get_module_opt(Host, ?MODULE, conversejs_options),
