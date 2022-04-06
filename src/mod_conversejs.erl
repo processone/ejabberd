@@ -291,7 +291,7 @@ mod_doc() ->
              "      i18n: \"pt\"",
              "      locked_domain: \"@HOST@\"",
              "      message_archiving: always",
-             "      theme: concord"]}
+             "      theme: dracula"]}
           ],
       opts =>
           [{websocket_url,
