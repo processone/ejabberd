@@ -69,6 +69,7 @@ data_path="/opt/$rel_name"
 conf_path="$data_path/conf"
 pem_file="$conf_path/server.pem"
 url='https://docs.ejabberd.im/admin/upgrade/#specific-version-upgrade-notes'
+url_doc_admin='https://docs.ejabberd.im/admin/installation/#administration-account'
 tmp_dir=$(mktemp -d "/tmp/.$rel_name.XXXXXX")
 
 trap 'rm -rf "$tmp_dir"' INT TERM EXIT
@@ -198,7 +199,15 @@ create_setup_script()
 		echo
 		echo '$url'
 		echo
-		echo 'If everything looks fine, restart the $rel_name service.'
+		echo 'If everything looks fine, restart the $rel_name service:'
+		echo '  systemctl restart ejabberd'
+	else
+		echo 'Now you can check ejabberd is running correctly:'
+		echo '  systemctl status ejabberd'
+		echo
+		echo 'Next you may want to edit ejabberd.yml to setup hosts,'
+		echo 'register an account and grant it admin rigts, see:'
+		echo '$url_doc_admin'
 	fi
 	EOF
 	chmod +x "$dir/setup"
