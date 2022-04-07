@@ -71,6 +71,7 @@ pem_file="$conf_path/server.pem"
 url='https://docs.ejabberd.im/admin/upgrade/#specific-version-upgrade-notes'
 url_doc_admin='https://docs.ejabberd.im/admin/installation/#administration-account'
 tmp_dir=$(mktemp -d "/tmp/.$rel_name.XXXXXX")
+path_uninstall="$code_path/uninstall.txt"
 
 trap 'rm -rf "$tmp_dir"' INT TERM EXIT
 umask 022
@@ -208,6 +209,17 @@ create_setup_script()
 	fi
 	echo '$rel_name $rel_vsn has been installed successfully.'
 	echo
+
+	echo >$path_uninstall
+	echo '# To uninstall ejabberd, first remove the service:' >>$path_uninstall
+	echo 'systemctl --now disable ejabberd' >>$path_uninstall
+	echo 'rm -rf /etc/systemd/system/ejabberd.service' >>$path_uninstall
+	echo >>$path_uninstall
+	echo '# Remove the binary files' >>$path_uninstall
+	echo 'rm -rf /opt/ejabberd-*' >>$path_uninstall
+	echo >>$path_uninstall
+	echo '# If you want to remove your config, database and logs:' >>$path_uninstall
+	echo 'rm -rf /opt/ejabberd' >>$path_uninstall
 
 	if [ \$is_upgrade = true ]
 	then
