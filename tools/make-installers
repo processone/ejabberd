@@ -124,6 +124,7 @@ create_setup_script()
 	else user_exists=false
 	fi
 
+	echo
 	echo 'The following installation paths will be used:'
 	echo '- $code_path'
 	if [ \$is_upgrade = true ]
@@ -144,6 +145,7 @@ create_setup_script()
 		echo 'Aborting installation.'
 		exit 1
 	fi
+	echo
 
 	if [ \$user_exists = false ]
 	then useradd -r -d '$data_path' '$rel_name'
@@ -188,6 +190,7 @@ create_setup_script()
 		echo '$code_path/bin directory for an example).'
 	fi
 	echo '$rel_name $rel_vsn has been installed successfully.'
+	echo
 
 	if [ \$is_upgrade = true ]
 	then
