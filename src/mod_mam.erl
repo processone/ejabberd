@@ -43,7 +43,8 @@
 	 get_room_config/4, set_room_option/3, offline_message/1, export/1,
 	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2,
 	 is_empty_for_user/2, is_empty_for_room/3, check_create_room/4,
-	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/7]).
+	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/7,
+	 delete_old_messages_batch/5, delete_old_messages_status/1, delete_old_messages_abort/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -566,6 +567,56 @@ message_is_archived(false, #{lserver := LServer}, Pkt) ->
 	    is_archived(Pkt, LServer);
 	false ->
 	    false
+    end.
+
+delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"chat">>;
+								  Type == <<"groupchat">>;
+								  Type == <<"all">> ->
+    CurrentTime = make_id(),
+    Diff = Days * 24 * 60 * 60 * 1000000,
+    TimeStamp = misc:usec_to_now(CurrentTime - Diff),
+    TypeA = misc:binary_to_atom(Type),
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case ejabberd_batch:register_task({mam, LServer}, 0, Rate, {LServer, TypeA, TimeStamp, BatchSize},
+				      fun({L, T, St, B} = S) ->
+					  case Mod:delete_old_messages_batch(L, St, T, B) of
+					      {ok, Count} ->
+						  {ok, S, Count};
+					      {error, _} = E ->
+						  E
+					  end
+				      end) of
+	ok ->
+	    {ok, ""};
+	{error, in_progress} ->
+	    {error, "Operation in progress"}
+    end.
+delete_old_messages_status(Server) ->
+    LServer = jid:nameprep(Server),
+    Msg = case ejabberd_batch:task_status({mam, LServer}) of
+	not_started ->
+	    "Operation not started";
+	{failed, Steps, Error} ->
+	    io_lib:format("Operation failed after deleting ~p messages with error ~p",
+			  [Steps, misc:format_val(Error)]);
+	{aborted, Steps} ->
+	    io_lib:format("Operation was aborted after deleting ~p messages",
+					[Steps]);
+	      {working, Steps} ->
+		  io_lib:format("Operation in progress, deleted ~p messages",
+				[Steps]);
+	{completed, Steps} ->
+	    io_lib:format("Operation was completed after deleting ~p messages",
+					[Steps])
+    end,
+    lists:flatten(Msg).
+
+delete_old_messages_abort(Server) ->
+    LServer = jid:nameprep(Server),
+    case ejabberd_batch:abort_task({mam, LServer}) of
+	aborted -> "Operation aborted";
+	not_started -> "No task running"
     end.
 
 delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
@@ -1379,6 +1430,39 @@ get_commands_spec() ->
 			args_example = [<<"all">>, 31],
 			args = [{type, binary}, {days, integer}],
 			result = {res, rescode}},
+     #ejabberd_commands{name = delete_old_mam_messages_batch, tags = [purge],
+			desc = "Delete MAM messages older than DAYS",
+			longdesc = "Valid message TYPEs: "
+				   "\"chat\", \"groupchat\", \"all\".",
+			module = ?MODULE, function = delete_old_messages_batch,
+			args_desc = ["Name of host where messages should be deleted",
+				     "Type of messages to delete (chat, groupchat, all)",
+				     "Days to keep messages",
+				     "Number of messages to delete per batch",
+				     "Desired rate of messages to delete per minute"],
+			args_example = [<<"localhost">>, <<"all">>, 31, 1000, 10000],
+			args = [{host, binary}, {type, binary}, {days, integer}, {batch_size, integer}, {rate, integer}],
+			result = {res, restuple},
+			result_desc = "Result tuple",
+			result_example = {ok, <<"Removal of 5000 messages in progress">>}},
+     #ejabberd_commands{name = delete_old_mam_messages_status, tags = [purge],
+			desc = "Status of delete old MAM messages operation",
+			module = ?MODULE, function = delete_old_messages_status,
+			args_desc = ["Name of host where messages should be deleted"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, string},
+			result_desc = "Status test",
+			result_example = {"Operation in progress, delete 5000 messages"}},
+     #ejabberd_commands{name = abort_delete_old_mam_messages, tags = [purge],
+			desc = "Abort currently running delete old MAM messages operation",
+			module = ?MODULE, function = delete_old_messages_abort,
+			args_desc = ["Name of host where operation should be aborted"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, string},
+			result_desc = "Status text",
+			result_example = {"Operation aborted"}},
      #ejabberd_commands{name = remove_mam_for_user, tags = [mam],
 			desc = "Remove mam archive for user",
 			module = ?MODULE, function = remove_mam_for_user,

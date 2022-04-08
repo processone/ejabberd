@@ -66,7 +66,8 @@ init([]) ->
 	   supervisor(ejabberd_gen_mod_sup, gen_mod),
 	   worker(ejabberd_acme),
 	   worker(ejabberd_auth),
-	   worker(ejabberd_oauth)]}}.
+	   worker(ejabberd_oauth),
+	   worker(ejabberd_batch)]}}.
 
 -spec stop_child(atom()) -> ok.
 stop_child(Name) ->

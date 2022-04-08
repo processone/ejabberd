@@ -30,7 +30,8 @@
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
 	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
-	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6]).
+	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6,
+	 delete_old_messages_batch/4, count_messages_to_delete/3]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -69,6 +70,56 @@ remove_from_archive(LUser, LServer, WithJid) ->
 				?SQL("delete from archive where username=%(LUser)s and %(LServer)H and bare_peer=%(Peer)s")) of
 	{error, Reason} -> {error, Reason};
 	_ -> ok
+    end.
+
+count_messages_to_delete(ServerHost, TimeStamp, Type) ->
+    TS = misc:now_to_usec(TimeStamp),
+    Res =
+    case Type of
+	all ->
+	    ejabberd_sql:sql_query(
+		ServerHost,
+		?SQL("select count(*) from archive"
+		     " where timestamp < %(TS)d and %(ServerHost)H"));
+	_ ->
+	    SType = misc:atom_to_binary(Type),
+	    ejabberd_sql:sql_query(
+		ServerHost,
+		?SQL("select @(count(*))d from archive"
+		     " where timestamp < %(TS)d"
+		     " and kind=%(SType)s"
+		     " and %(ServerHost)H"))
+    end,
+    case Res of
+	{selected, [Count]} ->
+	    {ok, Count};
+	_ ->
+	    error
+    end.
+
+delete_old_messages_batch(ServerHost, TimeStamp, Type, Batch) ->
+    TS = misc:now_to_usec(TimeStamp),
+    Res =
+    case Type of
+	all ->
+	    ejabberd_sql:sql_query(
+		ServerHost,
+		?SQL("delete from archive"
+		     " where timestamp < %(TS)d and %(ServerHost)H limit %(Batch)d"));
+	_ ->
+	    SType = misc:atom_to_binary(Type),
+	    ejabberd_sql:sql_query(
+		ServerHost,
+		?SQL("delete from archive"
+		     " where timestamp < %(TS)d"
+		     " and kind=%(SType)s"
+		     " and %(ServerHost)H limit %(Batch)d"))
+    end,
+    case Res of
+	{updated, Count} ->
+	    {ok, Count};
+	{error, _} = Error ->
+	    Error
     end.
 
 delete_old_messages(ServerHost, TimeStamp, Type) ->
