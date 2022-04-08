@@ -30,7 +30,7 @@
 -export([init/2, store_message/1, pop_messages/2, remove_expired_messages/1,
 	 remove_old_messages/2, remove_user/2, read_message_headers/2,
 	 read_message/3, remove_message/3, read_all_messages/2,
-	 remove_all_messages/2, count_messages/2, import/1, export/1]).
+	 remove_all_messages/2, count_messages/2, import/1, export/1, remove_old_messages_batch/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_offline.hrl").
@@ -111,6 +111,31 @@ remove_old_messages(Days, LServer) ->
 	    ?ERROR_MSG("Cannot delete message in offline spool: ~p", [_Error])
     end,
     {atomic, ok}.
+
+remove_old_messages_batch(LServer, Days, Batch) ->
+    case ejabberd_sql:sql_query(
+	LServer,
+	fun(pgsql, _) ->
+	    ejabberd_sql:sql_query_t(
+		?SQL("DELETE FROM spool"
+		     " WHERE created_at <"
+		     " NOW() - %(Days)d * INTERVAL '1 DAY' LIMIT %(Batch)d"));
+	   (sqlite, _) ->
+	       ejabberd_sql:sql_query_t(
+		   ?SQL("DELETE FROM spool"
+			" WHERE created_at <"
+			" DATETIME('now', '-%(Days)d days') LIMIT %(Batch)d"));
+	   (_, _) ->
+	       ejabberd_sql:sql_query_t(
+		   ?SQL("DELETE FROM spool"
+			" WHERE created_at < NOW() - INTERVAL %(Days)d DAY LIMIT %(Batch)d"))
+	end)
+    of
+	{updated, N} ->
+	    {ok, N};
+	Error ->
+	    {error, Error}
+    end.
 
 remove_user(LUser, LServer) ->
     ejabberd_sql:sql_query(

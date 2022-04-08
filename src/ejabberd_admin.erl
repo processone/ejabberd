@@ -60,8 +60,8 @@
 	 restore/1, % Still used by some modules
 	 clear_cache/0,
 	 gc/0,
-	 get_commands_spec/0
-	]).
+	 get_commands_spec/0,
+	 delete_old_messages_batch/4, delete_old_messages_status/1, delete_old_messages_abort/1]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -320,6 +320,36 @@ get_commands_spec() ->
 			args_desc = ["Number of days"],
 			args_example = [31],
 			args = [{days, integer}], result = {res, rescode}},
+     #ejabberd_commands{name = delete_old_messages_batch, tags = [purge],
+			desc = "Delete offline messages older than DAYS",
+			module = ?MODULE, function = delete_old_messages_batch,
+			args_desc = ["Name of host where messages should be deleted",
+				     "Days to keep messages",
+				     "Number of messages to delete per batch",
+				     "Desired rate of messages to delete per minute"],
+			args_example = [<<"localhost">>, 31, 1000, 10000],
+			args = [{host, binary}, {days, integer}, {batch_size, integer}, {rate, integer}],
+			result = {res, restuple},
+			result_desc = "Result tuple",
+			result_example = {ok, <<"Removal of 5000 messages in progress">>}},
+     #ejabberd_commands{name = delete_old_messages_status, tags = [purge],
+			desc = "Status of delete old offline messages operation",
+			module = ?MODULE, function = delete_old_messages_status,
+			args_desc = ["Name of host where messages should be deleted"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, string},
+			result_desc = "Status test",
+			result_example = {"Operation in progress, delete 5000 messages"}},
+     #ejabberd_commands{name = abort_delete_old_messages, tags = [purge],
+			desc = "Abort currently running delete old offline messages operation",
+			module = ?MODULE, function = delete_old_messages_abort,
+			args_desc = ["Name of host where operation should be aborted"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, string},
+			result_desc = "Status text",
+			result_example = {"Operation aborted"}},
 
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL file",
@@ -681,6 +711,51 @@ delete_old_messages(Days) ->
       fun(Host) ->
               {atomic, _} = mod_offline:remove_old_messages(Days, Host)
       end, ejabberd_option:hosts()).
+
+delete_old_messages_batch(Server, Days, BatchSize, Rate) ->
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, mod_offline),
+    case ejabberd_batch:register_task({spool, LServer}, 0, Rate, {LServer, Days, BatchSize},
+				      fun({L, Da, B} = S) ->
+					  case Mod:remove_old_messages_batch(L, Da, B) of
+					      {ok, Count} ->
+						  {ok, S, Count};
+					      {error, _} = E ->
+						  E
+					  end
+				      end) of
+	ok ->
+	    {ok, ""};
+	{error, in_progress} ->
+	    {error, "Operation in progress"}
+    end.
+
+delete_old_messages_status(Server) ->
+    LServer = jid:nameprep(Server),
+    Msg = case ejabberd_batch:task_status({spool, LServer}) of
+	      not_started ->
+		  "Operation not started";
+	      {failed, Steps, Error} ->
+		  io_lib:format("Operation failed after deleting ~p messages with error ~p",
+				[Steps, misc:format_val(Error)]);
+	      {aborted, Steps} ->
+		  io_lib:format("Operation was aborted after deleting ~p messages",
+				[Steps]);
+	      {working, Steps} ->
+		  io_lib:format("Operation in progress, deleted ~p messages",
+				[Steps]);
+	      {completed, Steps} ->
+		  io_lib:format("Operation was completed after deleting ~p messages",
+				[Steps])
+	  end,
+    lists:flatten(Msg).
+
+delete_old_messages_abort(Server) ->
+    LServer = jid:nameprep(Server),
+    case ejabberd_batch:abort_task({spool, LServer}) of
+	aborted -> "Operation aborted";
+	not_started -> "No task running"
+    end.
 
 %%%
 %%% Mnesia management
