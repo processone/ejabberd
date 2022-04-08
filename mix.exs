@@ -185,7 +185,7 @@ defmodule Ejabberd.MixProject do
   end
 
   defp elixir_required_version do
-    case {System.get_env("RELIVE", "false"),
+    case {Map.get(System.get_env(), "RELIVE", "false"),
           MapSet.member?(MapSet.new(System.argv()), "release")}
       do
       {"true", _} ->
