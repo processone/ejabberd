@@ -195,7 +195,7 @@ work_loop(Task, JobState, JobFun, Rate, StartDate, CurrentProgress) ->
 	    SleepTime = max(0, NewProgress/Rate*60 - TimeSpent),
 	    receive
 		abort -> ok
-	    after floor(SleepTime*1000) ->
+	    after round(SleepTime*1000) ->
 		work_loop(Task, NewState, JobFun, Rate, StartDate, NewProgress)
 	    end;
 	{error, Error} ->
