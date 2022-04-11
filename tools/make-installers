@@ -75,6 +75,22 @@ tmp_dir=$(mktemp -d "/tmp/.$rel_name.XXXXXX")
 trap 'rm -rf "$tmp_dir"' INT TERM EXIT
 umask 022
 
+create_help_file()
+{
+	local file="$1"
+
+	cat >"$file" <<-EOF
+	This is the $rel_name $rel_vsn-$iteration installer for linux-$arch
+
+	Visit
+	  https://www.ejabberd.im/
+
+	ejabberd Documentation site:
+	  https://docs.ejabberd.im/
+        
+	EOF
+}
+
 create_setup_script()
 {
 	local dir="$1"
@@ -222,8 +238,9 @@ do
 	test -e "$tgz_name" || tools/make-binaries
 	echo "$myself: Putting together installer for $arch ..."
 	gzip -c -d <"$tgz_name" >"$tmp_dir/$tar_name"
+        create_help_file "$tmp_dir/help.txt"
 	create_setup_script "$tmp_dir" "$tar_name"
-	"$makeself" "$tmp_dir" "$installer_name" "$rel_name $rel_vsn" './setup'
+	"$makeself" --help-header "$tmp_dir/help.txt" "$tmp_dir" "$installer_name" "$rel_name $rel_vsn" './setup'
 	find "$tmp_dir" -mindepth 1 -delete
 done
 echo "$myself: Created installers successfully."
