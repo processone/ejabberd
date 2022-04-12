@@ -42,6 +42,7 @@
 	 web_menu_main/2, web_page_main/2, web_menu_host/3,
 	 subscribe_room/4, subscribe_room_many/3,
          unsubscribe_room/2, get_subscribers/2,
+         get_room_serverhost/1,
          web_page_host/3,
          mod_opt_type/1, mod_options/1,
          get_commands_spec/0, find_hosts/1]).

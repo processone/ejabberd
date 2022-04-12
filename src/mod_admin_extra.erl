@@ -1149,12 +1149,35 @@ set_vcard(User, Host, Name, SomeContent) ->
 set_vcard(User, Host, Name, Subname, SomeContent) ->
     set_vcard_content(User, Host, [Name, Subname], SomeContent).
 
+%%
+%% Room vcard
+
+is_muc_service(Domain) ->
+    try mod_muc_admin:get_room_serverhost(Domain) of
+        Domain -> false;
+        Service when is_binary(Service) -> true
+    catch _:{unregistered_route, _} ->
+            throw(error_wrong_hostname)
+    end.
+
+get_room_vcard(Name, Service) ->
+    case mod_muc_admin:get_room_options(Name, Service) of
+        [] ->
+            throw(error_no_vcard_found);
+        Opts ->
+            case lists:keyfind(<<"vcard">>, 1, Opts) of
+                false ->
+                    throw(error_no_vcard_found);
+                {_, VCardRaw} ->
+                    [fxml_stream:parse_element(VCardRaw)]
+            end
+    end.
 
 %%
 %% Internal vcard
 
 get_vcard_content(User, Server, Data) ->
-    case mod_vcard:get_vcard(jid:nodeprep(User), jid:nameprep(Server)) of
+    case get_vcard_element(User, Server) of
 	[El|_] ->
 	    case get_vcard(Data, El) of
 		[false] -> throw(error_no_value_found_in_vcard);
@@ -1164,6 +1187,14 @@ get_vcard_content(User, Server, Data) ->
 	    throw(error_no_vcard_found);
 	error ->
 	    throw(database_failure)
+    end.
+
+get_vcard_element(User, Server) ->
+    case is_muc_service(Server) of
+        true ->
+           get_room_vcard(User, Server);
+        false ->
+           mod_vcard:get_vcard(jid:nodeprep(User), jid:nameprep(Server))
     end.
 
 get_vcard([<<"TEL">>, TelType], {_, _, _, OldEls}) ->
