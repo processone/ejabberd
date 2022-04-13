@@ -340,7 +340,7 @@ get_commands_spec() ->
 			args = [{host, binary}],
 			result = {status, string},
 			result_desc = "Status test",
-			result_example = {"Operation in progress, delete 5000 messages"}},
+			result_example = "Operation in progress, delete 5000 messages"},
      #ejabberd_commands{name = abort_delete_old_messages, tags = [purge],
 			desc = "Abort currently running delete old offline messages operation",
 			module = ?MODULE, function = delete_old_messages_abort,
@@ -349,7 +349,7 @@ get_commands_spec() ->
 			args = [{host, binary}],
 			result = {status, string},
 			result_desc = "Status text",
-			result_example = {"Operation aborted"}},
+			result_example = "Operation aborted"},
 
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL file",
