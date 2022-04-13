@@ -1294,20 +1294,18 @@ mod_doc() ->
            {use_mam_for_storage,
             #{value => "true | false",
               desc =>
-                  ?T("This is an experimental option. Enabling this option "
-                     "will make 'mod_offline' not use the former spool "
-                     "table for storing MucSub offline messages, but will "
-                     "use the archive table instead. This use of the archive "
-                     "table is cleaner and it makes it possible for clients "
-                     "to slowly drop the former offline use case and rely on "
-                     "message archive instead. It also further reduces the "
-                     "storage required when you enabled MucSub. Enabling this "
+                  ?T("This is an experimental option. Enabling this option, "
+                     "'mod_offline' uses the 'mod_mam' archive table instead "
+                     "of its own spool table to retrieve the messages received "
+                     "when the user was offline. This allows client "
+                     "developers to slowly drop XEP-0160 and rely on XEP-0313 "
+                     "instead. It also further reduces the "
+                     "storage required when you enable MucSub. Enabling this "
                      "option has a known drawback for the moment: most of "
                      "flexible message retrieval queries don't work (those that "
                      "allow retrieval/deletion of messages by id), but this "
                      "specification is not widely used. The default value "
-                     "is 'false' to keep former behaviour as default and "
-                     "ensure this option is disabled.")}},
+                     "is 'false' to keep former behaviour as default.")}},
            {bounce_groupchat,
             #{value => "true | false",
               desc =>
