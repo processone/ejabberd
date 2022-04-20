@@ -69,7 +69,7 @@ lookup(Token) ->
     end.
 
 
--spec revoke(binary()) -> ok | error.
+-spec revoke(binary()) -> ok | {error, binary()}.
 revoke(Token) ->
     mnesia:dirty_delete(oauth_token, Token).
 
