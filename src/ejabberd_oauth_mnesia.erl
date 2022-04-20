@@ -28,13 +28,13 @@
 -behaviour(ejabberd_oauth).
 
 -export([init/0,
-         store/1,
-         lookup/1,
-         clean/1,
-         lookup_client/1,
-         store_client/1,
-         remove_client/1,
-	 use_cache/0]).
+	 store/1,
+	 lookup/1,
+	 clean/1,
+	 lookup_client/1,
+	 store_client/1,
+	 remove_client/1,
+	 use_cache/0, revoke/1]).
 
 -include("ejabberd_oauth.hrl").
 
@@ -67,6 +67,11 @@ lookup(Token) ->
         _ ->
             error
     end.
+
+
+-spec revoke(binary()) -> ok | error.
+revoke(Token) ->
+    mnesia:dirty_delete(oauth_token, Token).
 
 clean(TS) ->
     F = fun() ->

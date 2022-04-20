@@ -65,6 +65,7 @@
 -callback init() -> any().
 -callback store(#oauth_token{}) -> ok | {error, any()}.
 -callback lookup(binary()) -> {ok, #oauth_token{}} | error.
+-callback revoke(binary()) -> ok | {error, binary()}.
 -callback clean(non_neg_integer()) -> any().
 
 -record(oauth_ctx, {
@@ -99,12 +100,12 @@ get_commands_spec() ->
                         result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}}
                        },
      #ejabberd_commands{name = oauth_revoke_token, tags = [oauth],
-                        desc = "Revoke authorization for a token (only Mnesia)",
+                        desc = "Revoke authorization for a token",
                         module = ?MODULE, function = oauth_revoke_token,
-                        args = [{token, string}],
+                        args = [{token, binary}],
                         policy = restricted,
-                        result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}},
-                        result_desc = "List of remaining tokens"
+                        result = {res, restuple},
+                        result_desc = "Result code"
                        },
      #ejabberd_commands{name = oauth_add_client_password, tags = [oauth],
                         desc = "Add OAUTH client_id with password grant type",
@@ -160,8 +161,15 @@ oauth_list_tokens() ->
 
 
 oauth_revoke_token(Token) ->
-    ok = mnesia:dirty_delete(oauth_token, list_to_binary(Token)),
-    oauth_list_tokens().
+    DBMod = get_db_backend(),
+    case DBMod:revoke(Token) of
+        ok ->
+            ets_cache:delete(oauth_cache, Token,
+                             ejabberd_cluster:get_nodes()),
+            {ok, ""};
+        Other ->
+            Other
+    end.
 
 oauth_add_client_password(ClientID, ClientName, Secret) ->
     DBMod = get_db_backend(),

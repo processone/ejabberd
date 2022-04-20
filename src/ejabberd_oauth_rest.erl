@@ -32,7 +32,7 @@
          lookup/1,
          clean/1,
          lookup_client/1,
-         store_client/1]).
+         store_client/1, revoke/1]).
 
 -include("ejabberd_oauth.hrl").
 -include("logger.hrl").
@@ -86,6 +86,10 @@ lookup(Token) ->
                 Time -> {cache_with_timeout, error, Time}
 	    end
     end.
+
+-spec revoke(binary()) -> ok | {error, binary()}.
+revoke(_Token) ->
+    {error, <<"not available">>}.
 
 clean(_TS) ->
     ok.
