@@ -301,6 +301,21 @@ defmodule Ejabberd.MixProject do
         Mix.Generator.copy_file("sql/#{x}", "#{ro}/lib/ejabberd-#{release.version}/priv/sql/#{x}")
       end)
 
+    File.cp_r!("include", "#{ro}/lib/ejabberd-#{release.version}/include")
+    for {name, details} <- Map.to_list(release.applications) do
+      {_, is_otp_app} = List.keyfind(details, :otp_app?, 0)
+      {_, vsn} = List.keyfind(details, :vsn, 0)
+      {_, path} = List.keyfind(details, :path, 0)
+      source_dir = case is_otp_app do
+        :true -> "#{path}/include"
+        :false -> "deps/#{name}/include"
+      end
+      target_dir = "#{ro}/lib/#{name}-#{vsn}/include"
+      File.exists?(source_dir)
+        && File.mkdir_p(target_dir)
+        && File.cp_r!(source_dir, target_dir)
+    end
+
     Mix.Generator.create_directory("#{ro}/var/lib/ejabberd")
 
     case Mix.env() do
