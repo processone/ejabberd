@@ -27,7 +27,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/build/
-          key: ${{runner.os}}-ct-ng-1.24.0
+          key: ${{runner.os}}-ct-ng-1.25.0-RC2
       - name: Install prerequisites
         run: |
           sudo apt-get -qq update
