@@ -66,3 +66,19 @@ jobs:
           #
           path: ejabberd-packages*
           retention-days: 14
+
+  release:
+    name: Release
+    needs: [binaries]
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v3
+        with:
+          name: ejabberd-packages
+      - name: Draft Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: ejabberd-packages/*
