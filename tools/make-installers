@@ -63,7 +63,7 @@ else
 fi
 
 rel_name='ejabberd'
-rel_vsn=$(git describe | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
+rel_vsn=$(git describe --tags | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
 code_path="/opt/$rel_name-$rel_vsn"
 data_path="/opt/$rel_name"
 conf_path="$data_path/conf"

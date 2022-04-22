@@ -63,7 +63,7 @@ then
 fi
 
 rel_name='ejabberd'
-rel_vsn=$(git describe | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
+rel_vsn=$(git describe --tags | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
 mix_vsn=$(mix_version "$rel_vsn")
 crosstool_vsn='1.25.0_rc2'
 termcap_vsn='1.3.1'

@@ -60,7 +60,7 @@ then
 fi
 
 rel_name='ejabberd'
-rel_vsn=$(git describe | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
+rel_vsn=$(git describe --tags | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
 conf_dir="/opt/$rel_name/conf"
 pem_file="$conf_dir/server.pem"
 tmp_dir=$(mktemp -d "/tmp/.$myself.XXXXXX")
