@@ -1,0 +1,329 @@
+#!/bin/sh
+
+# define default configuration
+POLL=true
+ERL_MAX_PORTS=32000
+ERL_PROCESSES=250000
+ERL_MAX_ETS_TABLES=1400
+FIREWALL_WINDOW=""
+INET_DIST_INTERFACE=""
+ERLANG_NODE=ejabberd@localhost
+
+# define default environment variables
+[ -z "$SCRIPT" ] && SCRIPT=$0
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT")" && pwd -P)"
+# shellcheck disable=SC2034
+ERTS_VSN="{{erts_vsn}}"
+ERL="{{erl}}"
+IEX="{{bindir}}/iex"
+EPMD="{{epmd}}"
+INSTALLUSER="{{installuser}}"
+
+# check the proper system user is used
+case $(id -un) in
+    "$INSTALLUSER")
+        EXEC_CMD="as_current_user"
+        ;;
+    root)
+        if [ -n "$INSTALLUSER" ] ; then
+            EXEC_CMD="as_install_user"
+        else
+            EXEC_CMD="as_current_user"
+            echo "WARNING: It is not recommended to run ejabberd as root" >&2
+        fi
+        ;;
+    *)
+        if [ -n "$INSTALLUSER" ] ; then
+            echo "ERROR: This command can only be run by root or the user $INSTALLUSER" >&2
+            exit 7
+        else
+            EXEC_CMD="as_current_user"
+        fi
+        ;;
+esac
+
+# parse command line parameters
+while [ $# -gt 0 ]; do
+    case $1 in
+        -n|--node) ERLANG_NODE_ARG=$2; shift 2;;
+        -s|--spool) SPOOL_DIR=$2; shift 2;;
+        -l|--logs) LOGS_DIR=$2; shift 2;;
+        -f|--config) EJABBERD_CONFIG_PATH=$2; shift 2;;
+        -c|--ctl-config) EJABBERDCTL_CONFIG_PATH=$2; shift 2;;
+        -d|--config-dir) CONFIG_DIR=$2; shift 2;;
+        -t|--no-timeout) NO_TIMEOUT="--no-timeout"; shift;;
+        *) break;;
+    esac
+done
+
+# define ejabberd variables if not already defined from the command line
+: "${CONFIG_DIR:="{{config_dir}}"}"
+: "${LOGS_DIR:="{{logs_dir}}"}"
+: "${SPOOL_DIR:="{{spool_dir}}"}"
+: "${EJABBERD_CONFIG_PATH:="$CONFIG_DIR/ejabberd.yml"}"
+: "${EJABBERDCTL_CONFIG_PATH:="$CONFIG_DIR/ejabberdctl.cfg"}"
+# Allows passing extra Erlang command-line arguments in vm.args file
+: "${VMARGS:="$CONFIG_DIR/vm.args"}"
+# shellcheck source=ejabberdctl.cfg.example
+[ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
+[ -n "$ERLANG_NODE_ARG" ] && ERLANG_NODE="$ERLANG_NODE_ARG"
+[ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && S="-s"
+: "${EJABBERD_LOG_PATH:="$LOGS_DIR/ejabberd.log"}"
+
+# define erl parameters
+ERLANG_OPTS="+K $POLL +P $ERL_PROCESSES $ERL_OPTIONS"
+if [ -n "$FIREWALL_WINDOW" ] ; then
+    ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
+fi
+if [ -n "$INET_DIST_INTERFACE" ] ; then
+    INET_DIST_INTERFACE2=$("$ERL" -noshell -eval 'case inet:parse_address("'$INET_DIST_INTERFACE'") of {ok,IP} -> io:format("~p",[IP]); _ -> ok end.' -s erlang halt)
+    if [ -n "$INET_DIST_INTERFACE2" ] ; then
+        ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_use_interface $INET_DIST_INTERFACE2"
+    fi
+fi
+# if vm.args file exists in config directory, pass it to Erlang VM
+[ -f "$VMARGS" ] && ERLANG_OPTS="$ERLANG_OPTS -args_file $VMARGS"
+ERL_LIBS='{{libdir}}'
+ERL_CRASH_DUMP="$LOGS_DIR"/erl_crash_$(date "+%Y%m%d-%H%M%S").dump
+ERL_INETRC="$CONFIG_DIR"/inetrc
+
+# define ejabberd parameters
+EJABBERD_OPTS="$EJABBERD_OPTS\
+$(sed '/^log_rotate_size/!d;s/:[ \t]*\([0-9]\{1,\}\).*/ \1/;s/:[ \t]*\(infinity\).*/ \1/;s/^/ /' "$EJABBERD_CONFIG_PATH")\
+$(sed '/^log_rotate_count/!d;s/:[ \t]*\([0-9]*\).*/ \1/;s/^/ /' "$EJABBERD_CONFIG_PATH")"
+[ -n "$EJABBERD_OPTS" ] && EJABBERD_OPTS="-ejabberd $EJABBERD_OPTS"
+EJABBERD_OPTS="-mnesia dir \"$SPOOL_DIR\" $MNESIA_OPTIONS $EJABBERD_OPTS -s ejabberd"
+
+# export global variables
+export EJABBERD_CONFIG_PATH
+export EJABBERD_LOG_PATH
+export EJABBERD_PID_PATH
+export ERL_CRASH_DUMP
+export ERL_EPMD_ADDRESS
+export ERL_INETRC
+export ERL_MAX_PORTS
+export ERL_MAX_ETS_TABLES
+export CONTRIB_MODULES_PATH
+export CONTRIB_MODULES_CONF_DIR
+export ERL_LIBS
+export SCRIPT_DIR
+
+# run command either directly or via su $INSTALLUSER
+exec_cmd()
+{
+    case $EXEC_CMD in
+        as_install_user) su -s /bin/sh -c '"$0" "$@"' "$INSTALLUSER" -- "$@" ;;
+        as_current_user) "$@" ;;
+    esac
+}
+exec_erl()
+{
+    NODE=$1; shift
+    exec_cmd "$ERL" ${S:--}name "$NODE" $ERLANG_OPTS "$@"
+}
+exec_iex()
+{
+    NODE=$1; shift
+    exec_cmd "$IEX" -${S:--}name "$NODE" --erl "$ERLANG_OPTS" "$@"
+}
+
+# usage
+debugwarning()
+{
+    if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
+        echo "--------------------------------------------------------------------"
+        echo ""
+        echo "IMPORTANT: we will attempt to attach an INTERACTIVE shell"
+        echo "to an already running ejabberd node."
+        echo "If an ERROR is printed, it means the connection was not successful."
+        echo "You can interact with the ejabberd node if you know how to use it."
+        echo "Please be extremely cautious with your actions,"
+        echo "and exit immediately if you are not completely sure."
+        echo ""
+        echo "To detach this shell from ejabberd, press:"
+        echo "  control+c, control+c"
+        echo ""
+        echo "--------------------------------------------------------------------"
+        echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
+        echo "  EJABBERD_BYPASS_WARNINGS=true"
+        echo "Press return to continue"
+        read -r _
+        echo ""
+    fi
+}
+
+livewarning()
+{
+    if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
+        echo "--------------------------------------------------------------------"
+        echo ""
+        echo "IMPORTANT: ejabberd is going to start in LIVE (interactive) mode."
+        echo "All log messages will be shown in the command shell."
+        echo "You can interact with the ejabberd node if you know how to use it."
+        echo "Please be extremely cautious with your actions,"
+        echo "and exit immediately if you are not completely sure."
+        echo ""
+        echo "To exit this LIVE mode and stop ejabberd, press:"
+        echo "  q().  and press the Enter key"
+        echo ""
+        echo "--------------------------------------------------------------------"
+        echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
+        echo "  EJABBERD_BYPASS_WARNINGS=true"
+        echo "Press return to continue"
+        read -r _
+        echo ""
+    fi
+}
+
+help()
+{
+    echo ""
+    echo "Commands to start an ejabberd node:"
+    echo "  start            Start in server mode"
+    echo "  foreground       Start in server mode (attached)"
+    echo "  foreground-quiet Start in server mode (attached), show only critical messages"
+    echo "  live             Start in interactive mode, with Erlang shell"
+    echo "  iexlive          Start in interactive mode, with Elixir shell"
+    echo ""
+    echo "Commands to interact with a running ejabberd node:"
+    echo "  debug            Attach an interactive Erlang shell to a running node"
+    echo "  iexdebug         Attach an interactive Elixir shell to a running node"
+    echo "  etop             Attach to a running node and start Erlang Top"
+    echo "  ping             Send ping to the node, returns pong or pang"
+    echo "  started|stopped  Wait for the node to fully start|stop"
+    echo ""
+    echo "Optional parameters when starting an ejabberd node:"
+    echo "  --config-dir dir   Config ejabberd:    $CONFIG_DIR"
+    echo "  --config file      Config ejabberd:    $EJABBERD_CONFIG_PATH"
+    echo "  --ctl-config file  Config ejabberdctl: $EJABBERDCTL_CONFIG_PATH"
+    echo "  --logs dir         Directory for logs: $LOGS_DIR"
+    echo "  --spool dir        Database spool dir: $SPOOL_DIR"
+    echo "  --node nodename    ejabberd node name: $ERLANG_NODE"
+    echo ""
+}
+
+# dynamic node name helper
+uid()
+{
+    uuid=$(uuidgen 2>/dev/null)
+    random=$(awk 'BEGIN { srand(); print int(rand()*32768) }' /dev/null)
+    [ -z "$uuid" ] && [ -f /proc/sys/kernel/random/uuid ] && uuid=$(cat /proc/sys/kernel/random/uuid)
+    [ -z "$uuid" ] && uuid=$(printf "%X" "${random:-$$}$(date +%M%S)")
+    uuid=$(printf '%s' $uuid | sed 's/^\(...\).*$/\1/')
+    [ $# -eq 0 ] && echo "${uuid}-${ERLANG_NODE}"
+    [ $# -eq 1 ] && echo "${uuid}-${1}-${ERLANG_NODE}"
+    [ $# -eq 2 ] && echo "${uuid}-${1}@${2}"
+}
+
+# stop epmd if there is no other running node
+stop_epmd()
+{
+    "$EPMD" -names 2>/dev/null | grep -q name || "$EPMD" -kill >/dev/null
+}
+
+# make sure node not already running and node name unregistered
+# if all ok, ensure runtime directory exists and make it current directory
+check_start()
+{
+    "$EPMD" -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
+        pgrep -f "$ERLANG_NODE" >/dev/null && {
+            echo "ERROR: The ejabberd node '$ERLANG_NODE' is already running."
+            exit 4
+        }
+        pgrep beam >/dev/null && {
+            echo "ERROR: The ejabberd node '$ERLANG_NODE' is registered,"
+            echo "       but no related beam process has been found."
+            echo "Shutdown all other erlang nodes, and call 'epmd -kill'."
+            exit 5
+        }
+        "$EPMD" -kill >/dev/null
+    }
+}
+
+# allow sync calls
+wait_status()
+{
+    # args: status try delay
+    # return: 0 OK, 1 KO
+    timeout="$2"
+    status=4
+    while [ "$status" -ne "$1" ] ; do
+        sleep "$3"
+        timeout=$((timeout - 1))
+        if [ $timeout -eq 0 ] ; then
+            status="$1"
+        else
+            exec_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
+                     -extra "$ERLANG_NODE" $NO_TIMEOUT status > /dev/null
+            status="$?"
+        fi
+    done
+    [ $timeout -gt 0 ]
+}
+
+# ensure we can change current directory to SPOOL_DIR
+[ -d "$SPOOL_DIR" ] || exec_cmd mkdir -p "$SPOOL_DIR"
+cd "$SPOOL_DIR" || {
+    echo "ERROR: can not access directory $SPOOL_DIR"
+    exit 6
+}
+
+# main
+case $1 in
+    start)
+        check_start
+        exec_erl "$ERLANG_NODE" $EJABBERD_OPTS -detached
+        ;;
+    foreground)
+        check_start
+        exec_erl "$ERLANG_NODE" $EJABBERD_OPTS -noinput
+        ;;
+    foreground-quiet)
+        check_start
+        exec_erl "$ERLANG_NODE" $EJABBERD_OPTS -noinput -ejabberd quiet true
+        ;;
+    live)
+        livewarning
+        check_start
+        exec_erl "$ERLANG_NODE" $EJABBERD_OPTS
+        ;;
+    debug)
+        debugwarning
+        exec_erl "$(uid debug)" -hidden -remsh "$ERLANG_NODE"
+        ;;
+    etop)
+        exec_erl "$(uid top)" -hidden -node "$ERLANG_NODE" -s etop \
+                 -s erlang halt -output text
+        ;;
+    iexdebug)
+        debugwarning
+        exec_iex "$(uid debug)" --remsh "$ERLANG_NODE"
+        ;;
+    iexlive)
+        livewarning
+        exec_iex "$ERLANG_NODE" --erl "$EJABBERD_OPTS" --app ejabberd
+        ;;
+    ping)
+        PEER=${2:-$ERLANG_NODE}
+        [ "$PEER" = "${PEER%.*}" ] && PS="-s"
+        exec_cmd "$ERL" ${PS:--}name "$(uid ping "$(hostname $PS)")" $ERLANG_OPTS \
+                 -noinput -hidden -eval 'io:format("~p~n",[net_adm:ping('"'$PEER'"')])' \
+                 -s erlang halt -output text
+        ;;
+    started)
+        wait_status 0 30 2 # wait 30x2s before timeout
+        ;;
+    stopped)
+        wait_status 3 30 2 && stop_epmd # wait 30x2s before timeout
+        ;;
+    *)
+        exec_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
+                 -extra "$ERLANG_NODE" $NO_TIMEOUT "$@"
+        result=$?
+        case $result in
+            2|3) help;;
+            *) :;;
+        esac
+        exit $result
+        ;;
+esac
