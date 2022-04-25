@@ -109,12 +109,24 @@ export ERL_LIBS
 export SCRIPT_DIR
 
 # run command either directly or via su $INSTALLUSER
-exec_cmd()
+run_cmd()
 {
     case $EXEC_CMD in
         as_install_user) su -s /bin/sh -c '"$0" "$@"' "$INSTALLUSER" -- "$@" ;;
         as_current_user) "$@" ;;
     esac
+}
+exec_cmd()
+{
+    case $EXEC_CMD in
+        as_install_user) su -s /bin/sh -c '"$0" "$@"' "$INSTALLUSER" -- "$@" ;;
+        as_current_user) exec "$@" ;;
+    esac
+}
+run_erl()
+{
+    NODE=$1; shift
+    run_cmd "$ERL" ${S:--}name "$NODE" $ERLANG_OPTS "$@"
 }
 exec_erl()
 {
@@ -253,7 +265,7 @@ wait_status()
         if [ $timeout -eq 0 ] ; then
             status="$1"
         else
-            exec_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
+            run_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
                      -extra "$ERLANG_NODE" $NO_TIMEOUT status > /dev/null
             status="$?"
         fi
@@ -262,7 +274,7 @@ wait_status()
 }
 
 # ensure we can change current directory to SPOOL_DIR
-[ -d "$SPOOL_DIR" ] || exec_cmd mkdir -p "$SPOOL_DIR"
+[ -d "$SPOOL_DIR" ] || run_cmd mkdir -p "$SPOOL_DIR"
 cd "$SPOOL_DIR" || {
     echo "ERROR: can not access directory $SPOOL_DIR"
     exit 6
@@ -317,7 +329,7 @@ case $1 in
         wait_status 3 30 2 && stop_epmd # wait 30x2s before timeout
         ;;
     *)
-        exec_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
+        run_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
                  -extra "$ERLANG_NODE" $NO_TIMEOUT "$@"
         result=$?
         case $result in
