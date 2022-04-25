@@ -252,6 +252,28 @@ check_start()
     }
 }
 
+post_waiter_fork()
+{
+    (FIRST_RUN=$FIRST_RUN "$0" post_waiter)&
+}
+
+post_waiter_waiting()
+{
+    $0 started
+    [ -n "$FIRST_RUN" ] && [ -n "$CTL_ON_CREATE" ] && (post_waiter_loop $CTL_ON_CREATE)
+    [ -n "$CTL_ON_START" ] && post_waiter_loop $CTL_ON_START
+}
+
+post_waiter_loop()
+{
+    LIST=$@
+    HEAD=${LIST%% ; *}
+    TAIL=${LIST#* ; }
+    echo ":> ejabberdctl $HEAD"
+    $0 $HEAD
+    [ "$HEAD" = "$TAIL" ] || post_waiter_loop $TAIL
+}
+
 # allow sync calls
 wait_status()
 {
@@ -274,6 +296,7 @@ wait_status()
 }
 
 # ensure we can change current directory to SPOOL_DIR
+[ -f "$SPOOL_DIR/schema.DAT" ] || FIRST_RUN=true
 [ -d "$SPOOL_DIR" ] || run_cmd mkdir -p "$SPOOL_DIR"
 cd "$SPOOL_DIR" || {
     echo "ERROR: can not access directory $SPOOL_DIR"
@@ -288,6 +311,7 @@ case $1 in
         ;;
     foreground)
         check_start
+        post_waiter_fork
         exec_erl "$ERLANG_NODE" $EJABBERD_OPTS -noinput
         ;;
     foreground-quiet)
@@ -327,6 +351,9 @@ case $1 in
         ;;
     stopped)
         wait_status 3 30 2 && stop_epmd # wait 30x2s before timeout
+        ;;
+    post_waiter)
+        post_waiter_waiting
         ;;
     *)
         run_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
