@@ -88,15 +88,15 @@ Sys = [{lib_dirs, []},
      end, OTPApps).
 
 Overlay = [
-           {mkdir, "var/log/ejabberd"},
-           {mkdir, "var/lib/ejabberd"},
-           {mkdir, "etc/ejabberd"},
+           {mkdir, "logs"},
+           {mkdir, "database"},
+           {mkdir, "conf"},
            {mkdir, "doc"},
            {template, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
            {template, "../ejabberdctl.template", "bin/ejabberdctl"},
-           {copy, "../ejabberdctl.cfg.example", "etc/ejabberd/ejabberdctl.cfg"},
-           {copy, "../ejabberd.yml.example", "etc/ejabberd/ejabberd.yml"},
-           {copy, "../inetrc", "etc/ejabberd/inetrc"},
+           {copy, "../ejabberdctl.cfg.example", "conf/ejabberdctl.cfg"},
+           {copy, "../ejabberd.yml.example", "conf/ejabberd.yml"},
+           {copy, "../inetrc", "conf/inetrc"},
            {copy, "files/install_upgrade.escript", "bin/install_upgrade.escript"}
           ],
 

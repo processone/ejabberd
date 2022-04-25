@@ -278,29 +278,29 @@ relive:
 relivelibdir=$(shell pwd)/$(DEPSDIR)
 relivedir=$(shell pwd)/_build/relive
 iexpath=$(shell which iex)
+CONFIG_DIR = ${relivedir}/conf
+SPOOL_DIR = ${relivedir}/database
+LOGS_DIR = ${relivedir}/logs
 
 ejabberdctl.relive:
-	$(SED) -e "s*{{rootdir}}*@prefix@*g" \
-		-e "s*{{installuser}}*@INSTALLUSER@*g" \
+	$(SED)  -e "s*{{installuser}}*@INSTALLUSER@*g" \
+		-e "s*{{config_dir}}*${CONFIG_DIR}*g" \
+		-e "s*{{logs_dir}}*${LOGS_DIR}*g" \
+		-e "s*{{spool_dir}}*${SPOOL_DIR}*g" \
 		-e "s*{{bindir}}/iex*$(iexpath)*g" \
 		-e "s*{{bindir}}*@bindir@*g" \
 		-e "s*{{libdir}}*${relivelibdir}*g" \
-		-e "s*{{sysconfdir}}/ejabberd*$(relivedir)/conf*g" \
-		-e "s*{{localstatedir}}/log/ejabberd*$(relivedir)/logs*g" \
-		-e "s*{{localstatedir}}/lib/ejabberd*$(relivedir)/database*g" \
-		-e "s*{{docdir}}*@docdir@*g" \
 		-e "s*{{erl}}*@ERL@*g" \
 		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
 		> ejabberdctl.relive
 
-ejabberdctl.example:
-	$(SED) -e "s*{{rootdir}}*@prefix@*g" \
-		-e "s*{{installuser}}*@INSTALLUSER@*g" \
+ejabberdctl.example: vars.config
+	$(SED)  -e "s*{{installuser}}*@INSTALLUSER@*g" \
+		-e "s*{{config_dir}}*${ETCDIR}*g" \
+		-e "s*{{logs_dir}}*${LOGDIR}*g" \
+		-e "s*{{spool_dir}}*${SPOOLDIR}*g" \
 		-e "s*{{bindir}}*@bindir@*g" \
 		-e "s*{{libdir}}*@libdir@*g" \
-		-e "s*{{sysconfdir}}*@sysconfdir@*g" \
-		-e "s*{{localstatedir}}*@localstatedir@*g" \
-		-e "s*{{docdir}}*@docdir@*g" \
 		-e "s*{{erl}}*@ERL@*g" \
 		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
 		> ejabberdctl.example
@@ -417,7 +417,7 @@ distclean: clean clean-rel
 rel:
 	$(REBARREL)
 
-DEV_CONFIG = _build/dev/rel/ejabberd/etc/ejabberd/ejabberd.yml
+DEV_CONFIG = _build/dev/rel/ejabberd/conf/ejabberd.yml
 
 dev $(DEV_CONFIG):
 	$(REBARDEV)

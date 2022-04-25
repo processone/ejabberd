@@ -50,20 +50,20 @@ while [ $# -gt 0 ]; do
         -l|--logs) LOGS_DIR=$2; shift 2;;
         -f|--config) EJABBERD_CONFIG_PATH=$2; shift 2;;
         -c|--ctl-config) EJABBERDCTL_CONFIG_PATH=$2; shift 2;;
-        -d|--config-dir) ETC_DIR=$2; shift 2;;
+        -d|--config-dir) CONFIG_DIR=$2; shift 2;;
         -t|--no-timeout) NO_TIMEOUT="--no-timeout"; shift;;
         *) break;;
     esac
 done
 
 # define ejabberd variables if not already defined from the command line
-: "${ETC_DIR:="{{sysconfdir}}/ejabberd"}"
-: "${LOGS_DIR:="{{localstatedir}}/log/ejabberd"}"
-: "${SPOOL_DIR:="{{localstatedir}}/lib/ejabberd"}"
-: "${EJABBERD_CONFIG_PATH:="$ETC_DIR/ejabberd.yml"}"
-: "${EJABBERDCTL_CONFIG_PATH:="$ETC_DIR/ejabberdctl.cfg"}"
+: "${CONFIG_DIR:="{{config_dir}}"}"
+: "${LOGS_DIR:="{{logs_dir}}"}"
+: "${SPOOL_DIR:="{{spool_dir}}"}"
+: "${EJABBERD_CONFIG_PATH:="$CONFIG_DIR/ejabberd.yml"}"
+: "${EJABBERDCTL_CONFIG_PATH:="$CONFIG_DIR/ejabberdctl.cfg"}"
 # Allows passing extra Erlang command-line arguments in vm.args file
-: "${VMARGS:="$ETC_DIR/vm.args"}"
+: "${VMARGS:="$CONFIG_DIR/vm.args"}"
 # shellcheck source=ejabberdctl.cfg.example
 [ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
 [ -n "$ERLANG_NODE_ARG" ] && ERLANG_NODE="$ERLANG_NODE_ARG"
@@ -85,7 +85,7 @@ fi
 [ -f "$VMARGS" ] && ERLANG_OPTS="$ERLANG_OPTS -args_file $VMARGS"
 ERL_LIBS='{{libdir}}'
 ERL_CRASH_DUMP="$LOGS_DIR"/erl_crash_$(date "+%Y%m%d-%H%M%S").dump
-ERL_INETRC="$ETC_DIR"/inetrc
+ERL_INETRC="$CONFIG_DIR"/inetrc
 
 # define ejabberd parameters
 EJABBERD_OPTS="$EJABBERD_OPTS\
@@ -193,7 +193,7 @@ help()
     echo "  started|stopped  Wait for the node to fully start|stop"
     echo ""
     echo "Optional parameters when starting an ejabberd node:"
-    echo "  --config-dir dir   Config ejabberd:    $ETC_DIR"
+    echo "  --config-dir dir   Config ejabberd:    $CONFIG_DIR"
     echo "  --config file      Config ejabberd:    $EJABBERD_CONFIG_PATH"
     echo "  --ctl-config file  Config ejabberdctl: $EJABBERDCTL_CONFIG_PATH"
     echo "  --logs dir         Directory for logs: $LOGS_DIR"

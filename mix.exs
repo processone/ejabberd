@@ -235,7 +235,9 @@ defmodule Ejabberd.MixProject do
       libdir: config(:libdir),
       sysconfdir: config(:sysconfdir),
       localstatedir: config(:localstatedir),
-      docdir: config(:docdir),
+      config_dir: config(:config_dir),
+      logs_dir: config(:logs_dir),
+      spool_dir: config(:spool_dir),
       erl: config(:erl),
       epmd: config(:epmd),
       bindir: Path.join([config(:release_dir), "releases", version()]),
@@ -286,15 +288,15 @@ defmodule Ejabberd.MixProject do
 
     suffix = case Mix.env() do
       :dev ->
-        Mix.Generator.copy_file("test/ejabberd_SUITE_data/ca.pem", "#{ro}/etc/ejabberd/ca.pem")
-        Mix.Generator.copy_file("test/ejabberd_SUITE_data/cert.pem", "#{ro}/etc/ejabberd/cert.pem")
+        Mix.Generator.copy_file("test/ejabberd_SUITE_data/ca.pem", "#{ro}/conf/ca.pem")
+        Mix.Generator.copy_file("test/ejabberd_SUITE_data/cert.pem", "#{ro}/conf/cert.pem")
         ".example"
       _ -> ""
     end
 
-    Mix.Generator.copy_file("ejabberd.yml.example", "#{ro}/etc/ejabberd/ejabberd.yml#{suffix}")
-    Mix.Generator.copy_file("ejabberdctl.cfg.example", "#{ro}/etc/ejabberd/ejabberdctl.cfg#{suffix}")
-    Mix.Generator.copy_file("inetrc", "#{ro}/etc/ejabberd/inetrc")
+    Mix.Generator.copy_file("ejabberd.yml.example", "#{ro}/conf/ejabberd.yml#{suffix}")
+    Mix.Generator.copy_file("ejabberdctl.cfg.example", "#{ro}/conf/ejabberdctl.cfg#{suffix}")
+    Mix.Generator.copy_file("inetrc", "#{ro}/conf/inetrc")
 
     Enum.each(File.ls!("sql"),
       fn x ->
@@ -315,8 +317,6 @@ defmodule Ejabberd.MixProject do
         && File.mkdir_p(target_dir)
         && File.cp_r!(source_dir, target_dir)
     end
-
-    Mix.Generator.create_directory("#{ro}/var/lib/ejabberd")
 
     case Mix.env() do
       :dev -> execute.("REL_DIR_TEMP=$PWD/rel/overlays/ rel/setup-dev.sh")
