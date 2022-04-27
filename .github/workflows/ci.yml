@@ -61,6 +61,13 @@ jobs:
       with:
         otp-version: ${{ matrix.otp }}
 
+    - name: Get a compatible Rebar
+      if: matrix.rebar == 2
+      run: |
+        rm rebar
+        wget https://github.com/processone/ejabberd/raw/21.12/rebar
+        chmod +x rebar
+
     - name: Prepare databases
       run: |
         sudo systemctl start mysql.service
