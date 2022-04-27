@@ -162,8 +162,8 @@ jobs:
         $RE/bin/ejabberdctl started
         $RE/bin/ejabberdctl stop
         $RE/bin/ejabberdctl stopped
-        cat $RE/var/log/ejabberd/ejabberd.log
-        grep -q "is stopped in" $RE/var/log/ejabberd/ejabberd.log
+        cat $RE/logs/ejabberd.log
+        grep -q "is stopped in" $RE/logs/ejabberd.log
 
     - name: Check Development Release
       if: matrix.rebar == 3
@@ -174,8 +174,8 @@ jobs:
         $RE/bin/ejabberdctl started
         $RE/bin/ejabberdctl stop
         $RE/bin/ejabberdctl stopped
-        cat $RE/var/log/ejabberd/ejabberd.log
-        grep -q "is stopped in" $RE/var/log/ejabberd/ejabberd.log
+        cat $RE/logs/ejabberd.log
+        grep -q "is stopped in" $RE/logs/ejabberd.log
 
     - name: Run tests (OTP 19.3)
       if: matrix.otp == '19.3'
