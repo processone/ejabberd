@@ -1,4 +1,4 @@
-name: Publish binary packages
+name: Installers
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache build directory
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/build/
           key: ${{runner.os}}-ct-ng-1.25.0-RC2
