@@ -455,8 +455,8 @@ best_match(Pattern, Opts) ->
 -spec logical_processors() -> non_neg_integer().
 logical_processors() ->
     case erlang:system_info(logical_processors) of
-	unknown -> 1;
-	V -> V
+	V when is_integer(V), V >= 2  -> V;
+	_ -> 1
     end.
 
 -spec pmap(fun((T1) -> T2), [T1]) -> [T2].
