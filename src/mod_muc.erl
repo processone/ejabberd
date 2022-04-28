@@ -166,7 +166,7 @@ reload(ServerHost, NewOpts, OldOpts) ->
       fun(I) ->
 	      ?GEN_SERVER:cast(procname(ServerHost, I),
 			       {reload, AddHosts, DelHosts, NewHosts})
-      end, lists:seq(1, erlang:system_info(logical_processors))),
+      end, lists:seq(1, misc:logical_processors())),
     load_permanent_rooms(AddHosts, ServerHost, NewOpts),
     shutdown_rooms(ServerHost, DelHosts, OldRMod),
     lists:foreach(
@@ -193,7 +193,7 @@ procname(Host, I) when is_integer(I) ->
       <<(atom_to_binary(?MODULE, latin1))/binary, "_", Host/binary,
 	"_", (integer_to_binary(I))/binary>>, utf8);
 procname(Host, RoomHost) ->
-    Cores = erlang:system_info(logical_processors),
+    Cores = misc:logical_processors(),
     I = erlang:phash2(RoomHost, Cores) + 1,
     procname(Host, I).
 

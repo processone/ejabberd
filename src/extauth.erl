@@ -99,10 +99,7 @@ worker_name(Pool, N) ->
 -spec pool_size(binary()) -> pos_integer().
 pool_size(Host) ->
     case ejabberd_option:extauth_pool_size(Host) of
-	undefined ->
-	    try erlang:system_info(logical_processors)
-	    catch _:_ -> 1
-	    end;
+	undefined -> misc:logical_processors();
 	Size ->
 	    Size
     end.

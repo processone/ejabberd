@@ -42,7 +42,8 @@
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
 	 crypto_hmac/3, crypto_hmac/4, uri_parse/1,
-	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1]).
+	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
+	 logical_processors/0]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -451,9 +452,16 @@ best_match(Pattern, Opts) ->
 		end, #{}, Opts),
     element(2, lists:min(Ds)).
 
+-spec logical_processors() -> non_neg_integer().
+logical_processors() ->
+    case erlang:system_info(logical_processors) of
+	unknown -> 1;
+	V -> V
+    end.
+
 -spec pmap(fun((T1) -> T2), [T1]) -> [T2].
 pmap(Fun, [_,_|_] = List) ->
-    case erlang:system_info(logical_processors) of
+    case logical_processors() of
 	1 -> lists:map(Fun, List);
 	_ ->
 	    Self = self(),
@@ -477,7 +485,7 @@ pmap(Fun, List) ->
 
 -spec peach(fun((T) -> any()), [T]) -> ok.
 peach(Fun, [_,_|_] = List) ->
-    case erlang:system_info(logical_processors) of
+    case logical_processors() of
 	1 -> lists:foreach(Fun, List);
 	_ ->
 	    Self = self(),

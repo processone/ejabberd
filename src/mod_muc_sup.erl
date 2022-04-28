@@ -51,7 +51,7 @@ procname(Host) ->
 %%% Supervisor callbacks
 %%%===================================================================
 init([Host]) ->
-    Cores = erlang:system_info(logical_processors),
+    Cores = misc:logical_processors(),
     Specs = lists:foldl(
 	      fun(I, Acc) ->
 		      [#{id => mod_muc:procname(Host, I),
