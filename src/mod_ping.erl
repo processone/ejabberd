@@ -132,6 +132,14 @@ handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
+handle_info({iq_reply, #iq{type = error} = IQ, JID}, State) ->
+    Timers = case xmpp:get_error(IQ) of
+		 #stanza_error{type=cancel, reason='service-unavailable'} ->
+		     del_timer(JID, State#state.timers);
+		 _ ->
+		     State#state.timers
+	     end,
+    {noreply, State#state{timers = Timers}};
 handle_info({iq_reply, #iq{}, _JID}, State) ->
     {noreply, State};
 handle_info({iq_reply, timeout, JID}, State) ->
