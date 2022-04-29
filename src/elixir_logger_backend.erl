@@ -25,6 +25,7 @@
 -module(elixir_logger_backend).
 
 -ifdef(ELIXIR_ENABLED).
+-ifdef(LAGER).
 
 -behaviour(gen_event).
 
@@ -122,4 +123,5 @@ severity_to_level(critical) -> error;
 severity_to_level(alert) -> error;
 severity_to_level(emergency) -> error.
 
+-endif.
 -endif.
