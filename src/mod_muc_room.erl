@@ -5140,8 +5140,9 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
 		    items = [#ps_item{
 			id = p1_rand:get_string(),
 			sub_els = [Payload1]}]}}]},
+	Packet1a = xmpp:put_meta(Packet1, mucsub_subscriber_jid, From),
 	ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
-						  WJ, Packet1, false);
+						  WJ, Packet1a, false);
 	true -> ok
     end,
     if WN /= [] ->
@@ -5156,8 +5157,9 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
 		    items = [#ps_item{
 			id = p1_rand:get_string(),
 			sub_els = [Payload2]}]}}]},
+	Packet2a = xmpp:put_meta(Packet2, mucsub_subscriber_jid, From),
 	ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
-					       WN, Packet2, false);
+						  WN, Packet2a, false);
 	true -> ok
     end.
 
