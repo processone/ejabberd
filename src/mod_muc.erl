@@ -1281,8 +1281,11 @@ mod_opt_type(default_room_options) ->
 	allow_user_invites => econf:bool(),
 	allow_visitor_nickchange => econf:bool(),
 	allow_visitor_status => econf:bool(),
+	allow_voice_requests => econf:bool(),
 	anonymous => econf:bool(),
 	captcha_protected => econf:bool(),
+	description => econf:binary(),
+	enable_hats => econf:bool(),
 	lang => econf:lang(),
 	logging => econf:bool(),
 	mam => econf:bool(),
@@ -1298,7 +1301,11 @@ mod_opt_type(default_room_options) ->
 	      econf:enum([moderator, participant, visitor])),
 	public => econf:bool(),
 	public_list => econf:bool(),
-	title => econf:binary()});
+	pubsub => econf:binary(),
+	title => econf:binary(),
+	vcard => econf:vcard_temp(),
+	vcard_xupdate => econf:binary(),
+	voice_request_min_interval => econf:pos_int()});
 mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
 mod_opt_type(ram_db_type) ->
@@ -1668,6 +1675,11 @@ mod_doc() ->
                        "If disallowed, the status text is stripped before broadcasting "
                        "the presence update to all the room occupants. "
                        "The default value is 'true'.")}},
+             {allow_voice_requests,
+              #{value => "true | false",
+                desc =>
+                    ?T("Allow visitors in a moderated room to request voice. "
+                       "The default value is 'true'.")}},
              {anonymous,
               #{value => "true | false",
                 desc =>
@@ -1683,6 +1695,16 @@ mod_doc() ->
                        "requires them to fill a CAPTCHA challenge (see section "
                        "https://docs.ejabberd.im/admin/configuration/#captcha[CAPTCHA] "
                        "in order to accept their join in the room. "
+                       "The default value is 'false'.")}},
+             {description,
+              #{value => ?T("Room Description"),
+                desc =>
+                    ?T("Short description of the room. "
+                       "The default value is an empty string.")}},
+             {enable_hats,
+              #{value => "true | false",
+                desc =>
+                    ?T("Allow extended roles as defined in XEP-0317 Hats. "
                        "The default value is 'false'.")}},
              {lang,
               #{value => ?T("Language"),
@@ -1739,6 +1761,21 @@ mod_doc() ->
                 desc =>
                     ?T("The list of participants is public, without requiring "
                        "to enter the room. The default value is 'true'.")}},
+             {pubsub,
+              #{value => ?T("PubSub Node"),
+                desc =>
+                    ?T("XMPP URI of associated Publish/Subscribe node. "
+                       "The default value is an empty string.")}},
+             {vcard,
+              #{value => ?T("vCard"),
+                desc =>
+                    ?T("A custom vCard for the room. See the equivalent mod_muc option."
+                       "The default value is an empty string.")}},
+             {voice_request_min_interval,
+              #{value => ?T("Number"),
+                desc =>
+                    ?T("Minimum interval between voice requests, in seconds. "
+                       "The default value is '1800'.")}},
              {mam,
               #{value => "true | false",
                 desc =>

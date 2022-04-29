@@ -3836,6 +3836,11 @@ remove_nonmembers(StateData) ->
 -spec set_opts([{atom(), any()}], state()) -> state().
 set_opts([], StateData) ->
     set_vcard_xupdate(StateData);
+set_opts([{vcard, Val} | Opts], StateData)
+  when is_record(Val, vcard_temp) ->
+    %% default_room_options is setting a default room vcard
+    ValRaw = fxml:element_to_binary(xmpp:encode(Val)),
+    set_opts([{vcard, ValRaw} | Opts], StateData);
 set_opts([{Opt, Val} | Opts], StateData) ->
     NSD = case Opt of
 	    title ->
