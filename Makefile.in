@@ -111,6 +111,7 @@ ifeq "$(REBAR_VER)" "6"
   GET_DEPS= deps.get
   CONFIGURE_DEPS=
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
+  XREFOPTIONS=graph
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
   RELIVECMD=escript rel/relive.escript && MIX_ENV=dev RELIVE=true iex --name ejabberd@localhost -S mix run
@@ -129,6 +130,7 @@ endif
   GET_DEPS= get-deps
   CONFIGURE_DEPS=$(REBAR) configure-deps
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
+  XREFOPTIONS=
   REBARREL=$(REBAR) as prod tar
   REBARDEV=REBAR_PROFILE=dev $(REBAR) release
   RELIVECMD=$(REBAR) relive
@@ -142,6 +144,7 @@ else
   GET_DEPS= get-deps
   CONFIGURE_DEPS=$(REBAR) configure-deps
   EBINDIR=ebin
+  XREFOPTIONS=
   REBARREL=$(REBAR) generate
   REBARDEV=
   RELIVECMD=@echo "Rebar2 detected... relive not supported.\
@@ -172,7 +175,7 @@ update:
 	$(REBAR) $(UPDATEDEPS) && :> $(DEPSDIR)/.got
 
 xref: all
-	$(REBAR) $(SKIPDEPS) xref
+	$(REBAR) $(SKIPDEPS) xref $(XREFOPTIONS)
 
 hooks: all
 	tools/hook_deps.sh $(EBINDIR)
