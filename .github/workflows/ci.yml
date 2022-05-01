@@ -45,7 +45,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Test shell scripts
       if: matrix.otp == 24
@@ -113,7 +113,7 @@ jobs:
         echo "{ct_opts, [{verbosity, 20}, {keep_logs, 20}]}." >>rebar.config
 
     - name: Cache rebar
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           deps/
