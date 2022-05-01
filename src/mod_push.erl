@@ -57,19 +57,19 @@
 -define(PUSH_CACHE, push_cache).
 
 -type c2s_state() :: ejabberd_c2s:state().
--type timestamp() :: erlang:timestamp().
--type push_session() :: {timestamp(), ljid(), binary(), xdata()}.
+-type push_session_id() :: erlang:timestamp().
+-type push_session() :: {push_session_id(), ljid(), binary(), xdata()}.
 -type err_reason() :: notfound | db_failure.
 -type direction() :: send | recv | undefined.
 
 -callback init(binary(), gen_mod:opts())
 	  -> any().
--callback store_session(binary(), binary(), timestamp(), jid(), binary(),
+-callback store_session(binary(), binary(), push_session_id(), jid(), binary(),
 			xdata())
 	  -> {ok, push_session()} | {error, err_reason()}.
 -callback lookup_session(binary(), binary(), jid(), binary())
 	  -> {ok, push_session()} | {error, err_reason()}.
--callback lookup_session(binary(), binary(), timestamp())
+-callback lookup_session(binary(), binary(), push_session_id())
 	  -> {ok, push_session()} | {error, err_reason()}.
 -callback lookup_sessions(binary(), binary(), jid())
 	  -> {ok, [push_session()]} | {error, err_reason()}.
@@ -77,7 +77,7 @@
 	  -> {ok, [push_session()]} | {error, err_reason()}.
 -callback lookup_sessions(binary())
 	  -> {ok, [push_session()]} | {error, err_reason()}.
--callback delete_session(binary(), binary(), timestamp())
+-callback delete_session(binary(), binary(), push_session_id())
 	  -> ok | {error, err_reason()}.
 -callback delete_old_sessions(binary() | global, erlang:timestamp())
 	  -> ok | {error, err_reason()}.
@@ -361,14 +361,14 @@ process_iq(IQ) ->
 enable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
        PushJID, Node, XData) ->
     case ejabberd_sm:get_session_sid(LUser, LServer, LResource) of
-	{TS, PID} ->
-	    case store_session(LUser, LServer, TS, PushJID, Node, XData) of
+	{ID, PID} ->
+	    case store_session(LUser, LServer, ID, PushJID, Node, XData) of
 		{ok, _} ->
 		    ?INFO_MSG("Enabling push notifications for ~ts",
 			      [jid:encode(JID)]),
-		    ejabberd_c2s:cast(PID, {push_enable, TS}),
+		    ejabberd_c2s:cast(PID, {push_enable, ID}),
 		    ejabberd_sm:set_user_info(LUser, LServer, LResource,
-					      push_id, TS);
+					      push_id, ID);
 		{error, _} = Err ->
 		    ?ERROR_MSG("Cannot enable push for ~ts: database error",
 			       [jid:encode(JID)]),
@@ -383,8 +383,8 @@ enable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 -spec disable(jid(), jid(), binary() | undefined) -> ok | {error, err_reason()}.
 disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
        PushJID, Node) ->
-    case ejabberd_sm:get_session_sid(LUser, LServer, LResource) of
-	{_TS, PID} ->
+    case ejabberd_sm:get_session_pid(LUser, LServer, LResource) of
+	PID when is_pid(PID) ->
 	    ?INFO_MSG("Disabling push notifications for ~ts",
 		      [jid:encode(JID)]),
 	    ejabberd_sm:del_user_info(LUser, LServer, LResource, push_id),
@@ -405,7 +405,7 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 -spec c2s_stanza(c2s_state(), xmpp_element() | xmlel(), term()) -> c2s_state().
 c2s_stanza(State, #stream_error{}, _SendResult) ->
     State;
-c2s_stanza(#{push_session_id := _TS, mgmt_state := pending} = State,
+c2s_stanza(#{push_session_id := _ID, mgmt_state := pending} = State,
 	   Pkt, _SendResult) ->
     ?DEBUG("Notifying client of stanza", []),
     notify(State, Pkt, get_direction(Pkt)),
@@ -450,7 +450,7 @@ offline_message(Acc) ->
     Acc.
 
 -spec c2s_session_pending(c2s_state()) -> c2s_state().
-c2s_session_pending(#{push_session_id := _TS, mgmt_queue := Queue} = State) ->
+c2s_session_pending(#{push_session_id := _ID, mgmt_queue := Queue} = State) ->
     case p1_queue:len(Queue) of
 	Len when Len > 0 ->
 	    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
@@ -468,14 +468,14 @@ c2s_session_pending(State) ->
     State.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
-c2s_copy_session(State, #{push_session_id := TS}) ->
-    State#{push_session_id => TS};
+c2s_copy_session(State, #{push_session_id := ID}) ->
+    State#{push_session_id => ID};
 c2s_copy_session(State, _) ->
     State.
 
 -spec c2s_handle_cast(c2s_state(), any()) -> c2s_state() | {stop, c2s_state()}.
-c2s_handle_cast(State, {push_enable, TS}) ->
-    {stop, State#{push_session_id => TS}};
+c2s_handle_cast(State, {push_enable, ID}) ->
+    {stop, State#{push_session_id => ID}};
 c2s_handle_cast(State, push_disable) ->
     {stop, maps:remove(push_session_id, State)};
 c2s_handle_cast(State, _Msg) ->
@@ -504,7 +504,7 @@ notify(#{jid := #jid{luser = LUser, lserver = LServer}} = State, Pkt, Dir) ->
 	     xmpp_element() | xmlel() | none, direction()) -> ok.
 notify(LUser, LServer, Clients, Pkt, Dir) ->
     lists:foreach(
-      fun({TS, PushLJID, Node, XData}) ->
+      fun({ID, PushLJID, Node, XData}) ->
 	      HandleResponse =
 	          fun(#iq{type = result}) ->
 			  ?DEBUG("~ts accepted notification for ~ts@~ts (~ts)",
@@ -518,7 +518,7 @@ notify(LUser, LServer, Clients, Pkt, Dir) ->
 					     LServer, Node, Reason]);
 			      {Type, Reason} ->
 				  spawn(?MODULE, delete_session,
-					[LUser, LServer, TS]),
+					[LUser, LServer, ID]),
 				  ?WARNING_MSG("~ts rejected notification for "
 					       "~ts@~ts (~ts), disabling push: ~ts "
 					       "(~ts)",
@@ -566,9 +566,9 @@ is_incoming_chat_msg(_Stanza) ->
 %%--------------------------------------------------------------------
 %% Internal functions.
 %%--------------------------------------------------------------------
--spec store_session(binary(), binary(), timestamp(), jid(), binary(), xdata())
-      -> {ok, push_session()} | {error, err_reason()}.
-store_session(LUser, LServer, TS, PushJID, Node, XData) ->
+-spec store_session(binary(), binary(), push_session_id(), jid(), binary(),
+		    xdata()) -> {ok, push_session()} | {error, err_reason()}.
+store_session(LUser, LServer, ID, PushJID, Node, XData) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     delete_session(LUser, LServer, PushJID, Node),
     case use_cache(Mod, LServer) of
@@ -577,26 +577,26 @@ store_session(LUser, LServer, TS, PushJID, Node, XData) ->
 			     cache_nodes(Mod, LServer)),
 	    ets_cache:update(
 		?PUSH_CACHE,
-		{LUser, LServer, TS}, {ok, {TS, PushJID, Node, XData}},
+		{LUser, LServer, ID}, {ok, {ID, PushJID, Node, XData}},
 		fun() ->
-			Mod:store_session(LUser, LServer, TS, PushJID, Node,
+			Mod:store_session(LUser, LServer, ID, PushJID, Node,
 					  XData)
 		end, cache_nodes(Mod, LServer));
 	false ->
-	    Mod:store_session(LUser, LServer, TS, PushJID, Node, XData)
+	    Mod:store_session(LUser, LServer, ID, PushJID, Node, XData)
     end.
 
 -spec lookup_session(binary(), binary(), c2s_state())
       -> {ok, push_session()} | error | {error, err_reason()}.
-lookup_session(LUser, LServer, #{push_session_id := TS}) ->
+lookup_session(LUser, LServer, #{push_session_id := ID}) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case use_cache(Mod, LServer) of
 	true ->
 	    ets_cache:lookup(
-	      ?PUSH_CACHE, {LUser, LServer, TS},
-	      fun() -> Mod:lookup_session(LUser, LServer, TS) end);
+	      ?PUSH_CACHE, {LUser, LServer, ID},
+	      fun() -> Mod:lookup_session(LUser, LServer, ID) end);
 	false ->
-	    Mod:lookup_session(LUser, LServer, TS)
+	    Mod:lookup_session(LUser, LServer, ID)
     end.
 
 -spec lookup_sessions(binary(), binary()) -> {ok, [push_session()]} | {error, err_reason()}.
@@ -611,16 +611,17 @@ lookup_sessions(LUser, LServer) ->
 	    Mod:lookup_sessions(LUser, LServer)
     end.
 
--spec delete_session(binary(), binary(), timestamp()) -> ok | {error, db_failure}.
-delete_session(LUser, LServer, TS) ->
+-spec delete_session(binary(), binary(), push_session_id())
+      -> ok | {error, db_failure}.
+delete_session(LUser, LServer, ID) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:delete_session(LUser, LServer, TS) of
+    case Mod:delete_session(LUser, LServer, ID) of
 	ok ->
 	    case use_cache(Mod, LServer) of
 		true ->
 		    ets_cache:delete(?PUSH_CACHE, {LUser, LServer},
 				     cache_nodes(Mod, LServer)),
-		    ets_cache:delete(?PUSH_CACHE, {LUser, LServer, TS},
+		    ets_cache:delete(?PUSH_CACHE, {LUser, LServer, ID},
 				     cache_nodes(Mod, LServer));
 		false ->
 		    ok
@@ -633,8 +634,8 @@ delete_session(LUser, LServer, TS) ->
 delete_session(LUser, LServer, PushJID, Node) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:lookup_session(LUser, LServer, PushJID, Node) of
-	{ok, {TS, _, _, _}} ->
-	    delete_session(LUser, LServer, TS);
+	{ok, {ID, _, _, _}} ->
+	    delete_session(LUser, LServer, ID);
 	error ->
 	    {error, notfound};
 	{error, _} = Err ->
@@ -662,12 +663,12 @@ delete_sessions(LUser, LServer, LookupFun, Mod) ->
 		    ok
 	    end,
 	    lists:foreach(
-	      fun({TS, _, _, _}) ->
-		      ok = Mod:delete_session(LUser, LServer, TS),
+	      fun({ID, _, _, _}) ->
+		      ok = Mod:delete_session(LUser, LServer, ID),
 		      case use_cache(Mod, LServer) of
 			  true ->
 			      ets_cache:delete(?PUSH_CACHE,
-					       {LUser, LServer, TS},
+					       {LUser, LServer, ID},
 					       cache_nodes(Mod, LServer));
 			  false ->
 			      ok
@@ -680,7 +681,7 @@ delete_sessions(LUser, LServer, LookupFun, Mod) ->
 -spec drop_online_sessions(binary(), binary(), [push_session()])
       -> [push_session()].
 drop_online_sessions(LUser, LServer, Clients) ->
-    OnlineTSs = lists:filtermap(
+    OnlineIDs = lists:filtermap(
 		  fun({_, Info}) ->
 			  case proplists:get_value(push_id, Info) of
 			      OnlineID = {_, _, _} ->
@@ -689,8 +690,8 @@ drop_online_sessions(LUser, LServer, Clients) ->
 				  false
 			  end
 		  end, ejabberd_sm:get_user_info(LUser, LServer)),
-    [Client || {TS, _, _, _} = Client <- Clients,
-	       not lists:member(TS, OnlineTSs)].
+    [Client || {ID, _, _, _} = Client <- Clients,
+	       not lists:member(ID, OnlineIDs)].
 
 -spec make_summary(binary(), xmpp_element() | xmlel() | none, direction())
       -> xdata() | undefined.
