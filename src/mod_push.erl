@@ -34,8 +34,8 @@
 -export([mod_doc/0]).
 %% ejabberd_hooks callbacks.
 -export([disco_sm_features/5, c2s_session_pending/1, c2s_copy_session/2,
-	 c2s_handle_cast/2, c2s_stanza/3, mam_message/7, offline_message/1,
-	 remove_user/2]).
+	 c2s_session_resumed/1, c2s_handle_cast/2, c2s_stanza/3, mam_message/7,
+	 offline_message/1, remove_user/2]).
 
 %% gen_iq_handler callback.
 -export([process_iq/1]).
@@ -259,6 +259,8 @@ register_hooks(Host) ->
 		       c2s_session_pending, 50),
     ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE,
 		       c2s_copy_session, 50),
+    ejabberd_hooks:add(c2s_session_resumed, Host, ?MODULE,
+		       c2s_session_resumed, 50),
     ejabberd_hooks:add(c2s_handle_cast, Host, ?MODULE,
 		       c2s_handle_cast, 50),
     ejabberd_hooks:add(c2s_handle_send, Host, ?MODULE,
@@ -278,6 +280,8 @@ unregister_hooks(Host) ->
 			  c2s_session_pending, 50),
     ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE,
 			  c2s_copy_session, 50),
+    ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE,
+			  c2s_session_resumed, 50),
     ejabberd_hooks:delete(c2s_handle_cast, Host, ?MODULE,
 			  c2s_handle_cast, 50),
     ejabberd_hooks:delete(c2s_handle_send, Host, ?MODULE,
@@ -473,6 +477,14 @@ c2s_copy_session(State, #{push_enabled := true,
     State#{push_enabled => true,
 	   push_session_id => ID};
 c2s_copy_session(State, _) ->
+    State.
+
+-spec c2s_session_resumed(c2s_state()) -> c2s_state().
+c2s_session_resumed(#{push_session_id := ID,
+		      user := U, server := S, resource := R} = State) ->
+    ejabberd_sm:set_user_info(U, S, R, push_id, ID),
+    State;
+c2s_session_resumed(State) ->
     State.
 
 -spec c2s_handle_cast(c2s_state(), any()) -> c2s_state() | {stop, c2s_state()}.
