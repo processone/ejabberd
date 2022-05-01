@@ -366,7 +366,9 @@ enable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 		{ok, _} ->
 		    ?INFO_MSG("Enabling push notifications for ~ts",
 			      [jid:encode(JID)]),
-		    ejabberd_c2s:cast(PID, push_enable);
+		    ejabberd_c2s:cast(PID, {push_enable, TS}),
+		    ejabberd_sm:set_user_info(LUser, LServer, LResource,
+					      push_id, TS);
 		{error, _} = Err ->
 		    ?ERROR_MSG("Cannot enable push for ~ts: database error",
 			       [jid:encode(JID)]),
@@ -385,6 +387,7 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 	{_TS, PID} ->
 	    ?INFO_MSG("Disabling push notifications for ~ts",
 		      [jid:encode(JID)]),
+	    ejabberd_sm:del_user_info(LUser, LServer, LResource, push_id),
 	    ejabberd_c2s:cast(PID, push_disable);
 	none ->
 	    ?WARNING_MSG("Session not found while disabling push for ~ts",
@@ -402,7 +405,7 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 -spec c2s_stanza(c2s_state(), xmpp_element() | xmlel(), term()) -> c2s_state().
 c2s_stanza(State, #stream_error{}, _SendResult) ->
     State;
-c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
+c2s_stanza(#{push_session_id := _TS, mgmt_state := pending} = State,
 	   Pkt, _SendResult) ->
     ?DEBUG("Notifying client of stanza", []),
     notify(State, Pkt, get_direction(Pkt)),
@@ -447,7 +450,7 @@ offline_message(Acc) ->
     Acc.
 
 -spec c2s_session_pending(c2s_state()) -> c2s_state().
-c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
+c2s_session_pending(#{push_session_id := _TS, mgmt_queue := Queue} = State) ->
     case p1_queue:len(Queue) of
 	Len when Len > 0 ->
 	    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
@@ -465,16 +468,16 @@ c2s_session_pending(State) ->
     State.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
-c2s_copy_session(State, #{push_enabled := true}) ->
-    State#{push_enabled => true};
+c2s_copy_session(State, #{push_session_id := TS}) ->
+    State#{push_session_id => TS};
 c2s_copy_session(State, _) ->
     State.
 
 -spec c2s_handle_cast(c2s_state(), any()) -> c2s_state() | {stop, c2s_state()}.
-c2s_handle_cast(State, push_enable) ->
-    {stop, State#{push_enabled => true}};
+c2s_handle_cast(State, {push_enable, TS}) ->
+    {stop, State#{push_session_id => TS}};
 c2s_handle_cast(State, push_disable) ->
-    {stop, maps:remove(push_enabled, State)};
+    {stop, maps:remove(push_session_id, State)};
 c2s_handle_cast(State, _Msg) ->
     State.
 
@@ -489,10 +492,8 @@ remove_user(LUser, LServer) ->
 %% Generate push notifications.
 %%--------------------------------------------------------------------
 -spec notify(c2s_state(), xmpp_element() | xmlel() | none, direction()) -> ok.
-notify(#{jid := #jid{luser = LUser, lserver = LServer},
-	 sid := {TS, _}},
-       Pkt, Dir) ->
-    case lookup_session(LUser, LServer, TS) of
+notify(#{jid := #jid{luser = LUser, lserver = LServer}} = State, Pkt, Dir) ->
+    case lookup_session(LUser, LServer, State) of
 	{ok, Client} ->
 	    notify(LUser, LServer, [Client], Pkt, Dir);
 	_Err ->
@@ -585,9 +586,9 @@ store_session(LUser, LServer, TS, PushJID, Node, XData) ->
 	    Mod:store_session(LUser, LServer, TS, PushJID, Node, XData)
     end.
 
--spec lookup_session(binary(), binary(), timestamp())
+-spec lookup_session(binary(), binary(), c2s_state())
       -> {ok, push_session()} | error | {error, err_reason()}.
-lookup_session(LUser, LServer, TS) ->
+lookup_session(LUser, LServer, #{push_session_id := TS}) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case use_cache(Mod, LServer) of
 	true ->
@@ -679,9 +680,17 @@ delete_sessions(LUser, LServer, LookupFun, Mod) ->
 -spec drop_online_sessions(binary(), binary(), [push_session()])
       -> [push_session()].
 drop_online_sessions(LUser, LServer, Clients) ->
-    SessIDs = ejabberd_sm:get_session_sids(LUser, LServer),
+    OnlineTSs = lists:filtermap(
+		  fun({_, Info}) ->
+			  case proplists:get_value(push_id, Info) of
+			      OnlineID = {_, _, _} ->
+				  {true, OnlineID};
+			      undefined ->
+				  false
+			  end
+		  end, ejabberd_sm:get_user_info(LUser, LServer)),
     [Client || {TS, _, _, _} = Client <- Clients,
-	       lists:keyfind(TS, 1, SessIDs) == false].
+	       not lists:member(TS, OnlineTSs)].
 
 -spec make_summary(binary(), xmpp_element() | xmlel() | none, direction())
       -> xdata() | undefined.
