@@ -405,7 +405,7 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 -spec c2s_stanza(c2s_state(), xmpp_element() | xmlel(), term()) -> c2s_state().
 c2s_stanza(State, #stream_error{}, _SendResult) ->
     State;
-c2s_stanza(#{push_session_id := _ID, mgmt_state := pending} = State,
+c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
 	   Pkt, _SendResult) ->
     ?DEBUG("Notifying client of stanza", []),
     notify(State, Pkt, get_direction(Pkt)),
@@ -450,7 +450,7 @@ offline_message(Acc) ->
     Acc.
 
 -spec c2s_session_pending(c2s_state()) -> c2s_state().
-c2s_session_pending(#{push_session_id := _ID, mgmt_queue := Queue} = State) ->
+c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
     case p1_queue:len(Queue) of
 	Len when Len > 0 ->
 	    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
@@ -468,16 +468,21 @@ c2s_session_pending(State) ->
     State.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
-c2s_copy_session(State, #{push_session_id := ID}) ->
-    State#{push_session_id => ID};
+c2s_copy_session(State, #{push_enabled := true,
+			  push_session_id := ID}) ->
+    State#{push_enabled => true,
+	   push_session_id => ID};
 c2s_copy_session(State, _) ->
     State.
 
 -spec c2s_handle_cast(c2s_state(), any()) -> c2s_state() | {stop, c2s_state()}.
 c2s_handle_cast(State, {push_enable, ID}) ->
-    {stop, State#{push_session_id => ID}};
+    {stop, State#{push_enabled => true,
+		  push_session_id => ID}};
 c2s_handle_cast(State, push_disable) ->
-    {stop, maps:remove(push_session_id, State)};
+    State1 = maps:remove(push_disable, State),
+    State2 = maps:remove(push_session_id, State1),
+    {stop, State2};
 c2s_handle_cast(State, _Msg) ->
     State.
 

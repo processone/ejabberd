@@ -213,7 +213,7 @@ c2s_copy_session(State, _) ->
     State.
 
 -spec c2s_handle_cast(c2s_state(), any()) -> c2s_state().
-c2s_handle_cast(#{lserver := LServer} = State, push_enable) ->
+c2s_handle_cast(#{lserver := LServer} = State, {push_enable, _ID}) ->
     ResumeTimeout = mod_push_keepalive_opt:resume_timeout(LServer),
     WakeOnTimeout = mod_push_keepalive_opt:wake_on_timeout(LServer),
     State#{push_resume_timeout => ResumeTimeout,
