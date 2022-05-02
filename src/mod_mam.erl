@@ -578,13 +578,27 @@ delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"c
     TypeA = misc:binary_to_atom(Type),
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case ejabberd_batch:register_task({mam, LServer}, 0, Rate, {LServer, TypeA, TimeStamp, BatchSize},
-				      fun({L, T, St, B} = S) ->
-					  case Mod:delete_old_messages_batch(L, St, T, B) of
-					      {ok, Count} ->
-						  {ok, S, Count};
-					      {error, _} = E ->
-						  E
+
+    case ejabberd_batch:register_task({mam, LServer}, 0, Rate, {LServer, TypeA, TimeStamp, BatchSize, none},
+				      fun({L, T, St, B, IS} = S) ->
+					  case {erlang:function_exported(Mod, remove_old_messages_batch, 4),
+						erlang:function_exported(Mod, remove_old_messages_batch, 5)} of
+					      {true, _} ->
+						  case Mod:delete_old_messages_batch(L, St, T, B) of
+						      {ok, Count} ->
+							  {ok, S, Count};
+						      {error, _} = E ->
+							  E
+						  end;
+					      {_, true} ->
+						  case Mod:remove_old_messages_batch(L, St, T, B, IS) of
+						      {ok, IS2, Count} ->
+							  {ok, {L, St, T, B, IS2}, Count};
+						      {error, _} = E ->
+							  E
+						  end;
+					      _ ->
+						  {error, not_implemented_for_backend}
 					  end
 				      end) of
 	ok ->

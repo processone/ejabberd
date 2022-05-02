@@ -29,7 +29,8 @@
 -export([init/2, store_message/1, pop_messages/2, remove_expired_messages/1,
 	 remove_old_messages/2, remove_user/2, read_message_headers/2,
 	 read_message/3, remove_message/3, read_all_messages/2,
-	 remove_all_messages/2, count_messages/2, import/1]).
+	 remove_all_messages/2, count_messages/2, import/1,
+	 remove_old_messages_batch/4]).
 -export([need_transform/1, transform/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -96,6 +97,47 @@ remove_old_messages(Days, _LServer) ->
 			     ok, offline_msg)
 	end,
     mnesia:transaction(F).
+
+delete_batch('$end_of_table', _LServer, _TS, Num) ->
+    {Num, '$end_of_table'};
+delete_batch(LastUS, _LServer, _TS, 0) ->
+    {0, LastUS};
+delete_batch(none, LServer, TS, Num) ->
+    delete_batch(mnesia:first(offline_msg), LServer, TS, Num);
+delete_batch({_, LServer2} = LastUS, LServer, TS, Num) when LServer /= LServer2 ->
+    delete_batch(mnesia:next(offline_msg, LastUS), LServer, TS, Num);
+delete_batch(LastUS, LServer, TS, Num) ->
+    Left =
+    lists:foldl(
+	fun(_, 0) ->
+	       0;
+	   (#offline_msg{timestamp = TS2} = O, Num2) when TS2 < TS ->
+	       mnesia:delete_object(O),
+	       Num2 - 1;
+	   (_, Num2) ->
+	       Num2
+	end, Num, mnesia:wread({offline_msg, LastUS})),
+    case Left of
+	0 -> {0, LastUS};
+	_ -> delete_batch(mnesia:next(offline_msg, LastUS), LServer, TS, Left)
+    end.
+
+remove_old_messages_batch(LServer, Days, Batch, LastUS) ->
+    S = erlang:system_time(second) - 60 * 60 * 24 * Days,
+    MegaSecs1 = S div 1000000,
+    Secs1 = S rem 1000000,
+    TimeStamp = {MegaSecs1, Secs1, 0},
+    R = mnesia:transaction(
+	fun() ->
+	    {Num, NextUS} = delete_batch(LastUS, LServer, TimeStamp, Batch),
+	    {Batch - Num, NextUS}
+	end),
+    case R of
+	{atomic, {Num, State}} ->
+	    {ok, State, Num};
+	{aborted, Err} ->
+	    {error, Err}
+    end.
 
 remove_user(LUser, LServer) ->
     US = {LUser, LServer},

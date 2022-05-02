@@ -29,7 +29,7 @@
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
 	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, remove_from_archive/3,
-	 is_empty_for_user/2, is_empty_for_room/3]).
+	 is_empty_for_user/2, is_empty_for_room/3, remove_old_messages_batch/5]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -129,6 +129,43 @@ delete_old_user_messages(User, TimeStamp, Type) ->
 	{aborted, Err} ->
 	    ?ERROR_MSG("Cannot delete old MAM messages: ~ts", [Err]),
 	    Err
+    end.
+
+delete_batch('$end_of_table', _LServer, _TS, _Type, Num) ->
+    {Num, '$end_of_table'};
+delete_batch(LastUS, _LServer, _TS, _Type, 0) ->
+    {0, LastUS};
+delete_batch(none, LServer, TS, Type, Num) ->
+    delete_batch(mnesia:first(archive_msg), LServer, TS, Type, Num);
+delete_batch({_, LServer2} = LastUS, LServer, TS, Type, Num) when LServer /= LServer2 ->
+    delete_batch(mnesia:next(archive_msg, LastUS), LServer, TS, Type, Num);
+delete_batch(LastUS, LServer, TS, Type, Num) ->
+    Left =
+    lists:foldl(
+	fun(_, 0) ->
+	    0;
+	   (#archive_msg{timestamp = TS2, type = Type2} = O, Num2) when TS2 < TS, (Type == all orelse Type == Type2) ->
+	       mnesia:delete_object(O),
+	       Num2 - 1;
+	   (_, Num2) ->
+	       Num2
+	end, Num, mnesia:wread({archive_msg, LastUS})),
+    case Left of
+	0 -> {0, LastUS};
+	_ -> delete_batch(mnesia:next(archive_msg, LastUS), LServer, TS, Type, Left)
+    end.
+
+remove_old_messages_batch(LServer, TimeStamp, Type, Batch, LastUS) ->
+    R = mnesia:transaction(
+	fun() ->
+	    {Num, NextUS} = delete_batch(LastUS, LServer, TimeStamp, Type, Batch),
+	    {Batch - Num, NextUS}
+	end),
+    case R of
+	{atomic, {Num, State}} ->
+	    {ok, State, Num};
+	{aborted, Err} ->
+	    {error, Err}
     end.
 
 extended_fields() ->

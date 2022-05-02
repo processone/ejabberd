@@ -715,13 +715,26 @@ delete_old_messages(Days) ->
 delete_old_messages_batch(Server, Days, BatchSize, Rate) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, mod_offline),
-    case ejabberd_batch:register_task({spool, LServer}, 0, Rate, {LServer, Days, BatchSize},
-				      fun({L, Da, B} = S) ->
-					  case Mod:remove_old_messages_batch(L, Da, B) of
-					      {ok, Count} ->
-						  {ok, S, Count};
-					      {error, _} = E ->
-						  E
+    case ejabberd_batch:register_task({spool, LServer}, 0, Rate, {LServer, Days, BatchSize, none},
+				      fun({L, Da, B, IS} = S) ->
+					  case {erlang:function_exported(Mod, remove_old_messages_batch, 3),
+						erlang:function_exported(Mod, remove_old_messages_batch, 4)} of
+					      {true, _} ->
+						  case Mod:remove_old_messages_batch(L, Da, B) of
+						      {ok, Count} ->
+							  {ok, S, Count};
+						      {error, _} = E ->
+							  E
+						  end;
+					      {_, true} ->
+						  case Mod:remove_old_messages_batch(L, Da, B, IS) of
+						      {ok, IS2, Count} ->
+							  {ok, {L, Da, B, IS2}, Count};
+						      {error, _} = E ->
+							  E
+						  end;
+					      _ ->
+						  {error, not_implemented_for_backend}
 					  end
 				      end) of
 	ok ->
