@@ -5,7 +5,7 @@ on:
     paths:
     - '*'
     - '!*.md'
-    - '.github/workflows/compile.yml'
+    - '.github/workflows/runtime.yml'
     - 'checkouts/**'
     - 'config/**'
     - 'lib/**'
@@ -16,7 +16,7 @@ on:
     paths:
     - '*'
     - '!*.md'
-    - '.github/workflows/compile.yml'
+    - '.github/workflows/runtime.yml'
     - 'checkouts/**'
     - 'config/**'
     - 'lib/**'
