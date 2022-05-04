@@ -20,6 +20,7 @@
 {"Access model","Model d'Accés"}.
 {"Account doesn't exist","El compte no existeix"}.
 {"Action on user","Acció en l'usuari"}.
+{"Add a hat to a user","Afegir un barret a un usuari"}.
 {"Add Jabber ID","Afegir Jabber ID"}.
 {"Add New","Afegir nou"}.
 {"Add User","Afegir usuari"}.
@@ -136,6 +137,7 @@
 {"Elements","Elements"}.
 {"Email Address","Adreça de correu"}.
 {"Email","Correu"}.
+{"Enable hats","Activar barrets"}.
 {"Enable logging","Habilitar el registre de la conversa"}.
 {"Enable message archiving","Activar l'emmagatzematge de missatges"}.
 {"Enabling push without 'node' attribute is not supported","No està suportat activar Push sense l'atribut 'node'"}.
@@ -186,6 +188,9 @@
 {"has been kicked because of an affiliation change","ha sigut expulsat a causa d'un canvi d'afiliació"}.
 {"has been kicked because the room has been changed to members-only","ha sigut expulsat perquè la sala ara és només per a membres"}.
 {"has been kicked","ha sigut expulsat"}.
+{"Hat title","Títol del barret"}.
+{"Hat URI","URI del barret"}.
+{"Hats limit exceeded","El límit de tràfic ha sigut sobrepassat"}.
 {"Host unknown","Host desconegut"}.
 {"Host","Host"}.
 {"HTTP File Upload","HTTP File Upload"}.
@@ -237,6 +242,8 @@
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Els bits menys significants del hash SHA-256 del text deurien ser iguals a l'etiqueta hexadecimal"}.
 {"leaves the room","surt de la sala"}.
 {"List of rooms","Llista de sales"}.
+{"List of users with hats","Llista d'usuaris amb barrets"}.
+{"List users with hats","Llista d'usuaris amb barrets"}.
 {"Logging","Registre"}.
 {"Low level update script","Script d'actualització de baix nivell"}.
 {"Make participants list public","Crear una llista de participants pública"}.
@@ -249,7 +256,7 @@
 {"Malformed username","Nom d'usuari mal format"}.
 {"MAM preference modification denied by service policy","Se t'ha denegat la modificació de la preferència de MAM per política del servei"}.
 {"March","Març"}.
-{"Max # of items to persist","Màxim # d'elements que persistixen"}.
+{"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","Màxim # d'elements a persistir, o `max` per a no tindre altre límit més que el màxim imposat pel servidor"}.
 {"Max payload size in bytes","Màxim tamany del payload en bytes"}.
 {"Maximum file size","Mida màxima de fitxer"}.
 {"Maximum Number of History Messages Returned by Room","Numero màxim de missatges de l'historia que retorna la sala"}.
@@ -324,6 +331,7 @@
 {"Node index not found","Index de node no trobat"}.
 {"Node not found","Node no trobat"}.
 {"Node ~p","Node ~p"}.
+{"Node","Node"}.
 {"Nodeprep has failed","Ha fallat Nodeprep"}.
 {"Nodes","Nodes"}.
 {"None","Cap"}.
@@ -339,7 +347,7 @@
 {"Number of Offline Messages","Número de missatges offline"}.
 {"Number of online users","Número d'usuaris connectats"}.
 {"Number of registered users","Número d'Usuaris Registrats"}.
-{"Number of seconds after which to automatically purge items","Número de segons després dels quals es purgaran automàticament elements"}.
+{"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Número de segons després dels quals es purgaran automàticament elements, o `max` per a no tindre altre límit més que el màxim imposat pel servidor"}.
 {"Occupants are allowed to invite others","Els ocupants poden invitar a altres"}.
 {"Occupants May Change the Subject","Els ocupants poden canviar el Tema"}.
 {"October","Octubre"}.
@@ -418,6 +426,7 @@
 {"Registered Users:","Usuaris registrats:"}.
 {"Register","Registrar"}.
 {"Remote copy","Còpia remota"}.
+{"Remove a hat from a user","Eliminar un barret d'un usuari"}.
 {"Remove All Offline Messages","Eliminar tots els missatges offline"}.
 {"Remove User","Eliminar usuari"}.
 {"Remove","Borrar"}.
@@ -519,7 +528,7 @@
 {"The JIDs of those with an affiliation of owner","Els JIDs de qui tenen una afiliació de propietaris"}.
 {"The JIDs of those with an affiliation of publisher","Els JIDs de qui tenen una afiliació de publicadors"}.
 {"The list of JIDs that may associate leaf nodes with a collection","La llista de JIDs que poden associar nodes fulla amb una col·lecció"}.
-{"The maximum number of child nodes that can be associated with a collection","El màxim número de nodes fills que poden associar-se amb una col·lecció"}.
+{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","El màxim número de nodes fills que poden associar-se amb una col·lecció, o `max` per a no tindre altre límit més que el màxim imposat pel servidor"}.
 {"The minimum number of milliseconds between sending any two notification digests","El número mínim de mil·lisegons entre l'enviament de dos resums de notificacions"}.
 {"The name of the node","El nom del node"}.
 {"The node is a collection node","El node es una col·lecció"}.
@@ -544,7 +553,6 @@
 {"The type of node data, usually specified by the namespace of the payload (if any)","El tipus de dades al node, usualment especificat pel namespace del payload (si n'hi ha)"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","La URL de uns transformació XSL que pot ser aplicada als payloads per a generar un element apropiat de contingut de missatge."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","La URL de una transformació XSL que pot ser aplicada al format de payload per a generar un resultat valid de Data Forms, que el client puga mostrar usant un métode generic de Data Forms"}.
-{"The username is not valid","El nom d'usuari no es vàlid"}.
 {"There was an error changing the password: ","Hi ha hagut un error canviant la contrasenya: "}.
 {"There was an error creating the account: ","Hi ha hagut un error creant el compte: "}.
 {"There was an error deleting the account: ","Hi ha hagut un error esborrant el compte: "}.
@@ -571,7 +579,7 @@
 {"Too many users in this conference","N'hi ha massa usuaris en esta sala de conferència"}.
 {"To","Per a"}.
 {"Total rooms","Sales totals"}.
-{"Traffic rate limit is exceeded","El llímit de tràfic ha sigut sobrepassat"}.
+{"Traffic rate limit is exceeded","El límit de tràfic ha sigut sobrepassat"}.
 {"Transactions Aborted:","Transaccions Avortades:"}.
 {"Transactions Committed:","Transaccions Realitzades:"}.
 {"Transactions Logged:","Transaccions registrades:"}.
