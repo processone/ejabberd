@@ -192,7 +192,7 @@ mod_doc() ->
           [?T("This module serves small 'host-meta' files as described in "
               "https://xmpp.org/extensions/xep-0156.html[XEP-0156: Discovering "
               "Alternative XMPP Connection Methods]."), "",
-           ?T("This module is available since ejabberd 22.xx."), "",
+           ?T("This module is available since ejabberd 22.05."), "",
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
               "http://../listen-options/#request-handlers[request_handlers]."), "",

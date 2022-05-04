@@ -1634,11 +1634,13 @@ mod_doc() ->
                      "      street: Elm Street"]}]}},
            {cleanup_affiliations_on_start,
             #{value => "true | false",
+              note => "added in 22.05",
               desc =>
                   ?T("Remove affiliations for non-existing local users on startup. "
                      "The default value is 'false'.")}},
            {default_room_options,
             #{value => ?T("Options"),
+              note => "improved in 22.05",
               desc =>
                   ?T("This option allows to define the desired "
                      "default room options. Note that the creator of a room "

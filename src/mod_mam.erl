@@ -1446,6 +1446,7 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = delete_old_mam_messages_batch, tags = [purge],
 			desc = "Delete MAM messages older than DAYS",
+			note = "added in 22.05",
 			longdesc = "Valid message TYPEs: "
 				   "\"chat\", \"groupchat\", \"all\".",
 			module = ?MODULE, function = delete_old_messages_batch,
@@ -1461,6 +1462,7 @@ get_commands_spec() ->
 			result_example = {ok, <<"Removal of 5000 messages in progress">>}},
      #ejabberd_commands{name = delete_old_mam_messages_status, tags = [purge],
 			desc = "Status of delete old MAM messages operation",
+			note = "added in 22.05",
 			module = ?MODULE, function = delete_old_messages_status,
 			args_desc = ["Name of host where messages should be deleted"],
 			args_example = [<<"localhost">>],
@@ -1470,6 +1472,7 @@ get_commands_spec() ->
 			result_example = "Operation in progress, delete 5000 messages"},
      #ejabberd_commands{name = abort_delete_old_mam_messages, tags = [purge],
 			desc = "Abort currently running delete old MAM messages operation",
+			note = "added in 22.05",
 			module = ?MODULE, function = delete_old_messages_abort,
 			args_desc = ["Name of host where operation should be aborted"],
 			args_example = [<<"localhost">>],

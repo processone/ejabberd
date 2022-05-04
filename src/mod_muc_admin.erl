@@ -337,6 +337,7 @@ get_commands_spec() ->
 			result = {nodes, {list, {node, string}}}},
      #ejabberd_commands{name = subscribe_room_many, tags = [muc_room],
 			desc = "Subscribe several users to a MUC conference",
+			note = "added in 22.05",
 			longdesc = "This command accept up to 50 users at once (this is configurable with `subscribe_room_many_max_users` option)",
 			module = ?MODULE, function = subscribe_room_many,
 			args_desc = ["Users JIDs and nicks",
@@ -1469,6 +1470,7 @@ mod_doc() ->
     opts =>
           [{subscribe_room_many_max_users,
             #{value => ?T("Number"),
+              note => "added in 22.05",
               desc =>
                   ?T("How many users can be subscribed to a room at once using "
                      "the 'subscribe_room_many' command. "

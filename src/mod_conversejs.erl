@@ -243,7 +243,8 @@ mod_doc() ->
     #{desc =>
           [?T("This module serves a simple page for the "
               "https://conversejs.org/[Converse] XMPP web browser client."), "",
-           ?T("This module is available since ejabberd 21.12."), "",
+           ?T("This module is available since ejabberd 21.12."),
+           ?T("Several options were improved in ejabberd 22.05."), "",
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
               "http://../listen-options/#request-handlers[request_handlers]."), "",
@@ -320,11 +321,13 @@ mod_doc() ->
                      "The default value is '@HOST@'.")}},
            {conversejs_resources,
             #{value => ?T("Path"),
+              note => "added in 22.05",
               desc =>
                   ?T("Local path to the Converse files. "
                      "If not set, the public Converse client will be used instead.")}},
            {conversejs_options,
             #{value => "{Name: Value}",
+              note => "added in 22.05",
               desc =>
                   ?T("Specify additional options to be passed to Converse. "
                      "See https://conversejs.org/docs/html/configuration.html[Converse configuration]. "

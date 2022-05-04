@@ -101,6 +101,7 @@ get_commands_spec() ->
                        },
      #ejabberd_commands{name = oauth_revoke_token, tags = [oauth],
                         desc = "Revoke authorization for a token",
+			note = "changed in 22.05",
                         module = ?MODULE, function = oauth_revoke_token,
                         args = [{token, binary}],
                         policy = restricted,
