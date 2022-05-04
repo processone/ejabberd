@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 12/08/2021
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 05/04/2022
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "12/08/2021" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "05/04/2022" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,7 +82,7 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/21\&.12/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/22\&.05/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
@@ -91,7 +91,8 @@ This section describes top level options of ejabberd\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLRules|ACLName}}\fR
 .RS 4
-The option specifies access rules\&. Each access rule is assigned a name that can be referenced from other parts of the configuration file (mostly from
+This option defines
+Access Rules\&. Each access rule is assigned a name that can be referenced from other parts of the configuration file (mostly from
 \fIaccess\fR
 options of ejabberd modules)\&. Each rule definition may contain arbitrary number of
 \fIallow\fR
@@ -1062,7 +1063,7 @@ This option can be used to tune tick time parameter of
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/21\&.12/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/22\&.05/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1360,9 +1361,10 @@ seconds\&.
 .PP
 \fBs2s_access\fR: \fIAccess\fR
 .RS 4
-The access rule to restrict server\-to\-server connections\&. The default value is
-\fIall\fR
-which means no restrictions are applied\&.
+This
+Access Rule
+defines to what remote servers can s2s connections be established\&. The default value is
+\fIall\fR; no restrictions are applied, it is allowed to connect s2s to/from all remote servers\&.
 .RE
 .PP
 \fBs2s_cafile\fR: \fIPath\fR
@@ -1776,7 +1778,7 @@ module\&. The default value is obtained at compile time from the underlying vers
 .RS 4
 This option enables validation for
 \fIOrigin\fR
-header to protect against connections from other domains than given in the configuration file\&. In this way, the lower layer load balancer can be chosen for a specific ejabberd implementation while still providing a secure Websocket connection\&. The default value is
+header to protect against connections from other domains than given in the configuration file\&. In this way, the lower layer load balancer can be chosen for a specific ejabberd implementation while still providing a secure WebSocket connection\&. The default value is
 \fIignore\fR\&. An example value of the
 \fIURL\fR
 is "https://test\&.example\&.org:8081"\&.
@@ -1784,7 +1786,7 @@ is "https://test\&.example\&.org:8081"\&.
 .PP
 \fBwebsocket_ping_interval\fR: \fItimeout()\fR
 .RS 4
-Defines time between pings sent by the server to a client (Websocket level protocol pings are used for this) to keep a connection active\&. If the client doesn\(cqt respond to two consecutive pings, the connection will be assumed as closed\&. The value of
+Defines time between pings sent by the server to a client (WebSocket level protocol pings are used for this) to keep a connection active\&. If the client doesn\(cqt respond to two consecutive pings, the connection will be assumed as closed\&. The value of
 \fI0\fR
 can be used to disable the feature\&. This option makes the server sending pings only for connections using the RFC compliant protocol\&. For older style connections the server expects that whitespace pings would be used for this purpose\&. The default value is
 \fI60\fR
@@ -2164,7 +2166,7 @@ This module depends on \fImod_privacy\fR where all the configuration is performe
 The module has no options\&.
 .SS "mod_bosh"
 .sp
-This module implements XMPP over BOSH as defined in XEP\-0124 and XEP\-0206\&. BOSH stands for Bidirectional\-streams Over Synchronous HTTP\&. It makes it possible to simulate long lived connections required by XMPP over the HTTP protocol\&. In practice, this module makes it possible to use XMPP in a browser without Websocket support and more generally to have a way to use XMPP while having to get through an HTTP proxy\&.
+This module implements XMPP over BOSH as defined in XEP\-0124 and XEP\-0206\&. BOSH stands for Bidirectional\-streams Over Synchronous HTTP\&. It makes it possible to simulate long lived connections required by XMPP over the HTTP protocol\&. In practice, this module makes it possible to use XMPP in a browser without WebSocket support and more generally to have a way to use XMPP while having to get through an HTTP proxy\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -2234,9 +2236,9 @@ option, but applied to this module only\&.
 .PP
 \fBram_db_type\fR: \fImnesia | sql | redis\fR
 .RS 4
-Same as
+Same as top\-level
 \fIdefault_ram_db\fR
-but applied to this module only\&.
+option, but applied to this module only\&.
 .RE
 .PP
 \fBuse_cache\fR: \fItrue | false\fR
@@ -2370,11 +2372,13 @@ The module has no options\&.
 .sp
 This module serves a simple page for the Converse XMPP web browser client\&.
 .sp
+This module is available since ejabberd 21\&.12\&. Several options were improved in ejabberd 22\&.05\&.
+.sp
 To use this module, in addition to adding it to the \fImodules\fR section, you must also enable it in \fIlisten\fR → \fIejabberd_http\fR → request_handlers\&.
 .sp
-You must also setup either the option \fIwebsocket_url\fR or \fIbosh_service_url\fR\&.
+Make sure either \fImod_bosh\fR or \fIejabberd_http_ws\fR request_handlers are enabled\&.
 .sp
-By default, the options \fIconversejs_css\fR and \fIconversejs_script\fR point to the public Converse\&.js client\&. Alternatively, you can host the client locally using \fImod_http_fileserver\fR\&.
+When \fIconversejs_css\fR and \fIconversejs_script\fR are \fIauto\fR, by default they point to the public Converse client\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -2384,29 +2388,61 @@ By default, the options \fIconversejs_css\fR and \fIconversejs_script\fR point t
 \fBAvailable options:\fR
 .RS 4
 .PP
-\fBbosh_service_url\fR: \fIBoshURL\fR
+\fBbosh_service_url\fR: \fIauto | BoshURL\fR
 .RS 4
-BOSH service URL to which Converse\&.js can connect to\&.
+BOSH service URL to which Converse can connect to\&. The keyword
+\fI@HOST@\fR
+is replaced with the real virtual host name\&. If set to
+\fIauto\fR, it will build the URL of the first configured BOSH request handler\&. The default value is
+\fIauto\fR\&.
 .RE
 .PP
-\fBconversejs_css\fR: \fIURL\fR
+\fBconversejs_css\fR: \fIauto | URL\fR
 .RS 4
-Converse\&.js CSS URL\&.
+Converse CSS URL\&. The keyword
+\fI@HOST@\fR
+is replaced with the hostname\&. The default value is
+\fIauto\fR\&.
+.RE
+.sp
+\fINote\fR about the next option: added in 22\&.05:
+.PP
+\fBconversejs_options\fR: \fI{Name: Value}\fR
+.RS 4
+Specify additional options to be passed to Converse\&. See
+Converse configuration\&. Only boolean, integer and string values are supported; lists are not supported\&.
+.RE
+.sp
+\fINote\fR about the next option: added in 22\&.05:
+.PP
+\fBconversejs_resources\fR: \fIPath\fR
+.RS 4
+Local path to the Converse files\&. If not set, the public Converse client will be used instead\&.
 .RE
 .PP
-\fBconversejs_script\fR: \fIURL\fR
+\fBconversejs_script\fR: \fIauto | URL\fR
 .RS 4
-Converse\&.js main script URL\&.
+Converse main script URL\&. The keyword
+\fI@HOST@\fR
+is replaced with the hostname\&. The default value is
+\fIauto\fR\&.
 .RE
 .PP
 \fBdefault_domain\fR: \fIDomain\fR
 .RS 4
-Specify a domain to act as the default for user JIDs\&. The default value is the first domain defined in the ejabberd configuration file\&.
+Specify a domain to act as the default for user JIDs\&. The keyword
+\fI@HOST@\fR
+is replaced with the hostname\&. The default value is
+\fI@HOST@\fR\&.
 .RE
 .PP
-\fBwebsocket_url\fR: \fIWebsocketURL\fR
+\fBwebsocket_url\fR: \fIauto | WebSocketURL\fR
 .RS 4
-A websocket URL to which Converse\&.js can connect to\&.
+A WebSocket URL to which Converse can connect to\&. The keyword
+\fI@HOST@\fR
+is replaced with the real virtual host name\&. If set to
+\fIauto\fR, it will build the URL of the first configured WebSocket request handler\&. The default value is
+\fIauto\fR\&.
 .RE
 .RE
 .sp
@@ -2415,8 +2451,10 @@ A websocket URL to which Converse\&.js can connect to\&.
 .nr an-break-flag 1
 .br
 .ps +1
-\fBExample:\fR
+\fBExamples:\fR
 .RS 4
+.sp
+Manually setup WebSocket url, and use the public Converse client:
 .sp
 .if n \{\
 .RS 4
@@ -2427,12 +2465,58 @@ listen:
     port: 5280
     module: ejabberd_http
     request_handlers:
+      /bosh: mod_bosh
+      /websocket: ejabberd_http_ws
+      /conversejs: mod_conversejs
+
+modules:
+  mod_bosh: {}
+  mod_conversejs:
+    websocket_url: "ws://@HOST@:5280/websocket"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Host Converse locally and let auto detection of WebSocket and Converse URLs:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+listen:
+  \-
+    port: 443
+    module: ejabberd_http
+    tls: true
+    request_handlers:
       /websocket: ejabberd_http_ws
       /conversejs: mod_conversejs
 
 modules:
   mod_conversejs:
-    websocket_url: "ws://example\&.org:5280/websocket"
+    conversejs_resources: "/home/ejabberd/conversejs\-9\&.0\&.0/package/dist"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Configure some additional options for Converse
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_conversejs:
+    websocket_url: auto
+    conversejs_options:
+      auto_away: 30
+      clear_cache_on_logout: true
+      i18n: "pt"
+      locked_domain: "@HOST@"
+      message_archiving: always
+      theme: dracula
 .fi
 .if n \{\
 .RE
@@ -2676,9 +2760,79 @@ The number of C2S authentication failures to trigger the IP ban\&. The default v
 \fI20\fR\&.
 .RE
 .RE
+.SS "mod_host_meta"
+.sp
+This module serves small \fIhost\-meta\fR files as described in XEP\-0156: Discovering Alternative XMPP Connection Methods\&.
+.sp
+This module is available since ejabberd 22\&.05\&.
+.sp
+To use this module, in addition to adding it to the \fImodules\fR section, you must also enable it in \fIlisten\fR → \fIejabberd_http\fR → request_handlers\&.
+.sp
+Notice it only works if ejabberd_http has tls enabled\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBbosh_service_url\fR: \fIundefined | auto | BoshURL\fR
+.RS 4
+BOSH service URL to announce\&. The keyword
+\fI@HOST@\fR
+is replaced with the real virtual host name\&. If set to
+\fIauto\fR, it will build the URL of the first configured BOSH request handler\&. The default value is
+\fIauto\fR\&.
+.RE
+.PP
+\fBwebsocket_url\fR: \fIundefined | auto | WebSocketURL\fR
+.RS 4
+WebSocket URL to announce\&. The keyword
+\fI@HOST@\fR
+is replaced with the real virtual host name\&. If set to
+\fIauto\fR, it will build the URL of the first configured WebSocket request handler\&. The default value is
+\fIauto\fR\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+listen:
+  \-
+    port: 443
+    module: ejabberd_http
+    tls: true
+    request_handlers:
+      /bosh: mod_bosh
+      /ws: ejabberd_http_ws
+      /\&.well\-known/host\-meta: mod_host_meta
+      /\&.well\-known/host\-meta\&.json: mod_host_meta
+
+modules:
+  mod_bosh: {}
+  mod_host_meta:
+    bosh_service_url: "https://@HOST@:5443/bosh"
+    websocket_url: "wss://@HOST@:5443/ws"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SS "mod_http_api"
 .sp
-This module provides a ReST API to call ejabberd commands using JSON data\&.
+This module provides a ReST interface to call ejabberd API commands using JSON data\&.
 .sp
 To use this module, in addition to adding it to the \fImodules\fR section, you must also enable it in \fIlisten\fR → \fIejabberd_http\fR → request_handlers\&.
 .sp
@@ -3702,14 +3856,23 @@ This option specifies who is allowed to register nickname within the Multi\-User
 \fIall\fR
 for backward compatibility, which means that any user is allowed to register any free nick\&.
 .RE
+.sp
+\fINote\fR about the next option: added in 22\&.05:
+.PP
+\fBcleanup_affiliations_on_start\fR: \fItrue | false\fR
+.RS 4
+Remove affiliations for non\-existing local users on startup\&. The default value is
+\fIfalse\fR\&.
+.RE
 .PP
 \fBdb_type\fR: \fImnesia | sql\fR
 .RS 4
-Define the type of persistent storage where the module will store room information\&. The default is the storage defined by the global option
-\fIdefault_db\fR, or
-\fImnesia\fR
-if omitted\&.
+Same as top\-level
+\fIdefault_db\fR
+option, but applied to this module only\&.
 .RE
+.sp
+\fINote\fR about the next option: improved in 22\&.05:
 .PP
 \fBdefault_room_options\fR: \fIOptions\fR
 .RS 4
@@ -3767,6 +3930,12 @@ Allow visitors to send status text in presence updates\&. If disallowed, the sta
 \fItrue\fR\&.
 .RE
 .PP
+\fBallow_voice_requests\fR: \fItrue | false\fR
+.RS 4
+Allow visitors in a moderated room to request voice\&. The default value is
+\fItrue\fR\&.
+.RE
+.PP
 \fBanonymous\fR: \fItrue | false\fR
 .RS 4
 The room is anonymous: occupants don\(cqt see the real JIDs of other occupants\&. Note that the room moderators can always see the real JIDs of the occupants\&. The default value is
@@ -3778,6 +3947,17 @@ The room is anonymous: occupants don\(cqt see the real JIDs of other occupants\&
 When a user tries to join a room where they have no affiliation (not owner, admin or member), the room requires them to fill a CAPTCHA challenge (see section
 CAPTCHA
 in order to accept their join in the room\&. The default value is
+\fIfalse\fR\&.
+.RE
+.PP
+\fBdescription\fR: \fIRoom Description\fR
+.RS 4
+Short description of the room\&. The default value is an empty string\&.
+.RE
+.PP
+\fBenable_hats\fR: \fItrue | false\fR
+.RS 4
+Allow extended roles as defined in XEP\-0317 Hats\&. The default value is
 \fIfalse\fR\&.
 .RE
 .PP
@@ -3878,9 +4058,25 @@ The list of participants is public, without requiring to enter the room\&. The d
 \fItrue\fR\&.
 .RE
 .PP
+\fBpubsub\fR: \fIPubSub Node\fR
+.RS 4
+XMPP URI of associated Publish/Subscribe node\&. The default value is an empty string\&.
+.RE
+.PP
 \fBtitle\fR: \fIRoom Title\fR
 .RS 4
 A human\-readable title of the room\&. There is no default value
+.RE
+.PP
+\fBvcard\fR: \fIvCard\fR
+.RS 4
+A custom vCard for the room\&. See the equivalent mod_muc option\&.The default value is an empty string\&.
+.RE
+.PP
+\fBvoice_request_min_interval\fR: \fINumber\fR
+.RS 4
+Minimum interval between voice requests, in seconds\&. The default value is
+\fI1800\fR\&.
 .RE
 .RE
 .PP
@@ -4010,9 +4206,9 @@ option, but applied to this module only\&.
 .PP
 \fBram_db_type\fR: \fImnesia | sql\fR
 .RS 4
-Define the type of volatile (in\-memory) storage where the module will store room information (\fImuc_online_room\fR
-and
-\fImuc_online_users\fR)\&.
+Same as top\-level
+\fIdefault_ram_db\fR
+option, but applied to this module only\&.
 .RE
 .PP
 \fBregexp_room_id\fR: \fIstring()\fR
@@ -4086,7 +4282,24 @@ This module provides commands to administer local MUC services and their MUC roo
 .sp
 This module depends on \fImod_muc\fR\&.
 .sp
-The module has no options\&.
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.sp
+\fINote\fR about the next option: added in 22\&.05:
+.PP
+\fBsubscribe_room_many_max_users\fR: \fINumber\fR
+.RS 4
+How many users can be subscribed to a room at once using the
+\fIsubscribe_room_many\fR
+command\&. The default value is
+\fI50\fR\&.
+.RE
+.RE
 .SS "mod_muc_log"
 .sp
 This module enables optional logging of Multi\-User Chat (MUC) public conversations to HTML\&. Once you enable this module, users can join a room using a MUC capable XMPP client, and if they have enough privileges, they can request the configuration form in which they can set the option to enable room logging\&.
@@ -4585,11 +4798,13 @@ option, but applied to this module only\&.
 .PP
 \fBuse_mam_for_storage\fR: \fItrue | false\fR
 .RS 4
-This is an experimental option\&. Enabling this option will make
+This is an experimental option\&. Enabling this option,
 \fImod_offline\fR
-not use the former spool table for storing MucSub offline messages, but will use the archive table instead\&. This use of the archive table is cleaner and it makes it possible for clients to slowly drop the former offline use case and rely on message archive instead\&. It also further reduces the storage required when you enabled MucSub\&. Enabling this option has a known drawback for the moment: most of flexible message retrieval queries don\(cqt work (those that allow retrieval/deletion of messages by id), but this specification is not widely used\&. The default value is
+uses the
+\fImod_mam\fR
+archive table instead of its own spool table to retrieve the messages received when the user was offline\&. This allows client developers to slowly drop XEP\-0160 and rely on XEP\-0313 instead\&. It also further reduces the storage required when you enable MucSub\&. Enabling this option has a known drawback for the moment: most of flexible message retrieval queries don\(cqt work (those that allow retrieval/deletion of messages by id), but this specification is not widely used\&. The default value is
 \fIfalse\fR
-to keep former behaviour as default and ensure this option is disabled\&.
+to keep former behaviour as default\&.
 .RE
 .RE
 .sp
@@ -5085,7 +5300,9 @@ A port number to listen for incoming connections\&. The default value is
 .PP
 \fBram_db_type\fR: \fImnesia | redis | sql\fR
 .RS 4
-Define the type of volatile (in\-memory) storage where the module will store room information\&.
+Same as top\-level
+\fIdefault_ram_db\fR
+option, but applied to this module only\&.
 .RE
 .PP
 \fBrecbuf\fR: \fISize\fR
@@ -5284,6 +5501,8 @@ To specify whether or not pubsub should cache last items\&. Value is
 or
 \fIfalse\fR\&. If not defined, pubsub does not cache last items\&. On systems with not so many nodes, caching last items speeds up pubsub and allows to raise user connection rate\&. The cost is memory usage, as every item is stored in memory\&.
 .RE
+.sp
+\fINote\fR about the next option: added in 21\&.12:
 .PP
 \fBmax_item_expire_node\fR: \fItimeout() | infinity\fR
 .RS 4
@@ -5682,6 +5901,8 @@ doesn\(cqt allow to register new accounts from s2s or existing c2s sessions\&. Y
 .RS 4
 Specify rules to restrict access for user unregistration\&. By default any user is able to unregister their account\&.
 .RE
+.sp
+\fINote\fR about the next option: added in 21\&.12:
 .PP
 \fBallow_modules\fR: \fIall | [Module, \&.\&.\&.]\fR
 .RS 4
@@ -6100,13 +6321,9 @@ option, but applied to this module only\&.
 .PP
 \fBdb_type\fR: \fImnesia | sql\fR
 .RS 4
-Define the type of storage where the module will create the tables and store user information\&. The default is the storage defined by the top\-level
+Same as top\-level
 \fIdefault_db\fR
-option, or
-\fImnesia\fR
-if omitted\&. If
-\fIsql\fR
-value is defined, make sure you have defined the database\&.
+option, but applied to this module only\&.
 .RE
 .PP
 \fBuse_cache\fR: \fItrue | false\fR
@@ -7380,13 +7597,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 21\&.12\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 22\&.05\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/21\&.12/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/22\&.05/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
