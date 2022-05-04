@@ -1,10 +1,27 @@
-ejabberd Community Edition
-==========================
 
-[![CI](https://github.com/processone/ejabberd/actions/workflows/ci.yml/badge.svg)](https://github.com/processone/ejabberd/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/processone/ejabberd/badge.svg?branch=master "Coverage in coveralls.io")](https://coveralls.io/github/processone/ejabberd?branch=master)
-[![Translation status](https://hosted.weblate.org/widgets/ejabberd/-/ejabberd-po/svg-badge.svg "Translation status in Weblate")](https://hosted.weblate.org/projects/ejabberd/ejabberd-po/)
-[![Hex version](https://img.shields.io/hexpm/v/ejabberd.svg "Hex version")](https://hex.pm/packages/ejabberd)
+<p align="center">
+    <img src="https://www.process-one.net/wp-content/uploads/2022/05/ejabberd-logo-rounded-index.png"
+        height="216">
+</p>
+<p align="center">
+    <a href="https://github.com/processone/ejabberd/tags" alt="GitHub tag (latest SemVer)">
+       <img src="https://img.shields.io/github/v/tag/processone/ejabberd?sort=semver&logo=embarcadero&label=&color=3fb0d2&logoWidth=20" /></a>
+    <a href="https://hex.pm/packages/ejabberd" alt="Hex version">
+       <img src="https://img.shields.io/hexpm/v/ejabberd.svg" /></a>
+    <a href="https://github.com/processone/ejabberd/pkgs/container/ejabberd" alt="GitHub Container">
+       <img src="https://img.shields.io/github/v/tag/processone/ejabberd?label=container&sort=semver" /></a>
+    <a href="https://hub.docker.com/r/ejabberd/ecs/" alt="Docker Image Version (latest semver)">
+       <img src="https://img.shields.io/docker/v/ejabberd/ecs?label=docker" /></a>
+    <a href="https://formulae.brew.sh/formula/ejabberd" alt="homebrew version">
+       <img src="https://img.shields.io/homebrew/v/ejabberd" /></a>
+    <br />
+    <a href="https://github.com/processone/ejabberd/actions/workflows/ci.yml" alt="CI">
+       <img src="https://github.com/processone/ejabberd/actions/workflows/ci.yml/badge.svg" /></a>
+    <a href="https://coveralls.io/github/processone/ejabberd?branch=master" alt="Coverage Status">
+       <img src="https://coveralls.io/repos/github/processone/ejabberd/badge.svg?branch=master "Coverage in coveralls.io"" /></a>
+    <a href="https://hosted.weblate.org/projects/ejabberd/ejabberd-po/" alt="Translation status">
+       <img src="https://hosted.weblate.org/widgets/ejabberd/-/ejabberd-po/svg-badge.svg"" /></a>
+</p>
 
 
 [ejabberd][im] is an open-source,
@@ -60,8 +77,8 @@ Security reports or concerns should preferably be reported privately,
 please send an email to the address: contact [at] process-one [dot] net
 or some other method from [ProcessOne Contact][p1contact].
 
-For commercial offering and support, including _ejabberd Business Edition_
-and _Fluux (ejabberd in the Cloud)_, please check [ProcessOne ejabberd page][p1home].
+For commercial offering and support, including [ejabberd Business Edition][p1home]
+and [Fluux (ejabberd in the Cloud)][fluux], please check [ProcessOne ejabberd page][p1home].
 
 
 Community
@@ -88,6 +105,7 @@ and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MI
 [docs]: https://docs.ejabberd.im
 [erlang]: https://www.erlang.org/
 [features]: https://docs.ejabberd.im/admin/introduction/
+[fluux]: https://fluux.io/
 [github]: https://github.com/processone/ejabberd
 [homebrew]: https://docs.ejabberd.im/admin/installation/#homebrew
 [hubecs]: https://hub.docker.com/r/ejabberd/ecs/
