@@ -370,7 +370,7 @@ disable_sasl_mechanisms() ->
 disable_sasl_mechanisms(Host) ->
     ejabberd_config:get_option({disable_sasl_mechanisms, Host}).
 
--spec domain_balancing() -> #{binary()=>#{'component_number':=1..1114111, 'type'=>'bare_destination' | 'bare_source' | 'destination' | 'random' | 'source'}}.
+-spec domain_balancing() -> #{binary()=>#{'component_number'=>1..1114111, 'type'=>'bare_destination' | 'bare_source' | 'destination' | 'random' | 'source'}}.
 domain_balancing() ->
     ejabberd_config:get_option({domain_balancing, global}).
 
