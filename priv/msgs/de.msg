@@ -20,6 +20,7 @@
 {"Access model","Zugriffsmodell"}.
 {"Account doesn't exist","Konto existiert nicht"}.
 {"Action on user","Aktion auf Benutzer"}.
+{"Add a hat to a user","Funktion zu einem Benutzer hinzufügen"}.
 {"Add Jabber ID","Jabber-ID hinzufügen"}.
 {"Add New","Neue(n) hinzufügen"}.
 {"Add User","Benutzer hinzufügen"}.
@@ -136,6 +137,7 @@
 {"Elements","Elemente"}.
 {"Email Address","E-Mail-Adresse"}.
 {"Email","E-Mail"}.
+{"Enable hats","Funktion einschalten"}.
 {"Enable logging","Protokollierung aktivieren"}.
 {"Enable message archiving","Nachrichtenarchivierung aktivieren"}.
 {"Enabling push without 'node' attribute is not supported","push ohne 'node'-Attribut zu aktivieren wird nicht unterstützt"}.
@@ -186,6 +188,9 @@
 {"has been kicked because of an affiliation change","wurde wegen einer Änderung der Zugehörigkeit hinausgeworfen"}.
 {"has been kicked because the room has been changed to members-only","wurde hinausgeworfen weil der Raum zu Nur-Mitglieder geändert wurde"}.
 {"has been kicked","wurde hinausgeworfen"}.
+{"Hat title","Funktionstitel"}.
+{"Hat URI","Funktions-URI"}.
+{"Hats limit exceeded","Funktionslimit wurde überschritten"}.
 {"Host unknown","Host unbekannt"}.
 {"Host","Host"}.
 {"HTTP File Upload","HTTP-Dateiupload"}.
@@ -237,6 +242,8 @@
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Niederwertigstes Bit des SHA-256-Hashes des Textes sollte hexadezimalem Label gleichen"}.
 {"leaves the room","verlässt den Raum"}.
 {"List of rooms","Liste von Räumen"}.
+{"List of users with hats","Liste der Benutzer mit Funktionen"}.
+{"List users with hats","Benutzer mit Funktionen auflisten"}.
 {"Logging","Protokollierung"}.
 {"Low level update script","Low-Level-Aktualisierungsscript"}.
 {"Make participants list public","Teilnehmerliste öffentlich machen"}.
@@ -249,7 +256,7 @@
 {"Malformed username","Ungültiger Benutzername"}.
 {"MAM preference modification denied by service policy","Modifikation der MAM-Präferenzen aufgrund der Dienstrichtlinien verweigert"}.
 {"March","März"}.
-{"Max # of items to persist","Maximale Anzahl persistenter Items"}.
+{"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","Maximale Anzahl der aufzubewahrenden Elemente oder `max`, wenn es keine spezifische Begrenzung gibt, außer einer vom Server festgelegten Höchstzahl"}.
 {"Max payload size in bytes","Maximale Nutzdatengröße in Bytes"}.
 {"Maximum file size","Maximale Dateigröße"}.
 {"Maximum Number of History Messages Returned by Room","Maximale Anzahl der vom Raum zurückgegebenen History-Nachrichten"}.
@@ -340,7 +347,7 @@
 {"Number of Offline Messages","Anzahl der Offline-Nachrichten"}.
 {"Number of online users","Anzahl der angemeldeten Benutzer"}.
 {"Number of registered users","Anzahl der registrierten Benutzer"}.
-{"Number of seconds after which to automatically purge items","Anzahl der Sekunden, nach der Items automatisch gelöscht werden"}.
+{"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Anzahl der Sekunden, nach denen Elemente automatisch gelöscht werden sollen, oder `max`, wenn es keine spezifische Grenze gibt, außer einer vom Server festgelegten Höchstgrenze"}.
 {"Occupants are allowed to invite others","Teilnehmer dürfen andere einladen"}.
 {"Occupants May Change the Subject","Teilnehmer dürfen das Thema ändern"}.
 {"October","Oktober"}.
@@ -419,6 +426,7 @@
 {"Registered Users","Registrierte Benutzer"}.
 {"Registered Users:","Registrierte Benutzer:"}.
 {"Remote copy","Fernkopie"}.
+{"Remove a hat from a user","Eine Funktion bei einem Benutzer entfernen"}.
 {"Remove All Offline Messages","Alle Offline-Nachrichten löschen"}.
 {"Remove User","Benutzer löschen"}.
 {"Remove","Entfernen"}.
@@ -437,7 +445,7 @@
 {"Roles and Affiliations that May Retrieve Member List","Rollen und Zugehörigkeiten die Mitgliederliste abrufen dürfen"}.
 {"Roles for which Presence is Broadcasted","Rollen für welche die Präsenz übertragen wird"}.
 {"Roles that May Send Private Messages","Rollen die Privatnachrichten senden dürfen"}.
-{"Room Configuration","Raum-Konfiguration"}.
+{"Room Configuration","Raumkonfiguration"}.
 {"Room creation is denied by service policy","Anlegen des Raumes aufgrund der Dienstrichtlinien verweigert"}.
 {"Room description","Raumbeschreibung"}.
 {"Room Occupants","Raumteilnehmer"}.
@@ -520,7 +528,7 @@
 {"The JIDs of those with an affiliation of owner","Die JIDs jener mit einer Zugehörigkeit von Besitzer"}.
 {"The JIDs of those with an affiliation of publisher","Die JIDs jener mit einer Zugehörigkeit von Veröffentlicher"}.
 {"The list of JIDs that may associate leaf nodes with a collection","Die Liste der JIDs die Blattknoten mit einer Sammlung verknüpfen dürfen"}.
-{"The maximum number of child nodes that can be associated with a collection","Die maximale Anzahl der Kindknoten die mit einer Sammlung verknüpft werden können"}.
+{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","Die Höchstzahl der untergeordneten Knoten, die einer Sammlung zugeordnet werden können, oder `max`, wenn es keine spezifische Begrenzung gibt, sondern nur eine vom Server festgelegte Höchstzahl"}.
 {"The minimum number of milliseconds between sending any two notification digests","Die minimale Anzahl an Millisekunden zwischen dem Senden von zwei Benachrichtigungs-Übersichten"}.
 {"The name of the node","Der Name des Knotens"}.
 {"The node is a collection node","Der Knoten ist ein Sammlungsknoten"}.
@@ -545,7 +553,6 @@
 {"The type of node data, usually specified by the namespace of the payload (if any)","Die Art der Knotendaten, üblicherweise vom Namensraum der Nutzdaten angegeben (gegebenenfalls)"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","Die URL einer XSL-Transformation welche auf Nutzdaten angewendet werden kann, um ein geeignetes Nachrichtenkörper-Element zu generieren."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","Die URL einer XSL-Transformation welche auf das Nutzdaten-Format angewendet werden kann, um ein gültiges Data Forms-Ergebnis zu generieren das der Client mit Hilfe einer generischen Data Forms-Rendering-Engine anzeigen könnte"}.
-{"The username is not valid","Der Benutzername ist nicht gültig"}.
 {"There was an error changing the password: ","Es trat ein Fehler beim Ändern des Passwortes auf: "}.
 {"There was an error creating the account: ","Es trat ein Fehler beim Erstellen des Kontos auf: "}.
 {"There was an error deleting the account: ","Es trat ein Fehler beim Löschen des Kontos auf: "}.
