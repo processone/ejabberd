@@ -173,7 +173,7 @@
 {"Get Number of Online Users","获取在线用户数"}.
 {"Get Number of Registered Users","获取注册用户数"}.
 {"Get Pending","获取挂起"}.
-{"Get User Last Login Time","获取用户上次登陆时间"}.
+{"Get User Last Login Time","获取用户上次登录时间"}.
 {"Get User Password","获取用户密码"}.
 {"Get User Statistics","获取用户统计"}.
 {"Given Name","中间名"}.
@@ -230,7 +230,7 @@
 {"Just created","刚刚创建"}.
 {"Label:","标签:"}.
 {"Last Activity","上次活动"}.
-{"Last login","上次登陆"}.
+{"Last login","上次登录"}.
 {"Last message","最近消息"}.
 {"Last month","上个月"}.
 {"Last year","上一年"}.
@@ -249,6 +249,7 @@
 {"Malformed username","用户名无效"}.
 {"MAM preference modification denied by service policy","MAM偏好被服务策略拒绝"}.
 {"March","三月"}.
+{"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","要保留的最大项目数 #，`max`表示除了服务器强加的最大值之外没有特定限制"}.
 {"Max payload size in bytes","最大有效负载字节数"}.
 {"Maximum file size","最大文件大小"}.
 {"Maximum Number of History Messages Returned by Room","房间返回的历史消息最大值"}.
@@ -339,6 +340,7 @@
 {"Number of Offline Messages","离线消息数量"}.
 {"Number of online users","在线用户数"}.
 {"Number of registered users","注册用户数"}.
+{"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","等待多少秒后自动清除项目，“max”表示除服务器施加的最大值外没有特定限制"}.
 {"Occupants are allowed to invite others","允许成员邀请其他人"}.
 {"Occupants May Change the Subject","成员可以修改主题"}.
 {"October","十月"}.
@@ -518,6 +520,7 @@
 {"The JIDs of those with an affiliation of owner","隶属所有人的JID"}.
 {"The JIDs of those with an affiliation of publisher","隶属发布人的JID"}.
 {"The list of JIDs that may associate leaf nodes with a collection","可以将叶节点与集合关联的JID列表"}.
+{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","可以与集合相关联的最大子节点数，“max”表示除服务器施加的最大值外没有特定限制"}.
 {"The minimum number of milliseconds between sending any two notification digests","发送任何两个通知摘要之间的最小毫秒数"}.
 {"The name of the node","该节点的名称"}.
 {"The node is a collection node","该节点是集合节点"}.
