@@ -170,7 +170,6 @@
 {"Make room public searchable","הפוך חדר לחדר שנתון לחיפוש פומבי"}.
 {"Malformed username","שם משתמש פגום"}.
 {"March","מרץ"}.
-{"Max # of items to persist","מספר מרבי של פריטים לקיבוע"}.
 {"Max payload size in bytes","גודל מרבי של מטען ייעוד (payload) ביחידות מידה של byte"}.
 {"Maximum Number of Occupants","מספר מרבי של נוכחים"}.
 {"May","מאי"}.

@@ -150,7 +150,6 @@
 {"Make room persistent","Chatruimte blijvend maken"}.
 {"Make room public searchable","Chatruimte doorzoekbaar maken"}.
 {"March","Maart"}.
-{"Max # of items to persist","Maximum aantal in het geheugen te bewaren items"}.
 {"Max payload size in bytes","Maximumgrootte van bericht in bytes"}.
 {"Maximum Number of Occupants","Maximum aantal aanwezigen"}.
 {"May","Mei"}.

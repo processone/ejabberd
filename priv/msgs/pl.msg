@@ -181,7 +181,6 @@
 {"Make room public searchable","Pozwól wyszukiwać pokój"}.
 {"Malformed username","Nieprawidłowa nazwa użytkownika"}.
 {"March","Marzec"}.
-{"Max # of items to persist","Maksymalna liczba przechowywanych przedmiotów"}.
 {"Max payload size in bytes","Maksymalna wielkość powiadomienia w bajtach"}.
 {"Maximum Number of Occupants","Maksymalna liczba uczestników"}.
 {"May","Maj"}.

@@ -144,7 +144,6 @@
 {"Make room persistent","Nastaviť miestnosť ako trvalú"}.
 {"Make room public searchable","Nastaviť miestnosť ako verejne prehľadávateľnú"}.
 {"March","Marec"}.
-{"Max # of items to persist","Maximálny počet položiek, ktoré je možné natrvalo uložiť"}.
 {"Max payload size in bytes","Maximálny náklad v bajtoch"}.
 {"Maximum Number of Occupants","Počet účastníkov"}.
 {"May","Máj"}.

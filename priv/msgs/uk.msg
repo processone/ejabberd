@@ -153,7 +153,6 @@
 {"Make room persistent","Зробити кімнату постійною"}.
 {"Make room public searchable","Зробити кімнату видимою всім"}.
 {"March","березня"}.
-{"Max # of items to persist","Максимальне число збережених публікацій"}.
 {"Max payload size in bytes","Максимальний розмір корисного навантаження в байтах"}.
 {"Maximum Number of Occupants","Максимальна кількість учасників"}.
 {"May","травня"}.

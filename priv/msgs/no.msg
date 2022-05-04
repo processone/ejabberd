@@ -165,7 +165,6 @@
 {"Make room persistent","Gjør rommet vedvarende"}.
 {"Make room public searchable","Gjør rommet offentlig søkbart"}.
 {"March","mars"}.
-{"Max # of items to persist","Høyeste # elementer som skal lagres"}.
 {"Maximum file size","Maksimal filstørrelse"}.
 {"Maximum Number of History Messages Returned by Room","Maksimalt antall historikkmeldinger tilbudt av rommet"}.
 {"May","mai"}.
@@ -333,7 +332,6 @@
 {"The query must not contain <item/> elements","Spørringen kan ikke inneholde <item/>-elementer"}.
 {"The room subject can be modified by participants","Romemnet kan endres av dets deltagere"}.
 {"The sender of the last received message","Avsender for sist mottatte melding"}.
-{"The username is not valid","Brukernavnet er ikke gyldig"}.
 {"There was an error creating the account: ","En feil inntraff under oppretting av kontoen: "}.
 {"There was an error deleting the account: ","En feil inntraff under sletting av kontoen: "}.
 {"This room is not anonymous","Dette rommet er ikke anonymt"}.

@@ -110,7 +110,6 @@
 {"Make room persistent","Tạo phòng bền vững"}.
 {"Make room public searchable","Tạo phòng có thể tìm kiếm công khai"}.
 {"March","Tháng Ba"}.
-{"Max # of items to persist","Số mục tối đa để lưu trữ"}.
 {"Max payload size in bytes","Kích thước dung lượng byte tối đa"}.
 {"Maximum Number of Occupants","Số Lượng Người Tham Dự Tối Đa"}.
 {"May","Tháng Năm"}.

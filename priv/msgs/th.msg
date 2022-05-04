@@ -110,7 +110,6 @@
 {"Make room persistent","สร้างเป็นห้องถาวร"}.
 {"Make room public searchable","สร้างเป็นห้องที่บุคคลทั่วไปสามารถค้นหาได้"}.
 {"March","มีนาคม"}.
-{"Max # of items to persist","จำนวนสูงสุดของรายการที่ยืนยัน"}.
 {"Max payload size in bytes","ขนาดสูงสุดของส่วนของข้อมูล (payload) มีหน่วยเป็นไบต์"}.
 {"Maximum Number of Occupants","จำนวนผู้ครอบครองห้องสูงสุด"}.
 {"May","พฤษภาคม"}.

@@ -201,7 +201,6 @@
 {"Malformed username","Недопустимое имя пользователя"}.
 {"MAM preference modification denied by service policy","Изменение настроек архива сообщений запрещено политикой службы"}.
 {"March","марта"}.
-{"Max # of items to persist","Максимальное число сохраняемых публикаций"}.
 {"Max payload size in bytes","Максимальный размер полезной нагрузки в байтах"}.
 {"Maximum Number of Occupants","Максимальное количество участников"}.
 {"May","мая"}.
@@ -411,7 +410,6 @@
 {"The query is only allowed from local users","Запрос доступен только для локальных пользователей"}.
 {"The query must not contain <item/> elements","Запрос не должен содержать элементов <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Строфа может содержать только один элемент <active/>, один элемент <default/> или один элемент <list/>"}.
-{"The username is not valid","Недопустимое имя пользователя"}.
 {"There was an error creating the account: ","Ошибка при создании аккаунта:"}.
 {"There was an error deleting the account: ","Ошибка при удалении аккаунта:"}.
 {"This room is not anonymous","Эта комната не анонимная"}.

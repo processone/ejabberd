@@ -227,7 +227,6 @@
 {"Make room persistent","Buat ruangan menjadi permanent"}.
 {"Make room public searchable","Buat ruangan dapat dicari"}.
 {"March","Maret"}.
-{"Max # of items to persist","Max item untuk bertahan"}.
 {"Max payload size in bytes","Max kapasitas ukuran dalam bytes"}.
 {"Maximum Number of Occupants","Maksimum Jumlah Penghuni"}.
 {"May","Mei"}.
@@ -423,7 +422,6 @@
 {"the password is","kata sandinya"}.
 {"The password was not changed","Kata sandi belum berubah"}.
 {"The passwords are different","Kata sandi berbeda"}.
-{"The username is not valid","Nama pengguna tidak valid"}.
 {"There was an error changing the password: ","Ada kesalahan saat merubah kata kunci: "}.
 {"There was an error creating the account: ","Ada kesalahan saat membuat akun: "}.
 {"There was an error deleting the account: ","Ada kesalahan saat menghapus akun: "}.
