@@ -131,6 +131,7 @@
 {"ejabberd SOCKS5 Bytestreams module","Module SOCKS5 Bytestreams per ejabberd"}.
 {"ejabberd vCard module","Module vCard ejabberd"}.
 {"ejabberd Web Admin","Console Web d'administration de ejabberd"}.
+{"ejabberd","ejabberd"}.
 {"Elements","Éléments"}.
 {"Email Address","Adresse courriel"}.
 {"Email","Courriel"}.
@@ -144,6 +145,7 @@
 {"Enter path to jabberd14 spool file","Entrez le chemin vers le fichier spool de Jabberd 1.4"}.
 {"Enter path to text file","Entrez le chemin vers le fichier texte"}.
 {"Enter the text you see","Tapez le texte que vous voyez"}.
+{"Erlang XMPP Server","Serveur XMPP Erlang"}.
 {"Error","Erreur"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Exempter des Jabberd IDs du test CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Exporter toutes les tables vers un fichier SQL :"}.
@@ -162,7 +164,10 @@
 {"File larger than ~w bytes","Taille de fichier suppérieur à ~w octets"}.
 {"Fill in the form to search for any matching XMPP User","Complétez le formulaire pour rechercher un utilisateur XMPP correspondant"}.
 {"Friday","Vendredi"}.
+{"From ~ts","De ~ts"}.
 {"From","De"}.
+{"Full List of Room Admins","Liste complète des administrateurs des salons"}.
+{"Full List of Room Owners","Liste complète des propriétaires des salons"}.
 {"Full Name","Nom complet"}.
 {"Get Number of Online Users","Récupérer le nombre d'utilisateurs en ligne"}.
 {"Get Number of Registered Users","Récupérer le nombre d'utilisateurs enregistrés"}.
@@ -182,6 +187,7 @@
 {"Host unknown","Serveur inconnu"}.
 {"Host","Serveur"}.
 {"HTTP File Upload","Téléversement de fichier HTTP"}.
+{"Idle connection","Connexion inactive"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","SI vous ne voyez pas l'image CAPTCHA ici, visitez la page web."}.
 {"Import Directory","Importer un répertoire"}.
 {"Import File","Importer un fichier"}.
@@ -221,6 +227,7 @@
 {"Label:","Étiquette :"}.
 {"Last Activity","Dernière activité"}.
 {"Last login","Dernière connexion"}.
+{"Last message","Dernier message"}.
 {"Last month","Dernier mois"}.
 {"Last year","Dernière année"}.
 {"leaves the room","quitte le salon"}.
@@ -252,6 +259,8 @@
 {"Middle Name","Autre nom"}.
 {"Minimum interval between voice requests (in seconds)","Intervalle minimum entre les demandes de 'voice' (en secondes)"}.
 {"Moderator privileges required","Les droits de modérateur sont nécessaires"}.
+{"Moderator","Modérateur"}.
+{"Moderators Only","Modérateurs uniquement"}.
 {"Modified modules","Modules mis à jour"}.
 {"Module failed to handle the query","Échec de traitement de la demande"}.
 {"Monday","Lundi"}.
@@ -265,12 +274,14 @@
 {"Neither 'role' nor 'affiliation' attribute found","Attribut 'role' ou 'affiliation' absent"}.
 {"Never","Jamais"}.
 {"New Password:","Nouveau mot de passe :"}.
+{"Nickname can't be empty","Le pseudonyme ne peut être laissé vide"}.
 {"Nickname Registration at ","Enregistrement d'un pseudo sur "}.
 {"Nickname ~s does not exist in the room","Le pseudo ~s n'existe pas dans ce salon"}.
 {"Nickname","Pseudo"}.
 {"No 'affiliation' attribute found","Attribut 'affiliation' absent"}.
 {"No available resource found","Aucune ressource disponible"}.
 {"No body provided for announce message","Pas de corps de message pour l'annonce"}.
+{"No child elements found","Aucun élément enfant trouvé"}.
 {"No data form found","Formulaire non trouvé"}.
 {"No Data","Aucune information disponible"}.
 {"No features available","Aucune fonctionalité disponible"}.
@@ -291,23 +302,30 @@
 {"No services available","Aucun service disponible"}.
 {"No statistics found for this item","Pas de statistiques"}.
 {"No 'to' attribute found in the invitation","L'élément 'to' est absent de l'invitation"}.
+{"Nobody","Personne"}.
 {"Node already exists","Ce nœud existe déjà"}.
 {"Node ID","Identifiant du nœud"}.
 {"Node index not found","Index de nœud non trouvé"}.
 {"Node not found","Nœud non trouvé"}.
 {"Node ~p","Nœud ~p"}.
+{"Node","Nœud"}.
 {"Nodeprep has failed","Échec de formattage"}.
 {"Nodes","Nœuds"}.
 {"None","Aucun"}.
+{"Not allowed","Non autorisé"}.
 {"Not Found","Nœud non trouvé"}.
 {"Not subscribed","Pas abonné"}.
 {"Notify subscribers when items are removed from the node","Avertir les abonnés lorsque des éléments sont supprimés sur le nœud"}.
 {"Notify subscribers when the node configuration changes","Avertir les abonnés lorsque la configuration du nœud change"}.
 {"Notify subscribers when the node is deleted","Avertir les abonnés lorsque le nœud est supprimé"}.
 {"November","Novembre"}.
+{"Number of answers required","Nombre de réponses requises"}.
 {"Number of occupants","Nombre d'occupants"}.
+{"Number of Offline Messages","Nombre de messages hors ligne"}.
 {"Number of online users","Nombre d'utilisateurs en ligne"}.
 {"Number of registered users","Nombre d'utilisateurs enregistrés"}.
+{"Occupants are allowed to invite others","Les occupants sont autorisés à inviter d’autres personnes"}.
+{"Occupants May Change the Subject","Les occupants peuvent changer le sujet"}.
 {"October","Octobre"}.
 {"Offline Messages","Messages en attente"}.
 {"Offline Messages:","Messages hors ligne :"}.
@@ -344,13 +362,16 @@
 {"Pending","En suspens"}.
 {"Period: ","Période : "}.
 {"Persist items to storage","Stockage persistant des éléments"}.
+{"Persistent","Persistant"}.
 {"Ping query is incorrect","Requête ping incorrecte"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ces options sauvegardent uniquement la base de données interne Mnesia. Si vous utilisez le module ODBC vous devez sauvegarde votre base SQL séparément."}.
 {"Please, wait for a while before sending new voice request","Attendez un moment avant de re-lancer une requête de voix"}.
 {"Pong","Pong"}.
 {"Present real Jabber IDs to","Rendre le Jabber ID réel visible pour"}.
-{"private, ","privé"}.
+{"Previous session not found","Session précédente introuvable"}.
+{"Previous session timed out","La session précédente a expiré"}.
+{"private, ","privé, "}.
 {"Publish-Subscribe","Publication-Abonnement"}.
 {"PubSub subscriber request","Demande d'abonnement PubSub"}.
 {"Purge all items when the relevant publisher goes offline","Purger tous les items lorsque publieur est hors-ligne"}.
@@ -360,6 +381,7 @@
 {"RAM copy","Copie en mémoire vive (RAM)"}.
 {"Really delete message of the day?","Confirmer la suppression du message du jour ?"}.
 {"Recipient is not in the conference room","Le destinataire n'est pas dans la conférence"}.
+{"Register an XMPP account","Inscrire un compte XMPP"}.
 {"Registered Users","Utilisateurs enregistrés"}.
 {"Registered Users:","Utilisateurs enregistrés :"}.
 {"Register","Enregistrer"}.
@@ -385,19 +407,24 @@
 {"Room Occupants","Occupants du salon"}.
 {"Room title","Titre du salon"}.
 {"Roster groups allowed to subscribe","Groupes de liste de contact autorisés à s'abonner"}.
+{"Roster of ~ts","Liste de contacts de ~ts"}.
 {"Roster size","Taille de la liste de contacts"}.
+{"Roster:","Liste de contacts :"}.
 {"RPC Call Error","Erreur d'appel RPC"}.
 {"Running Nodes","Nœuds actifs"}.
 {"Saturday","Samedi"}.
 {"Script check","Validation du script"}.
 {"Search Results for ","Résultats de recherche pour "}.
+{"Search until the date","Rechercher jusqu’à la date"}.
 {"Search users in ","Rechercher des utilisateurs "}.
+{"Select All","Tout sélectionner"}.
 {"Send announcement to all online users on all hosts","Envoyer l'annonce à tous les utilisateurs en ligne sur tous les serveurs"}.
 {"Send announcement to all online users","Envoyer l'annonce à tous les utilisateurs en ligne"}.
 {"Send announcement to all users on all hosts","Envoyer une annonce à tous les utilisateurs de tous les domaines"}.
 {"Send announcement to all users","Envoyer l'annonce à tous les utilisateurs"}.
 {"September","Septembre"}.
 {"Server:","Serveur :"}.
+{"Service list retrieval timed out","La récupération de la liste des services a expiré"}.
 {"Set message of the day and send to online users","Définir le message du jour et l'envoyer aux utilisateurs en ligne"}.
 {"Set message of the day on all hosts and send to online users","Définir le message du jour pour tous domaines et l'envoyer aux utilisateurs en ligne"}.
 {"Shared Roster Groups","Groupes de liste de contacts partagée"}.
@@ -414,6 +441,7 @@
 {"Storage Type","Type de stockage"}.
 {"Store binary backup:","Sauvegarde binaire :"}.
 {"Store plain text backup:","Sauvegarde texte :"}.
+{"Stream management is already enabled","La gestion des flux est déjà activée"}.
 {"Subject","Sujet"}.
 {"Submit","Soumettre"}.
 {"Submitted","Soumis"}.
@@ -421,26 +449,50 @@
 {"Subscription","Abonnement"}.
 {"Subscriptions are not allowed","Les abonnement ne sont pas autorisés"}.
 {"Sunday","Dimanche"}.
+{"Text associated with a picture","Texte associé à une image"}.
+{"Text associated with a sound","Texte associé à un son"}.
+{"Text associated with a video","Texte associé à une vidéo"}.
+{"Text associated with speech","Texte associé au discours"}.
 {"That nickname is already in use by another occupant","Le pseudo est déjà utilisé par un autre occupant"}.
 {"That nickname is registered by another person","Le pseudo est enregistré par une autre personne"}.
-{"The CAPTCHA is valid.","Le CAPTCHA est valide"}.
+{"The account already exists","Le compte existe déjà"}.
+{"The account was not unregistered","Le compte n’a pas été désinscrit"}.
+{"The body text of the last received message","Le corps du texte du dernier message reçu"}.
+{"The CAPTCHA is valid.","Le CAPTCHA est valide."}.
 {"The CAPTCHA verification has failed","La vérification du CAPTCHA a échoué"}.
+{"The captcha you entered is wrong","Le captcha que vous avez saisi est erroné"}.
 {"The collections with which a node is affiliated","Les collections avec lesquelle un nœud est affilié"}.
+{"The datetime when the node was created","La date à laquelle le nœud a été créé"}.
 {"The default language of the node","La langue par défaut du nœud"}.
 {"The feature requested is not supported by the conference","La demande de fonctionalité n'est pas supportée par la conférence"}.
+{"The JID of the node creator","Le JID du créateur du nœud"}.
 {"The name of the node","Le nom du nœud"}.
+{"The node is a collection node","Le nœud est un nœud de collecte"}.
+{"The number of subscribers to the node","Le nombre d’enregistrés au nœud"}.
+{"The number of unread or undelivered messages","Le nombre de messages non lus ou non remis"}.
 {"The password contains unacceptable characters","Le mot de passe contient des caractères non-acceptables"}.
 {"The password is too weak","Le mot de passe est trop faible"}.
 {"the password is","le mot de passe est"}.
+{"The password of your XMPP account was successfully changed.","Le mot de passe de votre compte XMPP a été modifié avec succès."}.
+{"The password was not changed","Le mot de passe n’a pas été modifié"}.
+{"The passwords are different","Les mots de passe sont différents"}.
 {"The query is only allowed from local users","La requête n'est autorisé qu'aux utilisateurs locaux"}.
 {"The query must not contain <item/> elements","La requête ne doit pas contenir d'élément <item/>"}.
+{"The room subject can be modified by participants","Le sujet du salon peut être modifié par les participants"}.
+{"The sender of the last received message","L’expéditeur du dernier message reçu"}.
+{"The subscription identifier associated with the subscription request","L’identificateur d’abonnement associé à la demande d’abonnement"}.
+{"There was an error changing the password: ","Une erreur s’est produite lors de la modification du mot de passe : "}.
 {"There was an error creating the account: ","Il y a eu une erreur en créant le compte : "}.
 {"There was an error deleting the account: ","Il y a eu une erreur en effaçant le compte : "}.
+{"This page allows to unregister an XMPP account in this XMPP server.","Cette page permet de désenregistrer un compte XMPP sur ce serveur XMPP."}.
 {"This room is not anonymous","Ce salon n'est pas anonyme"}.
+{"This service can not process the address: ~s","Ce service ne peut pas traiter l’adresse : ~s"}.
 {"Thursday","Jeudi"}.
 {"Time delay","Délais"}.
+{"Timed out waiting for stream resumption","Expiration du délai d’attente pour la reprise du flux"}.
 {"Time","Heure"}.
 {"To register, visit ~s","Pour vous enregistrer, visitez ~s"}.
+{"To ~ts","À ~ts"}.
 {"To","A"}.
 {"Token TTL","Jeton TTL"}.
 {"Too many active bytestreams","Trop de flux SOCKS5 actifs"}.
@@ -448,6 +500,7 @@
 {"Too many <item/> elements","Trop d'éléments <item/>"}.
 {"Too many <list/> elements","Trop d'éléments <list/>"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Trop (~p) d'authentification ont échoué pour cette adresse IP (~s). L'adresse sera débloquée à ~s UTC"}.
+{"Too many receiver fields were specified","Trop de champs de récepteurs ont été spécifiés"}.
 {"Too many unacked stanzas","Trop de stanzas sans accusé de réception (ack)"}.
 {"Too many users in this conference","Trop d'utilisateurs dans cette conférence"}.
 {"Total rooms","Nombre de salons"}.
@@ -461,8 +514,12 @@
 {"Unable to register route on existing local domain","Impossible d'enregistrer la route sur un domaine locale existant"}.
 {"Unauthorized","Non autorisé"}.
 {"Unexpected action","Action inattendu"}.
+{"Unexpected error condition: ~p","Condition d’erreur inattendue : ~p"}.
+{"Unregister an XMPP account","Annuler l’enregistrement d’un compte XMPP"}.
 {"Unregister","Désinscrire"}.
+{"Unselect All","Tout désélectionner"}.
 {"Unsupported <index/> element","Elément <index/> non supporté"}.
+{"Unsupported version","Version non prise en charge"}.
 {"Update message of the day (don't send)","Mise à jour du message du jour (pas d'envoi)"}.
 {"Update message of the day on all hosts (don't send)","Mettre à jour le message du jour sur tous les domaines (ne pas envoyer)"}.
 {"Update plan","Plan de mise à jour"}.
@@ -470,12 +527,15 @@
 {"Update script","Script de mise à jour"}.
 {"Update","Mettre à jour"}.
 {"Uptime:","Temps depuis le démarrage :"}.
+{"URL for Archived Discussion Logs","URL des journaux de discussion archivés"}.
 {"User already exists","L'utilisateur existe déjà"}.
-{"User JID","JID de l'utilisateur "}.
+{"User JID","JID de l'utilisateur"}.
 {"User (jid)","Utilisateur (jid)"}.
 {"User Management","Gestion des utilisateurs"}.
+{"User removed","Utilisateur supprimé"}.
 {"User session not found","Session utilisateur non trouvée"}.
 {"User session terminated","Session utilisateur terminée"}.
+{"User ~ts","Utilisateur ~ts"}.
 {"Username:","Nom d'utilisateur :"}.
 {"Users are not allowed to register accounts so quickly","Les utilisateurs ne sont pas autorisés à enregistrer des comptes si rapidement"}.
 {"Users Last Activity","Dernière activité des utilisateurs"}.
@@ -488,15 +548,22 @@
 {"Value of '~s' should be integer","La valeur de '~s' doit être un entier"}.
 {"Value 'set' of 'type' attribute is not allowed","La valeur de l'attribut 'type' ne peut être 'set'"}.
 {"vCard User Search","Recherche dans l'annnuaire"}.
+{"View Queue","Afficher la file d’attente"}.
 {"Virtual Hosts","Serveurs virtuels"}.
 {"Visitors are not allowed to change their nicknames in this room","Les visiteurs ne sont pas autorisés à changer de pseudo dans ce salon"}.
 {"Visitors are not allowed to send messages to all occupants","Les visiteurs ne sont pas autorisés à envoyer des messages à tout les occupants"}.
+{"Visitor","Visiteur"}.
 {"Voice request","Demande de voix"}.
 {"Voice requests are disabled in this conference","Les demandes de voix sont désactivées dans cette conférence"}.
 {"Wednesday","Mercredi"}.
 {"When a new subscription is processed","Quand un nouvel abonnement est traité"}.
 {"When to send the last published item","A quel moment envoyer le dernier élément publié"}.
-{"Whether to allow subscriptions","Autoriser l'abonnement ?"}.
+{"Whether to allow subscriptions","Autoriser ou non les abonnements"}.
+{"Wrong parameters in the web formulary","Paramètres erronés dans le formulaire Web"}.
+{"Wrong xmlns","Xmlns incorrect"}.
+{"XMPP Account Registration","Enregistrement de compte XMPP"}.
+{"XMPP Domains","Domaines XMPP"}.
+{"You can later change your password using an XMPP client.","Vous pouvez modifier ultérieurement votre mot de passe à l’aide d’un client XMPP."}.
 {"You have been banned from this room","Vous avez été exclus de ce salon"}.
 {"You have joined too many conferences","Vous avec rejoint trop de conférences"}.
 {"You must fill in field \"Nickname\" in the form","Vous devez préciser le champ \"pseudo\" dans le formulaire"}.
@@ -506,4 +573,5 @@
 {"Your active privacy list has denied the routing of this stanza.","Votre règle de flitrage active a empêché le routage de ce stanza."}.
 {"Your contact offline message queue is full. The message has been discarded.","La file d'attente de message de votre contact est pleine. Votre message a été détruit."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Vos messages pour ~s sont bloqués. Pour les débloquer, veuillez visiter ~s"}.
+{"Your XMPP account was successfully unregistered.","Votre compte XMPP a été désinscrit avec succès."}.
 {"You're not allowed to create nodes","Vous n'êtes pas autorisé à créer des nœuds"}.
