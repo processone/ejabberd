@@ -267,7 +267,7 @@ Build ejabberd Community Server base image for a given ejabberd version,
 both for amd64 and arm64 architectures:
 
 ```bash
-VERSION = 21.12
+VERSION = 22.05
 docker buildx build \
     --platform=linux/amd64,linux/arm64
     --build-arg VERSION=$(VERSION) \
