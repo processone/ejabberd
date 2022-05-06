@@ -63,7 +63,7 @@ uri_parse(URL) when is_binary(URL) ->
 uri_parse(URL) ->
     case http_uri:parse(URL) of
 	{ok, {Scheme, _UserInfo, Host, Port, Path, Query}} ->
-	    {ok, Scheme, Host, Port, Path, Query};
+	    {ok, atom_to_list(Scheme), Host, Port, Path, Query};
 	{error, _} = E ->
 	    E
     end.
