@@ -65,4 +65,4 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ghcr.io/processone/ejabberd:22.05,ghcr.io/processone/ejabberd:latest
