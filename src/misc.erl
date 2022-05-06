@@ -62,8 +62,8 @@ uri_parse(URL) when is_binary(URL) ->
     uri_parse(binary_to_list(URL));
 uri_parse(URL) ->
     case http_uri:parse(URL) of
-	{ok, {Scheme, _UserInfo, Host, Port, Path, Query}} ->
-	    {ok, atom_to_list(Scheme), Host, Port, Path, Query};
+	{ok, {Scheme, UserInfo, Host, Port, Path, Query}} ->
+	    {ok, atom_to_list(Scheme), UserInfo, Host, Port, Path, Query};
 	{error, _} = E ->
 	    E
     end.
@@ -73,11 +73,11 @@ uri_parse(URL) when is_binary(URL) ->
 uri_parse(URL) ->
     case uri_string:parse(URL) of
 	#{scheme := Scheme, host := Host, port := Port, path := Path} = M1 ->
-	    {ok, Scheme, Host, Port, Path, maps:get(query, M1, "")};
+	    {ok, Scheme, maps:get(userinfo, M1, ""), Host, Port, Path, maps:get(query, M1, "")};
 	#{scheme := "https", host := Host, path := Path} = M2 ->
-	    {ok, "https", Host, 443, Path, maps:get(query, M2, "")};
+	    {ok, "https", maps:get(userinfo, M2, ""), Host, 443, Path, maps:get(query, M2, "")};
 	#{scheme := "http", host := Host, path := Path} = M3 ->
-	    {ok, "http", Host, 80, Path, maps:get(query, M3, "")};
+	    {ok, "http", maps:get(userinfo, M3, ""), Host, 80, Path, maps:get(query, M3, "")};
 	{error, Atom, _} ->
 	    {error, Atom}
     end.

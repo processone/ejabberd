@@ -713,7 +713,7 @@ get_proc_name(ServerHost, ModuleName) ->
 -spec get_proc_name(binary(), atom(), binary()) -> atom().
 get_proc_name(ServerHost, ModuleName, PutURL) ->
     %% Once we depend on OTP >= 20.0, we can use binaries with http_uri.
-    {ok, _Scheme, Host0, _Port, Path0, _Query} =
+    {ok, _Scheme, _UserInfo, Host0, _Port, Path0, _Query} =
         misc:uri_parse(expand_host(PutURL, ServerHost)),
     Host = jid:nameprep(iolist_to_binary(Host0)),
     Path = str:strip(iolist_to_binary(Path0), right, $/),
