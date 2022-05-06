@@ -1,3 +1,108 @@
+# Version 22.05
+
+Core
+- C2S: Don't expect that socket will be available in `c2s_terminated` hook
+- Event handling process hook tracing
+- Guard agains `erlang:system_info(logical_processors)` not always returning number
+- `domain_balancing`: Allow for specifying `type` only, without specifying `component_number`
+
+MQTT
+- Add TLS certificate authentication for MQTT connections
+- Fix login when generating client id, keep connection record (#3593)
+- Pass property name as expected in mqtt_codec (fixes login using MQTT 5)
+- Support MQTT subscriptions spread over the cluster (#3750)
+
+MUC
+- Attach meta field with real jid to mucsub subscription events
+- Handle user removal
+- Stop empty MUC rooms 30 seconds after creation
+- `default_room_options`: Update options configurable
+- `subscribe_room_many_max_users`: New option in `mod_muc_admin`
+
+mod_conversejs
+- Improved options to support `@HOST@` and `auto` values
+- Set `auth` and `register` options based on ejabberd configuration
+- `conversejs_options`: New option
+- `conversejs_resources`: New option
+
+PubSub
+- `mod_pubsub`: Allow for limiting `item_expire` value
+- `mod_pubsub`: Unsubscribe JID on whitelist removal
+- `node_pep`: Add config-node and multi-items features (#3714)
+
+SQL
+- Improve compatibility with various db engine versions
+- Sync old-to-new schema script with reality (#3790)
+- Slight improvement in MSSQL testing support, but not yet complete
+
+Other Modules
+- `auth_jwt`: Checking users is active in SM for JWT authenticated user (#3795)
+- `mod_configure`: Implement Get List of Registered/Online Users from XEP-0133
+- `mod_host_meta`: New module to serve host-meta files, see XEP-0156
+- `mod_mam`: Store all mucsub notifications not only message notifications
+- `mod_ping`: Delete ping timer if resource is gone after the ping has been sent
+- `mod_ping`: Don't send ping if resource is gone
+- `mod_push`: Fix notifications for pending sessions (XEP-0198)
+- `mod_push`: Keep push session ID on session resume
+- `mod_shared_roster`: Adjust special group cache size
+- `mod_shared_roster`: Normalize JID on unset_presence (#3752)
+- `mod_stun_disco`: Fix parsing of IPv6 listeners
+
+Dependencies
+- autoconf: Supported from 2.59 to the new 2.71
+- fast_tls: Update to 1.1.14 to support OpenSSL 3
+- jiffy: Update to 1.1.1 to support Erlang/OTP 25.0-rc1
+- luerl: Update to 1.0.0, now available in hex.pm
+- lager: This dependency is used only when Erlang is older than 22
+- rebar2: Updated binary to work from Erlang/OTP 22 to 25
+- rebar3: Updated binary to work from Erlang/OTP 22 to 25
+- `make update`: Fix when used with rebar 3.18
+
+Compile
+- `mix release`: Copy `include/` files for ejabberd, deps and otp, in `mix.exs`
+- `rebar3 release`: Fix ERTS path in `ejabberdctl`
+- `configure.ac`: Set default ejabberd version number when not using git
+- `mix.exs`: Move some dependencies as optional
+- `mix.exs`: No need to use Distillery, Elixir has built-in support for OTP releases (#3788)
+- `tools/make-binaries`: New script for building Linux binaries
+- `tools/make-installers`: New script for building command line installers
+
+Start
+- New `make relive` similar to `ejabberdctl live` without installing
+- `ejabberdctl`: Fix some warnings detected by ShellCheck
+- `ejabberdctl`: Mention in the help: `etop`, `ping` and `started`/`stopped`
+- `make rel`: Switch to paths: `conf/`, `database/`, `logs/`
+- `mix.exs`: Add `-boot` and `-boot_var` in `ejabberdctl` instead of adding `vm.args`
+- `tools/captcha.sh`: Fix some warnings detected by ShellCheck
+
+Commands
+- Accept more types of ejabberdctl commands arguments as JSON-encoded
+- `delete_old_mam_messages_batch`: New command with rate limit
+- `delete_old_messages_batch`: New command with rate limit
+- `get_room_occupants_number`: Don't request the whole MUC room state (#3684, #1964)
+- `get_vcard`: Add support for MUC room vCard
+- `oauth_revoke_token`: Add support to work with all backends
+- `room_unused_*`: Optimize commands in SQL by reusing `created_at`
+- `rooms_unused_...`: Let `get_all_rooms` handle `global` argument (#3726)
+- `stop|restart`: Terminate ejabberd_sm before everything else to ensure sessions closing (#3641)
+- `subscribe_room_many`: New command
+
+Translations
+- Updated Catalan
+- Updated French
+- Updated German
+- Updated Portuguese
+- Updated Portuguese (Brazil)
+- Updated Spanish
+
+Workflows
+- CI: Publish CT logs and Cover on failure to an external GH Pages repo
+- CI: Test shell scripts using ShellCheck (#3738)
+- Container: New workflow to build and publish containers
+- Installers: Add job to create draft release
+- Installers: New workflow to build binary packages
+- Runtime: New workflow to test compilation, rel, starting and ejabberdctl
+
 # Version 21.12
 
 Commands
