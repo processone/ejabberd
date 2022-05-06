@@ -56,7 +56,7 @@
 
 -type distance_cache() :: #{{string(), string()} => non_neg_integer()}.
 
--spec uri_parse(binary()|string()) -> {ok, string(), string(), number(), string(), string()} | {error, term()}.
+-spec uri_parse(binary()|string()) -> {ok, string(), string(), string(), number(), string(), string()} | {error, term()}.
 -ifdef(USE_OLD_HTTP_URI).
 uri_parse(URL) when is_binary(URL) ->
     uri_parse(binary_to_list(URL));
