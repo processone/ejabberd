@@ -1967,7 +1967,7 @@ set_subscriber(JID, Nick, Nodes,
 			    id = p1_rand:get_string(),
 			    sub_els = [#muc_subscribe{nick = Nick}]}]}}]},
 	    {Packet2a, Packet2b} = ejabberd_hooks:run_fold(muc_subscribed, ServerHost, {Packet1a, Packet1b},
-							   [ServerHost, Room, Host, BareJID]),
+							   [ServerHost, Room, Host, BareJID, StateData]),
 	    send_subscriptions_change_notifications(Packet2a, Packet2b, NewStateData);
 	_ ->
 	    ok
@@ -4556,7 +4556,7 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 			    id = p1_rand:get_string(),
 			    sub_els = [#muc_subscribe{nick = Nick}]}]}}]},
 	    {Packet2a, Packet2b} = ejabberd_hooks:run_fold(muc_unsubscribed, ServerHost, {Packet1a, Packet1b},
-							   [ServerHost, Room, Host, BareJID]),
+							   [ServerHost, Room, Host, BareJID, StateData]),
 	    send_subscriptions_change_notifications(Packet2a, Packet2b, StateData),
 	    NewStateData2 = case close_room_if_temporary_and_empty(NewStateData) of
 		{stop, normal, _} -> stop;
