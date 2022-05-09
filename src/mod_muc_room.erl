@@ -1952,8 +1952,23 @@ set_subscriber(JID, Nick, Nodes,
     store_room(NewStateData, [{add_subscription, BareJID, Nick, Nodes}]),
     case not muc_subscribers_is_key(LBareJID, StateData#state.muc_subscribers) of
 	true ->
-	    send_subscriptions_change_notifications(BareJID, Nick, subscribe, NewStateData),
-	    ejabberd_hooks:run(muc_subscribed, ServerHost, [ServerHost, Room, Host, BareJID]);
+	    Packet1a = #message{
+		sub_els = [#ps_event{
+		    items = #ps_items{
+			node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
+			items = [#ps_item{
+			    id = p1_rand:get_string(),
+			    sub_els = [#muc_subscribe{jid = BareJID, nick = Nick}]}]}}]},
+	    Packet1b = #message{
+		sub_els = [#ps_event{
+		    items = #ps_items{
+			node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
+			items = [#ps_item{
+			    id = p1_rand:get_string(),
+			    sub_els = [#muc_subscribe{nick = Nick}]}]}}]},
+	    {Packet2a, Packet2b} = ejabberd_hooks:run_fold(muc_subscribed, ServerHost, {Packet1a, Packet1b},
+							   [ServerHost, Room, Host, BareJID]),
+	    send_subscriptions_change_notifications(Packet2a, Packet2b, NewStateData);
 	_ ->
 	    ok
     end,
@@ -4526,8 +4541,23 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 	{MUCSubscribers, #subscriber{nick = Nick}} ->
 	    NewStateData = StateData#state{muc_subscribers = MUCSubscribers},
 	    store_room(NewStateData, [{del_subscription, LBareJID}]),
-	    send_subscriptions_change_notifications(BareJID, Nick, unsubscribe, StateData),
-	    ejabberd_hooks:run(muc_unsubscribed, ServerHost, [ServerHost, Room, Host, BareJID]),
+	    Packet1a = #message{
+		sub_els = [#ps_event{
+		    items = #ps_items{
+			node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
+			items = [#ps_item{
+			    id = p1_rand:get_string(),
+			    sub_els = [#muc_subscribe{jid = BareJID, nick = Nick}]}]}}]},
+	    Packet1b = #message{
+		sub_els = [#ps_event{
+		    items = #ps_items{
+			node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
+			items = [#ps_item{
+			    id = p1_rand:get_string(),
+			    sub_els = [#muc_subscribe{nick = Nick}]}]}}]},
+	    {Packet2a, Packet2b} = ejabberd_hooks:run_fold(muc_unsubscribed, ServerHost, {Packet1a, Packet1b},
+							   [ServerHost, Room, Host, BareJID]),
+	    send_subscriptions_change_notifications(Packet2a, Packet2b, StateData),
 	    NewStateData2 = case close_room_if_temporary_and_empty(NewStateData) of
 		{stop, normal, _} -> stop;
 		{next_state, normal_state, SD} -> SD
@@ -5117,8 +5147,8 @@ store_room_no_checks(StateData, ChangesHints, Hibernation) ->
 		       make_opts(StateData, Hibernation),
 		       ChangesHints).
 
--spec send_subscriptions_change_notifications(jid(), binary(), subscribe|unsubscribe, state()) -> ok.
-send_subscriptions_change_notifications(From, Nick, Type, State) ->
+-spec send_subscriptions_change_notifications(stanza(), stanza(), state()) -> ok.
+send_subscriptions_change_notifications(Packet, PacketWithoutJid, State) ->
     {WJ, WN} =
         maps:fold(
           fun(_, #subscriber{jid = JID}, {WithJid, WithNick}) ->
@@ -5134,37 +5164,13 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
           muc_subscribers_get_by_node(?NS_MUCSUB_NODES_SUBSCRIBERS,
                                       State#state.muc_subscribers)),
     if WJ /= [] ->
-	Payload1 = case Type of
-		       subscribe -> #muc_subscribe{jid = From, nick = Nick};
-		       _ -> #muc_unsubscribe{jid = From, nick = Nick}
-		   end,
-	Packet1 = #message{
-	    sub_els = [#ps_event{
-		items = #ps_items{
-		    node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
-		    items = [#ps_item{
-			id = p1_rand:get_string(),
-			sub_els = [Payload1]}]}}]},
-	Packet1a = xmpp:put_meta(Packet1, mucsub_subscriber_jid, From),
 	ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
-						  WJ, Packet1a, false);
+						  WJ, Packet, false);
 	true -> ok
     end,
     if WN /= [] ->
-	Payload2 = case Type of
-		       subscribe -> #muc_subscribe{nick = Nick};
-		       _ -> #muc_unsubscribe{nick = Nick}
-		   end,
-	Packet2 = #message{
-	    sub_els = [#ps_event{
-		items = #ps_items{
-		    node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
-		    items = [#ps_item{
-			id = p1_rand:get_string(),
-			sub_els = [Payload2]}]}}]},
-	Packet2a = xmpp:put_meta(Packet2, mucsub_subscriber_jid, From),
 	ejabberd_router_multicast:route_multicast(State#state.jid, State#state.server_host,
-						  WN, Packet2a, false);
+						  WN, PacketWithoutJid, false);
 	true -> ok
     end.
 
