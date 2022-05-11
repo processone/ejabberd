@@ -65,7 +65,7 @@ fi
 rel_name='ejabberd'
 rel_vsn=$(git describe --tags | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
 mix_vsn=$(mix_version "$rel_vsn")
-crosstool_vsn='1.25.0_rc2'
+crosstool_vsn='1.25.0'
 termcap_vsn='1.3.1'
 expat_vsn='2.4.8'
 zlib_vsn='1.2.12'
@@ -79,7 +79,7 @@ jpeg_vsn='9e'
 webp_vsn='1.2.2'
 gd_vsn='2.3.3'
 odbc_vsn='2.3.11'
-sqlite_vsn='3380400'
+sqlite_vsn='3380500'
 root_dir="${BUILD_DIR:-$HOME/build}"
 bootstrap_dir="$root_dir/bootstrap"
 ct_prefix_dir="$root_dir/x-tools"
