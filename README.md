@@ -38,7 +38,6 @@ Installation
 There are several ways to install ejabberd:
 
 - Source code: compile yourself, see [COMPILE](COMPILE.md)
-- Installers from [ProcessOne Downloads][p1dl] (run/deb/rpm for x64)
 - Installers from [ejabberd GitHub Releases][releases] (run/deb/rpm for x64 and arm64)
 - Container image from [ejabberd Docker Hub][hubecs], see [ecs README][docker-ecs-readme] (for x64)
 - Container image from [ejabberd Github Packages][packages], see [CONTAINER](CONTAINER.md) (for x64 and arm64)
@@ -117,7 +116,6 @@ and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MI
 [muc]: xmpp:ejabberd@conference.process-one.net
 [osp]: https://docs.ejabberd.im/admin/installation/#operating-system-packages
 [p1contact]: https://www.process-one.net/en/company/contact/
-[p1dl]: https://www.process-one.net/en/ejabberd/downloads/
 [p1home]: https://www.process-one.net/en/ejabberd/
 [packages]: https://github.com/processone/ejabberd/pkgs/container/ejabberd
 [releases]: https://github.com/processone/ejabberd/releases
