@@ -164,7 +164,7 @@ defmodule Ejabberd.MixProject do
               "COPYING", "README.md",
               "mix.exs", "rebar.config", "rebar.config.script", "vars.config"],
       maintainers: ["ProcessOne"],
-      licenses: ["GPLv2"],
+      licenses: ["GPL-2.0-or-later"],
       links: %{"Site" => "https://www.ejabberd.im",
                "Documentation" => "http://docs.ejabberd.im",
                "Source" => "https://github.com/processone/ejabberd",
