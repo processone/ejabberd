@@ -101,6 +101,7 @@ defmodule Ejabberd.MixProject do
     [{:base64url, "~> 1.0"},
      {:cache_tab, "~> 1.0"},
      {:eimp, "~> 1.0"},
+     {:ex_doc, ">= 0.0.0", only: :dev},
      {:fast_tls, "~> 1.1"},
      {:fast_xml, "~> 1.1"},
      {:fast_yaml, "~> 1.0"},
