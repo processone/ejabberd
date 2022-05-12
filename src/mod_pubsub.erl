@@ -3414,11 +3414,6 @@ node_config(Node, ServerHost, [{RE, Opts}|NodeOpts]) ->
 node_config(_, _, []) ->
     [].
 
-%% @spec (Host, Options) -> MaxItems
-%%         Host = host()
-%%         Options = [Option]
-%%         Option = {Key::atom(), Value::term()}
-%%         MaxItems = integer() | unlimited
 %% @doc <p>Return the maximum number of items for a given node.</p>
 %% <p>Unlimited means that there is no limit in the number of items that can
 %% be stored.</p>

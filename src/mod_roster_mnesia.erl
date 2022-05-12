@@ -194,7 +194,6 @@ process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
                 ),
     rosteritem_purge({Action, Subs, Asks, Users, Contacts}).
 
-%% @spec ({Action::atom(), Subs::[atom()], Asks::[atom()], User::string(), Contact::string()}) -> {atomic, ok}
 rosteritem_purge(Options) ->
     Num_rosteritems = mnesia:table_info(roster, size),
     io:format("There are ~p roster items in total.~n", [Num_rosteritems]),

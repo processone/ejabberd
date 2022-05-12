@@ -52,8 +52,8 @@
 %%%==================================
 %%%% get_acl_access
 
-%% @spec (Path::[string()], Method) -> {HostOfRule, [AccessRule]}
-%% where Method = 'GET' | 'POST'
+-spec get_acl_rule(Path::[binary()], 'GET' | 'POST') ->
+    {HostOfRule::binary(), [AccessRule::atom()]}.
 
 %% All accounts can access those URLs
 get_acl_rule([], _) -> {<<"localhost">>, [all]};
@@ -275,10 +275,13 @@ get_auth_account2(HostOfRule, AccessRule, User, Server,
 make_xhtml(Els, Host, Lang, JID, Level) ->
     make_xhtml(Els, Host, cluster, Lang, JID, Level).
 
-%% @spec (Els, Host, Node, Lang, JID, Level::integer()) -> {200, [html], xmlelement()}
-%% where Host = global | string()
-%%       Node = cluster | atom()
-%%       JID = jid()
+-spec make_xhtml([xmlel()],
+                 Host::global | binary(),
+                 Node::cluster | atom(),
+                 Lang::binary(),
+                 jid(),
+                 Level::integer()) ->
+    {200, [html], xmlel()}.
 make_xhtml(Els, Host, Node, Lang, JID, Level) ->
     Base = get_base_path_sum(0, 0, Level),
     MenuItems = make_navigation(Host, Node, Lang, JID, Level),
@@ -1877,18 +1880,15 @@ get_table_content(Node, Table, _Type, PageNumber, PageSize) ->
 %%%==================================
 %%%% navigation menu
 
-%% @spec (Host, Node, Lang, JID::jid(), Level::integer()) -> [LI]
 make_navigation(Host, Node, Lang, JID, Level) ->
     Menu = make_navigation_menu(Host, Node, Lang, JID, Level),
     make_menu_items(Lang, Menu).
 
-%% @spec (Host, Node, Lang, JID::jid(), Level::integer()) -> Menu
-%% where Host = global | string()
-%%       Node = cluster | string()
-%%       Lang = string()
-%%       Menu = {URL, Title} | {URL, Title, [Menu]}
-%%       URL = string()
-%%       Title = string()
+-spec make_navigation_menu(Host::global | binary(),
+                           Node::cluster | atom(),
+                           Lang::binary(), JID::jid(), Level::integer()) ->
+    Menu::{URL::binary(), Title::binary()}
+    | {URL::binary(), Title::binary(), [Menu::any()]}.
 make_navigation_menu(Host, Node, Lang, JID, Level) ->
     HostNodeMenu = make_host_node_menu(Host, Node, Lang,
 				       JID, Level),
@@ -1897,7 +1897,6 @@ make_navigation_menu(Host, Node, Lang, JID, Level) ->
     NodeMenu = make_node_menu(Host, Node, Lang, Level),
     make_server_menu(HostMenu, NodeMenu, Lang, JID, Level).
 
-%% @spec (Host, Node, Base, Lang) -> [LI]
 make_menu_items(global, cluster, Base, Lang) ->
     HookItems = get_menu_items_hook(server, Lang),
     make_menu_items(Lang, {Base, <<"">>, HookItems});
@@ -1978,9 +1977,11 @@ get_menu_items_hook({node, Node}, Lang) ->
 get_menu_items_hook(server, Lang) ->
     ejabberd_hooks:run_fold(webadmin_menu_main, [], [Lang]).
 
-%% @spec (Lang::string(), Menu) -> [LI]
-%% where Menu = {MURI::string(), MName::string(), Items::[Item]}
-%%       Item = {IURI::string(), IName::string()} | {IURI::string(), IName::string(), Menu}
+-spec make_menu_items(Lang::binary(),
+                      {MURI::binary(), MName::binary(),
+                       Items::[{IURI::binary(), IName::binary()}
+                               | {IURI::binary(), IName::binary(), Menu::any()}]}) ->
+    [xmlel()].
 make_menu_items(Lang, Menu) ->
     lists:reverse(make_menu_items2(Lang, 1, Menu)).
 

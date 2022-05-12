@@ -436,7 +436,7 @@ upgrade_state(State) ->
 	    upgrade_state(setelement(2, State1, VSN+1))
     end.
 
--spec upgrade_state(tuple(), 1..?VSN) -> tuple().
+-spec upgrade_state(tuple(), integer()) -> tuple().
 upgrade_state(OldState, 1) ->
     %% Appending 'tls' field
     erlang:append_element(OldState, false);

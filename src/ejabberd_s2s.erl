@@ -589,10 +589,8 @@ allow_host1(MyHost, S2SHost) ->
             end
     end.
 
-%% Get information about S2S connections of the specified type.
-%% @spec (Type) -> [Info]
-%% where Type = in | out
-%%       Info = [{InfoName::atom(), InfoValue::any()}]
+%% @doc Get information about S2S connections of the specified type.
+-spec get_info_s2s_connections(Type::in | out) -> [[{InfoName::atom(), InfoValue::any()}]].
 get_info_s2s_connections(Type) ->
     ChildType = case Type of
 		    in -> ejabberd_s2s_in_sup;

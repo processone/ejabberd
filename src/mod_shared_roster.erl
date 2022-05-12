@@ -512,7 +512,8 @@ get_group_opt_cached(Host, Group, Opt, Default, Cache) ->
 	    proplists:get_value(Opt, Opts, Default)
     end.
 
-%% @spec (Host::string(), Group::string(), Opt::atom(), Default) -> OptValue | Default
+-spec get_group_opt(Host::binary(), Group::binary(), displayed_groups | label, Default) ->
+    OptValue::any() | Default.
 get_group_opt(Host, Group, Opt, Default) ->
     case get_group_opts(Host, Group) of
       error -> Default;
@@ -687,7 +688,8 @@ is_user_in_group(US, Group, Host) ->
 	    true
     end.
 
-%% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok} | error
+-spec add_user_to_group(Host::binary(), {User::binary(), Server::binary()},
+                        Group::binary()) -> {atomic, ok} | error.
 add_user_to_group(Host, US, Group) ->
     {_LUser, LServer} = US,
     case lists:member(LServer, ejabberd_config:get_option(hosts)) of

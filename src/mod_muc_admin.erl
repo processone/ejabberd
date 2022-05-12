@@ -695,8 +695,7 @@ justcreated_to_binary(J) when is_atom(J) ->
 %% Create/Delete Room
 %%----------------------------
 
-%% @spec (Name::binary(), Host::binary(), ServerHost::binary()) ->
-%%       ok | error
+-spec create_room(Name::binary(), Host::binary(), ServerHost::binary()) -> ok | error.
 %% @doc Create a room immediately with the default options.
 create_room(Name1, Host1, ServerHost) ->
     create_room_with_opts(Name1, Host1, ServerHost, []).
@@ -747,8 +746,7 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
     io:format("Creating room ~ts@~ts~n", [Name, Host]),
     mod_muc:store_room(ServerHost, Host, Name, DefRoomOpts).
 
-%% @spec (Name::binary(), Host::binary()) ->
-%%       ok | {error, room_not_exists}
+-spec destroy_room(Name::binary(), Host::binary()) -> ok | {error, room_not_exists}.
 %% @doc Destroy the room immediately.
 %% If the room has participants, they are not notified that the room was destroyed;
 %% they will notice when they try to chat and receive an error that the room doesn't exist.
@@ -1116,8 +1114,8 @@ send_direct_invitation(FromJid, UserJid, Msg) ->
 %% Change Room Option
 %%----------------------------
 
-%% @spec(Name::string(), Service::string(), Option::string(), Value) -> ok
-%%       Value = atom() | integer() | string()
+-spec change_room_option(Name::binary(), Service::binary(), Option::binary(),
+                         Value::atom() | integer() | string()) -> ok | mod_muc_log_not_enabled.
 %% @doc Change an option in an existing room.
 %% Requires the name of the room, the MUC service where it exists,
 %% the option to change (for example title or max_users),

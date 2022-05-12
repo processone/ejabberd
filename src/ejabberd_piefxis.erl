@@ -642,33 +642,26 @@ make_host_filename(FnT, Host) ->
 make_host_basefilename(Dir, FnT) ->
     filename:join([Dir, FnT]).
 
-%% @spec () -> string()
 make_piefxis_xml_head() ->
     "<?xml version='1.0' encoding='UTF-8'?>".
 
-%% @spec () -> string()
 make_piefxis_xml_tail() ->
     "".
 
-%% @spec () -> string()
 make_piefxis_server_head() ->
     io_lib:format("<server-data xmlns='~ts' xmlns:xi='~ts'>",
                   [?NS_PIE, ?NS_XI]).
 
-%% @spec () -> string()
 make_piefxis_server_tail() ->
     "</server-data>".
 
-%% @spec (Host::string()) -> string()
 make_piefxis_host_head(Host) ->
     io_lib:format("<host xmlns='~ts' xmlns:xi='~ts' jid='~ts'>",
                   [?NS_PIE, ?NS_XI, Host]).
 
-%% @spec () -> string()
 make_piefxis_host_tail() ->
     "</host>".
 
-%% @spec (Fn::string()) -> string()
 make_xinclude(Fn) ->
     Base = filename:basename(Fn),
     io_lib:format("<xi:include href='~ts'/>", [Base]).

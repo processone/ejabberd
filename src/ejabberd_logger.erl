@@ -113,7 +113,6 @@ get_string_env(Name, Default) ->
             Default
     end.
 
--spec start() -> ok.
 start() ->
     start(info).
 
@@ -181,17 +180,14 @@ do_start(Level) ->
 			  lager:set_loghwm(Handler, LogRateLimit)
 		  end, gen_event:which_handlers(lager_event)).
 
--spec restart() -> ok.
 restart() ->
     Level = ejabberd_option:loglevel(),
     application:stop(lager),
     start(Level).
 
--spec reopen_log() -> ok.
 reopen_log() ->
     ok.
 
--spec rotate_log() -> ok.
 rotate_log() ->
     catch lager_crash_log ! rotate,
     lists:foreach(
@@ -201,7 +197,6 @@ rotate_log() ->
               ok
       end, gen_event:which_handlers(lager_event)).
 
--spec get() -> loglevel().
 get() ->
     Handlers = get_lager_handlers(),
     lists:foldl(fun(lager_console_backend, _Acc) ->
@@ -213,7 +208,6 @@ get() ->
                 end,
                 none, Handlers).
 
--spec set(0..5 | loglevel()) -> ok.
 set(N) when is_integer(N), N>=0, N=<5 ->
     set(convert_loglevel(N));
 set(Level) when ?is_loglevel(Level) ->
@@ -255,7 +249,6 @@ get_lager_version() ->
 	false -> "0.0.0"
     end.
 
--spec flush() -> ok.
 flush() ->
     application:stop(lager),
     application:stop(sasl).

@@ -151,7 +151,9 @@ initialize(Host, Opts) ->
 	   content_types = ContentTypes,
 	   user_access = UserAccess}.
 
-%% @spec (AdminCTs::[CT], Default::[CT]) -> [CT]
+-spec build_list_content_types(AdminCTs::[{binary(), binary()|undefined}],
+                               Default::[{binary(), binary()|undefined}]) ->
+    [{string(), string()|undefined}].
 %% where CT = {Extension::string(), Value}
 %%       Value = string() | undefined
 %% @doc Return a unified list without duplicates.
@@ -265,7 +267,8 @@ code_change(_OldVsn, State, _Extra) ->
 %% request_handlers callbacks
 %%====================================================================
 
-%% @spec (LocalPath, Request) -> {HTTPCode::integer(), [Header], Page::string()}
+-spec process(LocalPath::[binary()], #request{}) ->
+    {HTTPCode::integer(), [{binary(), binary()}], Page::string()}.
 %% @doc Handle an HTTP request.
 %% LocalPath is the part of the requested URL path that is "local to the module".
 %% Returns the page to be sent back to the client and/or HTTP status code.

@@ -151,7 +151,6 @@ get_users(Server, []) ->
 count_users(Server, Opts) ->
     length(get_users(Server, Opts)).
 
-%% @spec (User, Server) -> true | false | {error, Error}
 user_exists(User, Server) ->
     case catch user_exists_ldap(User, Server) of
 	{'EXIT', _Error} -> {nocache, {error, db_failure}};

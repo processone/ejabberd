@@ -488,8 +488,9 @@ run_sql_cmd(Command, From, State, Timestamp) ->
 	    abort_on_driver_error(outer_op(Command), From, Timestamp)
     end.
 
-%% Only called by handle_call, only handles top level operations.
-%% @spec outer_op(Op) -> {error, Reason} | {aborted, Reason} | {atomic, Result}
+%% @doc Only called by handle_call, only handles top level operations.
+-spec outer_op(Op::{atom(), binary()}) ->
+    {error, Reason::binary()} | {aborted, Reason::binary()} | {atomic, Result::any()}.
 outer_op({sql_query, Query}) ->
     sql_query_internal(Query);
 outer_op({sql_transaction, F}) ->

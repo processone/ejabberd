@@ -52,7 +52,7 @@ halt() ->
     ejabberd_logger:flush(),
     erlang:halt(1, [{flush, true}]).
 
-%% @spec () -> false | string()
+-spec get_pid_file() -> false | string().
 get_pid_file() ->
     case os:getenv("EJABBERD_PID_PATH") of
 	false ->

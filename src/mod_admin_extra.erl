@@ -1538,7 +1538,8 @@ srg_user_del(User, Host, Group, GroupHost) ->
 %%%
 
 %% @doc Send a message to an XMPP account.
-%% @spec (Type::binary(), From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
+-spec send_message(Type::binary(), From::binary(), To::binary(),
+                   Subject::binary(), Body::binary()) -> ok.
 send_message(Type, From, To, Subject, Body) ->
     CodecOpts = ejabberd_config:codec_options(),
     try xmpp:decode(

@@ -218,11 +218,11 @@ process(Args, Version) ->
     end,
     Code.
 
-%% @spec (Args::[string()], AccessCommands) -> {String::string(), Code::integer()}
+-spec process2(Args::[string()], AccessCommands::any()) ->
+    {String::string(), Code::integer()}.
 process2(Args, AccessCommands) ->
     process2(Args, AccessCommands, ?DEFAULT_VERSION).
 
-%% @spec (Args::[string()], AccessCommands, Version) -> {String::string(), Code::integer()}
 process2(["--auth", User, Server, Pass | Args], AccessCommands, Version) ->
     process2(Args, AccessCommands, {list_to_binary(User), list_to_binary(Server),
 				    list_to_binary(Pass), true}, Version);
@@ -271,7 +271,6 @@ determine_string_type(String, Version) ->
 %% Command calling
 %%-----------------------------
 
-%% @spec (Args::[string()], Auth, AccessCommands, Version) -> string() | integer() | {string(), integer()}
 try_run_ctp(Args, Auth, AccessCommands, Version) ->
     try ejabberd_hooks:run_fold(ejabberd_ctl_process, false, [Args]) of
 	false when Args /= [] ->
@@ -292,7 +291,6 @@ try_run_ctp(Args, Auth, AccessCommands, Version) ->
 	    {io_lib:format("Error in ejabberd ctl process: '~p' ~p", [Error, Why]), ?STATUS_USAGE}
     end.
 
-%% @spec (Args::[string()], Auth, AccessCommands, Version) -> string() | integer() | {string(), integer()}
 try_call_command(Args, Auth, AccessCommands, Version) ->
     try call_command(Args, Auth, AccessCommands, Version) of
 	{Reason, wrong_command_arguments} ->
@@ -316,7 +314,11 @@ try_call_command(Args, Auth, AccessCommands, Version) ->
 	     ?STATUS_ERROR}
     end.
 
-%% @spec (Args::[string()], Auth, AccessCommands, Version) -> string() | integer() | {string(), integer()} | {error, ErrorType}
+-spec call_command(Args::[string()],
+                   Auth::noauth | {binary(), binary(), binary(), true},
+                   AccessCommands::[any()],
+                   Version::integer()) ->
+    string() | integer() | {string(), integer()} | {error, ErrorType::any()}.
 call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
     CmdStringU = ejabberd_regexp:greplace(
                    list_to_binary(CmdString), <<"-">>, <<"_">>),
@@ -768,7 +770,8 @@ print_usage_help(MaxC, ShCode) ->
 %% Print usage command
 %%-----------------------------
 
-%% @spec (CmdSubString::string(), MaxC::integer(), ShCode::boolean(), Version) -> ok
+-spec print_usage_commands2(CmdSubString::string(), MaxC::integer(),
+                            ShCode::boolean(), Version::integer()) -> ok.
 print_usage_commands2(CmdSubString, MaxC, ShCode, Version) ->
     %% Get which command names match this substring
     AllCommandsNames = [atom_to_list(Name) || {Name, _, _} <- ejabberd_commands:list_commands(Version)],
@@ -814,7 +817,8 @@ filter_commands_regexp(All, Glob) ->
       end,
       All).
 
-%% @spec (Cmd::string(), MaxC::integer(), ShCode::boolean(), Version) -> ok
+-spec print_usage_command(Cmd::string(), MaxC::integer(),
+                          ShCode::boolean(), Version::integer()) -> ok.
 print_usage_command(Cmd, MaxC, ShCode, Version) ->
     Name = list_to_atom(Cmd),
     C = ejabberd_commands:get_command_definition(Name, Version),
