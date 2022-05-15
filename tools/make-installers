@@ -68,10 +68,12 @@ code_path="/opt/$rel_name-$rel_vsn"
 data_path="/opt/$rel_name"
 conf_path="$data_path/conf"
 pem_file="$conf_path/server.pem"
-url='https://docs.ejabberd.im/admin/upgrade/#specific-version-upgrade-notes'
-url_doc_admin='https://docs.ejabberd.im/admin/installation/#administration-account'
+uninstall_file="$code_path/uninstall.txt"
+home_url='https://www.ejabberd.im'
+doc_url='https://docs.ejabberd.im'
+upgrade_url="$doc_url/admin/upgrade/#specific-version-upgrade-notes"
+admin_url="$doc_url/admin/installation/#administration-account"
 tmp_dir=$(mktemp -d "/tmp/.$rel_name.XXXXXX")
-path_uninstall="$code_path/uninstall.txt"
 
 trap 'rm -rf "$tmp_dir"' INT TERM EXIT
 umask 022
@@ -82,13 +84,13 @@ create_help_file()
 
 	cat >"$file" <<-EOF
 	This is the $rel_name $rel_vsn-$iteration installer for linux-$arch
-
-	Visit
-	  https://www.ejabberd.im/
-
-	ejabberd Documentation site:
-	  https://docs.ejabberd.im/
-        
+	
+	Visit:
+	  $home_url
+	
+	ejabberd documentation site:
+	  $doc_url
+	
 	EOF
 }
 
@@ -210,22 +212,23 @@ create_setup_script()
 	echo '$rel_name $rel_vsn has been installed successfully.'
 	echo
 
-	echo >$path_uninstall
-	echo '# To uninstall ejabberd, first remove the service:' >>$path_uninstall
-	echo 'systemctl --now disable ejabberd' >>$path_uninstall
-	echo 'rm -rf /etc/systemd/system/ejabberd.service' >>$path_uninstall
-	echo >>$path_uninstall
-	echo '# Remove the binary files' >>$path_uninstall
-	echo 'rm -rf /opt/ejabberd-*' >>$path_uninstall
-	echo >>$path_uninstall
-	echo '# If you want to remove your config, database and logs:' >>$path_uninstall
-	echo 'rm -rf /opt/ejabberd' >>$path_uninstall
+	cat >'$uninstall_file' <<_EOF
+	# To uninstall ejabberd, first remove the service. If you're using systemd:
+	systemctl --now disable ejabberd
+	rm -f /etc/systemd/system/ejabberd.service
+	
+	# Remove the binary files:
+	rm -rf /opt/ejabberd-*
+	
+	# If you want to remove your configuration, database and logs:
+	rm -rf /opt/ejabberd
+	_EOF
 
 	if [ \$is_upgrade = true ]
 	then
 		echo 'Please check the following web site for upgrade notes:'
 		echo
-		echo '$url'
+		echo '$upgrade_url'
 		echo
 		echo 'If everything looks fine, restart the $rel_name service:'
 		echo '  systemctl restart ejabberd'
@@ -233,9 +236,10 @@ create_setup_script()
 		echo 'Now you can check ejabberd is running correctly:'
 		echo '  systemctl status ejabberd'
 		echo
-		echo 'Next you may want to edit ejabberd.yml to setup hosts,'
+		echo 'Next you may want to edit ejabberd.yml to set up hosts,'
 		echo 'register an account and grant it admin rigts, see:'
-		echo '$url_doc_admin'
+		echo
+		echo '$admin_url'
 	fi
 	EOF
 	chmod +x "$dir/setup"
@@ -252,7 +256,8 @@ do
 	gzip -c -d <"$tgz_name" >"$tmp_dir/$tar_name"
         create_help_file "$tmp_dir/help.txt"
 	create_setup_script "$tmp_dir" "$tar_name"
-	"$makeself" --help-header "$tmp_dir/help.txt" "$tmp_dir" "$installer_name" "$rel_name $rel_vsn" './setup'
+	"$makeself" --help-header "$tmp_dir/help.txt" \
+	    "$tmp_dir" "$installer_name" "$rel_name $rel_vsn" './setup'
 	find "$tmp_dir" -mindepth 1 -delete
 done
 echo "$myself: Created installers successfully."
