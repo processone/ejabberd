@@ -97,7 +97,6 @@ create_help_file()
 create_setup_script()
 {
 	local dir="$1"
-	local tarball="$2"
 
 	cat >"$dir/setup" <<-EOF
 	#!/bin/sh
@@ -176,7 +175,9 @@ create_setup_script()
 	then host='localhost'
 	fi
 
-	tar --skip-old-files -C "\$(dirname '$code_path')" -xf '$tarball'
+	(tar -cf - '$rel_name' | tar --skip-old-files -C "\$(dirname '$code_path')" -xpf -)
+	(tar -cf - '$rel_name-$rel_vsn' | tar -C "\$(dirname '$code_path')" -xpf -)
+
 	chown -R -h 'root:root' '$code_path'
 	chown 'root:$rel_name' '$code_path/lib/epam-'*'/priv/bin/epam'
 	chmod '4750' '$code_path/lib/epam-'*'/priv/bin/epam'
@@ -247,15 +248,14 @@ create_setup_script()
 
 for arch in $architectures
 do
-	tar_name="$rel_name-$rel_vsn-linux-$arch.tar"
-	tgz_name="$tar_name.gz"
+	tar_name="$rel_name-$rel_vsn-linux-$arch.tar.gz"
 	installer_name="$rel_name-$rel_vsn-$iteration-linux-$arch.run"
 
-	test -e "$tgz_name" || tools/make-binaries
+	test -e "$tar_name" || tools/make-binaries
 	echo "$myself: Putting together installer for $arch ..."
-	gzip -c -d <"$tgz_name" >"$tmp_dir/$tar_name"
+	tar -xzpf "$tar_name"
         create_help_file "$tmp_dir/help.txt"
-	create_setup_script "$tmp_dir" "$tar_name"
+	create_setup_script "$tmp_dir"
 	"$makeself" --help-header "$tmp_dir/help.txt" \
 	    "$tmp_dir" "$installer_name" "$rel_name $rel_vsn" './setup'
 	find "$tmp_dir" -mindepth 1 -delete
