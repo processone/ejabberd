@@ -130,7 +130,7 @@ eval_file(Path) ->
 
 maybe_get_scram_auth(Data) ->
     case proplists:get_value(<<"iteration_count">>, Data, no_ic) of
-	IC when is_float(IC) -> %% A float like 4096.0 is read
+	IC when is_number(IC) ->
 	    #scram{
 		storedkey = misc:hex_to_base64(proplists:get_value(<<"stored_key">>, Data, <<"">>)),
 		serverkey = misc:hex_to_base64(proplists:get_value(<<"server_key">>, Data, <<"">>)),
