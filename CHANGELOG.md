@@ -3,7 +3,7 @@
 Core
 - C2S: Don't expect that socket will be available in `c2s_terminated` hook
 - Event handling process hook tracing
-- Guard agains `erlang:system_info(logical_processors)` not always returning number
+- Guard against `erlang:system_info(logical_processors)` not always returning a number
 - `domain_balancing`: Allow for specifying `type` only, without specifying `component_number`
 
 MQTT
@@ -36,7 +36,7 @@ SQL
 - Slight improvement in MSSQL testing support, but not yet complete
 
 Other Modules
-- `auth_jwt`: Checking users is active in SM for JWT authenticated user (#3795)
+- `auth_jwt`: Checking if an user is active in SM for a JWT authenticated user (#3795)
 - `mod_configure`: Implement Get List of Registered/Online Users from XEP-0133
 - `mod_host_meta`: New module to serve host-meta files, see XEP-0156
 - `mod_mam`: Store all mucsub notifications not only message notifications
