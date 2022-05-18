@@ -160,9 +160,10 @@ make_package()
 {
 	local output_type="$1"
 	local architecture="$(package_architecture "$2")"
-	local dir="$3"
+	local work_dir="$3"
+	local include_dirs="$4"
 
-	cd "$dir" # FPM's "--chdir" option doesn't work (as I'd expect).
+	cd "$work_dir" # FPM's "--chdir" option doesn't work (as I'd expect).
 	fpm --output-type "$output_type" \
 	    --input-type 'dir' \
 	    --name "$rel_name" \
@@ -194,7 +195,7 @@ make_package()
 	    --before-upgrade './before-install' \
 	    --after-upgrade './after-upgrade' \
 	    --after-remove './after-remove' \
-	    './opt' './usr'
+	    $include_dirs
 	cd "$OLDPWD"
 }
 
@@ -228,10 +229,10 @@ do
 	    "$etc_dir/systemd/system/$rel_name.service" "$arch_dir/$rel_name"
 
 	create_scripts "$arch_dir"
-	make_package 'rpm' "$arch" "$arch_dir"
+	make_package 'rpm' "$arch" "$arch_dir" './opt ./usr ./etc'
 	mv "$etc_dir/systemd/system/$rel_name.service" "$arch_dir"
 	rm -r "$etc_dir"
-	make_package 'deb' "$arch" "$arch_dir"
+	make_package 'deb' "$arch" "$arch_dir" './opt ./usr'
 	mv "$arch_dir/$rel_name"?$rel_vsn*.??? .
 done
 echo "$myself: Created DEB and RPM packages successfully."
