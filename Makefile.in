@@ -10,27 +10,27 @@ exec_prefix = @exec_prefix@
 DESTDIR =
 
 # /etc/ejabberd/
-ETCDIR = $(DESTDIR)@sysconfdir@/ejabberd
+ETCDIR = @sysconfdir@/ejabberd
 
 # /bin/
-BINDIR = $(DESTDIR)@bindir@
+BINDIR = @bindir@
 
 # /sbin/
-SBINDIR = $(DESTDIR)@sbindir@
+SBINDIR = @sbindir@
 
 # /lib/
-LIBDIR =  $(DESTDIR)@libdir@
+LIBDIR =  @libdir@
 
 # /lib/ejabberd/
-EJABBERDDIR = $(DESTDIR)@libdir@/ejabberd
+EJABBERDDIR = @libdir@/ejabberd
 
 # /share/doc/ejabberd
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 datarootdir = @datarootdir@
-DOCDIR = $(DESTDIR)@docdir@
+DOCDIR = @docdir@
 
 # /share/doc/man/man5
-MANDIR = $(DESTDIR)@mandir@/man5
+MANDIR = @mandir@/man5
 
 # /usr/lib/ejabberd/ebin/
 BEAMDIR = $(EJABBERDDIR)/ebin
@@ -66,10 +66,10 @@ SQLDIR = $(PRIVDIR)/sql
 LUADIR = $(PRIVDIR)/lua
 
 # /var/lib/ejabberd/
-SPOOLDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
+SPOOLDIR = @localstatedir@/lib/ejabberd
 
 # /var/log/ejabberd/
-LOGDIR = $(DESTDIR)@localstatedir@/log/ejabberd
+LOGDIR = @localstatedir@/log/ejabberd
 
 INSTALLUSER=@INSTALLUSER@
 # if no user was enabled, don't set privileges or ownership
@@ -201,7 +201,7 @@ ELIXIR_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,$(word 2,$(1))) $(wordlist 5,1000,
 DEPS_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,$(word 2,$(1))) $(wordlist 3,1000,$(1))
 MAIN_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,ejabberd) $(1)
 TO_DEST_SINGLE=$(if $(subst X$(DEPSBASE)X,,X$(word 1,$(1))X),$(call MAIN_TO_DEST,$(1)),$(if $(subst XlibX,,X$(word $(LIBIX),$(1))X),$(call DEPS_TO_DEST,$(wordlist $(DEPIX),1000,$(1))),$(call ELIXIR_TO_DEST,$(wordlist $(DEPIX),1000,$(1)))))
-TO_DEST=$(foreach path,$(1),$(call JOIN_PATHS,$(call TO_DEST_SINGLE,$(subst /, ,$(path)))))
+TO_DEST=$(foreach path,$(1),$(call JOIN_PATHS,$(DESTDIR)$(call TO_DEST_SINGLE,$(subst /, ,$(path)))))
 
 FILTER_DIRS=$(foreach path,$(1),$(if $(wildcard $(path)/*),,$(path)))
 FILES_WILDCARD=$(call FILTER_DIRS,$(foreach w,$(1),$(wildcard $(w))))
@@ -242,7 +242,7 @@ $(foreach file,$(DEPS_FILES_FILTERED) $(MAIN_FILES),$(eval $(call COPY_template,
 $(foreach file,$(BINARIES),$(eval $(call COPY_BINARY_template,$(file))))
 
 $(sort $(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS))):
-	$(INSTALL) -d $@
+		$(INSTALL) -d $@
 
 $(call TO_DEST,priv/sql/lite.sql): sql/lite.sql $(call TO_DEST,priv/sql)
 	$(INSTALL) -m 644 $< $@
@@ -311,23 +311,23 @@ ejabberdctl.example: vars.config
 install: copy-files ejabberdctl.example
 	#
 	# Configuration files
-	$(INSTALL) -d -m 750 $(G_USER) $(ETCDIR)
-	[ -f $(ETCDIR)/ejabberd.yml ] \
-		&& $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml-new \
-		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml
-	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
-		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
-		|| $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
-	$(INSTALL) -b -m 644 $(G_USER) inetrc $(ETCDIR)/inetrc
+	$(INSTALL) -d -m 750 $(G_USER) $(DESTDIR)$(ETCDIR)
+	[ -f $(DESTDIR)$(ETCDIR)/ejabberd.yml ] \
+		&& $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(DESTDIR)$(ETCDIR)/ejabberd.yml-new \
+		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(DESTDIR)$(ETCDIR)/ejabberd.yml
+	[ -f $(DESTDIR)$(ETCDIR)/ejabberdctl.cfg ] \
+		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(DESTDIR)$(ETCDIR)/ejabberdctl.cfg-new \
+		|| $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(DESTDIR)$(ETCDIR)/ejabberdctl.cfg
+	$(INSTALL) -b -m 644 $(G_USER) inetrc $(DESTDIR)$(ETCDIR)/inetrc
 	#
 	# Administration script
-	[ -d $(SBINDIR) ] || $(INSTALL) -d -m 755 $(SBINDIR)
-	$(INSTALL) -m 550 $(G_USER) ejabberdctl.example $(SBINDIR)/ejabberdctl
+	[ -d $(DESTDIR)$(SBINDIR) ] || $(INSTALL) -d -m 755 $(DESTDIR)$(SBINDIR)
+	$(INSTALL) -m 550 $(G_USER) ejabberdctl.example $(DESTDIR)$(SBINDIR)/ejabberdctl
 	# Elixir binaries
-	[ -d $(BINDIR) ] || $(INSTALL) -d -m 755 $(BINDIR)
-	[ -f $(DEPSDIR)/elixir/bin/iex ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/iex $(BINDIR)/iex || true
-	[ -f $(DEPSDIR)/elixir/bin/elixir ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/elixir $(BINDIR)/elixir || true
-	[ -f $(DEPSDIR)/elixir/bin/mix ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/mix $(BINDIR)/mix || true
+	[ -d $(DESTDIR)$(BINDIR) ] || $(INSTALL) -d -m 755 $(DESTDIR)$(BINDIR)
+	[ -f $(DEPSDIR)/elixir/bin/iex ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/iex $(DESTDIR)$(BINDIR)/iex || true
+	[ -f $(DEPSDIR)/elixir/bin/elixir ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/elixir $(DESTDIR)$(BINDIR)/elixir || true
+	[ -f $(DEPSDIR)/elixir/bin/mix ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/mix $(DESTDIR)$(BINDIR)/mix || true
 	#
 	# Init script
 	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \
@@ -342,59 +342,59 @@ install: copy-files ejabberdctl.example
 	chmod 644 ejabberd.service
 	#
 	# Spool directory
-	$(INSTALL) -d -m 750 $(O_USER) $(SPOOLDIR)
-	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(SPOOLDIR) >$(CHOWN_OUTPUT)
-	chmod -R 750 $(SPOOLDIR)
+	$(INSTALL) -d -m 750 $(O_USER) $(DESTDIR)$(SPOOLDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(DESTDIR)$(SPOOLDIR) >$(CHOWN_OUTPUT)
+	chmod -R 750 $(DESTDIR)$(SPOOLDIR)
 	#
 	# Log directory
-	$(INSTALL) -d -m 750 $(O_USER) $(LOGDIR)
-	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(LOGDIR) >$(CHOWN_OUTPUT)
-	chmod -R 750 $(LOGDIR)
+	$(INSTALL) -d -m 750 $(O_USER) $(DESTDIR)$(LOGDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(DESTDIR)$(LOGDIR) >$(CHOWN_OUTPUT)
+	chmod -R 750 $(DESTDIR)$(LOGDIR)
 	#
 	# Documentation
-	$(INSTALL) -d $(MANDIR)
-	$(INSTALL) -d $(DOCDIR)
+	$(INSTALL) -d $(DESTDIR)$(MANDIR)
+	$(INSTALL) -d $(DESTDIR)$(DOCDIR)
 	[ -f man/ejabberd.yml.5 ] \
-		&& $(INSTALL) -m 644 man/ejabberd.yml.5 $(MANDIR) \
+		&& $(INSTALL) -m 644 man/ejabberd.yml.5 $(DESTDIR)$(MANDIR) \
 		|| echo "Man page not included in sources"
-	$(INSTALL) -m 644 COPYING $(DOCDIR)
+	$(INSTALL) -m 644 COPYING $(DESTDIR)$(DOCDIR)
 
 uninstall: uninstall-binary
 
 uninstall-binary:
-	rm -f  $(SBINDIR)/ejabberdctl
-	rm -f  $(BINDIR)/iex
-	rm -f  $(BINDIR)/elixir
-	rm -f  $(BINDIR)/mix
-	rm -fr $(DOCDIR)
-	rm -f  $(BEAMDIR)/*.beam
-	rm -f  $(BEAMDIR)/*.app
-	rm -fr $(BEAMDIR)
-	rm -f  $(INCLUDEDIR)/*.hrl
-	rm -fr $(INCLUDEDIR)
-	rm -fr $(PBINDIR)
-	rm -f  $(SODIR)/*.so
-	rm -fr $(SODIR)
-	rm -f  $(MSGSDIR)/*.msg
-	rm -fr $(MSGSDIR)
-	rm -f  $(CSSDIR)/*.css
-	rm -fr $(CSSDIR)
-	rm -f  $(IMGDIR)/*.png
-	rm -fr $(IMGDIR)
-	rm -f  $(JSDIR)/*.js
-	rm -fr $(JSDIR)
-	rm -f  $(SQLDIR)/*.sql
-	rm -fr $(SQLDIR)
-	rm -fr $(LUADIR)/*.lua
-	rm -fr $(LUADIR)
-	rm -fr $(PRIVDIR)
-	rm -fr $(EJABBERDDIR)
+	rm -f  $(DESTDIR)$(SBINDIR)/ejabberdctl
+	rm -f  $(DESTDIR)$(BINDIR)/iex
+	rm -f  $(DESTDIR)$(BINDIR)/elixir
+	rm -f  $(DESTDIR)$(BINDIR)/mix
+	rm -fr $(DESTDIR)$(DOCDIR)
+	rm -f  $(DESTDIR)$(BEAMDIR)/*.beam
+	rm -f  $(DESTDIR)$(BEAMDIR)/*.app
+	rm -fr $(DESTDIR)$(BEAMDIR)
+	rm -f  $(DESTDIR)$(INCLUDEDIR)/*.hrl
+	rm -fr $(DESTDIR)$(INCLUDEDIR)
+	rm -fr $(DESTDIR)$(PBINDIR)
+	rm -f  $(DESTDIR)$(SODIR)/*.so
+	rm -fr $(DESTDIR)$(SODIR)
+	rm -f  $(DESTDIR)$(MSGSDIR)/*.msg
+	rm -fr $(DESTDIR)$(MSGSDIR)
+	rm -f  $(DESTDIR)$(CSSDIR)/*.css
+	rm -fr $(DESTDIR)$(CSSDIR)
+	rm -f  $(DESTDIR)$(IMGDIR)/*.png
+	rm -fr $(DESTDIR)$(IMGDIR)
+	rm -f  $(DESTDIR)$(JSDIR)/*.js
+	rm -fr $(DESTDIR)$(JSDIR)
+	rm -f  $(DESTDIR)$(SQLDIR)/*.sql
+	rm -fr $(DESTDIR)$(SQLDIR)
+	rm -fr $(DESTDIR)$(LUADIR)/*.lua
+	rm -fr $(DESTDIR)$(LUADIR)
+	rm -fr $(DESTDIR)$(PRIVDIR)
+	rm -fr $(DESTDIR)$(EJABBERDDIR)
 
 uninstall-all: uninstall-binary
-	rm -rf $(ETCDIR)
-	rm -rf $(EJABBERDDIR)
-	rm -rf $(SPOOLDIR)
-	rm -rf $(LOGDIR)
+	rm -rf $(DESTDIR)$(ETCDIR)
+	rm -rf $(DESTDIR)$(EJABBERDDIR)
+	rm -rf $(DESTDIR)$(SPOOLDIR)
+	rm -rf $(DESTDIR)$(LOGDIR)
 
 clean:
 	rm -rf $(DEPSDIR)/.got
