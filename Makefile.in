@@ -152,7 +152,7 @@ else
 endif
 endif
 
-all: deps src
+all: scripts deps src
 
 deps: $(DEPSDIR)/.got
 
@@ -297,6 +297,18 @@ ejabberdctl.relive:
 		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
 		> ejabberdctl.relive
 
+ejabberd.init:
+	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \
+		-e "s*@installuser@*$(INIT_USER)*g" ejabberd.init.template \
+		> ejabberd.init
+	chmod 755 ejabberd.init
+
+ejabberd.service:
+	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \
+		-e "s*@installuser@*$(INIT_USER)*g" ejabberd.service.template \
+		> ejabberd.service
+	chmod 644 ejabberd.service
+
 ejabberdctl.example: vars.config
 	$(SED)  -e "s*{{installuser}}*@INSTALLUSER@*g" \
 		-e "s*{{config_dir}}*${ETCDIR}*g" \
@@ -308,7 +320,9 @@ ejabberdctl.example: vars.config
 		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
 		> ejabberdctl.example
 
-install: copy-files ejabberdctl.example
+scripts: ejabberd.init ejabberd.service ejabberdctl.example
+
+install: copy-files
 	#
 	# Configuration files
 	$(INSTALL) -d -m 750 $(G_USER) $(DESTDIR)$(ETCDIR)
@@ -328,18 +342,6 @@ install: copy-files ejabberdctl.example
 	[ -f $(DEPSDIR)/elixir/bin/iex ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/iex $(DESTDIR)$(BINDIR)/iex || true
 	[ -f $(DEPSDIR)/elixir/bin/elixir ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/elixir $(DESTDIR)$(BINDIR)/elixir || true
 	[ -f $(DEPSDIR)/elixir/bin/mix ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/mix $(DESTDIR)$(BINDIR)/mix || true
-	#
-	# Init script
-	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \
-		-e "s*@installuser@*$(INIT_USER)*g" ejabberd.init.template \
-		> ejabberd.init
-	chmod 755 ejabberd.init
-	#
-	# Service script
-	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \
-		-e "s*@installuser@*$(INIT_USER)*g" ejabberd.service.template \
-		> ejabberd.service
-	chmod 644 ejabberd.service
 	#
 	# Spool directory
 	$(INSTALL) -d -m 750 $(O_USER) $(DESTDIR)$(SPOOLDIR)
