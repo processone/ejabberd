@@ -112,6 +112,7 @@ ifeq "$(REBAR_VER)" "6"
   CONFIGURE_DEPS=
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
   XREFOPTIONS=graph
+  CLEANARG=--deps
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
   RELIVECMD=escript rel/relive.escript && MIX_ENV=dev RELIVE=true iex --name ejabberd@localhost -S mix run
@@ -131,6 +132,7 @@ endif
   CONFIGURE_DEPS=$(REBAR) configure-deps
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
   XREFOPTIONS=
+  CLEANARG=--all
   REBARREL=$(REBAR) as prod tar
   REBARDEV=REBAR_PROFILE=dev $(REBAR) release
   RELIVECMD=$(REBAR) relive
@@ -145,6 +147,7 @@ else
   CONFIGURE_DEPS=$(REBAR) configure-deps
   EBINDIR=ebin
   XREFOPTIONS=
+  CLEANARG=
   REBARREL=$(REBAR) generate
   REBARDEV=
   RELIVECMD=@echo "Rebar2 detected... relive not supported.\
@@ -402,22 +405,23 @@ clean:
 	rm -rf $(DEPSDIR)/.got
 	rm -rf $(DEPSDIR)/.built
 	rm -rf test/*.beam
-	$(REBAR) clean
+	rm -f rebar.lock
+	rm -f ejabberdctl.example ejabberd.init ejabberd.service
+	$(REBAR) clean $(CLEANARG)
 
 clean-rel:
 	rm -rf rel/ejabberd
 
 distclean: clean clean-rel
+	rm -f aclocal.m4
 	rm -f config.status
 	rm -f config.log
 	rm -rf autom4te.cache
 	rm -rf $(EBINDIR)
 	rm -rf $(DEPSBASE)
+	rm -rf deps
 	rm -f Makefile
 	rm -f vars.config
-	rm -f src/ejabberd.app.src
-	rm -f ejabberdctl.example ejabberd.init ejabberd.service
-	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 
 rel:
 	$(REBARREL)
