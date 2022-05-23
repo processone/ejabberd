@@ -35,7 +35,7 @@ RUN git clone https://github.com/processone/ejabberd.git . \
     && mv .github/container/ejabberdctl.template . \
     && ./autogen.sh \
     && ./configure --with-rebar=mix --enable-all \
-    && mix deps.get \
+    && make deps \
     && make rel
 
 RUN cp -r _build/prod/rel/ejabberd/ /opt/ejabberd-$VERSION \
