@@ -109,7 +109,7 @@ ifeq "$(REBAR_VER)" "6"
   DEPSBASE=_build
   DEPSDIR=$(DEPSBASE)/dev/lib
   GET_DEPS= deps.get
-  CONFIGURE_DEPS=
+  CONFIGURE_DEPS=(cd deps/eimp; ./configure)
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
   XREFOPTIONS=graph
   CLEANARG=--deps
