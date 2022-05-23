@@ -164,9 +164,9 @@ $(DEPSDIR)/.got:
 	rm -rf $(DEPSDIR)/.built
 	mkdir -p $(DEPSDIR)
 	$(REBAR) $(GET_DEPS) && :> $(DEPSDIR)/.got
+	$(CONFIGURE_DEPS)
 
 $(DEPSDIR)/.built: $(DEPSDIR)/.got
-	$(CONFIGURE_DEPS)
 	$(REBAR) compile && :> $(DEPSDIR)/.built
 
 src: $(DEPSDIR)/.built
