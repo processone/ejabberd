@@ -203,7 +203,7 @@ user_offline(_SID, JID, _Info) ->
     case ejabberd_sm:get_session_pid(JID#jid.luser,
                                      JID#jid.lserver,
                                      JID#jid.lresource) of
-        none ->
+        PID when PID =:= none; node(PID) /= node() ->
             stop_ping(JID#jid.lserver, JID);
         _ ->
             ok
