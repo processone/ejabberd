@@ -176,6 +176,7 @@ update:
 	rm -rf $(DEPSDIR)/.got
 	rm -rf $(DEPSDIR)/.built
 	$(REBAR) $(UPDATEDEPS) && :> $(DEPSDIR)/.got
+	$(CONFIGURE_DEPS)
 
 xref: all
 	$(REBAR) $(SKIPDEPS) xref $(XREFOPTIONS)
