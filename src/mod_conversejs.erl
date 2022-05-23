@@ -183,9 +183,18 @@ get_register_options(Server) ->
              (_) -> false
           end,
           ejabberd_auth:auth_modules(Server)),
-    Modules = mod_register_opt:allow_modules(Server),
+    Modules = get_register_modules(Server),
     ModRegisterAllowsMe = (Modules == all) orelse lists:member(?MODULE, Modules),
     [{<<"allow_registration">>, AuthSupportsRegister and ModRegisterAllowsMe}].
+
+get_register_modules(Server) ->
+    try mod_register_opt:allow_modules(Server)
+    catch
+        error:{module_not_loaded, mod_register, _} ->
+            ?DEBUG("mod_conversejs couldn't get mod_register configuration for "
+                   "vhost ~p: module not loaded in that vhost.", [Server]),
+            []
+    end.
 
 get_extra_options(Host) ->
     RawOpts = gen_mod:get_module_opt(Host, ?MODULE, conversejs_options),
