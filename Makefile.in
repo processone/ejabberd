@@ -493,9 +493,10 @@ test:
 
 help:
 	@echo ""
-	@echo "  [all]          Compile dependencies and ejabberd"
-	@echo "  src            Compile ejabberd"
-	@echo "  deps           Get dependencies"
+	@echo "  [all]          "
+	@echo "  scripts        Prepare ejabberd start scripts"
+	@echo "  deps           Get and configure dependencies"
+	@echo "  src            Compile dependencies and ejabberd"
 	@echo "  update         Update dependencies' source code"
 	@echo "  clean          Clean binary files"
 	@echo "  distclean      Clean completely the development files"
