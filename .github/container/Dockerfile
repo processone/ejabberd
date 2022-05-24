@@ -102,10 +102,10 @@ RUN addgroup ejabberd -g 9000 \
     && chown -R ejabberd:ejabberd $HOME
 
 HEALTHCHECK \
-    --interval=5s \
+    --interval=1m \
     --timeout=5s \
     --start-period=5s \
-    --retries=120 \
+    --retries=10 \
     CMD /usr/local/bin/ejabberdctl status
 
 WORKDIR $HOME
