@@ -728,11 +728,11 @@ build_rel()
 
 	info "Building $rel_name $rel_vsn for $arch ..."
 	./autogen.sh
-	eimp_defs='-DHAVE_GD -DHAVE_WEBP -DHAVE_JPEG -DHAVE_PNG'
+	eimp_cflags='-fcommon'
 	eimp_libs='-lwebp -ljpeg -lpng -lz -lm'
 	export CC="$CC -Wl,-ldl" # Required by (statically linking) epam.
 	export LIBS="$eimp_libs -lcrypto -lpthread -ldl"
-	export CFLAGS="$CFLAGS $eimp_defs"
+	export CFLAGS="$CFLAGS $eimp_cflags"
 	export LDFLAGS="$LDFLAGS $eimp_libs"
 	if [ "$mode" = 'cross' ]
 	then
