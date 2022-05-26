@@ -256,10 +256,10 @@ That OTP release is configured with:
 Build ejabberd Community Server base image from ejabberd master on GitHub:
 
 ```bash
-VERSION = master
+VERSION=master
 docker build \
-    --build-arg VERSION=$(VERSION) \
-    -t personal/ejabberd:$(VERSION) \
+    --build-arg VERSION=$VERSION \
+    -t personal/ejabberd:$VERSION \
     .github/container
 ```
 
@@ -267,11 +267,11 @@ Build ejabberd Community Server base image for a given ejabberd version,
 both for amd64 and arm64 architectures:
 
 ```bash
-VERSION = 22.05
+VERSION=22.05
 docker buildx build \
     --platform=linux/amd64,linux/arm64
-    --build-arg VERSION=$(VERSION) \
-    -t personal/ejabberd:$(VERSION) \
+    --build-arg VERSION=$VERSION \
+    -t personal/ejabberd:$VERSION \
     .github/container
 ```
 
@@ -280,9 +280,9 @@ It's also possible to use podman instead of docker, just notice:
 - It mentions that `healthcheck` is not supported by the Open Container Initiative image format
 - If you want to start with command `live`, add environment variable `EJABBERD_BYPASS_WARNINGS=true`
 ```bash
-VERSION = master
+VERSION=master
 podman build \
-    --build-arg VERSION=$(VERSION) \
+    --build-arg VERSION=$VERSION \
     -t ja:$(version) \
     .github/container
 ```
