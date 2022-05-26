@@ -81,6 +81,7 @@ if [ -n "$INET_DIST_INTERFACE" ] ; then
         ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_use_interface $INET_DIST_INTERFACE2"
     fi
 fi
+[ -n "$ERL_DIST_PORT" ] && ERLANG_OPTS="$ERLANG_OPTS -erl_epmd_port $ERL_DIST_PORT -start_epmd false"
 # if vm.args file exists in config directory, pass it to Erlang VM
 [ -f "$VMARGS" ] && ERLANG_OPTS="$ERLANG_OPTS -args_file $VMARGS"
 ERL_LIBS='{{libdir}}'
@@ -102,6 +103,7 @@ export EJABBERD_LOG_PATH
 export EJABBERD_PID_PATH
 export ERL_CRASH_DUMP
 export ERL_EPMD_ADDRESS
+export ERL_DIST_PORT
 export ERL_INETRC
 export ERL_MAX_PORTS
 export ERL_MAX_ETS_TABLES
@@ -109,6 +111,11 @@ export CONTRIB_MODULES_PATH
 export CONTRIB_MODULES_CONF_DIR
 export ERL_LIBS
 export SCRIPT_DIR
+
+set_dist_client()
+{
+    [ -n "$ERL_DIST_PORT" ] && ERLANG_OPTS="$ERLANG_OPTS -dist_listen false"
+}
 
 # run command either directly or via su $INSTALLUSER
 exec_cmd()
@@ -220,6 +227,7 @@ uid()
 # stop epmd if there is no other running node
 stop_epmd()
 {
+    [ -n "$ERL_DIST_PORT" ] && return
     "$EPMD" -names 2>/dev/null | grep -q name || "$EPMD" -kill >/dev/null
 }
 
@@ -227,6 +235,7 @@ stop_epmd()
 # if all ok, ensure runtime directory exists and make it current directory
 check_start()
 {
+    [ -n "$ERL_DIST_PORT" ] && return
     "$EPMD" -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
         pgrep -f "$ERLANG_NODE" >/dev/null && {
             echo "ERROR: The ejabberd node '$ERLANG_NODE' is already running."
@@ -291,14 +300,17 @@ case $1 in
         ;;
     debug)
         debugwarning
+        set_dist_client
         exec_erl "$(uid debug)" -hidden -remsh "$ERLANG_NODE"
         ;;
     etop)
+        set_dist_client
         exec_erl "$(uid top)" -hidden -node "$ERLANG_NODE" -s etop \
                  -s erlang halt -output text
         ;;
     iexdebug)
         debugwarning
+        set_dist_client
         exec_iex "$(uid debug)" --remsh "$ERLANG_NODE"
         ;;
     iexlive)
@@ -308,17 +320,21 @@ case $1 in
     ping)
         PEER=${2:-$ERLANG_NODE}
         [ "$PEER" = "${PEER%.*}" ] && PS="-s"
+        set_dist_client
         exec_cmd "$ERL" ${PS:--}name "$(uid ping "$(hostname $PS)")" $ERLANG_OPTS \
                  -noinput -hidden -eval 'io:format("~p~n",[net_adm:ping('"'$PEER'"')])' \
                  -s erlang halt -output text
         ;;
     started)
+        set_dist_client
         wait_status 0 30 2 # wait 30x2s before timeout
         ;;
     stopped)
+        set_dist_client
         wait_status 3 30 2 && stop_epmd # wait 30x2s before timeout
         ;;
     *)
+        set_dist_client
         exec_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
                  -extra "$ERLANG_NODE" $NO_TIMEOUT "$@"
         result=$?

@@ -47,10 +47,28 @@
 #INET_DIST_INTERFACE=127.0.0.1
 
 #.
-#' ERL_EPMD_ADDRESS: IP addresses where epmd listens for connections
+#' ERL_DIST_PORT: Port number for Erlang distribution
+#
+# For Erlang distribution, clustering and ejabberdctl usage, the
+# Erlang VM listens in a random TCP port number, and the Erlang Port
+# Mapper Daemon (EPMD) is spawned and used to determine this port
+# number.
+#
+# ERL_DIST_PORT can define this port number.  In that case, EPMD is
+# not spawned during ejabberd startup, and ERL_EPMD_ADDRESS is
+# ignored. ERL_DIST_PORT must be set to the same port number during
+# ejabberd startup and when calling ejabberdctl.  This feature
+# requires at least Erlang/OTP 23.1.
+#
+# Default: not defined
+#
+#ERL_DIST_PORT=5210
+
+#.
+#' ERL_EPMD_ADDRESS: IP addresses where EPMD listens for connections
 #
 # This environment variable may be set to a comma-separated
-# list of IP addresses, in which case the epmd daemon
+# list of IP addresses, in which case the EPMD daemon
 # will listen only on the specified address(es) and on the
 # loopback address (which is implicitly added to the list if it
 # has not been specified). The default behaviour is to listen on
