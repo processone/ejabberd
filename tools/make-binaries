@@ -748,7 +748,7 @@ build_rel()
 	    --enable-all \
 	    --disable-erlang-version-check
 	make deps
-	sed -i 's/ *-lstdc++ *//g' 'deps/'*'/rebar.config'* # Link statically.
+	sed -i 's/ *-lstdc++//g' 'deps/'*'/rebar.config'* # Link statically.
 	if [ "$mode" = 'cross' ]
 	then
 		ln -s "$prefix/lib/erlang" 'lib/erlang'
