@@ -357,6 +357,15 @@ add_systemd_unit()
 }
 #.
 
+#' Add CAPTCHA script(s).
+add_captcha_script()
+{
+	local code_dir="$1"
+
+	cp -p 'tools/captcha'*'.sh' "$code_dir/lib"
+}
+#.
+
 #' Use our VT100 to avoid depending on Terminfo, adjust options/paths.
 edit_ejabberdctl()
 {
@@ -775,6 +784,7 @@ build_rel()
 	tar -C "$target_dst_dir" -xzf "$rel_dir/$rel_tar"
 	create_data_dir "$target_dst_dir" "$target_data_dir"
 	add_systemd_unit "$target_dst_dir"
+	add_captcha_script "$target_dst_dir"
 	edit_ejabberdctl "$target_dst_dir"
 	remove_unused_files "$target_dst_dir"
 	strip_files "$target_dst_dir" "$STRIP"
