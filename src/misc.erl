@@ -43,7 +43,7 @@
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
 	 crypto_hmac/3, crypto_hmac/4, uri_parse/1,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
-	 logical_processors/0]).
+	 semver_to_xxyy/1, logical_processors/0]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -620,6 +620,16 @@ delete_dir(Dir) ->
 	_:{badmatch, {error, Error}} ->
 	    {error, Error}
     end.
+
+-spec semver_to_xxyy(binary()) -> binary().
+semver_to_xxyy(<<Y1, Y2, $., M2, $., $0>>) ->
+    <<Y1, Y2, $., $0, M2>>;
+semver_to_xxyy(<<Y1, Y2, $., M2, $., Patch/binary>>) ->
+    <<Y1, Y2, $., $0, M2, $., Patch/binary>>;
+semver_to_xxyy(<<Y1, Y2, $., M1, M2, $., $0>>) ->
+    <<Y1, Y2, $., M1, M2>>;
+semver_to_xxyy(Version) when is_binary(Version) ->
+    Version.
 
 %%%===================================================================
 %%% Internal functions

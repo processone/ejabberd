@@ -457,8 +457,14 @@ doc() ->
       #{value => ?T("Path"),
         desc =>
             ?T("Full path to a script that generates http://../basic/#captcha[CAPTCHA] images. "
+               "@VERSION@ is replaced with ejabberd version number in XX.YY format. "
+               "@SEMVER@ is replaced with ejabberd version number in semver format "
+               "when compiled with Elixir's mix, or XX.YY format otherwise. "
                "There is no default value: when this option is not "
-               "set, CAPTCHA functionality is completely disabled.")}},
+               "set, CAPTCHA functionality is completely disabled."),
+        example =>
+            [{?T("When using the ejabberd installers or container image, the example captcha scripts can be used like this:"),
+              ["captcha_cmd: /opt/ejabberd-@VERSION@/lib/ejabberd-@SEMVER@/priv/bin/captcha.sh"]}]}},
      {captcha_limit,
       #{value => "pos_integer() | infinity",
         desc =>
