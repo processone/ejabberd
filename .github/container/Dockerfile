@@ -61,6 +61,9 @@ RUN export PEM=/opt/ejabberd/conf/server.pem \
         \ncertfiles: \
         \n  - /opt/ejabberd/conf/server.pem' "/opt/ejabberd/conf/ejabberd.yml"
 
+RUN sed -i '/^#ERL_DIST_PORT:/a \ \
+        \nERL_DIST_PORT: 5210' "/opt/ejabberd/conf/ejabberdctl.cfg"
+
 FROM alpine:3.15.4
 ENV HOME=/opt/ejabberd
 ARG VERSION=master
@@ -111,7 +114,7 @@ HEALTHCHECK \
 WORKDIR $HOME
 USER ejabberd
 VOLUME ["$HOME/conf", "$HOME/database", "$HOME/logs", "$HOME/upload"]
-EXPOSE 1883 4369-4399 5222 5269 5280 5443
+EXPOSE 1883 5210 5222 5269 5280 5443
 
 ENTRYPOINT ["/usr/local/bin/ejabberdctl"]
 CMD ["foreground"]

@@ -178,7 +178,7 @@ This container image exposes the ports:
 - `5280`: For admin interface.
 - `5443`: With encryption, used for admin interface, API, CAPTCHA, OAuth, Websockets and XMPP BOSH.
 - `1883`: Used for MQTT
-- `4369-4399`: EPMD and Erlang connectivity, used for `ejabberdctl` and clustering
+- `5210`: Erlang connectivity, used for `ejabberdctl` and clustering
 
 
 ### Volumes
@@ -276,7 +276,6 @@ docker buildx build \
 ```
 
 It's also possible to use podman instead of docker, just notice:
-- `EXPOSE 4369-4399` port range is not supported, remove that in Dockerfile
 - It mentions that `healthcheck` is not supported by the Open Container Initiative image format
 - If you want to start with command `live`, add environment variable `EJABBERD_BYPASS_WARNINGS=true`
 ```bash
