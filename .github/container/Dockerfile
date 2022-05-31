@@ -113,7 +113,7 @@ HEALTHCHECK \
 WORKDIR $HOME
 USER ejabberd
 VOLUME ["$HOME/conf", "$HOME/database", "$HOME/logs", "$HOME/upload"]
-EXPOSE 1883 4369-4399 5222 5269 5280 5443
+EXPOSE 1883 4369-4399 5210 5222 5269 5280 5443
 
 ENTRYPOINT ["/usr/local/bin/ejabberdctl"]
 CMD ["foreground"]

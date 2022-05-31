@@ -179,6 +179,7 @@ This container image exposes the ports:
 - `5443`: With encryption, used for admin interface, API, CAPTCHA, OAuth, Websockets and XMPP BOSH.
 - `1883`: Used for MQTT
 - `4369-4399`: EPMD and Erlang connectivity, used for `ejabberdctl` and clustering
+- `5210`: Erlang connectivity when `ERL_DIST_PORT` is set, alternative to EPMD
 
 
 ### Volumes
@@ -232,6 +233,23 @@ and the same
 For this you can either:
 - edit `conf/ejabberdctl.cfg` and set variables `ERLANG_NODE` and `ERLANG_COOKIE`
 - set the environment variables `ERLANG_NODE_ARG` and `ERLANG_COOKIE`
+
+Example to connect a local `ejabberdctl` to a containerized ejabberd:
+1. When creating the container, export port 5210, and set `ERLANG_COOKIE`:
+```
+docker run --name ejabberd -it \
+  -e ERLANG_COOKIE=`cat $HOME/.erlang.cookie` \
+  -p 5210:5210 -p 5222:5222 \
+  ghcr.io/processone/ejabberd
+```
+2. Set `ERL_DIST_PORT=5210` in ejabberdctl.cfg of container and local ejabberd
+3. Restart the container
+4. Now use `ejabberdctl` in your local ejabberd deployment
+
+To connect using a local `ejabberd` script:
+```
+ERL_DIST_PORT=5210 _build/dev/rel/ejabberd/bin/ejabberd ping
+```
 
 Example using environment variables (see full example [docker-compose.yml](https://github.com/processone/docker-ejabberd/issues/64#issuecomment-887741332)):
 ```yaml
