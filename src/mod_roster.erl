@@ -567,24 +567,25 @@ transaction(LUser, LServer, LJIDs, F) ->
 
 -spec in_subscription(boolean(), presence()) -> boolean().
 in_subscription(_, #presence{from = JID, to = To,
+                             sub_els = SubEls,
 			     type = Type, status = Status}) ->
     #jid{user = User, server = Server} = To,
     Reason = if Type == subscribe -> xmpp:get_text(Status);
 		true -> <<"">>
 	     end,
     process_subscription(in, User, Server, JID, Type,
-			 Reason).
+			 Reason, SubEls).
 
 -spec out_subscription(presence()) -> boolean().
 out_subscription(#presence{from = From, to = JID, type = Type}) ->
     #jid{user = User, server = Server} = From,
-    process_subscription(out, User, Server, JID, Type, <<"">>).
+    process_subscription(out, User, Server, JID, Type, <<"">>, []).
 
 -spec process_subscription(in | out, binary(), binary(), jid(),
 			   subscribe | subscribed | unsubscribe | unsubscribed,
-			   binary()) -> boolean().
+			   binary(), [fxml:xmlel()]) -> boolean().
 process_subscription(Direction, User, Server, JID1,
-		     Type, Reason) ->
+		     Type, Reason, SubEls) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LJID = jid:tolower(jid:remove_resource(JID1)),
@@ -618,6 +619,7 @@ process_subscription(Direction, User, Server, JID1,
 		    {Subscription, Pending} ->
 			NewItem = Item#roster{subscription = Subscription,
 					      ask = Pending,
+					      xs = SubEls,
 					      askmessage = AskMessage},
 			roster_subscribe_t(LUser, LServer, LJID, NewItem),
 			case mod_roster_opt:store_current_id(LServer) of
@@ -983,6 +985,7 @@ resend_pending_subscriptions(#{jid := JID} = State) ->
 	      Sub = #presence{from = jid:make(R#roster.jid),
 			      to = BareJID,
 			      type = subscribe,
+			      sub_els = R#roster.xs,
 			      status = xmpp:mk_text(Status)},
 	      ejabberd_c2s:send(AccState, Sub);
 	 (_, AccState) ->
