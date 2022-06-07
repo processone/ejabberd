@@ -619,6 +619,7 @@ process_subscription(Direction, User, Server, JID1,
 		    {Subscription, Pending} ->
 			NewItem = Item#roster{subscription = Subscription,
 					      ask = Pending,
+					      name = get_nick_subels(SubEls, Item#roster.name),
 					      xs = SubEls,
 					      askmessage = AskMessage},
 			roster_subscribe_t(LUser, LServer, LJID, NewItem),
@@ -655,6 +656,12 @@ process_subscription(Direction, User, Server, JID1,
 	    end;
 	_ ->
 	    false
+    end.
+
+get_nick_subels(SubEls, Default) ->
+    case xmpp:get_subtag(#presence{sub_els = SubEls}, #nick{}) of
+        {nick, N} -> N;
+        _ -> Default
     end.
 
 %% in_state_change(Subscription, Pending, Type) -> NewState
