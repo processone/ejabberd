@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['19.3', '24', '25.0-rc3']
+        otp: ['19.3', '24', '25.0']
         include:
         - otp: '19.3'
           rebar: 2
@@ -33,7 +33,7 @@ jobs:
         - otp: '24'
           rebar: 3
           os: ubuntu-20.04
-        - otp: '25.0-rc3'
+        - otp: '25.0'
           rebar: 3
           os: ubuntu-20.04
     runs-on: ${{ matrix.os }}
