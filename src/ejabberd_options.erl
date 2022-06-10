@@ -95,6 +95,10 @@ opt_type(c2s_ciphers) ->
     end;
 opt_type(c2s_dhfile) ->
     econf:file();
+opt_type(c2s_max_send_queue_delay) ->
+    econf:non_neg_int();
+opt_type(c2s_max_send_queue_size) ->
+    econf:non_neg_int();
 opt_type(c2s_protocol_options) ->
     econf:and_then(
       econf:list(econf:binary(), [unique]),
@@ -337,6 +341,10 @@ opt_type(s2s_dns_timeout) ->
     econf:timeout(second, infinity);
 opt_type(s2s_max_retry_delay) ->
     econf:timeout(second);
+opt_type(s2s_max_send_queue_delay) ->
+    econf:non_neg_int();
+opt_type(s2s_max_send_queue_size) ->
+    econf:non_neg_int();
 opt_type(s2s_protocol_options) ->
     opt_type(c2s_protocol_options);
 opt_type(s2s_queue_type) ->
@@ -527,6 +535,8 @@ options() ->
      {c2s_cafile, undefined},
      {c2s_ciphers, undefined},
      {c2s_dhfile, undefined},
+     {c2s_max_send_queue_delay, undefined},
+     {c2s_max_send_queue_size, undefined},
      {c2s_protocol_options, undefined},
      {c2s_tls_compression, undefined},
      {ca_file, iolist_to_binary(pkix:get_cafile())},
@@ -635,6 +645,8 @@ options() ->
      {s2s_dns_retries, 2},
      {s2s_dns_timeout, timer:seconds(10)},
      {s2s_max_retry_delay, timer:seconds(300)},
+     {s2s_max_send_queue_delay, 0},
+     {s2s_max_send_queue_size, 10},
      {s2s_protocol_options, undefined},
      {s2s_queue_type,
       fun(Host) -> ejabberd_config:get_option({queue_type, Host}) end},
@@ -705,6 +717,8 @@ globals() ->
      auth_cache_life_time,
      auth_cache_missed,
      auth_cache_size,
+     c2s_max_send_queue_delay,
+     c2s_max_send_queue_size,
      ca_file,
      captcha_cmd,
      captcha_host,
@@ -752,6 +766,8 @@ globals() ->
      router_use_cache,
      rpc_timeout,
      s2s_max_retry_delay,
+     c2s_max_send_queue_delay,
+     c2s_max_send_queue_size,
      shaper,
      sm_cache_life_time,
      sm_cache_missed,

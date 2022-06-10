@@ -555,6 +555,18 @@ init([State, Opts]) ->
     TLSVerify = proplists:get_bool(tls_verify, Opts),
     Zlib = proplists:get_bool(zlib, Opts),
     Timeout = ejabberd_option:negotiation_timeout(),
+    MaxQSize = case ejabberd_option:c2s_max_send_queue_size() of
+		   undefined ->
+		       proplists:get_value(max_send_queue_size, Opts, 10);
+		   C2SMaxQSize ->
+		       C2SMaxQSize
+	       end,
+    MaxQDelay = case ejabberd_option:c2s_max_send_queue_delay() of
+		    undefined ->
+			proplists:get_value(max_send_queue_delay, Opts, 0);
+		    C2SMaxQDelay ->
+			C2SMaxQDelay
+		end,
     State1 = State#{tls_options => TLSOpts2,
 		    tls_required => TLSRequired,
 		    tls_enabled => TLSEnabled,
@@ -567,7 +579,8 @@ init([State, Opts]) ->
 		    access => Access,
 		    shaper => Shaper},
     State2 = xmpp_stream_in:set_timeout(State1, Timeout),
-    ejabberd_hooks:run_fold(c2s_init, {ok, State2}, [Opts]).
+    State3 = xmpp_stream_in:configure_queue(State2, MaxQSize, MaxQDelay),
+    ejabberd_hooks:run_fold(c2s_init, {ok, State3}, [Opts]).
 
 handle_call(get_presence, From, #{jid := JID} = State) ->
     Pres = case maps:get(pres_last, State, error) of
@@ -1022,4 +1035,6 @@ listen_options() ->
      {tls_verify, false},
      {zlib, false},
      {max_stanza_size, infinity},
+     {max_send_queue_size, 10},
+     {max_send_queue_delay, 0},
      {max_fsm_queue, 10000}].

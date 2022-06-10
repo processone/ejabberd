@@ -22,6 +22,8 @@
 -export([c2s_cafile/0, c2s_cafile/1]).
 -export([c2s_ciphers/0, c2s_ciphers/1]).
 -export([c2s_dhfile/0, c2s_dhfile/1]).
+-export([c2s_max_send_queue_delay/0]).
+-export([c2s_max_send_queue_size/0]).
 -export([c2s_protocol_options/0, c2s_protocol_options/1]).
 -export([c2s_tls_compression/0, c2s_tls_compression/1]).
 -export([ca_file/0]).
@@ -124,6 +126,8 @@
 -export([s2s_dns_retries/0, s2s_dns_retries/1]).
 -export([s2s_dns_timeout/0, s2s_dns_timeout/1]).
 -export([s2s_max_retry_delay/0]).
+-export([s2s_max_send_queue_delay/0, s2s_max_send_queue_delay/1]).
+-export([s2s_max_send_queue_size/0, s2s_max_send_queue_size/1]).
 -export([s2s_protocol_options/0, s2s_protocol_options/1]).
 -export([s2s_queue_type/0, s2s_queue_type/1]).
 -export([s2s_timeout/0, s2s_timeout/1]).
@@ -274,6 +278,14 @@ c2s_dhfile() ->
 -spec c2s_dhfile(global | binary()) -> 'undefined' | binary().
 c2s_dhfile(Host) ->
     ejabberd_config:get_option({c2s_dhfile, Host}).
+
+-spec c2s_max_send_queue_delay() -> 'undefined' | non_neg_integer().
+c2s_max_send_queue_delay() ->
+    ejabberd_config:get_option({c2s_max_send_queue_delay, global}).
+
+-spec c2s_max_send_queue_size() -> 'undefined' | non_neg_integer().
+c2s_max_send_queue_size() ->
+    ejabberd_config:get_option({c2s_max_send_queue_size, global}).
 
 -spec c2s_protocol_options() -> 'undefined' | binary().
 c2s_protocol_options() ->
@@ -850,6 +862,20 @@ s2s_dns_timeout(Host) ->
 -spec s2s_max_retry_delay() -> pos_integer().
 s2s_max_retry_delay() ->
     ejabberd_config:get_option({s2s_max_retry_delay, global}).
+
+-spec s2s_max_send_queue_delay() -> 'undefined' | non_neg_integer().
+s2s_max_send_queue_delay() ->
+    s2s_max_send_queue_delay(global).
+-spec s2s_max_send_queue_delay(global | binary()) -> 'undefined' | non_neg_integer().
+s2s_max_send_queue_delay(Host) ->
+    ejabberd_config:get_option({s2s_max_send_queue_delay, Host}).
+
+-spec s2s_max_send_queue_size() -> 'undefined' | non_neg_integer().
+s2s_max_send_queue_size() ->
+    s2s_max_send_queue_size(global).
+-spec s2s_max_send_queue_size(global | binary()) -> 'undefined' | non_neg_integer().
+s2s_max_send_queue_size(Host) ->
+    ejabberd_config:get_option({s2s_max_send_queue_size, Host}).
 
 -spec s2s_protocol_options() -> 'undefined' | binary().
 s2s_protocol_options() ->
