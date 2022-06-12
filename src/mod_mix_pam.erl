@@ -32,11 +32,13 @@
 	 disco_sm_features/5,
 	 remove_user/2,
 	 process_iq/1,
+	 get_mix_roster_items/2,
 	 webadmin_user/4,
 	 webadmin_page/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
+-include("mod_roster.hrl").
 -include("translate.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
@@ -65,6 +67,7 @@ start(Host, Opts) ->
 	    ejabberd_hooks:add(bounce_sm_packet, Host, ?MODULE, bounce_sm_packet, 50),
 	    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, disco_sm_features, 50),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50),
+	    ejabberd_hooks:add(roster_get, Host, ?MODULE, get_mix_roster_items, 50),
 	    ejabberd_hooks:add(webadmin_user, Host, ?MODULE, webadmin_user, 50),
 	    ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, webadmin_page, 50),
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0,
@@ -77,6 +80,7 @@ stop(Host) ->
     ejabberd_hooks:delete(bounce_sm_packet, Host, ?MODULE, bounce_sm_packet, 50),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, disco_sm_features, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(roster_get, Host, ?MODULE, get_mix_roster_items, 50),
     ejabberd_hooks:delete(webadmin_user, Host, ?MODULE, webadmin_user, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, webadmin_page, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0).
@@ -207,6 +211,28 @@ process_iq(#iq{type = set,
     end;
 process_iq(IQ) ->
     xmpp:make_error(IQ, unsupported_query_error(IQ)).
+
+-spec get_mix_roster_items([#roster{}], {binary(), binary()}) -> [#roster{}].
+get_mix_roster_items(Acc, {LUser, LServer}) ->
+    JID = jid:make(LUser, LServer),
+    case get_channels(JID) of
+        {ok, Channels} ->
+            lists:map(
+                fun({#jid{luser=Channel, lserver=Service}, Id}) ->
+                    #roster{
+                        jid = {Channel, Service, <<>>},
+                        name = <<>>,
+                        subscription = both,
+                        ask = none,
+                        groups = [<<"Channels">>],
+                        askmessage = <<>>,
+                        xs = [],
+                        mix_participant_id = Id
+                    }
+                end, Channels);
+        _ ->
+            []
+    end ++ Acc.
 
 -spec remove_user(binary(), binary()) -> ok | {error, db_failure}.
 remove_user(LUser, LServer) ->
