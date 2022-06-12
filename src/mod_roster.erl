@@ -426,7 +426,11 @@ encode_item(Item) ->
 			   both -> subscribe;
 			   _ -> undefined
 		       end,
-		 groups = Item#roster.groups}.
+		 groups = Item#roster.groups,
+		 mix_channel = case Item#roster.mix_participant_id of
+				   <<>> -> undefined;
+				   _ -> #mix_roster_channel{'participant-id' = Item#roster.mix_participant_id}
+			       end}.
 
 -spec decode_item(roster_item(), #roster{}, boolean()) -> #roster{}.
 decode_item(#roster_item{subscription = remove} = Item, R, _) ->

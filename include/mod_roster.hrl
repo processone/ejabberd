@@ -28,7 +28,8 @@
     ask = none                             :: ask() | '_',
     groups = []                            :: [binary()] | '_',
     askmessage = <<"">>                    :: binary() | '_',
-    xs = []                                :: [fxml:xmlel()] | '_'
+    xs = []                                :: [fxml:xmlel()] | '_',
+    mix_participant_id = <<>>              :: binary() | '_'
 }).
 
 -record(roster_version,
