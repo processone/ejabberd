@@ -78,8 +78,6 @@
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
 
--define(DEFAULT_MAX_USERS_PRESENCE,1000).
-
 -define(MUC_HAT_ADD_CMD, <<"http://prosody.im/protocol/hats#add">>).
 -define(MUC_HAT_REMOVE_CMD, <<"http://prosody.im/protocol/hats#remove">>).
 -define(MUC_HAT_LIST_CMD, <<"p1:hats#list">>).

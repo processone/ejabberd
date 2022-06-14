@@ -79,8 +79,6 @@
 
 -include("translate.hrl").
 
--define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
-
 %% default value for the maximum number of user messages
 -define(MAX_USER_MESSAGES, infinity).
 

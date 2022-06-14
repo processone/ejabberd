@@ -66,8 +66,6 @@
 
 %% All the elements are of type value()
 
--define(VERSION_MULTICAST, <<"$Revision: 440 $ ">>).
-
 -define(PURGE_PROCNAME,
 	ejabberd_mod_multicast_purgeloop).
 
@@ -78,8 +76,6 @@
 -define(MAXTIME_CACHE_NEGOTIATING, 600).
 
 -define(CACHE_PURGE_TIMER, 86400000).
-
--define(DISCO_QUERY_TIMEOUT, 10000).
 
 -define(DEFAULT_LIMIT_LOCAL_MESSAGE, 100).
 
@@ -267,8 +263,6 @@ process_iq(#iq{type = T}, _) when T == set; T == get ->
     {error, xmpp:err_service_unavailable()};
 process_iq(_, _) ->
     reply.
-
--define(FEATURE(Feat), Feat).
 
 iq_disco_info(From, Lang, State) ->
     Name = mod_multicast_opt:name(State#state.lserver),
