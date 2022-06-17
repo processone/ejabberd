@@ -581,8 +581,8 @@ delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"c
 
     case ejabberd_batch:register_task({mam, LServer}, 0, Rate, {LServer, TypeA, TimeStamp, BatchSize, none},
 				      fun({L, T, St, B, IS} = S) ->
-					  case {erlang:function_exported(Mod, remove_old_messages_batch, 4),
-						erlang:function_exported(Mod, remove_old_messages_batch, 5)} of
+					  case {erlang:function_exported(Mod, delete_old_messages_batch, 4),
+						erlang:function_exported(Mod, delete_old_messages_batch, 5)} of
 					      {true, _} ->
 						  case Mod:delete_old_messages_batch(L, St, T, B) of
 						      {ok, Count} ->
@@ -591,7 +591,7 @@ delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"c
 							  E
 						  end;
 					      {_, true} ->
-						  case Mod:remove_old_messages_batch(L, St, T, B, IS) of
+						  case Mod:delete_old_messages_batch(L, St, T, B, IS) of
 						      {ok, IS2, Count} ->
 							  {ok, {L, St, T, B, IS2}, Count};
 						      {error, _} = E ->

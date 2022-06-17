@@ -29,7 +29,7 @@
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
 	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, remove_from_archive/3,
-	 is_empty_for_user/2, is_empty_for_room/3, remove_old_messages_batch/5]).
+	 is_empty_for_user/2, is_empty_for_room/3, delete_old_messages_batch/5]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -155,7 +155,7 @@ delete_batch(LastUS, LServer, TS, Type, Num) ->
 	_ -> delete_batch(mnesia:next(archive_msg, LastUS), LServer, TS, Type, Left)
     end.
 
-remove_old_messages_batch(LServer, TimeStamp, Type, Batch, LastUS) ->
+delete_old_messages_batch(LServer, TimeStamp, Type, Batch, LastUS) ->
     R = mnesia:transaction(
 	fun() ->
 	    {Num, NextUS} = delete_batch(LastUS, LServer, TimeStamp, Type, Batch),
