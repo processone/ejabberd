@@ -106,9 +106,14 @@
 -callback count_messages(binary(), binary()) -> {ets_cache:tag(), non_neg_integer()}.
 -callback use_cache(binary()) -> boolean().
 -callback cache_nodes(binary()) -> [node()].
+-callback remove_old_messages_batch(binary(), non_neg_integer(), pos_integer()) ->
+    {ok, non_neg_integer()} | {error, term()}.
+-callback remove_old_messages_batch(binary(), non_neg_integer(), pos_integer(), any()) ->
+    {ok, any(), non_neg_integer()} | {error, term()}.
 
 -optional_callbacks([remove_expired_messages/1, remove_old_messages/2,
-		     use_cache/1, cache_nodes/1]).
+		     use_cache/1, cache_nodes/1, remove_old_messages_batch/3,
+		     remove_old_messages_batch/4]).
 
 depends(_Host, _Opts) ->
     [].

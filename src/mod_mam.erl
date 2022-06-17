@@ -89,7 +89,18 @@
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), count()} |
     {error, db_failure}.
 
--optional_callbacks([use_cache/1, cache_nodes/1, select_with_mucsub/6, select/6, select/7]).
+-callback delete_old_messages_batch(binary(), erlang:timestamp(),
+				    all | chat | groupchat,
+				    pos_integer()) ->
+    {ok, non_neg_integer()} | {error, term()}.
+
+-callback delete_old_messages_batch(binary(), erlang:timestamp(),
+				    all | chat | groupchat,
+				    pos_integer(), any()) ->
+    {ok, any(), non_neg_integer()} | {error, term()}.
+
+-optional_callbacks([use_cache/1, cache_nodes/1, select_with_mucsub/6, select/6, select/7,
+    delete_old_messages_batch/5, delete_old_messages_batch/4]).
 
 %%%===================================================================
 %%% API
