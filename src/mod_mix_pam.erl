@@ -293,6 +293,18 @@ process_join_result(#iq{from = Channel,
 		    #iq{to = To} = IQ) ->
     case add_channel(To, Channel, ID) of
 	ok ->
+	    % Do roster push
+	    #jid{luser = ChannelName, lserver = Service} = Channel,
+	    mod_roster:push_item(To, #roster{}, #roster{
+		jid = {ChannelName, Service, <<>>},
+		name = <<>>,
+		subscription = none,
+		ask = none,
+		groups = [],
+		askmessage = <<>>,
+		mix_participant_id = ID
+	    }),
+	    % send IQ result
 	    ChanID = make_channel_id(Channel, ID),
 	    Join1 = Join#mix_join{id = <<"">>, jid = ChanID},
 	    ResIQ = xmpp:make_iq_result(IQ, #mix_client_join{join = Join1}),
@@ -304,7 +316,15 @@ process_join_result(Err, IQ) ->
     process_iq_error(Err, IQ).
 
 -spec process_leave_result(iq(), iq()) -> ok.
-process_leave_result(#iq{type = result, sub_els = [#mix_leave{} = Leave]}, IQ) ->
+process_leave_result(#iq{from = Channel, type = result, sub_els = [#mix_leave{} = Leave]},
+		     #iq{to = User} = IQ) ->
+    % Do roster push
+    #jid{luser = ChannelName, lserver = Service} = Channel,
+    mod_roster:push_item(User,
+	#roster{jid = {ChannelName, Service, <<>>}, subscription = none},
+	#roster{jid = {ChannelName, Service, <<>>},
+	        subscription = remove}),
+    % send iq result
     ResIQ = xmpp:make_iq_result(IQ, #mix_client_leave{leave = Leave}),
     ejabberd_router:route(ResIQ);
 process_leave_result(Err, IQ) ->
