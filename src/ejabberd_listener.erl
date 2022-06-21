@@ -457,11 +457,19 @@ config_reloaded() ->
 		      ok;
 		  {_, OldModule, OldOpts} ->
 		      _ = stop_listener(EndPoint, OldModule, OldOpts),
-		      ets:insert(?MODULE, {EndPoint, Module, Opts}),
-		      start_listener(EndPoint, Module, Opts);
+		      case start_listener(EndPoint, Module, Opts) of
+			  {ok, _} ->
+			      ets:insert(?MODULE, {EndPoint, Module, Opts});
+			  _ ->
+			      ok
+		      end;
 		  false ->
-		      ets:insert(?MODULE, {EndPoint, Module, Opts}),
-		      start_listener(EndPoint, Module, Opts)
+		      case start_listener(EndPoint, Module, Opts) of
+			  {ok, _} ->
+			      ets:insert(?MODULE, {EndPoint, Module, Opts});
+			  _ ->
+			      ok
+		      end
 	      end
       end, New).
 
