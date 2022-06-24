@@ -483,8 +483,12 @@ options_required([Form]) ->
     proplists:get_value(required, Opts, []).
 
 format_file(Path, Form) ->
+    Line = case erl_syntax:get_pos(Form) of
+      {L, _} -> L;
+      L -> L
+    end,
     filename:rootname(filename:basename(Path)) ++ ".erl:" ++
-	integer_to_list(erl_syntax:get_pos(Form)).
+	integer_to_list(Line).
 
 module(Path) ->
     list_to_atom(filename:rootname(filename:basename(Path))).
