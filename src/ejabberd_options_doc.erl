@@ -430,6 +430,31 @@ doc() ->
                "dhparam -out dh.pem 2048\". If this option is not specified, "
                "2048-bit MODP Group with 256-bit Prime Order Subgroup will be "
                "used as defined in RFC5114 Section 2.3.")}},
+     {c2s_max_send_queue_delay,
+      #{value => ?T("non_neg_integer()"),
+        desc =>
+            [?T("Specifies the maximum number of milliseconds to queue an "
+                "outgoing stanza or stream management element. Setting this "
+                "option to a positive (non-zero) number allows for batching up "
+                "multiple XML elements into a single TCP packet in order to "
+                "reduce the TCP/IP overhead. The default value is '0', which "
+                "disables queueing."), "",
+             ?T("To set a specific file per listener, use the listener's "
+                "http://../listen-options/#max_send_queue_delay[max_send_queue_delay] "
+                "option. Please note that 'c2s_max_send_queue_delay' overrides "
+                "the listener's 'max_send_queue_delay' option."), ""]}},
+     {c2s_max_send_queue_size,
+      #{value => ?T("non_neg_integer()"),
+        desc =>
+            [?T("Specifies the maximum number of elements to add to the send "
+                "queue. The default value is '10'. Note that this option has "
+                "no effect if 'max_send_queue_delay' isn't set to a value "
+                "larger than '0'. Setting this option to '0' disables "
+                "queueing."), "",
+             ?T("To set a specific file per listener, use the listener's "
+                "http://../listen-options/#max_send_queue_size[max_send_queue_size] "
+                "option. Please note that 'c2s_max_send_queue_size' overrides "
+                "the listener's 'max_send_queue_size' option."), ""]}},
      {c2s_protocol_options,
       #{value => "[Option, ...]",
         desc =>
@@ -1118,6 +1143,31 @@ doc() ->
                "dhparam -out dh.pem 2048\". If this option is not specified, "
                "2048-bit MODP Group with 256-bit Prime Order Subgroup will be "
                "used as defined in RFC5114 Section 2.3.")}},
+     {s2s_max_send_queue_delay,
+      #{value => ?T("non_neg_integer()"),
+        desc =>
+            [?T("Specifies the maximum number of milliseconds to queue an "
+                "outgoing stanza or stream management element. Setting this "
+                "option to a positive (non-zero) number allows for batching up "
+                "multiple XML elements into a single TCP packet in order to "
+                "reduce the TCP/IP overhead. The default value is '0', which "
+                "disables queueing."), "",
+             ?T("To set a specific file per listener, use the listener's "
+                "http://../listen-options/#max_send_queue_delay[max_send_queue_delay] "
+                "option. Please note that 's2s_max_send_queue_delay' overrides "
+                "the listener's 'max_send_queue_delay' option."), ""]}},
+     {s2s_max_send_queue_size,
+      #{value => ?T("non_neg_integer()"),
+        desc =>
+            [?T("Specifies the maximum number of elements to add to the send "
+                "queue. The default value is '10'. Note that this option has "
+                "no effect if 'max_send_queue_delay' isn't set to a value "
+                "larger than '0'. Setting this option to '0' disables "
+                "queueing."), "",
+             ?T("To set a specific file per listener, use the listener's "
+                "http://../listen-options/#max_send_queue_size[max_send_queue_size] "
+                "option. Please note that 's2s_max_send_queue_size' overrides "
+                "the listener's 'max_send_queue_size' option."), ""]}},
      {s2s_protocol_options,
       #{value => "[Option, ...]",
         desc =>

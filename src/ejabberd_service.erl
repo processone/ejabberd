@@ -117,10 +117,13 @@ init([State, Opts]) ->
 		  true -> TLSOpts1
 	      end,
     GlobalRoutes = proplists:get_value(global_routes, Opts, true),
+    MaxQSize = proplists:get_value(max_send_queue_size, Opts, 10),
+    MaxQDelay = proplists:get_value(max_send_queue_delay, Opts, 0),
     Timeout = ejabberd_option:negotiation_timeout(),
     State1 = xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)),
     State2 = xmpp_stream_in:set_timeout(State1, Timeout),
-    State3 = State2#{access => Access,
+    State3 = xmpp_stream_in:configure_queue(State2, MaxQSize, MaxQDelay),
+    State4 = State3#{access => Access,
 		     xmlns => ?NS_COMPONENT,
 		     lang => ejabberd_option:language(),
 		     server => ejabberd_config:get_myname(),
@@ -129,7 +132,7 @@ init([State, Opts]) ->
 		     tls_options => TLSOpts,
 		     global_routes => GlobalRoutes,
 		     check_from => CheckFrom},
-    ejabberd_hooks:run_fold(component_init, {ok, State3}, [Opts]).
+    ejabberd_hooks:run_fold(component_init, {ok, State4}, [Opts]).
 
 handle_stream_start(_StreamStart,
 		    #{remote_server := RemoteServer,
@@ -302,6 +305,8 @@ listen_options() ->
      {tls, false},
      {tls_compression, false},
      {max_stanza_size, infinity},
+     {max_send_queue_size, 10},
+     {max_send_queue_delay, 0},
      {max_fsm_queue, 10000},
      {password, undefined},
      {hosts, []},

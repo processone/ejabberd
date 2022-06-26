@@ -688,6 +688,10 @@ listen_opt_type(tls) ->
     econf:bool();
 listen_opt_type(max_stanza_size) ->
     econf:pos_int(infinity);
+listen_opt_type(max_send_queue_size) ->
+    econf:non_neg_int();
+listen_opt_type(max_send_queue_delay) ->
+    econf:non_neg_int();
 listen_opt_type(max_fsm_queue) ->
     econf:pos_int();
 listen_opt_type(send_timeout) ->

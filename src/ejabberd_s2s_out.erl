@@ -279,6 +279,8 @@ init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
 		     false -> unlimited
 		 end,
     Timeout = ejabberd_option:negotiation_timeout(),
+    MaxQSize = ejabberd_option:s2s_max_send_queue_size(),
+    MaxQDelay = ejabberd_option:s2s_max_send_queue_delay(),
     State1 = State#{on_route => queue,
 		    queue => p1_queue:new(QueueType, QueueLimit),
 		    xmlns => ?NS_SERVER,
@@ -286,9 +288,10 @@ init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
 		    server_host => ServerHost,
 		    shaper => none},
     State2 = xmpp_stream_out:set_timeout(State1, Timeout),
+    State3 = xmpp_stream_out:configure_queue(State2, MaxQSize, MaxQDelay),
     ?INFO_MSG("Outbound s2s connection started: ~ts -> ~ts",
 	      [LServer, RServer]),
-    ejabberd_hooks:run_fold(s2s_out_init, ServerHost, {ok, State2}, [Opts]).
+    ejabberd_hooks:run_fold(s2s_out_init, ServerHost, {ok, State3}, [Opts]).
 
 handle_call(Request, From, #{server_host := ServerHost} = State) ->
     ejabberd_hooks:run_fold(s2s_out_handle_call, ServerHost, State, [Request, From]).
