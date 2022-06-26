@@ -64,6 +64,7 @@
 -define(ROSTER_CACHE, roster_cache).
 -define(ROSTER_ITEM_CACHE, roster_item_cache).
 -define(ROSTER_VERSION_CACHE, roster_version_cache).
+-define(SM_MIX_ANNOTATE, roster_mix_annotate).
 
 -type c2s_state() :: ejabberd_c2s:state().
 -export_type([subscription/0]).
@@ -274,11 +275,12 @@ write_roster_version(LUser, LServer, InTransaction) ->
 %%     - roster versioning is used by server and client, BUT the server isn't storing versions on db OR
 %%     - the roster version from client don't match current version.
 -spec process_iq_get(iq()) -> iq().
-process_iq_get(#iq{to = To,
-		   sub_els = [#roster_query{ver = RequestedVersion}]} = IQ) ->
+process_iq_get(#iq{to = To, from = From,
+		   sub_els = [#roster_query{ver = RequestedVersion, mix_annotate = MixAnnotate}]} = IQ) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
     US = {LUser, LServer},
+    MixEnabled = MixAnnotate == #mix_roster_annotate{},
     {ItemsToSend, VersionToSend} =
 	case {mod_roster_opt:versioning(LServer),
 	      mod_roster_opt:store_current_id(LServer)} of
@@ -313,9 +315,16 @@ process_iq_get(#iq{to = To,
 			     roster_get, To#jid.lserver, [], [US])),
 		 false}
 	end,
+    % Store that MIX annotation is enabled (for roster pushes)
+    set_mix_annotation_enabled(From, MixEnabled),
+    % Only include <channel/> element when MIX annotation is enabled
+    Items = case ItemsToSend of
+	false -> false;
+	FullItems -> process_items_mix(FullItems, MixEnabled)
+    end,
     xmpp:make_iq_result(
       IQ,
-      case {ItemsToSend, VersionToSend} of
+      case {Items, VersionToSend} of
 	  {false, false} ->
 	      undefined;
 	  {Items, false} ->
@@ -512,11 +521,12 @@ push_item(To, OldItem, NewItem) ->
 -spec push_item(jid(), #roster{}, #roster{}, undefined | binary()) -> ok.
 push_item(To, OldItem, NewItem, Ver) ->
     route_presence_change(To, OldItem, NewItem),
+    [Item] = process_items_mix([encode_item(NewItem)], To),
     IQ = #iq{type = set, to = To,
 	     from = jid:remove_resource(To),
 	     id = <<"push", (p1_rand:get_string())/binary>>,
 	     sub_els = [#roster_query{ver = Ver,
-				      items = [encode_item(NewItem)]}]},
+				      items = [Item]}]},
     ejabberd_router:route(IQ).
 
 -spec route_presence_change(jid(), #roster{}, #roster{}) -> ok.
@@ -867,6 +877,57 @@ send_unsubscribing_presence(From, Item) ->
 			from = jid:remove_resource(From),
 			to = jid:make(Item#roster.jid)});
        true -> ok
+    end.
+
+%%%===================================================================
+%%% MIX
+%%%===================================================================
+
+-spec remove_mix_channel([#roster_item{}]) -> [#roster_item{}].
+remove_mix_channel(Items) ->
+    lists:map(
+	fun(Item) ->
+	    Item#roster_item{mix_channel = undefined}
+	end, Items).
+
+-spec process_items_mix([#roster_item{}], boolean() | jid()) -> [#roster_item{}].
+process_items_mix(Items, true) -> Items;
+process_items_mix(Items, false) -> remove_mix_channel(Items);
+process_items_mix(Items, JID) -> process_items_mix(Items, is_mix_annotation_enabled(JID)).
+
+-spec is_mix_annotation_enabled(jid()) -> boolean().
+is_mix_annotation_enabled(#jid{luser = User, lserver = Host, lresource = Res}) ->
+    case ejabberd_sm:get_user_info(User, Host, Res) of
+	offline -> false;
+	Info ->
+	    case lists:keyfind(?SM_MIX_ANNOTATE, 1, Info) of
+		{_, true} -> true;
+		_ -> false
+	    end
+    end.
+
+-spec set_mix_annotation_enabled(jid(), boolean()) -> ok | {error, any()}.
+set_mix_annotation_enabled(#jid{luser = U, lserver = Host, lresource = R} = JID, false) ->
+    case is_mix_annotation_enabled(JID) of
+	true ->
+	    ?DEBUG("Disabling roster MIX annotation for ~ts@~ts/~ts", [U, Host, R]),
+	    case ejabberd_sm:del_user_info(U, Host, R, ?SM_MIX_ANNOTATE) of
+		ok -> ok;
+		{error, Reason} = Err ->
+		    ?ERROR_MSG("Failed to disable roster MIX annotation for ~ts@~ts/~ts: ~p",
+			[U, Host, R, Reason]),
+		    Err
+	    end;
+	false -> ok
+    end;
+set_mix_annotation_enabled(#jid{luser = U, lserver = Host, lresource = R}, true)->
+    ?DEBUG("Enabling roster MIX annotation for ~ts@~ts/~ts", [U, Host, R]),
+    case ejabberd_sm:set_user_info(U, Host, R, ?SM_MIX_ANNOTATE, true) of
+	ok -> ok;
+	{error, Reason} = Err ->
+	    ?ERROR_MSG("Failed to enable roster MIX annotation for ~ts@~ts/~ts: ~p",
+		[U, Host, R, Reason]),
+	    Err
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
