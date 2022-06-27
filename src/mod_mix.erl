@@ -424,6 +424,7 @@ process_mix_join(#iq{to = To, from = From,
 		notify_participant_joined(Mod, ServerHost, To, From, ID, Nick),
 		xmpp:make_iq_result(IQ, #mix_join{id = ID,
 						  subscribe = Nodes,
+						  jid = make_channel_id(To, ID),
 						  nick = Nick,
 						  xmlns = XmlNs})
 	    catch _:{badmatch, {error, db_failure}} ->
@@ -645,6 +646,11 @@ notify_participant_left(Mod, LServer, To, ID) ->
 make_id(JID, Key) ->
     Data = jid:encode(jid:tolower(jid:remove_resource(JID))),
     xmpp_util:hex(misc:crypto_hmac(sha256, Data, Key, 10)).
+
+-spec make_channel_id(jid(), binary()) -> jid().
+make_channel_id(JID, ID) ->
+	{U, S, R} = jid:split(JID),
+	jid:make(<<ID/binary, $#, U/binary>>, S, R).
 
 %%%===================================================================
 %%% Error generators
