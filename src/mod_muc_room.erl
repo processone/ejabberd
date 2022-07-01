@@ -3014,22 +3014,26 @@ process_item_change(Item, SD, UJID) ->
 		send_kickban_presence(UJID, JID, Reason, 307, SD),
 		set_role(JID, none, SD);
 	    {JID, affiliation, none, Reason} ->
-		case (SD#state.config)#config.members_only of
-		    true ->
-			send_kickban_presence(UJID, JID, Reason, 321, none, SD),
-			maybe_send_affiliation(JID, none, SD),
-			SD1 = set_affiliation(JID, none, SD),
-			set_role(JID, none, SD1);
-		    _ ->
-			SD1 = set_affiliation(JID, none, SD),
-			SD2 = case (SD1#state.config)#config.moderated of
-			    true -> set_role(JID, visitor, SD1);
-			    false -> set_role(JID, participant, SD1)
-			end,
-			send_update_presence(JID, Reason, SD2, SD),
-			maybe_send_affiliation(JID, none, SD2),
-			SD2
-		end;
+                case get_affiliation(JID, SD) of
+                    none -> SD;
+                    _ ->
+                        case (SD#state.config)#config.members_only of
+                            true ->
+                                send_kickban_presence(UJID, JID, Reason, 321, none, SD),
+                                maybe_send_affiliation(JID, none, SD),
+                                SD1 = set_affiliation(JID, none, SD),
+                                set_role(JID, none, SD1);
+                            _ ->
+                                SD1 = set_affiliation(JID, none, SD),
+                                SD2 = case (SD1#state.config)#config.moderated of
+                                          true -> set_role(JID, visitor, SD1);
+                                          false -> set_role(JID, participant, SD1)
+                                      end,
+                                send_update_presence(JID, Reason, SD2, SD),
+                                maybe_send_affiliation(JID, none, SD2),
+                                SD2
+                        end
+                end;
 	    {JID, affiliation, outcast, Reason} ->
 		send_kickban_presence(UJID, JID, Reason, 301, outcast, SD),
 		maybe_send_affiliation(JID, outcast, SD),
