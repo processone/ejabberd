@@ -262,13 +262,25 @@ remove_user(LUser, LServer) ->
 %%% Internal functions
 %%%===================================================================
 -spec process_join(iq()) -> ignore.
-process_join(#iq{from = From,
+process_join(#iq{from = From, lang = Lang,
 		 sub_els = [#mix_client_join{channel = Channel,
 		                             join = Join}]} = IQ) ->
     ejabberd_router:route_iq(
       #iq{from = jid:remove_resource(From),
 	  to = Channel, type = set, sub_els = [Join]},
-      fun(ResIQ) -> process_join_result(ResIQ, IQ) end),
+      fun(#iq{sub_els = [El]} = ResIQ) ->
+        try xmpp:decode(El) of
+            MixJoin ->
+                process_join_result(ResIQ#iq {
+                    sub_els = [MixJoin]
+                }, IQ)
+        catch
+            _:{xmpp_codec, Reason} ->
+                Txt = xmpp:io_format_error(Reason),
+                Err = xmpp:err_bad_request(Txt, Lang),
+                ejabberd_router:route_error(IQ, Err)
+        end
+      end),
     ignore.
 
 -spec process_leave(iq()) -> iq() | error.
@@ -309,7 +321,7 @@ process_join_result(#iq{from = #jid{} = Channel,
 	{error, db_failure} ->
 	    ejabberd_router:route_error(IQ, db_error(IQ))
     end;
-process_join_result(Err, IQ) ->
+process_join_result(#iq{type = error} = Err, IQ) ->
     process_iq_error(Err, IQ).
 
 -spec process_leave_result(iq(), iq()) -> ok.
