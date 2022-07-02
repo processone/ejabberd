@@ -593,10 +593,8 @@ known_nodes() ->
 
 -spec filter_nodes([binary()]) -> [binary()].
 filter_nodes(Nodes) ->
-    lists:filter(
-      fun(Node) ->
-	      lists:member(Node, Nodes)
-      end, known_nodes()).
+    KnownNodes = known_nodes(),
+    [Node || KnownNode <- KnownNodes, Node <- Nodes, KnownNode == Node].
 
 -spec multicast(module(), binary(), binary(),
 		binary(), binary(), fun((jid()) -> message())) -> ok.
