@@ -451,3 +451,17 @@ CREATE TABLE mqtt_pub (
     user_properties bytea NOT NULL,
     expiry bigint NOT NULL
 );
+
+-- Enable HOT updates on tables which meet criteria for them. This reduces 3
+-- IO's per update to 1 IO per update in a typical case.
+ALTER TABLE archive_prefs SET (fillfactor = 90);
+ALTER TABLE users SET (fillfactor = 90);
+ALTER TABLE last SET (fillfactor = 90);
+ALTER TABLE muc_room SET (fillfactor = 90);
+ALTER TABLE muc_room_subscribers SET (fillfactor = 90);
+ALTER TABLE pubsub_item SET (fillfactor = 90);
+ALTER TABLE pubsub_node SET (fillfactor = 90);
+ALTER TABLE pubsub_node_option SET (fillfactor = 90);
+ALTER TABLE rosterusers SET (fillfactor = 90);
+ALTER TABLE vcard SET (fillfactor = 90);
+ALTER TABLE vcard_search SET (fillfactor = 90);
