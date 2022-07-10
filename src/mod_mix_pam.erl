@@ -181,7 +181,7 @@ bounce_sm_packet(Acc) ->
 disco_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 disco_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_MIX_PAM_0 |
+    {result, [?NS_MIX_PAM_0, ?NS_MIX_PAM_2 |
 	      case Acc of
 		  {result, Features} -> Features;
 		  empty -> []
