@@ -483,9 +483,16 @@ run_sql_cmd(Command, From, State, Timestamp) ->
 	    State1 = report_overload(State),
 	    {next_state, session_established, State1};
 	false ->
-	    put(?NESTING_KEY, ?TOP_LEVEL_TXN),
-	    put(?STATE_KEY, State),
-	    abort_on_driver_error(outer_op(Command), From, Timestamp)
+	    receive
+		{'EXIT', _Pid, Reason} ->
+		    PR = p1_queue:in({sql_cmd, Command, From, Timestamp},
+				     State#state.pending_requests),
+		    handle_reconnect(Reason, State#state{pending_requests = PR})
+	    after 0 ->
+		put(?NESTING_KEY, ?TOP_LEVEL_TXN),
+		put(?STATE_KEY, State),
+		abort_on_driver_error(outer_op(Command), From, Timestamp)
+	    end
     end.
 
 %% @doc Only called by handle_call, only handles top level operations.
@@ -670,11 +677,10 @@ sql_query_internal(Query) ->
 		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query,
 					   QueryTimeout - 1000));
 	    mysql ->
-		R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
+		mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),
-						   [{timeout, QueryTimeout - 1000},
-						    {result_type, binary}])),
-		  R;
+						   [{QueryTimeout - 1000},
+						    {result_type, binary}]));
 	      sqlite ->
 		  Host = State#state.host,
 		  sqlite_to_odbc(Host, sqlite3:sql_exec(sqlite_db(Host), Query))
@@ -853,7 +859,6 @@ sql_rollback() ->
     sql_query_internal(
       [{mssql, [<<"rollback transaction;">>]},
        {any, [<<"rollback;">>]}]).
-
 
 %% Generate the OTP callback return tuple depending on the driver result.
 abort_on_driver_error({error, <<"query timed out">>} = Reply, From, Timestamp) ->
