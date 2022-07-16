@@ -109,8 +109,8 @@ depends(_Host, _Opts) ->
 %%--------------------------------------------------------------------
 %% Hooks
 %%--------------------------------------------------------------------
--spec get_user_roster([#roster{}], {binary(), binary()}) -> [#roster{}].
-get_user_roster(Items, {U, S} = US) ->
+-spec get_user_roster([#roster_item{}], {binary(), binary()}) -> [#roster_item{}].
+get_user_roster(Items, US) ->
     SRUsers = get_user_to_groups_map(US, true),
     {NewItems1, SRUsersRest} = lists:mapfoldl(fun (Item,
 						   SRUsers1) ->
@@ -135,10 +135,9 @@ get_user_roster(Items, {U, S} = US) ->
 						      end
 					      end,
 					      SRUsers, Items),
-    SRItems = [#roster{usj = {U, S, {U1, S1, <<"">>}},
-		       us = US, jid = {U1, S1, <<"">>},
-		       name = get_user_name(U1, S1), subscription = both,
-		       ask = none, groups = GroupNames}
+    SRItems = [#roster_item{jid = jid:make(U1, S1),
+			    name = get_user_name(U1, S1), subscription = both,
+			    ask = undefined, groups = GroupNames}
 	       || {{U1, S1}, GroupNames} <- dict:to_list(SRUsersRest)],
     SRItems ++ NewItems1.
 

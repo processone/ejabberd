@@ -1333,16 +1333,15 @@ get_roster(User, Server) ->
 %% several times, each one in a different group.
 make_roster_xmlrpc(Roster) ->
     lists:foldl(
-      fun(Item, Res) ->
-	      JIDS = jid:encode(Item#roster.jid),
-	      Nick = Item#roster.name,
-	      Subs = atom_to_list(Item#roster.subscription),
-	      Ask = atom_to_list(Item#roster.ask),
-	      Groups = case Item#roster.groups of
+      fun(#roster_item{jid = JID, name = Nick, subscription = Sub, ask = Ask} = Item, Res) ->
+	      JIDS = jid:encode(JID),
+	      Subs = atom_to_list(Sub),
+	      Asks = atom_to_list(Ask),
+	      Groups = case Item#roster_item.groups of
 			   [] -> [<<>>];
 			   Gs -> Gs
 		       end,
-	      ItemsX = [{JIDS, Nick, Subs, Ask, Group} || Group <- Groups],
+	      ItemsX = [{JIDS, Nick, Subs, Asks, Group} || Group <- Groups],
 	      ItemsX ++ Res
       end,
       [],

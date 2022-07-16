@@ -777,9 +777,9 @@ broadcast_presence_unavailable(#{jid := JID, pres_a := PresA} = State, Pres,
 		    Roster = ejabberd_hooks:run_fold(roster_get, LServer,
 						     [], [{LUser, LServer}]),
 		    lists:foldl(
-			fun(#roster{jid = LJID, subscription = Sub}, Acc)
+			fun(#roster_item{jid = ItemJID, subscription = Sub}, Acc)
 			       when Sub == both; Sub == from ->
-			    maps:put(LJID, 1, Acc);
+			    maps:put(jid:tolower(ItemJID), 1, Acc);
 			   (_, Acc) ->
 			       Acc
 			end, #{BareJID => 1}, Roster);
@@ -813,8 +813,7 @@ broadcast_presence_available(#{jid := JID} = State,
 				    [], [{LUser, LServer}]),
     {FJIDs, TJIDs} =
 	lists:foldl(
-	  fun(#roster{jid = LJID, subscription = Sub}, {F, T}) ->
-		  To = jid:make(LJID),
+	  fun(#roster_item{jid = To, subscription = Sub}, {F, T}) ->
 		  F1 = if Sub == both orelse Sub == from ->
 			       Pres1 = xmpp:set_to(Pres, To),
 			       case privacy_check_packet(State, Pres1, out) of
@@ -843,10 +842,9 @@ broadcast_presence_available(#{jid := JID} = State,
     Items = ejabberd_hooks:run_fold(
 	      roster_get, LServer, [], [{LUser, LServer}]),
     JIDs = lists:foldl(
-	     fun(#roster{jid = LJID, subscription = Sub}, Tos)
+	     fun(#roster_item{jid = To, subscription = Sub}, Tos)
 		   when Sub == both orelse Sub == from ->
-		     To = jid:make(LJID),
-		     P = xmpp:set_to(Pres, jid:make(LJID)),
+		     P = xmpp:set_to(Pres, To),
 		     case privacy_check_packet(State, P, out) of
 			 allow -> [To|Tos];
 			 deny -> Tos
