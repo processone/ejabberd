@@ -212,22 +212,20 @@ process_iq(#iq{type = set,
 process_iq(IQ) ->
     xmpp:make_error(IQ, unsupported_query_error(IQ)).
 
--spec get_mix_roster_items([#roster{}], {binary(), binary()}) -> [#roster{}].
+-spec get_mix_roster_items([#roster_item{}], {binary(), binary()}) -> [#roster_item{}].
 get_mix_roster_items(Acc, {LUser, LServer}) ->
     JID = jid:make(LUser, LServer),
     case get_channels(JID) of
         {ok, Channels} ->
             lists:map(
-                fun({#jid{luser=Channel, lserver=Service}, Id}) ->
-                    #roster{
-                        jid = {Channel, Service, <<>>},
+                fun({ItemJID, Id}) ->
+                    #roster_item{
+                        jid = ItemJID,
                         name = <<>>,
                         subscription = both,
-                        ask = none,
+                        ask = undefined,
                         groups = [<<"Channels">>],
-                        askmessage = <<>>,
-                        xs = [],
-                        mix_participant_id = Id
+                        mix_channel = #mix_roster_channel{'participant-id' = Id}
                     }
                 end, Channels);
         _ ->
@@ -288,21 +286,19 @@ process_leave(#iq{from = From,
     end.
 
 -spec process_join_result(iq(), iq()) -> ok.
-process_join_result(#iq{from = Channel,
+process_join_result(#iq{from = #jid{} = Channel,
 			type = result, sub_els = [#mix_join{id = ID} = Join]},
 		    #iq{to = To} = IQ) ->
     case add_channel(To, Channel, ID) of
 	ok ->
 	    % Do roster push
-	    #jid{luser = ChannelName, lserver = Service} = Channel,
-	    mod_roster:push_item(To, #roster{}, #roster{
-		jid = {ChannelName, Service, <<>>},
+	    mod_roster:push_item(To, #roster_item{jid = #jid{}}, #roster_item{
+		jid = Channel,
 		name = <<>>,
 		subscription = none,
-		ask = none,
+		ask = undefined,
 		groups = [],
-		askmessage = <<>>,
-		mix_participant_id = ID
+		mix_channel = #mix_roster_channel{'participant-id' = ID}
 	    }),
 	    % send IQ result
 	    ChanID = make_channel_id(Channel, ID),
@@ -319,11 +315,9 @@ process_join_result(Err, IQ) ->
 process_leave_result(#iq{from = Channel, type = result, sub_els = [#mix_leave{} = Leave]},
 		     #iq{to = User} = IQ) ->
     % Do roster push
-    #jid{luser = ChannelName, lserver = Service} = Channel,
     mod_roster:push_item(User,
-	#roster{jid = {ChannelName, Service, <<>>}, subscription = none},
-	#roster{jid = {ChannelName, Service, <<>>},
-	        subscription = remove}),
+	#roster_item{jid = Channel, subscription = none},
+	#roster_item{jid = Channel, subscription = remove}),
     % send iq result
     ResIQ = xmpp:make_iq_result(IQ, #mix_client_leave{leave = Leave}),
     ejabberd_router:route(ResIQ);

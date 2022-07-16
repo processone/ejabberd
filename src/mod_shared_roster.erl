@@ -185,8 +185,8 @@ cache_nodes(Mod, Host) ->
         false -> ejabberd_cluster:get_nodes()
     end.
 
--spec get_user_roster([#roster{}], {binary(), binary()}) -> [#roster{}].
-get_user_roster(Items, {U, S} = US) ->
+-spec get_user_roster([#roster_item{}], {binary(), binary()}) -> [#roster_item{}].
+get_user_roster(Items, {_, S} = US) ->
     {DisplayedGroups, Cache} = get_user_displayed_groups(US),
     SRUsers = lists:foldl(
 	fun(Group, Acc1) ->
@@ -216,10 +216,10 @@ get_user_roster(Items, {U, S} = US) ->
 	    end
 	end,
 	SRUsers, Items),
-    SRItems = [#roster{usj = {U, S, {U1, S1, <<"">>}},
-		       us = US, jid = {U1, S1, <<"">>},
-		       name = get_rosteritem_name(U1, S1),
-		       subscription = both, ask = none, groups = GroupLabels}
+    SRItems = [#roster_item{jid = jid:make(U1, S1),
+			    name = get_rosteritem_name(U1, S1),
+			    subscription = both, ask = undefined,
+			    groups = GroupLabels}
 	       || {{U1, S1}, GroupLabels} <- dict:to_list(SRUsersRest)],
     SRItems ++ NewItems1.
 
@@ -855,16 +855,14 @@ displayed_to_groups(GroupName, LServer) ->
 
 push_item(User, Server, Item) ->
     mod_roster:push_item(jid:make(User, Server),
-			 Item#roster{subscription = none},
+			 Item#roster_item{subscription = none},
 			 Item).
 
 push_roster_item(User, Server, ContactU, ContactS, ContactN,
 		 GroupLabel, Subscription) ->
-    Item = #roster{usj =
-		       {User, Server, {ContactU, ContactS, <<"">>}},
-		   us = {User, Server}, jid = {ContactU, ContactS, <<"">>},
-		   name = ContactN, subscription = Subscription, ask = none,
-		   groups = [GroupLabel]},
+    Item = #roster_item{jid = jid:make(ContactU, ContactS),
+			name = ContactN, subscription = Subscription, ask = undefined,
+			groups = [GroupLabel]},
     push_item(User, Server, Item).
 
 -spec c2s_self_presence({presence(), ejabberd_c2s:state()})
