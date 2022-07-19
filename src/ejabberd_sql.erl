@@ -684,7 +684,7 @@ sql_query_internal(Query) ->
 	    mysql ->
 		mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),
-						   [{QueryTimeout - 1000},
+						   [{timeout, QueryTimeout - 1000},
 						    {result_type, binary}]));
 	      sqlite ->
 		  Host = State#state.host,
@@ -869,6 +869,9 @@ sql_rollback() ->
 abort_on_driver_error({error, <<"query timed out">>} = Reply, From, Timestamp) ->
     reply(From, Reply, Timestamp),
     {stop, timeout, get(?STATE_KEY)};
+abort_on_driver_error({error, <<"connection closed">>} = Reply, From, Timestamp) ->
+    reply(From, Reply, Timestamp),
+    handle_reconnect(<<"connection closed">>, get(?STATE_KEY));
 abort_on_driver_error({error, <<"Failed sending data on socket", _/binary>>} = Reply,
 		      From, Timestamp) ->
     reply(From, Reply, Timestamp),
