@@ -72,6 +72,8 @@
 -export([ldap_tls_verify/0, ldap_tls_verify/1]).
 -export([ldap_uids/0, ldap_uids/1]).
 -export([listen/0]).
+-export([log_burst_limit_count/0]).
+-export([log_burst_limit_window_time/0]).
 -export([log_rotate_count/0]).
 -export([log_rotate_size/0]).
 -export([loglevel/0]).
@@ -582,6 +584,14 @@ ldap_uids(Host) ->
 -spec listen() -> [ejabberd_listener:listener()].
 listen() ->
     ejabberd_config:get_option({listen, global}).
+
+-spec log_burst_limit_count() -> pos_integer().
+log_burst_limit_count() ->
+    ejabberd_config:get_option({log_burst_limit_count, global}).
+
+-spec log_burst_limit_window_time() -> pos_integer().
+log_burst_limit_window_time() ->
+    ejabberd_config:get_option({log_burst_limit_window_time, global}).
 
 -spec log_rotate_count() -> non_neg_integer().
 log_rotate_count() ->
