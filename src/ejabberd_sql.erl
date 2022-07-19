@@ -74,6 +74,7 @@
 	{db_ref               :: undefined | pid(),
 	 db_type = odbc       :: pgsql | mysql | sqlite | odbc | mssql,
 	 db_version           :: undefined | non_neg_integer(),
+	 reconnect_count = 0  :: non_neg_integer(),
 	 host                 :: binary(),
 	 pending_requests     :: p1_queue:queue(),
 	 overload_reported    :: undefined | integer()}).
@@ -375,7 +376,7 @@ connecting(connect, #state{host = Host} = State) ->
 		    State1 = State#state{db_ref = Ref,
 					 pending_requests = PendingRequests},
 		    State2 = get_db_version(State1),
-		    {next_state, session_established, State2}
+		    {next_state, session_established, State2#state{reconnect_count = 0}}
 	    catch _:Reason ->
 		    handle_reconnect(Reason, State)
 	    end;
@@ -467,15 +468,19 @@ print_state(State) -> State.
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-handle_reconnect(Reason, #state{host = Host} = State) ->
-    StartInterval = ejabberd_option:sql_start_interval(Host),
+handle_reconnect(Reason, #state{host = Host, reconnect_count = RC} = State) ->
+    StartInterval0 = ejabberd_option:sql_start_interval(Host),
+    StartInterval = case RC of
+			0 -> erlang:min(5000, StartInterval0);
+			_ -> StartInterval0
+		    end,
     ?WARNING_MSG("~p connection failed:~n"
 		 "** Reason: ~p~n"
 		 "** Retry after: ~B seconds",
 		 [State#state.db_type, Reason,
 		  StartInterval div 1000]),
     p1_fsm:send_event_after(StartInterval, connect),
-    {next_state, connecting, State}.
+    {next_state, connecting, State#state{reconnect_count = RC + 1}}.
 
 run_sql_cmd(Command, From, State, Timestamp) ->
     case current_time() >= Timestamp of
