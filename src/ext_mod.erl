@@ -36,13 +36,17 @@
          config_dir/0, get_commands_spec/0]).
 -export([modules_configs/0, module_ebin_dir/1]).
 -export([compile_erlang_file/2, compile_elixir_file/2]).
+-export([web_menu_node/3, web_page_node/5]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
 -include("ejabberd_commands.hrl").
+-include("ejabberd_web_admin.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(REPOS, "https://github.com/processone/ejabberd-contrib").
 
@@ -57,6 +61,8 @@ init([]) ->
     application:start(inets),
     inets:start(httpc, [{profile, ext_mod}]),
     ejabberd_commands:register_commands(get_commands_spec()),
+    ejabberd_hooks:add(webadmin_menu_node, ?MODULE, web_menu_node, 50),
+    ejabberd_hooks:add(webadmin_page_node, ?MODULE, web_page_node, 50),
     {ok, #state{}}.
 
 add_paths() ->
@@ -76,6 +82,8 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    ejabberd_hooks:delete(webadmin_menu_node, ?MODULE, web_menu_node, 50),
+    ejabberd_hooks:delete(webadmin_page_node, ?MODULE, web_page_node, 50),
     ejabberd_commands:unregister_commands(get_commands_spec()).
 
 code_change(_OldVsn, State, _Extra) ->
@@ -223,6 +231,7 @@ install(Package) when is_binary(Package) ->
                 ok ->
                     code:add_patha(module_ebin_dir(Module)),
                     ejabberd_config:reload(),
+                    copy_commit_json(Package, Attrs),
                     case erlang:function_exported(Module, post_install, 0) of
                         true -> Module:post_install();
                         _ -> ok
@@ -330,7 +339,8 @@ geturl(Url) ->
         [U, Pass] -> [{proxy_auth, {U, Pass}}];
         _ -> []
     end,
-    case httpc:request(get, {Url, []}, User, [{body_format, binary}], ext_mod) of
+    UA = {"User-Agent", "ejabberd/ext_mod"},
+    case httpc:request(get, {Url, [UA]}, User, [{body_format, binary}], ext_mod) of
         {ok, {{_, 200, _}, Headers, Response}} ->
             {ok, Headers, Response};
         {ok, {{_, Code, _}, _Headers, Response}} ->
@@ -380,7 +390,8 @@ extract_github_master(Repos, DestDir) ->
     case extract(zip, geturl(Url++"/archive/master.zip"), DestDir) of
         ok ->
             RepDir = filename:join(DestDir, module_name(Repos)),
-            file:rename(RepDir++"-master", RepDir);
+            file:rename(RepDir++"-master", RepDir),
+            write_commit_json(Url, RepDir);
         Error ->
             Error
     end.
@@ -722,3 +733,405 @@ format({Key, Val}) when is_binary(Val) ->
     {Key, binary_to_list(Val)};
 format({Key, Val}) -> % TODO: improve Yaml parsing
     {Key, Val}.
+
+%% -- COMMIT.json
+
+write_commit_json(Url, RepDir) ->
+    Url2 = string_replace(Url, "https://github.com", "https://api.github.com/repos"),
+    BranchUrl = lists:flatten(Url2 ++ "/branches/master"),
+    {ok, _Headers, Body} = geturl(BranchUrl),
+    {ok, F} = file:open(filename:join(RepDir, "COMMIT.json"), [raw, write]),
+    file:write(F, Body),
+    file:close(F).
+
+find_commit_json(Attrs) ->
+    {_, FromPath} = lists:keyfind(path, 1, Attrs),
+    case {find_commit_json_path(FromPath),
+          find_commit_json_path(filename:join(FromPath, ".."))}
+    of
+        {{ok, FromFile}, _} ->
+            FromFile;
+        {_, {ok, FromFile}} ->
+            FromFile
+    end.
+
+-ifdef(HAVE_URI_STRING). %% Erlang/OTP 20 or higher can use this:
+string_replace(Subject, Pattern, Replacement) ->
+    string:replace(Subject, Pattern, Replacement).
+
+find_commit_json_path(Path) ->
+    filelib:find_file("COMMIT.json", Path).
+-else. % Workaround for Erlang/OTP older than 20:
+string_replace(Subject, Pattern, Replacement) ->
+    B = binary:replace(list_to_binary(Subject),
+                       list_to_binary(Pattern),
+                       list_to_binary(Replacement)),
+    binary_to_list(B).
+
+find_commit_json_path(Path) ->
+    case filelib:wildcard("COMMIT.json", Path) of
+        [] ->
+            {error, commit_json_not_found};
+        ["COMMIT.json"] = File ->
+            {ok, filename:join(Path, File)}
+    end.
+-endif.
+
+copy_commit_json(Package, Attrs) ->
+    DestPath = module_lib_dir(Package),
+    FromFile = find_commit_json(Attrs),
+    file:copy(FromFile, filename:join(DestPath, "COMMIT.json")).
+
+get_commit_details(Dirname) ->
+    RepDir = filename:join(sources_dir(), Dirname),
+    get_commit_details2(filename:join(RepDir, "COMMIT.json")).
+
+get_commit_details2(Path) ->
+    case file:read_file(Path) of
+        {ok, Body} ->
+            parse_details(Body);
+        _ ->
+            #{sha => <<"1234567890">>,
+              date => <<>>,
+              message => <<>>,
+              html => <<>>,
+              commit_html_url => <<>>}
+    end.
+
+parse_details(Body) ->
+    {Contents} = jiffy:decode(Body),
+
+    {_, {Commit}} = lists:keyfind(<<"commit">>, 1, Contents),
+    {_, Sha} = lists:keyfind(<<"sha">>, 1, Commit),
+    {_, CommitHtmlUrl} = lists:keyfind(<<"html_url">>, 1, Commit),
+
+    {_, {Commit2}} = lists:keyfind(<<"commit">>, 1, Commit),
+    {_, Message} = lists:keyfind(<<"message">>, 1, Commit2),
+    {_, {Author}} = lists:keyfind(<<"author">>, 1, Commit2),
+    {_, AuthorName} = lists:keyfind(<<"name">>, 1, Author),
+    {_, {Committer}} = lists:keyfind(<<"committer">>, 1, Commit2),
+    {_, Date} = lists:keyfind(<<"date">>, 1, Committer),
+
+    {_, {Links}} = lists:keyfind(<<"_links">>, 1, Contents),
+    {_, Html} = lists:keyfind(<<"html">>, 1, Links),
+
+    #{sha => Sha,
+      date => Date,
+      message => Message,
+      html => Html,
+      author_name => AuthorName,
+      commit_html_url => CommitHtmlUrl}.
+
+%% -- Web Admin
+
+-define(AXC(URL, Attributes, Text),
+        ?XAE(<<"a">>, [{<<"href">>, URL} | Attributes], [?C(Text)])
+       ).
+
+-define(INPUTCHECKED(Type, Name, Value),
+        ?XA(<<"input">>,
+            [{<<"type">>, Type},
+             {<<"name">>, Name},
+             {<<"disabled">>, <<"true">>},
+             {<<"checked">>, <<"true">>},
+             {<<"value">>, Value}
+            ]
+           )
+       ).
+
+web_menu_node(Acc, _Node, Lang) ->
+    Acc ++ [{<<"contrib">>, translate:translate(Lang, ?T("Contrib Modules"))}].
+
+web_page_node(_, Node, [<<"contrib">>], Query, Lang) ->
+    QueryRes = list_modules_parse_query(Query),
+    Title = ?H1GL(translate:translate(Lang, ?T("Contrib Modules")),
+                  <<"../../developer/extending-ejabberd/modules/#ejabberd-contrib">>,
+                  <<"ejabberd-contrib">>),
+    Contents = get_content(Node, Query, Lang),
+    Result = case QueryRes of
+                 ok -> [?XREST(?T("Submitted"))];
+                 nothing -> []
+             end,
+    Res = Title ++ Result ++ Contents,
+    {stop, Res};
+web_page_node(Acc, _, _, _, _) ->
+    Acc.
+
+get_module_home(Module, Attrs) ->
+    case element(2, lists:keyfind(home, 1, Attrs)) of
+        "https://github.com/processone/ejabberd-contrib/tree/master/" = P1 ->
+            P1 ++ atom_to_list(Module);
+        Other ->
+            Other
+    end.
+
+get_module_summary(Attrs) ->
+    element(2, lists:keyfind(summary, 1, Attrs)).
+
+get_module_author(Attrs) ->
+    element(2, lists:keyfind(author, 1, Attrs)).
+
+get_installed_module_el({ModAtom, Attrs}, Lang) ->
+    Mod = misc:atom_to_binary(ModAtom),
+    Home = list_to_binary(get_module_home(ModAtom, Attrs)),
+    Summary = list_to_binary(get_module_summary(Attrs)),
+    Author = list_to_binary(get_module_author(Attrs)),
+    {_, FromPath} = lists:keyfind(path, 1, Attrs),
+    {ok, FromFile} = find_commit_json_path(FromPath),
+
+    #{sha := CommitSha,
+      date := CommitDate,
+      message := CommitMessage,
+      author_name := CommitAuthorName,
+      commit_html_url := CommitHtmlUrl} = get_commit_details2(FromFile),
+
+    [SourceSpec] = [S || {M, S} <- available(), M == ModAtom],
+    SourceFile = find_commit_json(SourceSpec),
+    #{sha := SourceSha,
+      date := SourceDate,
+      message := SourceMessage,
+      author_name := SourceAuthorName,
+      commit_html_url := SourceHtmlUrl} = get_commit_details2(SourceFile),
+
+    UpgradeEls =
+        case CommitSha == SourceSha of
+            true ->
+                [];
+            false ->
+                SourceTitleEl = make_title_el(SourceDate, SourceMessage, SourceAuthorName),
+                [?XE(<<"td">>,
+                     [?INPUT(<<"checkbox">>, <<"selected_upgrade">>, Mod),
+                      ?C(<<" ">>),
+                      ?AXC(SourceHtmlUrl, [SourceTitleEl], binary:part(SourceSha, {0, 8}))
+                     ]
+                    )
+                ]
+        end,
+
+    Started =
+        case gen_mod:is_loaded(hd(ejabberd_option:hosts()), ModAtom) of
+            false ->
+                [?C(<<" - ">>)];
+            true ->
+                []
+        end,
+    TitleEl = make_title_el(CommitDate, CommitMessage, CommitAuthorName),
+    Status = case lists:member({mod_status, 0}, ModAtom:module_info(exports)) of
+                 true ->
+                     [?C(<<" ">>),
+                      ?C(ModAtom:mod_status())];
+                 false -> []
+             end,
+    HomeTitleEl = make_home_title_el(Summary, Author),
+    ?XE(<<"tr">>,
+        [?XE(<<"td">>, [?AXC(Home, [HomeTitleEl], Mod)]),
+         ?XE(<<"td">>,
+             [?INPUTTD(<<"checkbox">>, <<"selected_uninstall">>, Mod),
+              ?C(<<" ">>),
+              ?AXC(CommitHtmlUrl, [TitleEl], binary:part(CommitSha, {0, 8})),
+              ?C(<<" ">>)]
+             ++ Started
+             ++ Status)
+        | UpgradeEls]).
+
+get_available_module_el({ModAtom, Attrs}) ->
+    Installed = installed(),
+    Mod = misc:atom_to_binary(ModAtom),
+    Home = list_to_binary(get_module_home(ModAtom, Attrs)),
+    Summary = list_to_binary(get_module_summary(Attrs)),
+    Author = list_to_binary(get_module_author(Attrs)),
+    HomeTitleEl = make_home_title_el(Summary, Author),
+    InstallCheckbox =
+        case lists:keymember(ModAtom, 1, Installed) of
+            false -> [?INPUT(<<"checkbox">>, <<"selected_install">>, Mod)];
+            true -> [?INPUTCHECKED(<<"checkbox">>, <<"selected_install">>, Mod)]
+        end,
+    ?XE(<<"tr">>,
+        [?XE(<<"td">>, InstallCheckbox ++ [?C(<<" ">>), ?AXC(Home, [HomeTitleEl], Mod)]),
+         ?XE(<<"td">>, [?C(Summary)])]).
+
+get_installed_modules_table(Lang) ->
+    Modules = installed(),
+    Tail = [?XE(<<"tr">>,
+                [?XE(<<"td">>, []),
+                 ?XE(<<"td">>,
+                     [?INPUTTD(<<"submit">>, <<"uninstall">>, ?T("Uninstall"))]
+                    ),
+                 ?XE(<<"td">>,
+                     [?INPUTT(<<"submit">>, <<"upgrade">>, ?T("Upgrade"))]
+                    )
+                ]
+               )
+           ],
+    TBody = [get_installed_module_el(Module, Lang) || Module <- lists:sort(Modules)],
+    ?XAE(<<"table">>,
+         [],
+         [?XE(<<"tbody">>, TBody ++ Tail)]
+        ).
+
+get_available_modules_table(Lang) ->
+    Modules = get_available_notinstalled(),
+    Tail = [?XE(<<"tr">>,
+                [?XE(<<"td">>,
+                     [?INPUTT(<<"submit">>, <<"install">>, ?T("Install"))]
+                    )
+                ]
+               )
+           ],
+    TBody = [get_available_module_el(Module) || Module <- lists:sort(Modules)],
+    ?XAE(<<"table">>,
+         [],
+         [?XE(<<"tbody">>, TBody ++ Tail)]
+        ).
+
+make_title_el(Date, Message, AuthorName) ->
+    LinkTitle = <<Message/binary, "\n", AuthorName/binary, "\n", Date/binary>>,
+    {<<"title">>, LinkTitle}.
+
+make_home_title_el(Summary, Author) ->
+    LinkTitle = <<Summary/binary, "\n", Author/binary>>,
+    {<<"title">>, LinkTitle}.
+
+get_content(Node, Query, Lang) ->
+    Instruct = translate:translate(Lang, ?T("Type a command in a textbox and click Execute.")),
+    {{_CommandCtl}, _Res} =
+        case catch parse_and_execute(Query, Node) of
+            {'EXIT', _} -> {{""}, Instruct};
+            Result_tuple -> Result_tuple
+        end,
+
+    AvailableModulesEls = get_available_modules_table(Lang),
+    InstalledModulesEls = get_installed_modules_table(Lang),
+
+    Sources = get_sources_list(),
+    SourceEls = (?XAE(<<"table">>,
+                      [],
+                      [?XE(<<"tbody">>,
+                           (lists:map(
+                              fun(Dirname) ->
+                                      #{sha := CommitSha,
+                                        date := CommitDate,
+                                        message := CommitMessage,
+                                        html := Html,
+                                        author_name := AuthorName,
+                                        commit_html_url := CommitHtmlUrl
+                                       } = get_commit_details(Dirname),
+                                      TitleEl = make_title_el(CommitDate, CommitMessage, AuthorName),
+                                      ?XE(<<"tr">>,
+                                          [?XE(<<"td">>, [?AC(Html, Dirname)]),
+                                           ?XE(<<"td">>,
+                                               [?AXC(CommitHtmlUrl, [TitleEl], binary:part(CommitSha, {0, 8}))]
+                                              ),
+                                           ?XE(<<"td">>, [?C(CommitMessage)])
+                                          ])
+                              end,
+                              lists:sort(Sources)
+                             ))
+                          )
+                      ]
+                     )),
+
+    [?XC(<<"p">>,
+         translate:translate(
+           Lang, ?T("Update specs to get modules source, then install desired ones.")
+          )
+        ),
+     ?XAE(<<"form">>,
+          [{<<"method">>, <<"post">>}],
+          [?XCT(<<"h3">>, ?T("Sources Specs:")),
+           SourceEls,
+           ?BR,
+           ?INPUTT(<<"submit">>,
+                   <<"updatespecs">>,
+                   translate:translate(Lang, ?T("Update Specs"))),
+
+           ?XCT(<<"h3">>, ?T("Installed Modules:")),
+           InstalledModulesEls,
+           ?BR,
+
+           ?XCT(<<"h3">>, ?T("Other Modules Available:")),
+           AvailableModulesEls
+          ]
+         )
+    ].
+
+get_sources_list() ->
+    case file:list_dir(sources_dir()) of
+        {ok, Filenames} -> Filenames;
+        {error, enoent} -> []
+    end.
+
+get_available_notinstalled() ->
+    Installed = installed(),
+    lists:filter(
+      fun({Mod, _}) ->
+              not lists:keymember(Mod, 1, Installed)
+      end,
+      available()
+     ).
+
+parse_and_execute(Query, Node) ->
+    {[Exec], _} = lists:partition(
+                    fun(ExType) ->
+                            lists:keymember(ExType, 1, Query)
+                    end,
+                    [<<"updatespecs">>]
+                   ),
+    Commands = {get_val(<<"updatespecs">>, Query)},
+    {_, R} = parse1_command(Exec, Commands, Node),
+    {Commands, R}.
+
+get_val(Val, Query) ->
+    {value, {_, R}} = lists:keysearch(Val, 1, Query),
+    binary_to_list(R).
+
+parse1_command(<<"updatespecs">>, {_}, _Node) ->
+    Res = update(),
+    {oook, io_lib:format("~p", [Res])}.
+
+list_modules_parse_query(Query) ->
+    case {lists:keysearch(<<"install">>, 1, Query),
+          lists:keysearch(<<"upgrade">>, 1, Query),
+          lists:keysearch(<<"uninstall">>, 1, Query)}
+    of
+        {{value, _}, _, _} -> list_modules_parse_install(Query);
+        {_, {value, _}, _} -> list_modules_parse_upgrade(Query);
+        {_, _, {value, _}} -> list_modules_parse_uninstall(Query);
+        _ -> nothing
+    end.
+
+list_modules_parse_install(Query) ->
+    lists:foreach(
+      fun({Mod, _}) ->
+              ModBin = misc:atom_to_binary(Mod),
+              case lists:member({<<"selected_install">>, ModBin}, Query) of
+                  true -> install(Mod);
+                  _ -> ok
+              end
+      end,
+      get_available_notinstalled()),
+    ok.
+
+list_modules_parse_upgrade(Query) ->
+    lists:foreach(
+      fun({Mod, _}) ->
+              ModBin = misc:atom_to_binary(Mod),
+              case lists:member({<<"selected_upgrade">>, ModBin}, Query) of
+                  true -> upgrade(Mod);
+                  _ -> ok
+              end
+      end,
+      installed()),
+    ok.
+
+list_modules_parse_uninstall(Query) ->
+    lists:foreach(
+      fun({Mod, _}) ->
+              ModBin = misc:atom_to_binary(Mod),
+              case lists:member({<<"selected_uninstall">>, ModBin}, Query) of
+                  true -> uninstall(Mod);
+                  _ -> ok
+              end
+      end,
+      installed()),
+    ok.
