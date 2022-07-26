@@ -55,6 +55,7 @@ jobs:
     - name: Prepare libraries
       run: |
         apt-get -qq update
+        apt-get purge -y libgd3
         apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
                             libsqlite3-dev libwebp-dev libyaml-dev
 
@@ -146,6 +147,7 @@ jobs:
     - name: Prepare libraries
       run: |
         sudo apt-get -qq update
+        sudo apt-get -y purge libgd3 nginx
         sudo apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
                                  libsqlite3-dev libwebp-dev libyaml-dev
 
