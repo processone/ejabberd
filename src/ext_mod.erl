@@ -752,7 +752,9 @@ find_commit_json(Attrs) ->
         {{ok, FromFile}, _} ->
             FromFile;
         {_, {ok, FromFile}} ->
-            FromFile
+            FromFile;
+        _ ->
+            not_found
     end.
 
 -ifdef(HAVE_URI_STRING). %% Erlang/OTP 20 or higher can use this:
@@ -779,8 +781,12 @@ find_commit_json_path(Path) ->
 
 copy_commit_json(Package, Attrs) ->
     DestPath = module_lib_dir(Package),
-    FromFile = find_commit_json(Attrs),
-    file:copy(FromFile, filename:join(DestPath, "COMMIT.json")).
+    case find_commit_json(Attrs) of
+        not_found ->
+            ok;
+        FromFile ->
+            file:copy(FromFile, filename:join(DestPath, "COMMIT.json"))
+    end.
 
 get_commit_details(Dirname) ->
     RepDir = filename:join(sources_dir(), Dirname),
