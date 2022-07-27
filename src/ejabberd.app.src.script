@@ -14,7 +14,7 @@ Vars = case file:consult(filename:join([filename:dirname(SCRIPT), "..", "vars.co
  Vars ++
  [{modules, []},
   {registered, []},
-  {applications, [kernel, sasl, ssl, stdlib]},
+  {applications, [kernel, sasl, ssl, stdlib, syntax_tools]},
   {included_applications,
     [compiler, inets, mnesia, os_mon,
      cache_tab,

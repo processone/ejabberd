@@ -43,7 +43,7 @@ defmodule Ejabberd.MixProject do
      extra_applications: [:mix],
      applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib,
                     :base64url, :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
-                    :p1_utils, :stringprep, :yconf],
+                    :p1_utils, :stringprep, :syntax_tools, :yconf],
      included_applications: [:mnesia, :os_mon,
                              :cache_tab, :eimp, :mqtree, :p1_acme,
                              :p1_oauth2, :pkix, :xmpp]
