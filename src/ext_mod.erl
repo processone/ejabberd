@@ -391,7 +391,7 @@ extract_github_master(Repos, DestDir) ->
         ok ->
             RepDir = filename:join(DestDir, module_name(Repos)),
             file:rename(RepDir++"-master", RepDir),
-            write_commit_json(Url, RepDir);
+            maybe_write_commit_json(Url, RepDir);
         Error ->
             Error
     end.
@@ -735,6 +735,14 @@ format({Key, Val}) -> % TODO: improve Yaml parsing
     {Key, Val}.
 
 %% -- COMMIT.json
+
+maybe_write_commit_json(Url, RepDir) ->
+    case (os:getenv("GITHUB_ACTIONS") == "true") of
+        true ->
+            ok;
+        false ->
+            write_commit_json(Url, RepDir)
+    end.
 
 write_commit_json(Url, RepDir) ->
     Url2 = string_replace(Url, "https://github.com", "https://api.github.com/repos"),
