@@ -560,44 +560,54 @@ outer_transaction(F, NRestarts, _Reason) ->
 		     [T]),
 	  erlang:exit(implementation_faulty)
     end,
-    sql_begin(),
-    put(?NESTING_KEY, PreviousNestingLevel + 1),
-    try F() of
-	Res ->
-	    sql_commit(),
-	    {atomic, Res}
-    catch
-	?EX_RULE(throw, {aborted, Reason}, _) when NRestarts > 0 ->
-	    rollback_transaction(F, NRestarts, Reason);
-	?EX_RULE(throw, {aborted, Reason}, Stack) when NRestarts =:= 0 ->
-	    StackTrace = ?EX_STACK(Stack),
-	    ?ERROR_MSG("SQL transaction restarts exceeded~n** "
-		       "Restarts: ~p~n** Last abort reason: "
-		       "~p~n** Stacktrace: ~p~n** When State "
-		       "== ~p",
-		       [?MAX_TRANSACTION_RESTARTS, Reason,
-			StackTrace, get(?STATE_KEY)]),
-	    rollback_transaction(F, NRestarts, Reason);
-	?EX_RULE(exit, Reason, _) ->
-	    rollback_transaction(F, 0, Reason)
+    case sql_begin() of
+	{error, Reason} ->
+	    maybe_restart_transaction(F, NRestarts, Reason, false);
+	_ ->
+	    put(?NESTING_KEY, PreviousNestingLevel + 1),
+	    try F() of
+		Res ->
+		    case sql_commit() of
+			{error, Reason} ->
+			    restart(Reason);
+			_ ->
+			    {atomic, Res}
+		    end
+	    catch
+		?EX_RULE(throw, {aborted, Reason}, _) when NRestarts > 0 ->
+		    maybe_restart_transaction(F, NRestarts, Reason, true);
+		?EX_RULE(throw, {aborted, Reason}, Stack) when NRestarts =:= 0 ->
+		    StackTrace = ?EX_STACK(Stack),
+		    ?ERROR_MSG("SQL transaction restarts exceeded~n** "
+			       "Restarts: ~p~n** Last abort reason: "
+			       "~p~n** Stacktrace: ~p~n** When State "
+			       "== ~p",
+			       [?MAX_TRANSACTION_RESTARTS, Reason,
+				StackTrace, get(?STATE_KEY)]),
+		    maybe_restart_transaction(F, NRestarts, Reason, true);
+		?EX_RULE(exit, Reason, _) ->
+		    maybe_restart_transaction(F, 0, Reason, true)
+	    end
     end.
 
-rollback_transaction(F, NRestarts, Reason) ->
+maybe_restart_transaction(F, NRestarts, Reason, DoRollback) ->
     Res = case driver_restart_required(Reason) of
-	true ->
-	    {aborted, Reason};
-	_ ->
-	    case sql_rollback() of
-		{Tag, Reason2} when Tag == error; Tag == aborted ->
-		    case driver_restart_required(Reason2) of
-			true ->
-			    {aborted, Reason2};
-			_ ->
-			    continue
-		    end;
-		_ ->
-		    continue
-	    end
+	      true ->
+		  {aborted, Reason};
+	      _ when DoRollback ->
+		  case sql_rollback() of
+		      {error, Reason2} ->
+			  case driver_restart_required(Reason2) of
+			      true ->
+				  {aborted, Reason2};
+			      _ ->
+				  continue
+			  end;
+		      _ ->
+			  continue
+		  end;
+	      _ ->
+		  continue
     end,
     case Res of
 	continue when NRestarts > 0 ->
