@@ -443,6 +443,8 @@ handle_sync_event(_Event, _From, StateName, State) ->
 code_change(_OldVsn, StateName, State, _Extra) ->
     {ok, StateName, State}.
 
+handle_info({'EXIT', _Pid, _Reason}, connecting, State) ->
+    {next_state, connecting, State};
 handle_info({'EXIT', _Pid, Reason}, _StateName, State) ->
     handle_reconnect(Reason, State);
 handle_info(Info, StateName, State) ->
