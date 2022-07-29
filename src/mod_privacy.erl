@@ -538,7 +538,8 @@ set_default_list(LUser, LServer, Name) ->
     end.
 
 -spec check_packet(allow | deny, c2s_state() | jid(), stanza(), in | out) -> allow | deny.
-check_packet(Acc, #{jid := JID} = State, Packet, Dir) ->
+check_packet(Acc, #{user := User, server := Server} = State, Packet, Dir) ->
+    JID = jid:make(User, Server),
     case maps:get(privacy_active_list, State, none) of
 	none ->
 	    check_packet(Acc, JID, Packet, Dir);
