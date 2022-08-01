@@ -90,7 +90,9 @@ ERL_INETRC="$CONFIG_DIR"/inetrc
 # define ejabberd parameters
 EJABBERD_OPTS="$EJABBERD_OPTS\
 $(sed '/^log_rotate_size/!d;s/:[ \t]*\([0-9]\{1,\}\).*/ \1/;s/:[ \t]*\(infinity\).*/ \1/;s/^/ /' "$EJABBERD_CONFIG_PATH")\
-$(sed '/^log_rotate_count/!d;s/:[ \t]*\([0-9]*\).*/ \1/;s/^/ /' "$EJABBERD_CONFIG_PATH")"
+$(sed '/^log_rotate_count/!d;s/:[ \t]*\([0-9]*\).*/ \1/;s/^/ /' "$EJABBERD_CONFIG_PATH")\
+$(sed '/^log_burst_limit_count/!d;s/:[ \t]*\([0-9]*\).*/ \1/;s/^/ /' "$EJABBERD_CONFIG_PATH")\
+$(sed '/^log_burst_limit_window_time/!d;s/:[ \t]*\([0-9]*[a-z]*\).*/ \1/;s/^/ /' "$EJABBERD_CONFIG_PATH")"
 [ -n "$EJABBERD_OPTS" ] && EJABBERD_OPTS="-ejabberd $EJABBERD_OPTS"
 EJABBERD_OPTS="-mnesia dir \"$SPOOL_DIR\" $MNESIA_OPTIONS $EJABBERD_OPTS -s ejabberd"
 
