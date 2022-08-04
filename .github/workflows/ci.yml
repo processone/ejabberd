@@ -113,6 +113,9 @@ jobs:
         echo '{ct_extra_params, "-verbosity 20"}.' >>rebar.config
         echo "{ct_opts, [{verbosity, 20}, {keep_logs, 20}]}." >>rebar.config
 
+    - name: Remove syntax_tools from release
+      run: sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
+
     - name: Cache rebar
       uses: actions/cache@v3
       with:
@@ -262,7 +265,7 @@ jobs:
         sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
                                                 SEQUENCES IN SCHEMA public
                                                 TO ejabberd_test;"
-        sudo sed -i 's|new_schema, false|new_schema, true|g' test/suite.erl
+        sed -i 's|new_schema, false|new_schema, true|g' test/suite.erl
     - run: CT_BACKENDS=mysql,pgsql make test
       id: ctnewschema
     - name: Check results
