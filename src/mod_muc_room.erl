@@ -4321,6 +4321,7 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 	   {description, Config#config.description},
 	   {changesubject, Config#config.allow_change_subj},
 	   {allowinvites, Config#config.allow_user_invites},
+	   {allow_query_users, Config#config.allow_query_users},
 	   {allowpm, AllowPM},
 	   {lang, Config#config.lang}],
     Fs2 = case Config#config.pubsub of
