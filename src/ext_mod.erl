@@ -36,7 +36,7 @@
          config_dir/0, get_commands_spec/0]).
 -export([modules_configs/0, module_ebin_dir/1]).
 -export([compile_erlang_file/2, compile_elixir_file/2]).
--export([web_menu_node/3, web_page_node/5]).
+-export([web_menu_node/3, web_page_node/5, get_page/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -858,6 +858,12 @@ web_menu_node(Acc, _Node, Lang) ->
     Acc ++ [{<<"contrib">>, translate:translate(Lang, ?T("Contrib Modules"))}].
 
 web_page_node(_, Node, [<<"contrib">>], Query, Lang) ->
+    Res = rpc:call(Node, ?MODULE, get_page, [Node, Query, Lang]),
+    {stop, Res};
+web_page_node(Acc, _, _, _, _) ->
+    Acc.
+
+get_page(Node, Query, Lang) ->
     QueryRes = list_modules_parse_query(Query),
     Title = ?H1GL(translate:translate(Lang, ?T("Contrib Modules")),
                   <<"../../developer/extending-ejabberd/modules/#ejabberd-contrib">>,
@@ -867,10 +873,7 @@ web_page_node(_, Node, [<<"contrib">>], Query, Lang) ->
                  ok -> [?XREST(?T("Submitted"))];
                  nothing -> []
              end,
-    Res = Title ++ Result ++ Contents,
-    {stop, Res};
-web_page_node(Acc, _, _, _, _) ->
-    Acc.
+    Title ++ Result ++ Contents.
 
 get_module_home(Module, Attrs) ->
     case element(2, lists:keyfind(home, 1, Attrs)) of
