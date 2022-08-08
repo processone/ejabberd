@@ -1,11 +1,11 @@
 @echo off
 
 ::
-::   ejabberd Docker installer for Windows
+::   ejabberd container installer for Windows
 ::   -------------------------------------
-::                                    v0.3
+::                                    v0.4
 ::
-:: This batch script downloads an ejabberd docker image
+:: This batch script downloads an ejabberd container image
 :: and setups a docker container to run ejabberd.
 
 ::
@@ -52,7 +52,9 @@ set USER=admin
 set PASSWORD=
 
 :: By default this downloads 'latest' ejabberd version,
-:: but you can set a specific version, for example 21.01
+:: but you can set a specific version, for example '22.05'
+:: or the bleeding edge 'master'. See available tags in
+:: https://github.com/processone/ejabberd/pkgs/container/ejabberd
 
 set VERSION=latest
 
@@ -72,7 +74,7 @@ set PORTS=5180 5222 5269 5443
 ::
 :: - (>) START the ejabberd container
 :: - Enter WebAdmin: click the ([->]) OPEN IN BROWSER button
-:: - To try ejabberdctl, click the (>_) CLI button, then: bin/ejabberdctl
+:: - To try ejabberdctl, click the (>_) CLI button, then: ejabberdctl
 :: - ([]) STOP the ejabberd container
 ::
 :: If using an old Windows, open Kitematic and you can:
@@ -80,7 +82,7 @@ set PORTS=5180 5222 5269 5443
 :: - START the ejabberd container
 :: - Open your configuration, logs, ... in Settings > Volumes
 :: - Enter WebAdmin in Settings > Hostname/Ports > click on the 5180 port
-:: - Try ejabberdctl in EXEC, then: bin/ejabberdctl
+:: - Try ejabberdctl in EXEC, then: ejabberdctl
 :: - STOP the ejabberd container
 ::
 :: You can delete the container and create it again running this script,
@@ -155,15 +157,15 @@ if [%PASSWORD%]==[] (
 set IMAGE=ghcr.io/processone/ejabberd:%VERSION%
 
 echo.
-echo === Checking if the '%IMAGE%' docker image was already downloaded...
+echo === Checking if the '%IMAGE%' container image was already downloaded...
 docker image history %IMAGE% >NUL
 if %ERRORLEVEL% NEQ 0 (
-  echo === The '%IMAGE%' docker image was not downloaded yet.
+  echo === The '%IMAGE%' container image was not downloaded yet.
   echo.
-  echo === Downloading the '%IMAGE%' docker image, please wait...
+  echo === Downloading the '%IMAGE%' container image, please wait...
   docker pull %IMAGE%
 ) else (
-  echo === The '%IMAGE%' docker image was already downloaded.
+  echo === The '%IMAGE%' container image was already downloaded.
 )
 
 ::===============================================================
@@ -172,18 +174,18 @@ if %ERRORLEVEL% NEQ 0 (
 ::===============================================================
 
 echo.
-echo === Checking if the 'ejabberd' docker container already exists...
+echo === Checking if the 'ejabberd' container already exists...
 docker container logs ejabberd
 if %ERRORLEVEL% EQU 0 (
   echo.
-  echo === The 'ejabberd' docker container already exists.
+  echo === The 'ejabberd' container already exists.
   echo === Nothing to do, so installation finishes now.
   echo === You can go to Docker Desktop and start the 'ejabberd' container.
   echo.
   pause
   exit 1
 ) else (
-  echo === The 'ejabberd' docker container doesn't yet exist,
+  echo === The 'ejabberd' container doesn't yet exist,
   echo === so let's continue the installation process.
 )
 
@@ -203,7 +205,7 @@ if exist %INSTALL_DIR% (
 ::===============================================================
 
 echo.
-echo === Creating the final 'ejabberd' docker container using %IMAGE% image...
+echo === Creating the final 'ejabberd' container using %IMAGE% image...
 
 setlocal EnableDelayedExpansion
 set PS=
@@ -228,7 +230,7 @@ EXIT /B %ERRORLEVEL%
 :create-ejabberd-pre
 
 echo.
-echo === Creating a preliminary 'ejabberd-pre' docker image using %IMAGE% image...
+echo === Creating a preliminary 'ejabberd-pre' container using %IMAGE% image...
 docker create --name ejabberd-pre --hostname localhost %IMAGE%
 
 echo.
@@ -285,7 +287,7 @@ docker cp ejabberd-pre:/opt/ejabberd/database/ %INSTALL_DIR%
 docker cp ejabberd-pre:/opt/ejabberd/logs/ %INSTALL_DIR%
 
 echo.
-echo === Deleting the preliminary 'ejabberd-pre' docker image...
+echo === Deleting the preliminary 'ejabberd-pre' container...
 docker stop ejabberd-pre
 docker rm ejabberd-pre
 
