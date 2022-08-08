@@ -98,18 +98,18 @@ for /f "tokens=4-5 delims=. " %%i in ('ver') do set WVERSION=%%i.%%j
 if "%wversion%" == "10.0" (
   echo === Preparing paths to install in Windows 10...
   set INSTALL_DIR=%INSTALL_DIR_WINDOWS10%
-  set VC=-v %INSTALL_DIR_WINDOWS10%\conf:/home/ejabberd/conf
-  set VD=-v %INSTALL_DIR_WINDOWS10%\database:/home/ejabberd/database
-  set VL=-v %INSTALL_DIR_WINDOWS10%\logs:/home/ejabberd/logs
-  set VM=-v %INSTALL_DIR_WINDOWS10%\ejabberd-modules:/home/ejabberd/.ejabberd-modules
+  set VC=-v %INSTALL_DIR_WINDOWS10%\conf:/opt/ejabberd/conf
+  set VD=-v %INSTALL_DIR_WINDOWS10%\database:/opt/ejabberd/database
+  set VL=-v %INSTALL_DIR_WINDOWS10%\logs:/opt/ejabberd/logs
+  set VM=-v %INSTALL_DIR_WINDOWS10%\ejabberd-modules:/opt/ejabberd/.ejabberd-modules
   set DOCKERDOWNLOAD="First download and install Docker Desktop from https://www.docker.com/"
 ) else (
   echo === Preparing paths to install in Windows older than 10...
   set INSTALL_DIR=C:\Users\%USERNAME%\ejabberd
-  set VC=-v "/%INSTALL_DIR_DOCKER%/conf:/home/ejabberd/conf"
-  set VD=-v "/%INSTALL_DIR_DOCKER%/database:/home/ejabberd/database"
-  set VL=-v "/%INSTALL_DIR_DOCKER%/logs:/home/ejabberd/logs"
-  set VM=-v "/%INSTALL_DIR_DOCKER%/ejabberd-modules:/home/ejabberd/.ejabberd-modules"
+  set VC=-v "/%INSTALL_DIR_DOCKER%/conf:/opt/ejabberd/conf"
+  set VD=-v "/%INSTALL_DIR_DOCKER%/database:/opt/ejabberd/database"
+  set VL=-v "/%INSTALL_DIR_DOCKER%/logs:/opt/ejabberd/logs"
+  set VM=-v "/%INSTALL_DIR_DOCKER%/ejabberd-modules:/opt/ejabberd/.ejabberd-modules"
   set DOCKERDOWNLOAD="First download and install Docker Toolbox from https://github.com/docker/toolbox/releases"
 )
 set VOLUMES=%VC% %VD% %VL% %VM%
@@ -152,7 +152,7 @@ if [%PASSWORD%]==[] (
 ::
 ::===============================================================
 
-set IMAGE=ejabberd/ecs:%VERSION%
+set IMAGE=ghcr.io/processone/ejabberd:%VERSION%
 
 echo.
 echo === Checking if the '%IMAGE%' docker image was already downloaded...
@@ -242,7 +242,7 @@ set status=4
 goto :while
 
 :statusstart
-docker exec -it ejabberd-pre bin/ejabberdctl status
+docker exec -it ejabberd-pre ejabberdctl status
 goto :statusend
 
 :while
@@ -263,15 +263,15 @@ if %status% GTR 0 (
 echo.
 echo === Setting a few options...
 docker exec -it ejabberd-pre sed -i "s!- localhost!- %HOST%!g" conf/ejabberd.yml
-docker exec -it ejabberd-pre sed -i "s!admin@localhost!%USER%@%HOST%!g" conf/ejabberd.yml
+docker exec -it ejabberd-pre sed -i "s!^acl:!acl:\n  admin:\n    user:\n      - \"%USER%@%HOST%\"!g" conf/ejabberd.yml
 docker exec -it ejabberd-pre sed -i "s!5280!5180!g" conf/ejabberd.yml
-docker exec -it ejabberd-pre sed -i "s!\"/admin\"!/!g" conf/ejabberd.yml
-docker exec -it ejabberd-pre bin/ejabberdctl reload_config
+docker exec -it ejabberd-pre sed -i "s!/admin!/!g" conf/ejabberd.yml
+docker exec -it ejabberd-pre ejabberdctl reload_config
 
 echo.
 echo === Registering the administrator account...
-docker exec -it ejabberd-pre bin/ejabberdctl register %USER% %HOST% %PASSWORD%
-docker exec -it ejabberd-pre bin/ejabberdctl stop
+docker exec -it ejabberd-pre ejabberdctl register %USER% %HOST% %PASSWORD%
+docker exec -it ejabberd-pre ejabberdctl stop
 
 echo.
 echo === Copying conf, database, logs...
@@ -280,9 +280,9 @@ mkdir %INSTALL_DIR%\conf
 mkdir %INSTALL_DIR%\database
 mkdir %INSTALL_DIR%\logs
 mkdir %INSTALL_DIR%\ejabberd-modules
-docker cp ejabberd-pre:/home/ejabberd/conf/ %INSTALL_DIR%
-docker cp ejabberd-pre:/home/ejabberd/database/ %INSTALL_DIR%
-docker cp ejabberd-pre:/home/ejabberd/logs/ %INSTALL_DIR%
+docker cp ejabberd-pre:/opt/ejabberd/conf/ %INSTALL_DIR%
+docker cp ejabberd-pre:/opt/ejabberd/database/ %INSTALL_DIR%
+docker cp ejabberd-pre:/opt/ejabberd/logs/ %INSTALL_DIR%
 
 echo.
 echo === Deleting the preliminary 'ejabberd-pre' docker image...
