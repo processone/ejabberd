@@ -318,6 +318,9 @@ start_connection(Module, Arity, Socket, State, Sup) ->
 		  supervisor:start_child(Sup, [{gen_tcp, Socket}, State])
 	  end,
     case Res of
+	{ok, Pid, preowned_socket} ->
+	    Module:accept(Pid),
+	    {ok, Pid};
 	{ok, Pid} ->
 	    case gen_tcp:controlling_process(Socket, Pid) of
 		ok ->
