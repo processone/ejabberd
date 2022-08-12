@@ -202,14 +202,13 @@ get_user_roster(Items, {_, S} = US) ->
 	end,
 	dict:new(), DisplayedGroups),
     {NewItems1, SRUsersRest} = lists:mapfoldl(
-	fun(Item, SRUsers1) ->
-	    {_, _, {U1, S1, _}} = Item#roster.usj,
-	    US1 = {U1, S1},
+	fun(Item = #roster_item{jid = #jid{luser = User1, lserver = Server1}}, SRUsers1) ->
+	    US1 = {User1, Server1},
 	    case dict:find(US1, SRUsers1) of
 		{ok, GroupLabels} ->
-		    {Item#roster{subscription = both,
-				 groups = Item#roster.groups ++ GroupLabels,
-				 ask = none},
+		    {Item#roster_item{subscription = both,
+				      groups = Item#roster_item.groups ++ GroupLabels,
+				      ask = undefined},
 		     dict:erase(US1, SRUsers1)};
 		error ->
 		    {Item, SRUsers1}
