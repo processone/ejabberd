@@ -119,6 +119,8 @@ create_scripts()
 	fi
 	chown 'root:$rel_name' '/opt/$rel_name-$rel_vsn/lib/epam-'*'/priv/bin/epam'
 	chmod '4750' '/opt/$rel_name-$rel_vsn/lib/epam-'*'/priv/bin/epam'
+	chown -R -h '$rel_name:$rel_name' '/opt/$rel_name'
+	chmod 'o-rwx' '/opt/$rel_name/'*
 	EOF
 
 	cat >"$dir/after-upgrade" <<-EOF
