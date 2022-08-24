@@ -4552,14 +4552,14 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 			node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
 			items = [#ps_item{
 			    id = p1_rand:get_string(),
-			    sub_els = [#muc_subscribe{jid = BareJID, nick = Nick}]}]}}]},
+			    sub_els = [#muc_unsubscribe{jid = BareJID, nick = Nick}]}]}}]},
 	    Packet1b = #message{
 		sub_els = [#ps_event{
 		    items = #ps_items{
 			node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
 			items = [#ps_item{
 			    id = p1_rand:get_string(),
-			    sub_els = [#muc_subscribe{nick = Nick}]}]}}]},
+			    sub_els = [#muc_unsubscribe{nick = Nick}]}]}}]},
 	    {Packet2a, Packet2b} = ejabberd_hooks:run_fold(muc_unsubscribed, ServerHost, {Packet1a, Packet1b},
 							   [ServerHost, Room, Host, BareJID, StateData]),
 	    send_subscriptions_change_notifications(Packet2a, Packet2b, StateData),
