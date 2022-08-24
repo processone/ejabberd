@@ -112,29 +112,20 @@ depends(_Host, _Opts) ->
 -spec get_user_roster([#roster_item{}], {binary(), binary()}) -> [#roster_item{}].
 get_user_roster(Items, US) ->
     SRUsers = get_user_to_groups_map(US, true),
-    {NewItems1, SRUsersRest} = lists:mapfoldl(fun (Item,
-						   SRUsers1) ->
-						      {_, _, {U1, S1, _}} =
-							  Item#roster.usj,
-						      US1 = {U1, S1},
-						      case dict:find(US1,
-								     SRUsers1)
-							  of
-							{ok, GroupNames} ->
-							    {Item#roster{subscription
-									     =
-									     both,
-									 groups =
-									     Item#roster.groups ++ GroupNames,
-									 ask =
-									     none},
-							     dict:erase(US1,
-									SRUsers1)};
-							error ->
-							    {Item, SRUsers1}
-						      end
-					      end,
-					      SRUsers, Items),
+    {NewItems1, SRUsersRest} = lists:mapfoldl(
+	fun(Item = #roster_item{jid = #jid{luser = U1, lserver = S1}}, SRUsers1) ->
+	    US1 = {U1, S1},
+	    case dict:find(US1, SRUsers1) of
+		{ok, GroupNames} ->
+		    {Item#roster_item{subscription = both,
+				      groups = Item#roster_item.groups ++ GroupNames,
+				      ask = none},
+		     dict:erase(US1, SRUsers1)};
+		error ->
+		    {Item, SRUsers1}
+	    end
+	end,
+	SRUsers, Items),
     SRItems = [#roster_item{jid = jid:make(U1, S1),
 			    name = get_user_name(U1, S1), subscription = both,
 			    ask = undefined, groups = GroupNames}
