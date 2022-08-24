@@ -51,12 +51,14 @@
 %%%----------------------------------------------------------------------
 
 start(_Host, _Opts) ->
+    report_hostmeta_listener(),
     ok.
 
 stop(_Host) ->
     ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
+    report_hostmeta_listener(),
     ok.
 
 depends(_Host, _Opts) ->
@@ -66,7 +68,7 @@ depends(_Host, _Opts) ->
 %%% HTTP handlers
 %%%----------------------------------------------------------------------
 
-process([], #request{method = 'GET', tp = https, host = Host, path = Path}) ->
+process([], #request{method = 'GET', host = Host, path = Path}) ->
     case lists:last(Path) of
         <<"host-meta">> ->
             file_xml(Host);
@@ -173,6 +175,23 @@ find_handler_port_path(Tls, Module) ->
               end;
          (_) -> false
       end, ets:tab2list(ejabberd_listener)).
+
+report_hostmeta_listener() ->
+    case {find_handler_port_path(false, ?MODULE),
+          find_handler_port_path(true, ?MODULE)} of
+        {[], []} ->
+            ?CRITICAL_MSG("It seems you enabled ~p in 'modules' but forgot to "
+                          "add it as a request_handler in an ejabberd_http "
+                          "listener.", [?MODULE]);
+        {[_|_], _} ->
+            ?WARNING_MSG("Apparently ~p is enabled in a request_handler in a "
+                         "non-encrypted ejabberd_http listener. This is "
+                         "disallowed by XEP-0156. Please enable 'tls' in that "
+                         "listener, or setup a proxy encryption mechanism.",
+                         [?MODULE]);
+        {[], [_|_]} ->
+            ok
+    end.
 
 %%%----------------------------------------------------------------------
 %%% Options and Doc
