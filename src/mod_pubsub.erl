@@ -4197,7 +4197,7 @@ delete_old_items(N) ->
 					  end
 				  end, Nodes);
 			    _ ->
-				error
+				[error]
 			end
 		end, ejabberd_option:hosts()),
     case lists:member(error, Results) of
@@ -4235,7 +4235,7 @@ delete_expired_items() ->
 					  end
 				  end, Nodes);
 			    _ ->
-				error
+				[error]
 			end
 		end, ejabberd_option:hosts()),
     case lists:member(error, Results) of
