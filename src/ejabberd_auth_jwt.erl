@@ -146,6 +146,9 @@ check_jwt_token(User, Server, Token) ->
         {false, _, _} ->
             false
     catch
-        error:{badarg, _} ->
+        A:B ->
+            ?DEBUG("jose_jwt:verify failed ~n for account ~p@~p~n "
+                   " JWK and token: ~p~n with error: ~p",
+                   [User, Server, {JWK, Token}, {A, B}]),
             false
     end.
