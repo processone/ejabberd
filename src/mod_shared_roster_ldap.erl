@@ -118,8 +118,7 @@ get_user_roster(Items, US) ->
 	    case dict:find(US1, SRUsers1) of
 		{ok, GroupNames} ->
 		    {Item#roster_item{subscription = both,
-				      groups = Item#roster_item.groups ++ GroupNames,
-				      ask = none},
+				      groups = Item#roster_item.groups ++ GroupNames},
 		     dict:erase(US1, SRUsers1)};
 		error ->
 		    {Item, SRUsers1}
