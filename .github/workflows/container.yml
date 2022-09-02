@@ -17,7 +17,7 @@ env:
 jobs:
   container:
     name: Container
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     permissions:
       packages: write
     steps:

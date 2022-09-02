@@ -31,20 +31,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['19.3', '21.3', '22.0', '24.3', '25']
+        otp: ['19.3', '20.3', '24.3', '25']
         rebar: ['rebar', 'rebar3']
-        include:
-        - otp: '19.3'
-          os: ubuntu-18.04
-        - otp: '21.3'
-          os: ubuntu-20.04
-        - otp: '22.0'
-          os: ubuntu-20.04
-        - otp: '24.3'
-          os: ubuntu-20.04
-        - otp: '25'
-          os: ubuntu-20.04
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     container:
       image: erlang:${{ matrix.otp }}
 
@@ -132,7 +121,7 @@ jobs:
           elixir: '1.11.4'
         - otp: '25.0'
           elixir: '1.12.3'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
 
