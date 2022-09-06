@@ -1,5 +1,4 @@
 FROM alpine:3.15.4 AS build
-ARG REPOSITORY=https://github.com/processone/ejabberd.git
 ARG VERSION=master
 
 RUN apk upgrade --update musl \
@@ -29,11 +28,11 @@ RUN apk upgrade --update musl \
 RUN mix local.hex --force \
     && mix local.rebar --force
 
+COPY . ./ejabberd
+
 WORKDIR ejabberd
 
-RUN git clone $REPOSITORY . \
-    && git checkout $VERSION \
-    && mv .github/container/ejabberdctl.template . \
+RUN mv .github/container/ejabberdctl.template . \
     && ./autogen.sh \
     && ./configure --with-rebar=mix --enable-all \
     && make deps \
