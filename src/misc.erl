@@ -220,15 +220,13 @@ encode_base64(Data) ->
 -spec ip_to_list(inet:ip_address() | undefined |
                  {inet:ip_address(), inet:port_number()}) -> binary().
 
-ip_to_list({local, _}) ->
-    <<"unix">>;
-ip_to_list(local) ->
-    <<"unix">>;
 ip_to_list({IP, _Port}) ->
     ip_to_list(IP);
 %% This function clause could use inet_parse too:
 ip_to_list(undefined) ->
     <<"unknown">>;
+ip_to_list(local) ->
+    <<"unix">>;
 ip_to_list(IP) ->
     list_to_binary(inet_parse:ntoa(IP)).
 
