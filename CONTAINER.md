@@ -281,7 +281,15 @@ It's also possible to use podman instead of docker, just notice:
 - If you want to start with command `live`, add environment variable `EJABBERD_BYPASS_WARNINGS=true`
 ```bash
 podman build \
-    -t ja \
+    -t ejabberd \
     -f .github/container/Dockerfile \
     .
+
+podman run --name eja1 -d -p 5222:5222 localhost/ejabberd
+
+podman exec eja1 ejabberdctl status
+
+podman exec -it eja1 sh
+
+podman stop eja1
 ```
