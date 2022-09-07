@@ -43,7 +43,7 @@ RUN cp -r _build/prod/rel/ejabberd/ /opt/ejabberd-$VERSION \
     && mv /opt/ejabberd-$VERSION/conf /opt/ejabberd/conf
 
 RUN BINPATH=$(dirname $(find /opt -name msgs))/bin/ \
-    && mkdir $BINPATH \
+    && mkdir -p $BINPATH \
     && cp tools/captcha*.sh $BINPATH
 
 RUN export PEM=/opt/ejabberd/conf/server.pem \
