@@ -56,28 +56,28 @@
 %%-----------------------------------------------------------------------
 
 -spec start(
-        binary(),
-        gen_mod:opts()
+        ServerHost :: binary(),
+        Opts :: gen_mod:opts()
        ) ->
-          {ok, pid()} | {error, term()}.
+          Result :: {ok, pid()} | {error, term()}.
 %
 start(ServerHost, Opts) ->
     gen_mod:start_child(?MODULE, ServerHost, Opts).
 
 -spec stop(
-        binary()
+        ServerHost :: binary()
        ) ->
-          any().
+          Result :: any().
 %
 stop(ServerHost) ->
     gen_mod:stop_child(?MODULE, ServerHost).
 
 -spec reload(
-        binary(),
-        gen_mod:opts(),
-        gen_mod:opts()
+        ServerHost :: binary(),
+        NewOpts :: gen_mod:opts(),
+        OldOpts :: gen_mod:opts()
        ) ->
-          ok.
+          Result :: ok.
 %
 reload(ServerHost, NewOpts, _OldOpts) ->
     ServerRef = gen_mod:get_module_proc(ServerHost, ?MODULE),
@@ -90,6 +90,11 @@ reload(ServerHost, NewOpts, _OldOpts) ->
 %% Options
 %%------------------------------------------------------------------------
 
+-spec mod_opt_type(
+        OptionName :: atom()
+       ) ->
+          OptionType :: econf:validator().
+%
 mod_opt_type(access_key_id) ->
     econf:binary();
 mod_opt_type(access_key_secret) ->
@@ -111,6 +116,11 @@ mod_opt_type(hosts) ->
 mod_opt_type(access) ->
     econf:acl().
 
+-spec mod_options(
+        Host :: binary()
+       ) ->
+          Options :: [{atom, any()}].
+%
 mod_options(Host) ->
     [{access_key_id, undefined},
      {access_key_secret, undefined},
@@ -123,6 +133,10 @@ mod_options(Host) ->
      {hosts, [<<"upload.", Host/binary>>]},
      {access, local}].
 
+-spec mod_doc() ->
+          Doc :: #{desc => binary() | [binary()],
+                   opts => [{atom(), #{value := binary(), desc := binary()}}]}.
+%
 mod_doc() ->
     #{desc =>
           [?T("This module implements XEP-0363 using an S3 bucket "
@@ -182,9 +196,9 @@ depends(_Host, _Opts) ->
          access       :: atom()}).
 
 -spec init(
-        list()
+        Params :: list()
        ) ->
-          {ok, gen_mod:opts()}.
+          Result :: {ok, gen_mod:opts()}.
 %
 init([ServerHost, Opts]) ->
     Params = build_service_params(ServerHost, Opts),
@@ -192,10 +206,10 @@ init([ServerHost, Opts]) ->
     {ok, Params}.
 
 -spec handle_info(
-        _,
-        gen_mod:opts()
+        Message :: any(),
+        State :: gen_mod:opts()
        ) ->
-          {noreply, gen_mod:opts()}.
+          Result :: {noreply, gen_mod:opts()}.
 % receive non-standard (gen_server) messages
 handle_info({route, #iq{lang = Lang} = Packet}, Opts) ->
     try xmpp:decode_els(Packet) of
@@ -213,21 +227,21 @@ handle_info(Request, Opts) ->
     {noreply, Opts}.
 
 -spec handle_call(
-        _,
-        gen_server:from(),
-        gen_mod:opts()
+        Request:: any(),
+        Sender :: gen_server:from(),
+        State :: gen_mod:opts()
        ) ->
-          {_, gen_mod:opts()}.
+          Result :: {_, gen_mod:opts()}.
 % respond to $gen_call messages
 handle_call(Request, Sender, Opts) ->
     ?WARNING_MSG("Unexpected call from ~p: ~p", [Sender, Request]),
     {noreply, Opts}.
 
 -spec handle_cast(
-        _,
-        gen_mod:opts()
+        Request :: any(),
+        State :: gen_mod:opts()
        ) ->
-          {_, gen_mod:opts()}.
+          Result :: {_, gen_mod:opts()}.
 % receive $gen_cast messages
 handle_cast({reload, ServerHost, NewOpts}, OldOpts) ->
     update_routes(ServerHost,
@@ -243,24 +257,24 @@ handle_cast(Request, Opts) ->
 %%-----------------------------------------------------------------------
 
 -spec update_routes(
-        binary(),
-        [binary()],
-        [binary()]
+        ServerHost :: binary(),
+        OldJIDs :: [binary()],
+        NewJIDs :: [binary()]
        ) ->
-          _.
+          Result :: _.
 % maintain routing rules for JIDs owned by this service.
-update_routes(ServerHost, OldDomains, NewDomains) ->
+update_routes(ServerHost, OldJIDs, NewJIDs) ->
     lists:foreach(fun (Domain) ->
                           ejabberd_router:register_route(Domain, ServerHost)
-                  end, NewDomains),
-    lists:foreach(fun ejabberd_router:unregister_route/1, OldDomains -- NewDomains).
+                  end, NewJIDs),
+    lists:foreach(fun ejabberd_router:unregister_route/1, OldJIDs -- NewJIDs).
 
 
 -spec handle_iq(
-        iq(),
-        gen_mod:opts()
+        IQ :: iq(),
+        Params :: gen_mod:opts()
        ) ->
-          iq().
+          Response :: iq().
 % Handle discovery requests. Produces a document such as depicted in
 % XEP-0363 v1.1.0 Ex. 4.
 handle_iq(#iq{type    = get,
@@ -348,7 +362,7 @@ handle_iq(IQ, _Params) ->
         ServiceHost :: binary(),
         JIDs :: [binary()]
        ) ->
-          [binary()].
+          ExpandedJIDs :: [binary()].
 % expand @HOST@ in JIDs
 expanded_jids(ServerHost, JIDs) ->
     lists:map(fun (JID) ->
@@ -356,10 +370,10 @@ expanded_jids(ServerHost, JIDs) ->
               end, JIDs).
 
 -spec build_service_params(
-        binary(),
-        gen_mod:opts()
+        ServerHost :: binary(),
+        Opts :: gen_mod:opts()
        ) ->
-          #params{}.
+          Params :: #params{}.
 % create a service params record from module config
 build_service_params(ServerHost, Opts) ->
     Auth = #aws_auth{access_key_id = get_opt(access_key_id, Opts),
@@ -376,9 +390,9 @@ build_service_params(ServerHost, Opts) ->
             access       = get_opt(access, Opts)}.
 
 -spec url_service_parameters(
-        #params{}
+        Params :: #params{}
        ) ->
-          [{binary(), binary() | true}].
+          ServiceParameters :: [{binary(), binary() | true}].
 % additional URL parameters from module config
 url_service_parameters(#params{set_public = true}) ->
     [{<<"X-Amz-Acl">>, <<"public-read">>}];
@@ -386,10 +400,10 @@ url_service_parameters(_) ->
     [].
 
 -spec upload_parameters(
-        #upload_request_0{},
-        #params{}
+        UploadRequest :: #upload_request_0{},
+        Params :: #params{}
        ) ->
-          [{binary(), binary() | true}].
+          UploadParameters :: [{binary(), binary() | true}].
 % headers to be included with the PUT request
 upload_parameters(#upload_request_0{size           = FileSize,
                                     'content-type' = ContentType},
@@ -399,11 +413,11 @@ upload_parameters(#upload_request_0{size           = FileSize,
     | url_service_parameters(ServiceParams)].
 
 -spec put_url(
-        #upload_request_0{},
-        #params{},
-        binary()
+        UploadRequest :: #upload_request_0{},
+        Params :: #params{},
+        URL :: binary()
        ) ->
-          binary().
+          PutURL :: binary().
 % attach additional query parameters (to the PUT URL), specifically canned ACL.
 put_url(UploadRequest, ServiceParams, URL) ->
     UriMap = uri_string:parse(URL),
@@ -418,10 +432,10 @@ put_url(UploadRequest, ServiceParams, URL) ->
     uri_string:recompose(UriMap#{query => WithOpts}).
 
 -spec object_url(
-        binary(),
-        binary()
+        BucketURL :: binary(),
+        FileName :: binary()
        ) ->
-          binary().
+          ObjectURL :: binary().
 % generate a unique random object URL for the given filename
 object_url(BucketURL, FileName) ->
     #{path := BasePath} = UriMap = uri_string:parse(BucketURL),
@@ -429,9 +443,9 @@ object_url(BucketURL, FileName) ->
     uri_string:recompose(UriMap#{path => <<BasePath/binary, "/", ObjectName/binary>>}).
 
 -spec object_name(
-        binary()
+        FileName :: binary()
        ) ->
-          binary().
+          ObjectName :: binary().
 % generate a unique-in-time object name
 object_name(FileName) ->
     MD = crypto:hash_init(sha256),
@@ -440,4 +454,4 @@ object_name(FileName) ->
     MDTime = crypto:hash_update(MDNodeName, <<(os:system_time())>>),
     MDRand = crypto:hash_update(MDTime, crypto:strong_rand_bytes(256)),
     Hash = crypto:hash_final(MDRand),
-    <<(binary:encode_hex(Hash))/binary, "-", FileName/binary>>.
+    <<(binary:encode_hex(Hash))/binary, "/", FileName/binary>>.
