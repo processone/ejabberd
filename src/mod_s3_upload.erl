@@ -205,7 +205,7 @@ handle_info({route, #iq{lang = Lang} = Packet}, Opts) ->
     catch _:{xmpp_codec, Why} ->
             Message = xmpp:io_format_error(Why),
             Error   = xmpp:err_bad_request(Message, Lang),
-            ejabbered_router:route_error(Packet, Error),
+            ejabberd_router:route_error(Packet, Error),
             {noreply, Opts}
     end;
 handle_info(Request, Opts) ->
