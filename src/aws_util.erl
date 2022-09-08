@@ -21,13 +21,13 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%----------------------------------------------------------------------
 
+%% URL Signing. Documented at
+%% https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html
+
 -module(aws_util).
 -author("roman@hargrave.info").
 
 -include("aws.hrl").
-
-%% URL Signing. Documented at
-%% https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html
 
 -type verb() :: get | put | post | delete.
 -type headers() :: [{unicode:chardata(), unicode:chardata()}].
@@ -59,7 +59,7 @@
 % sign a URL given headers, a verb, authentication details, and a time
 signed_url(Auth, Verb, Service, Url, ExtraHeaders, Time, TTL) ->
     #{host := Host} = UnauthenticatedUriMap = uri_string:parse(Url),
-    Headers = [{<<"host">>, Host}|ExtraHeaders],
+    Headers = [{<<"host">>, Host} | ExtraHeaders],
     % insert authentication params.
     QueryList = sorted_query_list(uri_query_list(UnauthenticatedUriMap)
                                   ++ base_query_params(Auth, Time, Service, Headers, TTL)),
@@ -77,17 +77,17 @@ signed_url(Auth, Verb, Service, Url, ExtraHeaders, Time, TTL) ->
 %%------------------------------------------------------------------------
 
 -spec sorted_query_list(
-        query_list()
+        QueryList :: query_list()
        ) ->
-          query_list().
+          SortedQueryList :: query_list().
 % sort a query paramater list by parameter name, ascending
 sorted_query_list(QueryList) ->
     lists:sort(fun ({L, _}, {R, _}) -> L =< R end, QueryList).
 
 -spec uri_query_list(
-        uri_string:uri_map()
+        UriMap :: uri_string:uri_map()
        ) ->
-          query_list().
+          QueryList :: query_list().
 % extract a query list from a uri_map().
 uri_query_list(#{query := QueryString}) ->
     dissect_query(QueryString);
@@ -95,7 +95,7 @@ uri_query_list(_) ->
     [].
 
 -spec verb(
-        verb()
+        Verb :: verb()
        ) ->
           binary().
 % convert a verb atom to a binary list
@@ -109,17 +109,17 @@ verb(delete) ->
     <<"DELETE">>.
 
 -spec encode_hex(
-        binary()
+        Data :: binary()
        ) ->
-          binary().
+          EncodedData :: binary().
 % lowercase binary:encode_hex
 encode_hex(Data) ->
     str:to_lower(binary:encode_hex(Data)).
 
 -spec iso8601_timestamp_utc(
-        calendar:datetime()
+        DateTime :: calendar:datetime()
        ) ->
-          binary().
+          Timestamp :: binary().
 % Generate an ISO8601-like YmdTHMSZ timestamp for X-Amz-Date. Only
 % produces UTC ('Z') timestamps. No separators.
 iso8601_timestamp_utc({{Y, Mo, D}, {H, M, S}}) ->
@@ -128,19 +128,19 @@ iso8601_timestamp_utc({{Y, Mo, D}, {H, M, S}}) ->
                 H, M, S]).
 
 -spec iso8601_date(
-        calendar:datetime()
+        DateTime :: calendar:datetime()
        ) ->
-          binary().
+          DateStr :: binary().
 % ISO8601 formatted date, no separators.
 iso8601_date({{Y, M, D}, _}) ->
     str:format("~B~2..0B~2..0B", [Y, M, D]).
 
 -spec scope(
-        #aws_auth{},
-        calendar:datetime(),
-        binary()
+        Auth :: #aws_auth{},
+        Time :: calendar:datetime(),
+        Service :: binary()
        ) ->
-          binary().
+          Scope :: binary().
 % Generate the request scope used in the credential field and signature message
 scope(#aws_auth{region = Region},
       Time,
@@ -151,11 +151,11 @@ scope(#aws_auth{region = Region},
                 Service]).
 
 -spec credential(
-        #aws_auth{},
-        calendar:datetime(),
-        binary()
+        Auth :: #aws_auth{},
+        Time :: calendar:datetime(),
+        Service :: binary()
        ) ->
-          binary().
+          Auth :: binary().
 % Generate the value used for X-Amz-Credential
 credential(#aws_auth{access_key_id = KeyID} = Auth,
            Time,
@@ -163,13 +163,13 @@ credential(#aws_auth{access_key_id = KeyID} = Auth,
     str:format("~ts/~ts", [KeyID, scope(Auth, Time, Service)]).
 
 -spec base_query_params(
-        #aws_auth{},
-        calendar:datetime(),
-        binary(),
-        headers(),
-        ttl()
+        Auth :: #aws_auth{},
+        Time :: calendar:datetime(),
+        Service :: binary(),
+        Headers :: headers(),
+        TTL :: ttl()
        ) ->
-          [{unicode:chardata(), unicode:chardata()}].
+          BaseQueryParams :: [{unicode:chardata(), unicode:chardata()}].
 % Return the minimum required set of query parameters needed for
 % authenticated signed requests.
 base_query_params(Auth, Time, Service, Headers, TTL) ->
@@ -180,9 +180,9 @@ base_query_params(Auth, Time, Service, Headers, TTL) ->
      {<<"X-Amz-SignedHeaders">>, signed_headers(Headers)}].
 
 -spec canonical_headers(
-        headers()
+        Headers :: headers()
        ) ->
-          unicode:chardata().
+          CanonicalHeaders :: unicode:chardata().
 % generate the header list for canonical_request
 canonical_headers(Headers) ->
     str:join(lists:map(fun ({Name, Value}) ->
@@ -191,9 +191,9 @@ canonical_headers(Headers) ->
              <<>>).
 
 -spec signed_headers(
-        headers()
+        SignedHeaders :: headers()
        ) ->
-          unicode:chardata().
+          SignedHeaders :: unicode:chardata().
 % generate a semicolon-delimited list of headers, used to enumerate
 % signed headers in the AWSv4 canonical request
 signed_headers(SignedHeaders) ->
@@ -203,12 +203,12 @@ signed_headers(SignedHeaders) ->
              <<";">>).
 
 -spec canonical_request(
-        verb(),
-        uri_string:uri_map(),
-        headers()
+        Verb :: verb(),
+        UriMap :: uri_string:uri_map(),
+        Headers :: headers()
        ) ->
-          unicode:chardata().
-% Generate the canonical request used so compute the signature
+          CanonicalRequest :: unicode:chardata().
+% Generate the canonical request used to compute the signature
 canonical_request(Verb,
                   #{query := Query,
                     path  := Path},
@@ -221,14 +221,14 @@ canonical_request(Verb,
       "UNSIGNED-PAYLOAD">>.
 
 -spec string_to_sign(
-        #aws_auth{},
-        calendar:datetime(),
-        binary(),
-        verb(),
-        uri_string:uri_map(),
-        headers()
+        Auth :: #aws_auth{},
+        Time :: calendar:datetime(),
+        Service :: binary(),
+        Verb :: verb(),
+        UriMap :: uri_string:uri_map(),
+        Headers :: headers()
        ) ->
-          unicode:chardata().
+          StringToSign :: unicode:chardata().
 % generate the "string to sign", as per AWS specs
 string_to_sign(Auth, Time, Service, Verb, UriMap, Headers) ->
     RequestHash = crypto:hash(sha256, canonical_request(Verb, UriMap, Headers)),
@@ -238,11 +238,11 @@ string_to_sign(Auth, Time, Service, Verb, UriMap, Headers) ->
       (encode_hex(RequestHash))/binary>>.
 
 -spec signing_key(
-        #aws_auth{},
-        calendar:datetime(),
-        binary()
+        Auth :: #aws_auth{},
+        Time :: calendar:datetime(),
+        Service :: binary()
        ) ->
-          binary().
+          SigningKey :: binary().
 % generate the signing key used in the final HMAC-SHA256 round for
 % request signing.
 signing_key(#aws_auth{access_key = AccessKey,
