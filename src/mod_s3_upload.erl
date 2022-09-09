@@ -119,7 +119,7 @@ mod_opt_type(access) ->
 -spec mod_options(
         Host :: binary()
        ) ->
-          Options :: [{atom, any()}].
+          Options :: [{atom(), term()} | atom()].
 %
 mod_options(Host) ->
     [{access_key_id, undefined},
@@ -198,7 +198,7 @@ depends(_Host, _Opts) ->
 -spec init(
         Params :: list()
        ) ->
-          Result :: {ok, gen_mod:opts()}.
+          Result :: {ok, #params{}}.
 %
 init([ServerHost, Opts]) ->
     Params = build_service_params(ServerHost, Opts),
@@ -207,9 +207,9 @@ init([ServerHost, Opts]) ->
 
 -spec handle_info(
         Message :: any(),
-        State :: gen_mod:opts()
+        State :: #params{}
        ) ->
-          Result :: {noreply, gen_mod:opts()}.
+          Result :: {noreply, #params{}}.
 % receive non-standard (gen_server) messages
 handle_info({route, #iq{lang = Lang} = Packet}, Opts) ->
     try xmpp:decode_els(Packet) of
@@ -229,9 +229,9 @@ handle_info(Request, Opts) ->
 -spec handle_call(
         Request:: any(),
         Sender :: gen_server:from(),
-        State :: gen_mod:opts()
+        State :: #params{}
        ) ->
-          Result :: {_, gen_mod:opts()}.
+          Result :: {noreply, #params{}}.
 % respond to $gen_call messages
 handle_call(Request, Sender, Opts) ->
     ?WARNING_MSG("Unexpected call from ~p: ~p", [Sender, Request]),
@@ -239,15 +239,15 @@ handle_call(Request, Sender, Opts) ->
 
 -spec handle_cast(
         Request :: any(),
-        State :: gen_mod:opts()
+        State :: #params{}
        ) ->
-          Result :: {_, gen_mod:opts()}.
+          Result :: {noreply, #params{}}.
 % receive $gen_cast messages
 handle_cast({reload, ServerHost, NewOpts}, OldOpts) ->
     update_routes(ServerHost,
                   OldOpts#params.service_jids,
                   NewOpts#params.service_jids),
-    {ok, NewOpts};
+    {noreply, NewOpts};
 handle_cast(Request, Opts) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Request]),
     {noreply, Opts}.
@@ -279,9 +279,10 @@ update_routes(ServerHost, OldJIDs, NewJIDs) ->
 % XEP-0363 v1.1.0 Ex. 4.
 handle_iq(#iq{type    = get,
               lang    = Lang,
-              to      = Host,
+              to      = HostJID,
               sub_els = [#disco_info{}]} = IQ,
           #params{max_size = MaxSize, service_name = ServiceName}) ->
+    Host = jid:encode(HostJID),
     % collect additional discovery entries, if any.
     Advice = ejabberd_hooks:run_fold(disco_info, Host, [],
                                      [Host, ?MODULE, <<"">>, Lang]),
