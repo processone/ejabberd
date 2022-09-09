@@ -1409,7 +1409,7 @@ push_roster_item(LU, LS, R, U, S, Action) ->
       xmpp:set_from_to(ResIQ, jid:remove_resource(LJID), LJID)).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
-    Groups = binary:split(Group,<<";">>, [global]),
+    Groups = binary:split(Group,<<";">>, [global, trim]),
     #roster_item{jid = jid:make(U, S),
 		 name = Nick,
 		 subscription = misc:binary_to_atom(Subs),
