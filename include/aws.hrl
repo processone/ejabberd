@@ -22,7 +22,7 @@
 %%%----------------------------------------------------------------------
 
 -record(aws_auth, {access_key_id :: binary(),
-                  access_key    :: binary(),
-                  region        :: binary()}).
+                   access_key    :: binary(),
+                   region        :: binary()}).
 
 -define(AWS_SERVICE_S3, <<"s3">>).
