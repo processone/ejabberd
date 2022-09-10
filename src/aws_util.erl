@@ -57,8 +57,8 @@
        ) ->
           SignedUrl :: binary().
 % sign a URL given headers, a verb, authentication details, and a time
-signed_url(Auth, Verb, Service, Url, ExtraHeaders, Time, TTL) ->
-    #{host := Host} = UnauthenticatedUriMap = uri_string:parse(Url),
+signed_url(Auth, Verb, Service, URL, ExtraHeaders, Time, TTL) ->
+    #{host := Host} = UnauthenticatedUriMap = uri_string:parse(URL),
     Headers = [{<<"host">>, Host} | ExtraHeaders],
     % insert authentication params.
     QueryList = sorted_query_list(uri_query_list(UnauthenticatedUriMap)
