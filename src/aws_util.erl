@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
-%%% File     : s3_util.erl
-%%% Usage    : S3 URL Generation and Signing
+%%% File     : aws_util.erl
+%%% Usage    : AWS URL Signing
 %%% Author   : Roman Hargrave <roman@hargrave.info>
 %%% Purpose  : Signing AWS Requests. Intended for S3-CS use.
 %%% Created  : 24 Aug 2022 by Roman Hargrave <roman@hargrave.info>
