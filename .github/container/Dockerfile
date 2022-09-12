@@ -46,6 +46,8 @@ RUN BINPATH=$(dirname $(find /opt -name msgs))/bin/ \
     && mkdir -p $BINPATH \
     && cp tools/captcha*.sh $BINPATH
 
+RUN [ ! -d .ejabberd-modules ] || cp -r .ejabberd-modules /opt/ejabberd/
+
 RUN export PEM=/opt/ejabberd/conf/server.pem \
     && curl -o "/opt/ejabberd/conf/cacert.pem" 'https://curl.se/ca/cacert.pem' \
     && openssl req -x509 \
