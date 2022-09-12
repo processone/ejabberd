@@ -15,6 +15,7 @@
 /*.cache
 /deps/
 /.deps-update/
+/.ejabberd-modules/
 /ebin/
 /ejabberd.init
 /ejabberd.service
