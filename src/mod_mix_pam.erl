@@ -226,7 +226,7 @@ get_mix_roster_items(Acc, {LUser, LServer}) ->
                         subscription = both,
                         ask = undefined,
                         groups = [<<"Channels">>],
-                        mix_channel = #mix_roster_channel{'participant-id' = Id}
+                        mix_channel = #mix_roster_channel{participant_id = Id}
                     }
                 end, Channels);
         _ ->
@@ -311,7 +311,7 @@ process_join_result(#iq{from = #jid{} = Channel,
 		subscription = none,
 		ask = undefined,
 		groups = [],
-		mix_channel = #mix_roster_channel{'participant-id' = ID}
+		mix_channel = #mix_roster_channel{participant_id = ID}
 	    }),
 	    % send IQ result
 	    ChanID = make_channel_id(Channel, ID),
