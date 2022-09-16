@@ -273,10 +273,9 @@ write_roster_version(LUser, LServer, InTransaction) ->
 %%     - the roster version from client don't match current version.
 -spec process_iq_get(iq()) -> iq().
 process_iq_get(#iq{to = To, from = From,
-		   sub_els = [#roster_query{ver = RequestedVersion, mix_annotate = MixAnnotate}]} = IQ) ->
+		   sub_els = [#roster_query{ver = RequestedVersion, mix_annotate = MixEnabled}]} = IQ) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
-    MixEnabled = MixAnnotate == #mix_roster_annotate{},
     {ItemsToSend, VersionToSend} =
 	case {mod_roster_opt:versioning(LServer),
 	      mod_roster_opt:store_current_id(LServer)} of
