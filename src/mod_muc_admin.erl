@@ -45,7 +45,8 @@
 	 get_room_serverhost/1,
 	 web_page_host/3,
 	 mod_opt_type/1, mod_options/1,
-	 get_commands_spec/0, find_hosts/1, room_diagnostics/2]).
+	 get_commands_spec/0, find_hosts/1, room_diagnostics/2,
+	 get_room_pid/2]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
