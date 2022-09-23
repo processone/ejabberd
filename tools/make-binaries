@@ -189,7 +189,7 @@ check_configured_dep_vsns()
 	          'zlib-\([1-9][0-9.]*\)\.tar\.gz'
 	check_vsn 'Expat' "$expat_vsn" \
 	          'https://github.com/libexpat/libexpat/releases' \
-	          'expat-\([1-9][0-9.]*\)\.tar\.gz'
+	          '[0-9]\]\([1-9][0-9.]*\)'
 	check_vsn 'Termcap' "$termcap_vsn" \
 	          'https://ftp.gnu.org/gnu/termcap/' \
 	          'termcap-\([1-9][0-9.]*\)\.tar\.gz'
@@ -201,7 +201,7 @@ check_configured_dep_vsns()
 	          'unixODBC-\([1-9][0-9.]*\)\.tar\.gz'
 	check_vsn 'Linux-PAM' "$pam_vsn" \
 	          'https://github.com/linux-pam/linux-pam/releases' \
-	          'Linux-PAM-\([1-9][0-9.]*\)\.tar\.xz'
+	          '[0-9]\]Linux-PAM \([1-9][0-9.]*\)'
 	check_vsn 'libpng' "$png_vsn" \
 	          'http://www.libpng.org/pub/png/libpng.html' \
 		  'libpng-\([1-9][0-9.]*\)\.tar\.gz'
@@ -213,7 +213,7 @@ check_configured_dep_vsns()
 	          'libwebp-\([1-9][0-9.]*\)\.tar\.gz'
 	check_vsn 'LibGD' "$gd_vsn" \
 	          'https://github.com/libgd/libgd/releases' \
-	          'libgd-\([1-9][0-9.]*\)\.tar\.gz'
+	          'gd-\([1-9][0-9.]*\)'
 	check_vsn 'Elixir' "$elixir_vsn" \
 	          'https://elixir-lang.org/install.html' \
 	          'v\([1-9][0-9.]*\)\.tar\.gz'
