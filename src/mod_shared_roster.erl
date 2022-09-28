@@ -422,6 +422,7 @@ create_group(Host, Group, Opts) ->
     end,
     case use_cache(Mod, Host) of
 	true ->
+	    ets_cache:delete(?GROUP_OPTS_CACHE, {Host, Group}, cache_nodes(Mod, Host)),
 	    ets_cache:insert(?GROUP_OPTS_CACHE, {Host, Group}, Opts, cache_nodes(Mod, Host));
 	_ ->
 	    ok
