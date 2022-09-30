@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 05/04/2022
+.\"      Date: 10/12/2022
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "05/04/2022" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "10/12/2022" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,7 +82,7 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/22\&.05/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/22\&.10/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
@@ -1006,6 +1006,22 @@ The option for listeners configuration\&. See the
 Listen Modules
 section for details\&.
 .RE
+.sp
+\fINote\fR about the next option: added in 22\&.10:
+.PP
+\fBlog_burst_limit_count\fR: \fINumber\fR
+.RS 4
+The number of messages to accept in
+log_burst_limit_window_time
+period before starting to drop them\&. Default 500
+.RE
+.sp
+\fINote\fR about the next option: added in 22\&.10:
+.PP
+\fBlog_burst_limit_window_time\fR: \fINumber\fR
+.RS 4
+The time period to rate\-limit log messages by\&. Defaults to 1 second\&.
+.RE
 .PP
 \fBlog_rotate_count\fR: \fINumber\fR
 .RS 4
@@ -1063,7 +1079,7 @@ This option can be used to tune tick time parameter of
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/22\&.05/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/22\&.10/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -7597,13 +7613,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 22\&.05\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 22\&.10\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/22\&.05/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/22\&.10/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
