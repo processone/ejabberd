@@ -48,7 +48,10 @@ man(Lang) ->
                                   {[{M, Descr, DocOpts, #{example => Example}}|Mods], SubMods};
                               #{opts := DocOpts} ->
                                   {ParentMod, Backend} = strip_backend_suffix(M),
-                                  {Mods, dict:append(ParentMod, {M, Backend, DocOpts}, SubMods)}
+                                  {Mods, dict:append(ParentMod, {M, Backend, DocOpts}, SubMods)};
+                              #{} ->
+                                  warn("module ~s is not properly documented", [M]),
+                                  Acc
                           catch _:undef ->
                                   case erlang:function_exported(
                                          M, mod_options, 1) of
