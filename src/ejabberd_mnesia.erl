@@ -172,7 +172,10 @@ change_table_copy_type(Name, TabDef) ->
     if NewType /= CurrType ->
 	    ?INFO_MSG("Changing Mnesia table '~ts' from ~ts to ~ts",
 		      [Name, CurrType, NewType]),
-	    mnesia_op(change_table_copy_type, [Name, node(), NewType]);
+	    if CurrType == unknown -> mnesia_op(add_table_copy, [Name, node(), NewType]);
+		true ->
+		    mnesia_op(change_table_copy_type, [Name, node(), NewType])
+	    end;
        true ->
 	    {atomic, ok}
     end.
