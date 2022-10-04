@@ -128,8 +128,8 @@ process_iq(#iq{lang = Lang, to = To} = IQ) ->
 	false ->
 	    Txt = ?T("Query to another users is forbidden"),
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang));
-	true ->
-	    process_local_iq(IQ)
+	{true, IQ1} ->
+	    process_local_iq(IQ1)
     end.
 
 -spec process_local_iq(iq()) -> iq().
@@ -147,7 +147,13 @@ process_local_iq(#iq{type = set, from = From, lang = Lang,
 	    Txt = ?T("Duplicated groups are not allowed by RFC6121"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	false ->
-	    #jid{lserver = LServer} = From,
+	    From1 = case xmpp:get_meta(IQ, privilege_from, none) of
+			#jid{} = PrivFrom ->
+			    PrivFrom;
+			none ->
+			    From
+		    end,
+	    #jid{lserver = LServer} = From1,
 	    Access = mod_roster_opt:access(LServer),
 	    case acl:match_rule(LServer, Access, From) of
 		deny ->

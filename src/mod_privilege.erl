@@ -217,19 +217,24 @@ process_message(#message{from = #jid{luser = <<"">>, lresource = <<"">>} = From,
 process_message(_Stanza) ->
     ok.
 
--spec roster_access(boolean(), iq()) -> boolean().
-roster_access(true, _) ->
-    true;
-roster_access(false, #iq{from = From, to = To, type = Type}) ->
+-spec roster_access({true, iq()} | false, iq()) -> {true, iq()} | false.
+roster_access({true, _IQ} = Acc, _) ->
+    Acc;
+roster_access(false, #iq{from = From, to = To, type = Type} = IQ) ->
     Host = From#jid.lserver,
     ServerHost = To#jid.lserver,
     Permissions = get_permissions(ServerHost),
     case maps:find(Host, Permissions) of
 	{ok, Access} ->
 	    Permission = proplists:get_value(roster, Access, none),
-	    (Permission == both)
-		orelse (Permission == get andalso Type == get)
-		orelse (Permission == set andalso Type == set);
+	    case (Permission == both)
+		     orelse (Permission == get andalso Type == get)
+		     orelse (Permission == set andalso Type == set) of
+		true ->
+		    {true, xmpp:put_meta(IQ, privilege_from, To)};
+		false ->
+		    false
+	    end;
 	error ->
 	    %% Component is disconnected
 	    false
