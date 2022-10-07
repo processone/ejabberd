@@ -969,6 +969,7 @@ node_disco_info(Host, Node, _From, _Identity, _Features) ->
 			  _ -> []
 		       end,
 		Meta = [{title, get_option(Options, title, <<>>)},
+			{type, get_option(Options, type, <<>>)},
 			{description, get_option(Options, description, <<>>)},
 			{owner, [jid:make(LJID) || {LJID, Aff} <- Affs, Aff =:= owner]},
 			{publisher, [jid:make(LJID) || {LJID, Aff} <- Affs, Aff =:= publisher]},
