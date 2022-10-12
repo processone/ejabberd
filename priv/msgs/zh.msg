@@ -20,6 +20,7 @@
 {"Access model","访问模型"}.
 {"Account doesn't exist","账号不存在"}.
 {"Action on user","对用户的动作"}.
+{"Add a hat to a user","给用户添加头衔"}.
 {"Add Jabber ID","添加Jabber ID"}.
 {"Add New","添加新用户"}.
 {"Add User","添加用户"}.
@@ -136,6 +137,7 @@
 {"Elements","元素"}.
 {"Email Address","电邮地址"}.
 {"Email","电子邮件"}.
+{"Enable hats","启用头衔"}.
 {"Enable logging","启用服务器端聊天记录"}.
 {"Enable message archiving","启用消息归档"}.
 {"Enabling push without 'node' attribute is not supported","不支持未使用'node'属性就开启推送"}.
@@ -170,6 +172,8 @@
 {"Full List of Room Admins","房间管理员完整列表"}.
 {"Full List of Room Owners","房间持有人完整列表"}.
 {"Full Name","全名"}.
+{"Get List of Online Users","获取在线用户列表"}.
+{"Get List of Registered Users","获取注册用户列表"}.
 {"Get Number of Online Users","获取在线用户数"}.
 {"Get Number of Registered Users","获取注册用户数"}.
 {"Get Pending","获取挂起"}.
@@ -186,6 +190,9 @@
 {"has been kicked because of an affiliation change","因联属关系改变而被踢出"}.
 {"has been kicked because the room has been changed to members-only","因该房间改为只对会员开放而被踢出"}.
 {"has been kicked","已被踢出"}.
+{"Hat title","头衔标题"}.
+{"Hat URI","头衔 URI"}.
+{"Hats limit exceeded","已超过头衔限制"}.
 {"Host unknown","主人未知"}.
 {"Host","主机"}.
 {"HTTP File Upload","HTTP文件上传"}.
@@ -237,6 +244,8 @@
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","文本的SHA-256哈希的最低有效位应等于十六进制标签"}.
 {"leaves the room","离开房间"}.
 {"List of rooms","房间列表"}.
+{"List of users with hats","有头衔用户的列表"}.
+{"List users with hats","有头衔用户列表"}.
 {"Logging","正在记录"}.
 {"Low level update script","低级别更新脚本"}.
 {"Make participants list public","公开参与人列表"}.
@@ -419,6 +428,7 @@
 {"Registered Users:","注册用户:"}.
 {"Register","注册"}.
 {"Remote copy","远程复制"}.
+{"Remove a hat from a user","移除用户头衔"}.
 {"Remove All Offline Messages","移除所有离线消息"}.
 {"Remove User","删除用户"}.
 {"Remove","移除"}.
@@ -519,6 +529,8 @@
 {"The JIDs of those to contact with questions","问题联系人的JID"}.
 {"The JIDs of those with an affiliation of owner","隶属所有人的JID"}.
 {"The JIDs of those with an affiliation of publisher","隶属发布人的JID"}.
+{"The list of all online users","所有在线用户列表"}.
+{"The list of all users","所有用户列表"}.
 {"The list of JIDs that may associate leaf nodes with a collection","可以将叶节点与集合关联的JID列表"}.
 {"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","可以与集合相关联的最大子节点数，“max”表示除服务器施加的最大值外没有特定限制"}.
 {"The minimum number of milliseconds between sending any two notification digests","发送任何两个通知摘要之间的最小毫秒数"}.
