@@ -7,6 +7,7 @@
 {" has set the subject to: "," установил(а) тему: "}.
 {"A friendly name for the node","Легко запоминаемое имя для узла"}.
 {"A password is required to enter this room","Чтобы войти в эту конференцию, нужен пароль"}.
+{"A Web Page","Веб-страница"}.
 {"Accept","Принять"}.
 {"Access denied by service policy","Доступ запрещён политикой службы"}.
 {"Account doesn't exist","Учётная запись не существует"}.
@@ -20,6 +21,7 @@
 {"All activity","Вся статистика"}.
 {"All Users","Все пользователи"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Разрешить этому Jabber ID подписаться на данный узел?"}.
+{"Allow this person to register with the room?","Разрешить пользователю зарегистрироваться в комнате?"}.
 {"Allow users to change the subject","Разрешить пользователям изменять тему"}.
 {"Allow users to query other users","Разрешить iq-запросы к пользователям"}.
 {"Allow users to send invites","Разрешить пользователям посылать приглашения"}.
