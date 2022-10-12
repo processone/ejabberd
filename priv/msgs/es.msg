@@ -79,6 +79,7 @@
 {"Changing role/affiliation is not allowed","No está permitido cambiar el rol/afiliación"}.
 {"Channel already exists","El canal ya existe"}.
 {"Channel does not exist","El canal no existe"}.
+{"Channel JID","JID del Canal"}.
 {"Channels","Canales"}.
 {"Characters not allowed:","Caracteres no permitidos:"}.
 {"Chatroom configuration modified","Configuración de la sala modificada"}.
@@ -98,6 +99,7 @@
 {"Configuration","Configuración"}.
 {"Connected Resources:","Recursos conectados:"}.
 {"Contact Addresses (normally, room owner or owners)","Direcciones de contacto (normalmente la del dueño o dueños de la sala)"}.
+{"Contrib Modules","Módulos Contrib"}.
 {"Country","País"}.
 {"CPU Time:","Tiempo consumido de CPU:"}.
 {"Current Discussion Topic","Tema de discusión actual"}.
@@ -215,6 +217,8 @@
 {"Incorrect value of 'action' attribute","Valor incorrecto del atributo 'action'"}.
 {"Incorrect value of 'action' in data form","Valor incorrecto de 'action' en el formulario de datos"}.
 {"Incorrect value of 'path' in data form","Valor incorrecto de 'path' en el formulario de datos"}.
+{"Installed Modules:","Módulos Instalados:"}.
+{"Install","Instalar"}.
 {"Insufficient privilege","Privilegio insuficiente"}.
 {"Internal server error","Error interno en el servidor"}.
 {"Invalid 'from' attribute in forwarded message","Atributo 'from' no válido en el mensaje reenviado"}.
@@ -231,6 +235,8 @@
 {"January","Enero"}.
 {"JID normalization denied by service policy","Se ha denegado la normalización del JID por política del servicio"}.
 {"JID normalization failed","Ha fallado la normalización del JID"}.
+{"Joined MIX channels of ~ts","Canales MIX unidos de ~ts"}.
+{"Joined MIX channels:","Canales MIX unidos:"}.
 {"joins the room","entra en la sala"}.
 {"July","Julio"}.
 {"June","Junio"}.
@@ -351,6 +357,7 @@
 {"Number of registered users","Número de usuarios registrados"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Número de segundos después de los cuales se purgarán elementos automáticamente, o `max` para no especificar un límite, más que el máximo impuesto por el servidor"}.
 {"Occupants are allowed to invite others","Los ocupantes pueden invitar a otras personas"}.
+{"Occupants are allowed to query others","Los ocupantes pueden enviar peticiones a otros"}.
 {"Occupants May Change the Subject","Los ocupantes pueden cambiar el Asunto"}.
 {"October","Octubre"}.
 {"Offline Messages","Mensajes diferidos"}.
@@ -377,11 +384,13 @@
 {"Only those on a whitelist may subscribe and retrieve items","Solo quienes están en una lista blanca pueden suscribirse y recibir elementos"}.
 {"Organization Name","Nombre de la organización"}.
 {"Organization Unit","Unidad de la organización"}.
+{"Other Modules Available:","Otros módulos disponibles:"}.
 {"Outgoing s2s Connections","Conexiones S2S salientes"}.
 {"Outgoing s2s Connections:","Conexiones S2S salientes:"}.
 {"Owner privileges required","Se requieren privilegios de propietario de la sala"}.
 {"Packet relay is denied by service policy","Se ha denegado el reenvío del paquete por política del servicio"}.
 {"Packet","Paquete"}.
+{"Participant ID","ID del Participante"}.
 {"Participant","Participante"}.
 {"Password Verification","Verificación de la contraseña"}.
 {"Password Verification:","Verificación de la contraseña:"}.
@@ -484,6 +493,7 @@
 {"Shut Down Service","Detener el servicio"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Algunos clientes XMPP pueden guardar tu contraseña en la máquina, pero solo deberías hacer esto en tu propia máquina personal, por razones de seguridad."}.
+{"Sources Specs:","Especificaciones de Códigos Fuente:"}.
 {"Specify the access model","Especifica el modelo de acceso"}.
 {"Specify the event message type","Especifica el tipo del mensaje de evento"}.
 {"Specify the publisher model","Especificar el modelo del publicante"}.
@@ -595,6 +605,7 @@
 {"Unauthorized","No autorizado"}.
 {"Unexpected action","Acción inesperada"}.
 {"Unexpected error condition: ~p","Condición de error inesperada: ~p"}.
+{"Uninstall","Desinstalar"}.
 {"Unregister an XMPP account","Borrar una cuenta XMPP"}.
 {"Unregister","Borrar"}.
 {"Unselect All","Deseleccionar todo"}.
@@ -605,7 +616,10 @@
 {"Update ~p","Actualizar ~p"}.
 {"Update plan","Plan de actualización"}.
 {"Update script","Script de actualización"}.
+{"Update specs to get modules source, then install desired ones.","Actualizar Especificaciones para conseguir el código fuente de los módulos, luego instala los que quieras."}.
+{"Update Specs","Actualizar Especificaciones"}.
 {"Update","Actualizar"}.
+{"Upgrade","Actualizar"}.
 {"Uptime:","Tiempo desde el inicio:"}.
 {"URL for Archived Discussion Logs","URL del registro de discusiones archivadas"}.
 {"User already exists","El usuario ya existe"}.
@@ -628,6 +642,7 @@
 {"Value of '~s' should be integer","El valor de '~s' debería ser un entero"}.
 {"Value 'set' of 'type' attribute is not allowed","El valor 'set' del atributo 'type' no está permitido"}.
 {"vCard User Search","Búsqueda de vCard de usuarios"}.
+{"View joined MIX channels","Ver los canales MIX unidos"}.
 {"View Queue","Ver Cola"}.
 {"View Roster","Ver Lista de contactos"}.
 {"Virtual Hosts","Dominios Virtuales"}.
