@@ -172,6 +172,8 @@
 {"Full List of Room Admins","Lista completa de administradores de la sala"}.
 {"Full List of Room Owners","Lista completa de dueños de la sala"}.
 {"Full Name","Nombre completo"}.
+{"Get List of Online Users","Ver lista de usuarios conectados"}.
+{"Get List of Registered Users","Ver lista de usuarios registrados"}.
 {"Get Number of Online Users","Ver número de usuarios conectados"}.
 {"Get Number of Registered Users","Ver número de usuarios registrados"}.
 {"Get Pending","Obtener pendientes"}.
@@ -527,6 +529,8 @@
 {"The JIDs of those to contact with questions","Los JIDs a quienes contactar con preguntas"}.
 {"The JIDs of those with an affiliation of owner","Los JIDs de quienes tienen una afiliación de dueños"}.
 {"The JIDs of those with an affiliation of publisher","Los JIDs de quienes tienen una afiliación de publicadores"}.
+{"The list of all online users","La lista de todos los usuarios conectados"}.
+{"The list of all users","La lista de todos los usuarios"}.
 {"The list of JIDs that may associate leaf nodes with a collection","La lista de JIDs que pueden asociar nodos hijo con una colección"}.
 {"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","El número máximo de nodos hijo que pueden asociarse a una colección, o `max` para no especificar un límite, más que el máximo impuesto por el servidor"}.
 {"The minimum number of milliseconds between sending any two notification digests","El número mínimo de milisegundos entre dos envíos de resumen de notificaciones"}.
