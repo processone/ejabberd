@@ -79,6 +79,7 @@
 {"Changing role/affiliation is not allowed","不允许修改角色/单位"}.
 {"Channel already exists","频道已存在"}.
 {"Channel does not exist","频道不存在"}.
+{"Channel JID","频道 JID"}.
 {"Channels","频道"}.
 {"Characters not allowed:","不允许字符："}.
 {"Chatroom configuration modified","聊天室配置已修改"}.
@@ -98,6 +99,7 @@
 {"Configuration","配置"}.
 {"Connected Resources:","已连接资源:"}.
 {"Contact Addresses (normally, room owner or owners)","联系人地址 (通常为房间持有人)"}.
+{"Contrib Modules","Contrib 模块"}.
 {"Country","国家"}.
 {"CPU Time:","CPU时间："}.
 {"Current Discussion Topic","当前讨论话题"}.
@@ -215,6 +217,8 @@
 {"Incorrect value of 'action' attribute","'action' 属性的值不正确"}.
 {"Incorrect value of 'action' in data form","数据表单中 'action' 的值不正确"}.
 {"Incorrect value of 'path' in data form","数据表单中 'path' 的值不正确"}.
+{"Installed Modules:","已安装的模块："}.
+{"Install","安装"}.
 {"Insufficient privilege","权限不足"}.
 {"Internal server error","内部服务器错误"}.
 {"Invalid 'from' attribute in forwarded message","转发的信息中 'from' 属性的值无效"}.
@@ -231,6 +235,8 @@
 {"January","一月"}.
 {"JID normalization denied by service policy","JID规范化被服务策略拒绝"}.
 {"JID normalization failed","JID规范化失败"}.
+{"Joined MIX channels of ~ts","加入了 ~ts 的 MIX 频道"}.
+{"Joined MIX channels:","加入了 MIX 频道："}.
 {"joins the room","加入房间"}.
 {"July","七月"}.
 {"June","六月"}.
@@ -351,6 +357,7 @@
 {"Number of registered users","注册用户数"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","等待多少秒后自动清除项目，“max”表示除服务器施加的最大值外没有特定限制"}.
 {"Occupants are allowed to invite others","允许成员邀请其他人"}.
+{"Occupants are allowed to query others","成员可查询其他人"}.
 {"Occupants May Change the Subject","成员可以修改主题"}.
 {"October","十月"}.
 {"Offline Messages","离线消息"}.
@@ -377,11 +384,13 @@
 {"Only those on a whitelist may subscribe and retrieve items","仅白名单用户可以订阅和检索内容项"}.
 {"Organization Name","组织名称"}.
 {"Organization Unit","组织单位"}.
+{"Other Modules Available:","其他可用模块："}.
 {"Outgoing s2s Connections","出站 s2s 连接"}.
 {"Outgoing s2s Connections:","出站 s2s 连接:"}.
 {"Owner privileges required","需要持有人权限"}.
 {"Packet relay is denied by service policy","包中继被服务策略拒绝"}.
 {"Packet","数据包"}.
+{"Participant ID","参与者 ID"}.
 {"Participant","参与人"}.
 {"Password Verification:","密码确认:"}.
 {"Password Verification","确认密码"}.
@@ -484,6 +493,7 @@
 {"Shut Down Service","关闭服务"}.
 {"SOCKS5 Bytestreams","SOCKS5 字节流"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","某些 XMPP 客户端可以在计算机里存储你的密码. 处于安全考虑, 请仅在你的个人计算机里使用该功能."}.
+{"Sources Specs:","源参数："}.
 {"Specify the access model","指定访问范例"}.
 {"Specify the event message type","指定事件消息类型"}.
 {"Specify the publisher model","指定发布人范例"}.
@@ -595,6 +605,7 @@
 {"Unauthorized","未认证的"}.
 {"Unexpected action","意外行为"}.
 {"Unexpected error condition: ~p","意外错误条件: ~p"}.
+{"Uninstall","卸载"}.
 {"Unregister an XMPP account","注销XMPP帐户"}.
 {"Unregister","取消注册"}.
 {"Unselect All","取消全选"}.
@@ -605,7 +616,10 @@
 {"Update plan","更新计划"}.
 {"Update ~p","更新~p"}.
 {"Update script","更新脚本"}.
+{"Update specs to get modules source, then install desired ones.","更新参数获取模块源，然后安装所需的模块。"}.
+{"Update Specs","更新参数"}.
 {"Update","更新"}.
+{"Upgrade","升级"}.
 {"Uptime:","正常运行时间:"}.
 {"URL for Archived Discussion Logs","已归档对话日志的URL"}.
 {"User already exists","用户已存在"}.
@@ -628,6 +642,7 @@
 {"Value of '~s' should be integer","'~s' 的值应为整数"}.
 {"Value 'set' of 'type' attribute is not allowed","不允许 'type' 属性的 'set' 值"}.
 {"vCard User Search","vCard用户搜索"}.
+{"View joined MIX channels","查看已加入的 MIX 频道"}.
 {"View Queue","查看队列"}.
 {"View Roster","查看花名册"}.
 {"Virtual Hosts","虚拟主机"}.
