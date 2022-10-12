@@ -1018,10 +1018,9 @@ get_commit_link(CommitHtmlUrl, TitleEl, CommitSha) ->
     ?AXC(CommitHtmlUrl, [TitleEl], binary:part(CommitSha, {0, 8})).
 
 get_content(Node, Query, Lang) ->
-    Instruct = translate:translate(Lang, ?T("Type a command in a textbox and click Execute.")),
     {{_CommandCtl}, _Res} =
         case catch parse_and_execute(Query, Node) of
-            {'EXIT', _} -> {{""}, Instruct};
+            {'EXIT', _} -> {{""}, <<"">>};
             Result_tuple -> Result_tuple
         end,
 
