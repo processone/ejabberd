@@ -5,7 +5,7 @@
 %%% Created : 27 Jul 2016 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -28,12 +28,12 @@
 -behaviour(ejabberd_oauth).
 
 -export([init/0,
-         store/1,
-         lookup/1,
-         clean/1,
-         lookup_client/1,
-         store_client/1,
-         remove_client/1]).
+	 store/1,
+	 lookup/1,
+	 clean/1,
+	 lookup_client/1,
+	 store_client/1,
+	 remove_client/1, revoke/1]).
 
 -include("ejabberd_oauth.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -76,6 +76,16 @@ lookup(Token) ->
 			      expire = Expire}};
         _ ->
             error
+    end.
+
+revoke(Token) ->
+    case ejabberd_sql:sql_query(
+	ejabberd_config:get_myname(),
+	?SQL("delete from oauth_token where token=%(Token)s")) of
+	{error, _} ->
+	    {error, <<"db error">>};
+	_ ->
+	    ok
     end.
 
 clean(TS) ->

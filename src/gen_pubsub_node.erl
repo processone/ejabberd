@@ -5,7 +5,7 @@
 %%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -123,10 +123,19 @@
     {error, stanza_error()}.
 
 -callback remove_extra_items(NodeIdx :: nodeIdx(),
+	Max_Items :: unlimited | non_neg_integer()) ->
+    {result, {[itemId()], [itemId()]}
+	}.
+
+-callback remove_extra_items(NodeIdx :: nodeIdx(),
 	Max_Items :: unlimited | non_neg_integer(),
 	ItemIds :: [itemId()]) ->
     {result, {[itemId()], [itemId()]}
 	}.
+
+-callback remove_expired_items(NodeIdx :: nodeIdx(),
+	Seconds :: infinity | non_neg_integer()) ->
+    {result, [itemId()]}.
 
 -callback get_node_affiliations(NodeIdx :: nodeIdx()) ->
     {result, [{ljid(), affiliation()}]}.

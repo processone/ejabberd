@@ -4,7 +4,7 @@
 %%% Purpose : XEP-0356: Privileged Entity
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -106,7 +106,7 @@ mod_doc() ->
 	   ?T("WARNING: Security issue: Privileged access gives components "
 	      "access to sensitive data, so permission should be granted "
 	      "carefully, only if you trust a component."), "",
-           ?T("NOTE: This module is complementary to 'mod_delegation', "
+           ?T("NOTE: This module is complementary to _`mod_delegation`_, "
               "but can also be used separately.")],
       opts =>
           [{roster,

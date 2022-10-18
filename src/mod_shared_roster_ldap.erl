@@ -7,7 +7,7 @@
 %%% Created :  5 Mar 2005 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -109,36 +109,25 @@ depends(_Host, _Opts) ->
 %%--------------------------------------------------------------------
 %% Hooks
 %%--------------------------------------------------------------------
--spec get_user_roster([#roster{}], {binary(), binary()}) -> [#roster{}].
-get_user_roster(Items, {U, S} = US) ->
+-spec get_user_roster([#roster_item{}], {binary(), binary()}) -> [#roster_item{}].
+get_user_roster(Items, US) ->
     SRUsers = get_user_to_groups_map(US, true),
-    {NewItems1, SRUsersRest} = lists:mapfoldl(fun (Item,
-						   SRUsers1) ->
-						      {_, _, {U1, S1, _}} =
-							  Item#roster.usj,
-						      US1 = {U1, S1},
-						      case dict:find(US1,
-								     SRUsers1)
-							  of
-							{ok, GroupNames} ->
-							    {Item#roster{subscription
-									     =
-									     both,
-									 groups =
-									     Item#roster.groups ++ GroupNames,
-									 ask =
-									     none},
-							     dict:erase(US1,
-									SRUsers1)};
-							error ->
-							    {Item, SRUsers1}
-						      end
-					      end,
-					      SRUsers, Items),
-    SRItems = [#roster{usj = {U, S, {U1, S1, <<"">>}},
-		       us = US, jid = {U1, S1, <<"">>},
-		       name = get_user_name(U1, S1), subscription = both,
-		       ask = none, groups = GroupNames}
+    {NewItems1, SRUsersRest} = lists:mapfoldl(
+	fun(Item = #roster_item{jid = #jid{luser = U1, lserver = S1}}, SRUsers1) ->
+	    US1 = {U1, S1},
+	    case dict:find(US1, SRUsers1) of
+		{ok, GroupNames} ->
+		    {Item#roster_item{subscription = both,
+				      groups = Item#roster_item.groups ++ GroupNames},
+		     dict:erase(US1, SRUsers1)};
+		error ->
+		    {Item, SRUsers1}
+	    end
+	end,
+	SRUsers, Items),
+    SRItems = [#roster_item{jid = jid:make(U1, S1),
+			    name = get_user_name(U1, S1), subscription = both,
+			    ask = undefined, groups = GroupNames}
 	       || {{U1, S1}, GroupNames} <- dict:to_list(SRUsersRest)],
     SRItems ++ NewItems1.
 
@@ -689,9 +678,9 @@ mod_doc() ->
            ?T("- Connection parameters: The module also accepts the "
 	      "connection parameters, all of which default to the top-level "
 	      "parameter of the same name, if unspecified. "
-	      "See http://../database-ldap/#ldap-connection[LDAP Connection] "
+	      "See http://../ldap/#ldap-connection[LDAP Connection] "
 	      "section for more information about them."), "",
-           ?T("Check also the http://../database-ldap/#configuration-examples"
+           ?T("Check also the http://../ldap/#ldap-examples"
 	      "[Configuration examples] section to get details about "
 	      "retrieving the roster, "
 	      "and configuration examples including Flat DIT and Deep DIT.")],
@@ -721,13 +710,13 @@ mod_doc() ->
 		     "name of roster entries (usually full names of people in "
 		     "the roster). See also the parameters 'ldap_userdesc' and "
 		     "'ldap_useruid'. For more information check the LDAP "
-		     "http://../database-ldap/#filters[Filters] section.")}},
+		     "http://../ldap/#filters[Filters] section.")}},
            {ldap_filter,
             #{desc =>
 		  ?T("Additional filter which is AND-ed together "
 		     "with \"User Filter\" and \"Group Filter\". "
 		     "For more information check the LDAP "
-		     "http://../database-ldap/#filters[Filters] section.")}},
+		     "http://../ldap/#filters[Filters] section.")}},
 	   %% Attributes:
            {ldap_groupattr,
             #{desc =>
@@ -785,7 +774,7 @@ mod_doc() ->
             #{desc =>
 		  ?T("A regex for extracting user ID from the value of the "
 		     "attribute named by 'ldap_memberattr'. Check the LDAP "
-		     "http://../database-ldap/#control-parameters"
+		     "http://../ldap/#control-parameters"
 		     "[Control Parameters] section.")}},
            {ldap_auth_check,
             #{value => "true | false",
@@ -796,7 +785,7 @@ mod_doc() ->
 		     "disable the check. Default value is 'true'.")}}] ++
           [{Opt,
             #{desc =>
-                  {?T("Same as top-level '~s' option, but "
+                  {?T("Same as top-level _`~s`_ option, but "
                       "applied to this module only."), [Opt]}}}
            || Opt <- [ldap_backups, ldap_base, ldap_uids, ldap_deref_aliases,
 		      ldap_encrypt, ldap_password, ldap_port, ldap_rootdn,

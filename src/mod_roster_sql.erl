@@ -4,7 +4,7 @@
 %%% Created : 14 Apr 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -80,9 +80,10 @@ get_roster(LUser, LServer) ->
 				[]
                         end,
             GroupsDict = lists:foldl(fun({J, G}, Acc) ->
-                                             dict:append(J, G, Acc)
+                                             Gs = maps:get(J, Acc, []),
+                                             maps:put(J, [G | Gs], Acc)
                                      end,
-                                     dict:new(), JIDGroups),
+                                     maps:new(), JIDGroups),
 	    {ok, lists:flatmap(
 		   fun(I) ->
 			   case raw_to_record(LServer, I) of
@@ -90,10 +91,7 @@ get_roster(LUser, LServer) ->
 			       error -> [];
 			       R ->
 				   SJID = jid:encode(R#roster.jid),
-				   Groups = case dict:find(SJID, GroupsDict) of
-						{ok, Gs} -> Gs;
-						error -> []
-					    end,
+                                   Groups = maps:get(SJID, GroupsDict, []),
 				   [R#roster{groups = Groups}]
 			   end
 		   end, Items)};

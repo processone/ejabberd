@@ -5,7 +5,7 @@
 %%% Created : 8 Sep 2007 by Badlop <badlop@ono.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -40,8 +40,13 @@
 	 change_room_option/4, get_room_options/2,
 	 set_room_affiliation/4, get_room_affiliations/2, get_room_affiliation/3,
 	 web_menu_main/2, web_page_main/2, web_menu_host/3,
-	 subscribe_room/4, unsubscribe_room/2, get_subscribers/2,
-	 web_page_host/3, mod_options/1, get_commands_spec/0, find_hosts/1]).
+	 subscribe_room/4, subscribe_room_many/3,
+	 unsubscribe_room/2, get_subscribers/2,
+	 get_room_serverhost/1,
+	 web_page_host/3,
+	 mod_opt_type/1, mod_options/1,
+	 get_commands_spec/0, find_hosts/1, room_diagnostics/2,
+	 get_room_pid/2]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -57,7 +62,7 @@
 %%----------------------------
 
 start(Host, _Opts) ->
-    ejabberd_commands:register_commands(get_commands_spec()),
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
     ejabberd_hooks:add(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_main, ?MODULE, web_page_main, 50),
@@ -281,7 +286,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = send_direct_invitation, tags = [muc_room],
 			desc = "Send a direct invitation to several destinations",
-			longdesc = "Since ejabberd 20.10, this command is "
+			longdesc = "Since ejabberd 20.12, this command is "
                         "asynchronous: the API call may return before the "
                         "server has send all the invitations.\n\n"
                         "Password and Message can also be: none. "
@@ -331,6 +336,27 @@ get_commands_spec() ->
 			args = [{user, binary}, {nick, binary}, {room, binary},
 				{nodes, binary}],
 			result = {nodes, {list, {node, string}}}},
+     #ejabberd_commands{name = subscribe_room_many, tags = [muc_room],
+			desc = "Subscribe several users to a MUC conference",
+			note = "added in 22.05",
+			longdesc = "This command accept up to 50 users at once (this is configurable with `subscribe_room_many_max_users` option)",
+			module = ?MODULE, function = subscribe_room_many,
+			args_desc = ["Users JIDs and nicks",
+                                     "the room to subscribe",
+                                     "nodes separated by commas: ,"],
+			args_example = [[{"tom@localhost", "Tom"},
+                                         {"jerry@localhost", "Jerry"}],
+                                        "room1@conference.localhost",
+                                        "urn:xmpp:mucsub:nodes:messages,urn:xmpp:mucsub:nodes:affiliations"],
+			args = [{users, {list,
+                                         {user, {tuple,
+                                                 [{jid, binary},
+                                                  {nick, binary}
+                                                 ]}}
+                                        }},
+                                {room, binary},
+				{nodes, binary}],
+			result = {res, rescode}},
      #ejabberd_commands{name = unsubscribe_room, tags = [muc_room],
 			desc = "Unsubscribe from a MUC conference",
 			module = ?MODULE, function = unsubscribe_room,
@@ -670,8 +696,7 @@ justcreated_to_binary(J) when is_atom(J) ->
 %% Create/Delete Room
 %%----------------------------
 
-%% @spec (Name::binary(), Host::binary(), ServerHost::binary()) ->
-%%       ok | error
+-spec create_room(Name::binary(), Host::binary(), ServerHost::binary()) -> ok | error.
 %% @doc Create a room immediately with the default options.
 create_room(Name1, Host1, ServerHost) ->
     create_room_with_opts(Name1, Host1, ServerHost, []).
@@ -710,7 +735,7 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 maybe_store_room(ServerHost, Host, Name, RoomOpts) ->
     case proplists:get_bool(persistent, RoomOpts) of
         true ->
-            {atomic, ok} = mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
+            {atomic, _} = mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
             ok;
         false ->
             ok
@@ -722,8 +747,7 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
     io:format("Creating room ~ts@~ts~n", [Name, Host]),
     mod_muc:store_room(ServerHost, Host, Name, DefRoomOpts).
 
-%% @spec (Name::binary(), Host::binary()) ->
-%%       ok | {error, room_not_exists}
+-spec destroy_room(Name::binary(), Host::binary()) -> ok | {error, room_not_exists}.
 %% @doc Destroy the room immediately.
 %% If the room has participants, they are not notified that the room was destroyed;
 %% they will notice when they try to chat and receive an error that the room doesn't exist.
@@ -835,7 +859,7 @@ rooms_report(Method, Action, Service, Days) ->
 
 muc_unused(Method, Action, Service, Last_allowed) ->
     %% Get all required info about all existing rooms
-    Rooms_all = get_all_rooms(Service),
+    Rooms_all = get_all_rooms(Service, erlang:system_time(microsecond) - Last_allowed*24*60*60*1000),
 
     %% Decide which ones pass the requirements
     Rooms_pass = decide_rooms(Method, Rooms_all, Last_allowed),
@@ -860,7 +884,14 @@ get_online_rooms(ServiceArg) ->
 	   || {RoomName, RoomHost, Pid} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
-get_all_rooms(Host) ->
+get_all_rooms(ServiceArg, Timestamp) ->
+    Hosts = find_services(ServiceArg),
+    lists:flatmap(
+      fun(Host) ->
+              get_all_rooms2(Host, Timestamp)
+      end, Hosts).
+
+get_all_rooms2(Host, Timestamp) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     OnlineRooms = get_online_rooms(Host),
     OnlineMap = lists:foldl(
@@ -870,8 +901,11 @@ get_all_rooms(Host) ->
 
     Mod = gen_mod:db_mod(ServerHost, mod_muc),
     DbRooms =
-    case erlang:function_exported(Mod, get_rooms_without_subscribers, 2) of
-	true ->
+    case {erlang:function_exported(Mod, get_rooms_without_subscribers, 2),
+	  erlang:function_exported(Mod, get_hibernated_rooms_older_than, 3)} of
+	{_, true} ->
+	    Mod:get_hibernated_rooms_older_than(ServerHost, Host, Timestamp);
+	{true, _} ->
 	    Mod:get_rooms_without_subscribers(ServerHost, Host);
 	_ ->
 	    Mod:get_rooms(ServerHost, Host)
@@ -925,6 +959,8 @@ decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
 	Opts ->
 	    case lists:keyfind(hibernation_time, 1, Opts) of
 		false ->
+		    {NodeStartTime, 0};
+		{_, undefined} ->
 		    {NodeStartTime, 0};
 		{_, T} ->
 		    {T, 0}
@@ -1015,8 +1051,8 @@ get_room_occupants(Pid) ->
 get_room_occupants_number(Room, Host) ->
     case get_room_pid(Room, Host) of
 	Pid when is_pid(Pid )->
-	    S = get_room_state(Pid),
-	    maps:size(S#state.users);
+	    {ok, #{occupants_number := N}} = mod_muc_room:get_info(Pid),
+	    N;
 	_ ->
 	    throw({error, room_not_found})
     end.
@@ -1079,8 +1115,8 @@ send_direct_invitation(FromJid, UserJid, Msg) ->
 %% Change Room Option
 %%----------------------------
 
-%% @spec(Name::string(), Service::string(), Option::string(), Value) -> ok
-%%       Value = atom() | integer() | string()
+-spec change_room_option(Name::binary(), Service::binary(), Option::binary(),
+                         Value::atom() | integer() | string()) -> ok | mod_muc_log_not_enabled.
 %% @doc Change an option in an existing room.
 %% Requires the name of the room, the MUC service where it exists,
 %% the option to change (for example title or max_users),
@@ -1141,6 +1177,28 @@ get_room_pid(Name, Service) ->
 		    room_not_found;
 		{ok, Pid} ->
 		    Pid
+	    end
+    catch
+	error:{invalid_domain, _} ->
+	    invalid_service;
+	error:{unregistered_route, _} ->
+	    invalid_service
+    end.
+
+room_diagnostics(Name, Service) ->
+    try get_room_serverhost(Service) of
+	ServerHost ->
+	    RMod = gen_mod:ram_db_mod(ServerHost, mod_muc),
+	    case RMod:find_online_room(ServerHost, Name, Service) of
+		error ->
+		    room_hibernated;
+		{ok, Pid} ->
+		    case rpc:pinfo(Pid, [current_stacktrace, message_queue_len, messages]) of
+			[{_, R}, {_, QL}, {_, Q}] ->
+			    #{stacktrace => R, queue_size => QL, queue => lists:sublist(Q, 10)};
+			_ ->
+			    unable_to_probe_process
+		    end
 	    end
     catch
 	error:{invalid_domain, _} ->
@@ -1324,6 +1382,18 @@ subscribe_room(User, Nick, Room, Nodes) ->
 	    throw({error, "Malformed room JID"})
     end.
 
+subscribe_room_many(Users, Room, Nodes) ->
+    MaxUsers = mod_muc_admin_opt:subscribe_room_many_max_users(global),
+    if
+        length(Users) > MaxUsers ->
+            throw({error, "Too many users in subscribe_room_many command"});
+        true ->
+            lists:foreach(
+              fun({User, Nick}) ->
+                      subscribe_room(User, Nick, Room, Nodes)
+              end, Users)
+    end.
+
 unsubscribe_room(User, Room) ->
     try jid:decode(Room) of
 	#jid{luser = Name, lserver = Host} when Name /= <<"">> ->
@@ -1406,11 +1476,23 @@ find_hosts(ServerHost) ->
 	    []
     end.
 
-mod_options(_) -> [].
+mod_opt_type(subscribe_room_many_max_users) ->
+    econf:int().
+
+mod_options(_) ->
+    [{subscribe_room_many_max_users, 50}].
 
 mod_doc() ->
     #{desc =>
 	  [?T("This module provides commands to administer local MUC "
 	      "services and their MUC rooms. It also provides simple "
 	      "WebAdmin pages to view the existing rooms."), "",
-	   ?T("This module depends on 'mod_muc'.")]}.
+	   ?T("This module depends on _`mod_muc`_.")],
+    opts =>
+          [{subscribe_room_many_max_users,
+            #{value => ?T("Number"),
+              note => "added in 22.05",
+              desc =>
+                  ?T("How many users can be subscribed to a room at once using "
+                     "the 'subscribe_room_many' command. "
+                     "The default value is '50'.")}}]}.

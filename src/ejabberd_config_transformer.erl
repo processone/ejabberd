@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -103,7 +103,7 @@ transform(_Host, acme, ACME, Acc) ->
     ACME1 = lists:map(
 	      fun({ca_url, URL} = Opt) ->
                       case misc:uri_parse(URL) of
-			  {ok, _, "acme-v01.api.letsencrypt.org", _, _} ->
+			  {ok, _, _, "acme-v01.api.letsencrypt.org", _, _, _} ->
 			      NewURL = ejabberd_acme:default_directory_url(),
 			      ?WARNING_MSG("ACME directory URL ~ts defined in "
 					   "option acme->ca_url is deprecated "

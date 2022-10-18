@@ -3,7 +3,7 @@
 %%% Created : 13 Sep 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -469,13 +469,13 @@ mod_doc() ->
               "[XEP-0398: User Avatar to vCard-Based Avatars Conversion]."), "",
            ?T("Also, the module supports conversion between avatar "
               "image formats on the fly."), "",
-           ?T("The module depends on 'mod_vcard', 'mod_vcard_xupdate' and "
-              "'mod_pubsub'.")],
+           ?T("The module depends on _`mod_vcard`_, _`mod_vcard_xupdate`_ and "
+              "_`mod_pubsub`_.")],
       opts =>
           [{convert,
             #{value => "{From: To}",
               desc =>
-                  ?T("Defines image convertion rules: the format in 'From' "
+                  ?T("Defines image conversion rules: the format in 'From' "
                      "will be converted to format in 'To'. The value of 'From' "
                      "can also be 'default', which is match-all rule. NOTE: "
                      "the list of supported formats is detected at compile time "
@@ -489,4 +489,4 @@ mod_doc() ->
               desc =>
                   ?T("Limit any given JID by the number of avatars it is able "
                      "to convert per minute. This is to protect the server from "
-                     "image convertion DoS. The default value is '10'.")}}]}.
+                     "image conversion DoS. The default value is '10'.")}}]}.

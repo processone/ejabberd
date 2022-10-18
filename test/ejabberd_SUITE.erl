@@ -3,7 +3,7 @@
 %%% Created :  2 Jun 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -76,7 +76,7 @@ init_per_group(Group, Config) ->
                     %% All backends enabled
                     do_init_per_group(Group, Config);
                 Backends ->
-                    %% Skipped backends that were not explicitely enabled
+                    %% Skipped backends that were not explicitly enabled
 		    case lists:member(Group, Backends) of
 			true ->
 			    do_init_per_group(Group, Config);

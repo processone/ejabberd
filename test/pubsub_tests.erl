@@ -3,7 +3,7 @@
 %%% Created : 16 Nov 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -87,7 +87,7 @@ test_features(Config) ->
 
 test_vcard(Config) ->
     JID = pubsub_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:encode(JID)]),
+    ct:comment("Retrieving vCard from ~s", [jid:encode(JID)]),
     VCard = mod_pubsub_opt:vcard(?config(server, Config)),
     #iq{type = result, sub_els = [VCard]} =
 	send_recv(Config, #iq{type = get, to = JID, sub_els = [#vcard_temp{}]}),

@@ -20,6 +20,7 @@
 {"Access model","Modelo de acesso"}.
 {"Account doesn't exist","A conta não existe"}.
 {"Action on user","Acção no utilizador"}.
+{"Add a hat to a user","Adiciona um chapéu num utilizador"}.
 {"Add Jabber ID","Adicionar ID jabber"}.
 {"Add New","Adicionar novo"}.
 {"Add User","Adicionar utilizador"}.
@@ -136,6 +137,7 @@
 {"Elements","Elementos"}.
 {"Email Address","Endereço de e-mail"}.
 {"Email","Email"}.
+{"Enable hats","Ativa chapéus"}.
 {"Enable logging","Permitir criação de logs"}.
 {"Enable message archiving","Ativar arquivamento de mensagens"}.
 {"Enabling push without 'node' attribute is not supported","Abilitar push sem o atributo 'node' não é suportado"}.
@@ -186,6 +188,9 @@
 {"has been kicked because of an affiliation change","foi desconectado porque por afiliação inválida"}.
 {"has been kicked because the room has been changed to members-only","foi desconectado porque a política da sala mudou, só membros são permitidos"}.
 {"has been kicked","foi removido"}.
+{"Hat title","Título do chapéu"}.
+{"Hat URI","URI do chapéu"}.
+{"Hats limit exceeded","O limite dos chapéus foi excedido"}.
 {"Host unknown","Máquina desconhecida"}.
 {"Host","Máquina"}.
 {"HTTP File Upload","Upload de ficheiros por HTTP"}.
@@ -237,6 +242,8 @@
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Bits menos significativos do hash sha-256 do texto devem ser iguais ao rótulo hexadecimal"}.
 {"leaves the room","Sair da sala"}.
 {"List of rooms","Lista de salas"}.
+{"List of users with hats","Lista os utilizadores com chapéus"}.
+{"List users with hats","Lista os utilizadores com chapéus"}.
 {"Logging","Registando no log"}.
 {"Low level update script","Script de atualização low level"}.
 {"Make participants list public","Tornar pública a lista de participantes"}.
@@ -249,7 +256,7 @@
 {"Malformed username","Nome de utilizador inválido"}.
 {"MAM preference modification denied by service policy","Modificação de preferência MAM negada por causa da política de serviços"}.
 {"March","Março"}.
-{"Max # of items to persist","Máximo # de elementos que persistem"}.
+{"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","Máximo # de itens para persistir ou `max` para nenhum limite específico que não seja um servidor imposto como máximo"}.
 {"Max payload size in bytes","Máximo tamanho do payload em bytes"}.
 {"Maximum file size","Tamanho máximo do ficheiro"}.
 {"Maximum Number of History Messages Returned by Room","Quantidade máxima das mensagens do histórico que foram devolvidas por sala"}.
@@ -340,7 +347,7 @@
 {"Number of Offline Messages","Quantidade das mensagens offline"}.
 {"Number of online users","Quantidade de utilizadores online"}.
 {"Number of registered users","Quantidade de utilizadores registados"}.
-{"Number of seconds after which to automatically purge items","Quantidade de segundos para excluir os itens automaticamente"}.
+{"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Quantidade de segundos após limpar automaticamente os itens ou `max` para nenhum limite específico que não seja um servidor imposto máximo"}.
 {"Occupants are allowed to invite others","As pessoas estão autorizadas a convidar outras pessoas"}.
 {"Occupants May Change the Subject","As pessoas talvez possam alterar o assunto"}.
 {"October","Outubro"}.
@@ -419,6 +426,7 @@
 {"Registered Users:","Utilizadores registados:"}.
 {"Register","Registar"}.
 {"Remote copy","Cópia remota"}.
+{"Remove a hat from a user","Remove um chapéu de um utilizador"}.
 {"Remove All Offline Messages","Remover Todas as Mensagens Offline"}.
 {"Remove User","Eliminar utilizador"}.
 {"Remove","Remover"}.
@@ -520,7 +528,7 @@
 {"The JIDs of those with an affiliation of owner","Os JIDs daqueles com uma afiliação de proprietário"}.
 {"The JIDs of those with an affiliation of publisher","Os JIDs daqueles com uma afiliação de editor"}.
 {"The list of JIDs that may associate leaf nodes with a collection","A lista dos JIDs que podem associar as páginas dos nós numa coleção"}.
-{"The maximum number of child nodes that can be associated with a collection","A quantidade máxima dos nós relacionados que podem ser associados com uma coleção"}.
+{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","A quantidade máxima de nós relacionados que podem ser associados a uma coleção ou `máximo` para nenhum limite específico que não seja um servidor imposto no máximo"}.
 {"The minimum number of milliseconds between sending any two notification digests","A quantidade mínima de milissegundos entre o envio do resumo das duas notificações"}.
 {"The name of the node","O nome do nó"}.
 {"The node is a collection node","O nó é um nó da coleção"}.
@@ -545,7 +553,6 @@
 {"The type of node data, usually specified by the namespace of the payload (if any)","O tipo dos dados do nó, normalmente definido pelo espaço dos nomes da carga útil (caso haja)"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","O URL da transformação XSL que pode ser aplicada nas cargas úteis para gerar um elemento apropriado no corpo da mensagem."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","A URL de uma transformação XSL que pode ser aplicada ao formato de carga útil para gerar um Formulário de Dados válido onde o cliente possa exibir usando um mecanismo genérico de renderização do Formulários de Dados"}.
-{"The username is not valid","O nome do utilizador não é válido"}.
 {"There was an error changing the password: ","Houve um erro ao alterar a palavra-passe: "}.
 {"There was an error creating the account: ","Houve um erro ao criar esta conta: "}.
 {"There was an error deleting the account: ","Houve um erro ao deletar esta conta: "}.

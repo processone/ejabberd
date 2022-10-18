@@ -5,7 +5,7 @@
 %%% Created : 27 Feb 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -535,12 +535,14 @@ analyze_ip_xff({IPLast, Port}, XFF) ->
 				       TrustedProxies)
 		   of
 		 true ->
-		     {ok, IPFirst} = inet_parse:address(
-                                       binary_to_list(ClientIP)),
-		     ?DEBUG("The IP ~w was replaced with ~w due to "
-			    "header X-Forwarded-For: ~ts",
-			    [IPLast, IPFirst, XFF]),
-		     IPFirst;
+		     case inet_parse:address(binary_to_list(ClientIP)) of
+			 {ok, IPFirst} ->
+			     ?DEBUG("The IP ~w was replaced with ~w due to "
+				    "header X-Forwarded-For: ~ts",
+				    [IPLast, IPFirst, XFF]),
+			     IPFirst;
+			 E -> throw(E)
+		     end;
 		 false -> IPLast
 	       end,
     {IPClient, Port}.

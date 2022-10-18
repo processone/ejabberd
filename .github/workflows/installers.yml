@@ -1,0 +1,84 @@
+name: Installers
+
+on:
+  push:
+    paths-ignore:
+    - '.devcontainer/**'
+    - 'examples/**'
+    - 'lib/**'
+    - 'man/**'
+    - 'priv/**'
+    - '**.md'
+  pull_request:
+    paths-ignore:
+    - '.devcontainer/**'
+    - 'examples/**'
+    - 'lib/**'
+    - 'man/**'
+    - 'priv/**'
+    - '**.md'
+
+jobs:
+  binaries:
+    name: Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache build directory
+        uses: actions/cache@v3
+        with:
+          path: ~/build/
+          key: ${{runner.os}}-ct-ng-1.25.0
+      - name: Install prerequisites
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -qq install makeself
+          # https://github.com/crosstool-ng/crosstool-ng/blob/master/testing/docker/ubuntu21.10/Dockerfile
+          sudo apt-get -qq install build-essential autoconf bison flex gawk
+          sudo apt-get -qq install help2man libncurses5-dev libtool libtool-bin
+          sudo apt-get -qq install python3-dev texinfo unzip
+      - name: Install FPM
+        run: |
+          gem install --no-document --user-install fpm
+          echo $HOME/.gem/ruby/*/bin >> $GITHUB_PATH
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Build binary archives
+        run: CHECK_DEPS=false tools/make-binaries
+      - name: Build DEB and RPM packages
+        run: tools/make-packages
+      - name: Build installers
+        run: tools/make-installers
+      - name: Collect packages
+        run: |
+          mkdir ejabberd-packages
+          mv ejabberd_*.deb ejabberd-*.rpm ejabberd-*.run ejabberd-packages
+      - name: Upload packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: ejabberd-packages
+          #
+          # Appending the wildcard character ("*") is a trick to make
+          # "ejabberd-packages" the root directory of the uploaded ZIP file:
+          #
+          # https://github.com/actions/upload-artifact#upload-using-multiple-paths-and-exclusions
+          #
+          path: ejabberd-packages*
+          retention-days: 14
+
+  release:
+    name: Release
+    needs: [binaries]
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v3
+        with:
+          name: ejabberd-packages
+      - name: Draft Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: ejabberd-packages/*

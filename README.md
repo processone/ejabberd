@@ -1,208 +1,126 @@
-ejabberd Community Edition
-==========================
 
-[![CI](https://github.com/processone/ejabberd/actions/workflows/ci.yml/badge.svg)](https://github.com/processone/ejabberd/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/processone/ejabberd/badge.svg?branch=master "Coverage in coveralls.io")](https://coveralls.io/github/processone/ejabberd?branch=master)
-[![Translation status](https://hosted.weblate.org/widgets/ejabberd/-/ejabberd-po/svg-badge.svg "Translation status in Weblate")](https://hosted.weblate.org/projects/ejabberd/ejabberd-po/)
-[![Hex version](https://img.shields.io/hexpm/v/ejabberd.svg "Hex version")](https://hex.pm/packages/ejabberd)
+<p align="center">
+    <img src="https://www.process-one.net/wp-content/uploads/2022/05/ejabberd-logo-rounded-index.png"
+        height="216">
+</p>
+<p align="center">
+    <a href="https://github.com/processone/ejabberd/tags" alt="GitHub tag (latest SemVer)">
+       <img src="https://img.shields.io/github/v/tag/processone/ejabberd?sort=semver&logo=embarcadero&label=&color=3fb0d2&logoWidth=20" /></a>
+    <a href="https://hex.pm/packages/ejabberd" alt="Hex version">
+       <img src="https://img.shields.io/hexpm/v/ejabberd.svg" /></a>
+    <a href="https://github.com/processone/ejabberd/pkgs/container/ejabberd" alt="GitHub Container">
+       <img src="https://img.shields.io/github/v/tag/processone/ejabberd?label=container&sort=semver" /></a>
+    <a href="https://hub.docker.com/r/ejabberd/ecs/" alt="Docker Image Version (latest semver)">
+       <img src="https://img.shields.io/docker/v/ejabberd/ecs?label=docker" /></a>
+    <a href="https://formulae.brew.sh/formula/ejabberd" alt="homebrew version">
+       <img src="https://img.shields.io/homebrew/v/ejabberd" /></a>
+    <br />
+    <a href="https://github.com/processone/ejabberd/actions/workflows/ci.yml" alt="CI">
+       <img src="https://github.com/processone/ejabberd/actions/workflows/ci.yml/badge.svg" /></a>
+    <a href="https://coveralls.io/github/processone/ejabberd?branch=master" alt="Coverage Status">
+       <img src="https://coveralls.io/repos/github/processone/ejabberd/badge.svg?branch=master "Coverage in coveralls.io"" /></a>
+    <a href="https://hosted.weblate.org/projects/ejabberd/ejabberd-po/" alt="Translation status">
+       <img src="https://hosted.weblate.org/widgets/ejabberd/-/ejabberd-po/svg-badge.svg"" /></a>
+</p>
 
-ejabberd is a distributed, fault-tolerant technology that allows the creation
-of large-scale instant messaging applications. The server can reliably support
-thousands of simultaneous users on a single node and has been designed to
-provide exceptional standards of fault tolerance. As an open source
-technology, based on industry-standards, ejabberd can be used to build bespoke
-solutions very cost effectively.
+
+[ejabberd][im] is an open-source,
+robust, scalable and extensible realtime platform built using [Erlang/OTP][erlang],
+that includes [XMPP][xmpp] Server, [MQTT][mqtt] Broker and [SIP][sip] Service.
+
+Check the features in [ejabberd.im][im], [ejabberd Docs][features],
+[ejabberd at ProcessOne][p1home], and a list of [supported protocols and XEPs][xeps].
 
 
-Key Features
+Installation
 ------------
 
-- **Cross-platform**  
-  ejabberd runs under Microsoft Windows and Unix-derived systems such as
-  Linux, FreeBSD and NetBSD.
+There are several ways to install ejabberd:
 
-- **Distributed**  
-  You can run ejabberd on a cluster of machines and all of them will serve the
-  same XMPP domain(s). When you need more capacity you can simply add a new
-  cheap node to your cluster. Accordingly, you do not need to buy an expensive
-  high-end machine to support tens of thousands concurrent users.
-
-- **Fault-tolerant**  
-  You can deploy an ejabberd cluster so that all the information required for
-  a properly working service will be replicated permanently on all nodes. This
-  means that if one of the nodes crashes, the others will continue working
-  without disruption. In addition, nodes also can be added or replaced ‘on
-  the fly’.
-
-- **Administrator-friendly**  
-  ejabberd is built on top of the Open Source Erlang. As a result you do not
-  need to install an external database, an external web server, amongst others
-  because everything is already included, and ready to run out of the box.
-  Other administrator benefits include:
-  - Comprehensive documentation.
-  - Straightforward installers for Linux.
-  - Docker packaging to help with deploy / development on Linux, Windows or MacOS.
-  - Deb and RPM packaging to support most Linux distributions.
-  - Web administration.
-  - Shared roster groups.
-  - Command line administration tool.
-  - Can integrate with existing authentication mechanisms.
-  - Capability to send announce messages.
-
-- **Internationalized**  
-  ejabberd leads in internationalization. Hence it is very well suited in a
-  globalized world. Related features are:
-  - Translated to 25 languages.
-  - Support for IDNA.
-
-- **Open Standards**  
-  ejabberd is the first Open Source XMPP server claiming to fully comply to
-  the XMPP standard.
-  - Fully XMPP-compliant.
-  - XML-based protocol.
-  - Many protocols supported.
+- Source code: compile yourself, see [COMPILE](COMPILE.md)
+- Installers from [ejabberd GitHub Releases][releases] (run/deb/rpm for x64 and arm64)
+- Container image from [ejabberd Docker Hub][hubecs], see [ecs README][docker-ecs-readme] (for x64)
+- Container image from [ejabberd Github Packages][packages], see [CONTAINER](CONTAINER.md) (for x64 and arm64)
+- Using your [Operating System package][osp]
+- Using the [Homebrew][homebrew] package manager
 
 
-Additional Features
--------------------
+Documentation
+-------------
 
-Moreover, ejabberd comes with a wide range of other state-of-the-art features:
+Please check the [ejabberd Docs][docs] website.
 
-- **Modularity**
-  - Load only the modules you want.
-  - Extend ejabberd with your own custom modules.
+When compiling from source code, you can get some help with:
 
-- **Security**
-  - SASL and STARTTLS for c2s and s2s connections.
-  - STARTTLS and Dialback s2s connections.
-  - Web Admin accessible via HTTPS secure access.
-
-- **Databases**
-  - Internal database for fast deployment (Mnesia).
-  - Native MySQL support.
-  - Native PostgreSQL support.
-  - ODBC data storage support.
-  - Microsoft SQL Server support.
-
-- **Authentication**
-  - Internal authentication.
-  - PAM, LDAP and ODBC.
-  - External authentication script.
-
-- **Others**
-  - Support for virtual hosting.
-  - Compressing XML streams with Stream Compression (XEP-0138).
-  - Statistics via Statistics Gathering (XEP-0039).
-  - IPv6 support both for c2s and s2s connections.
-  - Multi-User Chat module with support for clustering and HTML logging.
-  - Users Directory based on users vCards.
-  - Publish-Subscribe component with support for Personal Eventing.
-  - Support for web clients: HTTP Polling and HTTP Binding (BOSH).
-  - Component support: interface with networks such as AIM, ICQ and MSN.
-
-
-Quickstart guide
-----------------
-
-### 0. Requirements
-
-To compile ejabberd you need:
-
- - GNU Make.
- - GCC.
- - Libexpat ≥ 1.95.
- - Libyaml ≥ 0.1.4.
- - Erlang/OTP ≥ 19.3.
- - OpenSSL ≥ 1.0.0.
- - Zlib ≥ 1.2.3, for Stream Compression support (XEP-0138). Optional.
- - PAM library. Optional. For Pluggable Authentication Modules (PAM).
- - ImageMagick's Convert program and Ghostscript fonts. Optional. For CAPTCHA
-   challenges.
- - Elixir ≥ 1.10.3. Optional. Alternative to build ejabberd
-
-If your system splits packages in libraries and development headers, you must
-install the development packages also.
-
-### 1. Compile and install on *nix systems
-
-To compile ejabberd, execute the following commands.  The first one is only
-necessary if your source tree didn't come with a `configure` script (In this
-case you need autoconf installed).
-
-    ./autogen.sh
-    ./configure
-    make
-
-To install ejabberd, run this command with system administrator rights (root
-user):
-
-    sudo make install
-
-These commands will:
-
-- Install the configuration files in `/etc/ejabberd/`
-- Install ejabberd binary, header and runtime files in `/lib/ejabberd/`
-- Install the administration script: `/sbin/ejabberdctl`
-- Install ejabberd documentation in `/share/doc/ejabberd/`
-- Create a spool directory: `/var/lib/ejabberd/`
-- Create a directory for log files: `/var/log/ejabberd/`
-
-
-### 2. Start ejabberd
-
-You can use the `ejabberdctl` command line administration script to
-start and stop ejabberd. For example:
-
-    ejabberdctl start
-
-
-For detailed information please refer to the
-[ejabberd Documentation](https://docs.ejabberd.im)
-
-
-### 3. Use ejabberd locally
-
-Alternatively, you can setup ejabberd without installing in your system:
-
-    ./configure --with-rebar=rebar3
-    make dev
-
-Or, if you have Elixir available and plan to develop Elixir code:
-
-    ./configure --with-rebar=mix
-    make dev
-
-Check the full list of targets:
-
+    ./configure --help
     make help
+
+Once ejabberd is installed, try:
+
+    ejabberdctl help
+    man ejabberd.yml
 
 
 Development
 -----------
 
-In order to assist in the development of ejabberd, and particularly the
-execution of the test suite, a Vagrant environment is available at
-https://github.com/processone/ejabberd-vagrant-dev.
+Bug reports and features are tracked using [GitHub Issues][issues],
+please check [CONTRIBUTING](CONTRIBUTING.md) for details.
 
-To start ejabberd in development mode from the repository directory, you can
-type a command like:
+Translations can be improved online [using Weblate][weblate]
+or in your local machine as explained in [Localization][localization].
 
-    EJABBERD_CONFIG_PATH=ejabberd.yml erl -pa ebin -pa deps/*/ebin -pa test -pa deps/elixir/lib/*/ebin/ -s ejabberd
+Documentation for developers is available in [ejabberd docs: Developers][docs-dev].
 
+Security reports or concerns should preferably be reported privately,
+please send an email to the address: contact [at] process-one [dot] net
+or some other method from [ProcessOne Contact][p1contact].
 
-Translation
------------
-
-Using any gettext editor, you can improve the translation files found in
-`priv/msgs/*.po`, and then submit your changes.
-
-Alternatively, a simple way to improve translations is using our Weblate project:
-https://hosted.weblate.org/projects/ejabberd/ejabberd-po/
+For commercial offering and support, including [ejabberd Business Edition][p1home]
+and [Fluux (ejabberd in the Cloud)][fluux], please check [ProcessOne ejabberd page][p1home].
 
 
-Links
------
+Community
+---------
 
-- Documentation: https://docs.ejabberd.im
-- Community site: https://www.ejabberd.im
-- ejabberd commercial offering and support: https://www.process-one.net/en/ejabberd
+There are several places to get in touch with other ejabberd developers and administrators:
+
+- [ejabberd XMPP chatroom][muc]: ejabberd@conference.process-one.net
+- [Mailing list][list]
+- [GitHub Discussions][discussions]
+- [Stack Overflow][stackoverflow]
+
+
+License
+-------
+
+ejabberd is released under the GNU General Public License v2 (see [COPYING](COPYING.md)),
+and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MIT License.
+
+
+[discussions]: https://github.com/processone/ejabberd/discussions
+[docker-ecs-readme]: https://github.com/processone/docker-ejabberd/tree/master/ecs#readme
+[docs-dev]: https://docs.ejabberd.im/developer/
+[docs]: https://docs.ejabberd.im
+[erlang]: https://www.erlang.org/
+[features]: https://docs.ejabberd.im/admin/introduction/
+[fluux]: https://fluux.io/
+[github]: https://github.com/processone/ejabberd
+[homebrew]: https://docs.ejabberd.im/admin/installation/#homebrew
+[hubecs]: https://hub.docker.com/r/ejabberd/ecs/
+[im]: https://ejabberd.im/
+[issues]: https://github.com/processone/ejabberd/issues
+[list]: https://lists.jabber.ru/mailman/listinfo/ejabberd
+[localization]: https://docs.ejabberd.im/developer/extending-ejabberd/localization/
+[mqtt]: https://mqtt.org/
+[muc]: xmpp:ejabberd@conference.process-one.net
+[osp]: https://docs.ejabberd.im/admin/installation/#operating-system-packages
+[p1contact]: https://www.process-one.net/en/company/contact/
+[p1home]: https://www.process-one.net/en/ejabberd/
+[packages]: https://github.com/processone/ejabberd/pkgs/container/ejabberd
+[releases]: https://github.com/processone/ejabberd/releases
+[sip]: https://en.wikipedia.org/wiki/Session_Initiation_Protocol
+[stackoverflow]: https://stackoverflow.com/questions/tagged/ejabberd?sort=newest
+[weblate]: https://hosted.weblate.org/projects/ejabberd/ejabberd-po/
+[xeps]: https://www.process-one.net/en/ejabberd/protocols/
+[xmpp]: https://xmpp.org/

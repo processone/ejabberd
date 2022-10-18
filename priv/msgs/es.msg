@@ -20,6 +20,7 @@
 {"Access model","Modelo de Acceso"}.
 {"Account doesn't exist","La cuenta no existe"}.
 {"Action on user","Acción en el usuario"}.
+{"Add a hat to a user","Añade un sombrero a un usuario"}.
 {"Add Jabber ID","Añadir Jabber ID"}.
 {"Add New","Añadir nuevo"}.
 {"Add User","Añadir usuario"}.
@@ -78,6 +79,7 @@
 {"Changing role/affiliation is not allowed","No está permitido cambiar el rol/afiliación"}.
 {"Channel already exists","El canal ya existe"}.
 {"Channel does not exist","El canal no existe"}.
+{"Channel JID","JID del Canal"}.
 {"Channels","Canales"}.
 {"Characters not allowed:","Caracteres no permitidos:"}.
 {"Chatroom configuration modified","Configuración de la sala modificada"}.
@@ -97,6 +99,7 @@
 {"Configuration","Configuración"}.
 {"Connected Resources:","Recursos conectados:"}.
 {"Contact Addresses (normally, room owner or owners)","Direcciones de contacto (normalmente la del dueño o dueños de la sala)"}.
+{"Contrib Modules","Módulos Contrib"}.
 {"Country","País"}.
 {"CPU Time:","Tiempo consumido de CPU:"}.
 {"Current Discussion Topic","Tema de discusión actual"}.
@@ -136,6 +139,7 @@
 {"Elements","Elementos"}.
 {"Email Address","Dirección de correo electrónico"}.
 {"Email","Correo electrónico"}.
+{"Enable hats","Activar sombreros"}.
 {"Enable logging","Guardar históricos"}.
 {"Enable message archiving","Activar el almacenamiento de mensajes"}.
 {"Enabling push without 'node' attribute is not supported","No está soportado activar Push sin el atributo 'node'"}.
@@ -170,6 +174,8 @@
 {"Full List of Room Admins","Lista completa de administradores de la sala"}.
 {"Full List of Room Owners","Lista completa de dueños de la sala"}.
 {"Full Name","Nombre completo"}.
+{"Get List of Online Users","Ver lista de usuarios conectados"}.
+{"Get List of Registered Users","Ver lista de usuarios registrados"}.
 {"Get Number of Online Users","Ver número de usuarios conectados"}.
 {"Get Number of Registered Users","Ver número de usuarios registrados"}.
 {"Get Pending","Obtener pendientes"}.
@@ -186,6 +192,9 @@
 {"has been kicked because of an affiliation change","ha sido expulsado por un cambio de su afiliación"}.
 {"has been kicked because the room has been changed to members-only","ha sido expulsado porque la sala es ahora solo para miembros"}.
 {"has been kicked","ha sido expulsado"}.
+{"Hat title","Título del sombrero"}.
+{"Hat URI","Dirección del sombrero"}.
+{"Hats limit exceeded","Se ha excedido el límite de sombreros"}.
 {"Host unknown","Dominio desconocido"}.
 {"Host","Dominio"}.
 {"HTTP File Upload","Subir fichero por HTTP"}.
@@ -208,6 +217,8 @@
 {"Incorrect value of 'action' attribute","Valor incorrecto del atributo 'action'"}.
 {"Incorrect value of 'action' in data form","Valor incorrecto de 'action' en el formulario de datos"}.
 {"Incorrect value of 'path' in data form","Valor incorrecto de 'path' en el formulario de datos"}.
+{"Installed Modules:","Módulos Instalados:"}.
+{"Install","Instalar"}.
 {"Insufficient privilege","Privilegio insuficiente"}.
 {"Internal server error","Error interno en el servidor"}.
 {"Invalid 'from' attribute in forwarded message","Atributo 'from' no válido en el mensaje reenviado"}.
@@ -224,6 +235,8 @@
 {"January","Enero"}.
 {"JID normalization denied by service policy","Se ha denegado la normalización del JID por política del servicio"}.
 {"JID normalization failed","Ha fallado la normalización del JID"}.
+{"Joined MIX channels of ~ts","Canales MIX unidos de ~ts"}.
+{"Joined MIX channels:","Canales MIX unidos:"}.
 {"joins the room","entra en la sala"}.
 {"July","Julio"}.
 {"June","Junio"}.
@@ -237,6 +250,8 @@
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Los bits menos significativos del hash SHA-256 del texto deberían ser iguales a la etiqueta hexadecimal"}.
 {"leaves the room","sale de la sala"}.
 {"List of rooms","Lista de salas"}.
+{"List of users with hats","Lista de usuarios con sombreros"}.
+{"List users with hats","Listar usuarios con sombreros"}.
 {"Logging","Histórico de mensajes"}.
 {"Low level update script","Script de actualización a bajo nivel"}.
 {"Make participants list public","La lista de participantes es pública"}.
@@ -249,7 +264,7 @@
 {"Malformed username","Nombre de usuario mal formado"}.
 {"MAM preference modification denied by service policy","Se ha denegado modificar la preferencia MAM por política del servicio"}.
 {"March","Marzo"}.
-{"Max # of items to persist","Máximo # de elementos que persisten"}.
+{"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","Máximo # de elementos a persistir, o `max` para no especificar un límite, más que el máximo impuesto por el servidor"}.
 {"Max payload size in bytes","Máximo tamaño del contenido en bytes"}.
 {"Maximum file size","Tamaño máximo de fichero"}.
 {"Maximum Number of History Messages Returned by Room","Máximo número de mensajes del historial devueltos por la sala"}.
@@ -324,6 +339,7 @@
 {"Node index not found","No se ha encontrado índice de nodo"}.
 {"Node not found","Nodo no encontrado"}.
 {"Node ~p","Nodo ~p"}.
+{"Node","Nodo"}.
 {"Nodeprep has failed","Ha fallado el procesado del nombre de nodo (nodeprep)"}.
 {"Nodes","Nodos"}.
 {"None","Ninguno"}.
@@ -339,8 +355,9 @@
 {"Number of Offline Messages","Número de mensajes diferidos"}.
 {"Number of online users","Número de usuarios conectados"}.
 {"Number of registered users","Número de usuarios registrados"}.
-{"Number of seconds after which to automatically purge items","Número de segundos después de los cuales se purgarán elementos automáticamente"}.
+{"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Número de segundos después de los cuales se purgarán elementos automáticamente, o `max` para no especificar un límite, más que el máximo impuesto por el servidor"}.
 {"Occupants are allowed to invite others","Los ocupantes pueden invitar a otras personas"}.
+{"Occupants are allowed to query others","Los ocupantes pueden enviar peticiones a otros"}.
 {"Occupants May Change the Subject","Los ocupantes pueden cambiar el Asunto"}.
 {"October","Octubre"}.
 {"Offline Messages","Mensajes diferidos"}.
@@ -367,11 +384,13 @@
 {"Only those on a whitelist may subscribe and retrieve items","Solo quienes están en una lista blanca pueden suscribirse y recibir elementos"}.
 {"Organization Name","Nombre de la organización"}.
 {"Organization Unit","Unidad de la organización"}.
+{"Other Modules Available:","Otros módulos disponibles:"}.
 {"Outgoing s2s Connections","Conexiones S2S salientes"}.
 {"Outgoing s2s Connections:","Conexiones S2S salientes:"}.
 {"Owner privileges required","Se requieren privilegios de propietario de la sala"}.
 {"Packet relay is denied by service policy","Se ha denegado el reenvío del paquete por política del servicio"}.
 {"Packet","Paquete"}.
+{"Participant ID","ID del Participante"}.
 {"Participant","Participante"}.
 {"Password Verification","Verificación de la contraseña"}.
 {"Password Verification:","Verificación de la contraseña:"}.
@@ -418,6 +437,7 @@
 {"Registered Users:","Usuarios registrados:"}.
 {"Register","Registrar"}.
 {"Remote copy","Copia remota"}.
+{"Remove a hat from a user","Quitarle un sombrero a un usuario"}.
 {"Remove All Offline Messages","Borrar todos los mensajes diferidos"}.
 {"Remove User","Eliminar usuario"}.
 {"Remove","Borrar"}.
@@ -473,6 +493,7 @@
 {"Shut Down Service","Detener el servicio"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Algunos clientes XMPP pueden guardar tu contraseña en la máquina, pero solo deberías hacer esto en tu propia máquina personal, por razones de seguridad."}.
+{"Sources Specs:","Especificaciones de Códigos Fuente:"}.
 {"Specify the access model","Especifica el modelo de acceso"}.
 {"Specify the event message type","Especifica el tipo del mensaje de evento"}.
 {"Specify the publisher model","Especificar el modelo del publicante"}.
@@ -518,8 +539,10 @@
 {"The JIDs of those to contact with questions","Los JIDs a quienes contactar con preguntas"}.
 {"The JIDs of those with an affiliation of owner","Los JIDs de quienes tienen una afiliación de dueños"}.
 {"The JIDs of those with an affiliation of publisher","Los JIDs de quienes tienen una afiliación de publicadores"}.
+{"The list of all online users","La lista de todos los usuarios conectados"}.
+{"The list of all users","La lista de todos los usuarios"}.
 {"The list of JIDs that may associate leaf nodes with a collection","La lista de JIDs que pueden asociar nodos hijo con una colección"}.
-{"The maximum number of child nodes that can be associated with a collection","El número máximo de nodos hijo que pueden asociarse a una colección"}.
+{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","El número máximo de nodos hijo que pueden asociarse a una colección, o `max` para no especificar un límite, más que el máximo impuesto por el servidor"}.
 {"The minimum number of milliseconds between sending any two notification digests","El número mínimo de milisegundos entre dos envíos de resumen de notificaciones"}.
 {"The name of the node","El nombre del nodo"}.
 {"The node is a collection node","El nodo es una colección"}.
@@ -544,7 +567,6 @@
 {"The type of node data, usually specified by the namespace of the payload (if any)","El tipo de datos del nodo, usualmente especificado por el namespace del payload (en caso de haberlo)"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","La URL de una transformación XSL que puede aplicarse a payloads para generar un elemento de contenido del mensaje apropiado."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","La URL de una transformación XSL que puede aplicarse al formato de payload para generar un resultado de Formulario de Datos válido, que el cliente pueda mostrar usando un mecanismo de dibujado genérico de Formulario de Datos"}.
-{"The username is not valid","El nombre de usuario no es válido"}.
 {"There was an error changing the password: ","Hubo uno error al cambiar la contaseña: "}.
 {"There was an error creating the account: ","Hubo uno error al crear la cuenta: "}.
 {"There was an error deleting the account: ","Hubo un error borrando la cuenta: "}.
@@ -571,7 +593,7 @@
 {"Too many users in this conference","Demasiados usuarios en esta sala"}.
 {"To","Para"}.
 {"Total rooms","Salas totales"}.
-{"Traffic rate limit is exceeded","Se ha exedido el límite de tráfico"}.
+{"Traffic rate limit is exceeded","Se ha excedido el límite de tráfico"}.
 {"Transactions Aborted:","Transacciones abortadas:"}.
 {"Transactions Committed:","Transacciones finalizadas:"}.
 {"Transactions Logged:","Transacciones registradas:"}.
@@ -583,6 +605,7 @@
 {"Unauthorized","No autorizado"}.
 {"Unexpected action","Acción inesperada"}.
 {"Unexpected error condition: ~p","Condición de error inesperada: ~p"}.
+{"Uninstall","Desinstalar"}.
 {"Unregister an XMPP account","Borrar una cuenta XMPP"}.
 {"Unregister","Borrar"}.
 {"Unselect All","Deseleccionar todo"}.
@@ -593,7 +616,10 @@
 {"Update ~p","Actualizar ~p"}.
 {"Update plan","Plan de actualización"}.
 {"Update script","Script de actualización"}.
+{"Update specs to get modules source, then install desired ones.","Actualizar Especificaciones para conseguir el código fuente de los módulos, luego instala los que quieras."}.
+{"Update Specs","Actualizar Especificaciones"}.
 {"Update","Actualizar"}.
+{"Upgrade","Actualizar"}.
 {"Uptime:","Tiempo desde el inicio:"}.
 {"URL for Archived Discussion Logs","URL del registro de discusiones archivadas"}.
 {"User already exists","El usuario ya existe"}.
@@ -616,6 +642,7 @@
 {"Value of '~s' should be integer","El valor de '~s' debería ser un entero"}.
 {"Value 'set' of 'type' attribute is not allowed","El valor 'set' del atributo 'type' no está permitido"}.
 {"vCard User Search","Búsqueda de vCard de usuarios"}.
+{"View joined MIX channels","Ver los canales MIX unidos"}.
 {"View Queue","Ver Cola"}.
 {"View Roster","Ver Lista de contactos"}.
 {"Virtual Hosts","Dominios Virtuales"}.

@@ -153,7 +153,6 @@
 {"Make room persistent","Rinde li såle permaninte"}.
 {"Make room public searchable","Rinde li såle di berdelaedje cweråve publicmint"}.
 {"March","måss"}.
-{"Max # of items to persist","Nombe macsimoms di cayets permanints"}.
 {"Max payload size in bytes","Contnou macsimom en octets"}.
 {"Maximum Number of Occupants","Nombe macsimom di prezints"}.
 {"May","may"}.

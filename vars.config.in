@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -21,7 +21,6 @@
 %% Macros
 {roster_gateway_workaround, @roster_gateway_workaround@}.
 {full_xml, @full_xml@}.
-{db_type, @db_type@}.
 {debug, @debug@}.
 {new_sql_schema, @new_sql_schema@}.
 
@@ -30,6 +29,7 @@
 
 %% Dependencies
 {odbc, @odbc@}.
+{mssql, @mssql@}.
 {mysql, @mysql@}.
 {pgsql, @pgsql@}.
 {sqlite, @sqlite@}.
@@ -51,12 +51,18 @@
 {release, true}.
 {release_dir, "${SCRIPT_DIR%/*}"}.
 {sysconfdir, "{{release_dir}}/etc"}.
+{erts_dir, "{{release_dir}}/erts-${ERTS_VSN#erts-}"}.
 {installuser, "@INSTALLUSER@"}.
-{erl, "{{release_dir}}/{{erts_vsn}}/bin/erl"}.
-{epmd, "{{release_dir}}/{{erts_vsn}}/bin/epmd"}.
+{erl, "{{erts_dir}}/bin/erl"}.
+{epmd, "{{erts_dir}}/bin/epmd"}.
 {localstatedir, "{{release_dir}}/var"}.
 {libdir, "{{release_dir}}/lib"}.
 {docdir, "{{release_dir}}/doc"}.
+
+%% OTP release
+{config_dir, "{{release_dir}}/conf"}.
+{logs_dir, "{{release_dir}}/logs"}.
+{spool_dir, "{{release_dir}}/database"}.
 
 {latest_deps, @latest_deps@}.
 {system_deps, @system_deps@}.

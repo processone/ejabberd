@@ -5,7 +5,7 @@
 %%% Created :  4 Jul 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2013-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2013-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -28,6 +28,7 @@
 -protocol({xep, 313, '0.6.1'}).
 -protocol({xep, 334, '0.2'}).
 -protocol({xep, 359, '0.5.0'}).
+-protocol({xep, 441, '0.2.0'}).
 
 -behaviour(gen_mod).
 
@@ -42,7 +43,8 @@
 	 get_room_config/4, set_room_option/3, offline_message/1, export/1,
 	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2,
 	 is_empty_for_user/2, is_empty_for_room/3, check_create_room/4,
-	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/7]).
+	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/7,
+	 delete_old_messages_batch/5, delete_old_messages_status/1, delete_old_messages_abort/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -87,7 +89,18 @@
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), count()} |
     {error, db_failure}.
 
--optional_callbacks([use_cache/1, cache_nodes/1, select_with_mucsub/6, select/6, select/7]).
+-callback delete_old_messages_batch(binary(), erlang:timestamp(),
+				    all | chat | groupchat,
+				    pos_integer()) ->
+    {ok, non_neg_integer()} | {error, term()}.
+
+-callback delete_old_messages_batch(binary(), erlang:timestamp(),
+				    all | chat | groupchat,
+				    pos_integer(), any()) ->
+    {ok, any(), non_neg_integer()} | {error, term()}.
+
+-optional_callbacks([use_cache/1, cache_nodes/1, select_with_mucsub/6, select/6, select/7,
+    delete_old_messages_batch/5, delete_old_messages_batch/4]).
 
 %%%===================================================================
 %%% API
@@ -148,7 +161,7 @@ start(Host, Opts) ->
 		    ejabberd_hooks:add(check_create_room, Host, ?MODULE,
 				       check_create_room, 50)
 	    end,
-	    ejabberd_commands:register_commands(get_commands_spec()),
+	    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
 	    ok;
 	Err ->
 	    Err
@@ -567,6 +580,70 @@ message_is_archived(false, #{lserver := LServer}, Pkt) ->
 	    false
     end.
 
+delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"chat">>;
+								  Type == <<"groupchat">>;
+								  Type == <<"all">> ->
+    CurrentTime = make_id(),
+    Diff = Days * 24 * 60 * 60 * 1000000,
+    TimeStamp = misc:usec_to_now(CurrentTime - Diff),
+    TypeA = misc:binary_to_atom(Type),
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+
+    case ejabberd_batch:register_task({mam, LServer}, 0, Rate, {LServer, TypeA, TimeStamp, BatchSize, none},
+				      fun({L, T, St, B, IS} = S) ->
+					  case {erlang:function_exported(Mod, delete_old_messages_batch, 4),
+						erlang:function_exported(Mod, delete_old_messages_batch, 5)} of
+					      {true, _} ->
+						  case Mod:delete_old_messages_batch(L, St, T, B) of
+						      {ok, Count} ->
+							  {ok, S, Count};
+						      {error, _} = E ->
+							  E
+						  end;
+					      {_, true} ->
+						  case Mod:delete_old_messages_batch(L, St, T, B, IS) of
+						      {ok, IS2, Count} ->
+							  {ok, {L, St, T, B, IS2}, Count};
+						      {error, _} = E ->
+							  E
+						  end;
+					      _ ->
+						  {error, not_implemented_for_backend}
+					  end
+				      end) of
+	ok ->
+	    {ok, ""};
+	{error, in_progress} ->
+	    {error, "Operation in progress"}
+    end.
+delete_old_messages_status(Server) ->
+    LServer = jid:nameprep(Server),
+    Msg = case ejabberd_batch:task_status({mam, LServer}) of
+	not_started ->
+	    "Operation not started";
+	{failed, Steps, Error} ->
+	    io_lib:format("Operation failed after deleting ~p messages with error ~p",
+			  [Steps, misc:format_val(Error)]);
+	{aborted, Steps} ->
+	    io_lib:format("Operation was aborted after deleting ~p messages",
+					[Steps]);
+	      {working, Steps} ->
+		  io_lib:format("Operation in progress, deleted ~p messages",
+				[Steps]);
+	{completed, Steps} ->
+	    io_lib:format("Operation was completed after deleting ~p messages",
+					[Steps])
+    end,
+    lists:flatten(Msg).
+
+delete_old_messages_abort(Server) ->
+    LServer = jid:nameprep(Server),
+    case ejabberd_batch:abort_task({mam, LServer}) of
+	aborted -> "Operation aborted";
+	not_started -> "No task running"
+    end.
+
 delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
 					TypeBin == <<"groupchat">>;
 					TypeBin == <<"all">> ->
@@ -739,7 +816,7 @@ should_archive(#message{body = Body, subject = Subject,
 				#message{} = Msg ->
 				    should_archive(Msg, LServer);
 				_ ->
-				    false
+				    misc:is_mucsub_message(Pkt)
 			    end
 		    end
 	    end
@@ -1378,6 +1455,42 @@ get_commands_spec() ->
 			args_example = [<<"all">>, 31],
 			args = [{type, binary}, {days, integer}],
 			result = {res, rescode}},
+     #ejabberd_commands{name = delete_old_mam_messages_batch, tags = [purge],
+			desc = "Delete MAM messages older than DAYS",
+			note = "added in 22.05",
+			longdesc = "Valid message TYPEs: "
+				   "\"chat\", \"groupchat\", \"all\".",
+			module = ?MODULE, function = delete_old_messages_batch,
+			args_desc = ["Name of host where messages should be deleted",
+				     "Type of messages to delete (chat, groupchat, all)",
+				     "Days to keep messages",
+				     "Number of messages to delete per batch",
+				     "Desired rate of messages to delete per minute"],
+			args_example = [<<"localhost">>, <<"all">>, 31, 1000, 10000],
+			args = [{host, binary}, {type, binary}, {days, integer}, {batch_size, integer}, {rate, integer}],
+			result = {res, restuple},
+			result_desc = "Result tuple",
+			result_example = {ok, <<"Removal of 5000 messages in progress">>}},
+     #ejabberd_commands{name = delete_old_mam_messages_status, tags = [purge],
+			desc = "Status of delete old MAM messages operation",
+			note = "added in 22.05",
+			module = ?MODULE, function = delete_old_messages_status,
+			args_desc = ["Name of host where messages should be deleted"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, string},
+			result_desc = "Status test",
+			result_example = "Operation in progress, delete 5000 messages"},
+     #ejabberd_commands{name = abort_delete_old_mam_messages, tags = [purge],
+			desc = "Abort currently running delete old MAM messages operation",
+			note = "added in 22.05",
+			module = ?MODULE, function = delete_old_messages_abort,
+			args_desc = ["Name of host where operation should be aborted"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, string},
+			result_desc = "Status text",
+			result_example = "Operation aborted"},
      #ejabberd_commands{name = remove_mam_for_user, tags = [mam],
 			desc = "Remove mam archive for user",
 			module = ?MODULE, function = remove_mam_for_user,
@@ -1456,7 +1569,7 @@ mod_doc() ->
             #{value => "true | false",
               desc =>
                   ?T("This option determines how ejabberd's "
-                     "stream management code (see 'mod_stream_mgmt') "
+                     "stream management code (see _`mod_stream_mgmt`_) "
                      "handles unacknowledged messages when the "
                      "connection is lost. Usually, such messages are "
                      "either bounced or resent. However, neither is "
@@ -1495,28 +1608,28 @@ mod_doc() ->
             #{value => "true | false",
               desc =>
                   ?T("Whether to destroy message archive of a room "
-                     "(see 'mod_muc') when it gets destroyed. "
+                     "(see _`mod_muc`_) when it gets destroyed. "
                      "The default value is 'true'.")}},
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}},
            {user_mucsub_from_muc_archive,
             #{value => "true | false",
               desc =>

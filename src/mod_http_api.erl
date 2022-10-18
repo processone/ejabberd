@@ -5,7 +5,7 @@
 %%% Created : 15 Sep 2014 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -30,6 +30,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process/2, depends/2,
+         format_arg/2,
 	 mod_options/1, mod_doc/0]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -524,13 +525,24 @@ mod_options(_) ->
 
 mod_doc() ->
     #{desc =>
-	  [?T("This module provides a ReST API to call ejabberd commands "
-	      "using JSON data."), "",
+	  [?T("This module provides a ReST interface to call "
+              "https://docs.ejabberd.im/developer/ejabberd-api[ejabberd API] "
+	      "commands using JSON data."), "",
 	   ?T("To use this module, in addition to adding it to the 'modules' "
-	      "section, you must also add it to 'request_handlers' of some "
-	      "listener."), "",
+	      "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
+              "http://../listen-options/#request-handlers[request_handlers]."), "",
 	   ?T("To use a specific API version N, when defining the URL path "
 	      "in the request_handlers, add a 'vN'. "
 	      "For example: '/api/v2: mod_http_api'"), "",
 	   ?T("To run a command, send a POST request to the corresponding "
-	      "URL: 'http://localhost:5280/api/<command_name>'")]}.
+	      "URL: 'http://localhost:5280/api/<command_name>'")],
+     example =>
+         ["listen:",
+          "  -",
+          "    port: 5280",
+          "    module: ejabberd_http",
+          "    request_handlers:",
+          "      /api: mod_http_api",
+          "",
+          "modules:",
+          "  mod_http_api: {}"]}.

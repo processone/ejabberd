@@ -1,9 +1,160 @@
+# Version 22.05
+
+Core
+- C2S: Don't expect that socket will be available in `c2s_terminated` hook
+- Event handling process hook tracing
+- Guard against `erlang:system_info(logical_processors)` not always returning a number
+- `domain_balancing`: Allow for specifying `type` only, without specifying `component_number`
+
+MQTT
+- Add TLS certificate authentication for MQTT connections
+- Fix login when generating client id, keep connection record (#3593)
+- Pass property name as expected in mqtt_codec (fixes login using MQTT 5)
+- Support MQTT subscriptions spread over the cluster (#3750)
+
+MUC
+- Attach meta field with real jid to mucsub subscription events
+- Handle user removal
+- Stop empty MUC rooms 30 seconds after creation
+- `default_room_options`: Update options configurable
+- `subscribe_room_many_max_users`: New option in `mod_muc_admin`
+
+mod_conversejs
+- Improved options to support `@HOST@` and `auto` values
+- Set `auth` and `register` options based on ejabberd configuration
+- `conversejs_options`: New option
+- `conversejs_resources`: New option
+
+PubSub
+- `mod_pubsub`: Allow for limiting `item_expire` value
+- `mod_pubsub`: Unsubscribe JID on whitelist removal
+- `node_pep`: Add config-node and multi-items features (#3714)
+
+SQL
+- Improve compatibility with various db engine versions
+- Sync old-to-new schema script with reality (#3790)
+- Slight improvement in MSSQL testing support, but not yet complete
+
+Other Modules
+- `auth_jwt`: Checking if an user is active in SM for a JWT authenticated user (#3795)
+- `mod_configure`: Implement Get List of Registered/Online Users from XEP-0133
+- `mod_host_meta`: New module to serve host-meta files, see XEP-0156
+- `mod_mam`: Store all mucsub notifications not only message notifications
+- `mod_ping`: Delete ping timer if resource is gone after the ping has been sent
+- `mod_ping`: Don't send ping if resource is gone
+- `mod_push`: Fix notifications for pending sessions (XEP-0198)
+- `mod_push`: Keep push session ID on session resume
+- `mod_shared_roster`: Adjust special group cache size
+- `mod_shared_roster`: Normalize JID on unset_presence (#3752)
+- `mod_stun_disco`: Fix parsing of IPv6 listeners
+
+Dependencies
+- autoconf: Supported from 2.59 to the new 2.71
+- fast_tls: Update to 1.1.14 to support OpenSSL 3
+- jiffy: Update to 1.1.1 to support Erlang/OTP 25.0-rc1
+- luerl: Update to 1.0.0, now available in hex.pm
+- lager: This dependency is used only when Erlang is older than 22
+- rebar2: Updated binary to work from Erlang/OTP 22 to 25
+- rebar3: Updated binary to work from Erlang/OTP 22 to 25
+- `make update`: Fix when used with rebar 3.18
+
+Compile
+- `mix release`: Copy `include/` files for ejabberd, deps and otp, in `mix.exs`
+- `rebar3 release`: Fix ERTS path in `ejabberdctl`
+- `configure.ac`: Set default ejabberd version number when not using git
+- `mix.exs`: Move some dependencies as optional
+- `mix.exs`: No need to use Distillery, Elixir has built-in support for OTP releases (#3788)
+- `tools/make-binaries`: New script for building Linux binaries
+- `tools/make-installers`: New script for building command line installers
+
+Start
+- New `make relive` similar to `ejabberdctl live` without installing
+- `ejabberdctl`: Fix some warnings detected by ShellCheck
+- `ejabberdctl`: Mention in the help: `etop`, `ping` and `started`/`stopped`
+- `make rel`: Switch to paths: `conf/`, `database/`, `logs/`
+- `mix.exs`: Add `-boot` and `-boot_var` in `ejabberdctl` instead of adding `vm.args`
+- `tools/captcha.sh`: Fix some warnings detected by ShellCheck
+
+Commands
+- Accept more types of ejabberdctl commands arguments as JSON-encoded
+- `delete_old_mam_messages_batch`: New command with rate limit
+- `delete_old_messages_batch`: New command with rate limit
+- `get_room_occupants_number`: Don't request the whole MUC room state (#3684, #1964)
+- `get_vcard`: Add support for MUC room vCard
+- `oauth_revoke_token`: Add support to work with all backends
+- `room_unused_*`: Optimize commands in SQL by reusing `created_at`
+- `rooms_unused_...`: Let `get_all_rooms` handle `global` argument (#3726)
+- `stop|restart`: Terminate ejabberd_sm before everything else to ensure sessions closing (#3641)
+- `subscribe_room_many`: New command
+
+Translations
+- Updated Catalan
+- Updated French
+- Updated German
+- Updated Portuguese
+- Updated Portuguese (Brazil)
+- Updated Spanish
+
+Workflows
+- CI: Publish CT logs and Cover on failure to an external GH Pages repo
+- CI: Test shell scripts using ShellCheck (#3738)
+- Container: New workflow to build and publish containers
+- Installers: Add job to create draft release
+- Installers: New workflow to build binary packages
+- Runtime: New workflow to test compilation, rel, starting and ejabberdctl
+
+# Version 21.12
+
+Commands
+- `create_room_with_opts`: Fixed when using SQL storage
+- `change_room_option`: Add missing fields from config inside `mod_muc_admin:change_options`
+- piefxis: Fixed arguments of all commands
+
+Modules
+- mod_caps: Don't forget caps on XEP-0198 resumption
+- mod_conversejs: New module to serve a simple page for Converse.js
+- mod_http_upload_quota: Avoid `max_days` race
+- mod_muc: Support MUC hats (XEP-0317, conversejs/prosody compatible)
+- mod_muc: Optimize MucSub processing
+- mod_muc: Fix exception in mucsub {un}subscription events multicast handler
+- mod_multicast: Improve and optimize multicast routing code
+- mod_offline: Allow storing non-composing x:events in offline
+- mod_ping: Send ping from server, not bare user JID
+- mod_push: Fix handling of MUC/Sub messages
+- mod_register: New allow_modules option to restrict registration modules
+- mod_register_web: Handle unknown host gracefully
+- mod_register_web: Use mod_register configured restrictions
+
+PubSub
+- Add `delete_expired_pubsub_items` command
+- Add `delete_old_pubsub_items` command
+- Optimize publishing on large nodes (SQL)
+- Support unlimited number of items
+- Support `max_items=max` node configuration
+- Bump default value for `max_items` limit from 10 to 1000
+- Use configured `max_items` by default
+- node_flat: Avoid catch-all clauses for RSM
+- node_flat_sql: Avoid catch-all clauses for RSM
+
+SQL
+- Use `INSERT ... ON CONFLICT` in SQL_UPSERT for PostgreSQL >= 9.5
+- mod_mam export: assign MUC entries to the MUC service
+- MySQL: Fix typo when creating index
+- PgSQL: Add SASL auth support, PostgreSQL 14
+- PgSQL: Add missing SQL migration for table `push_session`
+- PgSQL: Fix `vcard_search` definition in pgsql new schema
+
+Other
+- `captcha-ng.sh`: "sort -R" command not POSIX, added "shuf" and "cat" as fallback
+- Make s2s connection table cleanup more robust
+- Update export/import of scram password to XEP-0227 1.1
+- Update Jose to 1.11.1 (the last in hex.pm correctly versioned)
+
 # Version 21.07
 
 Compilation
 - Add rebar3 3.15.2 binary
 - Add support for mix to: `./configure --enable-rebar=mix`
-- Add workaround so rebar2 can use Elixir 1.12.0
 - Improved `make rel` to work with rebar3 and mix
 - Add `make dev` to build a development release with rebar3 or mix
 - Hex: Add `sql/` and `vars.config` to Hex package files
@@ -167,7 +318,7 @@ Translations:
 - Fix problem with leaving old data when updating shared rosters
 - Fix edge case that caused failure of resuming old sessions with
   stream management.
-- Fix crash when room that was started with loging enabled was later
+- Fix crash when room that was started with logging enabled was later
   changed to logging disabled
 - Increase default shaper limits (this should help with delays for
   clients that are using jingle)
@@ -232,7 +383,7 @@ Translations:
   for all backends not only SQL
 - Add infrastructure for having module documentation directly
   in individual module source code
-- Generate man page automaticaly
+- Generate man page automatically
 - Implement copy feature in mod_carboncopy
 
 * Fixes
@@ -240,7 +391,7 @@ Translations:
 - Fix handling of result in xmlrpc module
 - Make webadmin work even when accessed through not declared domain
 - Better error reporting in xmlrpc
-- Limit ammount of results returned by disco queries to pubsub nodes
+- Limit amount of results returned by disco queries to pubsub nodes
 - Improve validation of configured JWT keys
 - Fix race condition in Redis/SQL startup
 - Fix loading order of third party modules
@@ -341,7 +492,7 @@ Translations:
 - Improve handling of unexpected iq in mod_muc_room
 - Attach mod_muc_room processes to a supervisor
 - Restore room when receiving message or generic iq for not started room
-- Distribute routing of MUC messages accross all CPU cores
+- Distribute routing of MUC messages across all CPU cores
 
 * PubSub
 - Fix pending nodes retrieval for SQL backend
@@ -375,7 +526,7 @@ Translations:
 - Make static hooks analyzer working again
 
 * MUC
-- Service admins are allowed to recreate room even if archiv is nonempty
+- Service admins are allowed to recreate room even if archive is nonempty
 - New option user_mucsub_from_muc_archive
 - Avoid late arrival of get_disco_item response
 - Handle get_subscribed_rooms call from mod_muc_room pid

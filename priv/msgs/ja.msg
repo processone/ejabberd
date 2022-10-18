@@ -191,7 +191,6 @@
 {"Make room public searchable","チャットルームを検索可"}.
 {"Malformed username","不正な形式のユーザー名"}.
 {"March","3月"}.
-{"Max # of items to persist","アイテムの最大保存数"}.
 {"Max payload size in bytes","最大ぺイロードサイズ (byte)"}.
 {"Maximum file size","最大ファイルサイズ"}.
 {"Maximum Number of Occupants","最大在室者数"}.
@@ -367,7 +366,6 @@
 {"The password of your XMPP account was successfully changed.","XMPP アカウントのパスワード変更に成功しました。"}.
 {"The password was not changed","このパスワードは変更されませんでした"}.
 {"The passwords are different","このパスワードが違います"}.
-{"The username is not valid","ユーザー名が正しくありません"}.
 {"There was an error creating the account: ","アカウントの作成中にエラーが発生しました: "}.
 {"There was an error deleting the account: ","アカウントの削除中にエラーが発生しました: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"}.

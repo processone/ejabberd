@@ -5,7 +5,7 @@
 %%% Created :  8 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -32,10 +32,12 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, stream_feature_register/2,
-	 c2s_unauthenticated_packet/2, try_register/4,
+	 c2s_unauthenticated_packet/2, try_register/4, try_register/5,
 	 process_iq/1, send_registration_notifications/3,
 	 mod_opt_type/1, mod_options/1, depends/2,
 	 format_error/1, mod_doc/0]).
+
+-deprecated({try_register, 4}).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -283,7 +285,7 @@ try_register_or_set_password(User, Server, Password,
 	_ when CaptchaSucceed ->
 	    case check_from(From, Server) of
 		allow ->
-		    case try_register(User, Server, Password, Source, Lang) of
+		    case try_register(User, Server, Password, Source, ?MODULE, Lang) of
 			ok ->
 			    xmpp:make_iq_result(IQ);
 			{error, Error} ->
@@ -328,6 +330,13 @@ try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(format_error(Why), Lang))
     end.
 
+try_register(User, Server, Password, SourceRaw, Module) ->
+    Modules = mod_register_opt:allow_modules(Server),
+    case (Modules == all) orelse lists:member(Module, Modules) of
+        true -> try_register(User, Server, Password, SourceRaw);
+        false -> {error, eaccess}
+    end.
+
 try_register(User, Server, Password, SourceRaw) ->
     case jid:is_nodename(User) of
 	false ->
@@ -363,8 +372,8 @@ try_register(User, Server, Password, SourceRaw) ->
 	    end
     end.
 
-try_register(User, Server, Password, SourceRaw, Lang) ->
-    case try_register(User, Server, Password, SourceRaw) of
+try_register(User, Server, Password, SourceRaw, Module, Lang) ->
+    case try_register(User, Server, Password, SourceRaw, Module) of
 	ok ->
 	    JID = jid:make(User, Server),
 	    Source = may_remove_resource(SourceRaw),
@@ -597,6 +606,8 @@ mod_opt_type(access_from) ->
     econf:acl();
 mod_opt_type(access_remove) ->
     econf:acl();
+mod_opt_type(allow_modules) ->
+    econf:either(all, econf:list(econf:atom()));
 mod_opt_type(captcha_protected) ->
     econf:bool();
 mod_opt_type(ip_access) ->
@@ -623,6 +634,7 @@ mod_options(_Host) ->
     [{access, all},
      {access_from, none},
      {access_remove, all},
+     {allow_modules, all},
      {captcha_protected, false},
      {ip_access, all},
      {password_strength, 0},
@@ -638,9 +650,9 @@ mod_doc() ->
            ?T("* Register a new account on the server."), "",
            ?T("* Change the password from an existing account on the server."), "",
            ?T("* Delete an existing account on the server."), "",
-           ?T("This module reads also another option defined globally for the "
-	      "server: 'registration_timeout'. Please check that option "
-	      "documentation in the section with top-level options.")],
+           ?T("This module reads also the top-level _`registration_timeout`_ "
+              "option defined globally for the server, "
+              "so please check that option documentation too.")],
       opts =>
           [{access,
             #{value => ?T("AccessName"),
@@ -661,12 +673,18 @@ mod_doc() ->
               desc =>
                   ?T("Specify rules to restrict access for user unregistration. "
                      "By default any user is able to unregister their account.")}},
+           {allow_modules,
+            #{value => "all | [Module, ...]",
+              note => "added in 21.12",
+              desc =>
+                  ?T("List of modules that can register accounts, or 'all'. "
+                     "The default value is 'all', which is equivalent to "
+                     "something like '[mod_register, mod_register_web]'.")}},
            {captcha_protected,
             #{value => "true | false",
               desc =>
-                  ?T("Protect registrations with CAPTCHA (see section "
-                     "https://docs.ejabberd.im/admin/configuration/basic/#captcha[CAPTCHA] "
-                     "of the Configuration Guide). The default is 'false'.")}},
+                  ?T("Protect registrations with http://../basic/#captcha[CAPTCHA]. "
+                     "The default is 'false'.")}},
            {ip_access,
             #{value => ?T("AccessName"),
               desc =>
@@ -680,7 +698,7 @@ mod_doc() ->
                      "https://en.wikipedia.org/wiki/Entropy_(information_theory)"
                      "[Shannon entropy] for passwords. The value 'Entropy' is a "
                      "number of bits of entropy. The recommended minimum is 32 bits. "
-                     "The default is 0, i.e. no checks are performed.")}},
+                     "The default is '0', i.e. no checks are performed.")}},
            {registration_watchers,
             #{value => "[JID, ...]",
               desc =>

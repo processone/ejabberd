@@ -5,7 +5,7 @@
 %%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -39,7 +39,8 @@
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
     purge_node/2, subscribe_node/8, unsubscribe_node/4,
-    publish_item/7, delete_item/4, remove_extra_items/3,
+    publish_item/7, delete_item/4,
+    remove_extra_items/2, remove_extra_items/3, remove_expired_items/2,
     get_entity_affiliations/2, get_node_affiliations/1,
     get_affiliation/2, set_affiliation/3,
     get_entity_subscriptions/2, get_node_subscriptions/1,
@@ -375,7 +376,8 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 		    or (Subscribed == true)) ->
 	    {error, xmpp:err_forbidden()};
 	true ->
-	    if MaxItems > 0 ->
+	    if MaxItems > 0;
+	       MaxItems == unlimited ->
 		    Now = erlang:timestamp(),
 		    case get_item(Nidx, ItemId) of
 			{result, #pubsub_item{creation = {_, GenKey}} = OldItem} ->
@@ -402,6 +404,16 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 	    end
     end.
 
+remove_extra_items(Nidx, MaxItems) ->
+    {result, States} = get_states(Nidx),
+    Records = States ++ mnesia:read({pubsub_orphan, Nidx}),
+    ItemIds = lists:flatmap(fun(#pubsub_state{items = Is}) ->
+				    Is;
+			       (#pubsub_orphan{items = Is}) ->
+				    Is
+			    end, Records),
+    remove_extra_items(Nidx, MaxItems, ItemIds).
+
 %% @doc <p>This function is used to remove extra items, most notably when the
 %% maximum number of items has been reached.</p>
 %% <p>This function is used internally by the core PubSub module, as no
@@ -419,6 +431,22 @@ remove_extra_items(Nidx, MaxItems, ItemIds) ->
     OldItems = lists:nthtail(length(NewItems), ItemIds),
     del_items(Nidx, OldItems),
     {result, {NewItems, OldItems}}.
+
+remove_expired_items(_Nidx, infinity) ->
+    {result, []};
+remove_expired_items(Nidx, Seconds) ->
+    Items = mnesia:index_read(pubsub_item, Nidx, #pubsub_item.nodeidx),
+    ExpT = misc:usec_to_now(
+	     erlang:system_time(microsecond) - (Seconds * 1000000)),
+    ExpItems = lists:filtermap(
+		 fun(#pubsub_item{itemid = {ItemId, _},
+				  modification = {ModT, _}}) when ModT < ExpT ->
+			 {true, ItemId};
+		    (#pubsub_item{}) ->
+			 false
+		 end, Items),
+    del_items(Nidx, ExpItems),
+    {result, ExpItems}.
 
 %% @doc <p>Triggers item deletion.</p>
 %% <p>Default plugin: The user performing the deletion must be the node owner
@@ -945,15 +973,12 @@ rsm_page(Count, Index, Offset, Items) ->
 	     last = Last}.
 
 encode_stamp(Stamp) ->
-    case catch xmpp_util:decode_timestamp(Stamp) of
-	{MS,S,US} -> {MS,S,US};
-	_ -> Stamp
+    try xmpp_util:decode_timestamp(Stamp)
+    catch _:{bad_timestamp, _} ->
+	    Stamp % We should return a proper error to the client instead.
     end.
 decode_stamp(Stamp) ->
-    case catch xmpp_util:encode_timestamp(Stamp) of
-	TimeStamp when is_binary(TimeStamp) -> TimeStamp;
-	_ -> Stamp
-    end.
+    xmpp_util:encode_timestamp(Stamp).
 
 transform({pubsub_state, {Id, Nidx}, Is, A, Ss}) ->
     {pubsub_state, {Id, Nidx}, Nidx, Is, A, Ss};

@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -299,6 +299,20 @@ export(_Server) ->
                   ["username=%(LUser)s",
                    "server_host=%(LServer)s",
                    "password=%(Password)s"])];
+         (Host, {passwd, {LUser, LServer},
+                         {scram, StoredKey1, ServerKey, Salt, IterationCount}})
+            when LServer == Host ->
+              Hash = sha,
+              StoredKey = scram_hash_encode(Hash, StoredKey1),
+              [?SQL("delete from users where username=%(LUser)s and %(LServer)H;"),
+               ?SQL_INSERT(
+                  "users",
+                  ["username=%(LUser)s",
+                   "server_host=%(LServer)s",
+                   "password=%(StoredKey)s",
+                   "serverkey=%(ServerKey)s",
+                   "salt=%(Salt)s",
+                   "iterationcount=%(IterationCount)d"])];
          (Host, #passwd{us = {LUser, LServer}, password = #scram{} = Scram})
             when LServer == Host ->
 	      StoredKey = scram_hash_encode(Scram#scram.hash, Scram#scram.storedkey),

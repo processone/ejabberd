@@ -5,7 +5,7 @@
 %%% Created :  9 Aug 2017 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -46,7 +46,7 @@
 %%%
 
 start(_Host, _Opts) ->
-    ejabberd_commands:register_commands(get_commands_spec()).
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()).
 
 stop(_Host) ->
     ejabberd_commands:unregister_commands(get_commands_spec()).
@@ -140,6 +140,7 @@ update_tables(State) ->
 
     add_sh_column(State, "sr_group"),
     add_pkey(State, "sr_group", ["server_host", "name"]),
+    create_unique_index(State, "sr_group", "i_sr_group_sh_name", ["server_host", "name"]),
     drop_sh_default(State, "sr_group"),
 
     add_sh_column(State, "sr_user"),
@@ -147,6 +148,7 @@ update_tables(State) ->
     drop_index(State, "i_sr_user_jid"),
     drop_index(State, "i_sr_user_grp"),
     add_pkey(State, "sr_user", ["server_host", "jid", "grp"]),
+    create_unique_index(State, "sr_user", "i_sr_user_sh_jid_grp", ["server_host", "jid", "grp"]),
     create_index(State, "sr_user", "i_sr_user_sh_jid", ["server_host", "jid"]),
     create_index(State, "sr_user", "i_sr_user_sh_grp", ["server_host", "grp"]),
     drop_sh_default(State, "sr_user"),
@@ -162,10 +164,12 @@ update_tables(State) ->
     drop_index(State, "i_timestamp"),
     drop_index(State, "i_peer"),
     drop_index(State, "i_bare_peer"),
+    drop_index(State, "i_username_peer"),
+    drop_index(State, "i_username_bare_peer"),
     create_index(State, "archive", "i_archive_sh_username_timestamp", ["server_host", "username", "timestamp"]),
     create_index(State, "archive", "i_archive_sh_timestamp", ["server_host", "timestamp"]),
-    create_index(State, "archive", "i_archive_sh_peer", ["server_host", "peer"]),
-    create_index(State, "archive", "i_archive_sh_bare_peer", ["server_host", "bare_peer"]),
+    create_index(State, "archive", "i_archive_sh_username_peer", ["server_host", "username", "peer"]),
+    create_index(State, "archive", "i_archive_sh_username_bare_peer", ["server_host", "username", "bare_peer"]),
     drop_sh_default(State, "archive"),
 
     add_sh_column(State, "archive_prefs"),
@@ -253,19 +257,29 @@ update_tables(State) ->
     create_index(State, "sm", "i_sm_sh_username", ["server_host", "username"]),
     drop_sh_default(State, "sm"),
 
-    add_sh_column(State, "carboncopy"),
-    drop_index(State, "i_carboncopy_ur"),
-    drop_index(State, "i_carboncopy_user"),
-    add_pkey(State, "carboncopy", ["server_host", "username", "resource"]),
-    create_index(State, "carboncopy", "i_carboncopy_sh_user", ["server_host", "username"]),
-    drop_sh_default(State, "carboncopy"),
-
     add_sh_column(State, "push_session"),
     drop_index(State, "i_push_usn"),
     drop_index(State, "i_push_ut"),
     add_pkey(State, "push_session", ["server_host", "username", "timestamp"]),
-    create_index(State, "push_session", "i_push_session_susn", ["server_host", "username", "service", "node"]),
+    create_unique_index(State, "push_session", "i_push_session_susn", ["server_host", "username", "service", "node"]),
     drop_sh_default(State, "push_session"),
+
+    add_sh_column(State, "mix_pam"),
+    drop_index(State, "i_mix_pam"),
+    drop_index(State, "i_mix_pam_us"),
+    create_unique_index(State, "mix_pam", "i_mix_pam", ["username", "server_host", "channel", "service"]),
+    create_index(State, "mix_pam", "i_mix_pam_us", ["username", "server_host"]),
+    drop_sh_default(State, "mix_pam"),
+
+    add_sh_column(State, "route"),
+    drop_index(State, "i_route"),
+    create_unique_index(State, "route", "i_route", ["domain", "server_host", "node", "pid"]),
+    drop_sh_default(State, "route"),
+
+    add_sh_column(State, "mqtt_pub"),
+    drop_index(State, "i_mqtt_topic"),
+    create_unique_index(State, "mqtt_pub", "i_mqtt_topic_server", ["topic", "server_host"]),
+    drop_sh_default(State, "mqtt_pub"),
 
     ok.
 
@@ -364,6 +378,6 @@ mod_doc() ->
     #{desc =>
           ?T("This module can be used to update existing SQL database "
              "from the default to the new schema. Check the section "
-             "http://../database-ldap/#default-and-new-schemas[Default and New Schemas] for details. "
+             "http://../database/#default-and-new-schemas[Default and New Schemas] for details. "
              "Please note that only PostgreSQL is supported. "
-             "When the module is loaded use 'update_sql' ejabberdctl command.")}.
+             "When the module is loaded use _`update_sql`_ API.")}.

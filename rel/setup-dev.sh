@@ -2,10 +2,10 @@ echo -n "===> Preparing dev configuration files: "
 
 PWD_DIR=`pwd`
 REL_DIR=$PWD_DIR/_build/dev/rel/ejabberd/
-CON_DIR=$REL_DIR/etc/ejabberd/
+CON_DIR=$REL_DIR/conf/
 
 [ -z "$REL_DIR_TEMP" ] && REL_DIR_TEMP=$REL_DIR
-CON_DIR_TEMP=$REL_DIR_TEMP/etc/ejabberd/
+CON_DIR_TEMP=$REL_DIR_TEMP/conf/
 BIN_DIR_TEMP=$REL_DIR_TEMP/bin/
 
 cd $CON_DIR_TEMP

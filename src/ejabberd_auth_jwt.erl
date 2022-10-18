@@ -5,7 +5,7 @@
 %%% Created : 16 Mar 2019 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -85,7 +85,14 @@ check_password(User, AuthzId, Server, Token) ->
             end
     end.
 
-user_exists(_User, _Host) -> {nocache, false}.
+user_exists(User, Host) ->
+  %% Checking that the user has an active session
+  %% If the session was negociated by the JWT auth method then we define that the user exists
+  %% Any other cases will return that the user doesn't exist
+  {nocache, case ejabberd_sm:get_user_info(User, Host) of
+              [{_, Info}] -> proplists:get_value(auth_module, Info) == ejabberd_auth_jwt;
+              _ -> false
+            end}.
 
 use_cache(_) ->
     false.
@@ -139,6 +146,9 @@ check_jwt_token(User, Server, Token) ->
         {false, _, _} ->
             false
     catch
-        error:{badarg, _} ->
+        A:B ->
+            ?DEBUG("jose_jwt:verify failed ~n for account ~p@~p~n "
+                   " JWK and token: ~p~n with error: ~p",
+                   [User, Server, {JWK, Token}, {A, B}]),
             false
     end.

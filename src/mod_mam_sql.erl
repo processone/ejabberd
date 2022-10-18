@@ -4,7 +4,7 @@
 %%% Created : 15 Apr 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -30,7 +30,8 @@
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
 	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
-	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6]).
+	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6,
+	 delete_old_messages_batch/4, count_messages_to_delete/3]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -71,8 +72,58 @@ remove_from_archive(LUser, LServer, WithJid) ->
 	_ -> ok
     end.
 
+count_messages_to_delete(ServerHost, TimeStamp, Type) ->
+    TS = misc:now_to_usec(TimeStamp),
+    Res =
+    case Type of
+	all ->
+	    ejabberd_sql:sql_query(
+		ServerHost,
+		?SQL("select count(*) from archive"
+		     " where timestamp < %(TS)d and %(ServerHost)H"));
+	_ ->
+	    SType = misc:atom_to_binary(Type),
+	    ejabberd_sql:sql_query(
+		ServerHost,
+		?SQL("select @(count(*))d from archive"
+		     " where timestamp < %(TS)d"
+		     " and kind=%(SType)s"
+		     " and %(ServerHost)H"))
+    end,
+    case Res of
+	{selected, [Count]} ->
+	    {ok, Count};
+	_ ->
+	    error
+    end.
+
+delete_old_messages_batch(ServerHost, TimeStamp, Type, Batch) ->
+    TS = misc:now_to_usec(TimeStamp),
+    Res =
+    case Type of
+	all ->
+	    ejabberd_sql:sql_query(
+		ServerHost,
+		?SQL("delete from archive"
+		     " where timestamp < %(TS)d and %(ServerHost)H limit %(Batch)d"));
+	_ ->
+	    SType = misc:atom_to_binary(Type),
+	    ejabberd_sql:sql_query(
+		ServerHost,
+		?SQL("delete from archive"
+		     " where timestamp < %(TS)d"
+		     " and kind=%(SType)s"
+		     " and %(ServerHost)H limit %(Batch)d"))
+    end,
+    case Res of
+	{updated, Count} ->
+	    {ok, Count};
+	{error, _} = Error ->
+	    Error
+    end.
+
 delete_old_messages(ServerHost, TimeStamp, Type) ->
-    TS = now_to_usec(TimeStamp),
+    TS = misc:now_to_usec(TimeStamp),
     case Type of
         all ->
             ejabberd_sql:sql_query(
@@ -311,11 +362,11 @@ export(_Server) ->
               []
       end},
      {archive_msg,
-      fun(Host, #archive_msg{us ={LUser, LServer},
+      fun([Host | HostTail], #archive_msg{us ={LUser, LServer},
                 id = _ID, timestamp = TS, peer = Peer,
                 type = Type, nick = Nick, packet = Pkt})
-          when LServer == Host ->
-                TStmp = now_to_usec(TS),
+          when (LServer == Host) or ([LServer] == HostTail)  ->
+                TStmp = misc:now_to_usec(TS),
                 SUser = case Type of
                       chat -> LUser;
                       groupchat -> jid:encode({LUser, LServer, <<>>})
@@ -372,16 +423,6 @@ is_empty_for_room(LServer, LName, LHost) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-now_to_usec({MSec, Sec, USec}) ->
-    (MSec*1000000 + Sec)*1000000 + USec.
-
-usec_to_now(Int) ->
-    Secs = Int div 1000000,
-    USec = Int rem 1000000,
-    MSec = Secs div 1000000,
-    Sec = Secs rem 1000000,
-    {MSec, Sec, USec}.
-
 make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     Start = proplists:get_value(start, MAMQuery),
     End = proplists:get_value('end', MAMQuery),
@@ -432,14 +473,14 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     StartClause = case Start of
 		      {_, _, _} ->
 			  [<<" and timestamp >= ">>,
-			   integer_to_binary(now_to_usec(Start))];
+			   integer_to_binary(misc:now_to_usec(Start))];
 		      _ ->
 			  []
 		  end,
     EndClause = case End of
 		    {_, _, _} ->
 			[<<" and timestamp <= ">>,
-			 integer_to_binary(now_to_usec(End))];
+			 integer_to_binary(misc:now_to_usec(End))];
 		    _ ->
 			[]
 		end,
@@ -526,7 +567,7 @@ make_archive_el(User, TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchi
 		TSInt ->
 		    try jid:decode(Peer) of
 			PeerJID ->
-			    Now = usec_to_now(TSInt),
+			    Now = misc:usec_to_now(TSInt),
 			    PeerLJID = jid:tolower(PeerJID),
 			    T = case Kind of
 				    <<"">> -> chat;

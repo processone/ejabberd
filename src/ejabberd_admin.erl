@@ -5,7 +5,7 @@
 %%% Created :  7 May 2006 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -30,7 +30,8 @@
 
 -export([start_link/0,
 	 %% Server
-	 status/0, reopen_log/0, rotate_log/0,
+	 status/0, stop/0, restart/0,
+	 reopen_log/0, rotate_log/0,
 	 set_loglevel/1,
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 registered_vhosts/0,
@@ -40,7 +41,7 @@
 	 %% Cluster
 	 join_cluster/1, leave_cluster/1, list_cluster/0,
 	 %% Erlang
-	 update_list/0, update/1,
+	 update_list/0, update/1, update/0,
 	 %% Accounts
 	 register/3, unregister/2,
 	 registered_users/1,
@@ -59,8 +60,8 @@
 	 restore/1, % Still used by some modules
 	 clear_cache/0,
 	 gc/0,
-	 get_commands_spec/0
-	]).
+	 get_commands_spec/0,
+	 delete_old_messages_batch/4, delete_old_messages_status/1, delete_old_messages_abort/1]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -113,18 +114,21 @@ get_commands_spec() ->
 			args = [], result = {res, restuple}},
      #ejabberd_commands{name = stop, tags = [server],
 			desc = "Stop ejabberd gracefully",
-			module = init, function = stop,
+			module = ?MODULE, function = stop,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = restart, tags = [server],
 			desc = "Restart ejabberd gracefully",
-			module = init, function = restart,
+			module = ?MODULE, function = restart,
 			args = [], result = {res, rescode}},
-     #ejabberd_commands{name = reopen_log, tags = [logs, server],
-			desc = "Reopen the log files",
+     #ejabberd_commands{name = reopen_log, tags = [logs],
+			desc = "Reopen the log files after being renamed",
+			longdesc = "This can be useful when an external tool is "
+			"used for log rotation. See "
+			"https://docs.ejabberd.im/admin/guide/troubleshooting/#log-files",
 			policy = admin,
 			module = ?MODULE, function = reopen_log,
 			args = [], result = {res, rescode}},
-     #ejabberd_commands{name = rotate_log, tags = [logs, server],
+     #ejabberd_commands{name = rotate_log, tags = [logs],
 			desc = "Rotate the log files",
 			module = ?MODULE, function = rotate_log,
 			args = [], result = {res, rescode}},
@@ -139,14 +143,14 @@ get_commands_spec() ->
 			args_example = [60, <<"Server will stop now.">>],
 			args = [{delay, integer}, {announcement, string}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = get_loglevel, tags = [logs, server],
+     #ejabberd_commands{name = get_loglevel, tags = [logs],
 			desc = "Get the current loglevel",
 			module = ejabberd_logger, function = get,
 			result_desc = "Tuple with the log level number, its keyword and description",
 			result_example = warning,
 			args = [],
                         result = {levelatom, atom}},
-     #ejabberd_commands{name = set_loglevel, tags = [logs, server],
+     #ejabberd_commands{name = set_loglevel, tags = [logs],
 			desc = "Set the loglevel",
 			module = ?MODULE, function = set_loglevel,
 			args_desc = ["Desired logging level: none | emergency | alert | critical "
@@ -178,6 +182,8 @@ get_commands_spec() ->
 			result = {res, restuple}},
      #ejabberd_commands{name = unregister, tags = [accounts],
 			desc = "Unregister a user",
+			longdesc = "This deletes the authentication and all the "
+                        "data associated to the account (roster, vcard...).",
                         policy = admin,
 			module = ?MODULE, function = unregister,
 			args_desc = ["Username", "Local vhost served by ejabberd"],
@@ -200,7 +206,7 @@ get_commands_spec() ->
 			result_example = [<<"example.com">>, <<"anon.example.com">>],
 			args = [],
 			result = {vhosts, {list, {vhost, string}}}},
-     #ejabberd_commands{name = reload_config, tags = [server, config],
+     #ejabberd_commands{name = reload_config, tags = [config],
 			desc = "Reload config file in memory",
 			module = ?MODULE, function = reload_config,
 			args = [],
@@ -254,21 +260,21 @@ get_commands_spec() ->
 			module = ejabberd_piefxis, function = import_file,
 			args_desc = ["Full path to the PIEFXIS file"],
 			args_example = ["/var/lib/ejabberd/example.com.xml"],
-			args = [{file, string}], result = {res, rescode}},
+			args = [{file, binary}], result = {res, rescode}},
      #ejabberd_commands{name = export_piefxis, tags = [mnesia],
 			desc = "Export data of all users in the server to PIEFXIS files (XEP-0227)",
 			module = ejabberd_piefxis, function = export_server,
 			args_desc = ["Full path to a directory"],
 			args_example = ["/var/lib/ejabberd/"],
-			args = [{dir, string}], result = {res, rescode}},
+			args = [{dir, binary}], result = {res, rescode}},
      #ejabberd_commands{name = export_piefxis_host, tags = [mnesia],
 			desc = "Export data of users in a host to PIEFXIS files (XEP-0227)",
 			module = ejabberd_piefxis, function = export_host,
 			args_desc = ["Full path to a directory", "Vhost to export"],
 			args_example = ["/var/lib/ejabberd/", "example.com"],
-			args = [{dir, string}, {host, string}], result = {res, rescode}},
+			args = [{dir, binary}, {host, binary}], result = {res, rescode}},
 
-     #ejabberd_commands{name = delete_mnesia, tags = [mnesia, sql],
+     #ejabberd_commands{name = delete_mnesia, tags = [mnesia],
                         desc = "Delete elements in Mnesia database for a given vhost",
                         module = ejd2sql, function = delete,
 			args_desc = ["Vhost which content will be deleted in Mnesia database"],
@@ -314,6 +320,39 @@ get_commands_spec() ->
 			args_desc = ["Number of days"],
 			args_example = [31],
 			args = [{days, integer}], result = {res, rescode}},
+     #ejabberd_commands{name = delete_old_messages_batch, tags = [purge],
+			desc = "Delete offline messages older than DAYS",
+			note = "added in 22.05",
+			module = ?MODULE, function = delete_old_messages_batch,
+			args_desc = ["Name of host where messages should be deleted",
+				     "Days to keep messages",
+				     "Number of messages to delete per batch",
+				     "Desired rate of messages to delete per minute"],
+			args_example = [<<"localhost">>, 31, 1000, 10000],
+			args = [{host, binary}, {days, integer}, {batch_size, integer}, {rate, integer}],
+			result = {res, restuple},
+			result_desc = "Result tuple",
+			result_example = {ok, <<"Removal of 5000 messages in progress">>}},
+     #ejabberd_commands{name = delete_old_messages_status, tags = [purge],
+			desc = "Status of delete old offline messages operation",
+			note = "added in 22.05",
+			module = ?MODULE, function = delete_old_messages_status,
+			args_desc = ["Name of host where messages should be deleted"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, string},
+			result_desc = "Status test",
+			result_example = "Operation in progress, delete 5000 messages"},
+     #ejabberd_commands{name = abort_delete_old_messages, tags = [purge],
+			desc = "Abort currently running delete old offline messages operation",
+			note = "added in 22.05",
+			module = ?MODULE, function = delete_old_messages_abort,
+			args_desc = ["Name of host where operation should be aborted"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, string},
+			result_desc = "Status text",
+			result_example = "Operation aborted"},
 
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL file",
@@ -326,7 +365,7 @@ get_commands_spec() ->
 			args_example = ["example.com", "/var/lib/ejabberd/example.com.sql"],
 			args = [{host, string}, {file, string}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = set_master, tags = [mnesia],
+     #ejabberd_commands{name = set_master, tags = [cluster],
 			desc = "Set master node of the clustered Mnesia tables",
 			longdesc = "If you provide as nodename \"self\", this "
 			"node will be set as its own master.",
@@ -345,31 +384,41 @@ get_commands_spec() ->
 				{oldbackup, string}, {newbackup, string}],
 			result = {res, restuple}},
      #ejabberd_commands{name = backup, tags = [mnesia],
-			desc = "Store the database to backup file",
+			desc = "Backup the Mnesia database to a binary file",
 			module = ?MODULE, function = backup_mnesia,
 			args_desc = ["Full path for the destination backup file"],
 			args_example = ["/var/lib/ejabberd/database.backup"],
 			args = [{file, string}], result = {res, restuple}},
      #ejabberd_commands{name = restore, tags = [mnesia],
-			desc = "Restore the database from backup file",
+			desc = "Restore the Mnesia database from a binary backup file",
+			longdesc = "This restores immediately from a "
+			"binary backup file the internal Mnesia "
+			"database. This will consume a lot of memory if "
+			"you have a large database, you may prefer "
+			"'install_fallback'.",
 			module = ?MODULE, function = restore_mnesia,
 			args_desc = ["Full path to the backup file"],
 			args_example = ["/var/lib/ejabberd/database.backup"],
 			args = [{file, string}], result = {res, restuple}},
      #ejabberd_commands{name = dump, tags = [mnesia],
-			desc = "Dump the database to a text file",
+			desc = "Dump the Mnesia database to a text file",
 			module = ?MODULE, function = dump_mnesia,
 			args_desc = ["Full path for the text file"],
 			args_example = ["/var/lib/ejabberd/database.txt"],
 			args = [{file, string}], result = {res, restuple}},
      #ejabberd_commands{name = dump_table, tags = [mnesia],
-			desc = "Dump a table to a text file",
+			desc = "Dump a Mnesia table to a text file",
 			module = ?MODULE, function = dump_table,
 			args_desc = ["Full path for the text file", "Table name"],
 			args_example = ["/var/lib/ejabberd/table-muc-registered.txt", "muc_registered"],
 			args = [{file, string}, {table, string}], result = {res, restuple}},
      #ejabberd_commands{name = load, tags = [mnesia],
-			desc = "Restore the database from a text file",
+			desc = "Restore Mnesia database from a text dump file",
+			longdesc = "Restore immediately. This is not "
+			"recommended for big databases, as it will "
+			"consume much time, memory and processor. In "
+			"that case it's preferable to use 'backup' and "
+			"'install_fallback'.",
 			module = ?MODULE, function = load_mnesia,
 			args_desc = ["Full path to the text file"],
 			args_example = ["/var/lib/ejabberd/database.txt"],
@@ -385,7 +434,14 @@ get_commands_spec() ->
 			args_example = ["roster"],
 			args = [{table, string}], result = {res, string}},
      #ejabberd_commands{name = install_fallback, tags = [mnesia],
-			desc = "Install the database from a fallback file",
+			desc = "Install Mnesia database from a binary backup file",
+			longdesc = "The binary backup file is "
+			"installed as fallback: it will be used to "
+			"restore the database at the next ejabberd "
+			"start. This means that, after running this "
+			"command, you have to restart ejabberd. This "
+			"command requires less memory than
+			'restore'.",
 			module = ?MODULE, function = install_fallback_mnesia,
 			args_desc = ["Full path to the fallback file"],
 			args_example = ["/var/lib/ejabberd/database.fallback"],
@@ -423,6 +479,16 @@ status() ->
 		{ok, io_lib:format("ejabberd ~s is running in that node", [Version])}
 	end,
     {Is_running, String1 ++ String2}.
+
+stop() ->
+    _ = supervisor:terminate_child(ejabberd_sup, ejabberd_sm),
+    timer:sleep(1000),
+    init:stop().
+
+restart() ->
+    _ = supervisor:terminate_child(ejabberd_sup, ejabberd_sm),
+    timer:sleep(1000),
+    init:restart().
 
 reopen_log() ->
     ejabberd_hooks:run(reopen_log_hook, []).
@@ -517,6 +583,15 @@ update_module(ModuleNameString) ->
 	{ok, _Res} -> {ok, []};
 	{error, Reason} -> {error, Reason}
     end.
+
+update() ->
+    io:format("Compiling ejabberd...~n", []),
+    os:cmd("make"),
+    Mods = ejabberd_admin:update_list(),
+    io:format("Updating modules: ~p~n", [Mods]),
+    ejabberd_admin:update("all"),
+    io:format("Updated modules: ", []),
+    Mods -- ejabberd_admin:update_list().
 
 %%%
 %%% Account management
@@ -639,6 +714,64 @@ delete_old_messages(Days) ->
       fun(Host) ->
               {atomic, _} = mod_offline:remove_old_messages(Days, Host)
       end, ejabberd_option:hosts()).
+
+delete_old_messages_batch(Server, Days, BatchSize, Rate) ->
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, mod_offline),
+    case ejabberd_batch:register_task({spool, LServer}, 0, Rate, {LServer, Days, BatchSize, none},
+				      fun({L, Da, B, IS} = S) ->
+					  case {erlang:function_exported(Mod, remove_old_messages_batch, 3),
+						erlang:function_exported(Mod, remove_old_messages_batch, 4)} of
+					      {true, _} ->
+						  case Mod:remove_old_messages_batch(L, Da, B) of
+						      {ok, Count} ->
+							  {ok, S, Count};
+						      {error, _} = E ->
+							  E
+						  end;
+					      {_, true} ->
+						  case Mod:remove_old_messages_batch(L, Da, B, IS) of
+						      {ok, IS2, Count} ->
+							  {ok, {L, Da, B, IS2}, Count};
+						      {error, _} = E ->
+							  E
+						  end;
+					      _ ->
+						  {error, not_implemented_for_backend}
+					  end
+				      end) of
+	ok ->
+	    {ok, ""};
+	{error, in_progress} ->
+	    {error, "Operation in progress"}
+    end.
+
+delete_old_messages_status(Server) ->
+    LServer = jid:nameprep(Server),
+    Msg = case ejabberd_batch:task_status({spool, LServer}) of
+	      not_started ->
+		  "Operation not started";
+	      {failed, Steps, Error} ->
+		  io_lib:format("Operation failed after deleting ~p messages with error ~p",
+				[Steps, misc:format_val(Error)]);
+	      {aborted, Steps} ->
+		  io_lib:format("Operation was aborted after deleting ~p messages",
+				[Steps]);
+	      {working, Steps} ->
+		  io_lib:format("Operation in progress, deleted ~p messages",
+				[Steps]);
+	      {completed, Steps} ->
+		  io_lib:format("Operation was completed after deleting ~p messages",
+				[Steps])
+	  end,
+    lists:flatten(Msg).
+
+delete_old_messages_abort(Server) ->
+    LServer = jid:nameprep(Server),
+    case ejabberd_batch:abort_task({spool, LServer}) of
+	aborted -> "Operation aborted";
+	not_started -> "No task running"
+    end.
 
 %%%
 %%% Mnesia management

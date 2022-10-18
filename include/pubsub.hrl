@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@
 -define(ERR_EXTENDED(E, C), mod_pubsub:extended_error(E, C)).
 
 %% The actual limit can be configured with mod_pubsub's option max_items_node
--define(MAXITEMS, 10).
+-define(MAXITEMS, 1000).
 
 %% this is currently a hard limit.
 %% Would be nice to have it configurable.

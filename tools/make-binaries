@@ -1,0 +1,886 @@
+#!/bin/sh
+
+# Build portable binary release tarballs for Linux/x64 and Linux/arm64.
+#
+# Author: Holger Weiss <holger@zedat.fu-berlin.de>.
+#
+# Copyright (c) 2022 ProcessOne, SARL.
+# All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -e
+set -u
+
+export PATH='/usr/local/bin:/usr/bin:/bin'
+
+myself=${0##*/}
+
+info()
+{
+	echo "$myself: $*"
+}
+
+error()
+{
+	echo >&2 "$myself: $*"
+}
+
+usage()
+{
+	echo >&2 "Usage: $myself"
+	exit 2
+}
+
+mix_version()
+{
+	# Mix insists on SemVer format.
+	local vsn="$(printf '%s' "$1" | sed 's/\.0/./')"
+
+	case $vsn in
+	*.*.*) printf '%s' "$vsn" ;;
+	*.*) printf '%s.0' "$vsn" ;;
+	esac
+}
+
+if ! [ -e 'mix.exs' ] || ! [ -e "tools/$myself" ]
+then
+	error "Please call this script from the repository's root directory."
+	exit 2
+elif [ $# -ne 0 ]
+then
+	usage
+fi
+
+rel_name='ejabberd'
+rel_vsn=$(git describe --tags | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
+mix_vsn=$(mix_version "$rel_vsn")
+crosstool_vsn='1.25.0'
+termcap_vsn='1.3.1'
+expat_vsn='2.4.9'
+zlib_vsn='1.2.12'
+yaml_vsn='0.2.5'
+ssl_vsn='1.1.1q'
+otp_vsn='24.3.4.5'
+elixir_vsn='1.14.0'
+pam_vsn='1.5.2'
+png_vsn='1.6.38'
+jpeg_vsn='9e'
+webp_vsn='1.2.4'
+gd_vsn='2.3.3'
+odbc_vsn='2.3.11'
+sqlite_vsn='3390300'
+root_dir="${BUILD_DIR:-$HOME/build}"
+bootstrap_dir="$root_dir/bootstrap"
+ct_prefix_dir="$root_dir/x-tools"
+build_dir="$root_dir/$rel_name"
+crosstool_dir="crosstool-ng-$crosstool_vsn"
+termcap_dir="termcap-$termcap_vsn"
+expat_dir="expat-$expat_vsn"
+zlib_dir="zlib-$zlib_vsn"
+yaml_dir="yaml-$yaml_vsn"
+ssl_dir="openssl-$ssl_vsn"
+otp_dir="otp_src_$otp_vsn"
+elixir_dir="elixir-$elixir_vsn"
+pam_dir="Linux-PAM-$pam_vsn"
+png_dir="libpng-$png_vsn"
+jpeg_dir="jpeg-$jpeg_vsn"
+webp_dir="libwebp-$webp_vsn"
+gd_dir="libgd-$gd_vsn"
+odbc_dir="unixODBC-$odbc_vsn"
+sqlite_dir="sqlite-autoconf-$sqlite_vsn"
+crosstool_tar="$crosstool_dir.tar.xz"
+termcap_tar="$termcap_dir.tar.gz"
+expat_tar="$expat_dir.tar.gz"
+zlib_tar="$zlib_dir.tar.gz"
+yaml_tar="$yaml_dir.tar.gz"
+ssl_tar="$ssl_dir.tar.gz"
+otp_tar="$otp_dir.tar.gz"
+elixir_tar="v$elixir_vsn.tar.gz"
+pam_tar="$pam_dir.tar.xz"
+png_tar="$png_dir.tar.gz"
+jpeg_tar="jpegsrc.v$jpeg_vsn.tar.gz"
+webp_tar="$webp_dir.tar.gz"
+gd_tar="$gd_dir.tar.gz"
+sqlite_tar="$sqlite_dir.tar.gz"
+odbc_tar="$odbc_dir.tar.gz"
+rel_tar="$rel_name-$mix_vsn.tar.gz"
+ct_jobs=$(nproc)
+src_dir="$root_dir/src"
+platform='x86_64-pc-linux-gnu'
+targets='x86_64-linux-gnu aarch64-linux-gnu'
+build_start=$(date '+%F %T')
+have_current_deps='false'
+dep_vsns_file="$build_dir/.dep_vsns"
+dep_vsns=''
+deps='crosstool
+      termcap
+      expat
+      zlib
+      yaml
+      ssl
+      otp
+      elixir
+      pam
+      png
+      jpeg
+      webp
+      gd
+      odbc
+      sqlite'
+
+umask 022
+
+#' Try to find a browser for checking dependency versions.
+have_browser()
+{
+	for browser in 'lynx' 'links' 'elinks'
+	do
+		$browser -dump 'https://ejabberd.im/' >'/dev/null' && return 0
+	done
+	return 1
+}
+#.
+
+#' Check whether the given dependency version is up-to-date.
+check_vsn()
+{
+	local name="$1"
+	local our_vsn="$2"
+	local src_url="$3"
+	local reg_exp="$4"
+	local cur_vsn=$($browser -dump "$src_url" |
+	                sed -n "s/.*$reg_exp.*/\\1/p" |
+	                head -1)
+
+	if [ "$our_vsn" = "$cur_vsn" ]
+	then
+		return 0
+	else
+		error "Current $name version is: $cur_vsn"
+		error "But our $name version is: $our_vsn"
+		error "Update $0 or set CHECK_DEPS=false"
+		exit 1
+	fi
+}
+#.
+
+#' Check whether our dependency versions are up-to-date.
+check_configured_dep_vsns()
+{
+	check_vsn 'OpenSSL' "$ssl_vsn" \
+	          'https://www.openssl.org/source/' \
+	          'openssl-\(1\.[0-9][0-9a-z.]*\)\.tar\.gz'
+	check_vsn 'LibYAML' "$yaml_vsn" \
+	          'https://pyyaml.org/wiki/LibYAML' \
+	          'yaml-\([0-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'zlib' "$zlib_vsn" \
+	          'https://zlib.net/' \
+	          'zlib-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'Expat' "$expat_vsn" \
+	          'https://github.com/libexpat/libexpat/releases' \
+	          '[0-9]\]\([1-9][0-9.]*\)'
+	check_vsn 'Termcap' "$termcap_vsn" \
+	          'https://ftp.gnu.org/gnu/termcap/' \
+	          'termcap-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'SQLite' "$sqlite_vsn" \
+	          'https://www.sqlite.org/download.html' \
+	          'sqlite-autoconf-\([1-9][0-9]*\)\.tar\.gz'
+	check_vsn 'ODBC' "$odbc_vsn" \
+	          'http://www.unixodbc.org/download.html' \
+	          'unixODBC-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'Linux-PAM' "$pam_vsn" \
+	          'https://github.com/linux-pam/linux-pam/releases' \
+	          '[0-9]\]Linux-PAM \([1-9][0-9.]*\)'
+	check_vsn 'libpng' "$png_vsn" \
+	          'http://www.libpng.org/pub/png/libpng.html' \
+		  'libpng-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'JPEG' "$jpeg_vsn" \
+	          'https://www.ijg.org' \
+	          'jpegsrc.v\([1-9][0-9a-z]*\)\.tar\.gz'
+	check_vsn 'WebP' "$webp_vsn" \
+	          'https://developers.google.com/speed/webp/download' \
+	          'libwebp-\([1-9][0-9.]*\)\.tar\.gz'
+	check_vsn 'LibGD' "$gd_vsn" \
+	          'https://github.com/libgd/libgd/releases' \
+	          'gd-\([1-9][0-9.]*\)'
+	check_vsn 'Elixir' "$elixir_vsn" \
+	          'https://elixir-lang.org/install.html' \
+	          'v\([1-9][0-9.]*\)\.tar\.gz'
+}
+#.
+
+#' Check whether existing dependencies are up-to-date.
+check_built_dep_vsns()
+{
+	for dep in $deps
+	do
+		eval dep_vsns=\"\$dep_vsns\$${dep}_vsn\"
+	done
+
+	if [ -e "$dep_vsns_file" ]
+	then
+		if [ "$dep_vsns" = "$(cat "$dep_vsns_file")" ]
+		then have_current_deps='true'
+		fi
+		rm "$dep_vsns_file"
+	fi
+}
+#.
+
+#' Save built dependency versions.
+save_built_dep_vsns()
+{
+	echo "$dep_vsns" >"$dep_vsns_file"
+}
+#.
+
+#' Create common part of Crosstool-NG configuration file.
+create_common_config()
+{
+	local file="$1"
+
+	cat >"$file" <<-'EOF'
+		CT_CONFIG_VERSION="4"
+		CT_DOWNLOAD_AGENT_CURL=y
+		CT_OMIT_TARGET_VENDOR=y
+		CT_CC_LANG_CXX=y
+		CT_ARCH_64=y
+		CT_KERNEL_LINUX=y
+		CT_LINUX_V_3_16=y
+		CT_GLIBC_V_2_17=y
+		CT_GLIBC_KERNEL_VERSION_NONE=y
+	EOF
+}
+#.
+
+#' Create Crosstool-NG configuration file for x64.
+create_x64_config()
+{
+	local file="$1"
+
+	create_common_config "$file"
+
+	cat >>"$file" <<-'EOF'
+		CT_ARCH_X86=y
+	EOF
+}
+#.
+
+#' Create Crosstool-NG configuration file for arm64.
+create_arm64_config()
+{
+	local file="$1"
+
+	create_common_config "$file"
+
+	cat >>"$file" <<-'EOF'
+		CT_ARCH_ARM=y
+	EOF
+}
+#.
+
+#' Return our name for the given platform.
+arch_name()
+{
+	local target="$1"
+
+	case $target in
+	x86_64*)
+		printf 'x64'
+		;;
+	aarch64*)
+		printf 'arm64'
+		;;
+	*)
+		error "Unsupported target platform: $target"
+		exit 1
+		;;
+	esac
+}
+#.
+
+#' Add native Erlang/OTP "bin" directory to PATH (for bootstrapping and Mix).
+add_otp_path()
+{
+	local mode="$1"
+	local prefix="$2"
+
+	if [ "$mode" = 'native' ]
+	then native_otp_bin="$prefix/bin"
+	fi
+	export PATH="$native_otp_bin:$PATH"
+}
+#.
+
+#' Create and populate /opt/ejabberd directory.
+create_data_dir()
+{
+	local code_dir="$1"
+	local data_dir="$2"
+
+	mkdir "$data_dir" "$data_dir/database" "$data_dir/logs"
+	mv "$code_dir/conf" "$data_dir"
+	chmod 'o-rwx' "$data_dir/"*
+	curl -o "$data_dir/conf/cacert.pem" 'https://curl.se/ca/cacert.pem'
+	sed -i '/^loglevel:/a\
+\
+ca_file: /opt/ejabberd/conf/cacert.pem\
+\
+certfiles:\
+  - /opt/ejabberd/conf/server.pem' "$data_dir/conf/$rel_name.yml"
+}
+#.
+
+#' Add systemd unit and init script.
+add_systemd_unit()
+{
+	local code_dir="$1"
+
+	sed -e "s|@ctlscriptpath@|/opt/$rel_name-$rel_vsn/bin|g" \
+	    -e "s|@installuser@|$rel_name|g" 'ejabberd.service.template' \
+	    >"$code_dir/bin/ejabberd.service"
+	sed -e "s|@ctlscriptpath@|/opt/$rel_name-$rel_vsn/bin|g" \
+	    -e "s|@installuser@|$rel_name|g" 'ejabberd.init.template' \
+	    >"$code_dir/bin/ejabberd.init"
+	chmod '+x' "$code_dir/bin/ejabberd.init"
+}
+#.
+
+#' Add CAPTCHA script(s).
+add_captcha_script()
+{
+	local code_dir="$1"
+
+	cp -p 'tools/captcha'*'.sh' "$code_dir/lib"
+}
+#.
+
+#' Use our VT100 to avoid depending on Terminfo, adjust options/paths.
+edit_ejabberdctl()
+{
+	local code_dir="$1"
+
+	sed -i \
+	    -e "2iexport TERM='internal'" \
+	    -e '/ERL_OPTIONS=/d' \
+	    -e 's|^ERLANG_NODE=ejabberd$|ERLANG_NODE=ejabberd@localhost|' \
+	    -e 's|_DIR:=".*}/|_DIR:="/opt/ejabberd/|' \
+	    -e 's|/database|/database/$ERLANG_NODE|' \
+	    "$code_dir/bin/${rel_name}ctl"
+}
+#.
+
+#' Delete unused files and directories, just to save some space.
+remove_unused_files()
+{
+	local code_dir="$1"
+
+	# Remove shared object file used only in test suite:
+	find "$code_dir/lib" -name 'otp_test_engine.so' -delete
+
+	# Remove shared object files of statically linked NIFs:
+	find "$code_dir/lib/crypto-"* "$code_dir/lib/asn1-"* \
+	    '(' -name 'asn1rt_nif.so' -o \
+	        -name 'crypto.so' -o \
+	        -name 'lib' -o \
+	        -name 'priv' ')' \
+	    -delete
+
+	# Remove unused ERTS binaries (see systools_make:erts_binary_filter/0):
+	find "$code_dir/erts-"*'/bin' \
+	    '(' -name 'ct_run' -o \
+	        -name 'dialyzer' -o \
+	        -name 'erlc' -o \
+	        -name 'typer' -o \
+	        -name 'yielding_c_fun' ')' \
+	    -delete
+
+	# Remove unused Mix stuff:
+	find "$code_dir/bin" -name 'ejabberd' -delete
+	find "$code_dir/releases" -name 'COOKIE' -delete
+}
+#.
+
+#' Strip ERTS binaries, shared objects, and BEAM files.
+strip_files()
+{
+	local code_dir="$1"
+	local strip_cmd="$2"
+
+	find "$code_dir/lib" \
+	    -type f \
+	    -name '*.so' \
+	    -exec "$strip_cmd" -s '{}' '+'
+	find "$code_dir/erts-"*'/bin' "$code_dir/lib/"*'/priv/bin' \
+	    -type f \
+	    -perm '-u+x' \
+	    -exec "$strip_cmd" -s '{}' '+' 2>'/dev/null' || :
+	erl -noinput -eval \
+	    "{ok, _} = beam_lib:strip_release('$code_dir'), halt()"
+}
+#.
+
+#' Build toochain for a given target.
+build_toolchain()
+{
+	local target="$1"
+	local prefix="$2"
+	local arch=$(arch_name "$target")
+
+	if [ -d "$prefix" ]
+	then
+		info "Using existing toolchain in $prefix ..."
+	else
+		if ! [ -x "$bootstrap_dir/bin/ct-ng" ]
+		then
+			info "Extracting Crosstool-NG $crosstool_vsn ..."
+			cd "$src_dir"
+			tar -xJf "$crosstool_tar"
+			cd "$OLDPWD"
+
+			info "Building Crosstool-NG $crosstool_vsn ..."
+			cd "$src_dir/$crosstool_dir"
+			./configure --prefix="$bootstrap_dir"
+			make
+			make install
+			cd "$OLDPWD"
+		fi
+
+		info "Building toolchain for $arch ..."
+		cd "$root_dir"
+		create_${arch}_config 'defconfig'
+		ct-ng defconfig
+		ct-ng build CT_PREFIX="$ct_prefix_dir" CT_JOBS="$ct_jobs"
+		rm -rf '.config' '.build' 'build.log'
+		cd "$OLDPWD"
+	fi
+}
+#.
+
+#' Build target dependencies.
+build_deps()
+{
+	local mode="$1"
+	local target="$2"
+	local prefix="$3"
+	local arch="$(arch_name "$target")"
+	local target_src_dir="$prefix/src"
+	local saved_path="$PATH"
+
+	if [ "$mode" = 'cross' ]
+	then configure="./configure --host=$target --build=$platform"
+	else configure='./configure'
+	fi
+
+	mkdir "$prefix"
+
+	info 'Extracting dependencies ...'
+	mkdir "$target_src_dir"
+	cd "$target_src_dir"
+	tar -xzf "$src_dir/$termcap_tar"
+	tar -xzf "$src_dir/$sqlite_tar"
+	tar -xzf "$src_dir/$odbc_tar"
+	tar -xzf "$src_dir/$expat_tar"
+	tar -xzf "$src_dir/$zlib_tar"
+	tar -xzf "$src_dir/$yaml_tar"
+	tar -xzf "$src_dir/$ssl_tar"
+	tar -xzf "$src_dir/$otp_tar"
+	tar -xzf "$src_dir/$elixir_tar"
+	tar -xzf "$src_dir/$png_tar"
+	tar -xzf "$src_dir/$jpeg_tar"
+	tar -xzf "$src_dir/$webp_tar"
+	tar -xzf "$src_dir/$gd_tar"
+	tar -xJf "$src_dir/$pam_tar"
+	cd "$OLDPWD"
+
+	info "Building Termcap $termcap_vsn for $arch ..."
+	cd "$target_src_dir/$termcap_dir"
+	$configure --prefix="$prefix"
+	cat >'config.h' <<-'EOF'
+		#ifndef CONFIG_H
+		#define CONFIG_H
+		#define INTERNAL_TERMINAL "internal:\\\n" \
+			"\t:am:bs:ms:xn:xo:\\\n" \
+			"\t:co#80:it#8:li#24:vt#3:\\\n" \
+			"\t:@8=\\EOM:DO=\\E[%dB:K1=\\EOq:K2=\\EOr:K3=\\EOs:K4=\\EOp:K5=\\EOn:\\\n" \
+			"\t:LE=\\E[%dD:RA=\\E[?7l:RI=\\E[%dC:SA=\\E[?7h:UP=\\E[%dA:\\\n" \
+			"\t:ac=``aaffggjjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~:\\\n" \
+			"\t:ae=^O:as=^N:bl=^G:cb=\\E[1K:cd=\\E[J:ce=\\E[K:cl=\\E[H\\E[J:\\\n" \
+			"\t:cm=\\E[%i%d;%dH:cr=^M:cs=\\E[%i%d;%dr:ct=\\E[3g:do=^J:\\\n" \
+			"\t:eA=\\E(B\\E)0:ho=\\E[H:k0=\\EOy:k1=\\EOP:k2=\\EOQ:k3=\\EOR:\\\n" \
+			"\t:k4=\\EOS:k5=\\EOt:k6=\\EOu:k7=\\EOv:k8=\\EOl:k9=\\EOw:k;=\\EOx:\\\n" \
+			"\t:kb=^H:kd=\\EOB:ke=\\E[?1l\\E>:kl=\\EOD:kr=\\EOC:ks=\\E[?1h\\E=:\\\n" \
+			"\t:ku=\\EOA:le=^H:mb=\\E[5m:md=\\E[1m:me=\\E[m\\017:mr=\\E[7m:\\\n" \
+			"\t:nd=\\E[C:rc=\\E8:rs=\\E>\\E[?3l\\E[?4l\\E[?5l\\E[?7h\\E[?8h:\\\n" \
+			"\t:..sa=\\E[0%?%p1%p6%|%t;1%;%?%p2%t;4%;%?%p1%p3%|%t;7%;%?%p4%t;5%;m%?%p9%t\\016%e\\017%;:\\\n" \
+			"\t:sc=\\E7:se=\\E[m:sf=^J:so=\\E[7m:sr=\\EM:st=\\EH:ta=^I:ue=\\E[m:\\\n" \
+			"\t:up=\\E[A:us=\\E[4m:"
+		#endif
+	EOF
+	make CPPFLAGS="$CPPFLAGS -DHAVE_CONFIG_H=1"
+	make install
+	cd "$OLDPWD"
+
+	info "Building zlib $zlib_vsn for $arch ..."
+	cd "$target_src_dir/$zlib_dir"
+	CFLAGS="$CFLAGS -O3 -fPIC" ./configure --prefix="$prefix" --static
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building OpenSSL $ssl_vsn for $arch ..."
+	cd "$target_src_dir/$ssl_dir"
+	CFLAGS="$CFLAGS -O3 -fPIC" ./Configure no-shared no-ui-console \
+	    --prefix="$prefix" \
+	    --openssldir="$prefix" \
+	    "linux-${target%-linux-gnu}"
+	make build_libs
+	make install_dev
+	cd "$OLDPWD"
+
+	info "Building Expat $expat_vsn for $arch ..."
+	cd "$target_src_dir/$expat_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    --without-docbook \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building LibYAML $yaml_vsn for $arch ..."
+	cd "$target_src_dir/$yaml_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building SQLite $sqlite_vsn for $arch ..."
+	cd "$target_src_dir/$sqlite_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building ODBC $odbc_vsn for $arch ..."
+	cd "$target_src_dir/$odbc_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building Linux-PAM $pam_vsn for $arch ..."
+	cd "$target_src_dir/$pam_dir"
+	$configure --prefix="$prefix" --includedir="$prefix/include/security" \
+	    --enable-static --disable-shared --disable-doc --enable-db=no \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building libpng $png_vsn for $arch ..."
+	cd "$target_src_dir/$png_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building JPEG $jpeg_vsn for $arch ..."
+	cd "$target_src_dir/$jpeg_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building WebP $webp_vsn for $arch ..."
+	cd "$target_src_dir/$webp_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building LibGD $gd_vsn for $arch ..."
+	cd "$target_src_dir/$gd_dir"
+	$configure --prefix="$prefix" --enable-static --disable-shared \
+	    --with-zlib="$prefix" \
+	    --with-webp="$prefix" \
+	    --with-jpeg="$prefix" \
+	    --with-png="$prefix" \
+	    --without-avif \
+	    --without-fontconfig \
+	    --without-freetype \
+	    --without-heif \
+	    --without-libiconv-prefix \
+	    --without-liq \
+	    --without-raqm \
+	    --without-tiff \
+	    --without-x \
+	    --without-xpm \
+	    CFLAGS="$CFLAGS -O3 -fPIC"
+	make
+	make install
+	cd "$OLDPWD"
+
+	info "Building Erlang/OTP $otp_vsn for $arch ..."
+	if [ "$mode" = 'cross' ]
+	then
+		add_otp_path "$mode" "$prefix"
+		export erl_xcomp_sysroot="$prefix"
+	fi
+	cd "$target_src_dir/$otp_dir"
+	# Don't link against libnsl: https://github.com/erlang/otp/pull/5558
+	sed -i -e '/LIBS="-lnsl/d' -e '/LIBS="-lsocket/d' \
+	    'lib/erl_interface/configure'
+	# The additional CFLAGS/LIBS below are required by --enable-static-nifs.
+	# The "-ldl" flag specifically is only needed for ODBC, though.
+	$configure \
+	    --prefix="$prefix" \
+	    --with-ssl="$prefix" \
+	    --with-odbc="$prefix" \
+	    --without-javac \
+	    --disable-dynamic-ssl-lib \
+	    --enable-static-nifs \
+	    CFLAGS="$CFLAGS -Wl,-L$prefix/lib" \
+	    LIBS='-lcrypto -ldl'
+	make
+	make install
+	if [ "$mode" = 'native' ]
+	then add_otp_path "$mode" "$prefix"
+	else unset erl_xcomp_sysroot
+	fi
+	cd "$OLDPWD"
+
+	info "Building Elixir $elixir_vsn for $arch ..."
+	cd "$target_src_dir/$elixir_dir"
+	make install PREFIX="$prefix"
+	cd "$OLDPWD"
+
+	export PATH="$saved_path"
+}
+#.
+
+#' Build the actual release.
+build_rel()
+{
+	local mode="$1"
+	local target="$2"
+	local prefix="$3"
+	local arch="$(arch_name "$target")"
+	local rel_dir="$PWD/_build/prod"
+	local target_data_dir="$prefix/$rel_name"
+	local target_dst_dir="$prefix/$rel_name-$rel_vsn"
+	local target_dst_tar="$rel_name-$rel_vsn-linux-$arch.tar.gz"
+	local saved_path="$PATH"
+
+	#
+	# The "$ct_prefix_dir/$target/$target/bin" directory contains cross
+	# compilation tools without "$target-" prefix. We add it to the PATH,
+	# just in case tools are called without prefix somewhere. However, we
+	# try to use the prefixed tools everywhere, so it should be possible to
+	# omit this directory from the path if desired. See also:
+	#
+	# https://stackoverflow.com/a/24243789
+	#
+	export PATH="$ct_prefix_dir/$target/bin:$ct_prefix_dir/$target/$target/bin:$PATH"
+	export CC="$target-gcc"
+	export CXX="$target-g++"
+	export CPP="$target-cpp"
+	export LD="$target-ld"
+	export AS="$target-as"
+	export AR="$target-ar"
+	export NM="$target-nm"
+	export RANLIB="$target-ranlib"
+	export OBJCOPY="$target-objcopy"
+	export STRIP="$target-strip"
+	export CPPFLAGS="-I$prefix/include"
+	export CFLAGS="-g0 -O2 -pipe -fomit-frame-pointer -static-libgcc $CPPFLAGS"
+	export CXXFLAGS="$CFLAGS -static-libstdc++"
+	export LDFLAGS="-L$prefix/lib -static-libgcc -static-libstdc++"
+	export ERL_COMPILER_OPTIONS='[deterministic, no_debug_info]'
+
+	if [ "$mode" = 'cross' ]
+	then configure="./configure --host=$target --build=$platform"
+	else configure='./configure'
+	fi
+
+	if [ $have_current_deps = false ]
+	then build_deps "$mode" "$target" "$prefix"
+	fi
+
+	add_otp_path "$mode" "$prefix"
+
+	if [ "$mode" = 'native' ] # In order to only do this once.
+	then
+		info "Fetching Mix dependencies"
+		mix local.hex --force
+		mix local.rebar --force
+	fi
+
+	info "Removing old $rel_name builds"
+	rm -rf '_build' 'deps'
+
+	info "Building $rel_name $rel_vsn for $arch ..."
+	./autogen.sh
+	eimp_cflags='-fcommon'
+	eimp_libs='-lwebp -ljpeg -lpng -lz -lm'
+	export CC="$CC -Wl,-ldl" # Required by (statically linking) epam.
+	export LIBS="$eimp_libs -lcrypto -lpthread -ldl"
+	export CFLAGS="$CFLAGS $eimp_cflags"
+	export LDFLAGS="$LDFLAGS $eimp_libs"
+	if [ "$mode" = 'cross' ]
+	then
+		# Hand over --host/--build to configure scripts of dependencies.
+		export host_alias="$target"
+		export build_alias="$platform"
+	fi
+	# The cache variable makes cross compilation work.
+	ac_cv_erlang_root_dir="$prefix/lib/erlang" $configure \
+	    --with-rebar='mix' \
+	    --with-sqlite3="$prefix" \
+	    --enable-user="$rel_name" \
+	    --enable-all \
+	    --disable-erlang-version-check
+	make deps
+	sed -i 's/ *-lstdc++//g' 'deps/'*'/rebar.config'* # Link statically.
+	if [ "$mode" = 'cross' ]
+	then
+		ln -s "$prefix/lib/erlang" 'lib/erlang'
+		erts_dir=$(ls -1d 'lib/erlang/erts-'*)
+		ei_inc="$prefix/lib/erlang/lib/erl_interface-"*'/include'
+		ei_lib="$prefix/lib/erlang/lib/erl_interface-"*'/lib'
+		export LDLIBS='-lpthread'
+		export ERL_EI_INCLUDE_DIR=$(ls -1d $ei_inc)
+		export ERL_EI_LIBDIR=$(ls -1d $ei_lib)
+		sed -i "/include_executables/a\\
+		    include_erts: \"$erts_dir\"," 'mix.exs'
+	fi
+	make rel
+	if [ "$mode" = 'cross' ]
+	then
+		sed -i '/include_erts/d' 'mix.exs'
+		rm 'lib/erlang'
+		unset LDLIBS ERL_EI_INCLUDE_DIR ERL_EI_LIBDIR
+		unset host_alias build_alias
+	fi
+
+	info "Putting together $rel_name $rel_vsn archive for $arch ..."
+	mkdir "$target_dst_dir"
+	tar -C "$target_dst_dir" -xzf "$rel_dir/$rel_tar"
+	create_data_dir "$target_dst_dir" "$target_data_dir"
+	add_systemd_unit "$target_dst_dir"
+	add_captcha_script "$target_dst_dir"
+	edit_ejabberdctl "$target_dst_dir"
+	remove_unused_files "$target_dst_dir"
+	strip_files "$target_dst_dir" "$STRIP"
+	tar -C "$prefix" --owner="$rel_name" --group="$rel_name" -cf - \
+	    "$rel_name" "$rel_name-$rel_vsn" | gzip -9 >"$target_dst_tar"
+	rm -rf "$target_dst_dir" "$target_data_dir"
+
+	info "Created $target_dst_tar successfully."
+
+	unset CC CXX CPP LD AS AR NM RANLIB OBJCOPY STRIP
+	unset CFLAGS CXXFLAGS LDFLAGS LIBS ERL_COMPILER_OPTIONS
+	export PATH="$saved_path"
+}
+#.
+
+if [ "${CHECK_DEPS:-true}" = 'true' ]
+then
+	if have_browser
+	then
+		check_configured_dep_vsns
+	else
+		error 'Cannot check dependency versions.'
+		error 'Install a browser or set CHECK_DEPS=false'
+		exit 1
+	fi
+else
+	info "Won't check dependency versions."
+fi
+
+if ! mkdir -p "$root_dir"
+then
+	error 'Set BUILD_DIR to a usable build directory path.'
+	exit 1
+fi
+
+check_built_dep_vsns
+
+info 'Removing old bootstrap tools ...'
+rm -rf "$bootstrap_dir"
+mkdir "$bootstrap_dir"
+
+if [ $have_current_deps = true ]
+then
+	info 'Dependencies are up-to-date ...'
+else
+	# Keep existing toolchains but rebuild everything else.
+	info 'Removing old builds ...'
+	rm -rf "$build_dir"
+	mkdir "$build_dir"
+
+	info 'Removing old source ...'
+	rm -rf "$src_dir"
+	mkdir "$src_dir"
+
+	info 'Downloading dependencies ...'
+	cd "$src_dir"
+	curl -LO "http://crosstool-ng.org/download/crosstool-ng/$crosstool_tar"
+	curl -LO "https://ftp.gnu.org/gnu/termcap/$termcap_tar"
+	curl -LO "https://github.com/libexpat/libexpat/releases/download/R_$(printf '%s' "$expat_vsn" | sed 's/\./_/g')/$expat_tar"
+	curl -LO "https://zlib.net/$zlib_tar"
+	curl -LO "https://pyyaml.org/download/libyaml/$yaml_tar"
+	curl -LO "https://www.openssl.org/source/$ssl_tar"
+	curl -LO "https://github.com/erlang/otp/releases/download/OTP-$otp_vsn/$otp_tar"
+	curl -LO "https://github.com/elixir-lang/elixir/archive/v$elixir_vsn.tar.gz"
+	curl -LO "https://github.com/linux-pam/linux-pam/releases/download/v$pam_vsn/$pam_tar"
+	curl -LO "https://download.sourceforge.net/libpng/$png_tar"
+	curl -LO "https://www.ijg.org/files/$jpeg_tar"
+	curl -LO "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/$webp_tar"
+	curl -LO "https://github.com/libgd/libgd/releases/download/gd-$gd_vsn/$gd_tar"
+	curl -LO "http://www.unixodbc.org/$odbc_tar"
+	curl -LO "https://www.sqlite.org/$(date '+%Y')/$sqlite_tar" \
+	    || curl -LO "https://www.sqlite.org/$(date -d '1 year ago' '+%Y')/$sqlite_tar" \
+	    || curl -LO "https://www.sqlite.org/$(date -d '2 years ago' '+%Y')/$sqlite_tar"
+	cd "$OLDPWD"
+fi
+
+mkdir "$bootstrap_dir/bin"
+export PATH="$bootstrap_dir/bin:$PATH" # For ct-ng.
+export LC_ALL='C.UTF-8' # Elixir insists on a UTF-8 environment.
+
+for target in $targets
+do
+	prefix="$build_dir/$(arch_name "$target")"
+	toolchain_dir="$ct_prefix_dir/$target"
+
+	if [ "$(uname -m)-linux-gnu" = "$target" ]
+	then mode='native'
+	else mode='cross'
+	fi
+	build_toolchain "$target" "$toolchain_dir"
+	build_rel "$mode" "$target" "$prefix"
+done
+
+save_built_dep_vsns
+
+info "Build started: $build_start"
+info "Build ended: $(date '+%F %T')"
+
+# vim:set foldmarker=#',#. foldmethod=marker:

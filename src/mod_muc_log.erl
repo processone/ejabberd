@@ -5,7 +5,7 @@
 %%% Created : 12 Mar 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -1021,7 +1021,7 @@ mod_doc() ->
            ?T("- URLs on messages and subjects are converted to hyperlinks."), "",
            ?T("- Timezone used on timestamps is shown on the log files."), "",
            ?T("- A custom link can be added on top of each page."), "",
-           ?T("The module depends on 'mod_muc'.")],
+           ?T("The module depends on _`mod_muc`_.")],
       opts =>
           [{access_log,
             #{value => ?T("AccessName"),

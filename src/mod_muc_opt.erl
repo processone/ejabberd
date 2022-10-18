@@ -9,6 +9,7 @@
 -export([access_mam/1]).
 -export([access_persistent/1]).
 -export([access_register/1]).
+-export([cleanup_affiliations_on_start/1]).
 -export([db_type/1]).
 -export([default_room_options/1]).
 -export([hibernation_timeout/1]).
@@ -73,13 +74,19 @@ access_register(Opts) when is_map(Opts) ->
 access_register(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, access_register).
 
+-spec cleanup_affiliations_on_start(gen_mod:opts() | global | binary()) -> boolean().
+cleanup_affiliations_on_start(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(cleanup_affiliations_on_start, Opts);
+cleanup_affiliations_on_start(Host) ->
+    gen_mod:get_module_opt(Host, mod_muc, cleanup_affiliations_on_start).
+
 -spec db_type(gen_mod:opts() | global | binary()) -> atom().
 db_type(Opts) when is_map(Opts) ->
     gen_mod:get_opt(db_type, Opts);
 db_type(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, db_type).
 
--spec default_room_options(gen_mod:opts() | global | binary()) -> [{atom(),'anyone' | 'false' | 'moderators' | 'nobody' | 'true' | binary() | ['moderator' | 'participant' | 'visitor'] | pos_integer()}].
+-spec default_room_options(gen_mod:opts() | global | binary()) -> [{atom(),'anyone' | 'false' | 'moderators' | 'nobody' | 'true' | 'undefined' | binary() | ['moderator' | 'participant' | 'visitor'] | pos_integer() | tuple()}].
 default_room_options(Opts) when is_map(Opts) ->
     gen_mod:get_opt(default_room_options, Opts);
 default_room_options(Host) ->

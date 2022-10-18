@@ -5,7 +5,7 @@
 %%% Created :  8 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -74,6 +74,7 @@
 	{db_ref               :: undefined | pid(),
 	 db_type = odbc       :: pgsql | mysql | sqlite | odbc | mssql,
 	 db_version           :: undefined | non_neg_integer(),
+	 reconnect_count = 0  :: non_neg_integer(),
 	 host                 :: binary(),
 	 pending_requests     :: p1_queue:queue(),
 	 overload_reported    :: undefined | integer()}).
@@ -375,7 +376,7 @@ connecting(connect, #state{host = Host} = State) ->
 		    State1 = State#state{db_ref = Ref,
 					 pending_requests = PendingRequests},
 		    State2 = get_db_version(State1),
-		    {next_state, session_established, State2}
+		    {next_state, session_established, State2#state{reconnect_count = 0}}
 	    catch _:Reason ->
 		    handle_reconnect(Reason, State)
 	    end;
@@ -442,6 +443,8 @@ handle_sync_event(_Event, _From, StateName, State) ->
 code_change(_OldVsn, StateName, State, _Extra) ->
     {ok, StateName, State}.
 
+handle_info({'EXIT', _Pid, _Reason}, connecting, State) ->
+    {next_state, connecting, State};
 handle_info({'EXIT', _Pid, Reason}, _StateName, State) ->
     handle_reconnect(Reason, State);
 handle_info(Info, StateName, State) ->
@@ -467,15 +470,25 @@ print_state(State) -> State.
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-handle_reconnect(Reason, #state{host = Host} = State) ->
-    StartInterval = ejabberd_option:sql_start_interval(Host),
+handle_reconnect(Reason, #state{host = Host, reconnect_count = RC} = State) ->
+    StartInterval0 = ejabberd_option:sql_start_interval(Host),
+    StartInterval = case RC of
+			0 -> erlang:min(5000, StartInterval0);
+			_ -> StartInterval0
+		    end,
     ?WARNING_MSG("~p connection failed:~n"
 		 "** Reason: ~p~n"
 		 "** Retry after: ~B seconds",
 		 [State#state.db_type, Reason,
 		  StartInterval div 1000]),
+    case State#state.db_type of
+	mysql -> catch p1_mysql_conn:stop(State#state.db_ref);
+	sqlite -> catch sqlite3:close(sqlite_db(State#state.host));
+	pgsql -> catch pgsql:terminate(State#state.db_ref);
+	_ -> ok
+    end,
     p1_fsm:send_event_after(StartInterval, connect),
-    {next_state, connecting, State}.
+    {next_state, connecting, State#state{reconnect_count = RC + 1}}.
 
 run_sql_cmd(Command, From, State, Timestamp) ->
     case current_time() >= Timestamp of
@@ -483,13 +496,21 @@ run_sql_cmd(Command, From, State, Timestamp) ->
 	    State1 = report_overload(State),
 	    {next_state, session_established, State1};
 	false ->
-	    put(?NESTING_KEY, ?TOP_LEVEL_TXN),
-	    put(?STATE_KEY, State),
-	    abort_on_driver_error(outer_op(Command), From, Timestamp)
+	    receive
+		{'EXIT', _Pid, Reason} ->
+		    PR = p1_queue:in({sql_cmd, Command, From, Timestamp},
+				     State#state.pending_requests),
+		    handle_reconnect(Reason, State#state{pending_requests = PR})
+	    after 0 ->
+		put(?NESTING_KEY, ?TOP_LEVEL_TXN),
+		put(?STATE_KEY, State),
+		abort_on_driver_error(outer_op(Command), From, Timestamp)
+	    end
     end.
 
-%% Only called by handle_call, only handles top level operations.
-%% @spec outer_op(Op) -> {error, Reason} | {aborted, Reason} | {atomic, Result}
+%% @doc Only called by handle_call, only handles top level operations.
+-spec outer_op(Op::{atom(), binary()}) ->
+    {error, Reason::binary()} | {aborted, Reason::binary()} | {atomic, Result::any()}.
 outer_op({sql_query, Query}) ->
     sql_query_internal(Query);
 outer_op({sql_transaction, F}) ->
@@ -541,30 +562,63 @@ outer_transaction(F, NRestarts, _Reason) ->
 		     [T]),
 	  erlang:exit(implementation_faulty)
     end,
-    sql_begin(),
-    put(?NESTING_KEY, PreviousNestingLevel + 1),
-    try F() of
-	Res ->
-	    sql_commit(),
-	    {atomic, Res}
-    catch
-	?EX_RULE(throw, {aborted, Reason}, _) when NRestarts > 0 ->
-	    sql_rollback(),
-            put(?NESTING_KEY, ?TOP_LEVEL_TXN),
+    case sql_begin() of
+	{error, Reason} ->
+	    maybe_restart_transaction(F, NRestarts, Reason, false);
+	_ ->
+	    put(?NESTING_KEY, PreviousNestingLevel + 1),
+	    try F() of
+		Res ->
+		    case sql_commit() of
+			{error, Reason} ->
+			    restart(Reason);
+			_ ->
+			    {atomic, Res}
+		    end
+	    catch
+		?EX_RULE(throw, {aborted, Reason}, _) when NRestarts > 0 ->
+		    maybe_restart_transaction(F, NRestarts, Reason, true);
+		?EX_RULE(throw, {aborted, Reason}, Stack) when NRestarts =:= 0 ->
+		    StackTrace = ?EX_STACK(Stack),
+		    ?ERROR_MSG("SQL transaction restarts exceeded~n** "
+			       "Restarts: ~p~n** Last abort reason: "
+			       "~p~n** Stacktrace: ~p~n** When State "
+			       "== ~p",
+			       [?MAX_TRANSACTION_RESTARTS, Reason,
+				StackTrace, get(?STATE_KEY)]),
+		    maybe_restart_transaction(F, NRestarts, Reason, true);
+		?EX_RULE(exit, Reason, _) ->
+		    maybe_restart_transaction(F, 0, Reason, true)
+	    end
+    end.
+
+maybe_restart_transaction(F, NRestarts, Reason, DoRollback) ->
+    Res = case driver_restart_required(Reason) of
+	      true ->
+		  {aborted, Reason};
+	      _ when DoRollback ->
+		  case sql_rollback() of
+		      {error, Reason2} ->
+			  case driver_restart_required(Reason2) of
+			      true ->
+				  {aborted, Reason2};
+			      _ ->
+				  continue
+			  end;
+		      _ ->
+			  continue
+		  end;
+	      _ ->
+		  continue
+    end,
+    case Res of
+	continue when NRestarts > 0 ->
+	    put(?NESTING_KEY, ?TOP_LEVEL_TXN),
 	    outer_transaction(F, NRestarts - 1, Reason);
-	?EX_RULE(throw, {aborted, Reason}, Stack) when NRestarts =:= 0 ->
-	    StackTrace = ?EX_STACK(Stack),
-	    ?ERROR_MSG("SQL transaction restarts exceeded~n** "
-		       "Restarts: ~p~n** Last abort reason: "
-		       "~p~n** Stacktrace: ~p~n** When State "
-		       "== ~p",
-		       [?MAX_TRANSACTION_RESTARTS, Reason,
-			StackTrace, get(?STATE_KEY)]),
-	    sql_rollback(),
+	continue ->
 	    {aborted, Reason};
-	?EX_RULE(exit, Reason, _) ->
-	    sql_rollback(),
-	    {aborted, Reason}
+	Other ->
+	    Other
     end.
 
 execute_bloc(F) ->
@@ -669,11 +723,10 @@ sql_query_internal(Query) ->
 		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query,
 					   QueryTimeout - 1000));
 	    mysql ->
-		R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
+		mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),
 						   [{timeout, QueryTimeout - 1000},
-						    {result_type, binary}])),
-		  R;
+						    {result_type, binary}]));
 	      sqlite ->
 		  Host = State#state.host,
 		  sqlite_to_odbc(Host, sqlite3:sql_exec(sqlite_db(Host), Query))
@@ -853,21 +906,22 @@ sql_rollback() ->
       [{mssql, [<<"rollback transaction;">>]},
        {any, [<<"rollback;">>]}]).
 
+driver_restart_required(<<"query timed out">>) -> true;
+driver_restart_required(<<"connection closed">>) -> true;
+driver_restart_required(<<"Failed sending data on socket", _/binary>>) -> true;
+driver_restart_required(<<"SQL connection failed">>) -> true;
+driver_restart_required(<<"Communication link failure">>) -> true;
+driver_restart_required(_) -> false.
 
 %% Generate the OTP callback return tuple depending on the driver result.
-abort_on_driver_error({error, <<"query timed out">>} = Reply, From, Timestamp) ->
+abort_on_driver_error({Tag, Msg} = Reply, From, Timestamp) when Tag == error; Tag == aborted ->
     reply(From, Reply, Timestamp),
-    {stop, timeout, get(?STATE_KEY)};
-abort_on_driver_error({error, <<"Failed sending data on socket", _/binary>>} = Reply,
-		      From, Timestamp) ->
-    reply(From, Reply, Timestamp),
-    {stop, closed, get(?STATE_KEY)};
-abort_on_driver_error({error, <<"SQL connection failed">>} = Reply, From, Timestamp) ->
-    reply(From, Reply, Timestamp),
-    {stop, timeout, get(?STATE_KEY)};
-abort_on_driver_error({error, <<"Communication link failure">>} = Reply, From, Timestamp) ->
-    reply(From, Reply, Timestamp),
-    {stop, closed, get(?STATE_KEY)};
+    case driver_restart_required(Msg) of
+	true ->
+	    handle_reconnect(Msg, get(?STATE_KEY));
+	_ ->
+	    {next_state, session_established, get(?STATE_KEY)}
+    end;
 abort_on_driver_error(Reply, From, Timestamp) ->
     reply(From, Reply, Timestamp),
     {next_state, session_established, get(?STATE_KEY)}.

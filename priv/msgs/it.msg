@@ -145,7 +145,6 @@
 {"Make room persistent","Rendere la stanza persistente"}.
 {"Make room public searchable","Rendere la sala visibile al pubblico"}.
 {"March","Marzo"}.
-{"Max # of items to persist","Numero massimo di elementi da conservare persistentemente"}.
 {"Max payload size in bytes","Dimensione massima del contenuto del messaggio in byte"}.
 {"Maximum Number of Occupants","Numero massimo di occupanti"}.
 {"May","Maggio"}.

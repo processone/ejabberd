@@ -4,7 +4,7 @@
 %%% Created : 20 Jan 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -118,7 +118,7 @@ eval_file(Path) ->
 	    case luerl:eval(NewData, State1) of
 		{ok, _} = Res ->
 		    Res;
-		{error, Why} = Err ->
+		{error, Why, _} = Err ->
 		    ?ERROR_MSG("Failed to eval ~ts: ~p", [Path, Why]),
 		    Err
 	    end;
@@ -130,7 +130,7 @@ eval_file(Path) ->
 
 maybe_get_scram_auth(Data) ->
     case proplists:get_value(<<"iteration_count">>, Data, no_ic) of
-	IC when is_float(IC) -> %% A float like 4096.0 is read
+	IC when is_number(IC) ->
 	    #scram{
 		storedkey = misc:hex_to_base64(proplists:get_value(<<"stored_key">>, Data, <<"">>)),
 		serverkey = misc:hex_to_base64(proplists:get_value(<<"server_key">>, Data, <<"">>)),

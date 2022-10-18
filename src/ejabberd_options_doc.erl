@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -61,11 +61,11 @@ doc() ->
         desc =>
             ?T("The time of a cached item to keep in cache. "
 	       "Once it's expired, the corresponding item is "
-	       "erased from cache. The default value is 'one hour'. "
+	       "erased from cache. The default value is '1 hour'. "
 	       "Several modules have a similar option; and some core "
 	       "ejabberd parts support similar options too, see "
-	       "'auth_cache_life_time', 'oauth_cache_life_time', "
-	       "'router_cache_life_time', and 'sm_cache_life_time'.")}},
+	       "_`auth_cache_life_time`_, _`oauth_cache_life_time`_, "
+	       "_`router_cache_life_time`_, and _`sm_cache_life_time`_.")}},
      {cache_missed,
       #{value => "true | false",
         desc =>
@@ -73,12 +73,12 @@ doc() ->
 	       "an attempt to lookup for a value in a database and "
 	       "this value is not found and the option is set to 'true', "
 	       "this attempt will be cached and no attempts will be "
-	       "performed until the cache expires (see 'cache_life_time'). "
+	       "performed until the cache expires (see _`cache_life_time`_). "
 	       "Usually you don't want to change it. Default is 'true'. "
 	       "Several modules have a similar option; and some core "
 	       "ejabberd parts support similar options too, see "
-	       "'auth_cache_missed', 'oauth_cache_missed', "
-	       "'router_cache_missed', and 'sm_cache_missed'.")}},
+	       "_`auth_cache_missed`_, _`oauth_cache_missed`_, "
+	       "_`router_cache_missed`_, and _`sm_cache_missed`_.")}},
      {cache_size,
       #{value => "pos_integer() | infinity",
         desc =>
@@ -93,16 +93,16 @@ doc() ->
 	       "performance. The default value is '1000'. "
 	       "Several modules have a similar option; and some core "
 	       "ejabberd parts support similar options too, see "
-	       "'auth_cache_size', 'oauth_cache_size', "
-	       "'router_cache_size', and 'sm_cache_size'.")}},
+	       "_`auth_cache_size`_, _`oauth_cache_size`_, "
+	       "_`router_cache_size`_, and _`sm_cache_size`_.")}},
      {use_cache,
       #{value => "true | false",
         desc =>
 	    ?T("Enable or disable cache. The default is 'true'. "
 	       "Several modules have a similar option; and some core "
 	       "ejabberd parts support similar options too, see "
-	       "'auth_use_cache', 'oauth_use_cache', 'router_use_cache', "
-	       "and 'sm_use_cache'.")}},
+	       "_`auth_use_cache`_, _`oauth_use_cache`_, _`router_use_cache`_, "
+	       "and _`sm_use_cache`_.")}},
      {default_db,
       #{value => "mnesia | sql",
         desc =>
@@ -122,14 +122,14 @@ doc() ->
                "Modules may have its own value of the option. "
                "The value of 'ram' means that queues will be kept in memory. "
                "If value 'file' is set, you may also specify directory "
-               "in 'queue_dir' option where file queues will be placed. "
+               "in _`queue_dir`_ option where file queues will be placed. "
                "The default value is 'ram'.")}},
      {version,
       #{value => "string()",
         desc =>
             ?T("The option can be used to set custom ejabberd version, "
                "that will be used by different parts of ejabberd, for "
-               "example by 'mod_version' module. The default value is "
+               "example by _`mod_version`_ module. The default value is "
                "obtained at compile time from the underlying version "
                "control system.")}},
      {acl,
@@ -141,7 +141,7 @@ doc() ->
                "has name 'ACLName': it can be any string except 'all' or 'none' "
                "(those are predefined names for the rules that match all or nothing "
                "respectively). The name 'ACLName' can be referenced from other "
-               "parts of the configuration file, for example in 'access_rules' "
+               "parts of the configuration file, for example in _`access_rules`_ "
                "option. The rules of 'ACLName' are represented by mapping "
                "'pass:[{ACLType: ACLValue}]'. These can be one of the following:")},
       [{user,
@@ -220,12 +220,14 @@ doc() ->
      {access_rules,
       #{value => "{AccessName: {allow|deny: ACLRules|ACLName}}",
         desc =>
-            ?T("The option specifies access rules. Each access rule is "
+            ?T("This option defines "
+               "http://../basic/#access-rules[Access Rules]. "
+               "Each access rule is "
                "assigned a name that can be referenced from other parts "
                "of the configuration file (mostly from 'access' options of "
                "ejabberd modules). Each rule definition may contain "
                "arbitrary number of 'allow' or 'deny' sections, and each "
-               "section may contain any number of ACL rules (see 'acl' option). "
+               "section may contain any number of ACL rules (see _`acl`_ option). "
                "There are no access rules defined by default."),
         example =>
             ["access_rules:",
@@ -313,10 +315,12 @@ doc() ->
      {anonymous_protocol,
       #{value => "login_anon | sasl_anon | both",
         desc =>
-            ?T("'login_anon' means that the anonymous login method will be used. "
-               "'sasl_anon' means that the SASL Anonymous method will be used. "
-               "'both' means that SASL Anonymous and login anonymous are both "
-               "enabled. The default value is 'sasl_anon'.")}},
+            [?T("Define what anonymous protocol will be used: "), "",
+            ?T("* 'login_anon' means that the anonymous login method will be used. "), "",
+            ?T("* 'sasl_anon' means that the SASL Anonymous method will be used. "), "",
+            ?T("* 'both' means that SASL Anonymous and login anonymous are both "
+               "enabled."), "",
+            ?T("The default value is 'sasl_anon'."), ""]}},
      {api_permissions,
       #{value => "[Permission, ...]",
         desc =>
@@ -334,18 +338,18 @@ doc() ->
      {auth_cache_life_time,
       #{value => "timeout()",
         desc =>
-            ?T("Same as 'cache_life_time', but applied to authentication cache "
-               "only. If not set, the value from 'cache_life_time' will be used.")}},
+            ?T("Same as _`cache_life_time`_, but applied to authentication cache "
+               "only. If not set, the value from _`cache_life_time`_ will be used.")}},
      {auth_cache_missed,
       #{value => "true | false",
         desc =>
-            ?T("Same as 'cache_missed', but applied to authentication cache "
-               "only. If not set, the value from 'cache_missed' will be used.")}},
+            ?T("Same as _`cache_missed`_, but applied to authentication cache "
+               "only. If not set, the value from _`cache_missed`_ will be used.")}},
      {auth_cache_size,
       #{value => "pos_integer() | infinity",
         desc =>
-            ?T("Same as 'cache_size', but applied to authentication cache "
-               "only. If not set, the value from 'cache_size' will be used.")}},
+            ?T("Same as _`cache_size`_, but applied to authentication cache "
+               "only. If not set, the value from _`cache_size`_ will be used.")}},
      {auth_method,
       #{value => "[mnesia | sql | anonymous | external | jwt | ldap | pam, ...]",
         desc =>
@@ -359,38 +363,41 @@ doc() ->
         desc =>
             ?T("This is used by the contributed module "
 	       "'ejabberd_auth_http' that can be installed from the "
-	       "'ejabberd-contrib' Git repository. Please refer to that "
+	       "https://github.com/processone/ejabberd-contrib[ejabberd-contrib] "
+               "Git repository. Please refer to that "
 	       "module's README file for details.")}},
      {auth_password_format,
       #{value => "plain | scram",
         note => "improved in 20.01",
         desc =>
-            ?T("The option defines in what format the users passwords "
-               "are stored. 'plain': The password is stored as plain text "
+            [?T("The option defines in what format the users passwords "
+               "are stored:"), "",
+            ?T("* 'plain': The password is stored as plain text "
                "in the database. This is risky because the passwords "
                "can be read if your database gets compromised. "
                "This is the default value. This format allows clients to "
                "authenticate using: the old Jabber Non-SASL (XEP-0078), "
-               "SASL PLAIN, SASL DIGEST-MD5, and SASL SCRAM-SHA-1. "
-               "'scram': The password is not stored, only some information "
+               "SASL PLAIN, SASL DIGEST-MD5, and SASL SCRAM-SHA-1. "), "",
+            ?T("* 'scram': The password is not stored, only some information "
                "that allows to verify the hash provided by the client. "
                "It is impossible to obtain the original plain password "
                "from the stored information; for this reason, when this "
                "value is configured it cannot be changed to plain anymore. "
                "This format allows clients to authenticate using: "
-               "SASL PLAIN and SASL SCRAM-SHA-1.")}},
+               "SASL PLAIN and SASL SCRAM-SHA-1."),
+            ?T("The default value is 'plain'.")]}},
      {auth_scram_hash,
       #{value => "sha | sha256 | sha512",
         desc =>
-        ?T("Hash algorith that should be used to store password in SCRAM format. "
+        ?T("Hash algorithm that should be used to store password in SCRAM format. "
            "You shouldn't change this if you already have passwords generated with "
            "a different algorithm - users that have such passwords will not be able "
-           "to authenticate.")}},
+           "to authenticate. The default value is 'sha'.")}},
      {auth_use_cache,
       #{value => "true | false",
         desc =>
-            ?T("Same as 'use_cache', but applied to authentication cache "
-               "only. If not set, the value from 'use_cache' will be used.")}},
+            ?T("Same as _`use_cache`_, but applied to authentication cache "
+               "only. If not set, the value from _`use_cache`_ will be used.")}},
      {c2s_cafile,
       #{value => ?T("Path"),
         desc =>
@@ -444,27 +451,27 @@ doc() ->
         desc =>
             [?T("Path to a file of CA root certificates. "
                "The default is to use system defined file if possible."), "",
-             ?T("For server conections, this 'ca_file' option is overriden by the http://../toplevel/#s2s-cafile[s2s_cafile] option."), ""
+             ?T("For server connections, this 'ca_file' option is overridden by the http://../toplevel/#s2s-cafile[s2s_cafile] option."), ""
             ]}},
      {captcha_cmd,
       #{value => ?T("Path"),
         desc =>
-            ?T("Full path to a script that generates CAPTCHA images. "
+            ?T("Full path to a script that generates http://../basic/#captcha[CAPTCHA] images. "
                "There is no default value: when this option is not "
                "set, CAPTCHA functionality is completely disabled.")}},
      {captcha_limit,
       #{value => "pos_integer() | infinity",
         desc =>
-            ?T("Maximum number of CAPTCHA generated images per minute for "
+            ?T("Maximum number of http://../basic/#captcha[CAPTCHA] generated images per minute for "
                "any given JID. The option is intended to protect the server "
                "from CAPTCHA DoS. The default value is 'infinity'.")}},
      {captcha_host,
       #{value => "String",
-        desc => ?T("Deprecated. Use 'captcha_url' instead.")}},
+        desc => ?T("Deprecated. Use _`captcha_url`_ instead.")}},
      {captcha_url,
       #{value => ?T("URL"),
         desc =>
-            ?T("An URL where CAPTCHA requests should be sent. NOTE: you need "
+            ?T("An URL where http://../basic/#captcha[CAPTCHA] requests should be sent. NOTE: you need "
                "to configure 'request_handlers' for 'ejabberd_http' listener "
                "as well. There is no default value.")}},
      {certfiles,
@@ -674,7 +681,8 @@ doc() ->
         desc =>
             ?T("The option defines the default language of server strings "
                "that can be seen by XMPP clients. If an XMPP client does not "
-               "possess 'xml:lang' attribute, the specified language is used.")}},
+               "possess 'xml:lang' attribute, the specified language is used. "
+               "The default value is '\"en\"'.")}},
      {ldap_servers,
       #{value => "[Host, ...]",
         desc =>
@@ -684,7 +692,7 @@ doc() ->
       #{value => "[Host, ...]",
         desc =>
             ?T("A list of IP addresses or DNS names of LDAP backup servers. "
-               "When no servers listed in 'ldap_servers' option are reachable, "
+               "When no servers listed in _`ldap_servers`_ option are reachable, "
                "ejabberd will try to connect to these backup servers. "
                "The default is an empty list, i.e. no backup servers specified. "
                "WARNING: ejabberd doesn't try to reconnect back to the main "
@@ -791,7 +799,7 @@ doc() ->
                "the result set. There is no default value, which means the "
                "result is not filtered. WARNING: Since this filter makes "
                "additional LDAP lookups, use it only as the last resort: "
-               "try to define all filter rules in 'ldap_filter' option if possible."),
+               "try to define all filter rules in _`ldap_filter`_ option if possible."),
         example =>
             ["ldap_dn_filter:",
              "  \"(&(name=%s)(owner=%D)(user=%u@%d))\": [sn]"]}},
@@ -799,13 +807,27 @@ doc() ->
       #{value => ?T("Number"),
         desc =>
             ?T("The number of rotated log files to keep. "
-               "The default value is '1'.")}},
+               "The default value is '1', which means that only keeps "
+               "`ejabberd.log.0`, `error.log.0` and `crash.log.0`.")}},
      {log_rotate_size,
       #{value => "pos_integer() | infinity",
         desc =>
             ?T("The size (in bytes) of a log file to trigger rotation. "
                "If set to 'infinity', log rotation is disabled. "
                "The default value is '10485760' (that is, 10 Mb).")}},
+     {log_burst_limit_count,
+      #{value => ?T("Number"),
+        note => "added in 22.10",
+        desc =>
+            ?T("The number of messages to accept in "
+               "`log_burst_limit_window_time` period before starting to "
+               "drop them. Default 500")}},
+     {log_burst_limit_window_time,
+      #{value => ?T("Number"),
+        note => "added in 22.10",
+        desc =>
+            ?T("The time period to rate-limit log messages "
+               "by. Defaults to 1 second.")}},
      {max_fsm_queue,
       #{value => ?T("Size"),
         desc =>
@@ -835,7 +857,7 @@ doc() ->
                "must have identical value on all nodes, or it will lead to subtle "
                "bugs. Usually leaving default value of this is option is best, "
                "tweak it only if you know what you are doing. "
-               "The default value is '1' minute.")}},
+               "The default value is '1 minute'.")}},
      {new_sql_schema,
       #{value => "true | false",
         desc =>
@@ -861,13 +883,13 @@ doc() ->
      {oauth_cache_life_time,
       #{value => "timeout()",
         desc =>
-            ?T("Same as 'cache_life_time', but applied to OAuth cache "
-               "only. If not set, the value from 'cache_life_time' will be used.")}},
+            ?T("Same as _`cache_life_time`_, but applied to OAuth cache "
+               "only. If not set, the value from _`cache_life_time`_ will be used.")}},
      {oauth_cache_missed,
       #{value => "true | false",
         desc =>
-            ?T("Same as 'cache_missed', but applied to OAuth cache "
-               "only. If not set, the value from 'cache_missed' will be used.")}},
+            ?T("Same as _`cache_missed`_, but applied to OAuth cache "
+               "only. If not set, the value from _`cache_missed`_ will be used.")}},
      {oauth_cache_rest_failure_life_time,
       #{value => "timeout()",
         note => "added in 21.01",
@@ -877,8 +899,8 @@ doc() ->
      {oauth_cache_size,
       #{value => "pos_integer() | infinity",
         desc =>
-            ?T("Same as 'cache_size', but applied to OAuth cache "
-               "only. If not set, the value from 'cache_size' will be used.")}},
+            ?T("Same as _`cache_size`_, but applied to OAuth cache "
+               "only. If not set, the value from _`cache_size`_ will be used.")}},
      {oauth_client_id_check,
       #{value => "allow | db | deny",
         desc =>
@@ -888,13 +910,13 @@ doc() ->
      {oauth_use_cache,
       #{value => "true | false",
         desc =>
-            ?T("Same as 'use_cache', but applied to OAuth cache "
-               "only. If not set, the value from 'use_cache' will be used.")}},
+            ?T("Same as _`use_cache`_, but applied to OAuth cache "
+               "only. If not set, the value from _`use_cache`_ will be used.")}},
      {oauth_db_type,
       #{value => "mnesia | sql",
         desc =>
             ?T("Database backend to use for OAuth authentication. "
-               "The default value is picked from 'default_db' option, or "
+               "The default value is picked from _`default_db`_ option, or "
                "if it's not set, 'mnesia' will be used.")}},
      {oauth_expire,
       #{value => "timeout()",
@@ -908,7 +930,7 @@ doc() ->
         desc =>
             ?T("Enable or disable OOM (out-of-memory) killer. "
                "When system memory raises above the limit defined in "
-               "'oom_watermark' option, ejabberd triggers OOM killer "
+               "_`oom_watermark`_ option, ejabberd triggers OOM killer "
                "to terminate most memory consuming Erlang processes. "
                "Note that in order to maintain functionality, ejabberd only "
                "attempts to kill transient processes, such as those managing "
@@ -919,14 +941,14 @@ doc() ->
         desc =>
             ?T("Trigger OOM killer when some of the running Erlang processes "
                "have messages queue above this 'Size'. Note that "
-               "such processes won't be killed if 'oom_killer' option is set "
+               "such processes won't be killed if _`oom_killer`_ option is set "
                "to 'false' or if 'oom_watermark' is not reached yet.")}},
      {oom_watermark,
       #{value => ?T("Percent"),
         desc =>
             ?T("A percent of total system memory consumed at which "
                "OOM killer should be activated with some of the processes "
-               "possibly be killed (see 'oom_killer' option). Later, when "
+               "possibly be killed (see _`oom_killer`_ option). Later, when "
                "memory drops below this 'Percent', OOM killer is deactivated. "
                "The default value is '80' percents.")}},
      {outgoing_s2s_families,
@@ -979,7 +1001,7 @@ doc() ->
      {queue_dir,
       #{value => ?T("Directory"),
         desc =>
-            ?T("If 'queue_type' option is set to 'file', use this 'Directory' "
+            ?T("If _`queue_type`_ option is set to 'file', use this 'Directory' "
                "to store file queues. The default is to keep queues inside "
                "Mnesia directory.")}},
      {redis_connect_timeout,
@@ -1009,8 +1031,8 @@ doc() ->
       #{value => "ram | file",
         desc =>
             ?T("The type of request queue for the Redis server. "
-               "See description of 'queue_type' option for the explanation. "
-               "The default value is the value defined in 'queue_type' "
+               "See description of _`queue_type`_ option for the explanation. "
+               "The default value is the value defined in _`queue_type`_ "
                "or 'ram' if the latter is not set.")}},
      {redis_server,
       #{value => ?T("Hostname"),
@@ -1020,7 +1042,7 @@ doc() ->
      {registration_timeout,
       #{value => "timeout()",
         desc =>
-            ?T("This is a global option for module 'mod_register'. "
+            ?T("This is a global option for module _`mod_register`_. "
                "It limits the frequency of registrations from a given "
                "IP or username. So, a user that tries to register a "
                "new account from the same IP address or JID during "
@@ -1043,29 +1065,29 @@ doc() ->
      {router_cache_life_time,
       #{value => "timeout()",
         desc =>
-            ?T("Same as 'cache_life_time', but applied to routing table cache "
-               "only. If not set, the value from 'cache_life_time' will be used.")}},
+            ?T("Same as _`cache_life_time`_, but applied to routing table cache "
+               "only. If not set, the value from _`cache_life_time`_ will be used.")}},
      {router_cache_missed,
       #{value => "true | false",
         desc =>
-            ?T("Same as 'cache_missed', but applied to routing table cache "
-               "only. If not set, the value from 'cache_missed' will be used.")}},
+            ?T("Same as _`cache_missed`_, but applied to routing table cache "
+               "only. If not set, the value from _`cache_missed`_ will be used.")}},
      {router_cache_size,
       #{value => "pos_integer() | infinity",
         desc =>
-            ?T("Same as 'cache_size', but applied to routing table cache "
-               "only. If not set, the value from 'cache_size' will be used.")}},
+            ?T("Same as _`cache_size`_, but applied to routing table cache "
+               "only. If not set, the value from _`cache_size`_ will be used.")}},
      {router_db_type,
       #{value => "mnesia | redis | sql",
         desc =>
             ?T("Database backend to use for routing information. "
-               "The default value is picked from 'default_ram_db' option, or "
+               "The default value is picked from _`default_ram_db`_ option, or "
                "if it's not set, 'mnesia' will be used.")}},
      {router_use_cache,
       #{value => "true | false",
         desc =>
-            ?T("Same as 'use_cache', but applied to routing table cache "
-               "only. If not set, the value from 'use_cache' will be used.")}},
+            ?T("Same as _`use_cache`_, but applied to routing table cache "
+               "only. If not set, the value from _`use_cache`_ will be used.")}},
      {rpc_timeout,
       #{value => "timeout()",
         desc =>
@@ -1076,9 +1098,10 @@ doc() ->
      {s2s_access,
       #{value => ?T("Access"),
         desc =>
-            ?T("The access rule to restrict server-to-server connections. "
-               "The default value is 'all' which means no restrictions "
-               "are applied.")}},
+            ?T("This http://../basic/#access-rules[Access Rule] defines to "
+               "what remote servers can s2s connections be established. "
+               "The default value is 'all'; no restrictions are applied, it is"
+               " allowed to connect s2s to/from all remote servers.")}},
      {s2s_cafile,
       #{value => ?T("Path"),
         desc =>
@@ -1142,8 +1165,8 @@ doc() ->
       #{value => "ram | file",
         desc =>
             ?T("The type of a queue for s2s packets. "
-               "See description of 'queue_type' option for the explanation. "
-               "The default value is the value defined in 'queue_type' "
+               "See description of _`queue_type`_ option for the explanation. "
+               "The default value is the value defined in _`queue_type`_ "
                "or 'ram' if the latter is not set.")}},
      {s2s_timeout,
       #{value => "timeout()",
@@ -1171,7 +1194,7 @@ doc() ->
         desc =>
             ?T("The option defines a set of shapers. Every shaper is assigned "
                "a name 'ShaperName' that can be used in other parts of the "
-               "configuration file, such as 'shaper_rules' option. The shaper "
+               "configuration file, such as _`shaper_rules`_ option. The shaper "
                "itself is defined by its 'Rate', where 'Rate' stands for the "
                "maximum allowed incoming rate in **bytes** per second. "
                "When a connection exceeds this limit, ejabberd stops reading "
@@ -1187,9 +1210,9 @@ doc() ->
       #{value => "{ShaperRuleName: {Number|ShaperName: ACLRule|ACLName}}",
         desc =>
             ?T("An entry allowing to declaring shaper to use for matching user/hosts. "
-               "Semantics is similar to 'access_rules' option, the only difference is "
+               "Semantics is similar to _`access_rules`_ option, the only difference is "
                "that instead using 'allow' or 'deny', a name of a shaper (defined in "
-               "'shaper' option) or a positive number should be used."),
+               "_`shaper`_ option) or a positive number should be used."),
         example =>
             ["shaper_rules:",
              "  connections_limit:",
@@ -1205,29 +1228,29 @@ doc() ->
      {sm_cache_life_time,
       #{value => "timeout()",
         desc =>
-            ?T("Same as 'cache_life_time', but applied to client sessions table cache "
-               "only. If not set, the value from 'cache_life_time' will be used.")}},
+            ?T("Same as _`cache_life_time`_, but applied to client sessions table cache "
+               "only. If not set, the value from _`cache_life_time`_ will be used.")}},
      {sm_cache_missed,
       #{value => "true | false",
         desc =>
-            ?T("Same as 'cache_missed', but applied to client sessions table cache "
-               "only. If not set, the value from 'cache_missed' will be used.")}},
+            ?T("Same as _`cache_missed`_, but applied to client sessions table cache "
+               "only. If not set, the value from _`cache_missed`_ will be used.")}},
      {sm_cache_size,
       #{value => "pos_integer() | infinity",
         desc =>
-            ?T("Same as 'cache_size', but applied to client sessions table cache "
-               "only. If not set, the value from 'cache_size' will be used.")}},
+            ?T("Same as _`cache_size`_, but applied to client sessions table cache "
+               "only. If not set, the value from _`cache_size`_ will be used.")}},
      {sm_db_type,
       #{value => "mnesia | redis | sql",
         desc =>
             ?T("Database backend to use for client sessions information. "
-               "The default value is picked from 'default_ram_db' option, or "
+               "The default value is picked from _`default_ram_db`_ option, or "
                "if it's not set, 'mnesia' will be used.")}},
      {sm_use_cache,
       #{value => "true | false",
         desc =>
-            ?T("Same as 'use_cache', but applied to client sessions table cache "
-               "only. If not set, the value from 'use_cache' will be used.")}},
+            ?T("Same as _`use_cache`_, but applied to client sessions table cache "
+               "only. If not set, the value from _`use_cache`_ will be used.")}},
      {sql_type,
       #{value => "mssql | mysql | odbc | pgsql | sqlite",
         desc =>
@@ -1253,7 +1276,7 @@ doc() ->
         note => "added in 20.12",
         desc =>
             ?T("Path to the ODBC driver to use to connect to a Microsoft SQL "
-               "Server database. This option is only valid if the 'sql_type' "
+               "Server database. This option is only valid if the _`sql_type`_ "
                "option is set to 'mssql'. "
                "The default value is: 'libtdsodbc.so'")}},
      {sql_password,
@@ -1288,8 +1311,8 @@ doc() ->
       #{value => "ram | file",
         desc =>
             ?T("The type of a request queue for the SQL server. "
-               "See description of 'queue_type' option for the explanation. "
-               "The default value is the value defined in 'queue_type' "
+               "See description of _`queue_type`_ option for the explanation. "
+               "The default value is the value defined in _`queue_type`_ "
                "or 'ram' if the latter is not set.")}},
      {sql_server,
       #{value => ?T("Host"),
@@ -1307,15 +1330,15 @@ doc() ->
       #{value => ?T("Path"),
         desc =>
             ?T("A path to a file with CA root certificates that will "
-               "be used to verify SQL connections. Implies 'sql_ssl' "
-               "and 'sql_ssl_verify' options are set to 'true'. "
+               "be used to verify SQL connections. Implies _`sql_ssl`_ "
+               "and _`sql_ssl_verify`_ options are set to 'true'. "
                "There is no default which means "
                "certificate verification is disabled.")}},
      {sql_ssl_certfile,
       #{value => ?T("Path"),
         desc =>
             ?T("A path to a certificate file that will be used "
-               "for SSL connections to the SQL server. Implies 'sql_ssl' "
+               "for SSL connections to the SQL server. Implies _`sql_ssl`_ "
                "option is set to 'true'. There is no default which means "
                "ejabberd won't provide a client certificate to the SQL "
                "server.")}},
@@ -1323,8 +1346,8 @@ doc() ->
       #{value => "true | false",
         desc =>
             ?T("Whether to verify SSL connection to the SQL server against "
-               "CA root certificates defined in 'sql_ssl_cafile' option. "
-               "Implies 'sql_ssl' option is set to 'true'. "
+               "CA root certificates defined in _`sql_ssl_cafile`_ option. "
+               "Implies _`sql_ssl`_ option is set to 'true'. "
                "The default value is 'false'.")}},
      {sql_start_interval,
       #{value => "timeout()",
@@ -1366,14 +1389,14 @@ doc() ->
                "protect against connections from other domains than given "
                "in the configuration file. In this way, the lower layer load "
                "balancer can be chosen for a specific ejabberd implementation "
-               "while still providing a secure Websocket connection. "
+               "while still providing a secure WebSocket connection. "
                "The default value is 'ignore'. An example value of the 'URL' is "
                "\"https://test.example.org:8081\".")}},
      {websocket_ping_interval,
       #{value => "timeout()",
         desc =>
             ?T("Defines time between pings sent by the server to a client "
-               "(Websocket level protocol pings are used for this) to keep "
+               "(WebSocket level protocol pings are used for this) to keep "
                "a connection active. If the client doesn't respond to two "
                "consecutive pings, the connection will be assumed as closed. "
                "The value of '0' can be used to disable the feature. This option "

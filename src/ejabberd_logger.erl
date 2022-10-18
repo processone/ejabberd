@@ -5,7 +5,7 @@
 %%% Created : 12 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2013-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2013-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -113,7 +113,6 @@ get_string_env(Name, Default) ->
             Default
     end.
 
--spec start() -> ok.
 start() ->
     start(info).
 
@@ -181,17 +180,14 @@ do_start(Level) ->
 			  lager:set_loghwm(Handler, LogRateLimit)
 		  end, gen_event:which_handlers(lager_event)).
 
--spec restart() -> ok.
 restart() ->
     Level = ejabberd_option:loglevel(),
     application:stop(lager),
     start(Level).
 
--spec reopen_log() -> ok.
 reopen_log() ->
     ok.
 
--spec rotate_log() -> ok.
 rotate_log() ->
     catch lager_crash_log ! rotate,
     lists:foreach(
@@ -201,7 +197,6 @@ rotate_log() ->
               ok
       end, gen_event:which_handlers(lager_event)).
 
--spec get() -> loglevel().
 get() ->
     Handlers = get_lager_handlers(),
     lists:foldl(fun(lager_console_backend, _Acc) ->
@@ -213,7 +208,6 @@ get() ->
                 end,
                 none, Handlers).
 
--spec set(0..5 | loglevel()) -> ok.
 set(N) when is_integer(N), N>=0, N=<5 ->
     set(convert_loglevel(N));
 set(Level) when ?is_loglevel(Level) ->
@@ -255,7 +249,6 @@ get_lager_version() ->
 	false -> "0.0.0"
     end.
 
--spec flush() -> ok.
 flush() ->
     application:stop(lager),
     application:stop(sasl).
@@ -273,13 +266,17 @@ start(Level) ->
     ErrorLog = filename:join([Dir, "error.log"]),
     LogRotateSize = get_integer_env(log_rotate_size, 10*1024*1024),
     LogRotateCount = get_integer_env(log_rotate_count, 1),
+    LogBurstLimitWindowTime = get_integer_env(log_burst_limit_window_time, 1000),
+    LogBurstLimitCount = get_integer_env(log_burst_limit_count, 500),
     Config = #{max_no_bytes => LogRotateSize,
 	       max_no_files => LogRotateCount,
 	       filesync_repeat_interval => no_repeat,
 	       file_check => 1000,
 	       sync_mode_qlen => 1000,
 	       drop_mode_qlen => 1000,
-	       flush_qlen => 5000},
+	       flush_qlen => 5000,
+	       burst_limit_window_time => LogBurstLimitWindowTime,
+	       burst_limit_max_count => LogBurstLimitCount},
     FmtConfig = #{legacy_header => false,
 		  time_designator => $ ,
 		  max_size => 100*1024,
@@ -288,10 +285,11 @@ start(Level) ->
     ConsoleFmtConfig = FmtConfig#{template => console_template()},
     try
 	ok = logger:set_primary_config(level, Level),
-	ok = logger:update_formatter_config(default, ConsoleFmtConfig),
+	DefaultHandlerId = get_default_handlerid(),
+	ok = logger:update_formatter_config(DefaultHandlerId, ConsoleFmtConfig),
 	case quiet_mode() of
 	    true ->
-		ok = logger:set_handler_config(default, level, critical);
+		ok = logger:set_handler_config(DefaultHandlerId, level, critical);
 	    _ ->
 		ok
 	end,
@@ -317,6 +315,13 @@ start(Level) ->
     catch _:{Tag, Err} when Tag == badmatch; Tag == case_clause ->
 	    ?LOG_CRITICAL("Failed to set logging: ~p", [Err]),
 	    Err
+    end.
+
+get_default_handlerid() ->
+    Ids = logger:get_handler_ids(),
+    case lists:member(default, Ids) of
+        true -> default;
+        false -> hd(Ids)
     end.
 
 -spec restart() -> ok.

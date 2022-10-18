@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -141,7 +141,7 @@ opt_type(domain_balancing) ->
 	#{component_number => econf:int(2, 1000),
 	  type => econf:enum([random, source, destination,
 			      bare_source, bare_destination])},
-	[{required, [component_number]}, {return, map}, unique]),
+	[{return, map}, unique]),
       [{return, map}]);
 opt_type(ext_api_path_oauth) ->
     econf:binary();
@@ -222,6 +222,10 @@ opt_type(log_rotate_count) ->
     econf:non_neg_int();
 opt_type(log_rotate_size) ->
     econf:pos_int(infinity);
+opt_type(log_burst_limit_window_time) ->
+    econf:timeout(second);
+opt_type(log_burst_limit_count) ->
+    econf:pos_int();
 opt_type(loglevel) ->
     fun(N) when is_integer(N) ->
 	    (econf:and_then(
@@ -576,6 +580,8 @@ options() ->
      {listen, []},
      {log_rotate_count, 1},
      {log_rotate_size, 10*1024*1024},
+     {log_burst_limit_window_time, timer:seconds(1)},
+     {log_burst_limit_count, 500},
      {max_fsm_queue, undefined},
      {modules, []},
      {negotiation_timeout, timer:seconds(30)},
@@ -722,6 +728,8 @@ globals() ->
      loglevel,
      log_rotate_count,
      log_rotate_size,
+     log_burst_limit_count,
+     log_burst_limit_window_time,
      negotiation_timeout,
      net_ticktime,
      new_sql_schema,

@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.53)
-AC_INIT(ejabberd, m4_esyscmd([echo `git describe --tags 2>/dev/null || echo 0.0` | sed 's/-g.*//;s/-/./' | tr -d '\012']), [ejabberd@process-one.net], [ejabberd])
+AC_PREREQ(2.59)
+AC_INIT(ejabberd, m4_esyscmd([echo `git describe --tags 2>/dev/null || echo 22.05` | sed 's/-g.*//;s/-/./' | tr -d '\012']), [ejabberd@process-one.net], [ejabberd])
 REQUIRE_ERLANG_MIN="8.3 (Erlang/OTP 19.3)"
 REQUIRE_ERLANG_MAX="100.0.0 (No Max)"
 
@@ -19,8 +19,7 @@ fi
 
 # Checks Erlang runtime and compiler
 AC_ARG_WITH(erlang,
-	AC_HELP_STRING([--with-erlang=dir],
-		[search for erlang in dir]),
+	AS_HELP_STRING([--with-erlang=dir],[search for erlang in dir]),
 [if test "$withval" = "yes" -o "$withval" = "no" -o "X$with_erlang" = "X"; then
     extra_erl_path=""
 else
@@ -29,8 +28,7 @@ fi
 ])
 
 AC_ARG_WITH(rebar,
-	AC_HELP_STRING([--with-rebar=bin],
-		[use the rebar/rebar3/mix binary specified]),
+	AS_HELP_STRING([--with-rebar=bin],[use the rebar/rebar3/mix binary specified]),
 [if test "$withval" = "yes" -o "$withval" = "no" -o "X$with_rebar" = "X"; then
     rebar="rebar"
 else
@@ -70,15 +68,15 @@ AC_CONFIG_FILES([Makefile
 		 vars.config])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-redis --enable-elixir --enable-stun --enable-sip --enable-debug --enable-lua --enable-tools (useful for Dialyzer checks, default: no)])],
+[AS_HELP_STRING([--enable-all],[same as --enable-odbc --enable-mssql --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-redis --enable-elixir --enable-stun --enable-sip --enable-debug --enable-lua --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true redis=true elixir=true stun=true sip=true debug=true lua=true tools=true ;;
-  no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false redis=false elixir=false stun=false sip=false debug=false lua=false tools=false ;;
+  yes) odbc=true mssql=true mysql=true pgsql=true sqlite=true pam=true zlib=true redis=true elixir=true stun=true sip=true debug=true lua=true tools=true ;;
+  no) odbc=false mssql=false mysql=false pgsql=false sqlite=false pam=false zlib=false redis=false elixir=false stun=false sip=false debug=false lua=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
 AC_ARG_ENABLE(debug,
-[AC_HELP_STRING([--enable-debug], [enable debug information (default: yes)])],
+[AS_HELP_STRING([--enable-debug],[enable debug information (default: yes)])],
 [case "${enableval}" in
   yes) debug=true ;;
   no)  debug=false ;;
@@ -86,7 +84,7 @@ AC_ARG_ENABLE(debug,
 esac],[if test "x$debug" = "x"; then debug=true; fi])
 
 AC_ARG_ENABLE(elixir,
-[AC_HELP_STRING([--enable-elixir], [enable Elixir support (default: no)])],
+[AS_HELP_STRING([--enable-elixir],[enable Elixir support (default: no)])],
 [case "${enableval}" in
   yes) elixir=true ;;
   no)  elixir=false ;;
@@ -94,8 +92,7 @@ AC_ARG_ENABLE(elixir,
 esac],[if test "x$elixir" = "x"; then elixir=false; fi])
 
 AC_ARG_ENABLE(erlang-version-check,
-[AC_HELP_STRING([--enable-erlang-version-check],
-	[Check Erlang/OTP version (default: yes)])])
+[AS_HELP_STRING([--enable-erlang-version-check],[Check Erlang/OTP version (default: yes)])])
 case "$enable_erlang_version_check" in
 	yes|'')
 		ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX])
@@ -106,7 +103,7 @@ case "$enable_erlang_version_check" in
 esac
 
 AC_ARG_ENABLE(full_xml,
-[AC_HELP_STRING([--enable-full-xml], [use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)])],
+[AS_HELP_STRING([--enable-full-xml],[use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)])],
 [case "${enableval}" in
   yes) full_xml=true ;;
   no)  full_xml=false ;;
@@ -128,7 +125,7 @@ if test "$ENABLEGROUP" != ""; then
 fi
 
 AC_ARG_ENABLE(latest_deps,
-[AC_HELP_STRING([--enable-latest-deps], [makes rebar use latest commits for dependencies instead of tagged versions (default: no)])],
+[AS_HELP_STRING([--enable-latest-deps],[makes rebar use latest commits for dependencies instead of tagged versions (default: no)])],
 [case "${enableval}" in
   yes) latest_deps=true ;;
   no)  latest_deps=false ;;
@@ -136,7 +133,7 @@ AC_ARG_ENABLE(latest_deps,
 esac],[if test "x$latest_deps" = "x"; then latest_deps=false; fi])
 
 AC_ARG_ENABLE(lua,
-[AC_HELP_STRING([--enable-lua], [enable Lua support, to import from Prosody (default: no)])],
+[AS_HELP_STRING([--enable-lua],[enable Lua support, to import from Prosody (default: no)])],
 [case "${enableval}" in
   yes) lua=true ;;
   no)  lua=false ;;
@@ -144,15 +141,15 @@ AC_ARG_ENABLE(lua,
 esac],[if test "x$lua" = "x"; then lua=false; fi])
 
 AC_ARG_ENABLE(mssql,
-[AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
+[AS_HELP_STRING([--enable-mssql],[use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
 [case "${enableval}" in
-  yes) db_type=mssql; mssql=true ;;
-  no)  db_type=generic; mssql=false ;;
+  yes) mssql=true ;;
+  no)  mssql=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
-esac],[db_type=generic])
+esac],[if test "x$mssql" = "x"; then mssql=false; fi])
 
 AC_ARG_ENABLE(mysql,
-[AC_HELP_STRING([--enable-mysql], [enable MySQL support (default: no)])],
+[AS_HELP_STRING([--enable-mysql],[enable MySQL support (default: no)])],
 [case "${enableval}" in
   yes) mysql=true ;;
   no)  mysql=false ;;
@@ -160,7 +157,7 @@ AC_ARG_ENABLE(mysql,
 esac],[if test "x$mysql" = "x"; then mysql=false; fi])
 
 AC_ARG_ENABLE(new_sql_schema,
-[AC_HELP_STRING([--enable-new-sql-schema], [use new SQL schema (default: no)])],
+[AS_HELP_STRING([--enable-new-sql-schema],[use new SQL schema by default (default: no)])],
 [case "${enableval}" in
   yes) new_sql_schema=true ;;
   no)  new_sql_schema=false ;;
@@ -168,7 +165,7 @@ AC_ARG_ENABLE(new_sql_schema,
 esac],[new_sql_schema=false])
 
 AC_ARG_ENABLE(odbc,
-[AC_HELP_STRING([--enable-odbc], [enable pure ODBC support (default: no)])],
+[AS_HELP_STRING([--enable-odbc],[enable pure ODBC support (default: no)])],
 [case "${enableval}" in
   yes) odbc=true ;;
   no)  odbc=false ;;
@@ -176,7 +173,7 @@ AC_ARG_ENABLE(odbc,
 esac],[if test "x$odbc" = "x"; then odbc=false; fi])
 
 AC_ARG_ENABLE(pam,
-[AC_HELP_STRING([--enable-pam], [enable PAM support (default: no)])],
+[AS_HELP_STRING([--enable-pam],[enable PAM support (default: no)])],
 [case "${enableval}" in
   yes) pam=true ;;
   no)  pam=false ;;
@@ -184,7 +181,7 @@ AC_ARG_ENABLE(pam,
 esac],[if test "x$pam" = "x"; then pam=false; fi])
 
 AC_ARG_ENABLE(pgsql,
-[AC_HELP_STRING([--enable-pgsql], [enable PostgreSQL support (default: no)])],
+[AS_HELP_STRING([--enable-pgsql],[enable PostgreSQL support (default: no)])],
 [case "${enableval}" in
   yes) pgsql=true ;;
   no)  pgsql=false ;;
@@ -192,7 +189,7 @@ AC_ARG_ENABLE(pgsql,
 esac],[if test "x$pgsql" = "x"; then pgsql=false; fi])
 
 AC_ARG_ENABLE(redis,
-[AC_HELP_STRING([--enable-redis], [enable Redis support (default: no)])],
+[AS_HELP_STRING([--enable-redis],[enable Redis support (default: no)])],
 [case "${enableval}" in
   yes) redis=true ;;
   no)  redis=false ;;
@@ -200,7 +197,7 @@ AC_ARG_ENABLE(redis,
 esac],[if test "x$redis" = "x"; then redis=false; fi])
 
 AC_ARG_ENABLE(roster_gateway_workaround,
-[AC_HELP_STRING([--enable-roster-gateway-workaround], [turn on workaround for processing gateway subscriptions (default: no)])],
+[AS_HELP_STRING([--enable-roster-gateway-workaround],[turn on workaround for processing gateway subscriptions (default: no)])],
 [case "${enableval}" in
   yes) roster_gateway_workaround=true ;;
   no)  roster_gateway_workaround=false ;;
@@ -208,7 +205,7 @@ AC_ARG_ENABLE(roster_gateway_workaround,
 esac],[roster_gateway_workaround=false])
 
 AC_ARG_ENABLE(sip,
-[AC_HELP_STRING([--enable-sip], [enable SIP support (default: no)])],
+[AS_HELP_STRING([--enable-sip],[enable SIP support (default: no)])],
 [case "${enableval}" in
   yes) sip=true ;;
   no)  sip=false ;;
@@ -216,7 +213,7 @@ AC_ARG_ENABLE(sip,
 esac],[if test "x$sip" = "x"; then sip=false; fi])
 
 AC_ARG_ENABLE(sqlite,
-[AC_HELP_STRING([--enable-sqlite], [enable SQLite support (default: no)])],
+[AS_HELP_STRING([--enable-sqlite],[enable SQLite support (default: no)])],
 [case "${enableval}" in
   yes) sqlite=true ;;
   no)  sqlite=false ;;
@@ -224,7 +221,7 @@ AC_ARG_ENABLE(sqlite,
 esac],[if test "x$sqlite" = "x"; then sqlite=false; fi])
 
 AC_ARG_ENABLE(stun,
-[AC_HELP_STRING([--enable-stun], [enable STUN/TURN support (default: yes)])],
+[AS_HELP_STRING([--enable-stun],[enable STUN/TURN support (default: yes)])],
 [case "${enableval}" in
   yes) stun=true ;;
   no)  stun=false ;;
@@ -232,7 +229,7 @@ AC_ARG_ENABLE(stun,
 esac],[if test "x$stun" = "x"; then stun=true; fi])
 
 AC_ARG_ENABLE(system_deps,
-[AC_HELP_STRING([--enable-system-deps], [makes rebar use locally installed dependencies instead of downloading them (default: no)])],
+[AS_HELP_STRING([--enable-system-deps],[makes rebar use locally installed dependencies instead of downloading them (default: no)])],
 [case "${enableval}" in
   yes) system_deps=true ;;
   no)  system_deps=false ;;
@@ -240,7 +237,7 @@ AC_ARG_ENABLE(system_deps,
 esac],[if test "x$system_deps" = "x"; then system_deps=false; fi])
 
 AC_ARG_ENABLE(tools,
-[AC_HELP_STRING([--enable-tools], [build development tools (default: no)])],
+[AS_HELP_STRING([--enable-tools],[build development tools (default: no)])],
 [case "${enableval}" in
   yes) tools=true ;;
   no)  tools=false ;;
@@ -262,7 +259,7 @@ if test "$ENABLEUSER" != ""; then
 fi
 
 AC_ARG_ENABLE(zlib,
-[AC_HELP_STRING([--enable-zlib], [enable Stream Compression (XEP-0138) using zlib (default: yes)])],
+[AS_HELP_STRING([--enable-zlib],[enable Stream Compression (XEP-0138) using zlib (default: yes)])],
 [case "${enableval}" in
   yes) zlib=true ;;
   no)  zlib=false ;;
@@ -286,8 +283,8 @@ esac
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(new_sql_schema)
 AC_SUBST(full_xml)
-AC_SUBST(db_type)
 AC_SUBST(odbc)
+AC_SUBST(mssql)
 AC_SUBST(mysql)
 AC_SUBST(pgsql)
 AC_SUBST(sqlite)

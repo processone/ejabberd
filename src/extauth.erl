@@ -2,7 +2,7 @@
 %%% Created : 7 May 2018 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -99,10 +99,7 @@ worker_name(Pool, N) ->
 -spec pool_size(binary()) -> pos_integer().
 pool_size(Host) ->
     case ejabberd_option:extauth_pool_size(Host) of
-	undefined ->
-	    try erlang:system_info(logical_processors)
-	    catch _:_ -> 1
-	    end;
+	undefined -> misc:logical_processors();
 	Size ->
 	    Size
     end.

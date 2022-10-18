@@ -19,7 +19,7 @@ init(State) ->
             {example, "rebar3 configure-deps"}, % How to use the plugin
             {opts, []},                   % list of options understood by the plugin
             {short_desc, "Explicitly run ./configure for dependencies"},
-            {desc, "A rebar plugin to allow explicitly running ./configure on depdendencies. Useful if dependencies might change prior to compilation when configure is run."}
+            {desc, "A rebar plugin to allow explicitly running ./configure on dependencies. Useful if dependencies might change prior to compilation when configure is run."}
     ]),
     {ok, rebar_state:add_provider(State, Provider)}.
 

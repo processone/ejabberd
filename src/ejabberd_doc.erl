@@ -2,7 +2,7 @@
 %%% File    : ejabberd_doc.erl
 %%% Purpose : Options documentation generator
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -48,7 +48,10 @@ man(Lang) ->
                                   {[{M, Descr, DocOpts, #{example => Example}}|Mods], SubMods};
                               #{opts := DocOpts} ->
                                   {ParentMod, Backend} = strip_backend_suffix(M),
-                                  {Mods, dict:append(ParentMod, {M, Backend, DocOpts}, SubMods)}
+                                  {Mods, dict:append(ParentMod, {M, Backend, DocOpts}, SubMods)};
+                              #{} ->
+                                  warn("module ~s is not properly documented", [M]),
+                                  Acc
                           catch _:undef ->
                                   case erlang:function_exported(
                                          M, mod_options, 1) of
@@ -231,9 +234,9 @@ man_header(Lang) ->
                  "indentation, or otherwise you will get pretty cryptic "
                  "configuration errors.")),
      io_lib:nl(),
-     tr(Lang, ?T("Logically, configuration options are splitted into 3 main categories: "
+     tr(Lang, ?T("Logically, configuration options are split into 3 main categories: "
                  "'Modules', 'Listeners' and everything else called 'Top Level' options. "
-                 "Thus this document is splitted into 3 main chapters describing each "
+                 "Thus this document is split into 3 main chapters describing each "
                  "category separately. So, the contents of ejabberd.yml will typically "
                  "look like this:")),
      io_lib:nl(),

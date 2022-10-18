@@ -129,7 +129,6 @@
 {"Make room persistent","Gör rummet permanent"}.
 {"Make room public searchable","Gör rummet publikt sökbart"}.
 {"March","Mars"}.
-{"Max # of items to persist","Högsta antal dataposter som sparas"}.
 {"Max payload size in bytes","Högsta innehållsstorlek i bytes"}.
 {"Maximum Number of Occupants","Maximalt antal av användare"}.
 {"May","Maj"}.

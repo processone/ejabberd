@@ -4,7 +4,7 @@
 %%% Purpose : XEP-0355: Namespace Delegation
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -95,7 +95,7 @@ mod_doc() ->
 	   ?T("WARNING: Security issue: Namespace delegation gives components "
 	      "access to sensitive data, so permission should be granted "
 	      "carefully, only if you trust the component."), "",
-	   ?T("NOTE: This module is complementary to 'mod_privilege' but can "
+	   ?T("NOTE: This module is complementary to _`mod_privilege`_ but can "
 	      "also be used separately.")],
       opts =>
           [{namespaces,

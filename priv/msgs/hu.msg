@@ -388,7 +388,6 @@
 {"The query is only allowed from local users","A lekérdezés csak helyi felhasználóktól engedélyezett"}.
 {"The query must not contain <item/> elements","A lekérdezés nem tartalmazhat <item/> elemeket"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","A stanzának csak egyetlen <active/> elemet, egyetlen <default/> elemet vagy egyetlen <list/> elemet KELL tartalmaznia"}.
-{"The username is not valid","A felhasználónév nem érvényes"}.
 {"There was an error creating the account: ","Hiba történt a fiók létrehozásakor: "}.
 {"There was an error deleting the account: ","Hiba történt a fiók törlésekor: "}.
 {"This room is not anonymous","Ez a szoba nem névtelen"}.

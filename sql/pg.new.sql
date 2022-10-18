@@ -1,5 +1,5 @@
 --
--- ejabberd, Copyright (C) 2002-2021   ProcessOne
+-- ejabberd, Copyright (C) 2002-2022   ProcessOne
 --
 -- This program is free software; you can redistribute it and/or
 -- modify it under the terms of the GNU General Public License as
@@ -156,6 +156,30 @@
 -- CREATE INDEX i_sm_sh_username ON sm USING btree (server_host, username);
 -- ALTER TABLE sm ALTER COLUMN server_host DROP DEFAULT;
 
+-- ALTER TABLE push_session ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
+-- DROP INDEX i_push_usn;
+-- DROP INDEX i_push_ut;
+-- ALTER TABLE push_session ADD PRIMARY KEY (server_host, username, timestamp);
+-- CREATE UNIQUE INDEX i_push_session_susn ON push_session USING btree (server_host, username, service, node);
+-- ALTER TABLE push_session ALTER COLUMN server_host DROP DEFAULT;
+
+-- ALTER TABLE mix_pam ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
+-- DROP INDEX i_mix_pam;
+-- DROP INDEX i_mix_pam_us;
+-- CREATE UNIQUE INDEX i_mix_pam ON mix_pam (username, server_host, channel, service);
+-- CREATE INDEX i_mix_pam_us ON mix_pam (username, server_host);
+-- ALTER TABLE mix_pam ALTER COLUMN server_host DROP DEFAULT;
+
+-- ALTER TABLE route ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
+-- DROP INDEX i_route;
+-- CREATE UNIQUE INDEX i_route ON route USING btree (domain, server_host, node, pid);
+-- ALTER TABLE i_route ALTER COLUMN server_host DROP DEFAULT;
+
+-- ALTER TABLE mqtt_pub ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
+-- DROP INDEX i_mqtt_topic;
+-- CREATE UNIQUE INDEX i_mqtt_topic_server ON mqtt_pub (topic, server_host);
+-- ALTER TABLE mqtt_pub ALTER COLUMN server_host DROP DEFAULT;
+
 
 CREATE TABLE users (
     username text NOT NULL,
@@ -305,7 +329,7 @@ CREATE TABLE vcard_search (
     lorgname text NOT NULL,
     orgunit text NOT NULL,
     lorgunit text NOT NULL,
-    PRIMARY KEY (server_host, username)
+    PRIMARY KEY (server_host, lusername)
 );
 
 CREATE INDEX i_vcard_search_sh_lfn       ON vcard_search(server_host, lfn);
@@ -444,6 +468,7 @@ CREATE TABLE muc_room (
 );
 
 CREATE UNIQUE INDEX i_muc_room_name_host ON muc_room USING btree (name, host);
+CREATE INDEX i_muc_room_host_created_at ON muc_room USING btree (host, created_at);
 
 CREATE TABLE muc_registered (
     jid text NOT NULL,
@@ -489,6 +514,7 @@ CREATE TABLE muc_room_subscribers (
 );
 
 CREATE INDEX i_muc_room_subscribers_host_jid ON muc_room_subscribers USING btree (host, jid);
+CREATE INDEX i_muc_room_subscribers_jid ON muc_room_subscribers USING btree (jid);
 CREATE UNIQUE INDEX i_muc_room_subscribers_host_room_jid ON muc_room_subscribers USING btree (host, room, jid);
 
 CREATE TABLE motd (

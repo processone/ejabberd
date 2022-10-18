@@ -5,7 +5,7 @@
 %%% Created : 10 Aug 2008 by Badlop <badlop@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -92,7 +92,7 @@
 %%%
 
 start(_Host, _Opts) ->
-    ejabberd_commands:register_commands(get_commands_spec()).
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()).
 
 stop(Host) ->
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
@@ -695,7 +695,7 @@ get_commands_spec() ->
 			args_example = [<<"group3">>, <<"myserver.com">>],
 			args_desc = ["Group identifier", "Group server name"],
 			result_example = [{<<"name">>, "Group 3"}, {<<"displayed_groups">>, "group1"}],
-			result_desc = "List of group informations, as key and value",
+			result_desc = "List of group information, as key and value",
 			result = {informations, {list, {information, {tuple, [{key, string}, {value, string}]}}}}},
      #ejabberd_commands{name = srg_get_members, tags = [shared_roster_group],
 			desc = "Get members of a Shared Roster Group",
@@ -1149,12 +1149,35 @@ set_vcard(User, Host, Name, SomeContent) ->
 set_vcard(User, Host, Name, Subname, SomeContent) ->
     set_vcard_content(User, Host, [Name, Subname], SomeContent).
 
+%%
+%% Room vcard
+
+is_muc_service(Domain) ->
+    try mod_muc_admin:get_room_serverhost(Domain) of
+        Domain -> false;
+        Service when is_binary(Service) -> true
+    catch _:{unregistered_route, _} ->
+            throw(error_wrong_hostname)
+    end.
+
+get_room_vcard(Name, Service) ->
+    case mod_muc_admin:get_room_options(Name, Service) of
+        [] ->
+            throw(error_no_vcard_found);
+        Opts ->
+            case lists:keyfind(<<"vcard">>, 1, Opts) of
+                false ->
+                    throw(error_no_vcard_found);
+                {_, VCardRaw} ->
+                    [fxml_stream:parse_element(VCardRaw)]
+            end
+    end.
 
 %%
 %% Internal vcard
 
 get_vcard_content(User, Server, Data) ->
-    case mod_vcard:get_vcard(jid:nodeprep(User), jid:nameprep(Server)) of
+    case get_vcard_element(User, Server) of
 	[El|_] ->
 	    case get_vcard(Data, El) of
 		[false] -> throw(error_no_value_found_in_vcard);
@@ -1164,6 +1187,14 @@ get_vcard_content(User, Server, Data) ->
 	    throw(error_no_vcard_found);
 	error ->
 	    throw(database_failure)
+    end.
+
+get_vcard_element(User, Server) ->
+    case is_muc_service(Server) of
+        true ->
+           get_room_vcard(User, Server);
+        false ->
+           mod_vcard:get_vcard(jid:nodeprep(User), jid:nameprep(Server))
     end.
 
 get_vcard([<<"TEL">>, TelType], {_, _, _, OldEls}) ->
@@ -1302,16 +1333,15 @@ get_roster(User, Server) ->
 %% several times, each one in a different group.
 make_roster_xmlrpc(Roster) ->
     lists:foldl(
-      fun(Item, Res) ->
-	      JIDS = jid:encode(Item#roster.jid),
-	      Nick = Item#roster.name,
-	      Subs = atom_to_list(Item#roster.subscription),
-	      Ask = atom_to_list(Item#roster.ask),
-	      Groups = case Item#roster.groups of
+      fun(#roster_item{jid = JID, name = Nick, subscription = Sub, ask = Ask} = Item, Res) ->
+	      JIDS = jid:encode(JID),
+	      Subs = atom_to_list(Sub),
+	      Asks = atom_to_list(Ask),
+	      Groups = case Item#roster_item.groups of
 			   [] -> [<<>>];
 			   Gs -> Gs
 		       end,
-	      ItemsX = [{JIDS, Nick, Subs, Ask, Group} || Group <- Groups],
+	      ItemsX = [{JIDS, Nick, Subs, Asks, Group} || Group <- Groups],
 	      ItemsX ++ Res
       end,
       [],
@@ -1379,7 +1409,7 @@ push_roster_item(LU, LS, R, U, S, Action) ->
       xmpp:set_from_to(ResIQ, jid:remove_resource(LJID), LJID)).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
-    Groups = binary:split(Group,<<";">>, [global]),
+    Groups = binary:split(Group,<<";">>, [global, trim]),
     #roster_item{jid = jid:make(U, S),
 		 name = Nick,
 		 subscription = misc:binary_to_atom(Subs),
@@ -1507,7 +1537,8 @@ srg_user_del(User, Host, Group, GroupHost) ->
 %%%
 
 %% @doc Send a message to an XMPP account.
-%% @spec (Type::binary(), From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
+-spec send_message(Type::binary(), From::binary(), To::binary(),
+                   Subject::binary(), Body::binary()) -> ok.
 send_message(Type, From, To, Subject, Body) ->
     CodecOpts = ejabberd_config:codec_options(),
     try xmpp:decode(
@@ -1652,14 +1683,6 @@ mod_doc() ->
            ?T("If you want to put a group Name with blankspaces, use the "
 	      "characters \"\' and \'\" to define when the Name starts and "
 	      "ends. See an example below.")],
-      opts =>
-          [{module_resource,
-            #{value => ?T("Resource"),
-              desc =>
-                  ?T("Indicate the resource that the XMPP stanzas must use "
-		     "in the FROM or TO JIDs. This is only useful in the "
-		     "'get_vcard*' and 'set_vcard*' commands. The default "
-		     "value is 'mod_admin_extra'.")}}],
       example =>
 	  [{?T("With this configuration, vCards can only be modified with "
 	       "mod_admin_extra commands:"),
@@ -1670,8 +1693,7 @@ mod_doc() ->
 	     "  vcard_set:",
 	     "    - allow: adminextraresource",
 	     "modules:",
-	     "  mod_admin_extra:",
-	     "    module_resource: \"modadminextraf8x,31ad\"",
+	     "  mod_admin_extra: {}",
 	     "  mod_vcard:",
 	     "    access_set: vcard_set"]},
 	   {?T("Content of roster file for 'pushroster' command:"),

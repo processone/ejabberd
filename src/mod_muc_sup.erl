@@ -2,7 +2,7 @@
 %%% Created : 4 Jul 2019 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -51,7 +51,7 @@ procname(Host) ->
 %%% Supervisor callbacks
 %%%===================================================================
 init([Host]) ->
-    Cores = erlang:system_info(logical_processors),
+    Cores = misc:logical_processors(),
     Specs = lists:foldl(
 	      fun(I, Acc) ->
 		      [#{id => mod_muc:procname(Host, I),

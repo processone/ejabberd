@@ -3,7 +3,7 @@
 %%% Created : 25 Dec 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -268,7 +268,7 @@ c2s_handle_info(State, {timeout, _, Timeout}) when Timeout == ack_timeout;
 						   Timeout == pending_timeout ->
     %% Late arrival of an already cancelled timer: we just ignore it.
     %% This might happen because misc:cancel_timer/1 doesn't guarantee
-    %% timer cancelation in the case when p1_server is used.
+    %% timer cancellation in the case when p1_server is used.
     {stop, State};
 c2s_handle_info(State, _) ->
     State.
@@ -962,12 +962,14 @@ mod_doc() ->
            {queue_type,
             #{value => "ram | file",
               desc =>
-                  ?T("Same as top-level 'queue_type' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`queue_type`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level _`cache_life_time`_ option, "
+                     "but applied to this module only. "
+                     "The default value is '48 hours'.")}}]}.

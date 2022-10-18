@@ -4,7 +4,7 @@
 %%% Created : 13 Apr 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -29,7 +29,8 @@
 -behaviour(mod_muc_room).
 
 %% API
--export([init/2, store_room/5, restore_room/3, forget_room/3,
+-export([init/2, store_room/5, store_changes/4,
+         restore_room/3, forget_room/3,
 	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4,
 	 import/3, export/1]).
 -export([register_online_room/4, unregister_online_room/4, find_online_room/3,
@@ -37,7 +38,8 @@
 	 register_online_user/4, unregister_online_user/4,
 	 count_online_rooms_by_user/3, get_online_rooms_by_user/3,
 	 get_subscribed_rooms/3, get_rooms_without_subscribers/2,
-	 find_online_room_by_pid/2]).
+	 get_hibernated_rooms_older_than/3,
+	 find_online_room_by_pid/2, remove_user/2]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
@@ -63,13 +65,19 @@ store_room(LServer, Host, Name, Opts, ChangesHints) ->
 			_ -> {[], Opts}
 		    end,
     SOpts = misc:term_to_expr(Opts2),
+    Timestamp = case lists:keyfind(hibernation_time, 1, Opts) of
+		    false -> <<"1970-01-02 00:00:00">>;
+		    {_, undefined} -> <<"1970-01-02 00:00:00">>;
+		    {_, Time} -> usec_to_sql_timestamp(Time)
+		end,
     F = fun () ->
 		?SQL_UPSERT_T(
                    "muc_room",
                    ["!name=%(Name)s",
                     "!host=%(Host)s",
                     "server_host=%(LServer)s",
-                    "opts=%(SOpts)s"]),
+                    "opts=%(SOpts)s",
+		    "created_at=%(Timestamp)t"]),
                 case ChangesHints of
                     Changes when is_list(Changes) ->
                         [change_room(Host, Name, Change) || Change <- Changes];
@@ -80,6 +88,12 @@ store_room(LServer, Host, Name, Opts, ChangesHints) ->
                         [change_room(Host, Name, {add_subscription, JID, Nick, Nodes})
                          || {JID, Nick, Nodes} <- Subs]
                 end
+	end,
+    ejabberd_sql:sql_transaction(LServer, F).
+
+store_changes(LServer, Host, Name, Changes) ->
+    F = fun () ->
+                [change_room(Host, Name, Change) || Change <- Changes]
 	end,
     ejabberd_sql:sql_transaction(LServer, F).
 
@@ -172,6 +186,23 @@ get_rooms_without_subscribers(LServer, Host) ->
 	    []
     end.
 
+get_hibernated_rooms_older_than(LServer, Host, Timestamp) ->
+    TimestampS = usec_to_sql_timestamp(Timestamp),
+    case catch ejabberd_sql:sql_query(
+	LServer,
+	?SQL("select @(name)s, @(opts)s from muc_room"
+	     " where host=%(Host)s and created_at < %(TimestampS)t and created_at > '1970-01-02 00:00:00'")) of
+	{selected, RoomOpts} ->
+	    lists:map(
+		fun({Room, Opts}) ->
+		    OptsD = ejabberd_sql:decode_term(Opts),
+		    #muc_room{name_host = {Room, Host},
+			      opts = mod_muc:opts_to_binary(OptsD)}
+		end, RoomOpts);
+	_Err ->
+	    []
+    end.
+
 get_rooms(LServer, Host) ->
     case catch ejabberd_sql:sql_query(
                  LServer,
@@ -185,13 +216,20 @@ get_rooms(LServer, Host) ->
 		{selected, Subs} ->
 		    SubsD = lists:foldl(
 			fun({Room, Jid, Nick, Nodes}, Dict) ->
-			    dict:append(Room, {jid:decode(Jid),
-					       Nick, ejabberd_sql:decode_term(Nodes)}, Dict)
-			end, dict:new(), Subs),
+                                Sub = {jid:decode(Jid),
+                                       Nick, ejabberd_sql:decode_term(Nodes)},
+                                maps:update_with(
+                                  Room,
+                                  fun(SubAcc) ->
+                                          [Sub | SubAcc]
+                                  end,
+                                  [Sub],
+                                  Dict)
+			end, maps:new(), Subs),
 	    lists:map(
 	      fun({Room, Opts}) ->
 			    OptsD = ejabberd_sql:decode_term(Opts),
-			    OptsD2 = case {dict:find(Room, SubsD), lists:keymember(subscribers, 1, OptsD)} of
+			    OptsD2 = case {maps:find(Room, SubsD), lists:keymember(subscribers, 1, OptsD)} of
 					 {_, true} ->
 					     store_room(LServer, Host, Room, mod_muc:opts_to_binary(OptsD), undefined),
 					     OptsD;
@@ -451,6 +489,13 @@ get_subscribed_rooms(LServer, Host, Jid) ->
 	    {error, db_failure}
     end.
 
+remove_user(LUser, LServer) ->
+    SJID = jid:encode(jid:make(LUser, LServer)),
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("delete from muc_room_subscribers where jid=%(SJID)s")),
+    ok.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -475,4 +520,13 @@ clean_tables(ServerHost) ->
 	Err2 ->
 	    ?ERROR_MSG("Failed to clean 'muc_online_users' table: ~p", [Err2]),
 	    Err2
+    end.
+
+usec_to_sql_timestamp(Timestamp) ->
+    TS = misc:usec_to_now(Timestamp),
+    case calendar:now_to_universal_time(TS) of
+	{{Year, Month, Day}, {Hour, Minute, Second}} ->
+	    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B "
+					 "~2..0B:~2..0B:~2..0B",
+					 [Year, Month, Day, Hour, Minute, Second]))
     end.

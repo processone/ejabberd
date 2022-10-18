@@ -5,7 +5,7 @@
 %%% Created : 12 Oct 2006 by Evgeniy Khramtsov <xram@jabber.ru>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -173,8 +173,8 @@ mod_doc() ->
            {ram_db_type,
             #{value => "mnesia | redis | sql",
               desc =>
-                  ?T("Define the type of volatile (in-memory) storage where the module "
-                     "will store room information.")}},
+                  ?T("Same as top-level _`default_ram_db`_ option, "
+                     "but applied to this module only.")}},
            {ip,
             #{value => ?T("IPAddress"),
               desc =>

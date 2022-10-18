@@ -5,7 +5,7 @@
 %%% Created : 21 Apr 2014 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2014-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2014-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -357,9 +357,9 @@ mod_opt_type(via) ->
               (econf:and_then(
                  econf:url([tls, tcp, udp]),
                  fun(URI) ->
-                         {ok, Type, Host, Port, _} =
+                         {ok, Type, _UserInfo, Host, Port, _, _} =
                             misc:uri_parse(URI),
-                         {Type, {unicode:characters_to_binary(Host), Port}}
+                         {list_to_atom(Type), {unicode:characters_to_binary(Host), Port}}
                  end))(U)
       end, [unique]).
 

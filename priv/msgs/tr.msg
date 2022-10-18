@@ -143,7 +143,6 @@
 {"Make room persistent","Odayı kalıcı hale getir"}.
 {"Make room public searchable","Odayı herkes tarafından aranabilir hale getir"}.
 {"March","Mart"}.
-{"Max # of items to persist","Kalıcı hale getirilecek en fazla öğe sayısı"}.
 {"Max payload size in bytes","En fazla yük (payload) boyutu (bayt olarak)"}.
 {"Maximum Number of Occupants","Odada En Fazla Bulunabilecek Kişi Sayısı"}.
 {"May","Mayıs"}.

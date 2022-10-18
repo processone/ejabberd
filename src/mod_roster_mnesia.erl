@@ -4,7 +4,7 @@
 %%% Created : 13 Apr 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -194,7 +194,6 @@ process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
                 ),
     rosteritem_purge({Action, Subs, Asks, Users, Contacts}).
 
-%% @spec ({Action::atom(), Subs::[atom()], Asks::[atom()], User::string(), Contact::string()}) -> {atomic, ok}
 rosteritem_purge(Options) ->
     Num_rosteritems = mnesia:table_info(roster, size),
     io:format("There are ~p roster items in total.~n", [Num_rosteritems]),

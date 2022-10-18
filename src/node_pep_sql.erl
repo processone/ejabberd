@@ -5,7 +5,7 @@
 %%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -37,7 +37,8 @@
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
     purge_node/2, subscribe_node/8, unsubscribe_node/4,
-    publish_item/7, delete_item/4, remove_extra_items/3,
+    publish_item/7, delete_item/4,
+    remove_extra_items/2, remove_extra_items/3, remove_expired_items/2,
     get_entity_affiliations/2, get_node_affiliations/1,
     get_affiliation/2, set_affiliation/3,
     get_entity_subscriptions/2, get_node_subscriptions/1,
@@ -92,8 +93,14 @@ publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload, PubOpts) ->
     node_flat_sql:publish_item(Nidx, Publisher, Model, MaxItems, ItemId,
 	Payload, PubOpts).
 
+remove_extra_items(Nidx, MaxItems) ->
+    node_flat_sql:remove_extra_items(Nidx, MaxItems).
+
 remove_extra_items(Nidx, MaxItems, ItemIds) ->
     node_flat_sql:remove_extra_items(Nidx, MaxItems, ItemIds).
+
+remove_expired_items(Nidx, Seconds) ->
+    node_flat_sql:remove_expired_items(Nidx, Seconds).
 
 delete_item(Nidx, Publisher, PublishModel, ItemId) ->
     node_flat_sql:delete_item(Nidx, Publisher, PublishModel, ItemId).

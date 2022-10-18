@@ -181,7 +181,6 @@
 {"Make room public searchable","Sala publicamente visible"}.
 {"Malformed username","Nome de usuario mal formado"}.
 {"March","Marzo"}.
-{"Max # of items to persist","Máximo # de elementos que persisten"}.
 {"Max payload size in bytes","Máximo tamaño do payload en bytes"}.
 {"Maximum Number of Occupants","Número máximo de ocupantes"}.
 {"May","Maio"}.

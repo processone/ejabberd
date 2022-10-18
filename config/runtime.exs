@@ -1,12 +1,13 @@
 import Config
 
-rootpath = System.get_env("RELEASE_ROOT", "")
+rootdefault = case System.get_env("RELIVE", "false") do
+  "true" -> "_build/relive"
+  "false" -> ""
+end
 
-# This is standard path in the context of ejabberd release
+rootpath = System.get_env("RELEASE_ROOT", rootdefault)
 config :ejabberd,
-  file: Path.join(rootpath, "etc/ejabberd/ejabberd.yml"),
-  log_path: Path.join(rootpath, 'var/log/ejabberd/ejabberd.log')
-
-# Customize Mnesia directory:
+  file: Path.join(rootpath, "conf/ejabberd.yml"),
+  log_path: Path.join(rootpath, 'logs/ejabberd.log')
 config :mnesia,
-  dir: Path.join(rootpath, 'var/lib/ejabberd/')
+  dir: Path.join(rootpath, 'database/')

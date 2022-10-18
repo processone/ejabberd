@@ -106,12 +106,12 @@ mod_doc() ->
               "experimental feature, updated in 19.02, and is not "
               "yet ready to use in production. It's asserted that "
               "the MIX protocol is going to replace the MUC protocol "
-              "in the future (see 'mod_muc')."), "",
+              "in the future (see _`mod_muc`_)."), "",
            ?T("To learn more about how to use that feature, you can refer to "
 	      "our tutorial: https://docs.ejabberd.im/tutorials/mix-010/"
 	      "[Getting started with XEP-0369: Mediated Information "
 	      "eXchange (MIX) v0.1]."), "",
-           ?T("The module depends on 'mod_mam'.")],
+           ?T("The module depends on _`mod_mam`_.")],
       opts =>
           [{access_create,
             #{value => ?T("AccessName"),
@@ -136,7 +136,7 @@ mod_doc() ->
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}}]}.
 
 -spec route(stanza()) -> ok.
 route(#iq{} = IQ) ->
@@ -168,9 +168,10 @@ process_disco_info(#iq{type = get, to = #jid{luser = <<>>} = To,
     Identity = #identity{category = <<"conference">>,
 			 type = <<"mix">>,
 			 name = translate:translate(Lang, Name)},
-    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
-		?NS_MIX_CORE_0, ?NS_MIX_CORE_SEARCHABLE_0,
-		?NS_MIX_CORE_CREATE_CHANNEL_0],
+    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MIX_CORE_0,
+		?NS_MIX_CORE_SEARCHABLE_0, ?NS_MIX_CORE_CREATE_CHANNEL_0,
+		?NS_MIX_CORE_1, ?NS_MIX_CORE_SEARCHABLE_1,
+		?NS_MIX_CORE_CREATE_CHANNEL_1],
     xmpp:make_iq_result(
       IQ, #disco_info{features = Features,
 		      identities = [Identity],
@@ -186,7 +187,7 @@ process_disco_info(#iq{type = get, to = #jid{luser = <<_, _/binary>>} = To,
 	    Identity = #identity{category = <<"conference">>,
 				 type = <<"mix">>},
 	    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
-			?NS_MIX_CORE_0, ?NS_MAM_2],
+			?NS_MIX_CORE_0, ?NS_MIX_CORE_1, ?NS_MAM_2],
 	    xmpp:make_iq_result(
 	      IQ, #disco_info{node = Node,
 			      features = Features,
@@ -350,7 +351,7 @@ format_status(_Opt, Status) ->
 %%%===================================================================
 -spec process_mix_create(iq()) -> iq().
 process_mix_create(#iq{to = To, from = From,
-		       sub_els = [#mix_create{channel = Chan}]} = IQ) ->
+		       sub_els = [#mix_create{channel = Chan, xmlns = XmlNs}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
@@ -374,7 +375,7 @@ process_mix_create(#iq{to = To, from = From,
 	  end,
     case Ret of
 	ok ->
-	    xmpp:make_iq_result(IQ, #mix_create{channel = Chan1});
+	    xmpp:make_iq_result(IQ, #mix_create{channel = Chan1, xmlns = XmlNs});
 	{error, conflict} ->
 	    xmpp:make_error(IQ, channel_exists_error(IQ));
 	{error, db_failure} ->
@@ -384,7 +385,7 @@ process_mix_create(#iq{to = To, from = From,
 -spec process_mix_destroy(iq()) -> iq().
 process_mix_destroy(#iq{to = To,
 			from = #jid{luser = U, lserver = S},
-			sub_els = [#mix_destroy{channel = Chan}]} = IQ) ->
+			sub_els = [#mix_destroy{channel = Chan, xmlns = XmlNs}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
@@ -392,7 +393,7 @@ process_mix_destroy(#iq{to = To,
 	{ok, {#jid{luser = U, lserver = S}, _, _}} ->
 	    case Mod:del_channel(ServerHost, Chan, Host) of
 		ok ->
-		    xmpp:make_iq_result(IQ, #mix_destroy{channel = Chan});
+		    xmpp:make_iq_result(IQ, #mix_destroy{channel = Chan, xmlns = XmlNs});
 		{error, db_failure} ->
 		    xmpp:make_error(IQ, db_error(IQ))
 	    end;
@@ -406,7 +407,7 @@ process_mix_destroy(#iq{to = To,
 
 -spec process_mix_join(iq()) -> iq().
 process_mix_join(#iq{to = To, from = From,
-		     sub_els = [#mix_join{} = JoinReq]} = IQ) ->
+		     sub_els = [#mix_join{xmlns = XmlNs} = JoinReq]} = IQ) ->
     Chan = To#jid.luser,
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
@@ -423,7 +424,9 @@ process_mix_join(#iq{to = To, from = From,
 		notify_participant_joined(Mod, ServerHost, To, From, ID, Nick),
 		xmpp:make_iq_result(IQ, #mix_join{id = ID,
 						  subscribe = Nodes,
-						  nick = Nick})
+						  jid = make_channel_id(To, ID),
+						  nick = Nick,
+						  xmlns = XmlNs})
 	    catch _:{badmatch, {error, db_failure}} ->
 		    xmpp:make_error(IQ, db_error(IQ))
 	    end;
@@ -435,7 +438,7 @@ process_mix_join(#iq{to = To, from = From,
 
 -spec process_mix_leave(iq()) -> iq().
 process_mix_leave(#iq{to = To, from = From,
-		      sub_els = [#mix_leave{}]} = IQ) ->
+		      sub_els = [#mix_leave{xmlns = XmlNs}]} = IQ) ->
     {Chan, Host, _} = jid:tolower(To),
     ServerHost = ejabberd_router:host_of_route(Host),
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
@@ -453,7 +456,7 @@ process_mix_leave(#iq{to = To, from = From,
 			    xmpp:make_error(IQ, db_error(IQ))
 		    end;
 		{error, notfound} ->
-		    xmpp:make_iq_result(IQ, #mix_leave{});
+		    xmpp:make_iq_result(IQ, #mix_leave{xmlns = XmlNs});
 		{error, db_failure} ->
 		    xmpp:make_error(IQ, db_error(IQ))
 	    end;
@@ -465,7 +468,7 @@ process_mix_leave(#iq{to = To, from = From,
 
 -spec process_mix_setnick(iq()) -> iq().
 process_mix_setnick(#iq{to = To, from = From,
-			sub_els = [#mix_setnick{nick = Nick}]} = IQ) ->
+			sub_els = [#mix_setnick{nick = Nick, xmlns = XmlNs}]} = IQ) ->
     {Chan, Host, _} = jid:tolower(To),
     ServerHost = ejabberd_router:host_of_route(Host),
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
@@ -474,12 +477,12 @@ process_mix_setnick(#iq{to = To, from = From,
 	{ok, _} ->
 	    case Mod:get_participant(ServerHost, Chan, Host, BFrom) of
 		{ok, {_, Nick}} ->
-		    xmpp:make_iq_result(IQ, #mix_setnick{nick = Nick});
+		    xmpp:make_iq_result(IQ, #mix_setnick{nick = Nick, xmlns = XmlNs});
 		{ok, {ID, _}} ->
 		    case Mod:set_participant(ServerHost, Chan, Host, BFrom, ID, Nick) of
 			ok ->
 			    notify_participant_joined(Mod, ServerHost, To, From, ID, Nick),
-			    xmpp:make_iq_result(IQ, #mix_setnick{nick = Nick});
+			    xmpp:make_iq_result(IQ, #mix_setnick{nick = Nick, xmlns = XmlNs});
 			{error, db_failure} ->
 			    xmpp:make_error(IQ, db_error(IQ))
 		    end;
@@ -590,10 +593,8 @@ known_nodes() ->
 
 -spec filter_nodes([binary()]) -> [binary()].
 filter_nodes(Nodes) ->
-    lists:filter(
-      fun(Node) ->
-	      lists:member(Node, Nodes)
-      end, known_nodes()).
+    KnownNodes = known_nodes(),
+    [Node || KnownNode <- KnownNodes, Node <- Nodes, KnownNode == Node].
 
 -spec multicast(module(), binary(), binary(),
 		binary(), binary(), fun((jid()) -> message())) -> ok.
@@ -644,6 +645,11 @@ make_id(JID, Key) ->
     Data = jid:encode(jid:tolower(jid:remove_resource(JID))),
     xmpp_util:hex(misc:crypto_hmac(sha256, Data, Key, 10)).
 
+-spec make_channel_id(jid(), binary()) -> jid().
+make_channel_id(JID, ID) ->
+	{U, S, R} = jid:split(JID),
+	jid:make(<<ID/binary, $#, U/binary>>, S, R).
+
 %%%===================================================================
 %%% Error generators
 %%%===================================================================
@@ -688,11 +694,15 @@ register_iq_handlers(Host) ->
 				  ?MODULE, process_disco_items),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MIX_CORE_0,
 				  ?MODULE, process_mix_core),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MIX_CORE_1,
+				  ?MODULE, process_mix_core),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO,
 				  ?MODULE, process_disco_info),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS,
 				  ?MODULE, process_disco_items),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_CORE_0,
+				  ?MODULE, process_mix_core),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_CORE_1,
 				  ?MODULE, process_mix_core),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PUBSUB,
 				  ?MODULE, process_pubsub_query),
@@ -704,8 +714,10 @@ unregister_iq_handlers(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MIX_CORE_0),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MIX_CORE_1),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_CORE_0),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_CORE_1),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBSUB),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_2).

@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -52,7 +52,7 @@ halt() ->
     ejabberd_logger:flush(),
     erlang:halt(1, [{flush, true}]).
 
-%% @spec () -> false | string()
+-spec get_pid_file() -> false | string().
 get_pid_file() ->
     case os:getenv("EJABBERD_PID_PATH") of
 	false ->

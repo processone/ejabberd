@@ -1,6 +1,6 @@
 %%%-------------------------------------------------------------------
 %%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% @copyright (C) 2002-2021 ProcessOne, SARL. All Rights Reserved.
+%%% @copyright (C) 2002-2022 ProcessOne, SARL. All Rights Reserved.
 %%%
 %%% Licensed under the Apache License, Version 2.0 (the "License");
 %%% you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 -export([init/2, publish/6, delete_published/2, lookup_published/2]).
 -export([list_topics/1, use_cache/1]).
 -export([init/0]).
--export([subscribe/4, unsubscribe/2, find_subscriber/2]).
+-export([subscribe/4, unsubscribe/2, find_subscriber/2, mqtree_match/1]).
 -export([open_session/1, close_session/1, lookup_session/1, get_sessions/2]).
 
 -include("logger.hrl").
@@ -103,7 +103,7 @@ lookup_published({_, S, _}, Topic) ->
                    correlation_data = CorrelationData,
                    content_type = ContentType,
                    user_properties = UserProps}] ->
-            Props = #{payload_format => PayloadFormat,
+            Props = #{payload_format_indicator => PayloadFormat,
                       response_topic => ResponseTopic,
                       correlation_data => CorrelationData,
                       content_type => ContentType,
@@ -249,9 +249,16 @@ unsubscribe({U, S, R} = USR, Topic) ->
 		    Reason, [jid:encode(USR), Topic])
     end.
 
-find_subscriber(S, Topic) when is_binary(Topic) ->
+mqtree_match(Topic) ->
     Tree = mqtree:whereis(mqtt_sub_index),
-    case mqtree:match(Tree, Topic) of
+    mqtree:match(Tree, Topic).
+
+mqtree_multi_match(Topic) ->
+    {Res, []} = ejabberd_cluster:multicall(?MODULE, mqtree_match, [Topic]),
+    lists:umerge(Res).
+
+find_subscriber(S, Topic) when is_binary(Topic) ->
+    case mqtree_multi_match(Topic) of
         [Filter|Filters] ->
             find_subscriber(S, {Filters, {Filter, S, '_', '_'}});
         [] ->

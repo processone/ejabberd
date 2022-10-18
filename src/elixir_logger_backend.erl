@@ -5,7 +5,7 @@
 %%% Created : 9 March 2016 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -25,6 +25,7 @@
 -module(elixir_logger_backend).
 
 -ifdef(ELIXIR_ENABLED).
+-ifdef(LAGER).
 
 -behaviour(gen_event).
 
@@ -122,4 +123,5 @@ severity_to_level(critical) -> error;
 severity_to_level(alert) -> error;
 severity_to_level(emergency) -> error.
 
+-endif.
 -endif.

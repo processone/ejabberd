@@ -5,7 +5,7 @@
 %%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -79,8 +79,6 @@
 
 -include("translate.hrl").
 
--define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
-
 %% default value for the maximum number of user messages
 -define(MAX_USER_MESSAGES, infinity).
 
@@ -106,9 +104,14 @@
 -callback count_messages(binary(), binary()) -> {ets_cache:tag(), non_neg_integer()}.
 -callback use_cache(binary()) -> boolean().
 -callback cache_nodes(binary()) -> [node()].
+-callback remove_old_messages_batch(binary(), non_neg_integer(), pos_integer()) ->
+    {ok, non_neg_integer()} | {error, term()}.
+-callback remove_old_messages_batch(binary(), non_neg_integer(), pos_integer(), any()) ->
+    {ok, any(), non_neg_integer()} | {error, term()}.
 
 -optional_callbacks([remove_expired_messages/1, remove_old_messages/2,
-		     use_cache/1, cache_nodes/1]).
+		     use_cache/1, cache_nodes/1, remove_old_messages_batch/3,
+		     remove_old_messages_batch/4]).
 
 depends(_Host, _Opts) ->
     [].
@@ -571,6 +574,16 @@ check_event(#message{from = From, to = To, id = ID, type = Type} = Msg) ->
 	    NewMsg = #message{from = To, to = From, id = ID, type = Type,
 			      sub_els = [#xevent{id = ID, offline = true}]},
 	    ejabberd_router:route(NewMsg),
+	    true;
+	% Don't store composing events
+	#xevent{id = V, composing = true} when V /= undefined ->
+	    false;
+	% Nor composing stopped events
+	#xevent{id = V, composing = false, delivered = false,
+		displayed = false, offline = false} when V /= undefined ->
+	    false;
+	% But store other received notifications
+	#xevent{id = V} when V /= undefined ->
 	    true;
 	_ ->
 	    false
@@ -1284,20 +1297,18 @@ mod_doc() ->
            {use_mam_for_storage,
             #{value => "true | false",
               desc =>
-                  ?T("This is an experimental option. Enabling this option "
-                     "will make 'mod_offline' not use the former spool "
-                     "table for storing MucSub offline messages, but will "
-                     "use the archive table instead. This use of the archive "
-                     "table is cleaner and it makes it possible for clients "
-                     "to slowly drop the former offline use case and rely on "
-                     "message archive instead. It also further reduces the "
-                     "storage required when you enabled MucSub. Enabling this "
+                  ?T("This is an experimental option. Enabling this option, "
+                     "'mod_offline' uses the 'mod_mam' archive table instead "
+                     "of its own spool table to retrieve the messages received "
+                     "when the user was offline. This allows client "
+                     "developers to slowly drop XEP-0160 and rely on XEP-0313 "
+                     "instead. It also further reduces the "
+                     "storage required when you enable MucSub. Enabling this "
                      "option has a known drawback for the moment: most of "
                      "flexible message retrieval queries don't work (those that "
                      "allow retrieval/deletion of messages by id), but this "
                      "specification is not widely used. The default value "
-                     "is 'false' to keep former behaviour as default and "
-                     "ensure this option is disabled.")}},
+                     "is 'false' to keep former behaviour as default.")}},
            {bounce_groupchat,
             #{value => "true | false",
               desc =>
@@ -1315,19 +1326,19 @@ mod_doc() ->
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}],
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}],
       example =>
 	  [{?T("This example allows power users to have as much as 5000 "
 	       "offline messages, administrators up to 2000, and all the "

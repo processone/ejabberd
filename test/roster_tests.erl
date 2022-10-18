@@ -3,7 +3,7 @@
 %%% Created : 22 Oct 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -224,12 +224,20 @@ get_items(Config, Version) ->
 			       sub_els = [#roster_query{ver = Version}]}) of
 	#iq{type = result,
 	    sub_els = [#roster_query{ver = NewVersion, items = Items}]} ->
-	    {NewVersion, Items};
+	    {NewVersion, normalize_items(Items)};
 	#iq{type = result, sub_els = []} ->
 	    {empty, []};
 	#iq{type = error} = Err ->
 	    xmpp:get_error(Err)
     end.
+
+normalize_items(Items) ->
+    Items2 =
+        lists:map(
+          fun(I) ->
+                  I#roster_item{groups = lists:sort(I#roster_item.groups)}
+          end, Items),
+    lists:sort(Items2).
 
 get_item(Config, JID) ->
     case get_items(Config) of

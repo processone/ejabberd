@@ -15,6 +15,7 @@
 /*.cache
 /deps/
 /.deps-update/
+/.ejabberd-modules/
 /ebin/
 /ejabberd.init
 /ejabberd.service
@@ -37,3 +38,8 @@
 /rebar.lock
 /log/
 Mnesia.nonode@nohost/
+# Binaries created with tools/make-{binaries,installers,packages}:
+/ejabberd_*.deb
+/ejabberd-*.rpm
+/ejabberd-*.run
+/ejabberd-*.tar.gz

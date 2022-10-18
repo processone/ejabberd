@@ -31,11 +31,17 @@
 -export([bounce_sm_packet/1,
 	 disco_sm_features/5,
 	 remove_user/2,
-	 process_iq/1]).
+	 process_iq/1,
+	 get_mix_roster_items/2,
+	 webadmin_user/4,
+	 webadmin_page/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
+-include("mod_roster.hrl").
 -include("translate.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 
 -define(MIX_PAM_CACHE, mix_pam_cache).
 
@@ -61,8 +67,11 @@ start(Host, Opts) ->
 	    ejabberd_hooks:add(bounce_sm_packet, Host, ?MODULE, bounce_sm_packet, 50),
 	    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, disco_sm_features, 50),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50),
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0,
-					  ?MODULE, process_iq);
+	    ejabberd_hooks:add(roster_get, Host, ?MODULE, get_mix_roster_items, 50),
+	    ejabberd_hooks:add(webadmin_user, Host, ?MODULE, webadmin_user, 50),
+	    ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, webadmin_page, 50),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0, ?MODULE, process_iq),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_2, ?MODULE, process_iq);
 	Err ->
 	    Err
     end.
@@ -71,7 +80,11 @@ stop(Host) ->
     ejabberd_hooks:delete(bounce_sm_packet, Host, ?MODULE, bounce_sm_packet, 50),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, disco_sm_features, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0).
+    ejabberd_hooks:delete(roster_get, Host, ?MODULE, get_mix_roster_items, 50),
+    ejabberd_hooks:delete(webadmin_user, Host, ?MODULE, webadmin_user, 50),
+    ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, webadmin_page, 50),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_2).
 
 reload(Host, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
@@ -120,23 +133,23 @@ mod_doc() ->
           [{db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
            {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}]}.
 
 -spec bounce_sm_packet({term(), stanza()}) -> {term(), stanza()}.
 bounce_sm_packet({_, #message{to = #jid{lresource = <<>>} = To,
@@ -168,7 +181,7 @@ bounce_sm_packet(Acc) ->
 disco_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 disco_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_MIX_PAM_0 |
+    {result, [?NS_MIX_PAM_0, ?NS_MIX_PAM_2 |
 	      case Acc of
 		  {result, Features} -> Features;
 		  empty -> []
@@ -200,6 +213,26 @@ process_iq(#iq{type = set,
 process_iq(IQ) ->
     xmpp:make_error(IQ, unsupported_query_error(IQ)).
 
+-spec get_mix_roster_items([#roster_item{}], {binary(), binary()}) -> [#roster_item{}].
+get_mix_roster_items(Acc, {LUser, LServer}) ->
+    JID = jid:make(LUser, LServer),
+    case get_channels(JID) of
+        {ok, Channels} ->
+            lists:map(
+                fun({ItemJID, Id}) ->
+                    #roster_item{
+                        jid = ItemJID,
+                        name = <<>>,
+                        subscription = both,
+                        ask = undefined,
+                        groups = [<<"Channels">>],
+                        mix_channel = #mix_roster_channel{participant_id = Id}
+                    }
+                end, Channels);
+        _ ->
+            []
+    end ++ Acc.
+
 -spec remove_user(binary(), binary()) -> ok | {error, db_failure}.
 remove_user(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -229,13 +262,25 @@ remove_user(LUser, LServer) ->
 %%% Internal functions
 %%%===================================================================
 -spec process_join(iq()) -> ignore.
-process_join(#iq{from = From,
+process_join(#iq{from = From, lang = Lang,
 		 sub_els = [#mix_client_join{channel = Channel,
-					     join = Join}]} = IQ) ->
+		                             join = Join}]} = IQ) ->
     ejabberd_router:route_iq(
       #iq{from = jid:remove_resource(From),
 	  to = Channel, type = set, sub_els = [Join]},
-      fun(ResIQ) -> process_join_result(ResIQ, IQ) end),
+      fun(#iq{sub_els = [El]} = ResIQ) ->
+        try xmpp:decode(El) of
+            MixJoin ->
+                process_join_result(ResIQ#iq {
+                    sub_els = [MixJoin]
+                }, IQ)
+        catch
+            _:{xmpp_codec, Reason} ->
+                Txt = xmpp:io_format_error(Reason),
+                Err = xmpp:err_bad_request(Txt, Lang),
+                ejabberd_router:route_error(IQ, Err)
+        end
+      end),
     ignore.
 
 -spec process_leave(iq()) -> iq() | error.
@@ -254,24 +299,40 @@ process_leave(#iq{from = From,
     end.
 
 -spec process_join_result(iq(), iq()) -> ok.
-process_join_result(#iq{from = Channel,
-			type = result, sub_els = [#mix_join{id = ID} = Join]},
+process_join_result(#iq{from = #jid{} = Channel,
+			type = result, sub_els = [#mix_join{id = ID, xmlns = XmlNs} = Join]},
 		    #iq{to = To} = IQ) ->
     case add_channel(To, Channel, ID) of
 	ok ->
+	    % Do roster push
+	    mod_roster:push_item(To, #roster_item{jid = #jid{}}, #roster_item{
+		jid = Channel,
+		name = <<>>,
+		subscription = none,
+		ask = undefined,
+		groups = [],
+		mix_channel = #mix_roster_channel{participant_id = ID}
+	    }),
+	    % send IQ result
 	    ChanID = make_channel_id(Channel, ID),
 	    Join1 = Join#mix_join{id = <<"">>, jid = ChanID},
-	    ResIQ = xmpp:make_iq_result(IQ, #mix_client_join{join = Join1}),
+	    ResIQ = xmpp:make_iq_result(IQ, #mix_client_join{join = Join1, xmlns = XmlNs}),
 	    ejabberd_router:route(ResIQ);
 	{error, db_failure} ->
 	    ejabberd_router:route_error(IQ, db_error(IQ))
     end;
-process_join_result(Err, IQ) ->
+process_join_result(#iq{type = error} = Err, IQ) ->
     process_iq_error(Err, IQ).
 
 -spec process_leave_result(iq(), iq()) -> ok.
-process_leave_result(#iq{type = result, sub_els = [#mix_leave{} = Leave]}, IQ) ->
-    ResIQ = xmpp:make_iq_result(IQ, #mix_client_leave{leave = Leave}),
+process_leave_result(#iq{from = Channel, type = result, sub_els = [#mix_leave{xmlns = XmlNs} = Leave]},
+		     #iq{to = User} = IQ) ->
+    % Do roster push
+    mod_roster:push_item(User,
+	#roster_item{jid = Channel, subscription = none},
+	#roster_item{jid = Channel, subscription = remove}),
+    % send iq result
+    ResIQ = xmpp:make_iq_result(IQ, #mix_client_leave{leave = Leave, xmlns = XmlNs}),
     ejabberd_router:route(ResIQ);
 process_leave_result(Err, IQ) ->
     process_iq_error(Err, IQ).
@@ -339,6 +400,11 @@ get_channel(JID, Channel) ->
 	    end
     end.
 
+get_channels(JID) ->
+    {_, LServer, _} = jid:tolower(JID),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:get_channels(JID).
+
 add_channel(JID, Channel, ID) ->
     Mod = gen_mod:db_mod(JID#jid.lserver, ?MODULE),
     case Mod:add_channel(JID, Channel, ID) of
@@ -399,3 +465,55 @@ delete_cache(Mod, JID, Channel) ->
 	false ->
 	    ok
     end.
+
+%%%===================================================================
+%%% Webadmin interface
+%%%===================================================================
+webadmin_user(Acc, User, Server, Lang) ->
+    QueueLen = case get_channels({jid:nodeprep(User), jid:nameprep(Server), <<>>}) of
+	{ok, Channels} -> length(Channels);
+	error -> -1
+    end,
+    FQueueLen = ?C(integer_to_binary(QueueLen)),
+    FQueueView = ?AC(<<"mix_channels/">>, ?T("View joined MIX channels")),
+    Acc ++
+        [?XCT(<<"h3">>, ?T("Joined MIX channels:")),
+         FQueueLen,
+         ?C(<<"  |   ">>),
+         FQueueView].
+
+webadmin_page(_, Host,
+              #request{us = _US, path = [<<"user">>, U, <<"mix_channels">>],
+                       lang = Lang} = _Request) ->
+    Res = web_mix_channels(U, Host, Lang),
+    {stop, Res};
+webadmin_page(Acc, _, _) -> Acc.
+
+web_mix_channels(User, Server, Lang) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    US = {LUser, LServer},
+    Items = case get_channels({jid:nodeprep(User), jid:nameprep(Server), <<>>}) of
+	{ok, Channels} -> Channels;
+	error -> []
+    end,
+    SItems = lists:sort(Items),
+    FItems = case SItems of
+        [] -> [?CT(?T("None"))];
+        _ ->
+	    THead = ?XE(<<"thead">>, [?XE(<<"tr">>, [?XCT(<<"td">>, ?T("Channel JID")),
+						     ?XCT(<<"td">>, ?T("Participant ID"))])]),
+	    Entries = lists:map(fun ({JID, ID}) ->
+				    ?XE(<<"tr">>, [
+					?XAC(<<"td">>, [{<<"class">>, <<"valign">>}], jid:encode(JID)),
+					?XAC(<<"td">>, [{<<"class">>, <<"valign">>}], ID)
+				    ])
+				end, SItems),
+	    [?XE(<<"table">>, [THead, ?XE(<<"tbody">>, Entries)])]
+    end,
+    PageTitle = str:translate_and_format(Lang, ?T("Joined MIX channels of ~ts"), [us_to_list(US)]),
+    (?H1GL(PageTitle, <<"modules/#mod-mix-pam">>, <<"mod_mix_pam">>))
+        ++ FItems.
+
+us_to_list({User, Server}) ->
+    jid:encode({User, Server, <<"">>}).

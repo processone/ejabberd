@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -151,7 +151,6 @@ get_users(Server, []) ->
 count_users(Server, Opts) ->
     length(get_users(Server, Opts)).
 
-%% @spec (User, Server) -> true | false | {error, Error}
 user_exists(User, Server) ->
     case catch user_exists_ldap(User, Server) of
 	{'EXIT', _Error} -> {nocache, {error, db_failure}};

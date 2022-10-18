@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -40,6 +40,7 @@
 	 room_destroyed/4,
 	 store_room/4,
 	 store_room/5,
+	 store_changes/4,
 	 restore_room/3,
 	 forget_room/3,
 	 create_room/3,
@@ -68,6 +69,7 @@
 	 get_online_rooms_by_user/3,
 	 can_use_nick/4,
 	 get_subscribed_rooms/2,
+         remove_user/2,
 	 procname/2,
 	 route/1, unhibernate_room/3]).
 
@@ -91,6 +93,7 @@
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), binary(), [binary()]) -> ok.
 -callback store_room(binary(), binary(), binary(), list(), list()|undefined) -> {atomic, any()}.
+-callback store_changes(binary(), binary(), binary(), list()) -> {atomic, any()}.
 -callback restore_room(binary(), binary(), binary()) -> muc_room_opts() | error.
 -callback forget_room(binary(), binary(), binary()) -> {atomic, any()}.
 -callback can_use_nick(binary(), binary(), jid(), binary()) -> boolean().
@@ -111,7 +114,8 @@
 -callback get_subscribed_rooms(binary(), binary(), jid()) ->
           {ok, [{jid(), binary(), [binary()]}]} | {error, db_failure}.
 
--optional_callbacks([get_subscribed_rooms/3]).
+-optional_callbacks([get_subscribed_rooms/3,
+                     store_changes/4]).
 
 %%====================================================================
 %% API
@@ -119,6 +123,8 @@
 start(Host, Opts) ->
     case mod_muc_sup:start(Host) of
 	{ok, _} ->
+            ejabberd_hooks:add(remove_user, Host, ?MODULE,
+                               remove_user, 50),
 	    MyHosts = gen_mod:get_opt_hosts(Opts),
 	    Mod = gen_mod:db_mod(Opts, ?MODULE),
 	    RMod = gen_mod:ram_db_mod(Opts, ?MODULE),
@@ -130,6 +136,8 @@ start(Host, Opts) ->
     end.
 
 stop(Host) ->
+    ejabberd_hooks:delete(remove_user, Host, ?MODULE,
+                          remove_user, 50),
     Proc = mod_muc_sup:procname(Host),
     supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
     supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
@@ -158,7 +166,7 @@ reload(ServerHost, NewOpts, OldOpts) ->
       fun(I) ->
 	      ?GEN_SERVER:cast(procname(ServerHost, I),
 			       {reload, AddHosts, DelHosts, NewHosts})
-      end, lists:seq(1, erlang:system_info(logical_processors))),
+      end, lists:seq(1, misc:logical_processors())),
     load_permanent_rooms(AddHosts, ServerHost, NewOpts),
     shutdown_rooms(ServerHost, DelHosts, OldRMod),
     lists:foreach(
@@ -185,7 +193,7 @@ procname(Host, I) when is_integer(I) ->
       <<(atom_to_binary(?MODULE, latin1))/binary, "_", Host/binary,
 	"_", (integer_to_binary(I))/binary>>, utf8);
 procname(Host, RoomHost) ->
-    Cores = erlang:system_info(logical_processors),
+    Cores = misc:logical_processors(),
     I = erlang:phash2(RoomHost, Cores) + 1,
     procname(Host, I).
 
@@ -313,6 +321,11 @@ store_room(ServerHost, Host, Name, Opts, ChangesHints) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:store_room(LServer, Host, Name, Opts, ChangesHints).
 
+store_changes(ServerHost, Host, Name, ChangesHints) ->
+    LServer = jid:nameprep(ServerHost),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:store_changes(LServer, Host, Name, ChangesHints).
+
 restore_room(ServerHost, Host, Name) ->
     LServer = jid:nameprep(ServerHost),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -389,10 +402,10 @@ init([Host, Worker]) ->
 			 {stop, normal, ok, state()}.
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
-handle_call({unhibernate, Room, Host}, _From,
+handle_call({unhibernate, Room, Host, ResetHibernationTime}, _From,
     #{server_host := ServerHost} = State) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    {reply, load_room(RMod, Host, ServerHost, Room), State};
+    {reply, load_room(RMod, Host, ServerHost, Room, ResetHibernationTime), State};
 handle_call({create, Room, Host, Opts}, _From,
 	    #{server_host := ServerHost} = State) ->
     ?DEBUG("MUC: create new room '~ts'~n", [Room]),
@@ -566,11 +579,15 @@ extract_password(#iq{} = IQ) ->
 
 -spec unhibernate_room(binary(), binary(), binary()) -> {ok, pid()} | error.
 unhibernate_room(ServerHost, Host, Room) ->
+    unhibernate_room(ServerHost, Host, Room, true).
+
+-spec unhibernate_room(binary(), binary(), binary(), boolean()) -> {ok, pid()} | error.
+unhibernate_room(ServerHost, Host, Room, ResetHibernationTime) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
 	    Proc = procname(ServerHost, {Room, Host}),
-	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host}) of
+	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host, ResetHibernationTime}, 20000) of
 		{ok, _} = R -> R;
 		_ -> error
 	    end;
@@ -592,7 +609,7 @@ route_to_room(Packet, ServerHost) ->
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err);
 		StartType ->
-		    case load_room(RMod, Host, ServerHost, Room) of
+		    case load_room(RMod, Host, ServerHost, Room, true) of
 			{error, notfound} when StartType == start ->
 			    case check_create_room(ServerHost, Host, Room, From) of
 				true ->
@@ -836,28 +853,36 @@ load_permanent_rooms(Hosts, ServerHost, Opts) ->
 		    lists:foreach(
 			fun(R) ->
 			    {Room, _} = R#muc_room.name_host,
-			    unhibernate_room(ServerHost, Host, Room)
+			    unhibernate_room(ServerHost, Host, Room, false)
 			end, get_rooms(ServerHost, Host))
 		end, Hosts);
 	false ->
 	    ok
     end.
 
--spec load_room(module(), binary(), binary(), binary()) -> {ok, pid()} |
-							   {error, notfound | term()}.
-load_room(RMod, Host, ServerHost, Room) ->
+-spec load_room(module(), binary(), binary(), binary(), boolean()) ->
+    {ok, pid()} | {error, notfound | term()}.
+load_room(RMod, Host, ServerHost, Room, ResetHibernationTime) ->
     case restore_room(ServerHost, Host, Room) of
 	error ->
 	    {error, notfound};
 	Opts0 ->
+	    Mod = gen_mod:db_mod(ServerHost, mod_muc),
 	    case proplists:get_bool(persistent, Opts0) of
 		true ->
 		    ?DEBUG("Restore room: ~ts", [Room]),
-		    start_room(RMod, Host, ServerHost, Room, Opts0);
+		    Res2 = start_room(RMod, Host, ServerHost, Room, Opts0),
+		    case {Res2, ResetHibernationTime} of
+			{{ok, _}, true} ->
+			    NewOpts = lists:keyreplace(hibernation_time, 1, Opts0, {hibernation_time, undefined}),
+			    store_room(ServerHost, Host, Room, NewOpts, []);
+			_ ->
+			    ok
+		    end,
+		    Res2;
 		_ ->
 		    ?DEBUG("Restore hibernated non-persistent room: ~ts", [Room]),
 		    Res = start_room(RMod, Host, ServerHost, Room, Opts0),
-		    Mod = gen_mod:db_mod(ServerHost, mod_muc),
 		    case erlang:function_exported(Mod, get_subscribed_rooms, 3) of
 			true ->
 			    ok;
@@ -1114,6 +1139,32 @@ count_online_rooms(ServerHost, Host) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     RMod:count_online_rooms(ServerHost, Host).
 
+-spec remove_user(binary(), binary()) -> ok.
+remove_user(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case erlang:function_exported(Mod, remove_user, 2) of
+	true ->
+            Mod:remove_user(LUser, LServer);
+        false ->
+            ok
+    end,
+    JID = jid:make(User, Server),
+    lists:foreach(
+      fun(Host) ->
+              lists:foreach(
+                fun({_, _, Pid}) ->
+                        mod_muc_room:change_item_async(
+                          Pid, JID, affiliation, none, <<"User removed">>),
+                        mod_muc_room:change_item_async(
+                          Pid, JID, role, none, <<"User removed">>)
+                end,
+                get_online_rooms(LServer, Host))
+      end,
+      gen_mod:get_module_opt_hosts(LServer, mod_muc)),
+    ok.
+
 opts_to_binary(Opts) ->
     lists:map(
       fun({title, Title}) ->
@@ -1126,7 +1177,7 @@ opts_to_binary(Opts) ->
               {subject, iolist_to_binary(Subj)};
          ({subject_author, Author}) ->
               {subject_author, iolist_to_binary(Author)};
-         ({affiliations, Affs}) ->
+         ({AffOrRole, Affs}) when (AffOrRole == affiliation) or (AffOrRole == role) ->
               {affiliations, lists:map(
                                fun({{U, S, R}, Aff}) ->
                                        NewAff =
@@ -1217,6 +1268,8 @@ mod_opt_type(user_message_shaper) ->
     econf:atom();
 mod_opt_type(user_presence_shaper) ->
     econf:atom();
+mod_opt_type(cleanup_affiliations_on_start) ->
+    econf:bool();
 mod_opt_type(default_room_options) ->
     econf:options(
       #{allow_change_subj => econf:bool(),
@@ -1228,8 +1281,11 @@ mod_opt_type(default_room_options) ->
 	allow_user_invites => econf:bool(),
 	allow_visitor_nickchange => econf:bool(),
 	allow_visitor_status => econf:bool(),
+	allow_voice_requests => econf:bool(),
 	anonymous => econf:bool(),
 	captcha_protected => econf:bool(),
+	description => econf:binary(),
+	enable_hats => econf:bool(),
 	lang => econf:lang(),
 	logging => econf:bool(),
 	mam => econf:bool(),
@@ -1245,7 +1301,11 @@ mod_opt_type(default_room_options) ->
 	      econf:enum([moderator, participant, visitor])),
 	public => econf:bool(),
 	public_list => econf:bool(),
-	title => econf:binary()});
+	pubsub => econf:binary(),
+	title => econf:binary(),
+	vcard => econf:vcard_temp(),
+	vcard_xupdate => econf:binary(),
+	voice_request_min_interval => econf:pos_int()});
 mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
 mod_opt_type(ram_db_type) ->
@@ -1294,6 +1354,7 @@ mod_options(Host) ->
      {preload_rooms, true},
      {hibernation_timeout, infinity},
      {vcard, undefined},
+     {cleanup_affiliations_on_start, false},
      {default_room_options,
       [{allow_change_subj,true},
        {allow_private_messages,true},
@@ -1358,19 +1419,19 @@ mod_doc() ->
               desc =>
                   ?T("To configure who is allowed to create new rooms at the "
                      "Multi-User Chat service, this option can be used. "
-                     "By default any account in the local ejabberd server is "
+                     "The default value is 'all', which means everyone is "
                      "allowed to create rooms.")}},
            {access_persistent,
             #{value => ?T("AccessName"),
               desc =>
                   ?T("To configure who is allowed to modify the 'persistent' room option. "
-                     "By default any account in the local ejabberd server is allowed to "
+                     "The default value is 'all', which means everyone is allowed to "
                      "modify that option.")}},
            {access_mam,
             #{value => ?T("AccessName"),
               desc =>
                   ?T("To configure who is allowed to modify the 'mam' room option. "
-                     "By default any account in the local ejabberd server is allowed to "
+                     "The default value is 'all', which means everyone is allowed to "
                      "modify that option.")}},
            {access_register,
             #{value => ?T("AccessName"),
@@ -1382,14 +1443,13 @@ mod_doc() ->
            {db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Define the type of persistent storage where the module will "
-                     "store room information. The default is the storage defined "
-                     "by the global option 'default_db', or 'mnesia' if omitted.")}},
+                  ?T("Same as top-level _`default_db`_ option, "
+                     "but applied to this module only.")}},
            {ram_db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Define the type of volatile (in-memory) storage where the module "
-                     "will store room information ('muc_online_room' and 'muc_online_users').")}},
+                  ?T("Same as top-level _`default_ram_db`_ option, "
+                     "but applied to this module only.")}},
            {hibernation_timeout,
             #{value => "infinity | Seconds",
               desc =>
@@ -1486,7 +1546,8 @@ mod_doc() ->
                   ?T("This option defines after how many users in the room, "
                      "it is considered overcrowded. When a MUC room is considered "
                      "overcrowed, presence broadcasts are limited to reduce load, "
-                     "traffic and excessive presence \"storm\" received by participants.")}},
+                     "traffic and excessive presence \"storm\" received by participants. "
+                     "The default value is '1000'.")}},
            {min_message_interval,
             #{value => ?T("Number"),
               desc =>
@@ -1517,7 +1578,7 @@ mod_doc() ->
            {queue_type,
             #{value => "ram | file",
               desc =>
-                  ?T("Same as top-level 'queue_type' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`queue_type`_ option, but applied to this module only.")}},
            {regexp_room_id,
             #{value => "string()",
               desc =>
@@ -1571,8 +1632,15 @@ mod_doc() ->
                      "    -",
                      "      work: true",
                      "      street: Elm Street"]}]}},
+           {cleanup_affiliations_on_start,
+            #{value => "true | false",
+              note => "added in 22.05",
+              desc =>
+                  ?T("Remove affiliations for non-existing local users on startup. "
+                     "The default value is 'false'.")}},
            {default_room_options,
             #{value => ?T("Options"),
+              note => "improved in 22.05",
               desc =>
                   ?T("This option allows to define the desired "
                      "default room options. Note that the creator of a room "
@@ -1609,6 +1677,11 @@ mod_doc() ->
                        "If disallowed, the status text is stripped before broadcasting "
                        "the presence update to all the room occupants. "
                        "The default value is 'true'.")}},
+             {allow_voice_requests,
+              #{value => "true | false",
+                desc =>
+                    ?T("Allow visitors in a moderated room to request voice. "
+                       "The default value is 'true'.")}},
              {anonymous,
               #{value => "true | false",
                 desc =>
@@ -1625,6 +1698,16 @@ mod_doc() ->
                        "https://docs.ejabberd.im/admin/configuration/#captcha[CAPTCHA] "
                        "in order to accept their join in the room. "
                        "The default value is 'false'.")}},
+             {description,
+              #{value => ?T("Room Description"),
+                desc =>
+                    ?T("Short description of the room. "
+                       "The default value is an empty string.")}},
+             {enable_hats,
+              #{value => "true | false",
+                desc =>
+                    ?T("Allow extended roles as defined in XEP-0317 Hats. "
+                       "The default value is 'false'.")}},
              {lang,
               #{value => ?T("Language"),
                 desc =>
@@ -1634,7 +1717,7 @@ mod_doc() ->
              {logging,
               #{value => "true | false",
                 desc =>
-                    ?T("The public messages are logged using 'mod_muc_log'. "
+                    ?T("The public messages are logged using _`mod_muc_log`_. "
                        "The default value is 'false'.")}},
              {members_by_default,
               #{value => "true | false",
@@ -1680,6 +1763,21 @@ mod_doc() ->
                 desc =>
                     ?T("The list of participants is public, without requiring "
                        "to enter the room. The default value is 'true'.")}},
+             {pubsub,
+              #{value => ?T("PubSub Node"),
+                desc =>
+                    ?T("XMPP URI of associated Publish/Subscribe node. "
+                       "The default value is an empty string.")}},
+             {vcard,
+              #{value => ?T("vCard"),
+                desc =>
+                    ?T("A custom vCard for the room. See the equivalent mod_muc option."
+                       "The default value is an empty string.")}},
+             {voice_request_min_interval,
+              #{value => ?T("Number"),
+                desc =>
+                    ?T("Minimum interval between voice requests, in seconds. "
+                       "The default value is '1800'.")}},
              {mam,
               #{value => "true | false",
                 desc =>

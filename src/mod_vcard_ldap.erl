@@ -4,7 +4,7 @@
 %%% Created : 29 Jul 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -571,7 +571,7 @@ mod_doc() ->
 		   }]}}] ++
           [{Opt,
             #{desc =>
-                  {?T("Same as top-level '~s' option, but "
+                  {?T("Same as top-level _`~s`_ option, but "
                       "applied to this module only."), [Opt]}}}
            || Opt <- [ldap_base, ldap_servers, ldap_uids,
                       ldap_deref_aliases, ldap_encrypt, ldap_password,

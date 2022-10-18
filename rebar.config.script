@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -387,8 +387,8 @@ Rules = [
 			    ]}]), []},
 	 {[plugins], IsRebar3 and (os:getenv("GITHUB_ACTIONS") == "true"),
 	  AppendList([{coveralls, {git,
-                                   "https://github.com/RoadRunnr/coveralls-erl.git",
-                                   {branch, "feature/git-info"}}} ]), []},
+                                   "https://github.com/processone/coveralls-erl.git",
+                                   {branch, "addjsonfile"}}} ]), []},
 	 {[overrides], [post_hook_configure], SystemDeps == false,
 	  AppendList2(GenDepsConfigure), [], []},
 	 {[ct_extra_params], [eunit_compile_opts], true,

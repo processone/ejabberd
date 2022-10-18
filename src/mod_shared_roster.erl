@@ -5,7 +5,7 @@
 %%% Created :  5 Mar 2005 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -150,7 +150,8 @@ depends(_Host, _Opts) ->
 
 -spec init_cache(module(), binary(), gen_mod:opts()) -> ok.
 init_cache(Mod, Host, Opts) ->
-    ets_cache:new(?SPECIAL_GROUPS_CACHE, [{max_size, 4}]),
+    NumHosts = length(ejabberd_option:hosts()),
+    ets_cache:new(?SPECIAL_GROUPS_CACHE, [{max_size, NumHosts * 4}]),
     case use_cache(Mod, Host) of
         true ->
 	    CacheOpts = cache_opts(Opts),
@@ -184,8 +185,8 @@ cache_nodes(Mod, Host) ->
         false -> ejabberd_cluster:get_nodes()
     end.
 
--spec get_user_roster([#roster{}], {binary(), binary()}) -> [#roster{}].
-get_user_roster(Items, {U, S} = US) ->
+-spec get_user_roster([#roster_item{}], {binary(), binary()}) -> [#roster_item{}].
+get_user_roster(Items, {_, S} = US) ->
     {DisplayedGroups, Cache} = get_user_displayed_groups(US),
     SRUsers = lists:foldl(
 	fun(Group, Acc1) ->
@@ -201,24 +202,23 @@ get_user_roster(Items, {U, S} = US) ->
 	end,
 	dict:new(), DisplayedGroups),
     {NewItems1, SRUsersRest} = lists:mapfoldl(
-	fun(Item, SRUsers1) ->
-	    {_, _, {U1, S1, _}} = Item#roster.usj,
-	    US1 = {U1, S1},
+	fun(Item = #roster_item{jid = #jid{luser = User1, lserver = Server1}}, SRUsers1) ->
+	    US1 = {User1, Server1},
 	    case dict:find(US1, SRUsers1) of
 		{ok, GroupLabels} ->
-		    {Item#roster{subscription = both,
-				 groups = Item#roster.groups ++ GroupLabels,
-				 ask = none},
+		    {Item#roster_item{subscription = both,
+				      groups = Item#roster_item.groups ++ GroupLabels,
+				      ask = undefined},
 		     dict:erase(US1, SRUsers1)};
 		error ->
 		    {Item, SRUsers1}
 	    end
 	end,
 	SRUsers, Items),
-    SRItems = [#roster{usj = {U, S, {U1, S1, <<"">>}},
-		       us = US, jid = {U1, S1, <<"">>},
-		       name = get_rosteritem_name(U1, S1),
-		       subscription = both, ask = none, groups = GroupLabels}
+    SRItems = [#roster_item{jid = jid:make(U1, S1),
+			    name = get_rosteritem_name(U1, S1),
+			    subscription = both, ask = undefined,
+			    groups = GroupLabels}
 	       || {{U1, S1}, GroupLabels} <- dict:to_list(SRUsersRest)],
     SRItems ++ NewItems1.
 
@@ -422,6 +422,7 @@ create_group(Host, Group, Opts) ->
     end,
     case use_cache(Mod, Host) of
 	true ->
+	    ets_cache:delete(?GROUP_OPTS_CACHE, {Host, Group}, cache_nodes(Mod, Host)),
 	    ets_cache:insert(?GROUP_OPTS_CACHE, {Host, Group}, Opts, cache_nodes(Mod, Host));
 	_ ->
 	    ok
@@ -511,7 +512,8 @@ get_group_opt_cached(Host, Group, Opt, Default, Cache) ->
 	    proplists:get_value(Opt, Opts, Default)
     end.
 
-%% @spec (Host::string(), Group::string(), Opt::atom(), Default) -> OptValue | Default
+-spec get_group_opt(Host::binary(), Group::binary(), displayed_groups | label, Default) ->
+    OptValue::any() | Default.
 get_group_opt(Host, Group, Opt, Default) ->
     case get_group_opts(Host, Group) of
       error -> Default;
@@ -686,7 +688,8 @@ is_user_in_group(US, Group, Host) ->
 	    true
     end.
 
-%% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok} | error
+-spec add_user_to_group(Host::binary(), {User::binary(), Server::binary()},
+                        Group::binary()) -> {atomic, ok} | error.
 add_user_to_group(Host, US, Group) ->
     {_LUser, LServer} = US,
     case lists:member(LServer, ejabberd_config:get_option(hosts)) of
@@ -852,16 +855,14 @@ displayed_to_groups(GroupName, LServer) ->
 
 push_item(User, Server, Item) ->
     mod_roster:push_item(jid:make(User, Server),
-			 Item#roster{subscription = none},
+			 Item#roster_item{subscription = none},
 			 Item).
 
 push_roster_item(User, Server, ContactU, ContactS, ContactN,
 		 GroupLabel, Subscription) ->
-    Item = #roster{usj =
-		       {User, Server, {ContactU, ContactS, <<"">>}},
-		   us = {User, Server}, jid = {ContactU, ContactS, <<"">>},
-		   name = ContactN, subscription = Subscription, ask = none,
-		   groups = [GroupLabel]},
+    Item = #roster_item{jid = jid:make(ContactU, ContactS),
+			name = ContactN, subscription = Subscription, ask = undefined,
+			groups = [GroupLabel]},
     push_item(User, Server, Item).
 
 -spec c2s_self_presence({presence(), ejabberd_c2s:state()})
@@ -870,12 +871,15 @@ c2s_self_presence(Acc) ->
     Acc.
 
 -spec unset_presence(binary(), binary(), binary(), binary()) -> ok.
-unset_presence(LUser, LServer, Resource, Status) ->
+unset_presence(User, Server, Resource, Status) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    LResource = jid:resourceprep(Resource),
     Resources = ejabberd_sm:get_user_resources(LUser,
 					       LServer),
     ?DEBUG("Unset_presence for ~p @ ~p / ~p -> ~p "
 	   "(~p resources)",
-	   [LUser, LServer, Resource, Status, length(Resources)]),
+	   [LUser, LServer, LResource, Status, length(Resources)]),
     case length(Resources) of
       0 ->
 	  lists:foreach(
@@ -1266,33 +1270,30 @@ mod_doc() ->
 	   ?T("- Displayed: A list of groups that will be in the "
 	      "rosters of this group's members. A group of other vhost can "
 	      "be identified with 'groupid@vhost'."), "",
-	   ?T("This module depends on 'mod_roster'. "
+	   ?T("This module depends on _`mod_roster`_. "
 	      "If not enabled, roster queries will return 503 errors.")],
       opts =>
           [{db_type,
             #{value => "mnesia | sql",
               desc =>
-                  ?T("Define the type of storage where the module will create "
-		     "the tables and store user information. The default is "
-		     "the storage defined by the global option 'default_db', "
-		     "or 'mnesia' if omitted. If 'sql' value is defined, "
-		     "make sure you have defined the database.")}},
-	   {use_cache,
+                  ?T("Same as top-level _`default_db`_ option, "
+                     "but applied to this module only.")}},
+           {use_cache,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
            {cache_missed,
             #{value => "true | false",
               desc =>
-                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}],
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}],
       example =>
 	  [{?T("Take the case of a computer club that wants all its members "
 	       "seeing each other in their rosters. To achieve this, they "

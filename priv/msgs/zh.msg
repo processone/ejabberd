@@ -4,7 +4,7 @@
 %%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 
 {" (Add * to the end of field to match substring)"," (在字段末添加*来匹配子串)"}.
-{" has set the subject to: ","已将标题设置为: "}.
+{" has set the subject to: "," 已将标题设置为: "}.
 {"# participants","# 个参与人"}.
 {"A description of the node","该节点的描述"}.
 {"A friendly name for the node","该节点的友好名称"}.
@@ -20,10 +20,11 @@
 {"Access model","访问模型"}.
 {"Account doesn't exist","账号不存在"}.
 {"Action on user","对用户的动作"}.
+{"Add a hat to a user","给用户添加头衔"}.
 {"Add Jabber ID","添加Jabber ID"}.
 {"Add New","添加新用户"}.
 {"Add User","添加用户"}.
-{"Administration of ","管理"}.
+{"Administration of ","管理 "}.
 {"Administration","管理"}.
 {"Administrator privileges required","需要管理员权限"}.
 {"All activity","所有活动"}.
@@ -62,7 +63,7 @@
 {"Automatic node creation is not enabled","未启用自动节点创建"}.
 {"Backup Management","备份管理"}.
 {"Backup of ~p","~p的备份"}.
-{"Backup to File at ","备份文件位于"}.
+{"Backup to File at ","备份文件位于 "}.
 {"Backup","备份"}.
 {"Bad format","格式错误"}.
 {"Birthday","出生日期"}.
@@ -78,6 +79,7 @@
 {"Changing role/affiliation is not allowed","不允许修改角色/单位"}.
 {"Channel already exists","频道已存在"}.
 {"Channel does not exist","频道不存在"}.
+{"Channel JID","频道 JID"}.
 {"Channels","频道"}.
 {"Characters not allowed:","不允许字符："}.
 {"Chatroom configuration modified","聊天室配置已修改"}.
@@ -97,12 +99,13 @@
 {"Configuration","配置"}.
 {"Connected Resources:","已连接资源:"}.
 {"Contact Addresses (normally, room owner or owners)","联系人地址 (通常为房间持有人)"}.
+{"Contrib Modules","Contrib 模块"}.
 {"Country","国家"}.
 {"CPU Time:","CPU时间："}.
 {"Current Discussion Topic","当前讨论话题"}.
 {"Database failure","数据库失败"}.
 {"Database Tables at ~p","位于~p的数据库表"}.
-{"Database Tables Configuration at ","数据库表格配置位于"}.
+{"Database Tables Configuration at ","数据库表格配置位于 "}.
 {"Database","数据库"}.
 {"December","十二月"}.
 {"Default users as participants","用户默认被视为参与人"}.
@@ -119,12 +122,12 @@
 {"'Displayed groups' not added (they do not exist!): ","'显示的群组' 未被添加 (它们不存在!): "}.
 {"Displayed:","已显示:"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","不要将密码告诉任何人, 就算是XMPP服务器的管理员也不可以."}.
-{"Dump Backup to Text File at ","转储备份到文本文件于"}.
+{"Dump Backup to Text File at ","将备份转储到位于以下位置的文本文件 "}.
 {"Dump to Text File","转储到文本文件"}.
 {"Duplicated groups are not allowed by RFC6121","按照RFC6121的规则，不允许有重复的群组"}.
 {"Dynamically specify a replyto of the item publisher","为项目发布者动态指定一个 replyto"}.
 {"Edit Properties","编辑属性"}.
-{"Either approve or decline the voice request.","接受或拒绝声音请求"}.
+{"Either approve or decline the voice request.","接受或拒绝声音请求."}.
 {"ejabberd HTTP Upload service","ejabberd HTTP 上传服务"}.
 {"ejabberd MUC module","ejabberd MUC 模块"}.
 {"ejabberd Multicast service","ejabberd多重映射服务"}.
@@ -136,6 +139,7 @@
 {"Elements","元素"}.
 {"Email Address","电邮地址"}.
 {"Email","电子邮件"}.
+{"Enable hats","启用头衔"}.
 {"Enable logging","启用服务器端聊天记录"}.
 {"Enable message archiving","启用消息归档"}.
 {"Enabling push without 'node' attribute is not supported","不支持未使用'node'属性就开启推送"}.
@@ -170,10 +174,12 @@
 {"Full List of Room Admins","房间管理员完整列表"}.
 {"Full List of Room Owners","房间持有人完整列表"}.
 {"Full Name","全名"}.
+{"Get List of Online Users","获取在线用户列表"}.
+{"Get List of Registered Users","获取注册用户列表"}.
 {"Get Number of Online Users","获取在线用户数"}.
 {"Get Number of Registered Users","获取注册用户数"}.
 {"Get Pending","获取挂起"}.
-{"Get User Last Login Time","获取用户上次登陆时间"}.
+{"Get User Last Login Time","获取用户上次登录时间"}.
 {"Get User Password","获取用户密码"}.
 {"Get User Statistics","获取用户统计"}.
 {"Given Name","中间名"}.
@@ -186,6 +192,9 @@
 {"has been kicked because of an affiliation change","因联属关系改变而被踢出"}.
 {"has been kicked because the room has been changed to members-only","因该房间改为只对会员开放而被踢出"}.
 {"has been kicked","已被踢出"}.
+{"Hat title","头衔标题"}.
+{"Hat URI","头衔 URI"}.
+{"Hats limit exceeded","已超过头衔限制"}.
 {"Host unknown","主人未知"}.
 {"Host","主机"}.
 {"HTTP File Upload","HTTP文件上传"}.
@@ -194,10 +203,10 @@
 {"Import Directory","导入目录"}.
 {"Import File","导入文件"}.
 {"Import user data from jabberd14 spool file:","从 jabberd14 Spool 文件导入用户数据:"}.
-{"Import User from File at ","导入用户的文件位于"}.
+{"Import User from File at ","从以下位置的文件导入用户 "}.
 {"Import users data from a PIEFXIS file (XEP-0227):","从 PIEFXIS 文件 (XEP-0227) 导入用户数据:"}.
 {"Import users data from jabberd14 spool directory:","从jabberd14 Spool目录导入用户数据:"}.
-{"Import Users from Dir at ","导入用户的目录位于"}.
+{"Import Users from Dir at ","从以下位置目录导入用户 "}.
 {"Import Users From jabberd14 Spool Files","从 jabberd14 Spool 文件导入用户"}.
 {"Improper domain part of 'from' attribute","不恰当的'from'属性域名部分"}.
 {"Improper message type","不恰当的消息类型"}.
@@ -208,6 +217,8 @@
 {"Incorrect value of 'action' attribute","'action' 属性的值不正确"}.
 {"Incorrect value of 'action' in data form","数据表单中 'action' 的值不正确"}.
 {"Incorrect value of 'path' in data form","数据表单中 'path' 的值不正确"}.
+{"Installed Modules:","已安装的模块："}.
+{"Install","安装"}.
 {"Insufficient privilege","权限不足"}.
 {"Internal server error","内部服务器错误"}.
 {"Invalid 'from' attribute in forwarded message","转发的信息中 'from' 属性的值无效"}.
@@ -224,19 +235,23 @@
 {"January","一月"}.
 {"JID normalization denied by service policy","JID规范化被服务策略拒绝"}.
 {"JID normalization failed","JID规范化失败"}.
+{"Joined MIX channels of ~ts","加入了 ~ts 的 MIX 频道"}.
+{"Joined MIX channels:","加入了 MIX 频道："}.
 {"joins the room","加入房间"}.
 {"July","七月"}.
 {"June","六月"}.
 {"Just created","刚刚创建"}.
 {"Label:","标签:"}.
 {"Last Activity","上次活动"}.
-{"Last login","上次登陆"}.
+{"Last login","上次登录"}.
 {"Last message","最近消息"}.
 {"Last month","上个月"}.
 {"Last year","上一年"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","文本的SHA-256哈希的最低有效位应等于十六进制标签"}.
 {"leaves the room","离开房间"}.
 {"List of rooms","房间列表"}.
+{"List of users with hats","有头衔用户的列表"}.
+{"List users with hats","有头衔用户列表"}.
 {"Logging","正在记录"}.
 {"Low level update script","低级别更新脚本"}.
 {"Make participants list public","公开参与人列表"}.
@@ -249,7 +264,7 @@
 {"Malformed username","用户名无效"}.
 {"MAM preference modification denied by service policy","MAM偏好被服务策略拒绝"}.
 {"March","三月"}.
-{"Max # of items to persist","允许持久化的最大内容条目数"}.
+{"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","要保留的最大项目数 #，`max`表示除了服务器强加的最大值之外没有特定限制"}.
 {"Max payload size in bytes","最大有效负载字节数"}.
 {"Maximum file size","最大文件大小"}.
 {"Maximum Number of History Messages Returned by Room","房间返回的历史消息最大值"}.
@@ -288,7 +303,7 @@
 {"Never","从未"}.
 {"New Password:","新密码:"}.
 {"Nickname can't be empty","昵称不能为空"}.
-{"Nickname Registration at ","昵称注册于"}.
+{"Nickname Registration at ","昵称注册于 "}.
 {"Nickname ~s does not exist in the room","昵称~s不在该房间"}.
 {"Nickname","昵称"}.
 {"No address elements found","没有找到地址的各元素"}.
@@ -326,6 +341,7 @@
 {"Node ~p","节点~p"}.
 {"Nodeprep has failed","Nodeprep 已失效"}.
 {"Nodes","节点"}.
+{"Node","节点"}.
 {"None","无"}.
 {"Not allowed","不允许"}.
 {"Not Found","没有找到"}.
@@ -339,8 +355,9 @@
 {"Number of Offline Messages","离线消息数量"}.
 {"Number of online users","在线用户数"}.
 {"Number of registered users","注册用户数"}.
-{"Number of seconds after which to automatically purge items","自动清除项目要等待的秒数"}.
+{"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","等待多少秒后自动清除项目，“max”表示除服务器施加的最大值外没有特定限制"}.
 {"Occupants are allowed to invite others","允许成员邀请其他人"}.
+{"Occupants are allowed to query others","成员可查询其他人"}.
 {"Occupants May Change the Subject","成员可以修改主题"}.
 {"October","十月"}.
 {"Offline Messages","离线消息"}.
@@ -367,11 +384,13 @@
 {"Only those on a whitelist may subscribe and retrieve items","仅白名单用户可以订阅和检索内容项"}.
 {"Organization Name","组织名称"}.
 {"Organization Unit","组织单位"}.
+{"Other Modules Available:","其他可用模块："}.
 {"Outgoing s2s Connections","出站 s2s 连接"}.
 {"Outgoing s2s Connections:","出站 s2s 连接:"}.
 {"Owner privileges required","需要持有人权限"}.
 {"Packet relay is denied by service policy","包中继被服务策略拒绝"}.
 {"Packet","数据包"}.
+{"Participant ID","参与者 ID"}.
 {"Participant","参与人"}.
 {"Password Verification:","密码确认:"}.
 {"Password Verification","确认密码"}.
@@ -418,6 +437,7 @@
 {"Registered Users:","注册用户:"}.
 {"Register","注册"}.
 {"Remote copy","远程复制"}.
+{"Remove a hat from a user","移除用户头衔"}.
 {"Remove All Offline Messages","移除所有离线消息"}.
 {"Remove User","删除用户"}.
 {"Remove","移除"}.
@@ -428,7 +448,7 @@
 {"Resources","资源"}.
 {"Restart Service","重启服务"}.
 {"Restart","重启"}.
-{"Restore Backup from File at ","要恢复的备份文件位于"}.
+{"Restore Backup from File at ","从以下位置的文件恢复备份 "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","在下次 ejabberd 重启后恢复二进制备份(需要的内存更少):"}.
 {"Restore binary backup immediately:","立即恢复二进制备份:"}.
 {"Restore plain text backup immediately:","立即恢复普通文本备份:"}.
@@ -455,7 +475,7 @@
 {"Search Results for ","搜索结果属于关键词 "}.
 {"Search the text","搜索文本"}.
 {"Search until the date","搜索截至日期"}.
-{"Search users in ","搜索用户于"}.
+{"Search users in ","在以下位置搜索用户 "}.
 {"Select All","全选"}.
 {"Send announcement to all online users on all hosts","发送通知给所有主机的在线用户"}.
 {"Send announcement to all online users","发送通知给所有在线用户"}.
@@ -473,6 +493,7 @@
 {"Shut Down Service","关闭服务"}.
 {"SOCKS5 Bytestreams","SOCKS5 字节流"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","某些 XMPP 客户端可以在计算机里存储你的密码. 处于安全考虑, 请仅在你的个人计算机里使用该功能."}.
+{"Sources Specs:","源参数："}.
 {"Specify the access model","指定访问范例"}.
 {"Specify the event message type","指定事件消息类型"}.
 {"Specify the publisher model","指定发布人范例"}.
@@ -518,8 +539,10 @@
 {"The JIDs of those to contact with questions","问题联系人的JID"}.
 {"The JIDs of those with an affiliation of owner","隶属所有人的JID"}.
 {"The JIDs of those with an affiliation of publisher","隶属发布人的JID"}.
+{"The list of all online users","所有在线用户列表"}.
+{"The list of all users","所有用户列表"}.
 {"The list of JIDs that may associate leaf nodes with a collection","可以将叶节点与集合关联的JID列表"}.
-{"The maximum number of child nodes that can be associated with a collection","可以与集合关联的最大子节点数"}.
+{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","可以与集合相关联的最大子节点数，“max”表示除服务器施加的最大值外没有特定限制"}.
 {"The minimum number of milliseconds between sending any two notification digests","发送任何两个通知摘要之间的最小毫秒数"}.
 {"The name of the node","该节点的名称"}.
 {"The node is a collection node","该节点是集合节点"}.
@@ -544,13 +567,12 @@
 {"The type of node data, usually specified by the namespace of the payload (if any)","节点数据的类型, 如果有, 通常由有效负载的名称空间指定"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","XSL转换的URL，可以将其应用于有效负载以生成适当的消息正文元素。"}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","XSL转换的URL, 可以将其应用于有效负载格式, 以生成有效的数据表单结果, 客户端可以使用通用数据表单呈现引擎来显示该结果"}.
-{"The username is not valid","用户名无效"}.
 {"There was an error changing the password: ","修改密码出错: "}.
 {"There was an error creating the account: ","帐户创建出错: "}.
 {"There was an error deleting the account: ","帐户删除失败: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","此处不区分大小写: macbeth 与 MacBeth 和 Macbeth 是一样的."}.
 {"This page allows to register an XMPP account in this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","本页面允许在此服务器上注册XMPP帐户. 你的JID (Jabber ID) 的形式如下: 用户名@服务器. 请仔细阅读说明并正确填写相应字段."}.
-{"This page allows to unregister an XMPP account in this XMPP server.","此页面允许在此XMPP服务器上注销XMPP帐户"}.
+{"This page allows to unregister an XMPP account in this XMPP server.","此页面允许在此 XMPP 服务器上注销 XMPP 帐户。"}.
 {"This room is not anonymous","此房间不是匿名房间"}.
 {"This service can not process the address: ~s","此服务无法处理地址: ~s"}.
 {"Thursday","星期四"}.
@@ -565,7 +587,7 @@
 {"Too many child elements","太多子元素"}.
 {"Too many <item/> elements","太多 <item/> 元素"}.
 {"Too many <list/> elements","太多 <list/> 元素"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","来自IP地址(~p)的(~s)失败认证太多. 该地址将在UTC时间~s被禁用."}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","来自IP地址(~p)的(~s)失败认证太多。将在UTC时间 ~s 解除对该地址的封锁"}.
 {"Too many receiver fields were specified","指定的接收者字段太多"}.
 {"Too many unacked stanzas","未被确认的节太多"}.
 {"Too many users in this conference","该会议的用户太多"}.
@@ -583,6 +605,7 @@
 {"Unauthorized","未认证的"}.
 {"Unexpected action","意外行为"}.
 {"Unexpected error condition: ~p","意外错误条件: ~p"}.
+{"Uninstall","卸载"}.
 {"Unregister an XMPP account","注销XMPP帐户"}.
 {"Unregister","取消注册"}.
 {"Unselect All","取消全选"}.
@@ -593,7 +616,10 @@
 {"Update plan","更新计划"}.
 {"Update ~p","更新~p"}.
 {"Update script","更新脚本"}.
+{"Update specs to get modules source, then install desired ones.","更新参数获取模块源，然后安装所需的模块。"}.
+{"Update Specs","更新参数"}.
 {"Update","更新"}.
+{"Upgrade","升级"}.
 {"Uptime:","正常运行时间:"}.
 {"URL for Archived Discussion Logs","已归档对话日志的URL"}.
 {"User already exists","用户已存在"}.
@@ -616,6 +642,7 @@
 {"Value of '~s' should be integer","'~s' 的值应为整数"}.
 {"Value 'set' of 'type' attribute is not allowed","不允许 'type' 属性的 'set' 值"}.
 {"vCard User Search","vCard用户搜索"}.
+{"View joined MIX channels","查看已加入的 MIX 频道"}.
 {"View Queue","查看队列"}.
 {"View Roster","查看花名册"}.
 {"Virtual Hosts","虚拟主机"}.
@@ -656,7 +683,7 @@
 {"You need a client that supports x:data to register the nickname","您需要一个支持 x:data 的客户端来注册昵称"}.
 {"You need an x:data capable client to search","您需要一个兼容 x:data 的客户端来搜索"}.
 {"Your active privacy list has denied the routing of this stanza.","你的活跃私聊列表拒绝了在此房间进行路由分发."}.
-{"Your contact offline message queue is full. The message has been discarded.","您的联系人离线消息队列已满. 消息已被丢弃"}.
+{"Your contact offline message queue is full. The message has been discarded.","您的联系人离线消息队列已满。消息已被丢弃。"}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","您发送给~s的消息已被阻止. 要解除阻止, 请访问 ~s"}.
 {"Your XMPP account was successfully registered.","你的XMPP帐户注册成功."}.
 {"Your XMPP account was successfully unregistered.","你的XMPP帐户注销成功."}.

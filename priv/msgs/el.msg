@@ -249,7 +249,6 @@
 {"Malformed username","Λανθασμένη μορφή ονόματος χρήστη"}.
 {"MAM preference modification denied by service policy","Άρνηση αλλαγής προτιμήσεων MAM, λόγω της τακτικής Παροχής Υπηρεσιών"}.
 {"March","Μάρτιος"}.
-{"Max # of items to persist","Μέγιστος αριθμός μόνιμων στοιχείων"}.
 {"Max payload size in bytes","Μέγιστο μέγεθος φορτίου σε bytes"}.
 {"Maximum file size","Μέγιστο μέγεθος αρχείου"}.
 {"Maximum Number of History Messages Returned by Room","Μέγιστος αριθμός μηνυμάτων Ιστορικού που επιστρέφονται από την Αίθουσα"}.
@@ -339,7 +338,6 @@
 {"Number of Offline Messages","Πλήθος μηνυμάτων Χωρίς Σύνδεση"}.
 {"Number of online users","Αριθμός συνδεδεμένων χρηστών"}.
 {"Number of registered users","Αριθμός εγγεγραμμένων χρηστών"}.
-{"Number of seconds after which to automatically purge items","Πλήθος δευτερολέπτων μετά τα οποία αυτομάτως εκκαθαρίζονται αντικείμενα"}.
 {"Occupants are allowed to invite others","Οι συμμετέχοντες μπορούν να προσκαλέσουν και άλλους"}.
 {"Occupants May Change the Subject","Επιτρέψτε στους χρήστες να αλλάζουν το Θέμα"}.
 {"October","Οκτώβριος"}.
@@ -519,7 +517,6 @@
 {"The JIDs of those with an affiliation of owner","Το JID αυτών που σχετίζονται με τον ιδιοκτήτη"}.
 {"The JIDs of those with an affiliation of publisher","Το JID αυτών που σχετίζονται με τον εκδότη"}.
 {"The list of JIDs that may associate leaf nodes with a collection","Λίστα των JIDs που μπορούν να σχετίζουν leaf κόμβους με μια Συλλογή"}.
-{"The maximum number of child nodes that can be associated with a collection","Το μέγιστο πλήθος θυγατρικών κόμβων που μπορούν να συσχετιστούν με μία Συλλογή"}.
 {"The minimum number of milliseconds between sending any two notification digests","Το ελάχιστο πλήθος χιλιοστών του δευτερολέπτου μεταξύ της αποστολής δύο συγχωνεύσεων ειδοποιήσεων"}.
 {"The name of the node","Το όνομα του κόμβου"}.
 {"The node is a collection node","Ο κόμβος είναι κόμβος Συλλογής"}.
@@ -544,7 +541,6 @@
 {"The type of node data, usually specified by the namespace of the payload (if any)","Ο τύπος των δεδομένων του κόμβου συνήθως προσδιορίζεται από το namespace του φόρτου εργασιών (αν υπάρχουν)"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","Το URL ενός μετασχηματισμού XSL το οποίο μπορεί να εφαρμοστεί σε φόρτους εργασίας για να παραχθεί το κατάλληλο στοιχείο του σώματος του μηνύματος."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","Το URL ενός μετασχηματισμού XSL, το οποίο μπορεί να εφαρμοστεί στους τύπους φόρτου εργασίας για να παραχθεί έγκυρο αποτέλεσμα Data Forms, τέτοιο που ο πελάτης μπορεί να εμφανίσει, χρησιμοποιώντας μια ευρείας χρήσης μηχανή επεξεργασίας Data Forms"}.
-{"The username is not valid","Το όνομα Χρήστη δεν είναι έγκυρο"}.
 {"There was an error changing the password: ","Παρουσιάστηκε σφάλμα κατά την αλλαγή του κωδικού πρόσβασης: "}.
 {"There was an error creating the account: ","Υπήρξε ένα σφάλμα κατά τη δημιουργία του λογαριασμού: "}.
 {"There was an error deleting the account: ","Υπήρξε ένα σφάλμα κατά τη διαγραφή του λογαριασμού: "}.

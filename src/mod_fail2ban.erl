@@ -5,7 +5,7 @@
 %%% Created : 15 Aug 2014 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2014-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2014-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -107,7 +107,7 @@ c2s_stream_started(#{ip := {Addr, _}} = State, _) ->
 start(Host, Opts) ->
     catch ets:new(failed_auth, [named_table, public,
 				{heir, erlang:group_leader(), none}]),
-    ejabberd_commands:register_commands(get_commands_spec()),
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
     gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->

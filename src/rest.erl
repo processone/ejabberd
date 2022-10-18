@@ -5,7 +5,7 @@
 %%% Created : 16 Oct 2014 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -191,13 +191,26 @@ base_url(Server, Path) ->
         _ -> Url
     end.
 
+-ifdef(HAVE_URI_STRING).
+uri_hack(Str) ->
+    case uri_string:normalize("%25") of
+        "%" -> % This hack around bug in httpc >21 <23.2
+            binary:replace(Str, <<"%25">>, <<"%2525">>, [global]);
+        _ -> Str
+    end.
+-else.
+uri_hack(Str) ->
+    Str.
+-endif.
+
 url(Url, []) ->
     Url;
 url(Url, Params) ->
     L = [<<"&", (iolist_to_binary(Key))/binary, "=",
           (misc:url_encode(Value))/binary>>
             || {Key, Value} <- Params],
-    <<$&, Encoded/binary>> = iolist_to_binary(L),
+    <<$&, Encoded0/binary>> = iolist_to_binary(L),
+    Encoded = uri_hack(Encoded0),
     <<Url/binary, $?, Encoded/binary>>.
 url(Server, Path, Params) ->
     case binary:split(base_url(Server, Path), <<"?">>) of

@@ -2,7 +2,7 @@
 %%% Created :  8 Dec 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -285,12 +285,14 @@ process_closed(State, Reason) ->
     stop_async(self()),
     State#{stop_reason => Reason}.
 
-process_terminated(#{sid := SID, socket := Socket,
-		     jid := JID, user := U, server := S, resource := R} = State,
+process_terminated(#{sid := SID, jid := JID, user := U, server := S, resource := R} = State,
 		   Reason) ->
     Status = format_reason(State, Reason),
     ?INFO_MSG("(~ts) Closing c2s session for ~ts: ~ts",
-	      [xmpp_socket:pp(Socket), jid:encode(JID), Status]),
+	      [case maps:find(socket, State) of
+		   {ok, Socket} -> xmpp_socket:pp(Socket);
+		   _ -> <<"unknown">>
+	       end, jid:encode(JID), Status]),
     Pres = #presence{type = unavailable,
 		     from = JID,
 		     to = jid:remove_resource(JID)},
@@ -305,10 +307,12 @@ process_terminated(#{sid := SID, socket := Socket,
 	     end,
     bounce_message_queue(SID, JID),
     State1;
-process_terminated(#{socket := Socket,
-		     stop_reason := {tls, _}} = State, Reason) ->
+process_terminated(#{stop_reason := {tls, _}} = State, Reason) ->
     ?WARNING_MSG("(~ts) Failed to secure c2s connection: ~ts",
-		 [xmpp_socket:pp(Socket), format_reason(State, Reason)]),
+		 [case maps:find(socket, State) of
+		      {ok, Socket} -> xmpp_socket:pp(Socket);
+		      _ -> <<"unknown">>
+		  end, format_reason(State, Reason)]),
     State;
 process_terminated(State, _Reason) ->
     State.
@@ -773,9 +777,9 @@ broadcast_presence_unavailable(#{jid := JID, pres_a := PresA} = State, Pres,
 		    Roster = ejabberd_hooks:run_fold(roster_get, LServer,
 						     [], [{LUser, LServer}]),
 		    lists:foldl(
-			fun(#roster{jid = LJID, subscription = Sub}, Acc)
+			fun(#roster_item{jid = ItemJID, subscription = Sub}, Acc)
 			       when Sub == both; Sub == from ->
-			    maps:put(LJID, 1, Acc);
+			    maps:put(jid:tolower(ItemJID), 1, Acc);
 			   (_, Acc) ->
 			       Acc
 			end, #{BareJID => 1}, Roster);
@@ -809,8 +813,7 @@ broadcast_presence_available(#{jid := JID} = State,
 				    [], [{LUser, LServer}]),
     {FJIDs, TJIDs} =
 	lists:foldl(
-	  fun(#roster{jid = LJID, subscription = Sub}, {F, T}) ->
-		  To = jid:make(LJID),
+	  fun(#roster_item{jid = To, subscription = Sub}, {F, T}) ->
 		  F1 = if Sub == both orelse Sub == from ->
 			       Pres1 = xmpp:set_to(Pres, To),
 			       case privacy_check_packet(State, Pres1, out) of
@@ -839,10 +842,9 @@ broadcast_presence_available(#{jid := JID} = State,
     Items = ejabberd_hooks:run_fold(
 	      roster_get, LServer, [], [{LUser, LServer}]),
     JIDs = lists:foldl(
-	     fun(#roster{jid = LJID, subscription = Sub}, Tos)
+	     fun(#roster_item{jid = To, subscription = Sub}, Tos)
 		   when Sub == both orelse Sub == from ->
-		     To = jid:make(LJID),
-		     P = xmpp:set_to(Pres, jid:make(LJID)),
+		     P = xmpp:set_to(Pres, To),
 		     case privacy_check_packet(State, P, out) of
 			 allow -> [To|Tos];
 			 deny -> Tos

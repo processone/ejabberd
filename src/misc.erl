@@ -8,7 +8,7 @@
 %%% Created : 30 Mar 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -42,7 +42,8 @@
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
 	 crypto_hmac/3, crypto_hmac/4, uri_parse/1,
-	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1]).
+	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
+	 logical_processors/0]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -55,23 +56,30 @@
 
 -type distance_cache() :: #{{string(), string()} => non_neg_integer()}.
 
+-spec uri_parse(binary()|string()) -> {ok, string(), string(), string(), number(), string(), string()} | {error, term()}.
 -ifdef(USE_OLD_HTTP_URI).
 uri_parse(URL) when is_binary(URL) ->
     uri_parse(binary_to_list(URL));
 uri_parse(URL) ->
-    {ok, {Scheme, _UserInfo, Host, Port, Path, _Query}} = http_uri:parse(URL),
-    {ok, Scheme, Host, Port, Path}.
+    case http_uri:parse(URL) of
+	{ok, {Scheme, UserInfo, Host, Port, Path, Query}} ->
+	    {ok, atom_to_list(Scheme), UserInfo, Host, Port, Path, Query};
+	{error, _} = E ->
+	    E
+    end.
 -else.
 uri_parse(URL) when is_binary(URL) ->
     uri_parse(binary_to_list(URL));
 uri_parse(URL) ->
     case uri_string:parse(URL) of
-	#{scheme := Scheme, host := Host, port := Port, path := Path} ->
-	    {ok, Scheme, Host, Port, Path};
-	#{scheme := "https", host := Host, path := Path} ->
-	    {ok, "https", Host, 443, Path};
-	#{scheme := "http", host := Host, path := Path} ->
-	    {ok, "http", Host, 80, Path}
+	#{scheme := Scheme, host := Host, port := Port, path := Path} = M1 ->
+	    {ok, Scheme, maps:get(userinfo, M1, ""), Host, Port, Path, maps:get(query, M1, "")};
+	#{scheme := "https", host := Host, path := Path} = M2 ->
+	    {ok, "https", maps:get(userinfo, M2, ""), Host, 443, Path, maps:get(query, M2, "")};
+	#{scheme := "http", host := Host, path := Path} = M3 ->
+	    {ok, "http", maps:get(userinfo, M3, ""), Host, 80, Path, maps:get(query, M3, "")};
+	{error, Atom, _} ->
+	    {error, Atom}
     end.
 -endif.
 
@@ -212,13 +220,13 @@ encode_base64(Data) ->
 -spec ip_to_list(inet:ip_address() | undefined |
                  {inet:ip_address(), inet:port_number()}) -> binary().
 
-ip_to_list({local, _}) ->
-    <<"unix">>;
 ip_to_list({IP, _Port}) ->
     ip_to_list(IP);
 %% This function clause could use inet_parse too:
 ip_to_list(undefined) ->
     <<"unknown">>;
+ip_to_list(local) ->
+    <<"unix">>;
 ip_to_list(IP) ->
     list_to_binary(inet_parse:ntoa(IP)).
 
@@ -451,9 +459,16 @@ best_match(Pattern, Opts) ->
 		end, #{}, Opts),
     element(2, lists:min(Ds)).
 
+-spec logical_processors() -> non_neg_integer().
+logical_processors() ->
+    case erlang:system_info(logical_processors) of
+	V when is_integer(V), V >= 2  -> V;
+	_ -> 1
+    end.
+
 -spec pmap(fun((T1) -> T2), [T1]) -> [T2].
 pmap(Fun, [_,_|_] = List) ->
-    case erlang:system_info(logical_processors) of
+    case logical_processors() of
 	1 -> lists:map(Fun, List);
 	_ ->
 	    Self = self(),
@@ -477,7 +492,7 @@ pmap(Fun, List) ->
 
 -spec peach(fun((T) -> any()), [T]) -> ok.
 peach(Fun, [_,_|_] = List) ->
-    case erlang:system_info(logical_processors) of
+    case logical_processors() of
 	1 -> lists:foreach(Fun, List);
 	_ ->
 	    Self = self(),

@@ -5,7 +5,7 @@
 %%% Created : 18 Apr 2020 by Holger Weiss <holger@zedat.fu-berlin.de>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2020-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2020-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -176,7 +176,7 @@ mod_doc() ->
 		     "clients. If ejabberd's built-in TURN service is used, "
 		     "TURN relays allocated using temporary credentials will "
 		     "be terminated shortly after the credentials expired. The "
-		     "default value is '12' hours. Note that restarting the "
+		     "default value is '12 hours'. Note that restarting the "
 		     "ejabberd node invalidates any temporary credentials "
 		     "offered before the restart unless a 'secret' is "
 		     "specified (see below).")}},
@@ -646,7 +646,7 @@ get_listener_ips(#{ip := {0, 0, 0, 0, 0, 0, 0, 1}} = Opts) ->
     {undefined, get_turn_ipv6_addr(Opts)};
 get_listener_ips(#{ip := {_, _, _, _} = IP}) ->
     {IP, undefined};
-get_listener_ips(#{ip := {_, _, _, _, _,_, _, _, _} = IP}) ->
+get_listener_ips(#{ip := {_, _, _, _, _, _, _, _} = IP}) ->
     {undefined, IP}.
 
 -spec get_turn_ipv4_addr(map()) -> inet:ip4_address() | undefined.

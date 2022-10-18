@@ -5,7 +5,7 @@
 %%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -38,7 +38,8 @@
 
 -export([init/3, terminate/2, options/0, set_node/1,
     get_node/3, get_node/2, get_node/1, get_nodes/2,
-    get_nodes/1, get_parentnodes/3, get_parentnodes_tree/3,
+    get_nodes/1, get_all_nodes/1,
+    get_parentnodes/3, get_parentnodes_tree/3,
     get_subnodes/3, get_subnodes_tree/3, create_node/6,
     delete_node/2]).
 
@@ -69,6 +70,9 @@ get_nodes(Host) ->
     get_nodes(Host, infinity).
 
 get_nodes(_Host, _Limit) ->
+    [].
+
+get_all_nodes(_Host) ->
     [].
 
 get_parentnodes(_Host, _Node, _From) ->

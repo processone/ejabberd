@@ -1,5 +1,5 @@
 --
--- ejabberd, Copyright (C) 2002-2021   ProcessOne
+-- ejabberd, Copyright (C) 2002-2022   ProcessOne
 --
 -- This program is free software; you can redistribute it and/or
 -- modify it under the terms of the GNU General Public License as
@@ -276,6 +276,7 @@ CREATE TABLE muc_room (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE UNIQUE INDEX i_muc_room_name_host USING BTREE ON muc_room(name(75), host(75));
+CREATE INDEX i_muc_room_host_created_at ON muc_room(host(75), created_at);
 
 CREATE TABLE muc_registered (
     jid text NOT NULL,
@@ -319,6 +320,7 @@ CREATE TABLE muc_room_subscribers (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX i_muc_room_subscribers_host_jid USING BTREE ON muc_room_subscribers(host, jid);
+CREATE INDEX i_muc_room_subscribers_jid USING BTREE ON muc_room_subscribers(jid);
 
 CREATE TABLE motd (
     username varchar(191) PRIMARY KEY,

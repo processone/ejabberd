@@ -3,7 +3,7 @@
 %%% Created : 17 May 2018 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -55,7 +55,7 @@ feature_enabled(Config) ->
 
 service_vcard(Config) ->
     Upload = upload_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:encode(Upload)]),
+    ct:comment("Retrieving vCard from ~s", [jid:encode(Upload)]),
     VCard = mod_http_upload_opt:vcard(?config(server, Config)),
     #iq{type = result, sub_els = [VCard]} =
 	send_recv(Config, #iq{type = get, to = Upload, sub_els = [#vcard_temp{}]}),

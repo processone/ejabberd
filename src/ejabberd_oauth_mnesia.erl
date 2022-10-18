@@ -5,7 +5,7 @@
 %%% Created : 20 Jul 2016 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -28,13 +28,13 @@
 -behaviour(ejabberd_oauth).
 
 -export([init/0,
-         store/1,
-         lookup/1,
-         clean/1,
-         lookup_client/1,
-         store_client/1,
-         remove_client/1,
-	 use_cache/0]).
+	 store/1,
+	 lookup/1,
+	 clean/1,
+	 lookup_client/1,
+	 store_client/1,
+	 remove_client/1,
+	 use_cache/0, revoke/1]).
 
 -include("ejabberd_oauth.hrl").
 
@@ -67,6 +67,11 @@ lookup(Token) ->
         _ ->
             error
     end.
+
+
+-spec revoke(binary()) -> ok | {error, binary()}.
+revoke(Token) ->
+    mnesia:dirty_delete(oauth_token, Token).
 
 clean(TS) ->
     F = fun() ->

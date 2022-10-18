@@ -5,7 +5,7 @@
 %%% Created : 22 Aug 2005 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -73,11 +73,16 @@ export(Server, Output) ->
       end, Modules),
     close_output(Output, IO).
 
-export(Server, Output, Module1) ->
-    Module = case Module1 of
-		 mod_pubsub -> pubsub_db;
-		 _ -> Module1
-	     end,
+export(Server, Output, mod_mam = M1) ->
+    MucServices = gen_mod:get_module_opt_hosts(Server, mod_muc),
+    [export2(MucService, Output, M1, M1) || MucService <- MucServices],
+    export2(Server, Output, M1, M1);
+export(Server, Output, mod_pubsub = M1) ->
+    export2(Server, Output, M1, pubsub_db);
+export(Server, Output, M1) ->
+    export2(Server, Output, M1, M1).
+
+export2(Server, Output, Module1, Module) ->
     SQLMod = gen_mod:db_mod(sql, Module),
     LServer = jid:nameprep(iolist_to_binary(Server)),
     IO = prepare_output(Output),
@@ -160,12 +165,18 @@ import_info(Mod) ->
 %%%----------------------------------------------------------------------
 export(LServer, Table, IO, ConvertFun) ->
     DbType = ejabberd_option:sql_type(LServer),
+    LServerConvert = case Table of
+                         archive_msg ->
+                             [LServer | mod_muc_admin:find_hosts(LServer)];
+                         _ ->
+                             LServer
+                     end,
     F = fun () ->
                 mnesia:read_lock_table(Table),
                 {_N, SQLs} =
                     mnesia:foldl(
                       fun(R, {N, SQLs} = Acc) ->
-                              case ConvertFun(LServer, R) of
+                              case ConvertFun(LServerConvert, R) of
                                   [] ->
                                       Acc;
                                   SQL1 ->

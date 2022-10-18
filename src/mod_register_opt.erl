@@ -6,6 +6,7 @@
 -export([access/1]).
 -export([access_from/1]).
 -export([access_remove/1]).
+-export([allow_modules/1]).
 -export([captcha_protected/1]).
 -export([ip_access/1]).
 -export([password_strength/1]).
@@ -30,6 +31,12 @@ access_remove(Opts) when is_map(Opts) ->
     gen_mod:get_opt(access_remove, Opts);
 access_remove(Host) ->
     gen_mod:get_module_opt(Host, mod_register, access_remove).
+
+-spec allow_modules(gen_mod:opts() | global | binary()) -> 'all' | [atom()].
+allow_modules(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(allow_modules, Opts);
+allow_modules(Host) ->
+    gen_mod:get_module_opt(Host, mod_register, allow_modules).
 
 -spec captcha_protected(gen_mod:opts() | global | binary()) -> boolean().
 captcha_protected(Opts) when is_map(Opts) ->

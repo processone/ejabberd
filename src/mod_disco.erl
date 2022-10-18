@@ -5,7 +5,7 @@
 %%% Created :  1 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -464,11 +464,11 @@ mod_doc() ->
                    "  -",
                    "    modules: all",
                    "    name: abuse-addresses",
-                   "    urls: [mailto:abuse@shakespeare.lit]",
+                   "    urls: [\"mailto:abuse@shakespeare.lit\"]",
                    "  -",
                    "    modules: [mod_muc]",
                    "    name: \"Web chatroom logs\"",
-                   "    urls: [http://www.example.org/muc-logs]",
+                   "    urls: [\"http://www.example.org/muc-logs\"]",
                    "  -",
                    "    modules: [mod_disco]",
                    "    name: feedback-addresses",

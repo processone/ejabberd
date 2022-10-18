@@ -186,7 +186,6 @@
 {"Make room persistent","Farigu babilejon daŭra"}.
 {"Make room public searchable","Farigu babilejon publike trovebla"}.
 {"March","Marĉo"}.
-{"Max # of items to persist","Maksimuma kiomo de eroj en konservado"}.
 {"Max payload size in bytes","Maksimuma aĵo-grando je bajtoj"}.
 {"Maximum file size","Maksimuma grando de dosiero"}.
 {"Maximum Number of Occupants","Limigo de nombro de partoprenantoj"}.

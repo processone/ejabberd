@@ -5,7 +5,7 @@
 %%% Created : 11 Jul 2009 by Brian Cully <bjc@kublai.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -132,35 +132,51 @@ handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
+handle_info({iq_reply, #iq{type = error} = IQ, JID}, State) ->
+    Timers = case xmpp:get_error(IQ) of
+		 #stanza_error{type=cancel, reason='service-unavailable'} ->
+		     del_timer(JID, State#state.timers);
+		 _ ->
+		     State#state.timers
+	     end,
+    {noreply, State#state{timers = Timers}};
 handle_info({iq_reply, #iq{}, _JID}, State) ->
     {noreply, State};
 handle_info({iq_reply, timeout, JID}, State) ->
     ejabberd_hooks:run(user_ping_timeout, State#state.host,
 		       [JID]),
     Timers = case State#state.timeout_action of
-      kill ->
-	  #jid{user = User, server = Server,
-	       resource = Resource} =
-	      JID,
-	  case ejabberd_sm:get_session_pid(User, Server, Resource)
-	      of
-	    Pid when is_pid(Pid) -> ejabberd_c2s:close(Pid, ping_timeout);
-	    _ -> ok
-	  end,
-	  del_timer(JID, State#state.timers);
-      _ ->
-	  State#state.timers
-    end,
+		 kill ->
+		     #jid{user = User, server = Server,
+			  resource = Resource} =
+			 JID,
+		     case ejabberd_sm:get_session_pid(User, Server, Resource) of
+			 Pid when is_pid(Pid) ->
+			     ejabberd_c2s:close(Pid, ping_timeout);
+			 _ ->
+			     ok
+		     end,
+		     del_timer(JID, State#state.timers);
+		 _ ->
+		     State#state.timers
+	     end,
     {noreply, State#state{timers = Timers}};
 handle_info({timeout, _TRef, {ping, JID}}, State) ->
-    Host = State#state.host,
-    From = jid:remove_resource(JID),
-    IQ = #iq{from = From, to = JID, type = get, sub_els = [#ping{}]},
-    ejabberd_router:route_iq(IQ, JID,
-			     gen_mod:get_module_proc(Host, ?MODULE),
-			     State#state.ping_ack_timeout),
-    Timers = add_timer(JID, State#state.ping_interval,
-		       State#state.timers),
+    Timers = case ejabberd_sm:get_session_pid(JID#jid.luser,
+					      JID#jid.lserver,
+					      JID#jid.lresource) of
+		 none ->
+		     del_timer(JID, State#state.timers);
+		 _ ->
+		     Host = State#state.host,
+		     From = jid:make(Host),
+		     IQ = #iq{from = From, to = JID, type = get, sub_els = [#ping{}]},
+		     ejabberd_router:route_iq(IQ, JID,
+					      gen_mod:get_module_proc(Host, ?MODULE),
+					      State#state.ping_ack_timeout),
+		     add_timer(JID, State#state.ping_interval,
+			       State#state.timers)
+	     end,
     {noreply, State#state{timers = Timers}};
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
@@ -187,7 +203,7 @@ user_offline(_SID, JID, _Info) ->
     case ejabberd_sm:get_session_pid(JID#jid.luser,
                                      JID#jid.lserver,
                                      JID#jid.lresource) of
-        none ->
+        PID when PID =:= none; node(PID) /= node() ->
             stop_ping(JID#jid.lserver, JID);
         _ ->
             ok
@@ -243,10 +259,10 @@ unregister_iq_handlers(Host) ->
 add_timer(JID, Interval, Timers) ->
     LJID = jid:tolower(JID),
     NewTimers = case maps:find(LJID, Timers) of
-      {ok, OldTRef} ->
-		      misc:cancel_timer(OldTRef),
-          maps:remove(LJID, Timers);
-      _ -> Timers
+		    {ok, OldTRef} ->
+			misc:cancel_timer(OldTRef),
+			maps:remove(LJID, Timers);
+		    _ -> Timers
 		end,
     TRef = erlang:start_timer(Interval, self(), {ping, JID}),
     maps:put(LJID, TRef, NewTimers).
@@ -255,10 +271,10 @@ add_timer(JID, Interval, Timers) ->
 del_timer(JID, Timers) ->
     LJID = jid:tolower(JID),
     case maps:find(LJID, Timers) of
-      {ok, TRef} ->
-	  misc:cancel_timer(TRef),
-    maps:remove(LJID, Timers);
-      _ -> Timers
+	{ok, TRef} ->
+	    misc:cancel_timer(TRef),
+	    maps:remove(LJID, Timers);
+	_ -> Timers
     end.
 
 depends(_Host, _Opts) ->
@@ -300,7 +316,7 @@ mod_doc() ->
               desc =>
                   ?T("How long to wait before deeming that a client "
                      "has not answered a given server ping request. "
-                     "The default value is '32' seconds.")}},
+                     "The default value is 'undefined'.")}},
            {send_pings,
             #{value => "true | false",
               desc =>
@@ -317,8 +333,8 @@ mod_doc() ->
                      "server ping request in less than period defined "
                      "in 'ping_ack_timeout' option: "
                      "'kill' means destroying the underlying connection, "
-                     "'none' means to do nothing. NOTE: when 'mod_stream_mgmt' "
-                     "module is loaded and stream management is enabled by "
+                     "'none' means to do nothing. NOTE: when _`mod_stream_mgmt`_ "
+                     "is loaded and stream management is enabled by "
                      "a client, killing the client connection doesn't mean "
                      "killing the client session - the session will be kept "
                      "alive in order to give the client a chance to resume it. "

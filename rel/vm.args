@@ -4,7 +4,7 @@
 ## Cookie for distributed erlang
 #-setcookie ejabberd
 
--mnesia dir \"var/lib/ejabberd\"
+-mnesia dir \"database\"
 
 ## Heartbeat management; auto-restarts VM if it dies or becomes unresponsive
 ## (Disabled by default..use with caution!)

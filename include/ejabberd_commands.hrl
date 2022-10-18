@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2021   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -59,6 +59,7 @@
          policy = restricted     :: open | restricted | admin | user,
         %% access is: [accessRuleName] or [{Module, AccessOption, DefaultAccessRuleName}]
          access = []             :: [{atom(),atom(),atom()}|atom()],
+         definer = unknown       :: atom(),
          result = {res, rescode} :: rterm() | '_' | '$2',
          args_rename = []        :: [{atom(),atom()}],
          args_desc = none        :: none | [string()] | '_',

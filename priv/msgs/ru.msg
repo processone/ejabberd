@@ -7,6 +7,7 @@
 {" has set the subject to: "," установил(а) тему: "}.
 {"A friendly name for the node","Легко запоминаемое имя для узла"}.
 {"A password is required to enter this room","Чтобы войти в эту конференцию, нужен пароль"}.
+{"A Web Page","Веб-страница"}.
 {"Accept","Принять"}.
 {"Access denied by service policy","Доступ запрещён политикой службы"}.
 {"Account doesn't exist","Учётная запись не существует"}.
@@ -20,6 +21,7 @@
 {"All activity","Вся статистика"}.
 {"All Users","Все пользователи"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Разрешить этому Jabber ID подписаться на данный узел?"}.
+{"Allow this person to register with the room?","Разрешить пользователю зарегистрироваться в комнате?"}.
 {"Allow users to change the subject","Разрешить пользователям изменять тему"}.
 {"Allow users to query other users","Разрешить iq-запросы к пользователям"}.
 {"Allow users to send invites","Разрешить пользователям посылать приглашения"}.
@@ -201,7 +203,6 @@
 {"Malformed username","Недопустимое имя пользователя"}.
 {"MAM preference modification denied by service policy","Изменение настроек архива сообщений запрещено политикой службы"}.
 {"March","марта"}.
-{"Max # of items to persist","Максимальное число сохраняемых публикаций"}.
 {"Max payload size in bytes","Максимальный размер полезной нагрузки в байтах"}.
 {"Maximum Number of Occupants","Максимальное количество участников"}.
 {"May","мая"}.
@@ -411,7 +412,6 @@
 {"The query is only allowed from local users","Запрос доступен только для локальных пользователей"}.
 {"The query must not contain <item/> elements","Запрос не должен содержать элементов <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Строфа может содержать только один элемент <active/>, один элемент <default/> или один элемент <list/>"}.
-{"The username is not valid","Недопустимое имя пользователя"}.
 {"There was an error creating the account: ","Ошибка при создании аккаунта:"}.
 {"There was an error deleting the account: ","Ошибка при удалении аккаунта:"}.
 {"This room is not anonymous","Эта комната не анонимная"}.

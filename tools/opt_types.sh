@@ -483,8 +483,12 @@ options_required([Form]) ->
     proplists:get_value(required, Opts, []).
 
 format_file(Path, Form) ->
+    Line = case erl_syntax:get_pos(Form) of
+      {L, _} -> L;
+      L -> L
+    end,
     filename:rootname(filename:basename(Path)) ++ ".erl:" ++
-	integer_to_list(erl_syntax:get_pos(Form)).
+	integer_to_list(Line).
 
 module(Path) ->
     list_to_atom(filename:rootname(filename:basename(Path))).
@@ -524,6 +528,8 @@ fold_opt(File, Fun, Acc, AbsCode) ->
 		      Fun(File, {#state.defaults, Form}, Acc1);
 		  {attribute, {spec, {spec, {{options, 0}, Spec}}}} ->
 		      Fun(File, {#state.specs, hd(Spec)}, Acc1);
+		  {attribute, {spec, {{options, 0}, Spec}}} ->
+		      Fun(File, {#state.specs, hd(Spec)}, Acc1);
 		  _ ->
 		      Acc1
 	      end
@@ -538,6 +544,8 @@ fold_mod_opt(File, Fun, Acc, AbsCode) ->
 		  {function, {mod_options, 1}} ->
 		      Fun(File, {#state.mod_defaults, Form}, Acc1);
 		  {attribute, {spec, {spec, {{mod_options, 1}, Spec}}}} ->
+		      Fun(File, {#state.mod_specs, hd(Spec)}, Acc1);
+		  {attribute, {spec, {{mod_options, 1}, Spec}}} ->
 		      Fun(File, {#state.mod_specs, hd(Spec)}, Acc1);
 		  _ ->
 		      Acc1
@@ -571,6 +579,8 @@ is_behaviour(AbsCode, Mod) ->
 	      case erl_syntax_lib:analyze_form(Form) of
 		  {attribute, {Attr, {_, Mod}}}
 		    when Attr == behaviour orelse Attr == behavior ->
+		      true;
+		  {attribute, {behaviour, Mod}} ->
 		      true;
 		  _ ->
 		      false

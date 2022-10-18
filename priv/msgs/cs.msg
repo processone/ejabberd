@@ -181,7 +181,6 @@
 {"Make room public searchable","Nastavit místnost jako veřejnou"}.
 {"Malformed username","Chybně formátováné jméno uživatele"}.
 {"March",". března"}.
-{"Max # of items to persist","Maximální počet položek, které je možné natrvalo uložit"}.
 {"Max payload size in bytes","Maximální náklad v bajtech"}.
 {"Maximum Number of Occupants","Počet účastníků"}.
 {"May",". května"}.

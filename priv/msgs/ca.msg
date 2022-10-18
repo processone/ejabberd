@@ -20,6 +20,7 @@
 {"Access model","Model d'Accés"}.
 {"Account doesn't exist","El compte no existeix"}.
 {"Action on user","Acció en l'usuari"}.
+{"Add a hat to a user","Afegir un barret a un usuari"}.
 {"Add Jabber ID","Afegir Jabber ID"}.
 {"Add New","Afegir nou"}.
 {"Add User","Afegir usuari"}.
@@ -78,6 +79,7 @@
 {"Changing role/affiliation is not allowed","No està permès canviar el rol/afiliació"}.
 {"Channel already exists","El canal ja existeix"}.
 {"Channel does not exist","El canal no existeix"}.
+{"Channel JID","JID del Canal"}.
 {"Channels","Canals"}.
 {"Characters not allowed:","Caràcters no permesos:"}.
 {"Chatroom configuration modified","Configuració de la sala de xat modificada"}.
@@ -97,6 +99,7 @@
 {"Configuration","Configuració"}.
 {"Connected Resources:","Recursos connectats:"}.
 {"Contact Addresses (normally, room owner or owners)","Adreces de contacte (normalment, propietaris de la sala)"}.
+{"Contrib Modules","Mòduls Contrib"}.
 {"Country","Pais"}.
 {"CPU Time:","Temps de CPU:"}.
 {"Current Discussion Topic","Assumpte de discussió actual"}.
@@ -136,6 +139,7 @@
 {"Elements","Elements"}.
 {"Email Address","Adreça de correu"}.
 {"Email","Correu"}.
+{"Enable hats","Activar barrets"}.
 {"Enable logging","Habilitar el registre de la conversa"}.
 {"Enable message archiving","Activar l'emmagatzematge de missatges"}.
 {"Enabling push without 'node' attribute is not supported","No està suportat activar Push sense l'atribut 'node'"}.
@@ -170,6 +174,8 @@
 {"Full List of Room Admins","Llista completa de administradors de la sala"}.
 {"Full List of Room Owners","Llista completa de propietaris de la sala"}.
 {"Full Name","Nom complet"}.
+{"Get List of Online Users","Obté la llista d'usuaris en línia"}.
+{"Get List of Registered Users","Obté la llista d'usuaris registrats"}.
 {"Get Number of Online Users","Obtenir Número d'Usuaris Connectats"}.
 {"Get Number of Registered Users","Obtenir Número d'Usuaris Registrats"}.
 {"Get Pending","Obtenir Pendents"}.
@@ -186,6 +192,9 @@
 {"has been kicked because of an affiliation change","ha sigut expulsat a causa d'un canvi d'afiliació"}.
 {"has been kicked because the room has been changed to members-only","ha sigut expulsat perquè la sala ara és només per a membres"}.
 {"has been kicked","ha sigut expulsat"}.
+{"Hat title","Títol del barret"}.
+{"Hat URI","URI del barret"}.
+{"Hats limit exceeded","El límit de tràfic ha sigut sobrepassat"}.
 {"Host unknown","Host desconegut"}.
 {"Host","Host"}.
 {"HTTP File Upload","HTTP File Upload"}.
@@ -208,6 +217,8 @@
 {"Incorrect value of 'action' attribute","Valor incorrecte del atribut 'action'"}.
 {"Incorrect value of 'action' in data form","Valor incorrecte de 'action' al formulari de dades"}.
 {"Incorrect value of 'path' in data form","Valor incorrecte de 'path' al formulari de dades"}.
+{"Installed Modules:","Mòduls instal·lats:"}.
+{"Install","Instal·lar"}.
 {"Insufficient privilege","Privilegi insuficient"}.
 {"Internal server error","Error intern del servidor"}.
 {"Invalid 'from' attribute in forwarded message","Atribut 'from' invàlid al missatge reenviat"}.
@@ -224,6 +235,8 @@
 {"January","Gener"}.
 {"JID normalization denied by service policy","S'ha denegat la normalització del JID per política del servei"}.
 {"JID normalization failed","Ha fallat la normalització del JID"}.
+{"Joined MIX channels of ~ts","Canals MIX units de ~ts"}.
+{"Joined MIX channels:","Canals MIX units:"}.
 {"joins the room","entra a la sala"}.
 {"July","Juliol"}.
 {"June","Juny"}.
@@ -237,6 +250,8 @@
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Els bits menys significants del hash SHA-256 del text deurien ser iguals a l'etiqueta hexadecimal"}.
 {"leaves the room","surt de la sala"}.
 {"List of rooms","Llista de sales"}.
+{"List of users with hats","Llista d'usuaris amb barrets"}.
+{"List users with hats","Llista d'usuaris amb barrets"}.
 {"Logging","Registre"}.
 {"Low level update script","Script d'actualització de baix nivell"}.
 {"Make participants list public","Crear una llista de participants pública"}.
@@ -249,7 +264,7 @@
 {"Malformed username","Nom d'usuari mal format"}.
 {"MAM preference modification denied by service policy","Se t'ha denegat la modificació de la preferència de MAM per política del servei"}.
 {"March","Març"}.
-{"Max # of items to persist","Màxim # d'elements que persistixen"}.
+{"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","Màxim # d'elements a persistir, o `max` per a no tindre altre límit més que el màxim imposat pel servidor"}.
 {"Max payload size in bytes","Màxim tamany del payload en bytes"}.
 {"Maximum file size","Mida màxima de fitxer"}.
 {"Maximum Number of History Messages Returned by Room","Numero màxim de missatges de l'historia que retorna la sala"}.
@@ -324,6 +339,7 @@
 {"Node index not found","Index de node no trobat"}.
 {"Node not found","Node no trobat"}.
 {"Node ~p","Node ~p"}.
+{"Node","Node"}.
 {"Nodeprep has failed","Ha fallat Nodeprep"}.
 {"Nodes","Nodes"}.
 {"None","Cap"}.
@@ -339,8 +355,9 @@
 {"Number of Offline Messages","Número de missatges offline"}.
 {"Number of online users","Número d'usuaris connectats"}.
 {"Number of registered users","Número d'Usuaris Registrats"}.
-{"Number of seconds after which to automatically purge items","Número de segons després dels quals es purgaran automàticament elements"}.
+{"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Número de segons després dels quals es purgaran automàticament elements, o `max` per a no tindre altre límit més que el màxim imposat pel servidor"}.
 {"Occupants are allowed to invite others","Els ocupants poden invitar a altres"}.
+{"Occupants are allowed to query others","Els ocupants poden enviar peticions a altres"}.
 {"Occupants May Change the Subject","Els ocupants poden canviar el Tema"}.
 {"October","Octubre"}.
 {"Offline Messages:","Missatges fora de línia:"}.
@@ -367,11 +384,13 @@
 {"Only those on a whitelist may subscribe and retrieve items","Només qui estiga a una llista blanca pot subscriure's i recuperar elements"}.
 {"Organization Name","Nom de la organizació"}.
 {"Organization Unit","Unitat de la organizació"}.
+{"Other Modules Available:","Altres mòduls disponibles:"}.
 {"Outgoing s2s Connections:","Connexions d'eixida s2s:"}.
 {"Outgoing s2s Connections","Connexions s2s d'eixida"}.
 {"Owner privileges required","Es requerixen privilegis de propietari de la sala"}.
 {"Packet relay is denied by service policy","S'ha denegat el reenviament del paquet per política del servei"}.
 {"Packet","Paquet"}.
+{"Participant ID","ID del Participant"}.
 {"Participant","Participant"}.
 {"Password Verification","Verificació de la Contrasenya"}.
 {"Password Verification:","Verificació de la Contrasenya:"}.
@@ -418,6 +437,7 @@
 {"Registered Users:","Usuaris registrats:"}.
 {"Register","Registrar"}.
 {"Remote copy","Còpia remota"}.
+{"Remove a hat from a user","Eliminar un barret d'un usuari"}.
 {"Remove All Offline Messages","Eliminar tots els missatges offline"}.
 {"Remove User","Eliminar usuari"}.
 {"Remove","Borrar"}.
@@ -473,6 +493,7 @@
 {"Shut Down Service","Apager el Servei"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clients XMPP poden emmagatzemar la teva contrasenya al ordinador, però només hauries de fer això al teu ordinador personal, per raons de seguretat."}.
+{"Sources Specs:","Especificacions de Codi Font:"}.
 {"Specify the access model","Especificar el model d'accés"}.
 {"Specify the event message type","Especifica el tipus de missatge d'event"}.
 {"Specify the publisher model","Especificar el model del publicant"}.
@@ -518,8 +539,10 @@
 {"The JIDs of those to contact with questions","Els JIDs a qui contactar amb preguntes"}.
 {"The JIDs of those with an affiliation of owner","Els JIDs de qui tenen una afiliació de propietaris"}.
 {"The JIDs of those with an affiliation of publisher","Els JIDs de qui tenen una afiliació de publicadors"}.
+{"The list of all online users","La llista de tots els usuaris en línia"}.
+{"The list of all users","La llista de tots els usuaris"}.
 {"The list of JIDs that may associate leaf nodes with a collection","La llista de JIDs que poden associar nodes fulla amb una col·lecció"}.
-{"The maximum number of child nodes that can be associated with a collection","El màxim número de nodes fills que poden associar-se amb una col·lecció"}.
+{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","El màxim número de nodes fills que poden associar-se amb una col·lecció, o `max` per a no tindre altre límit més que el màxim imposat pel servidor"}.
 {"The minimum number of milliseconds between sending any two notification digests","El número mínim de mil·lisegons entre l'enviament de dos resums de notificacions"}.
 {"The name of the node","El nom del node"}.
 {"The node is a collection node","El node es una col·lecció"}.
@@ -544,7 +567,6 @@
 {"The type of node data, usually specified by the namespace of the payload (if any)","El tipus de dades al node, usualment especificat pel namespace del payload (si n'hi ha)"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","La URL de uns transformació XSL que pot ser aplicada als payloads per a generar un element apropiat de contingut de missatge."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","La URL de una transformació XSL que pot ser aplicada al format de payload per a generar un resultat valid de Data Forms, que el client puga mostrar usant un métode generic de Data Forms"}.
-{"The username is not valid","El nom d'usuari no es vàlid"}.
 {"There was an error changing the password: ","Hi ha hagut un error canviant la contrasenya: "}.
 {"There was an error creating the account: ","Hi ha hagut un error creant el compte: "}.
 {"There was an error deleting the account: ","Hi ha hagut un error esborrant el compte: "}.
@@ -571,7 +593,7 @@
 {"Too many users in this conference","N'hi ha massa usuaris en esta sala de conferència"}.
 {"To","Per a"}.
 {"Total rooms","Sales totals"}.
-{"Traffic rate limit is exceeded","El llímit de tràfic ha sigut sobrepassat"}.
+{"Traffic rate limit is exceeded","El límit de tràfic ha sigut sobrepassat"}.
 {"Transactions Aborted:","Transaccions Avortades:"}.
 {"Transactions Committed:","Transaccions Realitzades:"}.
 {"Transactions Logged:","Transaccions registrades:"}.
@@ -583,6 +605,7 @@
 {"Unauthorized","No autoritzat"}.
 {"Unexpected action","Acció inesperada"}.
 {"Unexpected error condition: ~p","Condició d'error inesperada: ~p"}.
+{"Uninstall","Desinstal·lar"}.
 {"Unregister an XMPP account","Anul·lar el registre d'un compte XMPP"}.
 {"Unregister","Anul·lar el registre"}.
 {"Unselect All","Deseleccionar tots"}.
@@ -593,7 +616,10 @@
 {"Update ~p","Actualitzar ~p"}.
 {"Update plan","Pla d'actualització"}.
 {"Update script","Script d'actualització"}.
+{"Update specs to get modules source, then install desired ones.","Actualitza les especificacions per obtindre el codi font dels mòduls, després instal·la els que vulgues."}.
+{"Update Specs","Actualitzar Especificacions"}.
 {"Update","Actualitzar"}.
+{"Upgrade","Actualitza"}.
 {"Uptime:","Temps en marxa:"}.
 {"URL for Archived Discussion Logs","URL dels Arxius de Discussions"}.
 {"User already exists","El usuari ja existeix"}.
@@ -616,6 +642,7 @@
 {"Value of '~s' should be integer","El valor de '~s' deuria ser un numero enter"}.
 {"Value 'set' of 'type' attribute is not allowed","El valor 'set' a l'atribut 'type' no és permès"}.
 {"vCard User Search","vCard recerca d'usuari"}.
+{"View joined MIX channels","Vore els canals MIX units"}.
 {"View Queue","Vore Cua"}.
 {"View Roster","Vore Llista de contactes"}.
 {"Virtual Hosts","Hosts virtuals"}.

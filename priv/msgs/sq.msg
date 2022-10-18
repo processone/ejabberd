@@ -331,7 +331,6 @@
 {"The password was not changed","Fjalëkalimi s’u ndryshua"}.
 {"The passwords are different","Fjalëkalimet janë të ndryshëm"}.
 {"The sender of the last received message","Dërguesi i mesazhit të fundit të marrë"}.
-{"The username is not valid","Emri i përdoruesit s’është i vlefshëm"}.
 {"There was an error changing the password: ","Pati një gabim në ndryshimin e fjalëkalimit: "}.
 {"There was an error creating the account: ","Pati një gabim në krijimin e llogarisë: "}.
 {"This room is not anonymous","Kjo dhomë s’është anonime"}.
