@@ -1172,7 +1172,7 @@ doc() ->
       #{value => "timeout()",
         desc =>
             ?T("A time to wait before closing an idle s2s connection. "
-               "The default value is '10 minutes'.")}},
+               "The default value is '1' hour.")}},
      {s2s_use_starttls,
       #{value => "true | false | optional | required",
         desc =>

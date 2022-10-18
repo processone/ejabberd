@@ -644,7 +644,7 @@ options() ->
      {s2s_protocol_options, undefined},
      {s2s_queue_type,
       fun(Host) -> ejabberd_config:get_option({queue_type, Host}) end},
-     {s2s_timeout, timer:minutes(10)},
+     {s2s_timeout, timer:hours(1)},
      {s2s_tls_compression, undefined},
      {s2s_use_starttls, false},
      {s2s_zlib, false},
