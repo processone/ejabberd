@@ -1,3 +1,112 @@
+# Version 22.10
+
+Core:
+- Add `log_burst_limit_*` options ([#3865](https://github.com/processone/ejabberd/issues/3865))
+- Support `ERL_DIST_PORT` option to work without epmd
+- Auth JWT: Catch all errors from `jose_jwt:verify` and log debugging details ([#3890](https://github.com/processone/ejabberd/issues/3890))
+- HTTP: Fix unix socket support ([#3894](https://github.com/processone/ejabberd/issues/3894))
+- HTTP: Handle invalid values in `X-Forwarded-For` header more gracefuly
+- Listeners: Let module take over socket
+- Listeners: Don't register listeners that failed to start in config reload
+- `mod_admin_extra`: Handle empty roster group names
+- `mod_conversejs`: Fix crash when mod_register not enabled ([#3824](https://github.com/processone/ejabberd/issues/3824))
+- `mod_host_meta`: Complain at start if listener is not encrypted
+- `mod_ping`: Fix regression on `stop_ping` in clustering context ([#3817](https://github.com/processone/ejabberd/issues/3817))
+- `mod_pubsub`: Don't crash on command failures
+- `mod_shared_roster`: Fix cache invalidation
+- `mod_shared_roster_ldap`: Update roster_get hook to use `#roster_item{}`
+- `prosody2ejabberd`: Fix parsing of scram password from prosody
+
+MIX:
+- Fix MIX's filter_nodes
+- Return user jid on join
+- `mod_mix_pam`: Add new MIX namespaces to disco features
+- `mod_mix_pam`: Add handling of IQs with newer MIX namespaces
+- `mod_mix_pam`: Do roster pushes on join/leave
+- `mod_mix_pam`: Parse sub elements of the mix join remote result
+- `mod_mix_pam`: Provide MIX channels as roster entries via hook
+- `mod_mix_pam`: Display joined channels on webadmin page
+- `mod_mix_pam`: Adapt to renaming of `participant-id` from mix_roster_channel record
+- `mod_roster`: Change hook type from `#roster{}` to `#roster_item{}`
+- `mod_roster`: Respect MIX `<annotate/>` setting
+- `mod_roster`: Adapt to change of mix_annotate type to boolean in roster_query
+- `mod_shared_roster`: Fix wrong hook type `#roster{}` (now `#roster_item{}`)
+
+MUC:
+- Store role, and use it when joining a moderated room ([#3330](https://github.com/processone/ejabberd/issues/3330))
+- Don't persist `none` role ([#3330](https://github.com/processone/ejabberd/issues/3330))
+- Allow MUC service admins to bypass max_user_conferences limitation
+- Show allow_query_users room option in disco info ([#3830](https://github.com/processone/ejabberd/issues/3830))
+- Don't set affiliation to `none` if it's already `none` in `mod_muc_room:process_item_change/3`
+- Fix mucsub unsubscribe notification payload to have muc_unsubcribe in it
+- Allow muc_{un}subscribe hooks to modify sent packets
+- Pass room state to muc_{un}subscribed hook
+- The archive_msg export fun requires MUC Service for room archives
+- Export `mod_muc_admin:get_room_pid/2`
+- Export function for getting room diagnostics
+
+SQL:
+- Handle errors reported from begin/commit inside transaction
+- Make connection close errors bubble up from inside sql transaction
+- Make first sql reconnect wait shorter time
+- React to sql driver process exit earlier
+- Skip connection exit message when we triggered reconnection
+- Add syntax_tools to applications, required when using ejabberd_sql_pt ([#3869](https://github.com/processone/ejabberd/issues/3869))
+- Fix mam delete_old_messages_batch for sql backend
+- Use `INSERT ... ON DUPLICATE KEY UPDATE` for upsert on mysql
+- Update mysql library
+- Catch mysql connection being close earlier
+
+Build:
+- `make all`: Generate start scripts here, not in `make install` ([#3821](https://github.com/processone/ejabberd/issues/3821))
+- `make clean`: Improve this and "distclean"
+- `make deps`: Ensure deps configuration is ran when getting deps ([#3823](https://github.com/processone/ejabberd/issues/3823))
+- `make help`: Update with recent changes
+- `make install`: Don't leak DESTDIR in files copied by 'make install'
+- `make options`: Fix error reporting on OTP24+
+- `make update`: configure also in this case, similarly to `make deps`
+- Add definition to detect OTP older than 25, used by ejabberd_auth_http
+- Configure eimp with mix to detect image convert properly ([#3823](https://github.com/processone/ejabberd/issues/3823))
+- Remove unused macro definitions detected by rebar3_hank
+- Remove unused header files which content is already in xmpp library
+
+Container:
+- Get ejabberd-contrib sources to include them
+- Copy `.ejabberd-modules` directory if available
+- Do not clone repo inside container build
+- Use `make deps`, which performs additional steps ([#3823](https://github.com/processone/ejabberd/issues/3823))
+- Support `ERL_DIST_PORT` option to work without epmd
+- Copy `ejabberd-docker-install.bat` from docker-ejabberd git and rename it
+- Set a less frequent healthcheck to reduce CPU usage ([#3826](https://github.com/processone/ejabberd/issues/3826))
+- Fix build instructions, add more podman examples
+
+Installers:
+- make-binaries: Include CAPTCHA script with release
+- make-binaries: Edit rebar.config more carefully
+- make-binaries: Fix linking of EIMP dependencies
+- make-binaries: Fix GitHub release version checks
+- make-binaries: Adjust Mnesia spool directory path
+- make-binaries: Bump Erlang/OTP version to 24.3.4.5
+- make-binaries: Bump Expat and libpng versions
+- make-packages: Include systemd unit with RPM
+- make-packages: Fix permissions on RPM systems
+- make-installers: Support non-root installation
+- make-installers: Override code on upgrade
+- make-installers: Apply cosmetic changes
+
+External modules:
+- ext_mod: Support managing remote nodes in the cluster
+- ext_mod: Handle correctly when COMMIT.json not found
+- Don't bother with COMMIT.json user-friendly feature in automated user case
+- Handle not found COMMIT.json, for example in GH Actions
+- Add WebAdmin page for managing external modules
+
+Workflows Actions:
+- Update workflows to Erlang 25
+- Update workflows: Ubuntu 18 is deprecated and 22 is added
+- CI: Remove syntax_tools from applications, as fast_xml fails Dialyzer
+- Runtime: Add Xref options to be as strict as CI
+
 # Version 22.05
 
 Core
