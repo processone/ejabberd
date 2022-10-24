@@ -79,6 +79,7 @@
 {"Changing role/affiliation is not allowed","Ändern der Rolle/Zugehörigkeit ist nicht erlaubt"}.
 {"Channel already exists","Kanal existiert bereits"}.
 {"Channel does not exist","Kanal existiert nicht"}.
+{"Channel JID","Kanal-JID"}.
 {"Channels","Kanäle"}.
 {"Characters not allowed:","Nicht erlaubte Zeichen:"}.
 {"Chatroom configuration modified","Chatraum-Konfiguration geändert"}.
@@ -215,6 +216,8 @@
 {"Incorrect value of 'action' attribute","Falscher Wert des 'action'-Attributs"}.
 {"Incorrect value of 'action' in data form","Falscher Wert von 'action' in Datenformular"}.
 {"Incorrect value of 'path' in data form","Falscher Wert von 'path' in Datenformular"}.
+{"Installed Modules:","Installierte Module:"}.
+{"Install","Installieren"}.
 {"Insufficient privilege","Unzureichende Privilegien"}.
 {"Internal server error","Interner Serverfehler"}.
 {"Invalid 'from' attribute in forwarded message","Ungültiges 'from'-Attribut in weitergeleiteter Nachricht"}.
@@ -351,6 +354,7 @@
 {"Number of registered users","Anzahl der registrierten Benutzer"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Anzahl der Sekunden, nach denen Elemente automatisch gelöscht werden sollen, oder `max`, wenn es keine spezifische Grenze gibt, außer einer vom Server festgelegten Höchstgrenze"}.
 {"Occupants are allowed to invite others","Teilnehmer dürfen andere einladen"}.
+{"Occupants are allowed to query others","Teilnehmer dürfen andere abfragen"}.
 {"Occupants May Change the Subject","Teilnehmer dürfen das Thema ändern"}.
 {"October","Oktober"}.
 {"Offline Messages","Offline-Nachrichten"}.
@@ -377,11 +381,13 @@
 {"Only those on a whitelist may subscribe and retrieve items","Nur jemand auf einer Whitelist darf Items abonnieren und abrufen"}.
 {"Organization Name","Name der Organisation"}.
 {"Organization Unit","Abteilung"}.
+{"Other Modules Available:","Andere Module verfügbar:"}.
 {"Outgoing s2s Connections","Ausgehende s2s-Verbindungen"}.
 {"Outgoing s2s Connections:","Ausgehende s2s-Verbindungen:"}.
 {"Owner privileges required","Besitzerrechte erforderlich"}.
 {"Packet relay is denied by service policy","Paket-Relay aufgrund der Dienstrichtlinien verweigert"}.
 {"Packet","Paket"}.
+{"Participant ID","Teilnehmer-ID"}.
 {"Participant","Teilnehmer"}.
 {"Password Verification","Passwort bestätigen"}.
 {"Password Verification:","Passwort bestätigen:"}.
@@ -484,6 +490,7 @@
 {"Shut Down Service","Dienst herunterfahren"}.
 {"SOCKS5 Bytestreams","SOCKS5-Bytestreams"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Einige XMPP-Clients speichern Ihr Passwort auf dem Computer. Aus Sicherheitsgründen sollten Sie das nur auf Ihrem persönlichen Computer tun."}.
+{"Sources Specs:","Quellenspezifikationen:"}.
 {"Specify the access model","Geben Sie das Zugangsmodell an"}.
 {"Specify the event message type","Geben Sie den Ereignisnachrichtentyp an"}.
 {"Specify the publisher model","Geben Sie das Veröffentlichermodell an"}.
@@ -595,6 +602,7 @@
 {"Unauthorized","Nicht autorisiert"}.
 {"Unexpected action","Unerwartete Aktion"}.
 {"Unexpected error condition: ~p","Unerwarteter Fehlerzustand: ~p"}.
+{"Uninstall","Deinstallieren"}.
 {"Unregister an XMPP account","Ein XMPP-Konto entfernen"}.
 {"Unregister","Deregistrieren"}.
 {"Unselect All","Alle abwählen"}.
@@ -605,7 +613,10 @@
 {"Update plan","Aktualisierungsplan"}.
 {"Update ~p","~p aktualisieren"}.
 {"Update script","Aktualisierungsscript"}.
+{"Update specs to get modules source, then install desired ones.","Aktualisieren Sie die Spezifikationen, um den Quellcode der Module zu erhalten und installieren Sie dann die gewünschten Module."}.
+{"Update Specs","Spezifikationen aktualisieren"}.
 {"Update","Aktualisieren"}.
+{"Upgrade","Upgrade"}.
 {"Uptime:","Betriebszeit:"}.
 {"URL for Archived Discussion Logs","URL für archivierte Diskussionsprotokolle"}.
 {"User already exists","Benutzer existiert bereits"}.
