@@ -455,6 +455,7 @@ doc() ->
             ]}},
      {captcha_cmd,
       #{value => ?T("Path"),
+        note => "improved in 21.10",
         desc =>
             ?T("Full path to a script that generates http://../basic/#captcha[CAPTCHA] images. "
                "@VERSION@ is replaced with ejabberd version number in XX.YY format. "

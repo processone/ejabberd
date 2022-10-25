@@ -4,6 +4,7 @@ Core:
 - Add `log_burst_limit_*` options ([#3865](https://github.com/processone/ejabberd/issues/3865))
 - Support `ERL_DIST_PORT` option to work without epmd
 - Auth JWT: Catch all errors from `jose_jwt:verify` and log debugging details ([#3890](https://github.com/processone/ejabberd/issues/3890))
+- CAPTCHA: Support `@VERSION@` and `@SEMVER@` in `captcha_cmd` option ([#3835](https://github.com/processone/ejabberd/issues/3835))
 - HTTP: Fix unix socket support ([#3894](https://github.com/processone/ejabberd/issues/3894))
 - HTTP: Handle invalid values in `X-Forwarded-For` header more gracefuly
 - Listeners: Let module take over socket

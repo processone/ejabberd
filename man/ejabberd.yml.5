@@ -559,12 +559,26 @@ A maximum number of items (not memory!) in cache\&. The rule of thumb, for all t
 \fIrouter_cache_size\fR, and
 \fIsm_cache_size\fR\&.
 .RE
+.sp
+\fINote\fR about the next option: improved in 21\&.10:
 .PP
 \fBcaptcha_cmd\fR: \fIPath\fR
 .RS 4
 Full path to a script that generates
 CAPTCHA
-images\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
+images\&. @VERSION@ is replaced with ejabberd version number in XX\&.YY format\&. @SEMVER@ is replaced with ejabberd version number in semver format when compiled with Elixir\(cqs mix, or XX\&.YY format otherwise\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
+.sp
+When using the ejabberd installers or container image, the example captcha scripts can be used like this:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+captcha_cmd: /opt/ejabberd\-@VERSION@/lib/ejabberd\-@SEMVER@/priv/bin/captcha\&.sh
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .PP
 \fBcaptcha_host\fR: \fIString\fR
@@ -1474,7 +1488,8 @@ if the latter is not set\&.
 \fBs2s_timeout\fR: \fItimeout()\fR
 .RS 4
 A time to wait before closing an idle s2s connection\&. The default value is
-\fI10 minutes\fR\&.
+\fI1\fR
+hour\&.
 .RE
 .PP
 \fBs2s_tls_compression\fR: \fItrue | false\fR
