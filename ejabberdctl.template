@@ -59,7 +59,6 @@ done
 # define ejabberd variables if not already defined from the command line
 : "${CONFIG_DIR:="{{config_dir}}"}"
 : "${LOGS_DIR:="{{logs_dir}}"}"
-: "${SPOOL_DIR:="{{spool_dir}}"}"
 : "${EJABBERD_CONFIG_PATH:="$CONFIG_DIR/ejabberd.yml"}"
 : "${EJABBERDCTL_CONFIG_PATH:="$CONFIG_DIR/ejabberdctl.cfg"}"
 # Allows passing extra Erlang command-line arguments in vm.args file
@@ -68,6 +67,7 @@ done
 [ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
 [ -n "$ERLANG_NODE_ARG" ] && ERLANG_NODE="$ERLANG_NODE_ARG"
 [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && S="-s"
+: "${SPOOL_DIR:="{{spool_dir}}"}"
 : "${EJABBERD_LOG_PATH:="$LOGS_DIR/ejabberd.log"}"
 
 # define erl parameters
