@@ -25,7 +25,7 @@
 
 -author('amuhar3@gmail.com').
 
--protocol({xep, 0355, '0.4.1'}).
+-protocol({xep, 355, '0.4.1'}).
 
 -behaviour(gen_server).
 -behaviour(gen_mod).

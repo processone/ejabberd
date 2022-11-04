@@ -28,6 +28,8 @@
 
 -author('alexey@process-one.net').
 
+-protocol({rfc, 5802}).
+
 %% External exports
 -export([start_link/0, host_up/1, host_down/1, config_reloaded/0,
 	 set_password/3, check_password/4,

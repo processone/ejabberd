@@ -29,6 +29,7 @@
 
 -protocol({xep, 54, '1.2'}).
 -protocol({xep, 55, '1.3'}).
+-protocol({xep, 153, '1.1'}).
 
 -behaviour(gen_server).
 -behaviour(gen_mod).

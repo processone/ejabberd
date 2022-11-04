@@ -27,6 +27,8 @@
 -author('alexey@process-one.net').
 -compile({no_auto_import, [{halt, 0}]}).
 
+-protocol({rfc, 6122}).
+-protocol({rfc, 7590}).
 -protocol({xep, 4, '2.9'}).
 -protocol({xep, 86, '1.0'}).
 -protocol({xep, 106, '1.1'}).
@@ -36,6 +38,7 @@
 -protocol({xep, 216, '1.0'}).
 -protocol({xep, 243, '1.0'}).
 -protocol({xep, 270, '1.0'}).
+-protocol({xep, 368, '1.1.0'}).
 
 -export([start/0, stop/0, halt/0, start_app/1, start_app/2,
 	 get_pid_file/0, check_apps/0, module_name/1, is_loaded/0]).

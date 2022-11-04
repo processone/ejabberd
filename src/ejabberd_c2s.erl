@@ -22,6 +22,10 @@
 -module(ejabberd_c2s).
 -behaviour(xmpp_stream_in).
 -behaviour(ejabberd_listener).
+
+-protocol({rfc, 3920}).
+-protocol({rfc, 3921}).
+-protocol({rfc, 6120}).
 -protocol({rfc, 6121}).
 
 %% ejabberd_listener callbacks

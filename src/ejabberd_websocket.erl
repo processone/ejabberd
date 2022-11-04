@@ -38,6 +38,7 @@
 
 -module(ejabberd_websocket).
 -protocol({rfc, 6455}).
+-protocol({rfc, 7395}).
 
 -author('ecestari@process-one.net').
 
