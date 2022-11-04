@@ -190,6 +190,9 @@ options: all
 translations:
 	tools/prepare-tr.sh $(DEPSDIR)
 
+doap:
+	tools/generate-doap.sh
+
 edoc:
 	$(ERL) -noinput +B -eval \
         'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
@@ -510,6 +513,7 @@ help:
 	@echo "  dev            Build a development release"
 	@echo "  relive         Start a live ejabberd in _build/relive/"
 	@echo ""
+	@echo "  doap           Generate DOAP file"
 	@echo "  edoc           Generate edoc documentation (unused)"
 	@echo "  options        Generate ejabberd_option.erl"
 	@echo "  translations   Extract translation files (requires --enable-tools)"
