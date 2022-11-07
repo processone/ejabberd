@@ -29,8 +29,8 @@ robust, scalable and extensible realtime platform built using [Erlang/OTP][erlan
 that includes [XMPP][xmpp] Server, [MQTT][mqtt] Broker and [SIP][sip] Service.
 
 Check the features in [ejabberd.im][im], [ejabberd Docs][features],
-[ejabberd at ProcessOne][p1home], and a list of [supported protocols and XEPs][xeps].
-
+[ejabberd at ProcessOne][p1home], and the list of [supported protocols in ProcessOne][xeps]
+and [XMPP.org][xmppej].
 
 Installation
 ------------
@@ -124,3 +124,4 @@ and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MI
 [weblate]: https://hosted.weblate.org/projects/ejabberd/ejabberd-po/
 [xeps]: https://www.process-one.net/en/ejabberd/protocols/
 [xmpp]: https://xmpp.org/
+[xmppej]: https://xmpp.org/software/servers/ejabberd/
