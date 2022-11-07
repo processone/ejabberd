@@ -1,5 +1,26 @@
 #!/bin/bash
 
+# Erlang modules in ejabberd use a custom module attribute [1]
+# named -protocol to define what XEPs and RFCs that module implements.
+# General protocols are defined in ejabberd.erl
+#
+# The supported syntax is:
+#   -protocol({rfc, RFC-NUMBER}).
+#   -protocol({xep, XEP-NUMBER, XEP-VERSION}).
+#   -protocol({xep, XEP-NUMBER, XEP-VERSION, EJABBERD-VERSION, STATUS, COMMENTS}).
+# Where
+#   RFC-NUMBER, XEP-NUMBER :: integer()
+#   XEP-VERSION, EJABBERD-VERSION :: atom()
+#   STATUS, COMMENTS :: string()
+# For example:
+#   -protocol({rfc, 5766}).
+#   -protocol({xep, 111, '0.2'}).
+#   -protocol({xep, 222, '1.2.0', '17.09', "", ""}).
+#   -protocol({xep, 333, '1.11.2', '21.09', "complete", ""}).
+#   -protocol({xep, 333, '0.2.0', '21.09', "partial", "Only client X is supported"}).
+#
+# [1] https://www.erlang.org/doc/reference_manual/modules.html#module-attributes
+
 write_doap_head()
 {
     cat >"$1" <<-'EOF'
@@ -64,21 +85,31 @@ write_xeps()
 {
     xep=xep-$1
     out=$2
+    comments2=""
     int=$(echo $1 | sed 's/^0*//')
-
     imp=$(grep "\-protocol({xep, $int," $BASE/src/* | sed "s/.*src\/\(.*\).erl.*'\([0-9.-]*\)'.*/\1 \2/")
     [ "$imp" == "" ] && imp="NA 0.0"
 
     sourcefiles=$(grep "\-protocol({xep, $int," $BASE/src/* | sed "s/.*src\/\(.*\).erl.*'\([0-9.-]*\)'.*/\1/" | tr '\012' ',' | sed 's|,$||' | sed 's|,|, |g' | sed 's|^ejabberd$||')
-    versions=$(grep "\-protocol({xep, $int," $BASE/src/* | sed "s/.*src\/\(.*\).erl.*'\([0-9.-]*\)'.*/\2/" | head -1)
+
+    versionsold=$(grep "\-protocol({xep, $int, .*'})\." $BASE/src/* | sed "s/.*'\([0-9.-]*\)'.*/\1/" | head -1)
+    versionsnew=$(grep "\-protocol({xep, $int, .*\"})\." $BASE/src/* | sed "s/.*'\([0-9.-]*\)', '.*/\1/" | head -1)
+    versions="$versionsold$versionsnew"
+
+    since=$(grep "\-protocol({xep, $int, .*\"})\." $BASE/src/* | sed "s/.*', '\([0-9.-]*\)',.*/\1/" | head -1)
+    status=$(grep "\-protocol({xep, $int, .*\"})\." $BASE/src/* | sed "s/.*', \"\([a-z]*\)\", \".*/\1/" | head -1)
+
+    comments=$(grep "\-protocol({xep, $int, .*\"})\." $BASE/src/* | sed "s/.*\", \"\(.*\)\"}.*/\1/" | head -1)
+    [ -n "$comments" ] && comments2=", $comments"
+    note="$sourcefiles$comments2"
 
     echo "    <implements>" >>$out
     echo "      <xmpp:SupportedXep>" >>$out
     echo "        <xmpp:xep rdf:resource=\"https://xmpp.org/extensions/$xep.html\"/>" >>$out
     echo "        <xmpp:version>$versions</xmpp:version>" >>$out
-    echo "        <xmpp:since></xmpp:since>" >>$out
-    echo "        <xmpp:status></xmpp:status>" >>$out
-    echo "        <xmpp:note>$sourcefiles</xmpp:note>" >>$out
+    echo "        <xmpp:since>$since</xmpp:since>" >>$out
+    echo "        <xmpp:status>$status</xmpp:status>" >>$out
+    echo "        <xmpp:note>$note</xmpp:note>" >>$out
     echo "      </xmpp:SupportedXep>" >>$out
     echo "    </implements>" >>$out
 }
