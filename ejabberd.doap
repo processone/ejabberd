@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
          xmlns="http://usefulinc.com/ns/doap#"
-         xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#">
+         xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#"
+         xmlns:schema="https://schema.org/">
   <Project>
     <name>ejabberd</name>
     <shortdesc>XMPP Server with MQTT Broker and SIP Service</shortdesc>
@@ -21,7 +22,7 @@
     <download-page rdf:resource="https://www.process-one.net/en/ejabberd/downloads/"/>
     <download-mirror rdf:resource="https://github.com/processone/ejabberd/tags"/>
     <license rdf:resource="https://raw.githubusercontent.com/processone/ejabberd/master/COPYING"/>
-    <logo rdf:resource="https://docs.ejabberd.im/static/shared/images/footer_logo_e@2x.png"/>
+    <schema:logo rdf:resource="https://docs.ejabberd.im/static/shared/images/footer_logo_e@2x.png"/>
     <bug-database rdf:resource="https://github.com/processone/ejabberd/issues"/>
     <support-forum rdf:resource="xmpp:ejabberd@conference.process-one.net?join"/>
     <repository>
