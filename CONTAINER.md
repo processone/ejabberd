@@ -311,3 +311,116 @@ podman exec -it eja1 sh
 
 podman stop eja1
 ```
+
+
+Composer Examples
+=================
+
+## Minimal Example
+
+This is the barely minimal file to get a usable ejabberd.
+Store it as `docker-compose.yml`:
+
+```yaml
+services:
+  main:
+    image: ghcr.io/processone/ejabberd
+    container_name: ejabberd
+    ports:
+      - "5222:5222"
+      - "5269:5269"
+      - "5280:5280"
+      - "5443:5443"
+```
+
+Create and start the container with the command:
+```bash
+docker-compose up
+```
+
+## Customized Example
+
+This example shows the usage of several customizations:
+it uses a local configuration file,
+stores the mnesia database in a local path,
+registers an account when it's created,
+and checks the number of registered accounts every time it's started.
+
+Download or copy the ejabberd configuration file:
+```bash
+wget https://raw.githubusercontent.com/processone/ejabberd/master/ejabberd.yml.example
+mv ejabberd.yml.example ejabberd.yml
+```
+
+Create the database directory and allow the container access to it:
+```bash
+mkdir database
+sudo chown 9000:9000 database
+```
+
+Now write this `docker-compose.yml` file:
+```yaml
+version: '3.7'
+
+services:
+
+  main:
+    image: ghcr.io/processone/ejabberd
+    container_name: ejabberd
+    environment:
+      - CTL_ON_CREATE=register admin localhost asd
+      - CTL_ON_START=registered_users localhost ;
+                     status
+    ports:
+      - "5222:5222"
+      - "5269:5269"
+      - "5280:5280"
+      - "5443:5443"
+    volumes:
+      - ./ejabberd.yml:/opt/ejabberd/conf/ejabberd.yml:ro
+      - ./database:/opt/ejabberd/database
+```
+
+## Clustering Example
+
+In this example, the main container is created first.
+Once it is fully started and healthy, a second container is created,
+and once ejabberd is started in it, it joins the first one.
+
+An account is registered in the first node when created,
+and it should exist in the second node after join.
+
+Notice that in this example the main container does not have access
+to the exterior; the replica exports the ports and can be accessed.
+
+```yaml
+version: '3.7'
+
+services:
+
+  main:
+    image: ghcr.io/processone/ejabberd
+    container_name: ejabberd
+    environment:
+      - ERLANG_NODE_ARG=ejabberd@main
+      - ERLANG_COOKIE=dummycookie123
+      - CTL_ON_CREATE=register admin localhost asd
+
+  replica:
+    image: ghcr.io/processone/ejabberd
+    container_name: replica
+    depends_on:
+      main:
+        condition: service_healthy
+    ports:
+      - "5222:5222"
+      - "5269:5269"
+      - "5280:5280"
+      - "5443:5443"
+    environment:
+      - ERLANG_NODE_ARG=ejabberd@replica
+      - ERLANG_COOKIE=dummycookie123
+      - CTL_ON_CREATE=join_cluster ejabberd@main
+      - CTL_ON_START=registered_users localhost ;
+                     status
+```
