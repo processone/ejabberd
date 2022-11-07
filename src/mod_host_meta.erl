@@ -27,7 +27,7 @@
 
 -author('badlop@process-one.net').
 
--protocol({xep, 156, '1.4.0'}).
+-protocol({xep, 156, '1.4.0', '22.05', "", ""}).
 
 -behaviour(gen_mod).
 

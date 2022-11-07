@@ -25,7 +25,7 @@
 
 -module(mod_stun_disco).
 -author('holger@zedat.fu-berlin.de').
--protocol({xep, 215, '0.7'}).
+-protocol({xep, 215, '0.7', '20.04', "", ""}).
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
