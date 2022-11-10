@@ -1005,22 +1005,14 @@ sqlite_to_odbc(_Host, _) ->
 %% Open a database connection to PostgreSQL
 pgsql_connect(Server, Port, DB, Username, Password, ConnectTimeout,
 	      Transport, SSLOpts) ->
-    case pgsql:connect([{host, Server},
-                        {database, DB},
-                        {user, Username},
-                        {password, Password},
-                        {port, Port},
-			{transport, Transport},
-			{connect_timeout, ConnectTimeout},
-                        {as_binary, true}|SSLOpts]) of
-        {ok, Ref} ->
-            pgsql:squery(Ref, [<<"alter database \"">>, DB, <<"\" set ">>,
-                               <<"standard_conforming_strings='off';">>]),
-            pgsql:squery(Ref, [<<"set standard_conforming_strings to 'off';">>]),
-            {ok, Ref};
-        Err ->
-            Err
-    end.
+    pgsql:connect([{host, Server},
+                   {database, DB},
+                   {user, Username},
+                   {password, Password},
+                   {port, Port},
+                   {transport, Transport},
+                   {connect_timeout, ConnectTimeout},
+                   {as_binary, true}|SSLOpts]).
 
 %% Convert PostgreSQL query result to Erlang ODBC result formalism
 pgsql_to_odbc({ok, PGSQLResult}) ->
