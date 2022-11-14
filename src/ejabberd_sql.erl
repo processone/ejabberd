@@ -1206,7 +1206,7 @@ get_ssl_opts(ssl, Host) ->
 		    Opts2
 	    end;
 	false ->
-	    Opts2
+	    [{verify, verify_none}|Opts2]
     end;
 get_ssl_opts(tcp, _) ->
     [].
