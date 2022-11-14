@@ -125,6 +125,9 @@ handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
               mnesia:dirty_delete_object(S)
       end, Sessions),
     {noreply, State};
+handle_info({mnesia_system_event, {mnesia_up, Node}}, State) ->
+    ?INFO_MSG("Node ~p joined our Mnesia SM tables", [Node]),
+    {noreply, State};
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.

@@ -239,6 +239,9 @@ handle_cast(Msg, State) ->
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
+handle_info({mnesia_system_event, {mnesia_up, Node}}, State) ->
+    ?INFO_MSG("Node ~p joined our Mnesia S2S tables", [Node]),
+    {noreply, State};
 handle_info({route, Packet}, State) ->
     try route(Packet)
     catch ?EX_RULE(Class, Reason, St) ->
