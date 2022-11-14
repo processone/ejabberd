@@ -1061,10 +1061,10 @@ pgsql_execute_to_odbc(_) -> {updated, undefined}.
 
 %% part of init/1
 %% Open a database connection to MySQL
-mysql_connect(Server, Port, DB, Username, Password, ConnectTimeout, Transport, _) ->
+mysql_connect(Server, Port, DB, Username, Password, ConnectTimeout, Transport, SSLOpts0) ->
     SSLOpts = case Transport of
 		  ssl ->
-		      [ssl_required];
+		      [ssl_required|SSLOpts0];
 		  _ ->
 		      []
 	      end,
