@@ -21,7 +21,7 @@ defmodule Ejabberd.Config.OptsFormatter do
   end
 
   defp format_attrs_for_ejabberd(opts) when is_list(opts),
-    do: Enum.map opts, &format_attrs_for_ejabberd/1
+    do: (Enum.map opts, &format_attrs_for_ejabberd/1)
 
   defp format_attrs_for_ejabberd({:listeners, mods}),
     do: {:listen, format_listeners_for_ejabberd(mods)}
