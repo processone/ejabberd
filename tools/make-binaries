@@ -68,7 +68,7 @@ mix_vsn=$(mix_version "$rel_vsn")
 crosstool_vsn='1.25.0'
 termcap_vsn='1.3.1'
 expat_vsn='2.4.9'
-zlib_vsn='1.2.12'
+zlib_vsn='1.2.13'
 yaml_vsn='0.2.5'
 ssl_vsn='1.1.1q'
 otp_vsn='24.3.4.5'
@@ -260,6 +260,7 @@ create_common_config()
 		CT_LINUX_V_3_16=y
 		CT_GLIBC_V_2_17=y
 		CT_GLIBC_KERNEL_VERSION_NONE=y
+		CT_LOG_PROGRESS_BAR=n
 	EOF
 }
 #.
@@ -332,7 +333,7 @@ create_data_dir()
 	mkdir "$data_dir" "$data_dir/database" "$data_dir/logs"
 	mv "$code_dir/conf" "$data_dir"
 	chmod 'o-rwx' "$data_dir/"*
-	curl -o "$data_dir/conf/cacert.pem" 'https://curl.se/ca/cacert.pem'
+	curl --no-progress-meter -o "$data_dir/conf/cacert.pem" 'https://curl.se/ca/cacert.pem'
 	sed -i '/^loglevel:/a\
 \
 ca_file: /opt/ejabberd/conf/cacert.pem\
@@ -452,7 +453,7 @@ build_toolchain()
 			info "Building Crosstool-NG $crosstool_vsn ..."
 			cd "$src_dir/$crosstool_dir"
 			./configure --prefix="$bootstrap_dir"
-			make
+			make V=0
 			make install
 			cd "$OLDPWD"
 		fi
@@ -461,6 +462,8 @@ build_toolchain()
 		cd "$root_dir"
 		create_${arch}_config 'defconfig'
 		ct-ng defconfig
+		sed -i -e "s|^CT_ZLIB_VERSION=.*|CT_ZLIB_VERSION=\"$zlib_vsn\"|" .config
+		sed -i -e 's|^CT_ZLIB_MIRRORS=.*|CT_ZLIB_MIRRORS="https://github.com/madler/zlib/releases/download/v${CT_ZLIB_VERSION} https://www.zlib.net/ https://www.zlib.net/fossils/"|' .config
 		ct-ng build CT_PREFIX="$ct_prefix_dir" CT_JOBS="$ct_jobs"
 		rm -rf '.config' '.build' 'build.log'
 		cd "$OLDPWD"
@@ -841,23 +844,23 @@ else
 
 	info 'Downloading dependencies ...'
 	cd "$src_dir"
-	curl -LO "http://crosstool-ng.org/download/crosstool-ng/$crosstool_tar"
-	curl -LO "https://ftp.gnu.org/gnu/termcap/$termcap_tar"
-	curl -LO "https://github.com/libexpat/libexpat/releases/download/R_$(printf '%s' "$expat_vsn" | sed 's/\./_/g')/$expat_tar"
-	curl -LO "https://zlib.net/$zlib_tar"
-	curl -LO "https://pyyaml.org/download/libyaml/$yaml_tar"
-	curl -LO "https://www.openssl.org/source/$ssl_tar"
-	curl -LO "https://github.com/erlang/otp/releases/download/OTP-$otp_vsn/$otp_tar"
-	curl -LO "https://github.com/elixir-lang/elixir/archive/v$elixir_vsn.tar.gz"
-	curl -LO "https://github.com/linux-pam/linux-pam/releases/download/v$pam_vsn/$pam_tar"
-	curl -LO "https://download.sourceforge.net/libpng/$png_tar"
-	curl -LO "https://www.ijg.org/files/$jpeg_tar"
-	curl -LO "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/$webp_tar"
-	curl -LO "https://github.com/libgd/libgd/releases/download/gd-$gd_vsn/$gd_tar"
-	curl -LO "http://www.unixodbc.org/$odbc_tar"
-	curl -LO "https://www.sqlite.org/$(date '+%Y')/$sqlite_tar" \
-	    || curl -LO "https://www.sqlite.org/$(date -d '1 year ago' '+%Y')/$sqlite_tar" \
-	    || curl -LO "https://www.sqlite.org/$(date -d '2 years ago' '+%Y')/$sqlite_tar"
+	curl --no-progress-meter -LO "https://github.com/crosstool-ng/crosstool-ng/releases/download/$crosstool_dir/$crosstool_tar"
+	curl --no-progress-meter -LO "https://ftp.gnu.org/gnu/termcap/$termcap_tar"
+	curl --no-progress-meter -LO "https://github.com/libexpat/libexpat/releases/download/R_$(printf '%s' "$expat_vsn" | sed 's/\./_/g')/$expat_tar"
+	curl --no-progress-meter -LO "https://zlib.net/fossils/$zlib_tar"
+	curl --no-progress-meter -LO "https://pyyaml.org/download/libyaml/$yaml_tar"
+	curl --no-progress-meter -LO "https://www.openssl.org/source/$ssl_tar"
+	curl --no-progress-meter -LO "https://github.com/erlang/otp/releases/download/OTP-$otp_vsn/$otp_tar"
+	curl --no-progress-meter -LO "https://github.com/elixir-lang/elixir/archive/v$elixir_vsn.tar.gz"
+	curl --no-progress-meter -LO "https://github.com/linux-pam/linux-pam/releases/download/v$pam_vsn/$pam_tar"
+	curl --no-progress-meter -LO "https://download.sourceforge.net/libpng/$png_tar"
+	curl --no-progress-meter -LO "https://www.ijg.org/files/$jpeg_tar"
+	curl --no-progress-meter -LO "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/$webp_tar"
+	curl --no-progress-meter -LO "https://github.com/libgd/libgd/releases/download/gd-$gd_vsn/$gd_tar"
+	curl --no-progress-meter -LO "http://www.unixodbc.org/$odbc_tar"
+	curl --no-progress-meter -LO "https://www.sqlite.org/$(date '+%Y')/$sqlite_tar" \
+	    || curl --no-progress-meter -LO "https://www.sqlite.org/$(date -d '1 year ago' '+%Y')/$sqlite_tar" \
+	    || curl --no-progress-meter -LO "https://www.sqlite.org/$(date -d '2 years ago' '+%Y')/$sqlite_tar"
 	cd "$OLDPWD"
 fi
 
