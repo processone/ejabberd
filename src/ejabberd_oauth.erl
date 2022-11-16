@@ -500,6 +500,10 @@ process(_Handlers,
 		 path = [_, <<"authorization_token">>]}) ->
     ResponseType = proplists:get_value(<<"response_type">>, Q, <<"">>),
     ClientId = proplists:get_value(<<"client_id">>, Q, <<"">>),
+    JidEls = case proplists:get_value(<<"jid">>, Q, <<"">>) of
+                <<"">> -> [?INPUTID(<<"email">>, <<"username">>, <<"">>)];
+                Jid -> [?C(Jid), ?INPUT(<<"hidden">>, <<"username">>, Jid)]
+            end,
     RedirectURI = proplists:get_value(<<"redirect_uri">>, Q, <<"">>),
     Scope = proplists:get_value(<<"scope">>, Q, <<"">>),
     State = proplists:get_value(<<"state">>, Q, <<"">>),
@@ -507,8 +511,8 @@ process(_Handlers,
         ?XAE(<<"form">>,
              [{<<"action">>, <<"authorization_token">>},
               {<<"method">>, <<"post">>}],
-             [?LABEL(<<"username">>, [?CT(?T("User (jid)")), ?C(<<": ">>)]),
-              ?INPUTID(<<"email">>, <<"username">>, <<"">>),
+             [?LABEL(<<"username">>, [?CT(?T("User (jid)")), ?C(<<": ">>)])
+             ] ++ JidEls ++ [
               ?BR,
               ?LABEL(<<"password">>, [?CT(?T("Password")), ?C(<<": ">>)]),
               ?INPUTID(<<"password">>, <<"password">>, <<"">>),
