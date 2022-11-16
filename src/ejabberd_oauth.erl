@@ -245,6 +245,8 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 
+get_client_identity(<<"">>, Ctx) ->
+    {ok, {Ctx, {client, unknown_client}}};
 get_client_identity({client, ClientID}, Ctx) ->
     {ok, {Ctx, {client, ClientID}}}.
 
