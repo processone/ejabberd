@@ -271,11 +271,6 @@ update_tables(State) ->
     create_index(State, "mix_pam", "i_mix_pam_us", ["username", "server_host"]),
     drop_sh_default(State, "mix_pam"),
 
-    add_sh_column(State, "route"),
-    drop_index(State, "i_route"),
-    create_unique_index(State, "route", "i_route", ["domain", "server_host", "node", "pid"]),
-    drop_sh_default(State, "route"),
-
     add_sh_column(State, "mqtt_pub"),
     drop_index(State, "i_mqtt_topic"),
     create_unique_index(State, "mqtt_pub", "i_mqtt_topic_server", ["topic", "server_host"]),

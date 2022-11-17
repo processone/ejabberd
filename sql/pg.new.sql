@@ -170,11 +170,6 @@
 -- CREATE INDEX i_mix_pam_us ON mix_pam (username, server_host);
 -- ALTER TABLE mix_pam ALTER COLUMN server_host DROP DEFAULT;
 
--- ALTER TABLE route ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
--- DROP INDEX i_route;
--- CREATE UNIQUE INDEX i_route ON route USING btree (domain, server_host, node, pid);
--- ALTER TABLE i_route ALTER COLUMN server_host DROP DEFAULT;
-
 -- ALTER TABLE mqtt_pub ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
 -- DROP INDEX i_mqtt_topic;
 -- CREATE UNIQUE INDEX i_mqtt_topic_server ON mqtt_pub (topic, server_host);
