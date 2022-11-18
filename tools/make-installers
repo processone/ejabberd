@@ -80,7 +80,7 @@ create_help_file()
 	local file="$1"
 
 	cat >"$file" <<-EOF
-	This is the $rel_name $rel_vsn-$iteration installer for linux-$arch
+	This is the $rel_name $rel_vsn-$iteration installer for linux-gnu-$arch
 	
 	Visit:
 	  $home_url
@@ -354,7 +354,7 @@ create_setup_script()
 
 for arch in $architectures
 do
-	tar_name="$rel_name-$rel_vsn-linux-$arch.tar.gz"
+	tar_name="$rel_name-$rel_vsn-linux-gnu-$arch.tar.gz"
 	installer_name="$rel_name-$rel_vsn-$iteration-linux-$arch.run"
 
 	test -e "$tar_name" || tools/make-binaries

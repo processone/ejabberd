@@ -262,6 +262,18 @@ Example using environment variables (see full example [docker-compose.yml](https
 Generating a Container Image
 ============================
 
+> By default, `.github/container/Dockerfile` builds this container by directly compiling ejabberd,
+> it is a fast and direct method.
+>
+> However, a problem with QEMU prevents building the container in QEMU using Erlang/OTP 25
+> for the `arm64` architecture.
+>
+> Providing `build-args: METHOD=package` is an alternate method to build the container
+> used by the Github Actions workflow that provides `amd64` and `arm64` container images.
+> It first builds an ejabberd binary package, and later installs it in the image.
+> That method avoids using QEMU, so it can build `arm64` container images, but is extremely
+> slow the first time it's used, and consequently not recommended for general use.
+
 This container image includes ejabberd as a standalone OTP release built using Elixir.
 
 That OTP release is configured with:
