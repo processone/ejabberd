@@ -4033,6 +4033,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
                            lists:map(fun({U, H}) -> {U, maps:from_list(H)} end,
                                      Val)),
                   StateData#state{hats_users = Hats};
+	    hibernation_time -> StateData;
 	    Other ->
                   ?INFO_MSG("Unknown MUC room option, will be discarded: ~p", [Other]),
                   StateData
