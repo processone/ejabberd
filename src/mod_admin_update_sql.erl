@@ -129,7 +129,6 @@ update_tables(State) ->
     drop_index(State, "i_rosteru_username"),
     drop_index(State, "i_rosteru_jid"),
     create_unique_index(State, "rosterusers", "i_rosteru_sh_user_jid", ["server_host", "username", "jid"]),
-    create_index(State, "rosterusers", "i_rosteru_sh_username", ["server_host", "username"]),
     create_index(State, "rosterusers", "i_rosteru_sh_jid", ["server_host", "jid"]),
     drop_sh_default(State, "rosterusers"),
 
@@ -149,7 +148,6 @@ update_tables(State) ->
     drop_index(State, "i_sr_user_grp"),
     add_pkey(State, "sr_user", ["server_host", "jid", "grp"]),
     create_unique_index(State, "sr_user", "i_sr_user_sh_jid_grp", ["server_host", "jid", "grp"]),
-    create_index(State, "sr_user", "i_sr_user_sh_jid", ["server_host", "jid"]),
     create_index(State, "sr_user", "i_sr_user_sh_grp", ["server_host", "grp"]),
     drop_sh_default(State, "sr_user"),
 
@@ -217,7 +215,6 @@ update_tables(State) ->
     add_sh_column(State, "privacy_list"),
     drop_index(State, "i_privacy_list_username"),
     drop_index(State, "i_privacy_list_username_name"),
-    create_index(State, "privacy_list", "i_privacy_list_sh_username", ["server_host", "username"]),
     create_unique_index(State, "privacy_list", "i_privacy_list_sh_username_name", ["server_host", "username", "name"]),
     drop_sh_default(State, "privacy_list"),
 
@@ -225,7 +222,6 @@ update_tables(State) ->
     drop_index(State, "i_private_storage_username"),
     drop_index(State, "i_private_storage_username_namespace"),
     add_pkey(State, "private_storage", ["server_host", "username", "namespace"]),
-    create_index(State, "private_storage", "i_private_storage_sh_username", ["server_host", "username"]),
     drop_sh_default(State, "private_storage"),
 
     add_sh_column(State, "roster_version"),
@@ -268,7 +264,6 @@ update_tables(State) ->
     drop_index(State, "i_mix_pam"),
     drop_index(State, "i_mix_pam_us"),
     create_unique_index(State, "mix_pam", "i_mix_pam", ["username", "server_host", "channel", "service"]),
-    create_index(State, "mix_pam", "i_mix_pam_us", ["username", "server_host"]),
     drop_sh_default(State, "mix_pam"),
 
     add_sh_column(State, "mqtt_pub"),

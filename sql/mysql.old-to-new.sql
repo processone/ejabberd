@@ -33,14 +33,12 @@ BEGIN
                 ALTER TABLE `rosterusers` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `username`;
                 ALTER TABLE `rosterusers` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `rosterusers` ADD UNIQUE INDEX `i_rosteru_sh_user_jid` (`server_host`, `username`(75), `jid`(75));
-                ALTER TABLE `rosterusers` ADD INDEX `i_rosteru_sh_username` (`server_host`, `username`);
                 ALTER TABLE `rosterusers` ADD INDEX `i_rosteru_sh_jid` (`server_host`, `jid`);
                 ALTER TABLE `private_storage` DROP INDEX `i_private_storage_username_namespace`;
                 ALTER TABLE `private_storage` DROP INDEX `i_private_storage_username`;
                 ALTER TABLE `private_storage` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `username`;
                 ALTER TABLE `private_storage` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `private_storage` ADD PRIMARY KEY (`server_host`, `username`, `namespace`);
-                ALTER TABLE `private_storage` ADD INDEX `i_private_storage_sh_username` USING BTREE (`server_host`, `username`);
                 ALTER TABLE `mqtt_pub` DROP INDEX `i_mqtt_topic`;
                 ALTER TABLE `mqtt_pub` ADD COLUMN `server_host` VARCHAR (191) NOT NULL DEFAULT @DEFAULT_HOST AFTER `username`;
                 ALTER TABLE `mqtt_pub` ALTER COLUMN `server_host` DROP DEFAULT;
@@ -94,14 +92,12 @@ BEGIN
                 ALTER TABLE `privacy_list` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `username`;
                 ALTER TABLE `privacy_list` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `privacy_list` ADD UNIQUE INDEX `i_privacy_list_sh_username_name` USING BTREE (`server_host`, `username`(75), `name`(75));
-                ALTER TABLE `privacy_list` ADD INDEX `i_privacy_list_sh_username` USING BTREE (`server_host`, `username`);
                 ALTER TABLE `sr_user` DROP INDEX `i_sr_user_jid`;
                 ALTER TABLE `sr_user` DROP INDEX `i_sr_user_grp`;
                 ALTER TABLE `sr_user` DROP INDEX `i_sr_user_jid_group`;
                 ALTER TABLE `sr_user` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `jid`;
                 ALTER TABLE `sr_user` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `sr_user` ADD UNIQUE INDEX `i_sr_user_sh_jid_group` (`server_host`, `jid`, `grp`);
-                ALTER TABLE `sr_user` ADD INDEX `i_sr_user_sh_jid` (`server_host`, `jid`);
                 ALTER TABLE `sr_user` ADD INDEX `i_sr_user_sh_grp` (`server_host`, `grp`);
                 ALTER TABLE `sr_user` ADD PRIMARY KEY (`server_host`, `jid`, `grp`);
                 ALTER TABLE `muc_online_users` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `host`;
@@ -119,7 +115,6 @@ BEGIN
                 ALTER TABLE `mix_pam` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `username`;
                 ALTER TABLE `mix_pam` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `mix_pam` ADD UNIQUE INDEX `i_mix_pam` (`username`(191), `server_host`, `channel`(191), `service`(191));
-                ALTER TABLE `mix_pam` ADD INDEX `i_mix_pam_us` (`username`(191), `server_host`);
                 ALTER TABLE `route` CHANGE COLUMN `server_host` `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL;
                 ALTER TABLE `users` DROP PRIMARY KEY;
                 ALTER TABLE `users` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `username`;

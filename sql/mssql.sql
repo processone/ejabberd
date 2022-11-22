@@ -138,8 +138,6 @@ CREATE TABLE [dbo].[muc_online_users] (
 
 CREATE UNIQUE INDEX [muc_online_users_i] ON [muc_online_users] (username, server, resource, name, host)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
-CREATE UNIQUE CLUSTERED INDEX [muc_online_users_us] ON [muc_online_users] (username, server)
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE TABLE [dbo].[muc_room_subscribers] (
         [room] [varchar] (191) NOT NULL,
@@ -174,9 +172,6 @@ CREATE TABLE [dbo].[privacy_list] (
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 );
 
-CREATE INDEX [privacy_list_username] ON [privacy_list] (username)
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
-
 CREATE UNIQUE INDEX [privacy_list_username_name] ON [privacy_list] (username, name)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
@@ -202,9 +197,6 @@ CREATE TABLE [dbo].[private_storage] (
         [data] [text] NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE()
 ) TEXTIMAGE_ON [PRIMARY];
-
-CREATE INDEX [private_storage_username] ON [private_storage] (username)
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE UNIQUE CLUSTERED INDEX [private_storage_username_namespace] ON [private_storage] (username, namespace)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
@@ -320,9 +312,6 @@ CREATE TABLE [dbo].[rosterusers] (
 CREATE UNIQUE CLUSTERED INDEX [rosterusers_username_jid] ON [rosterusers] ([username], [jid])
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
-CREATE INDEX [rosterusers_username] ON [rosterusers] ([username])
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
-
 CREATE INDEX [rosterusers_jid] ON [rosterusers] ([jid])
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
@@ -380,9 +369,6 @@ CREATE TABLE [dbo].[sr_user] (
 
 CREATE UNIQUE CLUSTERED INDEX [sr_user_jid_group] ON [sr_user] ([jid], [grp])
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
-
-CREATE INDEX [sr_user_jid] ON [sr_user] ([jid])
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE INDEX [sr_user_grp] ON [sr_user] ([grp])
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
@@ -518,9 +504,6 @@ CREATE TABLE [dbo].[route] (
 );
 
 CREATE UNIQUE CLUSTERED INDEX [route_i] ON [route] (domain, server_host, node, pid)
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
-
-CREATE INDEX [route_domain] ON [route] (domain)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE TABLE [dbo].[bosh] (
