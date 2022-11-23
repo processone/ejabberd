@@ -67,7 +67,6 @@ process([], #request{method = 'GET', host = Host, raw_path = RawPath}) ->
             {<<"domain_placeholder">>, Domain},
             {<<"registration_domain">>, Domain},
             {<<"assets_path">>, RawPath},
-            {<<"i18n">>, ejabberd_option:language(Host)},
             {<<"view_mode">>, <<"fullscreen">>}
            | ExtraOptions],
     Init2 =
