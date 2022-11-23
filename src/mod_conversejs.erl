@@ -117,7 +117,9 @@ is_served_file(_) -> false.
 
 serve(Host, LocalPath) ->
     case get_conversejs_resources(Host) of
-        undefined -> ejabberd_web:error(not_found);
+        undefined ->
+            Path = str:join(LocalPath, <<"/">>),
+            {303, [{<<"Location">>, <<"https://cdn.conversejs.org/dist/", Path/binary>>}], <<>>};
         MainPath -> serve2(LocalPath, MainPath)
     end.
 
