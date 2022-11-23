@@ -128,6 +128,7 @@ publish({_, S, _} = USR, Pkt, ExpiryTime) ->
         allow ->
             case retain(USR, Pkt, ExpiryTime) of
                 ok ->
+		    ejabberd_hooks:run(mqtt_publish, S, [USR, Pkt, ExpiryTime]),
                     Mod = gen_mod:ram_db_mod(S, ?MODULE),
                     route(Mod, S, Pkt, ExpiryTime);
                 {error, _} = Err ->
@@ -603,7 +604,7 @@ match([H|T1], [<<"%c">>|T2], U, S, R) ->
     end;
 match([H|T1], [<<"%g">>|T2], U, S, R) ->
     case jid:resourceprep(H) of
-        H -> 
+        H ->
             case acl:loaded_shared_roster_module(S) of
                 undefined -> false;
                 Mod ->
