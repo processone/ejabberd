@@ -80,8 +80,7 @@ proc_name(Transport, Host, Port) ->
 	_ -> binary_to_atom(<<"mod_mqtt_bridge_mqtts_", HostB/binary, "_", (integer_to_binary(Port))/binary>>, utf8)
     end.
 
--spec mqtt_publish_hook(jid:ljid(), publish(), non_neg_integer()) ->
-    {ok, non_neg_integer()} | {error, db_failure | publish_forbidden}.
+-spec mqtt_publish_hook(jid:ljid(), publish(), non_neg_integer()) -> ok.
 mqtt_publish_hook({_, S, _}, #publish{topic = Topic} = Pkt, _ExpiryTime) ->
     {_, Publish} = mod_mqtt_bridge_opt:servers(S),
     case maps:find(Topic, Publish) of
@@ -97,7 +96,11 @@ mqtt_publish_hook({_, S, _}, #publish{topic = Topic} = Pkt, _ExpiryTime) ->
 %%% Options
 %%%===================================================================
 -spec mod_options(binary()) ->
-    [{atom(), any()}].
+    [{servers,
+      {[{atom(), gen_tcp | ssl, binary(), non_neg_integer(),
+	 #{binary() => binary()}, #{binary() => binary()}, binary()}],
+       #{binary() => [atom()]}}} |
+    {atom(), any()}].
 mod_options(Host) ->
     [{servers, []},
      {replication_user, jid:make(<<"admin">>, Host)}].
@@ -117,8 +120,8 @@ mod_opt_type(servers) ->
 	    maps:fold(
 		fun(Url, Opts, {HAcc, PAcc}) ->
 		    {ok, Scheme, _UserInfo, Host, Port, _Path, _Query} = misc:uri_parse(Url),
-		    Publish = maps:get(publish, Opts, []),
-		    Subscribe = maps:get(subscribe, Opts, []),
+		    Publish = maps:get(publish, Opts, #{}),
+		    Subscribe = maps:get(subscribe, Opts, #{}),
 		    Authentication = maps:get(authentication, Opts, []),
 		    Transport = case Scheme of "mqtt" -> gen_tcp;
 				    _ -> ssl
