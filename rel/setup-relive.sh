@@ -27,4 +27,5 @@ sed -i 's|^acl:$|acl:\n  admin: [user: admin]|g' ejabberd.yml.example
 sed -i "s|#' POLL|EJABBERD_BYPASS_WARNINGS=true\n\n#' POLL|g" ejabberdctl.cfg.example
 [ ! -f "$CON_DIR/ejabberdctl.cfg" ] \
     && echo -n "ejabberdctl.cfg " \
-    && mv ejabberdctl.cfg.example ejabberdctl.cfg
+    && mv ejabberdctl.cfg.example ejabberdctl.cfg \
+    || echo -n
