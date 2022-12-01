@@ -779,20 +779,24 @@ handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
     Config = StateData#state.config,
     CaptchaRequired = Config#config.captcha_protected,
     PasswordProtected = Config#config.password_protected,
+    MembersOnly = Config#config.members_only,
     TmpConfig = Config#config{captcha_protected = false,
-			       password_protected = false},
+			      password_protected = false,
+			      members_only = false},
     TmpState = StateData#state{config = TmpConfig},
     case process_iq_mucsub(From, IQ, TmpState) of
 	{result, #muc_subscribe{events = NewNodes}, NewState} ->
 	    NewConfig = (NewState#state.config)#config{
 			  captcha_protected = CaptchaRequired,
-			  password_protected = PasswordProtected},
+			  password_protected = PasswordProtected,
+			  members_only = MembersOnly},
 	    {reply, {ok, NewNodes}, StateName,
 	     NewState#state{config = NewConfig}};
 	{ignore, NewState} ->
 	    NewConfig = (NewState#state.config)#config{
 			  captcha_protected = CaptchaRequired,
-			  password_protected = PasswordProtected},
+			  password_protected = PasswordProtected,
+			  members_only = MembersOnly},
 	    {reply, {error, ?T("Request is ignored")},
 	     NewState#state{config = NewConfig}};
 	{error, Err} ->
