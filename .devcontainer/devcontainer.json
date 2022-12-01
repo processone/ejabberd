@@ -1,48 +1,7 @@
 {
 	"name": "ejabberd",
-	// "dockerComposeFile": "docker-compose.yml",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {
-			"VARIANT": "latest" // 1.11.4
-		}	
-	},
-	"workspaceFolder": "/workspace",
-
-	// Set *default* container specific settings.json values on container create.
-	"settings": {
-		"terminal.integrated.defaultProfile.linux": "/bin/zsh",
-	},
-
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": ["pgourlain.erlang", "jakebecker.elixir-ls"],
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [5222, 5280, 5269],
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "sh .devcontainer/post-create.sh",
-
-	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "vscode",
-	"portsAttributes": {
-		"1883": {
-			"label": "MQTT"
-		},
-		"5222": {
-			"label": "XMPP C2S"
-		},
-		"5223": {
-			"label": "Legacy XMPP C2S"
-		},
-		"5269": {
-			"label": "XMPP S2S"
-		},
-		"5280": {
-			"label": "ejabberd HTTP"
-		},
-		"5443": {
-			"label": "ejabberd HTTPS"
-		}
-	}
+	"build": {"dockerfile": "Dockerfile"},
+	"extensions": ["erlang-ls.erlang-ls"],
+	"postCreateCommand": ".devcontainer/prepare-container.sh",
+	"remoteUser": "vscode"
 }
