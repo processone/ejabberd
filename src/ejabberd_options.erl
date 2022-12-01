@@ -233,6 +233,8 @@ opt_type(log_burst_limit_window_time) ->
     econf:timeout(second);
 opt_type(log_burst_limit_count) ->
     econf:pos_int();
+opt_type(log_modules_fully) ->
+    econf:list(econf:atom());
 opt_type(loglevel) ->
     fun(N) when is_integer(N) ->
 	    (econf:and_then(
@@ -589,6 +591,7 @@ options() ->
      {log_rotate_size, 10*1024*1024},
      {log_burst_limit_window_time, timer:seconds(1)},
      {log_burst_limit_count, 500},
+     {log_modules_fully, []},
      {max_fsm_queue, undefined},
      {modules, []},
      {negotiation_timeout, timer:seconds(30)},
@@ -737,6 +740,7 @@ globals() ->
      log_rotate_size,
      log_burst_limit_count,
      log_burst_limit_window_time,
+     log_modules_fully,
      negotiation_timeout,
      net_ticktime,
      new_sql_schema,

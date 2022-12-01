@@ -532,6 +532,7 @@ validate(Y1) ->
     case pre_validate(Y1) of
 	{ok, Y2} ->
 	    set_loglevel(proplists:get_value(loglevel, Y2, info)),
+	    ejabberd_logger:set_modules_fully_logged(proplists:get_value(log_modules_fully, Y2, [])),
 	    case ejabberd_config_transformer:map_reduce(Y2) of
 		{ok, Y3} ->
 		    Hosts = proplists:get_value(hosts, Y3),

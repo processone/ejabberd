@@ -74,6 +74,7 @@
 -export([listen/0]).
 -export([log_burst_limit_count/0]).
 -export([log_burst_limit_window_time/0]).
+-export([log_modules_fully/0]).
 -export([log_rotate_count/0]).
 -export([log_rotate_size/0]).
 -export([loglevel/0]).
@@ -592,6 +593,10 @@ log_burst_limit_count() ->
 -spec log_burst_limit_window_time() -> pos_integer().
 log_burst_limit_window_time() ->
     ejabberd_config:get_option({log_burst_limit_window_time, global}).
+
+-spec log_modules_fully() -> [atom()].
+log_modules_fully() ->
+    ejabberd_config:get_option({log_modules_fully, global}).
 
 -spec log_rotate_count() -> non_neg_integer().
 log_rotate_count() ->

@@ -27,7 +27,7 @@
 
 %% API
 -export([start/0, get/0, set/1, get_log_path/0, flush/0]).
--export([convert_loglevel/1, loglevels/0]).
+-export([convert_loglevel/1, loglevels/0, set_modules_fully_logged/1]).
 -ifndef(LAGER).
 -export([progress_filter/2]).
 -endif.
@@ -249,6 +249,8 @@ get_lager_version() ->
 	false -> "0.0.0"
     end.
 
+set_modules_fully_logged(_) -> ok.
+
 flush() ->
     application:stop(lager),
     application:stop(sasl).
@@ -377,6 +379,10 @@ set(Level) when ?is_loglevel(Level) ->
 		_ -> xmpp:set_config([{debug, false}])
 	    end
     end.
+
+set_modules_fully_logged(Modules) ->
+    logger:unset_module_level(),
+    logger:set_module_level(Modules, all).
 
 -spec flush() -> ok.
 flush() ->
