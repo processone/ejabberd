@@ -1,0 +1,49 @@
+{
+        "version": "0.2.0",
+        "configurations": [
+                {
+                        "name": "Relive",
+                        "type": "erlang",
+                        "request": "launch",
+                        "runinterminal": [
+                                ".vscode/relive.sh"
+                        ],
+                        "projectnode": "ejabberd@localhost",
+                        "cookie": "COOKIE",
+                        "timeout": 300,
+                        "cwd": "${workspaceRoot}"
+                },
+                {
+                        "name": "Relive (alternate)",
+                        "type": "erlang",
+                        "request": "launch",
+                        "runinterminal": [
+                                "./rebar3", "shell",
+                                "--apps", "ejabberd",
+                                "--config", "rel/relive.config",
+                                "--script", "rel/relive.escript",
+                                "--name", "ejabberd@localhost",
+                                "--setcookie", "COOKIE"
+                        ],
+                        "projectnode": "ejabberd@localhost",
+                        "cookie": "COOKIE",
+                        "timeout": 300,
+                        "cwd": "${workspaceRoot}"
+                },
+                {
+                        "name": "Attach",
+                        "type": "erlang",
+                        "request": "attach",
+                        "runinterminal": [
+                                "./rebar3", "shell",
+                                "--sname", "clean@localhost",
+                                "--setcookie", "COOKIE",
+                                "--start-clean"
+                        ],
+                        "projectnode": "ejabberd@localhost",
+                        "cookie": "COOKIE",
+                        "timeout": 300,
+                        "cwd": "${workspaceRoot}"
+                }
+        ]
+}
