@@ -68,7 +68,7 @@
 		publish = #{},
 		id = 0 :: non_neg_integer(),
 		codec :: mqtt_codec:state(),
-		authentication}).
+		authentication :: #{}}).
 
 -type state() :: #state{}.
 
@@ -86,19 +86,27 @@ start_link(Proc, Transport, Host, Port, Publish, Subscribe, Authentication, Repl
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([_Proc, Transport, Host, Port, Publish, Subscribe, Authentication, ReplicationUser]) ->
-    case Transport:connect(Host, Port, [binary]) of
-	{ok, Sock} ->
-	    State1 = #state{socket = {Transport, Sock},
-			    version = 5,
-			    id = p1_rand:uniform(65535),
-			    codec = mqtt_codec:new(4096),
-			    subscriptions = Subscribe,
-			    authentication = Authentication,
-			    usr = jid:tolower(ReplicationUser),
-			    publish = Publish},
-	    State2 = connect(State1, Authentication),
-	    {ok, State2}
+init([_Proc, Proto, Host, Port, Publish, Subscribe, Authentication, ReplicationUser]) ->
+    {Version, Transport} = case Proto of
+			       mqtt -> {4, gen_tcp};
+			       mqtts -> {4, ssl};
+			       mqtt5 -> {5, gen_tcp};
+			       mqtt5s -> {5, ssl}
+			   end,
+    State = #state{version = Version,
+		   id = p1_rand:uniform(65535),
+		   codec = mqtt_codec:new(4096),
+		   subscriptions = Subscribe,
+		   authentication = Authentication,
+		   usr = jid:tolower(ReplicationUser),
+		   publish = Publish},
+    case Authentication of
+	#{certfile := Cert} when Proto == mqtts; Proto == mqtt5s ->
+	    connect(ssl:connect(Host, Port, [binary, {certfile, Cert}]), State, ssl, none);
+	#{username := User, password := Pass} ->
+	    connect(Transport:connect(Host, Port, [binary]), State, Transport, {User, Pass});
+	_ ->
+	    {stop, {error, <<"Certificate can be only used for encrypted connections">>, Authentication, Proto}}
     end.
 
 handle_call(Request, From, State) ->
@@ -109,8 +117,8 @@ handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
-handle_info({tcp, TCPSock, TCPData},
-	    #state{codec = Codec, socket = Socket} = State) ->
+handle_info({Tag, TCPSock, TCPData},
+	    #state{codec = Codec, socket = Socket} = State) when Tag == tcp; Tag == ssl ->
     case mqtt_codec:decode(Codec, TCPData) of
 	{ok, Pkt, Codec1} ->
 	    ?DEBUG("Got MQTT packet:~n~ts", [pp(Pkt)]),
@@ -131,7 +139,13 @@ handle_info({tcp, TCPSock, TCPData},
 handle_info({tcp_closed, _Sock}, State) ->
     ?DEBUG("MQTT connection reset by peer", []),
     stop(State, {socket, closed});
+handle_info({ssl_closed, _Sock}, State) ->
+    ?DEBUG("MQTT connection reset by peer", []),
+    stop(State, {socket, closed});
 handle_info({tcp_error, _Sock, Reason}, State) ->
+    ?DEBUG("MQTT connection error: ~ts", [format_inet_error(Reason)]),
+    stop(State, {socket, Reason});
+handle_info({ssl_error, _Sock, Reason}, State) ->
     ?DEBUG("MQTT connection error: ~ts", [format_inet_error(Reason)]),
     stop(State, {socket, Reason});
 handle_info({publish, #publish{topic = Topic} = Pkt}, #state{publish = Publish} = State) ->
@@ -193,18 +207,28 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% State transitions
 %%%===================================================================
-connect(State, AuthString) ->
-    [User, Pass] = binary:split(AuthString, <<":">>),
-    Connect = #connect{client_id = integer_to_binary(State#state.id),
-		       clean_start = true,
-		       username = User,
-		       password = Pass,
-		       keep_alive = 60,
-		       proto_level = 5},
-    Pkt = mqtt_codec:encode(5, Connect),
+connect({error, Reason}, _State, _Transport, _Auth) ->
+    {stop, {error, Reason}};
+connect({ok, Sock}, State0, Transport, Auth) ->
+    State = State0#state{socket = {Transport, Sock}},
+    Connect = case Auth of
+		  {User, Pass} ->
+		      #connect{client_id = integer_to_binary(State#state.id),
+			       clean_start = true,
+			       username = User,
+			       password = Pass,
+			       keep_alive = 60,
+			       proto_level = State#state.version};
+		  _ ->
+		      #connect{client_id = integer_to_binary(State#state.id),
+			       clean_start = true,
+			       keep_alive = 60,
+			       proto_level = State#state.version}
+	      end,
+    Pkt = mqtt_codec:encode(State#state.version, Connect),
     send(State, Connect),
     {ok, _, Codec2} = mqtt_codec:decode(State#state.codec, Pkt),
-    State#state{codec = Codec2}.
+    {ok, State#state{codec = Codec2}}.
 
 -spec stop(state(), error_reason()) ->
     {noreply, state(), infinity} |

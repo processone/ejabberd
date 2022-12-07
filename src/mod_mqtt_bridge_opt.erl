@@ -12,7 +12,7 @@ replication_user(Opts) when is_map(Opts) ->
 replication_user(Host) ->
     gen_mod:get_module_opt(Host, mod_mqtt_bridge, replication_user).
 
--spec servers(gen_mod:opts() | global | binary()) -> {[{atom(),'gen_tcp' | 'ssl',binary(),non_neg_integer(),#{binary()=>binary()},#{binary()=>binary()},binary()}],#{binary()=>[atom()]}}.
+-spec servers(gen_mod:opts() | global | binary()) -> {[{atom(),'mqtt' | 'mqtts' | 'mqtt5' | 'mqtt5s',binary(),non_neg_integer(),#{binary()=>binary()},#{binary()=>binary()},map()}],#{binary()=>[atom()]}}.
 servers(Opts) when is_map(Opts) ->
     gen_mod:get_opt(servers, Opts);
 servers(Host) ->

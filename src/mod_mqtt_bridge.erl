@@ -72,13 +72,11 @@ reload(_Host, _NewOpts, _OldOpts) ->
 depends(_Host, _Opts) ->
     [{mod_mqtt, hard}].
 
-proc_name(Transport, Host, Port) ->
+proc_name(Proto, Host, Port) ->
     HostB = list_to_binary(Host),
-    case Transport of
-	gen_tcp ->
-	    binary_to_atom(<<"mod_mqtt_bridge_mqtt_", HostB/binary, "_", (integer_to_binary(Port))/binary>>, utf8);
-	_ -> binary_to_atom(<<"mod_mqtt_bridge_mqtts_", HostB/binary, "_", (integer_to_binary(Port))/binary>>, utf8)
-    end.
+    TransportB = list_to_binary(Proto),
+    binary_to_atom(<<"mod_mqtt_bridge_", TransportB/binary, "_", HostB/binary,
+		     "_", (integer_to_binary(Port))/binary>>, utf8).
 
 -spec mqtt_publish_hook(jid:ljid(), publish(), non_neg_integer()) -> ok.
 mqtt_publish_hook({_, S, _}, #publish{topic = Topic} = Pkt, _ExpiryTime) ->
@@ -97,8 +95,8 @@ mqtt_publish_hook({_, S, _}, #publish{topic = Topic} = Pkt, _ExpiryTime) ->
 %%%===================================================================
 -spec mod_options(binary()) ->
     [{servers,
-      {[{atom(), gen_tcp | ssl, binary(), non_neg_integer(),
-	 #{binary() => binary()}, #{binary() => binary()}, binary()}],
+      {[{atom(), mqtt | mqtts | mqtt5 | mqtt5s, binary(), non_neg_integer(),
+	 #{binary() => binary()}, #{binary() => binary()}, map()}],
        #{binary() => [atom()]}}} |
     {atom(), any()}].
 mod_options(Host) ->
@@ -109,29 +107,39 @@ mod_opt_type(replication_user) ->
     econf:jid();
 mod_opt_type(servers) ->
     econf:and_then(
-	econf:map(econf:url([mqtt, mqtts]),
-		  econf:options(#{
-				    publish => econf:map(econf:binary(), econf:binary(), [{return, map}]),
-				    subscribe => econf:map(econf:binary(), econf:binary(), [{return, map}]),
-				    authentication => econf:binary()},
-				[{return, map}]),
+	econf:map(econf:url([mqtt, mqtts, mqtt5, mqtt5s]),
+	    econf:options(
+		#{
+		    publish => econf:map(econf:binary(), econf:binary(), [{return, map}]),
+		    subscribe => econf:map(econf:binary(), econf:binary(), [{return, map}]),
+		    authentication => econf:either(
+			econf:options(
+			    #{
+				username => econf:binary(),
+				password => econf:binary()
+			    }, [{return, map}]),
+			econf:options(
+			    #{
+				certfile => econf:pem()
+			    }, [{return, map}])
+		    )}, [{return, map}]),
 		  [{return, map}]),
 	fun(Servers) ->
 	    maps:fold(
 		fun(Url, Opts, {HAcc, PAcc}) ->
-		    {ok, Scheme, _UserInfo, Host, Port, _Path, _Query} = misc:uri_parse(Url),
+		    {ok, Scheme, _UserInfo, Host, Port, _Path, _Query} =
+		    misc:uri_parse(Url, [{mqtt, 1883}, {mqtts, 8883},
+					 {mqtt5, 1883}, {mqtt5s, 8883}]),
 		    Publish = maps:get(publish, Opts, #{}),
 		    Subscribe = maps:get(subscribe, Opts, #{}),
 		    Authentication = maps:get(authentication, Opts, []),
-		    Transport = case Scheme of "mqtt" -> gen_tcp;
-				    _ -> ssl
-				end,
-		    Proc = proc_name(Transport, Host, Port),
+		    Proto = list_to_atom(Scheme),
+		    Proc = proc_name(Scheme, Host, Port),
 		    PAcc2 = maps:fold(
 			fun(Topic, _RemoteTopic, Acc) ->
 			    maps:update_with(Topic, fun(V) -> [Proc | V] end, [Proc], Acc)
 			end, PAcc, Publish),
-		    {[{Proc, Transport, Host, Port, Publish, Subscribe, Authentication} | HAcc], PAcc2}
+		    {[{Proc, Proto, Host, Port, Publish, Subscribe, Authentication} | HAcc], PAcc2}
 		end, {[], #{}}, Servers)
 	end
     ).
