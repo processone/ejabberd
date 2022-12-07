@@ -68,7 +68,7 @@
 		publish = #{},
 		id = 0 :: non_neg_integer(),
 		codec :: mqtt_codec:state(),
-		authentication :: #{}}).
+		authentication :: #{username => binary(), password => binary(), certfile => binary()}}).
 
 -type state() :: #state{}.
 
@@ -106,7 +106,7 @@ init([_Proc, Proto, Host, Port, Publish, Subscribe, Authentication, ReplicationU
 	#{username := User, password := Pass} ->
 	    connect(Transport:connect(Host, Port, [binary]), State, Transport, {User, Pass});
 	_ ->
-	    {stop, {error, <<"Certificate can be only used for encrypted connections">>, Authentication, Proto}}
+	    {stop, {error, <<"Certificate can be only used for encrypted connections">>}}
     end.
 
 handle_call(Request, From, State) ->
