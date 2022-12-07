@@ -41,7 +41,7 @@
 	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0,
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
-	 crypto_hmac/3, crypto_hmac/4, uri_parse/1,
+	 crypto_hmac/3, crypto_hmac/4, uri_parse/1, uri_parse/2,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
 	 semver_to_xxyy/1, logical_processors/0]).
 
@@ -61,23 +61,37 @@
 uri_parse(URL) when is_binary(URL) ->
     uri_parse(binary_to_list(URL));
 uri_parse(URL) ->
-    case http_uri:parse(URL) of
+    uri_parse(URL, []).
+
+uri_parse(URL, Protocols) when is_binary(URL) ->
+    uri_parse(binary_to_list(URL), Protocols);
+uri_parse(URL, Protocols) ->
+    case http_uri:parse(URL, [{scheme_defaults, Protocols}]) of
 	{ok, {Scheme, UserInfo, Host, Port, Path, Query}} ->
 	    {ok, atom_to_list(Scheme), UserInfo, Host, Port, Path, Query};
 	{error, _} = E ->
 	    E
     end.
+
 -else.
 uri_parse(URL) when is_binary(URL) ->
     uri_parse(binary_to_list(URL));
 uri_parse(URL) ->
+    uri_parse(URL, [{http, 80}, {https, 443}]).
+
+uri_parse(URL, Protocols) when is_binary(URL) ->
+    uri_parse(binary_to_list(URL), Protocols);
+uri_parse(URL, Protocols) ->
     case uri_string:parse(URL) of
 	#{scheme := Scheme, host := Host, port := Port, path := Path} = M1 ->
 	    {ok, Scheme, maps:get(userinfo, M1, ""), Host, Port, Path, maps:get(query, M1, "")};
-	#{scheme := "https", host := Host, path := Path} = M2 ->
-	    {ok, "https", maps:get(userinfo, M2, ""), Host, 443, Path, maps:get(query, M2, "")};
-	#{scheme := "http", host := Host, path := Path} = M3 ->
-	    {ok, "http", maps:get(userinfo, M3, ""), Host, 80, Path, maps:get(query, M3, "")};
+	#{scheme := Scheme, host := Host, path := Path} = M2 ->
+	    case lists:keyfind(list_to_atom(Scheme), 1, Protocols) of
+		{_, Port} ->
+		    {ok, Scheme, maps:get(userinfo, M2, ""), Host, Port, Path, maps:get(query, M2, "")};
+		_ ->
+		    {error, unknown_protocol}
+	    end;
 	{error, Atom, _} ->
 	    {error, Atom}
     end.
