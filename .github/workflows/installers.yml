@@ -39,7 +39,7 @@ jobs:
       - name: Install FPM
         run: |
           gem install --no-document --user-install fpm
-          echo $HOME/.gem/ruby/*/bin >> $GITHUB_PATH
+          echo $HOME/.local/share/gem/ruby/*/bin >> $GITHUB_PATH
       - name: Check out repository code
         uses: actions/checkout@v3
         with:
