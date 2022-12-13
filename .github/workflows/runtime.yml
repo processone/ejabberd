@@ -125,7 +125,7 @@ jobs:
           elixir: '1.11.4'
         - otp: '25.0'
           elixir: '1.12.3'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
 
