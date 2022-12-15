@@ -377,6 +377,6 @@ validator() ->
 	fun(Os) ->
 		{proplists:get_value(from, Os, []),
 		 proplists:get_value(who, Os, none),
-		 proplists:get_value(what, Os, [])}
+		 proplists:get_value(what, Os, {none, none})}
 	end),
       [unique]).
