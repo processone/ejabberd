@@ -453,11 +453,13 @@ need_to_store(_LServer, #message{type = error}) -> false;
 need_to_store(LServer, #message{type = Type} = Packet) ->
     case xmpp:has_subtag(Packet, #offline{}) of
 	false ->
-	    case misc:unwrap_mucsub_message(Packet) of
-		#message{type = groupchat} = Msg ->
+	    case {xmpp:has_subtag(Packet, #ps_event{}), misc:unwrap_mucsub_message(Packet)} of
+		{true, #message{type = groupchat} = Msg} ->
 		    need_to_store(LServer, Msg#message{type = chat});
-		#message{} = Msg ->
+		{true, #message{} = Msg} ->
 		    need_to_store(LServer, Msg);
+		{true, _} ->
+		    false;
 		_ ->
 		    case check_store_hint(Packet) of
 			store ->
