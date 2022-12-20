@@ -936,12 +936,7 @@ get_installed_module_el({ModAtom, Attrs}, Lang) ->
                 []
         end,
     TitleEl = make_title_el(CommitDate, CommitMessage, CommitAuthorName),
-    Status = case lists:member({mod_status, 0}, ModAtom:module_info(exports)) of
-                 true ->
-                     [?C(<<" ">>),
-                      ?C(ModAtom:mod_status())];
-                 false -> []
-             end,
+    Status = get_module_status_el(ModAtom),
     HomeTitleEl = make_home_title_el(Summary, Author),
     ?XE(<<"tr">>,
         [?XE(<<"td">>, [?AXC(Home, [HomeTitleEl], Mod)]),
@@ -953,6 +948,46 @@ get_installed_module_el({ModAtom, Attrs}, Lang) ->
              ++ Started
              ++ Status)
         | UpgradeEls]).
+
+get_module_status_el(ModAtom) ->
+    case {get_module_status(ModAtom),
+          get_module_status(elixir_module_name(ModAtom))} of
+        {Str, unknown} when is_list(Str) ->
+            [?C(<<" ">>), ?C(Str)];
+        {unknown, Str} when is_list(Str) ->
+            [?C(<<" ">>), ?C(Str)];
+        {unknown, unknown} ->
+            []
+    end.
+
+get_module_status(Module) ->
+    try Module:mod_status() of
+        Str when is_list(Str) ->
+            Str
+    catch
+        _:_ ->
+            unknown
+    end.
+
+%% Converts mod_some_thing to Elixir.ModSomeThing
+elixir_module_name(ModAtom) ->
+    list_to_atom("Elixir." ++ elixir_module_name("_" ++ atom_to_list(ModAtom), [])).
+
+elixir_module_name([], Res) ->
+    lists:reverse(Res);
+elixir_module_name([$_, Char | Remaining], Res) ->
+    [Upper] = uppercase([Char]),
+    elixir_module_name(Remaining, [Upper | Res]);
+elixir_module_name([Char | Remaining], Res) ->
+    elixir_module_name(Remaining, [Char | Res]).
+
+-ifdef(HAVE_URI_STRING).
+uppercase(String) ->
+    string:uppercase(String). % OTP 20 or higher
+-else.
+uppercase(String) ->
+    string:to_upper(String). % OTP older than 20
+-endif.
 
 get_available_module_el({ModAtom, Attrs}) ->
     Installed = installed(),
