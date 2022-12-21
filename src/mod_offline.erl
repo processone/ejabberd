@@ -483,7 +483,7 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 				    true;
 				{_, _, false} ->
 				    Packet#message.body /= [];
-				{_, _, _, unless_chat_state} ->
+				{_, _, unless_chat_state} ->
 				    not misc:is_standalone_chat_state(Packet)
 			    end
 		    end
