@@ -473,14 +473,17 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 					_ ->
 					    true
 				    end,
-			    case {Store, mod_offline_opt:store_empty_body(LServer)} of
-				{false, _} ->
+			    case {misc:get_mucsub_event_type(Packet), Store,
+				  mod_offline_opt:store_empty_body(LServer)} of
+				{?NS_MUCSUB_NODES_PRESENCE, _, _} ->
 				    false;
-				{_, true} ->
+				{_, false, _} ->
+				    false;
+				{_, _, true} ->
 				    true;
-				{_, false} ->
+				{_, _, false} ->
 				    Packet#message.body /= [];
-				{_, unless_chat_state} ->
+				{_, _, _, unless_chat_state} ->
 				    not misc:is_standalone_chat_state(Packet)
 			    end
 		    end

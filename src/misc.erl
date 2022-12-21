@@ -43,7 +43,7 @@
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
 	 crypto_hmac/3, crypto_hmac/4, uri_parse/1, uri_parse/2,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
-	 semver_to_xxyy/1, logical_processors/0]).
+	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -168,7 +168,11 @@ unwrap_mucsub_message(_Packet) ->
     false.
 
 -spec is_mucsub_message(xmpp_element()) -> boolean().
-is_mucsub_message(#message{} = OuterMsg) ->
+is_mucsub_message(Packet) ->
+    get_mucsub_event_type(Packet) /= false.
+
+-spec get_mucsub_event_type(xmpp_element()) -> binary() | false.
+get_mucsub_event_type(#message{} = OuterMsg) ->
     case xmpp:get_subtag(OuterMsg, #ps_event{}) of
 	#ps_event{
 	    items = #ps_items{
@@ -180,11 +184,11 @@ is_mucsub_message(#message{} = OuterMsg) ->
 		 Node == ?NS_MUCSUB_NODES_PARTICIPANTS;
 		 Node == ?NS_MUCSUB_NODES_PRESENCE;
 		 Node == ?NS_MUCSUB_NODES_SUBSCRIBERS ->
-	    true;
+	    Node;
 	_ ->
 	    false
     end;
-is_mucsub_message(_Packet) ->
+get_mucsub_event_type(_Packet) ->
     false.
 
 -spec is_standalone_chat_state(stanza()) -> boolean().
