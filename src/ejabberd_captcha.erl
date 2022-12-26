@@ -398,6 +398,18 @@ create_image(Limiter, Key) ->
 				   {error, image_error()}.
 do_create_image(Key) ->
     FileName = get_prog_name(),
+    case length(string:split(FileName, "/")) == 1 of
+        true ->
+            do_create_image(Key, misc:binary_to_atom(FileName));
+        false ->
+            do_create_image(Key, FileName)
+    end.
+
+do_create_image(Key, Module) when is_atom(Module) ->
+    Function = create_image,
+    erlang:apply(Module, Function, [Key]);
+
+do_create_image(Key, FileName) when is_binary(FileName) ->
     Cmd = lists:flatten(io_lib:format("~ts ~ts", [FileName, Key])),
     case cmd(Cmd) of
       {ok,
@@ -551,6 +563,7 @@ return(Port, TRef, Result) ->
 is_feature_available() ->
     case get_prog_name() of
       Prog when is_binary(Prog) -> true;
+      MF when is_list(MF) -> true;
       false -> false
     end.
 

@@ -454,13 +454,14 @@ doc() ->
              ?T("For server connections, this 'ca_file' option is overridden by the http://../toplevel/#s2s-cafile[s2s_cafile] option."), ""
             ]}},
      {captcha_cmd,
-      #{value => ?T("Path"),
-        note => "improved in 21.10",
+      #{value => ?T("Path | ModuleName"),
+        note => "improved in 23.xx",
         desc =>
             ?T("Full path to a script that generates http://../basic/#captcha[CAPTCHA] images. "
                "@VERSION@ is replaced with ejabberd version number in XX.YY format. "
                "@SEMVER@ is replaced with ejabberd version number in semver format "
                "when compiled with Elixir's mix, or XX.YY format otherwise. "
+               "Alternatively, it can be the name of a module that implements ejabberd CAPTCHA support. "
                "There is no default value: when this option is not "
                "set, CAPTCHA functionality is completely disabled."),
         example =>
