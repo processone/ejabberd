@@ -3,7 +3,7 @@
 #
 get_help()
 {
-    local COMMANDCACHE=/var/log/ejabberd/bash_completion_$RANDOM
+    local COMMANDCACHE=/tmp/ejabberd_bash_completion_$RANDOM
     ejabberdctl $CTLARGS help tags >$COMMANDCACHE.tags
     ejabberdctl $CTLARGS >$COMMANDCACHE
     if [[ $? == 2 ]] ; then
