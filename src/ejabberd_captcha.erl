@@ -77,6 +77,11 @@ mk_ocr_field(Lang, CID, Type) ->
     [_, F] = captcha_form:encode([{ocr, <<>>}], Lang, [ocr]),
     xmpp:set_els(F, [#media{uri = [URI]}]).
 
+update_captcha_key(_Id, Key, Key) ->
+    ok;
+update_captcha_key(Id, _Key, Key2) ->
+    true = ets:update_element(captcha, Id, [{4, Key2}]).
+
 -spec create_captcha(binary(), jid(), jid(),
                      binary(), any(),
 		     callback() | term()) -> {error, image_error()} |
@@ -243,7 +248,8 @@ process(_Handlers,
     case lookup_captcha(Id) of
       {ok, #captcha{key = Key}} ->
 	  case create_image(Addr, Key) of
-	    {ok, Type, _, Img} ->
+	    {ok, Type, Key2, Img} ->
+		update_captcha_key(Id, Key, Key2),
 		{200,
 		 [{<<"Content-Type">>, Type},
 		  {<<"Cache-Control">>, <<"no-cache">>},
