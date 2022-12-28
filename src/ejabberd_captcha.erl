@@ -294,7 +294,7 @@ init([]) ->
     case check_captcha_setup() of
 	true ->
 	    register_handlers(),
-	    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
+	    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 70),
 	    {ok, #state{enabled = true}};
 	false ->
 	    {ok, #state{enabled = false}};
