@@ -565,11 +565,20 @@ compile(LibDir) ->
     Options = [{outdir, Bin}, {i, Inc} | compile_options()],
     filelib:ensure_dir(filename:join(Bin, ".")),
     [copy(App, Bin) || App <- filelib:wildcard(Src++"/*.app")],
+    compile_c_files(LibDir),
     Er = [compile_erlang_file(Bin, File, Options)
           || File <- filelib:wildcard(Src++"/*.erl")],
     Ex = [compile_elixir_file(Bin, File)
           || File <- filelib:wildcard(Lib ++ "/*.ex")],
     compile_result(Er++Ex).
+
+compile_c_files(LibDir) ->
+    case file:read_file_info(filename:join(LibDir, "c_src/Makefile")) of
+        {ok, _} ->
+            os:cmd("cd "++LibDir++"; make -C c_src");
+        {error, _} ->
+            ok
+    end.
 
 compile_result(Results) ->
     case lists:dropwhile(
@@ -649,6 +658,7 @@ install(Module, Spec, SrcDir, LibDir) ->
     Errors = lists:dropwhile(fun({_, ok}) -> true;
                                 (_) -> false
             end, Files1++Files2),
+    copy_priv_files(LibDir),
     inform_module_configuration(Module, LibDir, Files1),
     Result = case Errors of
         [{F, {error, E}}|_] ->
@@ -660,6 +670,12 @@ install(Module, Spec, SrcDir, LibDir) ->
     end,
     file:set_cwd(CurDir),
     Result.
+
+copy_priv_files(LibDir) ->
+    file:set_cwd(LibDir),
+    EjabberdLibDir = code:lib_dir(ejabberd),
+    [{File, copy(File, filename:join(EjabberdLibDir, File))}
+                  || File <- filelib:wildcard("{priv}/**")].
 
 inform_module_configuration(Module, LibDir, Files1) ->
     Res = lists:filter(fun({[$c, $o, $n, $f |_], ok}) -> true;
