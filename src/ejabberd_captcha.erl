@@ -398,7 +398,7 @@ create_image(Limiter, Key) ->
 				   {error, image_error()}.
 do_create_image(Key) ->
     FileName = get_prog_name(),
-    case length(string:split(FileName, "/")) == 1 of
+    case length(binary:split(FileName, <<"/">>)) == 1 of
         true ->
             do_create_image(Key, misc:binary_to_atom(FileName));
         false ->
