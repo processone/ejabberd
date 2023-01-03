@@ -361,7 +361,7 @@ terminate(_Reason, #state{enabled = Enabled}) ->
     if Enabled -> unregister_handlers();
        true -> ok
     end,
-    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50).
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 70).
 
 register_handlers() ->
     ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
