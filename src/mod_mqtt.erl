@@ -147,6 +147,7 @@ subscribe({_, S, _} = USR, TopicFilter, SubOpts, ID) ->
 	allow ->
             case check_subscribe_access(TopicFilter, USR) of
                 allow ->
+		    ejabberd_hooks:run(mqtt_subscribe, S, [USR, TopicFilter, SubOpts, ID]),
                     Mod:subscribe(USR, TopicFilter, SubOpts, ID);
                 deny ->
                     {error, subscribe_forbidden}
@@ -158,6 +159,7 @@ subscribe({_, S, _} = USR, TopicFilter, SubOpts, ID) ->
 -spec unsubscribe(jid:ljid(), binary()) -> ok | {error, notfound | db_failure}.
 unsubscribe({U, S, R}, Topic) ->
     Mod = gen_mod:ram_db_mod(S, ?MODULE),
+    ejabberd_hooks:run(mqtt_unsubscribe, S, [{U, S, R}, Topic]),
     Mod:unsubscribe({U, S, R}, Topic).
 
 -spec select_retained(jid:ljid(), binary(), qos(), non_neg_integer()) ->
