@@ -75,7 +75,7 @@ EOF
 	if test "x`cat conftest.out`" != "xok"; then
 	   AC_MSG_RESULT([failed])
 	   X="`cat conftest.out`"
-	   if test "[$3]" == "warn"; then
+	   if test "[$3]" = "warn"; then
 	      AC_MSG_WARN([$X])
 	   else
 	      AC_MSG_FAILURE([$X])
