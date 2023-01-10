@@ -234,6 +234,7 @@
 {"January","Januar"}.
 {"JID normalization denied by service policy","JID-Normalisierung aufgrund der Dienstrichtlinien verweigert"}.
 {"JID normalization failed","JID-Normalisierung fehlgeschlagen"}.
+{"Joined MIX channels:","Beigetretene MIX-Channels:"}.
 {"joins the room","betritt den Raum"}.
 {"July","Juli"}.
 {"June","Juni"}.
@@ -639,6 +640,7 @@
 {"Value of '~s' should be integer","Wert von '~s' sollte eine Ganzzahl sein"}.
 {"Value 'set' of 'type' attribute is not allowed","Wert 'set' des 'type'-Attributs ist nicht erlaubt"}.
 {"vCard User Search","vCard-Benutzer-Suche"}.
+{"View joined MIX channels","Beitretene MIX-Channel ansehen"}.
 {"View Queue","Warteschlange ansehen"}.
 {"View Roster","Kontaktliste ansehen"}.
 {"Virtual Hosts","Virtuelle Hosts"}.
