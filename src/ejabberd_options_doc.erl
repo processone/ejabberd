@@ -966,11 +966,11 @@ doc() ->
                "memory drops below this 'Percent', OOM killer is deactivated. "
                "The default value is '80' percents.")}},
      {outgoing_s2s_families,
-      #{value => "[ipv4 | ipv6, ...]",
+      #{value => "[ipv6 | ipv4, ...]",
         desc =>
             ?T("Specify which address families to try, in what order. "
-               "The default is '[ipv4, ipv6]' which means it first tries "
-               "connecting with IPv4, if that fails it tries using IPv6."
+               "The default is '[ipv6, ipv4]' which means it first tries "
+               "connecting with IPv6, if that fails it tries using IPv4."
                "This option is obsolete and irrelevant when using ejabberd 23.xx "
                "and Erlang/OTP 22, or newer versions of them.")}},
      {outgoing_s2s_ipv4_address,
