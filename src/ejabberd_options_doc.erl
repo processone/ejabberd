@@ -837,10 +837,10 @@ doc() ->
             ?T("The time period to rate-limit log messages "
                "by. Defaults to 1 second.")}},
      {log_modules_fully,
-      #{value => ?T("Number"),
+      #{value => "[Module, ...]",
         note => "added in 23.xx",
         desc =>
-            ?T("The modules listed in this option will log everything "
+            ?T("List of modules that will log everything "
                "independently from the general loglevel option.")}},
      {max_fsm_queue,
       #{value => ?T("Size"),
