@@ -173,7 +173,8 @@ mod_opt_type(servers) ->
 %%%===================================================================
 mod_doc() ->
     #{desc =>
-      ?T("This module adds ability to replicate data from or to external servers"),
+      ?T("This module adds ability to replicate data from or to external servers. "
+         "It is available since ejabberd 23.01."),
       opts =>
       [{servers,
 	#{value => "{ServerUrl: Replication informations}",

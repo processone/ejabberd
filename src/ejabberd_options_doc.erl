@@ -455,7 +455,7 @@ doc() ->
             ]}},
      {captcha_cmd,
       #{value => ?T("Path | ModuleName"),
-        note => "improved in 23.xx",
+        note => "improved in 23.01",
         desc =>
             ?T("Full path to a script that generates http://../basic/#captcha[CAPTCHA] images. "
                "@VERSION@ is replaced with ejabberd version number in XX.YY format. "
@@ -838,7 +838,7 @@ doc() ->
                "by. Defaults to 1 second.")}},
      {log_modules_fully,
       #{value => "[Module, ...]",
-        note => "added in 23.xx",
+        note => "added in 23.01",
         desc =>
             ?T("List of modules that will log everything "
                "independently from the general loglevel option.")}},
@@ -967,11 +967,12 @@ doc() ->
                "The default value is '80' percents.")}},
      {outgoing_s2s_families,
       #{value => "[ipv6 | ipv4, ...]",
+        note => "changed in 23.01",
         desc =>
             ?T("Specify which address families to try, in what order. "
                "The default is '[ipv6, ipv4]' which means it first tries "
                "connecting with IPv6, if that fails it tries using IPv4."
-               "This option is obsolete and irrelevant when using ejabberd 23.xx "
+               "This option is obsolete and irrelevant when using ejabberd 23.01 "
                "and Erlang/OTP 22, or newer versions of them.")}},
      {outgoing_s2s_ipv4_address,
       #{value => "Address",
