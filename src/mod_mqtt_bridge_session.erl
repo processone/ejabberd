@@ -128,6 +128,8 @@ handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
+-spec handle_info(term(), state()) ->
+    {noreply, state()} | {noreply, state(), timeout()} | {stop, term(), state()}.
 handle_info({Tag, TCPSock, TCPData},
 	    #state{ws_codec = {init, Hash, Auth, Last}} = State)
     when (Tag == tcp orelse Tag == ssl) ->
@@ -191,30 +193,26 @@ handle_info({Tag, TCPSock, TCPData},
     {Packets, Acc0} =
     case ejabberd_websocket_codec:decode(WSCodec, TCPData) of
 	{ok, NewWSCodec, Packets0} ->
-	    {Packets0, {State#state{ws_codec = NewWSCodec}, ok}};
+	    {Packets0, {noreply, ok, State#state{ws_codec = NewWSCodec}}};
 	{error, _Error, Packets0} ->
-	    {Packets0, {State, stop}}
+	    {Packets0, {stop_after, {socket, closed}, State}}
     end,
     Res2 =
     lists:foldl(
 	fun(_, {stop, _, _} = Res) -> Res;
-	   ({_Op, Data}, {S, Res}) ->
+	   ({_Op, Data}, {Tag, Res, S}) ->
 	       case handle_info({tcp_decoded, TCPSock, Data}, S) of
 		   {stop, _, _} = Stop ->
 		       Stop;
-		   {_, NewState, _} ->
-		       {NewState, Res};
 		   {_, NewState} ->
-		       {NewState, Res}
+		       {Tag, Res, NewState}
 	       end
 	end, Acc0, Packets),
     case Res2 of
-	{stop, _, _} ->
-	    Res2;
-	{NewState2, ok} ->
-	    {noreply, NewState2};
-	{NewState2, stop} ->
-	    stop(NewState2, {socket, closed})
+	{noreply, _, State} ->
+	    {noreply, State};
+	_ ->
+	    Res2
     end;
 handle_info({Tag, TCPSock, TCPData},
 	    #state{codec = Codec} = State)
