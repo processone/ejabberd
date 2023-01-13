@@ -35,7 +35,7 @@
 start(Host, Opts) ->
     User = mod_mqtt_bridge_opt:replication_user(Opts),
     lists:foldl(
-	fun({Proc, Transport, HostAddr, Port, Publish, Subscribe, Authentication}, Started) ->
+	fun({Proc, Transport, HostAddr, Port, Path, Publish, Subscribe, Authentication}, Started) ->
 	    case Started of
 		#{Proc := _} ->
 		    ?DEBUG("Already started ~p", [Proc]),
@@ -43,7 +43,7 @@ start(Host, Opts) ->
 		_ ->
 		    ChildSpec = {Proc,
 				 {mod_mqtt_bridge_session, start_link,
-				  [Proc, Transport, HostAddr, Port, Publish, Subscribe, Authentication, User]},
+				  [Proc, Transport, HostAddr, Port, Path, Publish, Subscribe, Authentication, User]},
 				 transient,
 				 1000,
 				 worker,
@@ -107,7 +107,7 @@ mod_opt_type(replication_user) ->
     econf:jid();
 mod_opt_type(servers) ->
     econf:and_then(
-	econf:map(econf:url([mqtt, mqtts, mqtt5, mqtt5s]),
+	econf:map(econf:url([mqtt, mqtts, mqtt5, mqtt5s, ws, wss]),
 	    econf:options(
 		#{
 		    publish => econf:map(econf:binary(), econf:binary(), [{return, map}]),
@@ -127,9 +127,10 @@ mod_opt_type(servers) ->
 	fun(Servers) ->
 	    maps:fold(
 		fun(Url, Opts, {HAcc, PAcc}) ->
-		    {ok, Scheme, _UserInfo, Host, Port, _Path, _Query} =
+		    {ok, Scheme, _UserInfo, Host, Port, Path, _Query} =
 		    misc:uri_parse(Url, [{mqtt, 1883}, {mqtts, 8883},
-					 {mqtt5, 1883}, {mqtt5s, 8883}]),
+					 {mqtt5, 1883}, {mqtt5s, 8883},
+					 {ws, 80}, {wss, 443}]),
 		    Publish = maps:get(publish, Opts, #{}),
 		    Subscribe = maps:get(subscribe, Opts, #{}),
 		    Authentication = maps:get(authentication, Opts, []),
@@ -139,7 +140,7 @@ mod_opt_type(servers) ->
 			fun(Topic, _RemoteTopic, Acc) ->
 			    maps:update_with(Topic, fun(V) -> [Proc | V] end, [Proc], Acc)
 			end, PAcc, Publish),
-		    {[{Proc, Proto, Host, Port, Publish, Subscribe, Authentication} | HAcc], PAcc2}
+		    {[{Proc, Proto, Host, Port, Path, Publish, Subscribe, Authentication} | HAcc], PAcc2}
 		end, {[], #{}}, Servers)
 	end
     ).
