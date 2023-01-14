@@ -1159,9 +1159,19 @@ db_opts(Host) ->
 	    SSLOpts = get_ssl_opts(Transport, Host),
 	    case Type of
 		mssql ->
-		    [mssql, <<"DRIVER=ODBC;SERVER=", Server/binary, ";UID=", User/binary,
-			      ";DATABASE=", DB/binary ,";PWD=", Pass/binary,
-			      ";PORT=", (integer_to_binary(Port))/binary ,";CLIENT_CHARSET=UTF-8;">>, Timeout];
+                    case odbc_server_is_connstring(Server) of
+                        true ->
+                            [mssql, Server, Timeout];
+                        false ->
+                            Encryption = case Transport of
+                                tcp -> <<"">>;
+                                ssl -> <<";ENCRYPTION=require;ENCRYPT=yes">>
+                            end,
+                            [mssql, <<"DRIVER=ODBC;SERVER=", Server/binary, ";DATABASE=", DB/binary,
+                                      ";UID=", User/binary, ";PWD=", Pass/binary,
+                                      ";PORT=", (integer_to_binary(Port))/binary, Encryption/binary,
+                                      ";CLIENT_CHARSET=UTF-8;">>, Timeout]
+                    end;
 		_ ->
 		    [Type, Server, Port, DB, User, Pass, Timeout, Transport, SSLOpts]
 	    end
@@ -1170,6 +1180,8 @@ db_opts(Host) ->
 warn_if_ssl_unsupported(tcp, _) ->
     ok;
 warn_if_ssl_unsupported(ssl, pgsql) ->
+    ok;
+warn_if_ssl_unsupported(ssl, mssql) ->
     ok;
 warn_if_ssl_unsupported(ssl, mysql) ->
     ok;
@@ -1203,7 +1215,7 @@ get_ssl_opts(ssl, Host) ->
 get_ssl_opts(tcp, _) ->
     [].
 
-init_mssql(Host) ->
+init_mssql_odbcinst(Host) ->
     Driver = ejabberd_option:sql_odbc_driver(Host),
     ODBCINST = io_lib:fwrite("[ODBC]~n"
 			     "Driver = ~s~n", [Driver]),
@@ -1223,6 +1235,19 @@ init_mssql(Host) ->
 	    ?ERROR_MSG("Failed to create temporary directory ~ts: ~ts",
 		       [tmp_dir(), file:format_error(Reason)]),
 	    Err
+    end.
+
+init_mssql(Host) ->
+    Server = ejabberd_option:sql_server(Host),
+    case odbc_server_is_connstring(Server) of
+        true -> ok;
+        false -> init_mssql_odbcinst(Host)
+    end.
+
+odbc_server_is_connstring(Server) ->
+    case binary:match(Server, <<"=">>) of
+        nomatch -> false;
+        _ -> true
     end.
 
 write_file_if_new(File, Payload) ->
