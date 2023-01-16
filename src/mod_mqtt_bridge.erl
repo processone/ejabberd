@@ -173,17 +173,37 @@ mod_opt_type(servers) ->
 %%%===================================================================
 mod_doc() ->
     #{desc =>
-      ?T("This module adds ability to replicate data from or to external servers. "
-         "It is available since ejabberd 23.01."),
+      [?T("This module adds ability to synchronize local MQTT topics with data on remote servers"),
+       ?T("It can update topics on remote servers when local user updates local topic, or can subscribe "
+	  "for changes on remote server, and update local copy when remote data is updated."),
+      ?T("It is available since ejabberd 23.01.")],
+      example =>
+	["modules:",
+	 "  ...",
+	 "  mod_mqtt_bridge:",
+	 "    servers:",
+	 "      \"mqtt://server.com\":",
+	 "        publish:"
+	 "          \"localA\": \"remoteA\" # local changes to 'localA' will be replicated on remote server as 'remoteA'"
+	 "          \"topicB\": \"topicB\""
+	 "        subscribe:"
+	 "          \"remoteB\": \"localB\" # changes to 'remoteB' on remote server will be stored as 'localB' on local server",
+	 "        authentication:"
+	 "          certfile: \"/etc/ejabberd/mqtt_server.pem\"",
+	 "    replication_user: \"mqtt@xmpp.server.com\"",
+	 "  ..."],
       opts =>
       [{servers,
-	#{value => "{ServerUrl: Replication informations}",
+	#{value => "{ServerUrl: {publish: [TopicPairs], subscribe: [TopicPairs], authentication: {username: User, password: Pass} | {certfile: PathToPemFile}}",
 	  desc =>
-	  ?T("Main entry point to define which topics should be replicated.")}},
+	  ?T("Declaration of data to share, must contain 'publish' or 'subscribe' or both, and 'authentication' "
+	     "section with username/password field or certfile pointing to client certifcate. "
+	     "Accepted urls can use schema mqtt, mqtts (mqtt with tls), mqtt5, mqtt5s (both to trigger v5 protocol), "
+	      "ws, wss, ws5, wss5. Certifcate authentication can be only used with mqtts, mqtt5s, wss, wss5.")}},
        {replication_user,
 	#{value => "JID",
 	  desc =>
-	  ?T("Identifier of a user which will own all local modifications.")}}]}.
+	  ?T("Identifier of a user that will be assigned as owner of local changes.")}}]}.
 
 %%%===================================================================
 %%% Internal functions
