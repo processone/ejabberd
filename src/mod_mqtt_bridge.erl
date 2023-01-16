@@ -197,7 +197,7 @@ mod_doc() ->
 	#{value => "{ServerUrl: {publish: [TopicPairs], subscribe: [TopicPairs], authentication: [AuthInfo]}}",
 	  desc =>
 	  ?T("Declaration of data to share, must contain 'publish' or 'subscribe' or both, and 'authentication' "
-	     "section with username/password field or certfile pointing to client certifcate. "
+	     "section with username/password field or certfile pointing to client certificate. "
 	     "Accepted urls can use schema mqtt, mqtts (mqtt with tls), mqtt5, mqtt5s (both to trigger v5 protocol), "
 	      "ws, wss, ws5, wss5. Certifcate authentication can be only used with mqtts, mqtt5s, wss, wss5.")}},
        {replication_user,

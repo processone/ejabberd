@@ -971,7 +971,7 @@ doc() ->
         desc =>
             ?T("Specify which address families to try, in what order. "
                "The default is '[ipv6, ipv4]' which means it first tries "
-               "connecting with IPv6, if that fails it tries using IPv4."
+               "connecting with IPv6, if that fails it tries using IPv4. "
                "This option is obsolete and irrelevant when using ejabberd 23.01 "
                "and Erlang/OTP 22, or newer versions of them.")}},
      {outgoing_s2s_ipv4_address,

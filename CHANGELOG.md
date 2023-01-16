@@ -34,7 +34,7 @@ Admin:
 DOAP:
 - Support extended `-protocol` erlang attribute
 - Add extended RFCs and XEP details to some protocol attributes
-- `tools/generate-doap.sh`: New script to generate DOAP file, add `make doap` ([#3915](https://github.com/processone/ejabberd/issues/#915))
+- `tools/generate-doap.sh`: New script to generate DOAP file, add `make doap` ([#3915](https://github.com/processone/ejabberd/issues/3915))
 - `ejabberd.doap`: New DOAP file describing ejabberd supported protocols
 
 MQTT:
