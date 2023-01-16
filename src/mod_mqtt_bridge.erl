@@ -107,7 +107,7 @@ mod_opt_type(replication_user) ->
     econf:jid();
 mod_opt_type(servers) ->
     econf:and_then(
-	econf:map(econf:url([mqtt, mqtts, mqtt5, mqtt5s, ws, wss]),
+	econf:map(econf:url([mqtt, mqtts, mqtt5, mqtt5s, ws, wss, ws5, wss5]),
 	    econf:options(
 		#{
 		    publish => econf:map(econf:binary(), econf:binary(), [{return, map}]),
@@ -130,7 +130,8 @@ mod_opt_type(servers) ->
 		    {ok, Scheme, _UserInfo, Host, Port, Path, _Query} =
 		    misc:uri_parse(Url, [{mqtt, 1883}, {mqtts, 8883},
 					 {mqtt5, 1883}, {mqtt5s, 8883},
-					 {ws, 80}, {wss, 443}]),
+					 {ws, 80}, {wss, 443},
+					 {ws5, 80}, {wss5, 443}]),
 		    Publish = maps:get(publish, Opts, #{}),
 		    Subscribe = maps:get(subscribe, Opts, #{}),
 		    Authentication = maps:get(authentication, Opts, []),

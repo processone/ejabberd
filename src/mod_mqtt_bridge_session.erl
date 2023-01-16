@@ -88,14 +88,17 @@ start_link(Proc, Transport, Host, Port, Path, Publish, Subscribe, Authentication
 %%% gen_server callbacks
 %%%===================================================================
 init([_Proc, Proto, Host, Port, Path, Publish, Subscribe, Authentication, ReplicationUser]) ->
-    {Version, Transport} = case Proto of
-			       mqtt -> {4, gen_tcp};
-			       mqtts -> {4, ssl};
-			       mqtt5 -> {5, gen_tcp};
-			       mqtt5s -> {5, ssl};
-			       ws -> {4, gen_tcp};
-			       wss -> {4, ssl}
-			   end,
+    {Version, Transport, IsWs} =
+    case Proto of
+	mqtt -> {4, gen_tcp, false};
+	mqtts -> {4, ssl, false};
+	mqtt5 -> {5, gen_tcp, false};
+	mqtt5s -> {5, ssl, false};
+	ws -> {4, gen_tcp, true};
+	wss -> {4, ssl, true};
+	ws5 -> {5, gen_tcp, true};
+	wss5 -> {5, ssl, true}
+    end,
     State = #state{version = Version,
 		   id = p1_rand:uniform(65535),
 		   codec = mqtt_codec:new(4096),
@@ -104,15 +107,15 @@ init([_Proc, Proto, Host, Port, Path, Publish, Subscribe, Authentication, Replic
 		   usr = jid:tolower(ReplicationUser),
 		   publish = Publish},
     case Authentication of
-	#{certfile := Cert} when Proto == mqtts; Proto == mqtt5s; Proto == wss ->
+	#{certfile := Cert} when Transport == ssl ->
 	    Sock = ssl:connect(Host, Port, [binary, {active, true}, {certfile, Cert}]),
-	    if Proto == ws orelse Proto == wss ->
+	    if IsWs ->
 		connect_ws(Host, Port, Path, Sock, State, ssl, none);
 		true -> connect(Sock, State, ssl, none)
 	    end;
 	#{username := User, password := Pass} ->
 	    Sock = Transport:connect(Host, Port, [binary, {active, true}]),
-	    if Proto == ws orelse Proto == wss ->
+	    if IsWs ->
 		connect_ws(Host, Port, Path, Sock, State, Transport, {User, Pass});
 		true -> connect(Sock, State, Transport, {User, Pass})
 	    end;
