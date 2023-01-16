@@ -123,6 +123,8 @@ init([_Proc, Proto, Host, Port, Path, Publish, Subscribe, Authentication, Replic
 	    {stop, {error, <<"Certificate can be only used for encrypted connections">>	}}
     end.
 
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State};
 handle_call(Request, From, State) ->
     ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
