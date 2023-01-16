@@ -216,10 +216,8 @@ handle_info({Tag, TCPSock, TCPData},
     case Res2 of
 	{noreply, _, State2} ->
 	    {noreply, State2};
-	{stop_after, Res3, State2} ->
-	    {stop, Res3, State2};
-	_ ->
-	    Res2
+	{Tag3, Res3, State2} when Tag3 == stop; Tag3 == stop_after ->
+	    {stop, Res3, State2}
     end;
 handle_info({Tag, TCPSock, TCPData},
 	    #state{codec = Codec} = State)
