@@ -42,7 +42,7 @@ jobs:
 
       - name: Get git describe
         id: gitdescribe
-        run: echo "::set-output name=ver::$(git describe --tags)"
+        run: echo "ver=$(git describe --tags)" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
