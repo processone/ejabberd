@@ -200,17 +200,19 @@ handle_info({Tag, TCPSock, TCPData},
     Res2 =
     lists:foldl(
 	fun(_, {stop, _, _} = Res) -> Res;
-	   ({_Op, Data}, {Tag, Res, S}) ->
+	   ({_Op, Data}, {Tag2, Res, S}) ->
 	       case handle_info({tcp_decoded, TCPSock, Data}, S) of
 		   {stop, _, _} = Stop ->
 		       Stop;
 		   {_, NewState} ->
-		       {Tag, Res, NewState}
+		       {Tag2, Res, NewState}
 	       end
 	end, Acc0, Packets),
     case Res2 of
-	{noreply, _, State} ->
-	    {noreply, State};
+	{noreply, _, State2} ->
+	    {noreply, State2};
+	{stop_after, Res3, State2} ->
+	    {stop, Res3, State2};
 	_ ->
 	    Res2
     end;
