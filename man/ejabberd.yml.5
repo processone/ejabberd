@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 10/12/2022
+.\"      Date: 01/16/2023
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "10/12/2022" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "01/16/2023" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,7 +82,7 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/22\&.10/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/23\&.01/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
@@ -560,13 +560,13 @@ A maximum number of items (not memory!) in cache\&. The rule of thumb, for all t
 \fIsm_cache_size\fR\&.
 .RE
 .sp
-\fINote\fR about the next option: improved in 21\&.10:
+\fINote\fR about the next option: improved in 23\&.01:
 .PP
-\fBcaptcha_cmd\fR: \fIPath\fR
+\fBcaptcha_cmd\fR: \fIPath | ModuleName\fR
 .RS 4
 Full path to a script that generates
 CAPTCHA
-images\&. @VERSION@ is replaced with ejabberd version number in XX\&.YY format\&. @SEMVER@ is replaced with ejabberd version number in semver format when compiled with Elixir\(cqs mix, or XX\&.YY format otherwise\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
+images\&. @VERSION@ is replaced with ejabberd version number in XX\&.YY format\&. @SEMVER@ is replaced with ejabberd version number in semver format when compiled with Elixir\(cqs mix, or XX\&.YY format otherwise\&. Alternatively, it can be the name of a module that implements ejabberd CAPTCHA support\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
 .sp
 When using the ejabberd installers or container image, the example captcha scripts can be used like this:
 .sp
@@ -1036,6 +1036,13 @@ period before starting to drop them\&. Default 500
 .RS 4
 The time period to rate\-limit log messages by\&. Defaults to 1 second\&.
 .RE
+.sp
+\fINote\fR about the next option: added in 23\&.01:
+.PP
+\fBlog_modules_fully\fR: \fI[Module, \&.\&.\&.]\fR
+.RS 4
+List of modules that will log everything independently from the general loglevel option\&.
+.RE
 .PP
 \fBlog_rotate_count\fR: \fINumber\fR
 .RS 4
@@ -1093,7 +1100,7 @@ This option can be used to tune tick time parameter of
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/22\&.10/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/23\&.01/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1202,14 +1209,14 @@ option)\&. Later, when memory drops below this
 \fI80\fR
 percents\&.
 .RE
+.sp
+\fINote\fR about the next option: changed in 23\&.01:
 .PP
 \fBoutgoing_s2s_families\fR: \fI[ipv6 | ipv4, \&.\&.\&.]\fR
 .RS 4
 Specify which address families to try, in what order\&. The default is
 \fI[ipv6, ipv4]\fR
-which means it first tries connecting with IPv6, if that fails it tries using IPv4\&.
-.PP
-NOTE: This option is obsolete and irrelevant when using ejabberd 23.xx and Erlang/OTP 22, or newer versions of them.
+which means it first tries connecting with IPv6, if that fails it tries using IPv4\&.This option is obsolete and irrelevant when using ejabberd 23\&.01 and Erlang/OTP 22, or newer versions of them\&.
 .RE
 .sp
 \fINote\fR about the next option: added in 20\&.12:
@@ -3832,6 +3839,28 @@ minutes\&.
 Same as top\-level
 \fIuse_cache\fR
 option, but applied to this module only\&.
+.RE
+.RE
+.SS "mod_mqtt_bridge"
+.sp
+This module adds ability to replicate data from or to external servers\&. It is available since ejabberd 23\&.01\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBreplication_user\fR: \fIJID\fR
+.RS 4
+Identifier of a user which will own all local modifications\&.
+.RE
+.PP
+\fBservers\fR: \fI{ServerUrl: Replication informations}\fR
+.RS 4
+Main entry point to define which topics should be replicated\&.
 .RE
 .RE
 .SS "mod_muc"
@@ -7630,13 +7659,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 22\&.10\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 23\&.01\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/22\&.10/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/23\&.01/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
