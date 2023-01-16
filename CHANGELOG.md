@@ -1,3 +1,57 @@
+# Version 23.01
+
+General:
+- Add `misc:uri_parse/2` to allow declaring default ports for protocols
+- CAPTCHA: Add support to define module instead of path to script
+- Clustering: Handle `mnesia_system_event mnesia_up` when other node joins this ([#3842](https://github.com/processone/ejabberd/issues/3842))
+- ConverseJS: Don't set i18n option because Converse enforces it instead of browser lang ([#3951](https://github.com/processone/ejabberd/issues/3951))
+- ConverseJS: Try to redirect access to files `mod_conversejs` to CDN when there is no local copies
+- ext_mod: compile C files and install them in ejabberd's `priv`
+- ext_mod: Support to get module status from Elixir modules
+- make-binaries: reduce log output
+- make-binaries: Bump zlib version to 1.2.13
+- MUC: Don't store mucsub presence events in offline storage
+- MUC: `hibernation_time` is not an option worth storing in room state ([#3946](https://github.com/processone/ejabberd/issues/3946))
+- Multicast: Jid format when `multicastc` was cached ([#3950](https://github.com/processone/ejabberd/issues/3950))
+- mysql: Pass `ssl` options to mysql driver
+- pgsql: Do not set `standard_conforming_strings` to `off` ([#3944](https://github.com/processone/ejabberd/issues/3944))
+- OAuth: Accept `jid` as a HTTP URL query argument
+- OAuth: Handle when client is not identified
+- PubSub: Expose the `pubsub#type` field in `disco#info` query to the node ([#3914](https://github.com/processone/ejabberd/issues/3914))
+- Translations: Update German translation
+
+Admin:
+- `api_permissions`: Fix option crash when doesn't have `who:` section
+- `log_modules_fully`: New option to list modules that will log everything
+- `outgoing_s2s_families`: Changed option's default to IPv6, and fall back to IPv4
+- Fix bash completion when using Relive or other install methods
+- Fix portability issue with some shells ([#3970](https://github.com/processone/ejabberd/issues/3970))
+- Allow admin command to subscribe new users to `members_only` rooms
+- Use alternative `split/2` function that works with Erlang/OTP as old as 19.3
+- Silent warning in OTP24 about not specified `cacerts` in SQL connections
+- Fix compilation warnings with Elixir 1.14
+
+DOAP:
+- Support extended `-protocol` erlang attribute
+- Add extended RFCs and XEP details to some protocol attributes
+- `tools/generate-doap.sh`: New script to generate DOAP file, add `make doap` ([#3915](https://github.com/processone/ejabberd/issues/#915))
+- `ejabberd.doap`: New DOAP file describing ejabberd supported protocols
+
+MQTT:
+- Add MQTT bridge module
+- Add support for certificate authentication in MQTT bridge
+- Implement reload in MQTT bridge
+- Add support for websockets to MQTT bridge
+- Recognize ws5/wss5 urls in MQTT bridge
+- `mqtt_publish`: New hook for MQTT publish event
+- `mqtt_(un)subscribe`: New hooks for MQTT subscribe & unsubscribe events
+
+VSCode:
+- Improve `.devcontainer` to use use devcontainer image and `.vscode`
+- Add `.vscode` files to instruct VSCode how to run ejabberd
+- Add Erlang LS default configuration
+- Add Elvis default configuration
+
 # Version 22.10
 
 Core:
