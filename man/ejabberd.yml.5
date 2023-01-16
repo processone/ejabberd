@@ -82,7 +82,7 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/23\&.01/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/21\&.12/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
@@ -1100,7 +1100,7 @@ This option can be used to tune tick time parameter of
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/23\&.01/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/21\&.12/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -3843,7 +3843,7 @@ option, but applied to this module only\&.
 .RE
 .SS "mod_mqtt_bridge"
 .sp
-This module adds ability to replicate data from or to external servers\&. It is available since ejabberd 23\&.01\&.
+This module adds ability to synchronize local MQTT topics with data on remote servers It can update topics on remote servers when local user updates local topic, or can subscribe for changes on remote server, and update local copy when remote data is updated\&. It is available since ejabberd 23\&.01\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -3855,13 +3855,51 @@ This module adds ability to replicate data from or to external servers\&. It is 
 .PP
 \fBreplication_user\fR: \fIJID\fR
 .RS 4
-Identifier of a user which will own all local modifications\&.
+Identifier of a user that will be assigned as owner of local changes\&.
 .RE
 .PP
-\fBservers\fR: \fI{ServerUrl: Replication informations}\fR
+\fBservers\fR: \fI{ServerUrl: {publish: [TopicPairs, subscribe: [TopicPairs], authentication: [AuthInfo]}}]\fR
 .RS 4
-Main entry point to define which topics should be replicated\&.
+Declaration of data to share, must contain
+\fIpublish\fR
+or
+\fIsubscribe\fR
+or both, and
+\fIauthentication\fR
+section with username/password field or certfile pointing to client certifcate\&. Accepted urls can use schema mqtt, mqtts (mqtt with tls), mqtt5, mqtt5s (both to trigger v5 protocol), ws, wss, ws5, wss5\&. Certifcate authentication can be only used with mqtts, mqtt5s, wss, wss5\&.
 .RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  \&.\&.\&.
+  mod_mqtt_bridge:
+    servers:
+      "mqtt://server\&.com":
+        publish:
+          "localA": "remoteA" # local changes to \*(AqlocalA\*(Aq will be replicated on remote server as \*(AqremoteA\*(Aq
+          "topicB": "topicB"
+        subscribe:
+          "remoteB": "localB" # changes to \*(AqremoteB\*(Aq on remote server will be stored as \*(AqlocalB\*(Aq on local server
+        authentication:
+          certfile: "/etc/ejabberd/mqtt_server\&.pem"
+    replication_user: "mqtt@xmpp\&.server\&.com"
+  \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .SS "mod_muc"
 .sp
@@ -6788,119 +6826,9 @@ The protocol extension is deferred and seems like there are no clients supportin
 The module has no options\&.
 .SS "mod_sip"
 .sp
-This module adds SIP proxy/registrar support for the corresponding virtual host\&.
-.if n \{\
+SIP support has not been enabled\&.
 .sp
-.\}
-.RS 4
-.it 1 an-trap
-.nr an-no-space-flag 1
-.nr an-break-flag 1
-.br
-.ps +1
-\fBNote\fR
-.ps -1
-.br
-.sp
-It is not enough to just load this module\&. You should also configure listeners and DNS records properly\&. For details see the section about the ejabberd_sip listen module in the ejabberd Documentation\&.
-.sp .5v
-.RE
-.sp
-.it 1 an-trap
-.nr an-no-space-flag 1
-.nr an-break-flag 1
-.br
-.ps +1
-\fBAvailable options:\fR
-.RS 4
-.PP
-\fBalways_record_route\fR: \fItrue | false\fR
-.RS 4
-Always insert "Record\-Route" header into SIP messages\&. This approach allows to bypass NATs/firewalls a bit more easily\&. The default value is
-\fItrue\fR\&.
-.RE
-.PP
-\fBflow_timeout_tcp\fR: \fItimeout()\fR
-.RS 4
-The option sets a keep\-alive timer for
-SIP outbound
-TCP connections\&. The default value is
-\fI2\fR
-minutes\&.
-.RE
-.PP
-\fBflow_timeout_udp\fR: \fItimeout()\fR
-.RS 4
-The options sets a keep\-alive timer for
-SIP outbound
-UDP connections\&. The default value is
-\fI29\fR
-seconds\&.
-.RE
-.PP
-\fBrecord_route\fR: \fIURI\fR
-.RS 4
-When the option
-\fIalways_record_route\fR
-is set to
-\fItrue\fR
-or when
-SIP outbound
-is utilized, ejabberd inserts "Record\-Route" header field with this
-\fIURI\fR
-into a SIP message\&. The default is a SIP URI constructed from the virtual host on which the module is loaded\&.
-.RE
-.PP
-\fBroutes\fR: \fI[URI, \&.\&.\&.]\fR
-.RS 4
-You can set a list of SIP URIs of routes pointing to this SIP proxy server\&. The default is a list containing a single SIP URI constructed from the virtual host on which the module is loaded\&.
-.RE
-.PP
-\fBvia\fR: \fI[URI, \&.\&.\&.]\fR
-.RS 4
-A list to construct "Via" headers for inserting them into outgoing SIP messages\&. This is useful if you\(cqre running your SIP proxy in a non\-standard network topology\&. Every
-\fIURI\fR
-element in the list must be in the form of "scheme://host:port", where "transport" must be
-\fItls\fR,
-\fItcp\fR, or
-\fIudp\fR, "host" must be a domain name or an IP address and "port" must be an internet port number\&. Note that all parts of the
-\fIURI\fR
-are mandatory (e\&.g\&. you cannot omit "port" or "scheme")\&.
-.RE
-.RE
-.sp
-.it 1 an-trap
-.nr an-no-space-flag 1
-.nr an-break-flag 1
-.br
-.ps +1
-\fBExample:\fR
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-modules:
-  \&.\&.\&.
-  mod_sip:
-    always_record_route: false
-    record_route: "sip:example\&.com;lr"
-    routes:
-      \- "sip:example\&.com;lr"
-      \- "sip:sip\&.example\&.com;lr"
-    flow_timeout_udp: 30 sec
-    flow_timeout_tcp: 1 min
-    via:
-      \- tls://sip\-tls\&.example\&.com:5061
-      \- tcp://sip\-tcp\&.example\&.com:5060
-      \- udp://sip\-udp\&.example\&.com:5060
-  \&.\&.\&.
-.fi
-.if n \{\
-.RE
-.\}
-.RE
+The module has no options\&.
 .SS "mod_stats"
 .sp
 This module adds support for XEP\-0039: Statistics Gathering\&. This protocol allows you to retrieve the following statistics from your ejabberd server:
@@ -7659,13 +7587,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 23\&.01\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 21\&.12\&.64\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/23\&.01/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/21\&.12/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp

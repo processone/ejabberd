@@ -178,23 +178,23 @@ mod_doc() ->
 	  "for changes on remote server, and update local copy when remote data is updated."),
       ?T("It is available since ejabberd 23.01.")],
       example =>
-	["modules:",
-	 "  ...",
-	 "  mod_mqtt_bridge:",
-	 "    servers:",
-	 "      \"mqtt://server.com\":",
-	 "        publish:"
-	 "          \"localA\": \"remoteA\" # local changes to 'localA' will be replicated on remote server as 'remoteA'"
-	 "          \"topicB\": \"topicB\""
-	 "        subscribe:"
-	 "          \"remoteB\": \"localB\" # changes to 'remoteB' on remote server will be stored as 'localB' on local server",
-	 "        authentication:"
-	 "          certfile: \"/etc/ejabberd/mqtt_server.pem\"",
-	 "    replication_user: \"mqtt@xmpp.server.com\"",
-	 "  ..."],
+      ["modules:",
+       "  ...",
+       "  mod_mqtt_bridge:",
+       "    servers:",
+       "      \"mqtt://server.com\":",
+       "        publish:",
+       "          \"localA\": \"remoteA\" # local changes to 'localA' will be replicated on remote server as 'remoteA'",
+       "          \"topicB\": \"topicB\"",
+       "        subscribe:",
+       "          \"remoteB\": \"localB\" # changes to 'remoteB' on remote server will be stored as 'localB' on local server",
+       "        authentication:",
+       "          certfile: \"/etc/ejabberd/mqtt_server.pem\"",
+       "    replication_user: \"mqtt@xmpp.server.com\"",
+       "  ..."],
       opts =>
       [{servers,
-	#{value => "{ServerUrl: {publish: [TopicPairs], subscribe: [TopicPairs], authentication: {username: User, password: Pass} | {certfile: PathToPemFile}}",
+	#{value => "{ServerUrl: {publish: [TopicPairs], subscribe: [TopicPairs], authentication: [AuthInfo]}}",
 	  desc =>
 	  ?T("Declaration of data to share, must contain 'publish' or 'subscribe' or both, and 'authentication' "
 	     "section with username/password field or certfile pointing to client certifcate. "
