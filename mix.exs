@@ -109,7 +109,7 @@ defmodule Ejabberd.MixProject do
      {:jiffy, "~> 1.1.1"},
      {:jose, "~> 1.11.5"},
      {:mqtree, "~> 1.0"},
-     {:p1_acme, git: "https://github.com/processone/p1_acme.git", ref: "f19a3bc5018dd635edb9f9fdcfb0e227f5be8409", override: true},
+     {:p1_acme, "~> 1.0"},
      {:p1_oauth2, "~> 0.6"},
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
