@@ -415,14 +415,19 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
                        "" -> [];
                        _ -> ?TAG('div', "note-down", ?RAW(Note))
                    end,
+        {NotePre, NotePost} =
+        if HTMLOutput -> {[], NoteEl};
+            true -> {NoteEl, []}
+        end,
 
-        [?TAG(h1, atom_to_list(Name)),
+        [NotePre,
+         ?TAG(h1, atom_to_list(Name)),
          ?TAG(p, ?RAW(Desc)),
-         NoteEl,
          case LongDesc of
              "" -> [];
              _ -> ?TAG(p, ?RAW(LongDesc))
          end,
+         NotePost,
          ?TAG(h2, <<"Arguments:">>), ArgsText,
          ?TAG(h2, <<"Result:">>), ResultText,
          ?TAG(h2, <<"Tags:">>), ?TAG(p, TagsText)]
