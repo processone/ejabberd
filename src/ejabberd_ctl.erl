@@ -498,7 +498,7 @@ is_supported_args(Args) ->
 
 %% Commands are Bold
 -define(B1, "\e[1m").
--define(B2, "\e[21m").
+-define(B2, "\e[22m").
 -define(C(S), case ShCode of true -> [?B1, S, ?B2]; false -> S end).
 
 %% Arguments are Dim
