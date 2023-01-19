@@ -82,7 +82,7 @@ CREATE INDEX i_sr_user_grp ON sr_user USING btree (grp);
 CREATE TABLE spool (
     username text NOT NULL,
     xml text NOT NULL,
-    seq SERIAL,
+    seq BIGSERIAL,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -95,7 +95,7 @@ CREATE TABLE archive (
     bare_peer text NOT NULL,
     xml text NOT NULL,
     txt text,
-    id SERIAL,
+    id BIGSERIAL,
     kind text,
     nick text,
     created_at TIMESTAMP NOT NULL DEFAULT now()
@@ -167,7 +167,7 @@ CREATE TABLE privacy_default_list (
 CREATE TABLE privacy_list (
     username text NOT NULL,
     name text NOT NULL,
-    id SERIAL UNIQUE,
+    id BIGSERIAL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -220,7 +220,7 @@ CREATE TABLE pubsub_node (
   node text NOT NULL,
   parent text NOT NULL DEFAULT '',
   plugin text NOT NULL,
-  nodeid SERIAL UNIQUE
+  nodeid BIGSERIAL UNIQUE
 );
 CREATE INDEX i_pubsub_node_parent ON pubsub_node USING btree (parent);
 CREATE UNIQUE INDEX i_pubsub_node_tuple ON pubsub_node USING btree (host, node);
@@ -243,7 +243,7 @@ CREATE TABLE pubsub_state (
   jid text NOT NULL,
   affiliation character(1),
   subscriptions text NOT NULL DEFAULT '',
-  stateid SERIAL UNIQUE
+  stateid BIGSERIAL UNIQUE
 );
 CREATE INDEX i_pubsub_state_jid ON pubsub_state USING btree (jid);
 CREATE UNIQUE INDEX i_pubsub_state_tuple ON pubsub_state USING btree (nodeid, jid);
