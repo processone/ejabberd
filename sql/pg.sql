@@ -47,11 +47,10 @@ CREATE TABLE rosterusers (
     server character(1) NOT NULL,
     subscribe text NOT NULL,
     "type" text,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    PRIMARY KEY (username, jid)
 );
 
-CREATE UNIQUE INDEX i_rosteru_user_jid ON rosterusers USING btree (username, jid);
-CREATE INDEX i_rosteru_username ON rosterusers USING btree (username);
 CREATE INDEX i_rosteru_jid ON rosterusers USING btree (jid);
 
 
@@ -64,27 +63,24 @@ CREATE TABLE rostergroups (
 CREATE INDEX pk_rosterg_user_jid ON rostergroups USING btree (username, jid);
 
 CREATE TABLE sr_group (
-    name text NOT NULL,
+    name text NOT NULL PRIMARY KEY,
     opts text NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
-CREATE UNIQUE INDEX i_sr_group_name ON sr_group USING btree (name);
-
 CREATE TABLE sr_user (
     jid text NOT NULL,
     grp text NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    PRIMARY KEY (jid, grp)
 );
 
-CREATE UNIQUE INDEX i_sr_user_jid_grp ON sr_user USING btree (jid, grp);
-CREATE INDEX i_sr_user_jid ON sr_user USING btree (jid);
 CREATE INDEX i_sr_user_grp ON sr_user USING btree (grp);
 
 CREATE TABLE spool (
     username text NOT NULL,
     xml text NOT NULL,
-    seq SERIAL,
+    seq BIGSERIAL,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -97,7 +93,7 @@ CREATE TABLE archive (
     bare_peer text NOT NULL,
     xml text NOT NULL,
     txt text,
-    id SERIAL,
+    id BIGSERIAL,
     kind text,
     nick text,
     created_at TIMESTAMP NOT NULL DEFAULT now()
@@ -169,12 +165,10 @@ CREATE TABLE privacy_default_list (
 CREATE TABLE privacy_list (
     username text NOT NULL,
     name text NOT NULL,
-    id SERIAL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    id BIGSERIAL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    PRIMARY KEY (username, name)
 );
-
-CREATE INDEX i_privacy_list_username ON privacy_list USING btree (username);
-CREATE UNIQUE INDEX i_privacy_list_username_name ON privacy_list USING btree (username, name);
 
 CREATE TABLE privacy_list_data (
     id bigint REFERENCES privacy_list(id) ON DELETE CASCADE,
@@ -195,12 +189,9 @@ CREATE TABLE private_storage (
     username text NOT NULL,
     namespace text NOT NULL,
     data text NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    PRIMARY KEY (username, namespace)
 );
-
-CREATE INDEX i_private_storage_username ON private_storage USING btree (username);
-CREATE UNIQUE INDEX i_private_storage_username_namespace ON private_storage USING btree (username, namespace);
-
 
 CREATE TABLE roster_version (
     username text PRIMARY KEY,
@@ -224,20 +215,20 @@ CREATE TABLE pubsub_node (
   node text NOT NULL,
   parent text NOT NULL DEFAULT '',
   plugin text NOT NULL,
-  nodeid SERIAL UNIQUE
+  nodeid BIGSERIAL UNIQUE,
+  PRIMARY KEY (host, node)
 );
 CREATE INDEX i_pubsub_node_parent ON pubsub_node USING btree (parent);
-CREATE UNIQUE INDEX i_pubsub_node_tuple ON pubsub_node USING btree (host, node);
 
 CREATE TABLE pubsub_node_option (
-  nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
+  nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,   -- todo: NOT NULL?
   name text NOT NULL,
   val text NOT NULL
 );
 CREATE INDEX i_pubsub_node_option_nodeid ON pubsub_node_option USING btree (nodeid);
 
 CREATE TABLE pubsub_node_owner (
-  nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
+  nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,   -- todo: NOT NULL?
   owner text NOT NULL
 );
 CREATE INDEX i_pubsub_node_owner_nodeid ON pubsub_node_owner USING btree (nodeid);
@@ -245,12 +236,12 @@ CREATE INDEX i_pubsub_node_owner_nodeid ON pubsub_node_owner USING btree (nodeid
 CREATE TABLE pubsub_state (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
   jid text NOT NULL,
-  affiliation character(1),
+  affiliation character(1),     -- todo: NOT NULL?
   subscriptions text NOT NULL DEFAULT '',
-  stateid SERIAL UNIQUE
+  stateid BIGSERIAL UNIQUE,
+  PRIMARY KEY (nodeid, jid)
 );
 CREATE INDEX i_pubsub_state_jid ON pubsub_state USING btree (jid);
-CREATE UNIQUE INDEX i_pubsub_state_tuple ON pubsub_state USING btree (nodeid, jid);
 
 CREATE TABLE pubsub_item (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
@@ -258,46 +249,44 @@ CREATE TABLE pubsub_item (
   publisher text NOT NULL,
   creation varchar(32) NOT NULL,
   modification varchar(32) NOT NULL,
-  payload text NOT NULL DEFAULT ''
+  payload text NOT NULL DEFAULT '',
+  PRIMARY KEY (nodeid, itemid)
 );
 CREATE INDEX i_pubsub_item_itemid ON pubsub_item USING btree (itemid);
-CREATE UNIQUE INDEX i_pubsub_item_tuple ON pubsub_item USING btree (nodeid, itemid);
 
 CREATE TABLE pubsub_subscription_opt (
   subid text NOT NULL,
-  opt_name varchar(32),
-  opt_value text NOT NULL
+  opt_name varchar(32) NOT NULL,
+  opt_value text NOT NULL,
+  PRIMARY KEY (subid, opt_name)
 );
-CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt USING btree (subid, opt_name);
 
 CREATE TABLE muc_room (
     name text NOT NULL,
     host text NOT NULL,
     opts text NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    PRIMARY KEY (name, host)
 );
-
-CREATE UNIQUE INDEX i_muc_room_name_host ON muc_room USING btree (name, host);
 CREATE INDEX i_muc_room_host_created_at ON muc_room USING btree (host, created_at);
 
 CREATE TABLE muc_registered (
     jid text NOT NULL,
     host text NOT NULL,
     nick text NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    PRIMARY KEY (jid, host)
 );
 
 CREATE INDEX i_muc_registered_nick ON muc_registered USING btree (nick);
-CREATE UNIQUE INDEX i_muc_registered_jid_host ON muc_registered USING btree (jid, host);
 
 CREATE TABLE muc_online_room (
     name text NOT NULL,
     host text NOT NULL,
     node text NOT NULL,
-    pid text NOT NULL
+    pid text NOT NULL,
+    PRIMARY KEY (name, host)
 );
-
-CREATE UNIQUE INDEX i_muc_online_room_name_host ON muc_online_room USING btree (name, host);
 
 CREATE TABLE muc_online_users (
     username text NOT NULL,
@@ -305,11 +294,9 @@ CREATE TABLE muc_online_users (
     resource text NOT NULL,
     name text NOT NULL,
     host text NOT NULL,
-    node text NOT NULL
+    node text NOT NULL,
+    PRIMARY KEY (username, server, resource, name, host)
 );
-
-CREATE UNIQUE INDEX i_muc_online_users ON muc_online_users USING btree (username, server, resource, name, host);
-CREATE INDEX i_muc_online_users_us ON muc_online_users USING btree (username, server);
 
 CREATE TABLE muc_room_subscribers (
    room text NOT NULL,
@@ -317,12 +304,12 @@ CREATE TABLE muc_room_subscribers (
    jid text NOT NULL,
    nick text NOT NULL,
    nodes text NOT NULL,
-   created_at TIMESTAMP NOT NULL DEFAULT now()
+   created_at TIMESTAMP NOT NULL DEFAULT now(),
+   PRIMARY KEY (host, room, jid)
 );
 
 CREATE INDEX i_muc_room_subscribers_host_jid ON muc_room_subscribers USING btree (host, jid);
 CREATE INDEX i_muc_room_subscribers_jid ON muc_room_subscribers USING btree (jid);
-CREATE UNIQUE INDEX i_muc_room_subscribers_host_room_jid ON muc_room_subscribers USING btree (host, room, jid);
 
 CREATE TABLE motd (
     username text PRIMARY KEY,
@@ -346,21 +333,19 @@ CREATE TABLE sm (
     username text NOT NULL,
     resource text NOT NULL,
     priority text NOT NULL,
-    info text NOT NULL
+    info text NOT NULL,
+    PRIMARY KEY (usec, pid)
 );
 
-CREATE UNIQUE INDEX i_sm_sid ON sm USING btree (usec, pid);
 CREATE INDEX i_sm_node ON sm USING btree (node);
 CREATE INDEX i_sm_username ON sm USING btree (username);
 
 CREATE TABLE oauth_token (
-    token text NOT NULL,
+    token text NOT NULL PRIMARY KEY,
     jid text NOT NULL,
     scope text NOT NULL,
     expire bigint NOT NULL
 );
-
-CREATE UNIQUE INDEX i_oauth_token_token ON oauth_token USING btree (token);
 
 CREATE TABLE oauth_client (
     client_id text PRIMARY KEY,
@@ -374,22 +359,18 @@ CREATE TABLE route (
     server_host text NOT NULL,
     node text NOT NULL,
     pid text NOT NULL,
-    local_hint text NOT NULL
+    local_hint text NOT NULL,
+    PRIMARY KEY (domain, server_host, node, pid)
 );
 
-CREATE UNIQUE INDEX i_route ON route USING btree (domain, server_host, node, pid);
-CREATE INDEX i_route_domain ON route USING btree (domain);
-
 CREATE TABLE bosh (
-    sid text NOT NULL,
+    sid text NOT NULL PRIMARY KEY,
     node text NOT NULL,
     pid text NOT NULL
 );
 
-CREATE UNIQUE INDEX i_bosh_sid ON bosh USING btree (sid);
-
 CREATE TABLE proxy65 (
-    sid text NOT NULL,
+    sid text NOT NULL PRIMARY KEY,
     pid_t text NOT NULL,
     pid_i text NOT NULL,
     node_t text NOT NULL,
@@ -397,7 +378,6 @@ CREATE TABLE proxy65 (
     jid_i text NOT NULL
 );
 
-CREATE UNIQUE INDEX i_proxy65_sid ON proxy65 USING btree (sid);
 CREATE INDEX i_proxy65_jid ON proxy65 USING btree (jid_i);
 
 CREATE TABLE push_session (
@@ -405,10 +385,10 @@ CREATE TABLE push_session (
     timestamp bigint NOT NULL,
     service text NOT NULL,
     node text NOT NULL,
-    xml text NOT NULL
+    xml text NOT NULL,
+    PRIMARY KEY (username, service, node)
 );
 
-CREATE UNIQUE INDEX i_push_usn ON push_session USING btree (username, service, node);
 CREATE UNIQUE INDEX i_push_ut ON push_session USING btree (username, timestamp);
 
 CREATE TABLE mix_channel (
@@ -419,10 +399,10 @@ CREATE TABLE mix_channel (
     jid text NOT NULL,
     hidden boolean NOT NULL,
     hmac_key text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (channel, service)
 );
 
-CREATE UNIQUE INDEX i_mix_channel ON mix_channel (channel, service);
 CREATE INDEX i_mix_channel_serv ON mix_channel (service);
 
 CREATE TABLE mix_participant (
@@ -433,11 +413,9 @@ CREATE TABLE mix_participant (
     jid text NOT NULL,
     id text NOT NULL,
     nick text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (channel, service, username, domain)
 );
-
-CREATE UNIQUE INDEX i_mix_participant ON mix_participant (channel, service, username, domain);
-CREATE INDEX i_mix_participant_chan_serv ON mix_participant (channel, service);
 
 CREATE TABLE mix_subscription (
     channel text NOT NULL,
@@ -445,29 +423,25 @@ CREATE TABLE mix_subscription (
     username text NOT NULL,
     domain text NOT NULL,
     node text NOT NULL,
-    jid text NOT NULL
+    jid text NOT NULL,
+    PRIMARY KEY (channel, service, username, domain, node)
 );
 
-CREATE UNIQUE INDEX i_mix_subscription ON mix_subscription (channel, service, username, domain, node);
-CREATE INDEX i_mix_subscription_chan_serv_ud ON mix_subscription (channel, service, username, domain);
 CREATE INDEX i_mix_subscription_chan_serv_node ON mix_subscription (channel, service, node);
-CREATE INDEX i_mix_subscription_chan_serv ON mix_subscription (channel, service);
 
 CREATE TABLE mix_pam (
     username text NOT NULL,
     channel text NOT NULL,
     service text NOT NULL,
     id text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (username, channel, service)
 );
-
-CREATE UNIQUE INDEX i_mix_pam ON mix_pam (username, channel, service);
-CREATE INDEX i_mix_pam_us ON mix_pam (username);
 
 CREATE TABLE mqtt_pub (
     username text NOT NULL,
     resource text NOT NULL,
-    topic text NOT NULL,
+    topic text NOT NULL PRIMARY KEY,
     qos smallint NOT NULL,
     payload bytea NOT NULL,
     payload_format smallint NOT NULL,
@@ -478,4 +452,16 @@ CREATE TABLE mqtt_pub (
     expiry bigint NOT NULL
 );
 
-CREATE UNIQUE INDEX i_mqtt_topic ON mqtt_pub (topic);
+-- Enable HOT updates on tables which meet criteria for them. This reduces 3
+-- IO's per update to 1 IO per update in a typical case.
+ALTER TABLE archive_prefs SET (fillfactor = 90);
+ALTER TABLE users SET (fillfactor = 90);
+ALTER TABLE last SET (fillfactor = 90);
+ALTER TABLE muc_room SET (fillfactor = 90);
+ALTER TABLE muc_room_subscribers SET (fillfactor = 90);
+ALTER TABLE pubsub_item SET (fillfactor = 90);
+ALTER TABLE pubsub_node SET (fillfactor = 90);
+ALTER TABLE pubsub_node_option SET (fillfactor = 90);
+ALTER TABLE rosterusers SET (fillfactor = 90);
+ALTER TABLE vcard SET (fillfactor = 90);
+ALTER TABLE vcard_search SET (fillfactor = 90);
