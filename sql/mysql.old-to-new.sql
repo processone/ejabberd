@@ -17,6 +17,7 @@ BEGIN
                 ALTER TABLE `push_session` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `push_session` ADD PRIMARY KEY (`server_host`, `username`(191), `timestamp`);
                 ALTER TABLE `push_session` ADD UNIQUE INDEX `i_push_session_susn` (`server_host`, `username`(191), `service`(191), `node`(191));
+                ALTER TABLE `push_session` ADD INDEX `i_push_session_sh_username_timestamp` (`server_host`, `username`(191), `timestamp`);
                 ALTER TABLE `roster_version` DROP PRIMARY KEY;
                 ALTER TABLE `roster_version` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `username`;
                 ALTER TABLE `roster_version` ALTER COLUMN `server_host` DROP DEFAULT;
@@ -73,10 +74,10 @@ BEGIN
                 ALTER TABLE `last` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `username`;
                 ALTER TABLE `last` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `last` ADD PRIMARY KEY (`server_host`, `username`);
+                ALTER TABLE `sr_group` DROP INDEX `i_sr_group_name`;
                 ALTER TABLE `sr_group` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `name`;
                 ALTER TABLE `sr_group` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `sr_group` ADD UNIQUE INDEX `i_sr_group_sh_name` (`server_host`, `name`);
-                ALTER TABLE `sr_group` ADD PRIMARY KEY (`server_host`, `name`);
                 ALTER TABLE `muc_registered` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `host`;
                 ALTER TABLE `muc_registered` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `sm` DROP INDEX `i_node`;
@@ -99,7 +100,6 @@ BEGIN
                 ALTER TABLE `sr_user` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `sr_user` ADD UNIQUE INDEX `i_sr_user_sh_jid_group` (`server_host`, `jid`, `grp`);
                 ALTER TABLE `sr_user` ADD INDEX `i_sr_user_sh_grp` (`server_host`, `grp`);
-                ALTER TABLE `sr_user` ADD PRIMARY KEY (`server_host`, `jid`, `grp`);
                 ALTER TABLE `muc_online_users` ADD COLUMN `server_host` VARCHAR (191) COLLATE `utf8mb4_unicode_ci` NOT NULL DEFAULT @DEFAULT_HOST AFTER `host`;
                 ALTER TABLE `muc_online_users` ALTER COLUMN `server_host` DROP DEFAULT;
                 ALTER TABLE `vcard` DROP PRIMARY KEY;

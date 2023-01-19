@@ -527,7 +527,7 @@ CREATE TABLE [dbo].[push_session] (
 CREATE UNIQUE CLUSTERED INDEX [i_push_usn] ON [push_session] (username, service, node)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
-CREATE UNIQUE INDEX [i_push_ut] ON [push_session] (username, timestamp)
+CREATE INDEX [i_push_ut] ON [push_session] (username, timestamp)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE TABLE [dbo].[mix_channel] (

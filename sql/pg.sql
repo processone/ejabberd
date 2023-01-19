@@ -403,7 +403,7 @@ CREATE TABLE push_session (
 );
 
 CREATE UNIQUE INDEX i_push_usn ON push_session USING btree (username, service, node);
-CREATE UNIQUE INDEX i_push_ut ON push_session USING btree (username, timestamp);
+CREATE INDEX i_push_ut ON push_session USING btree (username, timestamp);
 
 CREATE TABLE mix_channel (
     channel text NOT NULL,

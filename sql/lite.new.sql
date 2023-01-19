@@ -414,6 +414,7 @@ CREATE TABLE push_session (
 );
 
 CREATE UNIQUE INDEX i_push_session_susn ON push_session (server_host, username, service, node);
+CREATE INDEX i_push_session_sh_username_timestamp ON push_session (server_host, username, timestamp);
 
 CREATE TABLE mix_channel (
     channel text NOT NULL,

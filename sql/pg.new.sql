@@ -41,7 +41,9 @@
 -- ALTER TABLE rostergroups ALTER COLUMN server_host DROP DEFAULT;
 
 -- ALTER TABLE sr_group ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
+-- DROP INDEX i_sr_group_name;
 -- ALTER TABLE sr_group ADD PRIMARY KEY (server_host, name);
+-- CREATE UNIQUE INDEX i_sr_group_sh_name ON sr_group USING btree (server_host, name);
 -- ALTER TABLE sr_group ALTER COLUMN server_host DROP DEFAULT;
 
 -- ALTER TABLE sr_user ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
@@ -153,6 +155,7 @@
 -- DROP INDEX i_push_ut;
 -- ALTER TABLE push_session ADD PRIMARY KEY (server_host, username, timestamp);
 -- CREATE UNIQUE INDEX i_push_session_susn ON push_session USING btree (server_host, username, service, node);
+-- CREATE INDEX i_push_session_sh_username_timestamp ON push_session USING btree (server_host, username, timestamp);
 -- ALTER TABLE push_session ALTER COLUMN server_host DROP DEFAULT;
 
 -- ALTER TABLE mix_pam ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
@@ -583,6 +586,7 @@ CREATE TABLE push_session (
 );
 
 CREATE UNIQUE INDEX i_push_session_susn ON push_session USING btree (server_host, username, service, node);
+CREATE INDEX i_push_session_sh_username_timestamp ON push_session USING btree (server_host, username, timestamp);
 
 CREATE TABLE mix_channel (
     channel text NOT NULL,

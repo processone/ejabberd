@@ -432,6 +432,7 @@ CREATE TABLE push_session (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE UNIQUE INDEX i_push_session_susn ON push_session (server_host(191), username(191), service(191), node(191));
+CREATE INDEX i_push_session_sh_username_timestamp ON push_session (server_host, username(191), timestamp);
 
 CREATE TABLE mix_channel (
     channel text NOT NULL,
