@@ -33,9 +33,11 @@
 -include("ejabberd_commands.hrl").
 
 -define(RAW(V), if HTMLOutput -> fxml:crypt(iolist_to_binary(V)); true -> iolist_to_binary(V) end).
--define(TAG(N), if HTMLOutput -> [<<"<", ??N, "/>">>]; true -> md_tag(N, <<"">>) end).
--define(TAG(N, V), if HTMLOutput -> [<<"<", ??N, ">">>, V, <<"</", ??N, ">">>]; true -> md_tag(N, V) end).
--define(TAG(N, C, V), if HTMLOutput -> [<<"<", ??N, " class='", C, "'>">>, V, <<"</", ??N, ">">>]; true -> md_tag(N, V) end).
+-define(TAG_BIN(N), (atom_to_binary(N, latin1))/binary).
+-define(TAG_STR(N), atom_to_list(N)).
+-define(TAG(N), if HTMLOutput -> [<<"<", ?TAG_BIN(N), "/>">>]; true -> md_tag(N, <<"">>) end).
+-define(TAG(N, V), if HTMLOutput -> [<<"<", ?TAG_BIN(N), ">">>, V, <<"</", ?TAG_BIN(N), ">">>]; true -> md_tag(N, V) end).
+-define(TAG(N, C, V), if HTMLOutput -> [<<"<", ?TAG_BIN(N), " class='", C, "'>">>, V, <<"</", ?TAG_BIN(N), ">">>]; true -> md_tag(N, V) end).
 -define(TAG_R(N, V), ?TAG(N, ?RAW(V))).
 -define(TAG_R(N, C, V), ?TAG(N, C, ?RAW(V))).
 -define(SPAN(N, V), ?TAG_R(span, ??N, V)).
@@ -414,9 +416,9 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
                        _ -> ?TAG('div', "note-down", ?RAW(Note))
                    end,
 
-        [NoteEl,
-         ?TAG(h1, atom_to_list(Name)),
+        [?TAG(h1, atom_to_list(Name)),
          ?TAG(p, ?RAW(Desc)),
+         NoteEl,
          case LongDesc of
              "" -> [];
              _ -> ?TAG(p, ?RAW(LongDesc))
@@ -434,24 +436,17 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
     end.
 
 find_commands_definitions() ->
-    case code:lib_dir(ejabberd, ebin) of
-        {error, _} ->
-            lists:map(fun({N, _, _}) ->
-                              ejabberd_commands:get_command_definition(N)
-                      end, ejabberd_commands:list_commands());
-        Path ->
-            lists:flatmap(fun(P) ->
-                                  Mod = list_to_atom(filename:rootname(P)),
-                                  code:ensure_loaded(Mod),
-                                  Cs = case erlang:function_exported(Mod, get_commands_spec, 0) of
-                                      true ->
-                                          apply(Mod, get_commands_spec, []);
-                                      _ ->
-                                          []
-                                  end,
-                                  [C#ejabberd_commands{definer = Mod} || C <- Cs]
-                          end, filelib:wildcard("*.beam", Path))
-    end.
+    lists:flatmap(
+        fun(Mod) ->
+            code:ensure_loaded(Mod),
+            Cs = case erlang:function_exported(Mod, get_commands_spec, 0) of
+                     true ->
+                         apply(Mod, get_commands_spec, []);
+                     _ ->
+                         []
+                 end,
+            [C#ejabberd_commands{definer = Mod} || C <- Cs]
+        end, ejabberd_config:beams(all)).
 
 generate_html_output(File, RegExp, Languages) ->
     Cmds = find_commands_definitions(),
