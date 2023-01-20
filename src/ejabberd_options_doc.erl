@@ -1293,9 +1293,9 @@ doc() ->
         note => "added in 20.12",
         desc =>
             ?T("Path to the ODBC driver to use to connect to a Microsoft SQL "
-               "Server database. This option is only valid if the _`sql_type`_ "
-               "option is set to 'mssql'. "
-               "The default value is: 'libtdsodbc.so'")}},
+               "Server database. This option only applies if the _`sql_type`_ "
+               "option is set to 'mssql' and _`sql_server`_  is not an ODBC "
+               "connection string. The default value is: 'libtdsodbc.so'")}},
      {sql_password,
       #{value => ?T("Password"),
         desc =>
@@ -1334,14 +1334,15 @@ doc() ->
      {sql_server,
       #{value => ?T("Host"),
         desc =>
-            ?T("A hostname or an IP address of the SQL server. "
+            ?T("The hostname or IP address of the SQL server. For _`sql_type`_ "
+               "'mssql' or 'odbc' this can also be an ODBC connection string. "
                "The default value is 'localhost'.")}},
      {sql_ssl,
       #{value => "true | false",
         note => "improved in 20.03",
         desc =>
             ?T("Whether to use SSL encrypted connections to the "
-               "SQL server. The option is only available for MySQL and "
+               "SQL server. The option is only available for MySQL, MS SQL and "
                "PostgreSQL. The default value is 'false'.")}},
      {sql_ssl_cafile,
       #{value => ?T("Path"),
@@ -1350,7 +1351,8 @@ doc() ->
                "be used to verify SQL connections. Implies _`sql_ssl`_ "
                "and _`sql_ssl_verify`_ options are set to 'true'. "
                "There is no default which means "
-               "certificate verification is disabled.")}},
+               "certificate verification is disabled. "
+               "This option has no effect for MS SQL.")}},
      {sql_ssl_certfile,
       #{value => ?T("Path"),
         desc =>
@@ -1358,13 +1360,15 @@ doc() ->
                "for SSL connections to the SQL server. Implies _`sql_ssl`_ "
                "option is set to 'true'. There is no default which means "
                "ejabberd won't provide a client certificate to the SQL "
-               "server.")}},
+               "server. "
+               "This option has no effect for MS SQL.")}},
      {sql_ssl_verify,
       #{value => "true | false",
         desc =>
             ?T("Whether to verify SSL connection to the SQL server against "
                "CA root certificates defined in _`sql_ssl_cafile`_ option. "
                "Implies _`sql_ssl`_ option is set to 'true'. "
+               "This option has no effect for MS SQL. "
                "The default value is 'false'.")}},
      {sql_start_interval,
       #{value => "timeout()",

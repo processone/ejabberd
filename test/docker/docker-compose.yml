@@ -24,6 +24,7 @@ services:
       - mssqldata:/var/opt/mssql
       - ./db/mssql/initdb/initdb_mssql.sql:/initdb_mssql.sql:ro
       - ../../sql/mssql.sql:/mssql.sql:ro
+      - ../../sql/mssql.new.sql:/mssql.new.sql:ro
     restart: always
     ports:
       - 1433:1433

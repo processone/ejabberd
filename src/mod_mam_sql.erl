@@ -441,6 +441,11 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 		     true ->
 			  []
 		  end,
+    SubOrderClause = if LimitClause /= [], TopClause /= [] ->
+			  <<" ORDER BY timestamp DESC ">>;
+		     true ->
+			  []
+		  end,
     WithTextClause = if is_binary(WithText), WithText /= <<>> ->
 			     [<<" and match (txt) against (">>,
 			      ToString(WithText), <<")">>];
@@ -528,7 +533,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 		% XEP-0059: Result Set Management
 		% 2.5 Requesting the Last Page in a Result Set
 		[<<"SELECT">>, UserSel, <<" timestamp, xml, peer, kind, nick FROM (">>,
-		 Query, <<" ORDER BY timestamp DESC ">>,
+		 Query, SubOrderClause,
 		 LimitClause, <<") AS t ORDER BY timestamp ASC;">>];
 	    _ ->
 		[Query, <<" ORDER BY timestamp ASC ">>,

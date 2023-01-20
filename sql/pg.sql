@@ -51,7 +51,6 @@ CREATE TABLE rosterusers (
 );
 
 CREATE UNIQUE INDEX i_rosteru_user_jid ON rosterusers USING btree (username, jid);
-CREATE INDEX i_rosteru_username ON rosterusers USING btree (username);
 CREATE INDEX i_rosteru_jid ON rosterusers USING btree (jid);
 
 
@@ -78,13 +77,12 @@ CREATE TABLE sr_user (
 );
 
 CREATE UNIQUE INDEX i_sr_user_jid_grp ON sr_user USING btree (jid, grp);
-CREATE INDEX i_sr_user_jid ON sr_user USING btree (jid);
 CREATE INDEX i_sr_user_grp ON sr_user USING btree (grp);
 
 CREATE TABLE spool (
     username text NOT NULL,
     xml text NOT NULL,
-    seq SERIAL,
+    seq BIGSERIAL,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -97,7 +95,7 @@ CREATE TABLE archive (
     bare_peer text NOT NULL,
     xml text NOT NULL,
     txt text,
-    id SERIAL,
+    id BIGSERIAL,
     kind text,
     nick text,
     created_at TIMESTAMP NOT NULL DEFAULT now()
@@ -169,11 +167,10 @@ CREATE TABLE privacy_default_list (
 CREATE TABLE privacy_list (
     username text NOT NULL,
     name text NOT NULL,
-    id SERIAL UNIQUE,
+    id BIGSERIAL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
-CREATE INDEX i_privacy_list_username ON privacy_list USING btree (username);
 CREATE UNIQUE INDEX i_privacy_list_username_name ON privacy_list USING btree (username, name);
 
 CREATE TABLE privacy_list_data (
@@ -198,7 +195,6 @@ CREATE TABLE private_storage (
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
-CREATE INDEX i_private_storage_username ON private_storage USING btree (username);
 CREATE UNIQUE INDEX i_private_storage_username_namespace ON private_storage USING btree (username, namespace);
 
 
@@ -224,7 +220,7 @@ CREATE TABLE pubsub_node (
   node text NOT NULL,
   parent text NOT NULL DEFAULT '',
   plugin text NOT NULL,
-  nodeid SERIAL UNIQUE
+  nodeid BIGSERIAL UNIQUE
 );
 CREATE INDEX i_pubsub_node_parent ON pubsub_node USING btree (parent);
 CREATE UNIQUE INDEX i_pubsub_node_tuple ON pubsub_node USING btree (host, node);
@@ -247,7 +243,7 @@ CREATE TABLE pubsub_state (
   jid text NOT NULL,
   affiliation character(1),
   subscriptions text NOT NULL DEFAULT '',
-  stateid SERIAL UNIQUE
+  stateid BIGSERIAL UNIQUE
 );
 CREATE INDEX i_pubsub_state_jid ON pubsub_state USING btree (jid);
 CREATE UNIQUE INDEX i_pubsub_state_tuple ON pubsub_state USING btree (nodeid, jid);
@@ -309,7 +305,6 @@ CREATE TABLE muc_online_users (
 );
 
 CREATE UNIQUE INDEX i_muc_online_users ON muc_online_users USING btree (username, server, resource, name, host);
-CREATE INDEX i_muc_online_users_us ON muc_online_users USING btree (username, server);
 
 CREATE TABLE muc_room_subscribers (
    room text NOT NULL,
@@ -378,7 +373,6 @@ CREATE TABLE route (
 );
 
 CREATE UNIQUE INDEX i_route ON route USING btree (domain, server_host, node, pid);
-CREATE INDEX i_route_domain ON route USING btree (domain);
 
 CREATE TABLE bosh (
     sid text NOT NULL,
@@ -409,7 +403,7 @@ CREATE TABLE push_session (
 );
 
 CREATE UNIQUE INDEX i_push_usn ON push_session USING btree (username, service, node);
-CREATE UNIQUE INDEX i_push_ut ON push_session USING btree (username, timestamp);
+CREATE INDEX i_push_ut ON push_session USING btree (username, timestamp);
 
 CREATE TABLE mix_channel (
     channel text NOT NULL,
@@ -437,7 +431,6 @@ CREATE TABLE mix_participant (
 );
 
 CREATE UNIQUE INDEX i_mix_participant ON mix_participant (channel, service, username, domain);
-CREATE INDEX i_mix_participant_chan_serv ON mix_participant (channel, service);
 
 CREATE TABLE mix_subscription (
     channel text NOT NULL,
@@ -449,9 +442,7 @@ CREATE TABLE mix_subscription (
 );
 
 CREATE UNIQUE INDEX i_mix_subscription ON mix_subscription (channel, service, username, domain, node);
-CREATE INDEX i_mix_subscription_chan_serv_ud ON mix_subscription (channel, service, username, domain);
 CREATE INDEX i_mix_subscription_chan_serv_node ON mix_subscription (channel, service, node);
-CREATE INDEX i_mix_subscription_chan_serv ON mix_subscription (channel, service);
 
 CREATE TABLE mix_pam (
     username text NOT NULL,
@@ -462,7 +453,6 @@ CREATE TABLE mix_pam (
 );
 
 CREATE UNIQUE INDEX i_mix_pam ON mix_pam (username, channel, service);
-CREATE INDEX i_mix_pam_us ON mix_pam (username);
 
 CREATE TABLE mqtt_pub (
     username text NOT NULL,

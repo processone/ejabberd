@@ -21,7 +21,7 @@ The following commands will create the necessary login, user and database, will 
 
 ```
 docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
-docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /mssql.sql
+docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.sql
 ```
 
 ## Running tests
