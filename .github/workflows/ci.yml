@@ -58,8 +58,19 @@ jobs:
         wget https://github.com/processone/ejabberd/raw/21.12/rebar3
         chmod +x rebar3
 
+    - name: Install MS SQL Server
+      run: |
+        docker run -d -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=ejabberd_Test1" \
+                   -v $(pwd)/test/docker/db/mssql/initdb/initdb_mssql.sql:/initdb_mssql.sql:ro \
+                   -v $(pwd)/sql/mssql.sql:/mssql.sql:ro \
+                   -v $(pwd)/sql/mssql.new.sql:/mssql.new.sql:ro \
+                   -p 1433:1433 --name ejabberd-mssql "mcr.microsoft.com/mssql/server:2019-latest"
+        sleep 10
+
     - name: Prepare databases
       run: |
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.sql
         sudo systemctl start mysql.service
         sudo systemctl start postgresql.service
         mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
@@ -237,8 +248,8 @@ jobs:
         [[ -d logs ]] && rm -rf logs
         [[ -d _build/test/logs ]] && rm -rf _build/test/logs || true
         sed -i 's|update_sql, false|update_sql, true|g' test/suite.erl
-    - name: Run tests on upgraded schema (mysql, pgsql)
-      run: CT_BACKENDS=mysql,pgsql make test
+    - name: Run DB tests on upgraded schema (mssql, mysql, pgsql)
+      run: CT_BACKENDS=mssql,mysql,pgsql make test
       if: always() && steps.prepupgradetest.outcome != 'skipped'
       id: ctupgradedschema
     - name: Check results
@@ -261,8 +272,12 @@ jobs:
       run: |
         [[ -d logs ]] && rm -rf logs
         [[ -d _build/test/logs ]] && rm -rf _build/test/logs || true
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -Q "drop database [ejabberd_test];"
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -Q "drop login [ejabberd_test];"
         mysql -u root -proot -e "DROP DATABASE ejabberd_test;"
         sudo -u postgres psql -c "DROP DATABASE ejabberd_test;"
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.new.sql
         mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
         mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
                                  TO 'ejabberd_test'@'localhost';"
@@ -278,8 +293,8 @@ jobs:
                                                 SEQUENCES IN SCHEMA public
                                                 TO ejabberd_test;"
         sed -i 's|new_schema, false|new_schema, true|g' test/suite.erl
-    - name: Run tests on new schema (mysql, pgsql)
-      run: CT_BACKENDS=mysql,pgsql make test
+    - name: Run DB tests on new schema (mssql, mysql, pgsql)
+      run: CT_BACKENDS=mssql,mysql,pgsql make test
       id: ctnewschema
     - name: Check results
       if: always() && steps.ctnewschema.outcome != 'skipped'
