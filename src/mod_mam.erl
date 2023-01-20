@@ -1316,8 +1316,9 @@ msg_to_el(#archive_msg{timestamp = TS, packet = El, nick = Nick,
 		   end,
 	    Pkt3 = maybe_update_from_to(
 		     Pkt2, JidRequestor, JidArchive, Peer, MsgType, Nick),
+	    Pkt4 = xmpp:put_meta(Pkt3, archive_nick, Nick),
 	    Delay = #delay{stamp = TS, from = jid:make(LServer)},
-	    {ok, #forwarded{sub_els = [Pkt3], delay = Delay}}
+	    {ok, #forwarded{sub_els = [Pkt4], delay = Delay}}
     catch _:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("Failed to decode raw element ~p from message "
 		       "archive of user ~ts: ~ts",

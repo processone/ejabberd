@@ -316,20 +316,41 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType])
     process_flag(trap_exit, true),
     Shaper = ejabberd_shaper:new(RoomShaper),
     RoomQueue = room_queue_new(ServerHost, Shaper, QueueType),
+    Jid = jid:make(Room, Host),
     State = set_opts(Opts, #state{host = Host,
 				  server_host = ServerHost,
 				  access = Access,
 				  room = Room,
 				  history = lqueue_new(HistorySize, QueueType),
-				  jid = jid:make(Room, Host),
+				  jid = Jid,
 				  room_queue = RoomQueue,
 				  room_shaper = Shaper}),
     add_to_log(room_existence, started, State),
     ejabberd_hooks:run(start_room, ServerHost, [ServerHost, Room, Host]),
     State1 = cleanup_affiliations(State),
+    State2 =
+    case {lists:keyfind(hibernation_time, 1, Opts),
+	  (State1#state.config)#config.mam,
+	  (State1#state.history)#lqueue.max} of
+	{{_, V}, true, L} when is_integer(V), L > 0 ->
+	    {Msgs, _, _} = mod_mam:select(ServerHost, Jid, Jid, [],
+					 #rsm_set{max = L, before = <<"9999999999999999">>},
+					 groupchat, only_messages),
+	    Hist2 =
+	    lists:foldl(
+		fun({_, TS, #forwarded{sub_els = [#message{meta = #{archive_nick := Nick}} = Msg]}}, Hist) ->
+		    Pkt = xmpp:set_from_to(Msg, jid:replace_resource(Jid, Nick), Jid),
+		    Size = element_size(Pkt),
+		    lqueue_in({Nick, Pkt, false, misc:usec_to_now(TS), Size}, Hist)
+		end, State1#state.history, Msgs),
+	    State1#state{history = Hist2};
+	OTher ->
+	    ?WARNING_MSG("OTHER ~p ~p", [Jid, OTher]),
+	    State1
+    end,
     erlang:send_after(?CLEAN_ROOM_TIMEOUT, self(),
                       close_room_if_temporary_and_empty),
-    {ok, normal_state, reset_hibernate_timer(State1)}.
+    {ok, normal_state, reset_hibernate_timer(State2)}.
 
 normal_state({route, <<"">>,
 	      #message{from = From, type = Type, lang = Lang} = Packet},
