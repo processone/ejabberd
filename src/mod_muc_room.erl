@@ -344,8 +344,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType])
 		    lqueue_in({Nick, Pkt, false, misc:usec_to_now(TS), Size}, Hist)
 		end, State1#state.history, Msgs),
 	    State1#state{history = Hist2};
-	OTher ->
-	    ?WARNING_MSG("OTHER ~p ~p", [Jid, OTher]),
+	_ ->
 	    State1
     end,
     erlang:send_after(?CLEAN_ROOM_TIMEOUT, self(),
