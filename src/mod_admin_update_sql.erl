@@ -34,6 +34,8 @@
 % Commands API
 -export([update_sql/0]).
 
+% For testing
+-export([update_sql/1]).
 
 -include("logger.hrl").
 -include("ejabberd_commands.hrl").
