@@ -37,13 +37,13 @@
 -export([beams/1, validators/1, globals/0, may_hide_data/1]).
 -export([dump/0, dump/1, convert_to_yaml/1, convert_to_yaml/2]).
 -export([callback_modules/1]).
+-export([set_option/2]).
 
 %% Deprecated functions
--export([get_option/2, set_option/2]).
+-export([get_option/2]).
 -export([get_version/0, get_myhosts/0]).
 -export([get_mylang/0, get_lang/1]).
 -deprecated([{get_option, 2},
-	     {set_option, 2},
 	     {get_version, 0},
 	     {get_myhosts, 0},
 	     {get_mylang, 0},
