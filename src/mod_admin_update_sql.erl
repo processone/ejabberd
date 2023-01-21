@@ -246,7 +246,7 @@ update_tables(State) ->
             drop_index(State, "vcard_search", "i_vcard_search_lemail"),
             drop_index(State, "vcard_search", "i_vcard_search_lorgname"),
             drop_index(State, "vcard_search", "i_vcard_search_lorgunit"),
-            add_pkey(State, "vcard_search", ["server_host", "username"]),
+            add_pkey(State, "vcard_search", ["server_host", "lusername"]),
             create_index(State, "vcard_search", "i_vcard_search_sh_lfn",       ["server_host", "lfn"]),
             create_index(State, "vcard_search", "i_vcard_search_sh_lfamily",   ["server_host", "lfamily"]),
             create_index(State, "vcard_search", "i_vcard_search_sh_lgiven",    ["server_host", "lgiven"]),
