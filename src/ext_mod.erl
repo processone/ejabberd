@@ -66,7 +66,7 @@ init([]) ->
     {ok, #state{}}.
 
 add_paths() ->
-    [code:add_patha(module_ebin_dir(Module))
+    [code:add_pathsz([module_ebin_dir(Module)|module_deps_dirs(Module)])
      || {Module, _} <- installed()].
 
 handle_call(Request, From, State) ->
@@ -229,7 +229,7 @@ install(Package) when is_binary(Package) ->
             Module = misc:binary_to_atom(Package),
             case compile_and_install(Module, Attrs) of
                 ok ->
-                    code:add_patha(module_ebin_dir(Module)),
+                    code:add_pathsz([module_ebin_dir(Module)|module_deps_dirs(Module)]),
                     ejabberd_config:reload(),
                     copy_commit_json(Package, Attrs),
                     case erlang:function_exported(Module, post_install, 0) of
@@ -256,7 +256,7 @@ uninstall(Package) when is_binary(Package) ->
              || Host <- ejabberd_option:hosts()],
             code:purge(Module),
             code:delete(Module),
-            code:del_path(module_ebin_dir(Module)),
+            [code:del_path(PathDelete) || PathDelete <- [module_ebin_dir(Module)|module_deps_dirs(Module)]],
             delete_path(module_lib_dir(Module)),
             ejabberd_config:reload();
         false ->
@@ -654,11 +654,12 @@ install(Module, Spec, SrcDir, LibDir) ->
     Files1 = [{File, copy(File, filename:join(LibDir, File))}
                   || File <- filelib:wildcard("{ebin,priv,conf,include}/**")],
     Files2 = [{File, copy(File, filename:join(LibDir, filename:join(lists:nthtail(2,filename:split(File)))))}
-                  || File <- filelib:wildcard("deps/*/{ebin,priv}/**")],
+                  || File <- filelib:wildcard("deps/*/ebin/**")],
+    Files3 = [{File, copy(File, filename:join(LibDir, File))}
+                  || File <- filelib:wildcard("deps/*/priv/**")],
     Errors = lists:dropwhile(fun({_, ok}) -> true;
                                 (_) -> false
-            end, Files1++Files2),
-    copy_priv_files(LibDir),
+            end, Files1++Files2++Files3),
     inform_module_configuration(Module, LibDir, Files1),
     Result = case Errors of
         [{F, {error, E}}|_] ->
@@ -670,12 +671,6 @@ install(Module, Spec, SrcDir, LibDir) ->
     end,
     file:set_cwd(CurDir),
     Result.
-
-copy_priv_files(LibDir) ->
-    file:set_cwd(LibDir),
-    EjabberdLibDir = code:lib_dir(ejabberd),
-    [{File, copy(File, filename:join(EjabberdLibDir, File))}
-                  || File <- filelib:wildcard("{priv}/**")].
 
 inform_module_configuration(Module, LibDir, Files1) ->
     Res = lists:filter(fun({[$c, $o, $n, $f |_], ok}) -> true;
@@ -735,6 +730,14 @@ rebar_dep({App, _, {git, Url, Ref}}) ->
     {App, "git clone -n "++Url++" "++filename:basename(App)++
      "; (cd "++filename:basename(App)++
      "; git checkout -q "++Ref++")"}.
+
+module_deps_dirs(Module) ->
+    SrcDir = module_src_dir(Module),
+    LibDir = module_lib_dir(Module),
+    DepsDir = filename:join(LibDir, "deps"),
+    Deps = rebar_deps(filename:join(SrcDir, "rebar.config"))
+      ++ rebar_deps(filename:join(SrcDir, "rebar.config.script")),
+    [filename:join(DepsDir, App) || {App, _Cmd} <- Deps].
 
 %% -- YAML spec parser
 
