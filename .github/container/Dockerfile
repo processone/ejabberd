@@ -46,6 +46,9 @@ RUN cp -p 'tools/captcha'*'.sh' "/opt/ejabberd-$VERSION/lib"
 
 RUN [ ! -d .ejabberd-modules ] || cp -r .ejabberd-modules /opt/ejabberd/
 
+RUN find "/opt/ejabberd-$VERSION/bin" -name 'ejabberd' -delete \
+    && find "/opt/ejabberd-$VERSION/releases" -name 'COOKIE' -delete
+
 RUN export PEM=/opt/ejabberd/conf/server.pem \
     && curl -o "/opt/ejabberd/conf/cacert.pem" 'https://curl.se/ca/cacert.pem' \
     && openssl req -x509 \
