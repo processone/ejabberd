@@ -156,7 +156,7 @@ docker exec -it ejabberd vi conf/ejabberd.yml
 
 and add the required options:
 ```
-captcha_cmd: /opt/ejabberd-22.04/lib/ejabberd-22.04/priv/bin/captcha.sh
+captcha_cmd: /opt/ejabberd-22.04/lib/captcha.sh
 captcha_url: https://localhost:5443/captcha
 ```
 

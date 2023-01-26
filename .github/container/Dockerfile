@@ -42,9 +42,7 @@ RUN cp -r _build/prod/rel/ejabberd/ /opt/ejabberd-$VERSION \
     && mkdir -p /opt/ejabberd \
     && mv /opt/ejabberd-$VERSION/conf /opt/ejabberd/conf
 
-RUN BINPATH=$(dirname $(find /opt -name msgs))/bin/ \
-    && mkdir -p $BINPATH \
-    && cp tools/captcha*.sh $BINPATH
+RUN cp -p 'tools/captcha'*'.sh' "/opt/ejabberd-$VERSION/lib"
 
 RUN [ ! -d .ejabberd-modules ] || cp -r .ejabberd-modules /opt/ejabberd/
 
