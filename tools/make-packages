@@ -203,7 +203,7 @@ make_package()
 
 for arch in $architectures
 do
-	tar_name="$rel_name-$rel_vsn-linux-$arch.tar.gz"
+	tar_name="$rel_name-$rel_vsn-linux-gnu-$arch.tar.gz"
 	arch_dir="$tmp_dir/$arch"
 	opt_dir="$arch_dir/opt"
 	etc_dir="$arch_dir/etc"
