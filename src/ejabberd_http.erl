@@ -378,7 +378,7 @@ process(Handlers, Request) ->
                                 ?ERROR_MSG(
                                    "HTTP handler crashed: ~s",
                                    [misc:format_exception(2, Class, Reason, ?EX_STACK(Stack))]),
-                                erlang:raise(Class, Reason, Stack)
+                                erlang:raise(Class, Reason, ?EX_STACK(Stack))
                         end
 		end,
             ejabberd_hooks:run(http_request_debug, [{LocalPath, Request}]),
