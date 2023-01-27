@@ -55,6 +55,14 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VSN }}
           version-type: strict
 
+      - name: Remove Elixir Matchers
+        run: |
+          echo "::remove-matcher owner=elixir-mixCompileWarning::"
+          echo "::remove-matcher owner=elixir-credoOutputDefault::"
+          echo "::remove-matcher owner=elixir-mixCompileError::"
+          echo "::remove-matcher owner=elixir-mixTestFailure::"
+          echo "::remove-matcher owner=elixir-dialyzerOutputDefault::"
+
       - name: Build musl-libc based binary archives
         run: |
           sed -i "s|targets='.*'|targets='x86_64-linux-musl aarch64-linux-musl'|" tools/make-binaries
