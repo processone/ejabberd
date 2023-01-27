@@ -17,8 +17,8 @@ ERTS_VSN="{{erts_vsn}}"
 ERL="{{erl}}"
 IEX="{{bindir}}/iex"
 EPMD="{{epmd}}"
-[ -z "$ERLANG_COOKIE" ] && ERL_OPTIONS="-setcookie $(cat "${SCRIPT_DIR%/*}/releases/COOKIE")"
-[ -n "$ERLANG_COOKIE" ] && [ ! -f "$HOME"/.erlang.cookie ] && echo "$ERLANG_COOKIE" > "$HOME"/.erlang.cookie && chmod 400 "$HOME"/.erlang.cookie 
+COOKIE_FILE="$HOME"/.erlang.cookie
+[ -n "$ERLANG_COOKIE" ] && [ ! -f "$COOKIE_FILE" ] && echo "$ERLANG_COOKIE" > "$COOKIE_FILE" && chmod 400 "$COOKIE_FILE"
 
 # check the proper system user is used
 case $(id -un) in
