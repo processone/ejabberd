@@ -80,7 +80,6 @@ RUN apk upgrade --update musl \
     libwebp \
     linux-pam \
     ncurses-libs \
-    openssl \
     sqlite \
     sqlite-libs \
     unixodbc \
