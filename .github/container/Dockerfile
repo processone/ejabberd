@@ -82,6 +82,7 @@ RUN apk upgrade --update musl \
     ncurses-libs \
     sqlite \
     sqlite-libs \
+    tini \
     unixodbc \
     yaml \
     zlib \
@@ -115,5 +116,5 @@ USER ejabberd
 VOLUME ["$HOME"]
 EXPOSE 1883 4369-4399 5210 5222 5269 5280 5443
 
-ENTRYPOINT ["/usr/local/bin/ejabberdctl"]
+ENTRYPOINT ["/sbin/tini","--","/usr/local/bin/ejabberdctl"]
 CMD ["foreground"]
