@@ -31,6 +31,7 @@
 		recv_presence/1, recv/1]).
 
 -include("suite.hrl").
+-include_lib("stdlib/include/assert.hrl").
 
 %%%===================================================================
 %%% API
@@ -83,9 +84,9 @@ get_set(Config) ->
 			     "personal website: http://www.saint-andre.com/">>},
     #iq{type = result, sub_els = []} =
         send_recv(Config, #iq{type = set, sub_els = [VCard]}),
-    %% TODO: check if VCard == VCard1.
-    #iq{type = result, sub_els = [_VCard1]} =
+    #iq{type = result, sub_els = [VCard1]} =
         send_recv(Config, #iq{type = get, sub_els = [#vcard_temp{}]}),
+    ?assertEqual(VCard, VCard1),
     disconnect(Config).
 
 service_vcard(Config) ->

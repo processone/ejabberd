@@ -99,7 +99,8 @@ do_init_per_group(mysql, Config) ->
     case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MYSQL_VHOST),
-            clear_sql_tables(mysql, ?config(base_dir, Config)),
+            clear_sql_tables(mysql, Config),
+            update_sql(?MYSQL_VHOST, Config),
             set_opt(server, ?MYSQL_VHOST, Config);
         Err ->
             {skip, {mysql_not_available, Err}}
@@ -108,7 +109,8 @@ do_init_per_group(mssql, Config) ->
     case catch ejabberd_sql:sql_query(?MSSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MSSQL_VHOST),
-            clear_sql_tables(mssql, ?config(base_dir, Config)),
+            clear_sql_tables(mssql, Config),
+            update_sql(?MSSQL_VHOST, Config),
             set_opt(server, ?MSSQL_VHOST, Config);
         Err ->
             {skip, {mssql_not_available, Err}}
@@ -117,7 +119,8 @@ do_init_per_group(pgsql, Config) ->
     case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?PGSQL_VHOST),
-            clear_sql_tables(pgsql, ?config(base_dir, Config)),
+            clear_sql_tables(pgsql, Config),
+            update_sql(?PGSQL_VHOST, Config),
             set_opt(server, ?PGSQL_VHOST, Config);
         Err ->
             {skip, {pgsql_not_available, Err}}
@@ -1011,37 +1014,35 @@ bookmark_conference() ->
 '$handle_undefined_function'(_, _) ->
     erlang:error(undef).
 
+
 %%%===================================================================
 %%% SQL stuff
 %%%===================================================================
-clear_sql_tables(sqlite, _BaseDir) ->
+update_sql(Host, Config) ->
+    case ?config(update_sql, Config) of
+        true ->
+            mod_admin_update_sql:update_sql(Host);
+        false -> ok
+    end.
+
+schema_suffix(Config) ->
+    case ejabberd_sql:use_new_schema() of
+        true ->
+            case ?config(update_sql, Config) of
+                true ->  ".sql";
+                _ -> ".new.sql"
+            end;
+        _ -> ".sql"
+    end.
+
+clear_sql_tables(sqlite, _Config) ->
     ok;
-clear_sql_tables(Type, BaseDir) ->
+clear_sql_tables(Type, Config) ->
+    BaseDir = ?config(base_dir, Config),
     {VHost, File} = case Type of
-                        mysql ->
-                            Path = case ejabberd_sql:use_new_schema() of
-                                true ->
-                                    "mysql.new.sql";
-                                false ->
-                                    "mysql.sql"
-                            end,
-                            {?MYSQL_VHOST, Path};
-                        mssql ->
-                            Path = case ejabberd_sql:use_new_schema() of
-                                true ->
-                                    "mssql.new.sql";
-                                false ->
-                                    "mssql.sql"
-                            end,
-                            {?MSSQL_VHOST, Path};
-                        pgsql ->
-                            Path = case ejabberd_sql:use_new_schema() of
-                                true ->
-                                    "pg.new.sql";
-                                false ->
-                                    "pg.sql"
-                            end,
-                            {?PGSQL_VHOST, Path}
+                        mysql -> {?MYSQL_VHOST, "mysql" ++ schema_suffix(Config)};
+                        mssql -> {?MSSQL_VHOST, "mssql" ++ schema_suffix(Config)};
+                        pgsql -> {?PGSQL_VHOST, "pg" ++ schema_suffix(Config)}
                     end,
     SQLFile = filename:join([BaseDir, "sql", File]),
     CreationQueries = read_sql_queries(SQLFile),

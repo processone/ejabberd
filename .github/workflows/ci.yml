@@ -58,23 +58,34 @@ jobs:
         wget https://github.com/processone/ejabberd/raw/21.12/rebar3
         chmod +x rebar3
 
+    - name: Install MS SQL Server
+      run: |
+        docker run -d -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=ejabberd_Test1" \
+                   -v $(pwd)/test/docker/db/mssql/initdb/initdb_mssql.sql:/initdb_mssql.sql:ro \
+                   -v $(pwd)/sql/mssql.sql:/mssql.sql:ro \
+                   -v $(pwd)/sql/mssql.new.sql:/mssql.new.sql:ro \
+                   -p 1433:1433 --name ejabberd-mssql "mcr.microsoft.com/mssql/server:2019-latest"
+        sleep 10
+
     - name: Prepare databases
       run: |
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.sql
         sudo systemctl start mysql.service
         sudo systemctl start postgresql.service
+        mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
         mysql -u root -proot -e "CREATE USER 'ejabberd_test'@'localhost'
                                  IDENTIFIED BY 'ejabberd_test';"
-        mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
         mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
                                  TO 'ejabberd_test'@'localhost';"
-        mysql -u root -proot ejabberd_test < sql/mysql.sql
+        mysql -u ejabberd_test -pejabberd_test ejabberd_test < sql/mysql.sql
         pg_isready
+        sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
         sudo -u postgres psql -c "CREATE USER ejabberd_test
                                   WITH PASSWORD 'ejabberd_test';"
-        sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
-        sudo -u postgres psql ejabberd_test -f sql/pg.sql
         sudo -u postgres psql -c "GRANT ALL PRIVILEGES
                                   ON DATABASE ejabberd_test TO ejabberd_test;"
+        PGPASSWORD="ejabberd_test" psql -h localhost -U ejabberd_test ejabberd_test -f sql/pg.sql
         sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
                                                 TABLES IN SCHEMA public
                                                 TO ejabberd_test;"
@@ -221,20 +232,60 @@ jobs:
         CTRUN=`ls -la _build/test/logs/last | sed 's|.*-> ||'`
         echo "::notice::View CT results: https://processone.github.io/ecil/logs/$CTRUN/"
 
+    - name: Check for changes to trigger schema upgrade test
+      uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          sql:
+            - 'sql/**'
+            - 'src/mod_admin_update_sql.erl'
+
+    - name: Prepare for schema upgrade test
+      id: prepupgradetest
+      if: ${{ steps.filter.outputs.sql == 'true' }}
+      run: |
+        [[ -d logs ]] && rm -rf logs
+        [[ -d _build/test/logs ]] && rm -rf _build/test/logs || true
+        sed -i 's|update_sql, false|update_sql, true|g' test/suite.erl
+    - name: Run DB tests on upgraded schema (mssql, mysql, pgsql)
+      run: CT_BACKENDS=mssql,mysql,pgsql make test
+      if: always() && steps.prepupgradetest.outcome != 'skipped'
+      id: ctupgradedschema
+    - name: Check results
+      if: always() && steps.ctupgradedschema.outcome != 'skipped'
+      run: |
+        [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
+        ln `find logs/ -name suite.log` logs/suite.log
+        grep 'TEST COMPLETE' logs/suite.log
+        grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
+        test $(find logs/ -empty -name error.log)
+    - name: View logs failures
+      if: failure() && steps.ctupgradedschema.outcome != 'skipped'
+      run: |
+        cat logs/suite.log | awk \
+          'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+        find logs/ -name error.log -exec cat '{}' ';'
+        find logs/ -name exunit.log -exec cat '{}' ';'
+
     - name: Prepare new schema
       run: |
         [[ -d logs ]] && rm -rf logs
         [[ -d _build/test/logs ]] && rm -rf _build/test/logs || true
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -Q "drop database [ejabberd_test];"
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -Q "drop login [ejabberd_test];"
         mysql -u root -proot -e "DROP DATABASE ejabberd_test;"
         sudo -u postgres psql -c "DROP DATABASE ejabberd_test;"
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
+        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.new.sql
         mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
         mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
                                  TO 'ejabberd_test'@'localhost';"
-        mysql -u root -proot ejabberd_test < sql/mysql.new.sql
+        mysql -u ejabberd_test -pejabberd_test ejabberd_test < sql/mysql.new.sql
         sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
-        sudo -u postgres psql ejabberd_test -f sql/pg.new.sql
         sudo -u postgres psql -c "GRANT ALL PRIVILEGES
                                   ON DATABASE ejabberd_test TO ejabberd_test;"
+        PGPASSWORD="ejabberd_test" psql -h localhost -U ejabberd_test ejabberd_test -f sql/pg.new.sql
         sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
                                                 TABLES IN SCHEMA public
                                                 TO ejabberd_test;"
@@ -242,7 +293,8 @@ jobs:
                                                 SEQUENCES IN SCHEMA public
                                                 TO ejabberd_test;"
         sed -i 's|new_schema, false|new_schema, true|g' test/suite.erl
-    - run: CT_BACKENDS=mysql,pgsql make test
+    - name: Run DB tests on new schema (mssql, mysql, pgsql)
+      run: CT_BACKENDS=mssql,mysql,pgsql make test
       id: ctnewschema
     - name: Check results
       if: always() && steps.ctnewschema.outcome != 'skipped'

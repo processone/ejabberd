@@ -34,6 +34,8 @@
 % Commands API
 -export([update_sql/0]).
 
+% For testing
+-export([update_sql/1]).
 
 -include("logger.hrl").
 -include("ejabberd_commands.hrl").
@@ -112,182 +114,313 @@ update_sql(Host) ->
             State = #state{host = LHost,
                            dbtype = DBType,
                            escape = Escape},
-            update_tables(State)
+            update_tables(State),
+            check_config()
+    end.
+
+check_config() ->
+    case ejabberd_sql:use_new_schema() of
+        true -> ok;
+        false ->
+            ejabberd_config:set_option(new_sql_schema, true),
+            io:format('~nNOTE: you must add "new_sql_schema: true" to ejabberd.yml before next restart~n~n', [])
     end.
 
 update_tables(State) ->
-    add_sh_column(State, "users"),
-    drop_pkey(State, "users"),
-    add_pkey(State, "users", ["server_host", "username"]),
-    drop_sh_default(State, "users"),
+    case add_sh_column(State, "users") of
+        true ->
+            drop_pkey(State, "users"),
+            add_pkey(State, "users", ["server_host", "username"]),
+            drop_sh_default(State, "users");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "last"),
-    drop_pkey(State, "last"),
-    add_pkey(State, "last", ["server_host", "username"]),
-    drop_sh_default(State, "last"),
+    case add_sh_column(State, "last") of
+        true ->
+            drop_pkey(State, "last"),
+            add_pkey(State, "last", ["server_host", "username"]),
+            drop_sh_default(State, "last");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "rosterusers"),
-    drop_index(State, "rosterusers", "i_rosteru_user_jid"),
-    drop_index(State, "rosterusers", "i_rosteru_username"),
-    drop_index(State, "rosterusers", "i_rosteru_jid"),
-    create_unique_index(State, "rosterusers", "i_rosteru_sh_user_jid", ["server_host", "username", "jid"]),
-    create_index(State, "rosterusers", "i_rosteru_sh_jid", ["server_host", "jid"]),
-    drop_sh_default(State, "rosterusers"),
+    case add_sh_column(State, "rosterusers") of
+        true ->
+            drop_index(State, "rosterusers", "i_rosteru_user_jid"),
+            drop_index(State, "rosterusers", "i_rosteru_username"),
+            drop_index(State, "rosterusers", "i_rosteru_jid"),
+            create_unique_index(State, "rosterusers", "i_rosteru_sh_user_jid", ["server_host", "username", "jid"]),
+            create_index(State, "rosterusers", "i_rosteru_sh_jid", ["server_host", "jid"]),
+            drop_sh_default(State, "rosterusers");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "rostergroups"),
-    drop_index(State, "rostergroups", "pk_rosterg_user_jid"),
-    create_index(State, "rostergroups", "i_rosterg_sh_user_jid", ["server_host", "username", "jid"]),
-    drop_sh_default(State, "rostergroups"),
+    case add_sh_column(State, "rostergroups") of
+        true ->
+            drop_index(State, "rostergroups", "pk_rosterg_user_jid"),
+            create_index(State, "rostergroups", "i_rosterg_sh_user_jid", ["server_host", "username", "jid"]),
+            drop_sh_default(State, "rostergroups");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "sr_group"),
-    drop_index(State, "sr_group", "i_sr_group_name"),
-    create_unique_index(State, "sr_group", "i_sr_group_sh_name", ["server_host", "name"]),
-    drop_sh_default(State, "sr_group"),
+    case add_sh_column(State, "sr_group") of
+        true ->
+            drop_index(State, "sr_group", "i_sr_group_name"),
+            create_unique_index(State, "sr_group", "i_sr_group_sh_name", ["server_host", "name"]),
+            drop_sh_default(State, "sr_group");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "sr_user"),
-    drop_index(State, "sr_user", "i_sr_user_jid_grp"),
-    drop_index(State, "sr_user", "i_sr_user_jid"),
-    drop_index(State, "sr_user", "i_sr_user_grp"),
-    create_unique_index(State, "sr_user", "i_sr_user_sh_jid_grp", ["server_host", "jid", "grp"]),
-    create_index(State, "sr_user", "i_sr_user_sh_grp", ["server_host", "grp"]),
-    drop_sh_default(State, "sr_user"),
+    case add_sh_column(State, "sr_user") of
+        true ->
+            drop_index(State, "sr_user", "i_sr_user_jid_grp"),
+            drop_index(State, "sr_user", "i_sr_user_jid"),
+            drop_index(State, "sr_user", "i_sr_user_grp"),
+            create_unique_index(State, "sr_user", "i_sr_user_sh_jid_grp", ["server_host", "jid", "grp"]),
+            create_index(State, "sr_user", "i_sr_user_sh_grp", ["server_host", "grp"]),
+            drop_sh_default(State, "sr_user");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "spool"),
-    drop_index(State, "spool", "i_despool"),
-    create_index(State, "spool", "i_spool_sh_username", ["server_host", "username"]),
-    drop_sh_default(State, "spool"),
+    case add_sh_column(State, "spool") of
+        true ->
+            drop_index(State, "spool", "i_despool"),
+            create_index(State, "spool", "i_spool_sh_username", ["server_host", "username"]),
+            drop_sh_default(State, "spool");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "archive"),
-    drop_index(State, "archive", "i_username"),
-    drop_index(State, "archive", "i_username_timestamp"),
-    drop_index(State, "archive", "i_timestamp"),
-    drop_index(State, "archive", "i_peer"),
-    drop_index(State, "archive", "i_bare_peer"),
-    drop_index(State, "archive", "i_username_peer"),
-    drop_index(State, "archive", "i_username_bare_peer"),
-    create_index(State, "archive", "i_archive_sh_username_timestamp", ["server_host", "username", "timestamp"]),
-    create_index(State, "archive", "i_archive_sh_timestamp", ["server_host", "timestamp"]),
-    create_index(State, "archive", "i_archive_sh_username_peer", ["server_host", "username", "peer"]),
-    create_index(State, "archive", "i_archive_sh_username_bare_peer", ["server_host", "username", "bare_peer"]),
-    drop_sh_default(State, "archive"),
+    case add_sh_column(State, "archive") of
+        true ->
+            drop_index(State, "archive", "i_username"),
+            drop_index(State, "archive", "i_username_timestamp"),
+            drop_index(State, "archive", "i_timestamp"),
+            drop_index(State, "archive", "i_peer"),
+            drop_index(State, "archive", "i_bare_peer"),
+            drop_index(State, "archive", "i_username_peer"),
+            drop_index(State, "archive", "i_username_bare_peer"),
+            create_index(State, "archive", "i_archive_sh_username_timestamp", ["server_host", "username", "timestamp"]),
+            create_index(State, "archive", "i_archive_sh_timestamp", ["server_host", "timestamp"]),
+            create_index(State, "archive", "i_archive_sh_username_peer", ["server_host", "username", "peer"]),
+            create_index(State, "archive", "i_archive_sh_username_bare_peer", ["server_host", "username", "bare_peer"]),
+            drop_sh_default(State, "archive");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "archive_prefs"),
-    drop_pkey(State, "archive_prefs"),
-    add_pkey(State, "archive_prefs", ["server_host", "username"]),
-    drop_sh_default(State, "archive_prefs"),
+    case add_sh_column(State, "archive_prefs") of
+        true ->
+            drop_pkey(State, "archive_prefs"),
+            add_pkey(State, "archive_prefs", ["server_host", "username"]),
+            drop_sh_default(State, "archive_prefs");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "vcard"),
-    drop_pkey(State, "vcard"),
-    add_pkey(State, "vcard", ["server_host", "username"]),
-    drop_sh_default(State, "vcard"),
+    case add_sh_column(State, "vcard") of
+        true ->
+            drop_pkey(State, "vcard"),
+            add_pkey(State, "vcard", ["server_host", "username"]),
+            drop_sh_default(State, "vcard");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "vcard_search"),
-    drop_pkey(State, "vcard_search"),
-    drop_index(State, "vcard_search", "i_vcard_search_lfn"),
-    drop_index(State, "vcard_search", "i_vcard_search_lfamily"),
-    drop_index(State, "vcard_search", "i_vcard_search_lgiven"),
-    drop_index(State, "vcard_search", "i_vcard_search_lmiddle"),
-    drop_index(State, "vcard_search", "i_vcard_search_lnickname"),
-    drop_index(State, "vcard_search", "i_vcard_search_lbday"),
-    drop_index(State, "vcard_search", "i_vcard_search_lctry"),
-    drop_index(State, "vcard_search", "i_vcard_search_llocality"),
-    drop_index(State, "vcard_search", "i_vcard_search_lemail"),
-    drop_index(State, "vcard_search", "i_vcard_search_lorgname"),
-    drop_index(State, "vcard_search", "i_vcard_search_lorgunit"),
-    add_pkey(State, "vcard_search", ["server_host", "username"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lfn",       ["server_host", "lfn"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lfamily",   ["server_host", "lfamily"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lgiven",    ["server_host", "lgiven"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lmiddle",   ["server_host", "lmiddle"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lnickname", ["server_host", "lnickname"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lbday",     ["server_host", "lbday"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lctry",     ["server_host", "lctry"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_llocality", ["server_host", "llocality"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lemail",    ["server_host", "lemail"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lorgname",  ["server_host", "lorgname"]),
-    create_index(State, "vcard_search", "i_vcard_search_sh_lorgunit",  ["server_host", "lorgunit"]),
-    drop_sh_default(State, "vcard_search"),
+    case add_sh_column(State, "vcard_search") of
+        true ->
+            drop_pkey(State, "vcard_search"),
+            drop_index(State, "vcard_search", "i_vcard_search_lfn"),
+            drop_index(State, "vcard_search", "i_vcard_search_lfamily"),
+            drop_index(State, "vcard_search", "i_vcard_search_lgiven"),
+            drop_index(State, "vcard_search", "i_vcard_search_lmiddle"),
+            drop_index(State, "vcard_search", "i_vcard_search_lnickname"),
+            drop_index(State, "vcard_search", "i_vcard_search_lbday"),
+            drop_index(State, "vcard_search", "i_vcard_search_lctry"),
+            drop_index(State, "vcard_search", "i_vcard_search_llocality"),
+            drop_index(State, "vcard_search", "i_vcard_search_lemail"),
+            drop_index(State, "vcard_search", "i_vcard_search_lorgname"),
+            drop_index(State, "vcard_search", "i_vcard_search_lorgunit"),
+            add_pkey(State, "vcard_search", ["server_host", "lusername"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lfn",       ["server_host", "lfn"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lfamily",   ["server_host", "lfamily"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lgiven",    ["server_host", "lgiven"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lmiddle",   ["server_host", "lmiddle"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lnickname", ["server_host", "lnickname"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lbday",     ["server_host", "lbday"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lctry",     ["server_host", "lctry"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_llocality", ["server_host", "llocality"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lemail",    ["server_host", "lemail"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lorgname",  ["server_host", "lorgname"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lorgunit",  ["server_host", "lorgunit"]),
+            drop_sh_default(State, "vcard_search");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "privacy_default_list"),
-    drop_pkey(State, "privacy_default_list"),
-    add_pkey(State, "privacy_default_list", ["server_host", "username"]),
-    drop_sh_default(State, "privacy_default_list"),
+    case add_sh_column(State, "privacy_default_list") of
+        true ->
+            drop_pkey(State, "privacy_default_list"),
+            add_pkey(State, "privacy_default_list", ["server_host", "username"]),
+            drop_sh_default(State, "privacy_default_list");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "privacy_list"),
-    drop_index(State, "privacy_list", "i_privacy_list_username"),
-    drop_index(State, "privacy_list", "i_privacy_list_username_name"),
-    create_unique_index(State, "privacy_list", "i_privacy_list_sh_username_name", ["server_host", "username", "name"]),
-    drop_sh_default(State, "privacy_list"),
+    case add_sh_column(State, "privacy_list") of
+        true ->
+            drop_index(State, "privacy_list", "i_privacy_list_username"),
+            drop_index(State, "privacy_list", "i_privacy_list_username_name"),
+            create_unique_index(State, "privacy_list", "i_privacy_list_sh_username_name", ["server_host", "username", "name"]),
+            drop_sh_default(State, "privacy_list");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "private_storage"),
-    drop_index(State, "private_storage", "i_private_storage_username"),
-    drop_index(State, "private_storage", "i_private_storage_username_namespace"),
-    add_pkey(State, "private_storage", ["server_host", "username", "namespace"]),
-    drop_sh_default(State, "private_storage"),
+    case add_sh_column(State, "private_storage") of
+        true ->
+            drop_index(State, "private_storage", "i_private_storage_username"),
+            drop_index(State, "private_storage", "i_private_storage_username_namespace"),
+            add_pkey(State, "private_storage", ["server_host", "username", "namespace"]),
+            drop_sh_default(State, "private_storage");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "roster_version"),
-    drop_pkey(State, "roster_version"),
-    add_pkey(State, "roster_version", ["server_host", "username"]),
-    drop_sh_default(State, "roster_version"),
+    case add_sh_column(State, "roster_version") of
+        true ->
+            drop_pkey(State, "roster_version"),
+            add_pkey(State, "roster_version", ["server_host", "username"]),
+            drop_sh_default(State, "roster_version");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "muc_room"),
-    drop_sh_default(State, "muc_room"),
+    case add_sh_column(State, "muc_room") of
+        true ->
+            drop_sh_default(State, "muc_room");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "muc_registered"),
-    drop_sh_default(State, "muc_registered"),
+    case add_sh_column(State, "muc_registered") of
+        true ->
+            drop_sh_default(State, "muc_registered");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "muc_online_room"),
-    drop_sh_default(State, "muc_online_room"),
+    case add_sh_column(State, "muc_online_room") of
+        true ->
+            drop_sh_default(State, "muc_online_room");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "muc_online_users"),
-    drop_sh_default(State, "muc_online_users"),
+    case add_sh_column(State, "muc_online_users") of
+        true ->
+            drop_sh_default(State, "muc_online_users");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "motd"),
-    drop_pkey(State, "motd"),
-    add_pkey(State, "motd", ["server_host", "username"]),
-    drop_sh_default(State, "motd"),
+    case add_sh_column(State, "motd") of
+        true ->
+            drop_pkey(State, "motd"),
+            add_pkey(State, "motd", ["server_host", "username"]),
+            drop_sh_default(State, "motd");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "sm"),
-    drop_index(State, "sm", "i_sm_sid"),
-    drop_index(State, "sm", "i_sm_username"),
-    add_pkey(State, "sm", ["usec", "pid"]),
-    create_index(State, "sm", "i_sm_sh_username", ["server_host", "username"]),
-    drop_sh_default(State, "sm"),
+    case add_sh_column(State, "sm") of
+        true ->
+            drop_index(State, "sm", "i_sm_sid"),
+            drop_index(State, "sm", "i_sm_username"),
+            add_pkey(State, "sm", ["usec", "pid"]),
+            create_index(State, "sm", "i_sm_sh_username", ["server_host", "username"]),
+            drop_sh_default(State, "sm");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "push_session"),
-    drop_index(State, "push_session", "i_push_usn"),
-    drop_index(State, "push_session", "i_push_ut"),
-    create_unique_index(State, "push_session", "i_push_session_susn", ["server_host", "username", "service", "node"]),
-    create_index(State, "push_session", "i_push_session_sh_username_timestamp", ["server_host", "username", "timestamp"]),
-    drop_sh_default(State, "push_session"),
+    case add_sh_column(State, "push_session") of
+        true ->
+            drop_index(State, "push_session", "i_push_usn"),
+            drop_index(State, "push_session", "i_push_ut"),
+            create_unique_index(State, "push_session", "i_push_session_susn", ["server_host", "username", "service", "node"]),
+            create_index(State, "push_session", "i_push_session_sh_username_timestamp", ["server_host", "username", "timestamp"]),
+            drop_sh_default(State, "push_session");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "mix_pam"),
-    drop_index(State, "mix_pam", "i_mix_pam"),
-    drop_index(State, "mix_pam", "i_mix_pam_u"),
-    drop_index(State, "mix_pam", "i_mix_pam_us"),
-    create_unique_index(State, "mix_pam", "i_mix_pam", ["username", "server_host", "channel", "service"]),
-    drop_sh_default(State, "mix_pam"),
+    case add_sh_column(State, "mix_pam") of
+        true ->
+            drop_index(State, "mix_pam", "i_mix_pam"),
+            drop_index(State, "mix_pam", "i_mix_pam_u"),
+            drop_index(State, "mix_pam", "i_mix_pam_us"),
+            create_unique_index(State, "mix_pam", "i_mix_pam", ["username", "server_host", "channel", "service"]),
+            drop_sh_default(State, "mix_pam");
+        false ->
+            ok
+    end,
 
-    add_sh_column(State, "mqtt_pub"),
-    drop_index(State, "mqtt_pub", "i_mqtt_topic"),
-    create_unique_index(State, "mqtt_pub", "i_mqtt_topic_server", ["topic", "server_host"]),
-    drop_sh_default(State, "mqtt_pub"),
+    case add_sh_column(State, "mqtt_pub") of
+        true ->
+            drop_index(State, "mqtt_pub", "i_mqtt_topic"),
+            create_unique_index(State, "mqtt_pub", "i_mqtt_topic_server", ["topic", "server_host"]),
+            drop_sh_default(State, "mqtt_pub");
+        false ->
+            ok
+    end,
 
     ok.
 
-add_sh_column(#state{dbtype = pgsql} = State, Table) ->
+check_sh_column(#state{dbtype = mysql} = State, Table) ->
+    DB = ejabberd_option:sql_database(State#state.host),
+    sql_query(
+      State#state.host,
+      ["SELECT 1 FROM information_schema.columns ",
+       "WHERE table_name = '", Table, "' AND column_name = 'server_host' ",
+       "AND table_schema = '", (State#state.escape)(DB), "' ",
+       "GROUP BY table_name, column_name;"], false);
+check_sh_column(State, Table) ->
+    DB = ejabberd_option:sql_database(State#state.host),
+    sql_query(
+      State#state.host,
+      ["SELECT 1 FROM information_schema.columns ",
+       "WHERE table_name = '", Table, "' AND column_name = 'server_host' ",
+       "AND table_catalog = '", (State#state.escape)(DB), "' ",
+       "GROUP BY table_name, column_name;"], false).
+
+add_sh_column(State, Table) ->
+    case check_sh_column(State, Table) of
+        true -> false;
+        false ->
+            do_add_sh_column(State, Table),
+            true
+    end.
+
+do_add_sh_column(#state{dbtype = pgsql} = State, Table) ->
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ADD COLUMN server_host text NOT NULL DEFAULT '",
        (State#state.escape)(State#state.host),
        "';"]);
-add_sh_column(#state{dbtype = mssql} = State, Table) ->
+do_add_sh_column(#state{dbtype = mssql} = State, Table) ->
     sql_query(
       State#state.host,
-      ["ALTER TABLE [", Table, "] ADD [server_host] varchar (250) NOT NULL CONSTRAINT [server_host_default] DEFAULT '",
+      ["ALTER TABLE [", Table, "] ADD [server_host] varchar (250) NOT NULL ",
+       "CONSTRAINT [server_host_default] DEFAULT '",
        (State#state.escape)(State#state.host),
        "';"]);
-add_sh_column(#state{dbtype = mysql} = State, Table) ->
+do_add_sh_column(#state{dbtype = mysql} = State, Table) ->
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ADD COLUMN server_host varchar(191) NOT NULL DEFAULT '",
@@ -339,15 +472,44 @@ drop_sh_default(#state{dbtype = mysql} = State, Table) ->
       State#state.host,
       ["ALTER TABLE ", Table, " ALTER COLUMN server_host DROP DEFAULT;"]).
 
-drop_index(#state{dbtype = pgsql} = State, _Table, Index) ->
+check_index(#state{dbtype = pgsql} = State, Table, Index) ->
+    sql_query(
+      State#state.host,
+      ["SELECT 1 FROM pg_indexes WHERE tablename = '", Table,
+       "' AND indexname = '", Index, "';"], false);
+check_index(#state{dbtype = mssql} = State, Table, Index) ->
+    sql_query(
+      State#state.host,
+      ["SELECT 1 FROM sys.tables t ",
+       "INNER JOIN sys.indexes i ON i.object_id = t.object_id ",
+       "WHERE i.index_id > 0 ",
+       "AND i.name = '", Index, "' ",
+       "AND t.name = '", Table, "';"], false);
+check_index(#state{dbtype = mysql} = State, Table, Index) ->
+    DB = ejabberd_option:sql_database(State#state.host),
+    sql_query(
+      State#state.host,
+      ["SELECT 1 FROM information_schema.statistics ",
+       "WHERE table_name = '", Table, "' AND index_name = '", Index, "' ",
+       "AND table_schema = '", (State#state.escape)(DB), "' ",
+       "GROUP BY table_name, index_name;"], false).
+
+drop_index(State, Table, Index) ->
+    OldIndex = old_index_name(State#state.dbtype, Index),
+    case check_index(State, Table, OldIndex) of
+        true -> do_drop_index(State, Table, OldIndex);
+        false -> ok
+    end.
+
+do_drop_index(#state{dbtype = pgsql} = State, _Table, Index) ->
     sql_query(
       State#state.host,
       ["DROP INDEX ", Index, ";"]);
-drop_index(#state{dbtype = mssql} = State, Table, Index) ->
+do_drop_index(#state{dbtype = mssql} = State, Table, Index) ->
     sql_query(
       State#state.host,
-      ["DROP INDEX [", mssql_old_index_name(Index), "] ON [", Table, "];"]);
-drop_index(#state{dbtype = mysql} = State, Table, Index) ->
+      ["DROP INDEX [", Index, "] ON [", Table, "];"]);
+do_drop_index(#state{dbtype = mysql} = State, Table, Index) ->
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " DROP INDEX ", Index, ";"]).
@@ -364,7 +526,7 @@ create_unique_index(#state{dbtype = mssql} = State, Table, Index, Cols) ->
     SCols = string:join(Cols, ", "),
     sql_query(
       State#state.host,
-      ["CREATE UNIQUE ", mssql_clustered(Index), "INDEX [", mssql_new_index_name(Index), "] ",
+      ["CREATE UNIQUE ", mssql_clustered(Index), "INDEX [", new_index_name(State#state.dbtype, Index), "] ",
        "ON [", Table, "] (", SCols, ") ",
        "WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);"]);
 create_unique_index(#state{dbtype = mysql} = State, Table, Index, Cols) ->
@@ -376,47 +538,52 @@ create_unique_index(#state{dbtype = mysql} = State, Table, Index, Cols) ->
        SCols, ");"]).
 
 create_index(#state{dbtype = pgsql} = State, Table, Index, Cols) ->
+    NewIndex = new_index_name(State#state.dbtype, Index),
     SCols = string:join(Cols, ", "),
     sql_query(
       State#state.host,
-      ["CREATE INDEX ", Index, " ON ", Table, " USING btree (",
+      ["CREATE INDEX ", NewIndex, " ON ", Table, " USING btree (",
        SCols, ");"]);
 create_index(#state{dbtype = mssql} = State, Table, Index, Cols) ->
+    NewIndex = new_index_name(State#state.dbtype, Index),
     SCols = string:join(Cols, ", "),
     sql_query(
       State#state.host,
-      ["CREATE INDEX [", mssql_new_index_name(Index), "] ON [", Table, "] (", SCols, ") ",
+      ["CREATE INDEX [", NewIndex, "] ON [", Table, "] (", SCols, ") ",
        "WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);"]);
 create_index(#state{dbtype = mysql} = State, Table, Index, Cols) ->
-    Cols2 = [C ++ mysql_keylen(Index, C) || C <- Cols],
+    NewIndex = new_index_name(State#state.dbtype, Index),
+    Cols2 = [C ++ mysql_keylen(NewIndex, C) || C <- Cols],
     SCols = string:join(Cols2, ", "),
     sql_query(
       State#state.host,
-      ["CREATE INDEX ", Index, " ON ", Table, "(",
+      ["CREATE INDEX ", NewIndex, " ON ", Table, "(",
        SCols, ");"]).
 
-mssql_old_index_name("i_bare_peer") -> "archive_bare_peer";
-mssql_old_index_name("i_peer") -> "archive_peer";
-mssql_old_index_name("i_timestamp") -> "archive_timestamp";
-mssql_old_index_name("i_username") -> "archive_username";
-mssql_old_index_name("i_username_bare_peer") -> "archive_username_bare_peer";
-mssql_old_index_name("i_username_peer") -> "archive_username_peer";
-mssql_old_index_name("i_username_timestamp") -> "archive_username_timestamp";
-mssql_old_index_name("i_push_usn") -> "i_push_usn";
-mssql_old_index_name("i_push_ut") -> "i_push_ut";
-mssql_old_index_name("pk_rosterg_user_jid") -> "rostergroups_username_jid";
-mssql_old_index_name("i_rosteru_jid") -> "rosterusers_jid";
-mssql_old_index_name("i_rosteru_username") -> "rosterusers_username";
-mssql_old_index_name("i_rosteru_user_jid") -> "rosterusers_username_jid";
-mssql_old_index_name("i_despool") -> "spool_username";
-mssql_old_index_name("i_sr_user_jid_grp") -> "sr_user_jid_group";
-mssql_old_index_name(Index) -> string:substr(Index, 3).
+old_index_name(mssql, "i_bare_peer") -> "archive_bare_peer";
+old_index_name(mssql, "i_peer") -> "archive_peer";
+old_index_name(mssql, "i_timestamp") -> "archive_timestamp";
+old_index_name(mssql, "i_username") -> "archive_username";
+old_index_name(mssql, "i_username_bare_peer") -> "archive_username_bare_peer";
+old_index_name(mssql, "i_username_peer") -> "archive_username_peer";
+old_index_name(mssql, "i_username_timestamp") -> "archive_username_timestamp";
+old_index_name(mssql, "i_push_usn") -> "i_push_usn";
+old_index_name(mssql, "i_push_ut") -> "i_push_ut";
+old_index_name(mssql, "pk_rosterg_user_jid") -> "rostergroups_username_jid";
+old_index_name(mssql, "i_rosteru_jid") -> "rosterusers_jid";
+old_index_name(mssql, "i_rosteru_username") -> "rosterusers_username";
+old_index_name(mssql, "i_rosteru_user_jid") -> "rosterusers_username_jid";
+old_index_name(mssql, "i_despool") -> "spool_username";
+old_index_name(mssql, "i_sr_user_jid_grp") -> "sr_user_jid_group";
+old_index_name(mssql, Index) -> string:substr(Index, 3);
+old_index_name(_Type, Index) -> Index.
 
-mssql_new_index_name("i_rosterg_sh_user_jid") -> "rostergroups_sh_username_jid";
-mssql_new_index_name("i_rosteru_sh_jid") -> "rosterusers_sh_jid";
-mssql_new_index_name("i_rosteru_sh_user_jid") -> "rosterusers_sh_username_jid";
-mssql_new_index_name("i_sr_user_sh_jid_grp") -> "sr_user_sh_jid_group";
-mssql_new_index_name(Index) -> string:substr(Index, 3).
+new_index_name(mssql, "i_rosterg_sh_user_jid") -> "rostergroups_sh_username_jid";
+new_index_name(mssql, "i_rosteru_sh_jid") -> "rosterusers_sh_jid";
+new_index_name(mssql, "i_rosteru_sh_user_jid") -> "rosterusers_sh_username_jid";
+new_index_name(mssql, "i_sr_user_sh_jid_grp") -> "sr_user_sh_jid_group";
+new_index_name(mssql, Index) -> string:substr(Index, 3);
+new_index_name(_Type, Index) -> Index.
 
 mssql_clustered("i_mix_pam") -> "";
 mssql_clustered("i_push_session_susn") -> "";
@@ -440,11 +607,21 @@ mysql_keylen(_, "username") -> "(191)";
 mysql_keylen(_, _) -> "".
 
 sql_query(Host, Query) ->
-    io:format("executing \"~ts\" on ~ts~n", [Query, Host]),
+    sql_query(Host, Query, true).
+
+sql_query(Host, Query, Log) ->
+    case Log of
+        true -> io:format("executing \"~ts\" on ~ts~n", [Query, Host]);
+        false -> ok
+    end,
     case ejabberd_sql:sql_query(Host, Query) of
+        {selected, _Cols, []} ->
+            false;
+        {selected, _Cols, [_Rows]} ->
+            true;
         {error, Error} ->
             io:format("error: ~p~n", [Error]),
-            ok;
+            false;
         _ ->
             ok
     end.

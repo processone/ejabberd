@@ -92,7 +92,7 @@
 -- DROP INDEX i_vcard_search_lemail;
 -- DROP INDEX i_vcard_search_lorgname;
 -- DROP INDEX i_vcard_search_lorgunit;
--- ALTER TABLE vcard_search ADD PRIMARY KEY (server_host, username);
+-- ALTER TABLE vcard_search ADD PRIMARY KEY (server_host, lusername);
 -- CREATE INDEX i_vcard_search_sh_lfn       ON vcard_search(server_host, lfn);
 -- CREATE INDEX i_vcard_search_sh_lfamily   ON vcard_search(server_host, lfamily);
 -- CREATE INDEX i_vcard_search_sh_lgiven    ON vcard_search(server_host, lgiven);
