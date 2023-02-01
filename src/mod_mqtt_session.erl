@@ -1234,7 +1234,7 @@ authenticate(#connect{password = Pass, properties = Props} = Pkt, State) ->
 	    Err
     end.
 
--spec tls_auth(jid:jid(), state()) -> boolean().
+-spec tls_auth(jid:jid(), state()) -> boolean() | no_cert.
 tls_auth(_JID, #state{tls_verify = false}) ->
     no_cert;
 tls_auth(JID, State) ->
