@@ -1214,7 +1214,13 @@ authenticate(#connect{password = Pass, properties = Props} = Pkt, State) ->
                                 true ->
                                     {ok, JID, pkix};
                                 false ->
-                                    {error, 'not-authorized'}
+                                    {error, 'not-authorized'};
+				no_cert ->
+				    case ejabberd_auth:check_password_with_authmodule(
+					LUser, <<>>, LServer, Pass) of
+					{true, AuthModule} -> {ok, JID, AuthModule};
+					false -> {error, 'not-authorized'}
+				    end
                             end;
                         _ ->
                             case ejabberd_auth:check_password_with_authmodule(
@@ -1230,7 +1236,7 @@ authenticate(#connect{password = Pass, properties = Props} = Pkt, State) ->
 
 -spec tls_auth(jid:jid(), state()) -> boolean().
 tls_auth(_JID, #state{tls_verify = false}) ->
-    false;
+    no_cert;
 tls_auth(JID, State) ->
     case State#state.socket of
         {fast_tls, Sock} ->
@@ -1251,10 +1257,10 @@ tls_auth(JID, State) ->
                             false
                     end;
                 error ->
-                    false
+                    no_cert
             end;
         _ ->
-            false
+            no_cert
     end.
 
 get_cert_jid(Cert) ->
