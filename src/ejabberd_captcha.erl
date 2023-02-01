@@ -441,18 +441,37 @@ do_create_image(Key, FileName) when is_binary(FileName) ->
 get_prog_name() ->
     case ejabberd_option:captcha_cmd() of
         undefined ->
-            ?DEBUG("The option captcha_cmd is not configured, "
+            ?WARNING_MSG("The option captcha_cmd is not configured, "
                    "but some module wants to use the CAPTCHA "
                    "feature.",
                    []),
             false;
         FileName ->
+            maybe_warning_norequesthandler(),
             FileName
+    end.
+
+maybe_warning_norequesthandler() ->
+    Host = hd(ejabberd_option:hosts()),
+    URL = get_auto_url(any, ?MODULE, Host),
+    case URL of
+        undefined ->
+            ?WARNING_MSG("The option captcha_cmd is configured, "
+                   "but there is NO request_handler in listen option "
+                   "configured with ejabberd_captcha. Please check "
+                   "https://docs.ejabberd.im/admin/configuration/basic/#captcha",
+                   []);
+        _ ->
+            ok
     end.
 
 -spec get_url(binary()) -> binary().
 get_url(Str) ->
     case ejabberd_option:captcha_url() of
+	auto ->
+            Host =  ejabberd_config:get_myname(),
+            URL = get_auto_url(any, ?MODULE, Host),
+            <<URL/binary, $/, Str/binary>>;
 	undefined ->
 	    URL = parse_captcha_host(),
 	    <<URL/binary, "/captcha/", Str/binary>>;
@@ -476,6 +495,40 @@ parse_captcha_host() ->
       _ ->
 	    <<"http://", (ejabberd_config:get_myname())/binary>>
     end.
+
+get_auto_url(Tls, Module, Host) ->
+    case find_handler_port_path(Tls, Module) of
+        [] -> undefined;
+        TPPs ->
+            {ThisTls, Port, Path} = case lists:keyfind(true, 1, TPPs) of
+                                        false ->
+                                            lists:keyfind(false, 1, TPPs);
+                                        TPP ->
+                                            TPP
+                                    end,
+            Protocol = case ThisTls of
+                           false -> <<"http">>;
+                           true -> <<"https">>
+                       end,
+            <<Protocol/binary,
+              "://", Host/binary, ":",
+              (integer_to_binary(Port))/binary,
+              "/",
+              (str:join(Path, <<"/">>))/binary>>
+    end.
+
+find_handler_port_path(Tls, Module) ->
+    lists:filtermap(
+      fun({{Port, _, _},
+           ejabberd_http,
+           #{tls := ThisTls, request_handlers := Handlers}})
+            when (Tls == any) or (Tls == ThisTls) ->
+              case lists:keyfind(Module, 2, Handlers) of
+                  false -> false;
+                  {Path, Module} -> {true, {ThisTls, Port, Path}}
+              end;
+         (_) -> false
+      end, ets:tab2list(ejabberd_listener)).
 
 get_transfer_protocol(PortString) ->
     PortNumber = binary_to_integer(PortString),

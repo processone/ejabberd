@@ -458,8 +458,8 @@ doc() ->
         note => "improved in 23.01",
         desc =>
             ?T("Full path to a script that generates http://../basic/#captcha[CAPTCHA] images. "
-               "@VERSION@ is replaced with ejabberd version number in XX.YY format. "
-               "@SEMVER@ is replaced with ejabberd version number in semver format "
+               "'@VERSION@' is replaced with ejabberd version number in 'XX.YY' format. "
+               "'@SEMVER@' is replaced with ejabberd version number in semver format "
                "when compiled with Elixir's mix, or XX.YY format otherwise. "
                "Alternatively, it can be the name of a module that implements ejabberd CAPTCHA support. "
                "There is no default value: when this option is not "
@@ -477,11 +477,17 @@ doc() ->
       #{value => "String",
         desc => ?T("Deprecated. Use _`captcha_url`_ instead.")}},
      {captcha_url,
-      #{value => ?T("URL"),
+      #{value => ?T("URL | auto | undefined"),
+        note => "improved in 23.xx",
         desc =>
             ?T("An URL where http://../basic/#captcha[CAPTCHA] requests should be sent. NOTE: you need "
                "to configure 'request_handlers' for 'ejabberd_http' listener "
-               "as well. There is no default value.")}},
+               "as well. "
+               "If set to 'auto', it builds the URL using a 'request_handler' "
+               "already enabled, with encryption if available. "
+               "If set to 'undefined', it builds the URL using "
+               "the deprecated _`captcha_host`_ + /captcha. "
+               "The default value is 'auto'.")}},
      {certfiles,
       #{value => "[Path, ...]",
         desc =>

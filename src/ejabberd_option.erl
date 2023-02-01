@@ -329,7 +329,7 @@ captcha_host() ->
 captcha_limit() ->
     ejabberd_config:get_option({captcha_limit, global}).
 
--spec captcha_url() -> 'undefined' | binary().
+-spec captcha_url() -> 'auto' | 'undefined' | binary().
 captcha_url() ->
     ejabberd_config:get_option({captcha_url, global}).
 

@@ -123,7 +123,9 @@ opt_type(captcha_host) ->
 opt_type(captcha_limit) ->
     econf:pos_int(infinity);
 opt_type(captcha_url) ->
-    econf:url();
+    econf:either(
+      econf:url(),
+      econf:enum([auto, undefined]));
 opt_type(certfiles) ->
     econf:list(econf:binary());
 opt_type(cluster_backend) ->
@@ -546,7 +548,7 @@ options() ->
      {captcha_cmd, undefined},
      {captcha_host, <<"">>},
      {captcha_limit, infinity},
-     {captcha_url, undefined},
+     {captcha_url, auto},
      {certfiles, undefined},
      {cluster_backend, mnesia},
      {cluster_nodes, []},
