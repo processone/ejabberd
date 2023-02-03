@@ -441,7 +441,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 		     true ->
 			  []
 		  end,
-    SubOrderClause = if LimitClause /= [], TopClause /= [] ->
+    SubOrderClause = if LimitClause /= []; TopClause /= [] ->
 			  <<" ORDER BY timestamp DESC ">>;
 		     true ->
 			  []
