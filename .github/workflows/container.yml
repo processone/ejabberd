@@ -61,7 +61,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           build-args: |
             VERSION=${{ steps.gitdescribe.outputs.ver }}
