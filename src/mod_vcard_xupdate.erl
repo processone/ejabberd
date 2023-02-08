@@ -107,7 +107,7 @@ user_send_packet(Acc) ->
 
 -spec vcard_set(iq()) -> iq().
 vcard_set(#iq{from = #jid{luser = LUser, lserver = LServer}} = IQ) ->
-    ets_cache:delete(?VCARD_XUPDATE_CACHE, {LUser, LServer}),
+    ets_cache:delete(?VCARD_XUPDATE_CACHE, {LUser, LServer}, ejabberd_cluster:get_nodes()),
     ejabberd_sm:force_update_presence({LUser, LServer}),
     IQ;
 vcard_set(Acc) ->
@@ -117,7 +117,7 @@ vcard_set(Acc) ->
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    ets_cache:delete(?VCARD_XUPDATE_CACHE, {LUser, LServer}).
+    ets_cache:delete(?VCARD_XUPDATE_CACHE, {LUser, LServer}, ejabberd_cluster:get_nodes()).
 
 %%====================================================================
 %% Storage
