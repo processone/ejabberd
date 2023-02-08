@@ -46,7 +46,7 @@
 	 web_page_host/3,
 	 mod_opt_type/1, mod_options/1,
 	 get_commands_spec/0, find_hosts/1, room_diagnostics/2,
-	 get_room_pid/2]).
+	 get_room_pid/2, get_room_history/2]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -405,7 +405,19 @@ get_commands_spec() ->
 			result_desc = "Affiliation of the user",
 			result_example = member,
 			args = [{name, binary}, {service, binary}, {jid, binary}],
-			result = {affiliation, atom}}
+			result = {affiliation, atom}},
+         #ejabberd_commands{name = get_room_history, tags = [muc_room],
+			desc = "Get history of messages stored inside MUC room state",
+			module = ?MODULE, function = get_room_history,
+			args_desc = ["Room name", "MUC service"],
+			args_example = ["room1", "muc.example.com"],
+			result_desc = "Affiliation of the user",
+			result_example = member,
+			args = [{name, binary}, {service, binary}],
+			result = {history, {list,
+					    {entry, {tuple,
+						     [{timestamp, string},
+						      {message, string}]}}}}}
 	].
 
 
@@ -1286,6 +1298,23 @@ get_room_affiliations(Name, Service) ->
 		 ({{Uname, Domain, _Res}, Aff}) when is_atom(Aff)->
 		      {Uname, Domain, Aff, <<>>}
 	      end, Affiliations);
+	_ ->
+	    throw({error, "The room does not exist."})
+    end.
+
+get_room_history(Name, Service) ->
+    case get_room_pid(Name, Service) of
+	Pid when is_pid(Pid) ->
+	    case mod_muc_room:get_state(Pid) of
+		{ok, StateData} ->
+		    History = p1_queue:to_list((StateData#state.history)#lqueue.queue),
+		    lists:map(
+			fun({_Nick, Packet, _HaveSubject, TimeStamp, _Size}) ->
+			    {xmpp_util:encode_timestamp(TimeStamp), fxml:element_to_binary(xmpp:encode(Packet))}
+			end, History);
+		_ ->
+		    throw({error, "Unable to fetch room state."})
+	    end;
 	_ ->
 	    throw({error, "The room does not exist."})
     end.
