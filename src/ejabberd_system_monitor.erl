@@ -30,7 +30,7 @@
 -author('ekhramtsov@process-one.net').
 
 %% API
--export([start/0, config_reloaded/0]).
+-export([start/0, config_reloaded/0, stop/0]).
 
 %% gen_event callbacks
 -export([init/1, handle_event/2, handle_call/2,
@@ -67,6 +67,10 @@ start() ->
     application:set_env(os_mon, start_disksup, false),
     ejabberd:start_app(os_mon),
     set_oom_watermark().
+
+-spec stop() -> term().
+stop() ->
+    gen_event:delete_handler(alarm_handler, ?MODULE, []).
 
 excluded_apps() ->
     [os_mon, mnesia, sasl, stdlib, kernel].
@@ -115,7 +119,8 @@ handle_info(Info, State) ->
     ?WARNING_MSG("unexpected info: ~p~n", [Info]),
     {ok, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    misc:cancel_timer(State#state.tref),
     ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50).
 
 code_change(_OldVsn, State, _Extra) ->

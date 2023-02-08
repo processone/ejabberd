@@ -103,6 +103,7 @@ prep_stop(State) ->
     ejabberd_sm:stop(),
     ejabberd_service:stop(),
     ejabberd_s2s:stop(),
+    ejabberd_system_monitor:stop(),
     gen_mod:stop(),
     State.
 
