@@ -32,7 +32,7 @@ extract_lang_po2msg ()
 	MSGSTR_PATH=$PO_PATH.msgstr
 	MSGS_PATH=$LANG_CODE.msg
 
-	cd $PO_DIR
+	cd $PO_DIR || exit
 
 	# Check PO has correct ~
 	# Let's convert to C format so we can use msgfmt
@@ -48,11 +48,13 @@ extract_lang_po2msg ()
 	msgattrib $PO_PATH --translated --no-fuzzy --no-obsolete --no-location --no-wrap | grep "^msg" | tail --lines=+3 >$MS_PATH
 	grep "^msgid" $PO_PATH.ms | sed 's/^msgid //g' >$MSGID_PATH
 	grep "^msgstr" $PO_PATH.ms | sed 's/^msgstr //g' >$MSGSTR_PATH
-	echo "%% Generated automatically" >$MSGS_PATH
-	echo "%% DO NOT EDIT: run \`make translations\` instead" >>$MSGS_PATH
-	echo "%% To improve translations please read:" >>$MSGS_PATH
-	echo "%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/" >>$MSGS_PATH
-	echo "" >>$MSGS_PATH
+	{
+	    echo "%% Generated automatically"
+	    echo "%% DO NOT EDIT: run \`make translations\` instead"
+	    echo "%% To improve translations please read:"
+	    echo "%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/"
+	    echo ""
+	} >>$MSGS_PATH
 	paste $MSGID_PATH $MSGSTR_PATH --delimiter=, | awk '{print "{" $0 "}."}' | sort -g >>$MSGS_PATH
 
 	rm $MS_PATH
@@ -68,29 +70,29 @@ extract_lang_updateall ()
 	echo "Generating POT..."
 	extract_lang_src2pot
 
-	cd $MSGS_DIR
+	cd $MSGS_DIR || exit
 	echo ""
-	echo -e "File Missing (fuzzy) Language     Last translator"
-	echo -e "---- ------- ------- --------     ---------------"
-	for i in $( ls *.msg ) ; do
+	echo "File Missing (fuzzy) Language     Last translator"
+	echo "---- ------- ------- --------     ---------------"
+	for i in *.msg ; do
                 LANG_CODE=${i%.msg}
-		echo -n $LANG_CODE | awk '{printf "%-6s", $1 }'
+		printf "%s" "$LANG_CODE" | awk '{printf "%-6s", $1 }'
 
 		PO=$PO_DIR/$LANG_CODE.po
 
 		extract_lang_popot2po $LANG_CODE
 		extract_lang_po2msg $LANG_CODE
 
-		MISSING=`msgfmt --statistics $PO 2>&1 | awk '{printf "%5s", $4+$7 }'`
-		echo -n " $MISSING"
+                MISSING=$(msgfmt --statistics $PO 2>&1 | awk '{printf "%5s", $4+$7 }')
+		printf " %s" "$MISSING"
 
-		FUZZY=`msgfmt --statistics $PO 2>&1 | awk '{printf "%7s", $4 }'`
-		echo -n " $FUZZY"
+                FUZZY=$(msgfmt --statistics $PO 2>&1 | awk '{printf "%7s", $4 }')
+		printf " %s" "$FUZZY"
 
-		LANGUAGE=`grep "X-Language:" $PO | sed 's/\"X-Language: //g' | sed 's/\\\\n\"//g' | awk '{printf "%-12s", $1}'`
-		echo -n " $LANGUAGE"
+                LANGUAGE=$(grep "X-Language:" $PO | sed 's/\"X-Language: //g' | sed 's/\\n\"//g' | awk '{printf "%-12s", $1}')
+		printf " %s" "$LANGUAGE"
 
-		LASTAUTH=`grep "Last-Translator" $PO | sed 's/\"Last-Translator: //g' | sed 's/\\\\n\"//g'`
+                LASTAUTH=$(grep "Last-Translator" $PO | sed 's/\"Last-Translator: //g' | sed 's/\\n\"//g')
 		echo " $LASTAUTH"
 	done
 	echo ""
@@ -101,7 +103,7 @@ extract_lang_updateall ()
 	cd ..
 }
 
-EJA_DIR=`pwd`
+EJA_DIR=$(pwd)
 PROJECT=ejabberd
 DEPS_DIR=$1
 MSGS_DIR=$EJA_DIR/priv/msgs

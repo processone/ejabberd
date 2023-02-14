@@ -76,7 +76,7 @@ write_rfcs()
     int=$(echo $1 | sed 's/^0*//')
 
     imp=$(grep "\-protocol({rfc, $int," $BASE/src/* | sed "s/.*src\/\(.*\).erl.*'\([0-9.-]*\)'.*/\1 \2/")
-    [ "$imp" == "" ] && imp="NA 0.0"
+    [ "$imp" = "" ] && imp="NA 0.0"
 
     echo "    <implements rdf:resource=\"https://www.rfc-editor.org/info/$rfc\"/>" >>$out
 }
@@ -88,7 +88,7 @@ write_xeps()
     comments2=""
     int=$(echo $1 | sed 's/^0*//')
     imp=$(grep "\-protocol({xep, $int," $BASE/src/* | sed "s/.*src\/\(.*\).erl.*'\([0-9.-]*\)'.*/\1 \2/")
-    [ "$imp" == "" ] && imp="NA 0.0"
+    [ "$imp" = "" ] && imp="NA 0.0"
 
     sourcefiles=$(grep "\-protocol({xep, $int," $BASE/src/* | sed "s/.*src\/\(.*\).erl.*'\([0-9.-]*\)'.*/\1/" | tr '\012' ',' | sed 's|,$||' | sed 's|,|, |g' | sed 's|^ejabberd$||')
 
@@ -103,15 +103,17 @@ write_xeps()
     [ -n "$comments" ] && comments2=", $comments"
     note="$sourcefiles$comments2"
 
-    echo "    <implements>" >>$out
-    echo "      <xmpp:SupportedXep>" >>$out
-    echo "        <xmpp:xep rdf:resource=\"https://xmpp.org/extensions/$xep.html\"/>" >>$out
-    echo "        <xmpp:version>$versions</xmpp:version>" >>$out
-    echo "        <xmpp:since>$since</xmpp:since>" >>$out
-    echo "        <xmpp:status>$status</xmpp:status>" >>$out
-    echo "        <xmpp:note>$note</xmpp:note>" >>$out
-    echo "      </xmpp:SupportedXep>" >>$out
-    echo "    </implements>" >>$out
+    {
+     echo "    <implements>"
+     echo "      <xmpp:SupportedXep>"
+     echo "        <xmpp:xep rdf:resource=\"https://xmpp.org/extensions/$xep.html\"/>"
+     echo "        <xmpp:version>$versions</xmpp:version>"
+     echo "        <xmpp:since>$since</xmpp:since>"
+     echo "        <xmpp:status>$status</xmpp:status>"
+     echo "        <xmpp:note>$note</xmpp:note>"
+     echo "      </xmpp:SupportedXep>"
+     echo "    </implements>"
+    } >>$out
 }
 
 [ $# -eq 1 ] && BASE="$1" || BASE="$PWD"
@@ -121,13 +123,13 @@ final=ejabberd.doap
 
 write_doap_head $final
 
-for x_num in $(grep "\-protocol({rfc" $BASE/src/* | sed "s/,//" | awk '{printf("%04d\n", $2)}' | sort -u)
+grep "\-protocol({rfc" $BASE/src/* | sed "s/,//" | awk '{printf("%04d\n", $2)}' | sort -u | while IFS= read -r x_num
 do
     write_rfcs $x_num $temp
 done
 echo "" >>$temp
 
-for x_num in $(grep "\-protocol({xep" $BASE/src/* | sed "s/,//" | awk '{printf("%04d\n", $2)}' | sort -u)
+grep "\-protocol({xep" $BASE/src/* | sed "s/,//" | awk '{printf("%04d\n", $2)}' | sort -u | while IFS= read -r x_num
 do
     write_xeps $x_num $temp
 done
