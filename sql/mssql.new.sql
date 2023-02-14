@@ -554,7 +554,7 @@ CREATE TABLE [dbo].[push_session] (
     [xml] [varchar] (255) NOT NULL
 );
 
-CREATE UNIQUE NONCLUSTERED INDEX [push_session_susn] ON [push_session] (server_host, username, service, node))
+CREATE UNIQUE NONCLUSTERED INDEX [push_session_susn] ON [push_session] (server_host, username, service, node)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE INDEX [push_session_sh_username_timestamp] ON [push_session] (server_host, username, timestamp)
