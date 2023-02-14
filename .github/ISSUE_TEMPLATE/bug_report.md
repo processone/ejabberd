@@ -6,8 +6,7 @@ assignees: ''
 
 ---
 
-Before creating a ticket, please consider if this should fit the discussion forum better:
-https://github.com/processone/ejabberd/discussions
+Before creating a ticket, please consider if this should fit the [discussion forum](https://github.com/processone/ejabberd/discussions) better.
 
 ## Environment
 

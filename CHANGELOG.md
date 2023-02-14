@@ -486,7 +486,7 @@ Translations:
   changed to logging disabled
 - Increase default shaper limits (this should help with delays for
   clients that are using jingle)
-- Fix couple compatibility problems which prevented working on 
+- Fix couple compatibility problems which prevented working on
   erlang R19
 - Fix sending presence unavailable when session terminates for
   clients that only send directed presences (helps with sometimes
@@ -501,7 +501,7 @@ Translations:
 - Add support of ssl connection when connection to mysql
   database (configured with `sql_ssl: true` option)
 - Experimental support for cockroachdb when configured
-  with postgres connector 
+  with postgres connector
 - Add cache and optimize queries issued by `mod_shared_roster`,
   this should greatly improve performance of this module when
   used with `sql` backend
@@ -798,6 +798,6 @@ Translations:
 # Version 18.12
 
 * MAM data store compression
-* Proxy protocol support (http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt)
+* Proxy protocol support
 * MUC Self-Ping optimization (XEP-0410)
 * Bookmarks conversion (XEP-0411)

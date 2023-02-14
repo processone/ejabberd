@@ -34,9 +34,9 @@ To save your and our time, we will systematically close all issues that are requ
 support and redirect people to the section you are reading right now.
 
 Other channels for support are:
-- [ejabberd Mailing List][list]
-- [ejabberd XMPP room][muc]: ejabberd@conference.process-one.net
+- ejabberd XMPP room: [ejabberd@conference.process-one.net][muc]
 - [ejabberd XMPP room logs][logs]
+- [ejabberd Mailing List][list]
 
 ### <a name="issue"></a> Found an Issue or Bug?
 
@@ -147,4 +147,3 @@ gives us the option to relicense the code with a more permissive license in the 
 [doc-repo]: https://github.com/processone/docs.ejabberd.im
 [developer-setup]: https://docs.ejabberd.im/developer/
 [cla]: https://www.process-one.net/resources/ejabberd-cla.pdf
-[license]: https://github.com/processone/ejabberd/blob/master/COPYING

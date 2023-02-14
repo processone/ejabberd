@@ -73,7 +73,7 @@ or in your local machine as explained in [Localization][localization].
 Documentation for developers is available in [ejabberd docs: Developers][docs-dev].
 
 Security reports or concerns should preferably be reported privately,
-please send an email to the address: contact [at] process-one [dot] net
+please send an email to the address: contact at process-one dot net
 or some other method from [ProcessOne Contact][p1contact].
 
 For commercial offering and support, including [ejabberd Business Edition][p1home]
@@ -85,7 +85,7 @@ Community
 
 There are several places to get in touch with other ejabberd developers and administrators:
 
-- [ejabberd XMPP chatroom][muc]: ejabberd@conference.process-one.net
+- ejabberd XMPP chatroom: [ejabberd@conference.process-one.net][muc]
 - [Mailing list][list]
 - [GitHub Discussions][discussions]
 - [Stack Overflow][stackoverflow]
@@ -105,7 +105,6 @@ and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MI
 [erlang]: https://www.erlang.org/
 [features]: https://docs.ejabberd.im/admin/introduction/
 [fluux]: https://fluux.io/
-[github]: https://github.com/processone/ejabberd
 [homebrew]: https://docs.ejabberd.im/admin/installation/#homebrew
 [hubecs]: https://hub.docker.com/r/ejabberd/ecs/
 [im]: https://ejabberd.im/
