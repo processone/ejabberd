@@ -1,50 +1,55 @@
+"""extauth dummy script for ejabberd testing."""
+
 import sys
 import struct
 
-def read_from_stdin(bytes):
-  if hasattr(sys.stdin, 'buffer'):
-    return sys.stdin.buffer.read(bytes)
-  else:
-    return sys.stdin.read(bytes)
+def read_from_stdin(read_bytes):
+    """Read buffer from standard input."""
+    if hasattr(sys.stdin, 'buffer'):
+        return sys.stdin.buffer.read(read_bytes)
+    return sys.stdin.read(read_bytes)
 
 def read():
+    """Read input and process the command."""
     (pkt_size,) = struct.unpack('>H', read_from_stdin(2))
     pkt = sys.stdin.read(pkt_size)
     cmd = pkt.split(':')[0]
     if cmd == 'auth':
-        u, s, p = pkt.split(':', 3)[1:]
-        if u == "wrong":
+        user, _, _ = pkt.split(':', 3)[1:]
+        if user == "wrong":
             write(False)
         else:
             write(True)
     elif cmd == 'isuser':
-        u, s = pkt.split(':', 2)[1:]
-        if u == "wrong":
+        user, _ = pkt.split(':', 2)[1:]
+        if user == "wrong":
             write(False)
         else:
             write(True)
     elif cmd == 'setpass':
-        u, s, p = pkt.split(':', 3)[1:]
+        user, _, _ = pkt.split(':', 3)[1:]
         write(True)
     elif cmd == 'tryregister':
-        u, s, p = pkt.split(':', 3)[1:]
+        user, _, _ = pkt.split(':', 3)[1:]
         write(True)
     elif cmd == 'removeuser':
-        u, s = pkt.split(':', 2)[1:]
+        user, _ = pkt.split(':', 2)[1:]
         write(True)
     elif cmd == 'removeuser3':
-        u, s, p = pkt.split(':', 3)[1:]
+        user, _, _ = pkt.split(':', 3)[1:]
         write(True)
     else:
         write(False)
     read()
 
 def write(result):
+    """write result to standard output."""
     if result:
         sys.stdout.write('\x00\x02\x00\x01')
     else:
         sys.stdout.write('\x00\x02\x00\x00')
     sys.stdout.flush()
+
 
 if __name__ == "__main__":
     try:
