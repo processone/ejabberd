@@ -733,7 +733,7 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 					       lists:keysort(1, DefRoomOpts)),
 		    case mod_muc:create_room(Host, Name, RoomOpts) of
 			ok ->
-                            maybe_store_room(ServerHost, Host, Name, RoomOpts);
+                            ok;
 			{error, _} ->
 			    throw({error, "Unable to start room"})
 		    end;
@@ -742,15 +742,6 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 		_ ->
 		    throw({error, "Room already exists"})
 	    end
-    end.
-
-maybe_store_room(ServerHost, Host, Name, RoomOpts) ->
-    case proplists:get_bool(persistent, RoomOpts) of
-        true ->
-            {atomic, _} = mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
-            ok;
-        false ->
-            ok
     end.
 
 %% Create the room only in the database.

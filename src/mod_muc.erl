@@ -317,6 +317,15 @@ create_room(Host, Name, Opts) ->
 store_room(ServerHost, Host, Name, Opts) ->
     store_room(ServerHost, Host, Name, Opts, undefined).
 
+maybe_store_new_room(ServerHost, Host, Name, Opts) ->
+    case {proplists:get_bool(persistent, Opts), proplists:get_value(subscribers, Opts, [])} of
+	{false, []} ->
+	    {atomic, ok};
+	{_, Subs} ->
+	    Changes = [{add_subscription, JID, Nick, Nodes} || {JID, Nick, Nodes} <- Subs],
+	    store_room(ServerHost, Host, Name, Opts, Changes)
+    end.
+
 store_room(ServerHost, Host, Name, Opts, ChangesHints) ->
     LServer = jid:nameprep(ServerHost),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -417,6 +426,7 @@ handle_call({create, Room, Host, Opts}, _From,
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case start_room(RMod, Host, ServerHost, Room, NewOpts) of
 	{ok, _} ->
+	    maybe_store_new_room(ServerHost, Host, Room, NewOpts),
 	    ejabberd_hooks:run(create_room, ServerHost, [ServerHost, Room, Host]),
 	    {reply, ok, State};
 	Err ->
@@ -432,6 +442,7 @@ handle_call({create, Room, Host, From, Nick, Opts}, _From,
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case start_room(RMod, Host, ServerHost, Room, NewOpts, From, Nick) of
 	{ok, _} ->
+	    maybe_store_new_room(ServerHost, Host, Room, NewOpts),
 	    ejabberd_hooks:run(create_room, ServerHost, [ServerHost, Room, Host]),
 	    {reply, ok, State};
 	Err ->
