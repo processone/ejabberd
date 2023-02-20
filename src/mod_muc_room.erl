@@ -3882,14 +3882,23 @@ remove_nonmembers(StateData) ->
       end, StateData, get_users_and_subscribers(StateData)).
 
 -spec set_opts([{atom(), any()}], state()) -> state().
-set_opts([], StateData) ->
+set_opts(Opts, StateData) ->
+    case lists:keytake(persistent, 1, Opts) of
+	false ->
+	    set_opts2(Opts, StateData);
+	{value, Tuple, Rest} ->
+	    set_opts2([Tuple | Rest], StateData)
+    end.
+
+-spec set_opts2([{atom(), any()}], state()) -> state().
+set_opts2([], StateData) ->
     set_vcard_xupdate(StateData);
-set_opts([{vcard, Val} | Opts], StateData)
+set_opts2([{vcard, Val} | Opts], StateData)
   when is_record(Val, vcard_temp) ->
     %% default_room_options is setting a default room vcard
     ValRaw = fxml:element_to_binary(xmpp:encode(Val)),
-    set_opts([{vcard, ValRaw} | Opts], StateData);
-set_opts([{Opt, Val} | Opts], StateData) ->
+    set_opts2([{vcard, ValRaw} | Opts], StateData);
+set_opts2([{Opt, Val} | Opts], StateData) ->
     NSD = case Opt of
 	    title ->
 		StateData#state{config =
@@ -4058,7 +4067,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
                   ?INFO_MSG("Unknown MUC room option, will be discarded: ~p", [Other]),
                   StateData
 	  end,
-    set_opts(Opts, NSD).
+    set_opts2(Opts, NSD).
 
 -spec set_vcard_xupdate(state()) -> state().
 set_vcard_xupdate(#state{config =
