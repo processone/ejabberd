@@ -162,9 +162,14 @@ get_commands_spec() ->
 		       result = {res, rescode}},
      #ejabberd_commands{name = create_room_with_opts, tags = [muc_room],
 		       desc = "Create a MUC room name@service in host with given options",
+		       longdesc = "To set affilitions string value must have format 'Type:JID,Type:JID' "
+				  "for example 'owner:bob@example.com,member:peter@example.com'. Subscribers can be "
+				  "define with string 'JID:Nick:Node1:Node2,JID:Nick:Node3' for example "
+				  "'bob@example.com:Bob:messages:subject,anne@example.com:Anne:messages'.",
 		       module = ?MODULE, function = create_room_with_opts,
 		       args_desc = ["Room name", "MUC service", "Server host", "List of options"],
-		       args_example = ["room1", "muc.example.com", "localhost", [{"members_only","true"}]],
+		       args_example = ["room1", "muc.example.com", "localhost",
+				       [{"members_only","true"}, {"subscribers", "bob@example.com:Bob:messages"}]],
 		       args = [{name, binary}, {service, binary},
 			       {host, binary},
 			       {options, {list,
@@ -1166,9 +1171,65 @@ format_room_option(OptionString, ValueString) ->
 		    ValueString;
 		lang -> ValueString;
 		pubsub -> ValueString;
+		affiliations ->
+		    [parse_affiliation_string(Opt) || Opt <- str:tokens(ValueString, <<",">>)];
+		subscribers ->
+		    [parse_subscription_string(Opt) || Opt <- str:tokens(ValueString, <<",">>)];
 		_ -> misc:binary_to_atom(ValueString)
 	    end,
     {Option, Value}.
+
+parse_affiliation_string(String) ->
+    {Type, JidS} = case String of
+		       <<"owner:", Jid/binary>> -> {owner, Jid};
+		       <<"admin:", Jid/binary>> -> {admin, Jid};
+		       <<"member:", Jid/binary>> -> {member, Jid};
+		       <<"outcast:", Jid/binary>> -> {outcast, Jid};
+		       _ -> throw({error, "Invalid 'affiliation'"})
+		   end,
+    try jid:decode(JidS) of
+	#jid{luser = U, lserver = S, lresource = R} ->
+	    {{U, S, R}, {Type, <<>>}}
+    catch _:{bad_jid, _} ->
+	throw({error, "Malformed JID in affiliation"})
+    end.
+
+parse_subscription_string(String) ->
+    case str:tokens(String, <<":">>) of
+	[_] ->
+	    throw({error, "Invalid 'subscribers' - missing nick"});
+	[_, _] ->
+	    throw({error, "Invalid 'subscribers' - missing nodes"});
+	[JidS, Nick | Nodes] ->
+	    Nodes2 = parse_nodes(Nodes, []),
+	    try jid:decode(JidS) of
+		Jid ->
+		    {Jid, Nick, Nodes2}
+	    catch _:{bad_jid, _} ->
+		throw({error, "Malformed JID in 'subscribers'"})
+	    end
+    end.
+
+parse_nodes([], Acc) ->
+    Acc;
+parse_nodes([<<"presence">> | Rest], Acc) ->
+    parse_nodes(Rest, [?NS_MUCSUB_NODES_PRESENCE | Acc]);
+parse_nodes([<<"messages">> | Rest], Acc) ->
+    parse_nodes(Rest, [?NS_MUCSUB_NODES_MESSAGES | Acc]);
+parse_nodes([<<"participants">> | Rest], Acc) ->
+    parse_nodes(Rest, [?NS_MUCSUB_NODES_PARTICIPANTS | Acc]);
+parse_nodes([<<"affiliations">> | Rest], Acc) ->
+    parse_nodes(Rest, [?NS_MUCSUB_NODES_AFFILIATIONS | Acc]);
+parse_nodes([<<"subject">> | Rest], Acc) ->
+    parse_nodes(Rest, [?NS_MUCSUB_NODES_SUBJECT | Acc]);
+parse_nodes([<<"config">> | Rest], Acc) ->
+    parse_nodes(Rest, [?NS_MUCSUB_NODES_CONFIG | Acc]);
+parse_nodes([<<"system">> | Rest], Acc) ->
+    parse_nodes(Rest, [?NS_MUCSUB_NODES_SYSTEM | Acc]);
+parse_nodes([<<"subscribers">> | Rest], Acc) ->
+    parse_nodes(Rest, [?NS_MUCSUB_NODES_SUBSCRIBERS | Acc]);
+parse_nodes(_, _) ->
+    throw({error, "Invalid 'subscribers' - unknown node name used"}).
 
 %% @doc Get the Pid of an existing MUC room, or 'room_not_found'.
 -spec get_room_pid(binary(), binary()) -> pid() | room_not_found | invalid_service.

@@ -294,15 +294,15 @@ init([Host, ServerHost, Access, Room, HistorySize,
     process_flag(trap_exit, true),
     Shaper = ejabberd_shaper:new(RoomShaper),
     RoomQueue = room_queue_new(ServerHost, Shaper, QueueType),
-    State = set_affiliation(Creator, owner,
-	    #state{host = Host, server_host = ServerHost,
-		   access = Access, room = Room,
-		   history = lqueue_new(HistorySize, QueueType),
-		   jid = jid:make(Room, Host),
-		   just_created = true,
-		   room_queue = RoomQueue,
-		   room_shaper = Shaper}),
-    State1 = set_opts(DefRoomOpts, State),
+    State = set_opts(DefRoomOpts,
+		     #state{host = Host, server_host = ServerHost,
+			    access = Access, room = Room,
+			    history = lqueue_new(HistorySize, QueueType),
+			    jid = jid:make(Room, Host),
+			    just_created = true,
+			    room_queue = RoomQueue,
+			    room_shaper = Shaper}),
+    State1 = set_affiliation(Creator, owner, State),
     store_room(State1),
     ?INFO_MSG("Created MUC room ~ts@~ts by ~ts",
 	      [Room, Host, jid:encode(Creator)]),
@@ -4038,7 +4038,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
                         end, muc_subscribers_new(), Val),
                   StateData#state{muc_subscribers = MUCSubscribers};
 	    affiliations ->
-		StateData#state{affiliations = maps:from_list(Val)};
+		set_affiliations(maps:from_list(Val), StateData);
 	    roles ->
 		StateData#state{roles = maps:from_list(Val)};
 	    subject ->
