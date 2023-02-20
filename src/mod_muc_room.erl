@@ -1022,12 +1022,8 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 		not Moderated, IsSubscriber} of
 	      {true, _} -> true;
 	      {_, true} ->
-		  case get_default_role(get_affiliation(From, StateData),
-					StateData) of
-		      moderator -> true;
-		      participant -> true;
-		      _ -> false
-		  end;
+		  % We assume all subscribers are at least members
+		  true;
 	      _ ->
 		  false
 	  end,
