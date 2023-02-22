@@ -547,10 +547,11 @@ decode_stream_element(NS, El) ->
     decode(El, NS, []).
 
 format_element(El) ->
-    case erlang:function_exported(ct, log, 5) of
+    Bin = case erlang:function_exported(ct, log, 5) of
 	true -> ejabberd_web_admin:pretty_print_xml(El);
 	false -> io_lib:format("~p~n", [El])
-    end.
+    end,
+    binary:replace(Bin, <<"<">>, <<"&lt;">>, [global]).
 
 decode(El, NS, Opts) ->
     try
