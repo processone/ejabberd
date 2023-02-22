@@ -311,3 +311,17 @@ jobs:
           'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
         find logs/ -name error.log -exec cat '{}' ';'
         find logs/ -name exunit.log -exec cat '{}' ';'
+
+    - name: Upload CT logs
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ejabberd-ct-logs-${{matrix.otp}}
+        #
+        # Appending the wildcard character ("*") is a trick to make
+        # "ejabberd-packages" the root directory of the uploaded ZIP file:
+        #
+        # https://github.com/actions/upload-artifact#upload-using-multiple-paths-and-exclusions
+        #
+        path: _build/test/logs
+        retention-days: 14
