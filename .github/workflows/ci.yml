@@ -111,8 +111,7 @@ jobs:
               eimp, epam, esip, ezlib, fast_tls, fast_xml, fast_yaml,
               mqtree, p1_acme, p1_mysql, p1_oauth2, p1_pgsql, p1_utils, pkix,
               sqlite3, stringprep, stun, xmpp, yconf]} ]}.' >>rebar.config
-        echo '{ct_extra_params, "-verbosity 20"}.' >>rebar.config
-        echo "{ct_opts, [{verbosity, 20}, {keep_logs, 20}]}." >>rebar.config
+        echo "{ct_opts, [{keep_logs, 20}]}." >>rebar.config
 
     - name: Remove syntax_tools from release
       run: sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
