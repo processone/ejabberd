@@ -176,6 +176,7 @@ jobs:
       id: ct
       run: |
         (cd priv && ln -sf ../sql)
+        sed -i -e 's/ct:pal/ct:log/' test/suite.erl
         COMMIT=`echo $GITHUB_SHA | cut -c 1-7`
         DATE=`date +%s`
         REF_NAME=`echo $GITHUB_REF_NAME | tr "/" "_"`
