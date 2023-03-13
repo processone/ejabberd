@@ -258,7 +258,7 @@ create_common_config()
 		CT_ARCH_64=y
 		CT_KERNEL_LINUX=y
 		CT_LINUX_V_3_16=y
-		CT_GLIBC_V_2_17=y
+		CT_GLIBC_V_2_19=y
 		CT_GLIBC_KERNEL_VERSION_NONE=y
 		CT_LOG_PROGRESS_BAR=n
 	EOF
@@ -715,7 +715,7 @@ build_rel()
 	export CFLAGS="-g0 -O2 -pipe -fomit-frame-pointer -static-libgcc $CPPFLAGS"
 	export CXXFLAGS="$CFLAGS -static-libstdc++"
 	export LDFLAGS="-L$prefix/lib -static-libgcc -static-libstdc++"
-	export ERL_COMPILER_OPTIONS='[deterministic, no_debug_info]'
+	export ERL_COMPILER_OPTIONS='[no_debug_info]' # Building 25.x fails with 'deterministic'.
 
 	if [ "$mode" = 'cross' ]
 	then configure="./configure --host=$target --build=$platform"
