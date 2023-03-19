@@ -1751,10 +1751,12 @@ set_role(JID, Role, StateData) ->
 		   end, StateData#state.users, LJIDs),
 		 StateData#state.nicks}
 	end,
+    Affiliation = get_affiliation(JID, StateData),
     Roles = case Role of
                 %% Don't persist 'none' role: if someone is kicked, they will
-                %% maintain the same role they had *before* they were kicked
-                none ->
+                %% maintain the same role they had *before* they were kicked,
+                %% unless they were banned
+                none when Affiliation /= outcast ->
                     StateData#state.roles;
                 NewRole ->
                     maps:put(jid:remove_resource(LJID),
@@ -3070,7 +3072,7 @@ process_item_change(Item, SD, UJID) ->
                     process_iq_mucsub(JID,
                                       #iq{type = set,
                                           sub_els = [#muc_unsubscribe{}]}, SD),
-		set_affiliation(JID, outcast, set_role(JID, none, SD2), Reason);
+		set_role(JID, none, set_affiliation(JID, outcast, SD2, Reason));
 	    {JID, affiliation, A, Reason} when (A == admin) or (A == owner) ->
 		SD1 = set_affiliation(JID, A, SD, Reason),
 		SD2 = set_role(JID, moderator, SD1),
