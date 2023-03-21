@@ -3456,6 +3456,10 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
 		{true, {roster_groups_allowed, Value, Groups}};
 	   ({sql, _}) -> false;
 	   ({rsm, _}) -> false;
+	   ({Item, infinity}) when Item == max_items;
+				   Item == item_expire;
+				   Item == children_max ->
+	       {true, {Item, max}};
 	   (_) -> true
 	end, Options),
       Lang).
