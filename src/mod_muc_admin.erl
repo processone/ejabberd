@@ -416,8 +416,6 @@ get_commands_spec() ->
 			module = ?MODULE, function = get_room_history,
 			args_desc = ["Room name", "MUC service"],
 			args_example = ["room1", "muc.example.com"],
-			result_desc = "Affiliation of the user",
-			result_example = member,
 			args = [{name, binary}, {service, binary}],
 			result = {history, {list,
 					    {entry, {tuple,
