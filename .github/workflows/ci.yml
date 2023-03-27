@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['20.0', '21.3', '24.3', '25', '26.0-rc1']
+        otp: ['20.0', '25.3', '26.0-rc2']
     runs-on: ubuntu-20.04
     services:
       redis:
@@ -38,7 +38,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Test shell scripts
-      if: matrix.otp == 25
+      if: matrix.otp == '25.3'
       run: |
         shellcheck test/ejabberd_SUITE_data/gencerts.sh
         shellcheck tools/captcha.sh
@@ -46,7 +46,7 @@ jobs:
         shellcheck -x ejabberdctl.template
 
     - name: Get specific Erlang/OTP
-      if: matrix.otp != 25
+      if: matrix.otp != '25.3'
       uses: erlef/setup-beam@v1
       with:
         otp-version: ${{ matrix.otp }}
@@ -124,7 +124,7 @@ jobs:
         key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
 
     - name: Download test logs
-      if: matrix.otp == 25 && github.repository == 'processone/ejabberd'
+      if: matrix.otp == '25.3' && github.repository == 'processone/ejabberd'
       continue-on-error: true
       run: |
         mkdir -p _build/test
@@ -149,7 +149,7 @@ jobs:
     - run: make options
     - run: make xref
     - run: make dialyzer
-      if: matrix.otp != '26.0-rc1'
+      if: matrix.otp != '26.0-rc2'
 
     - name: Check Production Release
       run: |
@@ -205,7 +205,7 @@ jobs:
         find logs/ -name exunit.log -exec cat '{}' ';'
 
     - name: Send to coveralls
-      if: matrix.otp == 25
+      if: matrix.otp == '25.3'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |

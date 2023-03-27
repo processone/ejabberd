@@ -31,8 +31,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['19.3', '20.3', '24.3', '25']
+        otp: ['20.3', '25.3', '26']
         rebar: ['rebar', 'rebar3']
+        exclude:
+        - otp: '26'
+          rebar: 'rebar'
     runs-on: ubuntu-latest
     container:
       image: erlang:${{ matrix.otp }}
