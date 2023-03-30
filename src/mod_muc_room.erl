@@ -1126,7 +1126,7 @@ add_stanza_id(Packet, #state{jid = JID}) ->
 	    GenID = erlang:system_time(microsecond),
 	    {true, xmpp:put_meta(Packet, stanza_id, GenID)};
 	_ ->
-	    StanzaIds = xmpp:get_subtags(Packet, #stanza_id{}),
+	    StanzaIds = xmpp:get_subtags(Packet, #stanza_id{by = #jid{}}),
 	    HasOurStanzaId = lists:any(
 		fun(#stanza_id{by = JID2}) when JID == JID2 -> true;
 		   (_) -> false
