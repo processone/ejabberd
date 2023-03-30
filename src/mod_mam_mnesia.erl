@@ -81,7 +81,7 @@ remove_from_archive(LUser, LServer, none) ->
 	{atomic, _} -> ok;
 	{aborted, Reason} -> {error, Reason}
     end;
-remove_from_archive(LUser, LServer, WithJid) ->
+remove_from_archive(LUser, LServer, #jid{} = WithJid) ->
     US = {LUser, LServer},
     Peer = jid:remove_resource(jid:split(WithJid)),
     F = fun () ->
@@ -92,6 +92,22 @@ remove_from_archive(LUser, LServer, WithJid) ->
 			  when US1 == US, Peer1 == Peer -> Msg
 		       end)),
 	    lists:foreach(fun mnesia:delete_object/1, Msgs)
+	end,
+    case mnesia:transaction(F) of
+	{atomic, _} -> ok;
+	{aborted, Reason} -> {error, Reason}
+    end;
+remove_from_archive(LUser, LServer, StanzaId) ->
+    Timestamp = misc:usec_to_now(StanzaId),
+    US = {LUser, LServer},
+    F = fun () ->
+	Msgs = mnesia:select(
+	    archive_msg,
+	    ets:fun2ms(
+		fun(#archive_msg{us = US1, timestamp = Timestamp1} = Msg)
+		       when US1 == US, Timestamp1 == Timestamp -> Msg
+		end)),
+	lists:foreach(fun mnesia:delete_object/1, Msgs)
 	end,
     case mnesia:transaction(F) of
 	{atomic, _} -> ok;

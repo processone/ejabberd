@@ -64,10 +64,16 @@ remove_from_archive(LUser, LServer, none) ->
 	{error, Reason} -> {error, Reason};
 	_ -> ok
     end;
-remove_from_archive(LUser, LServer, WithJid) ->
+remove_from_archive(LUser, LServer, #jid{} = WithJid) ->
     Peer = jid:encode(jid:remove_resource(WithJid)),
     case ejabberd_sql:sql_query(LServer,
 				?SQL("delete from archive where username=%(LUser)s and %(LServer)H and bare_peer=%(Peer)s")) of
+	{error, Reason} -> {error, Reason};
+	_ -> ok
+    end;
+remove_from_archive(LUser, LServer, StanzaId) ->
+    case ejabberd_sql:sql_query(LServer,
+				?SQL("delete from archive where username=%(LUser)s and %(LServer)H and timestamp=%(StanzaId)d")) of
 	{error, Reason} -> {error, Reason};
 	_ -> ok
     end.

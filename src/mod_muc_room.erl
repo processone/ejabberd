@@ -499,6 +499,15 @@ normal_state({route, <<"">>,
 			       process_iq_captcha(From, IQ, StateData);
 			   #adhoc_command{} ->
 			       process_iq_adhoc(From, IQ, StateData);
+			   #fasten_apply_to{} = ApplyTo ->
+			       case xmpp:get_subtag(ApplyTo, #message_moderate{}) of
+				   #message_moderate{} = Moderate ->
+				       process_iq_moderate(From, IQ, ApplyTo, Moderate, StateData);
+				   _ ->
+				       Txt = ?T("The feature requested is not "
+						"supported by the conference"),
+				       {error, xmpp:err_service_unavailable(Txt, Lang)}
+			       end;
 			   _ ->
 			       Txt = ?T("The feature requested is not "
 					"supported by the conference"),
@@ -1059,7 +1068,8 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 			 drop ->
 			     {next_state, normal_state, StateData};
 			 NewPacket1 ->
-			     NewPacket = xmpp:put_meta(xmpp:remove_subtag(NewPacket1, #nick{}),
+			     NewPacket = xmpp:put_meta(xmpp:remove_subtag(
+				 add_stanza_id(NewPacket1, StateData), #nick{}),
 				 muc_sender_real_jid, From),
 			     Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
 				       true -> ?NS_MUCSUB_NODES_SUBJECT
@@ -1106,6 +1116,30 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 	  Err = xmpp:err_not_acceptable(ErrText, Lang),
 	  ejabberd_router:route_error(Packet, Err),
 	  {next_state, normal_state, StateData}
+    end.
+
+-spec add_stanza_id(Packet :: message(), State :: state()) -> message().
+add_stanza_id(Packet, #state{jid = JID}) ->
+    {AddId, NewPacket} =
+    case xmpp:get_meta(Packet, stanza_id, false) of
+	false ->
+	    GenID = erlang:system_time(microsecond),
+	    {true, xmpp:put_meta(Packet, stanza_id, GenID)};
+	_ ->
+	    StanzaIds = xmpp:get_subtags(Packet, #stanza_id{}),
+	    HasOurStanzaId = lists:any(
+		fun(#stanza_id{by = JID2}) when JID == JID2 -> true;
+		   (_) -> false
+		end, StanzaIds),
+	    {not HasOurStanzaId, Packet}
+    end,
+    if
+	AddId ->
+	    ID = xmpp:get_meta(NewPacket, stanza_id),
+	    IDs = integer_to_binary(ID),
+	    xmpp:append_subtags(NewPacket, [#stanza_id{by = JID, id = IDs}]);
+	true ->
+	    Packet
     end.
 
 -spec process_normal_message(jid(), message(), state()) -> state().
@@ -2853,6 +2887,18 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 	    StateData#state{just_created = erlang:system_time(microsecond)}
     end.
 
+remove_from_history(StanzaId, #state{history = #lqueue{queue = Queue} = LQueue} = StateData) ->
+    NewQ = p1_queue:foldl(
+	fun({_, Pkt, _, _, _} = Entry, Acc) ->
+	    case xmpp:get_meta(Pkt, stanza_id, 0) of
+		V when V == StanzaId ->
+		    Acc;
+		_ ->
+		    p1_queue:in(Entry, Acc)
+	    end
+	end, p1_queue:new(), Queue),
+    StateData#state{history = LQueue#lqueue{queue = NewQ}}.
+
 -spec send_history(jid(), [lqueue_elem()], state()) -> ok.
 send_history(JID, History, StateData) ->
     lists:foreach(
@@ -4237,7 +4283,7 @@ maybe_forget_room(StateData) ->
 make_disco_info(_From, StateData) ->
     Config = StateData#state.config,
     Feats = [?NS_VCARD, ?NS_MUC, ?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
-             ?NS_COMMANDS,
+             ?NS_COMMANDS, ?NS_MESSAGE_MODERATE,
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.public),
 				    <<"muc_public">>, <<"muc_hidden">>),
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.persistent),
@@ -4989,6 +5035,49 @@ add_presence_hats(JID, Pres, StateData) ->
             end;
         false ->
             Pres
+    end.
+
+-spec process_iq_moderate(jid(), iq(), fasten_apply_to(), message_moderate(), state()) ->
+    {result, undefined, state()} |
+    {error, stanza_error()}.
+process_iq_moderate(_From, #iq{type = get}, _ApplyTo, _Moderate, _StateData) ->
+    {error, xmpp:err_bad_request()};
+process_iq_moderate(From, #iq{type = set, lang = Lang},
+		    #fasten_apply_to{id = Id},
+		    #message_moderate{reason = Reason},
+		    #state{config = Config, jid = JID, server_host = Server} = StateData) ->
+    FAffiliation = get_affiliation(From, StateData),
+    FRole = get_role(From, StateData),
+    IsModerator = FRole == moderator orelse FAffiliation == owner orelse
+		  FAffiliation == admin,
+    case IsModerator of
+	false ->
+	    {error, xmpp:err_forbidden(
+		?T("Only moderators are allowed to retract messages"), Lang)};
+	_ ->
+	    try binary_to_integer(Id) of
+		StanzaId ->
+		    case Config#config.mam of
+			true ->
+			    JIDs = jid:encode(JID),
+			    mod_mam:remove_message_from_archive(JIDs, Server, StanzaId);
+			_ ->
+			    ok
+		    end,
+		    Packet = #message{type = groupchat,
+				      sub_els = [
+					  #fasten_apply_to{id = Id, sub_els = [
+					      #message_moderated{reason = Reason,
+								 retract = #message_retract{}}
+					  ]}]},
+		    send_wrapped_multiple(JID,
+					  get_users_and_subscribers_with_node(?NS_MUCSUB_NODES_MESSAGES, StateData),
+					  Packet, ?NS_MUCSUB_NODES_MESSAGES, StateData),
+		    {result, undefined, remove_from_history(StanzaId, StateData)}
+	    catch _:_ ->
+		{error, xmpp:err_bad_request(
+		    ?T("Stanza id is not valid"), Lang)}
+	    end
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
