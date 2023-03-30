@@ -667,6 +667,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0425.html"/>
+        <xmpp:version>0.2.1</xmpp:version>
+        <xmpp:since>23.04</xmpp:since>
+        <xmpp:status></xmpp:status>
+        <xmpp:note>mod_mam</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0441.html"/>
         <xmpp:version>0.2.0</xmpp:version>
         <xmpp:since></xmpp:since>
