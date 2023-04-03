@@ -17,17 +17,16 @@ that includes [XMPP][xmpp] Server, [MQTT][mqtt] Broker and [SIP][sip] Service.
 [mqtt]: https://mqtt.org/
 [sip]: https://en.wikipedia.org/wiki/Session_Initiation_Protocol
 
-This document explains how to use the
-[ejabberd container images](https://github.com/processone/ejabberd/pkgs/container/ejabberd)
-available in the GitHub Container Registry,
+This document explains how to use the `ejabberd` container image available in
+[ghcr.io/processone/ejabberd](https://github.com/processone/ejabberd/pkgs/container/ejabberd),
 built using the files in `.github/container/`.
 
-Alternatively, there are also
-[ejabberd-ecs Docker images](https://hub.docker.com/r/ejabberd/ecs/)
-available in Docker Hub,
+Alternatively, there is also the `ecs` container image available in
+[docker.io/ejabberd/ecs](https://hub.docker.com/r/ejabberd/ecs/),
 built using the
 [docker-ejabberd/ecs](https://github.com/processone/docker-ejabberd/tree/master/ecs)
 repository.
+Check the [differences between `ejabberd` and `ecs` images](https://github.com/processone/docker-ejabberd/blob/master/ecs/HUB-README.md#alternative-image-in-github).
 
 If you are using a Windows operating system, check the tutorials mentioned in
 [ejabberd Docs > Docker Image](https://docs.ejabberd.im/admin/installation/#docker-image).
@@ -206,7 +205,7 @@ explains how to install an additional module using docker-compose.
 ## Commands on start
 
 The ejabberdctl script reads the `CTL_ON_CREATE` environment variable
-the first time the docker container is started,
+the first time the container is started,
 and reads `CTL_ON_START` every time the container is started.
 Those variables can contain one ejabberdctl command,
 or several commands separated with the blankspace and `;` characters.
