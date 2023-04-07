@@ -117,7 +117,10 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
         \nexport SPOOL_DIR=/$HOME/database \
         \nexec /$(find $home_root_dir -name ejabberdctl) \"\$@\"" \
             > usr/local/bin/ejabberdctl \
-    && chmod +x usr/local/bin/*
+    && chmod +x usr/local/bin/* \
+    && scanelf --needed --nobanner --format '%n#p' --recursive $home_root_dir \
+        | tr ',' '\n' | sort -u | awk 'system("[ -e $home_root_dir" $1 " ]") == 0 { next } \
+        { print "so:" $1 }' > /tmp/runDeps
 
 ARG UID
 RUN chown -R $UID:$UID $HOME
@@ -133,23 +136,9 @@ RUN apk -U upgrade --available --no-cache \
 ################################################################################
 #' METHOD='direct' - install runtime dependencies
 FROM runtime-package AS runtime-direct
+COPY --from=ejabberd /tmp/runDeps /tmp/runDeps
 RUN apk add --no-cache \
-        expat \
-        freetds \
-        gd \
-        jpeg \
-        libgd \
-        libpng \
-        libstdc++ \
-        libwebp \
-        linux-pam \
-        ncurses-libs \
-        sqlite \
-        sqlite-libs \
-        unixodbc \
-        yaml \
-        zlib \
-    && ln -fs /usr/lib/libtdsodbc.so.0 /usr/lib/libtdsodbc.so
+        $(cat /tmp/runDeps)
 
 ################################################################################
 #' Finalize runtime environment
