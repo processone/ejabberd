@@ -258,23 +258,10 @@ Example using environment variables (see full example [docker-compose.yml](https
 ```
 
 
-Generating a Container Image
-============================
-
-> By default, `.github/container/Dockerfile` builds this container by directly compiling ejabberd,
-> it is a fast and direct method.
->
-> However, a problem with QEMU prevents building the container in QEMU using Erlang/OTP 25
-> for the `arm64` architecture.
->
-> Providing `build-args: METHOD=package` is an alternate method to build the container
-> used by the Github Actions workflow that provides `amd64` and `arm64` container images.
-> It first builds an ejabberd binary package, and later installs it in the image.
-> That method avoids using QEMU, so it can build `arm64` container images, but is extremely
-> slow the first time it's used, and consequently not recommended for general use.
+Build a Container Image
+=======================
 
 This container image includes ejabberd as a standalone OTP release built using Elixir.
-
 That OTP release is configured with:
 
 - `mix.exs`: Customize ejabberd release
@@ -282,7 +269,9 @@ That OTP release is configured with:
 - `config/runtime.exs`: Customize ejabberd paths
 - `ejabberd.yml.template`: ejabberd default config file
 
-Build ejabberd Community Server base image from ejabberd master on GitHub:
+## Direct build
+
+Build ejabberd Community Server container image from ejabberd master git repository:
 
 ```bash
 docker buildx build \
@@ -291,18 +280,7 @@ docker buildx build \
     .
 ```
 
-Build ejabberd Community Server base image for a given ejabberd version,
-both for amd64 and arm64 architectures:
-
-```bash
-VERSION=22.05
-git checkout $VERSION
-docker buildx build \
-    --platform=linux/amd64,linux/arm64
-    -t personal/ejabberd:$VERSION \
-    -f .github/container/Dockerfile \
-    .
-```
+## Podman build
 
 It's also possible to use podman instead of docker, just notice:
 - `EXPOSE 4369-4399` port range is not supported, remove that in Dockerfile
@@ -321,6 +299,30 @@ podman exec eja1 ejabberdctl status
 podman exec -it eja1 sh
 
 podman stop eja1
+```
+
+## Package build for `arm64`
+
+By default, `.github/container/Dockerfile` builds this container by directly compiling ejabberd,
+it is a fast and direct method.
+However, a problem with QEMU prevents building the container in QEMU using Erlang/OTP 25
+for the `arm64` architecture.
+
+Providing `--build-arg METHOD=package` is an alternate method to build the container
+used by the Github Actions workflow that provides `amd64` and `arm64` container images.
+It first builds an ejabberd binary package, and later installs it in the image.
+That method avoids using QEMU, so it can build `arm64` container images, but is extremely
+slow the first time it's used, and consequently not recommended for general use.
+
+In this case, to build the ejabberd container image for arm64 architecture:
+
+```bash
+docker buildx build \
+    --build-arg METHOD=package \
+    --platform linux/arm64 \
+    -t personal/ejabberd:$VERSION \
+    -f .github/container/Dockerfile \
+    .
 ```
 
 
