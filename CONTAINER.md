@@ -285,7 +285,7 @@ That OTP release is configured with:
 Build ejabberd Community Server base image from ejabberd master on GitHub:
 
 ```bash
-docker build \
+docker buildx build \
     -t personal/ejabberd \
     -f .github/container/Dockerfile \
     .
