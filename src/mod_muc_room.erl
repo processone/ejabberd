@@ -1074,19 +1074,20 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 			     Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
 				       true -> ?NS_MUCSUB_NODES_SUBJECT
 				    end,
+			     NewStateData2 = check_message_for_retractions(NewPacket1, NewStateData1),
 			     send_wrapped_multiple(
 			       jid:replace_resource(StateData#state.jid, FromNick),
 			       get_users_and_subscribers_with_node(Node, StateData),
-			       NewPacket, Node, NewStateData1),
-			     NewStateData2 = case has_body_or_subject(NewPacket) of
+			       NewPacket, Node, NewStateData2),
+			     NewStateData3 = case has_body_or_subject(NewPacket) of
 					       true ->
 						   add_message_to_history(FromNick, From,
 									  NewPacket,
-									  NewStateData1);
+									  NewStateData2);
 					       false ->
-						   NewStateData1
+						   NewStateData2
 					     end,
-			     {next_state, normal_state, NewStateData2}
+			     {next_state, normal_state, NewStateData3}
 		       end;
 		   _ ->
 		       Err = case (StateData#state.config)#config.allow_change_subj of
@@ -1116,6 +1117,34 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 	  Err = xmpp:err_not_acceptable(ErrText, Lang),
 	  ejabberd_router:route_error(Packet, Err),
 	  {next_state, normal_state, StateData}
+    end.
+
+-spec check_message_for_retractions(Packet :: message(), State :: state()) -> state().
+check_message_for_retractions(Packet,
+			  #state{config = Config, jid = JID, server_host = Server} = State) ->
+    case xmpp:get_subtag(Packet, #fasten_apply_to{}) of
+	#fasten_apply_to{id = ID} = F ->
+	    case xmpp:get_subtag(F, #message_retract{}) of
+		#message_retract{} ->
+		    #jid{luser = U, lserver = S} = xmpp:get_from(Packet),
+		    case remove_from_history({U, S}, ID, State) of
+			{NewState, StanzaId} when is_integer(StanzaId) ->
+			    case Config#config.mam of
+				true ->
+				    JIDs = jid:encode(JID),
+				    mod_mam:remove_message_from_archive(JIDs, Server, StanzaId),
+				    NewState;
+				_ ->
+				    NewState
+			    end;
+			{NewState, _} ->
+			    NewState
+		    end;
+		_ ->
+		    State
+	    end;
+	_ ->
+	    State
     end.
 
 -spec add_stanza_id(Packet :: message(), State :: state()) -> message().
@@ -2910,6 +2939,25 @@ remove_from_history(StanzaId, #state{history = #lqueue{queue = Queue} = LQueue} 
 	end, p1_queue:new(), Queue),
     StateData#state{history = LQueue#lqueue{queue = NewQ}}.
 
+remove_from_history({U1, S1}, OriginId, #state{history = #lqueue{queue = Queue} = LQueue} = StateData) ->
+    {NewQ, StanzaId} = p1_queue:foldl(
+	fun({_, Pkt, _, _, _} = Entry, {Q, none}) ->
+	    case jid:tolower(xmpp:get_from(Pkt)) of
+		{U2, S2, _} when U1 == U2, S1 == S2 ->
+		    case xmpp:get_subtag(Pkt, #origin_id{}) of
+			#origin_id{id = V} when V == OriginId ->
+			    {Q, xmpp:get_meta(Pkt, stanza_id, missing)};
+			_ ->
+			    {p1_queue:in(Entry, Q), none}
+		    end;
+		_ ->
+		    {p1_queue:in(Entry, Q), none}
+	    end;
+	   (Entry, {Q, S}) ->
+	       {p1_queue:in(Entry, Q), S}
+	end, {p1_queue:new(), none}, Queue),
+    {StateData#state{history = LQueue#lqueue{queue = NewQ}}, StanzaId}.
+
 -spec send_history(jid(), [lqueue_elem()], state()) -> ok.
 send_history(JID, History, StateData) ->
     lists:foreach(
@@ -4285,7 +4333,7 @@ maybe_forget_room(StateData) ->
 make_disco_info(_From, StateData) ->
     Config = StateData#state.config,
     Feats = [?NS_VCARD, ?NS_MUC, ?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
-             ?NS_COMMANDS, ?NS_MESSAGE_MODERATE,
+             ?NS_COMMANDS, ?NS_MESSAGE_MODERATE, ?NS_MESSAGE_RETRACT,
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.public),
 				    <<"muc_public">>, <<"muc_hidden">>),
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.persistent),
