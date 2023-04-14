@@ -2153,11 +2153,22 @@ get_priority_from_presence(#presence{priority = Prio}) ->
         _ -> Prio
     end.
 
--spec find_nick_by_jid(jid(), state()) -> binary().
+-spec find_nick_by_jid(jid() | undefined, state()) -> binary().
+find_nick_by_jid(undefined, _StateData) ->
+    <<>>;
 find_nick_by_jid(JID, StateData) ->
     LJID = jid:tolower(JID),
-    #user{nick = Nick} = maps:get(LJID, StateData#state.users),
-    Nick.
+    case maps:find(LJID, StateData#state.users) of
+	{ok, #user{nick = Nick}} ->
+	    Nick;
+	_ ->
+	    case maps:find(LJID, (StateData#state.muc_subscribers)#muc_subscribers.subscribers) of
+		{ok, #subscriber{nick = Nick}} ->
+		    Nick;
+		_ ->
+		    <<>>
+	    end
+    end.
 
 -spec is_nick_change(jid(), binary(), state()) -> boolean().
 is_nick_change(JID, Nick, StateData) ->
@@ -2890,7 +2901,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 remove_from_history(StanzaId, #state{history = #lqueue{queue = Queue} = LQueue} = StateData) ->
     NewQ = p1_queue:foldl(
 	fun({_, Pkt, _, _, _} = Entry, Acc) ->
-	    case xmpp:get_meta(Pkt, stanza_id, 0) of
+	    case xmpp:get_meta(Pkt, stanza_id, missing) of
 		V when V == StanzaId ->
 		    Acc;
 		_ ->
@@ -3448,7 +3459,7 @@ send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		       StateData) ->
     #user{jid = RealJID, nick = Nick} = maps:get(jid:tolower(UJID), StateData#state.users),
-    ActorNick = get_actor_nick(MJID, StateData),
+    ActorNick = find_nick_by_jid(MJID, StateData),
     %% TODO: optimize further
     UserMap =
         maps:merge(
@@ -3490,15 +3501,6 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		      ok
 	      end
       end, ok, UserMap).
-
--spec get_actor_nick(undefined | jid(), state()) -> binary().
-get_actor_nick(undefined, _StateData) ->
-    <<"">>;
-get_actor_nick(MJID, StateData) ->
-    try maps:get(jid:tolower(MJID), StateData#state.users) of
-	#user{nick = ActorNick} -> ActorNick
-    catch _:{badkey, _} -> <<"">>
-    end.
 
 -spec convert_legacy_fields([xdata_field()]) -> [xdata_field()].
 convert_legacy_fields(Fs) ->
@@ -5064,16 +5066,19 @@ process_iq_moderate(From, #iq{type = set, lang = Lang},
 			_ ->
 			    ok
 		    end,
+		    By = jid:replace_resource(JID, find_nick_by_jid(From, StateData)),
 		    Packet = #message{type = groupchat,
 				      sub_els = [
 					  #fasten_apply_to{id = Id, sub_els = [
-					      #message_moderated{reason = Reason,
+					      #message_moderated{by = By, reason = Reason,
 								 retract = #message_retract{}}
 					  ]}]},
 		    send_wrapped_multiple(JID,
 					  get_users_and_subscribers_with_node(?NS_MUCSUB_NODES_MESSAGES, StateData),
 					  Packet, ?NS_MUCSUB_NODES_MESSAGES, StateData),
-		    {result, undefined, remove_from_history(StanzaId, StateData)}
+		    NSD = add_message_to_history(<<"">>,
+						 StateData#state.jid, Packet, StateData),
+		    {result, undefined, remove_from_history(StanzaId, NSD)}
 	    catch _:_ ->
 		{error, xmpp:err_bad_request(
 		    ?T("Stanza id is not valid"), Lang)}
