@@ -66,6 +66,7 @@ depends(_Host, _Opts) ->
 get_commands_spec() ->
     [#ejabberd_commands{name = update_sql, tags = [sql],
                         desc = "Convert MS SQL, MySQL or PostgreSQL DB to the new format",
+                        note = "improved in 23.04",
                         module = ?MODULE, function = update_sql,
                         args = [],
                         args_example = [],

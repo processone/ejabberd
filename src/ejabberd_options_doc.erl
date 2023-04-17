@@ -478,7 +478,7 @@ doc() ->
         desc => ?T("Deprecated. Use _`captcha_url`_ instead.")}},
      {captcha_url,
       #{value => ?T("URL | auto | undefined"),
-        note => "improved in 23.xx",
+        note => "improved in 23.04",
         desc =>
             ?T("An URL where http://../basic/#captcha[CAPTCHA] requests should be sent. NOTE: you need "
                "to configure 'request_handlers' for 'ejabberd_http' listener "

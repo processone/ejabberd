@@ -413,6 +413,7 @@ get_commands_spec() ->
 			result = {affiliation, atom}},
          #ejabberd_commands{name = get_room_history, tags = [muc_room],
 			desc = "Get history of messages stored inside MUC room state",
+			note = "added in 23.04",
 			module = ?MODULE, function = get_room_history,
 			args_desc = ["Room name", "MUC service"],
 			args_example = ["room1", "muc.example.com"],
