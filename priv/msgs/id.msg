@@ -289,7 +289,6 @@
 {"Password","Sandi"}.
 {"Path to Dir","Jalur ke Dir"}.
 {"Path to File","Jalur ke File"}.
-{"Payload type","Tipe payload"}.
 {"Pending","Tertunda"}.
 {"Period: ","Periode: "}.
 {"Persist items to storage","Pertahankan item ke penyimpanan"}.

@@ -253,7 +253,6 @@
 {"Password:","Fjalëkalim:"}.
 {"Path to Dir","Shteg për te Drejtori"}.
 {"Path to File","Shteg për te Kartelë"}.
-{"Payload type","Lloj ngarkese"}.
 {"Pending","Pezull"}.
 {"Period: ","Periudhë: "}.
 {"Ping","Ping"}.

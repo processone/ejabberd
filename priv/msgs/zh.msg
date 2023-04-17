@@ -398,7 +398,6 @@
 {"Password:","密码:"}.
 {"Path to Dir","目录的路径"}.
 {"Path to File","文件路径"}.
-{"Payload type","有效载荷类型"}.
 {"Pending","挂起"}.
 {"Period: ","持续时间: "}.
 {"Persist items to storage","持久化内容条目"}.
@@ -564,7 +563,6 @@
 {"The sender of the last received message","最后收到的消息的发送者"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","本节必须只含一个 <active/> 元素， <default/> 元素，或 <list/> 元素"}.
 {"The subscription identifier associated with the subscription request","与订阅请求关联的订阅标识符"}.
-{"The type of node data, usually specified by the namespace of the payload (if any)","节点数据的类型, 如果有, 通常由有效负载的名称空间指定"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","XSL转换的URL，可以将其应用于有效负载以生成适当的消息正文元素。"}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","XSL转换的URL, 可以将其应用于有效负载格式, 以生成有效的数据表单结果, 客户端可以使用通用数据表单呈现引擎来显示该结果"}.
 {"There was an error changing the password: ","修改密码出错: "}.

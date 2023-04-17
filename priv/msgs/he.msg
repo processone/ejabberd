@@ -337,7 +337,6 @@
 {"The collections with which a node is affiliated","האוספים עמם צומת מסונף"}.
 {"The password is too weak","הסיסמה חלשה מדי"}.
 {"the password is","הסיסמה היא"}.
-{"The type of node data, usually specified by the namespace of the payload (if any)","סוג מידע ממסר, לרוב מצוין לפי מרחב־שמות של מטען הייעוד (אם בכלל)"}.
 {"There was an error creating the account: ","אירעה שגיאה ביצירת החשבון: "}.
 {"There was an error deleting the account: ","אירעה שגיאה במחיקת החשבון: "}.
 {"This room is not anonymous","חדר זה אינו אנונימי"}.

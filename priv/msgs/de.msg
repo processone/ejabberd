@@ -396,7 +396,6 @@
 {"Password:","Passwort:"}.
 {"Path to Dir","Pfad zum Verzeichnis"}.
 {"Path to File","Pfad zur Datei"}.
-{"Payload type","Nutzdatentyp"}.
 {"Pending","Ausstehend"}.
 {"Period: ","Zeitraum: "}.
 {"Persist items to storage","Items dauerhaft speichern"}.
@@ -562,7 +561,6 @@
 {"The sender of the last received message","Der Absender der letzten erhaltenen Nachricht"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Das Stanza darf nur ein <active/>-Element, ein <default/>-Element oder ein <list/>-Element enthalten"}.
 {"The subscription identifier associated with the subscription request","Die mit der Abonnement-Anforderung verknüpfte Abonnement-Bezeichnung"}.
-{"The type of node data, usually specified by the namespace of the payload (if any)","Die Art der Knotendaten, üblicherweise vom Namensraum der Nutzdaten angegeben (gegebenenfalls)"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","Die URL einer XSL-Transformation welche auf Nutzdaten angewendet werden kann, um ein geeignetes Nachrichtenkörper-Element zu generieren."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","Die URL einer XSL-Transformation welche auf das Nutzdaten-Format angewendet werden kann, um ein gültiges Data Forms-Ergebnis zu generieren das der Client mit Hilfe einer generischen Data Forms-Rendering-Engine anzeigen könnte"}.
 {"There was an error changing the password: ","Es trat ein Fehler beim Ändern des Passwortes auf: "}.
