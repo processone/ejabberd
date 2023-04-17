@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['20.0', '25.3', '26.0-rc2']
+        otp: ['20.0', '25.3', '26.0-rc3']
     runs-on: ubuntu-20.04
     services:
       redis:
@@ -149,7 +149,7 @@ jobs:
     - run: make options
     - run: make xref
     - run: make dialyzer
-      if: matrix.otp != '26.0-rc2'
+      if: matrix.otp != '26.0-rc3'
 
     - name: Check Production Release
       run: |
