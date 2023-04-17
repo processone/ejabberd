@@ -474,6 +474,8 @@ normal_state({route, <<"">>,
 	       [StateData]) of
 	    ignore ->
 		{next_state, normal_state, StateData};
+            {ignore, StateData2} ->
+		{next_state, normal_state, StateData2};
 	    #iq{type = T} = IQRes when T == error; T == result ->
 		ejabberd_router:route(IQRes),
 		{next_state, normal_state, StateData};
