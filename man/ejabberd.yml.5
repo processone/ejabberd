@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 01/16/2023
+.\"      Date: 04/17/2023
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "01/16/2023" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "04/17/2023" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,7 +82,7 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/23\&.01/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/23\&.04/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
@@ -566,7 +566,13 @@ A maximum number of items (not memory!) in cache\&. The rule of thumb, for all t
 .RS 4
 Full path to a script that generates
 CAPTCHA
-images\&. @VERSION@ is replaced with ejabberd version number in XX\&.YY format\&. @SEMVER@ is replaced with ejabberd version number in semver format when compiled with Elixir\(cqs mix, or XX\&.YY format otherwise\&. Alternatively, it can be the name of a module that implements ejabberd CAPTCHA support\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
+images\&.
+\fI@VERSION@\fR
+is replaced with ejabberd version number in
+\fIXX\&.YY\fR
+format\&.
+\fI@SEMVER@\fR
+is replaced with ejabberd version number in semver format when compiled with Elixir\(cqs mix, or XX\&.YY format otherwise\&. Alternatively, it can be the name of a module that implements ejabberd CAPTCHA support\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
 .sp
 When using the ejabberd installers or container image, the example captcha scripts can be used like this:
 .sp
@@ -595,8 +601,10 @@ CAPTCHA
 generated images per minute for any given JID\&. The option is intended to protect the server from CAPTCHA DoS\&. The default value is
 \fIinfinity\fR\&.
 .RE
+.sp
+\fINote\fR about the next option: improved in 23\&.04:
 .PP
-\fBcaptcha_url\fR: \fIURL\fR
+\fBcaptcha_url\fR: \fIURL | auto | undefined\fR
 .RS 4
 An URL where
 CAPTCHA
@@ -604,7 +612,14 @@ requests should be sent\&. NOTE: you need to configure
 \fIrequest_handlers\fR
 for
 \fIejabberd_http\fR
-listener as well\&. There is no default value\&.
+listener as well\&. If set to
+\fIauto\fR, it builds the URL using a
+\fIrequest_handler\fR
+already enabled, with encryption if available\&. If set to
+\fIundefined\fR, it builds the URL using the deprecated
+\fIcaptcha_host\fR
++ /captcha\&. The default value is
+\fIauto\fR\&.
 .RE
 .PP
 \fBcertfiles\fR: \fI[Path, \&.\&.\&.]\fR
@@ -1100,7 +1115,7 @@ This option can be used to tune tick time parameter of
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/23\&.01/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/23\&.04/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1216,7 +1231,7 @@ percents\&.
 .RS 4
 Specify which address families to try, in what order\&. The default is
 \fI[ipv6, ipv4]\fR
-which means it first tries connecting with IPv6, if that fails it tries using IPv4\&.This option is obsolete and irrelevant when using ejabberd 23\&.01 and Erlang/OTP 22, or newer versions of them\&.
+which means it first tries connecting with IPv6, if that fails it tries using IPv4\&. This option is obsolete and irrelevant when using ejabberd 23\&.01 and Erlang/OTP 22, or newer versions of them\&.
 .RE
 .sp
 \fINote\fR about the next option: added in 20\&.12:
@@ -1660,10 +1675,13 @@ An interval to make a dummy SQL request to keep alive the connections to the dat
 .PP
 \fBsql_odbc_driver\fR: \fIPath\fR
 .RS 4
-Path to the ODBC driver to use to connect to a Microsoft SQL Server database\&. This option is only valid if the
+Path to the ODBC driver to use to connect to a Microsoft SQL Server database\&. This option only applies if the
 \fIsql_type\fR
 option is set to
-\fImssql\fR\&. The default value is:
+\fImssql\fR
+and
+\fIsql_server\fR
+is not an ODBC connection string\&. The default value is:
 \fIlibtdsodbc\&.so\fR
 .RE
 .PP
@@ -1719,7 +1737,12 @@ if the latter is not set\&.
 .PP
 \fBsql_server\fR: \fIHost\fR
 .RS 4
-A hostname or an IP address of the SQL server\&. The default value is
+The hostname or IP address of the SQL server\&. For
+\fIsql_type\fR
+\fImssql\fR
+or
+\fIodbc\fR
+this can also be an ODBC connection string\&. The default value is
 \fIlocalhost\fR\&.
 .RE
 .sp
@@ -1727,7 +1750,7 @@ A hostname or an IP address of the SQL server\&. The default value is
 .PP
 \fBsql_ssl\fR: \fItrue | false\fR
 .RS 4
-Whether to use SSL encrypted connections to the SQL server\&. The option is only available for MySQL and PostgreSQL\&. The default value is
+Whether to use SSL encrypted connections to the SQL server\&. The option is only available for MySQL, MS SQL and PostgreSQL\&. The default value is
 \fIfalse\fR\&.
 .RE
 .PP
@@ -1738,7 +1761,7 @@ A path to a file with CA root certificates that will be used to verify SQL conne
 and
 \fIsql_ssl_verify\fR
 options are set to
-\fItrue\fR\&. There is no default which means certificate verification is disabled\&.
+\fItrue\fR\&. There is no default which means certificate verification is disabled\&. This option has no effect for MS SQL\&.
 .RE
 .PP
 \fBsql_ssl_certfile\fR: \fIPath\fR
@@ -1746,7 +1769,7 @@ options are set to
 A path to a certificate file that will be used for SSL connections to the SQL server\&. Implies
 \fIsql_ssl\fR
 option is set to
-\fItrue\fR\&. There is no default which means ejabberd won\(cqt provide a client certificate to the SQL server\&.
+\fItrue\fR\&. There is no default which means ejabberd won\(cqt provide a client certificate to the SQL server\&. This option has no effect for MS SQL\&.
 .RE
 .PP
 \fBsql_ssl_verify\fR: \fItrue | false\fR
@@ -1756,7 +1779,7 @@ Whether to verify SSL connection to the SQL server against CA root certificates 
 option\&. Implies
 \fIsql_ssl\fR
 option is set to
-\fItrue\fR\&. The default value is
+\fItrue\fR\&. This option has no effect for MS SQL\&. The default value is
 \fIfalse\fR\&.
 .RE
 .PP
@@ -1971,7 +1994,7 @@ ejabberdctl srg\-create g1 example\&.org "\*(AqGroup number 1\*(Aq" this_is_g1 g
 .RE
 .SS "mod_admin_update_sql"
 .sp
-This module can be used to update existing SQL database from the default to the new schema\&. Check the section Default and New Schemas for details\&. Please note that only PostgreSQL is supported\&. When the module is loaded use \fIupdate_sql\fR API\&.
+This module can be used to update existing SQL database from the default to the new schema\&. Check the section Default and New Schemas for details\&. Please note that only MS SQL, MySQL, and PostgreSQL are supported\&. When the module is loaded use \fIupdate_sql\fR API\&.
 .sp
 The module has no options\&.
 .SS "mod_announce"
@@ -3866,7 +3889,7 @@ or
 \fIsubscribe\fR
 or both, and
 \fIauthentication\fR
-section with username/password field or certfile pointing to client certifcate\&. Accepted urls can use schema mqtt, mqtts (mqtt with tls), mqtt5, mqtt5s (both to trigger v5 protocol), ws, wss, ws5, wss5\&. Certifcate authentication can be only used with mqtts, mqtt5s, wss, wss5\&.
+section with username/password field or certfile pointing to client certificate\&. Accepted urls can use schema mqtt, mqtts (mqtt with tls), mqtt5, mqtt5s (both to trigger v5 protocol), ws, wss, ws5, wss5\&. Certifcate authentication can be only used with mqtts, mqtt5s, wss, wss5\&.
 .RE
 .RE
 .sp
@@ -4650,6 +4673,34 @@ option is set to
 or a conference JID is appended to the
 \fIURL\fR
 otherwise\&. There is no default value\&.
+.RE
+.RE
+.SS "mod_muc_rtbl"
+.sp
+This module implement Real\-time blocklists for MUC rooms\&.
+.sp
+It works by observing remote pubsub node conforming with specification described in https://xmppbl\&.org/\&.
+.sp
+This module is available since ejabberd 23\&.04\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBrtbl_node\fR: \fIPubsubNodeName\fR
+.RS 4
+Name of pubsub node that should be used to track blocked users\&. The default value is
+\fImuc_bans_sha256\fR\&.
+.RE
+.PP
+\fBrtbl_server\fR: \fIDomain\fR
+.RS 4
+Domain of xmpp server that serves block list\&. The default value is
+\fIxmppbl\&.org\fR
 .RE
 .RE
 .SS "mod_multicast"
@@ -7697,13 +7748,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 23\&.01\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 23\&.04\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/23\&.01/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/23\&.04/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
