@@ -188,8 +188,10 @@ notify_rooms(Host, Items) ->
     lists:foreach(
 	fun(CHost) ->
 	    lists:foreach(
-		fun({_, _, Pid}) ->
-		    mod_muc_room:route(Pid, IQ)
+		fun({_, _, Pid}) when node(Pid) == node() ->
+		    mod_muc_room:route(Pid, IQ);
+		   (_) ->
+		       ok
 		end, mod_muc:get_online_rooms(CHost))
 	end, mod_muc_admin:find_hosts(Host)).
 
