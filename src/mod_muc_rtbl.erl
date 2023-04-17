@@ -53,6 +53,12 @@ start(Host, _Opts) ->
     request_initial_items(Host).
 
 stop(Host) ->
+    ejabberd_hooks:delete(local_send_to_resource_hook, Host,
+			  ?MODULE, pubsub_event_handler, 50),
+    ejabberd_hooks:delete(muc_filter_presence, Host,
+			  ?MODULE, muc_presence_filter, 50),
+    ejabberd_hooks:delete(muc_process_iq, Host,
+			  ?MODULE, muc_process_iq, 50),
     Jid = service_jid(Host),
     IQ = #iq{type = set, from = Jid, to = jid:make(mod_muc_rtbl_opt:rtbl_server(Host)),
 	     sub_els = [
