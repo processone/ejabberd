@@ -1,3 +1,87 @@
+# Version 23.04
+
+General:
+- New `s2s_out_bounce_packet` hook
+- Re-allow anonymous connection for connection without client certificates ([#3985](https://github.com/processone/ejabberd/issues/3985))
+- Stop `ejabberd_system_monitor` before stopping node
+- `captcha_url` option now accepts `auto` value, and it's the default
+- `mod_mam`: Add support for XEP-0425: Message Moderation
+- `mod_mam_sql`: Fix problem with results of mam queries using rsm with max and before
+- `mod_muc_rtbl`: New module for Real-Time Block List for MUC rooms ([#4017](https://github.com/processone/ejabberd/issues/4017))
+- `mod_roster`: Set roster name from XEP-0172, or the stored one ([#1611](https://github.com/processone/ejabberd/issues/1611))
+- `mod_roster`: Preliminary support to store extra elements in subscription request ([#840](https://github.com/processone/ejabberd/issues/840))
+- `mod_pubsub`: Pubsub xdata fields `max_item/item_expira/children_max` use `max` not `infinity`
+- `mod_vcard_xupdate`: Invalidate `vcard_xupdate` cache on all nodes when vcard is updated
+
+Admin:
+- `ext_mod`: Improve support for loading `*.so` files from `ext_mod` dependencies
+- Improve output in `gen_html_doc_for_commands` command
+- Fix ejabberdctl output formatting ([#3979](https://github.com/processone/ejabberd/issues/3979))
+- Log HTTP handler exceptions
+
+MUC:
+- New command `get_room_history`
+- Persist `none` role for outcasts
+- Try to populate room history from mam when unhibernating
+- Make `mod_muc_room:set_opts` process persistent flag first
+- Allow passing affiliations and subscribers to `create_room_with_opts` command
+- Store state in db in `mod_muc:create_room()`
+- Make subscribers members by default
+
+SQL schemas:
+- Fix a long standing bug in new schema migration
+- `update_sql` command: Many improvements in new schema migration
+- `update_sql` command: Add support to migrate MySQL too
+- Change PostgreSQL SERIAL to BIGSERIAL columns
+- Fix minor SQL schema inconsistencies
+- Remove unnecessary indexes
+- New SQL schema migrate fix
+
+MS SQL:
+- MS SQL schema fixes
+- Add `new` schema for MS SQL
+- Add MS SQL support for new schema migration
+- Minor MS SQL improvements
+- Fix MS SQL error caused by `ORDER BY` in subquery
+
+SQL Tests:
+- Add support for running tests on MS SQL
+- Add ability to run tests on upgraded DB
+- Un-deprecate `ejabberd_config:set_option/2`
+- Use python3 to run `extauth.py` for tests
+- Correct README for creating test docker MS SQL DB
+- Fix TSQLlint warnings in MSSQL test script
+
+Testing:
+- Fix Shellcheck warnings in shell scripts
+- Fix Remark-lint warnings
+- Fix Prospector and Pylint warnings in test `extauth.py`
+- Stop testing ejabberd with Erlang/OTP 19.3, as Github Actions no longer supports ubuntu-18.04
+- Test only with oldest OTP supported (20.0), newest stable (25.3) and bleeding edge (26.0-rc2)
+- Upload Common Test logs as artifact in case of failure
+
+`ecs` container image:
+- Update Alpine to 3.17 to get Erlang/OTP 25 and Elixir 1.14
+- Add `tini` as runtime init
+- Set `ERLANG_NODE` fixed to `ejabberd@localhost`
+- Upload images as artifacts to Github Actions
+- Publish tag images automatically to ghcr.io
+
+`ejabberd` container image:
+- Update Alpine to 3.17 to get Erlang/OTP 25 and Elixir 1.14
+- Add `METHOD` to build container using packages ([#3983](https://github.com/processone/ejabberd/issues/3983))
+- Add `tini` as runtime init
+- Detect runtime dependencies automatically
+- Remove unused Mix stuff: ejabberd script and static COOKIE
+- Copy captcha scripts to `/opt/ejabberd-*/lib` like the installers
+- Expose only `HOME` volume, it contains all the required subdirs
+- ejabberdctl: Don't use `.../releases/COOKIE`, it's no longer included
+
+Installers:
+- make-binaries: Bump versions, e.g. erlang/otp to 25.3
+- make-binaries: Fix building with erlang/otp v25.x
+- make-packages: Fix for installers workflow, which didn't find lynx
+
 # Version 23.01
 
 General:
