@@ -19,7 +19,7 @@ To compile ejabberd you need:
 - GCC
 - Libexpat ≥ 1.95
 - Libyaml ≥ 0.1.4
-- Erlang/OTP ≥ 19.3
+- Erlang/OTP ≥ 20.0
 - OpenSSL ≥ 1.0.0
 
 Other optional libraries are:
