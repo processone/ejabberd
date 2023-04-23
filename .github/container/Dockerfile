@@ -146,7 +146,7 @@ RUN apk add --no-cache \
         $(cat /tmp/runDeps)
 
 ################################################################################
-#' Finalize runtime environment
+#' Remove erlang/OTP & rebar3 from base image, finalize runtime environment
 FROM runtime-${METHOD} AS runtime
 ARG USER
 ARG UID
@@ -180,5 +180,5 @@ USER $USER
 VOLUME ["/$HOME"]
 EXPOSE 1883 4369-4399 5210 5222 5269 5280 5443
 
-ENTRYPOINT ["/sbin/tini","--","/usr/local/bin/ejabberdctl"]
+ENTRYPOINT ["/sbin/tini","--","ejabberdctl"]
 CMD ["foreground"]
