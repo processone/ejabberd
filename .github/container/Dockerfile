@@ -85,7 +85,7 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
 FROM ${METHOD} AS ejabberd
 RUN apk -U add --no-cache \
         git \
-        libcap-utils \
+        libcap \
         openssl
 
 WORKDIR /rootfs
@@ -135,7 +135,7 @@ RUN chown -R $UID:$UID $HOME
 FROM docker.io/erlang:${OTP_VSN}-alpine AS runtime-package
 RUN apk -U upgrade --available --no-cache \
     && apk add --no-cache \
-        libcap2 \
+        so:libcap.so.2 \
         tini
 
 ################################################################################
