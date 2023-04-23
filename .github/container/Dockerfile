@@ -1,5 +1,6 @@
 #' Define default build variables
-ARG ALPINE_VSN='3.17'
+ARG OTP_VSN='25.3'
+ARG ELIXIR_VSN='1.14.4'
 ARG UID='9000'
 ARG USER='ejabberd'
 ARG HOME="opt/$USER"
@@ -9,7 +10,7 @@ ARG VERSION='master'
 
 ################################################################################
 #' METHOD='direct' - build and install ejabberd directly from source
-FROM alpine:${ALPINE_VSN} AS direct
+FROM docker.io/erlang:${OTP_VSN}-alpine AS direct
 
 RUN apk -U add --no-cache \
         autoconf \
@@ -17,9 +18,6 @@ RUN apk -U add --no-cache \
         bash \
         build-base \
         curl \
-        elixir \
-        erlang-odbc \
-        erlang-reltool \
         expat-dev \
         file \
         gd-dev \
@@ -32,6 +30,13 @@ RUN apk -U add --no-cache \
         sqlite-dev \
         yaml-dev \
         zlib-dev
+
+ARG ELIXIR_VSN
+RUN wget -O - https://github.com/elixir-lang/elixir/archive/v$ELIXIR_VSN.tar.gz \
+        | tar -xzf -
+
+WORKDIR elixir-$ELIXIR_VSN
+RUN make install clean
 
 RUN mix local.hex --force \
     && mix local.rebar --force
@@ -66,7 +71,7 @@ RUN wget -O "$HOME/conf/cacert.pem" 'https://curl.se/ca/cacert.pem' \
 
 ################################################################################
 #' METHOD='package' - install ejabberd from binary tarball package
-FROM alpine:${ALPINE_VSN} AS package
+FROM docker.io/erlang:${OTP_VSN}-alpine AS package
 COPY tarballs/ejabberd-*-linux-musl-*.tar.gz /tmp/
 WORKDIR /rootfs
 ARG HOME
@@ -127,7 +132,7 @@ RUN chown -R $UID:$UID $HOME
 
 ################################################################################
 #' METHOD='package' - install runtime dependencies
-FROM alpine:${ALPINE_VSN} AS runtime-package
+FROM docker.io/erlang:${OTP_VSN}-alpine AS runtime-package
 RUN apk -U upgrade --available --no-cache \
     && apk add --no-cache \
         libcap2 \
@@ -148,6 +153,11 @@ ARG UID
 ARG HOME
 RUN addgroup $USER -g $UID \
     && adduser -s /sbin/nologin -D -u $UID -h /$HOME -G $USER $USER
+
+RUN apk del .erlang-rundeps \
+    && rm -f $(which rebar3) \
+    && find /usr -type d -name 'erlang' -exec rm -rf {} + \
+    && find /usr -type l -exec test ! -e {} \; -delete
 
 ################################################################################
 #' Build together production image
