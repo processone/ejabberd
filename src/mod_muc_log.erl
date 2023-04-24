@@ -97,9 +97,9 @@ get_url(#state{room = Room, host = Host, server_host = ServerHost}) ->
 	URL ->
 	    case mod_muc_log_opt:dirname(ServerHost) of
 		room_jid ->
-		    {ok, <<URL/binary, $/, Room/binary, $@, Host/binary>>};
+		    {ok, <<URL/binary, $/, Room/binary, $@, Host/binary, $/>>};
 		room_name ->
-		    {ok, <<URL/binary, $/, Room/binary>>}
+		    {ok, <<URL/binary, $/, Room/binary>>, $/}
 	    end
     catch
 	error:{module_not_loaded, _, _} ->
