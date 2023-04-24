@@ -62,12 +62,26 @@ depends(_Host, _Opts) ->
 %%% HTTP handlers
 %%%----------------------------------------------------------------------
 
-process([], #request{method = 'GET', lang = Lang}) ->
+process(Path, #request{raw_path = RawPath} = Request) ->
+    Continue = case Path of
+		   [E] ->
+		       binary:match(E, <<".">>) /= nomatch;
+		   _ ->
+		       false
+	       end,
+    case Continue orelse binary:at(RawPath, size(RawPath) - 1) == $/ of
+	true ->
+	    process2(Path, Request);
+	_ ->
+	    {301, [{<<"Location">>, <<RawPath/binary, "/">>}], <<>>}
+    end.
+
+process2([], #request{method = 'GET', lang = Lang}) ->
     index_page(Lang);
-process([<<"register.css">>],
+process2([<<"register.css">>],
 	#request{method = 'GET'}) ->
     serve_css();
-process([Section],
+process2([Section],
 	#request{method = 'GET', lang = Lang, host = Host,
 		 ip = {Addr, _Port}}) ->
     Host2 = case ejabberd_router:is_my_host(Host) of
@@ -82,7 +96,7 @@ process([Section],
 	<<"change_password">> -> form_changepass_get(Host2, Lang);
 	_ -> {404, [], "Not Found"}
     end;
-process([<<"new">>],
+process2([<<"new">>],
 	#request{method = 'POST', q = Q, ip = {Ip, _Port},
 		 lang = Lang, host = _HTTPHost}) ->
     case form_new_post(Q, Ip) of
@@ -97,7 +111,7 @@ process([<<"new">>],
                                 translate:translate(Lang, get_error_text(Error))]),
 	  {404, [], ErrorText}
     end;
-process([<<"delete">>],
+process2([<<"delete">>],
 	#request{method = 'POST', q = Q, lang = Lang,
 		 host = _HTTPHost}) ->
     case form_del_post(Q) of
@@ -112,7 +126,7 @@ process([<<"delete">>],
     end;
 %% TODO: Currently only the first vhost is usable. The web request record
 %% should include the host where the POST was sent.
-process([<<"change_password">>],
+process2([<<"change_password">>],
 	#request{method = 'POST', q = Q, lang = Lang,
 		 host = _HTTPHost}) ->
     case form_changepass_post(Q) of
@@ -126,7 +140,7 @@ process([<<"change_password">>],
 	  {404, [], ErrorText}
     end;
 
-process(_Path, _Request) ->
+process2(_Path, _Request) ->
     {404, [], "Not Found"}.
 
 %%%----------------------------------------------------------------------
