@@ -1,6 +1,10 @@
 #' Define default build variables
+## specifc ARGs for METHOD='direct'
 ARG OTP_VSN='25.3'
 ARG ELIXIR_VSN='1.14.4'
+## specifc ARGs for METHOD='package'
+ARG ALPINE_VSN='3.17'
+## general ARGs
 ARG UID='9000'
 ARG USER='ejabberd'
 ARG HOME="opt/$USER"
@@ -71,7 +75,7 @@ RUN wget -O "$HOME/conf/cacert.pem" 'https://curl.se/ca/cacert.pem' \
 
 ################################################################################
 #' METHOD='package' - install ejabberd from binary tarball package
-FROM docker.io/erlang:${OTP_VSN}-alpine AS package
+FROM docker.io/alpine:${ALPINE_VSN} AS package
 COPY tarballs/ejabberd-*-linux-musl-*.tar.gz /tmp/
 WORKDIR /rootfs
 ARG HOME
@@ -132,32 +136,35 @@ RUN chown -R $UID:$UID $HOME
 
 ################################################################################
 #' METHOD='package' - install runtime dependencies
-FROM docker.io/erlang:${OTP_VSN}-alpine AS runtime-package
+FROM docker.io/alpine:${ALPINE_VSN} AS runtime-package
 RUN apk -U upgrade --available --no-cache \
     && apk add --no-cache \
         so:libcap.so.2 \
         tini
 
 ################################################################################
-#' METHOD='direct' - install runtime dependencies
-FROM runtime-package AS runtime-direct
+#' METHOD='direct' - install runtime dependencies, remove erlang/OTP & rebar3
+FROM docker.io/erlang:${OTP_VSN}-alpine AS runtime-direct
 COPY --from=ejabberd /tmp/runDeps /tmp/runDeps
-RUN apk add --no-cache \
+RUN apk -U upgrade --available --no-cache \
+    && apk add --no-cache \
+        so:libcap.so.2 \
+        tini \
         $(cat /tmp/runDeps)
 
+RUN apk del .erlang-rundeps \
+    && rm -f $(which rebar3) \
+    && find /usr -type d -name 'erlang' -exec rm -rf {} + \
+    && find /usr -type l -exec test ! -e {} \; -delete
+
 ################################################################################
-#' Remove erlang/OTP & rebar3 from base image, finalize runtime environment
+#' Finalize runtime environment
 FROM runtime-${METHOD} AS runtime
 ARG USER
 ARG UID
 ARG HOME
 RUN addgroup $USER -g $UID \
     && adduser -s /sbin/nologin -D -u $UID -h /$HOME -G $USER $USER
-
-RUN apk del .erlang-rundeps \
-    && rm -f $(which rebar3) \
-    && find /usr -type d -name 'erlang' -exec rm -rf {} + \
-    && find /usr -type l -exec test ! -e {} \; -delete
 
 ################################################################################
 #' Build together production image
