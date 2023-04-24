@@ -1,11 +1,10 @@
 
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/processone/ejabberd?sort=semver&logo=embarcadero&label=&color=49c0c4)](https://github.com/processone/ejabberd/tags)
-[![GitHub Container](https://img.shields.io/github/v/tag/processone/ejabberd?label=container&sort=semver)](https://github.com/processone/ejabberd/pkgs/container/ejabberd)
-[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/ejabberd/ecs?label=docker)](https://hub.docker.com/r/ejabberd/ecs/)
+[![GitHub Container](https://img.shields.io/github/v/tag/processone/ejabberd?label=ejabberd&sort=semver&logo=docker)](https://github.com/processone/ejabberd/pkgs/container/ejabberd)
 
 
-ejabberd Container
-==================
+`ejabberd` Container Image
+==========================
 
 [ejabberd][home] is an open-source,
 robust, scalable and extensible realtime platform built using [Erlang/OTP][erlang],
