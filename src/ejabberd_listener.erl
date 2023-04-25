@@ -708,6 +708,6 @@ listen_options() ->
      {ip, {0,0,0,0}},
      {accept_interval, 0},
      {send_timeout, 15000},
-     {backlog, 5},
+     {backlog, 128},
      {use_proxy_protocol, false},
      {supervisor, true}].
