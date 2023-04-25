@@ -128,38 +128,37 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
             > usr/local/bin/ejabberdctl \
     && chmod +x usr/local/bin/* \
     && scanelf --needed --nobanner --format '%n#p' --recursive $home_root_dir \
-        | tr ',' '\n' | sort -u | awk 'system("[ -e $home_root_dir" $1 " ]") == 0 { next } \
-        { print "so:" $1 }' > /tmp/runDeps
+        | tr ',' '\n' \
+        | sort -u \
+        | awk 'system("[ -e $home_root_dir" $1 " ]") == 0 { next } { print "so:" $1 }' \
+        | sed -e "s|so:libc.so|so:libc.musl-$(uname -m).so.1|" \
+            > /tmp/runDeps
 
 ARG UID
 RUN chown -R $UID:$UID $HOME
 
 ################################################################################
-#' METHOD='package' - install runtime dependencies
-FROM docker.io/alpine:${ALPINE_VSN} AS runtime-package
-RUN apk -U upgrade --available --no-cache \
-    && apk add --no-cache \
-        so:libcap.so.2 \
-        tini
-
-################################################################################
-#' METHOD='direct' - install runtime dependencies, remove erlang/OTP & rebar3
+#' METHOD='direct' - Remove erlang/OTP & rebar3
 FROM docker.io/erlang:${OTP_VSN}-alpine AS runtime-direct
-COPY --from=ejabberd /tmp/runDeps /tmp/runDeps
-RUN apk -U upgrade --available --no-cache \
-    && apk add --no-cache \
-        so:libcap.so.2 \
-        tini \
-        $(cat /tmp/runDeps)
-
 RUN apk del .erlang-rundeps \
     && rm -f $(which rebar3) \
     && find /usr -type d -name 'erlang' -exec rm -rf {} + \
     && find /usr -type l -exec test ! -e {} \; -delete
 
 ################################################################################
-#' Finalize runtime environment
+#' METHOD='package' - define runtime base image
+FROM docker.io/alpine:${ALPINE_VSN} AS runtime-package
+
+################################################################################
+#' Update alpine, finalize runtime environment
 FROM runtime-${METHOD} AS runtime
+COPY --from=ejabberd /tmp/runDeps /tmp/runDeps
+RUN apk -U upgrade --available --no-cache \
+    && apk add --no-cache \
+        $(cat /tmp/runDeps) \
+        so:libcap.so.2 \
+        tini
+
 ARG USER
 ARG UID
 ARG HOME
