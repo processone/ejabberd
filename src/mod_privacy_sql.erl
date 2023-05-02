@@ -422,6 +422,12 @@ set_privacy_list_new(ID, RItems) ->
 	end,
 	RItems).
 
+calculate_difference(List1, List2) ->
+    Set1 = gb_sets:from_list(List1),
+    Set2 = gb_sets:from_list(List2),
+    {gb_sets:subtract(Set1, Set2),
+     gb_sets:subtract(Set2, Set1)}.
+
 set_privacy_list(ID, RItems) ->
     case ejabberd_sql:sql_query_t(
 	?SQL("select @(t)s, @(value)s, @(action)s, @(ord)d, @(match_all)b, "
@@ -429,25 +435,15 @@ set_privacy_list(ID, RItems) ->
 	     "@(match_presence_out)b from privacy_list_data "
 	     "where id=%(ID)d")) of
 	{selected, ExistingItems} ->
-	    {ToAdd2, ToDelete2} =
-	    lists:foldr(
-		fun(Value, {ToAdd, ToDelete}) ->
-		    case lists:splitwith(fun(E) -> E /= Value end, ToAdd) of
-			{_S, []} ->
-			    {ToAdd, [Value | ToDelete]};
-			{Pfx, [_ | Rest]} ->
-			    {Pfx ++ Rest, ToDelete}
-		    end
-		end, {RItems, []}, ExistingItems),
-	    ToAdd3 =
-	    if
-		ToDelete2 /= [] ->
-		    ejabberd_sql:sql_query_t(
-			?SQL("delete from privacy_list_data where id=%(ID)d")),
-		    RItems;
-		true ->
-		    ToAdd2
-	    end,
+	    {ToAdd2, ToDelete2} = calculate_difference(RItems, ExistingItems),
+	    ToAdd3 = if
+			 ToDelete2 /= [] ->
+			     ejabberd_sql:sql_query_t(
+				 ?SQL("delete from privacy_list_data where id=%(ID)d")),
+			     RItems;
+			 true ->
+			     ToAdd2
+		     end,
 	    lists:foreach(
 		fun({SType, SValue, SAction, Order, MatchAll, MatchIQ,
 		     MatchMessage, MatchPresenceIn, MatchPresenceOut}) ->
