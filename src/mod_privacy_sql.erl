@@ -425,8 +425,8 @@ set_privacy_list_new(ID, RItems) ->
 calculate_difference(List1, List2) ->
     Set1 = gb_sets:from_list(List1),
     Set2 = gb_sets:from_list(List2),
-    {gb_sets:subtract(Set1, Set2),
-     gb_sets:subtract(Set2, Set1)}.
+    {gb_sets:to_list(gb_sets:subtract(Set1, Set2)),
+     gb_sets:to_list(gb_sets:subtract(Set2, Set1))}.
 
 set_privacy_list(ID, RItems) ->
     case ejabberd_sql:sql_query_t(
