@@ -5,6 +5,7 @@
 \#*#
 .#*
 .edts
+.tool-versions
 *.dump
 /Makefile
 /doc
