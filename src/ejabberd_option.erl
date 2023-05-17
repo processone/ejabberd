@@ -52,6 +52,7 @@
 -export([host_config/0]).
 -export([hosts/0]).
 -export([include_config_file/0, include_config_file/1]).
+-export([install_contrib_modules/0]).
 -export([jwt_auth_only_rule/0, jwt_auth_only_rule/1]).
 -export([jwt_jid_field/0, jwt_jid_field/1]).
 -export([jwt_key/0, jwt_key/1]).
@@ -448,6 +449,10 @@ include_config_file() ->
 -spec include_config_file(global | binary()) -> any().
 include_config_file(Host) ->
     ejabberd_config:get_option({include_config_file, Host}).
+
+-spec install_contrib_modules() -> [atom()].
+install_contrib_modules() ->
+    ejabberd_config:get_option({install_contrib_modules, global}).
 
 -spec jwt_auth_only_rule() -> atom().
 jwt_auth_only_rule() ->

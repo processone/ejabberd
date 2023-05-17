@@ -183,6 +183,8 @@ opt_type(hosts) ->
     econf:non_empty(econf:list(econf:domain(), [unique]));
 opt_type(include_config_file) ->
     econf:any();
+opt_type(install_contrib_modules) ->
+    econf:list(econf:atom());
 opt_type(language) ->
     econf:lang();
 opt_type(ldap_backups) ->
@@ -517,6 +519,7 @@ options() ->
      {access_rules, []},
      {acme, #{}},
      {allow_contrib_modules, true},
+     {install_contrib_modules, []},
      {allow_multiple_connections, false},
      {anonymous_protocol, sasl_anon},
      {api_permissions,
@@ -736,6 +739,7 @@ globals() ->
      fqdn,
      hosts,
      host_config,
+     install_contrib_modules,
      listen,
      loglevel,
      log_rotate_count,

@@ -33,6 +33,7 @@
          installed_command/0, installed/0, installed/1,
          install/1, uninstall/1, upgrade/0, upgrade/1, add_paths/0,
          add_sources/1, add_sources/2, del_sources/1, modules_dir/0,
+         install_contrib_modules/2,
          config_dir/0, get_commands_spec/0]).
 -export([modules_configs/0, module_ebin_dir/1]).
 -export([compile_erlang_file/2, compile_elixir_file/2]).
@@ -215,10 +216,13 @@ installed_command() ->
     [short_spec(Item) || Item <- installed()].
 
 install(Module) when is_atom(Module) ->
-    install(misc:atom_to_binary(Module));
+    install(misc:atom_to_binary(Module), undefined);
 install(Package) when is_binary(Package) ->
+    install(Package, undefined).
+
+install(Package, Config) when is_binary(Package) ->
     Spec = [S || {Mod, S} <- available(), misc:atom_to_binary(Mod)==Package],
-    case {Spec, installed(Package), is_contrib_allowed()} of
+    case {Spec, installed(Package), is_contrib_allowed(Config)} of
         {_, _, false} ->
             {error, not_allowed};
         {[], _, _} ->
@@ -227,10 +231,10 @@ install(Package) when is_binary(Package) ->
             {error, conflict};
         {[Attrs], _, _} ->
             Module = misc:binary_to_atom(Package),
-            case compile_and_install(Module, Attrs) of
+            case compile_and_install(Module, Attrs, Config) of
                 ok ->
                     code:add_pathsz([module_ebin_dir(Module)|module_deps_dirs(Module)]),
-                    ejabberd_config:reload(),
+                    ejabberd_config_reload(Config),
                     copy_commit_json(Package, Attrs),
                     case erlang:function_exported(Module, post_install, 0) of
                         true -> Module:post_install();
@@ -241,6 +245,14 @@ install(Package) when is_binary(Package) ->
                     Error
             end
     end.
+
+ejabberd_config_reload(Config) when is_list(Config) ->
+    %% Don't reload config when ejabberd is starting
+    %% because it will be reloaded after installing
+    %% all the external modules from install_contrib_modules
+    ok;
+ejabberd_config_reload(undefined) ->
+    ejabberd_config:reload().
 
 uninstall(Module) when is_atom(Module) ->
     uninstall(misc:atom_to_binary(Module));
@@ -483,7 +495,13 @@ modules_spec(Dir, Path) ->
 short_spec({Module, Attrs}) when is_atom(Module), is_list(Attrs) ->
     {Module, proplists:get_value(summary, Attrs, "")}.
 
-is_contrib_allowed() ->
+is_contrib_allowed(Config) when is_list(Config) ->
+    case lists:keyfind(allow_contrib_modules, 1, Config) of
+        false -> true;
+        {_, false} -> false;
+        {_, true} -> true
+    end;
+is_contrib_allowed(undefined) ->
     ejabberd_option:allow_contrib_modules().
 
 %% -- build functions
@@ -526,7 +544,7 @@ check_sources(Module) ->
         _ -> {error, Result}
     end.
 
-compile_and_install(Module, Spec) ->
+compile_and_install(Module, Spec, Config) ->
     SrcDir = module_src_dir(Module),
     LibDir = module_lib_dir(Module),
     case filelib:is_dir(SrcDir) of
@@ -534,7 +552,7 @@ compile_and_install(Module, Spec) ->
             case compile_deps(SrcDir) of
                 ok ->
                     case compile(SrcDir) of
-                        ok -> install(Module, Spec, SrcDir, LibDir);
+                        ok -> install(Module, Spec, SrcDir, LibDir, Config);
                         Error -> Error
                     end;
                 Error ->
@@ -543,7 +561,7 @@ compile_and_install(Module, Spec) ->
         false ->
             Path = proplists:get_value(url, Spec, ""),
             case add_sources(Module, Path) of
-                ok -> compile_and_install(Module, Spec);
+                ok -> compile_and_install(Module, Spec, Config);
                 Error -> Error
             end
     end.
@@ -648,7 +666,7 @@ compile_elixir_file(_, File) ->
     {error, {compilation_failed, File}}.
 -endif.
 
-install(Module, Spec, SrcDir, LibDir) ->
+install(Module, Spec, SrcDir, LibDir, Config) ->
     {ok, CurDir} = file:get_cwd(),
     file:set_cwd(SrcDir),
     Files1 = [{File, copy(File, filename:join(LibDir, File))}
@@ -660,7 +678,7 @@ install(Module, Spec, SrcDir, LibDir) ->
     Errors = lists:dropwhile(fun({_, ok}) -> true;
                                 (_) -> false
             end, Files1++Files2++Files3),
-    inform_module_configuration(Module, LibDir, Files1),
+    inform_module_configuration(Module, LibDir, Files1, Config),
     Result = case Errors of
         [{F, {error, E}}|_] ->
             {error, {F, E}};
@@ -672,11 +690,11 @@ install(Module, Spec, SrcDir, LibDir) ->
     file:set_cwd(CurDir),
     Result.
 
-inform_module_configuration(Module, LibDir, Files1) ->
+inform_module_configuration(Module, LibDir, Files1, Config) ->
     Res = lists:filter(fun({[$c, $o, $n, $f |_], ok}) -> true;
                           (_) -> false
             end, Files1),
-    AlreadyConfigured = lists:keymember(Module, 1, ejabberd_config:get_option(modules)),
+    AlreadyConfigured = lists:keymember(Module, 1, get_modules(Config)),
     case {Res, AlreadyConfigured} of
         {[{ConfigPath, ok}], false} ->
             FullConfigPath = filename:join(LibDir, ConfigPath),
@@ -696,6 +714,12 @@ inform_module_configuration(Module, LibDir, Files1) ->
                       "Now you can configure it in your ejabberd.yml~n",
                       [Module])
     end.
+
+get_modules(Config) when is_list(Config) ->
+    {modules, Modules} = lists:keyfind(modules, 1, Config),
+    Modules;
+get_modules(undefined) ->
+    ejabberd_config:get_option(modules).
 
 %% -- minimalist rebar spec parser, only support git
 
@@ -1220,3 +1244,14 @@ list_modules_parse_uninstall(Query) ->
       end,
       installed()),
     ok.
+
+install_contrib_modules(Modules, Config) ->
+    lists:filter(fun(Module) ->
+                         case install(misc:atom_to_binary(Module), Config) of
+                             {error, conflict} ->
+                                 false;
+                             ok ->
+                                 true
+                         end
+                 end,
+                 Modules).

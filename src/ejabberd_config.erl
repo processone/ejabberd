@@ -502,7 +502,13 @@ read_file(File, Opts) ->
 	  end,
     case Ret of
 	{ok, Y} ->
-	    validate(Y);
+            InstalledModules = maybe_install_contrib_modules(Y),
+            ValResult = validate(Y),
+            case InstalledModules of
+                [] -> ok;
+                _ -> spawn(fun() -> timer:sleep(5000), ?MODULE:reload() end)
+            end,
+            ValResult;
 	Err ->
 	    Err
     end.
@@ -525,6 +531,18 @@ read_erlang_file(File, _) ->
 	    econf:replace_macros(Y);
 	Err ->
 	    Err
+    end.
+
+-spec maybe_install_contrib_modules(term()) -> [atom()].
+maybe_install_contrib_modules(Options) ->
+    case {lists:keysearch(allow_contrib_modules, 1, Options),
+          lists:keysearch(install_contrib_modules, 1, Options)} of
+        {Allow, {value, {_, InstallContribModules}}}
+          when (Allow == false) or
+               (Allow == {value, {allow_contrib_modules, true}}) ->
+            ext_mod:install_contrib_modules(InstallContribModules, Options);
+        _ ->
+            []
     end.
 
 -spec validate(term()) -> {ok, [{atom(), term()}]} | error_return().

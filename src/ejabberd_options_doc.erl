@@ -303,6 +303,8 @@ doc() ->
       #{value => "true | false",
         desc =>
             ?T("Whether to allow installation of third-party modules or not. "
+               "See https://docs.ejabberd.im/developer/extending-ejabberd/modules/#ejabberd-contrib"
+               "[ejabberd-contrib] documentation section. "
                "The default value is 'true'.")}},
      {allow_multiple_connections,
       #{value => "true | false",
@@ -670,6 +672,13 @@ doc() ->
                  "file 'Filename'. The options that do not match this "
                  "criteria are not accepted. The default value is to include "
                  "all options.")}}]},
+     {install_contrib_modules,
+      #{value => "[Module, ...]",
+        desc =>
+            ?T("Modules to install from "
+               "https://docs.ejabberd.im/developer/extending-ejabberd/modules/#ejabberd-contrib"
+               "[ejabberd-contrib] at start time. "
+               "The default value is an empty list of modules: '[]'.")}},
      {jwt_auth_only_rule,
       #{value => ?T("AccessName"),
         desc =>
