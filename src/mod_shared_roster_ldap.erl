@@ -395,14 +395,14 @@ get_member_jid(#state{user_jid_attr = UserJIDAttr, user_uid = UIDAttr} = State,
                                                 [{<<"%u">>, UID}])],
                            [UserJIDAttr]),
     case Entries of
-        [] ->
-            {error, error};
         [#eldap_entry{attributes = [{UserJIDAttr, [MemberJID | _]}]} | _] ->
             try jid:decode(MemberJID) of
                 #jid{luser = U, lserver = S} -> {U, S}
             catch
                 error:{bad_jid, _} -> {error, Host}
-            end
+            end;
+      _ ->
+        {error, error}
     end.
 
 extract_members(State, Extractor, AuthChecker, #eldap_entry{attributes = Attrs}, {DescAcc, JIDsAcc}) ->
