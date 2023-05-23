@@ -676,15 +676,22 @@ inform_module_configuration(Module, LibDir, Files1) ->
     Res = lists:filter(fun({[$c, $o, $n, $f |_], ok}) -> true;
                           (_) -> false
             end, Files1),
-    case Res of
-        [{ConfigPath, ok}] ->
+    AlreadyConfigured = lists:keymember(Module, 1, ejabberd_config:get_option(modules)),
+    case {Res, AlreadyConfigured} of
+        {[{ConfigPath, ok}], false} ->
             FullConfigPath = filename:join(LibDir, ConfigPath),
             io:format("Module ~p has been installed and started.~n"
                       "It's configured in the file:~n  ~s~n"
                       "Configure the module in that file, or remove it~n"
                       "and configure in your main ejabberd.yml~n",
                       [Module, FullConfigPath]);
-        [] ->
+        {[{ConfigPath, ok}], true} ->
+            FullConfigPath = filename:join(LibDir, ConfigPath),
+            file:rename(FullConfigPath, FullConfigPath++".example"),
+            io:format("Module ~p has been installed and started.~n"
+                      "The ~p configuration in your ejabberd.yml is used.~n",
+                      [Module, Module]);
+        {[], _} ->
             io:format("Module ~p has been installed.~n"
                       "Now you can configure it in your ejabberd.yml~n",
                       [Module])
