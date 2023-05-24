@@ -1832,7 +1832,7 @@ set_role(JID, Role, StateData) ->
                 %% maintain the same role they had *before* they were kicked,
                 %% unless they were banned
                 none when Affiliation /= outcast ->
-                    StateData#state.roles;
+		    maps:remove(jid:remove_resource(LJID), StateData#state.roles);
                 NewRole ->
                     maps:put(jid:remove_resource(LJID),
                              NewRole,
