@@ -1695,13 +1695,23 @@ set_affiliations_fallback(Affiliations, StateData) ->
 -spec get_affiliation(ljid() | jid(), state()) -> affiliation().
 get_affiliation(#jid{} = JID, StateData) ->
     case get_service_affiliation(JID, StateData) of
-        owner ->
-            owner;
-        none ->
-            case do_get_affiliation(JID, StateData) of
-                {Affiliation, _Reason} -> Affiliation;
-                Affiliation -> Affiliation
-            end
+	owner ->
+	    owner;
+	none ->
+	    Aff = case do_get_affiliation(JID, StateData) of
+		      {Affiliation, _Reason} -> Affiliation;
+		      Affiliation -> Affiliation
+		  end,
+	    case {Aff, (StateData#state.config)#config.members_only} of
+		% Subscribers should be have members affiliation in this case
+		{none, true} ->
+		    case is_subscriber(JID, StateData) of
+			true -> member;
+			_ -> none
+		    end;
+		_ ->
+		    Aff
+	    end
     end;
 get_affiliation(LJID, StateData) ->
     get_affiliation(jid:make(LJID), StateData).
