@@ -62,14 +62,6 @@ jobs:
         make update
         make
 
-    - name: Prepare rebar
-      run: |
-        echo '{xref_ignores, [{eldap_filter_yecc, return_error, 2}
-                             ]}.' >>rebar.config
-        echo '{xref_checks, [deprecated_function_calls, deprecated_functions,
-              locals_not_used, undefined_function_calls, undefined_functions]}.
-              % Disabled: exports_not_used,' >>rebar.config
-
     - run: make xref
 
     - name: Test rel (rebar2)
