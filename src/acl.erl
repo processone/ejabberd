@@ -39,14 +39,14 @@
 -type acl_rule() :: {user, {binary(), binary()} | binary()} |
 		    {server, binary()} |
 		    {resource, binary()} |
-		    {user_regexp, {re:mp(), binary()} | re:mp()} |
-		    {server_regexp, re:mp()} |
-		    {resource_regexp, re:mp()} |
-		    {node_regexp, {re:mp(), re:mp()}} |
-		    {user_glob, {re:mp(), binary()} | re:mp()} |
-		    {server_glob, re:mp()} |
-		    {resource_glob, re:mp()} |
-		    {node_glob, {re:mp(), re:mp()}} |
+		    {user_regexp, {re_mp(), binary()} | re_mp()} |
+		    {server_regexp, re_mp()} |
+		    {resource_regexp, re_mp()} |
+		    {node_regexp, {re_mp(), re_mp()}} |
+		    {user_glob, {re_mp(), binary()} | re_mp()} |
+		    {server_glob, re_mp()} |
+		    {resource_glob, re_mp()} |
+		    {node_glob, {re_mp(), re_mp()}} |
 		    {shared_group, {binary(), binary()} | binary()} |
 		    {ip, ip_mask()}.
 -type access() :: [{action(), [access_rule()]}].
@@ -348,7 +348,7 @@ node_validator(UV, SV) ->
 %%%===================================================================
 %%% Aux
 %%%===================================================================
--spec match_regexp(iodata(), re:mp()) -> boolean().
+-spec match_regexp(iodata(), re_mp()) -> boolean().
 match_regexp(Data, RegExp) ->
     re:run(Data, RegExp) /= nomatch.
 

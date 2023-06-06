@@ -431,7 +431,7 @@ is_equal_opt(Opt, NewOpts, OldOpts) ->
 %%%===================================================================
 -spec format_module_error(atom(), start | reload, non_neg_integer(), opts(),
 			  error | exit | throw, any(),
-			  [erlang:stack_item()]) -> iolist().
+			  [tuple()]) -> iolist().
 format_module_error(Module, Fun, Arity, Opts, Class, Reason, St) ->
     case {Class, Reason} of
 	{error, {bad_return, Module, {error, _} = Err}} ->

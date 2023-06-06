@@ -442,7 +442,9 @@ Makefile: Makefile.in
 
 ifeq "$(REBAR_VER)" "3"
 dialyzer:
+	find src/*_opt.erl -type f \! -regex ".*git.*" -exec sed -i 's/re:mp/  tuple/g' {} \;
 	$(REBAR) dialyzer
+	find src/*_opt.erl -type f \! -regex ".*git.*" -exec sed -i 's/  tuple/re:mp/g' {} \;
 else
 deps := $(wildcard $(DEPSDIR)/*/ebin)
 

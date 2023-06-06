@@ -72,7 +72,7 @@
          user_desc = <<"">>                           :: binary(),
          user_uid = <<"">>                            :: binary(),
          uid_format = <<"">>                          :: binary(),
-	 uid_format_re                                :: undefined | re:mp(),
+	 uid_format_re                                :: undefined | re_mp(),
          filter = <<"">>                              :: binary(),
          ufilter = <<"">>                             :: binary(),
          rfilter = <<"">>                             :: binary(),
