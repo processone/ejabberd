@@ -73,7 +73,7 @@
 -record(state,
 	{db_ref               :: undefined | pid(),
 	 db_type = odbc       :: pgsql | mysql | sqlite | odbc | mssql,
-	 db_version           :: undefined | non_neg_integer(),
+	 db_version           :: undefined | non_neg_integer() | {non_neg_integer(), atom(), non_neg_integer()},
 	 reconnect_count = 0  :: non_neg_integer(),
 	 host                 :: binary(),
 	 pending_requests     :: p1_queue:queue(),
@@ -1123,8 +1123,37 @@ get_db_version(#state{db_type = pgsql} = State) ->
             ?WARNING_MSG("Error getting pgsql version: ~p", [Res]),
             State
     end;
+get_db_version(#state{db_type = mysql} = State) ->
+    case mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
+					    [<<"select version();">>], self(),
+					    [{timeout, 5000},
+					     {result_type, binary}])) of
+	{selected, _, [SVersion]} ->
+	    case re:run(SVersion, <<"(\\d+)\\.(\\d+)(?:\\.(\\d+))?(?:-([^-]*))?">>,
+			[{capture, all_but_first, binary}]) of
+		{match, [V1, V2, V3, Type]} ->
+		    V = ((bin_to_int(V1)*1000)+bin_to_int(V2))*1000+bin_to_int(V3),
+		    TypeA = binary_to_atom(Type, utf8),
+		    Flags = case TypeA of
+				'MariaDB' -> 0;
+				_ when V >= 5007026 andalso V < 8000000 -> 1;
+				_ when V >= 8000020 -> 1;
+				_ -> 0
+			    end,
+		    State#state{db_version = {V, TypeA, Flags}};
+		_ ->
+		    ?WARNING_MSG("Error parsing mysql version: ~p", [SVersion]),
+		    State
+	    end;
+	Res ->
+	    ?WARNING_MSG("Error getting mysql version: ~p", [Res]),
+	    State
+    end;
 get_db_version(State) ->
     State.
+
+bin_to_int(<<>>) -> 0;
+bin_to_int(V) -> binary_to_integer(V).
 
 log(Level, Format, Args) ->
     case Level of

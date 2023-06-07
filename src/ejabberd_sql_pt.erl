@@ -567,7 +567,6 @@ parse_upsert_field1([$= | S], Acc, ParamPos, Loc) ->
 parse_upsert_field1([C | S], Acc, ParamPos, Loc) ->
     parse_upsert_field1(S, [C | Acc], ParamPos, Loc).
 
-
 make_sql_upsert(Table, ParseRes, Pos) ->
     check_upsert(ParseRes, Pos),
     erl_syntax:fun_expr(
@@ -586,6 +585,11 @@ make_sql_upsert(Table, ParseRes, Pos) ->
                  erl_syntax:operator('>='),
                  erl_syntax:integer(90100))],
              [make_sql_upsert_pgsql901(Table, ParseRes),
+              erl_syntax:atom(ok)]),
+         erl_syntax:clause(
+             [erl_syntax:atom(mysql), erl_syntax:tuple([erl_syntax:underscore(), erl_syntax:underscore(), erl_syntax:integer(1)])],
+             [],
+             [make_sql_upsert_mysql_select(Table, ParseRes),
               erl_syntax:atom(ok)]),
          erl_syntax:clause(
              [erl_syntax:atom(mysql), erl_syntax:underscore()],
@@ -681,6 +685,66 @@ make_sql_upsert_insert(Table, ParseRes) ->
            #state{'query' = [{str, ");"}]}
           ]),
     State.
+
+make_sql_upsert_select(Table, ParseRes) ->
+    {Fields0, Where0} =
+    lists:foldl(
+        fun({Field, key, ST}, {Fie, Whe}) ->
+               {Fie, [ST#state{
+                   'query' = [{str, Field}, {str, "="}] ++ ST#state.'query'}] ++ Whe};
+           ({Field, {true}, ST}, {Fie, Whe}) ->
+               {[ST#state{
+                   'query' = [{str, Field}, {str, "="}] ++ ST#state.'query'}] ++ Fie, Whe};
+           (_, Acc) ->
+               Acc
+        end, {[], []}, ParseRes),
+    Fields = join_states(Fields0, " AND "),
+    Where = join_states(Where0, " AND "),
+    State =
+    concat_states(
+        [#state{'query' = [{str, "SELECT "}],
+                res_vars = [erl_syntax:variable("__VSel")],
+                res = [erl_syntax:application(
+                    erl_syntax:atom(ejabberd_sql),
+                    erl_syntax:atom(to_bool),
+                    [erl_syntax:variable("__VSel")])]},
+         Fields,
+         #state{'query' = [{str, " FROM "}, {str, Table}, {str, " WHERE "}]},
+         Where
+        ]),
+    State.
+
+make_sql_upsert_mysql_select(Table, ParseRes) ->
+    Select = make_sql_query(make_sql_upsert_select(Table, ParseRes)),
+    Insert = make_sql_query(make_sql_upsert_insert(Table, ParseRes)),
+    Update = make_sql_query(make_sql_upsert_update(Table, ParseRes)),
+    erl_syntax:case_expr(
+        erl_syntax:application(
+            erl_syntax:atom(ejabberd_sql),
+            erl_syntax:atom(sql_query_t),
+            [Select]),
+        [erl_syntax:clause(
+            [erl_syntax:tuple([erl_syntax:atom(selected), erl_syntax:list([])])],
+            none,
+            [erl_syntax:application(
+                erl_syntax:atom(ejabberd_sql),
+                erl_syntax:atom(sql_query_t),
+                [Insert])]),
+         erl_syntax:clause(
+             [erl_syntax:abstract({selected, [{true}]})],
+             [],
+             [erl_syntax:atom(ok)]),
+         erl_syntax:clause(
+             [erl_syntax:tuple([erl_syntax:atom(selected), erl_syntax:underscore()])],
+             none,
+             [erl_syntax:application(
+                 erl_syntax:atom(ejabberd_sql),
+                 erl_syntax:atom(sql_query_t),
+                 [Update])]),
+         erl_syntax:clause(
+             [erl_syntax:variable("__SelectRes")],
+             none,
+             [erl_syntax:variable("__SelectRes")])]).
 
 make_sql_upsert_mysql(Table, ParseRes) ->
     Vals =
