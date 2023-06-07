@@ -60,7 +60,7 @@ Once ejabberd is installed, try:
     man ejabberd.yml
 
 
-Development
+Development (test)
 -----------
 
 Bug reports and features are tracked using [GitHub Issues][issues],
