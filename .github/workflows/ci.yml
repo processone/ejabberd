@@ -149,7 +149,6 @@ jobs:
     - run: make options
     - run: make xref
     - run: make dialyzer
-      if: matrix.otp != '26.0-rc3'
 
     - name: Check Production Release
       run: |
