@@ -232,7 +232,8 @@ LibDir = fun(Name, Suffix) ->
 GlobalDepsFilter =
 fun(Deps) ->
 	DepNames = lists:map(fun({DepName, _, _}) -> DepName;
-				({DepName, _}) -> DepName
+				({DepName, _}) -> DepName;
+				(DepName) -> DepName
 			     end, Deps),
 	lists:filtermap(fun(Dep) ->
 				case LibDir(atom_to_list(Dep), "") of
@@ -357,7 +358,8 @@ ProcessRelx = fun(Relx, Deps) ->
                       _ -> []
               end,
     DepApps = lists:map(fun({DepName, _, _}) -> DepName;
-                        ({DepName, _}) -> DepName
+                        ({DepName, _}) -> DepName;
+                        (DepName) -> DepName
                 end, Deps),
     [{release, NameVersion, DefaultApps ++ VarsApps ++ ProfileApps ++ DepApps} | RelxTail]
     end,
