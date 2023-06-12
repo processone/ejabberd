@@ -753,6 +753,7 @@ json_error(Code, Error, Reason) ->
     json_response(Code, Body).
 
 json_error_desc(access_denied)          -> <<"Access denied">>;
+json_error_desc(badpass)                -> <<"Bad password">>;
 json_error_desc(unsupported_grant_type) -> <<"Unsupported grant type">>;
 json_error_desc(invalid_scope)          -> <<"Invalid scope">>.
 
