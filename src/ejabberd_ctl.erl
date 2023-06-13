@@ -336,7 +336,7 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
 							CI2,
 							Version),
 	    format_result(Result, ResultFormat);
-	{'EXIT', {function_clause,[{lists,zip,[A1, A2], _} | _]}} ->
+	{'EXIT', {function_clause,[{lists,zip,[A1,A2|_], _} | _]}} ->
 	    {NumCompa, TextCompa} =
 		case {length(A1), length(A2)} of
 		    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};
