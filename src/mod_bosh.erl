@@ -69,7 +69,7 @@ process([],
 	#request{method = 'POST', data = Data, ip = IP, headers = Hdrs}) ->
     ?DEBUG("Incoming data: ~p", [Data]),
     Type = get_type(Hdrs),
-    ejabberd_bosh:process_request(Data, IP, Type);
+    ejabberd_bosh:process_request(Data, IP, Type, Hdrs);
 process([], #request{method = 'GET', data = <<>>}) ->
     {200, ?HEADER(?CT_XML), get_human_html_xmlel()};
 process([], #request{method = 'OPTIONS', data = <<>>}) ->
