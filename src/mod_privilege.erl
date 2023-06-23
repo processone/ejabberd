@@ -403,6 +403,9 @@ forward_message(#message{to = To} = Msg) ->
 		#message{} = NewMsg ->
 		    case NewMsg#message.from of
 			#jid{lresource = <<"">>, lserver = ServerHost} ->
+                            FromJID = NewMsg#message.from,
+                            State = #{jid => FromJID},
+                            ejabberd_hooks:run_fold(user_send_packet, FromJID#jid.lserver, {NewMsg, State}, []),
 			    ejabberd_router:route(NewMsg);
 			_ ->
 			    Lang = xmpp:get_lang(Msg),
