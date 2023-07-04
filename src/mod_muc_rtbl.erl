@@ -26,6 +26,7 @@
 -author("pawel@process-one.net").
 
 -behaviour(gen_mod).
+-behavior(gen_server).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -33,12 +34,21 @@
 -include("mod_muc_room.hrl").
 
 %% API
--export([start/2, stop/1, mod_opt_type/1, mod_options/1, mod_doc/0, depends/2]).
+-export([start/2, stop/1, init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3,
+	 mod_options/1, mod_opt_type/1, mod_doc/0, depends/2]).
 -export([pubsub_event_handler/1, muc_presence_filter/3, muc_process_iq/2]).
 
 -record(muc_rtbl, {host_id, blank = blank}).
+-record(rtbl_state, {host, subscribed = false, retry_timer}).
 
 start(Host, _Opts) ->
+    gen_server:start({local, gen_mod:get_module_proc(Host, ?MODULE)}, ?MODULE, [Host], []).
+
+stop(Host) ->
+    gen_server:stop({local, gen_mod:get_module_proc(Host, ?MODULE)}).
+
+init([Host]) ->
     ejabberd_mnesia:create(?MODULE, muc_rtbl,
 			   [{ram_copies, [node()]},
 			    {local_content, true},
@@ -50,32 +60,62 @@ start(Host, _Opts) ->
 		       ?MODULE, muc_presence_filter, 50),
     ejabberd_hooks:add(muc_process_iq, Host,
 		       ?MODULE, muc_process_iq, 50),
-    request_initial_items(Host).
+    request_initial_items(Host),
+    {ok, #rtbl_state{host = Host}}.
 
-stop(Host) ->
+handle_call(_Request, _From, State) ->
+    {noreply, State}.
+
+handle_cast(_Request, State) ->
+    {noreply, State}.
+
+handle_info({iq_reply, IQReply, initial_items}, State) ->
+    State2 = parse_initial_items(State, IQReply),
+    {noreply, State2};
+handle_info({iq_reply, IQReply, subscription}, State) ->
+    State2 = parse_subscription(State, IQReply),
+    {noreply, State2};
+handle_info(_Request, State) ->
+    {noreply, State}.
+
+terminate(_Reason, #rtbl_state{host = Host, subscribed = Sub, retry_timer = Timer}) ->
     ejabberd_hooks:delete(local_send_to_resource_hook, Host,
 			  ?MODULE, pubsub_event_handler, 50),
     ejabberd_hooks:delete(muc_filter_presence, Host,
 			  ?MODULE, muc_presence_filter, 50),
     ejabberd_hooks:delete(muc_process_iq, Host,
 			  ?MODULE, muc_process_iq, 50),
-    Jid = service_jid(Host),
-    IQ = #iq{type = set, from = Jid, to = jid:make(mod_muc_rtbl_opt:rtbl_server(Host)),
-	     sub_els = [
-		 #pubsub{unsubscribe =
-			 #ps_unsubscribe{jid = Jid, node = mod_muc_rtbl_opt:rtbl_node(Host)}}]},
-    ejabberd_router:route_iq(IQ, fun parse_subscribe_result/1).
+    case Sub of
+	true ->
+	    Jid = service_jid(Host),
+	    IQ = #iq{type = set, from = Jid, to = jid:make(mod_muc_rtbl_opt:rtbl_server(Host)),
+		     sub_els = [
+			 #pubsub{unsubscribe =
+				 #ps_unsubscribe{jid = Jid, node = mod_muc_rtbl_opt:rtbl_node(Host)}}]},
+	    ejabberd_router:route_iq(IQ, fun(_) -> ok end);
+	_ ->
+	    ok
+    end,
+    misc:cancel_timer(Timer).
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 request_initial_items(Host) ->
     IQ = #iq{type = get, from = service_jid(Host),
 	     to = jid:make(mod_muc_rtbl_opt:rtbl_server(Host)),
 	     sub_els = [
 		 #pubsub{items = #ps_items{node = mod_muc_rtbl_opt:rtbl_node(Host)}}]},
-    ejabberd_router:route_iq(IQ, fun parse_initial_items/1).
+    ejabberd_router:route_iq(IQ, initial_items, self()).
 
-parse_initial_items(#iq{type = error} = IQ) ->
-    ?WARNING_MSG("Fetching initial list failed: ~p", [xmpp:format_stanza_error(xmpp:get_error(IQ))]);
-parse_initial_items(#iq{from = From, to = #jid{lserver = Host} = To, type = result} = IQ) ->
+parse_initial_items(State, timeout) ->
+    ?WARNING_MSG("Fetching initial list failed: fetch timeout. Retrying in 60 seconds", []),
+    State#rtbl_state{retry_timer = erlang:send_after(60000, self(), fetch_list)};
+parse_initial_items(State, #iq{type = error} = IQ) ->
+    ?WARNING_MSG("Fetching initial list failed: ~p. Retrying in 60 seconds",
+		 [xmpp:format_stanza_error(xmpp:get_error(IQ))]),
+    State#rtbl_state{retry_timer = erlang:send_after(60000, self(), fetch_list)};
+parse_initial_items(State, #iq{from = From, to = #jid{lserver = Host} = To, type = result} = IQ) ->
     case xmpp:get_subtag(IQ, #pubsub{}) of
 	#pubsub{items = #ps_items{node = Node, items = Items}} ->
 	    Added = lists:foldl(
@@ -86,16 +126,22 @@ parse_initial_items(#iq{from = From, to = #jid{lserver = Host} = To, type = resu
 	    SubIQ = #iq{type = set, from = To, to = From,
 			sub_els = [
 			    #pubsub{subscribe = #ps_subscribe{jid = To, node = Node}}]},
-	    ejabberd_router:route_iq(SubIQ, fun parse_subscribe_result/1),
-	    notify_rooms(Host, Added);
+	    ejabberd_router:route_iq(SubIQ, subscription, self()),
+	    notify_rooms(Host, Added),
+	    State#rtbl_state{retry_timer = undefined, subscribed = true};
 	_ ->
-	    ?WARNING_MSG("Fetching initial list failed: invalid result payload", [])
+	    ?WARNING_MSG("Fetching initial list failed: invalid result payload", []),
+	    State#rtbl_state{retry_timer = undefined}
     end.
 
-parse_subscribe_result(#iq{type = error} = IQ) ->
-    ?WARNING_MSG("Subscription error: ~p", [xmpp:format_stanza_error(xmpp:get_error(IQ))]);
-parse_subscribe_result(_) ->
-    ok.
+parse_subscription(State, timeout) ->
+    ?WARNING_MSG("Subscription error: request timeout", []),
+    State#rtbl_state{subscribed = false};
+parse_subscription(State, #iq{type = error} = IQ) ->
+    ?WARNING_MSG("Subscription error: ~p", [xmpp:format_stanza_error(xmpp:get_error(IQ))]),
+    State#rtbl_state{subscribed = false};
+parse_subscription(State, _) ->
+    State.
 
 pubsub_event_handler(#message{from = #jid{luser = <<>>, lserver = SServer},
 			      to = #jid{luser = <<>>, lserver = Server,
