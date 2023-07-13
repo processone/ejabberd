@@ -236,8 +236,9 @@ install(Package, Config) when is_binary(Package) ->
                     code:add_pathsz([module_ebin_dir(Module)|module_deps_dirs(Module)]),
                     ejabberd_config_reload(Config),
                     copy_commit_json(Package, Attrs),
-                    case erlang:function_exported(Module, post_install, 0) of
-                        true -> Module:post_install();
+                    ModuleRuntime = get_runtime_module_name(Module),
+                    case erlang:function_exported(ModuleRuntime, post_install, 0) of
+                        true -> ModuleRuntime:post_install();
                         _ -> ok
                     end;
                 Error ->
@@ -260,14 +261,15 @@ uninstall(Package) when is_binary(Package) ->
     case installed(Package) of
         true ->
             Module = misc:binary_to_atom(Package),
-            case erlang:function_exported(Module, pre_uninstall, 0) of
-                true -> Module:pre_uninstall();
+            ModuleRuntime = get_runtime_module_name(Module),
+            case erlang:function_exported(ModuleRuntime, pre_uninstall, 0) of
+                true -> ModuleRuntime:pre_uninstall();
                 _ -> ok
             end,
-            [catch gen_mod:stop_module(Host, Module)
+            [catch gen_mod:stop_module(Host, ModuleRuntime)
              || Host <- ejabberd_option:hosts()],
-            code:purge(Module),
-            code:delete(Module),
+            code:purge(ModuleRuntime),
+            code:delete(ModuleRuntime),
             [code:del_path(PathDelete) || PathDelete <- [module_ebin_dir(Module)|module_deps_dirs(Module)]],
             delete_path(module_lib_dir(Module)),
             ejabberd_config:reload();
@@ -1017,6 +1019,26 @@ get_module_status(Module) ->
     catch
         _:_ ->
             unknown
+    end.
+
+%% When a module named mod_whatever in ejabberd-modules
+%% is written in Elixir, its runtime name is 'Elixir.ModWhatever'
+get_runtime_module_name(Module) ->
+    case is_elixir_module(Module) of
+        true -> elixir_module_name(Module);
+        false -> Module
+    end.
+
+is_elixir_module(Module) ->
+    LibDir = module_src_dir(Module),
+    Lib = filename:join(LibDir, "lib"),
+    Src = filename:join(LibDir, "src"),
+    case {filelib:wildcard(Lib++"/*.{ex}"),
+          filelib:wildcard(Src++"/*.{erl}")} of
+        {[_ | _], []} ->
+            true;
+        {[], [_ | _]} ->
+            false
     end.
 
 %% Converts mod_some_thing to Elixir.ModSomeThing
