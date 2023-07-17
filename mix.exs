@@ -154,7 +154,8 @@ defmodule Ejabberd.MixProject do
                          {config(:sip), :esip},
                          {config(:odbc), :odbc},
                          {config(:pgsql), :p1_pgsql},
-                         {config(:sqlite), :sqlite3}], do:
+                         {config(:sqlite), :sqlite3},
+                         {config(:stun), :stun}], do:
       app
   end
 
