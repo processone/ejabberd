@@ -108,6 +108,7 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
     {Port2, ExtraOpts} = case Port of
 			     <<"unix:", Path/binary>> ->
 				 SO = lists:keydelete(ip, 1, SockOpts),
+                                 setup_provisional_udsocket_dir(Path),
 				 file:delete(Path),
 				 {0, [{ip, {local, Path}} | SO]};
 			     _ ->
@@ -119,6 +120,7 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 			     {reuseaddr, true} |
 			     ExtraOpts2]) of
 	{ok, Socket} ->
+            set_definitive_udsocket(Port, Opts),
 	    case inet:sockname(Socket) of
 		{ok, {Addr, Port1}} ->
 		    proc_lib:init_ack({ok, self()}),
@@ -149,6 +151,7 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 init({Port, _, tcp} = EndPoint, Module, Opts, SockOpts) ->
     case listen_tcp(Port, SockOpts) of
 	{ok, ListenSocket} ->
+            set_definitive_udsocket(Port, Opts),
 	    case inet:sockname(ListenSocket) of
 		{ok, {Addr, Port1}} ->
 		    proc_lib:init_ack({ok, self()}),
@@ -186,8 +189,10 @@ listen_tcp(Port, SockOpts) ->
     {Port2, ExtraOpts} = case Port of
 			     <<"unix:", Path/binary>> ->
 				 SO = lists:keydelete(ip, 1, SockOpts),
+                                 Prov = setup_provisional_udsocket_dir(Path),
 				 file:delete(Path),
-				 {0, [{ip, {local, Path}} | SO]};
+				 file:delete(Prov),
+				 {0, [{ip, {local, Prov}} | SO]};
 			     _ ->
 				 {Port, SockOpts}
 			 end,
@@ -204,6 +209,72 @@ listen_tcp(Port, SockOpts) ->
 	{error, _} = Err ->
 	    Err
     end.
+
+%%%
+%%% Unix Domain Socket utility functions
+%%%
+
+setup_provisional_udsocket_dir(DefinitivePath) ->
+    ProvisionalPath = get_provisional_udsocket_path(DefinitivePath),
+    SocketDir = filename:dirname(ProvisionalPath),
+    file:make_dir(SocketDir),
+    file:change_mode(SocketDir, 8#00700),
+    ?DEBUG("Creating a Unix Domain Socket provisional file at ~ts for the definitive path ~s",
+              [ProvisionalPath, DefinitivePath]),
+    ProvisionalPath.
+
+get_provisional_udsocket_path(Path) ->
+    MnesiaDir = mnesia:system_info(directory),
+    SocketDir = filename:join(MnesiaDir, "socket"),
+    PathBase64 = misc:term_to_base64(Path),
+    PathBuild = filename:join(SocketDir, PathBase64),
+    %% Shorthen the path, a long path produces a crash when opening the socket.
+    binary:part(PathBuild, {0, erlang:min(107, byte_size(PathBuild))}).
+
+get_definitive_udsocket_path(<<"unix", _>> = Unix) ->
+    Unix;
+get_definitive_udsocket_path(ProvisionalPath) ->
+    PathBase64 = filename:basename(ProvisionalPath),
+    {term, Path} = misc:base64_to_term(PathBase64),
+    Path.
+
+set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
+    Prov = get_provisional_udsocket_path(Path),
+    timer:sleep(5000),
+    Usd = maps:get(unix_socket, Opts),
+    case maps:get(mode, Usd, undefined) of
+        undefined -> ok;
+        Mode -> ok = file:change_mode(Prov, Mode)
+    end,
+    case maps:get(owner, Usd, undefined) of
+        undefined -> ok;
+        Owner ->
+            try
+                ok = file:change_owner(Prov, Owner)
+            catch
+                error:{badmatch, {error, eperm}} ->
+                    ?ERROR_MSG("Error trying to set owner ~p for socket ~p", [Owner, Prov]),
+                    throw({error_setting_socket_owner, Owner, Prov})
+            end
+    end,
+    case maps:get(group, Usd, undefined) of
+        undefined -> ok;
+        Group ->
+            try
+                ok = file:change_group(Prov, Group)
+            catch
+                error:{badmatch, {error, eperm}} ->
+                    ?ERROR_MSG("Error trying to set group ~p for socket ~p", [Group, Prov]),
+                    throw({error_setting_socket_group, Group, Prov})
+            end
+    end,
+    file:rename(Prov, Path);
+set_definitive_udsocket(_Port, _Opts) ->
+    ok.
+
+%%%
+%%%
+%%%
 
 -spec split_opts(transport(), opts()) -> {opts(), [gen_tcp:option()]}.
 split_opts(Transport, Opts) ->
@@ -493,8 +564,11 @@ format_error(Reason) ->
 -spec format_endpoint(endpoint()) -> string().
 format_endpoint({Port, IP, _Transport}) ->
     case Port of
+        <<"unix:", _/binary>> ->
+            Port;
 	Unix when is_binary(Unix) ->
-	    <<"unix:", Unix/binary>>;
+            Def = get_definitive_udsocket_path(Unix),
+            <<"unix:", Def/binary>>;
 	_ ->
 	    IPStr = case tuple_size(IP) of
 			4 -> inet:ntoa(IP);
@@ -699,6 +773,12 @@ listen_opt_type(shaper) ->
     econf:shaper();
 listen_opt_type(access) ->
     econf:acl();
+listen_opt_type(unix_socket) ->
+    econf:options(
+      #{group => econf:non_neg_int(),
+       owner => econf:non_neg_int(),
+       mode => econf:octal()},
+      [unique, {return, map}]);
 listen_opt_type(use_proxy_protocol) ->
     econf:bool().
 
@@ -709,5 +789,6 @@ listen_options() ->
      {accept_interval, 0},
      {send_timeout, 15000},
      {backlog, 128},
+     {unix_socket, #{}},
      {use_proxy_protocol, false},
      {supervisor, true}].
