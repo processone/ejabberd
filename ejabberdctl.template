@@ -95,7 +95,7 @@ $(sed '/^log_rotate_count/!d;s/:[ \t]*\([0-9]*\).*/ \1/;s/^/ /' "$EJABBERD_CONFI
 $(sed '/^log_burst_limit_count/!d;s/:[ \t]*\([0-9]*\).*/ \1/;s/^/ /' "$EJABBERD_CONFIG_PATH")\
 $(sed '/^log_burst_limit_window_time/!d;s/:[ \t]*\([0-9]*[a-z]*\).*/ \1/;s/^/ /' "$EJABBERD_CONFIG_PATH")"
 [ -n "$EJABBERD_OPTS" ] && EJABBERD_OPTS="-ejabberd $EJABBERD_OPTS"
-EJABBERD_OPTS="$ERLANG_OPTS -mnesia dir \"$SPOOL_DIR\" $MNESIA_OPTIONS $EJABBERD_OPTS -s ejabberd"
+EJABBERD_OPTS="-mnesia dir \"$SPOOL_DIR\" $MNESIA_OPTIONS $EJABBERD_OPTS -s ejabberd"
 
 # export global variables
 export EJABBERD_CONFIG_PATH
@@ -128,12 +128,12 @@ exec_cmd()
 exec_erl()
 {
     NODE=$1; shift
-    exec_cmd "$ERL" ${S:--}name "$NODE" "$@"
+    exec_cmd "$ERL" ${S:--}name "$NODE" $ERLANG_OPTS "$@"
 }
 exec_iex()
 {
     NODE=$1; shift
-    exec_cmd "$IEX" -${S:--}name "$NODE" "$@"
+    exec_cmd "$IEX" -${S:--}name "$NODE" --erl "$ERLANG_OPTS" "$@"
 }
 
 # usage
@@ -321,7 +321,7 @@ case $1 in
         PEER=${2:-$ERLANG_NODE}
         [ "$PEER" = "${PEER%.*}" ] && PS="-s"
         set_dist_client
-        exec_cmd "$ERL" ${PS:--}name "$(uid ping "$(hostname $PS)")" \
+        exec_cmd "$ERL" ${PS:--}name "$(uid ping "$(hostname $PS)")" $ERLANG_OPTS \
                  -noinput -hidden -eval 'io:format("~p~n",[net_adm:ping('"'$PEER'"')])' \
                  -s erlang halt -output text
         ;;

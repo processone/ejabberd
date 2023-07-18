@@ -108,10 +108,8 @@
 #.
 #' ERL_OPTIONS: Additional Erlang options
 #
-# The next variable allows to specify additional options passed to erlang while
-# starting ejabberd. Some useful options are -noshell, -detached, -heart. When
-# ejabberd is started from an init.d script options -noshell and -detached are
-# added implicitly. See erl(1) for more info.
+# The next variable allows to specify additional options passed to
+# erlang. See erl(1) for more info.
 #
 # It might be useful to add "-pa /usr/local/lib/ejabberd/ebin" if you
 # want to add local modules in this path.
@@ -119,6 +117,19 @@
 # Default: ""
 #
 #ERL_OPTIONS=""
+
+#.
+#' EJABBERD_OPTS: Additional Erlang options to start ejabberd
+#
+# The next variable allows to specify additional options passed to erlang while
+# starting ejabberd. Some useful options are -noshell, -detached, -heart. When
+# ejabberd is started from an init.d script options -noshell and -detached are
+# added implicitly. See erl(1) for more info.
+#
+# Default: ""
+#
+#EJABBERD_OPTS=""
+EJABBERD_OPTS="-heart -env HEART_BEAT_TIMEOUT 120 -env ERL_CRASH_DUMP_SECONDS 60"
 
 #.
 #' ERLANG_NODE: Erlang node name
