@@ -1127,11 +1127,11 @@ user_roster(User, Server, Query, Lang) ->
 	++
 	[?XAE(<<"form">>,
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-	      (FItems ++
-		 [?P, ?INPUT(<<"text">>, <<"newjid">>, <<"">>),
+	      (  [?P, ?INPUT(<<"text">>, <<"newjid">>, <<"">>),
 		  ?C(<<" ">>),
 		  ?INPUTT(<<"submit">>, <<"addjid">>,
-			  ?T("Add Jabber ID"))]))].
+			  ?T("Add Jabber ID"))]
+               ++ FItems))].
 
 build_contact_jid_td(RosterJID) ->
     ContactJID = jid:make(RosterJID),
