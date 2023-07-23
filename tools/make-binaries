@@ -189,7 +189,7 @@ check_configured_dep_vsns()
 	          'zlib-\([1-9][0-9.]*\)\.tar\.gz'
 	check_vsn 'Expat' "$expat_vsn" \
 	          'https://github.com/libexpat/libexpat/releases' \
-	          '[0-9]\]\([1-9][0-9.]*\)'
+	          '\([1-9]\.[0-9]*\.[0-9]*\)'
 	check_vsn 'Termcap' "$termcap_vsn" \
 	          'https://ftp.gnu.org/gnu/termcap/' \
 	          'termcap-\([1-9][0-9.]*\)\.tar\.gz'
