@@ -297,7 +297,6 @@ create_x64_config()
 	local file="$1"
 	local libc="$2"
 
-	create_common_config "$file"
 	create_${libc}_config "$file"
 
 	cat >>"$file" <<-'EOF'
@@ -312,7 +311,6 @@ create_arm64_config()
 	local file="$1"
 	local libc="$2"
 
-	create_common_config "$file"
 	create_${libc}_config "$file"
 
 	cat >>"$file" <<-'EOF'
