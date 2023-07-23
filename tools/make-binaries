@@ -273,7 +273,6 @@ create_gnu_config()
 
 	cat >>"$file" <<-'EOF'
 		CT_GLIBC_V_2_19=y
-		CT_GLIBC_KERNEL_VERSION_NONE=y
 	EOF
 }
 #.
