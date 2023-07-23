@@ -346,7 +346,7 @@ add_otp_path()
 
 	if [ "$mode" = 'native' ]
 	then native_otp_bin="$prefix/bin"
-	elif [ ! -z "${INSTALL_DIR_FOR_OTP+x}" ] && [ ! -z "${INSTALL_DIR_FOR_ELIXIR+x}" ]
+	elif [ -n "${INSTALL_DIR_FOR_OTP+x}" ] && [ -n "${INSTALL_DIR_FOR_ELIXIR+x}" ]
 	then
 		# For github runners to build for non-native systems:
 		# https://github.com/erlef/setup-beam#environment-variables
