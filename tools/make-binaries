@@ -118,7 +118,6 @@ rel_tar="$rel_name-$mix_vsn.tar.gz"
 ct_jobs=$(nproc)
 src_dir="$root_dir/src"
 platform=$(gcc -dumpmachine)
-platform_libc=$(echo $platform | sed "s/\-/\ /g" | awk '{print $NF}')
 targets='x86_64-linux-gnu aarch64-linux-gnu'
 build_start=$(date '+%F %T')
 have_current_deps='false'
@@ -347,10 +346,10 @@ add_otp_path()
 
 	if [ "$mode" = 'native' ]
 	then native_otp_bin="$prefix/bin"
-	# for github runners to build for non-native systems
-	# https://github.com/marketplace/actions/setup-erlang-otp-with-optional-elixir-and-mix-and-or-rebar3
-	elif [ ! -z "${INSTALL_DIR_FOR_OTP-}" ] && [ ! -z "${INSTALL_DIR_FOR_ELIXIR-}" ] 
-	then 
+	elif [ ! -z "${INSTALL_DIR_FOR_OTP+x}" ] && [ ! -z "${INSTALL_DIR_FOR_ELIXIR+x}" ]
+	then
+		# For github runners to build for non-native systems:
+		# https://github.com/erlef/setup-beam#environment-variables
 		native_otp_bin="$INSTALL_DIR_FOR_OTP/bin"
 		native_elixir_bin="$INSTALL_DIR_FOR_ELIXIR/bin"
 		export PATH="$native_elixir_bin:$PATH"
@@ -472,9 +471,9 @@ build_toolchain()
 {
 	local target="$1"
 	local prefix="$2"
-	local libc="$3"
 	local arch=$(arch_name "$target")
-	
+	local libc="${target##*-}"
+
 	if [ -d "$prefix" ]
 	then
 		info "Using existing toolchain in $prefix ..."
@@ -513,8 +512,8 @@ build_deps()
 	local mode="$1"
 	local target="$2"
 	local prefix="$3"
-	local libc="$4"
 	local arch="$(arch_name "$target")"
+	local libc="${target##*-}"
 	local target_src_dir="$prefix/src"
 	local saved_path="$PATH"
 
@@ -721,8 +720,8 @@ build_rel()
 	local mode="$1"
 	local target="$2"
 	local prefix="$3"
-	local libc="$4"
 	local arch="$(arch_name "$target")"
+	local libc="${target##*-}"
 	local rel_dir="$PWD/_build/prod"
 	local target_data_dir="$prefix/$rel_name"
 	local target_dst_dir="$prefix/$rel_name-$rel_vsn"
@@ -761,7 +760,7 @@ build_rel()
 	fi
 
 	if [ $have_current_deps = false ]
-	then build_deps "$mode" "$target" "$prefix" "$libc"
+	then build_deps "$mode" "$target" "$prefix"
 	fi
 
 	add_otp_path "$mode" "$prefix"
@@ -908,16 +907,15 @@ export LC_ALL='C.UTF-8' # Elixir insists on a UTF-8 environment.
 
 for target in $targets
 do
-	libc="$(echo $target | sed "s/\-/\ /g" | awk '{print $NF}')"
-	prefix="$build_dir/$(arch_name "$target")-$libc"
+	prefix="$build_dir/$target"
 	toolchain_dir="$ct_prefix_dir/$target"
 
-	if [ "$(uname -m)-linux-$platform_libc" = "$target" ]
+	if [ "$platform" = "$target" ]
 	then mode='native'
 	else mode='cross'
 	fi
-	build_toolchain "$target" "$toolchain_dir" "$libc"
-	build_rel "$mode" "$target" "$prefix" "$libc"
+	build_toolchain "$target" "$toolchain_dir"
+	build_rel "$mode" "$target" "$prefix"
 done
 
 save_built_dep_vsns
