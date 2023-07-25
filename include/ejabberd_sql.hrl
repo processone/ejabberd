@@ -34,14 +34,14 @@
 		    format_query :: fun(),
 		    format_res :: fun(),
 		    args :: fun(),
-		    flags :: pos_integer(),
+		    flags :: non_neg_integer(),
 		    loc :: {module(), pos_integer()}}).
 -else.
 -record(sql_query, {hash :: binary(),
 		    format_query :: fun(),
 		    format_res :: fun(),
 		    args :: fun(),
-		    flags :: pos_integer(),
+		    flags :: non_neg_integer(),
 		    loc :: {module(), {pos_integer(), pos_integer()}}}).
 -endif.
 
