@@ -683,7 +683,14 @@ sql_query_internal(#sql_query{} = Query) ->
                             pgsql_sql_query(Query)
                     end;
                 mysql ->
-                    generic_sql_query(Query);
+		    case {Query#sql_query.flags, ejabberd_option:sql_prepared_statements(State#state.host)} of
+			{1, _} ->
+			    generic_sql_query(Query);
+			{_, false} ->
+			    generic_sql_query(Query);
+			_ ->
+			    mysql_prepared_execute(Query, State)
+		    end;
                 sqlite ->
                     sqlite_sql_query(Query)
             end
@@ -862,6 +869,24 @@ pgsql_execute_sql_query(SQLQuery, State) ->
     Res = pgsql_execute_to_odbc(ExecuteRes),
     sql_query_format_res(Res, SQLQuery).
 
+mysql_prepared_execute(#sql_query{hash = Hash} = Query, State) ->
+    ValEsc = #sql_escape{like_escape = fun() -> ignore end, _ = fun(X) -> X end},
+    TypesEsc = #sql_escape{string = fun(_) -> string end,
+			   integer = fun(_) -> integer end,
+			   boolean = fun(_) -> bool end,
+			   in_array_string = fun(_) -> string end,
+			   like_escape = fun() -> ignore end},
+    Val = [X || X <- (Query#sql_query.args)(ValEsc), X /= ignore],
+    Types = [X || X <- (Query#sql_query.args)(TypesEsc), X /= ignore],
+    QueryFn = fun() ->
+	PrepEsc = #sql_escape{like_escape = fun() -> <<>> end, _ = fun(_) -> <<"?">> end},
+	(Query#sql_query.format_query)((Query#sql_query.args)(PrepEsc))
+	end,
+    QueryTimeout = query_timeout(State#state.host),
+    Res = p1_mysql_conn:prepared_query(State#state.db_ref, QueryFn, Hash, Val, Types,
+				       self(), [{timeout, QueryTimeout - 1000}]),
+    Res2 = mysql_to_odbc(Res),
+    sql_query_format_res(Res2, Query).
 
 sql_query_format_res({selected, _, Rows}, SQLQuery) ->
     Res =

@@ -42,7 +42,8 @@
                 used_vars = [],
                 use_new_schema,
                 need_timestamp_pass = false,
-                need_array_pass = false}).
+                need_array_pass = false,
+                has_list = false}).
 
 -define(QUERY_RECORD, "sql_query").
 
@@ -268,9 +269,12 @@ parse1([$@, $( | S], Acc, State) ->
     Convert =
         case Type of
             integer ->
-                erl_syntax:application(
-                  erl_syntax:atom(binary_to_integer),
-                  [EVar]);
+                erl_syntax:if_expr([
+                    erl_syntax:clause(
+                        [erl_syntax:application(erl_syntax:atom(is_binary), [EVar])],
+                        [erl_syntax:application(erl_syntax:atom(binary_to_integer), [EVar])]),
+                    erl_syntax:clause([erl_syntax:atom(true)], [EVar])
+                    ]);
             string ->
                 EVar;
             timestamp ->
@@ -339,6 +343,7 @@ parse1([$%, $( | S], Acc, State) ->
                      erl_syntax:variable(Name)]),
                 State2#state{'query' = [[{var, Var, Type}] | State2#state.'query'],
                              need_array_pass = true,
+                             has_list = true,
                              args = [[Convert, ConvertArr] | State2#state.args],
                              params = [Var | State2#state.params],
                              param_pos = State2#state.param_pos + 1,
@@ -467,6 +472,7 @@ make_sql_query(State, Type) ->
     Hash = erlang:phash2(State#state{loc = undefined, use_new_schema = true}),
     SHash = <<"Q", (integer_to_binary(Hash))/binary>>,
     Query = pack_query(State#state.'query'),
+    Flags = case State#state.has_list of true -> 1; _ -> 0 end,
     EQuery =
         lists:flatmap(
           fun({str, S}) ->
@@ -515,6 +521,9 @@ make_sql_query(State, Type) ->
              none,
              [erl_syntax:tuple(State#state.res)]
             )])),
+      erl_syntax:record_field(
+          erl_syntax:atom(flags),
+          erl_syntax:abstract(Flags)),
       erl_syntax:record_field(
        erl_syntax:atom(loc),
         erl_syntax:abstract({get(?MOD), State#state.loc}))
