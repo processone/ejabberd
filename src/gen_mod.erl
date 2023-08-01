@@ -60,7 +60,9 @@
 
 -type component() :: ejabberd_sm | ejabberd_local.
 -type registration() ::
+        {hook, atom(), atom(), integer()} |
         {hook, atom(), module(), atom(), integer()} |
+        {iq_handler, component(), binary(), atom()} |
         {iq_handler, component(), binary(), module(), atom()}.
 
 -callback start(binary(), opts()) ->
@@ -165,7 +167,7 @@ start_module(Host, Module, Opts, Order) ->
 	    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
 	    {ok, Registrations} when is_list(Registrations) ->
                 store_options(Host, Module, Opts, Registrations, Order),
-                add_registrations(Host, Registrations),
+                add_registrations(Host, Module, Registrations),
                 ok;
 	    Err ->
 		ets:delete(ejabberd_modules, {Module, Host}),
@@ -319,7 +321,7 @@ stop_module_keep_config(Host, Module) ->
             [] ->
                 []
         end,
-    del_registrations(Host, Registrations),
+    del_registrations(Host, Module, Registrations),
     try Module:stop(Host) of
 	_ ->
 	    ets:delete(ejabberd_modules, {Module, Host}),
@@ -332,21 +334,30 @@ stop_module_keep_config(Host, Module) ->
 	    error
     end.
 
--spec add_registrations(binary(), [registration()]) -> ok.
-add_registrations(Host, Registrations) ->
+-spec add_registrations(binary(), module(), [registration()]) -> ok.
+add_registrations(Host, Module, Registrations) ->
     lists:foreach(
-      fun({hook, Hook, Module, Function, Seq}) ->
+      fun({hook, Hook, Function, Seq}) ->
               ejabberd_hooks:add(Hook, Host, Module, Function, Seq);
-         ({iq_handler, Component, NS, Module, Function}) ->
+         ({hook, Hook, Module1, Function, Seq}) ->
+              ejabberd_hooks:add(Hook, Host, Module1, Function, Seq);
+         ({iq_handler, Component, NS, Function}) ->
               gen_iq_handler:add_iq_handler(
-                Component, Host, NS, Module, Function)
+                Component, Host, NS, Module, Function);
+         ({iq_handler, Component, NS, Module1, Function}) ->
+              gen_iq_handler:add_iq_handler(
+                Component, Host, NS, Module1, Function)
       end, Registrations).
 
--spec del_registrations(binary(), [registration()]) -> ok.
-del_registrations(Host, Registrations) ->
+-spec del_registrations(binary(), module(), [registration()]) -> ok.
+del_registrations(Host, Module, Registrations) ->
     lists:foreach(
-      fun({hook, Hook, Module, Function, Seq}) ->
+      fun({hook, Hook, Function, Seq}) ->
               ejabberd_hooks:delete(Hook, Host, Module, Function, Seq);
+         ({hook, Hook, Module1, Function, Seq}) ->
+              ejabberd_hooks:delete(Hook, Host, Module1, Function, Seq);
+         ({iq_handler, Component, NS, _Function}) ->
+              gen_iq_handler:remove_iq_handler(Component, Host, NS);
          ({iq_handler, Component, NS, _Module, _Function}) ->
               gen_iq_handler:remove_iq_handler(Component, Host, NS)
       end, Registrations).

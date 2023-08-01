@@ -59,21 +59,17 @@ start(Host, Opts) ->
 			  register_extra_domain(Host, Domain)
 		  end,
 		  ExtraDomains),
-    {ok, [{iq_handler, ejabberd_local, ?NS_DISCO_ITEMS,
-           ?MODULE, process_local_iq_items},
-          {iq_handler, ejabberd_local, ?NS_DISCO_INFO,
-           ?MODULE, process_local_iq_info},
-          {iq_handler, ejabberd_sm, ?NS_DISCO_ITEMS,
-           ?MODULE, process_sm_iq_items},
-          {iq_handler, ejabberd_sm, ?NS_DISCO_INFO,
-           ?MODULE, process_sm_iq_info},
-          {hook, disco_local_items, ?MODULE, get_local_services, 100},
-          {hook, disco_local_features, ?MODULE, get_local_features, 100},
-          {hook, disco_local_identity, ?MODULE, get_local_identity, 100},
-          {hook, disco_sm_items, ?MODULE, get_sm_items, 100},
-          {hook, disco_sm_features, ?MODULE, get_sm_features, 100},
-          {hook, disco_sm_identity, ?MODULE, get_sm_identity, 100},
-          {hook, disco_info, ?MODULE, get_info, 100}]}.
+    {ok, [{iq_handler, ejabberd_local, ?NS_DISCO_ITEMS, process_local_iq_items},
+          {iq_handler, ejabberd_local, ?NS_DISCO_INFO, process_local_iq_info},
+          {iq_handler, ejabberd_sm, ?NS_DISCO_ITEMS, process_sm_iq_items},
+          {iq_handler, ejabberd_sm, ?NS_DISCO_INFO, process_sm_iq_info},
+          {hook, disco_local_items, get_local_services, 100},
+          {hook, disco_local_features, get_local_features, 100},
+          {hook, disco_local_identity, get_local_identity, 100},
+          {hook, disco_sm_items, get_sm_items, 100},
+          {hook, disco_sm_features, get_sm_features, 100},
+          {hook, disco_sm_identity, get_sm_identity, 100},
+          {hook, disco_info, get_info, 100}]}.
 
 stop(Host) ->
     catch ets:match_delete(disco_extra_domains,
