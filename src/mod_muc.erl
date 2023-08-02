@@ -715,6 +715,10 @@ process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
 		      true -> [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2];
 		      false -> []
 		  end,
+    OccupantIdFeatures = case gen_mod:is_loaded(ServerHost, mod_muc_occupantid) of
+		      true -> [?NS_OCCUPANT_ID];
+		      false -> []
+		  end,
     RSMFeatures = case RMod:rsm_supported() of
 		      true -> [?NS_RSM];
 		      false -> []
@@ -725,7 +729,7 @@ process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
 		       end,
     Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
 		?NS_MUC, ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE
-		| RegisterFeatures ++ RSMFeatures ++ MAMFeatures],
+		| RegisterFeatures ++ RSMFeatures ++ MAMFeatures ++ OccupantIdFeatures],
     Name = mod_muc_opt:name(ServerHost),
     Identity = #identity{category = <<"conference">>,
 			 type = <<"text">>,

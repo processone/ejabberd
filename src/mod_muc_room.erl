@@ -4362,6 +4362,12 @@ make_disco_info(_From, StateData) ->
 	       true -> [?NS_MUCSUB];
 	       false -> []
 	   end
+	++ case gen_mod:is_loaded(StateData#state.server_host, mod_muc_occupantid) of
+	       true ->
+		   [?NS_OCCUPANT_ID];
+	       _ ->
+		   []
+	   end
 	++ case {gen_mod:is_loaded(StateData#state.server_host, mod_mam),
 		 Config#config.mam} of
 	       {true, true} ->
