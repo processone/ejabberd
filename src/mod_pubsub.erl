@@ -3367,9 +3367,10 @@ get_option(Options, Var, Def) ->
 -spec node_options(host(), binary()) -> [{atom(), any()}].
 node_options(Host, Type) ->
     DefaultOpts = node_plugin_options(Host, Type),
-    case config(Host, plugins) of
-	[Type|_] -> config(Host, default_node_config, DefaultOpts);
-	_ -> DefaultOpts
+    case lists:member(Type, config(Host, plugins)) of
+	true ->
+            config(Host, default_node_config, DefaultOpts);
+	false -> DefaultOpts
     end.
 
 -spec node_plugin_options(host(), binary()) -> [{atom(), any()}].
