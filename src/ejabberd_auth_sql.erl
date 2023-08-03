@@ -161,7 +161,10 @@ set_password_t(LUser, LServer, Password) ->
        "users",
        ["!username=%(LUser)s",
         "!server_host=%(LServer)s",
-	"password=%(Password)s"]).
+	"password=%(Password)s",
+	"serverkey=''",
+	"salt=''",
+	"iterationcount=0"]).
 
 get_password_scram(LServer, LUser) ->
     ejabberd_sql:sql_query(
