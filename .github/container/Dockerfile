@@ -126,6 +126,10 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
         \nexport SPOOL_DIR=/$HOME/database \
         \nexec /$(find $home_root_dir -name ejabberdctl) \"\$@\"" \
             > usr/local/bin/ejabberdctl \
+    && echo -e \
+        "#!/bin/sh \
+        \n \
+        \nexec ejabberdctl \"\$@\"" > usr/local/bin/run.sh \
     && chmod +x usr/local/bin/* \
     && scanelf --needed --nobanner --format '%n#p' --recursive $home_root_dir \
         | tr ',' '\n' \
@@ -186,5 +190,5 @@ USER $USER
 VOLUME ["/$HOME"]
 EXPOSE 1883 4369-4399 5210 5222 5269 5280 5443
 
-ENTRYPOINT ["/sbin/tini","--","ejabberdctl"]
+ENTRYPOINT ["/sbin/tini","--","run.sh"]
 CMD ["foreground"]
