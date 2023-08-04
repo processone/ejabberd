@@ -622,13 +622,20 @@ normal_state({route, ToNick,
 					jid:replace_resource(StateData#state.jid,
 							     FromNick),
 				    X = #muc_user{},
-				    PrivMsg = xmpp:set_from(
-						xmpp:set_subtag(Packet, X),
-						FromNickJID),
-				    lists:foreach(
-				      fun(ToJID) ->
-					      ejabberd_router:route(xmpp:set_to(PrivMsg, ToJID))
-				      end, ToJIDs);
+                                    Packet2 = xmpp:set_subtag(Packet, X),
+                                    case ejabberd_hooks:run_fold(muc_filter_message,
+                                                                 StateData#state.server_host,
+                                                                 Packet2,
+                                                                 [StateData, FromNick]) of
+                                        drop ->
+                                            ok;
+                                        Packet3 ->
+                                            PrivMsg = xmpp:set_from(Packet3, FromNickJID),
+                                            lists:foreach(
+                                              fun(ToJID) ->
+                                                      ejabberd_router:route(xmpp:set_to(PrivMsg, ToJID))
+                                              end, ToJIDs)
+                                    end;
 			       true ->
 				    ErrText = ?T("You are not allowed to send private messages"),
 				    Err = xmpp:err_forbidden(ErrText, Lang),
