@@ -56,12 +56,7 @@ stop(_Host) ->
 %%%
 
 filter_packet(Packet, State, _Nick) ->
-    case (State#state.config)#config.anonymous of
-        true ->
-            add_occupantid_packet(Packet, State#state.jid);
-        false ->
-            Packet
-    end.
+    add_occupantid_packet(Packet, State#state.jid).
 
 %%%
 %%% XEP-0421 Occupant-id
