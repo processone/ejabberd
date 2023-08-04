@@ -73,32 +73,15 @@ start(Host, Opts) ->
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
-		       disco_features, 50),
-    ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE,
-		       c2s_copy_session, 50),
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-		       user_send_packet, 50),
-    ejabberd_hooks:add(privacy_check_packet, Host, ?MODULE,
-		       check_packet, 50),
-    ejabberd_hooks:add(remove_user, Host, ?MODULE,
-		       remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_PRIVACY, ?MODULE, process_iq).
+    {ok, [{hook, disco_local_features, disco_features, 50},
+          {hook, c2s_copy_session, c2s_copy_session, 50},
+          {hook, user_send_packet, user_send_packet, 50},
+          {hook, privacy_check_packet, check_packet, 50},
+          {hook, remove_user, remove_user, 50},
+          {iq_handler, ejabberd_sm, ?NS_PRIVACY, process_iq}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE,
-			  disco_features, 50),
-    ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE,
-			  c2s_copy_session, 50),
-    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-			  user_send_packet, 50),
-    ejabberd_hooks:delete(privacy_check_packet, Host,
-			  ?MODULE, check_packet, 50),
-    ejabberd_hooks:delete(remove_user, Host, ?MODULE,
-			  remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
-				     ?NS_PRIVACY).
+stop(_Host) ->
+    ok.
 
 reload(Host, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(NewOpts, ?MODULE),

@@ -44,50 +44,20 @@
 -include("translate.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
-start(Host, _Opts) ->
-    ejabberd_hooks:add(disco_local_items, Host, ?MODULE,
-		       get_local_items, 50),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
-		       get_local_features, 50),
-    ejabberd_hooks:add(disco_local_identity, Host, ?MODULE,
-		       get_local_identity, 50),
-    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE,
-		       get_sm_items, 50),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
-		       get_sm_features, 50),
-    ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE,
-		       get_sm_identity, 50),
-    ejabberd_hooks:add(adhoc_local_items, Host, ?MODULE,
-		       adhoc_local_items, 50),
-    ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE,
-		       adhoc_local_commands, 50),
-    ejabberd_hooks:add(adhoc_sm_items, Host, ?MODULE,
-		       adhoc_sm_items, 50),
-    ejabberd_hooks:add(adhoc_sm_commands, Host, ?MODULE,
-		       adhoc_sm_commands, 50),
-    ok.
+start(_Host, _Opts) ->
+    {ok, [{hook, disco_local_items, get_local_items, 50},
+          {hook, disco_local_features, get_local_features, 50},
+          {hook, disco_local_identity, get_local_identity, 50},
+          {hook, disco_sm_items, get_sm_items, 50},
+          {hook, disco_sm_features, get_sm_features, 50},
+          {hook, disco_sm_identity, get_sm_identity, 50},
+          {hook, adhoc_local_items, adhoc_local_items, 50},
+          {hook, adhoc_local_commands, adhoc_local_commands, 50},
+          {hook, adhoc_sm_items, adhoc_sm_items, 50},
+          {hook, adhoc_sm_commands, adhoc_sm_commands, 50}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(adhoc_sm_commands, Host, ?MODULE,
-			  adhoc_sm_commands, 50),
-    ejabberd_hooks:delete(adhoc_sm_items, Host, ?MODULE,
-			  adhoc_sm_items, 50),
-    ejabberd_hooks:delete(adhoc_local_commands, Host,
-			  ?MODULE, adhoc_local_commands, 50),
-    ejabberd_hooks:delete(adhoc_local_items, Host, ?MODULE,
-			  adhoc_local_items, 50),
-    ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE,
-			  get_sm_identity, 50),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
-			  get_sm_features, 50),
-    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE,
-			  get_sm_items, 50),
-    ejabberd_hooks:delete(disco_local_identity, Host,
-			  ?MODULE, get_local_identity, 50),
-    ejabberd_hooks:delete(disco_local_features, Host,
-			  ?MODULE, get_local_features, 50),
-    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE,
-			  get_local_items, 50).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

@@ -43,23 +43,14 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start(Host, _Opts) ->
-    ejabberd_hooks:add(pubsub_publish_item, Host, ?MODULE,
-		       pubsub_publish_item, 50),
-    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
-		       vcard_iq_convert, 30),
-    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
-		       vcard_iq_publish, 100),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
-		       get_sm_features, 50).
+start(_Host, _Opts) ->
+    {ok, [{hook, pubsub_publish_item, pubsub_publish_item, 50},
+          {hook, vcard_iq_set, vcard_iq_convert, 30},
+          {hook, vcard_iq_set, vcard_iq_publish, 100},
+          {hook, disco_sm_features, get_sm_features, 50}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(pubsub_publish_item, Host, ?MODULE,
-			  pubsub_publish_item, 50),
-    ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE, vcard_iq_convert, 30),
-    ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE, vcard_iq_publish, 100),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
-			  get_sm_features, 50).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

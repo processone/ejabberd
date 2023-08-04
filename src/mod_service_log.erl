@@ -36,18 +36,11 @@
 -include("translate.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 
-start(Host, _Opts) ->
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-		       log_user_send, 50),
-    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
-		       log_user_receive, 50),
-    ok.
+start(_Host, _Opts) ->
+    {ok, [{hook, user_send_packet, log_user_send, 50},
+          {hook, user_receive_packet, log_user_receive, 50}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-			  log_user_send, 50),
-    ejabberd_hooks:delete(user_receive_packet, Host,
-			  ?MODULE, log_user_receive, 50),
+stop(_Host) ->
     ok.
 
 depends(_Host, _Opts) ->

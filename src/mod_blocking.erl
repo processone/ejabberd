@@ -37,14 +37,12 @@
 -include("mod_privacy.hrl").
 -include("translate.hrl").
 
-start(Host, _Opts) ->
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_BLOCKING, ?MODULE, process_iq).
+start(_Host, _Opts) ->
+    {ok, [{hook, disco_local_features, disco_features, 50},
+          {iq_handler, ejabberd_sm, ?NS_BLOCKING, process_iq}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_BLOCKING).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

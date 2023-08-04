@@ -38,21 +38,14 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
-start(Host, _Opts) ->
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_SIC_0,
-				  ?MODULE, process_local_iq),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_SIC_0,
-				  ?MODULE, process_sm_iq),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_SIC_1,
-				  ?MODULE, process_local_iq),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_SIC_1,
-				  ?MODULE, process_sm_iq).
+start(_Host, _Opts) ->
+    {ok, [{iq_handler, ejabberd_local, ?NS_SIC_0, process_local_iq},
+          {iq_handler, ejabberd_sm, ?NS_SIC_0, process_sm_iq},
+          {iq_handler, ejabberd_local, ?NS_SIC_1, process_local_iq},
+          {iq_handler, ejabberd_sm, ?NS_SIC_1, process_sm_iq}]}.
 
-stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_SIC_0),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_SIC_0),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_SIC_1),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_SIC_1).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

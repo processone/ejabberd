@@ -48,25 +48,18 @@
 -type direction() :: sent | received.
 -type c2s_state() :: ejabberd_c2s:state().
 
-start(Host, _Opts) ->
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
-    %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
-    ejabberd_hooks:add(user_send_packet,Host, ?MODULE, user_send_packet, 89),
-    ejabberd_hooks:add(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
-    ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE, c2s_copy_session, 50),
-    ejabberd_hooks:add(c2s_session_resumed, Host, ?MODULE, c2s_session_resumed, 50),
-    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, c2s_session_opened, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2, ?MODULE, iq_handler).
+start(_Host, _Opts) ->
+    {ok, [{hook, disco_local_features, disco_features, 50},
+          %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
+          {hook, user_send_packet, user_send_packet, 89},
+          {hook, user_receive_packet, user_receive_packet, 89},
+          {hook, c2s_copy_session, c2s_copy_session, 50},
+          {hook, c2s_session_resumed, c2s_session_resumed, 50},
+          {hook, c2s_session_opened, c2s_session_opened, 50},
+          {iq_handler, ejabberd_sm, ?NS_CARBONS_2, iq_handler}]}.
 
-stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2),
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
-    %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
-    ejabberd_hooks:delete(user_send_packet,Host, ?MODULE, user_send_packet, 89),
-    ejabberd_hooks:delete(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
-    ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE, c2s_copy_session, 50),
-    ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE, c2s_session_resumed, 50),
-    ejabberd_hooks:delete(c2s_session_opened, Host, ?MODULE, c2s_session_opened, 50).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

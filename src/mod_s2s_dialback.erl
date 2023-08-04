@@ -40,49 +40,21 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start(Host, _Opts) ->
-    ejabberd_hooks:add(s2s_out_init, Host, ?MODULE, s2s_out_init, 50),
-    ejabberd_hooks:add(s2s_out_closed, Host, ?MODULE, s2s_out_closed, 50),
-    ejabberd_hooks:add(s2s_in_pre_auth_features, Host, ?MODULE,
-		       s2s_in_features, 50),
-    ejabberd_hooks:add(s2s_in_post_auth_features, Host, ?MODULE,
-		       s2s_in_features, 50),
-    ejabberd_hooks:add(s2s_in_handle_recv, Host, ?MODULE,
-		       s2s_in_recv, 50),
-    ejabberd_hooks:add(s2s_in_unauthenticated_packet, Host, ?MODULE,
-		       s2s_in_packet, 50),
-    ejabberd_hooks:add(s2s_in_authenticated_packet, Host, ?MODULE,
-		       s2s_in_packet, 50),
-    ejabberd_hooks:add(s2s_out_packet, Host, ?MODULE,
-		       s2s_out_packet, 50),
-    ejabberd_hooks:add(s2s_out_downgraded, Host, ?MODULE,
-		       s2s_out_downgraded, 50),
-    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE,
-		       s2s_out_auth_result, 50),
-    ejabberd_hooks:add(s2s_out_tls_verify, Host, ?MODULE,
-		       s2s_out_tls_verify, 50).
+start(_Host, _Opts) ->
+    {ok, [{hook, s2s_out_init, s2s_out_init, 50},
+          {hook, s2s_out_closed, s2s_out_closed, 50},
+          {hook, s2s_in_pre_auth_features, s2s_in_features, 50},
+          {hook, s2s_in_post_auth_features, s2s_in_features, 50},
+          {hook, s2s_in_handle_recv, s2s_in_recv, 50},
+          {hook, s2s_in_unauthenticated_packet, s2s_in_packet, 50},
+          {hook, s2s_in_authenticated_packet, s2s_in_packet, 50},
+          {hook, s2s_out_packet, s2s_out_packet, 50},
+          {hook, s2s_out_downgraded, s2s_out_downgraded, 50},
+          {hook, s2s_out_auth_result, s2s_out_auth_result, 50},
+          {hook, s2s_out_tls_verify, s2s_out_tls_verify, 50}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(s2s_out_init, Host, ?MODULE, s2s_out_init, 50),
-    ejabberd_hooks:delete(s2s_out_closed, Host, ?MODULE, s2s_out_closed, 50),
-    ejabberd_hooks:delete(s2s_in_pre_auth_features, Host, ?MODULE,
-			  s2s_in_features, 50),
-    ejabberd_hooks:delete(s2s_in_post_auth_features, Host, ?MODULE,
-			  s2s_in_features, 50),
-    ejabberd_hooks:delete(s2s_in_handle_recv, Host, ?MODULE,
-			  s2s_in_recv, 50),
-    ejabberd_hooks:delete(s2s_in_unauthenticated_packet, Host, ?MODULE,
-			  s2s_in_packet, 50),
-    ejabberd_hooks:delete(s2s_in_authenticated_packet, Host, ?MODULE,
-			  s2s_in_packet, 50),
-    ejabberd_hooks:delete(s2s_out_packet, Host, ?MODULE,
-			  s2s_out_packet, 50),
-    ejabberd_hooks:delete(s2s_out_downgraded, Host, ?MODULE,
-			  s2s_out_downgraded, 50),
-    ejabberd_hooks:delete(s2s_out_auth_result, Host, ?MODULE,
-			  s2s_out_auth_result, 50),
-    ejabberd_hooks:delete(s2s_out_tls_verify, Host, ?MODULE,
-			  s2s_out_tls_verify, 50).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

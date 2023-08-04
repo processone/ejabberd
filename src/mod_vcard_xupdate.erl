@@ -48,22 +48,13 @@
 
 start(Host, Opts) ->
     init_cache(Host, Opts),
-    ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE,
-		       update_presence, 100),
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-		       user_send_packet, 50),
-    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE, vcard_set,
-		       90),
-    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50).
+    {ok, [{hook, c2s_self_presence, update_presence, 100},
+          {hook, user_send_packet, user_send_packet, 50},
+          {hook, vcard_iq_set, vcard_set, 90},
+          {hook, remove_user, remove_user, 50}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(c2s_self_presence, Host,
-			  ?MODULE, update_presence, 100),
-    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-			  user_send_packet, 50),
-    ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE,
-			  vcard_set, 90),
-    ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50).
+stop(_Host) ->
+    ok.
 
 reload(Host, NewOpts, _OldOpts) ->
     init_cache(Host, NewOpts).

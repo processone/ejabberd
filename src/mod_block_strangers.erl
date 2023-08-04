@@ -45,21 +45,13 @@
 %%%===================================================================
 %%% Callbacks and hooks
 %%%===================================================================
-start(Host, _Opts) ->
-    ejabberd_hooks:add(user_receive_packet, Host,
-                       ?MODULE, filter_packet, 25),
-    ejabberd_hooks:add(roster_in_subscription, Host,
-		       ?MODULE, filter_subscription, 25),
-    ejabberd_hooks:add(offline_message_hook, Host,
-		       ?MODULE, filter_offline_msg, 25).
+start(_Host, _Opts) ->
+    {ok, [{hook, user_receive_packet, filter_packet, 25},
+          {hook, roster_in_subscription, filter_subscription, 25},
+          {hook, offline_message_hook, filter_offline_msg, 25}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(user_receive_packet, Host,
-                          ?MODULE, filter_packet, 25),
-    ejabberd_hooks:delete(roster_in_subscription, Host,
-			  ?MODULE, filter_subscription, 25),
-    ejabberd_hooks:delete(offline_message_hook, Host,
-			  ?MODULE, filter_offline_msg, 25).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

@@ -37,17 +37,12 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start(Host, _Opts) ->
-    ejabberd_hooks:add(c2s_unauthenticated_packet, Host, ?MODULE,
-		       c2s_unauthenticated_packet, 50),
-    ejabberd_hooks:add(c2s_pre_auth_features, Host, ?MODULE,
-		       c2s_stream_features, 50).
+start(_Host, _Opts) ->
+    {ok, [{hook, c2s_unauthenticated_packet, c2s_unauthenticated_packet, 50},
+          {hook, c2s_pre_auth_features, c2s_stream_features, 50}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(c2s_unauthenticated_packet, Host, ?MODULE,
-			  c2s_unauthenticated_packet, 50),
-    ejabberd_hooks:delete(c2s_pre_auth_features, Host, ?MODULE,
-			  c2s_stream_features, 50).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

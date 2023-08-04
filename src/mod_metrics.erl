@@ -49,27 +49,19 @@
 %% API
 %%====================================================================
 
-start(Host, _Opts) ->
-    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE, offline_message_hook, 20),
-    ejabberd_hooks:add(sm_register_connection_hook, Host, ?MODULE, sm_register_connection_hook, 20),
-    ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 20),
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 20),
-    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, user_receive_packet, 20),
-    ejabberd_hooks:add(s2s_send_packet, Host, ?MODULE, s2s_send_packet, 20),
-    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE, s2s_receive_packet, 20),
-    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 20),
-    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 20).
+start(_Host, _Opts) ->
+    {ok, [{hook, offline_message_hook, offline_message_hook, 20},
+          {hook, sm_register_connection_hook, sm_register_connection_hook, 20},
+          {hook, sm_remove_connection_hook, sm_remove_connection_hook, 20},
+          {hook, user_send_packet, user_send_packet, 20},
+          {hook, user_receive_packet, user_receive_packet, 20},
+          {hook, s2s_send_packet, s2s_send_packet, 20},
+          {hook, s2s_receive_packet, s2s_receive_packet, 20},
+          {hook, remove_user, remove_user, 20},
+          {hook, register_user, register_user, 20}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE, offline_message_hook, 20),
-    ejabberd_hooks:delete(sm_register_connection_hook, Host, ?MODULE, sm_register_connection_hook, 20),
-    ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 20),
-    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 20),
-    ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE, user_receive_packet, 20),
-    ejabberd_hooks:delete(s2s_send_packet, Host, ?MODULE, s2s_send_packet, 20),
-    ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE, s2s_receive_packet, 20),
-    ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 20),
-    ejabberd_hooks:delete(register_user, Host, ?MODULE, register_user, 20).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

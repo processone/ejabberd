@@ -42,49 +42,20 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
-start(Host, _Opts) ->
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_COMMANDS, ?MODULE, process_local_iq),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_COMMANDS, ?MODULE, process_sm_iq),
-    ejabberd_hooks:add(disco_local_identity, Host, ?MODULE,
-		       get_local_identity, 99),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
-		       get_local_features, 99),
-    ejabberd_hooks:add(disco_local_items, Host, ?MODULE,
-		       get_local_commands, 99),
-    ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE,
-		       get_sm_identity, 99),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
-		       get_sm_features, 99),
-    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE,
-		       get_sm_commands, 99),
-    ejabberd_hooks:add(adhoc_local_items, Host, ?MODULE,
-		       ping_item, 100),
-    ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE,
-		       ping_command, 100).
+start(_Host, _Opts) ->
+    {ok, [{iq_handler, ejabberd_local, ?NS_COMMANDS, process_local_iq},
+          {iq_handler, ejabberd_sm, ?NS_COMMANDS, process_sm_iq},
+          {hook, disco_local_identity, get_local_identity, 99},
+          {hook, disco_local_features, get_local_features, 99},
+          {hook, disco_local_items, get_local_commands, 99},
+          {hook, disco_sm_identity, get_sm_identity, 99},
+          {hook, disco_sm_features, get_sm_features, 99},
+          {hook, disco_sm_items, get_sm_commands, 99},
+          {hook, adhoc_local_items, ping_item, 100},
+          {hook, adhoc_local_commands, ping_command, 100}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(adhoc_local_commands, Host,
-			  ?MODULE, ping_command, 100),
-    ejabberd_hooks:delete(adhoc_local_items, Host, ?MODULE,
-			  ping_item, 100),
-    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE,
-			  get_sm_commands, 99),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
-			  get_sm_features, 99),
-    ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE,
-			  get_sm_identity, 99),
-    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE,
-			  get_local_commands, 99),
-    ejabberd_hooks:delete(disco_local_features, Host,
-			  ?MODULE, get_local_features, 99),
-    ejabberd_hooks:delete(disco_local_identity, Host,
-			  ?MODULE, get_local_identity, 99),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
-				     ?NS_COMMANDS),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
-				     ?NS_COMMANDS).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

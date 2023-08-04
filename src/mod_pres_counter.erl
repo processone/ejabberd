@@ -37,14 +37,10 @@
 -record(pres_counter,
 	{dir, start, count, logged = false}).
 
-start(Host, _Opts) ->
-    ejabberd_hooks:add(privacy_check_packet, Host, ?MODULE,
-		       check_packet, 25),
-    ok.
+start(_Host, _Opts) ->
+    {ok, [{hook, privacy_check_packet, check_packet, 25}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(privacy_check_packet, Host,
-			  ?MODULE, check_packet, 25),
+stop(_Host) ->
     ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->

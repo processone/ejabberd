@@ -32,13 +32,12 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start(Host, Opts) ->
+start(_Host, Opts) ->
     User = mod_mqtt_bridge_opt:replication_user(Opts),
     start_servers(User, element(1, mod_mqtt_bridge_opt:servers(Opts))),
-    ejabberd_hooks:add(mqtt_publish, Host, ?MODULE, mqtt_publish_hook, 50).
+    {ok, [{hook, mqtt_publish, mqtt_publish_hook, 50}]}.
 
 stop(Host) ->
-    ejabberd_hooks:delete(mqtt_publish, Host, ?MODULE, mqtt_publish_hook, 50),
     stop_servers(element(1, mod_mqtt_bridge_opt:servers(Host))),
     ok.
 

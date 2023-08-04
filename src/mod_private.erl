@@ -62,17 +62,13 @@ start(Host, Opts) ->
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
-    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:add(pubsub_publish_item, Host, ?MODULE, pubsub_publish_item, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE, ?MODULE, process_sm_iq),
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()).
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
+    {ok, [{hook, remove_user, remove_user, 50},
+          {hook, disco_sm_features, get_sm_features, 50},
+          {hook, pubsub_publish_item, pubsub_publish_item, 50},
+          {iq_handler, ejabberd_sm, ?NS_PRIVATE, process_sm_iq}]}.
 
 stop(Host) ->
-    ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:delete(pubsub_publish_item, Host, ?MODULE, pubsub_publish_item, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE),
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
 	false ->
 	    ejabberd_commands:unregister_commands(get_commands_spec());
