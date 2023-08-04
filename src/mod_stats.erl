@@ -44,7 +44,7 @@ start(_Host, _Opts) ->
 stop(_Host) ->
     ok.
 
-reload(Host, NewOpts, _OldOpts) ->
+reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 depends(_Host, _Opts) ->
