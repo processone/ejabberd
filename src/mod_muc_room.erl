@@ -5160,12 +5160,18 @@ process_iq_moderate(From, #iq{type = set, lang = Lang},
 			    ok
 		    end,
 		    By = jid:replace_resource(JID, find_nick_by_jid(From, StateData)),
-		    Packet = #message{type = groupchat,
+		    Packet0 = #message{type = groupchat,
+                                       from = From,
 				      sub_els = [
 					  #fasten_apply_to{id = Id, sub_els = [
 					      #message_moderated{by = By, reason = Reason,
 								 retract = #message_retract{}}
 					  ]}]},
+	            {FromNick, _Role} = get_participant_data(From, StateData),
+                    Packet = ejabberd_hooks:run_fold(muc_filter_message,
+                                                                 StateData#state.server_host,
+                                                                 Packet0,
+                                                                 [StateData, FromNick]),
 		    send_wrapped_multiple(JID,
 					  get_users_and_subscribers_with_node(?NS_MUCSUB_NODES_MESSAGES, StateData),
 					  Packet, ?NS_MUCSUB_NODES_MESSAGES, StateData),
