@@ -354,11 +354,15 @@ remove_mam_for_user_with_peer(User, Server, Peer) ->
 	{error, <<"Invalid peer JID">>}
     end.
 
--spec remove_message_from_archive(User :: binary(), Server :: binary(), StanzaId :: integer()) ->
+-spec remove_message_from_archive(
+        User :: binary() | {User :: binary(), Host :: binary()},
+        Server :: binary(), StanzaId :: integer()) ->
     ok | {error, binary()}.
-remove_message_from_archive(User, Server, StanzaId) ->
+remove_message_from_archive(User, Server, StanzaId) when is_binary(User) ->
+    remove_message_from_archive({User, Server}, Server, StanzaId);
+remove_message_from_archive({User, Host}, Server, StanzaId) ->
     Mod = gen_mod:db_mod(Server, ?MODULE),
-    case Mod:remove_from_archive(User, Server, StanzaId) of
+    case Mod:remove_from_archive(User, Host, StanzaId) of
 	ok ->
 	    ok;
 	{error, Bin} when is_binary(Bin) ->

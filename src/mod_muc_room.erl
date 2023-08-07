@@ -1130,7 +1130,8 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 
 -spec check_message_for_retractions(Packet :: message(), State :: state()) -> state().
 check_message_for_retractions(Packet,
-			  #state{config = Config, jid = JID, server_host = Server} = State) ->
+			  #state{config = Config, room = Room, host = Host,
+                                 server_host = Server} = State) ->
     case xmpp:get_subtag(Packet, #fasten_apply_to{}) of
 	#fasten_apply_to{id = ID} = F ->
 	    case xmpp:get_subtag(F, #message_retract{}) of
@@ -1140,8 +1141,7 @@ check_message_for_retractions(Packet,
 			{NewState, StanzaId} when is_integer(StanzaId) ->
 			    case Config#config.mam of
 				true ->
-				    JIDs = jid:encode(JID),
-				    mod_mam:remove_message_from_archive(JIDs, Server, StanzaId),
+				    mod_mam:remove_message_from_archive({Room, Host}, Server, StanzaId),
 				    NewState;
 				_ ->
 				    NewState
@@ -5140,7 +5140,8 @@ process_iq_moderate(_From, #iq{type = get}, _ApplyTo, _Moderate, _StateData) ->
 process_iq_moderate(From, #iq{type = set, lang = Lang},
 		    #fasten_apply_to{id = Id},
 		    #message_moderate{reason = Reason},
-		    #state{config = Config, jid = JID, server_host = Server} = StateData) ->
+		    #state{config = Config, room = Room, host = Host,
+                           jid = JID, server_host = Server} = StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     FRole = get_role(From, StateData),
     IsModerator = FRole == moderator orelse FAffiliation == owner orelse
@@ -5154,8 +5155,7 @@ process_iq_moderate(From, #iq{type = set, lang = Lang},
 		StanzaId ->
 		    case Config#config.mam of
 			true ->
-			    JIDs = jid:encode(JID),
-			    mod_mam:remove_message_from_archive(JIDs, Server, StanzaId);
+			    mod_mam:remove_message_from_archive({Room, Host}, Server, StanzaId);
 			_ ->
 			    ok
 		    end,
