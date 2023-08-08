@@ -234,8 +234,11 @@ c2s_handle_info(State, _) ->
 
 -spec ejabberd_started() -> ok.
 ejabberd_started() ->
-    [wake_all(Host) || Host <- ejabberd_config:get_option(hosts),
-		       mod_push_keepalive_opt:wake_on_start(Host)],
+    Pred = fun(Host) ->
+		   gen_mod:is_loaded(Host, ?MODULE) andalso
+		       mod_push_keepalive_opt:wake_on_start(Host)
+	   end,
+    [wake_all(Host) || Host <- ejabberd_config:get_option(hosts), Pred(Host)],
     ok.
 
 %%--------------------------------------------------------------------
