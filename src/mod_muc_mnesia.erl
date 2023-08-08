@@ -401,6 +401,15 @@ need_transform({muc_room, {N, H}, _})
   when is_list(N) orelse is_list(H) ->
     ?INFO_MSG("Mnesia table 'muc_room' will be converted to binary", []),
     true;
+need_transform({muc_room, {_N, _H}, Opts}) ->
+    case lists:keymember(allow_private_messages, 1, Opts) of
+        true ->
+            ?INFO_MSG("Mnesia table 'muc_room' will be converted to allowpm", []),
+            true;
+        false ->
+            false
+    end;
+
 need_transform({muc_registered, {{U, S}, H}, Nick})
   when is_list(U) orelse is_list(S) orelse is_list(H) orelse is_list(Nick) ->
     ?INFO_MSG("Mnesia table 'muc_registered' will be converted to binary", []),
@@ -408,9 +417,22 @@ need_transform({muc_registered, {{U, S}, H}, Nick})
 need_transform(_) ->
     false.
 
-transform(#muc_room{name_host = {N, H}, opts = Opts} = R) ->
+transform({muc_room, {N, H}, Opts} = R)
+  when is_list(N) orelse is_list(H) ->
     R#muc_room{name_host = {iolist_to_binary(N), iolist_to_binary(H)},
 	       opts = mod_muc:opts_to_binary(Opts)};
+transform(#muc_room{opts = Opts} = R) ->
+    Opts2 = case lists:keyfind(allow_private_messages, 1, Opts) of
+        {_, Value} when is_boolean(Value) ->
+            Value2 = case Value of
+                         true -> anyone;
+                         false -> none
+                     end,
+            lists:keyreplace(allow_private_messages, 1, Opts, {allowpm, Value2});
+        _ ->
+            Opts
+    end,
+    R#muc_room{opts = Opts2};
 transform(#muc_registered{us_host = {{U, S}, H}, nick = Nick} = R) ->
     R#muc_registered{us_host = {{iolist_to_binary(U), iolist_to_binary(S)},
 				iolist_to_binary(H)},

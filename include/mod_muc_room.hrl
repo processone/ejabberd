@@ -38,7 +38,7 @@
     description                          = <<"">> :: binary(),
     allow_change_subj                    = true :: boolean(),
     allow_query_users                    = true :: boolean(),
-    allow_private_messages               = true :: boolean(),
+    allowpm                              = anyone :: anyone | participants | moderators | none,
     allow_private_messages_from_visitors = anyone :: anyone | moderators | nobody ,
     allow_visitor_status                 = true :: boolean(),
     allow_visitor_nickchange             = true :: boolean(),

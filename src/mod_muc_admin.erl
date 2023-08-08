@@ -1276,7 +1276,7 @@ room_diagnostics(Name, Service) ->
 change_option(Option, Value, Config) ->
     case Option of
 	allow_change_subj -> Config#config{allow_change_subj = Value};
-	allow_private_messages -> Config#config{allow_private_messages = Value};
+	allowpm -> Config#config{allowpm = Value};
 	allow_private_messages_from_visitors -> Config#config{allow_private_messages_from_visitors = Value};
 	allow_query_users -> Config#config{allow_query_users = Value};
 	allow_subscription -> Config#config{allow_subscription = Value};

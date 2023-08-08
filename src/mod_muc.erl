@@ -1193,6 +1193,13 @@ opts_to_binary(Opts) ->
               {subject, iolist_to_binary(Subj)};
          ({subject_author, Author}) ->
               {subject_author, iolist_to_binary(Author)};
+         ({allow_private_messages, Value}) -> % ejabberd 23.04 or older
+              Value2 = case Value of
+                           true -> anyone;
+                           false -> none;
+                           _ -> Value
+                       end,
+              {allowpm, Value2};
          ({AffOrRole, Affs}) when (AffOrRole == affiliation) or (AffOrRole == role) ->
               {affiliations, lists:map(
                                fun({{U, S, R}, Aff}) ->
@@ -1289,7 +1296,8 @@ mod_opt_type(cleanup_affiliations_on_start) ->
 mod_opt_type(default_room_options) ->
     econf:options(
       #{allow_change_subj => econf:bool(),
-	allow_private_messages => econf:bool(),
+	allowpm =>
+	    econf:enum([anyone, participants, moderators, none]),
 	allow_private_messages_from_visitors =>
 	    econf:enum([anyone, moderators, nobody]),
 	allow_query_users => econf:bool(),
@@ -1373,7 +1381,7 @@ mod_options(Host) ->
      {cleanup_affiliations_on_start, false},
      {default_room_options,
       [{allow_change_subj,true},
-       {allow_private_messages,true},
+       {allowpm,anyone},
        {allow_query_users,true},
        {allow_user_invites,false},
        {allow_visitor_nickchange,true},
@@ -1667,11 +1675,11 @@ mod_doc() ->
                 desc =>
                     ?T("Allow occupants to change the subject. "
                        "The default value is 'true'.")}},
-             {allow_private_messages,
-              #{value => "true | false",
+             {allowpm,
+              #{value => "anyone | participants | moderators | none",
                 desc =>
-                    ?T("Occupants can send private messages to other occupants. "
-                       "The default value is 'true'.")}},
+                    ?T("Who can send private messages. "
+                       "The default value is 'anyone'.")}},
              {allow_query_users,
               #{value => "true | false",
                 desc =>

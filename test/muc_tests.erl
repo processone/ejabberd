@@ -1242,7 +1242,7 @@ config_private_messages_master(Config) ->
     [104] = set_config(Config, [{allow_private_messages_from_visitors, nobody}]),
     wait_for_slave(Config),
     [104] = set_config(Config, [{allow_private_messages_from_visitors, anyone},
-				    {allow_private_messages, false}]),
+				    {allowpm, none}]),
     ct:comment("Fail trying to send a private message"),
     send(Config, #message{to = PeerNickJID, type = chat}),
     #message{from = PeerNickJID, type = error} = ErrMsg = recv_message(Config),

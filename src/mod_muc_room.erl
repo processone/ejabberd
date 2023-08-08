@@ -593,7 +593,7 @@ normal_state({route, ToNick,
 	forget_message ->
 	    {next_state, normal_state, StateData};
 	continue_delivery ->
-	    case {(StateData#state.config)#config.allow_private_messages,
+	    case {is_user_allowed_private_message(From, StateData),
 		  is_user_online(From, StateData) orelse
 		  is_subscriber(From, StateData) orelse
 		  is_user_allowed_message_nonparticipant(From, StateData)} of
@@ -630,7 +630,7 @@ normal_state({route, ToNick,
 					      ejabberd_router:route(xmpp:set_to(PrivMsg, ToJID))
 				      end, ToJIDs);
 			       true ->
-				    ErrText = ?T("It is not allowed to send private messages"),
+				    ErrText = ?T("You are not allowed to send private messages"),
 				    Err = xmpp:err_forbidden(ErrText, Lang),
 				    ejabberd_router:route_error(Packet, Err)
 			    end
@@ -641,7 +641,7 @@ normal_state({route, ToNick,
 		    Err = xmpp:err_not_acceptable(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err);
 		{false, _} ->
-		    ErrText = ?T("It is not allowed to send private messages"),
+		    ErrText = ?T("You are not allowed to send private messages"),
 		    Err = xmpp:err_forbidden(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err)
 	    end,
@@ -1327,6 +1327,24 @@ is_user_allowed_message_nonparticipant(JID,
     case get_service_affiliation(JID, StateData) of
       owner -> true;
       _ -> false
+    end.
+
+-spec is_user_allowed_private_message(jid(), state()) -> boolean().
+is_user_allowed_private_message(JID, StateData) ->
+    case {(StateData#state.config)#config.allowpm,
+            get_role(JID, StateData)} of
+        {anyone, _} ->
+            true;
+        {participants, moderator} ->
+            true;
+        {participants, participant} ->
+            true;
+        {moderators, moderator} ->
+            true;
+        {none, _} ->
+            false;
+        {_, _} ->
+            false
     end.
 
 %% @doc Get information of this participant, or default values.
@@ -3788,7 +3806,7 @@ get_config(Lang, StateData, From) ->
 	 {moderatedroom, Config#config.moderated},
 	 {members_by_default, Config#config.members_by_default},
 	 {changesubject, Config#config.allow_change_subj},
-	 {allow_private_messages, Config#config.allow_private_messages},
+	 {allowpm, Config#config.allowpm},
 	 {allow_private_messages_from_visitors,
 	  Config#config.allow_private_messages_from_visitors},
 	 {allow_query_users, Config#config.allow_query_users},
@@ -3859,8 +3877,8 @@ set_config(Opts, Config, ServerHost, Lang) ->
 	 ({roomdesc, Desc}, C) -> C#config{description = Desc};
 	 ({changesubject, V}, C) -> C#config{allow_change_subj = V};
 	 ({allow_query_users, V}, C) -> C#config{allow_query_users = V};
-	 ({allow_private_messages, V}, C) ->
-	      C#config{allow_private_messages = V};
+	 ({allowpm, V}, C) ->
+	      C#config{allowpm = V};
 	 ({allow_private_messages_from_visitors, V}, C) ->
 	      C#config{allow_private_messages_from_visitors = V};
 	 ({allow_visitor_status, V}, C) -> C#config{allow_visitor_status = V};
@@ -4026,9 +4044,9 @@ set_opts2([{Opt, Val} | Opts], StateData) ->
 		StateData#state{config =
 				    (StateData#state.config)#config{allow_query_users
 									= Val}};
-	    allow_private_messages ->
+	    allowpm ->
 		StateData#state{config =
-				    (StateData#state.config)#config{allow_private_messages
+				    (StateData#state.config)#config{allowpm
 									= Val}};
 	    allow_private_messages_from_visitors ->
 		StateData#state{config =
@@ -4221,7 +4239,7 @@ make_opts(StateData, Hibernation) ->
     [?MAKE_CONFIG_OPT(#config.title), ?MAKE_CONFIG_OPT(#config.description),
      ?MAKE_CONFIG_OPT(#config.allow_change_subj),
      ?MAKE_CONFIG_OPT(#config.allow_query_users),
-     ?MAKE_CONFIG_OPT(#config.allow_private_messages),
+     ?MAKE_CONFIG_OPT(#config.allowpm),
      ?MAKE_CONFIG_OPT(#config.allow_private_messages_from_visitors),
      ?MAKE_CONFIG_OPT(#config.allow_visitor_status),
      ?MAKE_CONFIG_OPT(#config.allow_visitor_nickchange),
@@ -4481,20 +4499,12 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
 -spec iq_disco_info_extras(binary(), state(), boolean()) -> xdata().
 iq_disco_info_extras(Lang, StateData, Static) ->
     Config = StateData#state.config,
-    AllowPM = case Config#config.allow_private_messages of
-		  false -> none;
-		  true ->
-		      case Config#config.allow_private_messages_from_visitors of
-			  nobody -> participants;
-			  _ -> anyone
-		      end
-	      end,
     Fs1 = [{roomname, Config#config.title},
 	   {description, Config#config.description},
 	   {changesubject, Config#config.allow_change_subj},
 	   {allowinvites, Config#config.allow_user_invites},
 	   {allow_query_users, Config#config.allow_query_users},
-	   {allowpm, AllowPM},
+	   {allowpm, Config#config.allowpm},
 	   {lang, Config#config.lang}],
     Fs2 = case Config#config.pubsub of
 	      Node when is_binary(Node), Node /= <<"">> ->

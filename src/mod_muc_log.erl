@@ -811,8 +811,8 @@ get_roomconfig_text(members_by_default, Lang) ->
     tr(Lang, ?T("Default users as participants"));
 get_roomconfig_text(allow_change_subj, Lang) ->
     tr(Lang, ?T("Allow users to change the subject"));
-get_roomconfig_text(allow_private_messages, Lang) ->
-    tr(Lang, ?T("Allow users to send private messages"));
+get_roomconfig_text(allowpm, Lang) ->
+    tr(Lang, ?T("Who can send private messages"));
 get_roomconfig_text(allow_private_messages_from_visitors, Lang) ->
     tr(Lang, ?T("Allow visitors to send private messages to"));
 get_roomconfig_text(allow_query_users, Lang) ->
