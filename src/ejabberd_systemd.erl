@@ -117,7 +117,7 @@ handle_cast(Msg, State) ->
     {noreply, State}.
 
 -spec handle_info(ping_watchdog | term(), state()) -> {noreply, state()}.
-handle_info(ping_watchdog , #state{interval = Interval} = State)
+handle_info(ping_watchdog, #state{interval = Interval} = State)
   when is_integer(Interval), Interval > 0 ->
     try notify(State, <<"WATCHDOG=1">>)
     catch _:Err ->
@@ -169,10 +169,12 @@ maybe_start_timer(State) ->
 
 -spec start_timer(state()) -> state().
 start_timer(#state{interval = Interval} = State) ->
+    ?DEBUG("Pinging watchdog in ~B milliseconds", [Interval]),
     State#state{timer = erlang:send_after(Interval, self(), ping_watchdog)}.
 
 -spec cancel_timer(state()) -> ok.
 cancel_timer(#state{timer = Timer}) ->
+    ?DEBUG("Cancelling watchdog timer", []),
     misc:cancel_timer(Timer).
 
 -spec notify(state(), binary()) -> ok.
@@ -183,4 +185,5 @@ notify(#state{socket = Socket, destination = Destination},
 
 -spec cast_notification(binary()) -> ok.
 cast_notification(Notification) ->
+    ?DEBUG("Closing NOTIFY_SOCKET", []),
     gen_server:cast(?MODULE, {notify, Notification}).
