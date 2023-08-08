@@ -44,9 +44,8 @@
 	{socket :: gen_udp:socket() | undefined,
 	 destination :: inet:local_address() | undefined,
 	 interval :: pos_integer() | undefined,
-	 last_ping :: integer() | undefined}).
+	 timer :: reference() | undefined}).
 
--type watchdog_timeout() :: pos_integer() | hibernate.
 -type state() :: #state{}.
 
 %%--------------------------------------------------------------------
@@ -71,8 +70,7 @@ stopping() ->
 %%--------------------------------------------------------------------
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
--spec init(any())
-      -> {ok, state()} | {ok, state(), watchdog_timeout()} | {stop, term()}.
+-spec init(any()) -> {ok, state()} | {stop, term()}.
 init(_Opts) ->
     process_flag(trap_exit, true),
     case os:getenv("NOTIFY_SOCKET") of
@@ -84,17 +82,10 @@ init(_Opts) ->
 	    Destination = {local, Path},
 	    case gen_udp:open(0, [local]) of
 		{ok, Socket} ->
-		    Interval = get_watchdog_interval(),
 		    State = #state{socket = Socket,
 				   destination = Destination,
-				   interval = Interval},
-		    if is_integer(Interval), Interval > 0 ->
-			    ?INFO_MSG("Watchdog notifications enabled", []),
-			    {ok, set_last_ping(State), Interval};
-		       true ->
-			    ?INFO_MSG("Watchdog notifications disabled", []),
-			    {ok, State}
-		    end;
+				   interval = get_watchdog_interval()},
+		    {ok, maybe_start_timer(State)};
 		{error, Reason} ->
 		    ?CRITICAL_MSG("Cannot open IPC socket: ~p", [Reason]),
 		    {stop, Reason}
@@ -105,47 +96,48 @@ init(_Opts) ->
     end.
 
 -spec handle_call(term(), {pid(), term()}, state())
-      -> {reply, {error, badarg}, state(), watchdog_timeout()}.
+      -> {reply, {error, badarg}, state()}.
 handle_call(Request, From, State) ->
     ?ERROR_MSG("Got unexpected request from ~p: ~p", [From, Request]),
-    {reply, {error, badarg}, State, get_timeout(State)}.
+    {reply, {error, badarg}, State}.
 
--spec handle_cast({notify, binary()} | term(), state())
-      -> {noreply, state(), watchdog_timeout()}.
+-spec handle_cast({notify, binary()} | term(), state()) -> {noreply, state()}.
 handle_cast({notify, Notification},
 	    #state{destination = undefined} = State) ->
     ?DEBUG("No NOTIFY_SOCKET, dropping ~s notification", [Notification]),
-    {noreply, State, get_timeout(State)};
+    {noreply, State};
 handle_cast({notify, Notification}, State) ->
     try notify(State, Notification)
     catch _:Err ->
 	    ?ERROR_MSG("Cannot send ~s notification: ~p", [Notification, Err])
     end,
-    {noreply, State, get_timeout(State)};
+    {noreply, State};
 handle_cast(Msg, State) ->
     ?ERROR_MSG("Got unexpected message: ~p", [Msg]),
-    {noreply, State, get_timeout(State)}.
+    {noreply, State}.
 
--spec handle_info(timeout | term(), state())
-      -> {noreply, state(), watchdog_timeout()}.
-handle_info(timeout, #state{interval = Interval} = State)
+-spec handle_info(ping_watchdog | term(), state()) -> {noreply, state()}.
+handle_info(ping_watchdog , #state{interval = Interval} = State)
   when is_integer(Interval), Interval > 0 ->
     try notify(State, <<"WATCHDOG=1">>)
     catch _:Err ->
 	    ?ERROR_MSG("Cannot ping watchdog: ~p", [Err])
     end,
-    {noreply, set_last_ping(State), Interval};
+    {noreply, start_timer(State)};
 handle_info(Info, State) ->
     ?ERROR_MSG("Got unexpected info: ~p", [Info]),
-    {noreply, State, get_timeout(State)}.
+    {noreply, State}.
 
 -spec terminate(normal | shutdown | {shutdown, term()} | term(), state()) -> ok.
-terminate(Reason, #state{socket = undefined}) ->
+terminate(Reason, #state{socket = Socket} = State) ->
     ?DEBUG("Terminating ~s (~p)", [?MODULE, Reason]),
-    ok;
-terminate(Reason, #state{socket = Socket}) ->
-    ?DEBUG("Closing socket and terminating ~s (~p)", [?MODULE, Reason]),
-    ok = gen_udp:close(Socket).
+    cancel_timer(State),
+    case Socket of
+	undefined ->
+	    ok;
+	_Socket ->
+	    gen_udp:close(Socket)
+    end.
 
 -spec code_change({down, term()} | term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) ->
@@ -166,24 +158,22 @@ get_watchdog_interval() ->
 	    undefined
     end.
 
--spec get_timeout(state()) -> watchdog_timeout().
-get_timeout(#state{interval = undefined}) ->
-    ?DEBUG("Watchdog interval is undefined, hibernating", []),
-    hibernate;
-get_timeout(#state{interval = Interval, last_ping = LastPing}) ->
-    case Interval - (erlang:monotonic_time(millisecond) - LastPing) of
-	Timeout when Timeout > 0 ->
-	    ?DEBUG("Calculated new timeout value: ~B", [Timeout]),
-	    Timeout;
-	_ ->
-	    ?DEBUG("Calculated new timeout value: 1", []),
-	    1
-    end.
+-spec maybe_start_timer(state()) -> state().
+maybe_start_timer(#state{interval = Interval} = State)
+  when is_integer(Interval), Interval > 0 ->
+    ?INFO_MSG("Watchdog notifications enabled", []),
+    start_timer(State);
+maybe_start_timer(State) ->
+    ?INFO_MSG("Watchdog notifications disabled", []),
+    State.
 
--spec set_last_ping(state()) -> state().
-set_last_ping(State) ->
-    LastPing = erlang:monotonic_time(millisecond),
-    State#state{last_ping = LastPing}.
+-spec start_timer(state()) -> state().
+start_timer(#state{interval = Interval} = State) ->
+    State#state{timer = erlang:send_after(Interval, self(), ping_watchdog)}.
+
+-spec cancel_timer(state()) -> ok.
+cancel_timer(#state{timer = Timer}) ->
+    misc:cancel_timer(Timer).
 
 -spec notify(state(), binary()) -> ok.
 notify(#state{socket = Socket, destination = Destination},
