@@ -64,6 +64,7 @@
         {hook, atom(), module(), atom(), integer()} |
         {iq_handler, component(), binary(), atom()} |
         {iq_handler, component(), binary(), module(), atom()}.
+-export_type([registration/0]).
 
 -callback start(binary(), opts()) ->
     ok | {ok, pid()} |

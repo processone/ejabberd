@@ -91,19 +91,26 @@
 %%--------------------------------------------------------------------
 %% gen_mod callbacks.
 %%--------------------------------------------------------------------
--spec start(binary(), gen_mod:opts()) -> ok.
+-spec start(binary(), gen_mod:opts()) -> {ok, [gen_mod:registration()]}.
 start(Host, Opts) ->
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
-    register_iq_handlers(Host),
-    register_hooks(Host),
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()).
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
+    {ok, [{iq_handler, ejabberd_sm,  ?NS_PUSH_0, process_iq},
+          {hook, disco_sm_features, disco_sm_features, 50},
+          {hook, c2s_session_pending, c2s_session_pending, 50},
+          {hook, c2s_copy_session, c2s_copy_session, 50},
+          {hook, c2s_session_resumed, c2s_session_resumed, 50},
+          {hook, c2s_handle_cast, c2s_handle_cast, 50},
+          {hook, c2s_handle_send, c2s_stanza, 50},
+          {hook, store_mam_message, mam_message, 50},
+          {hook, offline_message_hook, offline_message, 55},
+          {hook, remove_user, remove_user, 50}]}.
+
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
-    unregister_hooks(Host),
-    unregister_iq_handlers(Host),
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
         false ->
             ejabberd_commands:unregister_commands(get_commands_spec());
@@ -249,51 +256,6 @@ delete_old_sessions(Days) ->
     end.
 
 %%--------------------------------------------------------------------
-%% Register/unregister hooks.
-%%--------------------------------------------------------------------
--spec register_hooks(binary()) -> ok.
-register_hooks(Host) ->
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
-		       disco_sm_features, 50),
-    ejabberd_hooks:add(c2s_session_pending, Host, ?MODULE,
-		       c2s_session_pending, 50),
-    ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE,
-		       c2s_copy_session, 50),
-    ejabberd_hooks:add(c2s_session_resumed, Host, ?MODULE,
-		       c2s_session_resumed, 50),
-    ejabberd_hooks:add(c2s_handle_cast, Host, ?MODULE,
-		       c2s_handle_cast, 50),
-    ejabberd_hooks:add(c2s_handle_send, Host, ?MODULE,
-		       c2s_stanza, 50),
-    ejabberd_hooks:add(store_mam_message, Host, ?MODULE,
-		       mam_message, 50),
-    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
-		       offline_message, 55),
-    ejabberd_hooks:add(remove_user, Host, ?MODULE,
-		       remove_user, 50).
-
--spec unregister_hooks(binary()) -> ok.
-unregister_hooks(Host) ->
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
-			  disco_sm_features, 50),
-    ejabberd_hooks:delete(c2s_session_pending, Host, ?MODULE,
-			  c2s_session_pending, 50),
-    ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE,
-			  c2s_copy_session, 50),
-    ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE,
-			  c2s_session_resumed, 50),
-    ejabberd_hooks:delete(c2s_handle_cast, Host, ?MODULE,
-			  c2s_handle_cast, 50),
-    ejabberd_hooks:delete(c2s_handle_send, Host, ?MODULE,
-			  c2s_stanza, 50),
-    ejabberd_hooks:delete(store_mam_message, Host, ?MODULE,
-			  mam_message, 50),
-    ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
-			  offline_message, 55),
-    ejabberd_hooks:delete(remove_user, Host, ?MODULE,
-			  remove_user, 50).
-
-%%--------------------------------------------------------------------
 %% Service discovery.
 %%--------------------------------------------------------------------
 -spec disco_sm_features(empty | {result, [binary()]} | {error, stanza_error()},
@@ -311,15 +273,6 @@ disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
 %%--------------------------------------------------------------------
 %% IQ handlers.
 %%--------------------------------------------------------------------
--spec register_iq_handlers(binary()) -> ok.
-register_iq_handlers(Host) ->
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PUSH_0,
-				  ?MODULE, process_iq).
-
--spec unregister_iq_handlers(binary()) -> ok.
-unregister_iq_handlers(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUSH_0).
-
 -spec process_iq(iq()) -> iq().
 process_iq(#iq{type = get, lang = Lang} = IQ) ->
     Txt = ?T("Value 'get' of 'type' attribute is not allowed"),

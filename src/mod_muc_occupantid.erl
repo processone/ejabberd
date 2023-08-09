@@ -44,18 +44,11 @@
 %%% gen_mod
 %%%
 
-start(Host, _Opts) ->
-    ejabberd_hooks:add(muc_filter_presence, Host,
-		       ?MODULE, filter_packet, 10),
-    ejabberd_hooks:add(muc_filter_message, Host,
-		       ?MODULE, filter_packet, 10),
-    ok.
+start(_Host, _Opts) ->
+    {ok, [{hook, muc_filter_presence, filter_packet, 10},
+          {hook, muc_filter_message, filter_packet, 10}]}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(muc_filter_presence, Host,
-			  ?MODULE, filter_packet, 10),
-    ejabberd_hooks:delete(muc_filter_message, Host,
-			  ?MODULE, filter_packet, 10),
+stop(_Host) ->
     ok.
 
 %%%
