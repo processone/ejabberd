@@ -157,7 +157,9 @@ RUN apk -U upgrade --available --no-cache \
     && apk add --no-cache \
         $(cat /tmp/runDeps) \
         so:libcap.so.2 \
-        tini
+        so:libtdsodbc.so.0 \
+        tini \
+    && ln -fs /usr/lib/libtdsodbc.so.0 /usr/lib/libtdsodbc.so
 
 ARG USER
 ARG UID
