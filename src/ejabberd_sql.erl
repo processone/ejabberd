@@ -1166,6 +1166,14 @@ get_db_version(#state{db_type = mysql} = State) ->
 				_ -> 0
 			    end,
 		    State#state{db_version = {V, TypeA, Flags}};
+		{match, [V1, V2, V3]} ->
+		    V = ((bin_to_int(V1)*1000)+bin_to_int(V2))*1000+bin_to_int(V3),
+		    Flags = case V of
+				_ when V >= 5007026 andalso V < 8000000 -> 1;
+				_ when V >= 8000020 -> 1;
+				_ -> 0
+			    end,
+		    State#state{db_version = {V, unknown, Flags}};
 		_ ->
 		    ?WARNING_MSG("Error parsing mysql version: ~p", [SVersion]),
 		    State
