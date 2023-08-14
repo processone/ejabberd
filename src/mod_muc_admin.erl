@@ -162,14 +162,15 @@ get_commands_spec() ->
 		       result = {res, rescode}},
      #ejabberd_commands{name = create_room_with_opts, tags = [muc_room],
 		       desc = "Create a MUC room name@service in host with given options",
-		       longdesc = "To set affilitions string value must have format 'Type:JID,Type:JID' "
-				  "for example 'owner:bob@example.com,member:peter@example.com'. Subscribers can be "
-				  "define with string 'JID:Nick:Node1:Node2,JID:Nick:Node3' for example "
-				  "'bob@example.com:Bob:messages:subject,anne@example.com:Anne:messages'.",
+		       longdesc =
+                        "The syntax of affiliations is: 'Type:JID,Type:JID'. "
+                        "The syntax of subscribers is: 'JID:Nick:Node:Node2,JID:Nick:Node' ",
 		       module = ?MODULE, function = create_room_with_opts,
 		       args_desc = ["Room name", "MUC service", "Server host", "List of options"],
 		       args_example = ["room1", "muc.example.com", "localhost",
-				       [{"members_only","true"}, {"subscribers", "bob@example.com:Bob:messages"}]],
+				       [{"members_only","true"},
+                                        {"affiliations", "owner:bob@example.com,member:peter@example.com"},
+                                        {"subscribers", "bob@example.com:Bob:messages:subject,anne@example.com:Anne:messages"}]],
 		       args = [{name, binary}, {service, binary},
 			       {host, binary},
 			       {options, {list,
