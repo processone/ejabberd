@@ -38,15 +38,17 @@
 
 -export([start/2, stop/1,
 	 mod_options/1, mod_doc/0, depends/2]).
--export([filter_packet/3]).
+-export([filter_packet/3, remove_room/3]).
 
 %%%
 %%% gen_mod
 %%%
 
 start(_Host, _Opts) ->
+    create_table(),
     {ok, [{hook, muc_filter_presence, filter_packet, 10},
-          {hook, muc_filter_message, filter_packet, 10}]}.
+          {hook, muc_filter_message, filter_packet, 10},
+          {hook, remove_room, remove_room, 50}]}.
 
 stop(_Host) ->
     ok.
@@ -57,6 +59,9 @@ stop(_Host) ->
 
 filter_packet(Packet, State, _Nick) ->
     add_occupantid_packet(Packet, State#state.jid).
+
+remove_room(_LServer, Name, Host) ->
+    delete_salt(jid:make(Name, Host)).
 
 %%%
 %%% XEP-0421 Occupant-id
@@ -69,8 +74,38 @@ add_occupantid_packet(Packet, RoomJid) ->
     xmpp:set_subtag(Packet, OccupantElement).
 
 calculate_occupantid(From, RoomJid) ->
-    Term = {jid:remove_resource(From), RoomJid, erlang:get_cookie()},
+    Term = {jid:remove_resource(From), get_salt(RoomJid)},
     misc:term_to_base64(crypto:hash(sha256, io_lib:format("~p", [Term]))).
+
+%%%
+%%% Table storing rooms' salt
+%%%
+
+-record(muc_occupant_id, {room_jid, salt}).
+
+create_table() ->
+    ejabberd_mnesia:create(?MODULE, muc_occupant_id,
+			   [{ram_copies, [node()]},
+			    {local_content, true},
+			    {attributes, record_info(fields, muc_occupant_id)},
+			    {type, set}]).
+
+
+get_salt(RoomJid) ->
+    case mnesia:dirty_read(muc_occupant_id, RoomJid) of
+        [] ->
+            Salt = p1_rand:get_string(),
+            ok = write_salt(RoomJid, Salt),
+            Salt;
+        [#muc_occupant_id{salt = Salt}] ->
+            Salt
+    end.
+
+write_salt(RoomJid, Salt) ->
+    mnesia:dirty_write(#muc_occupant_id{room_jid = RoomJid, salt = Salt}).
+
+delete_salt(RoomJid) ->
+    mnesia:dirty_delete(muc_occupant_id, RoomJid).
 
 %%%
 %%% Doc
