@@ -169,10 +169,12 @@ get_commands_spec() ->
      #ejabberd_commands{name = delete_old_users, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days, or that never logged",
 			longdesc = "To protect admin accounts, configure this for example:\n"
+			    "```\n"
 			    "access_rules:\n"
 			    "  protect_old_users:\n"
 			    "    - allow: admin\n"
-			    "    - deny: all\n",
+			    "    - deny: all\n"
+			    "```\n",
 			module = ?MODULE, function = delete_old_users,
 			args = [{days, integer}],
 			args_example = [30],
@@ -183,10 +185,12 @@ get_commands_spec() ->
      #ejabberd_commands{name = delete_old_users_vhost, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days in vhost, or that never logged",
 			longdesc = "To protect admin accounts, configure this for example:\n"
+			    "```\n"
 			    "access_rules:\n"
 			    "  delete_old_users:\n"
 			    "    - deny: admin\n"
-			    "    - allow: all\n",
+			    "    - allow: all\n"
+			    "```\n",
 			module = ?MODULE, function = delete_old_users_vhost,
 			args = [{host, binary}, {days, integer}],
 			args_example = [<<"myserver.com">>, 30],
@@ -215,7 +219,8 @@ get_commands_spec() ->
 			result_desc = "Status code: 0 on success, 1 otherwise"},
      #ejabberd_commands{name = check_password_hash, tags = [accounts],
 			desc = "Check if the password hash is correct",
-			longdesc = "Allows hash methods from crypto application",
+			longdesc = "Allows hash methods from the Erlang/OTP "
+                        "[crypto](https://www.erlang.org/doc/man/crypto) application.",
 			module = ?MODULE, function = check_password_hash,
 			args = [{user, binary}, {host, binary}, {passwordhash, binary},
 				{hashmethod, binary}],
@@ -390,14 +395,14 @@ get_commands_spec() ->
 			    "and its presence (show and status message) "
 			    "for a given user.",
 			longdesc =
-			    "The 'jid' value contains the user jid "
-			    "with resource.\nThe 'show' value contains "
+			    "The `jid` value contains the user JID "
+			    "with resource.\n\nThe `show` value contains "
 			    "the user presence flag. It can take "
-			    "limited values:\n - available\n - chat "
-			    "(Free for chat)\n - away\n - dnd (Do "
-			    "not disturb)\n - xa (Not available, "
-			    "extended away)\n - unavailable (Not "
-			    "connected)\n\n'status' is a free text "
+			    "limited values:\n\n - `available`\n - `chat` "
+			    "(Free for chat)\n - `away`\n - `dnd` (Do "
+			    "not disturb)\n - `xa` (Not available, "
+			    "extended away)\n - `unavailable` (Not "
+			    "connected)\n\n`status` is a free text "
 			    "defined by the user client.",
 			module = ?MODULE, function = get_presence,
 			args = [{user, binary}, {host, binary}],
@@ -421,8 +426,8 @@ get_commands_spec() ->
 			args_example = [<<"user1">>,<<"myserver.com">>,<<"tka1">>,
 					<<"available">>,<<"away">>,<<"BB">>, <<"7">>],
 			args_desc = ["User name", "Server name", "Resource",
-					"Type: available, error, probe...",
-					"Show: away, chat, dnd, xa.", "Status text",
+					"Type: `available`, `error`, `probe`...",
+					"Show: `away`, `chat`, `dnd`, `xa`.", "Status text",
 					"Priority, provide this value as an integer"],
 			result = {res, rescode}},
 
@@ -485,7 +490,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = add_rosteritem, tags = [roster],
 			desc = "Add an item to a user's roster (supports ODBC)",
-			longdesc = "Group can be several groups separated by ; for example: \"g1;g2;g3\"",
+			longdesc = "Group can be several groups separated by `;` for example: `g1;g2;g3`",
 			module = ?MODULE, function = add_rosteritem,
 			args = [{localuser, binary}, {localhost, binary},
 				{user, binary}, {host, binary},
@@ -616,7 +621,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = get_last, tags = [last],
 			desc = "Get last activity information",
 			longdesc = "Timestamp is UTC and XEP-0082 format, for example: "
-			    "2017-02-23T22:25:28.063062Z     ONLINE",
+			    "`2017-02-23T22:25:28.063062Z     ONLINE`",
 			module = ?MODULE, function = get_last,
 			args = [{user, binary}, {host, binary}],
 			args_example = [<<"user1">>,<<"myserver.com">>],
@@ -630,7 +635,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = set_last, tags = [last],
 			desc = "Set last activity information",
 			longdesc = "Timestamp is the seconds since "
-			"1970-01-01 00:00:00 UTC, for example: date +%s",
+			"`1970-01-01 00:00:00 UTC`. For example value see `date +%s`",
 			module = ?MODULE, function = set_last,
 			args = [{user, binary}, {host, binary}, {timestamp, integer}, {status, binary}],
 			args_example = [<<"user1">>,<<"myserver.com">>, 1500045311, <<"GoSleeping">>],
@@ -657,11 +662,11 @@ get_commands_spec() ->
 			desc = "Create a Shared Roster Group",
 			longdesc = "If you want to specify several group "
 			"identifiers in the Display argument,\n"
-			"put  \\ \" around the argument and\nseparate the "
-			"identifiers with \\ \\ n\n"
+			"put `\\ \"` around the argument and\nseparate the "
+			"identifiers with `\\ \\ n`\n"
 			"For example:\n"
-			"  ejabberdctl srg_create group3 myserver.com "
-			"name desc \\\"group1\\\\ngroup2\\\"",
+			"  `ejabberdctl srg_create group3 myserver.com "
+			"name desc \\\"group1\\\\ngroup2\\\"`",
 			note = "changed in 21.07",
 			module = ?MODULE, function = srg_create,
 			args = [{group, binary}, {host, binary},
@@ -734,7 +739,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = send_message, tags = [stanza],
 			desc = "Send a message to a local or remote bare of full JID",
 			longdesc = "When sending a groupchat message to a MUC room, "
-			"FROM must be the full JID of a room occupant, "
+			"`from` must be the full JID of a room occupant, "
 			"or the bare JID of a MUC service admin, "
 			"or the bare JID of a MUC/Sub subscribed user.",
 			module = ?MODULE, function = send_message,
@@ -742,13 +747,13 @@ get_commands_spec() ->
 				{subject, binary}, {body, binary}],
 			args_example = [<<"headline">>, <<"admin@localhost">>, <<"user1@localhost">>,
 				<<"Restart">>, <<"In 5 minutes">>],
-			args_desc = ["Message type: normal, chat, headline, groupchat", "Sender JID",
+			args_desc = ["Message type: `normal`, `chat`, `headline`, `groupchat`", "Sender JID",
 				"Receiver JID", "Subject, or empty string", "Body"],
 			result = {res, rescode}},
      #ejabberd_commands{name = send_stanza_c2s, tags = [stanza],
 			desc = "Send a stanza from an existing C2S session",
-			longdesc = "USER@HOST/RESOURCE must be an existing C2S session."
-			" As an alternative, use send_stanza instead.",
+			longdesc = "`user`@`host`/`resource` must be an existing C2S session."
+			" As an alternative, use http://./#send-stanza[send_stanza] instead.",
 			module = ?MODULE, function = send_stanza_c2s,
 			args = [{user, binary}, {host, binary}, {resource, binary}, {stanza, binary}],
 			args_example = [<<"admin">>, <<"myserver.com">>, <<"bot">>,

@@ -140,8 +140,8 @@ get_commands_spec() ->
 			desc = "Inform users and rooms, wait, and stop the server",
 			longdesc = "Provide the delay in seconds, and the "
 			"announcement quoted, for example: \n"
-			"ejabberdctl stop_kindly 60 "
-			"\\\"The server will stop in one minute.\\\"",
+			"`ejabberdctl stop_kindly 60 "
+			"\\\"The server will stop in one minute.\\\"`",
 			module = ?MODULE, function = stop_kindly,
 			args_desc = ["Seconds to wait", "Announcement to send, with quotes"],
 			args_example = [60, <<"Server will stop now.">>],
@@ -292,8 +292,9 @@ get_commands_spec() ->
 			args = [{host, binary}], result = {res, rescode}},
      #ejabberd_commands{name = import_prosody, tags = [mnesia, sql],
 			desc = "Import data from Prosody",
-			longdesc = "Note: this requires ejabberd compiled with --enable-lua "
-				"and include the optional 'luerl' library.",
+			longdesc = "Note: this requires ejabberd to be "
+                        "[compiled with `--enable-lua`](http://localhost:8098/admin/installation/#configure) "
+			"(which installs the `luerl` library).",
 			module = prosody2ejabberd, function = from_dir,
 			args_desc = ["Full path to the Prosody data directory"],
 			args_example = ["/var/lib/prosody/datadump/"],
@@ -371,7 +372,7 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = set_master, tags = [cluster],
 			desc = "Set master node of the clustered Mnesia tables",
-			longdesc = "If you provide as nodename \"self\", this "
+			longdesc = "If you provide as nodename `self`, this "
 			"node will be set as its own master.",
 			module = ?MODULE, function = set_master,
 			args_desc = ["Name of the erlang node that will be considered master of this node"],
@@ -399,7 +400,7 @@ get_commands_spec() ->
 			"binary backup file the internal Mnesia "
 			"database. This will consume a lot of memory if "
 			"you have a large database, you may prefer "
-			"'install_fallback'.",
+			"http://./#install-fallback[install_fallback].",
 			module = ?MODULE, function = restore_mnesia,
 			args_desc = ["Full path to the backup file"],
 			args_example = ["/var/lib/ejabberd/database.backup"],
@@ -421,8 +422,9 @@ get_commands_spec() ->
 			longdesc = "Restore immediately. This is not "
 			"recommended for big databases, as it will "
 			"consume much time, memory and processor. In "
-			"that case it's preferable to use 'backup' and "
-			"'install_fallback'.",
+			"that case it's preferable to use "
+			"http://./#backup[backup] and "
+			"http://./#install-fallback[install_fallback].",
 			module = ?MODULE, function = load_mnesia,
 			args_desc = ["Full path to the text file"],
 			args_example = ["/var/lib/ejabberd/database.txt"],
@@ -444,8 +446,8 @@ get_commands_spec() ->
 			"restore the database at the next ejabberd "
 			"start. This means that, after running this "
 			"command, you have to restart ejabberd. This "
-			"command requires less memory than
-			'restore'.",
+			"command requires less memory than "
+			"http://./#restore[restore].",
 			module = ?MODULE, function = install_fallback_mnesia,
 			args_desc = ["Full path to the fallback file"],
 			args_example = ["/var/lib/ejabberd/database.fallback"],
