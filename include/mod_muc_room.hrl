@@ -125,7 +125,7 @@
     roles                   = #{} :: roles(),
     history                 = #lqueue{} :: lqueue(),
     subject                 = [] :: [text()],
-    subject_author          = <<"">> :: binary(),
+    subject_author          = {<<"">>, #jid{}} :: {binary(), jid()},
     hats_users              = #{} :: map(), % FIXME on OTP 21+: #{ljid() => #{binary() => binary()}},
     just_created            = erlang:system_time(microsecond) :: true | integer(),
     activity                = treap:empty() :: treap:treap(),

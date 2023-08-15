@@ -1191,8 +1191,10 @@ opts_to_binary(Opts) ->
               {password, iolist_to_binary(Pass)};
          ({subject, [C|_] = Subj}) when is_integer(C), C >= 0, C =< 255 ->
               {subject, iolist_to_binary(Subj)};
-         ({subject_author, Author}) ->
-              {subject_author, iolist_to_binary(Author)};
+         ({subject_author, {AuthorNick, AuthorJID}}) ->
+              {subject_author, {iolist_to_binary(AuthorNick), AuthorJID}};
+         ({subject_author, AuthorNick}) -> % ejabberd 23.04 or older
+              {subject_author, {iolist_to_binary(AuthorNick), #jid{}}};
          ({allow_private_messages, Value}) -> % ejabberd 23.04 or older
               Value2 = case Value of
                            true -> anyone;

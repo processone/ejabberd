@@ -1053,7 +1053,7 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 			  true ->
 			      NSD =
 			      StateData#state{subject = Subject,
-					      subject_author = FromNick},
+					      subject_author = {FromNick, From}},
 			      store_room(NSD),
 			      {NSD, true};
 			  _ -> {StateData, false}
@@ -3000,14 +3000,24 @@ send_history(JID, History, StateData) ->
       end, History).
 
 -spec send_subject(jid(), state()) -> ok.
-send_subject(JID, #state{subject_author = Nick} = StateData) ->
+send_subject(JID, #state{subject_author = {Nick, AuthorJID}} = StateData) ->
     Subject = case StateData#state.subject of
 		  [] -> [#text{}];
 		  [_|_] = S -> S
 	      end,
-    Packet = #message{from = jid:replace_resource(StateData#state.jid, Nick),
+    Packet = #message{from = AuthorJID,
 		      to = JID, type = groupchat, subject = Subject},
-    ejabberd_router:route(Packet).
+    case ejabberd_hooks:run_fold(muc_filter_message,
+                                 StateData#state.server_host,
+                                 Packet,
+                                 [StateData, Nick]) of
+        drop ->
+            ok;
+        NewPacket1 ->
+            FromRoomNick = jid:replace_resource(StateData#state.jid, Nick),
+            NewPacket2 = xmpp:set_from(NewPacket1, FromRoomNick),
+            ejabberd_router:route(NewPacket2)
+    end.
 
 -spec check_subject(message()) -> [text()].
 check_subject(#message{subject = [_|_] = Subj, body = [],
@@ -4294,7 +4304,7 @@ expand_opts(CompactOpts) ->
                           {Pos+1, [{Field, Val}|Opts]}
                   end
           end, {2, []}, Fields),
-    SubjectAuthor = proplists:get_value(subject_author, CompactOpts, <<"">>),
+    SubjectAuthor = proplists:get_value(subject_author, CompactOpts, {<<"">>, #jid{}}),
     Subject = proplists:get_value(subject, CompactOpts, <<"">>),
     Subscribers = proplists:get_value(subscribers, CompactOpts, []),
     HibernationTime = proplists:get_value(hibernation_time, CompactOpts, 0),
