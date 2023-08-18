@@ -1148,7 +1148,11 @@ get_db_version(#state{db_type = pgsql} = State) ->
             ?WARNING_MSG("Error getting pgsql version: ~p", [Res]),
             State
     end;
-get_db_version(#state{db_type = mysql} = State) ->
+get_db_version(#state{db_type = mysql, host = Host} = State) ->
+    DefaultUpsert = case lists:member(mysql_alternative_upsert, ejabberd_option:sql_flags(Host)) of
+			true -> 1;
+			_ -> 0
+		    end,
     case mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 					    [<<"select version();">>], self(),
 					    [{timeout, 5000},
@@ -1160,10 +1164,10 @@ get_db_version(#state{db_type = mysql} = State) ->
 		    V = ((bin_to_int(V1)*1000)+bin_to_int(V2))*1000+bin_to_int(V3),
 		    TypeA = binary_to_atom(Type, utf8),
 		    Flags = case TypeA of
-				'MariaDB' -> 0;
+				'MariaDB' -> DefaultUpsert;
 				_ when V >= 5007026 andalso V < 8000000 -> 1;
 				_ when V >= 8000020 -> 1;
-				_ -> 0
+				_ -> DefaultUpsert
 			    end,
 		    State#state{db_version = {V, TypeA, Flags}};
 		{match, [V1, V2, V3]} ->
@@ -1171,7 +1175,7 @@ get_db_version(#state{db_type = mysql} = State) ->
 		    Flags = case V of
 				_ when V >= 5007026 andalso V < 8000000 -> 1;
 				_ when V >= 8000020 -> 1;
-				_ -> 0
+				_ -> DefaultUpsert
 			    end,
 		    State#state{db_version = {V, unknown, Flags}};
 		_ ->

@@ -143,6 +143,7 @@
 -export([sm_use_cache/0, sm_use_cache/1]).
 -export([sql_connect_timeout/0, sql_connect_timeout/1]).
 -export([sql_database/0, sql_database/1]).
+-export([sql_flags/0, sql_flags/1]).
 -export([sql_keepalive_interval/0, sql_keepalive_interval/1]).
 -export([sql_odbc_driver/0, sql_odbc_driver/1]).
 -export([sql_password/0, sql_password/1]).
@@ -963,6 +964,13 @@ sql_database() ->
 -spec sql_database(global | binary()) -> 'undefined' | binary().
 sql_database(Host) ->
     ejabberd_config:get_option({sql_database, Host}).
+
+-spec sql_flags() -> ['mysql_alternative_upsert'].
+sql_flags() ->
+    sql_flags(global).
+-spec sql_flags(global | binary()) -> ['mysql_alternative_upsert'].
+sql_flags(Host) ->
+    ejabberd_config:get_option({sql_flags, Host}).
 
 -spec sql_keepalive_interval() -> 'undefined' | pos_integer().
 sql_keepalive_interval() ->

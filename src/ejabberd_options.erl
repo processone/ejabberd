@@ -424,6 +424,8 @@ opt_type(sql_username) ->
     econf:binary();
 opt_type(sql_prepared_statements) ->
     econf:bool();
+opt_type(sql_flags) ->
+    econf:list_or_single(econf:enum([mysql_alternative_upsert]), [sorted, unique]);
 opt_type(trusted_proxies) ->
     econf:either(all, econf:list(econf:ip_mask()));
 opt_type(use_cache) ->
@@ -708,6 +710,7 @@ options() ->
      {sql_start_interval, timer:seconds(30)},
      {sql_username, <<"ejabberd">>},
      {sql_prepared_statements, true},
+     {sql_flags, []},
      {trusted_proxies, []},
      {validate_stream, false},
      {websocket_origin, []},
