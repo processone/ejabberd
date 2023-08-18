@@ -244,10 +244,9 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-
 get_client_identity(<<"">>, Ctx) ->
     {ok, {Ctx, {client, unknown_client}}};
-get_client_identity({client, ClientID}, Ctx) ->
+get_client_identity(ClientID, Ctx) when is_binary(ClientID) ->
     {ok, {Ctx, {client, ClientID}}}.
 
 verify_redirection_uri(_ClientID, RedirectURI, Ctx) ->
