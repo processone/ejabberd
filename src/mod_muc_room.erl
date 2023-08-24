@@ -625,12 +625,12 @@ normal_state({route, ToNick,
                                     Packet2 = xmpp:set_subtag(Packet, X),
                                     case ejabberd_hooks:run_fold(muc_filter_message,
                                                                  StateData#state.server_host,
-                                                                 Packet2,
+								 xmpp:put_meta(Packet2, mam_ignore, true),
                                                                  [StateData, FromNick]) of
                                         drop ->
                                             ok;
                                         Packet3 ->
-                                            PrivMsg = xmpp:set_from(Packet3, FromNickJID),
+                                            PrivMsg = xmpp:set_from(xmpp:del_meta(Packet3, mam_ignore), FromNickJID),
                                             lists:foreach(
                                               fun(ToJID) ->
                                                       ejabberd_router:route(xmpp:set_to(PrivMsg, ToJID))
@@ -3016,7 +3016,7 @@ send_subject(JID, #state{subject_author = {Nick, AuthorJID}} = StateData) ->
 		      to = JID, type = groupchat, subject = Subject},
     case ejabberd_hooks:run_fold(muc_filter_message,
                                  StateData#state.server_host,
-                                 Packet,
+                                 xmpp:put_meta(Packet, mam_ignore, true),
                                  [StateData, Nick]) of
         drop ->
             ok;
@@ -5169,9 +5169,9 @@ process_iq_moderate(From, #iq{type = set, lang = Lang},
 					  ]}]},
 	            {FromNick, _Role} = get_participant_data(From, StateData),
                     Packet = ejabberd_hooks:run_fold(muc_filter_message,
-                                                                 StateData#state.server_host,
-                                                                 Packet0,
-                                                                 [StateData, FromNick]),
+						     StateData#state.server_host,
+						     xmpp:put_meta(Packet0, mam_ignore, true),
+						     [StateData, FromNick]),
 		    send_wrapped_multiple(JID,
 					  get_users_and_subscribers_with_node(?NS_MUCSUB_NODES_MESSAGES, StateData),
 					  Packet, ?NS_MUCSUB_NODES_MESSAGES, StateData),

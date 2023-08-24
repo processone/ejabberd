@@ -465,6 +465,8 @@ offline_message({_Action, #message{from = Peer, to = To} = Pkt} = Acc) ->
 
 -spec muc_filter_message(message(), mod_muc_room:state(),
 			 binary()) -> message().
+muc_filter_message(#message{meta = #{mam_ignore := true}} = Pkt, _MUCState, _FromNick) ->
+    Pkt;
 muc_filter_message(#message{from = From} = Pkt,
 		   #state{config = Config, jid = RoomJID} = MUCState,
 		   FromNick) ->
