@@ -358,7 +358,7 @@ case $1 in
         ;;
     iexlive)
         livewarning
-        exec_iex "$ERLANG_NODE" --erl "$EJABBERD_OPTS" --app ejabberd
+        exec_iex "$ERLANG_NODE" --erl "$EJABBERD_OPTS"
         ;;
     ping)
         PEER=${2:-$ERLANG_NODE}
