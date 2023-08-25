@@ -8,7 +8,7 @@ defmodule Ejabberd.MixProject do
      elixir: elixir_required_version(),
      elixirc_paths: ["lib"],
      compile_path: ".",
-     compilers: [:asn1] ++ Mix.compilers,
+     compilers: [:asn1] ++ Mix.compilers(),
      erlc_options: erlc_options(),
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
@@ -260,7 +260,7 @@ defmodule Ejabberd.MixProject do
     end
 
     # Mix/Elixir lower than 1.11.0 use config/releases.exs instead of runtime.exs
-    case Version.match?(System.version, "~> 1.11") do
+    case Version.match?(System.version(), "~> 1.11") do
       true ->
         :ok
       false ->
@@ -339,7 +339,7 @@ defmodule Mix.Tasks.Compile.Asn1 do
   def run(args) do
     {opts, _, _} = OptionParser.parse(args, switches: [force: :boolean])
 
-    project      = Mix.Project.config
+    project      = Mix.Project.config()
     source_paths = project[:asn1_paths] || ["asn1"]
     dest_paths    = project[:asn1_target] || ["src"]
     mappings     = Enum.zip(source_paths, dest_paths)
@@ -361,7 +361,7 @@ defmodule Mix.Tasks.Compile.Asn1 do
   end
 
   def manifests, do: [manifest()]
-  defp manifest, do: Path.join(Mix.Project.manifest_path, @manifest)
+  defp manifest, do: Path.join(Mix.Project.manifest_path(), @manifest)
 
   def clean, do: Erlang.clean(manifest())
 end

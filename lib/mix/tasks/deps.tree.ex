@@ -14,15 +14,15 @@ defmodule Mix.Tasks.Ejabberd.Deps.Tree do
   def run(_argv) do
     # First we need to start manually the store to be available
     # during the compilation of the config file.
-    Ejabberd.Config.Store.start_link
+    Ejabberd.Config.Store.start_link()
     Ejabberd.Config.init(:ejabberd_config.path())
 
-    Mix.shell.info "ejabberd modules"
+    Mix.shell().info "ejabberd modules"
 
     Ejabberd.Config.Store.get(:modules)
     |> Enum.reverse # Because of how mods are stored inside the store
     |> format_mods
-    |> Mix.shell.info
+    |> Mix.shell().info
   end
 
   defp format_mods(mods) when is_list(mods) do

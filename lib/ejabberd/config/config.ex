@@ -36,8 +36,8 @@ defmodule Ejabberd.Config do
 
     case force do
       true ->
-        Ejabberd.Config.Store.stop
-        Ejabberd.Config.Store.start_link
+        Ejabberd.Config.Store.stop()
+        Ejabberd.Config.Store.start_link()
         do_init(file_path)
       false ->
         if not init_already_executed, do: do_init(file_path)
