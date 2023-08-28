@@ -409,7 +409,6 @@ edit_ejabberdctl()
 	sed -i \
 	    -e "2iexport TERM='internal'" \
 	    -e '/ERL_OPTIONS=/d' \
-	    -e 's|^ERLANG_NODE=ejabberd$|ERLANG_NODE=ejabberd@localhost|' \
 	    -e 's|_DIR:=".*}/|_DIR:="/opt/ejabberd/|' \
 	    -e 's|/database|/database/$ERLANG_NODE|' \
 	    "$code_dir/bin/${rel_name}ctl"
