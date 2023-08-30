@@ -85,7 +85,6 @@ Community
 There are several places to get in touch with other ejabberd developers and administrators:
 
 - ejabberd XMPP chatroom: [ejabberd@conference.process-one.net][muc]
-- [Mailing list][list]
 - [GitHub Discussions][discussions]
 - [Stack Overflow][stackoverflow]
 
@@ -108,7 +107,6 @@ and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MI
 [hubecs]: https://hub.docker.com/r/ejabberd/ecs/
 [im]: https://ejabberd.im/
 [issues]: https://github.com/processone/ejabberd/issues
-[list]: https://lists.jabber.ru/mailman/listinfo/ejabberd
 [localization]: https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 [mqtt]: https://mqtt.org/
 [muc]: xmpp:ejabberd@conference.process-one.net
