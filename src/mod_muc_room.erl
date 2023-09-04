@@ -4201,7 +4201,10 @@ set_opts2([{Opt, Val} | Opts], StateData) ->
 			    is_list(Val) -> Val
 			 end,
 		  StateData#state{subject = Subj};
-	    subject_author -> StateData#state{subject_author = Val};
+	    subject_author when is_tuple(Val) ->
+                  StateData#state{subject_author = Val};
+	    subject_author when is_binary(Val) -> % ejabberd 23.04 or older
+                  StateData#state{subject_author = {Val, #jid{}}};
             hats_users ->
                   Hats = maps:from_list(
                            lists:map(fun({U, H}) -> {U, maps:from_list(H)} end,
