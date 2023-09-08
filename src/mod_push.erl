@@ -135,6 +135,8 @@ depends(_Host, _Opts) ->
     [].
 
 -spec mod_opt_type(atom()) -> econf:validator().
+mod_opt_type(notify_on) ->
+    econf:enum([messages, all]);
 mod_opt_type(include_sender) ->
     econf:bool();
 mod_opt_type(include_body) ->
@@ -154,7 +156,8 @@ mod_opt_type(cache_life_time) ->
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(Host) ->
-    [{include_sender, false},
+    [{notify_on, all},
+     {include_sender, false},
      {include_body, <<"New message">>},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_option:use_cache(Host)},
@@ -175,7 +178,16 @@ mod_doc() ->
              "notification delivery to the user's mobile device using "
              "platform-dependant backend services such as FCM or APNS."),
       opts =>
-          [{include_sender,
+          [{notify_on,
+            #{value => "messages | all",
+              desc =>
+                  ?T("If this option is set to 'messages', notifications are "
+                     "generated only for actual chat messages with a body text "
+                     "(or some encrypted payload). If it's set to 'all', any "
+                     "kind of XMPP stanza will trigger a notification. If "
+                     "unsure, it's strongly recommended to stick to 'all', "
+                     "which is the default value.")}},
+           {include_sender,
             #{value => "true | false",
               desc =>
                   ?T("If this option is set to 'true', the sender's JID "
@@ -510,16 +522,21 @@ notify(LUser, LServer, Clients, Pkt, Dir) ->
 notify(LServer, PushLJID, Node, XData, Pkt0, Dir, HandleResponse) ->
     Pkt = unwrap_message(Pkt0),
     From = jid:make(LServer),
-    Summary = make_summary(LServer, Pkt, Dir),
-    Item = #ps_item{sub_els = [#push_notification{xdata = Summary}]},
-    PubSub = #pubsub{publish = #ps_publish{node = Node, items = [Item]},
-		     publish_options = XData},
-    IQ = #iq{type = set,
-	     from = From,
-	     to = jid:make(PushLJID),
-	     id = p1_rand:get_string(),
-	     sub_els = [PubSub]},
-    ejabberd_router:route_iq(IQ, HandleResponse).
+    case {make_summary(LServer, Pkt, Dir), mod_push_opt:notify_on(LServer)} of
+	{undefined, messages} ->
+	    ?DEBUG("Suppressing notification for stanza without payload", []),
+	    ok;
+	{Summary, _NotifyOn} ->
+	    Item = #ps_item{sub_els = [#push_notification{xdata = Summary}]},
+	    PubSub = #pubsub{publish = #ps_publish{node = Node, items = [Item]},
+			     publish_options = XData},
+	    IQ = #iq{type = set,
+		     from = From,
+		     to = jid:make(PushLJID),
+		     id = p1_rand:get_string(),
+		     sub_els = [PubSub]},
+	    ejabberd_router:route_iq(IQ, HandleResponse)
+    end.
 
 %%--------------------------------------------------------------------
 %% Miscellaneous.

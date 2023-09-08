@@ -9,6 +9,7 @@
 -export([db_type/1]).
 -export([include_body/1]).
 -export([include_sender/1]).
+-export([notify_on/1]).
 -export([use_cache/1]).
 
 -spec cache_life_time(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
@@ -46,6 +47,12 @@ include_sender(Opts) when is_map(Opts) ->
     gen_mod:get_opt(include_sender, Opts);
 include_sender(Host) ->
     gen_mod:get_module_opt(Host, mod_push, include_sender).
+
+-spec notify_on(gen_mod:opts() | global | binary()) -> 'all' | 'messages'.
+notify_on(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(notify_on, Opts);
+notify_on(Host) ->
+    gen_mod:get_module_opt(Host, mod_push, notify_on).
 
 -spec use_cache(gen_mod:opts() | global | binary()) -> boolean().
 use_cache(Opts) when is_map(Opts) ->
