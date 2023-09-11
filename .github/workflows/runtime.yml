@@ -42,7 +42,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Prepare libraries
       run: |
@@ -132,7 +132,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Get specific Erlang/OTP
       uses: erlef/setup-beam@v1
