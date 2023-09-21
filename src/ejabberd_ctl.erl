@@ -835,6 +835,11 @@ filter_commands_regexp(All, Glob) ->
       end,
       All).
 
+maybe_add_policy_arguments(Args, user) ->
+    [{user, binary}, {host, binary} | Args];
+maybe_add_policy_arguments(Args, _) ->
+    Args.
+
 -spec print_usage_command(Cmd::string(), MaxC::integer(),
                           ShCode::boolean(), Version::integer()) -> ok.
 print_usage_command(Cmd, MaxC, ShCode, Version) ->
@@ -847,13 +852,15 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 		     tags = TagsAtoms,
 		     definer = Definer,
 		     desc = Desc,
-		     args = ArgsDef,
+		     args = ArgsDefPreliminary,
+		     policy = Policy,
 		     longdesc = LongDesc,
 		     result = ResultDef} = C,
 
     NameFmt = ["  ", ?B("Command Name"), ": ", ?C(Cmd), "\n"],
 
     %% Initial indentation of result is 13 = length("  Arguments: ")
+    ArgsDef = maybe_add_policy_arguments(ArgsDefPreliminary, Policy),
     Args = [format_usage_ctype(ArgDef, 13) || ArgDef <- ArgsDef],
     ArgsMargin = lists:duplicate(13, $\s),
     ArgsListFmt = case Args of
