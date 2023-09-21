@@ -574,7 +574,10 @@ get_commands_spec() ->
 					       ]}}
 				  }}},
      #ejabberd_commands{name = get_roster, tags = [roster],
-			desc = "Get roster of a local user",
+			desc = "Get list of contacts in a local user roster",
+			longdesc =
+			    "Subscription can be: \"none\", \"from\", \"to\", \"both\". "
+                            "Pending can be: \"in\", \"out\", \"none\".",
                         policy = user,
 			module = ?MODULE, function = get_roster,
 			args = [],
@@ -583,8 +586,8 @@ get_commands_spec() ->
 								      {jid, string},
 								      {nick, string},
 								      {subscription, string},
-								      {ask, string},
-								      {group, string}
+								      {pending, string},
+								      {groups, {list, {group, string}}}
 								     ]}}}}},
      #ejabberd_commands{name = push_roster, tags = [roster],
 			desc = "Push template roster from file to a user",
@@ -1334,24 +1337,15 @@ get_roster(User, Server) ->
 	    make_roster_xmlrpc(Items)
     end.
 
-%% Note: if a contact is in several groups, the contact is returned
-%% several times, each one in a different group.
 make_roster_xmlrpc(Roster) ->
-    lists:foldl(
-      fun(#roster_item{jid = JID, name = Nick, subscription = Sub, ask = Ask} = Item, Res) ->
+    lists:map(
+      fun(#roster_item{jid = JID, name = Nick, subscription = Sub, ask = Ask, groups = Groups} = Item) ->
 	      JIDS = jid:encode(JID),
 	      Subs = atom_to_list(Sub),
 	      Asks = atom_to_list(Ask),
-	      Groups = case Item#roster_item.groups of
-			   [] -> [<<>>];
-			   Gs -> Gs
-		       end,
-	      ItemsX = [{JIDS, Nick, Subs, Asks, Group} || Group <- Groups],
-	      ItemsX ++ Res
+	      {JIDS, Nick, Subs, Asks, Groups}
       end,
-      [],
       Roster).
-
 
 %%-----------------------------
 %% Push Roster from file
