@@ -335,7 +335,7 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
 							ArgsFormatted,
 							CI2,
 							Version),
-	    format_result(Result, ResultFormat);
+	    format_result_preliminary(Result, ResultFormat);
 	{'EXIT', {function_clause,[{lists,zip,[A1,A2|_], _} | _]}} ->
 	    {NumCompa, TextCompa} =
 		case {length(A1), length(A2)} of
@@ -385,6 +385,11 @@ format_arg2(Arg, Parse)->
 %% Format result
 %%-----------------------------
 
+format_result_preliminary(Result, {A, {list, B}}) ->
+    format_result(Result, {A, {top_result_list, B}});
+format_result_preliminary(Result, ResultFormat) ->
+    format_result(Result, ResultFormat).
+
 format_result({error, ErrorAtom}, _) ->
     {io_lib:format("Error: ~p", [ErrorAtom]), make_status(error)};
 
@@ -421,6 +426,16 @@ format_result(Code, {_Name, rescode}) ->
 format_result({Code, Text}, {_Name, restuple}) ->
     {io_lib:format("~ts", [Text]), make_status(Code)};
 
+format_result([], {_Name, {top_result_list, _ElementsDef}}) ->
+    "";
+format_result([FirstElement | Elements], {_Name, {top_result_list, ElementsDef}}) ->
+    [format_result(FirstElement, ElementsDef) |
+     lists:map(
+       fun(Element) ->
+	       ["\n" | format_result(Element, ElementsDef)]
+       end,
+       Elements)];
+
 %% The result is a list of something: [something()]
 format_result([], {_Name, {list, _ElementsDef}}) ->
     "";
@@ -430,7 +445,7 @@ format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}) ->
      %% If there are more elements, put always first a newline character
      lists:map(
        fun(Element) ->
-	       ["\n" | format_result(Element, ElementsDef)]
+	       [";" | format_result(Element, ElementsDef)]
        end,
        Elements)];
 
@@ -755,7 +770,10 @@ print_usage_help(MaxC, ShCode) ->
 	 "\n",
 	 "Please note that 'ejabberdctl' shows all ejabberd commands,\n",
 	 "even those that cannot be used in the shell with ejabberdctl.\n",
-	 "Those commands can be identified because their description starts with: *"],
+	 "Those commands can be identified because their description starts with: *\n",
+	 "\n",
+	 "Some commands return lists, like get_roster and get_user_subscriptions.\n",
+	 "In those commands, the elements in the list are separated with: ;\n"],
     ArgsDef = [],
     C = #ejabberd_commands{
 	   name = help,
@@ -817,6 +835,11 @@ filter_commands_regexp(All, Glob) ->
       end,
       All).
 
+maybe_add_policy_arguments(Args, user) ->
+    [{user, binary}, {host, binary} | Args];
+maybe_add_policy_arguments(Args, _) ->
+    Args.
+
 -spec print_usage_command(Cmd::string(), MaxC::integer(),
                           ShCode::boolean(), Version::integer()) -> ok.
 print_usage_command(Cmd, MaxC, ShCode, Version) ->
@@ -829,13 +852,15 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 		     tags = TagsAtoms,
 		     definer = Definer,
 		     desc = Desc,
-		     args = ArgsDef,
+		     args = ArgsDefPreliminary,
+		     policy = Policy,
 		     longdesc = LongDesc,
 		     result = ResultDef} = C,
 
     NameFmt = ["  ", ?B("Command Name"), ": ", ?C(Cmd), "\n"],
 
     %% Initial indentation of result is 13 = length("  Arguments: ")
+    ArgsDef = maybe_add_policy_arguments(ArgsDefPreliminary, Policy),
     Args = [format_usage_ctype(ArgDef, 13) || ArgDef <- ArgsDef],
     ArgsMargin = lists:duplicate(13, $\s),
     ArgsListFmt = case Args of
