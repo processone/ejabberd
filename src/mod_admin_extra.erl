@@ -1339,7 +1339,7 @@ get_roster(User, Server) ->
 
 make_roster_xmlrpc(Roster) ->
     lists:map(
-      fun(#roster_item{jid = JID, name = Nick, subscription = Sub, ask = Ask, groups = Groups} = Item) ->
+      fun(#roster_item{jid = JID, name = Nick, subscription = Sub, ask = Ask, groups = Groups}) ->
 	      JIDS = jid:encode(JID),
 	      Subs = atom_to_list(Sub),
 	      Asks = atom_to_list(Ask),
