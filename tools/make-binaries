@@ -411,6 +411,7 @@ edit_ejabberdctl()
 	    -e '/ERL_OPTIONS=/d' \
 	    -e 's|_DIR:=".*}/|_DIR:="/opt/ejabberd/|' \
 	    -e 's|/database|/database/$ERLANG_NODE|' \
+	    -e 's|#vt100 ||' \
 	    "$code_dir/bin/${rel_name}ctl"
 }
 #.
