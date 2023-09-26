@@ -65,7 +65,7 @@ fi
 rel_name='ejabberd'
 rel_vsn=$(git describe --tags | sed -e 's/-g.*//' -e 's/-/./' | tr -d '[:space:]')
 mix_vsn=$(mix_version "$rel_vsn")
-crosstool_vsn='1.25.0'
+crosstool_vsn='1.26.0'
 termcap_vsn='1.3.1'
 expat_vsn='2.5.0'
 zlib_vsn='1.2.13'
@@ -497,8 +497,6 @@ build_toolchain()
 		cd "$root_dir"
 		create_${arch}_config 'defconfig' "$libc"
 		ct-ng defconfig
-		sed -i -e "s|^CT_ZLIB_VERSION=.*|CT_ZLIB_VERSION=\"$zlib_vsn\"|" .config
-		sed -i -e 's|^CT_ZLIB_MIRRORS=.*|CT_ZLIB_MIRRORS="https://github.com/madler/zlib/releases/download/v${CT_ZLIB_VERSION} https://www.zlib.net/ https://www.zlib.net/fossils/"|' .config
 		ct-ng build CT_PREFIX="$ct_prefix_dir" CT_JOBS="$ct_jobs"
 		rm -rf '.config' '.build' 'build.log'
 		cd "$OLDPWD"
