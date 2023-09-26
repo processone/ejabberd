@@ -397,13 +397,15 @@ logo_fill() ->
 %%%% process_admin
 
 process_admin(global, #request{path = [], lang = Lang}, AJID) ->
+    MenuItems = get_menu_items(global, cluster, Lang, AJID, 0),
+    Disclaimer = maybe_disclaimer_not_admin(MenuItems, AJID, Lang),
     make_xhtml((?H1GL((translate:translate(Lang, ?T("Administration"))), <<"">>,
 		      <<"Contents">>))
-		 ++
+		 ++ Disclaimer ++
 		 [?XE(<<"ul">>,
 		      [?LI([?ACT(MIU, MIN)])
 		       || {MIU, MIN}
-			      <- get_menu_items(global, cluster, Lang, AJID, 0)])],
+			      <- MenuItems])],
 	       global, Lang, AJID, 0);
 process_admin(Host, #request{path = [], lang = Lang}, AJID) ->
     make_xhtml([?XCT(<<"h1">>, ?T("Administration")),
@@ -573,14 +575,16 @@ term_to_id(T) -> base64:encode((term_to_binary(T))).
 %%%% list_vhosts
 
 list_vhosts(Lang, JID) ->
+    list_vhosts2(Lang, list_vhosts_allowed(JID)).
+
+list_vhosts_allowed(JID) ->
     Hosts = ejabberd_option:hosts(),
-    HostsAllowed = lists:filter(fun (Host) ->
+    lists:filter(fun (Host) ->
 					any_rules_allowed(Host,
 						     [configure, webadmin_view],
 						     JID)
 				end,
-				Hosts),
-    list_vhosts2(Lang, HostsAllowed).
+				Hosts).
 
 list_vhosts2(Lang, Hosts) ->
     SHosts = lists:sort(Hosts),
@@ -615,6 +619,17 @@ list_vhosts2(Lang, Hosts) ->
                                                 pretty_string_int(OnlineUsers))])])
 			 end,
 			 SHosts)))])].
+
+maybe_disclaimer_not_admin(MenuItems, AJID, Lang) ->
+    case {MenuItems, list_vhosts_allowed(AJID)} of
+        {[_], []} ->
+            [?XREST("Apparently your account has no administration rights in this server. "
+                    "Please check how to grant admin rights in: "
+                    "https://docs.ejabberd.im/admin/installation/#administration-account")
+            ];
+        _ ->
+            []
+    end.
 
 %%%==================================
 %%%% list_users
