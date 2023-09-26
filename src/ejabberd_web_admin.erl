@@ -623,9 +623,9 @@ list_vhosts2(Lang, Hosts) ->
 maybe_disclaimer_not_admin(MenuItems, AJID, Lang) ->
     case {MenuItems, list_vhosts_allowed(AJID)} of
         {[_], []} ->
-            [?XREST("Apparently your account has no administration rights in this server. "
-                    "Please check how to grant admin rights in: "
-                    "https://docs.ejabberd.im/admin/installation/#administration-account")
+            [?XREST(?T("Apparently your account has no administration rights in this server. "
+                       "Please check how to grant admin rights in: "
+                       "https://docs.ejabberd.im/admin/installation/#administration-account"))
             ];
         _ ->
             []
