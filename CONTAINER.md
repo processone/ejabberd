@@ -19,6 +19,7 @@ that includes [XMPP][xmpp] Server, [MQTT][mqtt] Broker and [SIP][sip] Service.
 This document explains how to use the `ejabberd` container image available in
 [ghcr.io/processone/ejabberd](https://github.com/processone/ejabberd/pkgs/container/ejabberd),
 built using the files in `.github/container/`.
+This image is based in Alpine 3.17, includes Erlang/OTP 25.3 and Elixir 1.14.4.
 
 Alternatively, there is also the `ecs` container image available in
 [docker.io/ejabberd/ecs](https://hub.docker.com/r/ejabberd/ecs/),
