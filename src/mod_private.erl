@@ -328,42 +328,45 @@ publish_pep_xmpp_bookmarks(JID, Data) ->
 			PepBookmarks when is_list(PepBookmarks) ->
 			    put(mod_private_pep_update, true),
 			    PepBookmarksMap = lists:foldl(fun pubsub_item_to_map/2, #{}, PepBookmarks),
-			    ToDelete =
+			    {ToDelete, Ret} =
 			    lists:foldl(
-				fun(#bookmark_conference{jid = BookmarkJID} = Bookmark, Map2) ->
+				fun(#bookmark_conference{jid = BookmarkJID} = Bookmark, {Map2, Ret2}) ->
 				    PB = storage_bookmark_to_xmpp_bookmark(Bookmark),
 				    case maps:take(jid:tolower(BookmarkJID), Map2) of
 					{StoredBookmark, Map3} when StoredBookmark == PB ->
-					    Map3;
+					    {Map3, Ret2};
 					{_, Map4} ->
-					    mod_pubsub:publish_item(
-						LBJID, LServer, ?NS_PEP_BOOKMARKS, JID,
-						jid:encode(BookmarkJID), [xmpp:encode(PB)], PubOpts, all),
-					    Map4;
+					    {Map4,
+					     err_ret(Ret2, mod_pubsub:publish_item(
+						 LBJID, LServer, ?NS_PEP_BOOKMARKS, JID,
+						 jid:encode(BookmarkJID), [xmpp:encode(PB)], PubOpts, all))};
 					_ ->
-					    mod_pubsub:publish_item(
-						LBJID, LServer, ?NS_PEP_BOOKMARKS, JID,
-						jid:encode(BookmarkJID), [xmpp:encode(PB)], PubOpts, all),
-					    Map2
+					    {Map2,
+					     err_ret(Ret2, mod_pubsub:publish_item(
+						 LBJID, LServer, ?NS_PEP_BOOKMARKS, JID,
+						 jid:encode(BookmarkJID), [xmpp:encode(PB)], PubOpts, all))}
 				    end
-				end, PepBookmarksMap, Bookmarks),
+				end, {PepBookmarksMap, ok}, Bookmarks),
+			    Ret4 =
 			    maps:fold(
-				fun(DeleteJid, _, _) ->
-				    mod_pubsub:delete_item(LBJID, ?NS_PEP_BOOKMARKS, JID, jid:encode(DeleteJid))
-				end, ok, ToDelete),
+				fun(DeleteJid, _, Ret3) ->
+				    err_ret(Ret3, mod_pubsub:delete_item(LBJID, ?NS_PEP_BOOKMARKS,
+									 JID, jid:encode(DeleteJid)))
+				end, Ret, ToDelete),
 			    erase(mod_private_pep_update),
-			    ok;
+			    Ret4;
 			{error, #stanza_error{reason = 'item-not-found'}} ->
 			    put(mod_private_pep_update, true),
-			    lists:foreach(
-				fun(#bookmark_conference{jid = BookmarkJID} = Bookmark) ->
+			    Ret7 =
+			    lists:foldl(
+				fun(#bookmark_conference{jid = BookmarkJID} = Bookmark, Ret5) ->
 				    PB = storage_bookmark_to_xmpp_bookmark(Bookmark),
-				    mod_pubsub:publish_item(
+				    err_ret(Ret5, mod_pubsub:publish_item(
 					LBJID, LServer, ?NS_PEP_BOOKMARKS, JID,
-					jid:encode(BookmarkJID), [xmpp:encode(PB)], PubOpts, all)
-				end, Bookmarks),
+					jid:encode(BookmarkJID), [xmpp:encode(PB)], PubOpts, all))
+				end, ok, Bookmarks),
 			    erase(mod_private_pep_update),
-			    ok;
+			    Ret7;
 			_ ->
 			    ok
 		    end;
@@ -373,6 +376,11 @@ publish_pep_xmpp_bookmarks(JID, Data) ->
 	false ->
 	    ok
     end.
+
+err_ret({error, _} = E, _) ->
+    E;
+err_ret(ok, E) ->
+    E.
 
 -spec pubsub_publish_item(binary(), binary(), jid(), jid(),
 			  binary(), [xmlel()]) -> any().
