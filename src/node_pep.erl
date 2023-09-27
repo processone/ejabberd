@@ -82,6 +82,7 @@ features() ->
 	<<"auto-create">>,
 	<<"auto-subscribe">>,
 	<<"config-node">>,
+        <<"config-node-max">>,
 	<<"delete-nodes">>,
 	<<"delete-items">>,
 	<<"filtered-notifications">>,
