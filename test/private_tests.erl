@@ -95,7 +95,11 @@ test_published(Config) ->
 	    #iq{type = result, sub_els = []} =
 		send_recv(Config,
 			  #iq{type = set,
-			      sub_els = [#pubsub_owner{delete = {Node, <<>>}}]});
+			      sub_els = [#pubsub_owner{delete = {Node, <<>>}}]}),
+	    #iq{type = result, sub_els = []} =
+		send_recv(Config,
+			  #iq{type = set,
+			      sub_els = [#pubsub_owner{delete = {?NS_PEP_BOOKMARKS, <<>>}}]});
 	false ->
 	    ok
     end,
