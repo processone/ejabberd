@@ -1975,6 +1975,9 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 	    Nidx = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
+	    ServerHost = serverhost(Host),
+	    ejabberd_hooks:run(pubsub_delete_item, ServerHost,
+			       [ServerHost, Node, Publisher, service_jid(Host), ItemId]),
 	    broadcast_retract_items(Host, Node, Nidx, Type, Options, [ItemId], ForceNotify),
 	    case get_cached_item(Host, Nidx) of
 		#pubsub_item{itemid = {ItemId, Nidx}} -> unset_cached_item(Host, Nidx);
