@@ -221,7 +221,7 @@ table_exists(Host, Table) ->
       fun(pgsql, _) ->
               case
                   ejabberd_sql:sql_query_t(
-                    ?SQL("select @()b exists (select from pg_tables "
+                    ?SQL("select @()b exists (select * from pg_tables "
                          "  where tablename=%(Table)s)"))
               of
                   {selected, [{Res}]} ->
@@ -460,14 +460,14 @@ format_default(sqlite, _DBVersion, Column) ->
     end;
 format_default(mysql, _DBVersion, Column) ->
     case Column#sql_column.type of
-        text -> <<"''">>;
-        {text, _} -> <<"''">>;
+        text -> <<"('')">>;
+        {text, _} -> <<"('')">>;
         bigint -> <<"0">>;
         integer -> <<"0">>;
         smallint -> <<"0">>;
         numeric -> <<"0">>;
         boolean -> <<"false">>;
-        blob -> <<"''">>;
+        blob -> <<"('')">>;
         timestamp -> <<"CURRENT_TIMESTAMP">>
         %{char, N} -> <<"''">>;
         %bigserial -> <<"0">>
