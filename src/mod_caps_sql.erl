@@ -37,8 +37,24 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
+init(Host, _Opts) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
     ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"caps_features">>,
+                columns =
+                    [#sql_column{name = <<"node">>, type = text},
+                     #sql_column{name = <<"subnode">>, type = text},
+                     #sql_column{name = <<"feature">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"node">>, <<"subnode">>]}]}]}].
 
 caps_read(LServer, {Node, SubNode}) ->
     case ejabberd_sql:sql_query(

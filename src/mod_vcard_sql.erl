@@ -41,8 +41,78 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
+init(Host, _Opts) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
     ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"vcard">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"vcard">>, type = {text, big}},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"username">>],
+                              unique = true}]},
+             #sql_table{
+                name = <<"vcard_search">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"lusername">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"fn">>, type = text},
+                     #sql_column{name = <<"lfn">>, type = text},
+                     #sql_column{name = <<"family">>, type = text},
+                     #sql_column{name = <<"lfamily">>, type = text},
+                     #sql_column{name = <<"given">>, type = text},
+                     #sql_column{name = <<"lgiven">>, type = text},
+                     #sql_column{name = <<"middle">>, type = text},
+                     #sql_column{name = <<"lmiddle">>, type = text},
+                     #sql_column{name = <<"nickname">>, type = text},
+                     #sql_column{name = <<"lnickname">>, type = text},
+                     #sql_column{name = <<"bday">>, type = text},
+                     #sql_column{name = <<"lbday">>, type = text},
+                     #sql_column{name = <<"ctry">>, type = text},
+                     #sql_column{name = <<"lctry">>, type = text},
+                     #sql_column{name = <<"locality">>, type = text},
+                     #sql_column{name = <<"llocality">>, type = text},
+                     #sql_column{name = <<"email">>, type = text},
+                     #sql_column{name = <<"lemail">>, type = text},
+                     #sql_column{name = <<"orgname">>, type = text},
+                     #sql_column{name = <<"lorgname">>, type = text},
+                     #sql_column{name = <<"orgunit">>, type = text},
+                     #sql_column{name = <<"lorgunit">>, type = text}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"lusername">>],
+                              unique = true},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lfn">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lfamily">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lgiven">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lmiddle">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lnickname">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lbday">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lctry">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"llocality">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lemail">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lorgname">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"lorgunit">>]}]}]}].
 
 stop(_Host) ->
     ok.

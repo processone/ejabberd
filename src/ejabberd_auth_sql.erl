@@ -45,7 +45,31 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(_Host) -> ok.
+start(Host) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"users">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"password">>, type = text},
+                     #sql_column{name = <<"serverkey">>, type = {text, 128},
+                                 default = true},
+                     #sql_column{name = <<"salt">>, type = {text, 128},
+                                 default = true},
+                     #sql_column{name = <<"iterationcount">>, type = integer,
+                                 default = true},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"username">>],
+                              unique = true}]}]}].
 
 stop(_Host) -> ok.
 

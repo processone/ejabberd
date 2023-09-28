@@ -902,6 +902,11 @@ doc() ->
                 "configuration flag '--enable-new-sql-schema' which is set "
                 "at compile time."),
              [binary:part(ejabberd_config:version(), {0,5})]}}},
+     {update_sql_schema,
+      #{value => "true | false",
+        desc =>
+            ?T("Allow ejabberd to update SQL schema. "
+               "The default value is 'true'.")}},
      {oauth_access,
       #{value => ?T("AccessName"),
         desc => ?T("By default creating OAuth tokens is not allowed. "

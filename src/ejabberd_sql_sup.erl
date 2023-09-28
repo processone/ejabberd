@@ -51,7 +51,9 @@ start(Host) ->
 		     type => supervisor,
 		     modules => [?MODULE]},
 	    case supervisor:start_child(ejabberd_db_sup, Spec) of
-		{ok, _} -> ok;
+		{ok, _} ->
+                    ejabberd_sql_schema:start(Host),
+                    ok;
 		{error, {already_started, Pid}} ->
                     %% Wait for the supervisor to fully start
                     _ = supervisor:count_children(Pid),

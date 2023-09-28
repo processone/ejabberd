@@ -33,9 +33,28 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    %% TODO
+init(Host, _Opts) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
     ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"mix_pam">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"channel">>, type = text},
+                     #sql_column{name = <<"service">>, type = text},
+                     #sql_column{name = <<"id">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"username">>, <<"server_host">>,
+                                         <<"channel">>, <<"service">>],
+                              unique = true}]}]}].
 
 add_channel(User, Channel, ID) ->
     {LUser, LServer, _} = jid:tolower(User),
