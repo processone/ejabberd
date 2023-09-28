@@ -658,7 +658,14 @@ create_tables(Host, Module, Schema) ->
     store_version(Host, Module, Schema#sql_schema.version).
 
 should_update_schema(Host) ->
-    case ejabberd_option:update_sql_schema() of
+    SupportedDB =
+        case ejabberd_option:sql_type(Host) of
+            pgsql -> true;
+            sqlite -> true;
+            mysql -> true;
+            _ -> false
+        end,
+    case ejabberd_option:update_sql_schema() andalso SupportedDB of
         true ->
             case ejabberd_sql:use_new_schema() of
                 true ->
