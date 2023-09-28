@@ -93,15 +93,16 @@
 -endif.
 
 -type state() :: #state{}.
--type sql_query_simple() :: [sql_query() | binary()] | #sql_query{} |
-			    fun(() -> any()) | fun((atom(), _) -> any()).
--type sql_query() :: sql_query_simple() |
-		     [{atom() | {atom(), any()}, sql_query_simple()}].
--type sql_query_result() :: {updated, non_neg_integer()} |
-                            {error, binary() | atom()} |
-                            {selected, [binary()], [[binary()]]} |
-                            {selected, [any()]} |
-			    ok.
+-type sql_query_simple(T) :: [sql_query(T) | binary()] | binary() |
+                             #sql_query{} |
+                             fun(() -> T) | fun((atom(), _) -> T).
+-type sql_query(T) :: sql_query_simple(T) |
+                      [{atom() | {atom(), any()}, sql_query_simple(T)}].
+-type sql_query_result(T) :: {updated, non_neg_integer()} |
+                             {error, binary() | atom()} |
+                             {selected, [binary()], [[binary()]]} |
+                             {selected, [any()]} |
+                             T.
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -112,14 +113,14 @@ start_link(Host, I) ->
     p1_fsm:start_link({local, Proc}, ?MODULE, [Host],
 		      fsm_limit_opts() ++ ?FSMOPTS).
 
--spec sql_query(binary(), sql_query()) -> sql_query_result().
+-spec sql_query(binary(), sql_query(T)) -> sql_query_result(T).
 sql_query(Host, Query) ->
     sql_call(Host, {sql_query, Query}).
 
 %% SQL transaction based on a list of queries
 %% This function automatically
--spec sql_transaction(binary(), [sql_query()] | fun(() -> any())) ->
-                             {atomic, any()} |
+-spec sql_transaction(binary(), [sql_query(T)] | fun(() -> T)) ->
+                             {atomic, T} |
                              {aborted, any()}.
 sql_transaction(Host, Queries)
     when is_list(Queries) ->
@@ -177,7 +178,7 @@ sync_send_event(Proc, Msg, Timeout) ->
 	    {error, Reason}
     end.
 
--spec sql_query_t(sql_query()) -> sql_query_result().
+-spec sql_query_t(sql_query(T)) -> sql_query_result(T).
 %% This function is intended to be used from inside an sql_transaction:
 sql_query_t(Query) ->
     QRes = sql_query_internal(Query),
