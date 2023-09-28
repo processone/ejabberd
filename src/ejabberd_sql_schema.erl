@@ -280,6 +280,7 @@ string_to_type(SType) ->
         <<"bigint ", _/binary>> -> bigint;
         <<"bigint(", _/binary>> -> bigint;
         <<"integer">> -> integer;
+        <<"int">> -> integer;
         <<"int(", _/binary>> -> integer;
         <<"smallint">> -> smallint;
         <<"smallint(", _/binary>> -> smallint;
