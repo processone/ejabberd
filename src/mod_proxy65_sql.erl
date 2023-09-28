@@ -34,6 +34,8 @@
 %%% API
 %%%===================================================================
 init() ->
+    ejabberd_sql_schema:update_schema(
+      ejabberd_config:get_myname(), ?MODULE, schemas()),
     NodeS = erlang:atom_to_binary(node(), latin1),
     ?DEBUG("Cleaning SQL 'proxy65' table...", []),
     case ejabberd_sql:sql_query(
@@ -46,6 +48,25 @@ init() ->
 	    ?ERROR_MSG("Failed to clean 'proxy65' table: ~p", [Err]),
 	    Err
     end.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"proxy65">>,
+                columns =
+                    [#sql_column{name = <<"sid">>, type = text},
+                     #sql_column{name = <<"pid_t">>, type = text},
+                     #sql_column{name = <<"pid_i">>, type = text},
+                     #sql_column{name = <<"node_t">>, type = text},
+                     #sql_column{name = <<"node_i">>, type = text},
+                     #sql_column{name = <<"jid_i">>, type = text}],
+                indices = [#sql_index{
+                              columns = [<<"sid">>],
+                              unique = true},
+                           #sql_index{
+                              columns = [<<"jid_i">>]}]}]}].
 
 register_stream(SID, Pid) ->
     PidS = misc:encode_pid(Pid),

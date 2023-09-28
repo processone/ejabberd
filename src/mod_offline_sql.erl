@@ -40,8 +40,27 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
+init(Host, _Opts) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
     ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"spool">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"xml">>, type = {text, big}},
+                     #sql_column{name = <<"seq">>, type = bigserial},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"username">>]},
+                           #sql_index{
+                              columns = [<<"created_at">>]}]}]}].
 
 store_message(#offline_msg{us = {LUser, LServer}} = M) ->
     From = M#offline_msg.from,

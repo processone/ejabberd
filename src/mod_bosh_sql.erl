@@ -37,6 +37,8 @@
 %%% API
 %%%===================================================================
 init() ->
+    ejabberd_sql_schema:update_schema(
+      ejabberd_config:get_myname(), ?MODULE, schemas()),
     Node = erlang:atom_to_binary(node(), latin1),
     ?DEBUG("Cleaning SQL 'bosh' table...", []),
     case ejabberd_sql:sql_query(
@@ -47,6 +49,20 @@ init() ->
 	    ?ERROR_MSG("Failed to clean 'route' table: ~p", [Err]),
 	    Err
     end.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"bosh">>,
+                columns =
+                    [#sql_column{name = <<"sid">>, type = text},
+                     #sql_column{name = <<"node">>, type = text},
+                     #sql_column{name = <<"pid">>, type = text}],
+                indices = [#sql_index{
+                              columns = [<<"sid">>],
+                              unique = true}]}]}].
 
 open_session(SID, Pid) ->
     PidS = misc:encode_pid(Pid),

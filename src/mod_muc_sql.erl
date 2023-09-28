@@ -52,12 +52,89 @@
 %%% API
 %%%===================================================================
 init(Host, Opts) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
     case gen_mod:ram_db_mod(Opts, mod_muc) of
 	?MODULE ->
 	    clean_tables(Host);
 	_ ->
 	    ok
     end.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"muc_room">>,
+                columns =
+                    [#sql_column{name = <<"name">>, type = text},
+                     #sql_column{name = <<"host">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"opts">>, type = {text, big}},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"name">>, <<"host">>],
+                              unique = true},
+                           #sql_index{
+                              columns = [<<"host">>, <<"created_at">>]}]},
+             #sql_table{
+                name = <<"muc_registered">>,
+                columns =
+                    [#sql_column{name = <<"jid">>, type = text},
+                     #sql_column{name = <<"host">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"nick">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"jid">>, <<"host">>],
+                              unique = true},
+                           #sql_index{
+                              columns = [<<"nick">>]}]},
+             #sql_table{
+                name = <<"muc_online_room">>,
+                columns =
+                    [#sql_column{name = <<"name">>, type = text},
+                     #sql_column{name = <<"host">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"node">>, type = text},
+                     #sql_column{name = <<"pid">>, type = text}],
+                indices = [#sql_index{
+                              columns = [<<"name">>, <<"host">>],
+                              unique = true}]},
+             #sql_table{
+                name = <<"muc_online_users">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server">>, type = {text, 75}},
+                     #sql_column{name = <<"resource">>, type = text},
+                     #sql_column{name = <<"name">>, type = text},
+                     #sql_column{name = <<"host">>, type = {text, 75}},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"node">>, type = text}],
+                indices = [#sql_index{
+                              columns = [<<"username">>, <<"server">>,
+                                         <<"resource">>, <<"name">>,
+                                         <<"host">>],
+                              unique = true}]},
+             #sql_table{
+                name = <<"muc_room_subscribers">>,
+                columns =
+                    [#sql_column{name = <<"room">>, type = text},
+                     #sql_column{name = <<"host">>, type = text},
+                     #sql_column{name = <<"jid">>, type = text},
+                     #sql_column{name = <<"nick">>, type = text},
+                     #sql_column{name = <<"nodes">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"host">>, <<"room">>, <<"jid">>],
+                              unique = true},
+                           #sql_index{
+                              columns = [<<"host">>, <<"jid">>]},
+                           #sql_index{
+                              columns = [<<"jid">>]}]}]}].
 
 store_room(LServer, Host, Name, Opts, ChangesHints) ->
     {Subs, Opts2} = case lists:keytake(subscribers, 1, Opts) of

@@ -48,6 +48,7 @@ init() ->
     ?DEBUG("Cleaning SQL SM table...", []),
     lists:foldl(
       fun(Host, ok) ->
+              ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
 	      case ejabberd_sql:sql_query(
 		     Host, ?SQL("delete from sm where node=%(Node)s")) of
 		  {updated, _} ->
@@ -59,6 +60,29 @@ init() ->
 	 (_, Err) ->
 	      Err
       end, ok, ejabberd_sm:get_vh_by_backend(?MODULE)).
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"sm">>,
+                columns =
+                    [#sql_column{name = <<"usec">>, type = bigint},
+                     #sql_column{name = <<"pid">>, type = text},
+                     #sql_column{name = <<"node">>, type = text},
+                     #sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"resource">>, type = text},
+                     #sql_column{name = <<"priority">>, type = text},
+                     #sql_column{name = <<"info">>, type = text}],
+                indices = [#sql_index{
+                              columns = [<<"usec">>, <<"pid">>],
+                              unique = true},
+                           #sql_index{
+                              columns = [<<"node">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"username">>]}]}]}].
 
 set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
 		     priority = Priority, info = Info}) ->

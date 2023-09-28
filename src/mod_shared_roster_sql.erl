@@ -43,8 +43,39 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
+init(Host, _Opts) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
     ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"sr_group">>,
+                columns =
+                    [#sql_column{name = <<"name">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"opts">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"name">>],
+                              unique = true}]},
+             #sql_table{
+                name = <<"sr_user">>,
+                columns =
+                    [#sql_column{name = <<"jid">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"grp">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>,
+                                         <<"jid">>, <<"grp">>],
+                              unique = true},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"grp">>]}]}]}].
 
 list_groups(Host) ->
     case ejabberd_sql:sql_query(

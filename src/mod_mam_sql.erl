@@ -43,8 +43,58 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
+init(Host, _Opts) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
     ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"archive">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"timestamp">>, type = bigint},
+                     #sql_column{name = <<"peer">>, type = text},
+                     #sql_column{name = <<"bare_peer">>, type = text},
+                     #sql_column{name = <<"xml">>, type = {text, big}},
+                     #sql_column{name = <<"txt">>, type = {text, big}},
+                     #sql_column{name = <<"id">>, type = bigserial},
+                     #sql_column{name = <<"kind">>, type = {text, 10}},
+                     #sql_column{name = <<"nick">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"username">>, <<"timestamp">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"username">>, <<"peer">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"username">>, <<"bare_peer">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"timestamp">>]}
+                          ],
+                post_create =
+                    fun(mysql, _) ->
+                            ejabberd_sql:sql_query_t(
+                              <<"CREATE FULLTEXT INDEX i_archive_txt ON archive(txt);">>);
+                       (_, _) ->
+                            ok
+                    end},
+             #sql_table{
+                name = <<"archive_prefs">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"def">>, type = text},
+                     #sql_column{name = <<"always">>, type = text},
+                     #sql_column{name = <<"never">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"username">>],
+                              unique = true}]}]}].
 
 remove_user(LUser, LServer) ->
     ejabberd_sql:sql_query(

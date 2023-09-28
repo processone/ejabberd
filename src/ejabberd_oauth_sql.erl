@@ -41,7 +41,34 @@
 -include("logger.hrl").
 
 init() ->
+    ejabberd_sql_schema:update_schema(
+      ejabberd_config:get_myname(), ?MODULE, schemas()),
     ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"oauth_token">>,
+                columns =
+                    [#sql_column{name = <<"token">>, type = text},
+                     #sql_column{name = <<"jid">>, type = text},
+                     #sql_column{name = <<"scope">>, type = text},
+                     #sql_column{name = <<"expire">>, type = bigint}],
+                indices = [#sql_index{
+                              columns = [<<"token">>],
+                              unique = true}]},
+             #sql_table{
+                name = <<"oauth_client">>,
+                columns =
+                    [#sql_column{name = <<"client_id">>, type = text},
+                     #sql_column{name = <<"client_name">>, type = text},
+                     #sql_column{name = <<"grant_type">>, type = text},
+                     #sql_column{name = <<"options">>, type = text}],
+                indices = [#sql_index{
+                              columns = [<<"client_id">>],
+                              unique = true}]}]}].
 
 store(R) ->
     Token = R#oauth_token.token,

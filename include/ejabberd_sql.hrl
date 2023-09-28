@@ -50,3 +50,20 @@
 		     boolean :: fun((boolean()) -> binary()),
 		     in_array_string :: fun((binary()) -> binary()),
 		     like_escape :: fun(() -> binary())}).
+
+
+-record(sql_index, {columns,
+                    unique = false :: boolean()}).
+-record(sql_column, {name :: binary(),
+                     type,
+                     default = false,
+                     opts = []}).
+-record(sql_table, {name :: binary(),
+                    columns :: [#sql_column{}],
+                    indices = [] :: [#sql_index{}],
+                    post_create}).
+-record(sql_schema, {version :: integer(),
+                     tables :: [#sql_table{}],
+                     update = []}).
+-record(sql_references, {table :: binary(),
+                         column :: binary()}).

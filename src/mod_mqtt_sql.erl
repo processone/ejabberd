@@ -36,8 +36,32 @@ init() ->
     ?ERROR_MSG("Backend 'sql' is only supported for db_type", []),
     {error, db_failure}.
 
-init(_Host, _Opts) ->
+init(Host, _Opts) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
     ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"mqtt_pub">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"resource">>, type = text},
+                     #sql_column{name = <<"topic">>, type = text},
+                     #sql_column{name = <<"qos">>, type = smallint},
+                     #sql_column{name = <<"payload">>, type = blob},
+                     #sql_column{name = <<"payload_format">>, type = smallint},
+                     #sql_column{name = <<"content_type">>, type = text},
+                     #sql_column{name = <<"response_topic">>, type = text},
+                     #sql_column{name = <<"correlation_data">>, type = blob},
+                     #sql_column{name = <<"user_property">>, type = blob},
+                     #sql_column{name = <<"expiry">>, type = bigint}],
+                indices = [#sql_index{
+                              columns = [<<"topic">>, <<"server_host">>],
+                              unique = true}]}]}].
 
 publish({U, LServer, R}, Topic, Payload, QoS, Props, ExpiryTime) ->
     PayloadFormat = encode_pfi(maps:get(payload_format_indicator, Props, binary)),

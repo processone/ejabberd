@@ -37,6 +37,8 @@
 %%% API
 %%%===================================================================
 init() ->
+    ejabberd_sql_schema:update_schema(
+      ejabberd_config:get_myname(), ?MODULE, schemas()),
     Node = erlang:atom_to_binary(node(), latin1),
     ?DEBUG("Cleaning SQL 'route' table...", []),
     case ejabberd_sql:sql_query(
@@ -47,6 +49,23 @@ init() ->
 	    ?ERROR_MSG("Failed to clean 'route' table: ~p", [Err]),
 	    Err
     end.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"route">>,
+                columns =
+                    [#sql_column{name = <<"domain">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"node">>, type = text},
+                     #sql_column{name = <<"pid">>, type = text},
+                     #sql_column{name = <<"local_hint">>, type = text}],
+                indices = [#sql_index{
+                              columns = [<<"domain">>, <<"server_host">>,
+                                         <<"node">>, <<"pid">>],
+                              unique = true}]}]}].
 
 register_route(Domain, ServerHost, LocalHint, _, Pid) ->
     PidS = misc:encode_pid(Pid),

@@ -42,8 +42,56 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
+init(Host, _Opts) ->
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
     ok.
+
+schemas() ->
+    [#sql_schema{
+        version = 1,
+        tables =
+            [#sql_table{
+                name = <<"privacy_default_list">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"name">>, type = text}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"username">>],
+                              unique = true}]},
+             #sql_table{
+                name = <<"privacy_list">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"name">>, type = text},
+                     #sql_column{name = <<"id">>, type = bigserial},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"id">>],
+                              unique = true},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"username">>,
+                                         <<"name">>],
+                              unique = true}]},
+             #sql_table{
+                name = <<"privacy_list_data">>,
+                columns =
+                    [#sql_column{name = <<"id">>, type = bigint,
+                                 opts = [#sql_references{
+                                            table = <<"privacy_list">>,
+                                            column = <<"id">>}]},
+                     #sql_column{name = <<"t">>, type = {char, 1}},
+                     #sql_column{name = <<"value">>, type = text},
+                     #sql_column{name = <<"action">>, type = {char, 1}},
+                     #sql_column{name = <<"ord">>, type = numeric},
+                     #sql_column{name = <<"match_all">>, type = boolean},
+                     #sql_column{name = <<"match_iq">>, type = boolean},
+                     #sql_column{name = <<"match_message">>, type = boolean},
+                     #sql_column{name = <<"match_presence_in">>, type = boolean},
+                     #sql_column{name = <<"match_presence_out">>, type = boolean}],
+                indices = [#sql_index{columns = [<<"id">>]}]}]}].
 
 unset_default(LUser, LServer) ->
     case unset_default_privacy_list(LUser, LServer) of
