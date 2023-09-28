@@ -200,7 +200,7 @@ find_index_name(Host, Table, Columns) ->
     end.
 
 get_version(Host, Module) ->
-    SModule = atom_to_binary(Module),
+    SModule = misc:atom_to_binary(Module),
     ejabberd_sql:sql_query(
       Host,
       ?SQL("select @(version)d"
@@ -208,7 +208,7 @@ get_version(Host, Module) ->
            " where module=%(SModule)s")).
 
 store_version(Host, Module, Version) ->
-    SModule = atom_to_binary(Module),
+    SModule = misc:atom_to_binary(Module),
     ?SQL_UPSERT(
        Host,
        "schema_version",
