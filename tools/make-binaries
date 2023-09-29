@@ -367,7 +367,7 @@ create_data_dir()
 	mkdir "$data_dir" "$data_dir/database" "$data_dir/logs"
 	mv "$code_dir/conf" "$data_dir"
 	chmod 'o-rwx' "$data_dir/"*
-	curl --no-progress-meter -o "$data_dir/conf/cacert.pem" 'https://curl.se/ca/cacert.pem'
+	curl -sS -o "$data_dir/conf/cacert.pem" 'https://curl.se/ca/cacert.pem'
 	sed -i '/^loglevel:/a\
 \
 ca_file: /opt/ejabberd/conf/cacert.pem\
@@ -877,23 +877,23 @@ else
 
 	info 'Downloading dependencies ...'
 	cd "$src_dir"
-	curl --no-progress-meter -LO "https://github.com/crosstool-ng/crosstool-ng/releases/download/$crosstool_dir/$crosstool_tar"
-	curl --no-progress-meter -LO "https://ftp.gnu.org/gnu/termcap/$termcap_tar"
-	curl --no-progress-meter -LO "https://github.com/libexpat/libexpat/releases/download/R_$(printf '%s' "$expat_vsn" | sed 's/\./_/g')/$expat_tar"
-	curl --no-progress-meter -LO "https://zlib.net/fossils/$zlib_tar"
-	curl --no-progress-meter -LO "https://pyyaml.org/download/libyaml/$yaml_tar"
-	curl --no-progress-meter -LO "https://www.openssl.org/source/$ssl_tar"
-	curl --no-progress-meter -LO "https://github.com/erlang/otp/releases/download/OTP-$otp_vsn/$otp_tar"
-	curl --no-progress-meter -LO "https://github.com/elixir-lang/elixir/archive/v$elixir_vsn.tar.gz"
-	curl --no-progress-meter -LO "https://github.com/linux-pam/linux-pam/releases/download/v$pam_vsn/$pam_tar"
-	curl --no-progress-meter -LO "https://download.sourceforge.net/libpng/$png_tar"
-	curl --no-progress-meter -LO "https://www.ijg.org/files/$jpeg_tar"
-	curl --no-progress-meter -LO "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/$webp_tar"
-	curl --no-progress-meter -LO "https://github.com/libgd/libgd/releases/download/gd-$gd_vsn/$gd_tar"
-	curl --no-progress-meter -LO "http://www.unixodbc.org/$odbc_tar"
-	curl --no-progress-meter -LO "https://www.sqlite.org/$(date '+%Y')/$sqlite_tar" \
-	    || curl --no-progress-meter -LO "https://www.sqlite.org/$(date -d '1 year ago' '+%Y')/$sqlite_tar" \
-	    || curl --no-progress-meter -LO "https://www.sqlite.org/$(date -d '2 years ago' '+%Y')/$sqlite_tar"
+	curl -sSLO "https://github.com/crosstool-ng/crosstool-ng/releases/download/$crosstool_dir/$crosstool_tar"
+	curl -sSLO "https://ftp.gnu.org/gnu/termcap/$termcap_tar"
+	curl -sSLO "https://github.com/libexpat/libexpat/releases/download/R_$(printf '%s' "$expat_vsn" | sed 's/\./_/g')/$expat_tar"
+	curl -sSLO "https://zlib.net/fossils/$zlib_tar"
+	curl -sSLO "https://pyyaml.org/download/libyaml/$yaml_tar"
+	curl -sSLO "https://www.openssl.org/source/$ssl_tar"
+	curl -sSLO "https://github.com/erlang/otp/releases/download/OTP-$otp_vsn/$otp_tar"
+	curl -sSLO "https://github.com/elixir-lang/elixir/archive/v$elixir_vsn.tar.gz"
+	curl -sSLO "https://github.com/linux-pam/linux-pam/releases/download/v$pam_vsn/$pam_tar"
+	curl -sSLO "https://download.sourceforge.net/libpng/$png_tar"
+	curl -sSLO "https://www.ijg.org/files/$jpeg_tar"
+	curl -sSLO "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/$webp_tar"
+	curl -sSLO "https://github.com/libgd/libgd/releases/download/gd-$gd_vsn/$gd_tar"
+	curl -sSLO "http://www.unixodbc.org/$odbc_tar"
+	curl -sSLO "https://www.sqlite.org/$(date '+%Y')/$sqlite_tar" \
+	    || curl -sSLO "https://www.sqlite.org/$(date -d '1 year ago' '+%Y')/$sqlite_tar" \
+	    || curl -sSLO "https://www.sqlite.org/$(date -d '2 years ago' '+%Y')/$sqlite_tar"
 	cd "$OLDPWD"
 fi
 
