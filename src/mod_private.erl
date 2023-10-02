@@ -124,7 +124,11 @@ mod_doc() ->
               "might be anything, as long as it is a valid XML. "
               "One typical usage is storing a bookmark of all user's conferences "
               "(https://xmpp.org/extensions/xep-0048.html"
-              "[XEP-0048: Bookmarks]).")],
+              "[XEP-0048: Bookmarks])."), "",
+           ?T("It also implements the bookmark conversion described in "
+              "https://xmpp.org/extensions/xep-0402.html[XEP-0402: PEP Native Bookmarks]"
+              ", see the command "
+              "https://docs.ejabberd.im/developer/ejabberd-api/admin-api/#bookmarks-to-pep[bookmarks_to_pep].")],
       opts =>
           [{db_type,
             #{value => "mnesia | sql",
