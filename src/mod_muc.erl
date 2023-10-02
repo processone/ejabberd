@@ -1471,7 +1471,7 @@ mod_doc() ->
                      "modify that option.")}},
            {access_register,
             #{value => ?T("AccessName"),
-              note => "improved in 23.xx",
+              note => "improved in 23.10",
               desc =>
                   ?T("This option specifies who is allowed to register nickname "
                      "within the Multi-User Chat service and rooms. The default is 'all' for "

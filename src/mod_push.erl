@@ -180,6 +180,7 @@ mod_doc() ->
       opts =>
           [{notify_on,
             #{value => "messages | all",
+              note => "added in 23.10",
               desc =>
                   ?T("If this option is set to 'messages', notifications are "
                      "generated only for actual chat messages with a body text "

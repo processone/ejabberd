@@ -578,6 +578,7 @@ get_commands_spec() ->
 			longdesc =
 			    "Subscription can be: \"none\", \"from\", \"to\", \"both\". "
                             "Pending can be: \"in\", \"out\", \"none\".",
+			note = "improved in 23.10",
                         policy = user,
 			module = ?MODULE, function = get_roster,
 			args = [],

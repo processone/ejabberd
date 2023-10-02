@@ -118,6 +118,7 @@ get_commands_spec() ->
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = halt, tags = [server],
 			desc = "Halt ejabberd abruptly with status code 1",
+			note = "added in 23.10",
 			module = ejabberd, function = halt,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = restart, tags = [server],

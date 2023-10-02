@@ -29,7 +29,7 @@
 
 -protocol({xep, 49, '1.2'}).
 -protocol({xep, 411, '0.2.0', '18.12', "", ""}).
--protocol({xep, 402, '1.1.3', '23.09', "", ""}).
+-protocol({xep, 402, '1.1.3', '23.10', "", ""}).
 
 -behaviour(gen_mod).
 

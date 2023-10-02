@@ -27,7 +27,7 @@
 
 -author('badlop@process-one.net').
 
--protocol({xep, 421, '0.1.0'}).
+-protocol({xep, 421, '0.1.0', '23.10', "", ""}).
 
 -behaviour(gen_mod).
 
@@ -121,7 +121,7 @@ mod_doc() ->
               "[XEP-0421: Anonymous unique occupant identifiers for MUCs]."), "",
            ?T("When the module is enabled, the feature is enabled "
               "in all semi-anonymous rooms."), "",
-           ?T("This module is available since ejabberd 23.xx.")]
+           ?T("This module is available since ejabberd 23.10.")]
      }.
 
 depends(_, _) ->

@@ -397,6 +397,7 @@ doc() ->
            "to authenticate. The default value is 'sha'.")}},
      {auth_external_user_exists_check,
       #{value => "true | false",
+        note => "added in 23.10",
         desc =>
         ?T("Supplement check for user existence based on 'mod_last' data, for authentication "
            "methods that don't have a way to reliable tell if user exists (like is the case for "
@@ -681,6 +682,7 @@ doc() ->
                  "all options.")}}]},
      {install_contrib_modules,
       #{value => "[Module, ...]",
+        note => "added in 23.10",
         desc =>
             ?T("Modules to install from "
                "https://docs.ejabberd.im/developer/extending-ejabberd/modules/#ejabberd-contrib"
