@@ -3806,7 +3806,9 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
 tree_call(Host, Function, Args) ->
     Tree = tree(Host),
     ?DEBUG("Tree_call apply(~ts, ~ts, ~p) @ ~ts", [Tree, Function, Args, Host]),
-    case apply(Tree, Function, Args) of
+    Res = apply(Tree, Function, Args),
+    Res2 = ejabberd_hooks:run_fold(pubsub_tree_call, Host, Res, [Tree, Function, Args]),
+    case Res2 of
 	{error, #stanza_error{}} = Err ->
 	    Err;
 	{error, {virtual, _}} = Err ->

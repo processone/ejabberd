@@ -37,7 +37,7 @@
 	 remove_user/2, get_data/2, get_data/3, export/1, mod_doc/0,
 	 import/5, import_start/2, mod_opt_type/1, set_data/2,
 	 mod_options/1, depends/2, get_sm_features/5, pubsub_publish_item/6,
-	 pubsub_delete_item/5]).
+	 pubsub_delete_item/5, pubsub_tree_call/4]).
 
 -export([get_commands_spec/0, bookmarks_to_pep/2]).
 
@@ -70,6 +70,7 @@ start(Host, Opts) ->
           {hook, disco_sm_features, get_sm_features, 50},
           {hook, pubsub_publish_item, pubsub_publish_item, 50},
           {hook, pubsub_delete_item, pubsub_delete_item, 50},
+	  {hook, pubsub_tree_call, pubsub_tree_call, 50},
           {iq_handler, ejabberd_sm, ?NS_PRIVATE, process_sm_iq}]}.
 
 stop(Host) ->
@@ -441,6 +442,22 @@ pubsub_item_to_storage_bookmark(#pubsub_item{itemid = {Id, _}, payload = [#xmlel
     end;
 pubsub_item_to_storage_bookmark(_) ->
     false.
+
+-spec pubsub_tree_call(Res :: any(), _Tree::any(), atom(), any()) -> any().
+pubsub_tree_call({error, #stanza_error{reason = 'item-not-found'}} = Res, Tree, get_node,
+		 [{User, Server, _}, ?NS_PEP_BOOKMARKS] = Args) ->
+    case get(mod_private_in_pubsub_tree_call) of
+	undefined ->
+	    put(mod_private_in_pubsub_tree_call, true),
+	    bookmarks_to_pep(User, Server),
+	    Res2 = apply(Tree, get_node, Args),
+	    erase(mod_private_in_pubsub_tree_call),
+	    Res2;
+	_ ->
+	    Res
+    end;
+pubsub_tree_call(Res, _Tree, _Function, _Args) ->
+    Res.
 
 -spec storage_bookmark_to_xmpp_bookmark(bookmark_conference()) -> pep_bookmarks_conference().
 storage_bookmark_to_xmpp_bookmark(#bookmark_conference{name = Name, autojoin = AutoJoin, nick = Nick,
