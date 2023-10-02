@@ -379,8 +379,10 @@ publish_pep_xmpp_bookmarks(JID, Data) ->
 
 err_ret({error, _} = E, _) ->
     E;
-err_ret(ok, E) ->
-    E.
+err_ret(ok, {error, _} = E) ->
+    E;
+err_ret(_, _) ->
+    ok.
 
 -spec pubsub_publish_item(binary(), binary(), jid(), jid(),
 			  binary(), [xmlel()]) -> any().
