@@ -724,16 +724,7 @@ build_rel()
 	local target_dst_tar="$rel_name-$rel_vsn-linux-$libc-$arch.tar.gz"
 	local saved_path="$PATH"
 
-	#
-	# The "$ct_prefix_dir/$target/$target/bin" directory contains cross
-	# compilation tools without "$target-" prefix. We add it to the PATH,
-	# just in case tools are called without prefix somewhere. However, we
-	# try to use the prefixed tools everywhere, so it should be possible to
-	# omit this directory from the path if desired. See also:
-	#
-	# https://stackoverflow.com/a/24243789
-	#
-	export PATH="$ct_prefix_dir/$target/bin:$ct_prefix_dir/$target/$target/bin:$PATH"
+	export PATH="$ct_prefix_dir/$target/bin:$PATH"
 	export CC="$target-gcc"
 	export CXX="$target-g++"
 	export CPP="$target-cpp"
