@@ -161,6 +161,8 @@ certfiles:
 
 new_sql_schema: NEW_SCHEMA
 
+update_sql_schema: UPDATE_SQL_SCHEMA
+
 api_permissions:
   "public commands":
     who: all

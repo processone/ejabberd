@@ -17,7 +17,8 @@ $ psql template1
 template1=# CREATE USER ejabberd_test WITH PASSWORD 'ejabberd_test';
 template1=# CREATE DATABASE ejabberd_test;
 template1=# GRANT ALL PRIVILEGES ON DATABASE ejabberd_test TO ejabberd_test;
-$ psql ejabberd_test -f sql/pg.sql
+# If you disabled the update_sql_schema option, create the schema manually:
+# $ psql ejabberd_test -f sql/pg.sql
 
 -------------------
   MySQL
@@ -26,7 +27,8 @@ $ mysql
 mysql> CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';
 mysql> CREATE DATABASE ejabberd_test;
 mysql> GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';
-$ mysql ejabberd_test < sql/mysql.sql
+# If you disabled the update_sql_schema option, create the schema manually:
+# $ mysql ejabberd_test < sql/mysql.sql
 
 -------------------
   MS SQL Server

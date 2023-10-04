@@ -59,6 +59,7 @@ init_config(Config) ->
 		      [{c2s_port, 5222},
 		       {loglevel, 4},
 		       {new_schema, false},
+		       {update_sql_schema, true},
 		       {s2s_port, 5269},
 		       {stun_port, 3478},
 		       {component_port, 5270},

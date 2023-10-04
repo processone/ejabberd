@@ -14,6 +14,7 @@ define_macro:
   PUT_URL: "http://upload.@HOST@:@@web_port@@/upload"
   GET_URL: "http://upload.@HOST@:@@web_port@@/upload"
   NEW_SCHEMA: @@new_schema@@
+  UPDATE_SQL_SCHEMA: @@update_sql_schema@@
   MYSQL_USER: "@@mysql_user@@"
   MYSQL_SERVER: "@@mysql_server@@"
   MYSQL_PORT: @@mysql_port@@
