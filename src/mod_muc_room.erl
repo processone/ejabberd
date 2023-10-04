@@ -671,6 +671,10 @@ normal_state({route, ToNick,
 			    ejabberd_router:route_iq(
 			      xmpp:set_from_to(Packet, FromJID, jid:remove_resource(To)),
 			      Packet, self());
+			pubsub ->
+			    ejabberd_router:route_iq(
+				xmpp:set_from_to(Packet, FromJID, jid:remove_resource(To)),
+				Packet, self());
 			ping when ToNick == FromNick ->
 			    %% Self-ping optimization from XEP-0410
 			    ejabberd_router:route(xmpp:make_iq_result(Packet));
@@ -1304,12 +1308,13 @@ process_voice_approval(From, Pkt, VoiceApproval, StateData) ->
 	    StateData
     end.
 
--spec direct_iq_type(iq()) -> vcard | ping | request | response | stanza_error().
+-spec direct_iq_type(iq()) -> vcard | ping | request | response | pubsub | stanza_error().
 direct_iq_type(#iq{type = T, sub_els = SubEls, lang = Lang}) when T == get; T == set ->
     case SubEls of
 	[El] ->
 	    case xmpp:get_ns(El) of
 		?NS_VCARD when T == get -> vcard;
+		?NS_PUBSUB when T == get -> pubsub;
 		?NS_PING when T == get -> ping;
 		_ -> request
 	    end;
