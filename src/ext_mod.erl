@@ -357,6 +357,8 @@ geturl(Url) ->
     case httpc:request(get, {Url, [UA]}, User, [{body_format, binary}], ext_mod) of
         {ok, {{_, 200, _}, Headers, Response}} ->
             {ok, Headers, Response};
+        {ok, {{_, 403, Reason}, _Headers, _Response}} ->
+            {error, Reason};
         {ok, {{_, Code, _}, _Headers, Response}} ->
             {error, {Code, Response}};
         {error, Reason} ->
@@ -799,10 +801,14 @@ maybe_write_commit_json(Url, RepDir) ->
 write_commit_json(Url, RepDir) ->
     Url2 = string_replace(Url, "https://github.com", "https://api.github.com/repos"),
     BranchUrl = lists:flatten(Url2 ++ "/branches/master"),
-    {ok, _Headers, Body} = geturl(BranchUrl),
-    {ok, F} = file:open(filename:join(RepDir, "COMMIT.json"), [raw, write]),
-    file:write(F, Body),
-    file:close(F).
+    case geturl(BranchUrl) of
+        {ok, _Headers, Body} ->
+            {ok, F} = file:open(filename:join(RepDir, "COMMIT.json"), [raw, write]),
+            file:write(F, Body),
+            file:close(F);
+        {error, Reason} ->
+            Reason
+    end.
 
 find_commit_json(Attrs) ->
     {_, FromPath} = lists:keyfind(path, 1, Attrs),
