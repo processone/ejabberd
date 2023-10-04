@@ -49,7 +49,7 @@
 -include("translate.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 
--define(REPOS, "https://github.com/processone/ejabberd-contrib").
+-define(REPOS, "git@github.com:processone/ejabberd-contrib.git").
 
 -record(state, {}).
 
