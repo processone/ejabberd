@@ -294,7 +294,7 @@ add_sources(Module, Path) when is_atom(Module), is_list(Path) ->
 add_sources(Package, Path) when is_binary(Package), is_list(Path) ->
     DestDir = sources_dir(),
     RepDir = filename:join(DestDir, module_name(Path)),
-    delete_path(RepDir),
+    delete_path(RepDir, binary_to_list(Package)),
     case filelib:ensure_dir(RepDir) of
         ok ->
             case {string:left(Path, 4), string:right(Path, 2)} of
@@ -406,8 +406,9 @@ extract_github_master(Repos, DestDir) ->
     case extract(zip, geturl(Url++"/archive/master.zip"), DestDir) of
         ok ->
             RepDir = filename:join(DestDir, module_name(Repos)),
-            file:rename(RepDir++"-master", RepDir),
-            maybe_write_commit_json(Url, RepDir);
+            RepDirSpec = filename:join(DestDir, module_spec_name(RepDir)),
+            file:rename(RepDir++"-master", RepDirSpec),
+            maybe_write_commit_json(Url, RepDirSpec);
         Error ->
             Error
     end.
@@ -441,6 +442,9 @@ delete_path(Path) ->
         false ->
             file:delete(Path)
     end.
+
+delete_path(Path, Package) ->
+    delete_path(filename:join(filename:dirname(Path), Package)).
 
 modules_dir() ->
     DefaultDir = filename:join(getenv("HOME"), ".ejabberd-modules"),
@@ -479,6 +483,14 @@ module_src_dir(Package) ->
 
 module_name(Id) ->
     filename:basename(filename:rootname(Id)).
+
+module_spec_name(Path) ->
+    case filelib:wildcard(filename:join(Path++"-master", "*.spec")) of
+        "" ->
+            module_name(Path);
+        ModuleName ->
+            filename:basename(ModuleName, ".spec")
+    end.
 
 module(Id) ->
     misc:binary_to_atom(iolist_to_binary(module_name(Id))).
