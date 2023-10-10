@@ -82,13 +82,19 @@ forget_room(_LServer, Host, Name) ->
 	end,
     mnesia:transaction(F).
 
-can_use_nick(_LServer, Host, JID, Nick) ->
+can_use_nick(_LServer, ServiceOrRoom, JID, Nick) ->
     {LUser, LServer, _} = jid:tolower(JID),
     LUS = {LUser, LServer},
+    MatchSpec = case (jid:decode(ServiceOrRoom))#jid.lserver of
+        ServiceOrRoom -> [{'==', {element, 2, '$1'}, ServiceOrRoom}];
+        Service -> [{'orelse',
+                    {'==', {element, 2, '$1'}, Service},
+                    {'==', {element, 2, '$1'}, ServiceOrRoom} }]
+                end,
     case catch mnesia:dirty_select(muc_registered,
 				   [{#muc_registered{us_host = '$1',
 						     nick = Nick, _ = '_'},
-				     [{'==', {element, 2, '$1'}, Host}],
+				     MatchSpec,
 				     ['$_']}])
 	of
       {'EXIT', _Reason} -> true;
@@ -110,31 +116,46 @@ get_nick(_LServer, Host, From) ->
 	[#muc_registered{nick = Nick}] -> Nick
     end.
 
-set_nick(_LServer, Host, From, Nick) ->
+set_nick(_LServer, ServiceOrRoom, From, Nick) ->
     {LUser, LServer, _} = jid:tolower(From),
     LUS = {LUser, LServer},
     F = fun () ->
 		case Nick of
 		    <<"">> ->
-			mnesia:delete({muc_registered, {LUS, Host}}),
+			mnesia:delete({muc_registered, {LUS, ServiceOrRoom}}),
 			ok;
 		    _ ->
+                        Service = (jid:decode(ServiceOrRoom))#jid.lserver,
+                        MatchSpec = case (ServiceOrRoom == Service) of
+                            true -> [{'==', {element, 2, '$1'}, ServiceOrRoom}];
+                            false -> [{'orelse',
+                                        {'==', {element, 2, '$1'}, Service},
+                                        {'==', {element, 2, '$1'}, ServiceOrRoom} }]
+                                    end,
 			Allow = case mnesia:select(
 				       muc_registered,
-				       [{#muc_registered{us_host =
-							     '$1',
-							 nick = Nick,
-							 _ = '_'},
-					 [{'==', {element, 2, '$1'},
-					   Host}],
+				       [{#muc_registered{us_host = '$1', nick = Nick, _ = '_'},
+					 MatchSpec,
 					 ['$_']}]) of
+				    [] when (ServiceOrRoom == Service) ->
+			                NickRegistrations = mnesia:select(
+				            muc_registered,
+				            [{#muc_registered{us_host = '$1', nick = Nick, _ = '_'},
+					        [],
+					        ['$_']}]),
+                                        not lists:any(fun({_, {_NRUS, NRServiceOrRoom}, _Nick}) ->
+                                                              Service == (jid:decode(NRServiceOrRoom))#jid.lserver end,
+                                                      NickRegistrations);
 				    [] -> true;
+				    [#muc_registered{us_host = {_U, Host}}]
+                                      when (Host == Service) and (ServiceOrRoom /= Service) ->
+					false;
 				    [#muc_registered{us_host = {U, _Host}}] ->
 					U == LUS
 				end,
 			if Allow ->
 				mnesia:write(#muc_registered{
-						us_host = {LUS, Host},
+						us_host = {LUS, ServiceOrRoom},
 						nick = Nick}),
 				ok;
 			   true ->

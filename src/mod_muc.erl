@@ -51,6 +51,7 @@
 	 process_disco_items/1,
 	 process_vcard/1,
 	 process_register/1,
+	 process_iq_register/1,
 	 process_muc_unique/1,
 	 process_mucsub/1,
 	 broadcast_service_message/3,
@@ -675,29 +676,33 @@ process_vcard(#iq{lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_register(iq()) -> iq().
-process_register(#iq{type = Type, from = From, to = To, lang = Lang,
-		     sub_els = [El = #register{}]} = IQ) ->
+process_register(IQ) ->
+    case process_iq_register(IQ) of
+        {result, Result} ->
+	    xmpp:make_iq_result(IQ, Result);
+        {error, Err} ->
+	    xmpp:make_error(IQ, Err)
+    end.
+
+-spec process_iq_register(iq()) -> {result, register()} | {error, stanza_error()}.
+process_iq_register(#iq{type = Type, from = From, to = To, lang = Lang,
+		     sub_els = [El = #register{}]}) ->
     Host = To#jid.lserver,
+    RegisterDestination = jid:encode(To),
     ServerHost = ejabberd_router:host_of_route(Host),
     AccessRegister = mod_muc_opt:access_register(ServerHost),
     case acl:match_rule(ServerHost, AccessRegister, From) of
 	allow ->
 	    case Type of
 		get ->
-		    xmpp:make_iq_result(
-		      IQ, iq_get_register_info(ServerHost, Host, From, Lang));
+                    {result, iq_get_register_info(ServerHost, RegisterDestination, From, Lang)};
 		set ->
-		    case process_iq_register_set(ServerHost, Host, From, El, Lang) of
-			{result, Result} ->
-			    xmpp:make_iq_result(IQ, Result);
-			{error, Err} ->
-			    xmpp:make_error(IQ, Err)
-		    end
+		    process_iq_register_set(ServerHost, RegisterDestination, From, El, Lang)
 	    end;
 	deny ->
 	    ErrText = ?T("Access denied by service policy"),
 	    Err = xmpp:err_forbidden(ErrText, Lang),
-	    xmpp:make_error(IQ, Err)
+	    {error, Err}
     end.
 
 -spec process_disco_info(iq()) -> iq().
@@ -1416,6 +1421,11 @@ mod_doc() ->
 	      "nobody else can use that nickname in any room in the MUC "
 	      "service. To register a nickname, open the Service Discovery in "
 	      "your XMPP client and register in the MUC service."), "",
+	   ?T("It is also possible to register a nickname in a room, so "
+	      "nobody else can use that nickname in that room. If a nick is "
+              "registered in the MUC service, that nick cannot be registered in "
+              "any room, and vice versa: a nick that is registered in a room "
+              "cannot be registered at the MUC service."), "",
 	   ?T("This module supports clustering and load balancing. One module "
 	      "can be started per cluster node. Rooms are distributed at "
 	      "creation time on all available MUC module instances. The "
@@ -1461,11 +1471,12 @@ mod_doc() ->
                      "modify that option.")}},
            {access_register,
             #{value => ?T("AccessName"),
+              note => "improved in 23.xx",
               desc =>
                   ?T("This option specifies who is allowed to register nickname "
-                     "within the Multi-User Chat service. The default is 'all' for "
+                     "within the Multi-User Chat service and rooms. The default is 'all' for "
                      "backward compatibility, which means that any user is allowed "
-                     "to register any free nick.")}},
+                     "to register any free nick in the MUC service and in the rooms.")}},
            {db_type,
             #{value => "mnesia | sql",
               desc =>

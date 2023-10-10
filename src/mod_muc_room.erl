@@ -501,6 +501,8 @@ normal_state({route, <<"">>,
 			       process_iq_captcha(From, IQ, StateData);
 			   #adhoc_command{} ->
 			       process_iq_adhoc(From, IQ, StateData);
+			   #register{} ->
+                               mod_muc:process_iq_register(IQ);
 			   #fasten_apply_to{} = ApplyTo ->
 			       case xmpp:get_subtag(ApplyTo, #message_moderate{}) of
 				   #message_moderate{} = Moderate ->
@@ -1406,7 +1408,7 @@ do_process_presence(Nick, #presence{from = From, type = available, lang = Lang} 
 		true ->
 		    case {nick_collision(From, Nick, StateData),
 			  mod_muc:can_use_nick(StateData#state.server_host,
-					       StateData#state.host,
+					       jid:encode(StateData#state.jid),
 					       From, Nick),
 			  {(StateData#state.config)#config.allow_visitor_nickchange,
 			   is_visitor(From, StateData)}} of
@@ -2290,7 +2292,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	    andalso NConferences < MaxConferences),
 	  Collision,
 	  mod_muc:can_use_nick(StateData#state.server_host,
-			       StateData#state.host, From, Nick),
+			       jid:encode(StateData#state.jid), From, Nick),
 	  get_occupant_initial_role(From, Affiliation, StateData)}
 	of
       {false, _, _, _} when NUsers >= MaxUsers orelse NUsers >= MaxAdminUsers ->
@@ -4385,8 +4387,10 @@ maybe_forget_room(StateData) ->
 	end).
 
 -spec make_disco_info(jid(), state()) -> disco_info().
-make_disco_info(_From, StateData) ->
+make_disco_info(From, StateData) ->
     Config = StateData#state.config,
+    ServerHost = StateData#state.server_host,
+    AccessRegister = mod_muc_opt:access_register(ServerHost),
     Feats = [?NS_VCARD, ?NS_MUC, ?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
              ?NS_COMMANDS, ?NS_MESSAGE_MODERATE, ?NS_MESSAGE_RETRACT,
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.public),
@@ -4401,6 +4405,10 @@ make_disco_info(_From, StateData) ->
 				    <<"muc_moderated">>, <<"muc_unmoderated">>),
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.password_protected),
 				    <<"muc_passwordprotected">>, <<"muc_unsecured">>)]
+	++ case acl:match_rule(ServerHost, AccessRegister, From) of
+	       allow -> [?NS_REGISTER];
+	       deny -> []
+	   end
 	++ case Config#config.allow_subscription of
 	       true -> [?NS_MUCSUB];
 	       false -> []
@@ -4703,7 +4711,7 @@ process_iq_mucsub(From,
 		    {error, xmpp:err_conflict(ErrText, Lang)};
                 false ->
                     case mod_muc:can_use_nick(StateData#state.server_host,
-                                              StateData#state.host,
+                                              jid:encode(StateData#state.jid),
                                               From, Nick) of
                         false ->
                             Err = case Nick of
