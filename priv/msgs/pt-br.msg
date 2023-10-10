@@ -12,11 +12,6 @@
 {"A Web Page","Uma página da web"}.
 {"Accept","Aceito"}.
 {"Access denied by service policy","Acesso negado pela política do serviço"}.
-{"Access model of authorize","Modelo de acesso da autorização"}.
-{"Access model of open","Modelo para acesso aberto"}.
-{"Access model of presence","Modelo para acesso presença"}.
-{"Access model of roster","Modelo para acesso lista"}.
-{"Access model of whitelist","Modelo de acesso da lista branca"}.
 {"Access model","Modelo de acesso"}.
 {"Account doesn't exist","A conta não existe"}.
 {"Action on user","Ação no usuário"}.
@@ -182,7 +177,7 @@
 {"Get User Last Login Time","Obter a Data do Último Login"}.
 {"Get User Password","Obter Senha do Usuário"}.
 {"Get User Statistics","Obter Estatísticas do Usuário"}.
-{"Given Name","Sobrenome"}.
+{"Given Name","Prenome"}.
 {"Grant voice to this person?","Dar voz a esta pessoa?"}.
 {"Group","Grupo"}.
 {"Groups that will be displayed to the members","Os grupos que serão exibidos para os membros"}.
@@ -230,7 +225,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Não é permitido o envio de mensagens de erro para a sala. O membro (~s) enviou uma mensagem de erro (~s) e foi expulso da sala"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Não é permitido enviar mensagens privadas para a sala de conferência"}.
-{"It is not allowed to send private messages","Não é permitido enviar mensagens privadas"}.
 {"Jabber ID","ID Jabber"}.
 {"January","Janeiro"}.
 {"JID normalization denied by service policy","Normalização JID negada por causa da política de serviços"}.
@@ -250,7 +244,7 @@
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Bits menos significativos do hash sha-256 do texto devem ser iguais ao rótulo hexadecimal"}.
 {"leaves the room","Sair da sala"}.
 {"List of rooms","Lista de salas"}.
-{"List of users with hats","Lista os usuários com chapéus"}.
+{"List of users with hats","Lista dos usuários com chapéus"}.
 {"List users with hats","Lista os usuários com chapéus"}.
 {"Logging","Registrando no log"}.
 {"Low level update script","Script de atualização low level"}.
@@ -351,7 +345,7 @@
 {"Notify subscribers when the node is deleted","Notificar assinantes quando o nó for eliminado se elimine"}.
 {"November","Novembro"}.
 {"Number of answers required","Quantidade de respostas necessárias"}.
-{"Number of occupants","Número de participantes"}.
+{"Number of occupants","Quantidade de ocupantes"}.
 {"Number of Offline Messages","Quantidade das mensagens offline"}.
 {"Number of online users","Número de usuários online"}.
 {"Number of registered users","Número de usuários registrados"}.
@@ -375,6 +369,7 @@
 {"Only members may query archives of this room","Somente os membros podem procurar nos arquivos desta sala"}.
 {"Only moderators and participants are allowed to change the subject in this room","Somente os moderadores e os participamentes podem alterar o assunto desta sala"}.
 {"Only moderators are allowed to change the subject in this room","Somente os moderadores podem alterar o assunto desta sala"}.
+{"Only moderators are allowed to retract messages","Apenas moderadores estão autorizados a retirar mensagens"}.
 {"Only moderators can approve voice requests","Somente moderadores podem aprovar requisições de voz"}.
 {"Only occupants are allowed to send messages to the conference","Somente os ocupantes podem enviar mensagens à sala de conferência"}.
 {"Only occupants are allowed to send queries to the conference","Somente os ocupantes podem enviar consultas à sala de conferência"}.
@@ -398,6 +393,7 @@
 {"Password:","Senha:"}.
 {"Path to Dir","Caminho para o diretório"}.
 {"Path to File","Caminho do arquivo"}.
+{"Payload semantic type information","Informações de tipo semântico de carga útil"}.
 {"Pending","Pendente"}.
 {"Period: ","Período: "}.
 {"Persist items to storage","Persistir elementos ao armazenar"}.
@@ -458,7 +454,7 @@
 {"Room Configuration","Configuração de salas"}.
 {"Room creation is denied by service policy","Sala não pode ser criada devido à política do serviço"}.
 {"Room description","Descrição da Sala"}.
-{"Room Occupants","Número de participantes"}.
+{"Room Occupants","Ocupantes do quarto"}.
 {"Room terminates","Terminação da sala"}.
 {"Room title","Título da sala"}.
 {"Roster groups allowed to subscribe","Listar grupos autorizados"}.
@@ -496,6 +492,7 @@
 {"Specify the access model","Especificar os modelos de acesso"}.
 {"Specify the event message type","Especificar o tipo de mensagem para o evento"}.
 {"Specify the publisher model","Especificar o modelo do publicante"}.
+{"Stanza id is not valid","A Stanza ID não é válido"}.
 {"Stanza ID","ID da estrofe"}.
 {"Statically specify a replyto of the node owner(s)","Defina uma resposta fixa do(s) proprietário(s) do nó"}.
 {"Statistics of ~p","Estatísticas de ~p"}.
@@ -560,6 +557,7 @@
 {"The query is only allowed from local users","Esta consulta só é permitida a partir de usuários locais"}.
 {"The query must not contain <item/> elements","A consulta não pode conter elementos <item/>"}.
 {"The room subject can be modified by participants","O tema da sala pode ser alterada pelos próprios participantes"}.
+{"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","Informações de tipo semântico dos dados no nó, geralmente especificadas pelo espaço de nomes da carga útil (se houver)"}.
 {"The sender of the last received message","O remetente da última mensagem que foi recebida"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","A instância DEVE conter apenas um elemento <active/>, um elemento <default/>, ou um elemento <list/>"}.
 {"The subscription identifier associated with the subscription request","O identificador da assinatura associado à solicitação da assinatura"}.
