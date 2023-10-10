@@ -12,11 +12,6 @@
 {"A Web Page","Eine Webseite"}.
 {"Accept","Akzeptieren"}.
 {"Access denied by service policy","Zugriff aufgrund der Dienstrichtlinien verweigert"}.
-{"Access model of authorize","Zugriffsmodell von 'authorize'"}.
-{"Access model of open","Zugriffsmodell von 'open'"}.
-{"Access model of presence","Zugriffsmodell von 'presence'"}.
-{"Access model of roster","Zugriffsmodell der Kontaktliste"}.
-{"Access model of whitelist","Zugriffsmodell von 'whitelist'"}.
 {"Access model","Zugriffsmodell"}.
 {"Account doesn't exist","Konto existiert nicht"}.
 {"Action on user","Aktion auf Benutzer"}.
@@ -229,11 +224,11 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Es ist nicht erlaubt Fehlermeldungen an den Raum zu senden. Der Teilnehmer (~s) hat eine Fehlermeldung (~s) gesendet und wurde aus dem Raum geworfen"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Es ist nicht erlaubt private Nachrichten des Typs \"groupchat\" zu senden"}.
 {"It is not allowed to send private messages to the conference","Es ist nicht erlaubt private Nachrichten an die Konferenz zu senden"}.
-{"It is not allowed to send private messages","Es ist nicht erlaubt private Nachrichten zu senden"}.
 {"Jabber ID","Jabber-ID"}.
 {"January","Januar"}.
 {"JID normalization denied by service policy","JID-Normalisierung aufgrund der Dienstrichtlinien verweigert"}.
 {"JID normalization failed","JID-Normalisierung fehlgeschlagen"}.
+{"Joined MIX channels of ~ts","Beigetretene MIX-Channels von ~ts"}.
 {"Joined MIX channels:","Beigetretene MIX-Channels:"}.
 {"joins the room","betritt den Raum"}.
 {"July","Juli"}.
@@ -373,6 +368,7 @@
 {"Only members may query archives of this room","Nur Mitglieder dürfen den Verlauf dieses Raumes abrufen"}.
 {"Only moderators and participants are allowed to change the subject in this room","Nur Moderatoren und Teilnehmer dürfen das Thema in diesem Raum ändern"}.
 {"Only moderators are allowed to change the subject in this room","Nur Moderatoren dürfen das Thema in diesem Raum ändern"}.
+{"Only moderators are allowed to retract messages","Nur Moderatoren dürfen Nachrichten zurückziehen"}.
 {"Only moderators can approve voice requests","Nur Moderatoren können Sprachrecht-Anforderungen genehmigen"}.
 {"Only occupants are allowed to send messages to the conference","Nur Teilnehmer dürfen Nachrichten an die Konferenz senden"}.
 {"Only occupants are allowed to send queries to the conference","Nur Teilnehmer dürfen Anfragen an die Konferenz senden"}.
@@ -494,6 +490,7 @@
 {"Specify the access model","Geben Sie das Zugangsmodell an"}.
 {"Specify the event message type","Geben Sie den Ereignisnachrichtentyp an"}.
 {"Specify the publisher model","Geben Sie das Veröffentlichermodell an"}.
+{"Stanza id is not valid","Stanza-ID ist ungültig"}.
 {"Stanza ID","Stanza-ID"}.
 {"Statically specify a replyto of the node owner(s)","Ein 'replyto' des/der Nodebesitzer(s) statisch angeben"}.
 {"Statistics of ~p","Statistiken von ~p"}.
