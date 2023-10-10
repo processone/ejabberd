@@ -8,8 +8,6 @@
 {"A password is required to enter this room","Et passord kreves for tilgang til samtalerommet"}.
 {"Accept","Godta"}.
 {"Access denied by service policy","Tilgang nektes på grunn av en tjenesteregel"}.
-{"Access model of presence","Tilgangsmodell for tilstedeværelse"}.
-{"Access model of roster","Tilgangsmodell for kontaktliste"}.
 {"Action on user","Handling på bruker"}.
 {"Add Jabber ID","Legg til Jabber-ID"}.
 {"Add New","Legg til ny"}.
@@ -141,7 +139,6 @@
 {"IP addresses","IP-adresser"}.
 {"is now known as","er nå kjent som"}.
 {"It is not allowed to send private messages to the conference","Det er ikke tillatt å sende private meldinger til konferansen"}.
-{"It is not allowed to send private messages","Det er ikke tillatt å sende private meldinger"}.
 {"Jabber ID","Jabber-ID"}.
 {"January","januar"}.
 {"JID normalization failed","JID-normalisering mislyktes"}.

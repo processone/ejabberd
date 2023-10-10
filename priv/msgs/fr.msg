@@ -12,11 +12,6 @@
 {"A Web Page","Une page Web"}.
 {"Accept","Accepter"}.
 {"Access denied by service policy","L'accès au service est refusé"}.
-{"Access model of authorize","Modèle d’accès de « autoriser »"}.
-{"Access model of open","Modèle d’accès de « ouvrir »"}.
-{"Access model of presence","Modèle d’accès de « présence »"}.
-{"Access model of roster","Modèle d’accès de « liste »"}.
-{"Access model of whitelist","Modèle d’accès de « liste blanche »"}.
 {"Access model","Modèle d’accès"}.
 {"Account doesn't exist","Le compte n’existe pas"}.
 {"Action on user","Action sur l'utilisateur"}.
@@ -220,7 +215,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","L'envoyer de messages d'erreur au salon n'est pas autorisé. Le participant (~s) à envoyé un message d'erreur (~s) et à été expulsé du salon"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Il n'est pas permis d'envoyer des messages privés de type \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Il n'est pas permis d'envoyer des messages privés à la conférence"}.
-{"It is not allowed to send private messages","L'envoi de messages privés n'est pas autorisé"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Janvier"}.
 {"joins the room","rejoint le salon"}.

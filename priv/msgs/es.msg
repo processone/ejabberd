@@ -12,11 +12,6 @@
 {"A Web Page","Una página web"}.
 {"Accept","Aceptar"}.
 {"Access denied by service policy","Acceso denegado por la política del servicio"}.
-{"Access model of authorize","Modelo de acceso de Autorizar"}.
-{"Access model of open","Modelo de acceso de Abierto"}.
-{"Access model of presence","Modelo de acceso de Presencia"}.
-{"Access model of roster","Modelo de acceso de Roster"}.
-{"Access model of whitelist","Modelo de acceso de Lista Blanca"}.
 {"Access model","Modelo de Acceso"}.
 {"Account doesn't exist","La cuenta no existe"}.
 {"Action on user","Acción en el usuario"}.
@@ -230,7 +225,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","No está permitido enviar mensajes de error a la sala. Este participante (~s) ha enviado un mensaje de error (~s) y fue expulsado de la sala"}.
 {"It is not allowed to send private messages of type \"groupchat\"","No está permitido enviar mensajes privados del tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir el envio de mensajes privados a la sala"}.
-{"It is not allowed to send private messages","No está permitido enviar mensajes privados"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Enero"}.
 {"JID normalization denied by service policy","Se ha denegado la normalización del JID por política del servicio"}.
@@ -290,7 +284,7 @@
 {"Modified modules","Módulos modificados"}.
 {"Module failed to handle the query","El módulo falló al gestionar la petición"}.
 {"Monday","Lunes"}.
-{"Multicast","Multicast"}.
+{"Multicast","Multidifusión"}.
 {"Multiple <item/> elements are not allowed by RFC6121","No se permiten múltiples elementos <item/> en RFC6121"}.
 {"Multi-User Chat","Salas de Charla"}.
 {"Name in the rosters where this group will be displayed","Nombre del grupo con que aparecerá en las listas de contactos"}.
@@ -375,6 +369,7 @@
 {"Only members may query archives of this room","Solo miembros pueden consultar el archivo de mensajes de la sala"}.
 {"Only moderators and participants are allowed to change the subject in this room","Solo los moderadores y participantes pueden cambiar el asunto de esta sala"}.
 {"Only moderators are allowed to change the subject in this room","Solo los moderadores pueden cambiar el asunto de esta sala"}.
+{"Only moderators are allowed to retract messages","Solo los moderadores pueden retractarse de los mensajes"}.
 {"Only moderators can approve voice requests","Solo los moderadores pueden aprobar peticiones de voz"}.
 {"Only occupants are allowed to send messages to the conference","Solo los ocupantes pueden enviar mensajes a la sala"}.
 {"Only occupants are allowed to send queries to the conference","Solo los ocupantes pueden enviar solicitudes a la sala"}.
@@ -398,6 +393,7 @@
 {"Password:","Contraseña:"}.
 {"Path to Dir","Ruta al directorio"}.
 {"Path to File","Ruta al fichero"}.
+{"Payload semantic type information","Información sobre el tipo semántico de la carga útil"}.
 {"Pending","Pendiente"}.
 {"Period: ","Periodo: "}.
 {"Persist items to storage","Persistir elementos al almacenar"}.
@@ -496,6 +492,7 @@
 {"Specify the access model","Especifica el modelo de acceso"}.
 {"Specify the event message type","Especifica el tipo del mensaje de evento"}.
 {"Specify the publisher model","Especificar el modelo del publicante"}.
+{"Stanza id is not valid","El identificador de la estrofa no es válido"}.
 {"Stanza ID","ID del paquete"}.
 {"Statically specify a replyto of the node owner(s)","Especificar de forma estática un 'replyto' de dueño(s) del nodo"}.
 {"Statistics of ~p","Estadísticas de ~p"}.
@@ -560,6 +557,7 @@
 {"The query is only allowed from local users","La solicitud está permitida solo para usuarios locales"}.
 {"The query must not contain <item/> elements","La solicitud no debe contener elementos <item/>"}.
 {"The room subject can be modified by participants","El asunto de la sala puede ser modificado por los participantes"}.
+{"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","La información semántica de los datos del nodo, normalmente es especificada por el espacio de los nombres de la carga útil (si existe)"}.
 {"The sender of the last received message","El emisor del último mensaje recibido"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","El paquete DEBE contener solo un elemento <active/>, un elemento <default/>, o un elemento <list/>"}.
 {"The subscription identifier associated with the subscription request","El identificador de suscripción asociado con la petición de suscripción"}.

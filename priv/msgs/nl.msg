@@ -129,7 +129,6 @@
 {"is now known as","heet nu"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Er mogen geen privéberichten van het type \"groupchat\" worden verzonden"}.
 {"It is not allowed to send private messages to the conference","Er mogen geen privéberichten naar de chatruimte worden verzonden"}.
-{"It is not allowed to send private messages","Het is niet toegestaan priveberichten te sturen"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januari"}.
 {"joins the room","betrad de chatruimte"}.

@@ -142,7 +142,6 @@
 {"IP addresses","Adresa IP"}.
 {"is now known as","tani njihet si"}.
 {"It is not allowed to send private messages to the conference","Nuk lejohet të dërgohen mesazhe private te konferenca"}.
-{"It is not allowed to send private messages","Nuk lejohet të dërgohen mesazhe private"}.
 {"Jabber ID","ID Jabber"}.
 {"January","Janar"}.
 {"JID normalization failed","Normalizimi JID dështoi"}.

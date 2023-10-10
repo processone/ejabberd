@@ -12,11 +12,6 @@
 {"A Web Page","Uma página da web"}.
 {"Accept","Aceito"}.
 {"Access denied by service policy","Acesso negado pela política de serviço"}.
-{"Access model of authorize","Modelo de acesso da autorização"}.
-{"Access model of open","Modelo para acesso aberto"}.
-{"Access model of presence","Modelo para acesso presença"}.
-{"Access model of roster","Modelo para acesso lista"}.
-{"Access model of whitelist","Modelo de acesso da lista branca"}.
 {"Access model","Modelo de acesso"}.
 {"Account doesn't exist","A conta não existe"}.
 {"Action on user","Acção no utilizador"}.
@@ -230,7 +225,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Não é permitido o envio de mensagens de erro para a sala. O membro (~s) enviou uma mensagem de erro (~s) e foi expulso da sala"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensagens privadas para a sala"}.
-{"It is not allowed to send private messages","Não é permitido enviar mensagens privadas"}.
 {"Jabber ID","ID Jabber"}.
 {"January","Janeiro"}.
 {"JID normalization denied by service policy","Normalização JID negada por causa da política de serviços"}.

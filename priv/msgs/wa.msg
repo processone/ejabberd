@@ -132,7 +132,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","On n' pout nén evoyî des messaedjes d' aroke sol såle. Li pårticipan (~s) a-st evoyî on messaedje d' aroke (~s) ey a stî tapé foû."}.
 {"It is not allowed to send private messages of type \"groupchat\"","C' est nén possibe d' evoyî des messaedjes privés del sôre «groupchat»"}.
 {"It is not allowed to send private messages to the conference","On n' pout nén evoyî des messaedjes privés dins cisse conferince ci"}.
-{"It is not allowed to send private messages","Ci n' est nén permetou d' evoyî des messaedjes privés"}.
 {"Jabber ID","ID Jabber"}.
 {"January","djanvî"}.
 {"joins the room","arive sol såle"}.

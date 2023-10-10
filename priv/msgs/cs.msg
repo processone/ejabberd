@@ -159,7 +159,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Není povoleno posílat chybové zprávy do místnosti. Účastník (~s) odeslal chybovou zprávu (~s) a byl vyhozen z místnosti"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
 {"It is not allowed to send private messages to the conference","Není povoleno odesílat soukromé zprávy v této místnosti"}.
-{"It is not allowed to send private messages","Je zakázáno posílat soukromé zprávy"}.
 {"Jabber ID","Jabber ID"}.
 {"January",". ledna"}.
 {"joins the room","vstoupil(a) do místnosti"}.

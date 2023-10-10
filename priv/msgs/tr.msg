@@ -123,7 +123,6 @@
 {"is now known as","isim değiştirdi :"}.
 {"It is not allowed to send private messages of type \"groupchat\"","\"groupchat\" tipinde özel mesajlar gönderilmesine izin verilmiyor"}.
 {"It is not allowed to send private messages to the conference","Konferansa özel mesajlar gönderilmesine izin verilmiyor"}.
-{"It is not allowed to send private messages","Özel mesaj gönderilmesine izin verilmiyor"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Ocak"}.
 {"joins the room","odaya katıldı"}.

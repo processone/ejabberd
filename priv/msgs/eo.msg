@@ -12,9 +12,6 @@
 {"A Web Page","Retpaĝo"}.
 {"Accept","Akcepti"}.
 {"Access denied by service policy","Atingo rifuzita de serv-politiko"}.
-{"Access model of open","Atingomodelo de malfermo"}.
-{"Access model of presence","Atingomodelo de ĉeesto"}.
-{"Access model of whitelist","Atingomodelo de permesolisto"}.
 {"Access model","Atingomodelo"}.
 {"Account doesn't exist","Konto ne ekzistas"}.
 {"Action on user","Ago je uzanto"}.
@@ -163,7 +160,6 @@
 {"is now known as","nun nomiĝas"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Malpermesas sendi mesaĝojn de tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Nur partoprenantoj rajtas sendi privatajn mesaĝojn al la babilejo"}.
-{"It is not allowed to send private messages","Ne estas permesata sendi privatajn mesaĝojn"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januaro"}.
 {"joins the room","eniras la babilejo"}.

@@ -12,11 +12,6 @@
 {"A Web Page","Una Pàgina Web"}.
 {"Accept","Acceptar"}.
 {"Access denied by service policy","Accés denegat per la política del servei"}.
-{"Access model of authorize","Model d'Accés de autoritzar"}.
-{"Access model of open","Model d'Accés de obert"}.
-{"Access model of presence","Model d'Accés de presència"}.
-{"Access model of roster","Model d'Accés de contactes"}.
-{"Access model of whitelist","Model d'Accés de llista blanca"}.
 {"Access model","Model d'Accés"}.
 {"Account doesn't exist","El compte no existeix"}.
 {"Action on user","Acció en l'usuari"}.
@@ -230,7 +225,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","No està permés enviar missatges d'error a la sala. El participant (~s) ha enviat un missatge d'error (~s) i ha sigut expulsat de la sala"}.
 {"It is not allowed to send private messages of type \"groupchat\"","No està permés enviar missatges del tipus \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","No està permès l'enviament de missatges privats a la sala"}.
-{"It is not allowed to send private messages","No està permés enviar missatges privats"}.
 {"Jabber ID","ID Jabber"}.
 {"January","Gener"}.
 {"JID normalization denied by service policy","S'ha denegat la normalització del JID per política del servei"}.
@@ -375,6 +369,7 @@
 {"Only members may query archives of this room","Només membres poden consultar l'arxiu de missatges d'aquesta sala"}.
 {"Only moderators and participants are allowed to change the subject in this room","Només els moderadors i participants poden canviar el tema d'aquesta sala"}.
 {"Only moderators are allowed to change the subject in this room","Només els moderadors poden canviar el tema d'aquesta sala"}.
+{"Only moderators are allowed to retract messages","Només els moderadors tenen permís per a retractar missatges"}.
 {"Only moderators can approve voice requests","Només els moderadors poden aprovar les peticions de veu"}.
 {"Only occupants are allowed to send messages to the conference","Sols els ocupants poden enviar missatges a la sala"}.
 {"Only occupants are allowed to send queries to the conference","Sols els ocupants poden enviar sol·licituds a la sala"}.
@@ -398,6 +393,7 @@
 {"Password:","Contrasenya:"}.
 {"Path to Dir","Ruta al directori"}.
 {"Path to File","Ruta al fitxer"}.
+{"Payload semantic type information","Informació sobre el tipus semàntic de la carrega útil"}.
 {"Pending","Pendent"}.
 {"Period: ","Període: "}.
 {"Persist items to storage","Persistir elements al guardar"}.
@@ -496,6 +492,7 @@
 {"Specify the access model","Especificar el model d'accés"}.
 {"Specify the event message type","Especifica el tipus de missatge d'event"}.
 {"Specify the publisher model","Especificar el model del publicant"}.
+{"Stanza id is not valid","L'identificador del paquet no es vàlid"}.
 {"Stanza ID","ID del paquet"}.
 {"Statically specify a replyto of the node owner(s)","Especifica estaticament una adreça on respondre al propietari del node"}.
 {"Statistics of ~p","Estadístiques de ~p"}.
@@ -560,6 +557,7 @@
 {"The query is only allowed from local users","La petició està permesa només d'usuaris locals"}.
 {"The query must not contain <item/> elements","La petició no pot contenir elements <item/>"}.
 {"The room subject can be modified by participants","El tema de la sala pot modificar-lo els participants"}.
+{"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","La informació semàntica de les dades al node, usualment especificat pel espai de noms de la càrrega util (si n'hi ha)"}.
 {"The sender of the last received message","Qui ha enviat l'ultim missatge rebut"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","El paquet DEU contindre només un element <active/>, un element <default/>, o un element <list/>"}.
 {"The subscription identifier associated with the subscription request","L'identificador de subscripció associat amb la petició de subscripció"}.

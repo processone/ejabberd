@@ -110,7 +110,6 @@
 {"is now known as","är känd som"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Det är inte tillåtet att skicka privata medelanden med typen \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Det är inte tillåtet att skicka privata medelanden till den här konferensen"}.
-{"It is not allowed to send private messages","Det ar inte tillåtet att skicka privata meddelanden"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januari"}.
 {"joins the room","joinar rummet"}.

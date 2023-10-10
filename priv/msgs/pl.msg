@@ -159,7 +159,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Użytkownik nie może wysyłać wiadomości o błędach do pokoju. Użytkownik (~s) wysłał błąd (~s) i został wyrzucony z pokoju"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Nie można wysyłać prywatnych wiadomości typu \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Nie wolno wysyłac prywatnych wiadomości na konferencję"}.
-{"It is not allowed to send private messages","Wysyłanie prywatnych wiadomości jest zabronione"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Styczeń"}.
 {"joins the room","dołącza do pokoju"}.

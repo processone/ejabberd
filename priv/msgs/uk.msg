@@ -207,7 +207,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Не дозволяється відправляти помилкові повідомлення в кімнату. Учасник (~s) відправив помилкове повідомлення (~s), та був виганий з кімнати"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Не дозволяється надсилати приватні повідомлення типу \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Не дозволяється надсилати приватні повідомлення в конференцію"}.
-{"It is not allowed to send private messages","Приватні повідомлення не дозволені"}.
 {"Jabber ID","Jabber ID"}.
 {"January","січня"}.
 {"JID normalization failed","Помилка нормалізації JID"}.

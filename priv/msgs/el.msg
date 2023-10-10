@@ -12,11 +12,6 @@
 {"A Web Page","Μία ιστοσελίδα"}.
 {"Accept","Αποδοχή"}.
 {"Access denied by service policy","Άρνηση πρόσβασης, λόγω τακτικής παροχής υπηρεσιών"}.
-{"Access model of authorize","Μοντέλο πρόσβασης της πιστοποίησης"}.
-{"Access model of open","Μοντέλο πρόσβασης του ανοικτού"}.
-{"Access model of presence","Μοντέλο πρόσβασης της παρουσίας"}.
-{"Access model of roster","Μοντέλο πρόσβασης της Λίστας Επαφών"}.
-{"Access model of whitelist","Μοντέλο πρόσβασης της Λευκής Λίστας"}.
 {"Access model","Καθορίστε το μοντέλο πρόσβασης"}.
 {"Account doesn't exist","Ο λογαριασμός δεν υπάρχει"}.
 {"Action on user","Eνέργεια για το χρήστη"}.
@@ -219,7 +214,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Δεν επιτρέπεται η αποστολή μηνυμάτων σφάλματος στο δωμάτιο. Ο συμμετέχων (~s) έχει στείλει ένα μήνυμα σφάλματος (~s) και έχει πεταχτεί έξω από την αίθουσα"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Δεν επιτρέπεται η αποστολή προσωπικών μηνυμάτων του τύπου \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Δεν επιτρέπεται να στείλει προσωπικά μηνύματα για τη διάσκεψη"}.
-{"It is not allowed to send private messages","Δεν επιτρέπεται η αποστολή προσωπικών μηνυμάτων"}.
 {"Jabber ID","Ταυτότητα Jabber"}.
 {"January","Ιανουάριος"}.
 {"JID normalization denied by service policy","Απετράπη η κανονικοποίηση του JID, λόγω της τακτικής Παροχής Υπηρεσιών"}.

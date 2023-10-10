@@ -12,11 +12,6 @@
 {"A Web Page","网页"}.
 {"Accept","接受"}.
 {"Access denied by service policy","访问被服务策略拒绝"}.
-{"Access model of authorize","授权的访问模型"}.
-{"Access model of open","开启的访问模型"}.
-{"Access model of presence","状态的访问模型"}.
-{"Access model of roster","花名册的访问模型"}.
-{"Access model of whitelist","白名单的访问模型"}.
 {"Access model","访问模型"}.
 {"Account doesn't exist","账号不存在"}.
 {"Action on user","对用户的动作"}.
@@ -230,7 +225,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","不允许将错误消息发送到该房间. 参与者(~s)已发送过一条消息(~s)并已被踢出房间"}.
 {"It is not allowed to send private messages of type \"groupchat\"","\"群组聊天\"类型不允许发送私聊消息"}.
 {"It is not allowed to send private messages to the conference","不允许向会议发送私聊消息"}.
-{"It is not allowed to send private messages","不可以发送私聊消息"}.
 {"Jabber ID","Jabber ID"}.
 {"January","一月"}.
 {"JID normalization denied by service policy","JID规范化被服务策略拒绝"}.

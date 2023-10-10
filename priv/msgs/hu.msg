@@ -170,7 +170,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Nem engedélyezett hibaüzeneteket küldeni a szobába. A résztvevő (~s) hibaüzenetet (~s) küldött, és ki lett rúgva a szobából"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Nem engedélyezett „groupchat” típusú személyes üzeneteket küldeni"}.
 {"It is not allowed to send private messages to the conference","Nem engedélyezett személyes üzeneteket küldeni a konferenciába"}.
-{"It is not allowed to send private messages","Nem engedélyezett személyes üzeneteket küldeni"}.
 {"Jabber ID","Jabber-azonosító"}.
 {"January","január"}.
 {"JID normalization denied by service policy","A Jabber-azonosító normalizálása megtagadva a szolgáltatási irányelv miatt"}.

@@ -180,7 +180,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Запрещено посылать сообщения об ошибках в эту комнату. Участник (~s) послал сообщение об ошибке (~s) и был выкинут из комнаты"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Нельзя посылать частные сообщения типа \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Не разрешается посылать частные сообщения прямо в конференцию"}.
-{"It is not allowed to send private messages","Запрещено посылать приватные сообщения"}.
 {"Jabber ID","Jabber ID"}.
 {"January","января"}.
 {"joins the room","вошёл(а) в комнату"}.

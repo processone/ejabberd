@@ -148,7 +148,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","אין זה מותר לשלוח הודעות שגיאה לחדר. משתתף זה (~s) שלח הודעת שגיאה (~s) ונבעט מתוך החדר"}.
 {"It is not allowed to send private messages of type \"groupchat\"","אין זה מותר לשלוח הודעות פרטיות מן טיפוס \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","אין זה מותר לשלוח הודעות פרטיות לועידה"}.
-{"It is not allowed to send private messages","אין זה מותר לשלוח הודעות פרטיות"}.
 {"Jabber ID","מזהה Jabber"}.
 {"January","ינואר"}.
 {"joins the room","נכנס/ת אל החדר"}.

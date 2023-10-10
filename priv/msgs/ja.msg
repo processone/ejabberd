@@ -166,7 +166,6 @@
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","このルームにエラーメッセージを送ることは許可されていません。参加者(~s)はエラーメッセージを(~s)を送信してルームからキックされました。"}.
 {"It is not allowed to send private messages of type \"groupchat\"","種別が\"groupchat\" であるプライベートメッセージを送信することはできません"}.
 {"It is not allowed to send private messages to the conference","この会議にプライベートメッセージを送信することはできません"}.
-{"It is not allowed to send private messages","プライベートメッセージを送信することはできません"}.
 {"Jabber ID","Jabber ID"}.
 {"January","1月"}.
 {"joins the room","がチャットルームに参加しました"}.

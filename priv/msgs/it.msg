@@ -125,7 +125,6 @@
 {"is now known as","è ora conosciuta/o come"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Non è consentito l'invio di messaggi privati di tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Non è consentito l'invio di messaggi privati alla conferenza"}.
-{"It is not allowed to send private messages","Non è consentito l'invio di messaggi privati"}.
 {"Jabber ID","Jabber ID (Jabber ID)"}.
 {"January","Gennaio"}.
 {"joins the room","entra nella stanza"}.

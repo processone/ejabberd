@@ -124,7 +124,6 @@
 {"is now known as","sa premenoval(a) na"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Nie je dovolené odoslanie súkromnej správy typu \"Skupinová správa\" "}.
 {"It is not allowed to send private messages to the conference","Nie je povolené odosielať súkromné správy do konferencie"}.
-{"It is not allowed to send private messages","Nieje povolené posielať súkromné správy"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Január"}.
 {"joins the room","vstúpil(a) do miestnosti"}.
