@@ -81,6 +81,8 @@ opt_type(auth_password_format) ->
     econf:enum([plain, scram]);
 opt_type(auth_scram_hash) ->
     econf:enum([sha, sha256, sha512]);
+opt_type(auth_external_user_exists_check) ->
+    econf:bool();
 opt_type(auth_use_cache) ->
     econf:bool();
 opt_type(c2s_cafile) ->
@@ -542,6 +544,7 @@ options() ->
      {auth_opts, []},
      {auth_password_format, plain},
      {auth_scram_hash, sha},
+     {auth_external_user_exists_check, true},
      {auth_use_cache,
       fun(Host) -> ejabberd_config:get_option({use_cache, Host}) end},
      {c2s_cafile, undefined},

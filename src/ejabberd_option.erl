@@ -14,6 +14,7 @@
 -export([auth_cache_life_time/0]).
 -export([auth_cache_missed/0]).
 -export([auth_cache_size/0]).
+-export([auth_external_user_exists_check/0, auth_external_user_exists_check/1]).
 -export([auth_method/0, auth_method/1]).
 -export([auth_opts/0, auth_opts/1]).
 -export([auth_password_format/0, auth_password_format/1]).
@@ -223,6 +224,13 @@ auth_cache_missed() ->
 -spec auth_cache_size() -> 'infinity' | pos_integer().
 auth_cache_size() ->
     ejabberd_config:get_option({auth_cache_size, global}).
+
+-spec auth_external_user_exists_check() -> boolean().
+auth_external_user_exists_check() ->
+    auth_external_user_exists_check(global).
+-spec auth_external_user_exists_check(global | binary()) -> boolean().
+auth_external_user_exists_check(Host) ->
+    ejabberd_config:get_option({auth_external_user_exists_check, Host}).
 
 -spec auth_method() -> [atom()].
 auth_method() ->

@@ -395,6 +395,13 @@ doc() ->
            "You shouldn't change this if you already have passwords generated with "
            "a different algorithm - users that have such passwords will not be able "
            "to authenticate. The default value is 'sha'.")}},
+     {auth_external_user_exists_check,
+      #{value => "true | false",
+        desc =>
+        ?T("Supplement check for user existence based on 'mod_last' data, for authentication "
+           "methods that don't have a way to reliable tell if user exists (like is the case for "
+           "'jwt' and certificate based authentication). This helps with processing offline message "
+           "for those users. The default value is 'true'.")}},
      {auth_use_cache,
       #{value => "true | false",
         desc =>
