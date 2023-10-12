@@ -257,6 +257,13 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 					modification = {Now, SubKey},
 					payload = Payload}),
 			    {result, {default, broadcast, []}};
+			% Allow node owner to modify any item, he can also delete it and recreate
+			{result, #pubsub_item{creation = {CreationTime, _}} = OldItem} when Affiliation == owner->
+			    set_item(OldItem#pubsub_item{
+				creation = {CreationTime, GenKey},
+				modification = {Now, SubKey},
+				payload = Payload}),
+			    {result, {default, broadcast, []}};
 			{result, _} ->
 			    {error, xmpp:err_forbidden()};
 			_ ->
