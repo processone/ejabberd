@@ -640,6 +640,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0402.html"/>
+        <xmpp:version>1.1.3</xmpp:version>
+        <xmpp:since>23.10</xmpp:since>
+        <xmpp:status></xmpp:status>
+        <xmpp:note>mod_private</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0405.html"/>
         <xmpp:version>0.3.0</xmpp:version>
         <xmpp:since></xmpp:since>
@@ -669,7 +678,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0421.html"/>
         <xmpp:version>0.1.0</xmpp:version>
-        <xmpp:since></xmpp:since>
+        <xmpp:since>23.10</xmpp:since>
         <xmpp:status></xmpp:status>
         <xmpp:note>mod_muc_occupantid</xmpp:note>
       </xmpp:SupportedXep>
