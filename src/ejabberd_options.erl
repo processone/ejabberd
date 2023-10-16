@@ -609,7 +609,7 @@ options() ->
      {negotiation_timeout, timer:seconds(30)},
      {net_ticktime, timer:seconds(60)},
      {new_sql_schema, ?USE_NEW_SQL_SCHEMA_DEFAULT},
-     {update_sql_schema, true},
+     {update_sql_schema, false},
      {oauth_access, none},
      {oauth_cache_life_time,
       fun(Host) -> ejabberd_config:get_option({cache_life_time, Host}) end},
