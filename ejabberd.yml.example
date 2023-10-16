@@ -46,6 +46,7 @@ listen:
     ip: "::"
     module: ejabberd_s2s_in
     max_stanza_size: 524288
+    shaper: s2s_shaper
   -
     port: 5443
     ip: "::"
