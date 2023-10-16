@@ -34,75 +34,81 @@
 {"Allow visitors to send private messages to","Дозволити відвідувачам відсилати приватні повідомлення"}.
 {"Allow visitors to send status text in presence updates","Дозволити відвідувачам відсилати текст статусу в оновленнях присутності"}.
 {"Allow visitors to send voice requests","Дозволити відвідувачам надсилати голосові запрошення"}.
+{"An associated LDAP group that defines room membership; this should be an LDAP Distinguished Name according to an implementation-specific or deployment-specific definition of a group.","Асоційована група LDAP, яка визначає членство в кімнаті; це повинно бути відмінне ім'я LDAP відповідно до специфічного для реалізації або специфічного для розгортання визначення групи."}.
 {"Announcements","Сповіщення"}.
 {"Answer associated with a picture","Відповідь, пов’язана зі зображенням"}.
 {"Answer associated with a video","Відповідь, пов'язана з відео"}.
 {"Answer associated with speech","Відповідь, пов'язана з мовленням"}.
 {"Answer to a question","Відповідь на запитання"}.
-{"Anyone in the specified roster group(s) may subscribe and retrieve items","Будь-хто в зазначеному списку груп(и) може підписатися та отримати елементи"}.
-{"Anyone may associate leaf nodes with the collection","Будь-хто може зв'язати вузли листів з колекцією"}.
-{"Anyone may publish","Будь-хто може опублікувати"}.
-{"Anyone may subscribe and retrieve items","Будь-хто може підписатися та отримати елементи"}.
-{"Anyone with Voice","Усі, хто має голос"}.
-{"April","квітня"}.
-{"Attribute 'channel' is required for this request","Для цього запиту потрібен атрибут \"канал\""}.
-{"Attribute 'id' is mandatory for MIX messages","Для MIX повідомлень потрібен атрибут \"id\""}.
-{"Attribute 'jid' is not allowed here","Атрибут 'jid' тут заборонений"}.
-{"Attribute 'node' is not allowed here","Атрибут \"вузол\" тут заборонений"}.
-{"August","серпня"}.
+{"Anyone in the specified roster group(s) may subscribe and retrieve items","Будь-хто в зазначеній групі (групах) реєстру може підписатися та отримувати матеріали"}.
+{"Anyone may associate leaf nodes with the collection","Будь-хто може асоціювати листові вузли з колекцією"}.
+{"Anyone may publish","Будь-хто може публікувати"}.
+{"Anyone may subscribe and retrieve items","Будь-хто може підписатися та отримувати публікації"}.
+{"Anyone with a presence subscription of both or from may subscribe and retrieve items","Будь-хто, хто має підписку на отримання інформації про присутність в обох випадках або може підписуватись та отримувати матеріали"}.
+{"Anyone with Voice","Будь-хто, хто має голос"}.
+{"Anyone","Будь-хто"}.
+{"Apparently your account has no administration rights in this server. Please check how to grant admin rights in: https://docs.ejabberd.im/admin/installation/#administration-account","Очевидно, ваш обліковий запис не має прав адміністратора на цьому сервері. Будь ласка, перевірте, як отримати права адміністратора за посиланням: https://docs.ejabberd.im/admin/installation/#administration-account"}.
+{"April","Квітень"}.
+{"Attribute 'channel' is required for this request","Атрибут \"канал\" є обов'язковим для цього запиту"}.
+{"Attribute 'id' is mandatory for MIX messages","Атрибут 'id' обов'язковий для MIX повідомлень"}.
+{"Attribute 'jid' is not allowed here","Атрибут 'jid' заборонений"}.
+{"Attribute 'node' is not allowed here","Атрибут \"вузол\" заборонений"}.
+{"Attribute 'to' of stanza that triggered challenge","Атрибут \"до\" рядка, який спровокував виклик"}.
+{"August","Серпень"}.
 {"Automatic node creation is not enabled","Автоматичне створення вузлів не ввімкнено"}.
 {"Backup Management","Керування резервним копіюванням"}.
 {"Backup of ~p","Резервне копіювання ~p"}.
 {"Backup to File at ","Резервне копіювання в файл на "}.
 {"Backup","Резервне копіювання"}.
-{"Bad format","Неправильний формат"}.
+{"Bad format","Невірний формат"}.
 {"Birthday","День народження"}.
-{"Both the username and the resource are required","Потрібне ім'я користувача та ресурс"}.
+{"Both the username and the resource are required","Обов'язково потрібне ім'я користувача та джерело"}.
 {"Bytestream already activated","Потік байтів вже активовано"}.
 {"Cannot remove active list","Неможливо видалити активний список"}.
-{"Cannot remove default list","Неможливо видалити список за промовчанням"}.
-{"CAPTCHA web page","Адреса капчі"}.
+{"Cannot remove default list","Неможливо видалити список за замовчуванням"}.
+{"CAPTCHA web page","Веб-сторінка CAPTCHA"}.
 {"Challenge ID","ID виклику"}.
 {"Change Password","Змінити пароль"}.
-{"Change User Password","Змінити Пароль Користувача"}.
+{"Change User Password","Змінити пароль користувача"}.
 {"Changing password is not allowed","Зміна пароля заборонена"}.
 {"Changing role/affiliation is not allowed","Зміна ролі/рангу заборонена"}.
-{"Channel already exists","Канал уже існує"}.
-{"Channel does not exist","Канал не існує"}.
+{"Channel already exists","Канал вже існує"}.
+{"Channel does not exist","Каналу не існує"}.
+{"Channel JID","Канали JID"}.
 {"Channels","Канали"}.
 {"Characters not allowed:","Заборонені символи:"}.
-{"Chatroom configuration modified","Конфігурація кімнати змінилась"}.
-{"Chatroom is created","Створено кімнату"}.
-{"Chatroom is destroyed","Знищено кімнату"}.
-{"Chatroom is started","Запущено кімнату"}.
-{"Chatroom is stopped","Зупинено кімнату"}.
+{"Chatroom configuration modified","Конфігурацію кімнати змінено"}.
+{"Chatroom is created","Кімнату створено"}.
+{"Chatroom is destroyed","Кімнату видалено"}.
+{"Chatroom is started","Кімнату запущено"}.
+{"Chatroom is stopped","Кімнату зупинено"}.
 {"Chatrooms","Кімнати"}.
-{"Choose a username and password to register with this server","Виберіть назву користувача та пароль для реєстрації на цьому сервері"}.
+{"Choose a username and password to register with this server","Виберіть логін і пароль для реєстрації на цьому сервері"}.
 {"Choose storage type of tables","Оберіть тип збереження таблиць"}.
-{"Choose whether to approve this entity's subscription.","Вирішіть, чи задовольнити запит цього об'єкту на підписку."}.
+{"Choose whether to approve this entity's subscription.","Виберіть, чи підтверджувати підписку."}.
 {"City","Місто"}.
 {"Client acknowledged more stanzas than sent by server","Клієнт підтвердив більше повідомлень, ніж було відправлено сервером"}.
 {"Commands","Команди"}.
-{"Conference room does not exist","Конференція не існує"}.
+{"Conference room does not exist","Кімната для переговорів відсутня"}.
 {"Configuration of room ~s","Конфігурація кімнати ~s"}.
 {"Configuration","Конфігурація"}.
 {"Connected Resources:","Підключені ресурси:"}.
 {"Contact Addresses (normally, room owner or owners)","Контактні адреси (зазвичай, власника або власників кімнати)"}.
 {"Country","Країна"}.
-{"CPU Time:","Процесорний час:"}.
+{"CPU Time:","Час роботи процесора:"}.
 {"Current Discussion Topic","Поточна тема обговорення"}.
-{"Database failure","Помилка база даних"}.
+{"Database failure","Збій бази даних"}.
 {"Database Tables at ~p","Таблиці бази даних на ~p"}.
 {"Database Tables Configuration at ","Конфігурація таблиць бази даних на "}.
 {"Database","База даних"}.
-{"December","грудня"}.
-{"Default users as participants","Зробити користувачів учасниками за замовчуванням"}.
+{"December","Грудень"}.
+{"Default users as participants","Користувачі за замовчуванням як учасники"}.
 {"Delete content","Видалити вміст"}.
 {"Delete message of the day on all hosts","Видалити повідомлення дня на усіх хостах"}.
 {"Delete message of the day","Видалити повідомлення дня"}.
-{"Delete Selected","Видалити виділені"}.
+{"Delete Selected","Видалити вибране"}.
 {"Delete table","Видалити таблицю"}.
-{"Delete User","Видалити Користувача"}.
+{"Delete User","Видалити користувача"}.
 {"Deliver event notifications","Доставляти сповіщення про події"}.
 {"Deliver payloads with event notifications","Доставляти разом з повідомленнями про публікації самі публікації"}.
 {"Description:","Опис:"}.
