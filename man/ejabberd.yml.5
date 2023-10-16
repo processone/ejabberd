@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 04/17/2023
+.\"      Date: 10/16/2023
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "04/17/2023" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "10/16/2023" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,7 +82,7 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/23\&.04/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/23\&.10/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
@@ -303,7 +303,9 @@ acme:
 .PP
 \fBallow_contrib_modules\fR: \fItrue | false\fR
 .RS 4
-Whether to allow installation of third\-party modules or not\&. The default value is
+Whether to allow installation of third\-party modules or not\&. See
+ejabberd\-contrib
+documentation section\&. The default value is
 \fItrue\fR\&.
 .RE
 .PP
@@ -395,6 +397,18 @@ Same as
 \fIcache_size\fR, but applied to authentication cache only\&. If not set, the value from
 \fIcache_size\fR
 will be used\&.
+.RE
+.sp
+\fINote\fR about the next option: added in 23\&.10:
+.PP
+\fBauth_external_user_exists_check\fR: \fItrue | false\fR
+.RS 4
+Supplement check for user existence based on
+\fImod_last\fR
+data, for authentication methods that don\(cqt have a way to reliable tell if user exists (like is the case for
+\fIjwt\fR
+and certificate based authentication)\&. This helps with processing offline message for those users\&. The default value is
+\fItrue\fR\&.
 .RE
 .PP
 \fBauth_method\fR: \fI[mnesia | sql | anonymous | external | jwt | ldap | pam, \&.\&.\&.]\fR
@@ -881,6 +895,16 @@ Disallows the usage of those options in the included file
 \fIFilename\fR\&. The options that match this criteria are not accepted\&. The default value is an empty list\&.
 .RE
 .RE
+.sp
+\fINote\fR about the next option: added in 23\&.10:
+.PP
+\fBinstall_contrib_modules\fR: \fI[Module, \&.\&.\&.]\fR
+.RS 4
+Modules to install from
+ejabberd\-contrib
+at start time\&. The default value is an empty list of modules:
+\fI[]\fR\&.
+.RE
 .PP
 \fBjwt_auth_only_rule\fR: \fIAccessName\fR
 .RS 4
@@ -1115,7 +1139,7 @@ This option can be used to tune tick time parameter of
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/23\&.04/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/23\&.10/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -3930,6 +3954,8 @@ This module provides support for XEP\-0045: Multi\-User Chat\&. Users can discov
 .sp
 The MUC service allows any Jabber ID to register a nickname, so nobody else can use that nickname in any room in the MUC service\&. To register a nickname, open the Service Discovery in your XMPP client and register in the MUC service\&.
 .sp
+It is also possible to register a nickname in a room, so nobody else can use that nickname in that room\&. If a nick is registered in the MUC service, that nick cannot be registered in any room, and vice versa: a nick that is registered in a room cannot be registered at the MUC service\&.
+.sp
 This module supports clustering and load balancing\&. One module can be started per cluster node\&. Rooms are distributed at creation time on all available MUC module instances\&. The multi\-user chat module is clustered but the rooms themselves are not clustered nor fault\-tolerant: if the node managing a set of rooms goes down, the rooms disappear and they will be recreated on an available node on first connection attempt\&.
 .sp
 .it 1 an-trap
@@ -3972,12 +3998,14 @@ To configure who is allowed to modify the
 room option\&. The default value is
 \fIall\fR, which means everyone is allowed to modify that option\&.
 .RE
+.sp
+\fINote\fR about the next option: improved in 23\&.10:
 .PP
 \fBaccess_register\fR: \fIAccessName\fR
 .RS 4
-This option specifies who is allowed to register nickname within the Multi\-User Chat service\&. The default is
+This option specifies who is allowed to register nickname within the Multi\-User Chat service and rooms\&. The default is
 \fIall\fR
-for backward compatibility, which means that any user is allowed to register any free nick\&.
+for backward compatibility, which means that any user is allowed to register any free nick in the MUC service and in the rooms\&.
 .RE
 .sp
 \fINote\fR about the next option: added in 22\&.05:
@@ -4006,12 +4034,6 @@ are:
 \fBallow_change_subj\fR: \fItrue | false\fR
 .RS 4
 Allow occupants to change the subject\&. The default value is
-\fItrue\fR\&.
-.RE
-.PP
-\fBallow_private_messages\fR: \fItrue | false\fR
-.RS 4
-Occupants can send private messages to other occupants\&. The default value is
 \fItrue\fR\&.
 .RE
 .PP
@@ -4057,6 +4079,12 @@ Allow visitors to send status text in presence updates\&. If disallowed, the sta
 .RS 4
 Allow visitors in a moderated room to request voice\&. The default value is
 \fItrue\fR\&.
+.RE
+.PP
+\fBallowpm\fR: \fIanyone | participants | moderators | none\fR
+.RS 4
+Who can send private messages\&. The default value is
+\fIanyone\fR\&.
 .RE
 .PP
 \fBanonymous\fR: \fItrue | false\fR
@@ -4675,6 +4703,15 @@ or a conference JID is appended to the
 otherwise\&. There is no default value\&.
 .RE
 .RE
+.SS "mod_muc_occupantid"
+.sp
+This module implements XEP\-0421: Anonymous unique occupant identifiers for MUCs\&.
+.sp
+When the module is enabled, the feature is enabled in all semi\-anonymous rooms\&.
+.sp
+This module is available since ejabberd 23\&.10\&.
+.sp
+The module has no options\&.
 .SS "mod_muc_rtbl"
 .sp
 This module implement Real\-time blocklists for MUC rooms\&.
@@ -5196,6 +5233,8 @@ option, but applied to this module only\&.
 This module adds support for XEP\-0049: Private XML Storage\&.
 .sp
 Using this method, XMPP entities can store private data on the server, retrieve it whenever necessary and share it between multiple connected clients of the same user\&. The data stored might be anything, as long as it is a valid XML\&. One typical usage is storing a bookmark of all user\(cqs conferences (XEP\-0048: Bookmarks)\&.
+.sp
+It also implements the bookmark conversion described in XEP\-0402: PEP Native Bookmarks, see the command bookmarks_to_pep\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -5937,6 +5976,16 @@ If this option is set to
 If this option is set to
 \fItrue\fR, the sender\(cqs JID is included with push notifications generated for incoming messages with a body\&. The default value is
 \fIfalse\fR\&.
+.RE
+.sp
+\fINote\fR about the next option: added in 23\&.10:
+.PP
+\fBnotify_on\fR: \fImessages | all\fR
+.RS 4
+If this option is set to
+\fImessages\fR, notifications are generated only for actual chat messages with a body text (or some encrypted payload)\&. If it\(cqs set to
+\fIall\fR, any kind of XMPP stanza will trigger a notification\&. If unsure, it\(cqs strongly recommended to stick to
+\fIall\fR, which is the default value\&.
 .RE
 .PP
 \fBuse_cache\fR: \fItrue | false\fR
@@ -7748,13 +7797,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 23\&.04\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 23\&.10\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/23\&.04/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/23\&.10/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
