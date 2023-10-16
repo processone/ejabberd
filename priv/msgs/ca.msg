@@ -48,6 +48,7 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Qualsevol amb una subscripció de presencia de 'both' o 'from' pot subscriure's i publicar elements"}.
 {"Anyone with Voice","Qualsevol amb Veu"}.
 {"Anyone","Qualsevol"}.
+{"Apparently your account has no administration rights in this server. Please check how to grant admin rights in: https://docs.ejabberd.im/admin/installation/#administration-account","Aparentment el teu compte no te privilegis d'administrador en este servidor. Per favor consulta com obtindre privilegis d'administrador en: https://docs.ejabberd.im/admin/installation/#administration-account"}.
 {"April","Abril"}.
 {"Attribute 'channel' is required for this request","L'atribut 'channel' és necessari per a aquesta petició"}.
 {"Attribute 'id' is mandatory for MIX messages","L'atribut 'id' es necessari per a missatges MIX"}.
@@ -659,6 +660,7 @@
 {"Whether to allow subscriptions","Permetre subscripcions"}.
 {"Whether to make all subscriptions temporary, based on subscriber presence","Si fer totes les subscripcions temporals, basat en la presencia del subscriptor"}.
 {"Whether to notify owners about new subscribers and unsubscribes","Si notificar als propietaris sobre noves subscripcions i desubscripcions"}.
+{"Who can send private messages","Qui pot enviar missatges privats"}.
 {"Who may associate leaf nodes with a collection","Qui pot associar nodes fulla amb una col·lecció"}.
 {"Wrong parameters in the web formulary","Paràmetres incorrectes en el formulari web"}.
 {"Wrong xmlns","El xmlns ès incorrecte"}.
@@ -670,6 +672,7 @@
 {"XMPP Show Value of XA (Extended Away)","Valor 'show' de XMPP: XA (Molt Ausent)"}.
 {"XMPP URI of Associated Publish-Subscribe Node","URI XMPP del Node Associat Publish-Subscribe"}.
 {"You are being removed from the room because of a system shutdown","Has sigut expulsat de la sala perquè el sistema va a apagar-se"}.
+{"You are not allowed to send private messages","No tens permés enviar missatges privats"}.
 {"You are not joined to the channel","No t'has unit al canal"}.
 {"You can later change your password using an XMPP client.","Podràs canviar la teva contrasenya més endavant utilitzant un client XMPP."}.
 {"You have been banned from this room","Has sigut bloquejat en aquesta sala"}.

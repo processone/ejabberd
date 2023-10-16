@@ -48,6 +48,7 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Cualquiera con una suscripción a la presencia de 'ambos' o 'de' puede suscribirse y recibir elementos"}.
 {"Anyone with Voice","Cualquiera con Voz"}.
 {"Anyone","Cualquiera"}.
+{"Apparently your account has no administration rights in this server. Please check how to grant admin rights in: https://docs.ejabberd.im/admin/installation/#administration-account","Aparentemente tu cuenta no tiene permisos de administración en este servidor. Por favor consulta cómo concederle privilegios de administrador en: https://docs.ejabberd.im/admin/installation/#administration-account"}.
 {"April","Abril"}.
 {"Attribute 'channel' is required for this request","El atributo 'channel' es necesario para esta petición"}.
 {"Attribute 'id' is mandatory for MIX messages","El atributo 'id' es necesario para mensajes MIX"}.
@@ -659,6 +660,7 @@
 {"Whether to allow subscriptions","Permitir subscripciones"}.
 {"Whether to make all subscriptions temporary, based on subscriber presence","Si hacer que todas las suscripciones sean temporales, basado en la presencia del suscriptor"}.
 {"Whether to notify owners about new subscribers and unsubscribes","Si notificar a los dueños sobre nuevas suscripciones y desuscripciones"}.
+{"Who can send private messages","Quién puede enviar mensajes privados"}.
 {"Who may associate leaf nodes with a collection","Quien puede asociar nodos hoja con una colección"}.
 {"Wrong parameters in the web formulary","Parámetros incorrectos en el formulario web"}.
 {"Wrong xmlns","XMLNS incorrecto"}.
@@ -670,6 +672,7 @@
 {"XMPP Show Value of XA (Extended Away)","Valor 'Show' de XMPP: XA (Ausente Extendido)"}.
 {"XMPP URI of Associated Publish-Subscribe Node","URI XMPP del Nodo Asociado de Publicar-Subscribir"}.
 {"You are being removed from the room because of a system shutdown","Estás siendo expulsado de la sala porque el sistema se va a detener"}.
+{"You are not allowed to send private messages","No tienes permitido enviar mensajes privados"}.
 {"You are not joined to the channel","No has entrado en el canal"}.
 {"You can later change your password using an XMPP client.","Puedes cambiar tu contraseña después, usando un cliente XMPP."}.
 {"You have been banned from this room","Has sido bloqueado en esta sala"}.
