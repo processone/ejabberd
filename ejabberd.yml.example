@@ -36,12 +36,11 @@ listen:
   -
     port: 5223
     ip: "::"
-    tls: true
     module: ejabberd_c2s
     max_stanza_size: 262144
     shaper: c2s_shaper
     access: c2s
-    starttls_required: true
+    tls: true
   -
     port: 5269
     ip: "::"
