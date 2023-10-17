@@ -1,6 +1,6 @@
 # Version 23.10
 
-Compilation
+Compilation:
 - Erlang/OTP: Raise the requirement to Erlang/OTP 20.0 as a minimum
 - CI: Update tests to Erlang/OTP 26 and recent Elixir
 - Move Xref and Dialyzer options from workflows to `rebar.config`
@@ -13,7 +13,7 @@ Compilation
 - Elixir: When building OTP release with mix, keep `ERLANG_NODE=ejabberd@localhost`
 - `ejabberdctl`: Pass `ERLANG_OPTS` when calling `erl` to parse the `INET_DIST_INTERFACE` ([#4066](https://github.com/processone/ejabberd/issues/#4066)
 
-Commands
+Commands:
 - `create_room_with_opts`: Fix typo and move examples to `args_example` ([#4080](https://github.com/processone/ejabberd/issues/#4080))
 - `etop`: Let `ejabberdctl etop` work in a release (if `observer` application is available)
 - `get_roster`: Command now returns groups in a list instead of newlines ([#4088](https://github.com/processone/ejabberd/issues/#4088))
@@ -22,10 +22,8 @@ Commands
 - `ejabberdctl`: Improve printing lists in results
 - `ejabberdctl`: Support `policy=user` in the help and return proper arguments
 - `ejabberdctl`: Document how to stop a debug shell: control+g
-- `ejabberdctl`: Support policy=user in the help and return proper arguments
-- `ejabberdctl`: Improve printing lists in results
 
-Container
+Container:
 - Dockerfile: Add missing dependency for mssql databases
 - Dockerfile: Reorder stages and steps for consistency
 - Dockerfile: Use Alpine as base for `METHOD=package`
@@ -33,7 +31,7 @@ Container
 - Dockerfile: Provide specific OTP and elixir vsn for direct compilation
 - Halt ejabberd if a command in `CTL_ON_` fails during ejabberd startup
 
-Core
+Core:
 - `auth_external_user_exists_check`: New option ([#3377](https://github.com/processone/ejabberd/issues/#3377))
 - `gen_mod`: Extend `gen_mod` API to simplify hooks and IQ handlers registration
 - `gen_mod`: Add shorter forms for `gen_mod` hook/`iq_handler` API
@@ -48,14 +46,14 @@ Core
 - Web Admin: In roster page move the `AddJID` textbox to top ([#4067](https://github.com/processone/ejabberd/issues/#4067))
 - Web Admin: Show a warning when visiting webadmin with non-privileged account ([#4089](https://github.com/processone/ejabberd/issues/#4089))
 
-Docs
+Docs:
 - Example configuration: clarify 5223 tls options; specify s2s shaper
 - Make sure that `policy=user` commands have `host` instead of `server` arg in docs
 - Improve syntax of many command descriptions for the Docs site
 - Move example Perl extauth script from ejabberd git to Docs site
 - Remove obsolete example files, and add link in Docs to the archived copies
 
-Installers (`make-binaries`)
+Installers (`make-binaries`):
 - Bump Erlang/OTP version to 26.1.1, and other dependencies
 - Remove outdated workaround
 - Don't build Linux-PAM examples
@@ -67,7 +65,7 @@ Installers (`make-binaries`)
 - Set kernel version for all builds
 - Let curl fail on HTTP errors
 
-Modules
+Modules:
 - `mod_muc_log`: Add trailing backslash to URLs shown in disco info
 - `mod_muc_occupantid`: New module with support for XEP-0421 Occupant Id ([#3397](https://github.com/processone/ejabberd/issues/#3397))
 - `mod_muc_rtbl`: Better error handling in ([#4050](https://github.com/processone/ejabberd/issues/#4050))
@@ -85,7 +83,7 @@ Modules
 - `mod_register_web`: Make redirect to page that end with `/` ([#3177](https://github.com/processone/ejabberd/issues/#3177))
 - `mod_shared_roster_ldap`: Don't crash in `get_member_jid` on empty output ([#3614](https://github.com/processone/ejabberd/issues/#3614))
 
-MUC
+MUC:
 - Add support to register nick in a room ([#3455](https://github.com/processone/ejabberd/issues/#3455))
 - Convert `allow_private_message` MUC room option to `allowpm` ([#3736](https://github.com/processone/ejabberd/issues/#3736))
 - Update xmpp version to send `roomconfig_changesubject` in disco#info ([#4085](https://github.com/processone/ejabberd/issues/#4085))
@@ -98,7 +96,7 @@ MUC
 - Remove existing role information for users that are kicked from room ([#4035](https://github.com/processone/ejabberd/issues/#4035))
 - Expand rule "mucsub subscribers are members in members only rooms" to more places
 
-SQL
+SQL:
 - Add ability to force alternative upsert implementation in mysql
 - Properly parse mysql version even if it doesn't have type tag
 - Use prepared statement with mysql
