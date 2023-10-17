@@ -1,3 +1,113 @@
+# Version 23.10
+
+Compilation
+- Erlang/OTP: Raise the requirement to Erlang/OTP 20.0 as a minimum
+- CI: Update tests to Erlang/OTP 26 and recent Elixir
+- Move Xref and Dialyzer options from workflows to `rebar.config`
+- Add sections to `rebar.config` to organize its content
+- Dialyzer dirty workarounds because `re:mp()` is not an exported type
+- When installing module already configured, keep config as example
+- Elixir 1.15 removed support for `--app`
+- Elixir: Improve support to stop external modules written in Elixir
+- Elixir: Update syntax of function calls as recommended by Elixir compiler
+- Elixir: When building OTP release with mix, keep `ERLANG_NODE=ejabberd@localhost`
+- `ejabberdctl`: Pass `ERLANG_OPTS` when calling `erl` to parse the `INET_DIST_INTERFACE` ([#4066](https://github.com/processone/ejabberd/issues/#4066)
+
+Commands
+- `create_room_with_opts`: Fix typo and move examples to `args_example` ([#4080](https://github.com/processone/ejabberd/issues/#4080))
+- `etop`: Let `ejabberdctl etop` work in a release (if `observer` application is available)
+- `get_roster`: Command now returns groups in a list instead of newlines ([#4088](https://github.com/processone/ejabberd/issues/#4088))
+- `halt`: New command to halt ejabberd abruptly with an error status code
+- `ejabberdctl`: Fix calling ejabberdctl command with wrong number of arguments with Erlang 26
+- `ejabberdctl`: Improve printing lists in results
+- `ejabberdctl`: Support `policy=user` in the help and return proper arguments
+- `ejabberdctl`: Document how to stop a debug shell: control+g
+- `ejabberdctl`: Support policy=user in the help and return proper arguments
+- `ejabberdctl`: Improve printing lists in results
+
+Container
+- Dockerfile: Add missing dependency for mssql databases
+- Dockerfile: Reorder stages and steps for consistency
+- Dockerfile: Use Alpine as base for `METHOD=package`
+- Dockerfile: Rename packages to improve compatibility
+- Dockerfile: Provide specific OTP and elixir vsn for direct compilation
+- Halt ejabberd if a command in `CTL_ON_` fails during ejabberd startup
+
+Core
+- `auth_external_user_exists_check`: New option ([#3377](https://github.com/processone/ejabberd/issues/#3377))
+- `gen_mod`: Extend `gen_mod` API to simplify hooks and IQ handlers registration
+- `gen_mod`: Add shorter forms for `gen_mod` hook/`iq_handler` API
+- `gen_mod`: Update modules to the new `gen_mod` API
+- `install_contrib_modules`: New option to define contrib modules to install automatically
+- `unix_socket`: New listener option, useful when setting unix socket files ([#4059](https://github.com/processone/ejabberd/issues/#4059))
+- `ejabberd_systemd`: Add a few debug messages
+- `ejabberd_systemd`: Avoid using `gen_server` timeout ([#4054](https://github.com/processone/ejabberd/issues/#4054))([#4058](https://github.com/processone/ejabberd/issues/#4058))
+- `ejabberd_listener`: Increase default listen queue backlog value to 128, which is the default value on both Linux and FreeBSD ([#4025](https://github.com/processone/ejabberd/issues/#4025))
+- OAuth: Handle `badpass` error message
+- When sending message on behalf of user, trigger `user_send_packet` ([#3990](https://github.com/processone/ejabberd/issues/#3990))
+- Web Admin: In roster page move the `AddJID` textbox to top ([#4067](https://github.com/processone/ejabberd/issues/#4067))
+- Web Admin: Show a warning when visiting webadmin with non-privileged account ([#4089](https://github.com/processone/ejabberd/issues/#4089))
+
+Docs
+- Example configuration: clarify 5223 tls options; specify s2s shaper
+- Make sure that `policy=user` commands have `host` instead of `server` arg in docs
+- Improve syntax of many command descriptions for the Docs site
+- Move example Perl extauth script from ejabberd git to Docs site
+- Remove obsolete example files, and add link in Docs to the archived copies
+
+Installers (`make-binaries`)
+- Bump Erlang/OTP version to 26.1.1, and other dependencies
+- Remove outdated workaround
+- Don't build Linux-PAM examples
+- Fix check for current Expat version
+- Apply minor simplifications
+- Don't duplicate config entries
+- Don't hard-code musl version
+- Omit unnecessary glibc setting
+- Set kernel version for all builds
+- Let curl fail on HTTP errors
+
+Modules
+- `mod_muc_log`: Add trailing backslash to URLs shown in disco info
+- `mod_muc_occupantid`: New module with support for XEP-0421 Occupant Id ([#3397](https://github.com/processone/ejabberd/issues/#3397))
+- `mod_muc_rtbl`: Better error handling in ([#4050](https://github.com/processone/ejabberd/issues/#4050))
+- `mod_private`: Add support for XEP-0402 PEP Native Bookmarks
+- `mod_privilege`: Don't fail to edit roster ([#3942](https://github.com/processone/ejabberd/issues/#3942))
+- `mod_pubsub`: Fix usage of `plugins` option, which produced `default_node_config` ignore ([#4070](https://github.com/processone/ejabberd/issues/#4070))
+- `mod_pubsub`: Add `pubsub_delete_item` hook
+- `mod_pubsub`: Report support of `config-node-max` in pep
+- `mod_pubsub`: Relay pubsub iq queries to muc members without using bare jid ([#4093](https://github.com/processone/ejabberd/issues/#4093))
+- `mod_pubsub`: Allow pubsub node owner to overwrite items published by other persons
+- `mod_push_keepalive`: Delay `wake_on_start`
+- `mod_push_keepalive`: Don't let hook crash
+- `mod_push`: Add `notify_on` option
+- `mod_push`: Set `last-message-sender` to bare JID
+- `mod_register_web`: Make redirect to page that end with `/` ([#3177](https://github.com/processone/ejabberd/issues/#3177))
+- `mod_shared_roster_ldap`: Don't crash in `get_member_jid` on empty output ([#3614](https://github.com/processone/ejabberd/issues/#3614))
+
+MUC
+- Add support to register nick in a room ([#3455](https://github.com/processone/ejabberd/issues/#3455))
+- Convert `allow_private_message` MUC room option to `allowpm` ([#3736](https://github.com/processone/ejabberd/issues/#3736))
+- Update xmpp version to send `roomconfig_changesubject` in disco#info ([#4085](https://github.com/processone/ejabberd/issues/#4085))
+- Fix crash when loading room from DB older than ffa07c6, 23.04
+- Fix support to retract a MUC room message
+- Don't always store messages passed through `muc_filter_message` ([#4083](https://github.com/processone/ejabberd/issues/#4083))
+- Pass also MUC room retract messages over the `muc_filter_message` ([#3397](https://github.com/processone/ejabberd/issues/#3397))
+- Pass MUC room private messages over the `muc_filter_message` too ([#3397](https://github.com/processone/ejabberd/issues/#3397))
+- Store the subject author JID, and run `muc_filter_message` when sending subject ([#3397](https://github.com/processone/ejabberd/issues/#3397))
+- Remove existing role information for users that are kicked from room ([#4035](https://github.com/processone/ejabberd/issues/#4035))
+- Expand rule "mucsub subscribers are members in members only rooms" to more places
+
+SQL
+- Add ability to force alternative upsert implementation in mysql
+- Properly parse mysql version even if it doesn't have type tag
+- Use prepared statement with mysql
+- Add alternate version of mysql upsert
+- `ejabberd_auth_sql`: Reset scram fields when setting plain password
+- `mod_privacy_sql`: Fix return values from `calculate_diff`
+- `mod_privacy_sql`: Optimize `set_list`
+- `mod_privacy_sql`: Use more efficient way to calculate changes in `set_privacy_list`
+
 # Version 23.04
 
 General:
