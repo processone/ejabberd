@@ -247,8 +247,8 @@ delete_node(Host, Node) ->
 
 fixup_node(#pubsub_node{options = Options} = Node) ->
     Res = lists:splitwith(
-	fun({max_items, infinity}) -> true;
-	   (_) -> false
+	fun({max_items, infinity}) -> false;
+	   (_) -> true
 	end, Options),
     Options2 = case Res of
 		   {Before, [_ | After]} ->
