@@ -328,13 +328,16 @@ raw_to_node(Host, {Node, Parent, Type, Nidx}) ->
 	       "where nodeid=%(Nidx)d"))
     of
 	{selected, ROptions} ->
-	    DbOpts = lists:map(fun ({Key, Value}) ->
-			    RKey = misc:binary_to_atom(Key),
-			    Tokens = element(2, erl_scan:string(binary_to_list(<<Value/binary, ".">>))),
-			    RValue = element(2, erl_parse:parse_term(Tokens)),
-			    {RKey, RValue}
-		    end,
-		    ROptions),
+	    DbOpts = lists:map(
+		fun({<<"max_items">>, <<"infinity">>}) ->
+		       {max_items, max};
+		   ({Key, Value}) ->
+		       RKey = misc:binary_to_atom(Key),
+		       Tokens = element(2, erl_scan:string(binary_to_list(<<Value/binary, ".">>))),
+		       RValue = element(2, erl_parse:parse_term(Tokens)),
+		       {RKey, RValue}
+		end,
+		ROptions),
 	    Module = misc:binary_to_atom(<<"node_", Type/binary, "_sql">>),
 	    StdOpts = Module:options(),
 	    lists:foldl(fun ({Key, Value}, Acc) ->

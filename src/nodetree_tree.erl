@@ -73,13 +73,13 @@ get_node(Host, Node, _From) ->
 
 get_node(Host, Node) ->
     case mnesia:read({pubsub_node, {Host, Node}}) of
-	[Record] when is_record(Record, pubsub_node) -> Record;
+	[#pubsub_node{} = Record]  -> fixup_node(Record);
 	_ -> {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
     end.
 
 get_node(Nidx) ->
     case mnesia:index_read(pubsub_node, Nidx, #pubsub_node.id) of
-	[Record] when is_record(Record, pubsub_node) -> Record;
+	[#pubsub_node{} = Record] -> fixup_node(Record);
 	_ -> {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
     end.
 
@@ -87,7 +87,8 @@ get_nodes(Host) ->
     get_nodes(Host, infinity).
 
 get_nodes(Host, infinity) ->
-    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'});
+    Nodes = mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}),
+    [fixup_node(N) || N <- Nodes];
 get_nodes(Host, Limit) ->
     case mnesia:select(
 	   pubsub_node,
@@ -96,16 +97,18 @@ get_nodes(Host, Limit) ->
 		     Node
 	     end), Limit, read) of
 	'$end_of_table' -> [];
-	{Nodes, _} -> Nodes
+	{Nodes, _} -> [fixup_node(N) || N <- Nodes]
     end.
 
 get_all_nodes({_U, _S, _R} = Owner) ->
     Host = jid:tolower(jid:remove_resource(Owner)),
-    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'});
+    Nodes = mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}),
+    [fixup_node(N) || N <- Nodes];
 get_all_nodes(Host) ->
-    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'})
+    Nodes = mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'})
 	++ mnesia:match_object(#pubsub_node{nodeid = {{'_', Host, '_'}, '_'},
-					    _ = '_'}).
+					    _ = '_'}),
+    [fixup_node(N) || N <- Nodes].
 
 get_parentnodes(Host, Node, _From) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
@@ -119,7 +122,8 @@ get_parentnodes_tree(Host, Node, _From) ->
     get_parentnodes_tree(Host, Node, 0, []).
 get_parentnodes_tree(Host, Node, Level, Acc) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
-	[Record] when is_record(Record, pubsub_node) ->
+	[#pubsub_node{} = Record0] ->
+	    Record = fixup_node(Record0),
 	    Tree = [{Level, [Record]}|Acc],
 	    case Record#pubsub_node.parents of
 		[Parent] -> get_parentnodes_tree(Host, Parent, Level+1, Tree);
@@ -130,7 +134,8 @@ get_parentnodes_tree(Host, Node, Level, Acc) ->
     end.
 
 get_subnodes(Host, <<>>, infinity) ->
-    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, parents = [], _ = '_'});
+    Nodes = mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, parents = [], _ = '_'}),
+    [fixup_node(N) || N <- Nodes];
 get_subnodes(Host, <<>>, Limit) ->
     case mnesia:select(
 	   pubsub_node,
@@ -139,10 +144,10 @@ get_subnodes(Host, <<>>, Limit) ->
 		     Node
 	     end), Limit, read) of
 	'$end_of_table' -> [];
-	{Nodes, _} -> Nodes
+	{Nodes, _} -> [fixup_node(N) || N <- Nodes]
     end;
 get_subnodes(Host, Node, infinity) ->
-    Q = qlc:q([N
+    Q = qlc:q([fixup_node(N)
 		|| #pubsub_node{nodeid = {NHost, _},
 			parents = Parents} =
 		    N
@@ -158,9 +163,12 @@ get_subnodes(Host, Node, Limit) ->
 	     end), Limit, read) of
 	'$end_of_table' -> [];
 	{Nodes, _} ->
-	    lists:filter(
-	      fun(#pubsub_node{parents = Parents}) ->
-		      lists:member(Node, Parents)
+	    lists:filtermap(
+	      fun(#pubsub_node{parents = Parents} = N2) ->
+		      case lists:member(Node, Parents) of
+			  true -> {true, fixup_node(N2)};
+			  _ -> false
+		      end
 	      end, Nodes)
     end.
 
@@ -236,3 +244,16 @@ delete_node(Host, Node) ->
 	end,
 	Removed),
     Removed.
+
+fixup_node(#pubsub_node{options = Options} = Node) ->
+    Res = lists:splitwith(
+	fun({max_items, infinity}) -> true;
+	   (_) -> false
+	end, Options),
+    Options2 = case Res of
+		   {Before, [_ | After]} ->
+		       Before ++ [{max_items, max} | After];
+		   {Rest, []} ->
+		       Rest
+	       end,
+    Node#pubsub_node{options = Options2}.
