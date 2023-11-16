@@ -442,7 +442,7 @@ handle_a(State, #sm_a{h = H}) ->
     resend_rack(State1).
 
 -spec handle_resume(state(), sm_resume()) -> {ok, state()} | {error, state()}.
-handle_resume(#{user := User, lserver := LServer, lang := Lang} = State,
+handle_resume(#{user := User, lserver := LServer} = State,
 	      #sm_resume{} = Resume) ->
     case has_resume_data(State, Resume) of
 	{ok, ResumedState, ResumedEl} ->
