@@ -61,7 +61,8 @@
 	 c2s_copy_session/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
-	 webadmin_user_parse_query/5]).
+	 webadmin_user_parse_query/5,
+	 c2s_handle_bind2_inline/2]).
 
 -export([mod_opt_type/1, mod_options/1, mod_doc/0, depends/2]).
 
@@ -130,6 +131,7 @@ start(Host, Opts) ->
           {hook, disco_info, get_info, 50},
           {hook, c2s_handle_info, c2s_handle_info, 50},
           {hook, c2s_copy_session, c2s_copy_session, 50},
+	  {hook, c2s_handle_bind2_inline, c2s_handle_bind2_inline, 50},
           {hook, webadmin_page_host, webadmin_page, 50},
           {hook, webadmin_user, webadmin_user, 50},
           {hook, webadmin_user_parse_query,  webadmin_user_parse_query, 50},
@@ -295,6 +297,10 @@ c2s_handle_info(State, _) ->
 c2s_copy_session(State, #{resend_offline := Flag}) ->
     State#{resend_offline => Flag};
 c2s_copy_session(State, _) ->
+    State.
+
+c2s_handle_bind2_inline(#{jid := #jid{luser = LUser, lserver = LServer}} = State, _Els) ->
+    delete_all_msgs(LUser, LServer),
     State.
 
 -spec handle_offline_query(iq()) -> iq().

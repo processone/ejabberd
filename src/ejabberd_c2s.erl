@@ -40,7 +40,9 @@
 	 handle_stream_start/2, handle_stream_end/2,
 	 handle_unauthenticated_packet/2, handle_authenticated_packet/2,
 	 handle_auth_success/4, handle_auth_failure/4, handle_send/3,
-	 handle_recv/3, handle_cdata/2, handle_unbinded_packet/2]).
+	 handle_recv/3, handle_cdata/2, handle_unbinded_packet/2,
+	 inline_stream_features/1, handle_sasl2_inline/2,
+	 handle_sasl2_inline_post/3, handle_bind2_inline/2]).
 %% Hooks
 -export([handle_unexpected_cast/2, handle_unexpected_call/3,
 	 process_auth_result/3, reject_unauthenticated_packet/2,
@@ -381,6 +383,9 @@ unauthenticated_stream_features(#{lserver := LServer}) ->
 authenticated_stream_features(#{lserver := LServer}) ->
     ejabberd_hooks:run_fold(c2s_post_auth_features, LServer, [], [LServer]).
 
+inline_stream_features(#{lserver := LServer}) ->
+    ejabberd_hooks:run_fold(c2s_inline_features, LServer, {[], []}, [LServer]).
+
 sasl_mechanisms(Mechs, #{lserver := LServer, stream_encrypted := Encrypted} = State) ->
     Type = ejabberd_auth:store_type(LServer),
     Mechs1 = ejabberd_option:disable_sasl_mechanisms(LServer),
@@ -532,6 +537,18 @@ handle_authenticated_packet(Pkt, #{lserver := LServer, jid := JID,
 handle_cdata(Data, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_cdata, LServer,
 			    State, [Data]).
+
+handle_sasl2_inline(Els, #{lserver := LServer} = State) ->
+    ejabberd_hooks:run_fold(c2s_handle_sasl2_inline, LServer,
+			    {State, Els, []}, []).
+
+handle_sasl2_inline_post(Els, Results, #{lserver := LServer} = State) ->
+    ejabberd_hooks:run_fold(c2s_handle_sasl2_inline_post, LServer,
+			    State, [Els, Results]).
+
+handle_bind2_inline(Els, #{lserver := LServer} = State) ->
+    ejabberd_hooks:run_fold(c2s_handle_bind2_inline, LServer,
+			    State, [Els]).
 
 handle_recv(El, Pkt, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_recv, LServer, State, [El, Pkt]).

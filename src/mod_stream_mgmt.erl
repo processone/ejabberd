@@ -33,9 +33,14 @@
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
 	 c2s_unbinded_packet/2, c2s_closed/2, c2s_terminated/2,
 	 c2s_handle_send/3, c2s_handle_info/2, c2s_handle_call/3,
-	 c2s_handle_recv/3]).
+	 c2s_handle_recv/3, c2s_inline_features/2,
+	 c2s_handle_sasl2_inline/1, c2s_handle_sasl2_inline_post/3,
+	 c2s_handle_bind2_inline/2]).
 %% adjust pending session timeout / access queue
 -export([get_resume_timeout/1, set_resume_timeout/2, queue_find/2]).
+
+%% for sasl2 inline resume
+-export([has_resume_data/2, post_resume_tasks/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -65,6 +70,7 @@ start(_Host, Opts) ->
     init_cache(Opts),
     {ok, [{hook, c2s_stream_started, c2s_stream_started, 50},
           {hook, c2s_post_auth_features, c2s_stream_features, 50},
+	  {hook, c2s_inline_features, c2s_inline_features, 50},
           {hook, c2s_unauthenticated_packet, c2s_unauthenticated_packet, 50},
           {hook, c2s_unbinded_packet, c2s_unbinded_packet, 50},
           {hook, c2s_authenticated_packet, c2s_authenticated_packet, 50},
@@ -72,6 +78,9 @@ start(_Host, Opts) ->
           {hook, c2s_handle_recv, c2s_handle_recv, 50},
           {hook, c2s_handle_info, c2s_handle_info, 50},
           {hook, c2s_handle_call, c2s_handle_call, 50},
+	  {hook, c2s_handle_sasl2_inline, c2s_handle_sasl2_inline, 50},
+	  {hook, c2s_handle_sasl2_inline_post, c2s_handle_sasl2_inline_post, 50},
+	  {hook, c2s_handle_bind2_inline, c2s_handle_bind2_inline, 50},
           {hook, c2s_closed, c2s_closed, 50},
           {hook, c2s_terminated, c2s_terminated, 50}]}.
 
@@ -110,6 +119,45 @@ c2s_stream_features(Acc, Host) ->
 	     #feature_sm{xmlns = ?NS_STREAM_MGMT_3}|Acc];
 	false ->
 	    Acc
+    end.
+
+c2s_inline_features({Sasl, Bind} = Acc, Host) ->
+    case gen_mod:is_loaded(Host, ?MODULE) of
+	true ->
+	    {[#feature_sm{xmlns = ?NS_STREAM_MGMT_3} | Sasl],
+	     [#feature_sm{xmlns = ?NS_STREAM_MGMT_3} | Bind]};
+	false ->
+	    Acc
+    end.
+
+c2s_handle_sasl2_inline({State, Els, Results} = Acc) ->
+    case lists:keytake(sm_resume, 1, Els) of
+	{value, Resume, Rest} ->
+	    case has_resume_data(State, Resume) of
+		{ok, NewState, Resumed} ->
+		    Rest2 = lists:keydelete(bind2_bind, 1, Rest),
+		    {NewState, Rest2, [Resumed | Results]};
+		{error, ResumeError} ->
+		    {State, Els, [ResumeError | Results]}
+	    end;
+	_ ->
+	    Acc
+    end.
+
+c2s_handle_sasl2_inline_post(State, _Els, Results) ->
+    case lists:keyfind(sm_resumed, 1, Results) of
+	false ->
+	    State;
+	_ ->
+	    post_resume_tasks(State)
+    end.
+
+c2s_handle_bind2_inline(State, Els) ->
+    case lists:keyfind(sm_enable, 1, Els) of
+	#sm_enable{} = Pkt ->
+	    negotiate_stream_mgmt(Pkt, State);
+	_ ->
+	    State
     end.
 
 c2s_unauthenticated_packet(#{lang := Lang} = State, Pkt) when ?is_sm_packet(Pkt) ->
@@ -394,38 +442,47 @@ handle_a(State, #sm_a{h = H}) ->
     resend_rack(State1).
 
 -spec handle_resume(state(), sm_resume()) -> {ok, state()} | {error, state()}.
-handle_resume(#{user := User, lserver := LServer,
-		lang := Lang, socket := Socket} = State,
-	      #sm_resume{h = H, previd = PrevID, xmlns = Xmlns}) ->
-    R = case inherit_session_state(State, PrevID) of
-	    {ok, InheritedState} ->
-		{ok, InheritedState, H};
-	    {error, Err, InH} ->
-		{error, #sm_failed{reason = 'item-not-found',
-				   text = xmpp:mk_text(format_error(Err), Lang),
-				   h = InH, xmlns = Xmlns}, Err};
-	    {error, Err} ->
-		{error, #sm_failed{reason = 'item-not-found',
-				   text = xmpp:mk_text(format_error(Err), Lang),
-				   xmlns = Xmlns}, Err}
-	end,
-    case R of
-	{ok, #{jid := JID} = ResumedState, NumHandled} ->
-	    State1 = check_h_attribute(ResumedState, NumHandled),
-	    #{mgmt_xmlns := AttrXmlns, mgmt_stanzas_in := AttrH} = State1,
-	    State2 = send(State1, #sm_resumed{xmlns = AttrXmlns,
-					      h = AttrH,
-					      previd = PrevID}),
-	    State3 = resend_unacked_stanzas(State2),
-	    State4 = send(State3, #sm_r{xmlns = AttrXmlns}),
-	    State5 = ejabberd_hooks:run_fold(c2s_session_resumed, LServer, State4, []),
-	    ?INFO_MSG("(~ts) Resumed session for ~ts",
-		      [xmpp_socket:pp(Socket), jid:encode(JID)]),
-	    {ok, State5};
+handle_resume(#{user := User, lserver := LServer, lang := Lang} = State,
+	      #sm_resume{} = Resume) ->
+    case has_resume_data(State, Resume) of
+	{ok, ResumedState, ResumedEl} ->
+	    State2 = send(ResumedState, ResumedEl),
+	    {ok, post_resume_tasks(State2)};
 	{error, El, Reason} ->
 	    log_resumption_error(User, LServer, Reason),
 	    {error, send(State, El)}
     end.
+
+-spec has_resume_data(state(), sm_resume()) ->
+    {ok, state(), sm_resumed()} | {error, sm_failed(), error_reason()}.
+has_resume_data(#{lang := Lang} = State,
+		#sm_resume{h = H, previd = PrevID, xmlns = Xmlns}) ->
+    case inherit_session_state(State, PrevID) of
+	{ok, InheritedState} ->
+	    State1 = check_h_attribute(InheritedState, H),
+	    #{mgmt_xmlns := AttrXmlns, mgmt_stanzas_in := AttrH} = State1,
+	    {ok, InheritedState, #sm_resumed{xmlns = AttrXmlns,
+					     h = AttrH,
+					     previd = PrevID}};
+	{error, Err, InH} ->
+	    {error, #sm_failed{reason = 'item-not-found',
+			       text = xmpp:mk_text(format_error(Err), Lang),
+			       h = InH, xmlns = Xmlns}, Err};
+	{error, Err} ->
+	    {error, #sm_failed{reason = 'item-not-found',
+			       text = xmpp:mk_text(format_error(Err), Lang),
+			       xmlns = Xmlns}, Err}
+    end.
+
+-spec post_resume_tasks(state()) -> state().
+post_resume_tasks(#{lserver := LServer, socket := Socket, jid := JID,
+		    mgmt_xmlns := AttrXmlns} = State) ->
+    State3 = resend_unacked_stanzas(State),
+    State4 = send(State3, #sm_r{xmlns = AttrXmlns}),
+    State5 = ejabberd_hooks:run_fold(c2s_session_resumed, LServer, State4, []),
+    ?INFO_MSG("(~ts) Resumed session for ~ts",
+	      [xmpp_socket:pp(Socket), jid:encode(JID)]),
+    State5.
 
 -spec transition_to_pending(state(), _) -> state().
 transition_to_pending(#{mgmt_state := active, mod := Mod,
