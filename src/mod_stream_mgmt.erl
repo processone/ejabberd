@@ -137,7 +137,7 @@ c2s_handle_sasl2_inline({State, Els, Results} = Acc) ->
 		{ok, NewState, Resumed} ->
 		    Rest2 = lists:keydelete(bind2_bind, 1, Rest),
 		    {NewState, Rest2, [Resumed | Results]};
-		{error, ResumeError} ->
+		{error, ResumeError, _Reason} ->
 		    {State, Els, [ResumeError | Results]}
 	    end;
 	_ ->
