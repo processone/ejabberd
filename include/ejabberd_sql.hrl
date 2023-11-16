@@ -53,7 +53,8 @@
 
 
 -record(sql_index, {columns,
-                    unique = false :: boolean()}).
+                    unique = false :: boolean(),
+                    meta = #{}}).
 -record(sql_column, {name :: binary(),
                      type,
                      default = false,

@@ -351,12 +351,11 @@ guess_version(Host, Schemas) ->
                   fun(Schema) ->
                           lists:all(
                             fun(Table) ->
-                                    Table2 = filter_table_sh(Table),
                                     CurrentColumns =
                                         get_table_schema(
-                                          Host, Table2#sql_table.name),
+                                          Host, Table#sql_table.name),
                                     check_columns_compatibility(
-                                      Table2#sql_table.columns,
+                                      Table#sql_table.columns,
                                       CurrentColumns)
                             end, Schema#sql_schema.tables)
                   end, Schemas),
@@ -568,6 +567,56 @@ format_create_index(mysql, _DBVersion, Table, Index) ->
          end, Index#sql_index.columns)),
      <<");">>].
 
+format_primary_key(mysql, _DBVersion, Table) ->
+    case lists:filter(
+           fun(#sql_index{meta = #{primary_key := true}}) -> true;
+              (_) -> false
+           end, Table#sql_table.indices) of
+        [] -> [];
+        [I] ->
+            [[<<"    ">>,
+              <<"PRIMARY KEY (">>,
+              lists:join(
+                <<", ">>,
+                lists:map(
+                  fun(Col) ->
+                          format_mysql_index_column(Table, Col)
+                  end, I#sql_index.columns)),
+              <<")">>]]
+    end;
+format_primary_key(_DBType, _DBVersion, Table) ->
+    case lists:filter(
+           fun(#sql_index{meta = #{primary_key := true}}) -> true;
+              (_) -> false
+           end, Table#sql_table.indices) of
+        [] -> [];
+        [I] ->
+            [[<<"    ">>,
+              <<"PRIMARY KEY (">>,
+              lists:join(<<", ">>, I#sql_index.columns),
+              <<")">>]]
+    end.
+
+format_add_primary_key(sqlite = DBType, DBVersion, Table, Index) ->
+    format_create_index(DBType, DBVersion, Table, Index);
+format_add_primary_key(mysql, _DBVersion, Table, Index) ->
+    TableName = Table#sql_table.name,
+    [<<"ALTER TABLE ">>, TableName, <<" ADD PRIMARY KEY (">>,
+     lists:join(
+       <<", ">>,
+       Index#sql_index.columns),
+     <<");">>];
+format_add_primary_key(_DBType, _DBVersion, Table, Index) ->
+    TableName = Table#sql_table.name,
+    [<<"ALTER TABLE ">>, TableName, <<" ADD PRIMARY KEY (">>,
+     lists:join(
+       <<", ">>,
+       lists:map(
+         fun(Col) ->
+                 format_mysql_index_column(Table, Col)
+         end, Index#sql_index.columns)),
+     <<");">>].
+
 format_create_table(pgsql = DBType, DBVersion, Table) ->
     TableName = Table#sql_table.name,
     [iolist_to_binary(
@@ -576,13 +625,18 @@ format_create_table(pgsql = DBType, DBVersion, Table) ->
           <<",\n">>,
           lists:map(
             fun(C) -> format_column_def(DBType, DBVersion, C) end,
-            Table#sql_table.columns)),
+            Table#sql_table.columns) ++
+              format_primary_key(DBType, DBVersion, Table)),
         <<"\n);\n">>])] ++
-        lists:map(
-          fun(I) ->
-                  iolist_to_binary(
-                    [format_create_index(DBType, DBVersion, Table, I),
-                     <<"\n">>])
+        lists:flatmap(
+          fun(#sql_index{meta = #{primary_key := true}}) ->
+                  [];
+             (#sql_index{meta = #{ignore := true}}) ->
+                  [];
+             (I) ->
+                  [iolist_to_binary(
+                     [format_create_index(DBType, DBVersion, Table, I),
+                      <<"\n">>])]
           end,
           Table#sql_table.indices);
 format_create_table(sqlite = DBType, DBVersion, Table) ->
@@ -593,13 +647,18 @@ format_create_table(sqlite = DBType, DBVersion, Table) ->
           <<",\n">>,
           lists:map(
             fun(C) -> format_column_def(DBType, DBVersion, C) end,
-            Table#sql_table.columns)),
+            Table#sql_table.columns) ++
+              format_primary_key(DBType, DBVersion, Table)),
         <<"\n);\n">>])] ++
-        lists:map(
-          fun(I) ->
-                  iolist_to_binary(
-                    [format_create_index(DBType, DBVersion, Table, I),
-                     <<"\n">>])
+        lists:flatmap(
+          fun(#sql_index{meta = #{primary_key := true}}) ->
+                  [];
+             (#sql_index{meta = #{ignore := true}}) ->
+                  [];
+             (I) ->
+                  [iolist_to_binary(
+                     [format_create_index(DBType, DBVersion, Table, I),
+                      <<"\n">>])]
           end,
           Table#sql_table.indices);
 format_create_table(mysql = DBType, DBVersion, Table) ->
@@ -610,13 +669,18 @@ format_create_table(mysql = DBType, DBVersion, Table) ->
          <<",\n">>,
          lists:map(
            fun(C) -> format_column_def(DBType, DBVersion, C) end,
-           Table#sql_table.columns)),
+           Table#sql_table.columns) ++
+             format_primary_key(DBType, DBVersion, Table)),
        <<"\n) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n">>])] ++
-        lists:map(
-          fun(I) ->
-                  iolist_to_binary(
-                    [format_create_index(DBType, DBVersion, Table, I),
-                     <<"\n">>])
+        lists:flatmap(
+          fun(#sql_index{meta = #{primary_key := true}}) ->
+                  [];
+             (#sql_index{meta = #{ignore := true}}) ->
+                  [];
+             (I) ->
+                  [iolist_to_binary(
+                     [format_create_index(DBType, DBVersion, Table, I),
+                      <<"\n">>])]
           end,
           Table#sql_table.indices).
 %format_create_table(DBType, _DBVersion, Table) ->
@@ -644,12 +708,11 @@ create_table(Host, Table) ->
 create_tables(Host, Module, Schema) ->
     lists:foreach(
       fun(Table) ->
-              Table2 = filter_table_sh(Table),
-              Res = create_table(Host, Table2),
+              Res = create_table(Host, Table),
               case Res of
                   {error, Error} ->
                       ?ERROR_MSG("Failed to create table ~s: ~p",
-                                 [Table2#sql_table.name, Error]),
+                                 [Table#sql_table.name, Error]),
                       error(Error);
                   _ ->
                       ok
@@ -677,9 +740,60 @@ should_update_schema(Host) ->
             false
     end.
 
-update_schema(Host, Module, Schemas) ->
+preprocess_table(Host, Table) ->
+    Table1 = filter_table_sh(Table),
+    ImplicitPK =
+        case ejabberd_option:sql_type(Host) of
+            pgsql -> false;
+            sqlite ->
+                case lists:keyfind(bigserial, #sql_column.type,
+                                   Table1#sql_table.columns) of
+                    false -> false;
+                    #sql_column{name = Name} -> {ok, Name}
+                end;
+            mysql ->
+                case lists:keyfind(bigserial, #sql_column.type,
+                                   Table1#sql_table.columns) of
+                    false -> false;
+                    #sql_column{name = Name} -> {ok, Name}
+                end
+        end,
+    Indices =
+        case ImplicitPK of
+            false ->
+                {Inds, _} =
+                    lists:mapfoldl(
+                      fun(#sql_index{unique = true} = I, false) ->
+                              {I#sql_index{
+                                 meta = (I#sql_index.meta)#{primary_key => true}},
+                               true};
+                         (I, Acc) ->
+                              {I, Acc}
+                      end, false, Table1#sql_table.indices),
+                Inds;
+            {ok, CN} ->
+                lists:map(
+                  fun(#sql_index{columns = [CN1]} = I) when CN == CN1 ->
+                          I#sql_index{
+                            meta = (I#sql_index.meta)#{ignore => true}};
+                     (I) -> I
+                  end,
+                  Table1#sql_table.indices)
+        end,
+    Table1#sql_table{indices = Indices}.
+
+preprocess_schemas(Host, Schemas) ->
+    lists:map(
+      fun(Schema) ->
+              Schema#sql_schema{
+                tables = lists:map(fun(T) -> preprocess_table(Host, T) end,
+                                   Schema#sql_schema.tables)}
+      end, Schemas).
+
+update_schema(Host, Module, RawSchemas) ->
     case should_update_schema(Host) of
         true ->
+            Schemas = preprocess_schemas(Host, RawSchemas),
             Version = get_current_version(Host, Module, Schemas),
             LastSchema = lists:max(Schemas),
             LastVersion = LastSchema#sql_schema.version,
@@ -730,7 +844,7 @@ do_update_schema(Host, Module, Schema) ->
                                   <<" DEFAULT ">>,
                                   Default, <<";\n">>]] ++
                                 case Column#sql_column.default of
-                                    false ->
+                                    false when DBType /= sqlite ->
                                         [[<<"ALTER TABLE ">>,
                                           TableName,
                                           <<" ALTER COLUMN ">>,
@@ -779,45 +893,57 @@ do_update_schema(Host, Module, Schema) ->
                   _ ->
                       ok
               end;
-         ({create_index, TableName, Columns}) ->
-              {value, Table1} =
-                  lists:keysearch(
-                    TableName, #sql_table.name, Schema#sql_schema.tables),
-              {value, Index1} =
-                  lists:keysearch(
-                    Columns, #sql_index.columns, Table1#sql_table.indices),
-              Table = filter_table_sh(Table1),
-              Index =
+         ({create_index, TableName, Columns1}) ->
+              Columns =
                   case ejabberd_sql:use_new_schema() of
                       true ->
-                          Index1;
+                          Columns1;
                       false ->
-                          Index1#sql_index{
-                            columns =
-                                lists:delete(
-                                  <<"server_host">>, Index1#sql_index.columns)
-                           }
+                          lists:delete(
+                            <<"server_host">>, Columns1)
                   end,
-              Res =
-                  ejabberd_sql:sql_query(
-                    Host,
-                    fun(DBType, DBVersion) ->
-                            SQL1 = format_create_index(
-                                    DBType, DBVersion, Table, Index),
-                            SQL = iolist_to_binary(SQL1),
-                            ?INFO_MSG("Create index ~s/~p:~n~s~n",
-                                      [Table#sql_table.name,
-                                       Index#sql_index.columns,
-                                       SQL]),
-                            ejabberd_sql:sql_query_t(SQL)
-                    end),
-              case Res of
-                  {error, Error} ->
-                      ?ERROR_MSG("Failed to update table ~s: ~p",
-                                 [TableName, Error]),
-                      error(Error);
+              {value, Table} =
+                  lists:keysearch(
+                    TableName, #sql_table.name, Schema#sql_schema.tables),
+              {value, Index} =
+                  lists:keysearch(
+                    Columns, #sql_index.columns, Table#sql_table.indices),
+              case Index#sql_index.meta of
+                  #{ignore := true} -> ok;
                   _ ->
-                      ok
+                      Res =
+                          ejabberd_sql:sql_query(
+                            Host,
+                            fun(DBType, DBVersion) ->
+                                    case Index#sql_index.meta of
+                                        #{primary_key := true} ->
+                                            SQL1 = format_add_primary_key(
+                                                     DBType, DBVersion, Table, Index),
+                                            SQL = iolist_to_binary(SQL1),
+                                            ?INFO_MSG("Add primary key ~s/~p:~n~s~n",
+                                                      [Table#sql_table.name,
+                                                       Index#sql_index.columns,
+                                                       SQL]),
+                                            ejabberd_sql:sql_query_t(SQL);
+                                        _ ->
+                                            SQL1 = format_create_index(
+                                                     DBType, DBVersion, Table, Index),
+                                            SQL = iolist_to_binary(SQL1),
+                                            ?INFO_MSG("Create index ~s/~p:~n~s~n",
+                                                      [Table#sql_table.name,
+                                                       Index#sql_index.columns,
+                                                       SQL]),
+                                            ejabberd_sql:sql_query_t(SQL)
+                                    end
+                            end),
+                      case Res of
+                          {error, Error} ->
+                              ?ERROR_MSG("Failed to update table ~s: ~p",
+                                         [TableName, Error]),
+                              error(Error);
+                          _ ->
+                              ok
+                      end
               end;
          ({drop_index, TableName, Columns1}) ->
               Columns =
@@ -888,7 +1014,9 @@ test() ->
                                #sql_column{name = <<"type">>, type = text},
                                #sql_column{name = <<"created_at">>, type = timestamp,
                                            default = true}],
-                    indices = [#sql_index{
+                    indices = [#sql_index{columns = [<<"id">>],
+                                          unique = true},
+                               #sql_index{
                                   columns = [<<"server_host">>, <<"username">>, <<"timestamp">>]},
                                #sql_index{
                                   columns = [<<"server_host">>, <<"username">>, <<"peer">>]},
@@ -905,7 +1033,8 @@ test() ->
                   [<<"server_host">>, <<"origin_id">>]},
                  {drop_index, <<"archive2">>,
                   [<<"server_host">>, <<"origin_id">>]},
-                 {drop_column, <<"archive2">>, <<"origin_id">>}
+                 {drop_column, <<"archive2">>, <<"origin_id">>},
+                 {create_index, <<"archive2">>, [<<"id">>]}
                 ]},
          #sql_schema{
             version = 1,
