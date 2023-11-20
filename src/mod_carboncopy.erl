@@ -37,7 +37,8 @@
 -export([user_send_packet/1, user_receive_packet/1,
 	 iq_handler/1, disco_features/5,
 	 depends/2, mod_options/1, mod_doc/0]).
--export([c2s_copy_session/2, c2s_session_opened/1, c2s_session_resumed/1]).
+-export([c2s_copy_session/2, c2s_session_opened/1, c2s_session_resumed/1,
+	 c2s_inline_features/2, c2s_handle_bind2_inline/1]).
 %% For debugging purposes
 -export([list/2]).
 
@@ -56,7 +57,9 @@ start(_Host, _Opts) ->
           {hook, c2s_copy_session, c2s_copy_session, 50},
           {hook, c2s_session_resumed, c2s_session_resumed, 50},
           {hook, c2s_session_opened, c2s_session_opened, 50},
-          {iq_handler, ejabberd_sm, ?NS_CARBONS_2, iq_handler}]}.
+	  {hook, c2s_inline_features, c2s_inline_features, 50},
+	  {hook, c2s_handle_bind2_inline, c2s_handle_bind2_inline, 50},
+	  {iq_handler, ejabberd_sm, ?NS_CARBONS_2, iq_handler}]}.
 
 stop(_Host) ->
     ok.
@@ -141,6 +144,23 @@ c2s_session_resumed(State) ->
 -spec c2s_session_opened(c2s_state()) -> c2s_state().
 c2s_session_opened(State) ->
     maps:remove(carboncopy, State).
+
+c2s_inline_features({Sasl, Bind} = Acc, Host) ->
+    case gen_mod:is_loaded(Host, ?MODULE) of
+	true ->
+	    {Sasl, [#bind2_feature{var = ?NS_CARBONS_2} | Bind]};
+	false ->
+	    Acc
+    end.
+
+c2s_handle_bind2_inline({#{user := U, server := S, resource := R} = State, Els, Results}) ->
+    case lists:keyfind(carbons_enable, 1, Els) of
+	#carbons_enable{} ->
+	    enable(S, U, R, ?NS_CARBONS_2),
+	    {State, Els, Results};
+	_ ->
+	{State, Els, Results}
+    end.
 
 % Modified from original version:
 %    - registered to the user_send_packet hook, to be called only once even for multicast
