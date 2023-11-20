@@ -35,7 +35,7 @@
 	 c2s_handle_send/3, c2s_handle_info/2, c2s_handle_call/3,
 	 c2s_handle_recv/3, c2s_inline_features/2,
 	 c2s_handle_sasl2_inline/1, c2s_handle_sasl2_inline_post/3,
-	 c2s_handle_bind2_inline/2]).
+	 c2s_handle_bind2_inline/1]).
 %% adjust pending session timeout / access queue
 -export([get_resume_timeout/1, set_resume_timeout/2, queue_find/2]).
 
@@ -125,7 +125,7 @@ c2s_inline_features({Sasl, Bind} = Acc, Host) ->
     case gen_mod:is_loaded(Host, ?MODULE) of
 	true ->
 	    {[#feature_sm{xmlns = ?NS_STREAM_MGMT_3} | Sasl],
-	     [#feature_sm{xmlns = ?NS_STREAM_MGMT_3} | Bind]};
+	     [#bind2_feature{var = ?NS_STREAM_MGMT_3} | Bind]};
 	false ->
 	    Acc
     end.
@@ -152,12 +152,13 @@ c2s_handle_sasl2_inline_post(State, _Els, Results) ->
 	    post_resume_tasks(State)
     end.
 
-c2s_handle_bind2_inline(State, Els) ->
+c2s_handle_bind2_inline({State, Els, Results}) ->
     case lists:keyfind(sm_enable, 1, Els) of
-	#sm_enable{} = Pkt ->
-	    negotiate_stream_mgmt(Pkt, State);
+	#sm_enable{xmlns = XMLNS} = Pkt ->
+	    {State2, Res} = handle_enable_int(State#{mgmt_xmlns => XMLNS}, Pkt),
+	    {State2, Els, [Res | Results]};
 	_ ->
-	    State
+	    {State, Els, Results}
     end.
 
 c2s_unauthenticated_packet(#{lang := Lang} = State, Pkt) when ?is_sm_packet(Pkt) ->
@@ -400,28 +401,28 @@ perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns, lang := Lang} = State) ->
 				   xmlns = Xmlns})
     end.
 
--spec handle_enable(state(), sm_enable()) -> state().
-handle_enable(#{mgmt_timeout := DefaultTimeout,
-		mgmt_queue_type := QueueType,
-		mgmt_max_timeout := MaxTimeout,
-		mgmt_xmlns := Xmlns, jid := JID} = State,
-	      #sm_enable{resume = Resume, max = Max}) ->
+-spec handle_enable_int(state(), sm_enable()) -> {state(), sm_enabled()}.
+handle_enable_int(#{mgmt_timeout := DefaultTimeout,
+		    mgmt_queue_type := QueueType,
+		    mgmt_max_timeout := MaxTimeout,
+		    mgmt_xmlns := Xmlns, jid := JID} = State,
+		  #sm_enable{resume = Resume, max = Max}) ->
     State1 = State#{mgmt_id => make_id()},
     Timeout = if Resume == false ->
-		      0;
-		 Max /= undefined, Max > 0, Max*1000 =< MaxTimeout ->
+	0;
+		  Max /= undefined, Max > 0, Max*1000 =< MaxTimeout ->
 		      Max*1000;
-		 true ->
+		  true ->
 		      DefaultTimeout
 	      end,
     Res = if Timeout > 0 ->
-		  ?DEBUG("Stream management with resumption enabled for ~ts",
-			 [jid:encode(JID)]),
-		  #sm_enabled{xmlns = Xmlns,
-			      id = encode_id(State1),
-			      resume = true,
-			      max = Timeout div 1000};
-	     true ->
+	?DEBUG("Stream management with resumption enabled for ~ts",
+	       [jid:encode(JID)]),
+	#sm_enabled{xmlns = Xmlns,
+		    id = encode_id(State1),
+		    resume = true,
+		    max = Timeout div 1000};
+	      true ->
 		  ?DEBUG("Stream management without resumption enabled for ~ts",
 			 [jid:encode(JID)]),
 		  #sm_enabled{xmlns = Xmlns}
@@ -429,6 +430,11 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
     State2 = State1#{mgmt_state => active,
 		     mgmt_queue => p1_queue:new(QueueType),
 		     mgmt_timeout => Timeout},
+    {State2, Res}.
+
+-spec handle_enable(state(), sm_enable()) -> state().
+handle_enable(State, Enable) ->
+    {State2, Res} = handle_enable_int(State, Enable),
     send(State2, Res).
 
 -spec handle_r(state()) -> state().

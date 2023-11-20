@@ -42,7 +42,8 @@
 	 handle_auth_success/4, handle_auth_failure/4, handle_send/3,
 	 handle_recv/3, handle_cdata/2, handle_unbinded_packet/2,
 	 inline_stream_features/1, handle_sasl2_inline/2,
-	 handle_sasl2_inline_post/3, handle_bind2_inline/2]).
+	 handle_sasl2_inline_post/3, handle_bind2_inline/2,
+	 handle_bind2_inline_post/3]).
 %% Hooks
 -export([handle_unexpected_cast/2, handle_unexpected_call/3,
 	 process_auth_result/3, reject_unauthenticated_packet/2,
@@ -548,7 +549,11 @@ handle_sasl2_inline_post(Els, Results, #{lserver := LServer} = State) ->
 
 handle_bind2_inline(Els, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_bind2_inline, LServer,
-			    State, [Els]).
+			    {State, Els, []}, []).
+
+handle_bind2_inline_post(Els, Results, #{lserver := LServer} = State) ->
+    ejabberd_hooks:run_fold(c2s_handle_bind2_inline_post, LServer,
+			    State, [Els, Results]).
 
 handle_recv(El, Pkt, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_recv, LServer, State, [El, Pkt]).

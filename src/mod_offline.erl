@@ -62,7 +62,7 @@
 	 webadmin_page/3,
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5,
-	 c2s_handle_bind2_inline/2]).
+	 c2s_handle_bind2_inline/1]).
 
 -export([mod_opt_type/1, mod_options/1, mod_doc/0, depends/2]).
 
@@ -299,9 +299,9 @@ c2s_copy_session(State, #{resend_offline := Flag}) ->
 c2s_copy_session(State, _) ->
     State.
 
-c2s_handle_bind2_inline(#{jid := #jid{luser = LUser, lserver = LServer}} = State, _Els) ->
+c2s_handle_bind2_inline({#{jid := #jid{luser = LUser, lserver = LServer}} = State, Els, Results}) ->
     delete_all_msgs(LUser, LServer),
-    State.
+    {State, Els, Results}.
 
 -spec handle_offline_query(iq()) -> iq().
 handle_offline_query(#iq{from = #jid{luser = U1, lserver = S1},
