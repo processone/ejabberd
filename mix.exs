@@ -102,7 +102,7 @@ defmodule Ejabberd.MixProject do
      {:cache_tab, "~> 1.0"},
      {:eimp, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
-     {:fast_tls, "~> 1.1"},
+     {:fast_tls, git: "https://github.com/processone/fast_tls.git", ref: "c98c1a7d190201dc4113babed91fdfedac2bf42a", override: true},
      {:fast_xml, "~> 1.1"},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
