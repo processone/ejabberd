@@ -467,9 +467,9 @@ has_resume_data(#{lang := Lang} = State,
 	{ok, InheritedState} ->
 	    State1 = check_h_attribute(InheritedState, H),
 	    #{mgmt_xmlns := AttrXmlns, mgmt_stanzas_in := AttrH} = State1,
-	    {ok, InheritedState, #sm_resumed{xmlns = AttrXmlns,
-					     h = AttrH,
-					     previd = PrevID}};
+	    {ok, State1, #sm_resumed{xmlns = AttrXmlns,
+				     h = AttrH,
+				     previd = PrevID}};
 	{error, Err, InH} ->
 	    {error, #sm_failed{reason = 'item-not-found',
 			       text = xmpp:mk_text(format_error(Err), Lang),

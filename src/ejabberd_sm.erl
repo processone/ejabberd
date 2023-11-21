@@ -39,6 +39,7 @@
 	 route/2,
 	 open_session/5,
 	 open_session/6,
+	 open_session/7,
 	 close_session/4,
 	 check_in_subscription/2,
 	 bounce_offline_message/1,
@@ -147,14 +148,20 @@ route(Packet) ->
 	    ok
     end.
 
--spec open_session(sid(), binary(), binary(), binary(), prio(), info()) -> ok.
 
-open_session(SID, User, Server, Resource, Priority, Info) ->
+-spec open_session(sid(), binary(), binary(), binary(), prio(), info(), binary() | undefined) -> ok.
+
+open_session(SID, User, Server, Resource, Priority, Info, Bind2Tag) ->
     set_session(SID, User, Server, Resource, Priority, Info),
-    check_for_sessions_to_replace(User, Server, Resource),
+    check_for_sessions_to_replace(User, Server, Resource, Bind2Tag),
     JID = jid:make(User, Server, Resource),
     ejabberd_hooks:run(sm_register_connection_hook,
 		       JID#jid.lserver, [SID, JID, Info]).
+
+-spec open_session(sid(), binary(), binary(), binary(), prio(), info()) -> ok.
+
+open_session(SID, User, Server, Resource, Priority, Info) ->
+    open_session(SID, User, Server, Resource, Priority, Info, undefined).
 
 -spec open_session(sid(), binary(), binary(), binary(), info()) -> ok.
 
@@ -452,6 +459,13 @@ c2s_handle_info(#{lang := Lang} = State, replaced) ->
     State1 = State#{replaced => true},
     Err = xmpp:serr_conflict(?T("Replaced by new connection"), Lang),
     {stop, ejabberd_c2s:send(State1, Err)};
+c2s_handle_info(#{lang := Lang, bind2_tag := Tag} = State,
+		{replaced_with_bind_tag, Bind2Tag}) when Tag == Bind2Tag ->
+    State1 = State#{replaced => true},
+    Err = xmpp:serr_conflict(?T("Replaced by new connection"), Lang),
+    {stop, ejabberd_c2s:send(State1, Err)};
+c2s_handle_info(State, {replaced_with_bind_tag, _}) ->
+    State;
 c2s_handle_info(#{lang := Lang} = State, kick) ->
     Err = xmpp:serr_policy_violation(?T("has been kicked"), Lang),
     {stop, ejabberd_c2s:send(State, Err)};
@@ -826,16 +840,17 @@ clean_session_list([S1, S2 | Rest], Res) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% On new session, check if some existing connections need to be replace
--spec check_for_sessions_to_replace(binary(), binary(), binary()) -> ok | replaced.
-check_for_sessions_to_replace(User, Server, Resource) ->
+-spec check_for_sessions_to_replace(binary(), binary(), binary(), binary() | undefined)
+				   -> ok | replaced.
+check_for_sessions_to_replace(User, Server, Resource, Bind2Tag) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
-    check_existing_resources(LUser, LServer, LResource),
+    check_existing_resources(LUser, LServer, LResource, Bind2Tag),
     check_max_sessions(LUser, LServer).
 
--spec check_existing_resources(binary(), binary(), binary()) -> ok.
-check_existing_resources(LUser, LServer, LResource) ->
+-spec check_existing_resources(binary(), binary(), binary(), binary() | undefined) -> ok.
+check_existing_resources(LUser, LServer, LResource, undefined) ->
     Mod = get_sm_backend(LServer),
     Ss = get_sessions(Mod, LUser, LServer, LResource),
     if Ss == [] -> ok;
@@ -847,7 +862,18 @@ check_existing_resources(LUser, LServer, LResource) ->
 			     (_) -> ok
 			 end,
 			 SIDs)
-    end.
+    end;
+check_existing_resources(LUser, LServer, _LResource, Bind2Tag) ->
+    Mod = get_sm_backend(LServer),
+    Ss = get_sessions(Mod, LUser, LServer),
+    Len = size(Bind2Tag),
+    lists:foreach(
+	fun(#session{sid = {_, Pid}, usr = {_, _, <<Tag:Len/binary, ".", _/binary>>}})
+	       when Pid /= self(), Tag == Bind2Tag ->
+	    ejabberd_c2s:route(Pid, {replaced_with_bind_tag, Bind2Tag});
+	   (_) ->
+	       ok
+	end, Ss).
 
 -spec is_existing_resource(binary(), binary(), binary()) -> boolean().
 

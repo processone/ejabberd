@@ -215,7 +215,12 @@ open_session(#{user := U, server := S, resource := R,
 	       Pres -> get_priority_from_presence(Pres)
 	   end,
     Info = [{ip, IP}, {conn, Conn}, {auth_module, AuthModule}],
-    ejabberd_sm:open_session(SID, U, S, R, Prio, Info),
+    case State of
+	#{bind2_tag := Tag} ->
+	    ejabberd_sm:open_session(SID, U, S, R, Prio, Info, Tag);
+	_ ->
+	    ejabberd_sm:open_session(SID, U, S, R, Prio, Info)
+    end,
     xmpp_stream_in:establish(State2).
 
 %%%===================================================================
