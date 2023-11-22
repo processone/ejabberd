@@ -216,7 +216,7 @@ open_session(#{user := U, server := S, resource := R,
 	   end,
     Info = [{ip, IP}, {conn, Conn}, {auth_module, AuthModule}],
     case State of
-	#{bind2_tag := Tag} ->
+	#{bind2_session_id := Tag} ->
 	    ejabberd_sm:open_session(SID, U, S, R, Prio, Info, Tag);
 	_ ->
 	    ejabberd_sm:open_session(SID, U, S, R, Prio, Info)
