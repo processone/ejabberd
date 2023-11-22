@@ -114,7 +114,7 @@ defmodule Ejabberd.MixProject do
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
-     {:xmpp, git: "https://github.com/processone/xmpp.git", ref: "2b0c95c807fc8f5862bc4301e0b7451a0617348e", override: true},
+     {:xmpp, git: "https://github.com/processone/xmpp.git", ref: "d8e862f3b43c7dac4ac53bb4a83f70e440017f92", override: true},
      {:yconf, "~> 1.0"}]
     ++ cond_deps()
   end
