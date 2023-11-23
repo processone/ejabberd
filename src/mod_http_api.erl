@@ -337,16 +337,27 @@ format_arg(Elements,
     when is_list(Elements) ->
     [{format_arg(Element, ElementDefFormat)}
      || Element <- Elements];
+
+%% Covered by command_test_list and command_test_list_tuple
 format_arg(Elements,
 	   {list, {_ElementDefName, ElementDefFormat}})
     when is_list(Elements) ->
     [format_arg(Element, ElementDefFormat)
      || Element <- Elements];
+
 format_arg({[{Name, Value}]},
 	   {tuple, [{_Tuple1N, Tuple1S}, {_Tuple2N, Tuple2S}]})
   when Tuple1S == binary;
        Tuple1S == string ->
     {format_arg(Name, Tuple1S), format_arg(Value, Tuple2S)};
+
+%% Covered by command_test_tuple and command_test_list_tuple
+format_arg(Elements,
+	   {tuple, ElementsDef})
+  when is_map(Elements) ->
+    list_to_tuple([element(2, maps:find(atom_to_binary(Name, latin1), Elements))
+                   || {Name, _Format} <- ElementsDef]);
+
 format_arg({Elements},
 	   {tuple, ElementsDef})
     when is_list(Elements) ->
@@ -363,10 +374,12 @@ format_arg({Elements},
 			  end
 		  end, ElementsDef),
     list_to_tuple(F);
+
 format_arg(Elements, {list, ElementsDef})
     when is_list(Elements) and is_atom(ElementsDef) ->
     [format_arg(Element, ElementsDef)
      || Element <- Elements];
+
 format_arg(Arg, integer) when is_integer(Arg) -> Arg;
 format_arg(Arg, binary) when is_list(Arg) -> process_unicode_codepoints(Arg);
 format_arg(Arg, binary) when is_binary(Arg) -> Arg;
@@ -452,6 +465,7 @@ format_result(Els, {Name, {list, {_, {tuple, [{_, atom}, _]}} = Fmt}}) ->
 format_result(Els, {Name, {list, {_, {tuple, [{name, string}, {value, _}]}} = Fmt}}) ->
     {misc:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
 
+%% Covered by command_test_list and command_test_list_tuple
 format_result(Els, {Name, {list, Def}}) ->
     {misc:atom_to_binary(Name), [element(2, format_result(El, Def)) || El <- Els]};
 
@@ -465,9 +479,11 @@ format_result(Tuple, {_Name, {tuple, [{name, string}, {value, _} = ValFmt]}}) ->
     {_, Val2} = format_result(Val, ValFmt),
     {iolist_to_binary(Name2), Val2};
 
+%% Covered by command_test_tuple and command_test_list_tuple
 format_result(Tuple, {Name, {tuple, Def}}) ->
     Els = lists:zip(tuple_to_list(Tuple), Def),
-    {misc:atom_to_binary(Name), {[format_result(El, ElDef) || {El, ElDef} <- Els]}};
+    Els2 = [format_result(El, ElDef) || {El, ElDef} <- Els],
+    {misc:atom_to_binary(Name), maps:from_list(Els2)};
 
 format_result(404, {_Name, _}) ->
     "not_found".
