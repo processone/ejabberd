@@ -160,7 +160,7 @@ get_commands_spec() ->
 		       args_example = ["/home/ejabberd/rooms.txt"],
 		       args = [{file, string}],
 		       result = {res, rescode}},
-     #ejabberd_commands{name = create_room_with_opts, tags = [muc_room],
+     #ejabberd_commands{name = create_room_with_opts, tags = [muc_room, muc_sub],
 		       desc = "Create a MUC room name@service in host with given options",
 		       longdesc =
                         "The syntax of `affiliations` is: `Type:JID,Type:JID`. "
@@ -246,7 +246,7 @@ get_commands_spec() ->
 		        result_example = ["room1@muc.example.com", "room2@muc.example.com"],
 			args = [{user, binary}, {host, binary}],
 		        result = {rooms, {list, {room, string}}}},
-     #ejabberd_commands{name = get_user_subscriptions, tags = [muc],
+     #ejabberd_commands{name = get_user_subscriptions, tags = [muc, muc_sub],
 			desc = "Get the list of rooms where this user is subscribed",
 			note = "added in 21.04",
 			module = ?MODULE, function = get_user_subscriptions,
@@ -329,7 +329,7 @@ get_commands_spec() ->
 								 {value, string}
 								]}}
 						}}},
-     #ejabberd_commands{name = subscribe_room, tags = [muc_room],
+     #ejabberd_commands{name = subscribe_room, tags = [muc_room, muc_sub],
 			desc = "Subscribe to a MUC conference",
 			module = ?MODULE, function = subscribe_room,
 			args_desc = ["User JID", "a user's nick",
@@ -342,7 +342,7 @@ get_commands_spec() ->
 			args = [{user, binary}, {nick, binary}, {room, binary},
 				{nodes, binary}],
 			result = {nodes, {list, {node, string}}}},
-     #ejabberd_commands{name = subscribe_room_many, tags = [muc_room],
+     #ejabberd_commands{name = subscribe_room_many, tags = [muc_room, muc_sub],
 			desc = "Subscribe several users to a MUC conference",
 			note = "added in 22.05",
 			longdesc = "This command accepts up to 50 users at once "
@@ -365,14 +365,14 @@ get_commands_spec() ->
                                 {room, binary},
 				{nodes, binary}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = unsubscribe_room, tags = [muc_room],
+     #ejabberd_commands{name = unsubscribe_room, tags = [muc_room, muc_sub],
 			desc = "Unsubscribe from a MUC conference",
 			module = ?MODULE, function = unsubscribe_room,
 			args_desc = ["User JID", "the room to subscribe"],
 			args_example = ["tom@localhost", "room1@conference.localhost"],
 			args = [{user, binary}, {room, binary}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = get_subscribers, tags = [muc_room],
+     #ejabberd_commands{name = get_subscribers, tags = [muc_room, muc_sub],
 			desc = "List subscribers of a MUC conference",
 			module = ?MODULE, function = get_subscribers,
 		        args_desc = ["Room name", "MUC service"],
