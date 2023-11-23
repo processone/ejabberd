@@ -23,8 +23,6 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%%% Does not support commands that have arguments with ctypes: list, tuple
-
 -module(ejabberd_ctl).
 
 -behaviour(gen_server).
@@ -372,6 +370,13 @@ format_arg(Arg, string) ->
     NumChars = integer_to_list(length(Arg)),
     Parse = "~" ++ NumChars ++ "c",
     format_arg2(Arg, Parse);
+format_arg(Arg, {list, {_ArgName, ArgFormat}}) ->
+    [format_arg(Element, ArgFormat) || Element <- string:tokens(Arg, ",")];
+format_arg(Arg, {list, ArgFormat}) ->
+    [format_arg(Element, ArgFormat) || Element <- string:tokens(Arg, ",")];
+format_arg(Arg, {tuple, Elements}) ->
+    Args = string:tokens(Arg, ":"),
+    list_to_tuple(format_args(Args, Elements));
 format_arg(Arg, Format) ->
     S = unicode:characters_to_binary(Arg, utf8),
     JSON = jiffy:decode(S),
@@ -491,19 +496,24 @@ get_list_commands(Version) ->
 tuple_command_help({Name, _Args, Desc}) ->
     {Args, _, _} = ejabberd_commands:get_command_format(Name, admin),
     Arguments = [atom_to_list(ArgN) || {ArgN, _ArgF} <- Args],
-    Prepend = case is_supported_args(Args) of
-		  true -> "";
-		  false -> "*"
-	      end,
     CallString = atom_to_list(Name),
-    {CallString, Arguments, Prepend ++ Desc}.
+    {CallString, Arguments, Desc}.
 
-is_supported_args(Args) ->
-    lists:all(
-      fun({_Name, Format}) ->
-	      (Format == integer)
-		  or (Format == string)
-		      or (Format == binary)
+has_tuple_args(Args) ->
+    lists:any(
+      fun({_Name, tuple}) -> true;
+         ({_Name, {tuple, _}}) -> true;
+         ({_Name, {list, SubArg}}) ->
+            has_tuple_args([SubArg]);
+         (_) -> false
+      end,
+      Args).
+
+has_list_args(Args) ->
+    lists:any(
+      fun({_Name, list}) -> true;
+         ({_Name, {list, _}}) -> true;
+         (_) -> false
       end,
       Args).
 
@@ -768,9 +778,9 @@ print_usage_help(MaxC, ShCode) ->
 	 "  ejabberdctl ", ?C("help"), " ", ?C("register"), "\n",
 	 "  ejabberdctl ", ?C("help"), " ", ?C("regist*"), "\n",
 	 "\n",
-	 "Please note that 'ejabberdctl' shows all ejabberd commands,\n",
-	 "even those that cannot be used in the shell with ejabberdctl.\n",
-	 "Those commands can be identified because their description starts with: *\n",
+	 "Some command arguments are lists or tuples, like add_rosteritem and create_room_with_opts.\n",
+	 "Separate the elements in a list with the , character.\n",
+	 "Separate the elements in a tuple with the : character.\n",
 	 "\n",
 	 "Some commands return lists, like get_roster and get_user_subscriptions.\n",
 	 "In those commands, the elements in the list are separated with: ;\n"],
@@ -893,9 +903,13 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 		      _ -> ["", prepare_description(0, MaxC, LongDesc), "\n\n"]
 		  end,
 
-    NoteEjabberdctl = case is_supported_args(ArgsDef) of
-			  true -> "";
-			  false -> ["  ", ?B("Note:"), " This command cannot be executed using ejabberdctl. Try ejabberd_xmlrpc.\n\n"]
+    NoteEjabberdctlList = case has_list_args(ArgsDef) of
+			  true -> ["  ", ?B("Note:"), " In a list argument, separate the elements using the , character for example: one,two,three\n\n"];
+			  false -> ""
+		      end,
+    NoteEjabberdctlTuple = case has_tuple_args(ArgsDef) of
+			  true -> ["  ", ?B("Note:"), " In a tuple argument, separate the elements using the : character for example: members_only:true\n\n"];
+			  false -> ""
 		      end,
 
     case Cmd of
@@ -903,7 +917,7 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
         _ -> print([NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt,
                     "\n\n", XmlrpcFmt, TagsFmt, "\n\n", ModuleFmt, DescFmt, "\n\n"], [])
     end,
-    print([LongDescFmt, NoteEjabberdctl], []).
+    print([LongDescFmt, NoteEjabberdctlList, NoteEjabberdctlTuple], []).
 
 format_usage_ctype(Type, _Indentation)
   when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary) or (Type==rescode) or (Type==restuple)->
