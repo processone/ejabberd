@@ -72,8 +72,7 @@ get_commands_spec() ->
                         args_example = [],
                         args_desc = [],
                         result = {res, rescode},
-                        result_example = ok,
-                        result_desc = "Status code: 0 on success, 1 otherwise"}
+                        result_example = ok}
     ].
 
 update_sql() ->

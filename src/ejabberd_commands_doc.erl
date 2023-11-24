@@ -386,7 +386,7 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
         ResultText = case Result of
                        {res,rescode} ->
                            [?TAG(dl, [gen_param(res, integer,
-                                                "Status code (0 on success, 1 otherwise)",
+                                                "Status code (`0` on success, `1` otherwise)",
                                                 HTMLOutput)])];
                        {res,restuple} ->
                            [?TAG(dl, [gen_param(res, string,
