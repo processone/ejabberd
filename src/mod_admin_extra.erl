@@ -423,6 +423,22 @@ get_commands_spec() ->
 					"Show: `away`, `chat`, `dnd`, `xa`.", "Status text",
 					"Priority, provide this value as an integer"],
 			result = {res, rescode}},
+     #ejabberd_commands{name = set_presence,
+			tags = [session],
+			desc = "Set presence of a session",
+			module = ?MODULE, function = set_presence,
+			version = 1,
+			args = [{user, binary}, {host, binary},
+				{resource, binary}, {type, binary},
+				{show, binary}, {status, binary},
+				{priority, integer}],
+			args_example = [<<"user1">>,<<"myserver.com">>,<<"tka1">>,
+					<<"available">>,<<"away">>,<<"BB">>, 7],
+			args_desc = ["User name", "Server name", "Resource",
+					"Type: `available`, `error`, `probe`...",
+					"Show: `away`, `chat`, `dnd`, `xa`.", "Status text",
+					"Priority, provide this value as an integer"],
+			result = {res, rescode}},
 
      #ejabberd_commands{name = set_nickname, tags = [vcard],
 			desc = "Set nickname in a user's vCard",
@@ -1084,14 +1100,10 @@ get_presence(U, S) ->
 	    {FullJID, Show, Status}
     end.
 
-set_presence(User, Host, Resource, Type, Show, Status, Priority)
-        when is_integer(Priority) ->
-    BPriority = integer_to_binary(Priority),
-    set_presence(User, Host, Resource, Type, Show, Status, BPriority);
-set_presence(User, Host, Resource, Type, Show, Status, Priority0) ->
-    Priority = if is_integer(Priority0) -> Priority0;
-		  true -> binary_to_integer(Priority0)
-	       end,
+set_presence(User, Host, Resource, Type, Show, Status, Priority) when is_binary(Priority) ->
+    set_presence(User, Host, Resource, Type, Show, Status, binary_to_integer(Priority));
+
+set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pres = #presence{
         from = jid:make(User, Host, Resource),
         to = jid:make(User, Host),
