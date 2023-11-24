@@ -113,14 +113,14 @@ depends(_Host, _Opts) ->
 %%%
 
 get_commands_spec() ->
-    Vcard1FieldsString = "Some vcard field names in get/set_vcard are:\n\n"
+    Vcard1FieldsString = "Some vcard field names in `get`/`set_vcard` are:\n\n"
 	"* FN           - Full Name\n"
 	"* NICKNAME     - Nickname\n"
 	"* BDAY         - Birthday\n"
 	"* TITLE        - Work: Position\n"
 	"* ROLE         - Work: Role\n",
 
-    Vcard2FieldsString = "Some vcard field names and subnames in get/set_vcard2 are:\n\n"
+    Vcard2FieldsString = "Some vcard field names and subnames in `get`/`set_vcard2` are:\n\n"
 	"* N FAMILY     - Family name\n"
 	"* N GIVEN      - Given name\n"
 	"* N MIDDLE     - Middle name\n"
@@ -134,8 +134,8 @@ get_commands_spec() ->
 	"* ORG ORGNAME  - Work: Company\n"
 	"* ORG ORGUNIT  - Work: Department\n",
 
-    VcardXEP = "For a full list of vCard fields check XEP-0054: vcard-temp at "
-	"https://xmpp.org/extensions/xep-0054.html",
+    VcardXEP = "For a full list of vCard fields check [XEP-0054: vcard-temp]"
+	"(https://xmpp.org/extensions/xep-0054.html)",
 
     [
      #ejabberd_commands{name = compile, tags = [erlang],
@@ -162,9 +162,9 @@ get_commands_spec() ->
 			result = {res, integer},
 			result_example = 0,
 			result_desc = "Returns integer code:\n"
-				      " - 0: code reloaded, module restarted\n"
-				      " - 1: error: module not loaded\n"
-				      " - 2: code not reloaded, but module restarted"},
+				      " - `0`: code reloaded, module restarted\n"
+				      " - `1`: error: module not loaded\n"
+				      " - `2`: code not reloaded, but module restarted"},
      #ejabberd_commands{name = delete_old_users, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days, or that never logged",
 			longdesc = "To protect admin accounts, configure this for example:\n"
@@ -509,52 +509,56 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = process_rosteritems, tags = [roster],
 			desc = "List/delete rosteritems that match filter",
-			longdesc = "Explanation of each argument:\n"
-			" - action: what to do with each rosteritem that "
+			longdesc = "Explanation of each argument:\n\n"
+			"* `action`: what to do with each rosteritem that "
 			"matches all the filtering options\n"
-			" - subs: subscription type\n"
-			" - asks: pending subscription\n"
-			" - users: the JIDs of the local user\n"
-			" - contacts: the JIDs of the contact in the roster\n"
+			"* `subs`: subscription type\n"
+			"* `asks`: pending subscription\n"
+			"* `users`: the JIDs of the local user\n"
+			"* `contacts`: the JIDs of the contact in the roster\n"
 			"\n"
-			" *** Mnesia: \n"
+			"**Mnesia backend:**\n"
 			"\n"
-			"Allowed values in the arguments:\n"
-			"  ACTION = list | delete\n"
-			"  SUBS = SUB[:SUB]* | any\n"
-			"  SUB = none | from | to | both\n"
-			"  ASKS = ASK[:ASK]* | any\n"
-			"  ASK = none | out | in\n"
-			"  USERS = JID[:JID]* | any\n"
-			"  CONTACTS = JID[:JID]* | any\n"
-			"  JID = characters valid in a JID, and can use the "
-			"globs: *, ?, ! and [...]\n"
+			"Allowed values in the arguments:\n\n"
+			"* `action` = `list` | `delete`\n"
+			"* `subs` = `any` | SUB[:SUB]*\n"
+			"* `asks` = `any` | ASK[:ASK]*\n"
+			"* `users` = `any` | JID[:JID]*\n"
+			"* `contacts` = `any` | JID[:JID]*\n"
+			"\nwhere\n\n"
+			"* SUB = `none` | `from `| `to` | `both`\n"
+			"* ASK = `none` | `out` | `in`\n"
+			"* JID = characters valid in a JID, and can use the "
+			"globs: `*`, `?`, `!` and `[...]`\n"
 			"\n"
 			"This example will list roster items with subscription "
-			"'none', 'from' or 'to' that have any ask property, of "
+			"`none`, `from` or `to` that have any ask property, of "
 			"local users which JID is in the virtual host "
-			"'example.org' and that the contact JID is either a "
+			"`example.org` and that the contact JID is either a "
 			"bare server name (without user part) or that has a "
-			"user part and the server part contains the word 'icq'"
-			":\n  list none:from:to any *@example.org *:*@*icq*"
+			"user part and the server part contains the word `icq`"
+			":\n  `list none:from:to any *@example.org *:*@*icq*`"
 			"\n\n"
-			" *** SQL:\n"
+			"**SQL backend:**\n"
 			"\n"
-			"Allowed values in the arguments:\n"
-			"  ACTION = list | delete\n"
-			"  SUBS = any | none | from | to | both\n"
-			"  ASKS = any | none | out | in\n"
-			"  USERS = JID\n"
-			"  CONTACTS = JID\n"
-			"  JID = characters valid in a JID, and can use the "
-			"globs: _ and %\n"
+			"Allowed values in the arguments:\n\n"
+			"* `action` = `list` | `delete`\n"
+			"* `subs` = `any` | SUB\n"
+			"* `asks` = `any` | ASK\n"
+			"* `users` = JID\n"
+			"* `contacts` = JID\n"
+			"\nwhere\n\n"
+			"* SUB = `none` | `from` | `to` | `both`\n"
+			"* ASK = `none` | `out` | `in`\n"
+			"* JID = characters valid in a JID, and can use the "
+			"globs: `_` and `%`\n"
 			"\n"
 			"This example will list roster items with subscription "
-			"'to' that have any ask property, of "
+			"`to` that have any ask property, of "
 			"local users which JID is in the virtual host "
-			"'example.org' and that the contact JID's "
-			"server part contains the word 'icq'"
-			":\n  list to any %@example.org %@%icq%",
+			"`example.org` and that the contact JID's "
+			"server part contains the word `icq`"
+			":\n  `list to any %@example.org %@%icq%`",
 			module = mod_roster, function = process_rosteritems,
 			args = [{action, string}, {subs, string},
 				{asks, string}, {users, string},
@@ -569,8 +573,8 @@ get_commands_spec() ->
      #ejabberd_commands{name = get_roster, tags = [roster],
 			desc = "Get list of contacts in a local user roster",
 			longdesc =
-			    "Subscription can be: \"none\", \"from\", \"to\", \"both\". "
-                            "Pending can be: \"in\", \"out\", \"none\".",
+			    "`subscription` can be: `none`, `from`, `to`, `both`.\n\n"
+                            "`pending` can be: `in`, `out`, `none`.",
 			note = "improved in 23.10",
                         policy = user,
 			module = ?MODULE, function = get_roster,
@@ -586,11 +590,12 @@ get_commands_spec() ->
      #ejabberd_commands{name = push_roster, tags = [roster],
 			desc = "Push template roster from file to a user",
 			longdesc = "The text file must contain an erlang term: a list "
-			    "of tuples with username, servername, group and nick. Example:\n"
-			    "[{<<\"user1\">>, <<\"localhost\">>, <<\"Workers\">>, <<\"User 1\">>},\n"
-			    " {<<\"user2\">>, <<\"localhost\">>, <<\"Workers\">>, <<\"User 2\">>}].\n"
-			    "When using UTF8 character encoding add /utf8 to certain string. Example:\n"
-			    "[{<<\"user2\">>, <<\"localhost\">>, <<\"Workers\"/utf8>>, <<\"User 2\"/utf8>>}].",
+			    "of tuples with username, servername, group and nick. For example:\n"
+			    "`[{\"user1\", \"localhost\", \"Workers\", \"User 1\"},\n"
+			    " {\"user2\", \"localhost\", \"Workers\", \"User 2\"}].`\n\n"
+			    "If there are problems parsing UTF8 character encoding, "
+                            "provide the corresponding string with the `<<\"STRING\"/utf8>>` syntax, for example:\n"
+			    "`[{\"user2\", \"localhost\", \"Workers\", <<\"User 2\"/utf8>>}]`.",
 			module = ?MODULE, function = push_roster,
 			args = [{file, binary}, {user, binary}, {host, binary}],
 			args_example = [<<"/home/ejabberd/roster.txt">>, <<"user1">>, <<"localhost">>],
@@ -600,8 +605,8 @@ get_commands_spec() ->
 			desc = "Push template roster from file to all those users",
 			longdesc = "The text file must contain an erlang term: a list "
 			    "of tuples with username, servername, group and nick. Example:\n"
-			    "[{\"user1\", \"localhost\", \"Workers\", \"User 1\"},\n"
-			    " {\"user2\", \"localhost\", \"Workers\", \"User 2\"}].",
+			    "`[{\"user1\", \"localhost\", \"Workers\", \"User 1\"},\n"
+			    " {\"user2\", \"localhost\", \"Workers\", \"User 2\"}].`",
 			module = ?MODULE, function = push_roster_all,
 			args = [{file, binary}],
 			args_example = [<<"/home/ejabberd/roster.txt">>],
@@ -617,7 +622,9 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = get_last, tags = [last],
 			desc = "Get last activity information",
-			longdesc = "Timestamp is UTC and XEP-0082 format, for example: "
+			longdesc = "Timestamp is UTC and "
+			    "[XEP-0082](https://xmpp.org/extensions/xep-0082.html)"
+			    " format, for example: "
 			    "`2017-02-23T22:25:28.063062Z     ONLINE`",
 			module = ?MODULE, function = get_last,
 			args = [{user, binary}, {host, binary}],
@@ -775,7 +782,9 @@ get_commands_spec() ->
 			result = {res, rescode}},
 
      #ejabberd_commands{name = stats, tags = [statistics],
-			desc = "Get statistical value: registeredusers onlineusers onlineusersnode uptimeseconds processes",
+			desc = "Get some statistical value for the whole ejabberd server",
+			longdesc = "Allowed statistics `name` are: `registeredusers`, "
+                            "`onlineusers`, `onlineusersnode`, `uptimeseconds`, `processes`.",
 			policy = admin,
 			module = ?MODULE, function = stats,
 			args = [{name, binary}],
@@ -785,7 +794,8 @@ get_commands_spec() ->
 			result_desc = "Integer statistic value",
 			result = {stat, integer}},
      #ejabberd_commands{name = stats_host, tags = [statistics],
-			desc = "Get statistical value for this host: registeredusers onlineusers",
+			desc = "Get some statistical value for this host",
+			longdesc = "Allowed statistics `name` are: `registeredusers`, `onlineusers`.",
 			policy = admin,
 			module = ?MODULE, function = stats,
 			args = [{name, binary}, {host, binary}],

@@ -129,7 +129,7 @@ get_commands_spec() ->
 			desc = "Reopen the log files after being renamed",
 			longdesc = "This can be useful when an external tool is "
 			"used for log rotation. See "
-			"https://docs.ejabberd.im/admin/guide/troubleshooting/#log-files",
+			"[Log Files](https://docs.ejabberd.im/admin/guide/troubleshooting/#log-files).",
 			policy = admin,
 			module = ?MODULE, function = reopen_log,
 			args = [], result = {res, rescode}},
@@ -157,9 +157,10 @@ get_commands_spec() ->
                         result = {levelatom, atom}},
      #ejabberd_commands{name = set_loglevel, tags = [logs],
 			desc = "Set the loglevel",
+			longdesc = "Possible loglevels: `none`, `emergency`, `alert`, `critical`,
+			           `error`, `warning`, `notice`, `info`, `debug`.",
 			module = ?MODULE, function = set_loglevel,
-			args_desc = ["Desired logging level: none | emergency | alert | critical "
-				     "| error | warning | notice | info | debug"],
+			args_desc = ["Desired logging level"],
 			args_example = ["debug"],
 			args = [{loglevel, string}],
 			result = {res, rescode}},
@@ -171,7 +172,8 @@ get_commands_spec() ->
 			result_example = ["mod_configure", "mod_vcard"],
 			result = {modules, {list, {module, string}}}},
      #ejabberd_commands{name = update, tags = [server],
-			desc = "Update the given module, or use the keyword: all",
+			desc = "Update the given module",
+			longdesc = "To update all the possible modules, use `all`.",
 			module = ?MODULE, function = update,
 			args_example = ["mod_vcard"],
 			args = [{module, string}],
@@ -373,7 +375,7 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = set_master, tags = [cluster],
 			desc = "Set master node of the clustered Mnesia tables",
-			longdesc = "If you provide as nodename `self`, this "
+			longdesc = "If `nodename` is set to `self`, then this "
 			"node will be set as its own master.",
 			module = ?MODULE, function = set_master,
 			args_desc = ["Name of the erlang node that will be considered master of this node"],
