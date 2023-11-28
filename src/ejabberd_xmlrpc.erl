@@ -238,7 +238,7 @@ do_command(Auth, Command, AttrL, ArgsF, ArgsR,
     ArgsFormatted = format_args(rename_old_args(AttrL, ArgsR), ArgsF),
     Result = ejabberd_commands:execute_command2(Command, ArgsFormatted, Auth),
     ResultFormatted = format_result(Result, ResultF),
-    {command_result, ResultFormatted}.
+    {command_result, {struct, [ResultFormatted]}}.
 
 rename_old_args(Args, []) ->
     Args;
@@ -292,6 +292,14 @@ format_args(Args, ArgsFormat) ->
     end.
 
 format_arg({array, Elements},
+	   {list, {_ElementDefName, ElementDefFormat}})
+    when is_list(Elements) ->
+    lists:map(fun (ElementValue) ->
+		      format_arg(ElementValue, ElementDefFormat)
+	      end,
+	      Elements);
+
+format_arg({array, Elements},
 	   {list, {ElementDefName, ElementDefFormat}})
     when is_list(Elements) ->
     lists:map(fun ({struct, [{ElementName, ElementValue}]}) when
@@ -307,7 +315,14 @@ format_arg({array, [{struct, Elements}]},
 		      format_arg(ElementValue, ElementDefFormat)
 	      end,
 	      Elements);
+%% Old ejabberd 23.10
 format_arg({array, [{struct, Elements}]},
+	   {tuple, ElementsDef})
+    when is_list(Elements) ->
+    FormattedList = format_args(Elements, ElementsDef),
+    list_to_tuple(FormattedList);
+%% New ejabberd 24.xx
+format_arg({struct, Elements},
 	   {tuple, ElementsDef})
     when is_list(Elements) ->
     FormattedList = format_args(Elements, ElementsDef),
@@ -336,6 +351,10 @@ process_unicode_codepoints(Str) ->
 %% Result
 %% -----------------------------
 
+format_result(Code, {Name, rescode}) ->
+    {Name, make_status(Code)};
+format_result({_Code, Text}, {_Name, restuple}) ->
+    {text, io_lib:format("~s", [Text])};
 format_result({error, Error}, _) when is_list(Error) ->
     throw({error, lists:flatten(Error)});
 format_result({error, Error}, _) ->
@@ -346,45 +365,36 @@ format_result({error, _Type, _Code, Error}, _) ->
     throw({error, Error});
 format_result(String, string) -> lists:flatten(String);
 format_result(Atom, {Name, atom}) ->
-    {struct,
-     [{Name, iolist_to_binary(atom_to_list(Atom))}]};
+     {Name, iolist_to_binary(atom_to_list(Atom))};
 format_result(Int, {Name, integer}) ->
-    {struct, [{Name, Int}]};
+    {Name, Int};
 format_result([A|_]=String, {Name, string}) when is_list(String) and is_integer(A) ->
-    {struct, [{Name, lists:flatten(String)}]};
+    {Name, lists:flatten(String)};
 format_result(Binary, {Name, string}) when is_binary(Binary) ->
-    {struct, [{Name, binary_to_list(Binary)}]};
+    {Name, binary_to_list(Binary)};
 format_result(Atom, {Name, string}) when is_atom(Atom) ->
-    {struct, [{Name, atom_to_list(Atom)}]};
+    {Name, atom_to_list(Atom)};
 format_result(Integer, {Name, string}) when is_integer(Integer) ->
-    {struct, [{Name, integer_to_list(Integer)}]};
+    {Name, integer_to_list(Integer)};
 format_result(Other, {Name, string}) ->
-    {struct, [{Name, io_lib:format("~p", [Other])}]};
+    {Name, io_lib:format("~p", [Other])};
 format_result(String, {Name, binary}) when is_list(String) ->
-    {struct, [{Name, lists:flatten(String)}]};
+    {Name, lists:flatten(String)};
 format_result(Binary, {Name, binary}) when is_binary(Binary) ->
-    {struct, [{Name, binary_to_list(Binary)}]};
-format_result(Code, {Name, rescode}) ->
-    {struct, [{Name, make_status(Code)}]};
-format_result({Code, Text}, {Name, restuple}) ->
-    {struct,
-     [{Name, make_status(Code)},
-      {text, io_lib:format("~s", [Text])}]};
-format_result(Elements, {Name, {list, ElementsDef}}) ->
-    FormattedList = lists:map(fun (Element) ->
-				      format_result(Element, ElementsDef)
-			      end,
-			      Elements),
-    {struct, [{Name, {array, FormattedList}}]};
-format_result(ElementsTuple,
-	      {Name, {tuple, ElementsDef}}) ->
-    ElementsList = tuple_to_list(ElementsTuple),
-    ElementsAndDef = lists:zip(ElementsList, ElementsDef),
-    FormattedList = lists:map(fun ({Element, ElementDef}) ->
-				      format_result(Element, ElementDef)
-			      end,
-			      ElementsAndDef),
-    {struct, [{Name, {array, FormattedList}}]};
+    {Name, binary_to_list(Binary)};
+
+
+format_result(Els, {Name, {list, Def}}) ->
+    FormattedList = [element(2, format_result(El, Def)) || El <- Els],
+    {Name, {array, FormattedList}};
+
+
+format_result(Tuple,
+	      {Name, {tuple, Def}}) ->
+    Els = lists:zip(tuple_to_list(Tuple), Def),
+    FormattedList = [format_result(El, ElDef) || {El, ElDef} <- Els],
+    {Name, {struct, FormattedList}};
+
 format_result(404, {Name, _}) ->
     {struct, [{Name, make_status(not_found)}]}.
 
