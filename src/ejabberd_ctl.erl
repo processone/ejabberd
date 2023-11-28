@@ -333,7 +333,7 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
 							ArgsFormatted,
 							CI2,
 							Version),
-	    format_result_preliminary(Result, ResultFormat);
+	    format_result_preliminary(Result, ResultFormat, Version);
 	{'EXIT', {function_clause,[{lists,zip,[A1,A2|_], _} | _]}} ->
 	    {NumCompa, TextCompa} =
 		case {length(A1), length(A2)} of
@@ -390,67 +390,67 @@ format_arg2(Arg, Parse)->
 %% Format result
 %%-----------------------------
 
-format_result_preliminary(Result, {A, {list, B}}) ->
-    format_result(Result, {A, {top_result_list, B}});
-format_result_preliminary(Result, ResultFormat) ->
-    format_result(Result, ResultFormat).
+format_result_preliminary(Result, {A, {list, B}}, Version) ->
+    format_result(Result, {A, {top_result_list, B}}, Version);
+format_result_preliminary(Result, ResultFormat, Version) ->
+    format_result(Result, ResultFormat, Version).
 
-format_result({error, ErrorAtom}, _) ->
+format_result({error, ErrorAtom}, _, _Version) ->
     {io_lib:format("Error: ~p", [ErrorAtom]), make_status(error)};
 
 %% An error should always be allowed to return extended error to help with API.
 %% Extended error is of the form:
 %%  {error, type :: atom(), code :: int(), Desc :: string()}
-format_result({error, ErrorAtom, Code, Msg}, _) ->
+format_result({error, ErrorAtom, Code, Msg}, _, _Version) ->
     {io_lib:format("Error: ~p: ~s", [ErrorAtom, Msg]), make_status(Code)};
 
-format_result(Atom, {_Name, atom}) ->
+format_result(Atom, {_Name, atom}, _Version) ->
     io_lib:format("~p", [Atom]);
 
-format_result(Int, {_Name, integer}) ->
+format_result(Int, {_Name, integer}, _Version) ->
     io_lib:format("~p", [Int]);
 
-format_result([A|_]=String, {_Name, string}) when is_list(String) and is_integer(A) ->
+format_result([A|_]=String, {_Name, string}, _Version) when is_list(String) and is_integer(A) ->
     io_lib:format("~ts", [String]);
 
-format_result(Binary, {_Name, string}) when is_binary(Binary) ->
+format_result(Binary, {_Name, string}, _Version) when is_binary(Binary) ->
     io_lib:format("~ts", [binary_to_list(Binary)]);
 
-format_result(Atom, {_Name, string}) when is_atom(Atom) ->
+format_result(Atom, {_Name, string}, _Version) when is_atom(Atom) ->
     io_lib:format("~ts", [atom_to_list(Atom)]);
 
-format_result(Integer, {_Name, string}) when is_integer(Integer) ->
+format_result(Integer, {_Name, string}, _Version) when is_integer(Integer) ->
     io_lib:format("~ts", [integer_to_list(Integer)]);
 
-format_result(Other, {_Name, string})  ->
+format_result(Other, {_Name, string}, _Version)  ->
     io_lib:format("~p", [Other]);
 
-format_result(Code, {_Name, rescode}) ->
+format_result(Code, {_Name, rescode}, _Version) ->
     make_status(Code);
 
-format_result({Code, Text}, {_Name, restuple}) ->
+format_result({Code, Text}, {_Name, restuple}, _Version) ->
     {io_lib:format("~ts", [Text]), make_status(Code)};
 
-format_result([], {_Name, {top_result_list, _ElementsDef}}) ->
+format_result([], {_Name, {top_result_list, _ElementsDef}}, _Version) ->
     "";
-format_result([FirstElement | Elements], {_Name, {top_result_list, ElementsDef}}) ->
-    [format_result(FirstElement, ElementsDef) |
+format_result([FirstElement | Elements], {_Name, {top_result_list, ElementsDef}}, Version) ->
+    [format_result(FirstElement, ElementsDef, Version) |
      lists:map(
        fun(Element) ->
-	       ["\n" | format_result(Element, ElementsDef)]
+	       ["\n" | format_result(Element, ElementsDef, Version)]
        end,
        Elements)];
 
 %% The result is a list of something: [something()]
-format_result([], {_Name, {list, _ElementsDef}}) ->
+format_result([], {_Name, {list, _ElementsDef}}, _Version) ->
     "";
-format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}) ->
+format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}, Version) ->
     %% Start formatting the first element
-    [format_result(FirstElement, ElementsDef) |
+    [format_result(FirstElement, ElementsDef, Version) |
      %% If there are more elements, put always first a newline character
      lists:map(
        fun(Element) ->
-	       [";" | format_result(Element, ElementsDef)]
+	       [";" | format_result(Element, ElementsDef, Version)]
        end,
        Elements)];
 
@@ -458,17 +458,17 @@ format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}) ->
 %% NOTE: the elements in the tuple are separated with tabular characters,
 %% if a string is empty, it will be difficult to notice in the shell,
 %% maybe a different separation character should be used, like ;;?
-format_result(ElementsTuple, {_Name, {tuple, ElementsDef}}) ->
+format_result(ElementsTuple, {_Name, {tuple, ElementsDef}}, Version) ->
     ElementsList = tuple_to_list(ElementsTuple),
     [{FirstE, FirstD} | ElementsAndDef] = lists:zip(ElementsList, ElementsDef),
-    [format_result(FirstE, FirstD) |
+    [format_result(FirstE, FirstD, Version) |
      lists:map(
        fun({Element, ElementDef}) ->
-	       ["\t" | format_result(Element, ElementDef)]
+	       ["\t" | format_result(Element, ElementDef, Version)]
        end,
        ElementsAndDef)];
 
-format_result(404, {_Name, _}) ->
+format_result(404, {_Name, _}, _Version) ->
     make_status(not_found).
 
 make_status(ok) -> ?STATUS_SUCCESS;
