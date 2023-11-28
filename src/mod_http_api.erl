@@ -412,7 +412,15 @@ format_command_result(Cmd, Auth, Result, Version) ->
 	    {_, T} = format_result(Result, ResultFormat),
 	    {200, T};
 	_ ->
-	    {200, {[format_result(Result, ResultFormat)]}}
+            OtherResult1 = format_result(Result, ResultFormat),
+            OtherResult2 = case Version of
+                               0 ->
+                                   {[OtherResult1]};
+                               _ ->
+                                   {_, Other3} = OtherResult1,
+                                   Other3
+                           end,
+	    {200, OtherResult2}
     end.
 
 format_result(Atom, {Name, atom}) ->
