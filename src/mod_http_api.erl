@@ -39,7 +39,7 @@
 -include("ejabberd_stacktrace.hrl").
 -include("translate.hrl").
 
--define(DEFAULT_API_VERSION, 0).
+-define(DEFAULT_API_VERSION, 1000000).
 
 -define(CT_PLAIN,
         {<<"Content-Type">>, <<"text/plain">>}).
