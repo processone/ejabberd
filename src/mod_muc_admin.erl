@@ -308,6 +308,22 @@ get_commands_spec() ->
 			args = [{name, binary}, {service, binary}, {password, binary},
 				{reason, binary}, {users, binary}],
 		        result = {res, rescode}},
+     #ejabberd_commands{name = send_direct_invitation, tags = [muc_room],
+			desc = "Send a direct invitation to several destinations",
+			longdesc = "Since ejabberd 20.12, this command is "
+                        "asynchronous: the API call may return before the "
+                        "server has send all the invitations.\n\n"
+                        "`password` and `message` can be set to `none`.",
+			module = ?MODULE, function = send_direct_invitation,
+			version = 1,
+		        args_desc = ["Room name", "MUC service", "Password, or `none`",
+			 "Reason text, or `none`", "List of users JIDs"],
+			args_example = [<<"room1">>, <<"muc.example.com">>,
+					<<>>, <<"Check this out!">>,
+					["user2@localhost", "user3@example.com"]],
+			args = [{name, binary}, {service, binary}, {password, binary},
+				{reason, binary}, {users, {list, {jid, binary}}}],
+		        result = {res, rescode}},
 
      #ejabberd_commands{name = change_room_option, tags = [muc_room],
 		       desc = "Change an option in a MUC room",
@@ -344,6 +360,20 @@ get_commands_spec() ->
 			args = [{user, binary}, {nick, binary}, {room, binary},
 				{nodes, binary}],
 			result = {nodes, {list, {node, string}}}},
+     #ejabberd_commands{name = subscribe_room, tags = [muc_room, muc_sub],
+			desc = "Subscribe to a MUC conference",
+			module = ?MODULE, function = subscribe_room,
+			version = 1,
+			args_desc = ["User JID", "a user's nick",
+			    "the room to subscribe", "list of nodes"],
+			args_example = ["tom@localhost", "Tom", "room1@conference.localhost",
+			    ["urn:xmpp:mucsub:nodes:messages", "urn:xmpp:mucsub:nodes:affiliations"]],
+			result_desc = "The list of nodes that has subscribed",
+			result_example = ["urn:xmpp:mucsub:nodes:messages",
+			    "urn:xmpp:mucsub:nodes:affiliations"],
+			args = [{user, binary}, {nick, binary}, {room, binary},
+				{nodes, {list, {node, binary}}}],
+			result = {nodes, {list, {node, string}}}},
      #ejabberd_commands{name = subscribe_room_many, tags = [muc_room, muc_sub],
 			desc = "Subscribe several users to a MUC conference",
 			note = "added in 22.05",
@@ -366,6 +396,30 @@ get_commands_spec() ->
                                         }},
                                 {room, binary},
 				{nodes, binary}],
+			result = {res, rescode}},
+     #ejabberd_commands{name = subscribe_room_many, tags = [muc_room, muc_sub],
+			desc = "Subscribe several users to a MUC conference",
+			note = "added in 22.05",
+			longdesc = "This command accepts up to 50 users at once "
+                            "(this is configurable with the *`mod_muc_admin`* option "
+                            "`subscribe_room_many_max_users`)",
+			module = ?MODULE, function = subscribe_room_many,
+			version = 1,
+			args_desc = ["Users JIDs and nicks",
+                                     "the room to subscribe",
+                                     "nodes separated by commas: `,`"],
+			args_example = [[{"tom@localhost", "Tom"},
+                                         {"jerry@localhost", "Jerry"}],
+                                        "room1@conference.localhost",
+                                        ["urn:xmpp:mucsub:nodes:messages", "urn:xmpp:mucsub:nodes:affiliations"]],
+			args = [{users, {list,
+                                         {user, {tuple,
+                                                 [{jid, binary},
+                                                  {nick, binary}
+                                                 ]}}
+                                        }},
+                                {room, binary},
+				{nodes, {list, {node, binary}}}],
 			result = {res, rescode}},
      #ejabberd_commands{name = unsubscribe_room, tags = [muc_room, muc_sub],
 			desc = "Unsubscribe from a MUC conference",
@@ -1074,20 +1128,22 @@ get_room_occupants_number(Room, Host) ->
 %%----------------------------
 %% http://xmpp.org/extensions/xep-0249.html
 
-send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
+send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) when is_binary(UsersString) ->
+    UsersStrings = binary:split(UsersString, <<":">>, [global]),
+    send_direct_invitation(RoomName, RoomService, Password, Reason, UsersStrings);
+send_direct_invitation(RoomName, RoomService, Password, Reason, UsersStrings) ->
     case jid:make(RoomName, RoomService) of
 	error ->
 	    throw({error, "Invalid 'roomname' or 'service'"});
 	RoomJid ->
 	    XmlEl = build_invitation(Password, Reason, RoomJid),
-	    Users = get_users_to_invite(RoomJid, UsersString),
+	    Users = get_users_to_invite(RoomJid, UsersStrings),
 	    [send_direct_invitation(RoomJid, UserJid, XmlEl)
 	     || UserJid <- Users],
 	    ok
     end.
 
-get_users_to_invite(RoomJid, UsersString) ->
-    UsersStrings = binary:split(UsersString, <<":">>, [global]),
+get_users_to_invite(RoomJid, UsersStrings) ->
     OccupantsTuples = get_room_occupants(RoomJid#jid.luser,
 					 RoomJid#jid.lserver),
     OccupantsJids = [jid:decode(JidString)
@@ -1439,8 +1495,10 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
 
 subscribe_room(_User, Nick, _Room, _Nodes) when Nick == <<"">> ->
     throw({error, "Nickname must be set"});
-subscribe_room(User, Nick, Room, Nodes) ->
+subscribe_room(User, Nick, Room, Nodes) when is_binary(Nodes) ->
     NodeList = re:split(Nodes, "\\h*,\\h*"),
+    subscribe_room(User, Nick, Room, NodeList);
+subscribe_room(User, Nick, Room, NodeList) ->
     try jid:decode(Room) of
 	#jid{luser = Name, lserver = Host} when Name /= <<"">> ->
 	    try jid:decode(User) of

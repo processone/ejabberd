@@ -91,6 +91,18 @@ get_commands_spec() ->
 				     "List of scopes to allow, separated by ';'"],
                         result = {result, {tuple, [{token, string}, {scopes, string}, {expires_in, string}]}}
                        },
+     #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
+                        desc = "Issue an [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) token for the given jid",
+                        module = ?MODULE, function = oauth_issue_token,
+                        version = 1,
+                        args = [{jid, string}, {ttl, integer}, {scopes, {list, {scope, binary}}}],
+                        policy = restricted,
+                        args_example = ["user@server.com", 3600, ["connected_users_number", "muc_online_rooms"]],
+                        args_desc = ["Jid for which issue token",
+				     "Time to live of generated token in seconds",
+				     "List of scopes to allow"],
+                        result = {result, {tuple, [{token, string}, {scopes, {list, {scope, string}}}, {expires_in, string}]}}
+                       },
      #ejabberd_commands{name = oauth_list_tokens, tags = [oauth],
                         desc = "List [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) tokens, user, scope, and seconds to expire (only Mnesia)",
                         longdesc = "List OAuth tokens, their user and scope, and how many seconds remain until expirity",
@@ -135,8 +147,10 @@ get_commands_spec() ->
                        }
     ].
 
-oauth_issue_token(Jid, TTLSeconds, ScopesString) ->
+oauth_issue_token(Jid, TTLSeconds, [Head|_] = ScopesString) when is_integer(Head) ->
     Scopes = [list_to_binary(Scope) || Scope <- string:tokens(ScopesString, ";")],
+    oauth_issue_token(Jid, TTLSeconds, Scopes);
+oauth_issue_token(Jid, TTLSeconds, Scopes) ->
     try jid:decode(list_to_binary(Jid)) of
         #jid{luser =Username, lserver = Server} ->
             Ctx1 = #oauth_ctx{password = admin_generated},

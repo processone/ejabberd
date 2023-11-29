@@ -511,6 +511,20 @@ get_commands_spec() ->
 			args_desc = ["User name", "Server name", "Contact user name", "Contact server name",
 				"Nickname", "Group", "Subscription"],
 			result = {res, rescode}},
+     #ejabberd_commands{name = add_rosteritem, tags = [roster],
+			desc = "Add an item to a user's roster (supports ODBC)",
+			module = ?MODULE, function = add_rosteritem,
+			version = 1,
+			args = [{localuser, binary}, {localhost, binary},
+				{user, binary}, {host, binary},
+				{nick, binary}, {groups, {list, {group, binary}}},
+				{subs, binary}],
+			args_rename = [{localserver, localhost}, {server, host}],
+			args_example = [<<"user1">>,<<"myserver.com">>,<<"user2">>, <<"myserver.com">>,
+				<<"User 2">>, [<<"Friends">>, <<"Team 1">>], <<"both">>],
+			args_desc = ["User name", "Server name", "Contact user name", "Contact server name",
+				"Nickname", "Groups", "Subscription"],
+			result = {res, rescode}},
      %%{"", "subs= none, from, to or both"},
      %%{"", "example: add-roster peter localhost mike server.com MiKe Employees both"},
      %%{"", "will add mike@server.com to peter@localhost roster"},
@@ -696,6 +710,18 @@ get_commands_spec() ->
 				<<"Third group">>, <<"group1\\\\ngroup2">>],
 			args_desc = ["Group identifier", "Group server name", "Group name",
 				"Group description", "Groups to display"],
+			result = {res, rescode}},
+     #ejabberd_commands{name = srg_create, tags = [shared_roster_group],
+			desc = "Create a Shared Roster Group",
+			module = ?MODULE, function = srg_create,
+			version = 1,
+			args = [{group, binary}, {host, binary},
+				{label, binary}, {description, binary}, {display, {list, {group, binary}}}],
+			args_rename = [{name, label}],
+			args_example = [<<"group3">>, <<"myserver.com">>, <<"Group3">>,
+				<<"Third group">>, [<<"group1">>, <<"group2">>]],
+			args_desc = ["Group identifier", "Group server name", "Group name",
+				"Group description", "List of groups to display"],
 			result = {res, rescode}},
      #ejabberd_commands{name = srg_delete, tags = [shared_roster_group],
 			desc = "Delete a Shared Roster Group",
@@ -1301,14 +1327,16 @@ update_vcard_els(Data, ContentList, Els1) ->
 %%% Roster
 %%%
 
-add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) ->
+add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) when is_binary(Group) ->
+    add_rosteritem(LocalUser, LocalServer, User, Server, Nick, [Group], Subs);
+add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Groups, Subs) ->
     case {jid:make(LocalUser, LocalServer), jid:make(User, Server)} of
 	{error, _} ->
 	    throw({error, "Invalid 'localuser'/'localserver'"});
 	{_, error} ->
 	    throw({error, "Invalid 'user'/'server'"});
 	{Jid, _Jid2} ->
-	    RosterItem = build_roster_item(User, Server, {add, Nick, Subs, Group}),
+	    RosterItem = build_roster_item(User, Server, {add, Nick, Subs, Groups}),
 	    case mod_roster:set_item_and_notify_clients(Jid, RosterItem, true) of
 		ok -> ok;
 		_ -> error
@@ -1423,6 +1451,11 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_router:route(
       xmpp:set_from_to(ResIQ, jid:remove_resource(LJID), LJID)).
 
+build_roster_item(U, S, {add, Nick, Subs, Groups}) when is_list(Groups) ->
+    #roster_item{jid = jid:make(U, S),
+		 name = Nick,
+		 subscription = misc:binary_to_atom(Subs),
+		 groups = Groups};
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
     Groups = binary:split(Group,<<";">>, [global, trim]),
     #roster_item{jid = jid:make(U, S),
@@ -1503,11 +1536,14 @@ private_set2(Username, Host, Xml) ->
 %%% Shared Roster Groups
 %%%
 
-srg_create(Group, Host, Label, Description, Display) ->
+srg_create(Group, Host, Label, Description, Display) when is_binary(Display) ->
     DisplayList = case Display of
-	<<>> -> [];
-	_ -> ejabberd_regexp:split(Display, <<"\\\\n">>)
+       <<>> -> [];
+       _ -> ejabberd_regexp:split(Display, <<"\\\\n">>)
     end,
+    srg_create(Group, Host, Label, Description, DisplayList);
+
+srg_create(Group, Host, Label, Description, DisplayList) ->
     Opts = [{label, Label},
 	    {displayed_groups, DisplayList},
 	    {description, Description}],
