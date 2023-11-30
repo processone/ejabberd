@@ -86,7 +86,8 @@ get_commands_spec() ->
                            args_desc = ["Path to file where generated "
                                         "documentation should be stored",
                                         "Regexp matching names of commands or modules "
-                                        "that will be included inside generated document",
+                                        "that will be included inside generated document, "
+                                        "or `runtime` to get commands registered at runtime",
                                         "Comma separated list of languages (chosen from `java`, `perl`, `xmlrpc`, `json`) "
                                         "that will have example invocation include in markdown document"],
                            result_desc = "0 if command failed, 1 when succeeded",
