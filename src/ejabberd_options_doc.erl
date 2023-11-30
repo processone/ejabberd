@@ -373,25 +373,26 @@ doc() ->
         note => "improved in 20.01",
         desc =>
             [?T("The option defines in what format the users passwords "
-               "are stored:"), "",
+               "are stored, plain text or in http://../authentication/#scram[SCRAM] format:"), "",
             ?T("* 'plain': The password is stored as plain text "
                "in the database. This is risky because the passwords "
                "can be read if your database gets compromised. "
                "This is the default value. This format allows clients to "
                "authenticate using: the old Jabber Non-SASL (XEP-0078), "
-               "SASL PLAIN, SASL DIGEST-MD5, and SASL SCRAM-SHA-1. "), "",
+               "SASL PLAIN, SASL DIGEST-MD5, and SASL SCRAM-SHA-1/256/512(-PLUS). "), "",
             ?T("* 'scram': The password is not stored, only some information "
                "that allows to verify the hash provided by the client. "
                "It is impossible to obtain the original plain password "
                "from the stored information; for this reason, when this "
                "value is configured it cannot be changed to plain anymore. "
                "This format allows clients to authenticate using: "
-               "SASL PLAIN and SASL SCRAM-SHA-1."),
-            ?T("The default value is 'plain'.")]}},
+               "SASL PLAIN and SASL SCRAM-SHA-1/256/512(-PLUS). The SCRAM variant "
+               "depends on the _`auth_scram_hash`_ option."), "",
+            ?T("The default value is 'plain'."), ""]}},
      {auth_scram_hash,
       #{value => "sha | sha256 | sha512",
         desc =>
-        ?T("Hash algorithm that should be used to store password in SCRAM format. "
+        ?T("Hash algorithm that should be used to store password in http://../authentication/#scram[SCRAM] format. "
            "You shouldn't change this if you already have passwords generated with "
            "a different algorithm - users that have such passwords will not be able "
            "to authenticate. The default value is 'sha'.")}},
