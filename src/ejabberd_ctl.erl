@@ -340,7 +340,7 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
 		    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};
 		    {L1, L2} when L1 > L2 -> {L1-L2, "more argument"}
 		end,
-	    process(["help" | [CmdString]]),
+	    process(["help" | [CmdString]], Version),
 	    {io_lib:format("Error: the command '~ts' requires ~p ~ts.",
 			   [CmdString, NumCompa, TextCompa]),
 	     wrong_command_arguments}
