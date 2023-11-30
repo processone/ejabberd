@@ -135,7 +135,7 @@ extract_auth(#request{auth = HTTPAuth, ip = {IP, _}, opts = Opts}) ->
 process(_, #request{method = 'POST', data = <<>>}) ->
     ?DEBUG("Bad Request: no data", []),
     badrequest_response(<<"Missing POST data">>);
-process([Call], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
+process([Call | _], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
     Version = get_api_version(Req),
     try
         Args = extract_args(Data),
@@ -153,7 +153,7 @@ process([Call], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
             ?DEBUG("Bad Request: ~p ~p", [_Error, StackTrace]),
             badrequest_response()
     end;
-process([Call], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
+process([Call | _], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
     Version = get_api_version(Req),
     try
         Args = case Data of
