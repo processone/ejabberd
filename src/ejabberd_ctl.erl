@@ -445,12 +445,16 @@ format_result([FirstElement | Elements], {_Name, {top_result_list, ElementsDef}}
 format_result([], {_Name, {list, _ElementsDef}}, _Version) ->
     "";
 format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}, Version) ->
+    Separator = case Version of
+                    0 -> ";";
+                    _ -> ","
+                end,
     %% Start formatting the first element
     [format_result(FirstElement, ElementsDef, Version) |
      %% If there are more elements, put always first a newline character
      lists:map(
        fun(Element) ->
-	       [";" | format_result(Element, ElementsDef, Version)]
+	       [Separator | format_result(Element, ElementsDef, Version)]
        end,
        Elements)];
 
@@ -782,8 +786,9 @@ print_usage_help(MaxC, ShCode) ->
 	 "Separate the elements in a list with the , character.\n",
 	 "Separate the elements in a tuple with the : character.\n",
 	 "\n",
-	 "Some commands return lists, like get_roster and get_user_subscriptions.\n",
-	 "In those commands, the elements in the list are separated with: ;\n"],
+	 "Some commands results are lists or tuples, like get_roster and get_user_subscriptions.\n",
+	 "The elements in a list are separated with a , character.\n",
+	 "The elements in a tuple are separated with a tabular character.\n"],
     ArgsDef = [],
     C = #ejabberd_commands{
 	   name = help,
