@@ -606,7 +606,7 @@ options() ->
      {log_modules_fully, []},
      {max_fsm_queue, undefined},
      {modules, []},
-     {negotiation_timeout, timer:seconds(30)},
+     {negotiation_timeout, timer:seconds(120)},
      {net_ticktime, timer:seconds(60)},
      {new_sql_schema, ?USE_NEW_SQL_SCHEMA_DEFAULT},
      {update_sql_schema, false},
