@@ -237,6 +237,7 @@ handle_cast(Msg, State) ->
     {noreply, State}.
 
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
+    ?INFO_MSG("Node ~p has left our Mnesia S2S tables", [Node]),
     clean_table_from_bad_node(Node),
     {noreply, State};
 handle_info({mnesia_system_event, {mnesia_up, Node}}, State) ->

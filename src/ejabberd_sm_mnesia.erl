@@ -112,6 +112,7 @@ handle_cast(Msg, State) ->
     {noreply, State}.
 
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
+    ?INFO_MSG("Node ~p has left our Mnesia SM tables", [Node]),
     Sessions =
         ets:select(
           session,
