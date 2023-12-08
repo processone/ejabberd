@@ -458,7 +458,7 @@ c2s_handle_cast(State, {push_enable, ID}) ->
     {stop, State#{push_enabled => true,
 		  push_session_id => ID}};
 c2s_handle_cast(State, push_disable) ->
-    State1 = maps:remove(push_disable, State),
+    State1 = maps:remove(push_enabled, State),
     State2 = maps:remove(push_session_id, State1),
     {stop, State2};
 c2s_handle_cast(State, _Msg) ->
