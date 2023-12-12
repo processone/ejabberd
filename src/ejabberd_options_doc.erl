@@ -1348,7 +1348,7 @@ doc() ->
         note => "added in 20.01",
         desc =>
 	    ?T("This option is 'true' by default, and is useful to disable "
-	       "prepared statements. The option is valid for PostgreSQL.")}},
+	       "prepared statements. The option is valid for PostgreSQL and MySQL.")}},
      {sql_query_timeout,
       #{value => "timeout()",
         desc =>
