@@ -60,7 +60,7 @@ defmodule Ejabberd.Config.EjabberdModule do
   defp fetch_and_store_repo_source_if_not_exists(path, repo) do
     unless File.exists?(path) do
       IO.puts "[info] Fetching: #{repo}"
-      :os.cmd('git clone #{repo} #{path}')
+      :os.cmd(~c"git clone #{repo} #{path}")
     end
   end
 

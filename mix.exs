@@ -23,11 +23,11 @@ defmodule Ejabberd.MixProject do
   def version do
     case config(:vsn) do
       :false -> "0.0.0" # ./configure wasn't run: vars.config not created
-      '0.0' -> "0.0.0" # the full git repository wasn't downloaded
-      'latest.0' -> "0.0.0" # running 'docker-ejabberd/ecs/build.sh latest'
+      ~c"0.0" -> "0.0.0" # the full git repository wasn't downloaded
+      ~c"latest.0" -> "0.0.0" # running 'docker-ejabberd/ecs/build.sh latest'
       [_, _, ?., _, _] = x ->
         head = String.replace(:erlang.list_to_binary(x), ~r/\.0+([0-9])/, ".\\1")
-        <<head::binary, ".0">>
+        "#{head}.0"
       vsn -> String.replace(:erlang.list_to_binary(vsn), ~r/\.0+([0-9])/, ".\\1")
     end
   end
@@ -72,16 +72,16 @@ defmodule Ejabberd.MixProject do
     result = [{:d, :ELIXIR_ENABLED}] ++
              cond_options() ++
              Enum.map(includes, fn (path) -> {:i, path} end) ++
-             if_version_above('20', [{:d, :DEPRECATED_GET_STACKTRACE}]) ++
-             if_version_above('20', [{:d, :HAVE_URI_STRING}]) ++
-             if_version_above('20', [{:d, :HAVE_ERL_ERROR}]) ++
-             if_version_below('21', [{:d, :USE_OLD_HTTP_URI}]) ++
-             if_version_below('22', [{:d, :LAGER}]) ++
-             if_version_below('21', [{:d, :NO_CUSTOMIZE_HOSTNAME_CHECK}]) ++
-             if_version_below('23', [{:d, :USE_OLD_CRYPTO_HMAC}]) ++
-             if_version_below('23', [{:d, :USE_OLD_PG2}]) ++
-             if_version_below('24', [{:d, :COMPILER_REPORTS_ONLY_LINES}]) ++
-             if_version_below('24', [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}])
+             if_version_above(~c"20", [{:d, :DEPRECATED_GET_STACKTRACE}]) ++
+             if_version_above(~c"20", [{:d, :HAVE_URI_STRING}]) ++
+             if_version_above(~c"20", [{:d, :HAVE_ERL_ERROR}]) ++
+             if_version_below(~c"21", [{:d, :USE_OLD_HTTP_URI}]) ++
+             if_version_below(~c"22", [{:d, :LAGER}]) ++
+             if_version_below(~c"21", [{:d, :NO_CUSTOMIZE_HOSTNAME_CHECK}]) ++
+             if_version_below(~c"23", [{:d, :USE_OLD_CRYPTO_HMAC}]) ++
+             if_version_below(~c"23", [{:d, :USE_OLD_PG2}]) ++
+             if_version_below(~c"24", [{:d, :COMPILER_REPORTS_ONLY_LINES}]) ++
+             if_version_below(~c"24", [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}])
     defines = for {:d, value} <- result, do: {:d, value}
     result ++ [{:d, :ALL_DEFS, defines}]
   end
@@ -136,7 +136,7 @@ defmodule Ejabberd.MixProject do
                          {config(:redis), {:eredis, "~> 1.2.0"}},
                          {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
-                         {if_version_below('22', true), {:lager, "~> 3.9.1"}},
+                         {if_version_below(~c"22", true), {:lager, "~> 3.9.1"}},
                          {config(:lua), {:luerl, "~> 1.0"}},
                          {config(:mysql), {:p1_mysql, git: "https://github.com/processone/p1_mysql.git", ref: "f685408b910c425b9905d4ddcdbedba717a5b48c"}},
                          {config(:pgsql), {:p1_pgsql, "~> 1.1"}},
@@ -154,7 +154,7 @@ defmodule Ejabberd.MixProject do
     for {:true, app} <- [{config(:pam), :epam},
                          {config(:lua), :luerl},
                          {config(:redis), :eredis},
-                         {if_version_below('22', true), :lager},
+                         {if_version_below(~c"22", true), :lager},
                          {config(:mysql), :p1_mysql},
                          {config(:sip), :esip},
                          {config(:odbc), :odbc},
@@ -214,7 +214,7 @@ defmodule Ejabberd.MixProject do
           _ -> :ok
         end
         case Version.match?(System.version(), "< 1.11.4")
-          and :erlang.system_info(:otp_release) > '23' do
+          and :erlang.system_info(:otp_release) > ~c"23" do
           true ->
             IO.puts("ERROR: To build releases with Elixir lower than 1.11.4, Erlang/OTP lower than 24 is required.")
           _ -> :ok
