@@ -886,7 +886,7 @@ doc() ->
         desc =>
             ?T("Time to wait for an XMPP stream negotiation to complete. "
                "When timeout occurs, the corresponding XMPP stream is closed. "
-               "The default value is '30' seconds.")}},
+               "The default value is '120' seconds.")}},
      {net_ticktime,
       #{value => "timeout()",
         desc =>
