@@ -8,7 +8,7 @@ defmodule Ejabberd.MixProject do
      elixir: elixir_required_version(),
      elixirc_paths: ["lib"],
      compile_path: ".",
-     compilers: [:asn1] ++ Mix.compilers(),
+     compilers: [:asn1, :yecc] ++ Mix.compilers(),
      erlc_options: erlc_options(),
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
