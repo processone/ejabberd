@@ -603,7 +603,7 @@ compile(LibDir) ->
     Er = [compile_erlang_file(Bin, File, Options)
           || File <- filelib:wildcard(Src++"/*.erl")],
     Ex = [compile_elixir_file(Bin, File)
-          || File <- filelib:wildcard(Lib ++ "/*.ex")],
+          || File <- filelib:wildcard(Lib ++ "/**/*.ex")],
     compile_result(Er++Ex).
 
 compile_c_files(LibDir) ->
