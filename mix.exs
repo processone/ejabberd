@@ -102,7 +102,7 @@ defmodule Ejabberd.MixProject do
      {:cache_tab, "~> 1.0"},
      {:eimp, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
-     {:fast_tls, git: "https://github.com/processone/fast_tls.git", ref: "1dc4ac9a0ca4a7e0ef026194a1ce56b45db6fe8d", override: true},
+     {:fast_tls, git: "https://github.com/processone/fast_tls.git", ref: "34e46e8a122e4dd83730eda1aa8b566ab55eea62", override: true},
      {:fast_xml, "~> 1.1"},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
@@ -114,7 +114,7 @@ defmodule Ejabberd.MixProject do
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
-     {:xmpp, git: "https://github.com/processone/xmpp.git", ref: "01e41061e6adb8569ed595a2b0701a2b91db83b0", override: true},
+     {:xmpp, git: "https://github.com/processone/xmpp.git", ref: "6059f7d98d449675552f4fa8030bfc163ceb6bd2", override: true},
      {:yconf, "~> 1.0"}]
     ++ cond_deps()
   end
