@@ -53,6 +53,7 @@
 {sysconfdir, "{{release_dir}}/etc"}.
 {erts_dir, "{{release_dir}}/erts-${ERTS_VSN#erts-}"}.
 {installuser, "@INSTALLUSER@"}.
+{iex, "{{release_dir}}/releases/{{vsn}}/iex"}.
 {erl, "{{erts_dir}}/bin/erl"}.
 {epmd, "{{erts_dir}}/bin/epmd"}.
 {localstatedir, "{{release_dir}}/var"}.
