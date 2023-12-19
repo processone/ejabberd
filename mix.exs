@@ -254,7 +254,7 @@ defmodule Ejabberd.MixProject do
     execute = fn(command) ->
       case function_exported?(System, :shell, 1) do
         true ->
-          System.shell(command)
+          System.shell(command, into: IO.stream())
         false ->
           :os.cmd(to_charlist(command))
       end
