@@ -320,7 +320,7 @@ defmodule Ejabberd.MixProject do
     end
 
     case Mix.env() do
-      :dev -> execute.("REL_DIR_TEMP=$PWD/rel/overlays/ rel/setup-dev.sh")
+      :dev -> execute.("REL_DIR_TEMP=$PWD/rel/overlays/ rel/setup-dev.sh mix")
       _ -> :ok
     end
 
