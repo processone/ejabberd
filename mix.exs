@@ -250,7 +250,7 @@ defmodule Ejabberd.MixProject do
       logs_dir: config(:logs_dir),
       spool_dir: config(:spool_dir),
       vsn: config(:vsn),
-      iex: config(:iex),
+      iexpath: config(:iexpath),
       erl: config(:erl),
       epmd: config(:epmd),
       bindir: Path.join([config(:release_dir), "releases", version()]),

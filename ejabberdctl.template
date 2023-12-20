@@ -15,8 +15,8 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT")" && pwd -P)"
 # shellcheck disable=SC2034
 ERTS_VSN="{{erts_vsn}}"
 ERL="{{erl}}"
-IEX="{{bindir}}/iex"
 EPMD="{{epmd}}"
+IEX="{{iexpath}}"
 INSTALLUSER="{{installuser}}"
 
 # check the proper system user is used
