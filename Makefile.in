@@ -100,6 +100,8 @@ REBAR_VER:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print $$2}')
 REBAR_VER_318:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print ($$2 == 3 && $$3 >= 18 ? 1 : 0)}')
 endif
 
+REBAR_ENABLE_ELIXIR = @elixir@
+
 ifeq "$(REBAR_VER)" "6"
   REBAR=$(MIX)
   SKIPDEPS=
@@ -113,10 +115,16 @@ ifeq "$(REBAR_VER)" "6"
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
   XREFOPTIONS=graph
   CLEANARG=--deps
+  ELIXIR_LIBDIR_RAW=$(shell elixir -e "IO.puts(:filename.dirname(:code.lib_dir(:elixir)))" -e ":erlang.halt")
+  ELIXIR_LIBDIR=":$(ELIXIR_LIBDIR_RAW)"
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
   RELIVECMD=escript rel/relive.escript && MIX_ENV=dev RELIVE=true iex --name ejabberd@localhost -S mix run
 else
+ifeq ($(REBAR_ENABLE_ELIXIR),true)
+  ELIXIR_LIBDIR_RAW=$(shell elixir -e "IO.puts(:filename.dirname(:code.lib_dir(:elixir)))" -e ":erlang.halt")
+  ELIXIR_LIBDIR=":$(ELIXIR_LIBDIR_RAW)"
+endif
 ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
   LISTDEPS=tree
@@ -299,7 +307,7 @@ ejabberdctl.relive:
 		-e "s*{{spool_dir}}*${SPOOL_DIR}*g" \
 		-e "s*{{bindir}}/iex*$(iexpath)*g" \
 		-e "s*{{bindir}}*@bindir@*g" \
-		-e "s*{{libdir}}*${relivelibdir}*g" \
+		-e "s*{{libdir}}*${relivelibdir}${ELIXIR_LIBDIR}*g" \
 		-e "s*{{erl}}*@ERL@*g" \
 		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
 		> ejabberdctl.relive
@@ -322,7 +330,7 @@ ejabberdctl.example: vars.config
 		-e "s*{{logs_dir}}*${LOGDIR}*g" \
 		-e "s*{{spool_dir}}*${SPOOLDIR}*g" \
 		-e "s*{{bindir}}*@bindir@*g" \
-		-e "s*{{libdir}}*@libdir@*g" \
+		-e "s*{{libdir}}*@libdir@${ELIXIR_LIBDIR}*g" \
 		-e "s*{{erl}}*@ERL@*g" \
 		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
 		> ejabberdctl.example
