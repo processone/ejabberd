@@ -604,7 +604,7 @@ compile(LibDir) ->
           || File <- filelib:wildcard(Src++"/*.erl")],
     Ex = [compile_elixir_file(Bin, File)
           || File <- filelib:wildcard(Lib ++ "/**/*.ex")],
-    compile_result(Er++Ex).
+    compile_result(lists:flatten([Er, Ex])).
 
 compile_c_files(LibDir) ->
     case file:read_file_info(filename:join(LibDir, "c_src/Makefile")) of
@@ -673,7 +673,7 @@ compile_elixir_file(Dest, File) when is_list(Dest) and is_list(File) ->
 
 compile_elixir_file(Dest, File) ->
   try 'Elixir.Kernel.ParallelCompiler':files_to_path([File], Dest, []) of
-    [Module] -> {ok, Module}
+    Modules when is_list(Modules) -> {ok, Modules}
   catch
     _ -> {error, {compilation_failed, File}}
   end.
