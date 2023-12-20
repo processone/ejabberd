@@ -125,6 +125,7 @@ ifeq ($(REBAR_ENABLE_ELIXIR),true)
   ELIXIR_LIBDIR_RAW=$(shell elixir -e "IO.puts(:filename.dirname(:code.lib_dir(:elixir)))" -e ":erlang.halt")
   ELIXIR_LIBDIR=":$(ELIXIR_LIBDIR_RAW)"
   EXPLICIT_ELIXIR_COMPILE=MIX_ENV=default mix compile.elixir
+  PREPARE_ELIXIR_SCRIPTS=mkdir rel/overlays; cp $(ELIXIR_LIBDIR_RAW)/../bin/iex rel/overlays/; cp $(ELIXIR_LIBDIR_RAW)/../bin/elixir rel/overlays/; sed -i 's|ERTS_BIN=$$|ERTS_BIN=$$SCRIPT_PATH/../../erts-{{erts_vsn}}/bin/|' rel/overlays/elixir
 endif
 ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
@@ -438,11 +439,13 @@ distclean: clean clean-rel
 	rm -f vars.config
 
 rel:
+	$(PREPARE_ELIXIR_SCRIPTS)
 	$(REBARREL)
 
 DEV_CONFIG = _build/dev/rel/ejabberd/conf/ejabberd.yml
 
 dev $(DEV_CONFIG):
+	$(PREPARE_ELIXIR_SCRIPTS)
 	$(REBARDEV)
 
 TAGS:
