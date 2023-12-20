@@ -124,6 +124,7 @@ else
 ifeq ($(REBAR_ENABLE_ELIXIR),true)
   ELIXIR_LIBDIR_RAW=$(shell elixir -e "IO.puts(:filename.dirname(:code.lib_dir(:elixir)))" -e ":erlang.halt")
   ELIXIR_LIBDIR=":$(ELIXIR_LIBDIR_RAW)"
+  EXPLICIT_ELIXIR_COMPILE=MIX_ENV=default mix compile.elixir
 endif
 ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
@@ -179,6 +180,7 @@ $(DEPSDIR)/.built: $(DEPSDIR)/.got
 
 src: $(DEPSDIR)/.built
 	$(REBAR) $(SKIPDEPS) compile
+	$(EXPLICIT_ELIXIR_COMPILE)
 
 update:
 	rm -rf $(DEPSDIR)/.got
