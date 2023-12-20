@@ -84,7 +84,7 @@ AC_ARG_ENABLE(debug,
 esac],[if test "x$debug" = "x"; then debug=true; fi])
 
 AC_ARG_ENABLE(elixir,
-[AS_HELP_STRING([--enable-elixir],[enable Elixir support (default: no)])],
+[AS_HELP_STRING([--enable-elixir],[enable Elixir support in Rebar3 (default: no)])],
 [case "${enableval}" in
   yes) elixir=true ;;
   no)  elixir=false ;;
