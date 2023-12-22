@@ -210,6 +210,16 @@ jobs:
         _build/dev/rel/ejabberd/bin/ejabberdctl stop \
           && _build/dev/rel/ejabberd/bin/ejabberdctl stopped
 
+    - name: View logs
+      if: always()
+      run: |
+        echo "===> Registered:"
+        cat registered.log
+        echo "===> Prod:"
+        cat _build/prod/rel/ejabberd/logs/*
+        echo "===> Dev:"
+        cat _build/dev/rel/ejabberd/logs/*
+
     - name: Check rel
       if: always()
       run: |
