@@ -184,7 +184,6 @@ jobs:
         ./configure --with-rebar=mix \
                     --prefix=/tmp/ejabberd \
                     --enable-all \
-                    --disable-elixir \
                     --disable-odbc
         mix deps.get
         make
