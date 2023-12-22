@@ -65,8 +65,7 @@ define_macro:
       mod_register:
         welcome_message:
           subject: "Welcome!"
-          body: "Hi.
-Welcome to this XMPP server."
+          body: "Hi.Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
