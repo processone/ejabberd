@@ -68,7 +68,7 @@ defmodule Ejabberd.MixProject do
 
   defp erlc_options do
     # Use our own includes + includes from all dependencies
-    includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
+    includes = ["include", deps_include()]
     result = [{:d, :ELIXIR_ENABLED}] ++
              cond_options() ++
              Enum.map(includes, fn (path) -> {:i, path} end) ++
@@ -119,8 +119,8 @@ defmodule Ejabberd.MixProject do
     ++ cond_deps()
   end
 
-  defp deps_include(deps) do
-    base = if Mix.Project.umbrella?() do
+  defp deps_include() do
+    if Mix.Project.umbrella?() do
       "../../deps"
     else
       case Mix.Project.deps_paths()[:ejabberd] do
@@ -128,7 +128,6 @@ defmodule Ejabberd.MixProject do
         _ -> ".."
       end
     end
-    Enum.map(deps, fn dep -> base<>"/#{dep}/include" end)
   end
 
   defp cond_deps do
