@@ -142,29 +142,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['21.3', '25.0', '26']
-        elixir: ['1.10.3', '1.11.4', '1.12.3', '1.13.4', '1.14.5', '1.15']
+        otp: ['23.0', '25.3', '26']
+        elixir: ['1.13.4', '1.15.7', '1.16']
         exclude:
-        - otp: '21.3'
-          elixir: '1.12.3'
-        - otp: '21.3'
-          elixir: '1.13.4'
-        - otp: '21.3'
-          elixir: '1.14.5'
-        - otp: '21.3'
-          elixir: '1.15'
-        - otp: '25.0'
-          elixir: '1.10.3'
-        - otp: '25.0'
-          elixir: '1.11.4'
-        - otp: '25.0'
-          elixir: '1.12.3'
-        - otp: '26'
-          elixir: '1.10.3'
-        - otp: '26'
-          elixir: '1.11.4'
-        - otp: '26'
-          elixir: '1.12.3'
+        - otp: '23.0'
+          elixir: '1.15.7'
+        - otp: '23.0'
+          elixir: '1.16'
         - otp: '26'
           elixir: '1.13.4'
     runs-on: ubuntu-20.04
