@@ -28,7 +28,8 @@ Other optional libraries are:
 - PAM library, for Pluggable Authentication Modules (PAM)
 - ImageMagick's Convert program and Ghostscript fonts, for CAPTCHA
   challenges
-- Elixir ≥ 1.10.3, to support Elixir, and alternative to rebar/rebar3
+- Elixir ≥ 1.10.3, for Elixir support. It is recommended Elixir 1.13.4 or higher
+  and Erlang/OTP 23.0 or higher.
 
 If your system splits packages in libraries and development headers,
 install the development packages too.
