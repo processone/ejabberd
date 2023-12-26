@@ -171,7 +171,13 @@ defmodule Ejabberd.MixProject do
   end
 
   defp vars do
-    case :file.consult("vars.config") do
+    filepath = case Application.fetch_env(:ejabberd, :vars_config_path) do
+      :error ->
+        "vars.config"
+      {:ok, path} ->
+        path
+    end
+    case :file.consult(filepath) do
       {:ok,config} -> config
       _ -> [zlib: true]
     end
