@@ -42,11 +42,12 @@ defmodule Ejabberd.MixProject do
     [mod: {:ejabberd_app, []},
      applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib, :mix,
                     :base64url, :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
-                    :p1_utils, :stringprep, :syntax_tools, :yconf],
+                    :p1_utils, :stringprep, :syntax_tools, :yconf]
+     ++ cond_apps(),
      included_applications: [:mnesia, :os_mon,
                              :cache_tab, :eimp, :mqtree, :p1_acme,
                              :p1_oauth2, :pkix, :xmpp]
-     ++ cond_apps()]
+     ++ cond_included_apps()]
   end
 
   defp if_version_above(ver, okResult) do
@@ -145,6 +146,11 @@ defmodule Ejabberd.MixProject do
   end
 
   defp cond_apps do
+    for {:true, app} <- [{config(:stun), :stun}], do:
+      app
+  end
+
+  defp cond_included_apps do
     for {:true, app} <- [{config(:pam), :epam},
                          {config(:lua), :luerl},
                          {config(:redis), :eredis},
@@ -179,7 +185,7 @@ defmodule Ejabberd.MixProject do
     end
     case :file.consult(filepath) do
       {:ok,config} -> config
-      _ -> [zlib: true]
+      _ -> [stun: true, zlib: true]
     end
   end
 
