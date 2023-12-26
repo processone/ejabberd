@@ -28,18 +28,34 @@ fi
 ])
 
 AC_ARG_WITH(rebar,
-	AS_HELP_STRING([--with-rebar=bin],[use the rebar/rebar3/mix binary specified]),
+	AS_HELP_STRING([--with-rebar=bin],[use as build tool the rebar/rebar3/mix binary specified]),
 [if test "$withval" = "yes" -o "$withval" = "no" -o "X$with_rebar" = "X"; then
-    rebar="rebar"
+    rebar="rebar3"
 else
     rebar="$with_rebar"
 fi
-], [rebar="rebar"])
+], [rebar="unconfigured"])
 
 AC_PATH_TOOL(ERL, erl, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(ERLC, erlc, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(EPMD, epmd, , [${extra_erl_path}$PATH])
+
+AC_PATH_TOOL(REBAR3, rebar3, , [${extra_erl_path}$PATH])
+AC_PATH_TOOL(ELIXIR, elixir, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(IEX, iex, , [${extra_erl_path}$PATH])
+AC_PATH_TOOL(MIX, mix, , [${extra_erl_path}$PATH])
+
+if test "$rebar" = unconfigured; then
+    if test "x$ELIXIR" = "x" -o "x$IEX" = "x" -o "x$MIX" = "x"; then
+        if test "x$REBAR3" = "x"; then
+            rebar="rebar3"
+        else
+            rebar=$REBAR3
+        fi
+    else
+        rebar=$MIX
+    fi
+fi
 
 AC_ERLANG_NEED_ERL
 AC_ERLANG_NEED_ERLC
@@ -280,6 +296,8 @@ case "`uname`" in
     fi
   ;;
 esac
+
+AC_MSG_RESULT([build tool to use (change using --with-rebar): $rebar])
 
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(new_sql_schema)
