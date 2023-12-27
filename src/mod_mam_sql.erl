@@ -29,7 +29,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
+	 extended_fields/0, store/10, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
 	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6,
 	 delete_old_messages_batch/4, count_messages_to_delete/3]).
 
@@ -49,6 +49,61 @@ init(Host, _Opts) ->
 
 schemas() ->
     [#sql_schema{
+        version = 2,
+        tables =
+            [#sql_table{
+                name = <<"archive">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"timestamp">>, type = bigint},
+                     #sql_column{name = <<"peer">>, type = text},
+                     #sql_column{name = <<"bare_peer">>, type = text},
+                     #sql_column{name = <<"xml">>, type = {text, big}},
+                     #sql_column{name = <<"txt">>, type = {text, big}},
+                     #sql_column{name = <<"id">>, type = bigserial},
+                     #sql_column{name = <<"kind">>, type = {text, 10}},
+                     #sql_column{name = <<"nick">>, type = text},
+                     #sql_column{name = <<"origin_id">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"username">>, <<"timestamp">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"username">>, <<"peer">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"username">>, <<"bare_peer">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"timestamp">>]},
+                           #sql_index{
+                              columns = [<<"server_host">>, <<"username">>, <<"origin_id">>]}
+                          ],
+                post_create =
+                    fun(mysql, _) ->
+                            ejabberd_sql:sql_query_t(
+                              <<"CREATE FULLTEXT INDEX i_archive_txt ON archive(txt);">>);
+                       (_, _) ->
+                            ok
+                    end},
+             #sql_table{
+                name = <<"archive_prefs">>,
+                columns =
+                    [#sql_column{name = <<"username">>, type = text},
+                     #sql_column{name = <<"server_host">>, type = text},
+                     #sql_column{name = <<"def">>, type = text},
+                     #sql_column{name = <<"always">>, type = text},
+                     #sql_column{name = <<"never">>, type = text},
+                     #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true}],
+                indices = [#sql_index{
+                              columns = [<<"server_host">>, <<"username">>],
+                              unique = true}]}],
+        update =
+            [{add_column, <<"archive">>, <<"origin_id">>},
+             {create_index, <<"archive">>,
+              [<<"server_host">>, <<"username">>, <<"origin_id">>]}
+            ]},
+     #sql_schema{
         version = 1,
         tables =
             [#sql_table{
@@ -200,7 +255,8 @@ delete_old_messages(ServerHost, TimeStamp, Type) ->
 extended_fields() ->
     [{withtext, <<"">>}].
 
-store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
+store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS,
+      OriginID, Retract) ->
     SUser = case Type of
 		chat -> LUser;
 		groupchat -> jid:encode({LUser, LHost, <<>>})
@@ -223,8 +279,19 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
 	      _ ->
 		  fxml:element_to_binary(Pkt)
 	  end,
-	case SqlType of
-	  mssql -> case ejabberd_sql:sql_query(
+    case Retract of
+        {true, RID} ->
+            ejabberd_sql:sql_query(
+              LServer,
+              ?SQL("delete from archive"
+                   " where username=%(SUser)s"
+                   " and %(LServer)H"
+                   " and bare_peer=%(BarePeer)s"
+                   " and origin_id=%(RID)s"));
+        false -> ok
+    end,
+    case SqlType of
+        mssql -> case ejabberd_sql:sql_query(
 	           LServer,
 	           ?SQL_INSERT(
 	              "archive",
@@ -236,13 +303,14 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
 	               "xml=N%(XML)s",
 	               "txt=N%(Body)s",
 	               "kind=%(SType)s",
-	               "nick=%(Nick)s"])) of
+	               "nick=%(Nick)s",
+	               "origin_id=%(OriginID)s"])) of
 		{updated, _} ->
 		    ok;
 		Err ->
 		    Err
 	    end;
-	    _ -> case ejabberd_sql:sql_query(
+        _ -> case ejabberd_sql:sql_query(
 	           LServer,
 	           ?SQL_INSERT(
 	              "archive",
@@ -254,13 +322,14 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
 	               "xml=%(XML)s",
 	               "txt=%(Body)s",
 	               "kind=%(SType)s",
-	               "nick=%(Nick)s"])) of
+	               "nick=%(Nick)s",
+	               "origin_id=%(OriginID)s"])) of
 		{updated, _} ->
 		    ok;
 		Err ->
 		    Err
 	    end
-	end.
+    end.
 
 write_prefs(LUser, _LServer, #archive_prefs{default = Default,
 					   never = Never,
@@ -420,7 +489,7 @@ export(_Server) ->
      {archive_msg,
       fun([Host | HostTail], #archive_msg{us ={LUser, LServer},
                 id = _ID, timestamp = TS, peer = Peer,
-                type = Type, nick = Nick, packet = Pkt})
+                type = Type, nick = Nick, packet = Pkt, origin_id = OriginID})
           when (LServer == Host) or ([LServer] == HostTail)  ->
                 TStmp = misc:now_to_usec(TS),
                 SUser = case Type of
@@ -444,7 +513,8 @@ export(_Server) ->
 	                     "xml=N%(XML)s",
 	                     "txt=N%(Body)s",
 	                     "kind=%(SType)s",
-	                     "nick=%(Nick)s"])];
+	                     "nick=%(Nick)s",
+                             "origin_id=%(OriginID)s"])];
 	                _ -> [?SQL_INSERT(
 	                    "archive",
 	                    ["username=%(SUser)s",
@@ -455,7 +525,8 @@ export(_Server) ->
 	                     "xml=%(XML)s",
 	                     "txt=%(Body)s",
 	                     "kind=%(SType)s",
-	                     "nick=%(Nick)s"])]
+	                     "nick=%(Nick)s",
+                             "origin_id=%(OriginID)s"])]
 		            end;
          (_Host, _R) ->
               []

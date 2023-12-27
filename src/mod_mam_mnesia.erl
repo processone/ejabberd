@@ -28,8 +28,10 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, remove_from_archive/3,
-	 is_empty_for_user/2, is_empty_for_room/3, delete_old_messages_batch/5]).
+	 extended_fields/0, store/10, write_prefs/4, get_prefs/2, select/6,
+         remove_from_archive/3,
+	 is_empty_for_user/2, is_empty_for_room/3, delete_old_messages_batch/5,
+         transform/1]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -187,7 +189,8 @@ delete_old_messages_batch(LServer, TimeStamp, Type, Batch, LastUS) ->
 extended_fields() ->
     [].
 
-store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, TS) ->
+store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, TS,
+      OriginID, _Retract) ->
     case {mnesia:table_info(archive_msg, disc_only_copies),
 	  mnesia:table_info(archive_msg, memory)} of
 	{[_|_], TableSize} when TableSize > ?TABLE_SIZE_LIMIT ->
@@ -205,7 +208,8 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, TS) ->
 				       bare_peer = {PUser, PServer, <<>>},
 				       type = Type,
 				       nick = Nick,
-				       packet = Pkt})
+				       packet = Pkt,
+                                       origin_id = OriginID})
 		end,
 	    case mnesia:transaction(F) of
 		{atomic, ok} ->
@@ -330,3 +334,16 @@ filter_by_max(Msgs, Len) when is_integer(Len), Len >= 0 ->
     {lists:sublist(Msgs, Len), length(Msgs) =< Len};
 filter_by_max(_Msgs, _Junk) ->
     {[], true}.
+
+transform({archive_msg, US, ID, Timestamp, Peer, BarePeer,
+           Packet, Nick, Type}) ->
+    #archive_msg{
+       us = US,
+       id = ID,
+       timestamp = Timestamp,
+       peer = Peer,
+       bare_peer = BarePeer,
+       packet = Packet,
+       nick = Nick,
+       type = Type,
+       origin_id = <<"">>}.

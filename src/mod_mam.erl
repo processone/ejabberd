@@ -69,7 +69,8 @@
 			      all | chat | groupchat) -> any().
 -callback extended_fields() -> [mam_query:property() | #xdata_field{}].
 -callback store(xmlel(), binary(), {binary(), binary()}, chat | groupchat,
-		jid(), binary(), recv | send, integer()) -> ok | any().
+		jid(), binary(), recv | send, integer(), binary(),
+                {true, binary()} | false) -> ok | any().
 -callback write_prefs(binary(), binary(), #archive_prefs{}, binary()) -> ok | any().
 -callback get_prefs(binary(), binary()) -> {ok, #archive_prefs{}} | error | {error, db_failure}.
 -callback select(binary(), jid(), jid(), mam_query:result(),
@@ -512,6 +513,17 @@ set_stanza_id(Pkt, JID, ID) ->
     NewEls = [Archived, StanzaID|xmpp:get_els(Pkt)],
     xmpp:set_els(Pkt, NewEls).
 
+-spec get_origin_id(stanza()) -> binary().
+get_origin_id(#message{type = groupchat} = Pkt) ->
+    integer_to_binary(get_stanza_id(Pkt));
+get_origin_id(#message{} = Pkt) ->
+    case xmpp:get_subtag(Pkt, #origin_id{}) of
+        #origin_id{id = ID} ->
+            ID;
+        _ ->
+            xmpp:get_id(Pkt)
+    end.
+
 -spec mark_stored_msg(message(), jid()) -> message().
 mark_stored_msg(#message{meta = #{stanza_id := ID}} = Pkt, JID) ->
     Pkt1 = set_stanza_id(Pkt, JID, integer_to_binary(ID)),
@@ -585,7 +597,8 @@ disco_sm_features(empty, From, To, Node, Lang) ->
 disco_sm_features({result, OtherFeatures},
 		  #jid{luser = U, lserver = S},
 		  #jid{luser = U, lserver = S}, <<"">>, _Lang) ->
-    {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_SID_0 |
+    {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_SID_0,
+              ?NS_MESSAGE_RETRACT |
 	      OtherFeatures]};
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -1038,9 +1051,16 @@ store_mam_message(Pkt, U, S, Peer, Nick, Type, Dir) ->
     LServer = ejabberd_router:host_of_route(S),
     US = {U, S},
     ID = get_stanza_id(Pkt),
+    OriginID = get_origin_id(Pkt),
+    Retract = case xmpp:get_subtag(Pkt, #message_retract{}) of
+                  #message_retract{id = RID} when RID /= <<"">> ->
+                      {true, RID};
+                  _ ->
+                      false
+              end,
     El = xmpp:encode(Pkt),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:store(El, LServer, US, Type, Peer, Nick, Dir, ID),
+    Mod:store(El, LServer, US, Type, Peer, Nick, Dir, ID, OriginID, Retract),
     Pkt.
 
 write_prefs(LUser, LServer, Host, Default, Always, Never) ->

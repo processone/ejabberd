@@ -26,7 +26,8 @@
 	 bare_peer = {<<"">>, <<"">>, <<"">>} :: ljid(),
 	 packet = #xmlel{}                    :: xmlel() | message(),
 	 nick = <<"">>                        :: binary(),
-	 type = chat                          :: chat | groupchat}).
+	 type = chat                          :: chat | groupchat,
+         origin_id                            :: binary()}).
 
 -record(archive_prefs,
 	{us = {<<"">>, <<"">>} :: {binary(), binary()},

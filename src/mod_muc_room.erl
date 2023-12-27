@@ -5181,7 +5181,7 @@ process_iq_moderate(From, #iq{type = set, lang = Lang},
 				      sub_els = [
 					  #fasten_apply_to{id = Id, sub_els = [
 					      #message_moderated{by = By, reason = Reason,
-								 retract = #message_retract{}}
+								 retract = #message_retract{id = Id}}
 					  ]}]},
 	            {FromNick, _Role} = get_participant_data(From, StateData),
                     Packet = ejabberd_hooks:run_fold(muc_filter_message,
