@@ -27,7 +27,7 @@
 	 packet = #xmlel{}                    :: xmlel() | message(),
 	 nick = <<"">>                        :: binary(),
 	 type = chat                          :: chat | groupchat,
-         origin_id                            :: binary()}).
+         origin_id = <<"">>                   :: binary()}).
 
 -record(archive_prefs,
 	{us = {<<"">>, <<"">>} :: {binary(), binary()},
