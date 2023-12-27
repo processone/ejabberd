@@ -94,6 +94,7 @@ CREATE TABLE archive (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     kind text,
     nick text,
+    origin_id text,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -101,6 +102,11 @@ CREATE INDEX i_username_timestamp ON archive(username, timestamp);
 CREATE INDEX i_archive_username_peer ON archive (username, peer);
 CREATE INDEX i_archive_username_bare_peer ON archive (username, bare_peer);
 CREATE INDEX i_timestamp ON archive(timestamp);
+CREATE INDEX i_archive_username_origin_id ON archive (username, origin_id);
+
+-- To update 'archive' from ejabberd <= 23.10:
+-- ALTER TABLE archive ADD COLUMN origin_id text NOT NULL DEFAULT '';
+-- CREATE INDEX i_archive_username_origin_id ON archive (username, origin_id);
 
 CREATE TABLE archive_prefs (
     username text NOT NULL PRIMARY KEY,

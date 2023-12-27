@@ -98,6 +98,7 @@ CREATE TABLE archive (
     id BIGSERIAL,
     kind text,
     nick text,
+    origin_id text,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -105,6 +106,12 @@ CREATE INDEX i_username_timestamp ON archive USING btree (username, timestamp);
 CREATE INDEX i_username_peer ON archive USING btree (username, peer);
 CREATE INDEX i_username_bare_peer ON archive USING btree (username, bare_peer);
 CREATE INDEX i_timestamp ON archive USING btree (timestamp);
+CREATE INDEX i_archive_username_origin_id ON archive USING btree (username, origin_id);
+
+-- To update 'archive' from ejabberd <= 23.10:
+-- ALTER TABLE archive ADD COLUMN origin_id text NOT NULL DEFAULT '';
+-- ALTER TABLE archive ALTER COLUMN origin_id DROP DEFAULT;
+-- CREATE INDEX i_archive_username_origin_id ON archive USING btree (username, origin_id);
 
 CREATE TABLE archive_prefs (
     username text NOT NULL PRIMARY KEY,

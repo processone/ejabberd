@@ -32,6 +32,7 @@ CREATE TABLE [dbo].[archive] (
         [id] [bigint] IDENTITY(1,1) NOT NULL,
         [kind] [varchar] (10) NULL,
         [nick] [varchar] (250) NULL,
+        [origin_id] [varchar] (250) NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
  CONSTRAINT [archive_PK] PRIMARY KEY CLUSTERED
 (
@@ -49,6 +50,9 @@ CREATE INDEX [archive_sh_username_bare_peer] ON [archive] (server_host, username
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE INDEX [archive_sh_timestamp] ON [archive] (server_host, timestamp)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE INDEX [archive_sh_username_origin_id] ON [archive] (server_host, username, origin_id)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE TABLE [dbo].[archive_prefs] (

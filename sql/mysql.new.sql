@@ -110,6 +110,7 @@ CREATE TABLE archive (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
     kind varchar(10),
     nick varchar(191),
+    origin_id varchar(191),
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -118,6 +119,12 @@ CREATE INDEX i_archive_sh_username_timestamp USING BTREE ON archive(server_host(
 CREATE INDEX i_archive_sh_username_peer USING BTREE ON archive(server_host(191), username(191), peer(191));
 CREATE INDEX i_archive_sh_username_bare_peer USING BTREE ON archive(server_host(191), username(191), bare_peer(191));
 CREATE INDEX i_archive_sh_timestamp USING BTREE ON archive(server_host(191), timestamp);
+CREATE INDEX i_archive_sh_username_origin_id USING BTREE ON archive(server_host(191), username(191), origin_id(191));
+
+-- To update 'archive' from ejabberd <= 23.10:
+-- ALTER TABLE archive ADD COLUMN origin_id text NOT NULL DEFAULT '';
+-- ALTER TABLE archive ALTER COLUMN origin_id DROP DEFAULT;
+-- CREATE INDEX i_archive_sh_username_origin_id USING BTREE ON archive(server_host(191), username(191), origin_id(191));
 
 CREATE TABLE archive_prefs (
     username varchar(191) NOT NULL,
