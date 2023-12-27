@@ -190,7 +190,27 @@ extended_fields() ->
     [].
 
 store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, TS,
-      OriginID, _Retract) ->
+      OriginID, Retract) ->
+    case Retract of
+        {true, RID} ->
+            mnesia:transaction(
+              fun () ->
+                      {PUser, PServer, _} = jid:tolower(Peer),
+                      Msgs = mnesia:select(
+                               archive_msg,
+                               ets:fun2ms(
+                                 fun(#archive_msg{
+                                        us = US1,
+                                        bare_peer = Peer1,
+                                        origin_id = OriginID1} = Msg)
+                                       when US1 == {LUser, LServer},
+                                            Peer1 == {PUser, PServer, <<>>},
+                                            OriginID1 == RID -> Msg
+                                 end)),
+                      lists:foreach(fun mnesia:delete_object/1, Msgs)
+              end);
+        false -> ok
+    end,
     case {mnesia:table_info(archive_msg, disc_only_copies),
 	  mnesia:table_info(archive_msg, memory)} of
 	{[_|_], TableSize} when TableSize > ?TABLE_SIZE_LIMIT ->
