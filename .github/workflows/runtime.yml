@@ -64,7 +64,7 @@ jobs:
     - name: Compile
       run: |
         ./autogen.sh
-        ./configure --with-rebar=`which ${{ matrix.rebar }}` \
+        ./configure --with-rebar=${{ matrix.rebar }} \
                     --prefix=/tmp/ejabberd \
                     --enable-all \
                     --disable-elixir \
