@@ -92,7 +92,7 @@ ifneq ($(INSTALLGROUP),)
   G_USER=-g $(INSTALLGROUP)
 endif
 
-ifeq "$(MIX)" "mix"
+ifeq "$(notdir $(MIX))" "mix"
 REBAR_VER:=6
 REBAR_VER_318:=0
 else
