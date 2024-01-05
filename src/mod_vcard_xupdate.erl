@@ -26,8 +26,6 @@
 -module(mod_vcard_xupdate).
 -behaviour(gen_mod).
 
--protocol({xep, 398, '0.2.0'}).
-
 %% gen_mod callbacks
 -export([start/2, stop/1, reload/3]).
 

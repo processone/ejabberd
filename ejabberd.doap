@@ -632,10 +632,10 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0398.html"/>
-        <xmpp:version>0.2.00.2.0</xmpp:version>
-        <xmpp:since>17.09</xmpp:since>
+        <xmpp:version>0.2.0</xmpp:version>
+        <xmpp:since>18.03</xmpp:since>
         <xmpp:status></xmpp:status>
-        <xmpp:note>mod_avatar, mod_vcard_xupdate</xmpp:note>
+        <xmpp:note>mod_avatar</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
