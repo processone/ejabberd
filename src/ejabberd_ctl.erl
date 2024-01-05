@@ -23,8 +23,6 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%%% Does not support commands that have arguments with ctypes: list, tuple
-
 -module(ejabberd_ctl).
 
 -behaviour(gen_server).
@@ -335,14 +333,14 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
 							ArgsFormatted,
 							CI2,
 							Version),
-	    format_result_preliminary(Result, ResultFormat);
+	    format_result_preliminary(Result, ResultFormat, Version);
 	{'EXIT', {function_clause,[{lists,zip,[A1,A2|_], _} | _]}} ->
 	    {NumCompa, TextCompa} =
 		case {length(A1), length(A2)} of
 		    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};
 		    {L1, L2} when L1 > L2 -> {L1-L2, "more argument"}
 		end,
-	    process(["help" | [CmdString]]),
+	    process(["help" | [CmdString]], Version),
 	    {io_lib:format("Error: the command '~ts' requires ~p ~ts.",
 			   [CmdString, NumCompa, TextCompa]),
 	     wrong_command_arguments}
@@ -372,6 +370,13 @@ format_arg(Arg, string) ->
     NumChars = integer_to_list(length(Arg)),
     Parse = "~" ++ NumChars ++ "c",
     format_arg2(Arg, Parse);
+format_arg(Arg, {list, {_ArgName, ArgFormat}}) ->
+    [format_arg(Element, ArgFormat) || Element <- string:tokens(Arg, ",")];
+format_arg(Arg, {list, ArgFormat}) ->
+    [format_arg(Element, ArgFormat) || Element <- string:tokens(Arg, ",")];
+format_arg(Arg, {tuple, Elements}) ->
+    Args = string:tokens(Arg, ":"),
+    list_to_tuple(format_args(Args, Elements));
 format_arg(Arg, Format) ->
     S = unicode:characters_to_binary(Arg, utf8),
     JSON = jiffy:decode(S),
@@ -385,67 +390,71 @@ format_arg2(Arg, Parse)->
 %% Format result
 %%-----------------------------
 
-format_result_preliminary(Result, {A, {list, B}}) ->
-    format_result(Result, {A, {top_result_list, B}});
-format_result_preliminary(Result, ResultFormat) ->
-    format_result(Result, ResultFormat).
+format_result_preliminary(Result, {A, {list, B}}, Version) ->
+    format_result(Result, {A, {top_result_list, B}}, Version);
+format_result_preliminary(Result, ResultFormat, Version) ->
+    format_result(Result, ResultFormat, Version).
 
-format_result({error, ErrorAtom}, _) ->
+format_result({error, ErrorAtom}, _, _Version) ->
     {io_lib:format("Error: ~p", [ErrorAtom]), make_status(error)};
 
 %% An error should always be allowed to return extended error to help with API.
 %% Extended error is of the form:
 %%  {error, type :: atom(), code :: int(), Desc :: string()}
-format_result({error, ErrorAtom, Code, Msg}, _) ->
+format_result({error, ErrorAtom, Code, Msg}, _, _Version) ->
     {io_lib:format("Error: ~p: ~s", [ErrorAtom, Msg]), make_status(Code)};
 
-format_result(Atom, {_Name, atom}) ->
+format_result(Atom, {_Name, atom}, _Version) ->
     io_lib:format("~p", [Atom]);
 
-format_result(Int, {_Name, integer}) ->
+format_result(Int, {_Name, integer}, _Version) ->
     io_lib:format("~p", [Int]);
 
-format_result([A|_]=String, {_Name, string}) when is_list(String) and is_integer(A) ->
+format_result([A|_]=String, {_Name, string}, _Version) when is_list(String) and is_integer(A) ->
     io_lib:format("~ts", [String]);
 
-format_result(Binary, {_Name, string}) when is_binary(Binary) ->
+format_result(Binary, {_Name, string}, _Version) when is_binary(Binary) ->
     io_lib:format("~ts", [binary_to_list(Binary)]);
 
-format_result(Atom, {_Name, string}) when is_atom(Atom) ->
+format_result(Atom, {_Name, string}, _Version) when is_atom(Atom) ->
     io_lib:format("~ts", [atom_to_list(Atom)]);
 
-format_result(Integer, {_Name, string}) when is_integer(Integer) ->
+format_result(Integer, {_Name, string}, _Version) when is_integer(Integer) ->
     io_lib:format("~ts", [integer_to_list(Integer)]);
 
-format_result(Other, {_Name, string})  ->
+format_result(Other, {_Name, string}, _Version)  ->
     io_lib:format("~p", [Other]);
 
-format_result(Code, {_Name, rescode}) ->
+format_result(Code, {_Name, rescode}, _Version) ->
     make_status(Code);
 
-format_result({Code, Text}, {_Name, restuple}) ->
+format_result({Code, Text}, {_Name, restuple}, _Version) ->
     {io_lib:format("~ts", [Text]), make_status(Code)};
 
-format_result([], {_Name, {top_result_list, _ElementsDef}}) ->
+format_result([], {_Name, {top_result_list, _ElementsDef}}, _Version) ->
     "";
-format_result([FirstElement | Elements], {_Name, {top_result_list, ElementsDef}}) ->
-    [format_result(FirstElement, ElementsDef) |
+format_result([FirstElement | Elements], {_Name, {top_result_list, ElementsDef}}, Version) ->
+    [format_result(FirstElement, ElementsDef, Version) |
      lists:map(
        fun(Element) ->
-	       ["\n" | format_result(Element, ElementsDef)]
+	       ["\n" | format_result(Element, ElementsDef, Version)]
        end,
        Elements)];
 
 %% The result is a list of something: [something()]
-format_result([], {_Name, {list, _ElementsDef}}) ->
+format_result([], {_Name, {list, _ElementsDef}}, _Version) ->
     "";
-format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}) ->
+format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}, Version) ->
+    Separator = case Version of
+                    0 -> ";";
+                    _ -> ","
+                end,
     %% Start formatting the first element
-    [format_result(FirstElement, ElementsDef) |
+    [format_result(FirstElement, ElementsDef, Version) |
      %% If there are more elements, put always first a newline character
      lists:map(
        fun(Element) ->
-	       [";" | format_result(Element, ElementsDef)]
+	       [Separator | format_result(Element, ElementsDef, Version)]
        end,
        Elements)];
 
@@ -453,17 +462,17 @@ format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}) ->
 %% NOTE: the elements in the tuple are separated with tabular characters,
 %% if a string is empty, it will be difficult to notice in the shell,
 %% maybe a different separation character should be used, like ;;?
-format_result(ElementsTuple, {_Name, {tuple, ElementsDef}}) ->
+format_result(ElementsTuple, {_Name, {tuple, ElementsDef}}, Version) ->
     ElementsList = tuple_to_list(ElementsTuple),
     [{FirstE, FirstD} | ElementsAndDef] = lists:zip(ElementsList, ElementsDef),
-    [format_result(FirstE, FirstD) |
+    [format_result(FirstE, FirstD, Version) |
      lists:map(
        fun({Element, ElementDef}) ->
-	       ["\t" | format_result(Element, ElementDef)]
+	       ["\t" | format_result(Element, ElementDef, Version)]
        end,
        ElementsAndDef)];
 
-format_result(404, {_Name, _}) ->
+format_result(404, {_Name, _}, _Version) ->
     make_status(not_found).
 
 make_status(ok) -> ?STATUS_SUCCESS;
@@ -491,19 +500,24 @@ get_list_commands(Version) ->
 tuple_command_help({Name, _Args, Desc}) ->
     {Args, _, _} = ejabberd_commands:get_command_format(Name, admin),
     Arguments = [atom_to_list(ArgN) || {ArgN, _ArgF} <- Args],
-    Prepend = case is_supported_args(Args) of
-		  true -> "";
-		  false -> "*"
-	      end,
     CallString = atom_to_list(Name),
-    {CallString, Arguments, Prepend ++ Desc}.
+    {CallString, Arguments, Desc}.
 
-is_supported_args(Args) ->
-    lists:all(
-      fun({_Name, Format}) ->
-	      (Format == integer)
-		  or (Format == string)
-		      or (Format == binary)
+has_tuple_args(Args) ->
+    lists:any(
+      fun({_Name, tuple}) -> true;
+         ({_Name, {tuple, _}}) -> true;
+         ({_Name, {list, SubArg}}) ->
+            has_tuple_args([SubArg]);
+         (_) -> false
+      end,
+      Args).
+
+has_list_args(Args) ->
+    lists:any(
+      fun({_Name, list}) -> true;
+         ({_Name, {list, _}}) -> true;
+         (_) -> false
       end,
       Args).
 
@@ -768,12 +782,13 @@ print_usage_help(MaxC, ShCode) ->
 	 "  ejabberdctl ", ?C("help"), " ", ?C("register"), "\n",
 	 "  ejabberdctl ", ?C("help"), " ", ?C("regist*"), "\n",
 	 "\n",
-	 "Please note that 'ejabberdctl' shows all ejabberd commands,\n",
-	 "even those that cannot be used in the shell with ejabberdctl.\n",
-	 "Those commands can be identified because their description starts with: *\n",
+	 "Some command arguments are lists or tuples, like add_rosteritem and create_room_with_opts.\n",
+	 "Separate the elements in a list with the , character.\n",
+	 "Separate the elements in a tuple with the : character.\n",
 	 "\n",
-	 "Some commands return lists, like get_roster and get_user_subscriptions.\n",
-	 "In those commands, the elements in the list are separated with: ;\n"],
+	 "Some commands results are lists or tuples, like get_roster and get_user_subscriptions.\n",
+	 "The elements in a list are separated with a , character.\n",
+	 "The elements in a tuple are separated with a tabular character.\n"],
     ArgsDef = [],
     C = #ejabberd_commands{
 	   name = help,
@@ -893,9 +908,13 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 		      _ -> ["", prepare_description(0, MaxC, LongDesc), "\n\n"]
 		  end,
 
-    NoteEjabberdctl = case is_supported_args(ArgsDef) of
-			  true -> "";
-			  false -> ["  ", ?B("Note:"), " This command cannot be executed using ejabberdctl. Try ejabberd_xmlrpc.\n\n"]
+    NoteEjabberdctlList = case has_list_args(ArgsDef) of
+			  true -> ["  ", ?B("Note:"), " In a list argument, separate the elements using the , character for example: one,two,three\n\n"];
+			  false -> ""
+		      end,
+    NoteEjabberdctlTuple = case has_tuple_args(ArgsDef) of
+			  true -> ["  ", ?B("Note:"), " In a tuple argument, separate the elements using the : character for example: members_only:true\n\n"];
+			  false -> ""
 		      end,
 
     case Cmd of
@@ -903,7 +922,7 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
         _ -> print([NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt,
                     "\n\n", XmlrpcFmt, TagsFmt, "\n\n", ModuleFmt, DescFmt, "\n\n"], [])
     end,
-    print([LongDescFmt, NoteEjabberdctl], []).
+    print([LongDescFmt, NoteEjabberdctlList, NoteEjabberdctlTuple], []).
 
 format_usage_ctype(Type, _Indentation)
   when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary) or (Type==rescode) or (Type==restuple)->

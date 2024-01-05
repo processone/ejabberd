@@ -113,14 +113,14 @@ depends(_Host, _Opts) ->
 %%%
 
 get_commands_spec() ->
-    Vcard1FieldsString = "Some vcard field names in get/set_vcard are:\n\n"
+    Vcard1FieldsString = "Some vcard field names in `get`/`set_vcard` are:\n\n"
 	"* FN           - Full Name\n"
 	"* NICKNAME     - Nickname\n"
 	"* BDAY         - Birthday\n"
 	"* TITLE        - Work: Position\n"
 	"* ROLE         - Work: Role\n",
 
-    Vcard2FieldsString = "Some vcard field names and subnames in get/set_vcard2 are:\n\n"
+    Vcard2FieldsString = "Some vcard field names and subnames in `get`/`set_vcard2` are:\n\n"
 	"* N FAMILY     - Family name\n"
 	"* N GIVEN      - Given name\n"
 	"* N MIDDLE     - Middle name\n"
@@ -134,8 +134,8 @@ get_commands_spec() ->
 	"* ORG ORGNAME  - Work: Company\n"
 	"* ORG ORGUNIT  - Work: Department\n",
 
-    VcardXEP = "For a full list of vCard fields check XEP-0054: vcard-temp at "
-	"https://xmpp.org/extensions/xep-0054.html",
+    VcardXEP = "For a full list of vCard fields check [XEP-0054: vcard-temp]"
+	"(https://xmpp.org/extensions/xep-0054.html)",
 
     [
      #ejabberd_commands{name = compile, tags = [erlang],
@@ -145,8 +145,7 @@ get_commands_spec() ->
 			args_example = ["/home/me/srcs/ejabberd/mod_example.erl"],
 			args_desc = ["Filename of erlang source file to compile"],
 			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
+			result_example = ok},
      #ejabberd_commands{name = get_cookie, tags = [erlang],
 			desc = "Get the Erlang cookie of this node",
 			module = ?MODULE, function = get_cookie,
@@ -163,9 +162,9 @@ get_commands_spec() ->
 			result = {res, integer},
 			result_example = 0,
 			result_desc = "Returns integer code:\n"
-				      " - 0: code reloaded, module restarted\n"
-				      " - 1: error: module not loaded\n"
-				      " - 2: code not reloaded, but module restarted"},
+				      " - `0`: code reloaded, module restarted\n"
+				      " - `1`: error: module not loaded\n"
+				      " - `2`: code not reloaded, but module restarted"},
      #ejabberd_commands{name = delete_old_users, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days, or that never logged",
 			longdesc = "To protect admin accounts, configure this for example:\n"
@@ -206,8 +205,7 @@ get_commands_spec() ->
 			args_example = [<<"peter">>, <<"myserver.com">>],
 			args_desc = ["User name to check", "Server to check"],
 			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
+			result_example = ok},
      #ejabberd_commands{name = check_password, tags = [accounts],
 			desc = "Check if a password is correct",
 			module = ?MODULE, function = check_password,
@@ -215,8 +213,7 @@ get_commands_spec() ->
 			args_example = [<<"peter">>, <<"myserver.com">>, <<"secret">>],
 			args_desc = ["User name to check", "Server to check", "Password to check"],
 			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
+			result_example = ok},
      #ejabberd_commands{name = check_password_hash, tags = [accounts],
 			desc = "Check if the password hash is correct",
 			longdesc = "Allows hash methods from the Erlang/OTP "
@@ -229,8 +226,7 @@ get_commands_spec() ->
 			args_desc = ["User name to check", "Server to check",
 				     "Password's hash value", "Name of hash method"],
 			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
+			result_example = ok},
      #ejabberd_commands{name = change_password, tags = [accounts],
 			desc = "Change the password of an account",
 			module = ?MODULE, function = set_password,
@@ -239,8 +235,7 @@ get_commands_spec() ->
 			args_desc = ["User name", "Server name",
 				     "New password for user"],
 			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
+			result_example = ok},
      #ejabberd_commands{name = ban_account, tags = [accounts],
 			desc = "Ban an account: kick sessions and set random password",
 			module = ?MODULE, function = ban_account,
@@ -249,8 +244,7 @@ get_commands_spec() ->
 			args_desc = ["User name to ban", "Server name",
 				     "Reason for banning user"],
 			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
+			result_example = ok},
      #ejabberd_commands{name = num_resources, tags = [session],
 			desc = "Get the number of resources of a user",
 			module = ?MODULE, function = num_resources,
@@ -278,8 +272,7 @@ get_commands_spec() ->
 			args_desc = ["User name", "Server name", "User's resource",
 				     "Reason for closing session"],
 			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
+			result_example = ok},
      #ejabberd_commands{name = status_num_host, tags = [session, statistics],
 			desc = "Number of logged users with this status in host",
 			policy = admin,
@@ -430,6 +423,22 @@ get_commands_spec() ->
 					"Show: `away`, `chat`, `dnd`, `xa`.", "Status text",
 					"Priority, provide this value as an integer"],
 			result = {res, rescode}},
+     #ejabberd_commands{name = set_presence,
+			tags = [session],
+			desc = "Set presence of a session",
+			module = ?MODULE, function = set_presence,
+			version = 1,
+			args = [{user, binary}, {host, binary},
+				{resource, binary}, {type, binary},
+				{show, binary}, {status, binary},
+				{priority, integer}],
+			args_example = [<<"user1">>,<<"myserver.com">>,<<"tka1">>,
+					<<"available">>,<<"away">>,<<"BB">>, 7],
+			args_desc = ["User name", "Server name", "Resource",
+					"Type: `available`, `error`, `probe`...",
+					"Show: `away`, `chat`, `dnd`, `xa`.", "Status text",
+					"Priority, provide this value as an integer"],
+			result = {res, rescode}},
 
      #ejabberd_commands{name = set_nickname, tags = [vcard],
 			desc = "Set nickname in a user's vCard",
@@ -502,6 +511,20 @@ get_commands_spec() ->
 			args_desc = ["User name", "Server name", "Contact user name", "Contact server name",
 				"Nickname", "Group", "Subscription"],
 			result = {res, rescode}},
+     #ejabberd_commands{name = add_rosteritem, tags = [roster],
+			desc = "Add an item to a user's roster (supports ODBC)",
+			module = ?MODULE, function = add_rosteritem,
+			version = 1,
+			args = [{localuser, binary}, {localhost, binary},
+				{user, binary}, {host, binary},
+				{nick, binary}, {groups, {list, {group, binary}}},
+				{subs, binary}],
+			args_rename = [{localserver, localhost}, {server, host}],
+			args_example = [<<"user1">>,<<"myserver.com">>,<<"user2">>, <<"myserver.com">>,
+				<<"User 2">>, [<<"Friends">>, <<"Team 1">>], <<"both">>],
+			args_desc = ["User name", "Server name", "Contact user name", "Contact server name",
+				"Nickname", "Groups", "Subscription"],
+			result = {res, rescode}},
      %%{"", "subs= none, from, to or both"},
      %%{"", "example: add-roster peter localhost mike server.com MiKe Employees both"},
      %%{"", "will add mike@server.com to peter@localhost roster"},
@@ -516,52 +539,56 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = process_rosteritems, tags = [roster],
 			desc = "List/delete rosteritems that match filter",
-			longdesc = "Explanation of each argument:\n"
-			" - action: what to do with each rosteritem that "
+			longdesc = "Explanation of each argument:\n\n"
+			"* `action`: what to do with each rosteritem that "
 			"matches all the filtering options\n"
-			" - subs: subscription type\n"
-			" - asks: pending subscription\n"
-			" - users: the JIDs of the local user\n"
-			" - contacts: the JIDs of the contact in the roster\n"
+			"* `subs`: subscription type\n"
+			"* `asks`: pending subscription\n"
+			"* `users`: the JIDs of the local user\n"
+			"* `contacts`: the JIDs of the contact in the roster\n"
 			"\n"
-			" *** Mnesia: \n"
+			"**Mnesia backend:**\n"
 			"\n"
-			"Allowed values in the arguments:\n"
-			"  ACTION = list | delete\n"
-			"  SUBS = SUB[:SUB]* | any\n"
-			"  SUB = none | from | to | both\n"
-			"  ASKS = ASK[:ASK]* | any\n"
-			"  ASK = none | out | in\n"
-			"  USERS = JID[:JID]* | any\n"
-			"  CONTACTS = JID[:JID]* | any\n"
-			"  JID = characters valid in a JID, and can use the "
-			"globs: *, ?, ! and [...]\n"
+			"Allowed values in the arguments:\n\n"
+			"* `action` = `list` | `delete`\n"
+			"* `subs` = `any` | SUB[:SUB]*\n"
+			"* `asks` = `any` | ASK[:ASK]*\n"
+			"* `users` = `any` | JID[:JID]*\n"
+			"* `contacts` = `any` | JID[:JID]*\n"
+			"\nwhere\n\n"
+			"* SUB = `none` | `from `| `to` | `both`\n"
+			"* ASK = `none` | `out` | `in`\n"
+			"* JID = characters valid in a JID, and can use the "
+			"globs: `*`, `?`, `!` and `[...]`\n"
 			"\n"
 			"This example will list roster items with subscription "
-			"'none', 'from' or 'to' that have any ask property, of "
+			"`none`, `from` or `to` that have any ask property, of "
 			"local users which JID is in the virtual host "
-			"'example.org' and that the contact JID is either a "
+			"`example.org` and that the contact JID is either a "
 			"bare server name (without user part) or that has a "
-			"user part and the server part contains the word 'icq'"
-			":\n  list none:from:to any *@example.org *:*@*icq*"
+			"user part and the server part contains the word `icq`"
+			":\n  `list none:from:to any *@example.org *:*@*icq*`"
 			"\n\n"
-			" *** SQL:\n"
+			"**SQL backend:**\n"
 			"\n"
-			"Allowed values in the arguments:\n"
-			"  ACTION = list | delete\n"
-			"  SUBS = any | none | from | to | both\n"
-			"  ASKS = any | none | out | in\n"
-			"  USERS = JID\n"
-			"  CONTACTS = JID\n"
-			"  JID = characters valid in a JID, and can use the "
-			"globs: _ and %\n"
+			"Allowed values in the arguments:\n\n"
+			"* `action` = `list` | `delete`\n"
+			"* `subs` = `any` | SUB\n"
+			"* `asks` = `any` | ASK\n"
+			"* `users` = JID\n"
+			"* `contacts` = JID\n"
+			"\nwhere\n\n"
+			"* SUB = `none` | `from` | `to` | `both`\n"
+			"* ASK = `none` | `out` | `in`\n"
+			"* JID = characters valid in a JID, and can use the "
+			"globs: `_` and `%`\n"
 			"\n"
 			"This example will list roster items with subscription "
-			"'to' that have any ask property, of "
+			"`to` that have any ask property, of "
 			"local users which JID is in the virtual host "
-			"'example.org' and that the contact JID's "
-			"server part contains the word 'icq'"
-			":\n  list to any %@example.org %@%icq%",
+			"`example.org` and that the contact JID's "
+			"server part contains the word `icq`"
+			":\n  `list to any %@example.org %@%icq%`",
 			module = mod_roster, function = process_rosteritems,
 			args = [{action, string}, {subs, string},
 				{asks, string}, {users, string},
@@ -576,8 +603,8 @@ get_commands_spec() ->
      #ejabberd_commands{name = get_roster, tags = [roster],
 			desc = "Get list of contacts in a local user roster",
 			longdesc =
-			    "Subscription can be: \"none\", \"from\", \"to\", \"both\". "
-                            "Pending can be: \"in\", \"out\", \"none\".",
+			    "`subscription` can be: `none`, `from`, `to`, `both`.\n\n"
+                            "`pending` can be: `in`, `out`, `none`.",
 			note = "improved in 23.10",
                         policy = user,
 			module = ?MODULE, function = get_roster,
@@ -593,11 +620,12 @@ get_commands_spec() ->
      #ejabberd_commands{name = push_roster, tags = [roster],
 			desc = "Push template roster from file to a user",
 			longdesc = "The text file must contain an erlang term: a list "
-			    "of tuples with username, servername, group and nick. Example:\n"
-			    "[{<<\"user1\">>, <<\"localhost\">>, <<\"Workers\">>, <<\"User 1\">>},\n"
-			    " {<<\"user2\">>, <<\"localhost\">>, <<\"Workers\">>, <<\"User 2\">>}].\n"
-			    "When using UTF8 character encoding add /utf8 to certain string. Example:\n"
-			    "[{<<\"user2\">>, <<\"localhost\">>, <<\"Workers\"/utf8>>, <<\"User 2\"/utf8>>}].",
+			    "of tuples with username, servername, group and nick. For example:\n"
+			    "`[{\"user1\", \"localhost\", \"Workers\", \"User 1\"},\n"
+			    " {\"user2\", \"localhost\", \"Workers\", \"User 2\"}].`\n\n"
+			    "If there are problems parsing UTF8 character encoding, "
+                            "provide the corresponding string with the `<<\"STRING\"/utf8>>` syntax, for example:\n"
+			    "`[{\"user2\", \"localhost\", \"Workers\", <<\"User 2\"/utf8>>}]`.",
 			module = ?MODULE, function = push_roster,
 			args = [{file, binary}, {user, binary}, {host, binary}],
 			args_example = [<<"/home/ejabberd/roster.txt">>, <<"user1">>, <<"localhost">>],
@@ -607,8 +635,8 @@ get_commands_spec() ->
 			desc = "Push template roster from file to all those users",
 			longdesc = "The text file must contain an erlang term: a list "
 			    "of tuples with username, servername, group and nick. Example:\n"
-			    "[{\"user1\", \"localhost\", \"Workers\", \"User 1\"},\n"
-			    " {\"user2\", \"localhost\", \"Workers\", \"User 2\"}].",
+			    "`[{\"user1\", \"localhost\", \"Workers\", \"User 1\"},\n"
+			    " {\"user2\", \"localhost\", \"Workers\", \"User 2\"}].`",
 			module = ?MODULE, function = push_roster_all,
 			args = [{file, binary}],
 			args_example = [<<"/home/ejabberd/roster.txt">>],
@@ -624,7 +652,9 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = get_last, tags = [last],
 			desc = "Get last activity information",
-			longdesc = "Timestamp is UTC and XEP-0082 format, for example: "
+			longdesc = "Timestamp is UTC and "
+			    "[XEP-0082](https://xmpp.org/extensions/xep-0082.html)"
+			    " format, for example: "
 			    "`2017-02-23T22:25:28.063062Z     ONLINE`",
 			module = ?MODULE, function = get_last,
 			args = [{user, binary}, {host, binary}],
@@ -680,6 +710,18 @@ get_commands_spec() ->
 				<<"Third group">>, <<"group1\\\\ngroup2">>],
 			args_desc = ["Group identifier", "Group server name", "Group name",
 				"Group description", "Groups to display"],
+			result = {res, rescode}},
+     #ejabberd_commands{name = srg_create, tags = [shared_roster_group],
+			desc = "Create a Shared Roster Group",
+			module = ?MODULE, function = srg_create,
+			version = 1,
+			args = [{group, binary}, {host, binary},
+				{label, binary}, {description, binary}, {display, {list, {group, binary}}}],
+			args_rename = [{name, label}],
+			args_example = [<<"group3">>, <<"myserver.com">>, <<"Group3">>,
+				<<"Third group">>, [<<"group1">>, <<"group2">>]],
+			args_desc = ["Group identifier", "Group server name", "Group name",
+				"Group description", "List of groups to display"],
 			result = {res, rescode}},
      #ejabberd_commands{name = srg_delete, tags = [shared_roster_group],
 			desc = "Delete a Shared Roster Group",
@@ -782,7 +824,9 @@ get_commands_spec() ->
 			result = {res, rescode}},
 
      #ejabberd_commands{name = stats, tags = [statistics],
-			desc = "Get statistical value: registeredusers onlineusers onlineusersnode uptimeseconds processes",
+			desc = "Get some statistical value for the whole ejabberd server",
+			longdesc = "Allowed statistics `name` are: `registeredusers`, "
+                            "`onlineusers`, `onlineusersnode`, `uptimeseconds`, `processes`.",
 			policy = admin,
 			module = ?MODULE, function = stats,
 			args = [{name, binary}],
@@ -792,7 +836,8 @@ get_commands_spec() ->
 			result_desc = "Integer statistic value",
 			result = {stat, integer}},
      #ejabberd_commands{name = stats_host, tags = [statistics],
-			desc = "Get statistical value for this host: registeredusers onlineusers",
+			desc = "Get some statistical value for this host",
+			longdesc = "Allowed statistics `name` are: `registeredusers`, `onlineusers`.",
 			policy = admin,
 			module = ?MODULE, function = stats,
 			args = [{name, binary}, {host, binary}],
@@ -1081,14 +1126,10 @@ get_presence(U, S) ->
 	    {FullJID, Show, Status}
     end.
 
-set_presence(User, Host, Resource, Type, Show, Status, Priority)
-        when is_integer(Priority) ->
-    BPriority = integer_to_binary(Priority),
-    set_presence(User, Host, Resource, Type, Show, Status, BPriority);
-set_presence(User, Host, Resource, Type, Show, Status, Priority0) ->
-    Priority = if is_integer(Priority0) -> Priority0;
-		  true -> binary_to_integer(Priority0)
-	       end,
+set_presence(User, Host, Resource, Type, Show, Status, Priority) when is_binary(Priority) ->
+    set_presence(User, Host, Resource, Type, Show, Status, binary_to_integer(Priority));
+
+set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pres = #presence{
         from = jid:make(User, Host, Resource),
         to = jid:make(User, Host),
@@ -1286,14 +1327,16 @@ update_vcard_els(Data, ContentList, Els1) ->
 %%% Roster
 %%%
 
-add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) ->
+add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) when is_binary(Group) ->
+    add_rosteritem(LocalUser, LocalServer, User, Server, Nick, [Group], Subs);
+add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Groups, Subs) ->
     case {jid:make(LocalUser, LocalServer), jid:make(User, Server)} of
 	{error, _} ->
 	    throw({error, "Invalid 'localuser'/'localserver'"});
 	{_, error} ->
 	    throw({error, "Invalid 'user'/'server'"});
 	{Jid, _Jid2} ->
-	    RosterItem = build_roster_item(User, Server, {add, Nick, Subs, Group}),
+	    RosterItem = build_roster_item(User, Server, {add, Nick, Subs, Groups}),
 	    case mod_roster:set_item_and_notify_clients(Jid, RosterItem, true) of
 		ok -> ok;
 		_ -> error
@@ -1408,6 +1451,11 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_router:route(
       xmpp:set_from_to(ResIQ, jid:remove_resource(LJID), LJID)).
 
+build_roster_item(U, S, {add, Nick, Subs, Groups}) when is_list(Groups) ->
+    #roster_item{jid = jid:make(U, S),
+		 name = Nick,
+		 subscription = misc:binary_to_atom(Subs),
+		 groups = Groups};
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
     Groups = binary:split(Group,<<";">>, [global, trim]),
     #roster_item{jid = jid:make(U, S),
@@ -1488,11 +1536,14 @@ private_set2(Username, Host, Xml) ->
 %%% Shared Roster Groups
 %%%
 
-srg_create(Group, Host, Label, Description, Display) ->
+srg_create(Group, Host, Label, Description, Display) when is_binary(Display) ->
     DisplayList = case Display of
-	<<>> -> [];
-	_ -> ejabberd_regexp:split(Display, <<"\\\\n">>)
+       <<>> -> [];
+       _ -> ejabberd_regexp:split(Display, <<"\\\\n">>)
     end,
+    srg_create(Group, Host, Label, Description, DisplayList);
+
+srg_create(Group, Host, Label, Description, DisplayList) ->
     Opts = [{label, Label},
 	    {displayed_groups, DisplayList},
 	    {description, Description}],

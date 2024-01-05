@@ -39,7 +39,7 @@
 -include("ejabberd_stacktrace.hrl").
 -include("translate.hrl").
 
--define(DEFAULT_API_VERSION, 0).
+-define(DEFAULT_API_VERSION, 1000000).
 
 -define(CT_PLAIN,
         {<<"Content-Type">>, <<"text/plain">>}).
@@ -135,7 +135,7 @@ extract_auth(#request{auth = HTTPAuth, ip = {IP, _}, opts = Opts}) ->
 process(_, #request{method = 'POST', data = <<>>}) ->
     ?DEBUG("Bad Request: no data", []),
     badrequest_response(<<"Missing POST data">>);
-process([Call], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
+process([Call | _], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
     Version = get_api_version(Req),
     try
         Args = extract_args(Data),
@@ -153,7 +153,7 @@ process([Call], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
             ?DEBUG("Bad Request: ~p ~p", [_Error, StackTrace]),
             badrequest_response()
     end;
-process([Call], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
+process([Call | _], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
     Version = get_api_version(Req),
     try
         Args = case Data of
@@ -412,7 +412,15 @@ format_command_result(Cmd, Auth, Result, Version) ->
 	    {_, T} = format_result(Result, ResultFormat),
 	    {200, T};
 	_ ->
-	    {200, {[format_result(Result, ResultFormat)]}}
+            OtherResult1 = format_result(Result, ResultFormat),
+            OtherResult2 = case Version of
+                               0 ->
+                                   {[OtherResult1]};
+                               _ ->
+                                   {_, Other3} = OtherResult1,
+                                   Other3
+                           end,
+	    {200, OtherResult2}
     end.
 
 format_result(Atom, {Name, atom}) ->

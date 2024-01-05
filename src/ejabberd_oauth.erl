@@ -81,7 +81,7 @@
 get_commands_spec() ->
     [
      #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
-                        desc = "Issue an oauth token for the given jid",
+                        desc = "Issue an [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) token for the given jid",
                         module = ?MODULE, function = oauth_issue_token,
                         args = [{jid, string},{ttl, integer}, {scopes, string}],
                         policy = restricted,
@@ -91,16 +91,28 @@ get_commands_spec() ->
 				     "List of scopes to allow, separated by ';'"],
                         result = {result, {tuple, [{token, string}, {scopes, string}, {expires_in, string}]}}
                        },
+     #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
+                        desc = "Issue an [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) token for the given jid",
+                        module = ?MODULE, function = oauth_issue_token,
+                        version = 1,
+                        args = [{jid, string}, {ttl, integer}, {scopes, {list, {scope, binary}}}],
+                        policy = restricted,
+                        args_example = ["user@server.com", 3600, ["connected_users_number", "muc_online_rooms"]],
+                        args_desc = ["Jid for which issue token",
+				     "Time to live of generated token in seconds",
+				     "List of scopes to allow"],
+                        result = {result, {tuple, [{token, string}, {scopes, {list, {scope, string}}}, {expires_in, string}]}}
+                       },
      #ejabberd_commands{name = oauth_list_tokens, tags = [oauth],
-                        desc = "List oauth tokens, user, scope, and seconds to expire (only Mnesia)",
-                        longdesc = "List oauth tokens, their user and scope, and how many seconds remain until expirity",
+                        desc = "List [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) tokens, user, scope, and seconds to expire (only Mnesia)",
+                        longdesc = "List OAuth tokens, their user and scope, and how many seconds remain until expirity",
                         module = ?MODULE, function = oauth_list_tokens,
                         args = [],
                         policy = restricted,
                         result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}}
                        },
      #ejabberd_commands{name = oauth_revoke_token, tags = [oauth],
-                        desc = "Revoke authorization for a token",
+                        desc = "Revoke authorization for an [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) token",
 			note = "changed in 22.05",
                         module = ?MODULE, function = oauth_revoke_token,
                         args = [{token, binary}],
@@ -109,7 +121,7 @@ get_commands_spec() ->
                         result_desc = "Result code"
                        },
      #ejabberd_commands{name = oauth_add_client_password, tags = [oauth],
-                        desc = "Add OAUTH client_id with password grant type",
+                        desc = "Add [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) client_id with password grant type",
                         module = ?MODULE, function = oauth_add_client_password,
                         args = [{client_id, binary},
                                 {client_name, binary},
@@ -118,7 +130,7 @@ get_commands_spec() ->
                         result = {res, restuple}
                        },
      #ejabberd_commands{name = oauth_add_client_implicit, tags = [oauth],
-                        desc = "Add OAUTH client_id with implicit grant type",
+                        desc = "Add [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) client_id with implicit grant type",
                         module = ?MODULE, function = oauth_add_client_implicit,
                         args = [{client_id, binary},
                                 {client_name, binary},
@@ -127,7 +139,7 @@ get_commands_spec() ->
                         result = {res, restuple}
                        },
      #ejabberd_commands{name = oauth_remove_client, tags = [oauth],
-                        desc = "Remove OAUTH client_id",
+                        desc = "Remove [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) client_id",
                         module = ?MODULE, function = oauth_remove_client,
                         args = [{client_id, binary}],
                         policy = restricted,
@@ -135,8 +147,10 @@ get_commands_spec() ->
                        }
     ].
 
-oauth_issue_token(Jid, TTLSeconds, ScopesString) ->
+oauth_issue_token(Jid, TTLSeconds, [Head|_] = ScopesString) when is_integer(Head) ->
     Scopes = [list_to_binary(Scope) || Scope <- string:tokens(ScopesString, ";")],
+    oauth_issue_token(Jid, TTLSeconds, Scopes);
+oauth_issue_token(Jid, TTLSeconds, Scopes) ->
     try jid:decode(list_to_binary(Jid)) of
         #jid{luser =Username, lserver = Server} ->
             Ctx1 = #oauth_ctx{password = admin_generated},

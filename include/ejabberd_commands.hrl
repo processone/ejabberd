@@ -67,42 +67,24 @@
          args_example = none     :: none | [any()] | '_',
          result_example = none   :: any()}).
 
-%% TODO Fix me: Type is not up to date
--type ejabberd_commands() :: #ejabberd_commands{name :: atom(),
-                                                tags :: [atom()],
-                                                desc :: string(),
-                                                longdesc :: string(),
-                                                version :: integer(),
-                                                module :: atom(),
-                                                function :: atom(),
-                                                args :: [aterm()],
-                                                policy :: open | restricted | admin | user,
-                                                access :: [{atom(),atom(),atom()}|atom()],
-                                                result :: rterm()}.
+-type ejabberd_commands() :: #ejabberd_commands{name                    :: atom(),
+                                                tags                    :: [atom()],
+                                                desc                    :: string(),
+                                                longdesc                :: string(),
+                                                version                 :: integer(),
+                                                note                    :: string(),
+                                                weight                  :: integer(),
+                                                module                  :: atom(),
+                                                function                :: atom(),
+                                                args                    :: [aterm()],
+                                                policy                  :: open | restricted | admin | user,
+                                                access                  :: [{atom(),atom(),atom()}|atom()],
+                                                definer                 :: atom(),
+                                                result                  :: rterm(),
+                                                args_rename             :: [{atom(),atom()}],
+                                                args_desc               :: none | [string()] | '_',
+                                                result_desc             :: none | string() | '_',
+                                                args_example            :: none | [any()] | '_',
+                                                result_example          :: any()
+                                               }.
 
-%% @type ejabberd_commands() = #ejabberd_commands{
-%%    name = atom(),
-%%    tags = [atom()],
-%%    desc = string(),
-%%    longdesc = string(),
-%%    module = atom(),
-%%    function = atom(),
-%%    args = [aterm()],
-%%    result = rterm()
-%%    }.
-%% desc: Description of the command
-%% args: Describe the accepted arguments.
-%% This way the function that calls the command can format the
-%% arguments before calling.
-
-%% @type atype() = integer | string | {tuple, [aterm()]} | {list, aterm()}.
-%% Allowed types for arguments are integer, string, tuple and list.
-
-%% @type rtype() = integer | string | atom | {tuple, [rterm()]} | {list, rterm()} | rescode | restuple.
-%% A rtype is either an atom or a tuple with two elements.
-
-%% @type aterm() = {Name::atom(), Type::atype()}.
-%% An argument term is a tuple with the term name and the term type.
-
-%% @type rterm() = {Name::atom(), Type::rtype()}.
-%% A result term is a tuple with the term name and the term type.

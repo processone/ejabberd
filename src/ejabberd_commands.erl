@@ -86,7 +86,8 @@ get_commands_spec() ->
                            args_desc = ["Path to file where generated "
                                         "documentation should be stored",
                                         "Regexp matching names of commands or modules "
-                                        "that will be included inside generated document",
+                                        "that will be included inside generated document, "
+                                        "or `runtime` to get commands registered at runtime",
                                         "Comma separated list of languages (chosen from `java`, `perl`, `xmlrpc`, `json`) "
                                         "that will have example invocation include in markdown document"],
                            result_desc = "0 if command failed, 1 when succeeded",
@@ -147,12 +148,24 @@ register_commands(Definer, Commands) ->
     lists:foreach(
       fun(Command) ->
               %% XXX check if command exists
-              mnesia:dirty_write(Command#ejabberd_commands{definer = Definer})
+              mnesia:dirty_write(register_command_prepare(Command, Definer))
               %% ?DEBUG("This command is already defined:~n~p", [Command])
       end,
       Commands),
     ejabberd_access_permissions:invalidate(),
     ok.
+
+
+
+
+register_command_prepare(Command, Definer) ->
+    Tags1 = Command#ejabberd_commands.tags,
+    Tags2 = case Command#ejabberd_commands.version of
+                0 -> Tags1;
+                Version -> Tags1 ++ [list_to_atom("v"++integer_to_list(Version))]
+            end,
+    Command#ejabberd_commands{definer = Definer, tags = Tags2}.
+
 
 -spec unregister_commands([ejabberd_commands()]) -> ok.
 

@@ -386,7 +386,7 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
         ResultText = case Result of
                        {res,rescode} ->
                            [?TAG(dl, [gen_param(res, integer,
-                                                "Status code (0 on success, 1 otherwise)",
+                                                "Status code (`0` on success, `1` otherwise)",
                                                 HTMLOutput)])];
                        {res,restuple} ->
                            [?TAG(dl, [gen_param(res, string,
@@ -400,9 +400,9 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
                                  [?TAG(dl, [gen_param(RName, Type, ResultDesc, HTMLOutput)])]
                            end
                      end,
-        TagsText = [?RAW("*`"++atom_to_list(Tag)++"`* ") || Tag <- Tags],
+        TagsText = ?RAW(string:join(["*`"++atom_to_list(Tag)++"`*" || Tag <- Tags], ", ")),
         IsDefinerMod = case Definer of
-                         unknown -> true;
+                         unknown -> false;
                          _ -> lists:member(gen_mod, proplists:get_value(behaviour, Definer:module_info(attributes)))
                      end,
         ModuleText = case IsDefinerMod of
@@ -477,8 +477,16 @@ maybe_add_policy_arguments(#ejabberd_commands{args=Args1, policy=user}=Cmd) ->
 maybe_add_policy_arguments(Cmd) ->
     Cmd.
 
+generate_md_output(File, <<"runtime">>, Languages) ->
+    Cmds = lists:map(fun({N, _, _}) ->
+                             ejabberd_commands:get_command_definition(N)
+                     end, ejabberd_commands:list_commands()),
+    generate_md_output(File, <<".">>, Languages, Cmds);
 generate_md_output(File, RegExp, Languages) ->
     Cmds = find_commands_definitions(),
+    generate_md_output(File, RegExp, Languages, Cmds).
+
+generate_md_output(File, RegExp, Languages, Cmds) ->
     {ok, RE} = re:compile(RegExp),
     Cmds2 = lists:filter(fun(#ejabberd_commands{name=Name, module=Module}) ->
                                  re:run(atom_to_list(Name), RE, [{capture, none}]) == match orelse

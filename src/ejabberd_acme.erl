@@ -450,11 +450,11 @@ delete_obsolete_data() ->
 %%%===================================================================
 get_commands_spec() ->
     [#ejabberd_commands{name = request_certificate, tags = [acme],
-			desc = "Requests certificates for all or the specified "
-			       "domains: all | domain1,domain2,...",
+			desc = "Requests certificates for all or some domains",
+			longdesc = "Domains can be `all`, or a list of domains separared with comma characters",
 			module = ?MODULE, function = request_certificate,
 			args_desc = ["Domains for which to acquire a certificate"],
-			args_example = ["all | domain.tld,conference.domain.tld,..."],
+			args_example = ["example.com,domain.tld,conference.domain.tld"],
 			args = [{domains, string}],
 			result = {res, restuple}},
      #ejabberd_commands{name = list_certificates, tags = [acme],
