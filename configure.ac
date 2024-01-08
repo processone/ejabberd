@@ -112,7 +112,7 @@ esac],[full_xml=false])
 
 ENABLEGROUP=""
 AC_ARG_ENABLE(group,
-  [AS_HELP_STRING([--enable-group[[[[=GROUP]]]]], [specify the group of the account defined in --enable-user (default: no)])],
+  [AS_HELP_STRING([--enable-group[[=GROUP]]], [specify the group of the account defined in --enable-user (default: no)])],
   [case "${enableval}" in
      yes) ENABLEGROUP=`groups |head -n 1` ;;
      no) ENABLEGROUP="" ;;
@@ -246,7 +246,7 @@ esac],[if test "x$tools" = "x"; then tools=false; fi])
 
 ENABLEUSER=""
 AC_ARG_ENABLE(user,
-  [AS_HELP_STRING([--enable-user[[[[=USER]]]]], [allow this system user to start ejabberd (default: no)])],
+  [AS_HELP_STRING([--enable-user[[=USER]]], [allow this system user to start ejabberd (default: no)])],
   [case "${enableval}" in
      yes) ENABLEUSER=`whoami` ;;
      no) ENABLEUSER="" ;;
