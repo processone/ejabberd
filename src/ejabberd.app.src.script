@@ -6,10 +6,14 @@
             {elixir, true} -> [elixir, iex, logger, mix];
             _ -> []
         end,
+        Tools = case lists:keyfind(tools, 1, Terms) of
+            {tools, true} -> [observer, runtime_tools]; % for `ejabberdctl etop`
+            _ -> []
+        end,
         {[lists:keyfind(description, 1, Terms),
          lists:keyfind(vsn, 1, Terms),
          {env, [{enabled_backends, EBs}]}
-        ], Elixirs};
+        ], Elixirs ++ Tools};
     _Err ->
         {[], []}
     end,

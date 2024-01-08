@@ -68,6 +68,7 @@ jobs:
                     --prefix=/tmp/ejabberd \
                     --enable-all \
                     --disable-elixir \
+                    --disable-tools \
                     --disable-odbc
         make update
         make
