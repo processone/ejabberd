@@ -438,7 +438,9 @@ distclean: clean clean-rel
 	rm -f Makefile
 	rm -f vars.config
 
-rel:
+rel: prod
+
+prod:
 	$(PREPARE_ELIXIR_SCRIPTS)
 	$(REBARREL)
 
@@ -506,7 +508,7 @@ test:
 	@cd priv && ln -sf ../sql
 	$(REBAR) $(SKIPDEPS) ct
 
-.PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
+.PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean prod rel \
 	install uninstall uninstall-binary uninstall-all translations deps test \
 	quicktest erlang_plt deps_plt ejabberd_plt xref hooks options
 
@@ -524,7 +526,7 @@ help:
 	@echo "  uninstall      Uninstall ejabberd (buggy)"
 	@echo "  uninstall-all  Uninstall also configuration, logs, mnesia... (buggy)"
 	@echo ""
-	@echo "  rel            Build a production release"
+	@echo "  prod           Build a production release"
 	@echo "  dev            Build a development release"
 	@echo "  relive         Start a live ejabberd in _build/relive/"
 	@echo ""
