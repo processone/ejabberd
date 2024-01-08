@@ -187,6 +187,21 @@ livewarning()
     fi
 }
 
+check_etop_result()
+{
+    result=$?
+    if [ $result -eq 1 ] ; then
+        echo ""
+        echo "It seems there was some problem running 'ejabberdctl etop'."
+        echo "Is the error message something like this?"
+        echo "  Failed to load module 'etop' because it cannot be found..."
+        echo "Then probably ejabberd was compiled with development tools disabled."
+        echo "To use 'etop', recompile ejabberd with: ./configure --enable-tools"
+        echo ""
+        exit $result
+    fi
+}
+
 help()
 {
     echo ""
@@ -310,6 +325,7 @@ case $1 in
         set_dist_client
         exec_erl "$(uid top)" -hidden -remsh "$ERLANG_NODE" -s etop \
                  -output text
+        check_etop_result
         ;;
     iexdebug)
         debugwarning
