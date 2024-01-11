@@ -401,7 +401,7 @@ doc() ->
         note => "added in 23.10",
         desc =>
         ?T("Supplement check for user existence based on 'mod_last' data, for authentication "
-           "methods that don't have a way to reliable tell if user exists (like is the case for "
+           "methods that don't have a way to reliably tell if a user exists (like is the case for "
            "'jwt' and certificate based authentication). This helps with processing offline message "
            "for those users. The default value is 'true'.")}},
      {auth_use_cache,
@@ -585,7 +585,7 @@ doc() ->
                  "'destination' - an instance is chosen by the full JID of "
                  "the packet's 'to' attribute; "
                  "'source' - by the full JID of the packet's 'from' attribute; "
-                 "'bare_destination' - by the the bare JID (without resource) "
+                 "'bare_destination' - by the bare JID (without resource) "
                  "of the packet's 'to' attribute; "
                  "'bare_source' - by the bare JID (without resource) of the "
                  "packet's 'from' attribute is used. The default value is 'random'.")}},
