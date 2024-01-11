@@ -4414,7 +4414,7 @@ mod_doc() ->
 		     "items. Value is 'true' or 'false'. If not defined, "
 		     "pubsub does not cache last items. On systems with not"
 		     " so many nodes, caching last items speeds up pubsub "
-		     "and allows to raise user connection rate. The cost "
+		     "and allows you to raise the user connection rate. The cost "
 		     "is memory usage, as every item is stored in memory.")}},
 	   {max_item_expire_node,
 	    #{value => "timeout() | infinity",
@@ -4469,7 +4469,7 @@ mod_doc() ->
 	   {pep_mapping,
 	    #{value => "List of Key:Value",
 	      desc =>
-		  ?T("This allows to define a list of key-value to choose "
+		  ?T("In this option you can provide a list of key-value to choose "
 		     "defined node plugins on given PEP namespace. "
 		     "The following example will use 'node_tune' instead of "
 		     "'node_pep' for every PEP node with the tune namespace:"),
@@ -4494,7 +4494,7 @@ mod_doc() ->
 			  "follows standard XEP-0060 implementation."),
 		       ?T("- 'pep' plugin adds extension to handle Personal "
 			  "Eventing Protocol (XEP-0163) to the PubSub engine. "
-			  "Adding pep allows to handle PEP automatically.")]}},
+			  "When enabled, PEP is handled automatically.")]}},
 	   {vcard,
 	    #{value => ?T("vCard"),
 	      desc =>

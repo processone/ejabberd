@@ -1043,7 +1043,7 @@ mod_doc() ->
            {dirname,
             #{value => "room_jid | room_name",
               desc =>
-                  ?T("Allows to configure the name of the room directory. "
+                  ?T("Configure the name of the room directory. "
                      "If set to 'room_jid', the room directory name will "
                      "be the full room JID. Otherwise, the room directory "
                      "name will be only the room name, not including the "

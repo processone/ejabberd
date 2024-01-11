@@ -256,7 +256,7 @@ mod_options(_) ->
 
 mod_doc() ->
     #{desc =>
-          ?T("This module allows to block/log messages coming from an "
+          ?T("This module blocks and logs any messages coming from an "
              "unknown entity. If a writing entity is not in your roster, "
              "you can let this module drop and/or log the message. "
              "By default you'll just not receive message from that entity. "

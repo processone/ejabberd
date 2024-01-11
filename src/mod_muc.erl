@@ -1679,7 +1679,7 @@ mod_doc() ->
             #{value => ?T("Options"),
               note => "improved in 22.05",
               desc =>
-                  ?T("This option allows to define the desired "
+                  ?T("Define the "
                      "default room options. Note that the creator of a room "
                      "can modify the options of his room at any time using an "
                      "XMPP client with MUC capability. The 'Options' are:")},

@@ -381,7 +381,7 @@ doc() ->
                "authenticate using: the old Jabber Non-SASL (XEP-0078), "
                "SASL PLAIN, SASL DIGEST-MD5, and SASL SCRAM-SHA-1/256/512(-PLUS). "), "",
             ?T("* 'scram': The password is not stored, only some information "
-               "that allows to verify the hash provided by the client. "
+               "required to verify the hash provided by the client. "
                "It is impossible to obtain the original plain password "
                "from the stored information; for this reason, when this "
                "value is configured it cannot be changed to plain anymore. "
@@ -702,7 +702,7 @@ doc() ->
       #{value => ?T("FieldName"),
         desc =>
             ?T("By default, the JID is defined in the '\"jid\"' JWT field. "
-               "This option allows to specify other JWT field name "
+               "In this option you can specify other JWT field name "
                "where the JID is defined.")}},
      {jwt_key,
       #{value => ?T("FilePath"),
@@ -903,8 +903,8 @@ doc() ->
             {?T("Whether to use 'new' SQL schema. All schemas are located "
                 "at <https://github.com/processone/ejabberd/tree/~s/sql>. "
                 "There are two schemas available. The default legacy schema "
-                "allows to store one XMPP domain into one ejabberd database. "
-                "The 'new' schema allows to handle several XMPP domains in a "
+                "stores one XMPP domain into one ejabberd database. "
+                "The 'new' schema can handle several XMPP domains in a "
                 "single ejabberd database. Using this 'new' schema is best when "
                 "serving several XMPP domains and/or changing domains from "
                 "time to time. This avoid need to manage several databases and "
@@ -1417,7 +1417,7 @@ doc() ->
                "contains the header 'X-Forwarded-For'. You can specify "
                "'all' to allow all proxies, or specify a list of IPs, "
                "possibly with masks. The default value is an empty list. "
-               "This allows, if enabled, to be able to know the real IP "
+               "Using this option you can know the real IP "
                "of the request, for admin purpose, or security configuration "
                "(for example using 'mod_fail2ban'). IMPORTANT: The proxy MUST "
                "be configured to set the 'X-Forwarded-For' header if you "

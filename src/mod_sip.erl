@@ -390,7 +390,7 @@ mod_doc() ->
             #{value => "true | false",
               desc =>
                   ?T("Always insert \"Record-Route\" header into "
-                     "SIP messages. This approach allows to bypass "
+                     "SIP messages. With this approach it is possible to bypass "
                      "NATs/firewalls a bit more easily. "
                      "The default value is 'true'.")}},
            {flow_timeout_tcp,
