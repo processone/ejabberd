@@ -32,8 +32,8 @@
 -export([c2s_stream_started/2, c2s_stream_features/2,
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
 	 c2s_unbinded_packet/2, c2s_closed/2, c2s_terminated/2,
-	 c2s_handle_send/3, c2s_handle_info/2, c2s_handle_call/3,
-	 c2s_handle_recv/3, c2s_inline_features/2,
+	 c2s_handle_send/3, c2s_handle_info/2, c2s_handle_cast/2,
+	 c2s_handle_call/3, c2s_handle_recv/3, c2s_inline_features/2,
 	 c2s_handle_sasl2_inline/1, c2s_handle_sasl2_inline_post/3,
 	 c2s_handle_bind2_inline/1]).
 %% adjust pending session timeout / access queue
@@ -77,6 +77,7 @@ start(_Host, Opts) ->
           {hook, c2s_handle_send, c2s_handle_send, 50},
           {hook, c2s_handle_recv, c2s_handle_recv, 50},
           {hook, c2s_handle_info, c2s_handle_info, 50},
+          {hook, c2s_handle_cast, c2s_handle_cast, 50},
           {hook, c2s_handle_call, c2s_handle_call, 50},
 	  {hook, c2s_handle_sasl2_inline, c2s_handle_sasl2_inline, 50},
 	  {hook, c2s_handle_sasl2_inline_post, c2s_handle_sasl2_inline_post, 50},
@@ -256,6 +257,13 @@ c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
 	    State
     end;
 c2s_handle_send(State, _Pkt, _Result) ->
+    State.
+
+c2s_handle_cast(#{mgmt_state := active} = State, send_ping) ->
+    {stop, send_rack(State)};
+c2s_handle_cast(#{mgmt_state := pending} = State, send_ping) ->
+    {stop, State};
+c2s_handle_cast(State, _Msg) ->
     State.
 
 c2s_handle_call(#{mgmt_id := MgmtID, mgmt_queue := Queue, mod := Mod} = State,

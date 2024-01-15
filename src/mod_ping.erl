@@ -49,14 +49,13 @@
 -export([init/1, terminate/2, handle_call/3,
 	 handle_cast/2, handle_info/2, code_change/3]).
 
--export([iq_ping/1, user_online/3, user_offline/3, mod_doc/0,
-	 user_send/1, mod_opt_type/1, mod_options/1, depends/2]).
+-export([iq_ping/1, user_online/3, user_offline/3, mod_doc/0, user_send/1,
+	 c2s_handle_cast/2, mod_opt_type/1, mod_options/1, depends/2]).
 
 -record(state,
 	{host                :: binary(),
          send_pings          :: boolean(),
 	 ping_interval       :: pos_integer(),
-	 ping_ack_timeout    :: undefined | non_neg_integer(),
 	 timeout_action      :: none | kill,
          timers              :: timers()}).
 
@@ -167,13 +166,8 @@ handle_info({timeout, _TRef, {ping, JID}}, State) ->
 					      JID#jid.lresource) of
 		 none ->
 		     del_timer(JID, State#state.timers);
-		 _ ->
-		     Host = State#state.host,
-		     From = jid:make(Host),
-		     IQ = #iq{from = From, to = JID, type = get, sub_els = [#ping{}]},
-		     ejabberd_router:route_iq(IQ, JID,
-					      gen_mod:get_module_proc(Host, ?MODULE),
-					      State#state.ping_ack_timeout),
+		 Pid ->
+		     ejabberd_c2s:cast(Pid, send_ping),
 		     add_timer(JID, State#state.ping_interval,
 			       State#state.timers)
 	     end,
@@ -214,19 +208,29 @@ user_send({Packet, #{jid := JID} = C2SState}) ->
     start_ping(JID#jid.lserver, JID),
     {Packet, C2SState}.
 
+-spec c2s_handle_cast(ejabberd_c2s:state(), send_ping | term())
+      -> ejabberd_c2s:state() | {stop, ejabberd_c2s:state()}.
+c2s_handle_cast(#{lserver := Host, jid := JID} = C2SState, send_ping) ->
+    From = jid:make(Host),
+    IQ = #iq{from = From, to = JID, type = get, sub_els = [#ping{}]},
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    PingAckTimeout = mod_ping_opt:ping_ack_timeout(Host),
+    ejabberd_router:route_iq(IQ, JID, Proc, PingAckTimeout),
+    {stop, C2SState};
+c2s_handle_cast(C2SState, _Msg) ->
+    C2SState.
+
 %%====================================================================
 %% Internal functions
 %%====================================================================
 init_state(Host, Opts) ->
     SendPings = mod_ping_opt:send_pings(Opts),
     PingInterval = mod_ping_opt:ping_interval(Opts),
-    PingAckTimeout = mod_ping_opt:ping_ack_timeout(Opts),
     TimeoutAction = mod_ping_opt:timeout_action(Opts),
     #state{host = Host,
 	   send_pings = SendPings,
 	   ping_interval = PingInterval,
 	   timeout_action = TimeoutAction,
-	   ping_ack_timeout = PingAckTimeout,
 	   timers = #{}}.
 
 register_hooks(Host) ->
@@ -235,7 +239,9 @@ register_hooks(Host) ->
     ejabberd_hooks:add(sm_remove_connection_hook, Host,
 		       ?MODULE, user_offline, 100),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-		       user_send, 100).
+		       user_send, 100),
+    ejabberd_hooks:add(c2s_handle_cast, Host, ?MODULE,
+		       c2s_handle_cast, 99).
 
 unregister_hooks(Host) ->
     ejabberd_hooks:delete(sm_remove_connection_hook, Host,
@@ -243,7 +249,9 @@ unregister_hooks(Host) ->
     ejabberd_hooks:delete(sm_register_connection_hook, Host,
 			  ?MODULE, user_online, 100),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-			  user_send, 100).
+			  user_send, 100),
+    ejabberd_hooks:delete(c2s_handle_cast, Host, ?MODULE,
+			  c2s_handle_cast, 99).
 
 register_iq_handlers(Host) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PING,
@@ -315,7 +323,10 @@ mod_doc() ->
             #{value => "timeout()",
               desc =>
                   ?T("How long to wait before deeming that a client "
-                     "has not answered a given server ping request. "
+                     "has not answered a given server ping request. NOTE: when "
+                     "_`mod_stream_mgmt`_ is loaded and stream management is "
+                     "enabled by a client, this value is ignored, and the "
+                     "`ack_timeout` applies instead. "
                      "The default value is 'undefined'.")}},
            {send_pings,
             #{value => "true | false",
