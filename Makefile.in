@@ -1,3 +1,7 @@
+#.
+#' definitions
+#
+
 REBAR = @ESCRIPT@ @rebar@
 MIX = @rebar@
 INSTALL = @INSTALL@
@@ -71,6 +75,10 @@ SPOOLDIR = @localstatedir@/lib/ejabberd
 # /var/log/ejabberd/
 LOGDIR = @localstatedir@/log/ejabberd
 
+#.
+#' install user
+#
+
 INSTALLUSER=@INSTALLUSER@
 # if no user was enabled, don't set privileges or ownership
 ifeq ($(INSTALLUSER),)
@@ -91,6 +99,10 @@ INSTALLGROUP=@INSTALLGROUP@
 ifneq ($(INSTALLGROUP),)
   G_USER=-g $(INSTALLGROUP)
 endif
+
+#.
+#' rebar / rebar3 / mix
+#
 
 ifeq "$(notdir $(MIX))" "mix"
 REBAR_VER:=6
@@ -165,6 +177,10 @@ else
 endif
 endif
 
+#.
+#' main targets
+#
+
 all: scripts deps src
 
 deps: $(DEPSDIR)/.got
@@ -207,6 +223,10 @@ doap:
 edoc:
 	$(ERL) -noinput +B -eval \
         'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
+
+#.
+#' copy-files
+#
 
 JOIN_PATHS=$(if $(wordlist 2,1000,$(1)),$(firstword $(1))/$(call JOIN_PATHS,$(wordlist 2,1000,$(1))),$(1))
 
@@ -293,6 +313,10 @@ copy-files:
 
 copy-files-sub: copy-files-sub2
 
+#.
+#' relive
+#
+
 relive:
 	$(RELIVECMD)
 
@@ -301,6 +325,10 @@ relivedir=$(shell pwd)/_build/relive
 CONFIG_DIR = ${relivedir}/conf
 SPOOL_DIR = ${relivedir}/database
 LOGS_DIR = ${relivedir}/logs
+
+#.
+#' scripts
+#
 
 ejabberdctl.relive:
 	$(SED)  -e "s*{{installuser}}*@INSTALLUSER@*g" \
@@ -339,6 +367,10 @@ ejabberdctl.example: vars.config
 		> ejabberdctl.example
 
 scripts: ejabberd.init ejabberd.service ejabberdctl.example
+
+#.
+#' install
+#
 
 install: copy-files
 	#
@@ -379,6 +411,10 @@ install: copy-files
 		|| echo "Man page not included in sources"
 	$(INSTALL) -m 644 COPYING $(DESTDIR)$(DOCDIR)
 
+#.
+#' uninstall
+#
+
 uninstall: uninstall-binary
 
 uninstall-binary:
@@ -416,6 +452,10 @@ uninstall-all: uninstall-binary
 	rm -rf $(DESTDIR)$(SPOOLDIR)
 	rm -rf $(DESTDIR)$(LOGDIR)
 
+#.
+#' clean
+#
+
 clean:
 	rm -rf $(DEPSDIR)/.got
 	rm -rf $(DEPSDIR)/.built
@@ -438,6 +478,10 @@ distclean: clean clean-rel
 	rm -f Makefile
 	rm -f vars.config
 
+#.
+#' releases
+#
+
 rel: prod
 
 prod:
@@ -450,10 +494,22 @@ dev $(DEV_CONFIG):
 	$(PREPARE_ELIXIR_SCRIPTS)
 	$(REBARDEV)
 
+#.
+#' tags
+#
+
 TAGS:
 	etags *.erl
 
+#.
+#' makefile
+#
+
 Makefile: Makefile.in
+
+#.
+#' dialyzer
+#
 
 ifeq "$(REBAR_VER)" "3"
 dialyzer:
@@ -501,6 +557,10 @@ dialyzer: erlang_plt deps_plt ejabberd_plt
 	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
 endif
 
+#.
+#' test
+#
+
 test:
 	@echo "************************** NOTICE ***************************************"
 	@cat test/README
@@ -508,9 +568,17 @@ test:
 	@cd priv && ln -sf ../sql
 	$(REBAR) $(SKIPDEPS) ct
 
+#.
+#' phony
+#
+
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean prod rel \
 	install uninstall uninstall-binary uninstall-all translations deps test \
 	quicktest erlang_plt deps_plt ejabberd_plt xref hooks options
+
+#.
+#' help
+#
 
 help:
 	@echo ""
@@ -540,3 +608,7 @@ help:
 	@echo "  hooks          Run hooks validator"
 	@echo "  test           Run Common Tests suite"
 	@echo "  xref           Run cross reference analysis"
+
+#.
+#'
+# vim: foldmarker=#',#. foldmethod=marker:
