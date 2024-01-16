@@ -4,7 +4,9 @@
 
 REBAR = @ESCRIPT@ @rebar@
 MIX = @rebar@
+AWK = @AWK@
 INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
 SED = @SED@
 ERL = @ERL@
 
@@ -108,8 +110,8 @@ ifeq "$(notdir $(MIX))" "mix"
 REBAR_VER:=6
 REBAR_VER_318:=0
 else
-REBAR_VER:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print $$2}')
-REBAR_VER_318:=$(shell $(REBAR) --version | awk -F '[ .]' '/rebar / {print ($$2 == 3 && $$3 >= 18 ? 1 : 0)}')
+REBAR_VER:=$(shell $(REBAR) --version | $(AWK) -F '[ .]' '/rebar / {print $$2}')
+REBAR_VER_318:=$(shell $(REBAR) --version | $(AWK) -F '[ .]' '/rebar / {print ($$2 == 3 && $$3 >= 18 ? 1 : 0)}')
 endif
 
 REBAR_ENABLE_ELIXIR = @elixir@
@@ -137,7 +139,7 @@ ifeq ($(REBAR_ENABLE_ELIXIR),true)
   ELIXIR_LIBDIR_RAW=$(shell elixir -e "IO.puts(:filename.dirname(:code.lib_dir(:elixir)))" -e ":erlang.halt")
   ELIXIR_LIBDIR=":$(ELIXIR_LIBDIR_RAW)"
   EXPLICIT_ELIXIR_COMPILE=MIX_ENV=default mix compile.elixir
-  PREPARE_ELIXIR_SCRIPTS=mkdir rel/overlays; cp $(ELIXIR_LIBDIR_RAW)/../bin/iex rel/overlays/; cp $(ELIXIR_LIBDIR_RAW)/../bin/elixir rel/overlays/; sed -i 's|ERTS_BIN=$$|ERTS_BIN=$$SCRIPT_PATH/../../erts-{{erts_vsn}}/bin/|' rel/overlays/elixir
+  PREPARE_ELIXIR_SCRIPTS=$(MKDIR_P) rel/overlays; cp $(ELIXIR_LIBDIR_RAW)/../bin/iex rel/overlays/; cp $(ELIXIR_LIBDIR_RAW)/../bin/elixir rel/overlays/; sed -i 's|ERTS_BIN=$$|ERTS_BIN=$$SCRIPT_PATH/../../erts-{{erts_vsn}}/bin/|' rel/overlays/elixir
 endif
 ifeq "$(REBAR_VER)" "3"
   SKIPDEPS=
@@ -188,7 +190,7 @@ deps: $(DEPSDIR)/.got
 $(DEPSDIR)/.got:
 	rm -rf $(DEPSDIR)/.got
 	rm -rf $(DEPSDIR)/.built
-	mkdir -p $(DEPSDIR)
+	$(MKDIR_P) $(DEPSDIR)
 	$(REBAR) $(GET_DEPS) && :> $(DEPSDIR)/.got
 	$(CONFIGURE_DEPS)
 
@@ -520,7 +522,7 @@ else
 deps := $(wildcard $(DEPSDIR)/*/ebin)
 
 dialyzer/erlang.plt:
-	@mkdir -p dialyzer
+	@$(MKDIR_P) dialyzer
 	@dialyzer --build_plt --output_plt dialyzer/erlang.plt \
 	-o dialyzer/erlang.log --apps kernel stdlib sasl crypto \
 	public_key ssl mnesia inets odbc compiler erts \
@@ -528,13 +530,13 @@ dialyzer/erlang.plt:
 	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
 
 dialyzer/deps.plt:
-	@mkdir -p dialyzer
+	@$(MKDIR_P) dialyzer
 	@dialyzer --build_plt --output_plt dialyzer/deps.plt \
 	-o dialyzer/deps.log $(deps); \
 	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
 
 dialyzer/ejabberd.plt:
-	@mkdir -p dialyzer
+	@$(MKDIR_P) dialyzer
 	@dialyzer --build_plt --output_plt dialyzer/ejabberd.plt \
 	-o dialyzer/ejabberd.log ebin; \
 	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi

@@ -10,7 +10,9 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
 AC_PROG_MAKE_SET
+AC_PROG_AWK
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_SED
 
 if test "x$GCC" = "xyes"; then
