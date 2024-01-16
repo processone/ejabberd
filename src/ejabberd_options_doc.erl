@@ -552,6 +552,16 @@ doc() ->
              "",
              "acl:",
              "  admin: USERBOB"]}},
+      {disable_sasl_scram_downgrade_protection,
+          #{value => "true | false",
+              desc =>
+                ?T("Allows to disable sending data required by "
+                "'XEP-0474: SASL SCRAM Downgrade Protection'. "
+                "There are known buggy clients (like those that use strophejs 1.6.2) "
+                "which will not be able to authenticatate when servers sends data from "
+                "that specification. This options allows server to disable it to allow "
+                "even buggy clients connects, but in exchange decrease MITM protection. "
+                "The default value of this option is 'false' which enables this extension.")}},
      {disable_sasl_mechanisms,
       #{value => "[Mechanism, ...]",
         desc =>

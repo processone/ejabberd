@@ -140,6 +140,8 @@ opt_type(default_ram_db) ->
     econf:enum([mnesia, sql, redis]);
 opt_type(define_macro) ->
     econf:any();
+opt_type(disable_sasl_scram_downgrade_protection) ->
+    econf:bool();
 opt_type(disable_sasl_mechanisms) ->
     econf:list_or_single(
       econf:and_then(
@@ -563,6 +565,7 @@ options() ->
      {cluster_backend, mnesia},
      {cluster_nodes, []},
      {define_macro, []},
+     {disable_sasl_scram_downgrade_protection, false},
      {disable_sasl_mechanisms, []},
      {domain_balancing, #{}},
      {ext_api_headers, <<>>},

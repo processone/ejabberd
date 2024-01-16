@@ -40,6 +40,7 @@
 -export([default_ram_db/0, default_ram_db/1]).
 -export([define_macro/0, define_macro/1]).
 -export([disable_sasl_mechanisms/0, disable_sasl_mechanisms/1]).
+-export([disable_sasl_scram_downgrade_protection/0, disable_sasl_scram_downgrade_protection/1]).
 -export([domain_balancing/0]).
 -export([ext_api_headers/0, ext_api_headers/1]).
 -export([ext_api_http_pool_size/0, ext_api_http_pool_size/1]).
@@ -383,6 +384,13 @@ disable_sasl_mechanisms() ->
 -spec disable_sasl_mechanisms(global | binary()) -> [binary()].
 disable_sasl_mechanisms(Host) ->
     ejabberd_config:get_option({disable_sasl_mechanisms, Host}).
+
+-spec disable_sasl_scram_downgrade_protection() -> boolean().
+disable_sasl_scram_downgrade_protection() ->
+    disable_sasl_scram_downgrade_protection(global).
+-spec disable_sasl_scram_downgrade_protection(global | binary()) -> boolean().
+disable_sasl_scram_downgrade_protection(Host) ->
+    ejabberd_config:get_option({disable_sasl_scram_downgrade_protection, Host}).
 
 -spec domain_balancing() -> #{binary()=>#{'component_number'=>1..1114111, 'type'=>'bare_destination' | 'bare_source' | 'destination' | 'random' | 'source'}}.
 domain_balancing() ->
