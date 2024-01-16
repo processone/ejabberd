@@ -574,7 +574,8 @@ test:
 
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean prod rel \
 	install uninstall uninstall-binary uninstall-all translations deps test \
-	quicktest erlang_plt deps_plt ejabberd_plt xref hooks options
+	all dev doap help relive scripts update \
+	erlang_plt deps_plt ejabberd_plt xref hooks options
 
 #.
 #' help
