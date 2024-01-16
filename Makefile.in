@@ -134,6 +134,8 @@ ifeq "$(REBAR_VER)" "6"
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
   RELIVECMD=escript rel/relive.escript && MIX_ENV=dev RELIVE=true iex --name ejabberd@localhost -S mix run
+  REL_LIB_DIR = _build/dev/rel/ejabberd/lib
+  COPY_REL_TARGET = dev
 else
 ifeq ($(REBAR_ENABLE_ELIXIR),true)
   ELIXIR_LIBDIR_RAW=$(shell elixir -e "IO.puts(:filename.dirname(:code.lib_dir(:elixir)))" -e ":erlang.halt")
@@ -160,6 +162,8 @@ endif
   REBARREL=$(REBAR) as prod tar
   REBARDEV=REBAR_PROFILE=dev $(REBAR) release
   RELIVECMD=$(REBAR) relive
+  REL_LIB_DIR = _build/dev/rel/ejabberd/lib
+  COPY_REL_TARGET = dev
 else
   SKIPDEPS=skip_deps=true
   LISTDEPS=-q list-deps
@@ -176,6 +180,8 @@ else
   REBARDEV=
   RELIVECMD=@echo "Rebar2 detected... relive not supported.\
 	 \nTry: ./configure --with-rebar=./rebar3 ; make relive"
+  REL_LIB_DIR = rel/ejabberd/lib
+  COPY_REL_TARGET = rel
 endif
 endif
 
@@ -316,6 +322,29 @@ copy-files:
 copy-files-sub: copy-files-sub2
 
 #.
+#' copy-files-rel
+#
+
+copy-files-rel: $(COPY_REL_TARGET)
+	#
+	# Libraries
+	(cd $(REL_LIB_DIR) && find . -follow -type f ! -executable -exec $(INSTALL) -vDm 640 $(G_USER) {} $(DESTDIR)$(LIBDIR)/{} \;)
+	#
+	# *.so:
+	(cd $(REL_LIB_DIR) && find . -follow -type f -executable -name *.so -exec $(INSTALL) -vDm 640 $(G_USER) {} $(DESTDIR)$(LIBDIR)/{} \;)
+	#
+	# Executable files
+	(cd $(REL_LIB_DIR) && find . -follow -type f -executable ! -name *.so -exec $(INSTALL) -vDm 550 $(G_USER) {} $(DESTDIR)$(LIBDIR)/{} \;)
+
+#.
+#' uninstall-librel
+#
+
+uninstall-librel:
+	(cd $(REL_LIB_DIR) && find . -follow -type f -exec rm -fv -v $(DESTDIR)$(LIBDIR)/{} \;)
+	(cd $(REL_LIB_DIR) && find . -follow -depth -type d -exec rm -dv -v $(DESTDIR)$(LIBDIR)/{} \;)
+
+#.
 #' relive
 #
 
@@ -374,7 +403,11 @@ scripts: ejabberd.init ejabberd.service ejabberdctl.example
 #' install
 #
 
-install: copy-files
+install: copy-files install-main
+
+install-rel: copy-files-rel install-main
+
+install-main:
 	#
 	# Configuration files
 	$(INSTALL) -d -m 750 $(G_USER) $(DESTDIR)$(ETCDIR)
@@ -418,6 +451,8 @@ install: copy-files
 #
 
 uninstall: uninstall-binary
+
+uninstall-rel: uninstall-binary uninstall-librel
 
 uninstall-binary:
 	rm -f  $(DESTDIR)$(SBINDIR)/ejabberdctl
@@ -577,7 +612,7 @@ test:
 
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean prod rel \
 	install uninstall uninstall-binary uninstall-all translations deps test \
-	all dev doap help relive scripts update \
+	all dev doap help install-rel relive scripts uninstall-rel update \
 	erlang_plt deps_plt ejabberd_plt xref hooks options
 
 #.
@@ -595,7 +630,9 @@ help:
 	@echo "  distclean      Clean completely the development files"
 	@echo ""
 	@echo "  install        Install ejabberd to /usr/local"
+	@echo "  install-rel    Install ejabberd to /usr/local (using release)"
 	@echo "  uninstall      Uninstall ejabberd (buggy)"
+	@echo "  uninstall-rel  Uninstall ejabberd (using release)"
 	@echo "  uninstall-all  Uninstall also configuration, logs, mnesia... (buggy)"
 	@echo ""
 	@echo "  prod           Build a production release"
