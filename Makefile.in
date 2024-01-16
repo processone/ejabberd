@@ -447,6 +447,7 @@ uninstall-binary:
 	rm -fr $(DESTDIR)$(LUADIR)
 	rm -fr $(DESTDIR)$(PRIVDIR)
 	rm -fr $(DESTDIR)$(EJABBERDDIR)
+	rm -f  $(DESTDIR)$(MANDIR)/ejabberd.yml.5
 
 uninstall-all: uninstall-binary
 	rm -rf $(DESTDIR)$(ETCDIR)
