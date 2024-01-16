@@ -499,7 +499,7 @@ dev $(DEV_CONFIG):
 #
 
 TAGS:
-	etags *.erl
+	etags src/*.erl
 
 #.
 #' makefile
@@ -603,7 +603,7 @@ help:
 	@echo "  edoc           Generate edoc documentation (unused)"
 	@echo "  options        Generate ejabberd_option.erl"
 	@echo "  translations   Extract translation files (requires --enable-tools)"
-	@echo "  tags           Generate tags file for text editors"
+	@echo "  TAGS           Generate tags file for text editors"
 	@echo ""
 	@echo "  dialyzer       Run Dialyzer static analyzer"
 	@echo "  hooks          Run hooks validator"
