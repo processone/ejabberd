@@ -33,9 +33,6 @@ jobs:
       matrix:
         otp: ['20.3', '25.3', '26']
         rebar: ['rebar', 'rebar3']
-        exclude:
-        - otp: '26'
-          rebar: 'rebar'
     runs-on: ubuntu-latest
     container:
       image: erlang:${{ matrix.otp }}
@@ -75,19 +72,13 @@ jobs:
 
     - run: make xref
 
-    - name: Test rel (rebar2)
+    - name: Prepare rel (rebar2)
       if: matrix.rebar == 'rebar'
       run: |
-        make rel
-        rel/ejabberd/bin/ejabberdctl start \
-          && rel/ejabberd/bin/ejabberdctl started
-        rel/ejabberd/bin/ejabberdctl register user1 localhost s0mePass
-        rel/ejabberd/bin/ejabberdctl register user2 localhost s0mePass
-        rel/ejabberd/bin/ejabberdctl registered_users localhost > registered.log
-        cat rel/ejabberd/logs/*
+        mkdir -p _build/prod && ln -s `pwd`/rel/ _build/prod/rel
+        mkdir -p _build/dev  && ln -s `pwd`/rel/ _build/dev/rel
 
     - name: Run rel
-      if: matrix.rebar != 'rebar'
       run: |
         make rel
         _build/prod/rel/ejabberd/bin/ejabberdctl start \
@@ -98,7 +89,6 @@ jobs:
           && _build/prod/rel/ejabberd/bin/ejabberdctl stopped
 
     - name: Run dev
-      if: matrix.rebar != 'rebar'
       run: |
         make dev
         _build/dev/rel/ejabberd/bin/ejabberdctl start \
@@ -109,7 +99,6 @@ jobs:
           && _build/dev/rel/ejabberd/bin/ejabberdctl stopped
 
     - name: Run install
-      if: matrix.rebar != 'rebar'
       run: |
         make install
         /tmp/ejabberd/sbin/ejabberdctl start \
@@ -120,7 +109,6 @@ jobs:
           && /tmp/ejabberd/sbin/ejabberdctl stopped
 
     - name: View logs
-      if: matrix.rebar != 'rebar'
       run: |
         echo "===> Registered:"
         cat registered.log
@@ -132,23 +120,22 @@ jobs:
         cat /tmp/ejabberd/var/log/ejabberd/*
 
     - name: Check logs
-      if: matrix.rebar != 'rebar'
       run: |
         grep -q '^user1$' registered.log
         grep -q '^user2$' registered.log
         grep -q '^user3$' registered.log
         grep -q 'is started' _build/prod/rel/ejabberd/logs/ejabberd.log
         grep -q 'is stopped' _build/prod/rel/ejabberd/logs/ejabberd.log
-        test $(find _build/prod/ -empty -name error.log)
+        test $(find _build/prod/rel/ -empty -name error.log)
         grep -q 'is started' _build/dev/rel/ejabberd/logs/ejabberd.log
         grep -q 'is stopped' _build/dev/rel/ejabberd/logs/ejabberd.log
-        test $(find _build/dev/ -empty -name error.log)
+        test $(find _build/dev/rel/ -empty -name error.log)
         grep -q 'is started' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
         grep -q 'is stopped' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
         test $(find /tmp/ejabberd/var/log/ejabberd/ -empty -name error.log)
 
     - name: View logs failures
-      if: matrix.rebar != 'rebar'
+      if: always()
       run: |
         cat _build/prod/rel/ejabberd/logs/ejabberd.log
         cat _build/prod/rel/ejabberd/logs/error.log
