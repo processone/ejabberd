@@ -115,6 +115,7 @@
 {"February",". února"}.
 {"File larger than ~w bytes","Soubor větší než ~w bytů"}.
 {"Friday","Pátek"}.
+{"From ~ts","Od ~ts"}.
 {"From","Od"}.
 {"Full Name","Celé jméno"}.
 {"Get Number of Online Users","Získat počet online uživatelů"}.
@@ -151,16 +152,18 @@
 {"Incorrect value of 'action' attribute","Nesprávná hodnota atributu 'action'"}.
 {"Incorrect value of 'action' in data form","Nesprávná hodnota atributu 'action' v datovém formuláři"}.
 {"Incorrect value of 'path' in data form","Nesprávná hodnota atributu 'path' v datovém formuláři"}.
+{"Installed Modules:","Instalované moduly:"}.
 {"Insufficient privilege","Nedostatečné oprávnění"}.
 {"Invalid 'from' attribute in forwarded message","Nesprávný atribut 'from' v přeposlané zprávě"}.
 {"Invitations are not allowed in this conference","Pozvánky nejsou povoleny v této místnosti"}.
 {"IP addresses","IP adresy"}.
 {"is now known as","se přejmenoval(a) na"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Není povoleno posílat chybové zprávy do místnosti. Účastník (~s) odeslal chybovou zprávu (~s) a byl vyhozen z místnosti"}.
-{"It is not allowed to send private messages of type \"groupchat\"","Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
+{"It is not allowed to send private messages of type \"groupchat\"","Není dovoleno odeslání soukromých zpráv typu \"skupinová zpráva\""}.
 {"It is not allowed to send private messages to the conference","Není povoleno odesílat soukromé zprávy v této místnosti"}.
 {"Jabber ID","Jabber ID"}.
 {"January",". ledna"}.
+{"Joined MIX channels:","Připojené MIX kanály:"}.
 {"joins the room","vstoupil(a) do místnosti"}.
 {"July",". července"}.
 {"June",". června"}.
@@ -181,7 +184,7 @@
 {"Malformed username","Chybně formátováné jméno uživatele"}.
 {"March",". března"}.
 {"Max payload size in bytes","Maximální náklad v bajtech"}.
-{"Maximum Number of Occupants","Počet účastníků"}.
+{"Maximum Number of Occupants","Maximální počet účastníků"}.
 {"May",". května"}.
 {"Members:","Členové:"}.
 {"Membership is required to enter this room","Pro vstup do místnosti musíte být členem"}.
@@ -200,7 +203,7 @@
 {"Name","Jméno"}.
 {"Name:","Jméno:"}.
 {"Neither 'jid' nor 'nick' attribute found","Nebyl nalezen atribut 'jid' ani 'nick'"}.
-{"Neither 'role' nor 'affiliation' attribute found","Nebyl nalezen atribut 'role'  ani 'affiliation'"}.
+{"Neither 'role' nor 'affiliation' attribute found","Nebyl nalezen atribut 'role' ani 'affiliation'"}.
 {"Never","Nikdy"}.
 {"New Password:","Nové heslo:"}.
 {"Nickname Registration at ","Registrace přezdívky na "}.
@@ -266,6 +269,7 @@
 {"Only service administrators are allowed to send service messages","Pouze správci služby smí odesílat servisní zprávy"}.
 {"Organization Name","Název firmy"}.
 {"Organization Unit","Oddělení"}.
+{"Other Modules Available:","Ostatní dostupné moduly:"}.
 {"Outgoing s2s Connections","Odchozí s2s spojení"}.
 {"Outgoing s2s Connections:","Odchozí s2s spojení:"}.
 {"Owner privileges required","Jsou vyžadována práva vlastníka"}.
@@ -319,7 +323,9 @@
 {"Room Occupants","Počet účastníků"}.
 {"Room title","Název místnosti"}.
 {"Roster groups allowed to subscribe","Skupiny kontaktů, které mohou odebírat"}.
+{"Roster of ~ts","Seznam kontaktů ~ts"}.
 {"Roster size","Velikost seznamu kontaktů"}.
+{"Roster:","Seznam kontaktů:"}.
 {"RPC Call Error","Chyba RPC volání"}.
 {"Running Nodes","Běžící uzly"}.
 {"Saturday","Sobota"}.
@@ -333,7 +339,7 @@
 {"September",". září"}.
 {"Server:","Server:"}.
 {"Set message of the day and send to online users","Nastavit zprávu dne a odeslat ji online uživatelům"}.
-{"Set message of the day on all hosts and send to online users","Nastavit zprávu dne a odeslat ji online uživatelům"}.
+{"Set message of the day on all hosts and send to online users","Nastavit zprávu dne na všech hostitelích a odeslat ji online uživatelům"}.
 {"Shared Roster Groups","Skupiny pro sdílený seznam kontaktů"}.
 {"Show Integral Table","Zobrazit kompletní tabulku"}.
 {"Show Ordinary Table","Zobrazit běžnou tabulku"}.
@@ -357,17 +363,20 @@
 {"Sunday","Neděle"}.
 {"That nickname is already in use by another occupant","Přezdívka je již používána jiným členem"}.
 {"That nickname is registered by another person","Přezdívka je zaregistrována jinou osobou"}.
+{"The account was not unregistered","Účet nebyl smazán"}.
 {"The CAPTCHA is valid.","CAPTCHA souhlasí."}.
 {"The CAPTCHA verification has failed","Ověření CAPTCHA se nezdařilo"}.
 {"The collections with which a node is affiliated","Kolekce, se kterými je uzel spřízněn"}.
 {"The feature requested is not supported by the conference","Požadovaná vlastnost není podporována touto místností"}.
+{"The number of subscribers to the node","Počet odběratelů uzlu"}.
 {"The password contains unacceptable characters","Heslo obsahuje nepovolené znaky"}.
 {"The password is too weak","Heslo je příliš slabé"}.
 {"the password is","heslo je"}.
 {"The query is only allowed from local users","Dotaz je povolen pouze pro místní uživatele"}.
 {"The query must not contain <item/> elements","Dotaz nesmí obsahovat elementy <item/>"}.
-{"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Stanza MUSÍ obsahovat pouze jeden element  <active/>, jeden element <default/> nebo jeden element <list/>"}.
-{"There was an error creating the account: ","Při vytváření účtu došlo k chybě:"}.
+{"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Stanza MUSÍ obsahovat pouze jeden element <active/>, jeden element <default/> nebo jeden element <list/>"}.
+{"There was an error changing the password: ","Při změně hesla došlo k chybě: "}.
+{"There was an error creating the account: ","Při vytváření účtu došlo k chybě: "}.
 {"There was an error deleting the account: ","Při mazání účtu došlo k chybě: "}.
 {"This room is not anonymous","Tato místnost není anonymní"}.
 {"Thursday","Čtvrtek"}.
@@ -416,8 +425,8 @@
 {"User","Uživatel"}.
 {"Validate","Ověřit"}.
 {"Value 'get' of 'type' attribute is not allowed","Hodnota 'get' atrubutu 'type' není povolena"}.
-{"Value of '~s' should be boolean","Hodnota  '~s' by měla být boolean"}.
-{"Value of '~s' should be datetime string","Hodnota  '~s' by měla být datetime řetězec"}.
+{"Value of '~s' should be boolean","Hodnota '~s' by měla být boolean"}.
+{"Value of '~s' should be datetime string","Hodnota '~s' by měla být datetime řetězec"}.
 {"Value of '~s' should be integer","Hodnota '~s' by měla být celé číslo"}.
 {"Value 'set' of 'type' attribute is not allowed","Hodnota 'set' atrubutu 'type' není povolena"}.
 {"vCard User Search","Hledání uživatelů ve vizitkách"}.
