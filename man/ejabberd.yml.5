@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 10/16/2023
+.\"      Date: 01/22/2024
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "10/16/2023" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "01/22/2024" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,7 +82,7 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/23\&.10/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/24\&.01/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
@@ -405,7 +405,7 @@ will be used\&.
 .RS 4
 Supplement check for user existence based on
 \fImod_last\fR
-data, for authentication methods that don\(cqt have a way to reliable tell if user exists (like is the case for
+data, for authentication methods that don\(cqt have a way to reliably tell if a user exists (like is the case for
 \fIjwt\fR
 and certificate based authentication)\&. This helps with processing offline message for those users\&. The default value is
 \fItrue\fR\&.
@@ -430,7 +430,9 @@ Git repository\&. Please refer to that module\(cqs README file for details\&.
 .PP
 \fBauth_password_format\fR: \fIplain | scram\fR
 .RS 4
-The option defines in what format the users passwords are stored:
+The option defines in what format the users passwords are stored, plain text or in
+SCRAM
+format:
 .sp
 .RS 4
 .ie n \{\
@@ -440,7 +442,7 @@ The option defines in what format the users passwords are stored:
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIplain\fR: The password is stored as plain text in the database\&. This is risky because the passwords can be read if your database gets compromised\&. This is the default value\&. This format allows clients to authenticate using: the old Jabber Non\-SASL (XEP\-0078), SASL PLAIN, SASL DIGEST\-MD5, and SASL SCRAM\-SHA\-1\&.
+\fIplain\fR: The password is stored as plain text in the database\&. This is risky because the passwords can be read if your database gets compromised\&. This is the default value\&. This format allows clients to authenticate using: the old Jabber Non\-SASL (XEP\-0078), SASL PLAIN, SASL DIGEST\-MD5, and SASL SCRAM\-SHA\-1/256/512(\-PLUS)\&.
 .RE
 .sp
 .RS 4
@@ -451,14 +453,19 @@ The option defines in what format the users passwords are stored:
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIscram\fR: The password is not stored, only some information that allows to verify the hash provided by the client\&. It is impossible to obtain the original plain password from the stored information; for this reason, when this value is configured it cannot be changed to plain anymore\&. This format allows clients to authenticate using: SASL PLAIN and SASL SCRAM\-SHA\-1\&. The default value is
-\fIplain\fR\&.
+\fIscram\fR: The password is not stored, only some information required to verify the hash provided by the client\&. It is impossible to obtain the original plain password from the stored information; for this reason, when this value is configured it cannot be changed to plain anymore\&. This format allows clients to authenticate using: SASL PLAIN and SASL SCRAM\-SHA\-1/256/512(\-PLUS)\&. The SCRAM variant depends on the
+\fIauth_scram_hash\fR
+option\&.
 .RE
 .RE
+.sp
+The default value is \fIplain\fR\&.
 .PP
 \fBauth_scram_hash\fR: \fIsha | sha256 | sha512\fR
 .RS 4
-Hash algorithm that should be used to store password in SCRAM format\&. You shouldn\(cqt change this if you already have passwords generated with a different algorithm \- users that have such passwords will not be able to authenticate\&. The default value is
+Hash algorithm that should be used to store password in
+SCRAM
+format\&. You shouldn\(cqt change this if you already have passwords generated with a different algorithm \- users that have such passwords will not be able to authenticate\&. The default value is
 \fIsha\fR\&.
 .RE
 .PP
@@ -725,6 +732,14 @@ or
 is case\-insensitive\&. The default value is an empty list, i\&.e\&. no mechanisms are disabled by default\&.
 .RE
 .PP
+\fBdisable_sasl_scram_downgrade_protection\fR: \fItrue | false\fR
+.RS 4
+Allows to disable sending data required by
+\fIXEP\-0474: SASL SCRAM Downgrade Protection\fR\&. There are known buggy clients (like those that use strophejs 1\&.6\&.2) which will not be able to authenticatate when servers sends data from that specification\&. This options allows server to disable it to allow even buggy clients connects, but in exchange decrease MITM protection\&. The default value of this option is
+\fIfalse\fR
+which enables this extension\&.
+.RE
+.PP
 \fBdomain_balancing\fR: \fI{Domain: Options}\fR
 .RS 4
 An algorithm to load balance the components that are plugged on an ejabberd cluster\&. It means that you can plug one or several instances of the same component on each ejabberd node and that the traffic will be automatically distributed\&. The algorithm to deliver messages to the component(s) can be specified by this option\&. For any component connected as
@@ -751,7 +766,7 @@ attribute;
 \fIfrom\fR
 attribute;
 \fIbare_destination\fR
-\- by the the bare JID (without resource) of the packet\(cqs
+\- by the bare JID (without resource) of the packet\(cqs
 \fIto\fR
 attribute;
 \fIbare_source\fR
@@ -916,7 +931,7 @@ This ACL rule defines accounts that can use only this auth method, even if other
 .RS 4
 By default, the JID is defined in the
 \fI"jid"\fR
-JWT field\&. This option allows to specify other JWT field name where the JID is defined\&.
+JWT field\&. In this option you can specify other JWT field name where the JID is defined\&.
 .RE
 .PP
 \fBjwt_key\fR: \fIFilePath\fR
@@ -1123,7 +1138,7 @@ section for details\&.
 \fBnegotiation_timeout\fR: \fItimeout()\fR
 .RS 4
 Time to wait for an XMPP stream negotiation to complete\&. When timeout occurs, the corresponding XMPP stream is closed\&. The default value is
-\fI30\fR
+\fI120\fR
 seconds\&.
 .RE
 .PP
@@ -1139,9 +1154,9 @@ This option can be used to tune tick time parameter of
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/23\&.10/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/23\&.10/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
 \fInew\fR
-schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
+schema can handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
 schema is best when serving several XMPP domains and/or changing domains from time to time\&. This avoid need to manage several databases and handle complex configuration changes\&. The default depends on configuration flag
 \fI\-\-enable\-new\-sql\-schema\fR
@@ -1689,6 +1704,15 @@ seconds\&.
 An SQL database name\&. For SQLite this must be a full path to a database file\&. The default value is
 \fIejabberd\fR\&.
 .RE
+.sp
+\fINote\fR about the next option: added in 24\&.01:
+.PP
+\fBsql_flags\fR: \fI[mysql_alternative_upsert]\fR
+.RS 4
+This option accepts a list of SQL flags, and is empty by default\&.
+\fImysql_alternative_upsert\fR
+forces the alternative upsert implementation in MySQL\&.
+.RE
 .PP
 \fBsql_keepalive_interval\fR: \fItimeout()\fR
 .RS 4
@@ -1738,7 +1762,7 @@ for MS SQL\&. The option has no effect for SQLite\&.
 .RS 4
 This option is
 \fItrue\fR
-by default, and is useful to disable prepared statements\&. The option is valid for PostgreSQL\&.
+by default, and is useful to disable prepared statements\&. The option is valid for PostgreSQL and MySQL\&.
 .RE
 .PP
 \fBsql_query_timeout\fR: \fItimeout()\fR
@@ -1831,10 +1855,16 @@ A user name for SQL authentication\&. The default value is
 Specify what proxies are trusted when an HTTP request contains the header
 \fIX\-Forwarded\-For\fR\&. You can specify
 \fIall\fR
-to allow all proxies, or specify a list of IPs, possibly with masks\&. The default value is an empty list\&. This allows, if enabled, to be able to know the real IP of the request, for admin purpose, or security configuration (for example using
+to allow all proxies, or specify a list of IPs, possibly with masks\&. The default value is an empty list\&. Using this option you can know the real IP of the request, for admin purpose, or security configuration (for example using
 \fImod_fail2ban\fR)\&. IMPORTANT: The proxy MUST be configured to set the
 \fIX\-Forwarded\-For\fR
 header if you enable this option as, otherwise, the client can set it itself and as a result the IP value cannot be trusted for security rules in ejabberd\&.
+.RE
+.PP
+\fBupdate_sql_schema\fR: \fItrue | false\fR
+.RS 4
+Allow ejabberd to update SQL schema\&. The default value is
+\fItrue\fR\&.
 .RE
 .PP
 \fBuse_cache\fR: \fItrue | false\fR
@@ -2186,7 +2216,7 @@ Limit any given JID by the number of avatars it is able to convert per minute\&.
 .RE
 .SS "mod_block_strangers"
 .sp
-This module allows to block/log messages coming from an unknown entity\&. If a writing entity is not in your roster, you can let this module drop and/or log the message\&. By default you\(cqll just not receive message from that entity\&. Enable this module if you want to drop SPAM messages\&.
+This module blocks and logs any messages coming from an unknown entity\&. If a writing entity is not in your roster, you can let this module drop and/or log the message\&. By default you\(cqll just not receive message from that entity\&. Enable this module if you want to drop SPAM messages\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -3913,7 +3943,7 @@ or
 \fIsubscribe\fR
 or both, and
 \fIauthentication\fR
-section with username/password field or certfile pointing to client certificate\&. Accepted urls can use schema mqtt, mqtts (mqtt with tls), mqtt5, mqtt5s (both to trigger v5 protocol), ws, wss, ws5, wss5\&. Certifcate authentication can be only used with mqtts, mqtt5s, wss, wss5\&.
+section with username/password field or certfile pointing to client certificate\&. Accepted urls can use schema mqtt, mqtts (mqtt with tls), mqtt5, mqtt5s (both to trigger v5 protocol), ws, wss, ws5, wss5\&. Certificate authentication can be only used with mqtts, mqtt5s, wss, wss5\&.
 .RE
 .RE
 .sp
@@ -4027,7 +4057,7 @@ option, but applied to this module only\&.
 .PP
 \fBdefault_room_options\fR: \fIOptions\fR
 .RS 4
-This option allows to define the desired default room options\&. Note that the creator of a room can modify the options of his room at any time using an XMPP client with MUC capability\&. The
+Define the default room options\&. Note that the creator of a room can modify the options of his room at any time using an XMPP client with MUC capability\&. The
 \fIOptions\fR
 are:
 .PP
@@ -4609,7 +4639,7 @@ to a remote file\&. By default a predefined CSS will be embedded into the HTML p
 .PP
 \fBdirname\fR: \fIroom_jid | room_name\fR
 .RS 4
-Allows to configure the name of the room directory\&. If set to
+Configure the name of the room directory\&. If set to
 \fIroom_jid\fR, the room directory name will be the full room JID\&. Otherwise, the room directory name will be only the room name, not including the MUC service name\&. The default value is
 \fIroom_jid\fR\&.
 .RE
@@ -5050,7 +5080,11 @@ This module implements support for XEP\-0199: XMPP Ping and periodic keepalives\
 .PP
 \fBping_ack_timeout\fR: \fItimeout()\fR
 .RS 4
-How long to wait before deeming that a client has not answered a given server ping request\&. The default value is
+How long to wait before deeming that a client has not answered a given server ping request\&. NOTE: when
+\fImod_stream_mgmt\fR
+is loaded and stream management is enabled by a client, this value is ignored, and the
+ack_timeout
+applies instead\&. The default value is
 \fIundefined\fR\&.
 .RE
 .PP
@@ -5689,7 +5723,7 @@ or
 To specify whether or not pubsub should cache last items\&. Value is
 \fItrue\fR
 or
-\fIfalse\fR\&. If not defined, pubsub does not cache last items\&. On systems with not so many nodes, caching last items speeds up pubsub and allows to raise user connection rate\&. The cost is memory usage, as every item is stored in memory\&.
+\fIfalse\fR\&. If not defined, pubsub does not cache last items\&. On systems with not so many nodes, caching last items speeds up pubsub and allows you to raise the user connection rate\&. The cost is memory usage, as every item is stored in memory\&.
 .RE
 .sp
 \fINote\fR about the next option: added in 21\&.12:
@@ -5770,7 +5804,7 @@ nodetree before\&.
 .PP
 \fBpep_mapping\fR: \fIList of Key:Value\fR
 .RS 4
-This allows to define a list of key\-value to choose defined node plugins on given PEP namespace\&. The following example will use
+In this option you can provide a list of key\-value to choose defined node plugins on given PEP namespace\&. The following example will use
 \fInode_tune\fR
 instead of
 \fInode_pep\fR
@@ -5823,7 +5857,7 @@ plugin handles the default behaviour and follows standard XEP\-0060 implementati
 .IP \(bu 2.3
 .\}
 \fIpep\fR
-plugin adds extension to handle Personal Eventing Protocol (XEP\-0163) to the PubSub engine\&. Adding pep allows to handle PEP automatically\&.
+plugin adds extension to handle Personal Eventing Protocol (XEP\-0163) to the PubSub engine\&. When enabled, PEP is handled automatically\&.
 .RE
 .RE
 .PP
@@ -6094,7 +6128,7 @@ on the requested username, registration of that user name is denied\&. There are
 .RS 4
 By default,
 \fIejabberd\fR
-doesn\(cqt allow to register new accounts from s2s or existing c2s sessions\&. You can change it by defining access rule in this option\&. Use with care: allowing registration from s2s leads to uncontrolled massive accounts creation by rogue users\&.
+doesn\(cqt allow the client to register new accounts from s2s or existing c2s sessions\&. You can change it by defining access rule in this option\&. Use with care: allowing registration from s2s leads to uncontrolled massive accounts creation by rogue users\&.
 .RE
 .PP
 \fBaccess_remove\fR: \fIAccessName\fR
@@ -6954,7 +6988,7 @@ It is not enough to just load this module\&. You should also configure listeners
 .PP
 \fBalways_record_route\fR: \fItrue | false\fR
 .RS 4
-Always insert "Record\-Route" header into SIP messages\&. This approach allows to bypass NATs/firewalls a bit more easily\&. The default value is
+Always insert "Record\-Route" header into SIP messages\&. With this approach it is possible to bypass NATs/firewalls a bit more easily\&. The default value is
 \fItrue\fR\&.
 .RE
 .PP
@@ -7797,13 +7831,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 23\&.10\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 23\&.10\&.118\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/23\&.10/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/24\&.01/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
