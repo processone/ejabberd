@@ -53,6 +53,8 @@ OTPApps = RequiredOTPApps ++ ConfiguredOTPApps,
 
 DepApps = lists:usort(lists:flatten(GetDeps(filename:join(TopDir, "rebar.config"), GetDeps))),
 
+SysVer = erlang:system_info(otp_release),
+
 Sys = [{lib_dirs, []},
        {erts, [{mod_cond, derived}, {app_file, strip}]},
        {app_file, strip},
@@ -70,13 +72,17 @@ Sys = [{lib_dirs, []},
        {boot_rel, "ejabberd"},
        {profile, embedded},
        {incl_cond, exclude},
-       {excl_archive_filters, [".*"]}, %% Do not archive built libs
        {excl_sys_filters, ["^bin/.*", "^erts.*/bin/(dialyzer|typer)",
                            "^erts.*/(doc|info|include|lib|man|src)"]},
        {excl_app_filters, ["\.gitignore"]},
        {app, stdlib, [{incl_cond, include}]},
        {app, kernel, [{incl_cond, include}]},
        {app, ejabberd, [{incl_cond, include}, {lib_dir, ".."}]}]
+++ if SysVer < "26" ->
+          [{excl_archive_filters, [".*"]}]; %% Do not archive built libs
+      true ->
+          []
+   end
 ++ lists:map(
      fun(App) ->
              {app, App, [{incl_cond, include},

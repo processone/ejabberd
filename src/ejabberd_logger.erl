@@ -340,8 +340,20 @@ progress_filter(#{level:=info,msg:={report,#{label:={_,progress}}}} = Event, _) 
 progress_filter(Event, _) ->
     Event.
 
+-ifdef(ELIXIR_ENABLED).
+console_template() ->
+    case (false /= code:is_loaded('Elixir.Logger'))
+        andalso
+        lists:keymember(default_formatter, 1, 'Elixir.Logger':module_info(exports)) of
+        true ->
+            [date, " ", time, " [", level, "] ", message, "\n"];
+        false ->
+            [time, " [", level, "] " | msg()]
+    end.
+-else.
 console_template() ->
     [time, " [", level, "] " | msg()].
+-endif.
 
 file_template() ->
     [time, " [", level, "] ", pid,

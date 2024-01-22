@@ -15,8 +15,8 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT")" && pwd -P)"
 # shellcheck disable=SC2034
 ERTS_VSN="{{erts_vsn}}"
 ERL="{{erl}}"
-IEX="{{bindir}}/iex"
 EPMD="{{epmd}}"
+IEX="{{iexpath}}"
 INSTALLUSER="{{installuser}}"
 
 # check the proper system user is used
@@ -175,8 +175,8 @@ livewarning()
         echo "Please be extremely cautious with your actions,"
         echo "and exit immediately if you are not completely sure."
         echo ""
-        echo "To exit this LIVE mode and stop ejabberd, press:"
-        echo "  q().  and press the Enter key"
+        echo "To exit and detach this shell from ejabberd, press:"
+        echo "  control+g and then q"
         echo ""
         echo "--------------------------------------------------------------------"
         echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
@@ -184,6 +184,39 @@ livewarning()
         echo "Press return to continue"
         read -r _
         echo ""
+    fi
+}
+
+check_etop_result()
+{
+    result=$?
+    if [ $result -eq 1 ] ; then
+        echo ""
+        echo "It seems there was some problem running 'ejabberdctl etop'."
+        echo "Is the error message something like this?"
+        echo "  Failed to load module 'etop' because it cannot be found..."
+        echo "Then probably ejabberd was compiled with development tools disabled."
+        echo "To use 'etop', recompile ejabberd with: ./configure --enable-tools"
+        echo ""
+        exit $result
+    fi
+}
+
+check_iex_result()
+{
+    result=$?
+    if [ $result -eq 127 ] ; then
+        echo ""
+        echo "It seems there was some problem finding 'iex' binary from Elixir."
+        echo "Probably ejabberd was compiled with Rebar3 and Elixir disabled, like:"
+        echo "  ./configure"
+        echo "which is equivalent to:"
+        echo "  ./configure --with-rebar=rebar3 --disable-elixir"
+        echo "To use 'iex', recompile ejabberd enabling Elixir or using Mix:"
+        echo "  ./configure --enable-elixir"
+        echo "  ./configure --with-rebar=mix"
+        echo ""
+        exit $result
     fi
 }
 
@@ -310,15 +343,18 @@ case $1 in
         set_dist_client
         exec_erl "$(uid top)" -hidden -remsh "$ERLANG_NODE" -s etop \
                  -output text
+        check_etop_result
         ;;
     iexdebug)
         debugwarning
         set_dist_client
         exec_iex "$(uid debug)" --remsh "$ERLANG_NODE"
+        check_iex_result
         ;;
     iexlive)
         livewarning
         exec_iex "$ERLANG_NODE" --erl "$EJABBERD_OPTS"
+        check_iex_result
         ;;
     ping)
         PEER=${2:-$ERLANG_NODE}

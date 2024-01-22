@@ -132,7 +132,7 @@ check_apps() ->
       fun() ->
 	      Apps = [ejabberd |
 		      [App || {App, _, _} <- application:which_applications(),
-			      App /= ejabberd]],
+			      App /= ejabberd, App /= hex]],
 	      ?DEBUG("Checking consistency of applications: ~ts",
 		     [misc:join_atoms(Apps, <<", ">>)]),
 	      misc:peach(

@@ -28,7 +28,8 @@ Other optional libraries are:
 - PAM library, for Pluggable Authentication Modules (PAM)
 - ImageMagick's Convert program and Ghostscript fonts, for CAPTCHA
   challenges
-- Elixir ≥ 1.10.3, to support Elixir, and alternative to rebar/rebar3
+- Elixir ≥ 1.10.3, for Elixir support. It is recommended Elixir 1.13.4 or higher
+  and Erlang/OTP 23.0 or higher.
 
 If your system splits packages in libraries and development headers,
 install the development packages too.
@@ -89,7 +90,7 @@ Build an OTP Release
 Instead of installing ejabberd in the system, you can build an OTP release
 that includes all necessary to run ejabberd in a subdirectory:
 
-    ./configure --with-rebar=rebar3
+    ./configure
     make rel
 
 Or, if you have Elixir available and plan to develop Elixir code:

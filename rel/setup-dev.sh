@@ -23,5 +23,14 @@ sed -i "s|#' POLL|EJABBERD_BYPASS_WARNINGS=true\n\n#' POLL|g" ejabberdctl.cfg.ex
 
 echo ""
 echo "===> Some example ways to start this ejabberd dev:"
-echo "     _build/dev/rel/ejabberd/bin/ejabberd console"
 echo "     _build/dev/rel/ejabberd/bin/ejabberdctl live"
+case "$1" in
+    "rebar3")
+        echo "     _build/dev/rel/ejabberd/bin/ejabberd console"
+        ;;
+    "mix")
+        echo "     RELEASE_NODE=ejabberd@localhost _build/dev/rel/ejabberd/bin/ejabberd start"
+        ;;
+    "*")
+        ;;
+esac
