@@ -48,6 +48,7 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Всеки, който има абонамент за присъствие на двете или от: може да се абонира и да извлича елементи"}.
 {"Anyone with Voice","Всеки, с възможност за гласово обаждане"}.
 {"Anyone","Всеки"}.
+{"Apparently your account has no administration rights in this server. Please check how to grant admin rights in: https://docs.ejabberd.im/admin/installation/#administration-account","Очевидно Вашият акаунт няма административни права за този сървър. Моля, проверете как да предоставите администраторски права на: https://docs.ejabberd.im/admin/installation/#administration-account"}.
 {"April","Април"}.
 {"Attribute 'channel' is required for this request","Атрибутът 'канал' е задължителен за тази заявка"}.
 {"Attribute 'id' is mandatory for MIX messages","Атрибутът 'id' е задължителен за MIX съобщения"}.
@@ -123,6 +124,9 @@
 {"Dynamically specify a replyto of the item publisher","Динамично задаване на отговор към публикувалия елемента"}.
 {"Edit Properties","Редактиране на свойства"}.
 {"Either approve or decline the voice request.","Одобрете или отхвърлете заявката за гласова връзка."}.
+{"ejabberd vCard module","ejabberd vCard модул"}.
+{"ejabberd Web Admin","Уеб администрация на ejabberd"}.
+{"ejabberd","ejabberd"}.
 {"Elements","Елементи"}.
 {"Email Address","Имейл адрес"}.
 {"Email","Илейл"}.
@@ -247,7 +251,7 @@
 {"Maximum file size","Максимален размер на файла"}.
 {"Maximum Number of History Messages Returned by Room","Максимален брой съобщения от хронологията, върнати от стая"}.
 {"Maximum number of items to persist","Максимален брой елементи за запазване"}.
-{"Maximum Number of Occupants","Максимален брой потребители"}.
+{"Maximum Number of Occupants","Максимален брой участници"}.
 {"May","Май"}.
 {"Members not added (inexistent vhost!): ","Членовете не са добавени (несъществуващ vhost!): "}.
 {"Membership is required to enter this room","Изисква се членство, за вход в тази стая"}.
@@ -329,7 +333,7 @@
 {"Notify subscribers when the node is deleted","Уведоми абонатите, когато нодът бъде изтрит"}.
 {"November","Ноември"}.
 {"Number of answers required","Брой на необходимите отговори"}.
-{"Number of occupants","Брой потребители"}.
+{"Number of occupants","Брой участници"}.
 {"Number of Offline Messages","Брой офлайн съобщения"}.
 {"Number of online users","Брой онлайн потребители"}.
 {"Number of registered users","Брой регистрирани потребители"}.
@@ -346,6 +350,7 @@
 {"Online Users:","Онлайн потребители:"}.
 {"Online","Онлайн"}.
 {"Only admins can see this","Само администратори могат да видят това"}.
+{"Only collection node owners may associate leaf nodes with the collection","Само собственици на колекционни нодове имат право да свързват листови нодове към колекцията"}.
 {"Only deliver notifications to available users","Доставяне на известия само до наличните потребители"}.
 {"Only <enable/> or <disable/> tags are allowed","Само тагове <enable/> и <disable/> са разрешени"}.
 {"Only <list/> element is allowed in this query","Само елементът <list/> е разрешен за тази заявка"}.
@@ -354,11 +359,12 @@
 {"Only moderators are allowed to change the subject in this room","Само модераторите имат право да сменят темата в тази стая"}.
 {"Only moderators are allowed to retract messages","Само модераторите имат право да оттеглят съобщения"}.
 {"Only moderators can approve voice requests","Само модераторите могат да одобряват гласови заявки"}.
-{"Only occupants are allowed to send messages to the conference","Само обитателите имат право да изпращат съобщения до конференцията"}.
-{"Only occupants are allowed to send queries to the conference","Само обитателите имат право да изпращат запитвания до конференцията"}.
+{"Only occupants are allowed to send messages to the conference","Само участници имат право да изпращат съобщения до конференцията"}.
+{"Only occupants are allowed to send queries to the conference","Само участници имат право да изпращат запитвания до конференцията"}.
 {"Only publishers may publish","Само издателите могат да публикуват"}.
 {"Only service administrators are allowed to send service messages","Само администраторите на услуги имат право да изпращат системни съобщения"}.
-{"Only those on a whitelist may subscribe and retrieve items","Само тези в белия списък могат да се абонират и да извличат елементи"}.
+{"Only those on a whitelist may associate leaf nodes with the collection","Само тези от списъка с позволени могат да свързват листови нодове с колекцията"}.
+{"Only those on a whitelist may subscribe and retrieve items","Само тези от списъка с позволени могат да се абонират и да извличат елементи"}.
 {"Organization Name","Име на организацията"}.
 {"Organization Unit","Отдел"}.
 {"Other Modules Available:","Други налични модули:"}.
@@ -375,6 +381,7 @@
 {"Password:","Парола:"}.
 {"Path to Dir","Път към директория"}.
 {"Path to File","Път до файл"}.
+{"Payload semantic type information","Информация за семантичен тип полезен товар"}.
 {"Pending","В очакване"}.
 {"Period: ","Период: "}.
 {"Persist items to storage","Запазване на елементите в хранилището"}.
@@ -395,9 +402,9 @@
 {"Publish model","Модел за публикуване"}.
 {"Publish-Subscribe","Публикуване-Абониране"}.
 {"PubSub subscriber request","Заявка от абонат за PubSub"}.
-{"Purge all items when the relevant publisher goes offline","Изчисти всички елементи, когато съответният издател премине в режим офлайн"}.
+{"Purge all items when the relevant publisher goes offline","Изчисти всички елементи, когато съответният публикуващ премине в режим офлайн"}.
 {"Push record not found","Push записът не е намерен"}.
-{"Queries to the conference members are not allowed in this room","В тази зала не се допускат запитвания към членовете на конференцията"}.
+{"Queries to the conference members are not allowed in this room","В тази стая не се допускат запитвания към членовете на конференцията"}.
 {"Query to another users is forbidden","Заявка към други потребители е забранена"}.
 {"RAM and disc copy","Копие в RAM и на диск"}.
 {"RAM copy","Копие в RAM"}.
@@ -406,7 +413,7 @@
 {"Receive notification from direct child nodes only","Получаване на известия само от директни подчинени нодове"}.
 {"Receive notification of new items only","Получаване на известия само за нови елементи"}.
 {"Receive notification of new nodes only","Получаване на известия само за нови нодове"}.
-{"Recipient is not in the conference room","Получателят не е в конферентната зала"}.
+{"Recipient is not in the conference room","Получателят не е в конферентната стая"}.
 {"Register an XMPP account","Регистрирай XMPP акаунт"}.
 {"Registered Users","Регистрирани потребители"}.
 {"Registered Users:","Регистрирани потребители:"}.
@@ -434,7 +441,7 @@
 {"Room Configuration","Конфигурация на стаята"}.
 {"Room creation is denied by service policy","Създаването на стая е отказано поради политика на услугата"}.
 {"Room description","Описание на стаята"}.
-{"Room Occupants","Обитатели на стаята"}.
+{"Room Occupants","Участници в стаята"}.
 {"Room terminates","Стаята се прекратява"}.
 {"Room title","Заглавие на стаята"}.
 {"Roster groups allowed to subscribe","Групи от списъци с контакти, на които е разрешено да се абонират"}.
@@ -443,6 +450,7 @@
 {"Roster:","Списък с контакти:"}.
 {"RPC Call Error","Грешка при RPC повикване"}.
 {"Running Nodes","Работещи нодове"}.
+{"~s invites you to the room ~s","~s ви кани в стая ~s"}.
 {"Saturday","Събота"}.
 {"Script check","Проверка на скрипт"}.
 {"Search from the date","Търси от дата"}.
@@ -470,7 +478,7 @@
 {"Sources Specs:","Спецификации на източниците:"}.
 {"Specify the access model","Задай модела за достъп"}.
 {"Specify the event message type","Задай типа на съобщението за събитие"}.
-{"Specify the publisher model","Задай модела на издателя"}.
+{"Specify the publisher model","Задайте модела на публикуващия"}.
 {"Stanza id is not valid","Невалидно ID на строфата"}.
 {"Stanza ID","ID на строфа"}.
 {"Statically specify a replyto of the node owner(s)","Статично задаване на replyto на собственика(ците) на нода"}.
@@ -496,7 +504,7 @@
 {"Text associated with a sound","Текст, свързан със звук"}.
 {"Text associated with a video","Текст, свързан с видео"}.
 {"Text associated with speech","Текст, свързан с реч"}.
-{"That nickname is already in use by another occupant","Този псевдоним вече се използва от друг потребител"}.
+{"That nickname is already in use by another occupant","Този псевдоним вече се използва от друг участник"}.
 {"That nickname is registered by another person","Този псевдоним е регистриран от друго лице"}.
 {"The account already exists","Профилът вече съществува"}.
 {"The account was not unregistered","Профилът не е дерегистриран"}.
@@ -504,6 +512,8 @@
 {"The CAPTCHA is valid.","CAPTCHA предизвикателството е валидно."}.
 {"The CAPTCHA verification has failed","Проверката на CAPTCHA предизвикателството е неуспешна"}.
 {"The captcha you entered is wrong","Въведеният captcha код е грешен"}.
+{"The child nodes (leaf or collection) associated with a collection","Дъщерните нодове (листови или колекция), свързани с колекция"}.
+{"The collections with which a node is affiliated","Колекциите, с които даден нод е свързан"}.
 {"The DateTime at which a leased subscription will end or has ended","Датата и часът, на който абонамент ще приключи или е приключил"}.
 {"The datetime when the node was created","Датата, когато нодът е бил създаден"}.
 {"The default language of the node","Езикът по подразбиране на нода"}.
@@ -514,10 +524,12 @@
 {"The JIDs of those with an affiliation of publisher","JID-та на лица с принадлежност към публикуващи"}.
 {"The list of all online users","Списък на всички онлайн потребители"}.
 {"The list of all users","Списък на всички потребители"}.
+{"The list of JIDs that may associate leaf nodes with a collection","Списъкът с JID, които могат да асоциират листови нодове с колекция"}.
 {"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","Максимален брой подчинени нодове, които могат да бъдат свързани с колекция, или `max` за липса на конкретен лимит, различен от наложения от сървъра максимум"}.
 {"The minimum number of milliseconds between sending any two notification digests","Минималният брой милисекунди между изпращането на две извадки на известия"}.
 {"The name of the node","Името на нода"}.
 {"The node is a collection node","Нодът е от тип колекция"}.
+{"The node is a leaf node (default)","Нодът е листов (по подразбиране)"}.
 {"The NodeID of the relevant node","NodeID на съответния нод"}.
 {"The number of pending incoming presence subscription requests","Броят на чакащите входящи заявки за абонамент за присъствие"}.
 {"The number of subscribers to the node","Бротят абонати на нода"}.
@@ -534,6 +546,124 @@
 {"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","Информацията за семантичния тип данни на нода, обикновено зададена от пространството на имената на прикачените данни (ако има такива)"}.
 {"The sender of the last received message","Подателят на последното получено съобщение"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Строфата ТРЯБВА да съдържа само един <active/> елемент, един <default/> елемент или един <list/> елемент"}.
+{"The subscription identifier associated with the subscription request","Идентификаторът на абонамента, свързан със заявката за абонамент"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","URL адрес на XSL трансформацията, която може да се приложи към прикачените данни, за да се генерира подходящ елемент от тялото на съобщението."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","URL адрес на XSL трансформацията, която може да се приложи към формата на прикачените данни, за да се генерира валиден резултат от Data Forms, който клиентът може да покаже с помощта на общ механизъм за визуализация на Data Forms."}.
+{"There was an error changing the password: ","Възникна грешка при промяна на паролата: "}.
+{"There was an error creating the account: ","Възникна грешка при създаването на профила: "}.
+{"There was an error deleting the account: ","Възникна грешка при изтриването на профила: "}.
+{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Не е чувствително към регистъра (главни и малки букви): \"macbeth\"е същото като \"MacBeth\"и \"Macbeth\"."}.
+{"This page allows to register an XMPP account in this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Тази страница позволява регистриране на XMPP профил на този сървър. Вашият JID (Jabber ID) ще бъде във формата: username@server. Моля, прочетете внимателно инструкциите, за да попълните правилно полетата."}.
+{"This page allows to unregister an XMPP account in this XMPP server.","Тази страница позволява премахване на XMPP профил от този сървър."}.
+{"This room is not anonymous","Тази стая не е анонимна"}.
+{"This service can not process the address: ~s","Тази услуга не може да обработи адреса: ~s"}.
+{"Thursday","Четвъртък"}.
+{"Time delay","Закъснение"}.
+{"Timed out waiting for stream resumption","Времето за изчакване за възобновяване на потока изтече"}.
+{"Time","Час"}.
+{"To register, visit ~s","За да се регистрирате, посетете ~s"}.
+{"To ~ts","До ~ts"}.
+{"Token TTL","Токен TTL"}.
+{"Too many active bytestreams","Твърде много активни \"bytestreams\" потоци"}.
+{"Too many CAPTCHA requests","Твърде много CAPTCHA заявки"}.
+{"Too many child elements","Твърде много дъщерни елементи"}.
+{"Too many <item/> elements","Твърде много <item/> елементи"}.
+{"Too many <list/> elements","Твърде много <list/> елементи"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Твърде много (~p) неуспешни опити за удостоверявания от този IP адрес (~s). Адресът ще бъде деблокиран в ~s UTC"}.
+{"Too many receiver fields were specified","Посочени са твърде много полета за получател"}.
+{"Too many unacked stanzas","Твърде много непотвърдени строфи"}.
+{"Too many users in this conference","Твърде много потребители в тази конференция"}.
+{"Total rooms","Общо стаи"}.
+{"To","До"}.
+{"Traffic rate limit is exceeded","Лимитът за трафик е надвишен"}.
+{"Transactions Aborted:","Прекратени транзакции:"}.
+{"Transactions Committed:","Извършени транзакции:"}.
+{"Transactions Logged:","Регистрирани транзакции:"}.
+{"Transactions Restarted:","Рестартирани транзакции:"}.
+{"~ts's Offline Messages Queue","Офлайн съобщения на ~ts"}.
+{"Tuesday","Вторник"}.
+{"Unable to generate a CAPTCHA","Не може да се генерира CAPTCHA"}.
+{"Unable to register route on existing local domain","Не може да се регистрира маршрут в съществуващ локален домейн"}.
+{"Unauthorized","Неоторизиран"}.
+{"Unexpected action","Неочаквано действие"}.
+{"Unexpected error condition: ~p","Неочаквано състояние на грешка: ~p"}.
+{"Uninstall","Деинсталирай"}.
+{"Unregister an XMPP account","Дерегистрирай XMPP профил"}.
+{"Unregister","Дерегистрирай"}.
+{"Unselect All","Размаркирай всички"}.
+{"Unsupported <index/> element","Неподдържан елемент <index/>"}.
+{"Unsupported version","Неподдържана версия"}.
+{"Update message of the day (don't send)","Актуализирай съобщението на деня (не изпращай)"}.
+{"Update message of the day on all hosts (don't send)","Актуализирай съобщението на деня на всички хостове (не изпращай)"}.
+{"Update plan","План за актуализация"}.
+{"Update ~p","Актуализирай ~p"}.
+{"Update script","Актуализиращ скрипт"}.
+{"Update specs to get modules source, then install desired ones.","Актуализирайте спецификациите, за да получите източник на модули, след което инсталирайте желаните."}.
+{"Update Specs","Актуализирай спецификациите"}.
+{"Update","Актуализирай"}.
+{"Upgrade","Обнови"}.
+{"Uptime:","Време на работа:"}.
+{"URL for Archived Discussion Logs","URL адрес за дневници на архивирани дискусии"}.
+{"User already exists","Потребителят вече съществува"}.
+{"User (jid)","Потребител (jid)"}.
+{"User JID","Потребител JID"}.
+{"User Management","Управление на потребители"}.
+{"User removed","Потребителят е премахнат"}.
+{"User session not found","Потребителската сесия не е намерена"}.
+{"User session terminated","Потребителската сесия е прекратена"}.
+{"User ~ts","Потребител ~ts"}.
+{"Username:","Потребителско име:"}.
+{"Users are not allowed to register accounts so quickly","Не е разрешено потребителите да регистрират профили толкова бързо"}.
+{"Users Last Activity","Последна активност на потребителите"}.
+{"Users","Потребители"}.
+{"User","Потребител"}.
+{"Validate","Валидирай"}.
+{"Value 'get' of 'type' attribute is not allowed","Стойността 'get' на атрибут 'type' не е разрешена"}.
+{"Value of '~s' should be boolean","Стойността на '~s' трябва да е булева"}.
+{"Value of '~s' should be datetime string","Стойността на '~s' трябва да бъде низ за дата и час"}.
+{"Value of '~s' should be integer","Стойността на '~s' трябва да бъде цяло число"}.
+{"Value 'set' of 'type' attribute is not allowed","Стойността 'set' на атрибут 'type' не е разрешена"}.
+{"View joined MIX channels","Вижте присъединените MIX канали"}.
+{"View Queue","Вижте опашката"}.
 {"View Roster","Преглед на списъка с контакти"}.
+{"Virtual Hosts","Виртуални хостове"}.
+{"Visitors are not allowed to change their nicknames in this room","Посетителите нямат право да променят псевдонимите си в тази стая"}.
+{"Visitors are not allowed to send messages to all occupants","На посетителите не е разрешено да изпращат съобщения до всички участници"}.
+{"Visitor","Посетител"}.
+{"Voice requests are disabled in this conference","Гласовите обаждания са деактивирани в тази конференция"}.
+{"Voice request","Заявка за гласово обаждане"}.
+{"Wednesday","Сряда"}.
+{"When a new subscription is processed and whenever a subscriber comes online","Когато се обработва нов абонамент и всеки път, когато абонат се появи онлайн"}.
+{"When a new subscription is processed","Когато се обработва нов абонамент"}.
+{"When to send the last published item","Кога да изпратите последния публикуван елемент"}.
+{"Whether an entity wants to receive an XMPP message body in addition to the payload format","Дали даден обект иска да получи тяло на XMPP съобщение в допълнение към формата на полезен товар"}.
+{"Whether an entity wants to receive digests (aggregations) of notifications or all notifications individually","Дали даден обект желае да получава обобщения за известия или всички известия поотделно"}.
+{"Whether an entity wants to receive or disable notifications","Дали даден обект желае да получава или деактивира известия"}.
+{"Whether owners or publisher should receive replies to items","Дали собствениците или публикуващите трябва да получават отговори на елементи"}.
+{"Whether the node is a leaf (default) or a collection","Дали нодът е листов (по подразбиране) или колекция"}.
+{"Whether to allow subscriptions","Дали да се разрешат абонаменти"}.
+{"Whether to make all subscriptions temporary, based on subscriber presence","Дали всички абонаменти да бъдат временни въз основа на присъствието на абонат"}.
+{"Whether to notify owners about new subscribers and unsubscribes","Дали да се уведомяват собствениците за нови абонати и откази от абонамент"}.
+{"Who can send private messages","Кой може да изпраща лични съобщения"}.
+{"Who may associate leaf nodes with a collection","Кой може да асоциира листови нодове с колекция"}.
+{"Wrong parameters in the web formulary","Грешни параметри в уеб формуляра"}.
+{"Wrong xmlns","Грешен xmlns"}.
+{"XMPP Account Registration","Регистриране на XMPP профил"}.
+{"XMPP Domains","XMPP домейни"}.
+{"XMPP Show Value of Away","XMPP покажи стойност на Отсъства"}.
+{"XMPP Show Value of Chat","XMPP покажи стойност на Чат"}.
+{"XMPP Show Value of DND (Do Not Disturb)","XMPP покажи стойност на DND (Не ме безпокой)"}.
+{"XMPP Show Value of XA (Extended Away)","XMPP покажи стойност на Продължително отсъствие"}.
+{"You are being removed from the room because of a system shutdown","Премахнати сте от стаята поради изключване на системата"}.
+{"You are not allowed to send private messages","Нямате право да изпращате лични съобщения"}.
+{"You are not joined to the channel","Не сте присъединени към канала"}.
+{"You can later change your password using an XMPP client.","По-късно можете да промените паролата си с помощта на XMPP клиент."}.
+{"You have been banned from this room","Достъпът ви до тази стая е забранен"}.
+{"You have joined too many conferences","Присъединили сте се към твърде много конференции"}.
+{"You must fill in field \"Nickname\" in the form","Трябва да попълните полето \"Псевдоним\" във формата"}.
+{"You need a client that supports x:data and CAPTCHA to register","За да се регистрирате Ви е нужен клиент, който поддържа x:data и CAPTCHA"}.
+{"You need a client that supports x:data to register the nickname","За да регистрирате псевдонима, Ви е необходим клиент, който поддържа x:data"}.
+{"You need an x:data capable client to search","За да търсите, Ви е нужен клиент, който поддържа x:data"}.
+{"Your XMPP account was successfully registered.","Вашият XMPP акаунт, беше регистриран успешно."}.
+{"Your XMPP account was successfully unregistered.","Вашият XMPP акаунт, беше успешно дерегистриран."}.
+{"You're not allowed to create nodes","Нямате право да създавате нодове"}.
