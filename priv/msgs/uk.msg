@@ -12,6 +12,7 @@
 {"A Web Page","Веб-сторінка"}.
 {"Accept","Прийняти"}.
 {"Access denied by service policy","Доступ заборонений політикою служби"}.
+{"Access model","Права доступу"}.
 {"Account doesn't exist","Обліковий запис не існує"}.
 {"Action on user","Дія над користувачем"}.
 {"Add a hat to a user","Додати капелюх користувачу"}.
@@ -94,6 +95,7 @@
 {"Configuration","Конфігурація"}.
 {"Connected Resources:","Підключені ресурси:"}.
 {"Contact Addresses (normally, room owner or owners)","Контактні адреси (зазвичай, власника або власників кімнати)"}.
+{"Contrib Modules","Запуск модулів"}.
 {"Country","Країна"}.
 {"CPU Time:","Час роботи процесора:"}.
 {"Current Discussion Topic","Поточна тема обговорення"}.
@@ -166,11 +168,15 @@
 {"Full List of Room Admins","Повний перелік адміністраторів кімнати"}.
 {"Full List of Room Owners","Повний перелік власників кімнати"}.
 {"Full Name","Повне ім'я"}.
+{"Get List of Online Users","Отримати кількість користувачів в мережі"}.
+{"Get List of Registered Users","Отримати кількість зареєстрованих користувачів"}.
 {"Get Number of Online Users","Отримати Кількість Підключених Користувачів"}.
 {"Get Number of Registered Users","Отримати Кількість Зареєстрованих Користувачів"}.
+{"Get Pending","Очікування"}.
 {"Get User Last Login Time","Отримати Час Останнього Підключення Користувача"}.
 {"Get User Password","Отримати Пароль Користувача"}.
 {"Get User Statistics","Отримати Статистику по Користувачу"}.
+{"Given Name","По-батькові"}.
 {"Grant voice to this person?","Надати голос персоні?"}.
 {"Groups that will be displayed to the members","Групи, які показуватимуться учасникам"}.
 {"Groups","Групи"}.
@@ -180,6 +186,9 @@
 {"has been kicked because of an affiliation change","вигнано з кімнати внаслідок зміни рангу"}.
 {"has been kicked because the room has been changed to members-only","вигнано з кімнати тому, що вона стала тільки для учасників"}.
 {"has been kicked","вигнали з кімнати"}.
+{"Hat title","Назва кімнати"}.
+{"Hat URI","Назва URI"}.
+{"Hats limit exceeded","Перевищено швидкість передачі інформації"}.
 {"Host unknown","Невідоме ім'я сервера"}.
 {"Host","Хост"}.
 {"HTTP File Upload","Відвантаження файлів по HTTP"}.
@@ -202,6 +211,8 @@
 {"Incorrect value of 'action' attribute","Неправильне значення атрибута \"action\""}.
 {"Incorrect value of 'action' in data form","Неправильне значення \"action\" у формі даних"}.
 {"Incorrect value of 'path' in data form","Неправильне значення \"path\" у формі даних"}.
+{"Installed Modules:","Запуск модулів:"}.
+{"Install","Встановлення"}.
 {"Insufficient privilege","Недостатньо привілеїв"}.
 {"Internal server error","Внутрішня помилка сервера"}.
 {"Invalid 'from' attribute in forwarded message","Неприйнятний атрибут \"from\" у пересланому повідомленні"}.
@@ -215,6 +226,7 @@
 {"It is not allowed to send private messages to the conference","Не дозволяється надсилати приватні повідомлення в конференцію"}.
 {"Jabber ID","Jabber ID"}.
 {"January","січня"}.
+{"JID normalization denied by service policy","Створювати конференцію заборонено політикою служби"}.
 {"JID normalization failed","Помилка нормалізації JID"}.
 {"joins the room","увійшов(ла) в кімнату"}.
 {"July","липня"}.
@@ -226,6 +238,7 @@
 {"Last message","Останнє повідомлення"}.
 {"Last month","За останній місяць"}.
 {"Last year","За останній рік"}.
+{"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Найменш значущі біти хеш-функції SHA-256 від тексту мають відповідати шістнадцятковій мітці."}.
 {"leaves the room","вийшов(ла) з кімнати"}.
 {"List of rooms","Перелік кімнат"}.
 {"List of users with hats","Список користувачів із капелюхами"}.
@@ -240,7 +253,9 @@
 {"Make room persistent","Зробити кімнату постійною"}.
 {"Make room public searchable","Зробити кімнату видимою всім"}.
 {"Malformed username","Неправильне ім’я користувача"}.
+{"MAM preference modification denied by service policy","Зміна налаштувань MAM відхилена через політики сервісу"}.
 {"March","березня"}.
+{"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","Максимальна кількість елементів для зберігання, або max для встановлення не конкретизованого ліміту, окрім максимального, накладеного сервером"}.
 {"Max payload size in bytes","Максимальний розмір корисного навантаження в байтах"}.
 {"Maximum file size","Макс. розмір файлу"}.
 {"Maximum Number of History Messages Returned by Room","Максимальна кількість повідомлень історії на кімнату"}.
@@ -250,7 +265,9 @@
 {"Members not added (inexistent vhost!): ","Учасників не додано (вірт. сервер не існує!): "}.
 {"Membership is required to enter this room","В цю конференцію можуть входити тільки її члени"}.
 {"Members:","Члени:"}.
+{"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Запам'ятайте свій пароль або запишіть його на папері та зберігайте у безпечному місці. У XMPP не існує автоматизованого способу відновлення паролю, якщо ви його забудете."}.
 {"Memory","Пам'ять"}.
+{"Mere Availability in XMPP (No Show Value)","Проста доступність у XMPP (без показу статусу)"}.
 {"Message body","Тіло повідомлення"}.
 {"Message not found in forwarded payload","Повідомлення не знайдено в пересланому вмісті"}.
 {"Messages from strangers are rejected","Повідомлення від незнайомців відхиляються"}.
@@ -259,6 +276,7 @@
 {"Middle Name","По-батькові"}.
 {"Minimum interval between voice requests (in seconds)","Мінімальний інтервал між голосовими запитами (в секундах)"}.
 {"Moderator privileges required","Необхідні права модератора"}.
+{"Moderators Only","Тільки модераторам"}.
 {"Moderator","Модератор"}.
 {"Modified modules","Змінені модулі"}.
 {"Module failed to handle the query","Модулю не вдалося обробити запит"}.
@@ -266,8 +284,11 @@
 {"Multicast","Мультікаст"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Кілька елементів <item/> не дозволені RFC6121"}.
 {"Multi-User Chat","Багато-користувальницький чат"}.
+{"Name in the rosters where this group will be displayed","Назва у списку контактів, де ця група буде відображена"}.
 {"Name","Назва"}.
 {"Name:","Назва:"}.
+{"Natural Language for Room Discussions","Розмовна мова для обговорень у кімнаті"}.
+{"Natural-Language Room Name","Назва кімнати розмовною мовою"}.
 {"Neither 'jid' nor 'nick' attribute found","Не знайдено ні атрибута \"jid\", ні \"nick\""}.
 {"Neither 'role' nor 'affiliation' attribute found","Не знайдено ні атрибута \"role\", ні \"affiliation\""}.
 {"Never","Ніколи"}.
@@ -303,6 +324,7 @@
 {"No services available","Немає доступних сервісів"}.
 {"No statistics found for this item","Для цього елемента статистичні дані не знайдено"}.
 {"No 'to' attribute found in the invitation","У запрошенні не знайдено атрибут \"до\""}.
+{"Nobody","Ніхто"}.
 {"Node already exists","Вузол уже існує"}.
 {"Node ID","ID вузла"}.
 {"Node index not found","Індекс вузла не знайдено"}.
@@ -324,6 +346,10 @@
 {"Number of Offline Messages","Кількість автономних повідомлень"}.
 {"Number of online users","Кількість підключених користувачів"}.
 {"Number of registered users","Кількість зареєстрованих користувачів"}.
+{"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Кількість секунд, після яких автоматично видаляти елементи, або `max` для встановлення невизначеного ліміту, окрім максимального, накладеного сервером."}.
+{"Occupants are allowed to invite others","Учасникам дозволено запрошувати інших"}.
+{"Occupants are allowed to query others","Учасникам дозволено ставити запитання іншим"}.
+{"Occupants May Change the Subject","Учасникам дозволено змінювати тему"}.
 {"October","грудня"}.
 {"Offline Messages","Офлайнові повідомлення"}.
 {"Offline Messages:","Офлайнові повідомлення:"}.
@@ -340,19 +366,23 @@
 {"Only members may query archives of this room","Тільки модератори можуть запитувати архіви цієї кімнати"}.
 {"Only moderators and participants are allowed to change the subject in this room","Тільки модератори та учасники можуть змінювати тему в цій кімнаті"}.
 {"Only moderators are allowed to change the subject in this room","Тільки модератори можуть змінювати тему в цій кімнаті"}.
+{"Only moderators are allowed to retract messages","Тільки модераторам дозволено відкликати повідомлення"}.
 {"Only moderators can approve voice requests","Тільки модератори можуть схвалювати голосові запити"}.
 {"Only occupants are allowed to send messages to the conference","Тільки присутнім дозволяється надсилати повідомленняя в конференцію"}.
 {"Only occupants are allowed to send queries to the conference","Тільки присутнім дозволяється відправляти запити в конференцію"}.
 {"Only publishers may publish","Тільки видавці можуть публікувати"}.
 {"Only service administrators are allowed to send service messages","Тільки адміністратор сервісу може надсилати службові повідомлення"}.
 {"Only those on a whitelist may associate leaf nodes with the collection","Лише ті, хто входить до білого списку, можуть асоціювати листові вузли з колекцією"}.
+{"Only those on a whitelist may subscribe and retrieve items","Тільки ті, хто є в білому списку, можуть підписуватися та отримувати елементи"}.
 {"Organization Name","Назва організації"}.
 {"Organization Unit","Відділ організації"}.
+{"Other Modules Available:","Інші доступні модулі:"}.
 {"Outgoing s2s Connections","Вихідні s2s-з'єднання"}.
 {"Outgoing s2s Connections:","Вихідні s2s-з'єднання:"}.
 {"Owner privileges required","Необхідні права власника"}.
 {"Packet relay is denied by service policy","Пересилання пакетів заборонене політикою сервісу"}.
 {"Packet","Пакет"}.
+{"Participant ID","ID учасника"}.
 {"Participant","Учасник"}.
 {"Password Verification","Перевірка Пароля"}.
 {"Password Verification:","Перевірка Пароля:"}.
@@ -360,24 +390,36 @@
 {"Password:","Пароль:"}.
 {"Path to Dir","Шлях до директорії"}.
 {"Path to File","Шлях до файла"}.
+{"Payload semantic type information","Інформація про тип вмісту даних"}.
 {"Pending","Очікування"}.
 {"Period: ","Період: "}.
-{"Persist items to storage","Зберегати публікації до сховища"}.
-{"Ping","Пінг"}.
-{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Зауважте, що ця опція відповідає за резервне копіювання тільки вбудованної бази даних Mnesia. Якщо Ви також використовуєте інше сховище для даних (наприклад за допомогою модуля ODBC), то його резервне копіювання потрібно робити окремо."}.
-{"Please, wait for a while before sending new voice request","Будь ласка, почекайте деякий час перед тим, як знову відправляти голосовий запит"}.
-{"Pong","Понг"}.
-{"Present real Jabber IDs to","Зробити реальні Jabber ID учасників видимими"}.
-{"Previous session not found","Попередній сеанс не знайдено"}.
+{"Persist items to storage","Зберігати елементи в сховищі"}.
+{"Persistent","Тривалий"}.
+{"Ping query is incorrect","Запит ping некоректний"}.
+{"Ping","Затримка (пінг)"}.
+{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Зверніть увагу, що ці налаштування створюють резервну копію лише вбудованої бази даних Mnesia. Якщо ви використовуєте модуль ODBC, вам також потрібно окремо створити резервну копію вашої SQL-бази даних."}.
+{"Please, wait for a while before sending new voice request","Будь ласка, зачекайте трохи перед тим, як відправляти новий голосовий запит"}.
+{"Pong","Pong (відповідь на Ping, підтвердження взаємодії)"}.
+{"Possessing 'ask' attribute is not allowed by RFC6121","Наявність атрибуту 'ask' не дозволена згідно з RFC6121"}.
+{"Present real Jabber IDs to","Показувати реальні Jabber ID для"}.
+{"Previous session not found","Попередню сесію не знайдено"}.
+{"Previous session PID has been killed","PID попередньої сесії був зупинений"}.
+{"Previous session PID has exited","PID попередньої сесії завершив роботу"}.
+{"Previous session PID is dead","PID попередньої сесії більше не активний"}.
+{"Previous session timed out","Час попередньої сесії вичерпано"}.
 {"private, ","приватна, "}.
+{"Public","Публічний"}.
+{"Publish model","Модель публікації"}.
 {"Publish-Subscribe","Публікація-Підписка"}.
-{"PubSub subscriber request","Запит на підписку PubSub"}.
-{"Purge all items when the relevant publisher goes offline","Видалити всі елементи, коли особа, що їх опублікувала, вимикається від мережі"}.
+{"PubSub subscriber request","Запит підписника PubSub"}.
+{"Purge all items when the relevant publisher goes offline","Видалити всі елементи, коли автор публікації виходить офлайн"}.
 {"Push record not found","Push-запис не знайдено"}.
-{"Queries to the conference members are not allowed in this room","Запити до користувачів в цій конференції заборонені"}.
-{"RAM and disc copy","ОЗП та диск"}.
-{"RAM copy","ОЗП"}.
-{"Really delete message of the day?","Насправді, видалити повідомлення дня?"}.
+{"Queries to the conference members are not allowed in this room","Запити до учасників конференції не дозволені в цій кімнаті"}.
+{"Query to another users is forbidden","Запит до інших користувачів заборонено"}.
+{"RAM and disc copy","Копія оперативної пам'яті та диску"}.
+{"RAM copy","Копія оперативної пам'яті"}.
+{"Really delete message of the day?","Дійсно видалити повідомлення дня?"}.
+{"Receive notification from all descendent nodes","Отримувати сповіщення від усіх підпорядкованих вузлів"}.
 {"Recipient is not in the conference room","Адресата немає в конференції"}.
 {"Register an XMPP account","Зареєструвати XMPP-запис"}.
 {"Registered Users","Зареєстровані користувачі"}.
