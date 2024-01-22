@@ -3,6 +3,7 @@
 %% To improve translations please read:
 %%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 
+{" (Add * to the end of field to match substring)"," Gebruik de velden om te zoeken (Voeg achteraan het teken * toe om te zoeken naar alles wat met het eerste deel begint.)."}.
 {" has set the subject to: "," veranderde het onderwerp in: "}.
 {"A friendly name for the node","Bijnaam voor deze knoop"}.
 {"A password is required to enter this room","U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"}.
