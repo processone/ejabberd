@@ -102,8 +102,8 @@ defmodule Ejabberd.MixProject do
      {:cache_tab, "~> 1.0"},
      {:eimp, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
-     {:fast_tls, git: "https://github.com/processone/fast_tls.git", ref: "34e46e8a122e4dd83730eda1aa8b566ab55eea62", override: true},
-     {:fast_xml, "~> 1.1"},
+     {:fast_tls, ">= 1.1.18"},
+     {:fast_xml, ">= 1.1.51"},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
      {:jiffy, "~> 1.1.1"},
@@ -114,7 +114,7 @@ defmodule Ejabberd.MixProject do
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
-     {:xmpp, git: "https://github.com/processone/xmpp.git", ref: "db6d730f0e1cd36645c32d7c7e89e19bb27642e3", override: true},
+     {:xmpp, ">= 1.8.0"},
      {:yconf, "~> 1.0"}]
     ++ cond_deps()
   end
@@ -137,7 +137,7 @@ defmodule Ejabberd.MixProject do
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {if_version_below(~c"22", true), {:lager, "~> 3.9.1"}},
                          {config(:lua), {:luerl, "~> 1.0"}},
-                         {config(:mysql), {:p1_mysql, git: "https://github.com/processone/p1_mysql.git", ref: "f685408b910c425b9905d4ddcdbedba717a5b48c"}},
+                         {config(:mysql), {:p1_mysql, ">= 1.0.23" }},
                          {config(:pgsql), {:p1_pgsql, "~> 1.1"}},
                          {config(:sqlite), {:sqlite3, "~> 1.1"}},
                          {config(:stun), {:stun, "~> 1.0"}}], do:
