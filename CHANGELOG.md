@@ -1,3 +1,64 @@
+# Version 24.01
+
+Core:
+- Support SASL2 and Bind2
+- Support tls-server-end-point channel binding and sasl2 codec
+- Support tls-exporter channel binding
+- Support XEP-0474: SASL SCRAM Downgrade Protection
+- Fix presenting features and returning results of inline bind2 elements
+- [`disable_sasl_scram_downgrade_protection`](https://docs.ejabberd.im/admin/configuration/toplevel/#disable-sasl-scram-downgrade-protection): New option to disable XEP-0474
+- [`negotiation_timeout`](https://docs.ejabberd.im/admin/configuration/toplevel/#negotiation-timeout): Increase default value from 30s to 2m
+- mod_carboncopy: Teach how to interact with bind2 inline requests
+
+Other:
+- configure: Fix explanation of `--enable-group` option ([#4135](https://github.com/processone/ejabberd/issues/4135))
+- ejabberdctl: Fix startup problem when having set `EJABBERD_OPTS` and logger options
+- ejabberdctl: Set EJABBERD_OPTS back to "", and use previous flags as example
+- eldap: Change logic for `eldap tls_verify=soft` and `false`
+- eldap: Don't set `fail_if_no_peer_cert` for eldap ssl client connections
+- mod_mam: Support XEP-0424 Message Retraction
+- mod_ping: Support XEP-0198 pings when stream management is enabled
+- mod_pubsub: Normalize pubsub `max_items` node options on read
+- mod_pubsub: PEP nodetree: Fix reversed logic in node fixup function
+- mod_pubsub: Only care about PEP bookmarks options when creating node from scratch
+
+SQL:
+- MySQL: Support `sha256_password` auth plugin
+- ejabberd_sql_schema: Use the first unique index as a primary key
+- Update SQL schema files for MAM's XEP-0424
+- New option [`sql_flags`](https://docs.ejabberd.im/admin/configuration/toplevel/#sql-flags): right now only useful to enable `mysql_alternative_upsert`
+
+Commands API:
+- Commands: Add a new [`muc_sub`](https://docs.ejabberd.im/developer/ejabberd-api/admin-tags/#muc-sub) tag to all the relevant commands
+- Commands: Improve syntax of many commands documentation
+- Commands: Use list arguments in many commands that used separators
+- Commands: [`set_presence`](https://docs.ejabberd.im/developer/ejabberd-api/admin-api/#set-presence): switch priority argument from string to integer
+- ejabberd_commands: Add the command API version as [a tag `vX`](https://docs.ejabberd.im/developer/ejabberd-api/admin-tags/#v1)
+- ejabberd_ctl: Add support for list and tuple arguments
+- ejabberd_xmlrpc: Fix support for restuple error response
+- mod_http_api: When no specific API version is requested, use the latest
+
+Rebar3/Elixir/Mix:
+- Add observer and runtime_tools in releases when `--enable-tools`
+- Makefile: Add `install-rel` and `uninstall-rel`
+- Makefile: Rename `make rel` to `make prod`
+- ejabberdctl: Detect problem running iex or etop and show explanation
+- configure: Use Mix or Rebar3 by default instead of Rebar2 to compile ejabberd
+- Rebar3: Include Elixir files when making a release
+- Rebar3: Workaround to fix protocol consolidation
+- Rebar3: Add support to compile Elixir dependencies
+- Rebar3: Compile explicitly our Elixir files when `--enable-elixir`
+- Rebar3: Provide proper path to iex
+- Rebar/Rebar3: Remove Elixir as a rebar dependency
+- Rebar/Rebar3: Update binaries to work with Erlang/OTP 23-26
+- Elixir: Fix compiling ejabberd as a dependency ([#4128](https://github.com/processone/ejabberd/issues/4128))
+- Elixir: Fix ejabberdctl start/live when installed
+- Elixir: Fix: FORMATTER ERROR: bad return value ([#4087](https://github.com/processone/ejabberd/issues/4087))
+- Elixir: Fix: Couldn't find file `Elixir.Hex.API`
+- Mix: Enable stun by default when `vars.config` not found
+- Mix: New option `vars_config_path` to set path to `vars.config` ([#4128](https://github.com/processone/ejabberd/issues/4128))
+- Mix: Fix ejabberdctl iexlive problem locating iex in an OTP release
+
 # Version 23.10
 
 Compilation:
