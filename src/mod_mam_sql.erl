@@ -32,6 +32,7 @@
 	 extended_fields/0, store/10, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
 	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6,
 	 delete_old_messages_batch/4, count_messages_to_delete/3]).
+-export([sql_schemas/0]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -44,10 +45,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 2,
         tables =
@@ -79,11 +80,10 @@ schemas() ->
                               columns = [<<"server_host">>, <<"username">>, <<"origin_id">>]}
                           ],
                 post_create =
-                    fun(mysql, _) ->
-                            ejabberd_sql:sql_query_t(
-                              <<"CREATE FULLTEXT INDEX i_archive_txt ON archive(txt);">>);
-                       (_, _) ->
-                            ok
+                    fun(#sql_schema_info{db_type = mysql}) ->
+                            [<<"CREATE FULLTEXT INDEX i_archive_txt ON archive(txt);">>];
+                       (_) ->
+                            []
                     end},
              #sql_table{
                 name = <<"archive_prefs">>,
@@ -131,10 +131,10 @@ schemas() ->
                               columns = [<<"server_host">>, <<"timestamp">>]}
                           ],
                 post_create =
-                    fun(mysql, _) ->
+                    fun(#sql_schema_info{db_type = mysql}) ->
                             ejabberd_sql:sql_query_t(
                               <<"CREATE FULLTEXT INDEX i_archive_txt ON archive(txt);">>);
-                       (_, _) ->
+                       (_) ->
                             ok
                     end},
              #sql_table{

@@ -34,6 +34,7 @@
 	 get_sessions/0,
 	 get_sessions/1,
 	 get_sessions/2]).
+-export([sql_schemas/0]).
 
 -include("ejabberd_sm.hrl").
 -include("logger.hrl").
@@ -48,7 +49,7 @@ init() ->
     ?DEBUG("Cleaning SQL SM table...", []),
     lists:foldl(
       fun(Host, ok) ->
-              ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+              ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
 	      case ejabberd_sql:sql_query(
 		     Host, ?SQL("delete from sm where node=%(Node)s")) of
 		  {updated, _} ->
@@ -61,7 +62,7 @@ init() ->
 	      Err
       end, ok, ejabberd_sm:get_vh_by_backend(?MODULE)).
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

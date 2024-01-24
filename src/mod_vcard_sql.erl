@@ -31,6 +31,7 @@
 -export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4, remove_user/2,
 	 search_fields/1, search_reported/1, import/3, export/1]).
 -export([is_search_supported/1]).
+-export([sql_schemas/0]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_vcard.hrl").
@@ -42,10 +43,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

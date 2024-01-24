@@ -27,6 +27,7 @@
 %% API
 -export([init/0, register_route/5, unregister_route/3, find_routes/1,
 	 get_all_routes/0]).
+-export([sql_schemas/0]).
 
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -38,7 +39,7 @@
 %%%===================================================================
 init() ->
     ejabberd_sql_schema:update_schema(
-      ejabberd_config:get_myname(), ?MODULE, schemas()),
+      ejabberd_config:get_myname(), ?MODULE, sql_schemas()),
     Node = erlang:atom_to_binary(node(), latin1),
     ?DEBUG("Cleaning SQL 'route' table...", []),
     case ejabberd_sql:sql_query(
@@ -50,7 +51,7 @@ init() ->
 	    Err
     end.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

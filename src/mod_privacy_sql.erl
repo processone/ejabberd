@@ -34,6 +34,8 @@
 
 -export([item_to_raw/1, raw_to_item/1]).
 
+-export([sql_schemas/0]).
+
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
@@ -43,10 +45,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

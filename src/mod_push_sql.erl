@@ -30,6 +30,7 @@
 -export([init/2, store_session/6, lookup_session/4, lookup_session/3,
 	 lookup_sessions/3, lookup_sessions/2, lookup_sessions/1,
 	 delete_session/3, delete_old_sessions/2, export/1]).
+-export([sql_schemas/0]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -40,10 +41,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

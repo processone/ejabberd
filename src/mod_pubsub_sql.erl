@@ -20,6 +20,7 @@
 
 %% API
 -export([init/3]).
+-export([sql_schemas/0]).
 
 -include("ejabberd_sql_pt.hrl").
 
@@ -27,13 +28,13 @@
 %%% API
 %%%===================================================================
 init(_Host, ServerHost, _Opts) ->
-    ejabberd_sql_schema:update_schema(ServerHost, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(ServerHost, ?MODULE, sql_schemas()),
     ok.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

@@ -29,6 +29,7 @@
 
 %% API
 -export([init/2, caps_read/2, caps_write/3, export/1, import/3]).
+-export([sql_schemas/0]).
 
 -include("mod_caps.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -38,10 +39,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

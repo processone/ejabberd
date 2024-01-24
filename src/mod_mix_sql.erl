@@ -27,6 +27,7 @@
 -export([set_channel/6, get_channels/2, get_channel/3, del_channel/3]).
 -export([set_participant/6, get_participant/4, get_participants/3, del_participant/4]).
 -export([subscribe/5, unsubscribe/4, unsubscribe/5, get_subscribed/4]).
+-export([sql_schemas/0]).
 
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -35,10 +36,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

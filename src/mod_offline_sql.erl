@@ -31,6 +31,7 @@
 	 remove_old_messages/2, remove_user/2, read_message_headers/2,
 	 read_message/3, remove_message/3, read_all_messages/2,
 	 remove_all_messages/2, count_messages/2, import/1, export/1, remove_old_messages_batch/3]).
+-export([sql_schemas/0]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_offline.hrl").
@@ -41,10 +42,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

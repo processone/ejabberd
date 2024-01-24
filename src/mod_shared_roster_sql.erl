@@ -34,6 +34,7 @@
 	 get_user_displayed_groups/3, is_user_in_group/3,
 	 add_user_to_group/3, remove_user_from_group/3, import/3,
 	 export/1]).
+-export([sql_schemas/0]).
 
 -include_lib("xmpp/include/jid.hrl").
 -include("mod_roster.hrl").
@@ -44,10 +45,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

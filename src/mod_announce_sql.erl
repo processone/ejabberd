@@ -31,6 +31,7 @@
 -export([init/2, set_motd_users/2, set_motd/2, delete_motd/1,
 	 get_motd/1, is_motd_user/2, set_motd_user/2, import/3,
 	 export/1]).
+-export([sql_schemas/0]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_announce.hrl").
@@ -41,10 +42,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

@@ -25,6 +25,7 @@
 -export([init/0]).
 -export([subscribe/4, unsubscribe/2, find_subscriber/2]).
 -export([open_session/1, close_session/1, lookup_session/1, get_sessions/2]).
+-export([sql_schemas/0]).
 
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -37,10 +38,10 @@ init() ->
     {error, db_failure}.
 
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

@@ -34,6 +34,7 @@
 	 lookup_client/1,
 	 store_client/1,
 	 remove_client/1, revoke/1]).
+-export([sql_schemas/0]).
 
 -include("ejabberd_oauth.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -42,10 +43,10 @@
 
 init() ->
     ejabberd_sql_schema:update_schema(
-      ejabberd_config:get_myname(), ?MODULE, schemas()),
+      ejabberd_config:get_myname(), ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

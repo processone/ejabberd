@@ -42,6 +42,7 @@
 	 find_online_room_by_pid/2, remove_user/2]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
+-export([sql_schemas/0]).
 
 -include_lib("xmpp/include/jid.hrl").
 -include("mod_muc.hrl").
@@ -52,7 +53,7 @@
 %%% API
 %%%===================================================================
 init(Host, Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     case gen_mod:ram_db_mod(Opts, mod_muc) of
 	?MODULE ->
 	    clean_tables(Host);
@@ -60,7 +61,7 @@ init(Host, Opts) ->
 	    ok
     end.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

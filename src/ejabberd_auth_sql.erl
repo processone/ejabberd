@@ -34,6 +34,7 @@
 	 get_users/2, count_users/2, get_password/2,
 	 remove_user/2, store_type/1, plain_password_required/1,
 	 export/1, which_users_exists/2]).
+-export([sql_schemas/0]).
 
 -include_lib("xmpp/include/scram.hrl").
 -include("logger.hrl").
@@ -46,10 +47,10 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

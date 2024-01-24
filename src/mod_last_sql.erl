@@ -30,6 +30,7 @@
 %% API
 -export([init/2, get_last/2, store_last_info/4, remove_user/2,
 	 import/2, export/1]).
+-export([sql_schemas/0]).
 
 -include("mod_last.hrl").
 -include("logger.hrl").
@@ -39,10 +40,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

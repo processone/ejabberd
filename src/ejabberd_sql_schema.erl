@@ -28,10 +28,12 @@
 -author('alexey@process-one.net').
 
 -export([start/1, update_schema/3,
-         get_table_schema/2, get_table_indices/2, test/0]).
+         get_table_schema/2, get_table_indices/2, print_schema/3,
+         test/0]).
 
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("ejabberd_ctl.hrl").
 
 start(Host) ->
     case should_update_schema(Host) of
@@ -40,8 +42,17 @@ start(Host) ->
                 true ->
                     ok;
                 false ->
-                    Table = filter_table_sh(schema_table()),
-                    Res = create_table(Host, Table),
+                    SchemaInfo =
+                        ejabberd_sql:sql_query(
+                          Host,
+                          fun(DBType, DBVersion) ->
+                                  #sql_schema_info{
+                                     db_type = DBType,
+                                     db_version = DBVersion,
+                                     new_schema = ejabberd_sql:use_new_schema()}
+                          end),
+                    Table = filter_table_sh(SchemaInfo, schema_table()),
+                    Res = create_table(Host, SchemaInfo, Table),
                     case Res of
                         {error, Error} ->
                             ?ERROR_MSG("Failed to create table ~s: ~p",
@@ -249,8 +260,8 @@ table_exists(Host, Table) ->
               end
       end).
 
-filter_table_sh(Table) ->
-    case {ejabberd_sql:use_new_schema(), Table#sql_table.name} of
+filter_table_sh(SchemaInfo, Table) ->
+    case {SchemaInfo#sql_schema_info.new_schema, Table#sql_table.name} of
         {true, _} ->
             Table;
         {_, <<"route">>} ->
@@ -383,7 +394,7 @@ get_current_version(Host, Module, Schemas) ->
             Version
     end.
 
-format_type(pgsql, _DBVersion, Column) ->
+format_type(#sql_schema_info{db_type = pgsql}, Column) ->
     case Column#sql_column.type of
         text -> <<"text">>;
         {text, _} -> <<"text">>;
@@ -397,7 +408,7 @@ format_type(pgsql, _DBVersion, Column) ->
         {char, N} -> [<<"character(">>, integer_to_binary(N), <<")">>];
         bigserial -> <<"bigserial">>
     end;
-format_type(sqlite, _DBVersion, Column) ->
+format_type(#sql_schema_info{db_type = sqlite}, Column) ->
     case Column#sql_column.type of
         text -> <<"text">>;
         {text, _} -> <<"text">>;
@@ -411,7 +422,7 @@ format_type(sqlite, _DBVersion, Column) ->
         {char, N} -> [<<"character(">>, integer_to_binary(N), <<")">>];
         bigserial -> <<"integer primary key autoincrement">>
     end;
-format_type(mysql, _DBVersion, Column) ->
+format_type(#sql_schema_info{db_type = mysql}, Column) ->
     case Column#sql_column.type of
         text -> <<"text">>;
         {text, big} -> <<"mediumtext">>;
@@ -429,7 +440,7 @@ format_type(mysql, _DBVersion, Column) ->
         bigserial -> <<"bigint auto_increment primary key">>
     end.
 
-format_default(pgsql, _DBVersion, Column) ->
+format_default(#sql_schema_info{db_type = pgsql}, Column) ->
     case Column#sql_column.type of
         text -> <<"''">>;
         {text, _} -> <<"''">>;
@@ -443,7 +454,7 @@ format_default(pgsql, _DBVersion, Column) ->
         %{char, N} -> <<"''">>;
         %bigserial -> <<"0">>
     end;
-format_default(sqlite, _DBVersion, Column) ->
+format_default(#sql_schema_info{db_type = sqlite}, Column) ->
     case Column#sql_column.type of
         text -> <<"''">>;
         {text, _} -> <<"''">>;
@@ -457,7 +468,7 @@ format_default(sqlite, _DBVersion, Column) ->
         %{char, N} -> <<"''">>;
         %bigserial -> <<"0">>
     end;
-format_default(mysql, _DBVersion, Column) ->
+format_default(#sql_schema_info{db_type = mysql}, Column) ->
     case Column#sql_column.type of
         text -> <<"('')">>;
         {text, _} -> <<"('')">>;
@@ -472,20 +483,20 @@ format_default(mysql, _DBVersion, Column) ->
         %bigserial -> <<"0">>
     end.
 
-escape_name(pgsql, _DBVersion, <<"type">>) ->
+escape_name(#sql_schema_info{db_type = pgsql}, <<"type">>) ->
     <<"\"type\"">>;
-escape_name(_DBType, _DBVersion, ColumnName) ->
+escape_name(_SchemaInfo, ColumnName) ->
     ColumnName.
 
-format_column_def(DBType, DBVersion, Column) ->
+format_column_def(SchemaInfo, Column) ->
     [<<"    ">>,
-     escape_name(DBType, DBVersion, Column#sql_column.name), <<" ">>,
-     format_type(DBType, DBVersion, Column),
+     escape_name(SchemaInfo, Column#sql_column.name), <<" ">>,
+     format_type(SchemaInfo, Column),
      <<" NOT NULL">>,
      case Column#sql_column.default of
          false -> [];
          true ->
-             [<<" DEFAULT ">>, format_default(DBType, DBVersion, Column)]
+             [<<" DEFAULT ">>, format_default(SchemaInfo, Column)]
      end,
      case lists:keyfind(sql_references, 1, Column#sql_column.opts) of
          false -> [];
@@ -511,7 +522,7 @@ format_mysql_index_column(Table, ColumnName) ->
             ColumnName
     end.
 
-format_create_index(pgsql, _DBVersion, Table, Index) ->
+format_create_index(#sql_schema_info{db_type = pgsql}, Table, Index) ->
     TableName = Table#sql_table.name,
     Unique =
         case Index#sql_index.unique of
@@ -528,7 +539,7 @@ format_create_index(pgsql, _DBVersion, Table, Index) ->
        <<", ">>,
        Index#sql_index.columns),
      <<");">>];
-format_create_index(sqlite, _DBVersion, Table, Index) ->
+format_create_index(#sql_schema_info{db_type = sqlite}, Table, Index) ->
     TableName = Table#sql_table.name,
     Unique =
         case Index#sql_index.unique of
@@ -545,7 +556,7 @@ format_create_index(sqlite, _DBVersion, Table, Index) ->
        <<", ">>,
        Index#sql_index.columns),
      <<");">>];
-format_create_index(mysql, _DBVersion, Table, Index) ->
+format_create_index(#sql_schema_info{db_type = mysql}, Table, Index) ->
     TableName = Table#sql_table.name,
     Unique =
         case Index#sql_index.unique of
@@ -567,7 +578,7 @@ format_create_index(mysql, _DBVersion, Table, Index) ->
          end, Index#sql_index.columns)),
      <<");">>].
 
-format_primary_key(mysql, _DBVersion, Table) ->
+format_primary_key(#sql_schema_info{db_type = mysql}, Table) ->
     case lists:filter(
            fun(#sql_index{meta = #{primary_key := true}}) -> true;
               (_) -> false
@@ -584,7 +595,7 @@ format_primary_key(mysql, _DBVersion, Table) ->
                   end, I#sql_index.columns)),
               <<")">>]]
     end;
-format_primary_key(_DBType, _DBVersion, Table) ->
+format_primary_key(_SchemaInfo, Table) ->
     case lists:filter(
            fun(#sql_index{meta = #{primary_key := true}}) -> true;
               (_) -> false
@@ -597,16 +608,17 @@ format_primary_key(_DBType, _DBVersion, Table) ->
               <<")">>]]
     end.
 
-format_add_primary_key(sqlite = DBType, DBVersion, Table, Index) ->
-    format_create_index(DBType, DBVersion, Table, Index);
-format_add_primary_key(mysql, _DBVersion, Table, Index) ->
+format_add_primary_key(#sql_schema_info{db_type = sqlite} = SchemaInfo,
+                       Table, Index) ->
+    format_create_index(SchemaInfo, Table, Index);
+format_add_primary_key(#sql_schema_info{db_type = pgsql}, Table, Index) ->
     TableName = Table#sql_table.name,
     [<<"ALTER TABLE ">>, TableName, <<" ADD PRIMARY KEY (">>,
      lists:join(
        <<", ">>,
        Index#sql_index.columns),
      <<");">>];
-format_add_primary_key(_DBType, _DBVersion, Table, Index) ->
+format_add_primary_key(#sql_schema_info{db_type = mysql}, Table, Index) ->
     TableName = Table#sql_table.name,
     [<<"ALTER TABLE ">>, TableName, <<" ADD PRIMARY KEY (">>,
      lists:join(
@@ -617,16 +629,16 @@ format_add_primary_key(_DBType, _DBVersion, Table, Index) ->
          end, Index#sql_index.columns)),
      <<");">>].
 
-format_create_table(pgsql = DBType, DBVersion, Table) ->
+format_create_table(#sql_schema_info{db_type = pgsql} = SchemaInfo, Table) ->
     TableName = Table#sql_table.name,
     [iolist_to_binary(
        [<<"CREATE TABLE ">>, TableName, <<" (\n">>,
         lists:join(
           <<",\n">>,
           lists:map(
-            fun(C) -> format_column_def(DBType, DBVersion, C) end,
+            fun(C) -> format_column_def(SchemaInfo, C) end,
             Table#sql_table.columns) ++
-              format_primary_key(DBType, DBVersion, Table)),
+              format_primary_key(SchemaInfo, Table)),
         <<"\n);\n">>])] ++
         lists:flatmap(
           fun(#sql_index{meta = #{primary_key := true}}) ->
@@ -635,20 +647,20 @@ format_create_table(pgsql = DBType, DBVersion, Table) ->
                   [];
              (I) ->
                   [iolist_to_binary(
-                     [format_create_index(DBType, DBVersion, Table, I),
+                     [format_create_index(SchemaInfo, Table, I),
                       <<"\n">>])]
           end,
           Table#sql_table.indices);
-format_create_table(sqlite = DBType, DBVersion, Table) ->
+format_create_table(#sql_schema_info{db_type = sqlite} = SchemaInfo, Table) ->
     TableName = Table#sql_table.name,
     [iolist_to_binary(
        [<<"CREATE TABLE ">>, TableName, <<" (\n">>,
         lists:join(
           <<",\n">>,
           lists:map(
-            fun(C) -> format_column_def(DBType, DBVersion, C) end,
+            fun(C) -> format_column_def(SchemaInfo, C) end,
             Table#sql_table.columns) ++
-              format_primary_key(DBType, DBVersion, Table)),
+              format_primary_key(SchemaInfo, Table)),
         <<"\n);\n">>])] ++
         lists:flatmap(
           fun(#sql_index{meta = #{primary_key := true}}) ->
@@ -657,20 +669,20 @@ format_create_table(sqlite = DBType, DBVersion, Table) ->
                   [];
              (I) ->
                   [iolist_to_binary(
-                     [format_create_index(DBType, DBVersion, Table, I),
+                     [format_create_index(SchemaInfo, Table, I),
                       <<"\n">>])]
           end,
           Table#sql_table.indices);
-format_create_table(mysql = DBType, DBVersion, Table) ->
+format_create_table(#sql_schema_info{db_type = mysql} = SchemaInfo, Table) ->
     TableName = Table#sql_table.name,
     [iolist_to_binary(
       [<<"CREATE TABLE ">>, TableName, <<" (\n">>,
        lists:join(
          <<",\n">>,
          lists:map(
-           fun(C) -> format_column_def(DBType, DBVersion, C) end,
+           fun(C) -> format_column_def(SchemaInfo, C) end,
            Table#sql_table.columns) ++
-             format_primary_key(DBType, DBVersion, Table)),
+             format_primary_key(SchemaInfo, Table)),
        <<"\n) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n">>])] ++
         lists:flatmap(
           fun(#sql_index{meta = #{primary_key := true}}) ->
@@ -679,20 +691,16 @@ format_create_table(mysql = DBType, DBVersion, Table) ->
                   [];
              (I) ->
                   [iolist_to_binary(
-                     [format_create_index(DBType, DBVersion, Table, I),
+                     [format_create_index(SchemaInfo, Table, I),
                       <<"\n">>])]
           end,
           Table#sql_table.indices).
-%format_create_table(DBType, _DBVersion, Table) ->
-%    ?ERROR_MSG("Can't create SQL table ~p on ~p",
-%               [Table#sql_table.name, DBType]),
-%    error.
 
-create_table(Host, Table) ->
+create_table(Host, SchemaInfo, Table) ->
     ejabberd_sql:sql_query(
       Host,
-      fun(DBType, DBVersion) ->
-              SQLs = format_create_table(DBType, DBVersion, Table),
+      fun() ->
+              SQLs = format_create_table(SchemaInfo, Table),
               ?INFO_MSG("Creating table ~s:~n~s~n",
                         [Table#sql_table.name, SQLs]),
               lists:foreach(
@@ -700,15 +708,18 @@ create_table(Host, Table) ->
               case Table#sql_table.post_create of
                   undefined ->
                       ok;
-                  F ->
-                      F(DBType, DBVersion)
+                  F when is_function(F, 1) ->
+                      PostSQLs = F(SchemaInfo),
+                      lists:foreach(
+                        fun(SQL) -> ejabberd_sql:sql_query_t(SQL) end,
+                        PostSQLs)
               end
       end).
 
-create_tables(Host, Module, Schema) ->
+create_tables(Host, Module, SchemaInfo, Schema) ->
     lists:foreach(
       fun(Table) ->
-              Res = create_table(Host, Table),
+              Res = create_table(Host, SchemaInfo, Table),
               case Res of
                   {error, Error} ->
                       ?ERROR_MSG("Failed to create table ~s: ~p",
@@ -740,10 +751,10 @@ should_update_schema(Host) ->
             false
     end.
 
-preprocess_table(Host, Table) ->
-    Table1 = filter_table_sh(Table),
+preprocess_table(SchemaInfo, Table) ->
+    Table1 = filter_table_sh(SchemaInfo, Table),
     ImplicitPK =
-        case ejabberd_option:sql_type(Host) of
+        case SchemaInfo#sql_schema_info.db_type of
             pgsql -> false;
             sqlite ->
                 case lists:keyfind(bigserial, #sql_column.type,
@@ -782,18 +793,30 @@ preprocess_table(Host, Table) ->
         end,
     Table1#sql_table{indices = Indices}.
 
-preprocess_schemas(Host, Schemas) ->
+preprocess_schemas(SchemaInfo, Schemas) ->
     lists:map(
       fun(Schema) ->
               Schema#sql_schema{
-                tables = lists:map(fun(T) -> preprocess_table(Host, T) end,
-                                   Schema#sql_schema.tables)}
+                tables = lists:map(
+                           fun(T) ->
+                                   preprocess_table(SchemaInfo, T)
+                           end,
+                           Schema#sql_schema.tables)}
       end, Schemas).
 
 update_schema(Host, Module, RawSchemas) ->
     case should_update_schema(Host) of
         true ->
-            Schemas = preprocess_schemas(Host, RawSchemas),
+            SchemaInfo =
+                ejabberd_sql:sql_query(
+                  Host,
+                  fun(DBType, DBVersion) ->
+                          #sql_schema_info{
+                             db_type = DBType,
+                             db_version = DBVersion,
+                             new_schema = ejabberd_sql:use_new_schema()}
+                  end),
+            Schemas = preprocess_schemas(SchemaInfo, RawSchemas),
             Version = get_current_version(Host, Module, Schemas),
             LastSchema = lists:max(Schemas),
             LastVersion = LastSchema#sql_schema.version,
@@ -801,7 +824,7 @@ update_schema(Host, Module, RawSchemas) ->
                 _ when Version < 0 ->
                     ?ERROR_MSG("Can't update SQL schema for module ~p, please do it manually", [Module]);
                 0 ->
-                    create_tables(Host, Module, LastSchema);
+                    create_tables(Host, Module, SchemaInfo, LastSchema);
                 LastVersion ->
                     ok;
                 _ when LastVersion < Version ->
@@ -811,7 +834,8 @@ update_schema(Host, Module, RawSchemas) ->
                       fun(Schema) ->
                               if
                                   Schema#sql_schema.version > Version ->
-                                      do_update_schema(Host, Module, Schema);
+                                      do_update_schema(Host, Module,
+                                                       SchemaInfo, Schema);
                                   true ->
                                       ok
                               end
@@ -821,7 +845,7 @@ update_schema(Host, Module, RawSchemas) ->
             ok
     end.
 
-do_update_schema(Host, Module, Schema) ->
+do_update_schema(Host, Module, SchemaInfo, Schema) ->
     lists:foreach(
       fun({add_column, TableName, ColumnName}) ->
               {value, Table} =
@@ -833,9 +857,9 @@ do_update_schema(Host, Module, Schema) ->
               Res =
                   ejabberd_sql:sql_query(
                     Host,
-                    fun(DBType, DBVersion) ->
-                            Def = format_column_def(DBType, DBVersion, Column),
-                            Default = format_default(DBType, DBVersion, Column),
+                    fun(DBType, _DBVersion) ->
+                            Def = format_column_def(SchemaInfo, Column),
+                            Default = format_default(SchemaInfo, Column),
                             SQLs =
                                 [[<<"ALTER TABLE ">>,
                                   TableName,
@@ -914,11 +938,11 @@ do_update_schema(Host, Module, Schema) ->
                       Res =
                           ejabberd_sql:sql_query(
                             Host,
-                            fun(DBType, DBVersion) ->
+                            fun() ->
                                     case Index#sql_index.meta of
                                         #{primary_key := true} ->
                                             SQL1 = format_add_primary_key(
-                                                     DBType, DBVersion, Table, Index),
+                                                     SchemaInfo, Table, Index),
                                             SQL = iolist_to_binary(SQL1),
                                             ?INFO_MSG("Add primary key ~s/~p:~n~s~n",
                                                       [Table#sql_table.name,
@@ -927,7 +951,7 @@ do_update_schema(Host, Module, Schema) ->
                                             ejabberd_sql:sql_query_t(SQL);
                                         _ ->
                                             SQL1 = format_create_index(
-                                                     DBType, DBVersion, Table, Index),
+                                                     SchemaInfo, Table, Index),
                                             SQL = iolist_to_binary(SQL1),
                                             ?INFO_MSG("Create index ~s/~p:~n~s~n",
                                                       [Table#sql_table.name,
@@ -992,6 +1016,96 @@ do_update_schema(Host, Module, Schema) ->
               end
       end, Schema#sql_schema.update),
     store_version(Host, Module, Schema#sql_schema.version).
+
+
+print_schema(SDBType, SDBVersion, SNewSchema) ->
+    {DBType, DBVersion} =
+        case SDBType of
+            "pgsql" ->
+                case string:split(SDBVersion, ".") of
+                    [SMajor, SMinor] ->
+                        try {list_to_integer(SMajor), list_to_integer(SMinor)} of
+                            {Major, Minor} ->
+                                {pgsql, Major * 10000 + Minor}
+                        catch _:_ ->
+                                io:format("pgsql version be in the form of "
+                                          "Major.Minor, e.g. 16.1~n"),
+                                {error, error}
+                        end;
+                    _ ->
+                        io:format("pgsql version be in the form of "
+                                  "Major.Minor, e.g. 16.1~n"),
+                        {error, error}
+                end;
+            "mysql" ->
+                case ejabberd_sql:parse_mysql_version(SDBVersion, 0) of
+                    {ok, V} ->
+                        {mysql, V};
+                    error ->
+                        io:format("pgsql version be in the same form as "
+                                  "SELECT VERSION() returns~n"),
+                        {error, error}
+                end;
+            "sqlite" ->
+                {sqlite, undefined};
+            _ ->
+                io:format("db_type must be one of the following: "
+                          "'pgsql', 'mysql', 'sqlite'~n"),
+                {error, error}
+        end,
+    NewSchema =
+        case SNewSchema of
+            "0" -> false;
+            "1" -> true;
+            "false" -> false;
+            "true" -> true;
+            _ ->
+                io:format("new_schema must be one of the following: "
+                          "'0', '1', 'false', 'true'~n"),
+                error
+        end,
+    case {DBType, NewSchema} of
+        {error, _} -> ?STATUS_ERROR;
+        {_, error} -> ?STATUS_ERROR;
+        _ ->
+            SchemaInfo =
+                #sql_schema_info{
+                   db_type = DBType,
+                   db_version = DBVersion,
+                   new_schema = NewSchema},
+            Mods = ejabberd_config:beams(all),
+            lists:foreach(
+              fun(Mod) ->
+                      case erlang:function_exported(Mod, sql_schemas, 0) of
+                          true ->
+                              Schemas = Mod:sql_schemas(),
+                              Schemas2 = preprocess_schemas(SchemaInfo, Schemas),
+                              Schema = lists:max(Schemas2),
+                              SQLs =
+                                  lists:flatmap(
+                                    fun(Table) ->
+                                            SQLs = format_create_table(SchemaInfo, Table),
+                                            PostSQLs =
+                                                case Table#sql_table.post_create of
+                                                    undefined ->
+                                                        [];
+                                                    F when is_function(F, 1) ->
+                                                        PSQLs = F(SchemaInfo),
+                                                        lists:map(
+                                                          fun(S) ->
+                                                                  [S, <<"\n">>]
+                                                          end, PSQLs)
+                                                end,
+                                            SQLs ++ PostSQLs
+                                    end, Schema#sql_schema.tables),
+                              io:format("~s~n", [SQLs]);
+                          false ->
+                              ok
+                      end
+              end, Mods),
+            ?STATUS_SUCCESS
+    end.
+
 
 test() ->
     Schemas =

@@ -34,6 +34,7 @@
 	 update_roster/4, del_roster/3, transaction/2,
 	 process_rosteritems/5,
 	 import/3, export/1, raw_to_record/2]).
+-export([sql_schemas/0]).
 
 -include("mod_roster.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -44,10 +45,10 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    ejabberd_sql_schema:update_schema(Host, ?MODULE, schemas()),
+    ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
-schemas() ->
+sql_schemas() ->
     [#sql_schema{
         version = 1,
         tables =

@@ -56,7 +56,8 @@
 	 init_mssql/1,
 	 keep_alive/2,
 	 to_list/2,
-	 to_array/2]).
+	 to_array/2,
+         parse_mysql_version/2]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4,
@@ -1134,6 +1135,31 @@ to_odbc({error, Reason}) when is_list(Reason) ->
 to_odbc(Res) ->
     Res.
 
+parse_mysql_version(SVersion, DefaultUpsert) ->
+    case re:run(SVersion, <<"(\\d+)\\.(\\d+)(?:\\.(\\d+))?(?:-([^-]*))?">>,
+                [{capture, all_but_first, binary}]) of
+        {match, [V1, V2, V3, Type]} ->
+            V = ((bin_to_int(V1)*1000)+bin_to_int(V2))*1000+bin_to_int(V3),
+            TypeA = binary_to_atom(Type, utf8),
+            Flags = case TypeA of
+                        'MariaDB' -> DefaultUpsert;
+                        _ when V >= 5007026 andalso V < 8000000 -> 1;
+                        _ when V >= 8000020 -> 1;
+                        _ -> DefaultUpsert
+                    end,
+            {ok, {V, TypeA, Flags}};
+        {match, [V1, V2, V3]} ->
+            V = ((bin_to_int(V1)*1000)+bin_to_int(V2))*1000+bin_to_int(V3),
+            Flags = case V of
+                        _ when V >= 5007026 andalso V < 8000000 -> 1;
+                        _ when V >= 8000020 -> 1;
+                        _ -> DefaultUpsert
+                    end,
+            {ok, {V, unknown, Flags}};
+        _ ->
+            error
+    end.
+
 get_db_version(#state{db_type = pgsql} = State) ->
     case pgsql:squery(State#state.db_ref,
                       <<"select current_setting('server_version_num')">>) of
@@ -1159,27 +1185,10 @@ get_db_version(#state{db_type = mysql, host = Host} = State) ->
 					    [{timeout, 5000},
 					     {result_type, binary}])) of
 	{selected, _, [SVersion]} ->
-	    case re:run(SVersion, <<"(\\d+)\\.(\\d+)(?:\\.(\\d+))?(?:-([^-]*))?">>,
-			[{capture, all_but_first, binary}]) of
-		{match, [V1, V2, V3, Type]} ->
-		    V = ((bin_to_int(V1)*1000)+bin_to_int(V2))*1000+bin_to_int(V3),
-		    TypeA = binary_to_atom(Type, utf8),
-		    Flags = case TypeA of
-				'MariaDB' -> DefaultUpsert;
-				_ when V >= 5007026 andalso V < 8000000 -> 1;
-				_ when V >= 8000020 -> 1;
-				_ -> DefaultUpsert
-			    end,
-		    State#state{db_version = {V, TypeA, Flags}};
-		{match, [V1, V2, V3]} ->
-		    V = ((bin_to_int(V1)*1000)+bin_to_int(V2))*1000+bin_to_int(V3),
-		    Flags = case V of
-				_ when V >= 5007026 andalso V < 8000000 -> 1;
-				_ when V >= 8000020 -> 1;
-				_ -> DefaultUpsert
-			    end,
-		    State#state{db_version = {V, unknown, Flags}};
-		_ ->
+            case parse_mysql_version(SVersion, DefaultUpsert) of
+                {ok, V} ->
+                    State#state{db_version = V};
+                error ->
 		    ?WARNING_MSG("Error parsing mysql version: ~p", [SVersion]),
 		    State
 	    end;
