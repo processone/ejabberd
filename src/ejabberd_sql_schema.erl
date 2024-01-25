@@ -1042,8 +1042,8 @@ print_schema(SDBType, SDBVersion, SNewSchema) ->
                     {ok, V} ->
                         {mysql, V};
                     error ->
-                        io:format("pgsql version be in the same form as "
-                                  "SELECT VERSION() returns~n"),
+                        io:format("mysql version be in the same form as "
+                                  "SELECT VERSION() returns, e.g. 8.2.0~n"),
                         {error, error}
                 end;
             "sqlite" ->
