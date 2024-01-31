@@ -32,6 +32,7 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
+-export([get_commands_spec/0]).
 
 -include("ejabberd_ctl.hrl").
 -include("ejabberd_commands.hrl").
@@ -90,6 +91,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
     {ok, #state{}}.
 
 handle_call(Request, From, State) ->
@@ -105,6 +107,7 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -478,11 +481,7 @@ make_status(Error) ->
 get_list_commands(Version) ->
     try ejabberd_commands:list_commands(Version) of
 	Commands ->
-	    [tuple_command_help(Command)
-	     || {N,_,_}=Command <- Commands,
-		%% Don't show again those commands, because they are already
-		%% announced by ejabberd_ctl itself
-		N /= status, N /= stop, N /= restart]
+	    [tuple_command_help(Command) || Command <- Commands]
     catch
 	exit:_ ->
 	    []
@@ -541,15 +540,7 @@ print_usage(Version) ->
     {MaxC, ShCode} = get_shell_info(),
     print_usage(dual, MaxC, ShCode, Version).
 print_usage(HelpMode, MaxC, ShCode, Version) ->
-    AllCommands =
-	[
-	 {"help", ["[arguments]"], "Get help"},
-	 {"status", [], "Get ejabberd status"},
-	 {"stop", [], "Stop ejabberd"},
-	 {"restart", [], "Restart ejabberd"},
-	 {"mnesia", ["[info]"], "show information of Mnesia system"},
-	 {"print_sql_schema", ["db_type", "db_version", "new_schema"], "print SQL schema for the given RDBMS"}] ++
-	get_list_commands(Version),
+    AllCommands = get_list_commands(Version),
 
     print(
        ["Usage: ", "ejabberdctl", " [--no-timeout] [--node ", ?A("nodename"), "] [--version ", ?A("api_version"), "] ",
@@ -956,3 +947,30 @@ disable_logging() ->
 disable_logging() ->
     logger:set_primary_config(level, none).
 -endif.
+
+%%-----------------------------
+%% Register commands
+%%-----------------------------
+
+get_commands_spec() ->
+    [
+     #ejabberd_commands{name = help, tags = [ejabberdctl],
+			desc = "Get list of commands, or help of a command (only ejabberdctl)",
+			longdesc = "This command is exclusive for the ejabberdctl command-line script, "
+			"don't attempt to execute it using any other API frontend."},
+     #ejabberd_commands{name = mnesia_info_ctl, tags = [ejabberdctl, mnesia],
+			desc = "Show information of Mnesia system (only ejabberdctl)",
+			note = "renamed in 24.01",
+			longdesc = "This command is exclusive for the ejabberdctl command-line script, "
+			"don't attempt to execute it using any other API frontend."},
+     #ejabberd_commands{name = print_sql_schema, tags = [ejabberdctl, sql],
+			desc = "Print SQL schema for the given RDBMS (only ejabberdctl)",
+			longdesc = "This command is exclusive for the ejabberdctl command-line script, "
+			"don't attempt to execute it using any other API frontend.",
+			note = "added in 24.01",
+			args = [{db_type, string}, {db_version, string}, {new_schema, string}],
+                        args_desc = ["Database type: pgsql | mysql | sqlite",
+                                     "Your database version: 16.1, 8.2.0...",
+                                     "Use new schema: 0, false, 1 or true"],
+                        args_example = ["pgsql", "16.1", "true"]}
+    ].
