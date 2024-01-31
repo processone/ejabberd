@@ -1,18 +1,27 @@
 #
 # bash completion for ejabberdctl
 #
+# For installation and details see:
+# https://docs.ejabberd.im/admin/guide/managing/#bash-completion
+#
+
 get_help()
 {
-    local COMMANDCACHE=/tmp/ejabberd_bash_completion_$RANDOM
-    ejabberdctl $CTLARGS help tags >$COMMANDCACHE.tags
-    ejabberdctl $CTLARGS >$COMMANDCACHE
-    if [[ $? == 2 ]] ; then
-        ISRUNNING=1
-        runningcommands=`cat $COMMANDCACHE | grep "^  [a-z]" | awk '{print $1}' | xargs`
-        runningtags=`cat $COMMANDCACHE.tags | grep "^  [a-z]" | awk '{print $1}' | xargs`
+    local CACHE_BASE=/tmp/ejabberd_bash_completion
+    local DATESTRING=`date +%F-%H`
+    local CACHE=$CACHE_BASE.$DATESTRING
+    local CACHE_COMS=$CACHE.coms
+    local CACHE_TAGS=$CACHE.tags
+    if [[ ! -f $CACHE_COMS ]] ; then
+        rm -f $CACHE_BASE.*
+        [ -f $CACHE_COMS ] || ejabberdctl $CTLARGS           | sed "s|\x1B\[[0-9]*m||g" | grep "^  [a-z]" | awk '{print $1}' | xargs >$CACHE_COMS
+        [ -f $CACHE_TAGS ] || ejabberdctl $CTLARGS help tags | sed "s|\x1B\[[0-9]*m||g" | grep "^  [a-z]" | awk '{print $1}' | xargs >$CACHE_TAGS
     fi
-    rm $COMMANDCACHE
-    rm $COMMANDCACHE.tags
+    if [[ $? == 2 ]] || [[ -f $CACHE_COMS ]] ; then
+        ISRUNNING=1
+        runningcommands=`cat $CACHE_COMS`
+        runningtags=`cat $CACHE_TAGS`
+    fi
 }
 
 _ejabberdctl()
