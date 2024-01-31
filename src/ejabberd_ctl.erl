@@ -142,19 +142,8 @@ process(["status"], _Version) ->
 %% TODO: Mnesia operations should not be hardcoded in ejabberd_ctl module.
 %% For now, I leave them there to avoid breaking those commands for people that
 %% may be using it (as format of response is going to change).
-process(["mnesia"], _Version) ->
-    print("~p~n", [mnesia:system_info(all)]),
-    ?STATUS_SUCCESS;
-
-process(["mnesia", "info"], _Version) ->
+process(["mnesia_info_ctl"], _Version) ->
     mnesia:info(),
-    ?STATUS_SUCCESS;
-
-process(["mnesia", Arg], _Version) ->
-    case catch mnesia:system_info(list_to_atom(Arg)) of
-	{'EXIT', Error} -> print("Error: ~p~n", [Error]);
-	Return -> print("~p~n", [Return])
-    end,
     ?STATUS_SUCCESS;
 
 process(["print_sql_schema", DBType, DBVersion, NewSchema], _Version) ->
