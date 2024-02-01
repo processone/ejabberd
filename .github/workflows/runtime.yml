@@ -33,7 +33,7 @@ jobs:
       matrix:
         otp: ['20.3', '25.3', '26']
         rebar: ['rebar', 'rebar3']
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: erlang:${{ matrix.otp }}
 
