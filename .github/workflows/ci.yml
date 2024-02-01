@@ -104,7 +104,7 @@ jobs:
       run: sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
 
     - name: Cache rebar
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/rebar3/
@@ -220,7 +220,7 @@ jobs:
         echo "::notice::View CT results: https://processone.github.io/ecil/logs/$CTRUN/"
 
     - name: Check for changes to trigger schema upgrade test
-      uses: dorny/paths-filter@v2
+      uses: dorny/paths-filter@v3
       id: filter
       with:
         filters: |
