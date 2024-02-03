@@ -195,7 +195,7 @@ get_mucsub_event_type(_Packet) ->
 is_standalone_chat_state(Stanza) ->
     case unwrap_carbon(Stanza) of
 	#message{body = [], subject = [], sub_els = Els} ->
-	    IgnoreNS = [?NS_CHATSTATES, ?NS_DELAY, ?NS_EVENT],
+	    IgnoreNS = [?NS_CHATSTATES, ?NS_DELAY, ?NS_EVENT, ?NS_HINTS],
 	    Stripped = [El || El <- Els,
 			      not lists:member(xmpp:get_ns(El), IgnoreNS)],
 	    Stripped == [];
