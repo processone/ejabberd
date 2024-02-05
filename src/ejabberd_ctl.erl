@@ -408,6 +408,12 @@ format_result(Int, {_Name, integer}, _Version) ->
 format_result([A|_]=String, {_Name, string}, _Version) when is_list(String) and is_integer(A) ->
     io_lib:format("~ts", [String]);
 
+format_result(Binary, {_Name, binary}, _Version) when is_binary(Binary) ->
+    io_lib:format("~ts", [binary_to_list(Binary)]);
+
+format_result(String, {_Name, binary}, _Version) when is_list(String) ->
+    io_lib:format("~ts", [String]);
+
 format_result(Binary, {_Name, string}, _Version) when is_binary(Binary) ->
     io_lib:format("~ts", [binary_to_list(Binary)]);
 
@@ -852,15 +858,21 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 		     definer = Definer,
 		     desc = Desc,
 		     args = ArgsDefPreliminary,
+		     args_desc = ArgsDesc,
+		     args_example = ArgsExample,
+		     result_example = ResultExample,
 		     policy = Policy,
 		     longdesc = LongDesc,
+		     note = Note,
 		     result = ResultDef} = C,
 
     NameFmt = ["  ", ?B("Command Name"), ": ", ?C(Cmd), "\n"],
 
     %% Initial indentation of result is 13 = length("  Arguments: ")
     ArgsDef = maybe_add_policy_arguments(ArgsDefPreliminary, Policy),
-    Args = [format_usage_ctype(ArgDef, 13) || ArgDef <- ArgsDef],
+    ArgsDetailed = add_args_desc(ArgsDef, ArgsDesc),
+    Args = [format_usage_ctype1(ArgDetailed, 13, ShCode) || ArgDetailed <- ArgsDetailed],
+
     ArgsMargin = lists:duplicate(13, $\s),
     ArgsListFmt = case Args of
 		      [] -> "\n";
@@ -870,9 +882,17 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 
     %% Initial indentation of result is 11 = length("  Returns: ")
     ResultFmt = format_usage_ctype(ResultDef, 11),
-    ReturnsFmt = ["  ",?B("Returns"),": ", ResultFmt],
+    ReturnsFmt = ["  ",?B("Result"),": ", ResultFmt],
 
-    XmlrpcFmt = "", %%+++ ["  ",?B("XML-RPC"),": ", format_usage_xmlrpc(ArgsDef, ResultDef), "\n\n"],
+    ExampleMargin = lists:duplicate(11, $\s),
+    Example = format_usage_example(Cmd, ArgsExample, ResultExample, ExampleMargin),
+    ExampleFmt = case Example of
+		      [] ->
+                            "";
+		      _ ->
+                            ExampleListFmt = [ [Ex, "\n", ExampleMargin] || Ex <- Example],
+                            ["  ",?B("Example"),": ", ExampleListFmt, "\n"]
+		  end,
 
     TagsFmt = ["  ",?B("Tags"),":", prepare_long_line(8, MaxC, [?G(atom_to_list(TagA)) || TagA <- TagsAtoms])],
 
@@ -885,6 +905,11 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
                     false -> []
                 end,
 
+    NoteFmt = case Note of
+                    "" -> [];
+                    _ -> ["  ",?B("Note"),": ", Note, "\n\n"]
+                end,
+
     DescFmt = ["  ",?B("Description"),":", prepare_description(15, MaxC, Desc)],
 
     LongDescFmt = case LongDesc of
@@ -892,11 +917,11 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 		      _ -> ["", prepare_description(0, MaxC, LongDesc), "\n\n"]
 		  end,
 
-    NoteEjabberdctlList = case has_list_args(ArgsDef) of
+    NoteEjabberdctlList = case has_list_args(ArgsDefPreliminary) of
 			  true -> ["  ", ?B("Note:"), " In a list argument, separate the elements using the , character for example: one,two,three\n\n"];
 			  false -> ""
 		      end,
-    NoteEjabberdctlTuple = case has_tuple_args(ArgsDef) of
+    NoteEjabberdctlTuple = case has_tuple_args(ArgsDefPreliminary) of
 			  true -> ["  ", ?B("Note:"), " In a tuple argument, separate the elements using the : character for example: members_only:true\n\n"];
 			  false -> ""
 		      end,
@@ -904,9 +929,47 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
     case Cmd of
         "help" -> ok;
         _ -> print([NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt,
-                    "\n\n", XmlrpcFmt, TagsFmt, "\n\n", ModuleFmt, DescFmt, "\n\n"], [])
+                    "\n\n", ExampleFmt, TagsFmt, "\n\n", ModuleFmt, NoteFmt, DescFmt, "\n\n"], [])
     end,
     print([LongDescFmt, NoteEjabberdctlList, NoteEjabberdctlTuple], []).
+
+%%-----------------------------
+%% Format Arguments Help
+%%-----------------------------
+
+add_args_desc(Definitions, none) ->
+    Descriptions = lists:duplicate(length(Definitions), ""),
+    add_args_desc(Definitions, Descriptions);
+add_args_desc(Definitions, Descriptions) ->
+    lists:zipwith(fun({Name, Type}, Description) ->
+                          {Name, Type, Description} end,
+                  Definitions,
+                  Descriptions).
+
+format_usage_ctype1({_Name, _Type} = Definition, Indentation, ShCode) ->
+    [Arg] = add_args_desc([Definition], none),
+    format_usage_ctype1(Arg, Indentation, ShCode);
+format_usage_ctype1({Name, Type, Description}, Indentation, ShCode) ->
+    TypeString = case Type of
+        {list, ElementDef} ->
+            NameFmt = atom_to_list(Name),
+            Indentation2 = Indentation + length(NameFmt) + 4,
+            ElementFmt = format_usage_ctype1(ElementDef, Indentation2, ShCode),
+            io_lib:format("[ ~s ]", [lists:flatten(ElementFmt)]);
+        {tuple, ElementsDef} ->
+            NameFmt = atom_to_list(Name),
+            Indentation2 = Indentation + length(NameFmt) + 4,
+            ElementsFmt = format_usage_tuple(ElementsDef, Indentation2),
+            io_lib:format("{ ~s }", [lists:flatten(ElementsFmt)]);
+        _ ->
+            Type
+    end,
+    DescriptionText = case Description of
+                          "" -> "";
+                          Description -> " : "++Description
+                      end,
+    io_lib:format("~p::~s~s", [Name, TypeString, DescriptionText]).
+
 
 format_usage_ctype(Type, _Indentation)
   when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary) or (Type==rescode) or (Type==restuple)->
@@ -926,12 +989,13 @@ format_usage_ctype({Name, {tuple, ElementsDef}}, Indentation) ->
     NameFmt = atom_to_list(Name),
     Indentation2 = Indentation + length(NameFmt) + 4,
     ElementsFmt = format_usage_tuple(ElementsDef, Indentation2),
-    [NameFmt, "::{ " | ElementsFmt].
+    [NameFmt, "::{ "] ++ ElementsFmt ++ [" }"].
+
 
 format_usage_tuple([], _Indentation) ->
     [];
 format_usage_tuple([ElementDef], Indentation) ->
-    [format_usage_ctype(ElementDef, Indentation) , " }"];
+    format_usage_ctype(ElementDef, Indentation);
 format_usage_tuple([ElementDef | ElementsDef], Indentation) ->
     ElementFmt = format_usage_ctype(ElementDef, Indentation),
     MarginString = lists:duplicate(Indentation, $\s), % Put spaces
@@ -947,6 +1011,102 @@ disable_logging() ->
 disable_logging() ->
     logger:set_primary_config(level, none).
 -endif.
+
+%%-----------------------------
+%% Format Example Help
+%%-----------------------------
+
+format_usage_example(_Cmd, none, _ResultExample, _Indentation) ->
+    "";
+format_usage_example(Cmd, ArgsExample, ResultExample, Indentation) ->
+    Arguments = format_usage_arguments(ArgsExample, []),
+    Result = format_usage_result([ResultExample], [], Indentation),
+    [lists:join(" ", ["ejabberdctl", Cmd] ++ Arguments) | Result].
+
+format_usage_arguments([], R) ->
+    lists:reverse(R);
+
+format_usage_arguments([Argument | Arguments], R)
+  when is_integer(Argument) ->
+    format_usage_arguments(Arguments, [integer_to_list(Argument) | R]);
+
+format_usage_arguments([[Integer|_] = Argument | Arguments], R)
+  when is_list(Argument) and is_integer(Integer) ->
+    Result = case contains_more_than_letters(Argument) of
+                 true -> ["\"", Argument, "\""];
+                 false -> [Argument]
+             end,
+    format_usage_arguments(Arguments, [Result | R]);
+
+format_usage_arguments([[Element | _] = Argument | Arguments], R)
+  when is_list(Argument) and is_tuple(Element) ->
+    ArgumentFmt = format_usage_arguments(Argument, []),
+    format_usage_arguments(Arguments, [lists:join(",", ArgumentFmt) | R]);
+
+format_usage_arguments([Argument | Arguments], R)
+  when is_list(Argument) ->
+    Result = format_usage_arguments(Argument, []),
+    format_usage_arguments(Arguments, [lists:join(",", Result) | R]);
+
+format_usage_arguments([Argument | Arguments], R)
+  when is_tuple(Argument) ->
+    Result = format_usage_arguments(tuple_to_list(Argument), []),
+    format_usage_arguments(Arguments, [lists:join(":", Result) | R]);
+
+format_usage_arguments([Argument | Arguments], R)
+  when is_binary(Argument) ->
+    Result = case contains_more_than_letters(binary_to_list(Argument)) of
+                 true -> ["\"", Argument, "\""];
+                 false -> [Argument]
+             end,
+    format_usage_arguments(Arguments, [Result | R]);
+
+format_usage_arguments([Argument | Arguments], R) ->
+    format_usage_arguments(Arguments, [Argument | R]).
+
+format_usage_result([none], _R, _Indentation) ->
+    "";
+format_usage_result([], R, _Indentation) ->
+    lists:reverse(R);
+
+format_usage_result([{Code, Text} | Arguments], R, Indentation)
+  when is_atom(Code) and is_binary(Text) ->
+    format_usage_result(Arguments, [Text | R], Indentation);
+
+format_usage_result([Argument | Arguments], R, Indentation)
+  when is_atom(Argument) ->
+    format_usage_result(Arguments, [["\'", atom_to_list(Argument), "\'"] | R], Indentation);
+
+format_usage_result([Argument | Arguments], R, Indentation)
+  when is_integer(Argument) ->
+    format_usage_result(Arguments, [integer_to_list(Argument) | R], Indentation);
+
+format_usage_result([[Integer|_] = Argument | Arguments], R, Indentation)
+  when is_list(Argument) and is_integer(Integer) ->
+    format_usage_result(Arguments, [Argument | R], Indentation);
+
+format_usage_result([[Element | _] = Argument | Arguments], R, Indentation)
+  when is_list(Argument) and is_tuple(Element) ->
+    ArgumentFmt = format_usage_result(Argument, [], Indentation),
+    format_usage_result(Arguments, [lists:join("\n"++Indentation, ArgumentFmt) | R], Indentation);
+
+format_usage_result([Argument | Arguments], R, Indentation)
+  when is_list(Argument) ->
+    format_usage_result(Arguments, [lists:join("\n"++Indentation, Argument) | R], Indentation);
+
+format_usage_result([Argument | Arguments], R, Indentation)
+  when is_tuple(Argument) ->
+    Result = format_usage_result(tuple_to_list(Argument), [], Indentation),
+    format_usage_result(Arguments, [lists:join("\t", Result) | R], Indentation);
+
+format_usage_result([Argument | Arguments], R, Indentation) ->
+    format_usage_result(Arguments, [Argument | R], Indentation).
+
+contains_more_than_letters(Argument) ->
+    lists:any(fun(I) when (I < $A) -> true;
+                 (I) when (I > $z) -> true;
+                 (_) -> false end,
+              Argument).
 
 %%-----------------------------
 %% Register commands
