@@ -49,7 +49,7 @@ jobs:
           sudo apt-get -qq install python3-dev texinfo unzip
 
       - name: Install erlang/OTP
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@v1.17.2
         with:
           otp-version: ${{ env.OTP_VSN }}
           elixir-version: ${{ env.ELIXIR_VSN }}
