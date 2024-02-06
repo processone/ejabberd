@@ -823,7 +823,7 @@ write_commit_json(Url, RepDir) ->
     end.
 
 find_commit_json(Attrs) ->
-    {_, FromPath} = lists:keyfind(path, 1, Attrs),
+    FromPath = get_module_path(Attrs),
     case {find_commit_json_path(FromPath),
           find_commit_json_path(filename:join(FromPath, ".."))}
     of
@@ -946,7 +946,7 @@ get_page(Node, Query, Lang) ->
     Title ++ Result ++ Contents.
 
 get_module_home(Module, Attrs) ->
-    case element(2, lists:keyfind(home, 1, Attrs)) of
+    case get_module_information(home, Attrs) of
         "https://github.com/processone/ejabberd-contrib/tree/master/" = P1 ->
             P1 ++ atom_to_list(Module);
         Other ->
@@ -954,17 +954,26 @@ get_module_home(Module, Attrs) ->
     end.
 
 get_module_summary(Attrs) ->
-    element(2, lists:keyfind(summary, 1, Attrs)).
+    get_module_information(summary, Attrs).
 
 get_module_author(Attrs) ->
-    element(2, lists:keyfind(author, 1, Attrs)).
+    get_module_information(author, Attrs).
+
+get_module_path(Attrs) ->
+    get_module_information(path, Attrs).
+
+get_module_information(Attribute, Attrs) ->
+    case lists:keyfind(Attribute, 1, Attrs) of
+        false -> "";
+        {_, Value} -> Value
+    end.
 
 get_installed_module_el({ModAtom, Attrs}, Lang) ->
     Mod = misc:atom_to_binary(ModAtom),
     Home = list_to_binary(get_module_home(ModAtom, Attrs)),
     Summary = list_to_binary(get_module_summary(Attrs)),
     Author = list_to_binary(get_module_author(Attrs)),
-    {_, FromPath} = lists:keyfind(path, 1, Attrs),
+    FromPath = get_module_path(Attrs),
     FromFile = case find_commit_json_path(FromPath) of
                    {ok, FF} -> FF;
                    {error, _} -> "dummypath"
