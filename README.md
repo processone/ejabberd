@@ -37,9 +37,9 @@ Installation
 There are several ways to install ejabberd:
 
 - Source code: compile yourself, see [COMPILE](COMPILE.md)
-- Installers from [ProcessOne Download][p1download] or [ejabberd GitHub Releases][releases] (run/deb/rpm for x64 and arm64)
-- `ecs` container image available in [Docker Hub][hubecs] and [Github Packages][packagesecs], see [ecs README][docker-ecs-readme] (for x64)
-- `ejabberd` container image available in [Github Packages][packages], see [CONTAINER](CONTAINER.md) (for x64 and arm64)
+- Installers: [ProcessOne Download][p1download] and [GitHub Releases][releases] for releases, [GitHub Actions](https://github.com/processone/ejabberd/actions/workflows/installers.yml) for master branch (run/deb/rpm for x64 and arm64)
+- `ecs` container image: [Docker Hub][hubecs] and [Github Packages][packagesecs], see [ecs README][docker-ecs-readme] (for x64)
+- `ejabberd` container image: [Github Packages][packages] for releases and master branch, see [CONTAINER](CONTAINER.md) (for x64 and arm64)
 - Using your [Operating System package][osp]
 - Using the [Homebrew][homebrew] package manager
 
@@ -70,6 +70,10 @@ Translations can be improved online [using Weblate][weblate]
 or in your local machine as explained in [Localization][localization].
 
 Documentation for developers is available in [ejabberd docs: Developers][docs-dev].
+
+There are nightly builds of ejabberd, both for `master` branch and for Pull Requests:
+- Installers: go to [GitHub Actions: Installers](https://github.com/processone/ejabberd/actions/workflows/installers.yml), open the most recent commit, on the bottom of that commit page, download the `ejabberd-packages.zip` artifact.
+- `ejabberd` container image: go to [ejabberd Github Packages][packages]
 
 Security reports or concerns should preferably be reported privately,
 please send an email to the address: contact at process-one dot net
@@ -123,3 +127,4 @@ and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MI
 [xeps]: https://www.process-one.net/en/ejabberd/protocols/
 [xmpp]: https://xmpp.org/
 [xmppej]: https://xmpp.org/software/servers/ejabberd/
+
