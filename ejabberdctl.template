@@ -248,16 +248,27 @@ help()
 }
 
 # dynamic node name helper
-uid()
-{
-    uuid=$(uuidgen 2>/dev/null)
-    random=$(awk 'BEGIN { srand(); print int(rand()*32768) }' /dev/null)
-    [ -z "$uuid" ] && [ -f /proc/sys/kernel/random/uuid ] && uuid=$(cat /proc/sys/kernel/random/uuid)
-    [ -z "$uuid" ] && uuid=$(printf "%X" "${random:-$$}$(date +%M%S)")
-    uuid=$(printf '%s' $uuid | sed 's/^\(...\).*$/\1/')
-    [ $# -eq 0 ] && echo "${uuid}-${ERLANG_NODE}"
-    [ $# -eq 1 ] && echo "${uuid}-${1}-${ERLANG_NODE}"
-    [ $# -eq 2 ] && echo "${uuid}-${1}@${2}"
+uid() {
+  if erl -noinput -boot start_clean -eval 'case erlang:system_info(otp_release) >= "23" of true -> halt(1); _ -> halt(0) end.' ; then
+    N=1
+    PF=$(( $$ % 97 ))
+    while
+      case $# in
+        0) NN="${PF}-${N}-${ERLANG_NODE}"
+          ;;
+        1) NN="${PF}-${N}-${1}-${ERLANG_NODE}"
+          ;;
+        2) NN="${PF}-${N}-${1}@${2}"
+          ;;
+      esac
+      N=$(( N + 1 + ( $$ % 5 ) ))
+      epmd -names 2>/dev/null | grep -q " ${NN%@*} "
+    do :; done
+    echo $NN
+  else
+    # for R23+ use native dynamic node code
+    echo undefined
+  fi
 }
 
 # stop epmd if there is no other running node
@@ -300,7 +311,9 @@ wait_status()
         if [ $timeout -eq 0 ] ; then
             status="$1"
         else
-            exec_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
+            exec_erl "$(uid ctl)" -hidden -noinput \
+                     -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
+                     -s ejabberd_ctl \
                      -extra "$ERLANG_NODE" $NO_TIMEOUT status > /dev/null
             status="$?"
         fi
@@ -361,7 +374,9 @@ case $1 in
         [ "$PEER" = "${PEER%.*}" ] && PS="-s"
         set_dist_client
         exec_cmd "$ERL" ${PS:--}name "$(uid ping "$(hostname $PS)")" $ERLANG_OPTS \
-                 -noinput -hidden -eval 'io:format("~p~n",[net_adm:ping('"'$PEER'"')])' \
+                 -noinput -hidden \
+                 -eval 'net_kernel:connect_node('"'$PEER'"')' \
+                 -eval 'io:format("~p~n",[net_adm:ping('"'$PEER'"')])' \
                  -s erlang halt -output text
         ;;
     started)
@@ -374,7 +389,9 @@ case $1 in
         ;;
     *)
         set_dist_client
-        exec_erl "$(uid ctl)" -hidden -noinput -s ejabberd_ctl \
+        exec_erl "$(uid ctl)" -hidden -noinput \
+                 -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
+                 -s ejabberd_ctl \
                  -extra "$ERLANG_NODE" $NO_TIMEOUT "$@"
         result=$?
         case $result in
