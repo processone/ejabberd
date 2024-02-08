@@ -228,7 +228,9 @@ help()
 
 # dynamic node name helper
 uid() {
-  if erl -noinput -boot start_clean -eval 'case erlang:system_info(otp_release) >= "23" of true -> halt(1); _ -> halt(0) end.' ; then
+  ERTSVERSION="$("$ERL" -version 2>&1 | sed 's|.*\([0-9][0-9]\).*|\1|g')"
+  if [ $ERTSVERSION -lt 11 ] ; then # otp 23.0 includes erts 11.0
+    # Erlang/OTP lower than 23, which doesn's support dynamic node code
     N=1
     PF=$(( $$ % 97 ))
     while
@@ -241,11 +243,12 @@ uid() {
           ;;
       esac
       N=$(( N + 1 + ( $$ % 5 ) ))
-      epmd -names 2>/dev/null | grep -q " ${NN%@*} "
+      "$EPMD" -names 2>/dev/null | grep -q " ${NN%@*} "
     do :; done
     echo $NN
   else
-    # for R23+ use native dynamic node code
+    # Erlang/OTP 23 or higher: use native dynamic node code
+    # https://www.erlang.org/patches/otp-23.0#OTP-13812
     echo undefined
   fi
 }
