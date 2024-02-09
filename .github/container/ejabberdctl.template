@@ -366,10 +366,10 @@ case $1 in
         ;;
     etop)
         set_dist_client
-        exec_erl "$(uid top)" -hidden -node "$ERLANG_NODE" \
+        exec_erl "$(uid top)" -hidden -remsh "$ERLANG_NODE" \
                  -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
                  -s etop \
-                 -s erlang halt -output text
+                 -output text
         ;;
     iexdebug)
         debugwarning
