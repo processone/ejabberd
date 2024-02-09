@@ -898,7 +898,7 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
 
     IsDefinerMod = case Definer of
                      unknown -> true;
-                     _ -> lists:member(gen_mod, proplists:get_value(behaviour, Definer:module_info(attributes)))
+                     _ -> lists:member([gen_mod], proplists:get_all_values(behaviour, Definer:module_info(attributes)))
                  end,
     ModuleFmt = case IsDefinerMod of
                     true -> ["  ",?B("Module"),": ", atom_to_list(Definer), "\n\n"];
