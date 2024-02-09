@@ -2,6 +2,7 @@
 #' definitions
 #
 
+ESCRIPT = @ESCRIPT@
 REBAR = @ESCRIPT@ @rebar@
 MIX = @rebar@
 AWK = @AWK@
@@ -9,6 +10,13 @@ INSTALL = @INSTALL@
 MKDIR_P = @MKDIR_P@
 SED = @SED@
 ERL = @ERL@
+EPMD = @EPMD@
+IEX = @IEX@
+
+INSTALLUSER=@INSTALLUSER@
+INSTALLGROUP=@INSTALLGROUP@
+
+REBAR_ENABLE_ELIXIR = @elixir@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -81,7 +89,6 @@ LOGDIR = @localstatedir@/log/ejabberd
 #' install user
 #
 
-INSTALLUSER=@INSTALLUSER@
 # if no user was enabled, don't set privileges or ownership
 ifeq ($(INSTALLUSER),)
   O_USER=
@@ -96,8 +103,8 @@ else
   CHOWN_OUTPUT=&1
   INIT_USER=$(INSTALLUSER)
 endif
+
 # if no group was enabled, don't set privileges or ownership
-INSTALLGROUP=@INSTALLGROUP@
 ifneq ($(INSTALLGROUP),)
   G_USER=-g $(INSTALLGROUP)
 endif
@@ -113,8 +120,6 @@ else
 REBAR_VER:=$(shell $(REBAR) --version | $(AWK) -F '[ .]' '/rebar / {print $$2}')
 REBAR_VER_318:=$(shell $(REBAR) --version | $(AWK) -F '[ .]' '/rebar / {print ($$2 == 3 && $$3 >= 18 ? 1 : 0)}')
 endif
-
-REBAR_ENABLE_ELIXIR = @elixir@
 
 ifeq "$(REBAR_VER)" "6"
   REBAR=$(MIX)
@@ -133,7 +138,7 @@ ifeq "$(REBAR_VER)" "6"
   ELIXIR_LIBDIR=":$(ELIXIR_LIBDIR_RAW)"
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
-  RELIVECMD=escript rel/relive.escript && MIX_ENV=dev RELIVE=true iex --name ejabberd@localhost -S mix run
+  RELIVECMD=$(ESCRIPT) rel/relive.escript && MIX_ENV=dev RELIVE=true $(IEX) --name ejabberd@localhost -S mix run
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
 else
@@ -362,15 +367,15 @@ LOGS_DIR = ${relivedir}/logs
 #
 
 ejabberdctl.relive:
-	$(SED)  -e "s*{{installuser}}*@INSTALLUSER@*g" \
+	$(SED)  -e "s*{{installuser}}*${INSTALLUSER}*g" \
 		-e "s*{{config_dir}}*${CONFIG_DIR}*g" \
 		-e "s*{{logs_dir}}*${LOGS_DIR}*g" \
 		-e "s*{{spool_dir}}*${SPOOL_DIR}*g" \
-		-e "s*{{bindir}}*@bindir@*g" \
+		-e "s*{{bindir}}*${BINDIR}*g" \
 		-e "s*{{libdir}}*${relivelibdir}${ELIXIR_LIBDIR}*g" \
-		-e "s*{{iexpath}}*@IEX@*g" \
-		-e "s*{{erl}}*@ERL@*g" \
-		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
+		-e "s*{{iexpath}}*${IEX}*g" \
+		-e "s*{{erl}}*${ERL}*g" \
+		-e "s*{{epmd}}*${EPMD}*g" ejabberdctl.template \
 		> ejabberdctl.relive
 
 ejabberd.init:
@@ -386,15 +391,15 @@ ejabberd.service:
 	chmod 644 ejabberd.service
 
 ejabberdctl.example: vars.config
-	$(SED)  -e "s*{{installuser}}*@INSTALLUSER@*g" \
+	$(SED)  -e "s*{{installuser}}*${INSTALLUSER}*g" \
 		-e "s*{{config_dir}}*${ETCDIR}*g" \
 		-e "s*{{logs_dir}}*${LOGDIR}*g" \
 		-e "s*{{spool_dir}}*${SPOOLDIR}*g" \
-		-e "s*{{bindir}}*@bindir@*g" \
-		-e "s*{{libdir}}*@libdir@${ELIXIR_LIBDIR}*g" \
-		-e "s*{{iexpath}}*@IEX@*g" \
-		-e "s*{{erl}}*@ERL@*g" \
-		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
+		-e "s*{{bindir}}*${BINDIR}*g" \
+		-e "s*{{libdir}}*${LIBDIR}${ELIXIR_LIBDIR}*g" \
+		-e "s*{{iexpath}}*${IEX}*g" \
+		-e "s*{{erl}}*${ERL}*g" \
+		-e "s*{{epmd}}*${EPMD}*g" ejabberdctl.template \
 		> ejabberdctl.example
 
 scripts: ejabberd.init ejabberd.service ejabberdctl.example
@@ -430,12 +435,12 @@ install-main:
 	#
 	# Spool directory
 	$(INSTALL) -d -m 750 $(O_USER) $(DESTDIR)$(SPOOLDIR)
-	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(DESTDIR)$(SPOOLDIR) >$(CHOWN_OUTPUT)
+	$(CHOWN_COMMAND) -R $(INSTALLUSER) $(DESTDIR)$(SPOOLDIR) >$(CHOWN_OUTPUT)
 	chmod -R 750 $(DESTDIR)$(SPOOLDIR)
 	#
 	# Log directory
 	$(INSTALL) -d -m 750 $(O_USER) $(DESTDIR)$(LOGDIR)
-	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(DESTDIR)$(LOGDIR) >$(CHOWN_OUTPUT)
+	$(CHOWN_COMMAND) -R $(INSTALLUSER) $(DESTDIR)$(LOGDIR) >$(CHOWN_OUTPUT)
 	chmod -R 750 $(DESTDIR)$(LOGDIR)
 	#
 	# Documentation
