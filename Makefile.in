@@ -160,7 +160,7 @@ endif
   XREFOPTIONS=
   CLEANARG=--all
   REBARREL=$(REBAR) as prod tar
-  REBARDEV=REBAR_PROFILE=dev $(REBAR) release
+  REBARDEV=$(REBAR) as dev release
   RELIVECMD=$(REBAR) relive
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
