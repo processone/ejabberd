@@ -150,6 +150,7 @@ ifeq ($(REBAR_ENABLE_ELIXIR),true)
   ELIXIR_LIBDIR_RAW=$(shell elixir -e "IO.puts(:filename.dirname(:code.lib_dir(:elixir)))" -e ":erlang.halt")
   ELIXIR_LIBDIR=":$(ELIXIR_LIBDIR_RAW)"
   EXPLICIT_ELIXIR_COMPILE=MIX_ENV=default mix compile.elixir
+  EXPLICIT_ELIXIR_COMPILE_DEV=MIX_ENV=dev mix compile.elixir
   PREPARE_ELIXIR_SCRIPTS=$(MKDIR_P) rel/overlays; cp $(ELIXIR_LIBDIR_RAW)/../bin/iex rel/overlays/; cp $(ELIXIR_LIBDIR_RAW)/../bin/elixir rel/overlays/; sed -i 's|ERTS_BIN=$$|ERTS_BIN=$$SCRIPT_PATH/../../erts-{{erts_vsn}}/bin/|' rel/overlays/elixir
 endif
 ifeq "$(REBAR_VER)" "3"
@@ -170,7 +171,7 @@ endif
   CLEANARG=--all
   REBARREL=$(REBAR) as prod tar
   REBARDEV=$(REBAR) as dev release
-  RELIVECMD=$(REBAR) relive
+  RELIVECMD=$(REBAR) as dev relive
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
   GET_DEPS_TRANSLATIONS=$(REBAR) as translations $(GET_DEPS)
@@ -377,6 +378,7 @@ uninstall-librel:
 #
 
 relive:
+	$(EXPLICIT_ELIXIR_COMPILE_DEV)
 	$(RELIVECMD)
 
 relivelibdir=$(shell pwd)/$(DEPSDIR)

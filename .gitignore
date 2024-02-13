@@ -34,6 +34,7 @@
 /priv/bin/captcha*sh
 /priv/sql
 /rel/ejabberd
+/recompile.log
 /_build
 /database/
 /.rebar
