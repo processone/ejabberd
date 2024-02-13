@@ -331,13 +331,18 @@ post_waiter_loop()
     LIST=$@
     HEAD=${LIST%% ; *}
     TAIL=${LIST#* ; }
-    echo ":> ejabberdctl $HEAD"
-    $0 $HEAD
+    HEAD2=${HEAD#\! *}
+    echo ":> ejabberdctl $HEAD2"
+    $0 $HEAD2
     ctlstatus=$?
     if [ $ctlstatus -ne 0 ] ; then
-        echo ":> FAILURE in command '$HEAD' !!! Stopping ejabberd..."
-        $0 halt > /dev/null
-        exit $ctlstatus
+        if [ "$HEAD" != "$HEAD2" ] ; then
+            echo ":> FAILURE in command '$HEAD2' !!! Ignoring result"
+        else
+            echo ":> FAILURE in command '$HEAD' !!! Stopping ejabberd..."
+            $0 halt > /dev/null
+            exit $ctlstatus
+        fi
     fi
     [ "$HEAD" = "$TAIL" ] || post_waiter_loop $TAIL
 }

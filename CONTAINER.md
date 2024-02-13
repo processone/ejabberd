@@ -221,10 +221,13 @@ and reads `CTL_ON_START` every time the container is started.
 Those variables can contain one ejabberdctl command,
 or several commands separated with the blankspace and `;` characters.
 
+By default failure of any of commands executed that way would
+abort start, this can be disabled by prefixing commands with `!`
+
 Example usage (or check the [full example](#customized-example)):
 ```yaml
     environment:
-      - CTL_ON_CREATE=register admin localhost asd
+      - CTL_ON_CREATE=\! register admin localhost asd
       - CTL_ON_START=stats registeredusers ;
                      check_password admin localhost asd ;
                      status
@@ -411,7 +414,9 @@ In this example, the main container is created first.
 Once it is fully started and healthy, a second container is created,
 and once ejabberd is started in it, it joins the first one.
 
-An account is registered in the first node when created,
+An account is registered in the first node when created (and
+we ignore errors that can happen when doing that - for example
+whenn account already exists),
 and it should exist in the second node after join.
 
 Notice that in this example the main container does not have access
@@ -428,7 +433,7 @@ services:
     environment:
       - ERLANG_NODE_ARG=ejabberd@main
       - ERLANG_COOKIE=dummycookie123
-      - CTL_ON_CREATE=register admin localhost asd
+      - CTL_ON_CREATE=\! register admin localhost asd
 
   replica:
     image: ghcr.io/processone/ejabberd
