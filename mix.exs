@@ -132,6 +132,8 @@ defmodule Ejabberd.MixProject do
 
   defp cond_deps do
     for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0"}},
+                         {Mix.env() == :translations,
+                          {:ejabberd_po, git: "https://github.com/processone/ejabberd-po.git"}},
                          {config(:redis), {:eredis, "~> 1.2.0"}},
                          {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},

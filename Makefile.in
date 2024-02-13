@@ -141,6 +141,8 @@ ifeq "$(REBAR_VER)" "6"
   RELIVECMD=$(ESCRIPT) rel/relive.escript && MIX_ENV=dev RELIVE=true $(IEX) --name ejabberd@localhost -S mix run
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
+  GET_DEPS_TRANSLATIONS=MIX_ENV=translations $(REBAR) $(GET_DEPS)
+  DEPSDIR_TRANSLATIONS=deps
 else
 ifeq ($(REBAR_ENABLE_ELIXIR),true)
   ELIXIR_LIBDIR_RAW=$(shell elixir -e "IO.puts(:filename.dirname(:code.lib_dir(:elixir)))" -e ":erlang.halt")
@@ -169,6 +171,8 @@ endif
   RELIVECMD=$(REBAR) relive
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
+  GET_DEPS_TRANSLATIONS=$(REBAR) as translations $(GET_DEPS)
+  DEPSDIR_TRANSLATIONS=_build/translations/lib
 else
   SKIPDEPS=skip_deps=true
   LISTDEPS=-q list-deps
@@ -228,7 +232,8 @@ options: all
 	tools/opt_types.sh ejabberd_option $(EBINDIR)
 
 translations:
-	tools/prepare-tr.sh $(DEPSDIR)
+	$(GET_DEPS_TRANSLATIONS)
+	tools/prepare-tr.sh $(DEPSDIR_TRANSLATIONS)
 
 doap:
 	tools/generate-doap.sh
@@ -647,7 +652,7 @@ help:
 	@echo "  doap           Generate DOAP file"
 	@echo "  edoc           Generate edoc documentation (unused)"
 	@echo "  options        Generate ejabberd_option.erl"
-	@echo "  translations   Extract translation files (requires --enable-tools)"
+	@echo "  translations   Extract translation files"
 	@echo "  TAGS           Generate tags file for text editors"
 	@echo ""
 	@echo "  dialyzer       Run Dialyzer static analyzer"
