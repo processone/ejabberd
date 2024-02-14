@@ -36,7 +36,7 @@ jobs:
 
       - name: Get erlang/OTP version for bootstrapping
         run: |
-          echo "OTP_VSN=$(awk '/^otp_vsn=/ {{gsub(/[^0-9.]/, ""); print}}' tools/make-binaries)" >> $GITHUB_ENV
+          echo "OTP_VSN=$(awk '/^otp_vsn=/ {{gsub(/[^0-9.rc-]/, ""); print}}' tools/make-binaries)" >> $GITHUB_ENV
           echo "ELIXIR_VSN=$(awk '/^elixir_vsn=/ {{gsub(/[^0-9.]/, ""); print}}' tools/make-binaries)" >> $GITHUB_ENV
 
       - name: Install prerequisites
