@@ -20,7 +20,7 @@
 %%%
 %%%----------------------------------------------------------------------
 -module(mod_matrix_gw_sup).
--if(?OTP_RELEASE >= 24).
+-ifndef(OTP_BELOW_24).
 -behaviour(supervisor).
 
 %% API

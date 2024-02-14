@@ -23,7 +23,7 @@
 %%%
 %%%-------------------------------------------------------------------
 -module(mod_matrix_gw_s2s).
--if(?OTP_RELEASE >= 24).
+-ifndef(OTP_BELOW_24).
 -behaviour(gen_statem).
 
 %% API

@@ -24,7 +24,7 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_matrix_gw).
--if(?OTP_RELEASE >= 24).
+-ifndef(OTP_BELOW_24).
 
 -author('alexey@process-one.net').
 
