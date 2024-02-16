@@ -72,7 +72,7 @@
 
 -record(data,
         {host :: binary(),
-         local_user :: jid(),
+         local_user :: jid() | undefined,
          remote_user :: binary() | undefined,
          remote_servers = #{},
          room_id :: binary(),
@@ -347,14 +347,7 @@ send_join(Host, Origin, RoomID, EventID, JSON) ->
 %% process to initialize.
 %% @end
 %%--------------------------------------------------------------------
--spec init(Args :: term()) ->
-                  {gen_statem:callback_mode(),
-                   State :: term(), Data :: term()} |
-                  {gen_statem:callback_mode(),
-                   State :: term(), Data :: term(),
-                   [gen_statem:action()] | gen_statem:action()} |
-                  ignore |
-                  {stop, Reason :: term()}.
+-spec init(Args :: term()) -> gen_statem:init_result(term()).
 init([Host, RoomID]) ->
     mnesia:dirty_write(
       #matrix_room{room_id = RoomID,

@@ -216,14 +216,7 @@ check_signature(Host, JSON) ->
 %% process to initialize.
 %% @end
 %%--------------------------------------------------------------------
--spec init(Args :: term()) ->
-                  {gen_statem:callback_mode(),
-                   State :: term(), Data :: term()} |
-                  {gen_statem:callback_mode(),
-                   State :: term(), Data :: term(),
-                   [gen_statem:action()] | gen_statem:action()} |
-                  ignore |
-                  {stop, Reason :: term()}.
+-spec init(Args :: term()) -> gen_statem:init_result(term()).
 init([Host, MatrixServer]) ->
     mnesia:dirty_write(
       #matrix_s2s{to = MatrixServer,
@@ -476,8 +469,9 @@ do_get_matrix_host_port(Data) ->
                                 "_matrix._tcp." ++ binary_to_list(MatrixServer),
                             case inet_res:getbyname(SRVName, srv, 5000) of
                                 {ok, HostEntry} ->
-                                    case h_addr_list_to_host_ports(
-                                           HostEntry#hostent.h_addr_list) of
+                                    {hostent, _Name, _Aliases, _AddrType, _Len,
+                                     HAddrList} = HostEntry,
+                                    case h_addr_list_to_host_ports(HAddrList) of
                                         {ok, [{Host, Port} | _]} ->
                                             {list_to_binary(Host), Port};
                                         _ ->
@@ -531,7 +525,7 @@ check_signature(JSON, SignatureName, KeyID, VerifyKey) ->
         Signature = mod_matrix_gw:base64_decode(SSignature),
         JSON2 = maps:without([<<"signatures">>, <<"unsigned">>], JSON),
         Msg = mod_matrix_gw:encode_canonical_json(JSON2),
-        public_key:verify(Msg, ignored, Signature, {ed_pub, ed25519, VerifyKey})
+        crypto:verify(eddsa, none, Msg, Signature, [VerifyKey, ed25519])
     catch
         _:_ ->
             false

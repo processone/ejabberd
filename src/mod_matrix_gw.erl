@@ -362,16 +362,6 @@ process([<<"federation">>, <<"v2">>, <<"send_join">>, RoomID, EventID],
             case get_id_domain_exn(Sender) of
                 Origin ->
                     case mod_matrix_gw_room:send_join(Host, Origin, RoomID, EventID, JSON) of
-                        {error, room_not_found} ->
-                            Res = #{<<"errcode">> => <<"M_NOT_FOUND">>,
-                                    <<"error">> => <<"Unknown room">>},
-                            {404, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                             jiffy:encode(Res)};
-                        {error, not_invited} ->
-                            Res = #{<<"errcode">> => <<"M_FORBIDDEN">>,
-                                    <<"error">> => <<"You are not invited to this room">>},
-                            {403, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                             jiffy:encode(Res)};
                         {error, Error} when is_binary(Error) ->
                             Res = #{<<"errcode">> => <<"M_BAD_REQUEST">>,
                                     <<"error">> => Error},
@@ -733,12 +723,22 @@ sign_json(Host, JSON) ->
     Msg = encode_canonical_json(JSON2),
     SignatureName = mod_matrix_gw_opt:matrix_domain(Host),
     KeyName = mod_matrix_gw_opt:key_name(Host),
-    {PubKey, PrivKey} = mod_matrix_gw_opt:key(Host),
+    {_PubKey, PrivKey} = mod_matrix_gw_opt:key(Host),
     KeyID = <<"ed25519:", KeyName/binary>>,
-    Sig = public_key:sign(Msg, ignored, {ed_pri, ed25519, PubKey, PrivKey}),
+    Sig = crypto:sign(eddsa, none, Msg, [PrivKey, ed25519]),
     Sig64 = base64_encode(Sig),
     Signatures2 = Signatures#{SignatureName => #{KeyID => Sig64}},
     JSON#{<<"signatures">> => Signatures2}.
+
+-spec send_request(
+        binary(),
+        get | post | put,
+        binary(),
+        [binary()],
+        [{binary(), binary()}],
+        none | jiffy:json_object(),
+        [any()],
+        [any()]) -> {ok, any()} | {error, any()}.
 
 send_request(Host, Method, MatrixServer, Path, Query, JSON,
              HTTPOptions, Options) ->
@@ -751,13 +751,13 @@ send_request(Host, Method, MatrixServer, Path, Query, JSON,
                 URI2 = str:join(
                          lists:map(
                            fun({K, V}) ->
-                                   [uri_string:quote(K), $=, uri_string:quote(V)]
+                                   iolist_to_binary(
+                                     [uri_string:quote(K), $=,
+                                      uri_string:quote(V)])
                            end, Query), $&),
                 <<URI1/binary, $?, URI2/binary>>
         end,
-    % TODO
     {MHost, MPort} = mod_matrix_gw_s2s:get_matrix_host_port(Host, MatrixServer),
-    %{MHost, MPort} = {MatrixServer, 8008},
     URL = <<"https://", MHost/binary,
             ":", (integer_to_binary(MPort))/binary,
             URI/binary>>,
