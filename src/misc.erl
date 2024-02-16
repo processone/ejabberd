@@ -41,7 +41,7 @@
 	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0,
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
-	 crypto_hmac/3, crypto_hmac/4, uri_parse/1, uri_parse/2,
+	 crypto_hmac/3, crypto_hmac/4, uri_parse/1, uri_parse/2, uri_quote/1,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
 	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1]).
 
@@ -95,6 +95,14 @@ uri_parse(URL, Protocols) ->
 	{error, Atom, _} ->
 	    {error, Atom}
     end.
+-endif.
+
+-ifdef(OTP_BELOW_25).
+uri_quote(Data) ->
+    http_uri:encode(Data).
+-else.
+uri_quote(Data) ->
+    uri_string:quote(Data).
 -endif.
 
 -ifdef(USE_OLD_CRYPTO_HMAC).
