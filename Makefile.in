@@ -3,7 +3,7 @@
 #
 
 ESCRIPT = @ESCRIPT@
-REBAR = @ESCRIPT@ @rebar@
+REBAR = @rebar@
 MIX = @rebar@
 AWK = @AWK@
 INSTALL = @INSTALL@
