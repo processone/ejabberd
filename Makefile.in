@@ -188,7 +188,7 @@ else
   REBARREL=$(REBAR) generate
   REBARDEV=
   RELIVECMD=@echo "Rebar2 detected... relive not supported.\
-	 \nTry: ./configure --with-rebar=./rebar3 ; make relive"
+	 \nTry: ./configure --with-rebar=rebar3 ; make relive"
   REL_LIB_DIR = rel/ejabberd/lib
   COPY_REL_TARGET = rel
 endif
