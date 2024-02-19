@@ -2031,12 +2031,12 @@ get_sender_power_level(EventID, Data) ->
                       case {RoomVersion#room_version.implicit_room_creator, E} of
                           {false,
                            #event{type = ?ROOM_CREATE, state_key = <<"">>,
-                                  json = #event{json = #{<<"content">> :=
-                                                             #{<<"creator">> := Sender}}}}} ->
+                                  json = #{<<"content">> :=
+                                               #{<<"creator">> := Sender}}}} ->
                               100;
                           {true,
                            #event{type = ?ROOM_CREATE, state_key = <<"">>,
-                                  json = #event{sender = Sender}}} ->
+                                  sender = Sender}} ->
                               100;
                           _ ->
                               Acc
