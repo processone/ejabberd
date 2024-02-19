@@ -52,7 +52,7 @@ jobs:
         otp-version: ${{ matrix.otp }}
 
     - name: Get a compatible Rebar3
-      if: matrix.otp <= '21.3'
+      if: matrix.otp < 24
       run: |
         rm rebar3
         wget https://github.com/processone/ejabberd/raw/21.12/rebar3
