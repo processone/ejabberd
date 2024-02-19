@@ -67,7 +67,7 @@
          sender :: binary(),
          prev_events :: [binary()],
          origin_server_ts :: integer(),
-         json :: jiffy:json_object(),
+         json :: #{atom() | binary() => jiffy:json_value()},
          state_map}).
 
 -record(data,

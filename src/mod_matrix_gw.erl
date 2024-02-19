@@ -736,7 +736,7 @@ sign_json(Host, JSON) ->
         binary(),
         [binary()],
         [{binary(), binary()}],
-        none | jiffy:json_object(),
+        none | #{atom() | binary() => jiffy:json_value()},
         [any()],
         [any()]) -> {ok, any()} | {error, any()}.
 
