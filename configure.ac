@@ -263,7 +263,7 @@ AC_ARG_ENABLE(system_deps,
 esac],[if test "x$system_deps" = "x"; then system_deps=false; fi])
 
 AC_ARG_ENABLE(tools,
-[AS_HELP_STRING([--enable-tools],[build development tools: etop (default: no)])],
+[AS_HELP_STRING([--enable-tools],[include debugging/development tools (default: no)])],
 [case "${enableval}" in
   yes) tools=true ;;
   no)  tools=false ;;
