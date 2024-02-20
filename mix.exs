@@ -187,9 +187,13 @@ defmodule Ejabberd.MixProject do
       {:ok, path} ->
         path
     end
-    case :file.consult(filepath) do
+    config2 = case :file.consult(filepath) do
       {:ok,config} -> config
       _ -> [stun: true, zlib: true]
+    end
+    case Mix.env() do
+      :dev -> List.keystore(config2, :tools, 0, {:tools, true})
+      _ -> config2
     end
   end
 
