@@ -24,7 +24,6 @@
 {debug, @debug@}.
 {new_sql_schema, @new_sql_schema@}.
 
-%% Ad-hoc directories with source files
 {tools, @tools@}.
 
 %% Dependencies
