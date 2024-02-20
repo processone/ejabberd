@@ -7,7 +7,7 @@
             _ -> []
         end,
         Tools = case lists:keyfind(tools, 1, Terms) of
-            {tools, true} -> [observer, runtime_tools]; % for `ejabberdctl etop`
+            {tools, true} -> [observer]; % for `ejabberdctl etop`
             _ -> []
         end,
         {[lists:keyfind(description, 1, Terms),

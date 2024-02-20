@@ -150,8 +150,7 @@ defmodule Ejabberd.MixProject do
 
   defp cond_apps do
     for {:true, app} <- [{config(:stun), :stun},
-                         {config(:tools), :observer},
-                         {config(:tools), :runtime_tools}], do:
+                         {config(:tools), :observer}], do:
       app
   end
 
