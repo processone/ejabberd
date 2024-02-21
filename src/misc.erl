@@ -98,8 +98,13 @@ uri_parse(URL, Protocols) ->
 -endif.
 
 -ifdef(OTP_BELOW_25).
+-ifdef(OTP_BELOW_24).
+uri_quote(Data) ->
+    Data.
+-else.
 uri_quote(Data) ->
     http_uri:encode(Data).
+-endif.
 -else.
 uri_quote(Data) ->
     uri_string:quote(Data).
