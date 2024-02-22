@@ -67,12 +67,22 @@
 -export([connecting/2, connecting/3,
 	 session_established/2, session_established/3]).
 
+-ifdef(OTP_RELEASE).
+    -if(?OTP_RELEASE >= 27).
+	-type(odbc_connection_reference() ::  odbc:connection_reference()).
+    -else.
+	-type(odbc_connection_reference() ::  pid()).
+    -endif.
+-else.
+    -type(odbc_connection_reference() ::  pid()).
+-endif.
+
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("ejabberd_stacktrace.hrl").
 
 -record(state,
-	{db_ref               :: undefined | pid() | odbc:connection_reference(),
+	{db_ref               :: undefined | pid() | odbc_connection_reference(),
 	 db_type = odbc       :: pgsql | mysql | sqlite | odbc | mssql,
 	 db_version           :: undefined | non_neg_integer() | {non_neg_integer(), atom(), non_neg_integer()},
 	 reconnect_count = 0  :: non_neg_integer(),
