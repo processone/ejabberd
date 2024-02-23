@@ -884,7 +884,8 @@ mod_options(Host) ->
 
 mod_doc() ->
     #{desc =>
-          [?T("Matrix gateway")],
+          [?T("https://matrix.org/[Matrix] gateway."), "",
+           ?T("This module is available since ejabberd 24.02.")],
       example =>
 	  ["listen:",
 	   "  -",
@@ -911,7 +912,7 @@ mod_doc() ->
               desc =>
                   ?T("This option defines the Jabber IDs of the service. "
                      "If the 'host' option is not specified, the Jabber ID will be "
-		     "the hostname of the virtual host with the prefix \"matrix.\". "
+		     "the hostname of the virtual host with the prefix '\"matrix.\"'. "
                      "The keyword '@HOST@' is replaced with the real virtual host name.")}},
 	   {key_name,
             #{value => "string()",
@@ -927,7 +928,7 @@ mod_doc() ->
                   ?T("If set to 'false', all packets failing to be delivered via an XMPP "
 		     "server-to-server connection will then be routed to the Matrix gateway "
 		     "by translating a Jabber ID 'user@matrixdomain.tld' to a Matrix user "
-		     "identifier '@user:matrixdomain.tld'. When set to true, messages "
+		     "identifier '@user:matrixdomain.tld'. When set to 'true', messages "
 		     "must be explicitly sent to the matrix gateway service Jabber ID to be "
 		     "routed to a remote Matrix server. In this case, to send a message to "
 		     "Matrix user '@user:matrixdomain.tld', the client must send a message "
