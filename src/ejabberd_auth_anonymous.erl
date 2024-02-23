@@ -153,7 +153,7 @@ check_password(User, _AuthzId, Server, _Password) ->
 	 %% If user exists in other module, reject anonnymous authentication
 	 true -> false;
 	 %% If we are not sure whether the user exists in other module, reject anon auth
-	 maybe -> false;
+	 maybe_exists -> false;
 	 false -> login(User, Server)
      end}.
 

@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['20.0', '25.3', '26.1']
+        otp: ['20.0', '25', '26', '27.0-rc1']
     runs-on: ubuntu-20.04
     services:
       redis:
@@ -38,7 +38,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Test shell scripts
-      if: matrix.otp == '25.3'
+      if: matrix.otp == '26'
       run: |
         shellcheck test/ejabberd_SUITE_data/gencerts.sh
         shellcheck tools/captcha.sh
@@ -46,13 +46,12 @@ jobs:
         shellcheck -x ejabberdctl.template
 
     - name: Get specific Erlang/OTP
-      if: matrix.otp != '25.3'
       uses: erlef/setup-beam@v1
       with:
         otp-version: ${{ matrix.otp }}
 
     - name: Get a compatible Rebar3
-      if: matrix.otp <= '21.3'
+      if: matrix.otp < 24
       run: |
         rm rebar3
         wget https://github.com/processone/ejabberd/raw/21.12/rebar3
@@ -111,7 +110,7 @@ jobs:
         key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
 
     - name: Download test logs
-      if: matrix.otp == '25.3' && github.repository == 'processone/ejabberd'
+      if: matrix.otp == '26' && github.repository == 'processone/ejabberd'
       continue-on-error: true
       run: |
         mkdir -p _build/test
@@ -191,7 +190,7 @@ jobs:
         find logs/ -name exunit.log -exec cat '{}' ';'
 
     - name: Send to coveralls
-      if: matrix.otp == '25.3'
+      if: matrix.otp == '26'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -301,7 +300,7 @@ jobs:
 
     - name: Upload CT logs
       if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ejabberd-ct-logs-${{matrix.otp}}
         #

@@ -425,7 +425,7 @@ user_exists(User, Server) ->
 	    false
     end.
 
--spec user_exists_in_other_modules(atom(), binary(), binary()) -> boolean() | maybe.
+-spec user_exists_in_other_modules(atom(), binary(), binary()) -> boolean() | maybe_exists.
 user_exists_in_other_modules(Module, User, Server) ->
     user_exists_in_other_modules_loop(
       auth_modules(Server) -- [Module], User, Server).
@@ -439,7 +439,7 @@ user_exists_in_other_modules_loop([AuthModule | AuthModules], User, Server) ->
 	{false, _} ->
 	    user_exists_in_other_modules_loop(AuthModules, User, Server);
 	{{error, _}, _} ->
-	    maybe
+	    maybe_exists
     end.
 
 -spec which_users_exists(list({binary(), binary()})) -> list({binary(), binary()}).

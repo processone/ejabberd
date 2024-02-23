@@ -67,12 +67,22 @@
 -export([connecting/2, connecting/3,
 	 session_established/2, session_established/3]).
 
+-ifdef(OTP_RELEASE).
+    -if(?OTP_RELEASE >= 27).
+	-type(odbc_connection_reference() ::  odbc:connection_reference()).
+    -else.
+	-type(odbc_connection_reference() ::  pid()).
+    -endif.
+-else.
+    -type(odbc_connection_reference() ::  pid()).
+-endif.
+
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("ejabberd_stacktrace.hrl").
 
 -record(state,
-	{db_ref               :: undefined | pid(),
+	{db_ref               :: undefined | pid() | odbc_connection_reference(),
 	 db_type = odbc       :: pgsql | mysql | sqlite | odbc | mssql,
 	 db_version           :: undefined | non_neg_integer() | {non_neg_integer(), atom(), non_neg_integer()},
 	 reconnect_count = 0  :: non_neg_integer(),
@@ -1122,14 +1132,18 @@ mysql_to_odbc(ok) ->
 mysql_item_to_odbc(Columns, Recs) ->
     {selected, [element(2, Column) || Column <- Columns], Recs}.
 
-to_odbc({selected, Columns, Recs}) ->
-    Rows = [lists:map(
-	      fun(I) when is_integer(I) ->
-		      integer_to_binary(I);
-		 (B) ->
-		      B
-	      end, Row) || Row <- Recs],
-    {selected, [list_to_binary(C) || C <- Columns], Rows};
+to_odbc({selected, Columns, Rows}) ->
+    Rows2 = lists:map(
+	fun(Row) ->
+	    Row2 = if is_tuple(Row) -> tuple_to_list(Row);
+		       is_list(Row) -> Row
+		   end,
+	    lists:map(
+		fun(I) when is_integer(I) -> integer_to_binary(I);
+		    (B) -> B
+		end, Row2)
+	end, Rows),
+    {selected, [list_to_binary(C) || C <- Columns], Rows2};
 to_odbc({error, Reason}) when is_list(Reason) ->
     {error, list_to_binary(Reason)};
 to_odbc(Res) ->

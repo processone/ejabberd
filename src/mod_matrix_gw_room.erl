@@ -5,7 +5,7 @@
 %%% Created :  1 May 2022 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2022   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2024   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
 %%%-------------------------------------------------------------------
 -module(mod_matrix_gw_room).
 
--if(?OTP_RELEASE >= 24).
+-ifndef(OTP_BELOW_24).
 -behaviour(gen_statem).
 
 %% API
@@ -67,12 +67,12 @@
          sender :: binary(),
          prev_events :: [binary()],
          origin_server_ts :: integer(),
-         json :: jiffy:json_object(),
+         json :: #{atom() | binary() => jiffy:json_value()},
          state_map}).
 
 -record(data,
         {host :: binary(),
-         local_user :: jid(),
+         local_user :: jid() | undefined,
          remote_user :: binary() | undefined,
          remote_servers = #{},
          room_id :: binary(),
@@ -347,14 +347,7 @@ send_join(Host, Origin, RoomID, EventID, JSON) ->
 %% process to initialize.
 %% @end
 %%--------------------------------------------------------------------
--spec init(Args :: term()) ->
-                  {gen_statem:callback_mode(),
-                   State :: term(), Data :: term()} |
-                  {gen_statem:callback_mode(),
-                   State :: term(), Data :: term(),
-                   [gen_statem:action()] | gen_statem:action()} |
-                  ignore |
-                  {stop, Reason :: term()}.
+-spec init(Args :: term()) -> gen_statem:init_result(term()).
 init([Host, RoomID]) ->
     mnesia:dirty_write(
       #matrix_room{room_id = RoomID,
@@ -2038,12 +2031,12 @@ get_sender_power_level(EventID, Data) ->
                       case {RoomVersion#room_version.implicit_room_creator, E} of
                           {false,
                            #event{type = ?ROOM_CREATE, state_key = <<"">>,
-                                  json = #event{json = #{<<"content">> :=
-                                                             #{<<"creator">> := Sender}}}}} ->
+                                  json = #{<<"content">> :=
+                                               #{<<"creator">> := Sender}}}} ->
                               100;
                           {true,
                            #event{type = ?ROOM_CREATE, state_key = <<"">>,
-                                  json = #event{sender = Sender}}} ->
+                                  sender = Sender}} ->
                               100;
                           _ ->
                               Acc

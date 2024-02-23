@@ -42,6 +42,7 @@ AC_PATH_TOOL(ERL, erl, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(ERLC, erlc, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(EPMD, epmd, , [${extra_erl_path}$PATH])
 
+AC_PATH_TOOL(REBAR, rebar, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(REBAR3, rebar3, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(ELIXIR, elixir, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(IEX, iex, , [${extra_erl_path}$PATH])
@@ -57,6 +58,12 @@ if test "$rebar" = unconfigured; then
     else
         rebar=$MIX
     fi
+fi
+if test "x$rebar" = "xrebar" -a "x$REBAR" = "x" ; then
+    rebar="./rebar"
+fi
+if test "x$rebar" = "xrebar3" -a "x$REBAR3" = "x" ; then
+    rebar="./rebar3"
 fi
 
 AC_ERLANG_NEED_ERL
@@ -256,7 +263,7 @@ AC_ARG_ENABLE(system_deps,
 esac],[if test "x$system_deps" = "x"; then system_deps=false; fi])
 
 AC_ARG_ENABLE(tools,
-[AS_HELP_STRING([--enable-tools],[build development tools: ejabberd-po, etop (default: no)])],
+[AS_HELP_STRING([--enable-tools],[include debugging/development tools (default: no)])],
 [case "${enableval}" in
   yes) tools=true ;;
   no)  tools=false ;;

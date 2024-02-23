@@ -6,10 +6,22 @@
             {elixir, true} -> [elixir, iex, logger, mix];
             _ -> []
         end,
-        Tools = case lists:keyfind(tools, 1, Terms) of
-            {tools, true} -> [observer, runtime_tools]; % for `ejabberdctl etop`
+
+        ProfileEnvironmentVariable = os:getenv("REBAR_PROFILE"),
+        AsProfiles = case lists:dropwhile(fun("as") -> false; (_) -> true end,
+                                               init:get_plain_arguments()) of
+                              ["as", Profiles | _] -> string:split(Profiles, ",");
+                              _ -> []
+                          end,
+        Terms2 = case lists:member("dev", [ProfileEnvironmentVariable | AsProfiles]) of
+            true -> lists:keystore(tools, 1, Terms, {tools, true});
+            false -> Terms
+        end,
+        Tools = case lists:keyfind(tools, 1, Terms2) of
+            {tools, true} -> [observer];
             _ -> []
         end,
+
         {[lists:keyfind(description, 1, Terms),
          lists:keyfind(vsn, 1, Terms),
          {env, [{enabled_backends, EBs}]}

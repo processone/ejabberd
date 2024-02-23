@@ -81,7 +81,9 @@ defmodule Ejabberd.MixProject do
              if_version_below(~c"23", [{:d, :USE_OLD_CRYPTO_HMAC}]) ++
              if_version_below(~c"23", [{:d, :USE_OLD_PG2}]) ++
              if_version_below(~c"24", [{:d, :COMPILER_REPORTS_ONLY_LINES}]) ++
-             if_version_below(~c"24", [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}])
+             if_version_below(~c"24", [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}]) ++
+             if_version_below(~c"24", [{:d, :OTP_BELOW_24}]) ++
+             if_version_below(~c"25", [{:d, :OTP_BELOW_25}])
     defines = for {:d, value} <- result, do: {:d, value}
     result ++ [{:d, :ALL_DEFS, defines}]
   end
@@ -132,11 +134,16 @@ defmodule Ejabberd.MixProject do
 
   defp cond_deps do
     for {:true, dep} <- [{config(:pam), {:epam, "~> 1.0"}},
+                         {Mix.env() == :translations,
+                          {:ejabberd_po, git: "https://github.com/processone/ejabberd-po.git"}},
                          {config(:redis), {:eredis, "~> 1.2.0"}},
                          {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {if_version_below(~c"22", true), {:lager, "~> 3.9.1"}},
-                         {config(:lua), {:luerl, "~> 1.0"}},
+                         {config(:lua) and if_version_below(~c"27", true),
+                                         {:luerl, "~> 1.1.1"}},
+                         {config(:lua) and if_version_above(~c"26", true),
+                                         {:luerl, git: "https://github.com/processone/luerl", branch: "otp27"}},
                          {config(:mysql), {:p1_mysql, ">= 1.0.23" }},
                          {config(:pgsql), {:p1_pgsql, "~> 1.1"}},
                          {config(:sqlite), {:sqlite3, "~> 1.1"}},
@@ -146,8 +153,7 @@ defmodule Ejabberd.MixProject do
 
   defp cond_apps do
     for {:true, app} <- [{config(:stun), :stun},
-                         {config(:tools), :observer},
-                         {config(:tools), :runtime_tools}], do:
+                         {config(:tools), :observer}], do:
       app
   end
 
@@ -184,9 +190,13 @@ defmodule Ejabberd.MixProject do
       {:ok, path} ->
         path
     end
-    case :file.consult(filepath) do
+    config2 = case :file.consult(filepath) do
       {:ok,config} -> config
       _ -> [stun: true, zlib: true]
+    end
+    case Mix.env() do
+      :dev -> List.keystore(config2, :tools, 0, {:tools, true})
+      _ -> config2
     end
   end
 
