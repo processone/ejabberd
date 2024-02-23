@@ -884,30 +884,56 @@ mod_options(Host) ->
 
 mod_doc() ->
     #{desc =>
-          [?T("TODO")],
+          [?T("Matrix gateway")],
       example =>
-          [{?T("TODO"),
-            ["listen:",
-             "  -",
-             "    port: 5280",
-             "    module: ejabberd_http",
-             "    request_handlers:",
-             "      /bosh: mod_bosh",
-             "      /websocket: ejabberd_http_ws",
-             "      /conversejs: mod_conversejs",
-             "",
-             "modules:",
-             "  mod_bosh: {}",
-             "  mod_conversejs:",
-             "    websocket_url: \"ws://@HOST@:5280/websocket\""]}
-          ],
+	  ["listen:",
+	   "  -",
+	   "    port: 8448",
+	   "    module: ejabberd_http",
+	   "    tls: true",
+	   "    request_handlers:",
+	   "      \"/_matrix\": mod_matrix_gw",
+	   "",
+	   "modules:",
+	   "  mod_matrix_gw:",
+	   "    key_name: \"key1\"",
+	   "    key: \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"",
+	   "    matrix_id_as_jid: true"],
       opts =>
           [{matrix_domain,
             #{value => ?T("Domain"),
               desc =>
-                  ?T("TODO Specify a domain to act as the default for user JIDs. "
+                  ?T("Specify a domain in the Matrix federation. "
                      "The keyword '@HOST@' is replaced with the hostname. "
-                     "The default value is '@HOST@'.")}}
+                     "The default value is '@HOST@'.")}},
+	   {host,
+            #{value => ?T("Host"),
+              desc =>
+                  ?T("This option defines the Jabber IDs of the service. "
+                     "If the 'host' option is not specified, the Jabber ID will be "
+		     "the hostname of the virtual host with the prefix \"matrix.\". "
+                     "The keyword '@HOST@' is replaced with the real virtual host name.")}},
+	   {key_name,
+            #{value => "string()",
+              desc =>
+                  ?T("Name of the matrix signing key.")}},
+	   {key,
+            #{value => "string()",
+              desc =>
+                  ?T("Value of the matrix signing key, in base64.")}},
+	   {matrix_id_as_jid,
+            #{value => "true | false",
+              desc =>
+                  ?T("If set to 'false', all packets failing to be delivered via an XMPP "
+		     "server-to-server connection will then be routed to the Matrix gateway "
+		     "by translating a Jabber ID 'user@matrixdomain.tld' to a Matrix user "
+		     "identifier '@user:matrixdomain.tld'. When set to true, messages "
+		     "must be explicitly sent to the matrix gateway service Jabber ID to be "
+		     "routed to a remote Matrix server. In this case, to send a message to "
+		     "Matrix user '@user:matrixdomain.tld', the client must send a message "
+		     "to the JID 'user%matrixdomain.tld@matrix.myxmppdomain.tld', where "
+		     "'matrix.myxmppdomain.tld' is the JID of the gateway service as set by the "
+		     "'host' option. The default is 'false'.")}}
           ]
      }.
 -endif.
