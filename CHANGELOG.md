@@ -54,7 +54,7 @@ Rebar3/Elixir/Mix:
 - Elixir: Fix compiling ejabberd as a dependency ([#4128](https://github.com/processone/ejabberd/issues/4128))
 - Elixir: Fix ejabberdctl start/live when installed
 - Elixir: Fix: FORMATTER ERROR: bad return value ([#4087](https://github.com/processone/ejabberd/issues/4087))
-- Elixir: Fix: Couldn't find file `Elixir.Hex.API`
+- Elixir: Fix: Couldn't find file `Elixir Hex API`
 - Mix: Enable stun by default when `vars.config` not found
 - Mix: New option `vars_config_path` to set path to `vars.config` ([#4128](https://github.com/processone/ejabberd/issues/4128))
 - Mix: Fix ejabberdctl iexlive problem locating iex in an OTP release
@@ -345,7 +345,7 @@ MUC:
 - Don't persist `none` role ([#3330](https://github.com/processone/ejabberd/issues/3330))
 - Allow MUC service admins to bypass max_user_conferences limitation
 - Show allow_query_users room option in disco info ([#3830](https://github.com/processone/ejabberd/issues/3830))
-- Don't set affiliation to `none` if it's already `none` in `mod_muc_room:process_item_change/3`
+- mod_muc_room: Don't set affiliation to `none` if it's already `none` in `process_item_change/3`
 - Fix mucsub unsubscribe notification payload to have muc_unsubcribe in it
 - Allow muc_{un}subscribe hooks to modify sent packets
 - Pass room state to muc_{un}subscribed hook
