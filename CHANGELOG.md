@@ -1,4 +1,4 @@
-# Version 24.01
+## Version 24.01
 
 Core:
 - Support SASL2 and Bind2
@@ -59,7 +59,7 @@ Rebar3/Elixir/Mix:
 - Mix: New option `vars_config_path` to set path to `vars.config` ([#4128](https://github.com/processone/ejabberd/issues/4128))
 - Mix: Fix ejabberdctl iexlive problem locating iex in an OTP release
 
-# Version 23.10
+## Version 23.10
 
 Compilation:
 - Erlang/OTP: Raise the requirement to Erlang/OTP 20.0 as a minimum
@@ -167,7 +167,7 @@ SQL:
 - `mod_privacy_sql`: Optimize `set_list`
 - `mod_privacy_sql`: Use more efficient way to calculate changes in `set_privacy_list`
 
-# Version 23.04
+## Version 23.04
 
 General:
 - New `s2s_out_bounce_packet` hook
@@ -251,7 +251,7 @@ Installers:
 - make-binaries: Fix building with erlang/otp v25.x
 - make-packages: Fix for installers workflow, which didn't find lynx
 
-# Version 23.01
+## Version 23.01
 
 General:
 - Add `misc:uri_parse/2` to allow declaring default ports for protocols
@@ -305,7 +305,7 @@ VSCode:
 - Add Erlang LS default configuration
 - Add Elvis default configuration
 
-# Version 22.10
+## Version 22.10
 
 Core:
 - Add `log_burst_limit_*` options ([#3865](https://github.com/processone/ejabberd/issues/3865))
@@ -415,7 +415,7 @@ Workflows Actions:
 - CI: Remove syntax_tools from applications, as fast_xml fails Dialyzer
 - Runtime: Add Xref options to be as strict as CI
 
-# Version 22.05
+## Version 22.05
 
 Core
 - C2S: Don't expect that socket will be available in `c2s_terminated` hook
@@ -520,7 +520,7 @@ Workflows
 - Installers: New workflow to build binary packages
 - Runtime: New workflow to test compilation, rel, starting and ejabberdctl
 
-# Version 21.12
+## Version 21.12
 
 Commands
 - `create_room_with_opts`: Fixed when using SQL storage
@@ -567,7 +567,7 @@ Other
 - Update export/import of scram password to XEP-0227 1.1
 - Update Jose to 1.11.1 (the last in hex.pm correctly versioned)
 
-# Version 21.07
+## Version 21.07
 
 Compilation
 - Add rebar3 3.15.2 binary
@@ -613,7 +613,7 @@ SQL:
 - mod_mqtt: Add mqtt_pub table definition for MSSQL
 - mod_shared_roster: Add missing indexes to `sr_group` tables in all SQL databases
 
-# Version 21.04
+## Version 21.04
 
 API Commands:
 - `add_rosteritem/...`: Add argument guards to roster commands
@@ -651,7 +651,7 @@ Modules:
 - `mod_pubsub`: Fix `gen_pubsub_node:get_state` return value
 - `mod_vcard`: Obtain and provide photo type in vCard LDAP
 
-# Version 21.01
+## Version 21.01
 
 Miscellaneous changes:
 - `log_rotate_size` option: Fix handling of ‘infinity’ value
@@ -686,7 +686,7 @@ Translations:
 - Moved gettext PO files to a new `ejabberd-po` repository
 - Improved several translations: Catalan, Chinese, German, Greek, Indonesian, Norwegian, Portuguese (Brazil), Spanish.
 
-# Version 20.12
+## Version 20.12
 
 - Add support for `SCRAM-SHA-{256,512}-{PLUS}` authentication
 - Don't use same value in cache for user don't exist and wrong password
@@ -721,7 +721,7 @@ Translations:
 - WebAdmin: Mark dangerous buttons with CSS
 - WebSocket: Make websocket send put back pressure on c2s process
 
-# Version 20.07
+## Version 20.07
 
 * Changes in this version
 - Add support for using unix sockets in listeners.
@@ -748,7 +748,7 @@ Translations:
   they were passed to handler modules
 - Make stun module work better with ipv6 addresses
 
-# Version 20.03
+## Version 20.03
 
 * Changes in this version
 - Add support of ssl connection when connection to mysql
@@ -768,7 +768,7 @@ Translations:
 - Fix reporting errors in `send_stanza` command when xml
   passed to it couldn't be passed correctly
 
-# Version 20.02
+## Version 20.02
 
 * Changes in this version
 - Fix problems when trying to use string format with unicode
@@ -786,7 +786,7 @@ Translations:
   override built-in values
 - Fix return value of reload_config and dump_config commands
 
-# Version 20.01
+## Version 20.01
 
 * New features
 - Implement OAUTH authentication in mqtt
@@ -819,7 +819,7 @@ Translations:
   failed
 - Fix crash in stream management when timeout was not set
 
-# Version 19.09
+## Version 19.09
 
 * Admin
 - The minimum required Erlang/OTP version is now 19.3
@@ -872,7 +872,7 @@ Translations:
 - Correctly handle unicode in log messages
 - Fix unicode processing in ejabberd.yml
 
-# Version 19.08
+## Version 19.08
 
 * Administration
 - Improve ejabberd halting procedure
@@ -917,7 +917,7 @@ Translations:
 - Remove deprecated pubsub plugins
 - Expose access_model and publish_model in pubsub#metadata
 
-# Version 19.05
+## Version 19.05
 
 * Admin
 - The minimum required Erlang/OTP version is now 19.1
@@ -994,7 +994,7 @@ Translations:
 - mod_mqtt: Support other socket modules
 - mod_push: Check for payload in encrypted messages
 
-# Version 19.02
+## Version 19.02
 
 * Admin
 - Fix in configure.ac the Erlang/OTP version: from 17.5 to 19.0
@@ -1048,7 +1048,7 @@ Translations:
 - Translations: fixed "make translations"
 - WebAdmin: Fix support to restart module with new options
 
-# Version 18.12
+## Version 18.12
 
 * MAM data store compression
 * Proxy protocol support

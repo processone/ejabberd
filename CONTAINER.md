@@ -33,9 +33,9 @@ If you are using a Windows operating system, check the tutorials mentioned in
 
 
 Start ejabberd
-==============
+--------------
 
-## With default configuration
+### With default configuration
 
 Start ejabberd in a new container:
 
@@ -59,7 +59,7 @@ docker restart ejabberd
 ```
 
 
-## Start with Erlang console attached
+### Start with Erlang console attached
 
 Start ejabberd with an Erlang console attached using the `live` command:
 
@@ -70,7 +70,7 @@ docker run --name ejabberd -it -p 5222:5222 ghcr.io/processone/ejabberd live
 That uses the default configuration file and XMPP domain "localhost".
 
 
-## Start with your configuration and database
+### Start with your configuration and database
 
 Pass a configuration file as a volume
 and share the local directory to store database:
@@ -92,9 +92,9 @@ and the volumes you mount must grant proper rights to that account.
 
 
 Next steps
-==========
+----------
 
-## Register the administrator account
+### Register the administrator account
 
 The default ejabberd configuration does not grant admin privileges
 to any account,
@@ -111,7 +111,7 @@ Then edit conf/ejabberd.yml and add the ACL as explained in
 [ejabberd Docs: Administration Account](https://docs.ejabberd.im/admin/installation/#administration-account)
 
 
-## Check ejabberd log files
+### Check ejabberd log files
 
 Check the content of the log files inside the container,
 even if you do not put it on a shared persistent drive:
@@ -121,7 +121,7 @@ docker exec -it ejabberd tail -f logs/ejabberd.log
 ```
 
 
-## Inspect the container files
+### Inspect the container files
 
 The container uses Alpine Linux. Start a shell inside the container:
 
@@ -130,7 +130,7 @@ docker exec -it ejabberd sh
 ```
 
 
-## Open ejabberd debug console
+### Open ejabberd debug console
 
 Open an interactive debug Erlang console attached to a running ejabberd in a running container:
 
@@ -139,7 +139,7 @@ docker exec -it ejabberd ejabberdctl debug
 ```
 
 
-## CAPTCHA
+### CAPTCHA
 
 ejabberd includes two example CAPTCHA scripts.
 If you want to use any of them, first install some additional required libraries:
@@ -177,9 +177,9 @@ documentation section.
 
 
 Advanced Container Configuration
-================================
+--------------------------------
 
-## Ports
+### Ports
 
 This container image exposes the ports:
 
@@ -192,7 +192,7 @@ This container image exposes the ports:
 - `5210`: Erlang connectivity when `ERL_DIST_PORT` is set, alternative to EPMD
 
 
-## Volumes
+### Volumes
 
 ejabberd produces two types of data: log files and database spool files (Mnesia).
 This is the kind of data you probably want to store on a persistent or local drive (at least the database).
@@ -213,7 +213,7 @@ It's possible to install additional ejabberd modules using volumes,
 explains how to install an additional module using docker-compose.
 
 
-## Commands on start
+### Commands on start
 
 The ejabberdctl script reads the `CTL_ON_CREATE` environment variable
 the first time the container is started,
@@ -234,7 +234,7 @@ Example usage (or check the [full example](#customized-example)):
 ```
 
 
-## Clustering
+### Clustering
 
 When setting several containers to form a
 [cluster of ejabberd nodes](https://docs.ejabberd.im/admin/guide/clustering/),
@@ -273,7 +273,7 @@ Example using environment variables (see full example [docker-compose.yml](https
 
 
 Build a Container Image
-=======================
+-----------------------
 
 This container image includes ejabberd as a standalone OTP release built using Elixir.
 That OTP release is configured with:
@@ -283,7 +283,7 @@ That OTP release is configured with:
 - `config/runtime.exs`: Customize ejabberd paths
 - `ejabberd.yml.template`: ejabberd default config file
 
-## Direct build
+### Direct build
 
 Build ejabberd Community Server container image from ejabberd master git repository:
 
@@ -294,7 +294,7 @@ docker buildx build \
     .
 ```
 
-## Podman build
+### Podman build
 
 It's also possible to use podman instead of docker, just notice:
 - `EXPOSE 4369-4399` port range is not supported, remove that in Dockerfile
@@ -315,7 +315,7 @@ podman exec -it eja1 sh
 podman stop eja1
 ```
 
-## Package build for `arm64`
+### Package build for `arm64`
 
 By default, `.github/container/Dockerfile` builds this container by directly compiling ejabberd,
 it is a fast and direct method.
@@ -341,9 +341,9 @@ docker buildx build \
 
 
 Composer Examples
-=================
+-----------------
 
-## Minimal Example
+### Minimal Example
 
 This is the barely minimal file to get a usable ejabberd.
 Store it as `docker-compose.yml`:
@@ -365,7 +365,7 @@ Create and start the container with the command:
 docker-compose up
 ```
 
-## Customized Example
+### Customized Example
 
 This example shows the usage of several customizations:
 it uses a local configuration file,
@@ -408,7 +408,7 @@ services:
       - ./database:/opt/ejabberd/database
 ```
 
-## Clustering Example
+### Clustering Example
 
 In this example, the main container is created first.
 Once it is fully started and healthy, a second container is created,
