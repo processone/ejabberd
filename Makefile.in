@@ -133,6 +133,8 @@ ifeq "$(REBAR_VER)" "6"
   CONFIGURE_DEPS=(cd deps/eimp; ./configure)
   EBINDIR=$(DEPSDIR)/ejabberd/ebin
   XREFOPTIONS=graph
+  EDOCPRE=MIX_ENV=edoc
+  EDOCTASK=docs --proglang erlang
   CLEANARG=--deps
   ELIXIR_LIBDIR_RAW=$(shell elixir -e "IO.puts(:filename.dirname(:code.lib_dir(:elixir)))" -e ":erlang.halt")
   ELIXIR_LIBDIR=":$(ELIXIR_LIBDIR_RAW)"
@@ -238,9 +240,25 @@ translations:
 doap:
 	tools/generate-doap.sh
 
-edoc:
-	$(ERL) -noinput +B -eval \
-        'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
+#.
+#' edoc
+#
+
+edoc: edoc_files edoc_compile
+	$(EDOCPRE) $(REBAR) $(EDOCTASK)
+
+edoc_compile: deps
+	$(EDOCPRE) $(REBAR) compile
+
+edoc_files: _build/edoc/docs.md _build/edoc/logo.png
+
+_build/edoc/docs.md: edoc_compile
+	echo "For much more detailed and complete ejabberd documentation, " \
+	     "go to the [ejabberd Docs](https://docs.ejabberd.im/) site." \
+	     > _build/edoc/docs.md
+
+_build/edoc/logo.png: edoc_compile
+	wget https://docs.ejabberd.im/static/shared/images/footer_logo_e.png -O _build/edoc/logo.png
 
 #.
 #' copy-files
@@ -650,7 +668,7 @@ help:
 	@echo "  relive         Start a live ejabberd in _build/relive/"
 	@echo ""
 	@echo "  doap           Generate DOAP file"
-	@echo "  edoc           Generate edoc documentation (unused)"
+	@echo "  edoc           Generate EDoc documentation [mix]"
 	@echo "  options        Generate ejabberd_option.erl"
 	@echo "  translations   Extract translation files"
 	@echo "  TAGS           Generate tags file for text editors"

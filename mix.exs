@@ -3,6 +3,7 @@ defmodule Ejabberd.MixProject do
 
   def project do
     [app: :ejabberd,
+     source_url: "https://github.com/processone/ejabberd",
      version: version(),
      description: description(),
      elixir: elixir_required_version(),
@@ -17,6 +18,7 @@ defmodule Ejabberd.MixProject do
      language: :erlang,
      releases: releases(),
      package: package(),
+     docs: docs(),
      deps: deps()]
   end
 
@@ -103,7 +105,7 @@ defmodule Ejabberd.MixProject do
     [{:base64url, "~> 1.0"},
      {:cache_tab, "~> 1.0"},
      {:eimp, "~> 1.0"},
-     {:ex_doc, ">= 0.0.0", only: :dev},
+     {:ex_doc, "~> 0.31", only: [:dev, :edoc], runtime: false},
      {:fast_tls, ">= 1.1.18"},
      {:fast_xml, ">= 1.1.51"},
      {:fast_yaml, "~> 1.0"},
@@ -161,6 +163,7 @@ defmodule Ejabberd.MixProject do
     for {:true, app} <- [{config(:pam), :epam},
                          {config(:lua), :luerl},
                          {config(:redis), :eredis},
+                         {Mix.env() == :edoc, :ex_doc},
                          {if_version_below(~c"22", true), :lager},
                          {config(:mysql), :p1_mysql},
                          {config(:sip), :esip},
@@ -350,6 +353,31 @@ defmodule Ejabberd.MixProject do
     release
   end
 
+  defp docs do
+    [
+      main: "readme",
+      logo: "_build/edoc/logo.png",
+      source_ref: "master",
+      extra_section: "", # No need for Pages section name, it's the only one
+      api_reference: false, # API section has just Elixir, hide it
+      filter_modules: "aaaaa", # Module section has just Elixir modules, hide them
+      extras: [
+        "README.md": [title: "Readme"],
+        "COMPILE.md": [title: "Compile and Install"],
+        "CONTAINER.md": [title: "Container Image"],
+        "CONTRIBUTING.md": [title: "Contributing"],
+        "CONTRIBUTORS.md": [title: "Contributors"],
+        "CODE_OF_CONDUCT.md": [title: "Code of Conduct"],
+        "CHANGELOG.md": [title: "ChangeLog"],
+        "COPYING": [title: "Copying License"],
+        "_build/edoc/docs.md": [title: "&xrArr; ejabberd Docs"]
+      ],
+      groups_for_extras: [
+        "": Path.wildcard("*.md") ++ ["COPYING"],
+        "For more documentation": "_build/edoc/docs.md"
+      ]
+    ]
+  end
 end
 
 defmodule Mix.Tasks.Compile.Asn1 do
