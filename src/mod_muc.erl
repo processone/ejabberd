@@ -1732,7 +1732,7 @@ mod_doc() ->
                     ?T("When a user tries to join a room where they have no "
                        "affiliation (not owner, admin or member), the room "
                        "requires them to fill a CAPTCHA challenge (see section "
-                       "https://docs.ejabberd.im/admin/configuration/#captcha[CAPTCHA] "
+                       "http://../#captcha[CAPTCHA] "
                        "in order to accept their join in the room. "
                        "The default value is 'false'.")}},
              {description,
