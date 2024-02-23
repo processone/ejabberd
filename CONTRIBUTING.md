@@ -3,21 +3,21 @@
 We'd love for you to contribute to our source code and to make ejabberd even better than it is
 today! Here are the guidelines we'd like you to follow:
 
-* [Code of Conduct](#coc)
-* [Questions and Problems](#question)
-* [Issues and Bugs](#issue)
-* [Feature Requests](#feature)
-* [Issue Submission Guidelines](#submit)
-* [Pull Request Submission Guidelines](#submit-pr)
-* [Signing the CLA](#cla)
+* [Code of Conduct](#code-of-conduct)
+* [Questions and Problems](#questions-bugs-features)
+* [Issues and Bugs](#found-an-issue-or-bug)
+* [Feature Requests](#missing-a-feature)
+* [Issue Submission Guidelines](#issue-submission-guidelines)
+* [Pull Request Submission Guidelines](#pull-request-submission-guidelines)
+* [Signing the CLA](#signing-the-contributor-license-agreement-cla)
 
-## <a name="coc"></a> Code of Conduct
+## Code of Conduct
 
 Help us keep ejabberd community open-minded and inclusive. Please read and follow our [Code of Conduct][coc].
 
-## <a name="requests"></a> Questions, Bugs, Features
+## Questions, Bugs, Features
 
-### <a name="question"></a> Got a Question or Problem?
+### Got a Question or Problem?
 
 Do not open issues for general support questions as we want to keep GitHub issues for bug reports
 and feature requests. You've got much better chances of getting your question answered on dedicated
@@ -38,12 +38,12 @@ Other channels for support are:
 - [ejabberd XMPP room logs][logs]
 - [ejabberd Mailing List][list]
 
-### <a name="issue"></a> Found an Issue or Bug?
+### Found an Issue or Bug?
 
 If you find a bug in the source code, you can help us by submitting an issue to our
 [GitHub Repository][github]. Even better, you can submit a Pull Request with a fix.
 
-### <a name="feature"></a> Missing a Feature?
+### Missing a Feature?
 
 You can request a new feature by submitting an issue to our [GitHub Repository][github-issues].
 
@@ -54,7 +54,7 @@ If you would like to implement a new feature then consider what kind of change i
 * **Small Changes** can directly be crafted and submitted to the [GitHub Repository][github]
   as a Pull Request. See the section about [Pull Request Submission Guidelines](#submit-pr).
 
-## <a name="submit"></a> Issue Submission Guidelines
+## Issue Submission Guidelines
 
 Before you submit your issue search the archive, maybe your question was already answered.
 
@@ -64,7 +64,7 @@ the effort we can spend fixing issues and adding new features, by not reporting 
 The "[new issue][github-new-issue]" form contains a number of prompts that you should fill out to
 make it easier to understand and categorize the issue.
 
-## <a name="submit-pr"></a> Pull Request Submission Guidelines
+## Pull Request Submission Guidelines
 
 By submitting a pull request for a code or doc contribution, you need to have the right
 to grant your contribution's copyright license to ProcessOne. Please check [ProcessOne CLA][cla]
@@ -123,7 +123,7 @@ restarted.
 
 That's it! Thank you for your contribution!
 
-## <a name="cla"></a> Signing the Contributor License Agreement (CLA)
+## Signing the Contributor License Agreement (CLA)
 
 Upon submitting a Pull Request, we will ask you to sign our CLA if you haven't done
 so before. It's a quick process, we promise, and you will be able to do it all online
