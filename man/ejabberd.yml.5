@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 01/22/2024
+.\"      Date: 02/24/2024
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "01/22/2024" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "02/24/2024" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,7 +82,7 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/24\&.01/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/24\&.02/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
@@ -1705,7 +1705,7 @@ An SQL database name\&. For SQLite this must be a full path to a database file\&
 \fIejabberd\fR\&.
 .RE
 .sp
-\fINote\fR about the next option: added in 24\&.01:
+\fINote\fR about the next option: added in 24\&.02:
 .PP
 \fBsql_flags\fR: \fI[mysql_alternative_upsert]\fR
 .RS 4
@@ -3070,7 +3070,7 @@ List of accounts that are allowed to use this service\&. Default value:
 \fBExamples:\fR
 .RS 4
 .sp
-This example configuration will serve the files from the local directory \fI/var/www\fR in the address \fIhttp://example\&.org:5280/pub/archive/\fR\&. In this example a new content type \fIogg\fR is defined, \fIpng\fR is redefined, and \fIjpg\fR definition is deleted:
+This example configuration will serve the files from the local directory \fI/var/www\fR in the address \fIhttp://example\&.org:5280/pub/content/\fR\&. In this example a new content type \fIogg\fR is defined, \fIpng\fR is redefined, and \fIjpg\fR definition is deleted:
 .sp
 .if n \{\
 .RS 4
@@ -3083,7 +3083,7 @@ listen:
     module: ejabberd_http
     request_handlers:
       \&.\&.\&.
-      /pub/archive: mod_http_fileserver
+      /pub/content: mod_http_fileserver
       \&.\&.\&.
   \&.\&.\&.
 
@@ -3574,6 +3574,96 @@ option, but applied to this module only\&.
 When this option is disabled, for each individual subscriber a separa mucsub message is stored\&. With this option enabled, when a user fetches archive virtual mucsub, messages are generated from muc archives\&. The default value is
 \fIfalse\fR\&.
 .RE
+.RE
+.SS "mod_matrix_gw"
+.sp
+Matrix gateway\&.
+.sp
+This module is available since ejabberd 24\&.02\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBhost\fR: \fIHost\fR
+.RS 4
+This option defines the Jabber IDs of the service\&. If the
+\fIhost\fR
+option is not specified, the Jabber ID will be the hostname of the virtual host with the prefix
+\fI"matrix\&."\fR\&. The keyword
+\fI@HOST@\fR
+is replaced with the real virtual host name\&.
+.RE
+.PP
+\fBkey\fR: \fIstring()\fR
+.RS 4
+Value of the matrix signing key, in base64\&.
+.RE
+.PP
+\fBkey_name\fR: \fIstring()\fR
+.RS 4
+Name of the matrix signing key\&.
+.RE
+.PP
+\fBmatrix_domain\fR: \fIDomain\fR
+.RS 4
+Specify a domain in the Matrix federation\&. The keyword
+\fI@HOST@\fR
+is replaced with the hostname\&. The default value is
+\fI@HOST@\fR\&.
+.RE
+.PP
+\fBmatrix_id_as_jid\fR: \fItrue | false\fR
+.RS 4
+If set to
+\fIfalse\fR, all packets failing to be delivered via an XMPP server\-to\-server connection will then be routed to the Matrix gateway by translating a Jabber ID
+\fIuser@matrixdomain\&.tld\fR
+to a Matrix user identifier
+\fI@user:matrixdomain\&.tld\fR\&. When set to
+\fItrue\fR, messages must be explicitly sent to the matrix gateway service Jabber ID to be routed to a remote Matrix server\&. In this case, to send a message to Matrix user
+\fI@user:matrixdomain\&.tld\fR, the client must send a message to the JID
+\fIuser%\fR\fImatrixdomain\&.tld@matrix\&.myxmppdomain\fR\fI\&.tld\fR, where
+\fImatrix\&.myxmppdomain\&.tld\fR
+is the JID of the gateway service as set by the
+\fIhost\fR
+option\&. The default is
+\fIfalse\fR\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+listen:
+  \-
+    port: 8448
+    module: ejabberd_http
+    tls: true
+    request_handlers:
+      "/_matrix": mod_matrix_gw
+
+modules:
+  mod_matrix_gw:
+    key_name: "key1"
+    key: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    matrix_id_as_jid: true
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .SS "mod_metrics"
 .sp
@@ -7831,13 +7921,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 23\&.10\&.118\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 24\&.02\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/24\&.01/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/24\&.02/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
