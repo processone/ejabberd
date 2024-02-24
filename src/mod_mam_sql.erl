@@ -163,6 +163,8 @@ remove_room(LServer, LName, LHost) ->
     LUser = jid:encode({LName, LHost, <<>>}),
     remove_user(LUser, LServer).
 
+remove_from_archive({LUser, LHost}, LServer, Key) ->
+    remove_from_archive(jid:encode({LUser, LHost, <<>>}), LServer, Key);
 remove_from_archive(LUser, LServer, none) ->
     case ejabberd_sql:sql_query(LServer,
 				?SQL("delete from archive where username=%(LUser)s and %(LServer)H")) of

@@ -361,9 +361,9 @@ remove_mam_for_user_with_peer(User, Server, Peer) ->
     ok | {error, binary()}.
 remove_message_from_archive(User, Server, StanzaId) when is_binary(User) ->
     remove_message_from_archive({User, Server}, Server, StanzaId);
-remove_message_from_archive({User, Host}, Server, StanzaId) ->
+remove_message_from_archive({_User, _Host} = UserHost, Server, StanzaId) ->
     Mod = gen_mod:db_mod(Server, ?MODULE),
-    case Mod:remove_from_archive(User, Host, StanzaId) of
+    case Mod:remove_from_archive(UserHost, Server, StanzaId) of
 	ok ->
 	    ok;
 	{error, Bin} when is_binary(Bin) ->

@@ -77,14 +77,14 @@ remove_user(LUser, LServer) ->
 remove_room(_LServer, LName, LHost) ->
     remove_user(LName, LHost).
 
-remove_from_archive(LUser, LServer, none) ->
-    US = {LUser, LServer},
+remove_from_archive(LUser, LHost, Key) when is_binary(LUser) ->
+    remove_from_archive({LUser, LHost}, LHost, Key);
+remove_from_archive(US, _LServer, none) ->
     case mnesia:transaction(fun () -> mnesia:delete({archive_msg, US}) end) of
 	{atomic, _} -> ok;
 	{aborted, Reason} -> {error, Reason}
     end;
-remove_from_archive(LUser, LServer, #jid{} = WithJid) ->
-    US = {LUser, LServer},
+remove_from_archive(US, _LServer, #jid{} = WithJid) ->
     Peer = jid:remove_resource(jid:split(WithJid)),
     F = fun () ->
 	    Msgs = mnesia:select(
@@ -99,9 +99,8 @@ remove_from_archive(LUser, LServer, #jid{} = WithJid) ->
 	{atomic, _} -> ok;
 	{aborted, Reason} -> {error, Reason}
     end;
-remove_from_archive(LUser, LServer, StanzaId) ->
+remove_from_archive(US, _LServer, StanzaId) ->
     Timestamp = misc:usec_to_now(StanzaId),
-    US = {LUser, LServer},
     F = fun () ->
 	Msgs = mnesia:select(
 	    archive_msg,
