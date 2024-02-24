@@ -95,7 +95,7 @@ get_commands_spec() ->
                         desc = "Issue an [OAuth](https://docs.ejabberd.im/developer/ejabberd-api/oauth/) token for the given jid",
                         module = ?MODULE, function = oauth_issue_token,
                         version = 1,
-                        note = "updated in 24.01",
+                        note = "updated in 24.02",
                         args = [{jid, string}, {ttl, integer}, {scopes, {list, {scope, binary}}}],
                         policy = restricted,
                         args_example = ["user@server.com", 3600, ["connected_users_number", "muc_online_rooms"]],

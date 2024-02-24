@@ -1361,7 +1361,7 @@ doc() ->
 	       "prepared statements. The option is valid for PostgreSQL and MySQL.")}},
      {sql_flags,
       #{value => "[mysql_alternative_upsert]",
-        note => "added in 24.01",
+        note => "added in 24.02",
         desc =>
 	    ?T("This option accepts a list of SQL flags, and is empty by default. "
                "'mysql_alternative_upsert' forces the alternative upsert implementation in MySQL.")}},

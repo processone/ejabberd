@@ -1,4 +1,4 @@
-## Version 24.01
+## Version 24.02
 
 Core:
 - Support SASL2 and Bind2

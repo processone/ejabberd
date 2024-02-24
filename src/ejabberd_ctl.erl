@@ -1120,14 +1120,14 @@ get_commands_spec() ->
 			"don't attempt to execute it using any other API frontend."},
      #ejabberd_commands{name = mnesia_info_ctl, tags = [ejabberdctl, mnesia],
 			desc = "Show information of Mnesia system (only ejabberdctl)",
-			note = "renamed in 24.01",
+			note = "renamed in 24.02",
 			longdesc = "This command is exclusive for the ejabberdctl command-line script, "
 			"don't attempt to execute it using any other API frontend."},
      #ejabberd_commands{name = print_sql_schema, tags = [ejabberdctl, sql],
 			desc = "Print SQL schema for the given RDBMS (only ejabberdctl)",
 			longdesc = "This command is exclusive for the ejabberdctl command-line script, "
 			"don't attempt to execute it using any other API frontend.",
-			note = "added in 24.01",
+			note = "added in 24.02",
 			args = [{db_type, string}, {db_version, string}, {new_schema, string}],
                         args_desc = ["Database type: pgsql | mysql | sqlite",
                                      "Your database version: 16.1, 8.2.0...",

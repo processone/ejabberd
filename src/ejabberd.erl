@@ -39,11 +39,11 @@
 -protocol({xep, 243, '1.0'}).
 -protocol({xep, 270, '1.0'}).
 -protocol({xep, 368, '1.1.0'}).
--protocol({xep, 386, '0.3.0', '24.01', "", ""}).
--protocol({xep, 388, '0.4.0', '24.01', "", ""}).
--protocol({xep, 424, '0.4.0', '24.01', "", ""}).
--protocol({xep, 440, '0.4.0', '24.01', "", ""}).
--protocol({xep, 474, '0.3.0', '24.01', "", ""}).
+-protocol({xep, 386, '0.3.0', '24.02', "", ""}).
+-protocol({xep, 388, '0.4.0', '24.02', "", ""}).
+-protocol({xep, 424, '0.4.0', '24.02', "", ""}).
+-protocol({xep, 440, '0.4.0', '24.02', "", ""}).
+-protocol({xep, 474, '0.3.0', '24.02', "", ""}).
 
 -export([start/0, stop/0, halt/0, start_app/1, start_app/2,
 	 get_pid_file/0, check_apps/0, module_name/1, is_loaded/0]).

@@ -321,7 +321,7 @@ format_arg({array, [{struct, Elements}]},
     when is_list(Elements) ->
     FormattedList = format_args(Elements, ElementsDef),
     list_to_tuple(FormattedList);
-%% New ejabberd 24.01
+%% New ejabberd 24.02
 format_arg({struct, Elements},
 	   {tuple, ElementsDef})
     when is_list(Elements) ->
