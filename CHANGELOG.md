@@ -1,6 +1,7 @@
 ## Version 24.02
 
 Core:
+- Added Matrix gateway in `mod_matrix_gw`
 - Support SASL2 and Bind2
 - Support tls-server-end-point channel binding and sasl2 codec
 - Support tls-exporter channel binding
@@ -11,12 +12,13 @@ Core:
 - mod_carboncopy: Teach how to interact with bind2 inline requests
 
 Other:
-- configure: Fix explanation of `--enable-group` option ([#4135](https://github.com/processone/ejabberd/issues/4135))
 - ejabberdctl: Fix startup problem when having set `EJABBERD_OPTS` and logger options
-- ejabberdctl: Set EJABBERD_OPTS back to "", and use previous flags as example
+- ejabberdctl: Set EJABBERD_OPTS back to `""`, and use previous flags as example
 - eldap: Change logic for `eldap tls_verify=soft` and `false`
 - eldap: Don't set `fail_if_no_peer_cert` for eldap ssl client connections
+- Ignore hints when checking for chat states
 - mod_mam: Support XEP-0424 Message Retraction
+- mod_mam: Fix XEP-0425: Message Moderation with SQL storage
 - mod_ping: Support XEP-0198 pings when stream management is enabled
 - mod_pubsub: Normalize pubsub `max_items` node options on read
 - mod_pubsub: PEP nodetree: Fix reversed logic in node fixup function
@@ -28,7 +30,18 @@ SQL:
 - Update SQL schema files for MAM's XEP-0424
 - New option [`sql_flags`](https://docs.ejabberd.im/admin/configuration/toplevel/#sql-flags): right now only useful to enable `mysql_alternative_upsert`
 
+Installers and Container:
+- Container: Add ability to ignore failures in execution of `CTL_ON_*` commands
+- Container: Update to Erlang/OTP 26.2, Elixir 1.16.1 and Alpine 3.19
+- Container: Update this custom ejabberdctl to match the main one
+- make-binaries: Bump OpenSSL 3.2.1, Erlang/OTP 26.2.2, Elixir 1.16.1
+- make-binaries: Bump many dependency versions
+
 Commands API:
+- `print_sql_schema`: New command available in ejabberdctl command-line script
+- ejabberdctl: Rework temporary node name generation
+- ejabberdctl: Print argument description, examples and note in help
+- ejabberdctl: Document exclusive ejabberdctl commands like all the others
 - Commands: Add a new [`muc_sub`](https://docs.ejabberd.im/developer/ejabberd-api/admin-tags/#muc-sub) tag to all the relevant commands
 - Commands: Improve syntax of many commands documentation
 - Commands: Use list arguments in many commands that used separators
@@ -38,22 +51,30 @@ Commands API:
 - ejabberd_xmlrpc: Fix support for restuple error response
 - mod_http_api: When no specific API version is requested, use the latest
 
-Rebar3/Elixir/Mix:
+Compilation with Rebar3/Elixir/Mix:
+- Fix compilation with Erlang/OTP 27: don't use the reserved word 'maybe'
+- configure: Fix explanation of `--enable-group` option ([#4135](https://github.com/processone/ejabberd/issues/4135))
 - Add observer and runtime_tools in releases when `--enable-tools`
+- Update "make translations" to reduce build requirements
+- Use Luerl 1.0 for Erlang 20, 1.1.1 for 21-26, and temporary fork for 27
 - Makefile: Add `install-rel` and `uninstall-rel`
 - Makefile: Rename `make rel` to `make prod`
-- ejabberdctl: Detect problem running iex or etop and show explanation
+- Makefile: Update `make edoc` to use ExDoc, requires mix
+- Makefile: No need to use `escript` to run rebar|rebar3|mix
+- configure: If `--with-rebar=rebar3` but rebar3 not system-installed, use local one
 - configure: Use Mix or Rebar3 by default instead of Rebar2 to compile ejabberd
+- ejabberdctl: Detect problem running iex or etop and show explanation
 - Rebar3: Include Elixir files when making a release
 - Rebar3: Workaround to fix protocol consolidation
 - Rebar3: Add support to compile Elixir dependencies
 - Rebar3: Compile explicitly our Elixir files when `--enable-elixir`
-- Rebar3: Provide proper path to iex
+- Rebar3: Provide proper path to `iex`
+- Rebar/Rebar3: Update binaries to work with Erlang/OTP 24-27
 - Rebar/Rebar3: Remove Elixir as a rebar dependency
-- Rebar/Rebar3: Update binaries to work with Erlang/OTP 23-26
+- Rebar3/Mix: If `dev` profile/environment, enable tools automatically
 - Elixir: Fix compiling ejabberd as a dependency ([#4128](https://github.com/processone/ejabberd/issues/4128))
 - Elixir: Fix ejabberdctl start/live when installed
-- Elixir: Fix: FORMATTER ERROR: bad return value ([#4087](https://github.com/processone/ejabberd/issues/4087))
+- Elixir: Fix: `FORMATTER ERROR: bad return value` ([#4087](https://github.com/processone/ejabberd/issues/4087))
 - Elixir: Fix: Couldn't find file `Elixir Hex API`
 - Mix: Enable stun by default when `vars.config` not found
 - Mix: New option `vars_config_path` to set path to `vars.config` ([#4128](https://github.com/processone/ejabberd/issues/4128))
