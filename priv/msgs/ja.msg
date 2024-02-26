@@ -4,7 +4,7 @@
 %%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 
 {" (Add * to the end of field to match substring)"," (* を最後に付けると部分文字列にマッチします)"}.
-{" has set the subject to: "," は件名を設定しました: "}.
+{" has set the subject to: "," は題を設定しました: "}.
 {"A description of the node","ノードの説明"}.
 {"A friendly name for the node","ノードのフレンドリネーム"}.
 {"A password is required to enter this room","このチャットルームに入るにはパスワードが必要です"}.
@@ -36,6 +36,7 @@
 {"Anyone","誰にでも"}.
 {"April","4月"}.
 {"August","8月"}.
+{"Automatic node creation is not enabled","ノードの自動作成は有効になっていません"}.
 {"Backup Management","バックアップ管理"}.
 {"Backup of ~p","バックアップ: ~p"}.
 {"Backup to File at ","ファイルにバックアップ: "}.
@@ -44,11 +45,13 @@
 {"Birthday","誕生日"}.
 {"Both the username and the resource are required","ユーザー名とリソースの両方が必要"}.
 {"CAPTCHA web page","CAPTCHA ウェブページ"}.
+{"Challenge ID","チャレンジ ID"}.
 {"Change Password","パスワードを変更"}.
 {"Change User Password","パスワードを変更"}.
 {"Changing password is not allowed","パスワード変更の権限がありません"}.
 {"Channel already exists","チャンネルは既に存在します"}.
 {"Channel does not exist","チャンネルは存在しません"}.
+{"Channel JID","チャンネル ID"}.
 {"Channels","チャンネル"}.
 {"Characters not allowed:","使用できない文字:"}.
 {"Chatroom configuration modified","チャットルームの設定が変更されました"}.
@@ -70,6 +73,7 @@
 {"Country","国"}.
 {"CPU Time:","CPU時間:"}.
 {"Current Discussion Topic","現在の話題"}.
+{"Database failure","データーベース障害"}.
 {"Database Tables at ~p","データーベーステーブル: ~p"}.
 {"Database Tables Configuration at ","データーベーステーブル設定 "}.
 {"Database","データーベース"}.
@@ -117,8 +121,11 @@
 {"Export all tables as SQL queries to a file:","すべてのテーブルをSQL形式でファイルにエクスポート: "}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","サーバーにあるすべてのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","ホストのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"}.
+{"External component failure","外部コンポーネントの障害"}.
+{"External component timeout","外部コンポーネントのタイムアウト"}.
 {"Failed to extract JID from your voice request approval","発言権要求の承認から JID を取り出すことに失敗しました"}.
 {"Failed to parse HTTP response","HTTP 応答のパースに失敗しました"}.
+{"Failed to process option '~s'","オプション '~s' の処理に失敗しました"}.
 {"Family Name","姓"}.
 {"February","2月"}.
 {"Fill in the form to search for any matching XMPP User","XMPP ユーザーを検索するには欄に入力してください"}.
@@ -128,8 +135,11 @@
 {"Full List of Room Admins","チャットルーム管理者の一覧"}.
 {"Full List of Room Owners","チャットルーム主宰者の一覧"}.
 {"Full Name","氏名"}.
+{"Get List of Online Users","オンラインユーザーの一覧を取得"}.
+{"Get List of Registered Users","登録ユーザーの一覧を取得"}.
 {"Get Number of Online Users","オンラインユーザー数を取得"}.
 {"Get Number of Registered Users","登録ユーザー数を取得"}.
+{"Get Pending","保留中の取得"}.
 {"Get User Last Login Time","最終ログイン時間を取得"}.
 {"Get User Password","パスワードを取得"}.
 {"Get User Statistics","ユーザー統計を取得"}.
@@ -158,8 +168,12 @@
 {"Incoming s2s Connections:","内向き s2s コネクション:"}.
 {"Incorrect data form","データ形式が違います"}.
 {"Incorrect password","パスワードが違います"}.
+{"Installed Modules:","インストールされているモジュール:"}.
+{"Install","インストール"}.
+{"Insufficient privilege","権限が不十分です"}.
 {"Internal server error","内部サーバーエラー"}.
 {"Invalid node name","無効なノード名です"}.
+{"Invalid 'previd' value","無効な 'previd' の値です"}.
 {"Invitations are not allowed in this conference","この会議では、招待はできません"}.
 {"IP addresses","IP アドレス"}.
 {"is now known as","は名前を変更しました: "}.
@@ -168,6 +182,7 @@
 {"It is not allowed to send private messages to the conference","この会議にプライベートメッセージを送信することはできません"}.
 {"Jabber ID","Jabber ID"}.
 {"January","1月"}.
+{"JID normalization failed","JID の正規化に失敗しました"}.
 {"joins the room","がチャットルームに参加しました"}.
 {"July","7月"}.
 {"June","6月"}.
@@ -216,14 +231,22 @@
 {"Nickname Registration at ","ニックネーム登録: "}.
 {"Nickname ~s does not exist in the room","ニックネーム ~s はこのチャットルームにいません"}.
 {"Nickname","ニックネーム"}.
+{"No address elements found","アドレス要素が見つかりません"}.
+{"No addresses element found","アドレス要素が見つかりません"}.
 {"No body provided for announce message","アナウンスメッセージはありませんでした"}.
+{"No child elements found","子要素が見つかりません"}.
 {"No Data","データなし"}.
+{"No <forwarded/> element found","<forwarded/> 要素が見つかりません"}.
+{"No 'item' element found","'item' 要素が見つかりません"}.
 {"No limit","制限なし"}.
+{"No 'password' found in this query","このクエリに 'password' が見つかりません"}.
+{"No services available","利用できるサービスはありません"}.
 {"Node already exists","ノードは既に存在しています"}.
 {"Node ID","ノードID"}.
 {"Node not found","ノードが見つかりません"}.
 {"Node ~p","ノード ~p"}.
 {"Nodes","ノード"}.
+{"Node","ノード"}.
 {"None","なし"}.
 {"Not Found","見つかりません"}.
 {"Notify subscribers when items are removed from the node","アイテムがノードから消された時に購読者へ通知する"}.
@@ -245,6 +268,8 @@
 {"Online Users:","オンラインユーザー:"}.
 {"Online","オンライン"}.
 {"Only deliver notifications to available users","有効なユーザーにのみ告知を送信する"}.
+{"Only <enable/> or <disable/> tags are allowed","<enable/> タグまたは <disable/> タグのみが許可されます"}.
+{"Only <list/> element is allowed in this query","このクエリでは <list/> 要素のみが許可されます"}.
 {"Only members may query archives of this room","メンバーのみがこのルームのアーカイブを取得できます"}.
 {"Only moderators and participants are allowed to change the subject in this room","モデレーターと参加者のみがチャットルームの件名を変更できます"}.
 {"Only moderators are allowed to change the subject in this room","モデレーターのみがチャットルームの件名を変更できます"}.
@@ -258,6 +283,7 @@
 {"Outgoing s2s Connections:","外向き s2s コネクション:"}.
 {"Owner privileges required","主宰者の権限が必要です"}.
 {"Packet","パケット"}.
+{"Participant ID","参加者 ID"}.
 {"Participant","参加者"}.
 {"Password Verification","パスワード (確認)"}.
 {"Password Verification:","パスワード (確認):"}.
@@ -274,11 +300,14 @@
 {"Please, wait for a while before sending new voice request","新しい発言権の要求を送るまで少し間をおいてください"}.
 {"Pong","Pong"}.
 {"Present real Jabber IDs to","本当の Jabber ID を公開"}.
+{"Previous session not found","前のセッションが見つかりません"}.
 {"private, ","プライベート、"}.
+{"Public","公開"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub 購読者のリクエスト"}.
 {"Purge all items when the relevant publisher goes offline","公開者がオフラインになるときに、すべてのアイテムを削除"}.
 {"Queries to the conference members are not allowed in this room","このチャットルームでは、会議のメンバーへのクエリーは禁止されています"}.
+{"Query to another users is forbidden","他のユーザーへのクエリは禁止されています"}.
 {"RAM and disc copy","RAM, ディスクコピー"}.
 {"RAM copy","RAM コピー"}.
 {"Really delete message of the day?","本当にお知らせメッセージを削除しますか ?"}.
@@ -292,6 +321,7 @@
 {"Remove User","ユーザーを削除"}.
 {"Remove","削除"}.
 {"Replaced by new connection","新しいコネクションによって置き換えられました"}.
+{"Request is ignored","リクエストは無視されます"}.
 {"Resources","リソース"}.
 {"Restart Service","サービスを再起動"}.
 {"Restart","再起動"}.
@@ -330,6 +360,7 @@
 {"Show Integral Table","累積の表を表示"}.
 {"Show Ordinary Table","通常の表を表示"}.
 {"Shut Down Service","サービスを停止"}.
+{"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","XMPP クライアントはコンピューターにパスワードを記憶できます。コンピューターが安全であると信頼できる場合にのみ、この機能を使用してください。"}.
 {"Specify the access model","アクセスモデルを設定する"}.
 {"Specify the event message type","イベントメッセージ種別を設定"}.
@@ -377,6 +408,7 @@
 {"Too many CAPTCHA requests","CAPTCHA 要求が多すぎます"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","~p回の認証に失敗しました。このIPアドレス(~s)は~s UTCまでブロックされます。"}.
 {"Too many unacked stanzas","多くのスタンザが応答していません"}.
+{"Too many users in this conference","この会議にはユーザーが多すぎます"}.
 {"Total rooms","チャットルーム数"}.
 {"To","To"}.
 {"Traffic rate limit is exceeded","トラフィックレートの制限を超えました"}.
@@ -388,8 +420,12 @@
 {"Tuesday","火曜日"}.
 {"Unable to generate a CAPTCHA","CAPTCHA を生成できません"}.
 {"Unauthorized","認証されていません"}.
+{"Unexpected action","予期しないアクション"}.
+{"Unexpected error condition: ~p","予期しないエラー状態: ~p"}.
+{"Uninstall","アンインストール"}.
 {"Unregister an XMPP account","XMPP アカウントを削除"}.
 {"Unregister","削除"}.
+{"Unselect All","すべての選択を解除"}.
 {"Unsupported version","対応していないバージョン"}.
 {"Update message of the day (don't send)","お知らせメッセージを更新 (送信しない)"}.
 {"Update message of the day on all hosts (don't send)","全ホストのお知らせメッセージを更新 (送信しない)"}.
@@ -397,12 +433,15 @@
 {"Update ~p","更新 ~p"}.
 {"Update script","スクリプトの更新"}.
 {"Update","更新"}.
+{"Upgrade","アップグレード"}.
 {"Uptime:","起動時間:"}.
 {"User already exists","ユーザーは既に存在しています"}.
 {"User (jid)","ユーザー (JID)"}.
 {"User JID","ユーザー JID"}.
 {"User Management","ユーザー管理"}.
 {"User removed","ユーザーを削除しました"}.
+{"User session not found","ユーザーセッションが見つかりません"}.
+{"User session terminated","ユーザーセッションが終了しました"}.
 {"User ~ts","ユーザー ~ts"}.
 {"Username:","ユーザー名:"}.
 {"Users are not allowed to register accounts so quickly","それほど速くアカウントを登録することはできません"}.
@@ -410,6 +449,8 @@
 {"Users","ユーザー"}.
 {"User","ユーザー"}.
 {"Validate","検証"}.
+{"Value of '~s' should be boolean","'~s' の値はブール値である必要があります"}.
+{"Value of '~s' should be integer","'~s' の値は整数である必要があります"}.
 {"vCard User Search","vCard検索"}.
 {"View Queue","キューを表示"}.
 {"View Roster","名簿を表示"}.
@@ -420,11 +461,15 @@
 {"Voice requests are disabled in this conference","この会議では、発言権の要求はできません"}.
 {"Voice request","発言権を要求"}.
 {"Wednesday","水曜日"}.
+{"When a new subscription is processed","新しい購読が処理されるとき"}.
 {"When to send the last published item","最後の公開アイテムを送信するタイミングで"}.
 {"Whether to allow subscriptions","購読を許可するかどうか"}.
+{"Who can send private messages","誰がプライベートメッセージを送れるか"}.
 {"XMPP Account Registration","XMPP アカウント登録"}.
 {"XMPP Domains","XMPP ドメイン"}.
 {"You are being removed from the room because of a system shutdown","システムシャットダウンのためチャットルームから削除されました"}.
+{"You are not allowed to send private messages","プライベートメッセージを送信する権限がありません"}.
+{"You are not joined to the channel","チャンネルに参加していません"}.
 {"You can later change your password using an XMPP client.","あなたは後で XMPP クライアントを使用してパスワードを変更できます。"}.
 {"You have been banned from this room","あなたはこのチャットルームから締め出されています"}.
 {"You must fill in field \"Nickname\" in the form","フォームの\"ニックネーム\"欄を入力する必要があります"}.
