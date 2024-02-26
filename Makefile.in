@@ -635,7 +635,7 @@ help:
 	@echo "  scripts        Prepare ejabberd start scripts"
 	@echo "  deps           Get and configure dependencies"
 	@echo "  src            Compile dependencies and ejabberd"
-	@echo "  update         Update dependencies' source code"
+	@echo "  update         Update dependencies source code"
 	@echo "  clean          Clean binary files"
 	@echo "  distclean      Clean completely the development files"
 	@echo ""
@@ -655,10 +655,10 @@ help:
 	@echo "  translations   Extract translation files"
 	@echo "  TAGS           Generate tags file for text editors"
 	@echo ""
-	@echo "  dialyzer       Run Dialyzer static analyzer"
+	@echo "  dialyzer       Run Dialyzer static analyzer [rebar3]"
 	@echo "  hooks          Run hooks validator"
-	@echo "  test           Run Common Tests suite"
-	@echo "  xref           Run cross reference analysis"
+	@echo "  test           Run Common Tests suite [rebar3]"
+	@echo "  xref           Run cross reference analysis [rebar3]"
 
 #.
 #'
