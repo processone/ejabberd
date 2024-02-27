@@ -29,7 +29,7 @@
 -export([start/0, get/0, set/1, get_log_path/0, flush/0]).
 -export([convert_loglevel/1, loglevels/0, set_modules_fully_logged/1]).
 -ifndef(LAGER).
--export([progress_filter/2]).
+-export([progress_filter/2, config_reloaded/0]).
 -endif.
 %% Deprecated functions
 -export([restart/0, reopen_log/0, rotate_log/0]).
@@ -266,6 +266,7 @@ start(Level) ->
     EjabberdLog = get_log_path(),
     Dir = filename:dirname(EjabberdLog),
     ErrorLog = filename:join([Dir, "error.log"]),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     LogRotateSize = get_integer_env(log_rotate_size, 10*1024*1024),
     LogRotateCount = get_integer_env(log_rotate_count, 1),
     LogBurstLimitWindowTime = get_integer_env(log_burst_limit_window_time, 1000),
@@ -329,6 +330,27 @@ get_default_handlerid() ->
 -spec restart() -> ok.
 restart() ->
     ok.
+
+-spec config_reloaded() -> ok.
+config_reloaded() ->
+    LogRotateSize = ejabberd_option:log_rotate_size(),
+    LogRotateCount = ejabberd_option:log_rotate_count(),
+    LogBurstLimitWindowTime = ejabberd_option:log_burst_limit_window_time(),
+    LogBurstLimitCount = ejabberd_option:log_burst_limit_count(),
+    lists:foreach(
+	fun(Handler) ->
+	    case logger:get_handler_config(Handler) of
+		{ok, #{config := Config}} ->
+		    Config2 = Config#{
+			max_no_bytes => LogRotateSize,
+			max_no_files => LogRotateCount,
+			burst_limit_window_time => LogBurstLimitWindowTime,
+			burst_limit_max_count => LogBurstLimitCount},
+		    logger:update_handler_config(Handler, config, Config2);
+		_ ->
+		    ok
+	    end
+	end, [ejabberd_log, error_log]).
 
 progress_filter(#{level:=info,msg:={report,#{label:={_,progress}}}} = Event, _) ->
     case get() of
