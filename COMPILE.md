@@ -91,12 +91,7 @@ Instead of installing ejabberd in the system, you can build an OTP release
 that includes all necessary to run ejabberd in a subdirectory:
 
     ./configure
-    make rel
-
-Or, if you have Elixir available and plan to develop Elixir code:
-
-    ./configure --with-rebar=mix
-    make dev
+    make prod
 
 Check the full list of targets:
 
