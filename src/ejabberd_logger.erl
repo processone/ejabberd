@@ -27,9 +27,9 @@
 
 %% API
 -export([start/0, get/0, set/1, get_log_path/0, flush/0]).
--export([convert_loglevel/1, loglevels/0, set_modules_fully_logged/1]).
+-export([convert_loglevel/1, loglevels/0, set_modules_fully_logged/1, config_reloaded/0]).
 -ifndef(LAGER).
--export([progress_filter/2, config_reloaded/0]).
+-export([progress_filter/2]).
 -endif.
 %% Deprecated functions
 -export([restart/0, reopen_log/0, rotate_log/0]).
@@ -185,6 +185,9 @@ restart() ->
     application:stop(lager),
     start(Level).
 
+config_reloaded() ->
+    ok.
+
 reopen_log() ->
     ok.
 
@@ -266,7 +269,6 @@ start(Level) ->
     EjabberdLog = get_log_path(),
     Dir = filename:dirname(EjabberdLog),
     ErrorLog = filename:join([Dir, "error.log"]),
-    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     LogRotateSize = get_integer_env(log_rotate_size, 10*1024*1024),
     LogRotateCount = get_integer_env(log_rotate_count, 1),
     LogBurstLimitWindowTime = get_integer_env(log_burst_limit_window_time, 1000),

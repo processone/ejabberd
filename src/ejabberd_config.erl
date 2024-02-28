@@ -111,6 +111,9 @@ reload() ->
 			    ejabberd_hooks:run(host_down, [Host])
 		    end, DelHosts),
 		  ejabberd_hooks:run(config_reloaded, []),
+		  % logger is started too early to be able to use hooks, so
+		  % we need to call it separately
+		  ejabberd_logger:config_reloaded(),
 		  delete_host_options(DelHosts),
 		  ?INFO_MSG("Configuration reloaded successfully", []);
 	      Err ->
