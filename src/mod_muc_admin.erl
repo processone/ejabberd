@@ -1574,7 +1574,7 @@ validate_host(Name, ArgName) ->
 	error ->
 	    throw({error, <<"Invalid value of '",ArgName/binary,"'">>});
 	Name2 ->
-	    case lists:member(Name2, ejabberd_config:get_myhosts()) of
+	    case lists:member(Name2, ejabberd_option:hosts()) of
 		false ->
 		    throw({error, <<"Unknown host passed in '",ArgName/binary,"'">>});
 		_ ->
