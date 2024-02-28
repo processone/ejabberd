@@ -860,7 +860,7 @@ depends(_Host, _Opts) ->
 mod_opt_type(host) ->
     econf:host();
 mod_opt_type(matrix_domain) ->
-    econf:binary();
+    econf:host();
 mod_opt_type(key_name) ->
     econf:binary();
 mod_opt_type(key) ->
@@ -875,7 +875,7 @@ mod_opt_type(persist) ->
     econf:bool().
 
 mod_options(Host) ->
-    [{matrix_domain, <<"@HOST@">>},
+    [{matrix_domain, Host},
      {host, <<"matrix.", Host/binary>>},
      {key_name, <<"">>},
      {key, {<<"">>, <<"">>}},
