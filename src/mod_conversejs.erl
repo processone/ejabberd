@@ -54,8 +54,7 @@ process([], #request{method = 'GET', host = Host, raw_path = RawPath}) ->
     ExtraOptions = get_auth_options(Host)
         ++ get_register_options(Host)
         ++ get_extra_options(Host),
-    DomainRaw = gen_mod:get_module_opt(Host, ?MODULE, default_domain),
-    Domain = misc:expand_keyword(<<"@HOST@">>, DomainRaw, Host),
+    Domain = mod_conversejs_opt:default_domain(Host),
     Script = get_file_url(Host, conversejs_script,
                           <<RawPath/binary, "/converse.min.js">>,
                           <<"https://cdn.conversejs.org/dist/converse.min.js">>),
@@ -238,12 +237,12 @@ mod_opt_type(conversejs_script) ->
 mod_opt_type(conversejs_css) ->
     econf:binary();
 mod_opt_type(default_domain) ->
-    econf:binary().
+    econf:host().
 
-mod_options(_) ->
+mod_options(Host) ->
     [{bosh_service_url, auto},
      {websocket_url, auto},
-     {default_domain, <<"@HOST@">>},
+     {default_domain, Host},
      {conversejs_resources, undefined},
      {conversejs_options, []},
      {conversejs_script, auto},
