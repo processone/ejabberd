@@ -264,7 +264,7 @@ defmodule Ejabberd.MixProject do
       config_dir: config(:config_dir),
       logs_dir: config(:logs_dir),
       spool_dir: config(:spool_dir),
-      vsn: config(:vsn),
+      vsn: version(),
       iexpath: config(:iexpath),
       erl: config(:erl),
       epmd: config(:epmd),
