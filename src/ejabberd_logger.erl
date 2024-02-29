@@ -368,7 +368,7 @@ progress_filter(Event, _) ->
 console_template() ->
     case (false /= code:is_loaded('Elixir.Logger'))
         andalso
-        lists:keymember(default_formatter, 1, 'Elixir.Logger':module_info(exports)) of
+        'Elixir.System':version() >= <<"1.15">> of
         true ->
             [date, " ", time, " [", level, "] ", message, "\n"];
         false ->
