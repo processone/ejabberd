@@ -320,9 +320,9 @@ spec(ip_mask, 0, _, _) ->
 spec(port, 0, _, _) ->
     erl_types:t_from_range(1, 65535);
 spec(re, A, _, _) when A == 0; A == 1 ->
-    t_remote(re, mp);
+    t_remote(misc, re_mp);
 spec(glob, A, _, _) when A == 0; A == 1 ->
-    t_remote(re, mp);
+    t_remote(misc, re_mp);
 spec(path, 0, _, _) ->
     erl_types:t_binary();
 spec(binary_sep, 1, _, _) ->

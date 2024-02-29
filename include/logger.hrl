@@ -62,7 +62,5 @@
             _ -> 'Elixir.Logger':bare_log(error, io_lib:format(Format, Args), [?MODULE])
         end).
 
--type re_mp() :: {re_pattern, _, _, _, _}. % Copied from re.erl
-
 %% Uncomment if you want to debug p1_fsm/gen_fsm
 %%-define(DBGFSM, true).

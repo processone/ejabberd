@@ -54,6 +54,10 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include_lib("kernel/include/file.hrl").
 
+%% Copied from erlang/otp/lib/stdlib/src/re.erl
+-type re_mp() :: {re_pattern, _, _, _, _}.
+-export_type([re_mp/0]).
+
 -type distance_cache() :: #{{string(), string()} => non_neg_integer()}.
 
 -spec uri_parse(binary()|string()) -> {ok, string(), string(), string(), number(), string(), string()} | {error, term()}.
