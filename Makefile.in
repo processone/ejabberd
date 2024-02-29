@@ -577,10 +577,16 @@ Makefile: Makefile.in
 #' dialyzer
 #
 
-ifeq "$(REBAR_VER)" "3"
+ifeq "$(REBAR_VER)" "6" # Mix
+dialyzer:
+	MIX_ENV=test $(REBAR) dialyzer
+
+else
+ifeq "$(REBAR_VER)" "3" # Rebar3
 dialyzer:
 	$(REBAR) dialyzer
-else
+
+else # Rebar2
 deps := $(wildcard $(DEPSDIR)/*/ebin)
 
 dialyzer/erlang.plt:
@@ -619,6 +625,7 @@ dialyzer: erlang_plt deps_plt ejabberd_plt
 	@dialyzer --plts dialyzer/*.plt --no_check_plt \
 	--get_warnings -o dialyzer/error.log ebin; \
 	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
+endif
 endif
 
 #.
@@ -671,7 +678,7 @@ help:
 	@echo "  translations   Extract translation files"
 	@echo "  TAGS           Generate tags file for text editors"
 	@echo ""
-	@echo "  dialyzer       Run Dialyzer static analyzer [rebar3]"
+	@echo "  dialyzer       Run Dialyzer static analyzer"
 	@echo "  hooks          Run hooks validator"
 	@echo "  test           Run Common Tests suite [rebar3]"
 	@echo "  xref           Run cross reference analysis [rebar3]"

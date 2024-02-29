@@ -16,6 +16,7 @@ defmodule Ejabberd.MixProject do
      aliases: [test: "test --no-start"],
      start_permanent: Mix.env() == :prod,
      language: :erlang,
+     dialyzer: dialyzer(),
      releases: releases(),
      package: package(),
      docs: docs(),
@@ -50,6 +51,17 @@ defmodule Ejabberd.MixProject do
                              :cache_tab, :eimp, :mqtree, :p1_acme,
                              :p1_oauth2, :pkix, :xmpp]
      ++ cond_included_apps()]
+  end
+
+  defp dialyzer do
+    [
+      plt_add_apps: [
+        :mnesia, :odbc, :os_mon, :stdlib,
+        :eredis, :luerl,
+        :cache_tab, :eimp, :epam, :esip, :ezlib, :mqtree,
+        :p1_acme, :p1_mysql, :p1_oauth2, :p1_pgsql, :pkix,
+        :sqlite3, :stun, :xmpp],
+    ]
   end
 
   defp if_version_above(ver, okResult) do
@@ -104,6 +116,7 @@ defmodule Ejabberd.MixProject do
   defp deps do
     [{:base64url, "~> 1.0"},
      {:cache_tab, "~> 1.0"},
+     {:dialyxir, "~> 1.2", only: [:test], runtime: false},
      {:eimp, "~> 1.0"},
      {:ex_doc, "~> 0.31", only: [:dev, :edoc], runtime: false},
      {:fast_tls, ">= 1.1.18"},
@@ -164,6 +177,7 @@ defmodule Ejabberd.MixProject do
                          {config(:lua), :luerl},
                          {config(:redis), :eredis},
                          {Mix.env() == :edoc, :ex_doc},
+                         {Mix.env() == :test, :dialyxir},
                          {if_version_below(~c"22", true), :lager},
                          {config(:mysql), :p1_mysql},
                          {config(:sip), :esip},
