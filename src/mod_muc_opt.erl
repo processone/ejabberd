@@ -212,7 +212,7 @@ ram_db_type(Opts) when is_map(Opts) ->
 ram_db_type(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, ram_db_type).
 
--spec regexp_room_id(gen_mod:opts() | global | binary()) -> <<>> | re:mp().
+-spec regexp_room_id(gen_mod:opts() | global | binary()) -> <<>> | misc:re_mp().
 regexp_room_id(Opts) when is_map(Opts) ->
     gen_mod:get_opt(regexp_room_id, Opts);
 regexp_room_id(Host) ->

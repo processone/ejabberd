@@ -118,7 +118,7 @@ ldap_memberattr_format(Opts) when is_map(Opts) ->
 ldap_memberattr_format(Host) ->
     gen_mod:get_module_opt(Host, mod_shared_roster_ldap, ldap_memberattr_format).
 
--spec ldap_memberattr_format_re(gen_mod:opts() | global | binary()) -> 'undefined' | re:mp().
+-spec ldap_memberattr_format_re(gen_mod:opts() | global | binary()) -> 'undefined' | misc:re_mp().
 ldap_memberattr_format_re(Opts) when is_map(Opts) ->
     gen_mod:get_opt(ldap_memberattr_format_re, Opts);
 ldap_memberattr_format_re(Host) ->

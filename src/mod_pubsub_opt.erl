@@ -39,7 +39,7 @@ default_node_config(Opts) when is_map(Opts) ->
 default_node_config(Host) ->
     gen_mod:get_module_opt(Host, mod_pubsub, default_node_config).
 
--spec force_node_config(gen_mod:opts() | global | binary()) -> [{re:mp(),[{atom(),atom() | integer()}]}].
+-spec force_node_config(gen_mod:opts() | global | binary()) -> [{misc:re_mp(),[{atom(),atom() | integer()}]}].
 force_node_config(Opts) when is_map(Opts) ->
     gen_mod:get_opt(force_node_config, Opts);
 force_node_config(Host) ->
