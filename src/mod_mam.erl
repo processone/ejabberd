@@ -1598,7 +1598,9 @@ mod_doc() ->
     #{desc =>
           ?T("This module implements "
              "https://xmpp.org/extensions/xep-0313.html"
-             "[XEP-0313: Message Archive Management]. "
+             "[XEP-0313: Message Archive Management] and "
+             "https://xmpp.org/extensions/xep-0441.html"
+             "[XEP-0441: Message Archive Management Preferences]. "
              "Compatible XMPP clients can use it to store their "
              "chat history on the server."),
       opts =>
