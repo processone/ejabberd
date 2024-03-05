@@ -443,11 +443,13 @@ add_message_to_log(Nick1, Message, RoomJID, Opts,
     {_, _, Microsecs} = Now,
     STimeUnique = io_lib:format("~ts.~w",
 				[STime, Microsecs]),
+    maybe_print_jl(open, F, Message, FileFormat),
     fw(F, io_lib:format("<a id=\"~ts\" name=\"~ts\" href=\"#~ts\" "
                        "class=\"ts\">[~ts]</a> ",
                        [STimeUnique, STimeUnique, STimeUnique, STime])
 	 ++ Text,
        FileFormat),
+    maybe_print_jl(close, F, Message, FileFormat),
     file:close(F),
     ok.
 
@@ -598,6 +600,7 @@ put_header(F, Room, Date, CSSFile, Lang, Hour_offset,
     RoomOccupants = roomoccupants_to_string(Occupants,
 					    FileFormat),
     put_room_occupants(F, RoomOccupants, Lang, FileFormat),
+    put_occupants_join_leave(F, Lang),
     Time_offset_str = case Hour_offset < 0 of
 			true -> io_lib:format("~p", [Hour_offset]);
 			false -> io_lib:format("+~p", [Hour_offset])
@@ -662,6 +665,35 @@ put_room_occupants(F, RoomOccupants, Lang,
 	 "y: none;\" ><br/>~ts</div>">>,
        [Now2, RoomOccupants]),
     fw(F, <<"</div>">>).
+
+put_occupants_join_leave(F, Lang) ->
+    fw(F, <<"<div class=\"rc\">">>),
+    fw(F,
+       <<"<div class=\"rct\" onclick=\"jlf();return "
+	 "false;\">~ts</div>">>,
+       [tr(Lang, ?T("Show Occupants Join/Leave"))]),
+    fw(F, <<"</div>">>).
+
+maybe_print_jl(_Direction, _F, _Message, plaintext) ->
+    ok;
+maybe_print_jl(Direction, F, Message, html) ->
+    PrintJl = case Message of
+        join -> true;
+        leave -> true;
+        {leave, _} -> true;
+        _ -> false
+    end,
+    case PrintJl of
+        true -> print_jl(Direction, F);
+        false -> ok
+    end.
+
+print_jl(Direction, F) ->
+    String = case Direction of
+                 open -> "<div class=\"jl\">";
+                 close -> "</div>"
+             end,
+    fw(F, io_lib:format(String, [])).
 
 htmlize(S1) -> htmlize(S1, html).
 

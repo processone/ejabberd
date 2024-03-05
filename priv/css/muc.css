@@ -16,12 +16,14 @@ a.roomjid {color: #336699; font-size: 24px; font-weight: bold; font-family: sans
 div.logdate {color: #663399; font-size: 20px; font-weight: bold; font-family: sans-serif; letter-spacing: 2px; border-bottom: #224466 solid 1pt; margin-left:80pt; margin-top:20px;}
 div.roomsubject {color: #336699; font-size: 18px; font-family: sans-serif; margin-left: 80pt; margin-bottom: 10px;}
 div.rc {color: #336699; font-size: 12px; font-family: sans-serif; margin-left: 50%; text-align: right; background: #f3f6f9; border-bottom: 1px solid #336699; border-right: 4px solid #336699;}
-div.rct {font-weight: bold; background: #e3e6e9; padding-right: 10px;}
+div.rct {font-weight: bold; background: #e3e6e9; padding-right: 10px; cursor: pointer;}
+div.rct:hover {text-decoration: underline;}
 div.rcos {padding-right: 10px;}
 div.rcoe {color: green;}
 div.rcod {color: red;}
 div.rcoe:after {content: ": v";}
 div.rcod:after {content: ": x";}
 div.rcot:after {}
+div.jl {display: none;}
 .legend {width: 100%; margin-top: 30px; border-top: #224466 solid 1pt;  padding: 10px 0px 10px 0px; text-align: left; font-family: monospace; letter-spacing: 2px;}
 .w3c {position: absolute; right: 10px; width: 60%; text-align: right; font-family: monospace; letter-spacing: 1px;}
