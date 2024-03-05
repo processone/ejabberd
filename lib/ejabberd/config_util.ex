@@ -7,7 +7,7 @@ defmodule Ejabberd.ConfigUtil do
   @doc """
   Returns true when the config file is based on elixir.
   """
-  @spec is_elixir_config(list) :: boolean
+  @spec is_elixir_config(binary) :: boolean
   def is_elixir_config(filename) when is_list(filename) do
     is_elixir_config(to_string(filename))
   end

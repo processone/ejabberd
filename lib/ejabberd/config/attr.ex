@@ -41,7 +41,7 @@ defmodule Ejabberd.Config.Attr do
   """
   @spec validate([attr]) :: [{:ok, attr}] | [{:error, attr, atom()}]
   def validate(attrs) when is_list(attrs), do: Enum.map(attrs, &valid_attr?/1)
-  def validate(attr), do: validate([attr]) |> List.first
+  def validate(attr), do: validate([attr])
 
   @doc """
   Returns the type of an attribute, given its name.

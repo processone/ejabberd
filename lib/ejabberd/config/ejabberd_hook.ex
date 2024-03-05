@@ -13,7 +13,6 @@ defmodule Ejabberd.Config.EjabberdHook do
   @doc """
   Register a hook to ejabberd.
   """
-  @spec start(EjabberdHook.t) :: none
   def start(%EjabberdHook{hook: hook, opts: opts, fun: fun}) do
     host = Keyword.get(opts, :host, :global)
     priority = Keyword.get(opts, :priority, 50)

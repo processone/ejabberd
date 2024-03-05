@@ -4,8 +4,6 @@ defmodule Ejabberd.Config.ValidatorUtility do
   Imports utility functions for working with validation structures.
   """
 
-  alias Ejabberd.Config.EjabberdModule
-
   @doc """
   Inserts an error inside the errors collection, for the given key.
   If the key doesn't exists then it creates an empty collection
@@ -22,7 +20,6 @@ defmodule Ejabberd.Config.ValidatorUtility do
   Given a list of modules it extracts and returns a list
   of the module names (which are Elixir.Module).
   """
-  @spec extract_module_names(EjabberdModule.t) :: [atom]
   def extract_module_names(modules) when is_list(modules) do
     modules
     |> Enum.map(&Map.get(&1, :module))

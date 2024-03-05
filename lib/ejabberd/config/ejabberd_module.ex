@@ -30,7 +30,6 @@ defmodule Ejabberd.Config.EjabberdModule do
   a git attribute and tries to fetch the repo,
   then, it install them through :ext_mod.install/1
   """
-  @spec fetch_git_repos([EjabberdModule.t]) :: none()
   def fetch_git_repos(modules) do
     modules
     |> Enum.filter(&is_git_module?/1)

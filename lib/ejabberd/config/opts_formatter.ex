@@ -14,14 +14,11 @@ defmodule Ejabberd.Config.OptsFormatter do
   Look at how Config.get_ejabberd_opts/0 is constructed for
   more informations.
   """
-  @spec format_opts_for_ejabberd([{atom(), any()}]) :: list()
+  @spec format_opts_for_ejabberd(map) :: list()
   def format_opts_for_ejabberd(opts) do
     opts
     |> format_attrs_for_ejabberd
   end
-
-  defp format_attrs_for_ejabberd(opts) when is_list(opts),
-    do: (Enum.map opts, &format_attrs_for_ejabberd/1)
 
   defp format_attrs_for_ejabberd({:listeners, mods}),
     do: {:listen, format_listeners_for_ejabberd(mods)}
@@ -31,6 +28,9 @@ defmodule Ejabberd.Config.OptsFormatter do
 
   defp format_attrs_for_ejabberd({key, opts}) when is_atom(key),
     do: {key, opts}
+
+  defp format_attrs_for_ejabberd(opts),
+    do: (Enum.map opts, &format_attrs_for_ejabberd/1)
 
   defp format_mods_for_ejabberd(mods) do
     Enum.map mods, fn %EjabberdModule{module: mod, attrs: attrs} ->
