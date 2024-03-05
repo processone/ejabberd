@@ -583,7 +583,7 @@ put_header(F, Room, Date, CSSFile, Lang, Hour_offset,
 	 "class=\"nav\" href=\"~ts\">&gt;</a></span></di"
 	 "v>">>,
        [Date, Date_prev, Date_next]),
-    case {htmlize(Room#room.subject_author),
+    case {htmlize(prepare_subject_author(Room#room.subject_author)),
 	  htmlize(Room#room.subject)}
 	of
       {<<"">>, <<"">>} -> ok;
@@ -783,6 +783,12 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 						 (htmlize(tr(Lang, misc:atom_to_binary(T)),
 							  FileFormat))/binary,
 						 "\"</div>">>;
+					   allowpm ->
+					       <<"<div class=\"rcot\">",
+						 OptText/binary, ": \"",
+						 (htmlize(tr(Lang, misc:atom_to_binary(T)),
+							  FileFormat))/binary,
+						 "\"</div>">>;
 					   _ -> <<"\"", T/binary, "\"">>
 					 end
 				   end,
@@ -897,6 +903,11 @@ get_room_occupants(RoomJIDString) ->
 	error ->
 	    []
     end.
+
+prepare_subject_author({Nick, _}) ->
+    Nick;
+prepare_subject_author(SA) ->
+    SA.
 
 -spec get_room_state(binary(), binary()) -> {ok, mod_muc_room:state()} | error.
 
