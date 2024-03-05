@@ -4,6 +4,8 @@ defmodule Ejabberd.Config.Validator.Dependencies do
   with the @dependency annotation.
   """
 
+  alias Ejabberd.Config.EjabberdModule
+
   # TODO: Duplicated from validator.ex !!!
   @type mod_validation :: {[EjabberdModule.t], EjabberdModule.t, map}
   import Ejabberd.Config.ValidatorUtility

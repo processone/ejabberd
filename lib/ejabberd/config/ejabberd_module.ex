@@ -7,12 +7,13 @@ defmodule Ejabberd.Config.EjabberdModule do
   the already existing Elixir.Module.
   """
 
-  @type t :: %{module: atom, attrs: [Attr.t]}
-
-  defstruct [:module, :attrs]
-
   alias Ejabberd.Config.EjabberdModule
   alias Ejabberd.Config.Validation
+  alias Ejabberd.Config.Attr
+
+  @type t :: %{module: atom, attrs: [Attr.attr]}
+
+  defstruct [:module, :attrs]
 
   @doc """
   Given a list of modules / single module

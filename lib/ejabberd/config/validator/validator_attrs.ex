@@ -3,11 +3,12 @@ defmodule Ejabberd.Config.Validator.Attrs do
   Validator module used to validate attributes.
   """
 
-  # TODO: Duplicated from validator.ex !!!
-  @type mod_validation :: {[EjabberdModule.t], EjabberdModule.t, map}
-
   import Ejabberd.Config.ValidatorUtility
   alias Ejabberd.Config.Attr
+  alias Ejabberd.Config.EjabberdModule
+
+  # TODO: Duplicated from validator.ex !!!
+  @type mod_validation :: {[EjabberdModule.t], EjabberdModule.t, map}
 
   @doc """
   Given a module (with the form used for validation)
