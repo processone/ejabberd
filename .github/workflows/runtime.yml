@@ -334,12 +334,13 @@ jobs:
         ./autogen.sh
         ./configure --with-rebar=mix \
                     --prefix=/tmp/ejabberd \
-                    --enable-all \
-                    --disable-odbc
+                    --enable-all
         mix deps.get
         make
 
     - run: make xref
+
+    - run: make dialyzer
 
     - run: make edoc
 
