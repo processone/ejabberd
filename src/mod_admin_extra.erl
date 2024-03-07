@@ -802,7 +802,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = send_stanza_c2s, tags = [stanza],
 			desc = "Send a stanza from an existing C2S session",
 			longdesc = "`user`@`host`/`resource` must be an existing C2S session."
-			" As an alternative, use http://./#send-stanza[send_stanza] instead.",
+			" As an alternative, use _`send_stanza`_ API instead.",
 			module = ?MODULE, function = send_stanza_c2s,
 			args = [{user, binary}, {host, binary}, {resource, binary}, {stanza, binary}],
 			args_example = [<<"admin">>, <<"myserver.com">>, <<"bot">>,
@@ -1730,7 +1730,7 @@ mod_doc() ->
            ?T("- 'pushroster': (and 'pushroster-all')"),
            ?T("The roster file must be placed, if using Windows, on the "
 	      "directory where you installed ejabberd: "
-	      "C:/Program Files/ejabberd or similar. If you use other "
+	      "`C:/Program Files/ejabberd` or similar. If you use other "
 	      "Operating System, place the file on the same directory where "
 	      "the .beam files are installed. See below an example roster file."),
            ?T("- 'srg-create':"),

@@ -417,7 +417,7 @@ doc() ->
                "one of these root CA certificates and should contain the "
                "corresponding JID(s) in 'subjectAltName' field. "
                "There is no default value."), "",
-             ?T("You can use http://../toplevel/#host-config[host_config] to specify this option per-vhost."), "",
+             ?T("You can use _`host_config`_ to specify this option per-vhost."), "",
              ?T("To set a specific file per listener, use the listener's http://../listen-options/#cafile[cafile] option. Please notice that 'c2s_cafile' overrides the listener's 'cafile' option."), ""
             ]}},
      {c2s_ciphers,
@@ -462,7 +462,7 @@ doc() ->
         desc =>
             [?T("Path to a file of CA root certificates. "
                "The default is to use system defined file if possible."), "",
-             ?T("For server connections, this 'ca_file' option is overridden by the http://../toplevel/#s2s-cafile[s2s_cafile] option."), ""
+             ?T("For server connections, this 'ca_file' option is overridden by the _`s2s_cafile`_ option."), ""
             ]}},
      {captcha_cmd,
       #{value => ?T("Path | ModuleName"),
@@ -1164,8 +1164,8 @@ doc() ->
         desc =>
             [?T("A path to a file with CA root certificates that will "
                "be used to authenticate s2s connections. If not set, "
-               "the value of http://../toplevel/#ca-file[ca_file] will be used."), "",
-             ?T("You can use http://../toplevel/#host-config[host_config] to specify this option per-vhost."), ""
+               "the value of _`ca_file`_ will be used."), "",
+             ?T("You can use _`host_config`_ to specify this option per-vhost."), ""
             ]}},
      {s2s_ciphers,
       #{value => "[Cipher, ...]",

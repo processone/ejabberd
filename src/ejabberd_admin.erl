@@ -300,7 +300,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = import_prosody, tags = [mnesia, sql],
 			desc = "Import data from Prosody",
 			longdesc = "Note: this requires ejabberd to be "
-                        "[compiled with `--enable-lua`](http://localhost:8098/admin/installation/#configure) "
+                        "compiled with `./configure --enable-lua` "
 			"(which installs the `luerl` library).",
 			module = prosody2ejabberd, function = from_dir,
 			args_desc = ["Full path to the Prosody data directory"],
@@ -371,7 +371,7 @@ get_commands_spec() ->
 			longdesc = "Configure the modules to use SQL, then call this command. "
 			           "After correctly exported the database of a vhost, "
                                    "you may want to delete from mnesia with "
-			           "the http://./#delete-mnesia[delete_mnesia] command.",
+			           "the _`delete_mnesia`_ API.",
 			module = ejd2sql, function = export,
 			args_desc = ["Vhost", "Full path to the destination SQL file"],
 			args_example = ["example.com", "/var/lib/ejabberd/example.com.sql"],
@@ -407,7 +407,7 @@ get_commands_spec() ->
 			"binary backup file the internal Mnesia "
 			"database. This will consume a lot of memory if "
 			"you have a large database, you may prefer "
-			"http://./#install-fallback[install_fallback].",
+			"_`install_fallback`_ API.",
 			module = ?MODULE, function = restore_mnesia,
 			args_desc = ["Full path to the backup file"],
 			args_example = ["/var/lib/ejabberd/database.backup"],
@@ -430,8 +430,8 @@ get_commands_spec() ->
 			"recommended for big databases, as it will "
 			"consume much time, memory and processor. In "
 			"that case it's preferable to use "
-			"http://./#backup[backup] and "
-			"http://./#install-fallback[install_fallback].",
+			"_`backup`_ API and "
+			"_`install_fallback`_ API.",
 			module = ?MODULE, function = load_mnesia,
 			args_desc = ["Full path to the text file"],
 			args_example = ["/var/lib/ejabberd/database.txt"],
@@ -454,7 +454,7 @@ get_commands_spec() ->
 			"start. This means that, after running this "
 			"command, you have to restart ejabberd. This "
 			"command requires less memory than "
-			"http://./#restore[restore].",
+			"_`restore`_ API.",
 			module = ?MODULE, function = install_fallback_mnesia,
 			args_desc = ["Full path to the fallback file"],
 			args_example = ["/var/lib/ejabberd/database.fallback"],
