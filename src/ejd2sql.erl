@@ -74,7 +74,10 @@ export(Server, Output) ->
     close_output(Output, IO).
 
 export(Server, Output, mod_mam = M1) ->
-    MucServices = gen_mod:get_module_opt_hosts(Server, mod_muc),
+    MucServices = case gen_mod:is_loaded(Server, mod_muc) of
+        true -> gen_mod:get_module_opt_hosts(Server, mod_muc);
+        false -> []
+    end,
     [export2(MucService, Output, M1, M1) || MucService <- MucServices],
     export2(Server, Output, M1, M1);
 export(Server, Output, mod_pubsub = M1) ->
