@@ -1,7 +1,7 @@
 #' Define default build variables
 ## specifc ARGs for METHOD='direct'
 ARG OTP_VSN='26.2'
-ARG ELIXIR_VSN='1.16.1'
+ARG ELIXIR_VSN='1.16.2'
 ## specifc ARGs for METHOD='package'
 ARG ALPINE_VSN='3.19'
 ## general ARGs
