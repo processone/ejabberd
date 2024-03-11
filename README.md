@@ -17,9 +17,11 @@
     <a href="https://github.com/processone/ejabberd/actions/workflows/ci.yml" alt="CI">
        <img src="https://github.com/processone/ejabberd/actions/workflows/ci.yml/badge.svg" /></a>
     <a href="https://coveralls.io/github/processone/ejabberd?branch=master" alt="Coverage Status">
-       <img src="https://coveralls.io/repos/github/processone/ejabberd/badge.svg?branch=master "Coverage in coveralls.io"" /></a>
+       <img src="https://coveralls.io/repos/github/processone/ejabberd/badge.svg?branch=master" /></a>
     <a href="https://hosted.weblate.org/projects/ejabberd/ejabberd-po/" alt="Translation status">
-       <img src="https://hosted.weblate.org/widgets/ejabberd/-/ejabberd-po/svg-badge.svg"" /></a>
+       <img src="https://hosted.weblate.org/widgets/ejabberd/-/ejabberd-po/svg-badge.svg" /></a>
+    <a href="https://docs.ejabberd.im/" alt="ejabberd Docs">
+       <img src="https://img.shields.io/github/v/tag/processone/docs.ejabberd.im?sort=semver&logo=&label=docs&logoWidth=0" /></a>
 </p>
 
 
