@@ -234,7 +234,7 @@ mod_doc() ->
               "another URL from which that file can later be downloaded."), "",
            ?T("In order to use this module, it must be enabled "
               "in 'listen' -> 'ejabberd_http' -> "
-              "http://../listen-options/#request-handlers[request_handlers].")],
+              "http://../listen-options/#request_handlers[request_handlers].")],
       opts =>
           [{host,
             #{desc => ?T("Deprecated. Use 'hosts' instead.")}},

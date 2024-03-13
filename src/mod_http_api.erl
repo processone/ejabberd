@@ -538,7 +538,7 @@ mod_doc() ->
 	      "commands using JSON data."), "",
 	   ?T("To use this module, in addition to adding it to the 'modules' "
 	      "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
-              "http://../listen-options/#request-handlers[request_handlers]."), "",
+              "http://../listen-options/#request_handlers[request_handlers]."), "",
 	   ?T("To use a specific API version N, when defining the URL path "
 	      "in the request_handlers, add a 'vN'. "
 	      "For example: '/api/v2: mod_http_api'"), "",

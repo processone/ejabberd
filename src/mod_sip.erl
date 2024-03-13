@@ -383,7 +383,7 @@ mod_doc() ->
            ?T("NOTE: It is not enough to just load this module. "
               "You should also configure listeners and DNS records "
               "properly. For details see the section about the "
-              "http://../listen/#ejabberd-sip[ejabberd_sip] listen module "
+              "http://../listen/#ejabberd_sip[ejabberd_sip] listen module "
               "in the ejabberd Documentation.")],
       opts =>
           [{always_record_route,

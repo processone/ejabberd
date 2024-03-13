@@ -256,9 +256,9 @@ mod_doc() ->
            ?T("Several options were improved in ejabberd 22.05."), "",
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
-              "http://../listen-options/#request-handlers[request_handlers]."), "",
+              "http://../listen-options/#request_handlers[request_handlers]."), "",
            ?T("Make sure either 'mod_bosh' or 'ejabberd_http_ws' "
-              "http://../listen-options/#request-handlers[request_handlers] "
+              "http://../listen-options/#request_handlers[request_handlers] "
               "are enabled."), "",
            ?T("When 'conversejs_css' and 'conversejs_script' are 'auto', "
               "by default they point to the public Converse client.")
