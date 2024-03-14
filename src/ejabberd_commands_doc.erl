@@ -364,7 +364,7 @@ make_tags(HTMLOutput) ->
 
 -dialyzer({no_match, gen_tags/2}).
 gen_tags({TagName, Commands}, HTMLOutput) ->
-    [?TAG(h1, TagName) | [?TAG(p, ?RAW("* *`"++C++"`*")) || C <- Commands]].
+    [?TAG(h1, TagName) | [?TAG(p, ?RAW("* _`"++C++"`_")) || C <- Commands]].
 
 gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
                            args=Args, args_desc=ArgsDesc, note=Note, definer=Definer,
@@ -395,14 +395,14 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
                                  [?TAG(dl, [gen_param(RName, Type, ResultDesc, HTMLOutput)])]
                            end
                      end,
-        TagsText = ?RAW(string:join(["*`"++atom_to_list(Tag)++"`*" || Tag <- Tags], ", ")),
+        TagsText = ?RAW(string:join(["_`"++atom_to_list(Tag)++"`_" || Tag <- Tags], ", ")),
         IsDefinerMod = case Definer of
                          unknown -> false;
                          _ -> lists:member(gen_mod, proplists:get_value(behaviour, Definer:module_info(attributes)))
                      end,
         ModuleText = case IsDefinerMod of
                        true ->
-                           [?TAG(h2, <<"Module:">>), ?TAG(p, ?RAW("*`"++atom_to_list(Definer)++"`*"))];
+                           [?TAG(h2, <<"Module:">>), ?TAG(p, ?RAW("_`"++atom_to_list(Definer)++"`_"))];
                        false ->
                            []
                    end,

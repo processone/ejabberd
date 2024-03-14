@@ -380,7 +380,7 @@ get_commands_spec() ->
 			desc = "Subscribe several users to a MUC conference",
 			note = "added in 22.05",
 			longdesc = "This command accepts up to 50 users at once "
-                            "(this is configurable with the *`mod_muc_admin`* option "
+                            "(this is configurable with the _`mod_muc_admin`_ option "
                             "`subscribe_room_many_max_users`)",
 			module = ?MODULE, function = subscribe_room_many,
 			args_desc = ["Users JIDs and nicks",
@@ -402,7 +402,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = subscribe_room_many, tags = [muc_room, muc_sub],
 			desc = "Subscribe several users to a MUC conference",
 			longdesc = "This command accepts up to 50 users at once "
-                            "(this is configurable with the *`mod_muc_admin`* option "
+                            "(this is configurable with the _`mod_muc_admin`_ option "
                             "`subscribe_room_many_max_users`)",
 			module = ?MODULE, function = subscribe_room_many,
 			version = 1,
