@@ -37,13 +37,13 @@ doc() ->
       #{value => "[Options, ...]",
         desc =>
             ?T("The option for listeners configuration. See the "
-               "http://../listen/[Listen Modules] section "
+               "_`listen.md|Listen Modules`_ section "
                "for details.")}},
      {modules,
       #{value => "{Module: Options}",
         desc =>
             ?T("The option for modules configuration. See "
-               "http://../modules/[Modules] section "
+               "_`modules.md|Modules`_ section "
                "for details.")}},
      {loglevel,
       #{value =>
@@ -221,7 +221,7 @@ doc() ->
       #{value => "{AccessName: {allow|deny: ACLRules|ACLName}}",
         desc =>
             ?T("This option defines "
-               "http://../basic/#access-rules[Access Rules]. "
+               "_`basic.md#access-rules|Access Rules`_. "
                "Each access rule is "
                "assigned a name that can be referenced from other parts "
                "of the configuration file (mostly from 'access' options of "
@@ -255,7 +255,7 @@ doc() ->
      {acme,
       #{value => ?T("Options"),
         desc =>
-            ?T("http://../basic/#acme[ACME] configuration, to automatically "
+            ?T("_`basic.md#acme|ACME`_ configuration, to automatically "
                "obtain SSL certificates for the domains served by ejabberd, "
                "which means that certificate requests and renewals are "
                "performed to some CA server (aka \"ACME server\") in a fully "
@@ -303,8 +303,8 @@ doc() ->
       #{value => "true | false",
         desc =>
             ?T("Whether to allow installation of third-party modules or not. "
-               "See https://docs.ejabberd.im/developer/extending-ejabberd/modules/#ejabberd-contrib"
-               "[ejabberd-contrib] documentation section. "
+               "See _`../../developer/extending-ejabberd/modules.md#ejabberd-contrib|ejabberd-contrib`_ "
+               "documentation section. "
                "The default value is 'true'.")}},
      {allow_multiple_connections,
       #{value => "true | false",
@@ -328,8 +328,7 @@ doc() ->
         desc =>
             ?T("Define the permissions for API access. Please consult the "
                "ejabberd Docs web -> For Developers -> ejabberd ReST API -> "
-               "https://docs.ejabberd.im/developer/ejabberd-api/permissions/"
-               "[API Permissions].")}},
+               "_`../../developer/ejabberd-api/permissions.md|API Permissions`_.")}},
      {append_host_config,
       #{value => "{Host: Options}",
         desc =>
@@ -373,7 +372,7 @@ doc() ->
         note => "improved in 20.01",
         desc =>
             [?T("The option defines in what format the users passwords "
-               "are stored, plain text or in http://../authentication/#scram[SCRAM] format:"), "",
+               "are stored, plain text or in _`authentication.md#scram|SCRAM`_ format:"), "",
             ?T("* 'plain': The password is stored as plain text "
                "in the database. This is risky because the passwords "
                "can be read if your database gets compromised. "
@@ -392,7 +391,7 @@ doc() ->
      {auth_scram_hash,
       #{value => "sha | sha256 | sha512",
         desc =>
-        ?T("Hash algorithm that should be used to store password in http://../authentication/#scram[SCRAM] format. "
+        ?T("Hash algorithm that should be used to store password in _`authentication.md#scram|SCRAM`_ format. "
            "You shouldn't change this if you already have passwords generated with "
            "a different algorithm - users that have such passwords will not be able "
            "to authenticate. The default value is 'sha'.")}},
@@ -418,7 +417,7 @@ doc() ->
                "corresponding JID(s) in 'subjectAltName' field. "
                "There is no default value."), "",
              ?T("You can use _`host_config`_ to specify this option per-vhost."), "",
-             ?T("To set a specific file per listener, use the listener's http://../listen-options/#cafile[cafile] option. Please notice that 'c2s_cafile' overrides the listener's 'cafile' option."), ""
+             ?T("To set a specific file per listener, use the listener's _`listen-options.md#cafile|cafile`_ option. Please notice that 'c2s_cafile' overrides the listener's 'cafile' option."), ""
             ]}},
      {c2s_ciphers,
       #{value => "[Cipher, ...]",
@@ -468,7 +467,7 @@ doc() ->
       #{value => ?T("Path | ModuleName"),
         note => "improved in 23.01",
         desc =>
-            ?T("Full path to a script that generates http://../basic/#captcha[CAPTCHA] images. "
+            ?T("Full path to a script that generates _`basic.md#captcha|CAPTCHA`_ images. "
                "'@VERSION@' is replaced with ejabberd version number in 'XX.YY' format. "
                "'@SEMVER@' is replaced with ejabberd version number in semver format "
                "when compiled with Elixir's mix, or XX.YY format otherwise. "
@@ -481,7 +480,7 @@ doc() ->
      {captcha_limit,
       #{value => "pos_integer() | infinity",
         desc =>
-            ?T("Maximum number of http://../basic/#captcha[CAPTCHA] generated images per minute for "
+            ?T("Maximum number of _`basic.md#captcha|CAPTCHA`_ generated images per minute for "
                "any given JID. The option is intended to protect the server "
                "from CAPTCHA DoS. The default value is 'infinity'.")}},
      {captcha_host,
@@ -491,7 +490,7 @@ doc() ->
       #{value => ?T("URL | auto | undefined"),
         note => "improved in 23.04",
         desc =>
-            ?T("An URL where http://../basic/#captcha[CAPTCHA] requests should be sent. NOTE: you need "
+            ?T("An URL where _`basic.md#captcha|CAPTCHA`_ requests should be sent. NOTE: you need "
                "to configure 'request_handlers' for 'ejabberd_http' listener "
                "as well. "
                "If set to 'auto', it builds the URL using a 'request_handler' "
@@ -696,8 +695,8 @@ doc() ->
         note => "added in 23.10",
         desc =>
             ?T("Modules to install from "
-               "https://docs.ejabberd.im/developer/extending-ejabberd/modules/#ejabberd-contrib"
-               "[ejabberd-contrib] at start time. "
+               "_`../../developer/extending-ejabberd/modules.md#ejabberd-contrib|ejabberd-contrib`_ "
+               "at start time. "
                "The default value is an empty list of modules: '[]'.")}},
      {jwt_auth_only_rule,
       #{value => ?T("AccessName"),
@@ -1156,7 +1155,7 @@ doc() ->
      {s2s_access,
       #{value => ?T("Access"),
         desc =>
-            ?T("This http://../basic/#access-rules[Access Rule] defines to "
+            ?T("This _`basic.md#access-rules|Access Rule`_ defines to "
                "what remote servers can s2s connections be established. "
                "The default value is 'all'; no restrictions are applied, it is"
                " allowed to connect s2s to/from all remote servers.")}},

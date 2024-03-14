@@ -282,7 +282,7 @@ listen_options() ->
 mod_doc() ->
     #{desc =>
           ?T("This module adds "
-             "https://docs.ejabberd.im/admin/guide/mqtt/[support for the MQTT] "
+             "_`../guide/mqtt/index.md|support for the MQTT`_ "
              "protocol version '3.1.1' and '5.0'. Remember to configure "
 	     "'mod_mqtt' in 'modules' and  'listen' sections."),
       opts =>

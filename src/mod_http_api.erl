@@ -534,11 +534,11 @@ mod_options(_) ->
 mod_doc() ->
     #{desc =>
 	  [?T("This module provides a ReST interface to call "
-              "https://docs.ejabberd.im/developer/ejabberd-api[ejabberd API] "
+              "_`../../developer/ejabberd-api/index.md|ejabberd API`_ "
 	      "commands using JSON data."), "",
 	   ?T("To use this module, in addition to adding it to the 'modules' "
 	      "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
-              "http://../listen-options/#request_handlers[request_handlers]."), "",
+              "_`listen-options.md#request_handlers|request_handlers`_."), "",
 	   ?T("To use a specific API version N, when defining the URL path "
 	      "in the request_handlers, add a 'vN'. "
 	      "For example: '/api/v2: mod_http_api'"), "",

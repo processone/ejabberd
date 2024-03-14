@@ -671,7 +671,7 @@ mod_doc() ->
            {captcha_protected,
             #{value => "true | false",
               desc =>
-                  ?T("Protect registrations with http://../basic/#captcha[CAPTCHA]. "
+                  ?T("Protect registrations with _`basic.md#captcha|CAPTCHA`_. "
                      "The default is 'false'.")}},
            {ip_access,
             #{value => ?T("AccessName"),

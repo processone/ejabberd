@@ -615,7 +615,7 @@ mod_doc() ->
            ?T("- Register a new account on the server."), "",
            ?T("- Change the password from an existing account on the server."), "",
            ?T("- Unregister an existing account on the server."), "",
-	   ?T("This module supports http://../basic/#captcha[CAPTCHA] "
+	   ?T("This module supports _`basic.md#captcha|CAPTCHA`_ "
               "to register a new account. "
 	      "To enable this feature, configure the "
               "top-level _`captcha_cmd`_ and "
@@ -625,7 +625,7 @@ mod_doc() ->
 	      "important to include the last / character in the URL, "
 	      "otherwise the subpages URL will be incorrect."), "",
            ?T("This module is enabled in 'listen' -> 'ejabberd_http' -> "
-              "http://../listen-options/#request_handlers[request_handlers], "
+              "_`listen-options.md#request_handlers|request_handlers`_, "
               "no need to enable in 'modules'."),
            ?T("The module depends on _`mod_register`_ where all the "
               "configuration is performed.")],

@@ -301,6 +301,6 @@ mod_doc() ->
               desc =>
                   ?T("Whether to generate CAPTCHA or not in response to "
                      "messages from strangers. See also section "
-                     "http://../#captcha"
-                     "[CAPTCHA] of the Configuration Guide. "
+                     "_`basic.md#captcha|CAPTCHA`_"
+                     " of the Configuration Guide. "
                      "The default value is 'false'.")}}]}.

@@ -1247,8 +1247,8 @@ mod_doc() ->
               "are currently open."), "",
            ?T("NOTE: 'ejabberdctl' has a command to "
               "delete expired messages (see chapter "
-              "https://docs.ejabberd.im/admin/guide/managing"
-              "[Managing an ejabberd server] in online documentation.")],
+              "_`../guide/managing.md|Managing an ejabberd server`_ "
+              "in online documentation.")],
       opts =>
           [{access_max_user_messages,
             #{value => ?T("AccessName"),
