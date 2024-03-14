@@ -72,10 +72,11 @@ man(Lang) ->
                     catch _:undef -> []
                     end
             end, ejabberd_config:callback_modules(all)),
+    Version = ejabberd_config:version(),
     Options =
         ["TOP LEVEL OPTIONS",
          "-----------------",
-         tr(Lang, ?T("This section describes top level options of ejabberd.")),
+         tr(Lang, <<"This section describes top level options of ejabberd ", Version/binary, ".">>),
          io_lib:nl()] ++
         lists:flatmap(
           fun(Opt) ->
@@ -95,7 +96,7 @@ man(Lang) ->
          "MODULES",
          "-------",
          "[[modules]]",
-         tr(Lang, ?T("This section describes options of all ejabberd modules.")),
+         tr(Lang, <<"This section describes modules options of ejabberd ", Version/binary, ".">>),
          io_lib:nl()] ++
         lists:flatmap(
           fun({M, Descr, DocOpts, Backends, Example}) ->
@@ -114,7 +115,7 @@ man(Lang) ->
          "LISTENERS",
          "-------",
          "[[listeners]]",
-         tr(Lang, ?T("This section describes options of all ejabberd listeners.")),
+         tr(Lang, <<"This section describes listeners options of ejabberd ", Version/binary, ".">>),
          io_lib:nl(),
          "TODO"],
     AsciiData =
