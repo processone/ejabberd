@@ -237,7 +237,7 @@ json_gen({_Name, {list, ElDesc}}, List, Indent, HTMLOutput) ->
     [?OP_L("["), ?BR, Indent2, list_join_with(Res, [?OP_L(","), ?BR, Indent2]), ?BR, Indent, ?OP_L("]")].
 
 json_call(Name, ArgsDesc, Values, ResultDesc, Result, HTMLOutput) ->
-    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"    ">>, <<"~~~ json\n">>} end,
+    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"">>, <<"~~~ json\n">>} end,
     {Code, ResultStr} = case {ResultDesc, Result} of
                             {{_, rescode}, V} when V == true; V == ok ->
                                 {200, [?STR_L("")]};
