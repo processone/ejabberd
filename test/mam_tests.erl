@@ -431,11 +431,20 @@ set_default(Config, Default) ->
 
 send_messages(Config, Range) ->
     Peer = ?config(peer, Config),
+    send_message_extra(Config, 0, <<"to-retract-1">>, []),
     lists:foreach(
-      fun(N) ->
+      fun
+	  (1) ->
+	      send_message_extra(Config, 1, <<"retraction-1">>, [#message_retract{id = <<"to-retract-1">>}]);
+	  (N) ->
 	      Body = xmpp:mk_text(integer_to_binary(N)),
               send(Config, #message{to = Peer, body = Body})
       end, Range).
+
+send_message_extra(Config, N, Id, Sub) ->
+    Peer = ?config(peer, Config),
+    Body = xmpp:mk_text(integer_to_binary(N)),
+    send(Config, #message{id = Id, to = Peer, body = Body, sub_els = Sub}).
 
 recv_messages(Config, Range) ->
     Peer = ?config(peer, Config),
@@ -448,7 +457,7 @@ recv_messages(Config, Range) ->
 		  xmpp:get_subtag(Msg, #mam_archived{}),
 	      #stanza_id{by = BareMyJID} =
 		  xmpp:get_subtag(Msg, #stanza_id{})
-      end, Range).
+      end, [0 | Range]).
 
 recv_archived_messages(Config, From, To, QID, Range) ->
     MyJID = my_jid(Config),
