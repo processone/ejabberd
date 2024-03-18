@@ -151,6 +151,30 @@ ProcessVars = fun F([], Acc) ->
 			  false ->
 			      F(Tail, Acc)
 		      end;
+	          F([{Type, {Mod, TypeDef}, Value} | Tail], Acc) when
+	              Type == if_type_exported orelse
+		          Type == if_type_not_exported ->
+	              try
+		          {ok, Concrete} = dialyzer_utils:get_core_from_beam(code:which(Mod)),
+		          {ok, Types} = dialyzer_utils:get_record_and_type_info(Concrete),
+		          maps:get(TypeDef, Types, undefined)
+	              of
+		          undefined when Type == if_type_not_exported ->
+		              F(Tail, ProcessSingleVar(F, Value, Acc));
+		          undefined ->
+		              F(Tail, Acc);
+		          _ when Type == if_type_exported ->
+		              F(Tail, ProcessSingleVar(F, Value, Acc));
+		          _ ->
+		              F(Tail, Acc)
+	              catch _:_ ->
+		          if
+		              Type == if_type_not_exported ->
+			          F(Tail, ProcessSingleVar(F, Value, Acc));
+		              true ->
+			          F(Tail, Acc)
+		          end
+	              end;
 		  F([Other1 | Tail1], Acc) ->
 		      F(Tail1, [F(Other1, []) | Acc]);
 		  F(Val, Acc) when is_tuple(Val) ->

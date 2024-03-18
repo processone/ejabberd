@@ -80,6 +80,20 @@ defmodule Ejabberd.MixProject do
     end
   end
 
+  defp if_type_exported(module, typeDef, okResult) do
+    try do
+      {:ok, concrete} = :dialyzer_utils.get_core_from_beam(:code.which(module))
+      {:ok, types} = :dialyzer_utils.get_record_and_type_info(concrete)
+      if Maps.has_key(types, typeDef) do
+        okResult
+      else
+        []
+      end
+    rescue
+       _ -> []
+    end
+  end
+
   defp erlc_options do
     # Use our own includes + includes from all dependencies
     includes = ["include", deps_include()]
@@ -97,7 +111,8 @@ defmodule Ejabberd.MixProject do
              if_version_below(~c"24", [{:d, :COMPILER_REPORTS_ONLY_LINES}]) ++
              if_version_below(~c"24", [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}]) ++
              if_version_below(~c"24", [{:d, :OTP_BELOW_24}]) ++
-             if_version_below(~c"25", [{:d, :OTP_BELOW_25}])
+             if_version_below(~c"25", [{:d, :OTP_BELOW_25}]) ++
+             if_type_exported(:odbc, {:opaque, :connection_reference, 0}, [{:d, :ODBC_HAS_TYPES}])
     defines = for {:d, value} <- result, do: {:d, value}
     result ++ [{:d, :ALL_DEFS, defines}]
   end

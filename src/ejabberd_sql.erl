@@ -67,12 +67,8 @@
 -export([connecting/2, connecting/3,
 	 session_established/2, session_established/3]).
 
--ifdef(OTP_RELEASE).
-    -if(?OTP_RELEASE >= 27).
-	-type(odbc_connection_reference() ::  odbc:connection_reference()).
-    -else.
-	-type(odbc_connection_reference() ::  pid()).
-    -endif.
+-ifdef(ODBC_HAS_TYPES).
+    -type(odbc_connection_reference() ::  odbc:connection_reference()).
 -else.
     -type(odbc_connection_reference() ::  pid()).
 -endif.
