@@ -97,7 +97,7 @@ user_send_packet(Acc) ->
 -spec vcard_set(iq()) -> iq().
 vcard_set(#iq{from = #jid{luser = LUser, lserver = LServer}} = IQ) ->
     ets_cache:delete(?VCARD_XUPDATE_CACHE, {LUser, LServer}, ejabberd_cluster:get_nodes()),
-    ejabberd_sm:force_update_presence({LUser, LServer}),
+    ejabberd_sm:reset_vcard_xupdate_resend_presence({LUser, LServer}),
     IQ;
 vcard_set(Acc) ->
     Acc.

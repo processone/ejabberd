@@ -52,7 +52,8 @@
 -export([get_presence/1, set_presence/2, resend_presence/1, resend_presence/2,
 	 open_session/1, call/3, cast/2, send/2, close/1, close/2, stop_async/1,
 	 reply/2, copy_state/2, set_timeout/2, route/2, format_reason/2,
-	 host_up/1, host_down/1, send_ws_ping/1, bounce_message_queue/2]).
+	 host_up/1, host_down/1, send_ws_ping/1, bounce_message_queue/2,
+	 reset_vcard_xupdate_resend_presence/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -107,6 +108,10 @@ resend_presence(Pid) ->
 -spec resend_presence(pid(), jid() | undefined) -> boolean().
 resend_presence(Pid, To) ->
     route(Pid, {resend_presence, To}).
+
+-spec reset_vcard_xupdate_resend_presence(pid()) -> boolean().
+reset_vcard_xupdate_resend_presence(Pid) ->
+    route(Pid, reset_vcard_xupdate_resend_presence).
 
 -spec close(pid()) -> ok;
 	   (state()) -> state().
@@ -245,6 +250,13 @@ process_info(#{lserver := LServer} = State, {route, Packet}) ->
 	    end;
        true ->
 	    State1
+    end;
+process_info(State, reset_vcard_xupdate_resend_presence) ->
+    case maps:get(pres_last, State, error) of
+	error -> State;
+	Pres ->
+	    Pres2 = xmpp:remove_subtag(Pres, #vcard_xupdate{}),
+	    process_self_presence(State#{pres_last => Pres2}, Pres2)
     end;
 process_info(#{jid := JID} = State, {resend_presence, To}) ->
     case maps:get(pres_last, State, error) of

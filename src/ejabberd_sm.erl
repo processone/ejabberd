@@ -56,6 +56,7 @@
 	 get_vh_session_number/1,
 	 get_vh_by_backend/1,
 	 force_update_presence/1,
+	 reset_vcard_xupdate_resend_presence/1,
 	 connected_users/0,
 	 connected_users_number/0,
 	 user_resources/2,
@@ -925,6 +926,15 @@ force_update_presence({LUser, LServer}) ->
 			  ejabberd_c2s:resend_presence(Pid)
 		  end,
 		  Ss).
+
+-spec reset_vcard_xupdate_resend_presence({binary(), binary()}) -> ok.
+reset_vcard_xupdate_resend_presence({LUser, LServer}) ->
+    Mod = get_sm_backend(LServer),
+    Ss = get_sessions(Mod, LUser, LServer),
+    lists:foreach(
+	fun(#session{sid = {_, Pid}}) ->
+	    ejabberd_c2s:reset_vcard_xupdate_resend_presence(Pid)
+	end, Ss).
 
 -spec get_sm_backend(binary()) -> module().
 
