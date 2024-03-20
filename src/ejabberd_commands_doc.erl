@@ -87,7 +87,7 @@ md_tag(h2, V) ->
 md_tag(strong, V) ->
     [<<"*">>, V, <<"*">>];
 md_tag('div', V) ->
-    [<<"<div class='note-down'>">>, V, <<"</div>">>];
+    [<<"*Note* about the next option: ">>, V];
 md_tag(_, V) ->
     V.
 
