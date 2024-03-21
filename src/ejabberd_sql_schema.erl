@@ -394,6 +394,29 @@ get_current_version(Host, Module, Schemas) ->
             Version
     end.
 
+sqlite_table_copy(Host, SchemaInfo, Table) ->
+    ejabberd_sql:sql_transaction(Host,
+        fun() ->
+            TableName = Table#sql_table.name,
+            NewTableName = <<"new_", TableName/binary>>,
+            NewTable = Table#sql_table{name = NewTableName},
+            create_table_t(SchemaInfo, NewTable),
+            SQL2 = <<"INSERT INTO ", NewTableName/binary,
+                " SELECT * FROM ", TableName/binary>>,
+            ?INFO_MSG("Copying table ~s to ~s:~n~s~n",
+                [TableName, NewTableName, SQL2]),
+            ejabberd_sql:sql_query_t(SQL2),
+            SQL3 = <<"DROP TABLE ", TableName/binary>>,
+            ?INFO_MSG("Droping old table ~s:~n~s~n",
+                [TableName, SQL2]),
+            ejabberd_sql:sql_query_t(SQL3),
+            SQL4 = <<"ALTER TABLE ", NewTableName/binary,
+                " RENAME TO ", TableName/binary>>,
+            ?INFO_MSG("Renameing table ~s to ~s:~n~s~n",
+                [NewTableName, TableName, SQL4]),
+            ejabberd_sql:sql_query_t(SQL4)
+        end).
+
 format_type(#sql_schema_info{db_type = pgsql}, Column) ->
     case Column#sql_column.type of
         text -> <<"text">>;
@@ -697,24 +720,26 @@ format_create_table(#sql_schema_info{db_type = mysql} = SchemaInfo, Table) ->
           Table#sql_table.indices).
 
 create_table(Host, SchemaInfo, Table) ->
-    ejabberd_sql:sql_query(
-      Host,
-      fun() ->
-              SQLs = format_create_table(SchemaInfo, Table),
-              ?INFO_MSG("Creating table ~s:~n~s~n",
-                        [Table#sql_table.name, SQLs]),
-              lists:foreach(
-                fun(SQL) -> ejabberd_sql:sql_query_t(SQL) end, SQLs),
-              case Table#sql_table.post_create of
-                  undefined ->
-                      ok;
-                  F when is_function(F, 1) ->
-                      PostSQLs = F(SchemaInfo),
-                      lists:foreach(
-                        fun(SQL) -> ejabberd_sql:sql_query_t(SQL) end,
-                        PostSQLs)
-              end
-      end).
+    ejabberd_sql:sql_query(Host,
+        fun() ->
+            create_table_t(SchemaInfo, Table)
+        end).
+
+create_table_t(SchemaInfo, Table) ->
+    SQLs = format_create_table(SchemaInfo, Table),
+    ?INFO_MSG("Creating table ~s:~n~s~n",
+        [Table#sql_table.name, SQLs]),
+    lists:foreach(
+        fun(SQL) -> ejabberd_sql:sql_query_t(SQL) end, SQLs),
+    case Table#sql_table.post_create of
+        undefined ->
+            ok;
+        F when is_function(F, 1) ->
+            PostSQLs = F(SchemaInfo),
+            lists:foreach(
+                fun(SQL) -> ejabberd_sql:sql_query_t(SQL) end,
+                PostSQLs)
+    end.
 
 create_tables(Host, Module, SchemaInfo, Schema) ->
     lists:foreach(
@@ -969,6 +994,74 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                               ok
                       end
               end;
+         ({update_primary_key, TableName, Columns1}) ->
+             Columns =
+                 case ejabberd_sql:use_new_schema() of
+                     true ->
+                         Columns1;
+                     false ->
+                         lists:delete(
+                             <<"server_host">>, Columns1)
+                 end,
+             {value, Table} =
+                 lists:keysearch(
+                     TableName, #sql_table.name, Schema#sql_schema.tables),
+             {value, Index} =
+                 lists:keysearch(
+                     Columns, #sql_index.columns, Table#sql_table.indices),
+             Res =
+             case SchemaInfo#sql_schema_info.db_type of
+                 sqlite ->
+                     sqlite_table_copy(Host, SchemaInfo, Table);
+                 pgsql ->
+                     TableName = Table#sql_table.name,
+                     SQL1 = [<<"ALTER TABLE ">>, TableName, <<" DROP CONSTRAINT ",
+                         TableName/binary,"_pkey, ",
+                         "ADD PRIMARY KEY (">>,
+                         lists:join(
+                             <<", ">>,
+                             Index#sql_index.columns),
+                         <<");">>],
+                     SQL = iolist_to_binary(SQL1),
+                     ?INFO_MSG("Update primary key ~s/~p:~n~s~n",
+                         [Table#sql_table.name,
+                             Index#sql_index.columns,
+                             SQL]),
+                     ejabberd_sql:sql_query(
+                         Host,
+                         fun(_DBType, _DBVersion) ->
+                             ejabberd_sql:sql_query_t(SQL)
+                         end);
+                 mysql ->
+                     TableName = Table#sql_table.name,
+                     SQL1 = [<<"ALTER TABLE ">>, TableName, <<" DROP PRIMARY KEY, "
+                     "ADD PRIMARY KEY (">>,
+                         lists:join(
+                             <<", ">>,
+                             lists:map(
+                                 fun(Col) ->
+                                     format_mysql_index_column(Table, Col)
+                                 end, Index#sql_index.columns)),
+                         <<");">>],
+                     SQL = iolist_to_binary(SQL1),
+                     ?INFO_MSG("Update primary key ~s/~p:~n~s~n",
+                         [Table#sql_table.name,
+                             Index#sql_index.columns,
+                             SQL]),
+                     ejabberd_sql:sql_query(
+                         Host,
+                         fun(_DBType, _DBVersion) ->
+                             ejabberd_sql:sql_query_t(SQL)
+                         end)
+             end,
+             case Res of
+                 {error, Error} ->
+                     ?ERROR_MSG("Failed to update table ~s: ~p",
+                         [TableName, Error]),
+                     error(Error);
+                 _ ->
+                     ok
+             end;
          ({drop_index, TableName, Columns1}) ->
               Columns =
                   case ejabberd_sql:use_new_schema() of
