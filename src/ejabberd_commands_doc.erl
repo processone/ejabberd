@@ -87,7 +87,7 @@ md_tag(h2, V) ->
 md_tag(strong, V) ->
     [<<"*">>, V, <<"*">>];
 md_tag('div', V) ->
-    [<<"*Note* about the next option: ">>, V];
+    [<<"*Note* about this command: ">>, V, <<".">>];
 md_tag(_, V) ->
     V.
 
@@ -415,8 +415,8 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
             true -> {NoteEl, []}
         end,
 
-        [NotePre,
-         ?TAG(h1, atom_to_list(Name)),
+        [?TAG(h1, atom_to_list(Name)),
+         NotePre,
          ?TAG(p, ?RAW(Desc)),
          case LongDesc of
              "" -> [];
