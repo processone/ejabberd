@@ -415,7 +415,7 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
             true -> {NoteEl, []}
         end,
 
-        [?TAG(h1, atom_to_list(Name)),
+        [?TAG(h1, make_command_name(Name, Note)),
          NotePre,
          ?TAG(p, ?RAW(Desc)),
          case LongDesc of
@@ -434,6 +434,19 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
 				     <<"Error when generating documentation for command '~p': ~p">>,
 				     [Name, Ex])))
     end.
+
+get_version_mark("") ->
+    "";
+get_version_mark(Note) ->
+    [XX, YY | _] = string:tokens(binary_to_list(ejabberd_option:version()), "."),
+    XXYY = string:join([XX, YY], "."),
+    case string:find(Note, XXYY) of
+        nomatch -> "";
+        _ -> " 🟤"
+    end.
+
+make_command_name(Name, Note) ->
+    atom_to_list(Name) ++ get_version_mark(Note).
 
 find_commands_definitions() ->
     lists:flatmap(
@@ -492,21 +505,22 @@ generate_md_output(File, RegExp, Languages, Cmds) ->
                        end, Cmds2),
     Cmds4 = [maybe_add_policy_arguments(Cmd) || Cmd <- Cmds3],
     Langs = binary:split(Languages, <<",">>, [global]),
-    Version = ejabberd_config:version(),
-    Header = <<"# API Reference\n\n"
-            "This section describes API of ejabberd ", Version/binary, ".\n\n">>,
+    Version = binary_to_list(ejabberd_config:version()),
+    Header = ["# API Reference\n\n"
+            "This section describes API commands of ejabberd ", Version, ". "
+            "The commands that changed in this version are marked with 🟤.\n\n"],
     Out = lists:map(fun(C) -> gen_doc(C, false, Langs) end, Cmds4),
-    {ok, Fh} = file:open(File, [write]),
+    {ok, Fh} = file:open(File, [write, {encoding, utf8}]),
     io:format(Fh, "~ts~ts", [Header, Out]),
     file:close(Fh),
     ok.
 
 generate_tags_md(File) ->
-    Version = ejabberd_config:version(),
-    Header = <<"# API Tags\n\n"
-            "This section enumerates the API tags of ejabberd ", Version/binary, ".\n\n">>,
+    Version = binary_to_list(ejabberd_config:version()),
+    Header = ["# API Tags\n\n"
+            "This section enumerates the API tags of ejabberd ", Version, ". \n\n"],
     Tags = make_tags(false),
-    {ok, Fh} = file:open(File, [write]),
+    {ok, Fh} = file:open(File, [write, {encoding, utf8}]),
     io:format(Fh, "~ts~ts", [Header, Tags]),
     file:close(Fh),
     ok.

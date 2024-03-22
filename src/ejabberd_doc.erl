@@ -45,7 +45,8 @@ man(Lang) ->
                               #{desc := Descr} = Map ->
                                   DocOpts = maps:get(opts, Map, []),
                                   Example = maps:get(example, Map, []),
-                                  {[{M, Descr, DocOpts, #{example => Example}}|Mods], SubMods};
+                                  Note = maps:get(note, Map, []),
+                                  {[{M, Descr, DocOpts, #{example => Example, note => Note}}|Mods], SubMods};
                               #{opts := DocOpts} ->
                                   {ParentMod, Backend} = strip_backend_suffix(M),
                                   {Mods, dict:append(ParentMod, {M, Backend, DocOpts}, SubMods)};
@@ -72,11 +73,12 @@ man(Lang) ->
                     catch _:undef -> []
                     end
             end, ejabberd_config:callback_modules(all)),
-    Version = ejabberd_config:version(),
+    Version = binary_to_list(ejabberd_config:version()),
     Options =
         ["TOP LEVEL OPTIONS",
          "-----------------",
-         tr(Lang, <<"This section describes top level options of ejabberd ", Version/binary, ".">>),
+         "This section describes top level options of ejabberd " ++ Version ++ ".",
+         "The options that changed in this version are marked with 🟤.",
          io_lib:nl()] ++
         lists:flatmap(
           fun(Opt) ->
@@ -96,13 +98,15 @@ man(Lang) ->
          "MODULES",
          "-------",
          "[[modules]]",
-         tr(Lang, <<"This section describes modules options of ejabberd ", Version/binary, ".">>),
+         "This section describes modules options of ejabberd " ++ Version ++ ".",
+         "The modules that changed in this version are marked with 🟤.",
          io_lib:nl()] ++
         lists:flatmap(
           fun({M, Descr, DocOpts, Backends, Example}) ->
                   ModName = atom_to_list(M),
+                  VersionMark = get_version_mark(Example),
                   [io_lib:nl(),
-                   ModName,
+                   lists:flatten([ModName, VersionMark]),
                    lists:duplicate(length(atom_to_list(M)), $~),
                    "[[" ++ ModName ++ "]]",
                    io_lib:nl()] ++
@@ -115,7 +119,7 @@ man(Lang) ->
          "LISTENERS",
          "-------",
          "[[listeners]]",
-         tr(Lang, <<"This section describes listeners options of ejabberd ", Version/binary, ".">>),
+         "This section describes listeners options of ejabberd " ++ Version ++ ".",
          io_lib:nl(),
          "TODO"],
     AsciiData =
@@ -163,13 +167,24 @@ opt_to_man(Lang, {Option, Options, Children}, Level) ->
                          lists:keysort(1, Children))]) ++
         [io_lib:nl()|format_example(Level, Lang, Options)].
 
-format_option(Lang, Option, #{value := Val}) ->
-    "*" ++ atom_to_list(Option) ++ "*: 'pass:[" ++
+get_version_mark(#{note := Note}) ->
+    [XX, YY | _] = string:tokens(binary_to_list(ejabberd_option:version()), "."),
+    XXYY = string:join([XX, YY], "."),
+    case string:find(Note, XXYY) of
+        nomatch -> "";
+        _ -> " 🟤"
+    end;
+get_version_mark(_) ->
+    "".
+
+format_option(Lang, Option, #{value := Val} = Options) ->
+    VersionMark = get_version_mark(Options),
+    "*" ++ atom_to_list(Option) ++ VersionMark ++ "*: 'pass:[" ++
         tr(Lang, Val) ++ "]'::";
 format_option(_Lang, Option, #{}) ->
     "*" ++ atom_to_list(Option) ++ "*::".
 
-format_versions(Lang, #{note := Note}) ->
+format_versions(_Lang, #{note := Note}) ->
     ["_Note_ about this option: " ++ Note ++ ". "];
 format_versions(_, _) ->
     [].
