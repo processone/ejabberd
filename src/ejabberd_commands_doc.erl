@@ -493,7 +493,7 @@ generate_md_output(File, RegExp, Languages, Cmds) ->
     Cmds4 = [maybe_add_policy_arguments(Cmd) || Cmd <- Cmds3],
     Langs = binary:split(Languages, <<",">>, [global]),
     Version = ejabberd_config:version(),
-    Header = <<"# Administration API reference\n\n"
+    Header = <<"# API Reference\n\n"
             "This section describes API of ejabberd ", Version/binary, ".\n\n">>,
     Out = lists:map(fun(C) -> gen_doc(C, false, Langs) end, Cmds4),
     {ok, Fh} = file:open(File, [write]),
