@@ -52,7 +52,7 @@ If you would like to implement a new feature then consider what kind of change i
 * **Major Changes** that you wish to contribute to the project should be discussed first in an
   [GitHub issue][github-issues] that clearly outlines the changes and benefits of the feature.
 * **Small Changes** can directly be crafted and submitted to the [GitHub Repository][github]
-  as a Pull Request. See the section about [Pull Request Submission Guidelines](#submit-pr).
+  as a Pull Request. See the section about [Pull Request Submission Guidelines](#pull-request-submission-guidelines).
 
 ## Issue Submission Guidelines
 
