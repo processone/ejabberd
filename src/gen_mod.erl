@@ -74,6 +74,7 @@
 -callback mod_opt_type(atom()) -> econf:validator().
 -callback mod_options(binary()) -> [{atom(), term()} | atom()].
 -callback mod_doc() -> #{desc => binary() | [binary()],
+                         note => string(),
                          opts => [opt_doc()],
                          example => [string()] | [{binary(), [string()]}]}.
 -callback depends(binary(), opts()) -> [{module(), hard | soft}].
