@@ -159,8 +159,8 @@ mod_doc() ->
 	  ?T("This module allows XMPP clients to discover STUN/TURN services "
 	     "and to obtain temporary credentials for using them as per "
 	     "https://xmpp.org/extensions/xep-0215.html"
-	     "[XEP-0215: External Service Discovery]. "
-	     "This module is included in ejabberd since version 20.04."),
+	     "[XEP-0215: External Service Discovery]."),
+      note => "added in 20.04",
       opts =>
 	  [{access,
 	    #{value => ?T("AccessName"),

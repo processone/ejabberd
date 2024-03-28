@@ -264,8 +264,8 @@ mod_doc() ->
     #{desc =>
       [?T("This module implement Real-time blocklists for MUC rooms."), "",
        ?T("It works by observing remote pubsub node conforming with "
-	  "specification described in https://xmppbl.org/."), "",
-       ?T("This module is available since ejabberd 23.04.")],
+	  "specification described in https://xmppbl.org/.")],
+      note => "added in 23.04",
       opts =>
       [{rtbl_server,
 	#{value => ?T("Domain"),

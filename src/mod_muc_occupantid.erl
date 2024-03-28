@@ -120,8 +120,8 @@ mod_doc() ->
               "https://xmpp.org/extensions/xep-0421.html"
               "[XEP-0421: Anonymous unique occupant identifiers for MUCs]."), "",
            ?T("When the module is enabled, the feature is enabled "
-              "in all semi-anonymous rooms."), "",
-           ?T("This module is available since ejabberd 23.10.")]
+              "in all semi-anonymous rooms.")],
+      note => "added in 23.10"
      }.
 
 depends(_, _) ->

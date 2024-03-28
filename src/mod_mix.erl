@@ -102,14 +102,13 @@ mod_doc() ->
           [?T("This module is an experimental implementation of "
               "https://xmpp.org/extensions/xep-0369.html"
               "[XEP-0369: Mediated Information eXchange (MIX)]. "
-              "MIX support was added in ejabberd 16.03 as an "
-              "experimental feature, updated in 19.02, and is not "
-              "yet ready to use in production. It's asserted that "
+              "It's asserted that "
               "the MIX protocol is going to replace the MUC protocol "
               "in the future (see _`mod_muc`_)."), "",
            ?T("To learn more about how to use that feature, you can refer to "
 	      "our tutorial: _`../../tutorials/mix-010.md|Getting started with MIX`_"), "",
            ?T("The module depends on _`mod_mam`_.")],
+      note => "added in 16.03 and improved in 19.02",
       opts =>
           [{access_create,
             #{value => ?T("AccessName"),

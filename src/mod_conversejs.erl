@@ -252,8 +252,6 @@ mod_doc() ->
     #{desc =>
           [?T("This module serves a simple page for the "
               "https://conversejs.org/[Converse] XMPP web browser client."), "",
-           ?T("This module is available since ejabberd 21.12."),
-           ?T("Several options were improved in ejabberd 22.05."), "",
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
               "_`listen-options.md#request_handlers|request_handlers`_."), "",
@@ -263,6 +261,7 @@ mod_doc() ->
            ?T("When 'conversejs_css' and 'conversejs_script' are 'auto', "
               "by default they point to the public Converse client.")
           ],
+      note => "added in 21.12 and improved in 22.05",
       example =>
           [{?T("Manually setup WebSocket url, and use the public Converse client:"),
             ["listen:",

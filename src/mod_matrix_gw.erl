@@ -884,8 +884,8 @@ mod_options(Host) ->
 
 mod_doc() ->
     #{desc =>
-          [?T("https://matrix.org/[Matrix] gateway."), "",
-           ?T("This module is available since ejabberd 24.02.")],
+          [?T("https://matrix.org/[Matrix] gateway.")],
+      note => "added in 24.02",
       example =>
 	  ["listen:",
 	   "  -",
