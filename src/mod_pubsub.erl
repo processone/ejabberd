@@ -4504,21 +4504,22 @@ mod_doc() ->
 		     "representation of vCard. Since the representation has "
 		     "no attributes, the mapping is straightforward."),
 	      example =>
-		  [{?T("The following XML representation of vCard:"),
-		    ["<vCard xmlns='vcard-temp'>",
-		     "  <FN>PubSub Service</FN>",
-		     "  <ADR>",
-		     "    <WORK/>",
-		     "    <STREET>Elm Street</STREET>",
-		     "  </ADR>",
-		     "</vCard>"]},
-		   {?T("will be translated to:"),
-		    ["vcard:",
-		     "  fn: PubSub Service",
-		     "  adr:",
-		     "    -",
-		     "      work: true",
-		     "      street: Elm Street"]}]}}
+                  ["# This XML representation of vCard:",
+                   "#   <vCard xmlns='vcard-temp'>",
+                   "#     <FN>Conferences</FN>",
+                   "#     <ADR>",
+                   "#       <WORK/>",
+                   "#       <STREET>Elm Street</STREET>",
+                   "#     </ADR>",
+                   "#   </vCard>",
+                   "# ",
+                   "# is translated to:",
+                   "vcard:",
+                   "  fn: Conferences",
+                   "  adr:",
+                   "    -",
+                   "      work: true",
+                   "      street: Elm Street"]}}
 	  ],
       example =>
 	  [{?T("Example of configuration that uses flat nodes as default, "
