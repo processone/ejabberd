@@ -160,11 +160,11 @@ exit_or_halt(Reason, StartFlag) ->
 
 get_module_file(App, Mod) ->
     BaseName = atom_to_list(Mod),
-    case code:lib_dir(App, ebin) of
+    case code:lib_dir(App) of
         {error, _} ->
             BaseName;
         Dir ->
-            filename:join([Dir, BaseName ++ ".beam"])
+            filename:join([Dir, "ebin", BaseName ++ ".beam"])
     end.
 
 module_name([Dir, _, <<H,_/binary>> | _] = Mod) when H >= 65, H =< 90 ->
