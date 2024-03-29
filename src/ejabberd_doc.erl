@@ -211,7 +211,7 @@ format_example(Level, Lang, #{example := [_|_] = Example}) ->
         false ->
             lists:flatmap(
               fun(Block) ->
-                      ["+", "''''", "+"|Block]
+                      ["+", "*Examples*:", "+"|Block]
               end,
               lists:map(
                 fun({Text, Lines}) ->
