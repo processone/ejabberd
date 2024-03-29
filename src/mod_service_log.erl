@@ -92,9 +92,7 @@ mod_doc() ->
                      "to which stanzas will be forwarded.")}}],
       example =>
           ["modules:",
-           "  ...",
            "  mod_service_log:",
            "    loggers:",
            "      - xmpp-server.tld",
-           "      - component.domain.tld",
-           "  ..."]}.
+           "      - component.domain.tld"]}.

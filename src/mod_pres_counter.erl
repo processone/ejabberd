@@ -150,8 +150,6 @@ mod_doc() ->
                   ?T("The time interval. The default value is '1' minute.")}}],
       example =>
           ["modules:",
-           "  ...",
            "  mod_pres_counter:",
            "    count: 5",
-           "    interval: 30 secs",
-           "  ..."]}.
+           "    interval: 30 secs"]}.

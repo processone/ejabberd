@@ -274,7 +274,6 @@ mod_doc() ->
            "  proxyrate: 10240",
            "",
            "modules:",
-           "  ...",
            "  mod_proxy65:",
            "    host: proxy1.example.org",
            "    name: \"File Transfer Proxy\"",
@@ -284,5 +283,4 @@ mod_doc() ->
            "    access: proxy65_access",
            "    shaper: proxy65_shaper",
            "    recbuf: 10240",
-           "    sndbuf: 10240",
-           "  ..."]}.
+           "    sndbuf: 10240"]}.

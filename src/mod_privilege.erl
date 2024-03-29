@@ -163,15 +163,13 @@ mod_doc() ->
                        "The default value is 'none'.")}}]}],
       example =>
           ["modules:",
-           "  ...",
            "  mod_privilege:",
            "    roster:",
            "      get: all",
            "    presence:",
            "      managed_entity: all",
            "    message:",
-           "      outgoing: all",
-           "  ..."]}.
+           "      outgoing: all"]}.
 
 depends(_, _) ->
     [].

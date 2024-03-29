@@ -561,18 +561,13 @@ mod_doc() ->
 	       "content type 'ogg' is defined, 'png' is redefined, and 'jpg' "
 	       "definition is deleted:"),
 	   ["listen:",
-           "  ...",
            "  -",
            "    port: 5280",
            "    module: ejabberd_http",
            "    request_handlers:",
-           "      ...",
            "      /pub/content: mod_http_fileserver",
-           "      ...",
-           "  ...",
            "",
            "modules:",
-           "  ...",
            "  mod_http_fileserver:",
            "    docroot: /var/www",
            "    accesslog: /var/log/ejabberd/access.log",
@@ -585,5 +580,4 @@ mod_doc() ->
            "    content_types:",
            "      .ogg: audio/ogg",
            "      .png: image/png",
-           "    default_content_type: text/html",
-           "  ..."]}]}.
+           "    default_content_type: text/html"]}]}.

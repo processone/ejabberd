@@ -1410,8 +1410,6 @@ mod_doc() ->
                   ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}],
       example =>
           ["modules:",
-           "  ...",
            "  mod_roster:",
            "    versioning: true",
-           "    store_current_id: false",
-           "  ..."]}.
+           "    store_current_id: false"]}.

@@ -352,9 +352,7 @@ mod_doc() ->
                      "The default value is 'none'.")}}],
       example =>
           ["modules:",
-           "  ...",
            "  mod_ping:",
            "    send_pings: true",
            "    ping_interval: 4 min",
-           "    timeout_action: kill",
-           "  ..."]}.
+           "    timeout_action: kill"]}.

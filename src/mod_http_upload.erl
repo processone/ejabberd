@@ -384,23 +384,17 @@ mod_doc() ->
                      "      street: Elm Street"]}]}}],
       example =>
           ["listen:",
-           "  ...",
            "  -",
            "    port: 5443",
            "    module: ejabberd_http",
            "    tls: true",
            "    request_handlers:",
-           "      ...",
            "      /upload: mod_http_upload",
-           "      ...",
-           "  ...",
            "",
            "modules:",
-           "  ...",
            "  mod_http_upload:",
            "    docroot: /ejabberd/upload",
-           "    put_url: \"https://@HOST@:5443/upload\"",
-           "  ..."]}.
+           "    put_url: \"https://@HOST@:5443/upload\""]}.
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->

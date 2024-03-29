@@ -134,19 +134,15 @@ mod_doc() ->
 	       "to use the quota feature. You can stick to the default names "
 	       "and just specify access rules such as those in this example:"),
           ["shaper_rules:",
-           "  ...",
            "  soft_upload_quota:",
            "    1000: all # MiB",
            "  hard_upload_quota:",
            "    1100: all # MiB",
-           "  ...",
            "",
            "modules:",
-           "  ...",
            "  mod_http_upload: {}",
            "  mod_http_upload_quota:",
-           "    max_days: 100",
-           "  ..."]}]}.
+           "    max_days: 100"]}]}.
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->

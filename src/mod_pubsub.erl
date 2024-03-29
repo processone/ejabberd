@@ -4524,7 +4524,6 @@ mod_doc() ->
 	  [{?T("Example of configuration that uses flat nodes as default, "
 	       "and allows use of flat, hometree and pep nodes:"),
 	    ["modules:",
-	     "  ...",
 	     "  mod_pubsub:",
 	     "    access_createnode: pubsub_createnode",
 	     "    max_subscriptions_node: 100",
@@ -4534,14 +4533,12 @@ mod_doc() ->
 	     "      max_items: 4",
 	     "    plugins:",
 	     "      - flat",
-	     "      - pep",
-	     "  ..."]},
+	     "      - pep"]},
 	   {?T("Using relational database requires using mod_pubsub with "
 	       "db_type 'sql'. Only flat, hometree and pep plugins supports "
 	       "SQL. The following example shows previous configuration "
 	       "with SQL usage:"),
 	    ["modules:",
-	     "  ...",
 	     "  mod_pubsub:",
 	     "    db_type: sql",
 	     "    access_createnode: pubsub_createnode",
@@ -4549,6 +4546,5 @@ mod_doc() ->
 	     "    last_item_cache: false",
 	     "    plugins:",
 	     "      - flat",
-	     "      - pep",
-	     "  ..."]}
+	     "      - pep"]}
 	  ]}.

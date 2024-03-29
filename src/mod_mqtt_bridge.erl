@@ -178,7 +178,6 @@ mod_doc() ->
       ?T("It is available since ejabberd 23.01.")],
       example =>
       ["modules:",
-       "  ...",
        "  mod_mqtt_bridge:",
        "    servers:",
        "      \"mqtt://server.com\":",
@@ -189,8 +188,7 @@ mod_doc() ->
        "          \"remoteB\": \"localB\" # changes to 'remoteB' on remote server will be stored as 'localB' on local server",
        "        authentication:",
        "          certfile: \"/etc/ejabberd/mqtt_server.pem\"",
-       "    replication_user: \"mqtt@xmpp.server.com\"",
-       "  ..."],
+       "    replication_user: \"mqtt@xmpp.server.com\""],
       opts =>
       [{servers,
 	#{value => "{ServerUrl: {publish: [TopicPairs], subscribe: [TopicPairs], authentication: [AuthInfo]}}",

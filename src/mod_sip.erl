@@ -437,7 +437,6 @@ mod_doc() ->
                      "cannot omit \"port\" or \"scheme\").")}}],
       example =>
           ["modules:",
-           "  ...",
            "  mod_sip:",
            "    always_record_route: false",
            "    record_route: \"sip:example.com;lr\"",
@@ -449,7 +448,6 @@ mod_doc() ->
            "    via:",
            "      - tls://sip-tls.example.com:5061",
            "      - tcp://sip-tcp.example.com:5060",
-           "      - udp://sip-udp.example.com:5060",
-           "  ..."]}.
+           "      - udp://sip-udp.example.com:5060"]}.
 
 -endif.

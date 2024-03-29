@@ -129,7 +129,6 @@ mod_doc() ->
            "    server: sat-pubsub.example.org",
            "",
            "modules:",
-           "  ...",
            "  mod_delegation:",
            "    namespaces:",
            "      urn:xmpp:mam:1:",

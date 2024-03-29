@@ -93,14 +93,12 @@ mod_doc() ->
                      "is 'all'.")}}],
       example =>
           ["modules:",
-           "  ...",
            "  mod_s2s_dialback:",
            "    access:",
            "      allow:",
            "        server: legacy.domain.tld",
            "        server: invalid-cert.example.org",
-           "      deny: all",
-           "  ..."]}.
+           "      deny: all"]}.
 
 s2s_in_features(Acc, _) ->
     [#db_feature{errors = true}|Acc].
