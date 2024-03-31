@@ -110,6 +110,7 @@ man(Lang) ->
                    lists:duplicate(length(atom_to_list(M)), $~),
                    "[[" ++ ModName ++ "]]",
                    io_lib:nl()] ++
+                      format_versions(Lang, Example) ++ [io_lib:nl()] ++
                       tr_multi(Lang, Descr) ++ [io_lib:nl()] ++
                       opts_to_man(Lang, [{M, '', DocOpts}|Backends]) ++
                       format_example(0, Lang, Example)
@@ -184,7 +185,7 @@ format_option(Lang, Option, #{value := Val} = Options) ->
 format_option(_Lang, Option, #{}) ->
     "*" ++ atom_to_list(Option) ++ "*::".
 
-format_versions(_Lang, #{note := Note}) ->
+format_versions(_Lang, #{note := Note}) when Note /= [] ->
     ["_Note_ about this option: " ++ Note ++ ". "];
 format_versions(_, _) ->
     [].
