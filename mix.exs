@@ -84,7 +84,7 @@ defmodule Ejabberd.MixProject do
     try do
       {:ok, concrete} = :dialyzer_utils.get_core_from_beam(:code.which(module))
       {:ok, types} = :dialyzer_utils.get_record_and_type_info(concrete)
-      if Maps.has_key(types, typeDef) do
+      if Map.has_key?(types, typeDef) do
         okResult
       else
         []
