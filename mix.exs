@@ -206,9 +206,9 @@ defmodule Ejabberd.MixProject do
               "mix.exs", "rebar.config", "rebar.config.script", "vars.config"],
       maintainers: ["ProcessOne"],
       licenses: ["GPL-2.0-or-later"],
-      links: %{"Site" => "https://www.ejabberd.im",
-               "Documentation" => "http://docs.ejabberd.im",
-               "Source" => "https://github.com/processone/ejabberd",
+      links: %{"ejabberd.im" => "https://www.ejabberd.im",
+               "ejabberd Docs" => "http://docs.ejabberd.im",
+               "GitHub" => "https://github.com/processone/ejabberd",
                "ProcessOne" => "http://www.process-one.net/"}]
   end
 
