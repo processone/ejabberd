@@ -249,7 +249,7 @@ For this you can either:
 
 Example to connect a local `ejabberdctl` to a containerized ejabberd:
 1. When creating the container, export port 5210, and set `ERLANG_COOKIE`:
-```
+```sh
 docker run --name ejabberd -it \
   -e ERLANG_COOKIE=`cat $HOME/.erlang.cookie` \
   -p 5210:5210 -p 5222:5222 \
@@ -260,7 +260,7 @@ docker run --name ejabberd -it \
 4. Now use `ejabberdctl` in your local ejabberd deployment
 
 To connect using a local `ejabberd` script:
-```
+```sh
 ERL_DIST_PORT=5210 _build/dev/rel/ejabberd/bin/ejabberd ping
 ```
 
