@@ -170,7 +170,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = delete_old_users, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days, or that never logged",
 			longdesc = "To protect admin accounts, configure this for example:\n"
-			    "```\n"
+			    "``` yaml\n"
 			    "access_rules:\n"
 			    "  protect_old_users:\n"
 			    "    - allow: admin\n"
@@ -186,7 +186,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = delete_old_users_vhost, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days in vhost, or that never logged",
 			longdesc = "To protect admin accounts, configure this for example:\n"
-			    "```\n"
+			    "``` yaml\n"
 			    "access_rules:\n"
 			    "  delete_old_users:\n"
 			    "    - deny: admin\n"
