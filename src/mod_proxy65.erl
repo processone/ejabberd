@@ -237,24 +237,7 @@ mod_doc() ->
                      "by some XMPP clients in Service Discovery. The value of "
                      "'vCard' is a YAML map constructed from an XML representation "
                      "of vCard. Since the representation has no attributes, "
-                     "the mapping is straightforward."),
-              example =>
-                  ["# This XML representation of vCard:",
-                   "#   <vCard xmlns='vcard-temp'>",
-                   "#     <FN>Conferences</FN>",
-                   "#     <ADR>",
-                   "#       <WORK/>",
-                   "#       <STREET>Elm Street</STREET>",
-                   "#     </ADR>",
-                   "#   </vCard>",
-                   "# ",
-                   "# is translated to:",
-                   "vcard:",
-                   "  fn: Conferences",
-                   "  adr:",
-                   "    -",
-                   "      work: true",
-                   "      street: Elm Street"]}}],
+                     "the mapping is straightforward.")}}],
       example =>
           ["acl:",
            "  admin:",
