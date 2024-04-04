@@ -37,30 +37,36 @@ start(Host) ->
     case is_started(Host) of
 	true -> ok;
 	false ->
-	    App = case ejabberd_option:sql_type(Host) of
-		      mysql -> p1_mysql;
-		      pgsql -> p1_pgsql;
-		      sqlite -> sqlite3;
-		      _ -> odbc
-		  end,
-	    ejabberd:start_app(App),
-	    Spec = #{id => gen_mod:get_module_proc(Host, ?MODULE),
-		     start => {ejabberd_sql_sup, start_link, [Host]},
-		     restart => transient,
-		     shutdown => infinity,
-		     type => supervisor,
-		     modules => [?MODULE]},
-	    case supervisor:start_child(ejabberd_db_sup, Spec) of
-		{ok, _} ->
-                    ejabberd_sql_schema:start(Host),
-                    ok;
-		{error, {already_started, Pid}} ->
-                    %% Wait for the supervisor to fully start
-                    _ = supervisor:count_children(Pid),
-                    ok;
-		{error, Why} = Err ->
-		    ?ERROR_MSG("Failed to start ~ts: ~p", [?MODULE, Why]),
-		    Err
+	    case lists:member(Host, ejabberd_option:hosts()) of
+		false ->
+		    ?WARNING_MSG("Rejecting start of sql worker for unknown host: ~ts", [Host]),
+		    {error, invalid_host};
+		true ->
+		    App = case ejabberd_option:sql_type(Host) of
+			      mysql -> p1_mysql;
+			      pgsql -> p1_pgsql;
+			      sqlite -> sqlite3;
+			      _ -> odbc
+			  end,
+		    ejabberd:start_app(App),
+		    Spec = #{id => gen_mod:get_module_proc(Host, ?MODULE),
+			start => {ejabberd_sql_sup, start_link, [Host]},
+			restart => transient,
+			shutdown => infinity,
+			type => supervisor,
+			modules => [?MODULE]},
+		    case supervisor:start_child(ejabberd_db_sup, Spec) of
+			{ok, _} ->
+			    ejabberd_sql_schema:start(Host),
+			    ok;
+			{error, {already_started, Pid}} ->
+			    %% Wait for the supervisor to fully start
+			    _ = supervisor:count_children(Pid),
+			    ok;
+			{error, Why} = Err ->
+			    ?ERROR_MSG("Failed to start ~ts: ~p", [?MODULE, Why]),
+			    Err
+		    end
 	    end
     end.
 
