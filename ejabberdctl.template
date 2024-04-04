@@ -78,7 +78,7 @@ fi
 if [ -n "$INET_DIST_INTERFACE" ] ; then
     INET_DIST_INTERFACE2=$("$ERL" $ERLANG_OPTS -noshell -eval 'case inet:parse_address("'$INET_DIST_INTERFACE'") of {ok,IP} -> io:format("~p",[IP]); _ -> ok end.' -s erlang halt)
     if [ -n "$INET_DIST_INTERFACE2" ] ; then
-        if [ $(echo "$INET_DIST_INTERFACE2" | grep -o "," | wc -l) -eq 7 ] ; then
+        if [ "$(echo "$INET_DIST_INTERFACE2" | grep -o "," | wc -l)" -eq 7 ] ; then
             INET_DIST_INTERFACE2="$INET_DIST_INTERFACE2 -proto_dist inet6_tcp"
         fi
         ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_use_interface $INET_DIST_INTERFACE2"
