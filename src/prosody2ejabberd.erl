@@ -322,8 +322,13 @@ convert_roster_item(LUser, LServer, JIDstring, LuaList) ->
 			  [R#roster{name = Name}];
 		     ({<<"persist">>, false}, _) ->
 			  [];
-		     (_, []) ->
-			  []
+		     ({<<"approved">>, _}, [R]) ->
+			  [R];
+		     (A, [R]) ->
+	                  io:format("Warning: roster of user ~ts@~ts includes unknown "
+                                    "attribute:~n   ~p~nand that one is discarded.~n",
+                                    [LUser, LServer, A]),
+			  [R]
 		  end, [InitR], LuaList)
     catch _:{bad_jid, _} ->
 	    []
