@@ -219,19 +219,34 @@ AppendList2 = fun(Append) ->
 		      end
 	      end,
 
-Rebar3DepsFilter =
+% Convert our rich deps syntax to rebar2 format:
+% https://github.com/rebar/rebar/wiki/Dependency-management
+Rebar2DepsFilter =
 fun(DepsList, GitOnlyDeps) ->
-	lists:map(fun({DepName, _, {git, _, {tag, Version}}} = Dep) ->
-			  case lists:member(DepName, GitOnlyDeps) of
-			      true ->
-				  Dep;
-			      _ ->
-				  {DepName, Version}
-                          end;
-		     (Dep) ->
-			  Dep
+	lists:map(fun({DepName, _HexVersion, Source}) ->
+	              {DepName, ".*", Source}
 		  end, DepsList)
 end,
+
+% Convert our rich deps syntax to rebar3 version definition format:
+% https://rebar3.org/docs/configuration/dependencies/#dependency-version-handling
+% https://hexdocs.pm/elixir/Version.html
+Rebar3DepsFilter =
+fun(DepsList, GitOnlyDeps) ->
+	lists:map(fun({DepName, HexVersion, {git, _, {tag, GitVersion}} = Source}) ->
+			  case {lists:member(DepName, GitOnlyDeps), HexVersion == ".*"} of
+                              {true, _} ->
+                                  {DepName, ".*", Source};
+                              {false, true} ->
+                                  {DepName, GitVersion};
+                              {false, false} ->
+                                  {DepName, HexVersion}
+                          end;
+		     ({DepName, _HexVersion, Source}) ->
+	              {DepName, ".*", Source}
+		  end, DepsList)
+end,
+
 
 DepAlts = fun("esip") -> ["esip", "p1_sip"];
 	     ("xmpp") -> ["xmpp", "p1_xmpp"];
@@ -423,6 +438,8 @@ Rules = [
 	  ProcessRelx, [], []},
 	 {[deps], [floating_deps], true,
 	  ProcessFloatingDeps, [], []},
+	 {[deps], [gitonly_deps], (not IsRebar3),
+	  Rebar2DepsFilter, [], []},
 	 {[deps], [gitonly_deps], IsRebar3,
 	  Rebar3DepsFilter, [], []},
 	 {[deps], SystemDeps /= false,
