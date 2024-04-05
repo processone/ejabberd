@@ -193,7 +193,7 @@ jobs:
       run: |
         sed -i "s|^modules:|modules:\n  'ModPresenceDemo': {}|g" ejabberd.yml.example
         cat ejabberd.yml.example
-        sed -i 's|^{deps, \(.*\)|{deps, \1\n  {decimal, ".*", {git, "https://github.com/ericmj/decimal", {branch, "main"}}}, |g' rebar.config
+        sed -i 's|^{deps, \[\(.*\)|{deps, [{decimal, ".*", {git, "https://github.com/ericmj/decimal", {branch, "main"}}},\n \1|g' rebar.config
         cat rebar.config
 
     - name: Compile

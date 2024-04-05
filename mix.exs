@@ -44,7 +44,7 @@ defmodule Ejabberd.MixProject do
   def application do
     [mod: {:ejabberd_app, []},
      applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib, :mix,
-                    :base64url, :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
+                    :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
                     :p1_utils, :stringprep, :syntax_tools, :yconf]
      ++ cond_apps(),
      included_applications: [:mnesia, :os_mon,
@@ -129,8 +129,7 @@ defmodule Ejabberd.MixProject do
   end
 
   defp deps do
-    [{:base64url, "~> 1.0"},
-     {:cache_tab, "~> 1.0"},
+    [{:cache_tab, "~> 1.0"},
      {:dialyxir, "~> 1.2", only: [:test], runtime: false},
      {:eimp, "~> 1.0"},
      {:ex_doc, "~> 0.31", only: [:dev, :edoc], runtime: false},
