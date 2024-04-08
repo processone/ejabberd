@@ -299,7 +299,7 @@ docker buildx build \
 It's also possible to use podman instead of docker, just notice:
 - `EXPOSE 4369-4399` port range is not supported, remove that in Dockerfile
 - It mentions that `healthcheck` is not supported by the Open Container Initiative image format
-- If you want to start with command `live`, add environment variable `EJABBERD_BYPASS_WARNINGS=true`
+- to start with command `live`, you may want to add environment variable `EJABBERD_BYPASS_WARNINGS=true`
 ```bash
 podman build \
     -t ejabberd \
@@ -313,6 +313,8 @@ podman exec eja1 ejabberdctl status
 podman exec -it eja1 sh
 
 podman stop eja1
+
+podman run --name eja1 -it -e EJABBERD_BYPASS_WARNINGS=true -p 5222:5222 localhost/ejabberd live
 ```
 
 ### Package build for `arm64`
