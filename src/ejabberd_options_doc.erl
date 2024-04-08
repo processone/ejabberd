@@ -1379,6 +1379,7 @@ doc() ->
                "or 'ram' if the latter is not set.")}},
      {sql_server,
       #{value => ?T("Host"),
+        note => "improved in 23.04",
         desc =>
             ?T("The hostname or IP address of the SQL server. For _`sql_type`_ "
                "'mssql' or 'odbc' this can also be an ODBC connection string. "
