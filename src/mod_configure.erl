@@ -27,7 +27,7 @@
 
 -author('alexey@process-one.net').
 
--protocol({xep, 133, '1.1'}).
+-protocol({xep, 133, '1.3.0', '13.10', "complete", ""}).
 
 -behaviour(gen_mod).
 
@@ -133,8 +133,6 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 	  ?INFO_COMMAND(?T("Delete User"), Lang);
       ?NS_ADMINL(<<"end-user-session">>) ->
 	  ?INFO_COMMAND(?T("End User Session"), Lang);
-      ?NS_ADMINL(<<"get-user-password">>) ->
-	  ?INFO_COMMAND(?T("Get User Password"), Lang);
       ?NS_ADMINL(<<"change-user-password">>) ->
 	  ?INFO_COMMAND(?T("Change User Password"), Lang);
       ?NS_ADMINL(<<"get-user-lastlogin">>) ->
@@ -218,8 +216,6 @@ get_local_features(Acc, From,
 	    ?NS_ADMINL(<<"delete-user">>) ->
 		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"end-user-session">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
-	    ?NS_ADMINL(<<"get-user-password">>) ->
 		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"change-user-password">>) ->
 		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
@@ -447,8 +443,6 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To,
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"end-user-session">>) ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
-	    ?NS_ADMINL(<<"get-user-password">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"change-user-password">>) ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"get-user-lastlogin">>) ->
@@ -490,8 +484,6 @@ get_local_items(_Host, [<<"user">>], Server, Lang) ->
 	    (?NS_ADMINX(<<"delete-user">>))),
       ?NODE(?T("End User Session"),
 	    (?NS_ADMINX(<<"end-user-session">>))),
-      ?NODE(?T("Get User Password"),
-	    (?NS_ADMINX(<<"get-user-password">>))),
       ?NODE(?T("Change User Password"),
 	    (?NS_ADMINX(<<"change-user-password">>))),
       ?NODE(?T("Get User Last Login Time"),
@@ -1009,16 +1001,6 @@ get_form(_Host, ?NS_ADMINL(<<"end-user-session">>),
 				   label = tr(Lang, ?T("Jabber ID")),
 				   required = true,
 				   var = <<"accountjid">>}]}};
-get_form(_Host, ?NS_ADMINL(<<"get-user-password">>),
-	 Lang) ->
-    {result,
-     #xdata{title = tr(Lang, ?T("Get User Password")),
-	    type = form,
-	    fields = [?HFIELD(),
-		      #xdata_field{type = 'jid-single',
-				   label = tr(Lang, ?T("Jabber ID")),
-				   var = <<"accountjid">>,
-				   required = true}]}};
 get_form(_Host, ?NS_ADMINL(<<"change-user-password">>),
 	 Lang) ->
     {result,
@@ -1325,23 +1307,6 @@ set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
     end,
     {result, undefined};
 set_form(From, Host,
-	 ?NS_ADMINL(<<"get-user-password">>), Lang, XData) ->
-    AccountString = get_value(<<"accountjid">>, XData),
-    JID = jid:decode(AccountString),
-    User = JID#jid.luser,
-    Server = JID#jid.lserver,
-    true = Server == Host orelse
-	     get_permission_level(From) == global,
-    Password = ejabberd_auth:get_password(User, Server),
-    true = is_binary(Password),
-    {result,
-     #xdata{type = form,
-	    fields = [?HFIELD(),
-		      ?XFIELD('jid-single', ?T("Jabber ID"),
-			      <<"accountjid">>, AccountString),
-		      ?XFIELD('text-single', ?T("Password"),
-			      <<"password">>, Password)]}};
-set_form(From, Host,
 	 ?NS_ADMINL(<<"change-user-password">>), _Lang, XData) ->
     AccountString = get_value(<<"accountjid">>, XData),
     Password = get_value(<<"password">>, XData),
@@ -1570,6 +1535,7 @@ mod_options(_) -> [].
 mod_doc() ->
     #{desc =>
           ?T("The module provides server configuration functionality via "
-             "https://xmpp.org/extensions/xep-0050.html"
-             "[XEP-0050: Ad-Hoc Commands]. This module requires "
-             "_`mod_adhoc`_ to be loaded.")}.
+             "https://xmpp.org/extensions/xep-0050.html[XEP-0050: Ad-Hoc Commands]. "
+             "Implements many commands as defined in "
+             "https://xmpp.org/extensions/xep-0133.html[XEP-0133: Service Administration]. "
+             "This module requires _`mod_adhoc`_ to be loaded.")}.
