@@ -564,7 +564,7 @@ get_user_rooms(User, Server) ->
       end, ejabberd_option:hosts()).
 
 get_user_subscriptions(User, Server) ->
-    User2 = validate_muc(User, <<"user">>),
+    User2 = validate_user(User, <<"user">>),
     Server2 = validate_host(Server, <<"host">>),
     Services = find_services(global),
     UserJid = jid:make(User2, Server2),
@@ -1580,6 +1580,15 @@ validate_host(Name, ArgName) ->
 		_ ->
 		    Name2
 	    end
+    end.
+
+-spec validate_user(Name :: binary(), ArgName::binary()) -> binary().
+validate_user(Name, ArgName) ->
+    case jid:nodeprep(Name) of
+	error ->
+	    throw({error, <<"Invalid value of '",ArgName/binary,"'">>});
+	Name2 ->
+	    Name2
     end.
 
 -spec validate_muc(Name :: binary(), ArgName::binary()) -> binary().
