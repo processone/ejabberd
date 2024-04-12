@@ -396,6 +396,7 @@ ejabberdctl.relive:
 		-e "s*{{spool_dir}}*${SPOOL_DIR}*g" \
 		-e "s*{{bindir}}*${BINDIR}*g" \
 		-e "s*{{libdir}}*${relivelibdir}${ELIXIR_LIBDIR}*g" \
+		-e "s*ERTS_VSN*# ERTS_VSN*g" \
 		-e "s*{{iexpath}}*${IEX}*g" \
 		-e "s*{{erl}}*${ERL}*g" \
 		-e "s*{{epmd}}*${EPMD}*g" ejabberdctl.template \
@@ -420,6 +421,7 @@ ejabberdctl.example: vars.config
 		-e "s*{{spool_dir}}*${SPOOLDIR}*g" \
 		-e "s*{{bindir}}*${BINDIR}*g" \
 		-e "s*{{libdir}}*${LIBDIR}${ELIXIR_LIBDIR}*g" \
+		-e "s*ERTS_VSN*# ERTS_VSN*g" \
 		-e "s*{{iexpath}}*${IEX}*g" \
 		-e "s*{{erl}}*${ERL}*g" \
 		-e "s*{{epmd}}*${EPMD}*g" ejabberdctl.template \
