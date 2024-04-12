@@ -924,6 +924,7 @@ doc() ->
              [binary:part(ejabberd_config:version(), {0,5})]}}},
      {update_sql_schema,
       #{value => "true | false",
+        note => "added in 23.10",
         desc =>
             ?T("Allow ejabberd to update SQL schema. "
                "The default value is 'true'.")}},
