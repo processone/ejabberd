@@ -247,13 +247,8 @@ json_call(Name, ArgsDesc, Values, ResultDesc, Result, HTMLOutput) ->
                                 {200, [?STR(Text1)]};
                             {{_, restuple}, {_, Text2}} ->
                                 {500, [?STR(Text2)]};
-                            {{_, {list, _}}, _} ->
-                                {200, json_gen(ResultDesc, Result, Indent, HTMLOutput)};
-                            {{_, {tuple, _}}, _} ->
-                                {200, json_gen(ResultDesc, Result, Indent, HTMLOutput)};
-                            {{Name0, _}, _} ->
-                                {200, [Indent, ?OP_L("{"), ?STR_A(Name0), ?OP_L(": "),
-				       json_gen(ResultDesc, Result, Indent, HTMLOutput), ?OP_L("}")]}
+                            {{_, _}, _} ->
+                                {200, json_gen(ResultDesc, Result, Indent, HTMLOutput)}
                         end,
     CodeStr = case Code of
                   200 -> <<" 200 OK">>;
