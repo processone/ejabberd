@@ -119,7 +119,7 @@ xupdate_master(Config) ->
 	      sub_els = [#vcard_xupdate{hash = ImgHash}]} = recv_presence(Config),
     #iq{type = result, sub_els = []} =
 	send_recv(Config, #iq{type = set, sub_els = [#vcard_temp{}]}),
-    ?recv2(#presence{from = MyJID, type = available,
+    {_, _} = ?recv2(#presence{from = MyJID, type = available,
 		     sub_els = [#vcard_xupdate{hash = undefined}]},
 	   #presence{from = Peer, type = unavailable}),
     disconnect(Config).

@@ -142,7 +142,7 @@ unsupported_iq(Config) ->
 %%%===================================================================
 %%% Master-slave tests
 %%%===================================================================
-master_slave_cases(DB) ->
+master_slave_cases(_DB) ->
     {offline_master_slave, [sequence],
      [master_slave_test(flex),
       master_slave_test(send_all),
@@ -233,8 +233,6 @@ mucsub_mam_slave(Config) ->
     gen_mod:update_module(Server, mod_mam, #{user_mucsub_from_muc_archive => true}),
 
     Room = suite:muc_room_jid(Config),
-    MyJID = my_jid(Config),
-    MyJIDBare = jid:remove_resource(MyJID),
     ok = mam_tests:set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
     send(Config, #presence{type = unavailable}),
