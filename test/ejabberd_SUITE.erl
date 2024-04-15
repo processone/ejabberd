@@ -99,7 +99,6 @@ do_init_per_group(mysql, Config) ->
     case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MYSQL_VHOST),
-            clear_sql_tables(mysql, Config),
             update_sql(?MYSQL_VHOST, Config),
             set_opt(server, ?MYSQL_VHOST, Config);
         Err ->
@@ -109,7 +108,6 @@ do_init_per_group(mssql, Config) ->
     case catch ejabberd_sql:sql_query(?MSSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MSSQL_VHOST),
-            clear_sql_tables(mssql, Config),
             update_sql(?MSSQL_VHOST, Config),
             set_opt(server, ?MSSQL_VHOST, Config);
         Err ->
@@ -119,7 +117,6 @@ do_init_per_group(pgsql, Config) ->
     case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?PGSQL_VHOST),
-            clear_sql_tables(pgsql, Config),
             update_sql(?PGSQL_VHOST, Config),
             set_opt(server, ?PGSQL_VHOST, Config);
         Err ->
@@ -168,11 +165,34 @@ end_per_group(mnesia, _Config) ->
     ok;
 end_per_group(redis, _Config) ->
     ok;
-end_per_group(mysql, _Config) ->
+end_per_group(mysql, Config) ->
+    Query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'mqtt_pub';",
+    case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [Query]) of
+        {selected, _, [[<<"0">>]]} ->
+            ok;
+        {selected, _, [[<<"1">>]]} ->
+            clear_sql_tables(mysql, Config);
+        Other ->
+            ct:fail({failed_to_check_table_existence, mysql, Other})
+    end,
     ok;
-end_per_group(mssql, _Config) ->
+end_per_group(mssql, Config) ->
+    Query = "SELECT * FROM sys.tables WHERE name = 'mqtt_pub'",
+    case catch ejabberd_sql:sql_query(?MSSQL_VHOST, [Query]) of
+        {selected, [t]} ->
+            clear_sql_tables(mssql, Config);
+        Other ->
+            ct:fail({failed_to_check_table_existence, mssql, Other})
+    end,
     ok;
-end_per_group(pgsql, _Config) ->
+end_per_group(pgsql, Config) ->
+    Query = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'mqtt_pub');",
+    case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [Query]) of
+        {selected, [t]} ->
+            clear_sql_tables(pgsql, Config);
+        Other ->
+            ct:fail({failed_to_check_table_existence, pgsql, Other})
+    end,
     ok;
 end_per_group(sqlite, _Config) ->
     ok;
