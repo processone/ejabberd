@@ -197,6 +197,11 @@ format_error(eimp_error) ->
     format("ejabberd is built without image converter support", []);
 format_error({mqtt_codec, Reason}) ->
     mqtt_codec:format_error(Reason);
+format_error({external_module_error, Module, Error}) ->
+    try Module:format_error(Error)
+    catch _:_ ->
+	format("Invalid value", [])
+    end;
 format_error(Reason) ->
     yconf:format_error(Reason).
 
