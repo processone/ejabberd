@@ -227,7 +227,7 @@ abort start, this can be disabled by prefixing commands with `!`
 Example usage (or check the [full example](#customized-example)):
 ```yaml
     environment:
-      - CTL_ON_CREATE=\! register admin localhost asd
+      - CTL_ON_CREATE=! register admin localhost asd
       - CTL_ON_START=stats registeredusers ;
                      check_password admin localhost asd ;
                      status
@@ -435,7 +435,7 @@ services:
     environment:
       - ERLANG_NODE_ARG=ejabberd@main
       - ERLANG_COOKIE=dummycookie123
-      - CTL_ON_CREATE=\! register admin localhost asd
+      - CTL_ON_CREATE=! register admin localhost asd
 
   replica:
     image: ghcr.io/processone/ejabberd
