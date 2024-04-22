@@ -139,7 +139,7 @@ defmodule Ejabberd.MixProject do
      {:idna, "~> 6.0"},
      {:jiffy, "~> 1.1.1"},
      {:mqtree, "~> 1.0"},
-     {:p1_acme, "~> 1.0"},
+     {:p1_acme, git: "https://github.com/processone/p1_acme", branch: "master"},
      {:p1_oauth2, "~> 0.6"},
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
