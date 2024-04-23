@@ -22,7 +22,7 @@
   "makeup_erlang": {:hex, :makeup_erlang, "0.1.5", "e0ff5a7c708dda34311f7522a8758e23bfcd7d8d8068dc312b5eb41c6fd76eba", [:mix], [{:makeup, "~> 1.0", [hex: :makeup, repo: "hexpm", optional: false]}], "hexpm", "94d2e986428585a21516d7d7149781480013c56e30c6a233534bedf38867a59a"},
   "mqtree": {:hex, :mqtree, "1.0.16", "f8f8b4971e4ca94313ba9bcaaa1aa1077daaba5e3fd3468ffb491420a4cc3593", [:rebar3], [{:p1_utils, "1.0.25", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm", "c87d1c95575db65af29b795c9daa3bed43f5c1bf84072a74469659bcf53594eb"},
   "nimble_parsec": {:hex, :nimble_parsec, "1.4.0", "51f9b613ea62cfa97b25ccc2c1b4216e81df970acd8e16e8d1bdc58fef21370d", [:mix], [], "hexpm", "9c565862810fb383e9838c1dd2d7d2c437b3d13b267414ba6af33e50d2d1cf28"},
-  "p1_acme": {:git, "https://github.com/processone/p1_acme", "2d049fa25d66f97a08b58ba8e07a751ed60ff9c4", [branch: "master"]},
+  "p1_acme": {:git, "https://github.com/processone/p1_acme", "b4d0900eabb208c493ae3958bc545151bb19b90e", [branch: "master"]},
   "p1_mysql": {:hex, :p1_mysql, "1.0.23", "9b4e98f1f01e2cc4a759f611f0f015365e65c5f61ea453aa4bdfe950d20a5f11", [:rebar3], [], "hexpm", "9cef98265fb287374e7b64bf4022c4df5ec66196ca31cf4bed73c67c45bf824e"},
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.14", "1c5f82535574de87e2059695ac4b91f8f9aebacbc1c80287dae6f02552d47aea", [:rebar3], [], "hexpm", "1fd3ac474e43722d9d5a87c6df8d36f698ed87af7bb81cbbb66361451d99ae8f"},
   "p1_pgsql": {:hex, :p1_pgsql, "1.1.25", "f59b7faa457fadf0c2713ac335202f41ca1b06b7c4926925b3cb0bc6f0578601", [:rebar3], [{:xmpp, "1.8.1", [hex: :xmpp, repo: "hexpm", optional: false]}], "hexpm", "b654c1e07d3e775b626b407e7696cacfd88d17be83e7168b9d89c3832d913de7"},
