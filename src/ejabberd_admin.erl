@@ -603,8 +603,9 @@ update() ->
     Mods = ejabberd_admin:update_list(),
     io:format("Updating modules: ~p~n", [Mods]),
     ejabberd_admin:update("all"),
-    io:format("Updated modules: ", []),
-    Mods -- ejabberd_admin:update_list().
+    Mods2 = Mods -- ejabberd_admin:update_list(),
+    io:format("Updated modules: ~p~n", [Mods2]),
+    ok.
 
 %%%
 %%% Account management
