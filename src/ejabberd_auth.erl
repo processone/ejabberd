@@ -236,14 +236,16 @@ check_password_with_authmodule(User, AuthzId, Server, Password) ->
 
 -spec check_password_with_authmodule(
 	binary(), binary(), binary(), binary(), binary(),
-	digest_fun() | undefined) -> false | {true, atom()}.
+	digest_fun() | undefined) -> false | {false, atom(), binary()} | {true, atom()}.
 check_password_with_authmodule(User, AuthzId, Server, Password, Digest, DigestGen) ->
     case validate_credentials(User, Server) of
 	{ok, LUser, LServer} ->
-	    case jid:nodeprep(AuthzId) of
-		error ->
+	    case {jid:nodeprep(AuthzId), get_is_banned(LUser, LServer)} of
+                {error, _} ->
 		    false;
-		LAuthzId ->
+                {_, {is_banned, BanReason}} ->
+                    {false, 'account-disabled', BanReason};
+                {LAuthzId, _} ->
                     untag_stop(
                       lists:foldl(
                         fun(Mod, false) ->
@@ -373,10 +375,15 @@ get_password_s(User, Server) ->
       Password -> Password
     end.
 
--spec get_password_with_authmodule(binary(), binary()) -> {false | password(), module()}.
+-spec get_password_with_authmodule(binary(), binary()) ->
+    {false | {false, atom(), binary()} | password(), module()}.
 get_password_with_authmodule(User, Server) ->
     case validate_credentials(User, Server) of
 	{ok, LUser, LServer} ->
+	    case get_is_banned(LUser, LServer) of
+                {is_banned, BanReason} ->
+                    {{false, 'account-disabled', BanReason}, module_not_consulted};
+                not_banned ->
 	    case lists:foldl(
 		   fun(M, {error, _}) ->
 			   {db_get_password(LUser, LServer, M), M};
@@ -387,6 +394,7 @@ get_password_with_authmodule(User, Server) ->
 		    {Password, Module};
 		{error, Module} ->
 		    {false, Module}
+            end
 	    end;
 	_ ->
 	    {false, undefined}
@@ -566,6 +574,15 @@ backend_type(Mod) ->
 -spec password_format(binary() | global) -> plain | scram.
 password_format(LServer) ->
     ejabberd_option:auth_password_format(LServer).
+
+get_is_banned(User, Server) ->
+    case mod_admin_extra:get_ban_details(User, Server) of
+          [] ->
+              not_banned;
+          BanDetails ->
+              {_, ReasonText} = lists:keyfind("reason", 1, BanDetails),
+              {is_banned, <<"Account is banned: ", ReasonText/binary>>}
+    end.
 
 %%%----------------------------------------------------------------------
 %%% Backend calls
