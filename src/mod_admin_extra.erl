@@ -1099,7 +1099,7 @@ set_random_password_v2(User, Server) ->
 build_ban_xmlel(Reason, Pass, {LastDate, LastReason}, BanDate, Hash) ->
     PassEls = build_pass_els(Pass),
     #xmlel{name = <<"banned">>,
-           attrs = [{<<"xmlns">>, <<"ejabberd:banned">>}],
+           attrs = [{<<"xmlns">>, <<"jabber:ejabberd:banned">>}],
            children = [#xmlel{name = <<"reason">>, attrs = [], children = [{xmlcdata, Reason}]},
                        #xmlel{name = <<"password">>, attrs = [], children = PassEls},
                        #xmlel{name = <<"lastdate">>, attrs = [], children = [{xmlcdata, LastDate}]},
@@ -1126,7 +1126,7 @@ build_pass_els(#scram{storedkey = StoredKey,
 %% Get ban details
 
 get_ban_details(User, Host) ->
-    [El] = private_get2(User, Host, <<"banned">>, <<"ejabberd:banned">>),
+    [El] = private_get2(User, Host, <<"banned">>, <<"jabber:ejabberd:banned">>),
     Reason = fxml:get_subtag_cdata(El, <<"reason">>),
     LastDate = fxml:get_subtag_cdata(El, <<"lastdate">>),
     LastReason = fxml:get_subtag_cdata(El, <<"lastreason">>),
@@ -1168,7 +1168,7 @@ unban_account2(User, Host) ->
     private_set2(User, Host, UnBanPrivateXml).
 
 get_oldpass(User, Host) ->
-    [El] = private_get2(User, Host, <<"banned">>, <<"ejabberd:banned">>),
+    [El] = private_get2(User, Host, <<"banned">>, <<"jabber:ejabberd:banned">>),
     Pass = fxml:get_subtag(El, <<"password">>),
     get_pass(Pass).
 
@@ -1187,7 +1187,7 @@ get_pass(#xmlel{children = ScramEls} = Pass) when is_list(ScramEls) ->
            iterationcount = binary_to_integer(IterationCount)}.
 
 build_unban_xmlel() ->
-    #xmlel{name = <<"banned">>, attrs = [{<<"xmlns">>, <<"ejabberd:banned">>}]}.
+    #xmlel{name = <<"banned">>, attrs = [{<<"xmlns">>, <<"jabber:ejabberd:banned">>}]}.
 
 %%%
 %%% Sessions
