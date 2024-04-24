@@ -1081,17 +1081,22 @@ ban_account_v2_b(User, Host, ReasonText) ->
     Pass = ejabberd_auth:get_password_s(User, Host),
     Last = get_last(User, Host),
     BanDate = xmpp_util:encode_timestamp(erlang:timestamp()),
-    BanPrivateXml = build_ban_xmlel(Reason, Pass, Last, BanDate),
+    Hash = get_hash_value(User, Host),
+    BanPrivateXml = build_ban_xmlel(Reason, Pass, Last, BanDate, Hash),
     ok = private_set2(User, Host, BanPrivateXml),
     ok = set_random_password_v2(User, Host),
     kick_sessions(User, Host, Reason),
     ok.
 
+get_hash_value(User, Host) ->
+    Cookie = misc:atom_to_binary(erlang:get_cookie()),
+    misc:term_to_base64(crypto:hash(sha256, <<User/binary, Host/binary, Cookie/binary>>)).
+
 set_random_password_v2(User, Server) ->
     NewPass = p1_rand:get_string(),
     ok = ejabberd_auth:set_password(User, Server, NewPass).
 
-build_ban_xmlel(Reason, Pass, {LastDate, LastReason}, BanDate) ->
+build_ban_xmlel(Reason, Pass, {LastDate, LastReason}, BanDate, Hash) ->
     PassEls = build_pass_els(Pass),
     #xmlel{name = <<"banned">>,
            attrs = [{<<"xmlns">>, <<"ejabberd:banned">>}],
@@ -1099,7 +1104,8 @@ build_ban_xmlel(Reason, Pass, {LastDate, LastReason}, BanDate) ->
                        #xmlel{name = <<"password">>, attrs = [], children = PassEls},
                        #xmlel{name = <<"lastdate">>, attrs = [], children = [{xmlcdata, LastDate}]},
                        #xmlel{name = <<"lastreason">>, attrs = [], children = [{xmlcdata, LastReason}]},
-                       #xmlel{name = <<"bandate">>, attrs = [], children = [{xmlcdata, BanDate}]}
+                       #xmlel{name = <<"bandate">>, attrs = [], children = [{xmlcdata, BanDate}]},
+                       #xmlel{name = <<"hash">>, attrs = [], children = [{xmlcdata, Hash}]}
                        ]}.
 
 build_pass_els(Pass) when is_binary(Pass) ->
@@ -1125,11 +1131,16 @@ get_ban_details(User, Host) ->
     LastDate = fxml:get_subtag_cdata(El, <<"lastdate">>),
     LastReason = fxml:get_subtag_cdata(El, <<"lastreason">>),
     BanDate = fxml:get_subtag_cdata(El, <<"bandate">>),
-    [{"reason", Reason},
-     {"bandate", BanDate},
-     {"lastdate", LastDate},
-     {"lastreason", LastReason}
-    ].
+    Hash = fxml:get_subtag_cdata(El, <<"hash">>),
+    case Hash == get_hash_value(User, Host) of
+        true ->
+            [{"reason", Reason},
+             {"bandate", BanDate},
+             {"lastdate", LastDate},
+             {"lastreason", LastReason}];
+        false ->
+            []
+    end.
 
 is_banned(User, Host) ->
     case lists:keyfind("bandate", 1, get_ban_details(User, Host)) of
