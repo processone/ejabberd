@@ -109,14 +109,14 @@ and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MI
 [erlang]: https://www.erlang.org/
 [features]: https://docs.ejabberd.im/admin/introduction/
 [fluux]: https://fluux.io/
-[homebrew]: https://docs.ejabberd.im/admin/installation/#homebrew
+[homebrew]: https://docs.ejabberd.im/admin/install/homebrew/
 [hubecs]: https://hub.docker.com/r/ejabberd/ecs/
 [im]: https://ejabberd.im/
 [issues]: https://github.com/processone/ejabberd/issues
 [localization]: https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 [mqtt]: https://mqtt.org/
 [muc]: xmpp:ejabberd@conference.process-one.net
-[osp]: https://docs.ejabberd.im/admin/installation/#operating-system-packages
+[osp]: https://docs.ejabberd.im/admin/install/os-package/
 [p1contact]: https://www.process-one.net/en/company/contact/
 [p1download]: https://www.process-one.net/en/ejabberd/downloads/
 [p1home]: https://www.process-one.net/en/ejabberd/

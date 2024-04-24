@@ -29,7 +29,7 @@ repository.
 Check the [differences between `ejabberd` and `ecs` images](https://github.com/processone/docker-ejabberd/blob/master/ecs/HUB-README.md#alternative-image-in-github).
 
 If you are using a Windows operating system, check the tutorials mentioned in
-[ejabberd Docs > Docker Image](https://docs.ejabberd.im/admin/installation/#docker-image).
+[ejabberd Docs > Docker Image](https://docs.ejabberd.im/admin/install/container/#ejabberd-container-image).
 
 
 Start ejabberd
@@ -108,7 +108,7 @@ docker exec -it ejabberd ejabberdctl register admin localhost passw0rd
 ```
 
 Then edit conf/ejabberd.yml and add the ACL as explained in
-[ejabberd Docs: Administration Account](https://docs.ejabberd.im/admin/installation/#administration-account)
+[ejabberd Docs: Administration Account](https://docs.ejabberd.im/admin/install/next-steps/#administration-account)
 
 
 ### Check ejabberd log files

@@ -48,7 +48,7 @@ write_doap_head()
     <download-page rdf:resource="https://www.process-one.net/en/ejabberd/downloads/"/>
     <download-mirror rdf:resource="https://github.com/processone/ejabberd/tags"/>
     <license rdf:resource="https://raw.githubusercontent.com/processone/ejabberd/master/COPYING"/>
-    <schema:logo rdf:resource="https://docs.ejabberd.im/static/shared/images/footer_logo_e@2x.png"/>
+    <schema:logo rdf:resource="https://docs.ejabberd.im/assets/img/footer_logo_e@2x.png"/>
     <bug-database rdf:resource="https://github.com/processone/ejabberd/issues"/>
     <support-forum rdf:resource="xmpp:ejabberd@conference.process-one.net?join"/>
     <repository>

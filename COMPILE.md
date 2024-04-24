@@ -7,7 +7,7 @@ from source code.
 For a more detailed explanation, please check the
 ejabberd Docs: [Source Code Installation][docs-source].
 
-[docs-source]: https://docs.ejabberd.im/admin/installation/#source-code
+[docs-source]: https://docs.ejabberd.im/admin/install/source/
 
 
 Requirements

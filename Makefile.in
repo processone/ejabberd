@@ -258,7 +258,7 @@ _build/edoc/docs.md: edoc_compile
 	     > _build/edoc/docs.md
 
 _build/edoc/logo.png: edoc_compile
-	wget https://docs.ejabberd.im/static/shared/images/footer_logo_e.png -O _build/edoc/logo.png
+	wget https://docs.ejabberd.im/assets/img/footer_logo_e.png -O _build/edoc/logo.png
 
 #.
 #' copy-files

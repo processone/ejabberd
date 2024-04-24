@@ -625,7 +625,7 @@ maybe_disclaimer_not_admin(MenuItems, AJID, Lang) ->
         {[_], []} ->
             [?XREST(?T("Apparently your account has no administration rights in this server. "
                        "Please check how to grant admin rights in: "
-                       "https://docs.ejabberd.im/admin/installation/#administration-account"))
+                       "https://docs.ejabberd.im/admin/install/next-steps/#administration-account"))
             ];
         _ ->
             []
