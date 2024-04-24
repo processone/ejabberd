@@ -1126,7 +1126,14 @@ build_pass_els(#scram{storedkey = StoredKey,
 %% Get ban details
 
 get_ban_details(User, Host) ->
-    [El] = private_get2(User, Host, <<"banned">>, <<"jabber:ejabberd:banned">>),
+    case private_get2(User, Host, <<"banned">>, <<"jabber:ejabberd:banned">>) of
+        [El] ->
+            get_ban_details(User, Host, El);
+        [] ->
+            []
+    end.
+
+get_ban_details(User, Host, El) ->
     Reason = fxml:get_subtag_cdata(El, <<"reason">>),
     LastDate = fxml:get_subtag_cdata(El, <<"lastdate">>),
     LastReason = fxml:get_subtag_cdata(El, <<"lastreason">>),
@@ -1694,6 +1701,12 @@ private_get(Username, Host, Element, Ns) ->
     binary_to_list(fxml:element_to_binary(xmpp:encode(#private{sub_els = Els}))).
 
 private_get2(Username, Host, Element, Ns) ->
+    case gen_mod:is_loaded(Host, mod_private) of
+        true -> private_get3(Username, Host, Element, Ns);
+        false -> []
+    end.
+
+private_get3(Username, Host, Element, Ns) ->
     ElementXml = #xmlel{name = Element, attrs = [{<<"xmlns">>, Ns}]},
     mod_private:get_data(jid:nodeprep(Username), jid:nameprep(Host),
 			       [{Ns, ElementXml}]).
