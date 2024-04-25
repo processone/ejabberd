@@ -333,3 +333,19 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 
 AC_OUTPUT
+
+AS_CASE([$rebar],
+ [*rebar3], [
+  deps=""
+  AS_IF([test "x$stun" = "xfalse"], [deps="stun,$deps"])
+  AS_IF([test "x$sqlite" = "xfalse"], [deps="sqlite3,$deps"])
+  AS_IF([test "x$pgsql" = "xfalse"], [deps="p1_pgsql,$deps"])
+  AS_IF([test "x$mysql" = "xfalse"], [deps="p1_mysql,$deps"])
+  AS_IF([test "x$zlib" = "xfalse"], [deps="ezlib,$deps"])
+  AS_IF([test "x$sip" = "xfalse"], [deps="esip,$deps"])
+  AS_IF([test "x$redis" = "xfalse"], [deps="eredis,$deps"])
+  AS_IF([test "x$pam" = "xfalse"], [deps="epam,$deps"])
+  AS_IF([test "x$deps" = "x"], [],
+   [echo "unlocking disabled rebar3 dependencies: $deps"
+    $rebar unlock "$deps"])
+ ])
