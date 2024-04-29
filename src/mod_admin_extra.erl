@@ -1069,11 +1069,16 @@ prepare_reason(Reason) when is_binary(Reason) ->
 %% Ban account v2
 
 ban_account_v2(User, Host, ReasonText) ->
-    case is_banned(User, Host) of
-        true ->
-            account_was_already_banned;
+    case gen_mod:is_loaded(Host, mod_private) of
         false ->
-            ban_account_v2_b(User, Host, ReasonText)
+            mod_private_is_required_but_disabled;
+        true ->
+            case is_banned(User, Host) of
+                true ->
+                    account_was_already_banned;
+                false ->
+                    ban_account_v2_b(User, Host, ReasonText)
+            end
     end.
 
 ban_account_v2_b(User, Host, ReasonText) ->
@@ -1161,11 +1166,16 @@ is_banned(User, Host) ->
 %% Unban account
 
 unban_account(User, Host) ->
-    case is_banned(User, Host) of
+    case gen_mod:is_loaded(Host, mod_private) of
         false ->
-            account_was_not_banned;
+            mod_private_is_required_but_disabled;
         true ->
-            unban_account2(User, Host)
+            case is_banned(User, Host) of
+                false ->
+                    account_was_not_banned;
+                true ->
+                    unban_account2(User, Host)
+            end
     end.
 
 unban_account2(User, Host) ->
