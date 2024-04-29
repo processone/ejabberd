@@ -417,6 +417,8 @@ GithubConfig = case {os:getenv("GITHUB_ACTIONS"), os:getenv("GITHUB_TOKEN")} of
 end,
 
 Rules = [
+	 {[plugins], IsRebar3,
+	  AppendList([{pc, ".*", {git, "https://github.com/blt/port_compiler.git", {branch, "otp-27"}}}]), []},
 	 {[provider_hooks], IsRebar3,
 	  AppendList([{pre, [
 			     {compile, {asn, compile}},
