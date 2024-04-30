@@ -13,7 +13,9 @@ defmodule Ejabberd.MixProject do
      erlc_options: erlc_options(),
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
-     aliases: [test: "test --no-start"],
+     aliases: [
+       test: "test --no-start",
+       "deps.get": ["deps.get", "pc_branch"]],
      start_permanent: Mix.env() == :prod,
      language: :erlang,
      dialyzer: dialyzer(),
@@ -406,6 +408,14 @@ defmodule Ejabberd.MixProject do
         "For more documentation": "_build/edoc/docs.md"
       ]
     ]
+  end
+end
+
+defmodule Mix.Tasks.PcBranch do
+  use Mix.Task
+  def run(_) do
+    command = "find deps -name rebar.config.script -exec sed -i 's/AppendList..pc/AppendList\(\[{pc, {git, \"https:\\/\\/github.com\\/blt\\/port_compiler.git\", {branch, \"otp-27\"}}}/g' {} ';' "
+    :os.cmd(to_charlist(command))
   end
 end
 
