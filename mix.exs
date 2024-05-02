@@ -144,7 +144,7 @@ defmodule Ejabberd.MixProject do
      {:p1_acme, git: "https://github.com/processone/p1_acme", branch: "master"},
      {:p1_oauth2, "~> 0.6"},
      {:p1_utils, "~> 1.0"},
-     {:pkix, "~> 1.0"},
+     {:pkix, git: "https://github.com/processone/pkix"},
      {:stringprep, ">= 1.0.26"},
      {:xmpp, git: "https://github.com/processone/xmpp", override: true},
      {:yconf, "~> 1.0"}]
