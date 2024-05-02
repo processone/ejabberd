@@ -127,7 +127,6 @@ jobs:
                     --disable-elixir \
                     --disable-mssql \
                     --disable-odbc
-        make update
         make
 
     - run: make install -s

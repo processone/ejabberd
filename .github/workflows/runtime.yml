@@ -67,7 +67,6 @@ jobs:
                     --disable-elixir \
                     --disable-tools \
                     --disable-odbc
-        make update
         make
 
     - run: make xref
@@ -203,7 +202,6 @@ jobs:
                     --prefix=/tmp/ejabberd \
                     --enable-all \
                     --disable-odbc
-        make update
         make
 
     - run: make xref
@@ -340,7 +338,6 @@ jobs:
         ./configure --with-rebar=mix \
                     --prefix=/tmp/ejabberd \
                     --enable-all
-        mix deps.get
         make
 
     - run: make xref
