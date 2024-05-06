@@ -11,13 +11,16 @@
 
 REBAR=$1
 
-ERLS=$(git grep --name-only @format-begin src/)
+FORMAT()
+{
+FPATH=$1
+ERLS=$(git grep --name-only @format-begin "$FPATH"/)
 
 for ERL in $ERLS; do
     csplit --quiet --prefix=$ERL-format- $ERL /@format-/ "{*}"
 done
 
-EFMTS=$(find src/*-format-* -type f -exec grep --files-with-matches "@format-begin" '{}' ';')
+EFMTS=$(find "$FPATH"/*-format-* -type f -exec grep --files-with-matches "@format-begin" '{}' ';')
 EFMTS2=""
 for EFMT in $EFMTS; do
     EFMTS2="$EFMTS2 --files $EFMT"
@@ -32,3 +35,7 @@ for ERL in $ERLS; do
          rm $SPLIT
     done
 done
+}
+
+FORMAT src
+FORMAT test
