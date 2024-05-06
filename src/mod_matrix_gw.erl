@@ -75,13 +75,13 @@ process([<<"key">>, <<"v2">>, <<"server">> | _],
               }},
     SJSON = sign_json(Host, JSON),
     {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-     jiffy:encode(SJSON)};
+     misc:json_encode(SJSON)};
 process([<<"federation">>, <<"v1">>, <<"version">>],
         #request{method = 'GET', host = _Host} = _Request) ->
     JSON = #{<<"server">> => #{<<"name">> => <<"ejabberd/mod_matrix_gw">>,
                                <<"version">> => <<"0.1">>}},
     {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-     jiffy:encode(JSON)};
+     misc:json_encode(JSON)};
 process([<<"federation">>, <<"v1">>, <<"query">>, <<"profile">>],
         #request{method = 'GET', host = _Host} = Request) ->
     case proplists:get_value(<<"user_id">>, Request#request.q) of
@@ -116,7 +116,7 @@ process([<<"federation">>, <<"v1">>, <<"user">>, <<"devices">>, UserID],
                            <<"keys">> => []}],
                     <<"stream_id">> => 1,
                     <<"user_id">> => UserID},
-            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], jiffy:encode(Res)};
+            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], misc:json_encode(Res)};
         {result, HTTPResult} ->
             HTTPResult
     end;
@@ -127,7 +127,7 @@ process([<<"federation">>, <<"v1">>, <<"user">>, <<"keys">>, <<"query">>],
             DeviceKeys2 = maps:map(fun(_Key, _) -> #{} end, DeviceKeys),
             Res = #{<<"device_keys">> => DeviceKeys2},
             {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-             jiffy:encode(Res)};
+             misc:json_encode(Res)};
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
         {result, HTTPResult} ->
@@ -156,8 +156,8 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
                                     ?DEBUG("sign event ~p~n", [SEvent]),
                                     ResJSON = #{<<"event">> => SEvent},
                                     mod_matrix_gw_room:join(Host, Origin, RoomID, Sender, UserID),
-                                    ?DEBUG("res ~s~n", [jiffy:encode(ResJSON)]),
-                                    {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], jiffy:encode(ResJSON)};
+                                    ?DEBUG("res ~s~n", [misc:json_encode(ResJSON)]),
+                                    {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], misc:json_encode(ResJSON)};
                                 _ ->
                                     {400, [], <<"400 Bad Request: bad event id">>}
                             end;
@@ -191,7 +191,7 @@ process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
                     end, PDUs),
             ?DEBUG("send res ~p~n", [Res]),
             {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-             jiffy:encode(maps:from_list(Res))};
+             misc:json_encode(maps:from_list(Res))};
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
         {result, HTTPResult} ->
@@ -212,7 +212,7 @@ process([<<"federation">>, <<"v1">>, <<"get_missing_events">>, RoomID],
             ?DEBUG("get_missing_events res ~p~n", [PDUs]),
             Res = #{<<"events">> => PDUs},
             {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-             jiffy:encode(Res)};
+             misc:json_encode(Res)};
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
         {result, HTTPResult} ->
@@ -245,7 +245,7 @@ process([<<"federation">>, <<"v1">>, <<"backfill">>, RoomID],
                             <<"origin_server_ts">> => erlang:system_time(millisecond),
                             <<"pdus">> => PDUs},
                     {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                     jiffy:encode(Res)};
+                     misc:json_encode(Res)};
                 {result, HTTPResult} ->
                     HTTPResult
             end;
@@ -265,7 +265,7 @@ process([<<"federation">>, <<"v1">>, <<"state_ids">>, RoomID],
                                     <<"pdu_ids">> => PDUs},
                             ?DEBUG("get_state_ids res ~p~n", [Res]),
                             {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                             jiffy:encode(Res)};
+                             misc:json_encode(Res)};
                         {error, room_not_found} ->
                             {400, [], <<"400 Bad Request: room not found">>};
                         {error, not_allowed} ->
@@ -307,7 +307,7 @@ process([<<"federation">>, <<"v1">>, <<"event">>, EventID],
                             <<"origin_server_ts">> => erlang:system_time(millisecond),
                             <<"pdus">> => [PDU]},
                     {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                     jiffy:encode(Res)}
+                     misc:json_encode(Res)}
             end;
         {result, HTTPResult} ->
             HTTPResult
@@ -324,27 +324,27 @@ process([<<"federation">>, <<"v1">>, <<"make_join">>, RoomID, UserID],
                             Res = #{<<"errcode">> => <<"M_NOT_FOUND">>,
                                     <<"error">> => <<"Unknown room">>},
                             {404, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                             jiffy:encode(Res)};
+                             misc:json_encode(Res)};
                         {error, not_invited} ->
                             Res = #{<<"errcode">> => <<"M_FORBIDDEN">>,
                                     <<"error">> => <<"You are not invited to this room">>},
                             {403, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                             jiffy:encode(Res)};
+                             misc:json_encode(Res)};
                         {error, {incompatible_version, Ver}} ->
                             Res = #{<<"errcode">> => <<"M_INCOMPATIBLE_ROOM_VERSION">>,
                                     <<"error">> => <<"Your homeserver does not support the features required to join this room">>,
                                     <<"room_version">> => Ver},
                             {400, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                             jiffy:encode(Res)};
+                             misc:json_encode(Res)};
                         {ok, Res} ->
                             {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                             jiffy:encode(Res)}
+                             misc:json_encode(Res)}
                     end;
                 _ ->
                     Res = #{<<"errcode">> => <<"M_FORBIDDEN">>,
                             <<"error">> => <<"User not from origin">>},
                     {403, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                     jiffy:encode(Res)}
+                     misc:json_encode(Res)}
             end;
         {result, HTTPResult} ->
             HTTPResult
@@ -366,23 +366,23 @@ process([<<"federation">>, <<"v2">>, <<"send_join">>, RoomID, EventID],
                             Res = #{<<"errcode">> => <<"M_BAD_REQUEST">>,
                                     <<"error">> => Error},
                             {403, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                             jiffy:encode(Res)};
+                             misc:json_encode(Res)};
                         {ok, Res} ->
                             ?DEBUG("send_join res: ~p~n", [Res]),
                             {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                             jiffy:encode(Res)}
+                             misc:json_encode(Res)}
                     end;
                 _ ->
                     Res = #{<<"errcode">> => <<"M_FORBIDDEN">>,
                             <<"error">> => <<"User not from origin">>},
                     {403, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-                     jiffy:encode(Res)}
+                     misc:json_encode(Res)}
             end;
         {ok, _JSON, _Origin} ->
             Res = #{<<"errcode">> => <<"M_BAD_REQUEST">>,
                     <<"error">> => <<"Invalid event format">>},
             {400, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-             jiffy:encode(Res)};
+             misc:json_encode(Res)};
         {result, HTTPResult} ->
             HTTPResult
     end;
@@ -409,8 +409,7 @@ preprocess_federation_request(Request, DoSignCheck) ->
                                 if
                                     Request#request.length > 0 ->
                                         try
-                                            jiffy:decode(Request2#request.data,
-                                                         [return_maps])
+                                            misc:json_decode(Request2#request.data)
                                         catch
                                             _:_ ->
                                                 error
@@ -674,7 +673,7 @@ get_pruned_event_id(PrunedEvent) ->
 
 encode_canonical_json(JSON) ->
     JSON2 = sort_json(JSON),
-    jiffy:encode(JSON2).
+    misc:json_encode(JSON2).
 
 sort_json(#{} = Map) ->
     Map2 = maps:map(fun(_K, V) ->
@@ -736,7 +735,7 @@ sign_json(Host, JSON) ->
         binary(),
         [binary()],
         [{binary(), binary()}],
-        none | #{atom() | binary() => jiffy:json_value()},
+        none | #{atom() | binary() => misc:json_value()},
         [any()],
         [any()]) -> {ok, any()} | {error, any()}.
 
@@ -772,7 +771,7 @@ send_request(Host, Method, MatrixServer, Path, Query, JSON,
     Content =
         case JSON of
             none -> <<>>;
-            _ -> jiffy:encode(JSON)
+            _ -> misc:json_encode(JSON)
         end,
     Request =
         case Method of

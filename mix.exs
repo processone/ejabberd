@@ -46,7 +46,7 @@ defmodule Ejabberd.MixProject do
   def application do
     [mod: {:ejabberd_app, []},
      applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib, :mix,
-                    :fast_tls, :fast_xml, :fast_yaml, :jiffy, :jose,
+                    :fast_tls, :fast_xml, :fast_yaml, :jose,
                     :p1_utils, :stringprep, :syntax_tools, :yconf]
      ++ cond_apps(),
      included_applications: [:mnesia, :os_mon,
@@ -114,6 +114,7 @@ defmodule Ejabberd.MixProject do
              if_version_below(~c"24", [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}]) ++
              if_version_below(~c"24", [{:d, :OTP_BELOW_24}]) ++
              if_version_below(~c"25", [{:d, :OTP_BELOW_25}]) ++
+             if_version_below(~c"27", [{:d, :OTP_BELOW_27}]) ++
              if_type_exported(:odbc, {:opaque, :connection_reference, 0}, [{:d, :ODBC_HAS_TYPES}])
     defines = for {:d, value} <- result, do: {:d, value}
     result ++ [{:d, :ALL_DEFS, defines}]
@@ -139,7 +140,6 @@ defmodule Ejabberd.MixProject do
      {:fast_xml, ">= 1.1.51"},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
-     {:jiffy, "~> 1.1.1"},
      {:mqtree, "~> 1.0"},
      {:p1_acme, git: "https://github.com/processone/p1_acme", branch: "master"},
      {:p1_oauth2, "~> 0.6"},
@@ -173,6 +173,7 @@ defmodule Ejabberd.MixProject do
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {if_version_above(~c"23", true), {:jose, "~> 1.11.10"}},
                          {if_version_below(~c"24", true), {:jose, "1.11.1"}},
+                         {if_version_below(~c"27", true), {:jiffy, "~> 1.1.1"}},
                          {if_version_below(~c"22", true), {:lager, "~> 3.9.1"}},
                          {config(:lua), {:luerl, "~> 1.2.0"}},
                          {config(:mysql), {:p1_mysql, ">= 1.0.23" }},
@@ -185,6 +186,7 @@ defmodule Ejabberd.MixProject do
   defp cond_apps do
     for {:true, app} <- [{config(:stun), :stun},
                          {Map.has_key?(System.get_env(), "RELIVE"), :exsync},
+                         {if_version_below(~c"27", true), :jiffy},
                          {config(:tools), :observer}], do:
       app
   end

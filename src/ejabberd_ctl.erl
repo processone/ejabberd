@@ -374,7 +374,7 @@ format_arg(Arg, {tuple, Elements}) ->
     list_to_tuple(format_args(Args, Elements));
 format_arg(Arg, Format) ->
     S = unicode:characters_to_binary(Arg, utf8),
-    JSON = jiffy:decode(S, [return_maps]),
+    JSON = misc:json_decode(S),
     mod_http_api:format_arg(JSON, Format).
 
 format_arg2(Arg, Parse)->

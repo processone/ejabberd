@@ -197,7 +197,7 @@ perform_call(Command, Args, Req, Version) ->
 %% Be tolerant to make API more easily usable from command-line pipe.
 extract_args(<<"\n">>) -> [];
 extract_args(Data) ->
-    Maps = jiffy:decode(Data, [return_maps]),
+    Maps = misc:json_decode(Data),
     maps:to_list(Maps).
 
 % get API version N from last "vN" element in URL path
@@ -492,10 +492,10 @@ invalid_token_response() ->
 badrequest_response() ->
     badrequest_response(<<"400 Bad Request">>).
 badrequest_response(Body) ->
-    json_response(400, jiffy:encode(Body)).
+    json_response(400, misc:json_encode(Body)).
 
 json_format({Code, Result}) ->
-    json_response(Code, jiffy:encode(Result));
+    json_response(Code, misc:json_encode(Result));
 json_format({HTMLCode, JSONErrorCode, Message}) ->
     json_error(HTMLCode, JSONErrorCode, Message).
 
@@ -506,8 +506,8 @@ json_response(Code, Body) when is_integer(Code) ->
 %% message is binary
 json_error(HTTPCode, JSONCode, Message) ->
     {HTTPCode, ?HEADER(?CT_JSON),
-     jiffy:encode(#{<<"status">> => <<"error">>,
-                    <<"code">> => JSONCode,
+     misc:json_encode(#{<<"status">> => <<"error">>,
+                    <<"code">> =>  JSONCode,
                     <<"message">> => Message})
     }.
 

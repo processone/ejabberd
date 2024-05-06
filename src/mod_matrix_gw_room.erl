@@ -67,7 +67,7 @@
          sender :: binary(),
          prev_events :: [binary()],
          origin_server_ts :: integer(),
-         json :: #{atom() | binary() => jiffy:json_value()},
+         json :: #{atom() | binary() => misc:json_value()},
          state_map}).
 
 -record(data,
@@ -510,7 +510,7 @@ handle_event(cast, {join, MatrixServer, RoomID, Sender, UserID}, State, Data) ->
             ?DEBUG("make_join ~p~n", [MakeJoinRes]),
             case MakeJoinRes of
                 {ok, {{_, 200, _}, _Headers, Body}} ->
-                    try jiffy:decode(Body, [return_maps]) of
+                    try misc:json_decode(Body) of
                         #{<<"event">> := Event,
                           <<"room_version">> := SRoomVersion} ->
                             case binary_to_room_version(SRoomVersion) of
@@ -702,7 +702,7 @@ process_send_join_res(MatrixServer, SendJoinRes, RoomVersion, Data) ->
     case SendJoinRes of
         {ok, {{_, 200, _}, _Headers, Body}} ->
             try
-                case jiffy:decode(Body, [return_maps]) of
+                case misc:json_decode(Body) of
                     #{<<"auth_chain">> := JSONAuthChain,
                       <<"event">> := JSONEvent,
                       <<"state">> := JSONState} = JSON when is_list(JSONAuthChain),
@@ -1585,7 +1585,7 @@ process_pdu(Host, Origin, PDU) ->
 process_missing_events_res(Host, Origin, Pid, RoomID, RoomVersion,
                            {ok, {{_, 200, _}, _Headers, Body}}) ->
     try
-        case jiffy:decode(Body, [return_maps]) of
+        case misc:json_decode(Body) of
             #{<<"events">> := JSONEvents} when is_list(JSONEvents) ->
                 process_missing_events(Host, Origin, Pid, RoomID, RoomVersion, JSONEvents)
         end
@@ -1673,7 +1673,7 @@ request_room_state(Host, Origin, _Pid, RoomID, RoomVersion, Event) ->
     case Res of
         {ok, {{_, 200, _}, _Headers, Body}} ->
             try
-                case jiffy:decode(Body, [return_maps]) of
+                case misc:json_decode(Body) of
                     #{<<"auth_chain">> := JSONAuthChain,
                       <<"pdus">> := JSONState} = _JSON when is_list(JSONAuthChain),
                                                             is_list(JSONState) ->
@@ -1732,7 +1732,7 @@ request_event(Host, Origin, _Pid, RoomID, RoomVersion, EventID) ->
     case Res of
         {ok, {{_, 200, _}, _Headers, Body}} ->
             try
-                case jiffy:decode(Body, [return_maps]) of
+                case misc:json_decode(Body) of
                     #{<<"pdus">> := [PDU]} ->
                         Event = json_to_event(PDU, RoomVersion),
                         case check_event_sig_and_hash(Host, Event) of

@@ -90,7 +90,7 @@ process([], #request{method = 'GET', host = Host, raw_path = RawPath}) ->
       <<"</head>">>,
       <<"<body>">>,
       <<"<script>">>,
-      <<"converse.initialize(">>, jiffy:encode(Init4), <<");">>,
+      <<"converse.initialize(">>, misc:json_encode(Init4), <<");">>,
       <<"</script>">>,
       <<"</body>">>,
       <<"</html>">>]};

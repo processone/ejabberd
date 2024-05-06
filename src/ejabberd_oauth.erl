@@ -755,7 +755,7 @@ json_response(Code, Body) ->
     {Code, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>},
            {<<"Cache-Control">>, <<"no-store">>},
            {<<"Pragma">>, <<"no-cache">>}],
-     jiffy:encode(Body)}.
+     misc:json_encode(Body)}.
 
 %% OAauth error are defined in:
 %% https://tools.ietf.org/html/draft-ietf-oauth-v2-25#section-5.2

@@ -884,7 +884,7 @@ get_commit_details2(Path) ->
     end.
 
 parse_details(Body) ->
-    Contents = jiffy:decode(Body, [return_maps]),
+    Contents = misc:json_decode(Body),
 
     {ok, Commit} = maps:find(<<"commit">>, Contents),
     {ok, Sha} = maps:find(<<"sha">>, Commit),

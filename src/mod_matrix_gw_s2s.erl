@@ -342,7 +342,7 @@ handle_event(cast, {key_reply, KeyID, HTTPResult}, State, Data) ->
     case HTTPResult of
         {{_, 200, _}, _, SJSON} ->
             try
-                JSON = jiffy:decode(SJSON, [return_maps]),
+                JSON = misc:json_decode(SJSON),
                 ?DEBUG("key ~p~n", [JSON]),
                 #{<<"verify_keys">> := VerifyKeys} = JSON,
                 #{KeyID := KeyData} = VerifyKeys,
@@ -447,7 +447,7 @@ do_get_matrix_host_port(Data) ->
                         case HTTPRes of
                             {ok, {{_, 200, _}, _Headers, Body}} ->
                                 try
-                                    case jiffy:decode(Body, [return_maps]) of
+                                    case misc:json_decode(Body) of
                                         #{<<"m.server">> := Server} ->
                                             case binary:split(Server, <<":">>) of
                                                 [ServerAddr] ->

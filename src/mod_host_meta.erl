@@ -125,7 +125,7 @@ file_json(Host) ->
     {200, [html,
            {<<"Content-Type">>, <<"application/json">>},
            {<<"Access-Control-Allow-Origin">>, <<"*">>}],
-     [jiffy:encode(#{links => BoshList ++ WsList})]}.
+     [misc:json_encode(#{links => BoshList ++ WsList})]}.
 
 get_url(M, bosh, Tls, Host) ->
     get_url(M, Tls, Host, bosh_service_url, mod_bosh);

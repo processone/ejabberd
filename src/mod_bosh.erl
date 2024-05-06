@@ -154,14 +154,22 @@ get_type(Hdrs) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(json) ->
+-ifdef(OTP_BELOW_27).
+mod_opt_type_json() ->
     econf:and_then(
       econf:bool(),
       fun(false) -> false;
 	 (true) ->
 	      ejabberd:start_app(jiffy),
 	      true
-      end);
+      end).
+-else.
+mod_opt_type_json() ->
+    econf:bool().
+-endif.
+
+mod_opt_type(json) ->
+    mod_opt_type_json();
 mod_opt_type(max_concat) ->
     econf:pos_int(unlimited);
 mod_opt_type(max_inactivity) ->
