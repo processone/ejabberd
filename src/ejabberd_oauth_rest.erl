@@ -50,11 +50,11 @@ store(R) ->
     case rest:with_retry(
            post,
            [ejabberd_config:get_myname(), Path, [],
-            {[{<<"token">>, R#oauth_token.token},
-              {<<"user">>, SJID},
-              {<<"scope">>, R#oauth_token.scope},
-              {<<"expire">>, R#oauth_token.expire}
-             ]}], 2, 500) of
+            #{<<"token">> => R#oauth_token.token,
+              <<"user">> => SJID,
+              <<"scope">> => R#oauth_token.scope,
+              <<"expire">> => R#oauth_token.expire
+             }], 2, 500) of
         {ok, Code, _} when Code == 200 orelse Code == 201 ->
             ok;
         Err ->
@@ -65,14 +65,23 @@ store(R) ->
 lookup(Token) ->
     Path = path(<<"lookup">>),
     case rest:with_retry(post, [ejabberd_config:get_myname(), Path, [],
-                                {[{<<"token">>, Token}]}],
+                                #{<<"token">> => Token}],
                          2, 500) of
-        {ok, 200, {Data}} ->
-            SJID = proplists:get_value(<<"user">>, Data, <<>>),
+        {ok, 200, Data} ->
+            SJID = case maps:find(<<"user">>, Data) of
+                       {ok, U} -> U;
+                       error -> <<>>
+                   end,
             JID = jid:decode(SJID),
             US = {JID#jid.luser, JID#jid.lserver},
-            Scope = proplists:get_value(<<"scope">>, Data, []),
-            Expire = proplists:get_value(<<"expire">>, Data, 0),
+            Scope = case maps:find(<<"scope">>, Data) of
+                        {ok, S} -> S;
+                        error -> []
+                    end,
+            Expire = case maps:find(<<"expire">>, Data) of
+                         {ok, E} -> E;
+                         error -> 0
+                     end,
             {ok, #oauth_token{token = Token,
 			      us = US,
 			      scope = Scope,
@@ -113,11 +122,11 @@ store_client(#oauth_client{client_id = ClientID,
     case rest:with_retry(
            post,
            [ejabberd_config:get_myname(), Path, [],
-            {[{<<"client_id">>, ClientID},
-              {<<"client_name">>, ClientName},
-              {<<"grant_type">>, SGrantType},
-              {<<"options">>, SOptions}
-             ]}], 2, 500) of
+            #{<<"client_id">> => ClientID,
+              <<"client_name">> => ClientName,
+              <<"grant_type">> => SGrantType,
+              <<"options">> => SOptions
+             }], 2, 500) of
         {ok, Code, _} when Code == 200 orelse Code == 201 ->
             ok;
         Err ->
@@ -128,17 +137,26 @@ store_client(#oauth_client{client_id = ClientID,
 lookup_client(ClientID) ->
     Path = path(<<"lookup_client">>),
     case rest:with_retry(post, [ejabberd_config:get_myname(), Path, [],
-                                {[{<<"client_id">>, ClientID}]}],
+                                #{<<"client_id">> => ClientID}],
                          2, 500) of
-        {ok, 200, {Data}} ->
-            ClientName = proplists:get_value(<<"client_name">>, Data, <<>>),
-            SGrantType = proplists:get_value(<<"grant_type">>, Data, <<>>),
+        {ok, 200, Data} ->
+            ClientName = case maps:find(<<"client_name">>, Data) of
+                             {ok, CN} -> CN;
+                             error -> <<>>
+                         end,
+            SGrantType = case maps:find(<<"grant_type">>, Data) of
+                             {ok, GT} -> GT;
+                             error -> <<>>
+                         end,
             GrantType =
                 case SGrantType of
                     <<"password">> -> password;
                     <<"implicit">> -> implicit
                 end,
-            SOptions = proplists:get_value(<<"options">>, Data, <<>>),
+            SOptions = case maps:find(<<"options">>, Data) of
+                           {ok, O} -> O;
+                           error -> <<>>
+                       end,
             case misc:base64_to_term(SOptions) of
                 {term, Options} ->
                     {ok, #oauth_client{client_id = ClientID,

@@ -157,7 +157,7 @@ encode_json(Content) ->
 decode_json(<<>>) -> [];
 decode_json(<<" ">>) -> [];
 decode_json(<<"\r\n">>) -> [];
-decode_json(Data) -> jiffy:decode(Data).
+decode_json(Data) -> jiffy:decode(Data, [return_maps]).
 
 custom_headers(Server) ->
   case ejabberd_option:ext_api_headers(Server) of

@@ -884,21 +884,21 @@ get_commit_details2(Path) ->
     end.
 
 parse_details(Body) ->
-    {Contents} = jiffy:decode(Body),
+    Contents = jiffy:decode(Body, [return_maps]),
 
-    {_, {Commit}} = lists:keyfind(<<"commit">>, 1, Contents),
-    {_, Sha} = lists:keyfind(<<"sha">>, 1, Commit),
-    {_, CommitHtmlUrl} = lists:keyfind(<<"html_url">>, 1, Commit),
+    {ok, Commit} = maps:find(<<"commit">>, Contents),
+    {ok, Sha} = maps:find(<<"sha">>, Commit),
+    {ok, CommitHtmlUrl} = maps:find(<<"html_url">>, Commit),
 
-    {_, {Commit2}} = lists:keyfind(<<"commit">>, 1, Commit),
-    {_, Message} = lists:keyfind(<<"message">>, 1, Commit2),
-    {_, {Author}} = lists:keyfind(<<"author">>, 1, Commit2),
-    {_, AuthorName} = lists:keyfind(<<"name">>, 1, Author),
-    {_, {Committer}} = lists:keyfind(<<"committer">>, 1, Commit2),
-    {_, Date} = lists:keyfind(<<"date">>, 1, Committer),
+    {ok, Commit2} = maps:find(<<"commit">>, Commit),
+    {ok, Message} = maps:find(<<"message">>, Commit2),
+    {ok, Author} = maps:find(<<"author">>, Commit2),
+    {ok, AuthorName} = maps:find(<<"name">>, Author),
+    {ok, Committer} = maps:find(<<"committer">>, Commit2),
+    {ok, Date} = maps:find(<<"date">>, Committer),
 
-    {_, {Links}} = lists:keyfind(<<"_links">>, 1, Contents),
-    {_, Html} = lists:keyfind(<<"html">>, 1, Links),
+    {ok, Links} = maps:find(<<"_links">>, Contents),
+    {ok, Html} = maps:find(<<"html">>, Links),
 
     #{sha => Sha,
       date => Date,

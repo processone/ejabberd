@@ -721,11 +721,10 @@ process(_Handlers,
                                       ExpiresIn
                               end,
                     {ok, VerifiedScope} = oauth2_response:scope(Response),
-                    json_response(200, {[
-                                         {<<"access_token">>, AccessToken},
-                                         {<<"token_type">>, Type},
-                                         {<<"scope">>, str:join(VerifiedScope, <<" ">>)},
-                                         {<<"expires_in">>, Expires}]});
+                    json_response(200, #{<<"access_token">> => AccessToken,
+                                         <<"token_type">> => Type,
+                                         <<"scope">> => str:join(VerifiedScope, <<" ">>),
+                                         <<"expires_in">> => Expires});
                 {error, Error} when is_atom(Error) ->
                     json_error(400, <<"invalid_grant">>, Error)
             end;
@@ -762,8 +761,8 @@ json_response(Code, Body) ->
 %% https://tools.ietf.org/html/draft-ietf-oauth-v2-25#section-5.2
 json_error(Code, Error, Reason) ->
     Desc = json_error_desc(Reason),
-    Body = {[{<<"error">>, Error},
-             {<<"error_description">>, Desc}]},
+    Body = #{<<"error">> => Error,
+             <<"error_description">> => Desc},
     json_response(Code, Body).
 
 json_error_desc(access_denied)          -> <<"Access denied">>;
