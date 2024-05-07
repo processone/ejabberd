@@ -34,8 +34,8 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, reload/3, get_url/1,
-	 check_access_log/2, add_to_log/5]).
+-export([start/2, stop/1, reload/3, get_url/2,
+	 check_access_log/3, add_to_log/5]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
@@ -82,7 +82,9 @@ add_to_log(Host, Type, Data, Room, Opts) ->
     gen_server:cast(get_proc_name(Host),
 		    {add_to_log, Type, Data, Room, Opts}).
 
-check_access_log(Host, From) ->
+check_access_log(allow, _Host, _From) ->
+    allow;
+check_access_log(_Acc, Host, From) ->
     case catch gen_server:call(get_proc_name(Host),
 			       {check_access_log, Host, From})
 	of
@@ -90,8 +92,10 @@ check_access_log(Host, From) ->
       Res -> Res
     end.
 
--spec get_url(#state{}) -> {ok, binary()} | error.
-get_url(#state{room = Room, host = Host, server_host = ServerHost}) ->
+-spec get_url(any(), #state{}) -> {ok, binary()} | error.
+get_url({ok, _} = Acc, _State) ->
+    Acc;
+get_url(_Acc, #state{room = Room, host = Host, server_host = ServerHost}) ->
     try mod_muc_log_opt:url(ServerHost) of
 	undefined -> error;
 	URL ->
@@ -115,6 +119,9 @@ depends(_Host, _Opts) ->
 init([Host|_]) ->
     process_flag(trap_exit, true),
     Opts = gen_mod:get_module_opts(Host, ?MODULE),
+    ejabberd_hooks:add(muc_log_add, Host, ?MODULE, add_to_log, 100),
+    ejabberd_hooks:add(muc_log_check_access_log, Host, ?MODULE, check_access_log, 100),
+    ejabberd_hooks:add(muc_log_get_url, Host, ?MODULE, get_url, 100),
     {ok, init_state(Host, Opts)}.
 
 handle_call({check_access_log, ServerHost, FromJID}, _From, State) ->
@@ -137,7 +144,11 @@ handle_cast(Msg, State) ->
 
 handle_info(_Info, State) -> {noreply, State}.
 
-terminate(_Reason, _State) -> ok.
+terminate(_Reason, #state{host = Host}) ->
+    ejabberd_hooks:delete(muc_log_add, Host, ?MODULE, add_to_log, 100),
+    ejabberd_hooks:delete(muc_log_check_access_log, Host, ?MODULE, check_access_log, 100),
+    ejabberd_hooks:delete(muc_log_get_url, Host, ?MODULE, get_url, 100),
+    ok.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 

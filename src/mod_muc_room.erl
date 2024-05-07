@@ -3716,8 +3716,10 @@ is_allowed_log_change(Options, StateData, From) ->
 	false -> true;
 	true ->
 	    allow ==
-		mod_muc_log:check_access_log(StateData#state.server_host,
-					     From)
+		ejabberd_hooks:run_fold(muc_log_check_access_log,
+                                        StateData#state.server_host,
+                                        deny,
+                                        [StateData#state.server_host, From])
     end.
 
 -spec is_allowed_persistent_change(muc_roomconfig:result(), state(), jid()) -> boolean().
@@ -3856,7 +3858,10 @@ get_config(Lang, StateData, From) ->
 		[]
 	end
 	++
-	case mod_muc_log:check_access_log(StateData#state.server_host, From) of
+        case ejabberd_hooks:run_fold(muc_log_check_access_log,
+                                     StateData#state.server_host,
+                                     deny,
+                                     [StateData#state.server_host, From]) of
 	    allow -> [{enablelogging, Config#config.logging}];
 	    deny -> []
 	end,
@@ -4555,7 +4560,10 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 	  end,
     Fs4 = case Config#config.logging of
 	      true ->
-		  case mod_muc_log:get_url(StateData) of
+		  case ejabberd_hooks:run_fold(muc_log_get_url,
+                                               StateData#state.server_host,
+                                               error,
+                                               [StateData]) of
 		      {ok, URL} ->
 			  [{logs, URL}|Fs3];
 		      error ->
@@ -5334,15 +5342,23 @@ handle_roommessage_from_nonparticipant(Packet, StateData, From) ->
 
 add_to_log(Type, Data, StateData)
     when Type == roomconfig_change_disabledlogging ->
-    mod_muc_log:add_to_log(StateData#state.server_host,
-			   roomconfig_change, Data, StateData#state.jid,
-			   make_opts(StateData, false));
+    ejabberd_hooks:run(muc_log_add,
+                       StateData#state.server_host,
+                       [StateData#state.server_host,
+                        roomconfig_change,
+                        Data,
+                        StateData#state.jid,
+                        make_opts(StateData, false)]);
 add_to_log(Type, Data, StateData) ->
     case (StateData#state.config)#config.logging of
       true ->
-	  mod_muc_log:add_to_log(StateData#state.server_host,
-				 Type, Data, StateData#state.jid,
-				 make_opts(StateData, false));
+        ejabberd_hooks:run(muc_log_add,
+                           StateData#state.server_host,
+                           [StateData#state.server_host,
+                            Type,
+                            Data,
+                            StateData#state.jid,
+                            make_opts(StateData, false)]);
       false -> ok
     end.
 
