@@ -512,7 +512,7 @@ web_mix_channels(User, Server, Lang) ->
 	    [?XE(<<"table">>, [THead, ?XE(<<"tbody">>, Entries)])]
     end,
     PageTitle = str:translate_and_format(Lang, ?T("Joined MIX channels of ~ts"), [us_to_list(US)]),
-    (?H1GL(PageTitle, <<"modules/#mod-mix-pam">>, <<"mod_mix_pam">>))
+    (?H1GL(PageTitle, <<"modules/#mod_mix_pam">>, <<"mod_mix_pam">>))
         ++ FItems.
 
 us_to_list({User, Server}) ->

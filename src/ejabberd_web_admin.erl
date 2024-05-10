@@ -400,7 +400,7 @@ process_admin(global, #request{path = [], lang = Lang}, AJID) ->
     MenuItems = get_menu_items(global, cluster, Lang, AJID, 0),
     Disclaimer = maybe_disclaimer_not_admin(MenuItems, AJID, Lang),
     make_xhtml((?H1GL((translate:translate(Lang, ?T("Administration"))), <<"">>,
-		      <<"Contents">>))
+		      <<"Configuration">>))
 		 ++ Disclaimer ++
 		 [?XE(<<"ul">>,
 		      [?LI([?ACT(MIU, MIN)])
@@ -477,7 +477,7 @@ process_admin(Host, #request{path = [<<"last-activity">>],
 		list_last_activity(Host, Lang, false, Month);
 	    _ -> list_last_activity(Host, Lang, true, Month)
 	  end,
-    PageH1 = ?H1GL(translate:translate(Lang, ?T("Users Last Activity")), <<"modules/#mod-last">>, <<"mod_last">>),
+    PageH1 = ?H1GL(translate:translate(Lang, ?T("Users Last Activity")), <<"modules/#mod_last">>, <<"mod_last">>),
     make_xhtml(PageH1 ++
 		 [?XAE(<<"form">>,
 		       [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
@@ -508,7 +508,7 @@ process_admin(Host, #request{path = [<<"last-activity">>],
 	       Host, Lang, AJID, 3);
 process_admin(Host, #request{path = [<<"stats">>], lang = Lang}, AJID) ->
     Res = get_stats(Host, Lang),
-    PageH1 = ?H1GL(translate:translate(Lang, ?T("Statistics")), <<"modules/#mod-stats">>, <<"mod_stats">>),
+    PageH1 = ?H1GL(translate:translate(Lang, ?T("Statistics")), <<"modules/#mod_stats">>, <<"mod_stats">>),
     Level = case Host of
 	global -> 1;
 	_ -> 3
@@ -1413,8 +1413,9 @@ get_node(global, Node, [<<"stats">>], _Query, Lang) ->
 				     system_info, [transaction_restarts]),
     TransactionsLogged = ejabberd_cluster:call(Node, mnesia, system_info,
 				  [transaction_log_writes]),
-    [?XC(<<"h1">>,
-	 (str:translate_and_format(Lang, ?T("Statistics of ~p"), [Node]))),
+    ?H1GL(str:translate_and_format(Lang, ?T("Statistics of ~p"), [Node]),
+          <<"modules/#mod_stats">>,
+          <<"mod_stats">>) ++ [
      ?XAE(<<"table">>, [],
 	  [?XE(<<"tbody">>,
 	       [?XE(<<"tr">>,

@@ -912,7 +912,7 @@ list_shared_roster_groups(Host, Query, Lang) ->
 				       ?INPUTT(<<"submit">>, <<"addnew">>,
 					       ?T("Add New"))])])]))])),
     (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
-	   <<"modules/#mod-shared-roster">>, <<"mod_shared_roster">>))
+	   <<"modules/#mod_shared_roster">>, <<"mod_shared_roster">>))
       ++
       case Res of
 	ok -> [?XREST(?T("Submitted"))];
@@ -1019,7 +1019,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 			      ?XE(<<"td">>, [?CT(?T("Groups that will be displayed to the members"))])
 ])])])),
     (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
-	   <<"modules/#mod-shared-roster">>, <<"mod_shared_roster">>))
+	   <<"modules/#mod_shared_roster">>, <<"mod_shared_roster">>))
       ++
       [?XC(<<"h2">>, translate:translate(Lang, ?T("Group")))] ++
 	case Res of
