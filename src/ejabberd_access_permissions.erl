@@ -344,10 +344,10 @@ validator(from) ->
     fun(L) when is_list(L) ->
 	    lists:map(
 	      fun({K, V}) -> {(econf:enum([tag]))(K), (econf:binary())(V)};
-		 (A) -> (econf:enum([ejabberd_xmlrpc, mod_cron, mod_http_api, ejabberd_ctl]))(A)
+		 (A) -> (econf:enum([ejabberd_xmlrpc, mod_cron, mod_http_api, ejabberd_ctl, ejabberd_web_admin]))(A)
 	      end, lists:flatten(L));
        (A) ->
-	    [(econf:enum([ejabberd_xmlrpc, mod_cron, mod_http_api, ejabberd_ctl]))(A)]
+	    [(econf:enum([ejabberd_xmlrpc, mod_cron, mod_http_api, ejabberd_ctl, ejabberd_web_admin]))(A)]
     end;
 validator(what) ->
     econf:and_then(

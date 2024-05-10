@@ -29,18 +29,16 @@
 
 -author('alexey@process-one.net').
 
--export([process/2, list_users/4,
-	 list_users_in_diapason/4, pretty_print_xml/1,
-	 term_to_id/1]).
-
--include("logger.hrl").
+-export([process/2, pretty_print_xml/1,
+         make_command/2, make_command/4, make_command_raw_value/3,
+         make_table/2, make_table/4,
+         term_to_id/1, id_to_term/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
-
+-include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
-
 -include("ejabberd_web_admin.hrl").
-
+-include("logger.hrl").
 -include("translate.hrl").
 
 -define(INPUTATTRS(Type, Name, Value, Attrs),
@@ -64,6 +62,10 @@ get_acl_rule([<<"logo.png">>], _) ->
 get_acl_rule([<<"favicon.ico">>], _) ->
     {<<"localhost">>, [all]};
 get_acl_rule([<<"additions.js">>], _) ->
+    {<<"localhost">>, [all]};
+get_acl_rule([<<"sortable.min.css">>], _) ->
+    {<<"localhost">>, [all]};
+get_acl_rule([<<"sortable.min.js">>], _) ->
     {<<"localhost">>, [all]};
 %% This page only displays vhosts that the user is admin:
 get_acl_rule([<<"vhosts">>], _) ->
@@ -318,7 +320,20 @@ make_xhtml(Els, Host, Node, Lang, JID, Level) ->
 					  <<Base/binary, "style.css">>},
 					 {<<"type">>, <<"text/css">>},
 					 {<<"rel">>, <<"stylesheet">>}],
-				    children = []}]},
+				    children = []},
+			     #xmlel{name = <<"link">>,
+				    attrs =
+					[{<<"href">>,
+					  <<Base/binary, "sortable.min.css">>},
+					 {<<"type">>, <<"text/css">>},
+					 {<<"rel">>, <<"stylesheet">>}],
+				    children = []},
+			     #xmlel{name = <<"script">>,
+				    attrs =
+					[{<<"src">>,
+					  <<Base/binary, "sortable.min.js">>},
+					 {<<"type">>, <<"text/javascript">>}],
+				    children = [?C(<<" ">>)]}]},
 		 ?XE(<<"body">>,
 		     [?XAE(<<"div">>, [{<<"id">>, <<"container">>}],
 			   [?XAE(<<"div">>, [{<<"id">>, <<"header">>}],
@@ -383,6 +398,18 @@ favicon() ->
 logo() ->
     case misc:read_img("admin-logo.png") of
 	{ok, Img} -> Img;
+	{error, _} -> <<>>
+    end.
+
+sortable_css() ->
+    case misc:read_css("sortable.min.css") of
+	{ok, CSS} -> CSS;
+	{error, _} -> <<>>
+    end.
+
+sortable_js() ->
+    case misc:read_js("sortable.min.js") of
+	{ok, JS} -> JS;
 	{error, _} -> <<>>
     end.
 
@@ -457,6 +484,17 @@ process_admin(_Host, #request{path = [<<"additions.js">>]}, _) ->
      additions_js()};
 process_admin(global, #request{path = [<<"vhosts">>], lang = Lang}, AJID) ->
     Res = list_vhosts(Lang, AJID),
+process_admin(_Host, #request{path = [<<"sortable.min.css">>]}, _) ->
+    {200,
+     [{<<"Content-Type">>, <<"text/css">>}, last_modified(),
+      cache_control_public()],
+     sortable_css()};
+process_admin(_Host, #request{path = [<<"sortable.min.js">>]}, _) ->
+    {200,
+     [{<<"Content-Type">>, <<"text/javascript">>},
+      last_modified(), cache_control_public()],
+     sortable_js()};
+
     make_xhtml((?H1GL((translate:translate(Lang, ?T("Virtual Hosts"))),
 		      <<"basic/#xmpp-domains">>, ?T("XMPP Domains")))
 		 ++ Res,
@@ -585,7 +623,22 @@ process_admin(Host, #request{lang = Lang} = Request, AJID) ->
       _ -> make_xhtml(Res, Host, Lang, AJID, Level)
     end.
 
+term_to_id([]) -> <<>>;
 term_to_id(T) -> base64:encode((term_to_binary(T))).
+id_to_term(<<>>) -> [];
+id_to_term(I) -> binary_to_term(base64:decode(I)).
+
+can_user_access_host(Host, #request{auth = Auth,
+                                    host = HostHTTP,
+                                    method = Method}) ->
+    Path = [<<"server">>, Host],
+    case get_auth_admin(Auth, HostHTTP, Path, Method) of
+      {ok, _} ->
+	  true;
+      {unauthorized, _Error} ->
+	  false
+    end.
+
 
 %%%==================================
 %%%% list_vhosts
@@ -2069,4 +2122,897 @@ any_rules_allowed(Host, Access, Entity) ->
 	      allow == acl:match_rule(Host, Rule, Entity)
       end, Access).
 
+%%%==================================
+
+%%% @format-begin
+
+%%%% make_command: API
+
+-spec make_command(Name :: atom(), Request :: http_request()) -> xmlel().
+make_command(Name, Request) ->
+    make_command2(Name, Request, [], []).
+
+-spec make_command(Name :: atom(),
+                   Request :: http_request(),
+                   BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}],
+                   [Option]) ->
+                      xmlel() | {raw_and_value, any(), xmlel()}
+    when Option ::
+             {only, presentation | without_presentation | button | result | value | raw_and_value} |
+             {input_name_append, [binary()]} |
+             {force_execution, boolean()} |
+             {table_options, {PageSize :: integer(), RemainingPath :: [binary()]}} |
+             {result_named, boolean()} |
+             {result_links,
+              [{ResultName :: atom(),
+                LinkType :: host | node | user | room | shared_roster | arg_host | paragraph,
+                Level :: integer(),
+                Append :: binary()}]} |
+             {style, normal | danger}.
+make_command(Name, Request, BaseArguments, Options) ->
+    make_command2(Name, Request, BaseArguments, Options).
+
+-spec make_command_raw_value(Name :: atom(),
+                             Request :: http_request(),
+                             BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}]) ->
+                                any().
+make_command_raw_value(Name, Request, BaseArguments) ->
+    make_command2(Name, Request, BaseArguments, [{only, raw_value}]).
+
+%%%==================================
+%%%% make_command: main
+
+-spec make_command2(Name :: atom(),
+                    Request :: http_request(),
+                    BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}],
+                    [Option]) ->
+                       xmlel() | any()
+    when Option ::
+             {only,
+              presentation |
+              without_presentation |
+              button |
+              result |
+              value |
+              raw_value |
+              raw_and_value} |
+             {input_name_append, [binary()]} |
+             {force_execution, boolean()} |
+             {table_options, {PageSize :: integer(), RemainingPath :: [binary()]}} |
+             {result_named, boolean()} |
+             {result_links,
+              [{ResultName :: atom(),
+                LinkType :: host | node | user | room | shared_roster | arg_host | paragraph,
+                Level :: integer(),
+                Append :: binary()}]} |
+             {style, normal | danger}.
+make_command2(Name, Request, BaseArguments, Options) ->
+    Only = proplists:get_value(only, Options, all),
+    ForceExecution = proplists:get_value(force_execution, Options, false),
+    InputNameAppend = proplists:get_value(input_name_append, Options, []),
+    Resultnamed = proplists:get_value(result_named, Options, false),
+    ResultLinks = proplists:get_value(result_links, Options, []),
+    TO = proplists:get_value(table_options, Options, {999999, []}),
+    Style = proplists:get_value(style, Options, normal),
+    #request{us = {RUser, RServer},
+             ip = RIp,
+             host = RHost} =
+        Request,
+    CallerInfo =
+        #{usr => {RUser, RServer, <<"">>},
+          ip => RIp,
+          caller_host => RHost,
+          caller_module => ?MODULE},
+    try {ejabberd_commands:get_command_definition(Name),
+         ejabberd_access_permissions:can_access(Name, CallerInfo)}
+    of
+        {C, allow} ->
+            make_command2(Name,
+                          Request,
+                          CallerInfo,
+                          BaseArguments,
+                          C,
+                          Only,
+                          ForceExecution,
+                          InputNameAppend,
+                          Resultnamed,
+                          ResultLinks,
+                          Style,
+                          TO);
+        {_C, deny} ->
+            ?DEBUG("Blocked access to command ~p for~n CallerInfo: ~p", [Name, CallerInfo]),
+            ?C(<<"">>)
+    catch
+        A:B ->
+            ?INFO_MSG("Problem preparing command ~p: ~p", [Name, {A, B}]),
+            ?C(<<"">>)
+    end.
+
+make_command2(Name,
+              Request,
+              CallerInfo,
+              BaseArguments,
+              C,
+              Only,
+              ForceExecution,
+              InputNameAppend,
+              Resultnamed,
+              ResultLinks,
+              Style,
+              TO) ->
+    {ArgumentsFormat, _Rename, ResultFormatApi} = ejabberd_commands:get_command_format(Name),
+    Method =
+        case {ForceExecution, ResultFormatApi} of
+            {true, _} ->
+                auto;
+            {_, {_, rescode}} ->
+                manual;
+            {_, {_, restuple}} ->
+                manual;
+            _ ->
+                auto
+        end,
+    PresentationEls = make_command_presentation(Name, C#ejabberd_commands.tags),
+    Query = Request#request.q,
+    {ArgumentsUsed1, ExecRes} =
+        execute_command(Name,
+                        Query,
+                        BaseArguments,
+                        Method,
+                        ArgumentsFormat,
+                        CallerInfo,
+                        InputNameAppend),
+    ArgumentsFormatDetailed =
+        add_arguments_details(ArgumentsFormat,
+                              C#ejabberd_commands.args_desc,
+                              C#ejabberd_commands.args_example),
+    ArgumentsEls =
+        make_command_arguments(Name,
+                               Query,
+                               Only,
+                               Method,
+                               Style,
+                               ArgumentsFormatDetailed,
+                               BaseArguments,
+                               InputNameAppend),
+    Automated =
+        case ArgumentsEls of
+            [] ->
+                true;
+            _ ->
+                false
+        end,
+    ArgumentsUsed =
+        (catch lists:zip(
+                   lists:map(fun({A, _}) -> A end, ArgumentsFormat), ArgumentsUsed1)),
+    ResultEls =
+        make_command_result(ExecRes,
+                            ArgumentsUsed,
+                            ResultFormatApi,
+                            Automated,
+                            Resultnamed,
+                            ResultLinks,
+                            TO),
+    make_command3(Only, ExecRes, PresentationEls, ArgumentsEls, ResultEls).
+
+make_command3(presentation, _ExecRes, PresentationEls, _ArgumentsEls, _ResultEls) ->
+    ?XAE(<<"p">>, [{<<"class">>, <<"api">>}], PresentationEls);
+make_command3(button, _ExecRes, _PresentationEls, [Button], _ResultEls) ->
+    Button;
+make_command3(result,
+              _ExecRes,
+              _PresentationEls,
+              _ArgumentsEls,
+              [{xmlcdata, _}, Xmlel]) ->
+    ?XAE(<<"p">>, [{<<"class">>, <<"api">>}], [Xmlel]);
+make_command3(value, _ExecRes, _PresentationEls, _ArgumentsEls, [{xmlcdata, _}, Xmlel]) ->
+    Xmlel;
+make_command3(value,
+              _ExecRes,
+              _PresentationEls,
+              _ArgumentsEls,
+              [{xmlel, _, _, _} = Xmlel]) ->
+    Xmlel;
+make_command3(raw_and_value,
+              ExecRes,
+              _PresentationEls,
+              _ArgumentsEls,
+              [{xmlel, _, _, _} = Xmlel]) ->
+    {raw_and_value, ExecRes, Xmlel};
+make_command3(raw_value, ExecRes, _PresentationEls, _ArgumentsEls, _ResultEls) ->
+    ExecRes;
+make_command3(without_presentation,
+              _ExecRes,
+              _PresentationEls,
+              ArgumentsEls,
+              ResultEls) ->
+    ?XAE(<<"p">>,
+         [{<<"class">>, <<"api">>}],
+         [?XE(<<"blockquote">>, ArgumentsEls ++ ResultEls)]);
+make_command3(all, _ExecRes, PresentationEls, ArgumentsEls, ResultEls) ->
+    ?XAE(<<"p">>,
+         [{<<"class">>, <<"api">>}],
+         PresentationEls ++ [?XE(<<"blockquote">>, ArgumentsEls ++ ResultEls)]).
+
+add_arguments_details(ArgumentsFormat, Descriptions, none) ->
+    add_arguments_details(ArgumentsFormat, Descriptions, []);
+add_arguments_details(ArgumentsFormat, none, Examples) ->
+    add_arguments_details(ArgumentsFormat, [], Examples);
+add_arguments_details(ArgumentsFormat, Descriptions, Examples) ->
+    lists_zipwith3(fun({A, B}, C, D) -> {A, B, C, D} end,
+                   ArgumentsFormat,
+                   Descriptions,
+                   Examples,
+                   {pad, {none, "", ""}}).
+
+-ifdef(OTP_BELOW_26).
+
+lists_zipwith3(Combine, List1, List2, List3, {pad, {DefaultX, DefaultY, DefaultZ}}) ->
+    lists_zipwith3(Combine, List1, List2, List3, DefaultX, DefaultY, DefaultZ, []).
+
+lists_zipwith3(_Combine, [], [], [], _DefaultX, _DefaultY, _DefaultZ, Res) ->
+    lists:reverse(Res);
+lists_zipwith3(Combine,
+               [E1 | List1],
+               [E2 | List2],
+               [E3 | List3],
+               DefX,
+               DefY,
+               DefZ,
+               Res) ->
+    E123 = Combine(E1, E2, E3),
+    lists_zipwith3(Combine, List1, List2, List3, DefX, DefY, DefZ, [E123 | Res]);
+lists_zipwith3(Combine, [E1 | List1], [], [], DefX, DefY, DefZ, Res) ->
+    E123 = Combine(E1, DefY, DefZ),
+    lists_zipwith3(Combine, List1, [], [], DefX, DefY, DefZ, [E123 | Res]);
+lists_zipwith3(Combine, [E1 | List1], [], [E3 | List3], DefX, DefY, DefZ, Res) ->
+    E123 = Combine(E1, DefY, E3),
+    lists_zipwith3(Combine, List1, [], List3, DefX, DefY, DefZ, [E123 | Res]);
+lists_zipwith3(Combine, [E1 | List1], [E2 | List2], [], DefX, DefY, DefZ, Res) ->
+    E123 = Combine(E1, E2, DefZ),
+    lists_zipwith3(Combine, List1, List2, [], DefX, DefY, DefZ, [E123 | Res]).
+
+-else.
+
+lists_zipwith3(Combine, List1, List2, List3, How) ->
+    lists:zipwith3(Combine, List1, List2, List3, How).
+
+-endif.
+
+%%%==================================
+%%%% make_command: presentation
+
+make_command_presentation(Name, Tags) ->
+    NameBin = misc:atom_to_binary(Name),
+    NiceNameBin = nice_this(Name),
+    Text = ejabberd_ctl:get_usage_command(atom_to_list(Name), 100, false, 1000000),
+    AnchorLink = [?ANCHORL(NameBin)],
+    MaybeDocsLink =
+        case lists:member(internal, Tags) of
+            true ->
+                [];
+            false ->
+                [?GL(<<"developer/ejabberd-api/admin-api/#", NameBin/binary>>, NameBin)]
+        end,
+    [?XE(<<"details">>,
+         [?XAE(<<"summary">>, [{<<"id">>, NameBin}], [?XC(<<"strong">>, NiceNameBin)])]
+         ++ MaybeDocsLink
+         ++ AnchorLink
+         ++ [?XC(<<"pre">>, list_to_binary(Text))])].
+
+nice_this(This, integer) ->
+    {nice_this(This), right};
+nice_this(This, _Format) ->
+    nice_this(This).
+
+-spec nice_this(This :: atom() | string() | [byte()]) -> NiceThis :: binary().
+nice_this(This) when is_atom(This) ->
+    nice_this(atom_to_list(This));
+nice_this(This) when is_binary(This) ->
+    nice_this(binary_to_list(This));
+nice_this(This) when is_list(This) ->
+    list_to_binary(lists:flatten([string:titlecase(Word)
+                                  || Word <- string:replace(This, "_", " ", all)])).
+
+-spec long_this(These :: [This :: atom()]) -> Long :: binary().
+long_this(These) ->
+    list_to_binary(lists:join($/, [atom_to_list(This) || This <- These])).
+
+%%%==================================
+%%%% make_command: arguments
+
+make_command_arguments(Name,
+                       Query,
+                       Only,
+                       Method,
+                       Style,
+                       ArgumentsFormat,
+                       BaseArguments,
+                       InputNameAppend) ->
+    ArgumentsFormat2 = remove_base_arguments(ArgumentsFormat, BaseArguments),
+    ArgumentsFields = make_arguments_fields(Name, Query, ArgumentsFormat2),
+    Button = make_button_element(Name, Method, Style, InputNameAppend),
+    ButtonElement =
+        ?XE(<<"tr">>,
+            [?X(<<"td">>), ?XAE(<<"td">>, [{<<"class">>, <<"alignright">>}], [Button])]),
+    case {(ArgumentsFields /= []) or (Method == manual), Only} of
+        {false, _} ->
+            [];
+        {true, button} ->
+            [?XAE(<<"form">>, [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}], [Button])];
+        {true, _} ->
+            [?XAE(<<"form">>,
+                  [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
+                  [?XE(<<"table">>, ArgumentsFields ++ [ButtonElement])])]
+    end.
+
+remove_base_arguments(ArgumentsFormat, BaseArguments) ->
+    lists:filter(fun({ArgName, _ArgFormat, _ArgDesc, _ArgExample}) ->
+                    not
+                        lists:keymember(
+                            misc:atom_to_binary(ArgName), 1, BaseArguments)
+                 end,
+                 ArgumentsFormat).
+
+make_button_element(Name, _, Style, InputNameAppend) ->
+    Id = term_to_id(InputNameAppend),
+    NameBin = <<(misc:atom_to_binary(Name))/binary, Id/binary>>,
+    NiceNameBin = nice_this(Name),
+    case Style of
+        danger ->
+            ?INPUTD(<<"submit">>, NameBin, NiceNameBin);
+        _ ->
+            ?INPUT(<<"submit">>, NameBin, NiceNameBin)
+    end.
+
+make_arguments_fields(Name, Query, ArgumentsFormat) ->
+    lists:map(fun({ArgName, ArgFormat, _ArgDescription, ArgExample}) ->
+                 ArgExampleBin = format_result(ArgExample, {ArgName, ArgFormat}),
+                 ArgNiceNameBin = nice_this(ArgName),
+                 ArgLongNameBin = long_this([Name, ArgName]),
+                 ArgValue =
+                     case lists:keysearch(ArgLongNameBin, 1, Query) of
+                         {value, {ArgLongNameBin, V}} ->
+                             V;
+                         _ ->
+                             <<"">>
+                     end,
+                 ?XE(<<"tr">>,
+                     [?XC(<<"td">>, <<ArgNiceNameBin/binary, ":">>),
+                      ?XE(<<"td">>,
+                          [?INPUTPH(<<"text">>, ArgLongNameBin, ArgValue, ArgExampleBin)])])
+              end,
+              ArgumentsFormat).
+
+%%%==================================
+%%%% make_command: execute
+
+execute_command(Name,
+                Query,
+                BaseArguments,
+                Method,
+                ArgumentsFormat,
+                CallerInfo,
+                InputNameAppend) ->
+    try Args = prepare_arguments(Name, BaseArguments ++ Query, ArgumentsFormat),
+        {Args,
+         execute_command2(Name, Query, Args, Method, ArgumentsFormat, CallerInfo, InputNameAppend)}
+    of
+        R ->
+            R
+    catch
+        A:E ->
+            {error, {A, E}}
+    end.
+
+execute_command2(Name,
+                 Query,
+                 Arguments,
+                 Method,
+                 ArgumentsFormat,
+                 CallerInfo,
+                 InputNameAppend) ->
+    AllArgumentsProvided = length(Arguments) == length(ArgumentsFormat),
+    PressedExecuteButton = is_this_to_execute(Name, Query, Arguments, InputNameAppend),
+    LetsExecute =
+        case {Method, PressedExecuteButton, AllArgumentsProvided} of
+            {auto, _, true} ->
+                true;
+            {manual, true, true} ->
+                true;
+            _ ->
+                false
+        end,
+    case LetsExecute of
+        true ->
+            catch ejabberd_commands:execute_command2(Name, Arguments, CallerInfo);
+        false ->
+            not_executed
+    end.
+
+is_this_to_execute(Name, Query, Arguments, InputNameAppend) ->
+    NiceNameBin = nice_this(Name),
+    NameBin = misc:atom_to_binary(Name),
+    AppendBin = term_to_id(lists:sublist(Arguments, length(InputNameAppend))),
+    ArgumentsId = <<NameBin/binary, AppendBin/binary>>,
+    {value, {ArgumentsId, NiceNameBin}} == lists:keysearch(ArgumentsId, 1, Query).
+
+prepare_arguments(ComName, Args, ArgsFormat) ->
+    lists:foldl(fun({ArgName, ArgFormat}, FinalArguments) ->
+                   %% Give priority to the value enforced in our code
+                   %% Otherwise use the value provided by the user
+                   case {lists:keyfind(
+                             misc:atom_to_binary(ArgName), 1, Args),
+                         lists:keyfind(long_this([ComName, ArgName]), 1, Args)}
+                   of
+                       %% Value enforced in our code
+                       {{_, Value}, _} ->
+                           [format_arg(Value, ArgFormat) | FinalArguments];
+                       %% User didn't provide value in the field
+                       {_, {_, <<>>}} ->
+                           FinalArguments;
+                       %% Value provided by the user in the form field
+                       {_, {_, Value}} ->
+                           [format_arg(Value, ArgFormat) | FinalArguments];
+                       {false, false} ->
+                           FinalArguments
+                   end
+                end,
+                [],
+                lists:reverse(ArgsFormat)).
+
+format_arg(Value, any) ->
+    Value;
+format_arg(Value, atom) when is_atom(Value) ->
+    Value;
+format_arg(Value, binary) when is_binary(Value) ->
+    Value;
+format_arg(Value, ArgFormat) ->
+    ejabberd_ctl:format_arg(binary_to_list(Value), ArgFormat).
+
+%%%==================================
+%%%% make_command: result
+
+make_command_result(not_executed, _, _, _, _, _, _) ->
+    [];
+make_command_result({error, ErrorElement}, _, _, _, _, _, _) ->
+    [?DIVRES([?C(<<"Error: ">>),
+              ?XC(<<"code">>, list_to_binary(io_lib:format("~p", [ErrorElement])))])];
+make_command_result(Value,
+                    ArgumentsUsed,
+                    {ResName, _ResFormat} = ResultFormatApi,
+                    Automated,
+                    Resultnamed,
+                    ResultLinks,
+                    TO) ->
+    ResNameBin = nice_this(ResName),
+    ResultValueEl =
+        make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, TO),
+    ResultEls =
+        case Resultnamed of
+            true ->
+                [?C(<<ResNameBin/binary, ": ">>), ResultValueEl];
+            false ->
+                [ResultValueEl]
+        end,
+    case Automated of
+        true ->
+            ResultEls;
+        false ->
+            [?DIVRES(ResultEls)]
+    end.
+
+make_command_result_element(ArgumentsUsed,
+                            ListOfTuples,
+                            {_ArgName, {list, {_ListElementsName, {tuple, TupleElements}}}},
+                            ResultLinks,
+                            {PageSize, RPath}) ->
+    HeadElements =
+        [nice_this(ElementName, ElementFormat) || {ElementName, ElementFormat} <- TupleElements],
+    ContentElements =
+        [list_to_tuple([make_result(format_result(V, {ElementName, ElementFormat}),
+                                    ElementName,
+                                    ArgumentsUsed,
+                                    ResultLinks)
+                        || {V, {ElementName, ElementFormat}}
+                               <- lists:zip(tuple_to_list(Tuple), TupleElements)])
+         || Tuple <- ListOfTuples],
+    make_table(PageSize, RPath, HeadElements, ContentElements);
+make_command_result_element(_ArgumentsUsed,
+                            Values,
+                            {_ArgName, {tuple, TupleElements}},
+                            _ResultLinks,
+                            _TO) ->
+    ?XE(<<"table">>,
+        [?XE(<<"thead">>,
+             [?XE(<<"tr">>,
+                  [?XC(<<"td">>, nice_this(ElementName))
+                   || {ElementName, _ElementFormat} <- TupleElements])]),
+         ?XE(<<"tbody">>,
+             [?XE(<<"tr">>,
+                  [?XC(<<"td">>, format_result(V, {ElementName, ElementFormat}))
+                   || {V, {ElementName, ElementFormat}}
+                          <- lists:zip(tuple_to_list(Values), TupleElements)])])]);
+make_command_result_element(ArgumentsUsed,
+                            Value,
+                            {_ArgName, {list, {ElementsName, ElementsFormat}}},
+                            ResultLinks,
+                            {PageSize, RPath}) ->
+    HeadElements = [nice_this(ElementsName)],
+    ContentElements =
+        [{make_result(format_result(V, {ElementsName, ElementsFormat}),
+                      ElementsName,
+                      ArgumentsUsed,
+                      ResultLinks)}
+         || V <- Value],
+    make_table(PageSize, RPath, HeadElements, ContentElements);
+make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, _TO) ->
+    Res = make_result(format_result(Value, ResultFormatApi),
+                      unknown_element_name,
+                      ArgumentsUsed,
+                      ResultLinks),
+    Res2 =
+        case Res of
+            [{xmlel, _, _, _} | _] = X ->
+                X;
+            Z ->
+                [Z]
+        end,
+    ?XE(<<"code">>, Res2).
+
+make_result(Binary, ElementName, ArgumentsUsed, [{ResultName, arg_host, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    {_, Host} = lists:keyfind(host, 1, ArgumentsUsed),
+    UrlBinary =
+        replace_url_elements([<<"server/">>, host, <<"/">>, Append], [{host, Host}], Level),
+    ?AC(UrlBinary, Binary);
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, host, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    UrlBinary =
+        replace_url_elements([<<"server/">>, host, <<"/">>, Append], [{host, Binary}], Level),
+    ?AC(UrlBinary, Binary);
+make_result(Binary,
+            ElementName,
+            _ArgumentsUsed,
+            [{ResultName, mnesia_table, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    Node = misc:atom_to_binary(node()),
+    UrlBinary =
+        replace_url_elements([<<"node/">>, node, <<"/db/table/">>, tablename, <<"/">>, Append],
+                             [{node, Node}, {tablename, Binary}],
+                             Level),
+    ?AC(UrlBinary, Binary);
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, node, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    UrlBinary =
+        replace_url_elements([<<"node/">>, node, <<"/">>, Append], [{node, Binary}], Level),
+    ?AC(UrlBinary, Binary);
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, user, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    Jid = try jid:decode(Binary) of
+              #jid{} = J ->
+                  J
+          catch
+              _:{bad_jid, _} ->
+                  %% TODO: Find a method to be able to link to this user to delete it
+                  ?INFO_MSG("Error parsing Binary that is not a valid JID:~n  ~p", [Binary]),
+                  jid:decode(<<"unknown-username@localhost">>)
+          end,
+    {User, Host, _R} = jid:split(Jid),
+    case lists:member(Host, ejabberd_config:get_option(hosts)) of
+        true ->
+            UrlBinary =
+                replace_url_elements([<<"server/">>, host, <<"/user/">>, user, <<"/">>, Append],
+                                     [{user, misc:url_encode(User)}, {host, Host}],
+                                     Level),
+            ?AC(UrlBinary, Binary);
+        false ->
+            ?C(Binary)
+    end;
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, room, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    Jid = jid:decode(Binary),
+    {Roomname, Service, _} = jid:split(Jid),
+    Host = ejabberd_router:host_of_route(Service),
+    case lists:member(Host, ejabberd_config:get_option(hosts)) of
+        true ->
+            UrlBinary =
+                replace_url_elements([<<"server/">>,
+                                      host,
+                                      <<"/muc/rooms/room/">>,
+                                      room,
+                                      <<"/">>,
+                                      Append],
+                                     [{room, misc:url_encode(Roomname)}, {host, Host}],
+                                     Level),
+            ?AC(UrlBinary, Binary);
+        false ->
+            ?C(Binary)
+    end;
+make_result(Binary,
+            ElementName,
+            ArgumentsUsed,
+            [{ResultName, shared_roster, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    First = proplists:get_value(first, ArgumentsUsed),
+    Second = proplists:get_value(second, ArgumentsUsed),
+    {GroupId, Host} =
+        case jid:decode(First) of
+            #jid{luser = <<"">>, lserver = G} ->
+                {G, Second};
+            #jid{luser = G, lserver = H} ->
+                {G, H}
+        end,
+    UrlBinary =
+        replace_url_elements([<<"server/">>,
+                              host,
+                              <<"/shared-roster/group/">>,
+                              srg,
+                              <<"/">>,
+                              Append],
+                             [{host, Host}, {srg, GroupId}],
+                             Level),
+    ?AC(UrlBinary, Binary);
+make_result([{xmlcdata, _, _, _} | _] = Any,
+            _ElementName,
+            _ArgumentsUsed,
+            _ResultLinks) ->
+    Any;
+make_result([{xmlel, _, _, _} | _] = Any, _ElementName, _ArgumentsUsed, _ResultLinks) ->
+    Any;
+make_result(Binary,
+            ElementName,
+            _ArgumentsUsed,
+            [{ResultName, paragraph, _Level, _Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    ?XC(<<"pre">>, Binary);
+make_result(Binary, _ElementName, _ArgumentsUsed, _ResultLinks) ->
+    ?C(Binary).
+
+replace_url_elements(UrlComponents, Replacements, Level) ->
+    Base = get_base_path_sum(0, 0, Level),
+    Binary2 =
+        lists:foldl(fun (El, Acc) when is_binary(El) ->
+                            [El | Acc];
+                        (El, Acc) when is_atom(El) ->
+                            {El, Value} = lists:keyfind(El, 1, Replacements),
+                            [Value | Acc]
+                    end,
+                    [],
+                    UrlComponents),
+    Binary3 =
+        binary:list_to_bin(
+            lists:reverse(Binary2)),
+    <<Base/binary, Binary3/binary>>.
+
+format_result(Value, {_ResultName, integer}) when is_integer(Value) ->
+    integer_to_binary(Value);
+format_result(Value, {_ResultName, string}) when is_list(Value) ->
+    Value;
+format_result(Value, {_ResultName, string}) when is_binary(Value) ->
+    Value;
+format_result(Value, {_ResultName, atom}) when is_atom(Value) ->
+    misc:atom_to_binary(Value);
+format_result(Value, {_ResultName, any}) ->
+    Value;
+format_result({ok, String}, {_ResultName, restuple}) when is_list(String) ->
+    list_to_binary(String);
+format_result({error, Type, Code, Desc}, {_ResultName, restuple}) ->
+    <<"Error: ",
+      (misc:atom_to_binary(Type))/binary,
+      " ",
+      (integer_to_binary(Code))/binary,
+      ": ",
+      (list_to_binary(Desc))/binary>>;
+format_result([], {_Name, {list, _ElementsDef}}) ->
+    "";
+format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}) ->
+    Separator = ",",
+    [format_result(FirstElement, ElementsDef) | lists:map(fun(Element) ->
+                                                             [Separator | format_result(Element,
+                                                                                        ElementsDef)]
+                                                          end,
+                                                          Elements)];
+format_result(Value, _ResultFormat) when is_atom(Value) ->
+    misc:atom_to_binary(Value);
+format_result(Value, _ResultFormat) when is_list(Value) ->
+    list_to_binary(Value);
+format_result(Value, _ResultFormat) when is_binary(Value) ->
+    Value;
+format_result(Value, _ResultFormat) ->
+    io_lib:format("~p", [Value]).
+
+%%%==================================
+%%%% make_table
+
+-spec make_table(PageSize :: integer(),
+                 RemainingPath :: [binary()],
+                 NameOptionList :: [Name :: binary() | {Name :: binary(), left | right}],
+                 Values :: [tuple()]) ->
+                    xmlel().
+make_table(PageSize, RPath, NameOptionList, Values1) ->
+    Values =
+        case lists:member(<<"sort">>, RPath) of
+            true ->
+                Values1;
+            false ->
+                GetXmlValue =
+                    fun ({xmlcdata, _} = X) ->
+                            X;
+                        ({xmlel, _, _, _} = X) ->
+                            X;
+                        ({raw_and_value, _V, X}) ->
+                            X
+                    end,
+                ConvertTupleToTuple =
+                    fun(Row1) -> list_to_tuple(lists:map(GetXmlValue, tuple_to_list(Row1))) end,
+                lists:map(ConvertTupleToTuple, Values1)
+        end,
+    make_table1(PageSize, RPath, <<"">>, <<"">>, 1, NameOptionList, Values).
+
+make_table1(PageSize,
+            [<<"page">>, PageNumber | RPath],
+            PageUrlBase,
+            SortUrlBase,
+            _Start,
+            NameOptionList,
+            Values1) ->
+    make_table1(PageSize,
+                RPath,
+                <<PageUrlBase/binary, "../../">>,
+                <<SortUrlBase/binary, "../../">>,
+                1 + PageSize * binary_to_integer(PageNumber),
+                NameOptionList,
+                Values1);
+make_table1(PageSize,
+            [<<"sort">>, SortType | RPath],
+            PageUrlBase,
+            SortUrlBase,
+            Start,
+            NameOptionList,
+            Rows1) ->
+    ColumnToSort =
+        length(lists:takewhile(fun (A) when A == SortType ->
+                                       false;
+                                   ({A, _}) when A == SortType ->
+                                       false;
+                                   (_) ->
+                                       true
+                               end,
+                               NameOptionList))
+        + 1,
+    Direction =
+        case lists:nth(ColumnToSort, NameOptionList) of
+            {_, right} ->
+                descending;
+            {_, left} ->
+                ascending;
+            _ ->
+                ascending
+        end,
+    ColumnToSort = ColumnToSort,
+    GetRawValue =
+        fun ({xmlcdata, _} = X) ->
+                X;
+            ({xmlel, _, _, _} = X) ->
+                X;
+            ({raw_and_value, R, _X}) ->
+                R
+        end,
+    GetXmlValue =
+        fun ({xmlcdata, _} = X) ->
+                X;
+            ({xmlel, _, _, _} = X) ->
+                X;
+            ({raw_and_value, _R, X}) ->
+                X
+        end,
+    SortTwo =
+        fun(A1, B1) ->
+           A2 = GetRawValue(element(ColumnToSort, A1)),
+           B2 = GetRawValue(element(ColumnToSort, B1)),
+           case Direction of
+               ascending ->
+                   A2 < B2;
+               descending ->
+                   A2 > B2
+           end
+        end,
+    Rows1Sorted = lists:sort(SortTwo, Rows1),
+    ConvertTupleToTuple =
+        fun(Row1) -> list_to_tuple(lists:map(GetXmlValue, tuple_to_list(Row1))) end,
+    Rows = lists:map(ConvertTupleToTuple, Rows1Sorted),
+    make_table1(PageSize,
+                RPath,
+                PageUrlBase,
+                <<SortUrlBase/binary, "../../">>,
+                Start,
+                NameOptionList,
+                Rows);
+make_table1(PageSize, [], PageUrlBase, SortUrlBase, Start, NameOptionList, Values1) ->
+    Values = lists:sublist(Values1, Start, PageSize),
+    Table = make_table(NameOptionList, Values),
+    Size = length(Values1),
+    Remaining =
+        case Size rem PageSize of
+            0 ->
+                0;
+            _ ->
+                1
+        end,
+    NumPages = max(0, Size div PageSize + Remaining - 1),
+    PLinks1 =
+        lists:foldl(fun(N, Acc) ->
+                       NBin = integer_to_binary(N),
+                       Acc
+                       ++ [?C(<<", ">>),
+                           ?AC(<<PageUrlBase/binary, "page/", NBin/binary, "/">>, NBin)]
+                    end,
+                    [],
+                    lists:seq(1, NumPages)),
+    PLinks =
+        case PLinks1 of
+            [] ->
+                [];
+            _ ->
+                [?XE(<<"p">>, [?C(<<"Page: ">>), ?AC(<<PageUrlBase/binary>>, <<"0">>) | PLinks1])]
+        end,
+
+    Names =
+        lists:map(fun ({Name, _}) ->
+                          Name;
+                      (Name) ->
+                          Name
+                  end,
+                  NameOptionList),
+    [_ | SLinks1] =
+        lists:foldl(fun(N, Acc) ->
+                       [?C(<<", ">>), ?AC(<<SortUrlBase/binary, "sort/", N/binary, "/">>, N) | Acc]
+                    end,
+                    [],
+                    lists:reverse(Names)),
+    SLinks =
+        case {PLinks, SLinks1} of
+            {_, []} ->
+                [];
+            {[], _} ->
+                [];
+            {_, [_]} ->
+                [];
+            {_, SLinks2} ->
+                [?XE(<<"p">>, [?C(<<"Sort all pages by: ">>) | SLinks2])]
+        end,
+
+    ?XE(<<"div">>, [Table | PLinks ++ SLinks]).
+
+-spec make_table(NameOptionList :: [Name :: binary() | {Name :: binary(), left | right}],
+                 Values :: [tuple()]) ->
+                    xmlel().
+make_table(NameOptionList, Values) ->
+    NamesAndAttributes = [make_column_attributes(NameOption) || NameOption <- NameOptionList],
+    {Names, ColumnsAttributes} = lists:unzip(NamesAndAttributes),
+    make_table(Names, ColumnsAttributes, Values).
+
+make_table(Names, ColumnsAttributes, Values) ->
+    ?XAE(<<"table">>,
+         [{<<"class">>, <<"sortable">>}],
+         [?XE(<<"thead">>,
+              [?XE(<<"tr">>, [?XC(<<"th">>, nice_this(HeadElement)) || HeadElement <- Names])]),
+          ?XE(<<"tbody">>,
+              [?XE(<<"tr">>,
+                   [?XAE(<<"td">>, CAs, [V])
+                    || {CAs, V} <- lists:zip(ColumnsAttributes, tuple_to_list(ValueTuple))])
+               || ValueTuple <- Values])]).
+
+make_column_attributes({Name, Option}) ->
+    {Name, [make_column_attribute(Option)]};
+make_column_attributes(Name) ->
+    {Name, []}.
+
+make_column_attribute(left) ->
+    {<<"class">>, <<"alignleft">>};
+make_column_attribute(right) ->
+    {<<"class">>, <<"alignright">>}.
+
+%%%==================================
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:

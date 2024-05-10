@@ -26,6 +26,18 @@
                  {tuple, [rterm()]} | {list, rterm()} |
                  rescode | restuple.
 
+%% The purpose of a command can either be:
+%% - informative: its purpose is to obtain information
+%% - modifier: its purpose is to produce some change in the server
+%%
+%% A modifier command should be designed just to produce its desired side-effect,
+%% and its result term should just be success or failure: rescode or restuple.
+%%
+%% ejabberd_web_admin:make_command/2 considers that commands
+%% with result type different than rescode or restuple
+%% are commands that can be safely executed automatically
+%% to get information and build the web page.
+
 -type oauth_scope() :: atom().
 
 %% ejabberd_commands OAuth ReST ACL definition:

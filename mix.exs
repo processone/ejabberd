@@ -112,6 +112,7 @@ defmodule Ejabberd.MixProject do
              if_version_below(~c"24", [{:d, :SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL}]) ++
              if_version_below(~c"24", [{:d, :OTP_BELOW_24}]) ++
              if_version_below(~c"25", [{:d, :OTP_BELOW_25}]) ++
+             if_version_below(~c"26", [{:d, :OTP_BELOW_26}]) ++
              if_version_below(~c"27", [{:d, :OTP_BELOW_27}]) ++
              if_type_exported(:odbc, {:opaque, :connection_reference, 0}, [{:d, :ODBC_HAS_TYPES}])
     defines = for {:d, value} <- result, do: {:d, value}
