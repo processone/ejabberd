@@ -684,6 +684,9 @@ build_deps()
 		export erl_xcomp_sysroot="$prefix"
 	fi
 	cd "$target_src_dir/$otp_dir"
+	# Revert https://github.com/erlang/otp/commit/53ef5df40c733ce3d8215c5c98805f99f378f656
+	# because it breaks MSSQL, see https://github.com/processone/ejabberd/issues/4178
+	sed -i 's|if(size == 0 && (sql_type == SQL_LONGVARCHAR|if((sql_type == SQL_LONGVARCHAR|g' lib/odbc/c_src/odbcserver.c
 	# The additional CFLAGS/LIBS below are required by --enable-static-nifs.
 	# The "-ldl" flag specifically is only needed for ODBC, though.
 	$configure \
