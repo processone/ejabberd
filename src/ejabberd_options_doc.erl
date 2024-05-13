@@ -1378,11 +1378,13 @@ doc() ->
                "The default value is the value defined in _`queue_type`_ "
                "or 'ram' if the latter is not set.")}},
      {sql_server,
-      #{value => ?T("Host"),
-        note => "improved in 23.04",
+      #{value => "Host | IP Address | ODBC Connection String | Unix Socket Path",
+        note => "improved in 24.xx",
         desc =>
             ?T("The hostname or IP address of the SQL server. For _`sql_type`_ "
                "'mssql' or 'odbc' this can also be an ODBC connection string. "
+               "When _`sql_type`_ is 'mysql' or 'pgsql', this can be the path to "
+               "a unix domain socket expressed like: \"unix:/path/to/socket\"."
                "The default value is 'localhost'.")}},
      {sql_ssl,
       #{value => "true | false",
