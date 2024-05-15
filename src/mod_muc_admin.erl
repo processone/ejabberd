@@ -61,12 +61,12 @@
 %% gen_mod
 %%----------------------------
 
-start(Host, _Opts) ->
+start(_Host, _Opts) ->
     ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
-    ejabberd_hooks:add(webadmin_menu_main, ?MODULE, web_menu_main, 50),
-    ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
-    ejabberd_hooks:add(webadmin_page_main, ?MODULE, web_page_main, 50),
-    ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
+    {ok, [{hook, webadmin_menu_main, web_menu_main, 50, global},
+	  {hook, webadmin_page_main, web_page_main, 50, global},
+	  {hook, webadmin_menu_host, web_menu_host, 50},
+	  {hook, webadmin_page_host, web_page_host, 50}]}.
 
 stop(Host) ->
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
@@ -74,11 +74,7 @@ stop(Host) ->
             ejabberd_commands:unregister_commands(get_commands_spec());
         true ->
             ok
-    end,
-    ejabberd_hooks:delete(webadmin_menu_main, ?MODULE, web_menu_main, 50),
-    ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
-    ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
-    ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
+    end.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
