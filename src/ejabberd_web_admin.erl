@@ -1158,7 +1158,11 @@ search_running_node(SNode, [Node | Nodes]) ->
 get_node(global, Node, [], Query, Lang) ->
     Res = node_parse_query(Node, Query),
     Base = get_base_path(global, Node, 2),
-    MenuItems2 = make_menu_items(global, Node, Base, Lang),
+    BaseItems = [{<<"db">>, <<"Database">>},
+                 {<<"backup">>, <<"Backup">>},
+                 {<<"stats">>, <<"Statistics">>},
+                 {<<"update">>, <<"Update">>}],
+    MenuItems = make_menu_items(global, Node, Base, Lang, BaseItems),
     [?XC(<<"h1">>,
 	 (str:translate_and_format(Lang, ?T("Node ~p"), [Node])))]
       ++
@@ -1168,12 +1172,7 @@ get_node(global, Node, [], Query, Lang) ->
 	nothing -> []
       end
 	++
-	[?XE(<<"ul">>,
-	     ([?LI([?ACT(<<"db/">>, ?T("Database"))]),
-	       ?LI([?ACT(<<"backup/">>, ?T("Backup"))]),
-	       ?LI([?ACT(<<"stats/">>, ?T("Statistics"))]),
-	       ?LI([?ACT(<<"update/">>, ?T("Update"))])]
-		++ MenuItems2)),
+	[?XE(<<"ul">>, MenuItems),
 	 ?XAE(<<"form">>,
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 	      [?INPUTT(<<"submit">>, <<"restart">>, ?T("Restart")),
@@ -1181,7 +1180,7 @@ get_node(global, Node, [], Query, Lang) ->
 	       ?INPUTTD(<<"submit">>, <<"stop">>, ?T("Stop"))])];
 get_node(Host, Node, [], _Query, Lang) ->
     Base = get_base_path(Host, Node, 4),
-    MenuItems2 = make_menu_items(Host, Node, Base, Lang),
+    MenuItems2 = make_menu_items(Host, Node, Base, Lang, []),
     [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Node ~p"), [Node]))),
      ?XE(<<"ul">>, MenuItems2)];
 get_node(global, Node, [<<"db">>], Query, Lang) ->
@@ -1944,19 +1943,16 @@ make_navigation_menu(Host, Node, Lang, JID, Level) ->
     NodeMenu = make_node_menu(Host, Node, Lang, Level),
     make_server_menu(HostMenu, NodeMenu, Lang, JID, Level).
 
-make_menu_items(global, cluster, Base, Lang) ->
-    HookItems = get_menu_items_hook(server, Lang),
-    make_menu_items(Lang, {Base, <<"">>, HookItems});
-make_menu_items(global, Node, Base, Lang) ->
-    HookItems = get_menu_items_hook({node, Node}, Lang),
-    make_menu_items(Lang, {Base, <<"">>, HookItems});
-make_menu_items(Host, cluster, Base, Lang) ->
-    HookItems = get_menu_items_hook({host, Host}, Lang),
-    make_menu_items(Lang, {Base, <<"">>, HookItems});
-make_menu_items(Host, Node, Base, Lang) ->
-    HookItems = get_menu_items_hook({hostnode, Host, Node},
-				    Lang),
-    make_menu_items(Lang, {Base, <<"">>, HookItems}).
+make_menu_items(Host, Node, Base, Lang, Acc) ->
+    Place = case {Host, Node} of
+                {global, cluster} -> server;
+                {global, Node} -> {node, Node};
+                {Host, cluster} -> {host, Host};
+                {Host, Node} -> {hostnode, Host, Node}
+            end,
+    HookItems = get_menu_items_hook(Place, Lang),
+    Items = lists:keysort(2, HookItems ++ Acc),
+    make_menu_items(Lang, {Base, <<"">>, Items}).
 
 make_host_node_menu(global, _, _Lang, _JID, _Level) ->
     {<<"">>, <<"">>, []};
@@ -1976,14 +1972,15 @@ make_host_menu(global, _HostNodeMenu, _Lang, _JID, _Level) ->
 make_host_menu(Host, HostNodeMenu, Lang, JID, Level) ->
     HostBase = get_base_path(Host, cluster, Level),
     HostFixed = [{<<"users">>, ?T("Users")},
-		 {<<"online-users">>, ?T("Online Users")}]
-		  ++
+		 {<<"online-users">>, ?T("Online Users")}],
+    HostFixedAdditional =
 		  get_lastactivity_menuitem_list(Host) ++
 		    [{<<"nodes">>, ?T("Nodes"), HostNodeMenu},
 		     {<<"stats">>, ?T("Statistics")}]
 		      ++ get_menu_items_hook({host, Host}, Lang),
+    HostFixedAll = HostFixed ++ lists:keysort(2, HostFixedAdditional),
     HostFixed2 = [Tuple
-		  || Tuple <- HostFixed,
+		  || Tuple <- HostFixedAll,
 		     is_allowed_path(Host, Tuple, JID)],
     {HostBase, Host, HostFixed2}.
 
@@ -1997,18 +1994,20 @@ make_node_menu(global, Node, Lang, Level) ->
 		 {<<"update">>, ?T("Update")}]
 		  ++ get_menu_items_hook({node, Node}, Lang),
     {NodeBase, iolist_to_binary(atom_to_list(Node)),
-     NodeFixed};
+     lists:keysort(2, NodeFixed)};
 make_node_menu(_Host, _Node, _Lang, _Level) ->
     {<<"">>, <<"">>, []}.
 
 make_server_menu(HostMenu, NodeMenu, Lang, JID, Level) ->
     Base = get_base_path(global, cluster, Level),
     Fixed = [{<<"vhosts">>, ?T("Virtual Hosts"), HostMenu},
-	     {<<"nodes">>, ?T("Nodes"), NodeMenu},
-	     {<<"stats">>, ?T("Statistics")}]
+	     {<<"nodes">>, ?T("Nodes"), NodeMenu}],
+    FixedAdditional =
+	    [{<<"stats">>, ?T("Statistics")}]
 	      ++ get_menu_items_hook(server, Lang),
+    FixedAll = Fixed ++ lists:keysort(2, FixedAdditional),
     Fixed2 = [Tuple
-	      || Tuple <- Fixed,
+	      || Tuple <- FixedAll,
 		 is_allowed_path(global, Tuple, JID)],
     {Base, <<"">>, Fixed2}.
 
