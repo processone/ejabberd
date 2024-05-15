@@ -225,7 +225,7 @@ analyze_hooks({Add, Del}) ->
 		  true -> ok;
 		  false ->
 		      err("~s:~p: Error: "
-			  "hook ~s->~s->~s is added but was never removed~n",
+			  "hook ~s->~s->~s is added but was never deleted~n",
 			  [File, FileNo, Hook, Mod, Fun])
 	      end
       end, maps:to_list(Add1)),
@@ -235,7 +235,7 @@ analyze_hooks({Add, Del}) ->
 		  true -> ok;
 		  false ->
 		      err("~s:~p: Error: "
-			  "hook ~s->~s->~s is removed but was never added~n",
+			  "hook ~s->~s->~s is deleted but was never added~n",
 			  [File, FileNo, Hook, Mod, Fun])
 	      end
       end, maps:to_list(Del1)).
