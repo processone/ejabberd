@@ -169,7 +169,7 @@ check_iq_handlers_export({HookedFuns, _}, Exports) ->
 			case is_exported(Mod, Fun, 1, Exports) of
 			    true -> ok;
 			    false ->
-				err("~s:~B: Error: "
+				err("~s:~p: Error: "
 				    "iq handler is registered on unexported function: "
 				    "~s:~s/1~n", [File, FileNo, Mod, Fun])
 			end
@@ -184,7 +184,7 @@ analyze_iq_handlers({Add, Del}) ->
 			case maps:is_key(Handler, Del) of
 			    true -> ok;
 			    false ->
-				err("~s:~B: Error: "
+				err("~s:~p: Error: "
 				    "iq handler is added but not removed~n",
 				    [File, FileNo])
 			end
@@ -197,7 +197,7 @@ analyze_iq_handlers({Add, Del}) ->
 			case maps:is_key(Handler, Add) of
 			    true -> ok;
 			    false ->
-				err("~s:~B: Error: "
+				err("~s:~p: Error: "
 				    "iq handler is removed but not added~n",
 				    [File, FileNo])
 			end
@@ -224,7 +224,7 @@ analyze_hooks({Add, Del}) ->
 	      case maps:is_key(Key, Del1) of
 		  true -> ok;
 		  false ->
-		      err("~s:~B: Error: "
+		      err("~s:~p: Error: "
 			  "hook ~s->~s->~s is added but was never removed~n",
 			  [File, FileNo, Hook, Mod, Fun])
 	      end
@@ -234,7 +234,7 @@ analyze_hooks({Add, Del}) ->
 	      case maps:is_key(Key, Add1) of
 		  true -> ok;
 		  false ->
-		      err("~s:~B: Error: "
+		      err("~s:~p: Error: "
 			  "hook ~s->~s->~s is removed but was never added~n",
 			  [File, FileNo, Hook, Mod, Fun])
 	      end
