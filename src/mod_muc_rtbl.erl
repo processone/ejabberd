@@ -26,7 +26,7 @@
 -author("pawel@process-one.net").
 
 -behaviour(gen_mod).
--behavior(gen_server).
+-behaviour(gen_server).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
