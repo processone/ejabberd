@@ -172,6 +172,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0059.html"/>
+        <xmpp:version>1.0</xmpp:version>
+        <xmpp:since></xmpp:since>
+        <xmpp:status></xmpp:status>
+        <xmpp:note></xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0060.html"/>
         <xmpp:version>1.14</xmpp:version>
         <xmpp:since></xmpp:since>
@@ -280,6 +289,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0138.html"/>
+        <xmpp:version>2.1</xmpp:version>
+        <xmpp:since></xmpp:since>
+        <xmpp:status></xmpp:status>
+        <xmpp:note>ejabberd_c2s</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0153.html"/>
         <xmpp:version>1.1</xmpp:version>
         <xmpp:since></xmpp:since>
@@ -343,6 +361,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0175.html"/>
+        <xmpp:version>1.2</xmpp:version>
+        <xmpp:since></xmpp:since>
+        <xmpp:status></xmpp:status>
+        <xmpp:note>ejabberd_auth_anonymous</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0176.html"/>
         <xmpp:version>1.0</xmpp:version>
         <xmpp:since></xmpp:since>
@@ -393,6 +420,15 @@
         <xmpp:since></xmpp:since>
         <xmpp:status></xmpp:status>
         <xmpp:note>mod_time</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0203.html"/>
+        <xmpp:version>2.0</xmpp:version>
+        <xmpp:since></xmpp:since>
+        <xmpp:status></xmpp:status>
+        <xmpp:note>mod_offline</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
@@ -456,6 +492,15 @@
         <xmpp:since></xmpp:since>
         <xmpp:status></xmpp:status>
         <xmpp:note>ejabberd_piefxis</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0231.html"/>
+        <xmpp:version>1.0</xmpp:version>
+        <xmpp:since></xmpp:since>
+        <xmpp:status></xmpp:status>
+        <xmpp:note>ejabberd_captcha</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
