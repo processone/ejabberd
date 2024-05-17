@@ -22,7 +22,7 @@
     <download-page rdf:resource="https://www.process-one.net/en/ejabberd/downloads/"/>
     <download-mirror rdf:resource="https://github.com/processone/ejabberd/tags"/>
     <license rdf:resource="https://raw.githubusercontent.com/processone/ejabberd/master/COPYING"/>
-    <schema:logo rdf:resource="https://docs.ejabberd.im/static/shared/images/footer_logo_e@2x.png"/>
+    <schema:logo rdf:resource="https://docs.ejabberd.im/assets/img/footer_logo_e@2x.png"/>
     <bug-database rdf:resource="https://github.com/processone/ejabberd/issues"/>
     <support-forum rdf:resource="xmpp:ejabberd@conference.process-one.net?join"/>
     <repository>
@@ -272,9 +272,9 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0133.html"/>
-        <xmpp:version>1.1</xmpp:version>
-        <xmpp:since></xmpp:since>
-        <xmpp:status></xmpp:status>
+        <xmpp:version>1.3.0</xmpp:version>
+        <xmpp:since>13.10</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_configure</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
