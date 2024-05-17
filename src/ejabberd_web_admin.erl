@@ -397,16 +397,44 @@ logo_fill() ->
 %%%==================================
 %%%% process_admin
 
-process_admin(global, #request{path = [], lang = Lang}, AJID) ->
+process_admin(global, #request{path = [], lang = Lang} = Request, AJID) ->
+    Title = ?H1GLraw(<<"">>, <<"">>, <<"home">>),
     MenuItems = get_menu_items(global, cluster, Lang, AJID, 0),
     Disclaimer = maybe_disclaimer_not_admin(MenuItems, AJID, Lang),
-    make_xhtml((?H1GL((translate:translate(Lang, ?T("Administration"))), <<"">>,
-		      <<"Configuration">>))
-		 ++ Disclaimer ++
-		 [?XE(<<"ul">>,
-		      [?LI([?ACT(MIU, MIN)])
-		       || {MIU, MIN}
-			      <- MenuItems])],
+    WelcomeText =
+        [?BR,
+         ?XAE(<<"p">>, [{<<"align">>, <<"center">>}],
+              [?XA(<<"img">>, [{<<"src">>, <<"logo.png">>},
+                               {<<"style">>, <<"border-radius:10px; background:#49cbc1; padding: 1.1em;">>}])
+              ]),
+         ?BR,
+         ?X(<<"hr">>)] ++ Title ++
+        [?XE(<<"blockquote">>,
+             [
+              ?XC(<<"p">>, <<"Welcome to ejabberd's WebAdmin!">>),
+              ?XC(<<"p">>, <<"Browse the menu to navigate your XMPP virtual hosts, "
+                              "Erlang nodes, and other global server pages...">>),
+              ?XC(<<"p">>, <<"Some pages have a link in the top right corner "
+                              "to relevant documentation in ejabberd Docs.">>),
+              ?X(<<"hr">>),
+              ?XE(<<"p">>,
+                  [?C(<<"Many pages use ejabberd's API commands to show information "
+                         "and to allow you perform administrative tasks. "
+                         "Click on a command name to view its details. "
+                         "You can also execute those same API commands "
+                         "using other interfaces, see: ">>),
+                   ?AC(<<"https://docs.ejabberd.im/developer/ejabberd-api/">>,
+                       <<"ejabberd Docs: API">>)
+                  ]),
+              ?XC(<<"p">>, <<"For example, this is the 'stats' command, "
+                              "it accepts an argument and returns an integer:">>),
+              make_command(stats, Request)]),
+         ?X(<<"hr">>), ?BR],
+    make_xhtml(Disclaimer ++ WelcomeText ++
+                   [?XE(<<"ul">>,
+                        [?LI([?ACT(MIU, MIN)])
+                         || {MIU, MIN}
+                                <- MenuItems])],
 	       global, Lang, AJID, 0);
 process_admin(Host, #request{path = [], lang = Lang}, AJID) ->
     make_xhtml([?XCT(<<"h1">>, ?T("Administration")),
@@ -621,12 +649,14 @@ list_vhosts2(Lang, Hosts) ->
 			 end,
 			 SHosts)))])].
 
-maybe_disclaimer_not_admin(MenuItems, AJID, Lang) ->
+maybe_disclaimer_not_admin(MenuItems, AJID, _Lang) ->
     case {MenuItems, list_vhosts_allowed(AJID)} of
         {[_], []} ->
-            [?XREST(?T("Apparently your account has no administration rights in this server. "
-                       "Please check how to grant admin rights in: "
-                       "https://docs.ejabberd.im/admin/install/next-steps/#administration-account"))
+            [?BR,
+             ?DIVRES([?C(<<"Apparently your account has no administration rights in "
+                            "this server. Please check how to grant admin rights: ">>),
+                      ?AC(<<"https://docs.ejabberd.im/admin/install/next-steps/#administration-account">>,
+                          <<"ejabberd Docs: Administration Account">>)])
             ];
         _ ->
             []
