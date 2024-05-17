@@ -174,8 +174,7 @@ process2([<<"server">>, SHost | RPath] = Path,
 		{401,
 		 [{<<"WWW-Authenticate">>,
 		   <<"basic realm=\"ejabberd\"">>}],
-		 ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					       ?T("Unauthorized"))])};
+		 ejabberd_web:make_xhtml(make_unauthorized(Lang))};
 	    {unauthorized, Error} ->
 		{BadUser, _BadPass} = Auth,
 		{IPT, _Port} = Request#request.ip,
@@ -186,8 +185,7 @@ process2([<<"server">>, SHost | RPath] = Path,
 		 [{<<"WWW-Authenticate">>,
 		   <<"basic realm=\"auth error, retry login "
 		     "to ejabberd\"">>}],
-		 ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					       ?T("Unauthorized"))])}
+		 ejabberd_web:make_xhtml(make_unauthorized(Lang))}
 	  end;
       false -> ejabberd_web:error(not_found)
     end;
@@ -206,8 +204,7 @@ process2(RPath,
 	    {401,
 	     [{<<"WWW-Authenticate">>,
 	       <<"basic realm=\"ejabberd\"">>}],
-	     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					   ?T("Unauthorized"))])};
+	     ejabberd_web:make_xhtml(make_unauthorized(Lang))};
 	{unauthorized, Error} ->
 	    {BadUser, _BadPass} = Auth,
 	    {IPT, _Port} = Request#request.ip,
@@ -218,9 +215,13 @@ process2(RPath,
 	     [{<<"WWW-Authenticate">>,
 	       <<"basic realm=\"auth error, retry login "
 		 "to ejabberd\"">>}],
-	     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					   ?T("Unauthorized"))])}
+	     ejabberd_web:make_xhtml(make_unauthorized(Lang))}
     end.
+
+make_unauthorized(Lang) ->
+    [?XCT(<<"h1">>, ?T("Unauthorized")),
+     ?XE(<<"p">>, [?C(<<"There was some problem authenticating, or the account doesn't have privilege.">>)]),
+     ?XE(<<"p">>, [?C(<<"Please check the log file for a more precise error message.">>)])].
 
 get_auth_admin(Auth, HostHTTP, RPath, Method) ->
     case Auth of
