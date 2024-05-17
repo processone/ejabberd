@@ -30,6 +30,7 @@
 -protocol({rfc, 6122}).
 -protocol({rfc, 7590}).
 -protocol({xep, 4, '2.9'}).
+-protocol({xep, 59, '1.0'}).
 -protocol({xep, 86, '1.0'}).
 -protocol({xep, 106, '1.1'}).
 -protocol({xep, 170, '1.0'}).

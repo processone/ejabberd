@@ -31,6 +31,7 @@
 -protocol({xep, 22, '1.4'}).
 -protocol({xep, 23, '1.3'}).
 -protocol({xep, 160, '1.0'}).
+-protocol({xep, 203, '2.0'}).
 -protocol({xep, 334, '0.2'}).
 
 -behaviour(gen_mod).

@@ -28,6 +28,8 @@
 -behaviour(ejabberd_auth).
 -author('mickael.remond@process-one.net').
 
+-protocol({xep, 175, '1.2'}).
+
 -export([start/1,
 	 stop/1,
          use_cache/1,
