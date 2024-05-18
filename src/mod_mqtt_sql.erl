@@ -58,7 +58,7 @@ sql_schemas() ->
                      #sql_column{name = <<"content_type">>, type = text},
                      #sql_column{name = <<"response_topic">>, type = text},
                      #sql_column{name = <<"correlation_data">>, type = blob},
-                     #sql_column{name = <<"user_property">>, type = blob},
+                     #sql_column{name = <<"user_properties">>, type = blob},
                      #sql_column{name = <<"expiry">>, type = bigint}],
                 indices = [#sql_index{
                               columns = [<<"topic">>, <<"server_host">>],
