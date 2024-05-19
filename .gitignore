@@ -40,6 +40,8 @@
 /.rebar
 /log/
 Mnesia.nonode@nohost/
+/TAGS
+/tags
 # Binaries created with tools/make-{binaries,installers,packages}:
 /ejabberd_*.deb
 /ejabberd-*.rpm
