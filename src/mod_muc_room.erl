@@ -292,6 +292,7 @@ get_disco_item(Pid, Filter, JID, Lang) ->
 init([Host, ServerHost, Access, Room, HistorySize,
       RoomShaper, Creator, _Nick, DefRoomOpts, QueueType]) ->
     process_flag(trap_exit, true),
+    misc:set_proc_label({?MODULE, Room, Host}),
     Shaper = ejabberd_shaper:new(RoomShaper),
     RoomQueue = room_queue_new(ServerHost, Shaper, QueueType),
     State = set_opts(DefRoomOpts,
@@ -314,6 +315,7 @@ init([Host, ServerHost, Access, Room, HistorySize,
     {ok, normal_state, reset_hibernate_timer(State1)};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType]) ->
     process_flag(trap_exit, true),
+    misc:set_proc_label({?MODULE, Room, Host}),
     Shaper = ejabberd_shaper:new(RoomShaper),
     RoomQueue = room_queue_new(ServerHost, Shaper, QueueType),
     Jid = jid:make(Room, Host),

@@ -121,6 +121,7 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 			     ExtraOpts2]) of
 	{ok, Socket} ->
             set_definitive_udsocket(Port, Opts),
+            misc:set_proc_label({?MODULE, udp, Port}),
 	    case inet:sockname(Socket) of
 		{ok, {Addr, Port1}} ->
 		    proc_lib:init_ack({ok, self()}),
@@ -155,6 +156,7 @@ init({Port, _, tcp} = EndPoint, Module, Opts, SockOpts) ->
 	    case inet:sockname(ListenSocket) of
 		{ok, {Addr, Port1}} ->
 		    proc_lib:init_ack({ok, self()}),
+                    misc:set_proc_label({?MODULE, tcp, Port}),
 		    case application:ensure_started(ejabberd) of
 			ok ->
 			    Sup = start_module_sup(Module, Opts),

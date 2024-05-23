@@ -43,6 +43,7 @@
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
 	 crypto_hmac/3, crypto_hmac/4, uri_parse/1, uri_parse/2, uri_quote/1,
          json_encode/1, json_decode/1,
+	 set_proc_label/1,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
 	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1]).
 
@@ -780,3 +781,11 @@ to_string(B) when is_binary(B) ->
     binary_to_list(B);
 to_string(S) ->
     S.
+
+-ifdef(OTP_BELOW_27).
+set_proc_label(_Label) ->
+    ok.
+-else.
+set_proc_label(Label) ->
+    proc_lib:set_label(Label).
+-endif.

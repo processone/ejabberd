@@ -290,6 +290,7 @@ reject_unauthenticated_packet(State, _Pkt) ->
 process_auth_result(#{sasl_mech := Mech, auth_module := AuthModule,
 		      socket := Socket, ip := IP, lserver := LServer} = State,
 		    true, User) ->
+    misc:set_proc_label({?MODULE, User, LServer}),
     ?INFO_MSG("(~ts) Accepted c2s ~ts authentication for ~ts@~ts by ~ts backend from ~ts",
               [xmpp_socket:pp(Socket), Mech, User, LServer,
                ejabberd_auth:backend_type(AuthModule),
@@ -617,6 +618,7 @@ init([State, Opts]) ->
 		    access => Access,
 		    shaper => Shaper},
     State2 = xmpp_stream_in:set_timeout(State1, Timeout),
+    misc:set_proc_label({?MODULE, init_state}),
     ejabberd_hooks:run_fold(c2s_init, {ok, State2}, [Opts]).
 
 handle_call(get_presence, From, #{jid := JID} = State) ->
