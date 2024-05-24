@@ -77,14 +77,12 @@ jobs:
                                  IDENTIFIED BY 'ejabberd_test';"
         mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
                                  TO 'ejabberd_test'@'localhost';"
-        mysql -u ejabberd_test -pejabberd_test ejabberd_test < sql/mysql.sql
         pg_isready
         sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
         sudo -u postgres psql -c "CREATE USER ejabberd_test
                                   WITH PASSWORD 'ejabberd_test';"
         sudo -u postgres psql -c "GRANT ALL PRIVILEGES
                                   ON DATABASE ejabberd_test TO ejabberd_test;"
-        PGPASSWORD="ejabberd_test" psql -h localhost -U ejabberd_test ejabberd_test -f sql/pg.sql
         sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
                                                 TABLES IN SCHEMA public
                                                 TO ejabberd_test;"
@@ -266,11 +264,9 @@ jobs:
         mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
         mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
                                  TO 'ejabberd_test'@'localhost';"
-        mysql -u ejabberd_test -pejabberd_test ejabberd_test < sql/mysql.new.sql
         sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
         sudo -u postgres psql -c "GRANT ALL PRIVILEGES
                                   ON DATABASE ejabberd_test TO ejabberd_test;"
-        PGPASSWORD="ejabberd_test" psql -h localhost -U ejabberd_test ejabberd_test -f sql/pg.new.sql
         sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
                                                 TABLES IN SCHEMA public
                                                 TO ejabberd_test;"
