@@ -61,8 +61,6 @@ get_acl_rule([<<"style.css">>], _) ->
     {<<"localhost">>, [all]};
 get_acl_rule([<<"logo.png">>], _) ->
     {<<"localhost">>, [all]};
-get_acl_rule([<<"logo-fill.png">>], _) ->
-    {<<"localhost">>, [all]};
 get_acl_rule([<<"favicon.ico">>], _) ->
     {<<"localhost">>, [all]};
 get_acl_rule([<<"additions.js">>], _) ->
@@ -388,12 +386,6 @@ logo() ->
 	{error, _} -> <<>>
     end.
 
-logo_fill() ->
-    case misc:read_img("admin-logo-fill.png") of
-	{ok, Img} -> Img;
-	{error, _} -> <<>>
-    end.
-
 %%%==================================
 %%%% process_admin
 
@@ -458,11 +450,6 @@ process_admin(_Host, #request{path = [<<"logo.png">>]}, _) ->
      [{<<"Content-Type">>, <<"image/png">>}, last_modified(),
       cache_control_public()],
      logo()};
-process_admin(_Host, #request{path = [<<"logo-fill.png">>]}, _) ->
-    {200,
-     [{<<"Content-Type">>, <<"image/png">>}, last_modified(),
-      cache_control_public()],
-     logo_fill()};
 process_admin(_Host, #request{path = [<<"additions.js">>]}, _) ->
     {200,
      [{<<"Content-Type">>, <<"text/javascript">>},
