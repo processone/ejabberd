@@ -772,13 +772,7 @@ should_update_schema(Host) ->
         true ->
             case ejabberd_sql:use_new_schema() of
                 true ->
-                    %% TODO: not efficient when there are many hosts
-                    case lists:member(sql, ejabberd_option:auth_method(Host)) of
-                        true ->
-                            true;
-                        false ->
-                            false
-                    end;
+                    lists:member(sql, ejabberd_option:auth_method(Host));
                 false ->
                     true
             end;
