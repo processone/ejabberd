@@ -45,11 +45,11 @@ defmodule Ejabberd.MixProject do
     [mod: {:ejabberd_app, []},
      applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib, :mix,
                     :fast_tls, :fast_xml, :fast_yaml, :jose,
-                    :p1_utils, :stringprep, :syntax_tools, :yconf]
+                    :p1_utils, :stringprep, :syntax_tools, :yconf, :xmpp]
      ++ cond_apps(),
      included_applications: [:mnesia, :os_mon,
                              :cache_tab, :eimp, :mqtree, :p1_acme,
-                             :p1_oauth2, :pkix, :xmpp]
+                             :p1_oauth2, :pkix]
      ++ cond_included_apps()]
   end
 
