@@ -328,9 +328,13 @@ publish_pep_native_bookmarks(JID, Data) ->
 	true ->
 	    case lists:keyfind(?NS_STORAGE_BOOKMARKS, 1, Data) of
 		{_, Bookmarks0} ->
-		    Bookmarks = case xmpp:decode(Bookmarks0) of
+		    Bookmarks = try xmpp:decode(Bookmarks0) of
 				    #bookmark_storage{conference = C} -> C;
 				    _ -> []
+				catch _:{xmpp_codec, Why} ->
+					  ?WARNING_MSG("Failed to decode bookmarks of ~ts: ~ts",
+						       [jid:encode(JID), xmpp:format_error(Why)]),
+					  []
 				end,
 		    PubOpts = [{persist_items, true}, {access_model, whitelist}, {max_items, max}, {notify_retract,true}, {notify_delete,true}, {send_last_published_item, never}],
 		    case mod_pubsub:get_items(LBJID, ?NS_PEP_BOOKMARKS) of
