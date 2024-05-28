@@ -505,10 +505,12 @@ normal_state({route, <<"">>,
 			       process_iq_adhoc(From, IQ, StateData);
 			   #register{} ->
                                mod_muc:process_iq_register(IQ);
-			   #fasten_apply_to{} = ApplyTo ->
+			   #message_moderate{} = Moderate -> % moderate:1
+			       process_iq_moderate(From, IQ, Moderate, StateData);
+			   #fasten_apply_to{id = ModerateId} = ApplyTo ->
 			       case xmpp:get_subtag(ApplyTo, #message_moderate{}) of
-				   #message_moderate{} = Moderate ->
-				       process_iq_moderate(From, IQ, ApplyTo, Moderate, StateData);
+				   #message_moderate{} = Moderate -> % moderate:0
+				       process_iq_moderate(From, IQ, Moderate#message_moderate{id = ModerateId}, StateData);
 				   _ ->
 				       Txt = ?T("The feature requested is not "
 						"supported by the conference"),
@@ -4399,7 +4401,9 @@ make_disco_info(From, StateData) ->
     ServerHost = StateData#state.server_host,
     AccessRegister = mod_muc_opt:access_register(ServerHost),
     Feats = [?NS_VCARD, ?NS_MUC, ?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
-             ?NS_COMMANDS, ?NS_MESSAGE_MODERATE, ?NS_MESSAGE_RETRACT,
+             ?NS_COMMANDS,
+             ?NS_MESSAGE_MODERATE_0, ?NS_MESSAGE_MODERATE_1,
+             ?NS_MESSAGE_RETRACT,
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.public),
 				    <<"muc_public">>, <<"muc_hidden">>),
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.persistent),
@@ -5158,14 +5162,13 @@ add_presence_hats(JID, Pres, StateData) ->
             Pres
     end.
 
--spec process_iq_moderate(jid(), iq(), fasten_apply_to(), message_moderate(), state()) ->
+-spec process_iq_moderate(jid(), iq(), message_moderate(), state()) ->
     {result, undefined, state()} |
     {error, stanza_error()}.
-process_iq_moderate(_From, #iq{type = get}, _ApplyTo, _Moderate, _StateData) ->
+process_iq_moderate(_From, #iq{type = get}, _Moderate, _StateData) ->
     {error, xmpp:err_bad_request()};
 process_iq_moderate(From, #iq{type = set, lang = Lang},
-		    #fasten_apply_to{id = Id},
-		    #message_moderate{reason = Reason},
+		    #message_moderate{id = Id, reason = Reason, xmlns = Xmlns},
 		    #state{config = Config, room = Room, host = Host,
                            jid = JID, server_host = Server} = StateData) ->
     FAffiliation = get_affiliation(From, StateData),
@@ -5186,13 +5189,25 @@ process_iq_moderate(From, #iq{type = set, lang = Lang},
 			    ok
 		    end,
 		    By = jid:replace_resource(JID, find_nick_by_jid(From, StateData)),
+                    SubEl = case Xmlns of
+                                ?NS_MESSAGE_MODERATE_0 ->
+                                    SubEls = [#xmlel{name = <<"reason">>,
+                                                    attrs = [],
+                                                    children = [{xmlcdata, Reason}]},
+                                              #message_retract{id = Id}],
+                                    ModeratedEl = #message_moderated{by = By,
+                                                                   sub_els = SubEls},
+                                    #fasten_apply_to{id = Id,
+                                                     sub_els = [ModeratedEl]};
+                                ?NS_MESSAGE_MODERATE_1 ->
+                                    ModeratedEl = #message_moderated{by = By},
+                                    #message_retract{id = Id,
+                                                     reason = Reason,
+                                                     moderated = ModeratedEl}
+                            end,
 		    Packet0 = #message{type = groupchat,
                                        from = From,
-				      sub_els = [
-					  #fasten_apply_to{id = Id, sub_els = [
-					      #message_moderated{by = By, reason = Reason,
-								 retract = #message_retract{id = Id}}
-					  ]}]},
+                                       sub_els = [SubEl]},
 	            {FromNick, _Role} = get_participant_data(From, StateData),
                     Packet = ejabberd_hooks:run_fold(muc_filter_message,
 						     StateData#state.server_host,
