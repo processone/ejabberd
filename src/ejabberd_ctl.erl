@@ -976,11 +976,14 @@ format_usage_ctype1({Name, Type, Description}, Indentation, ShCode) ->
 
 
 format_usage_ctype(Type, _Indentation)
-  when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary) or (Type==rescode) or (Type==restuple)->
+  when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary)
+       or (Type==rescode) or (Type==restuple) ->
     io_lib:format("~p", [Type]);
 
 format_usage_ctype({Name, Type}, _Indentation)
-  when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary) or (Type==rescode) or (Type==restuple)->
+  when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary)
+       or (Type==rescode) or (Type==restuple)
+       or (Type==any) ->
     io_lib:format("~p::~p", [Name, Type]);
 
 format_usage_ctype({Name, {list, ElementDef}}, Indentation) ->

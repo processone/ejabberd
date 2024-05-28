@@ -19,12 +19,17 @@
 %%%----------------------------------------------------------------------
 
 -type aterm() :: {atom(), atype()}.
--type atype() :: integer | string | binary |
+-type atype() :: integer | string | binary | any | atom |
                  {tuple, [aterm()]} | {list, aterm()}.
 -type rterm() :: {atom(), rtype()}.
--type rtype() :: integer | string | atom |
+-type rtype() :: integer | string | atom | any |
                  {tuple, [rterm()]} | {list, rterm()} |
                  rescode | restuple.
+
+%% The 'any' and 'atom' argument types and 'any' result type
+%% should only be used %% by commands with tag 'internal',
+%% which are meant to be used only internally in ejabberd,
+%% and not called using external frontends.
 
 %% The purpose of a command can either be:
 %% - informative: its purpose is to obtain information
