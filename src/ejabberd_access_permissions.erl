@@ -82,7 +82,7 @@ can_access(Cmd, CallerInfo) ->
 	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo) of
 		true ->
 		    ?DEBUG("Command '~p' execution allowed by rule "
-			   "'~ts' (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
+			   "'~ts'~n (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
 		    allow;
 		_ ->
 		    none
@@ -93,7 +93,7 @@ can_access(Cmd, CallerInfo) ->
     case Res of
 	allow -> allow;
 	_ ->
-	    ?DEBUG("Command '~p' execution denied "
+	    ?DEBUG("Command '~p' execution denied~n "
 		   "(CallerInfo=~p)", [Cmd, CallerInfo]),
 	    deny
     end.
