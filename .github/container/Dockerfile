@@ -142,6 +142,8 @@ RUN if [ ! -d $HOME/.ejabberd-modules ]; \
     fi
 
 RUN export PEM=$HOME/conf/server.pem \
+    && wget -O /etc/ssl/openssl.cnf \
+        https://raw.githubusercontent.com/openssl/openssl/openssl-3.3/apps/openssl.cnf \
     && openssl req -x509 \
             -batch \
             -nodes \
