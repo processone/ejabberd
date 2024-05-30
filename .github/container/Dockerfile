@@ -124,7 +124,8 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
 FROM ${METHOD} AS ejabberd
 RUN apk -U add --no-cache \
         git \
-        libcap \
+        libcap-utils \
+        pax-utils \
         openssl
 
 WORKDIR /rootfs
@@ -188,7 +189,7 @@ RUN apk -U upgrade --available --no-cache \
         $(cat /tmp/runDeps) \
         freetds \
         unixodbc \
-        libcap\
+        libcap \
         busybox \
         ca-certificates-bundle \
         tini
