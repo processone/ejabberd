@@ -1,6 +1,6 @@
 #' Define default build variables
 ## source ARGs
-ARG OTP_VSN='26.2.5'
+ARG OTP_VSN='27'
 ARG ELIXIR_VSN='1.16.3'
 ## general ARGs
 ARG UID='9000'
@@ -25,6 +25,9 @@ RUN apk -U upgrade --available && apk add --no-cache  \
         ca-certificates-bundle \
         curl \
         expat-dev \
+        erlang-$OTP_VSN \
+        erlang-$OTP_VSN-dev \
+        erlang-$OTP_VSN-odbc \
         file \
         freetds freetds-dev \
         freetype-dev \
@@ -44,26 +47,6 @@ RUN apk -U upgrade --available && apk add --no-cache  \
         wget \
         yaml-dev \
         zlib-dev
-
-ARG OTP_VSN
-RUN wget -O - https://github.com/erlang/otp/releases/download/OTP-"$OTP_VSN"/otp_src_"$OTP_VSN".tar.gz \
-        | tar -xzf -
-
-WORKDIR /otp_src_"$OTP_VSN"
-## https://github.com/processone/ejabberd/commit/b288d5c76370e44fef3a9caa6fbb888435057a2a
-RUN sed -i 's|if(size == 0 && (sql_type == SQL_LONGVARCHAR|if((sql_type == SQL_LONGVARCHAR|g' lib/odbc/c_src/odbcserver.c
-RUN ./configure \
-        --prefix=/usr \
-        --sysconfdir=/etc \
-        --mandir=/usr/share/man \
-        --infodir=/usr/share/info \
-        --host="$CHOST" \
-        --build="$CBUILD" \
-        --enable-threads \
-        --enable-shared-zlib \
-        --enable-ssl=dynamic-ssl-lib \
-        --enable-jit \
-    && make install
 
 WORKDIR /
 ARG ELIXIR_VSN
