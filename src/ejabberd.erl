@@ -45,6 +45,7 @@
 -protocol({xep, 424, '0.4.0', '24.02', "", ""}).
 -protocol({xep, 440, '0.4.0', '24.02', "", ""}).
 -protocol({xep, 474, '0.3.0', '24.02', "", ""}).
+-protocol({xep, 485, '0.2.0', '24.02', "", "mod_pubsub_serverinfo in ejabberd-contrib.git"}).
 
 -export([start/0, stop/0, halt/0, start_app/1, start_app/2,
 	 get_pid_file/0, check_apps/0, module_name/1, is_loaded/0]).
