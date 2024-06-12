@@ -73,13 +73,13 @@ get_acl_rule([<<"vhosts">>], _) ->
 %% The pages of a vhost are only accessible if the user is admin of that vhost:
 get_acl_rule([<<"server">>, VHost | _RPath], Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    {VHost, [configure, webadmin_view]};
+    {VHost, [configure]};
 get_acl_rule([<<"server">>, VHost | _RPath], 'POST') ->
     {VHost, [configure]};
 %% Default rule: only global admins can access any other random page
 get_acl_rule(_RPath, Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    {global, [configure, webadmin_view]};
+    {global, [configure]};
 get_acl_rule(_RPath, 'POST') ->
     {global, [configure]}.
 
@@ -581,7 +581,7 @@ list_vhosts_allowed(JID) ->
     Hosts = ejabberd_option:hosts(),
     lists:filter(fun (Host) ->
 					any_rules_allowed(Host,
-						     [configure, webadmin_view],
+						     [configure],
 						     JID)
 				end,
 				Hosts).
