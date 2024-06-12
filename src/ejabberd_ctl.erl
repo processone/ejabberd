@@ -367,9 +367,9 @@ format_arg(Arg, string) ->
     Parse = "~" ++ NumChars ++ "c",
     format_arg2(Arg, Parse);
 format_arg(Arg, {list, {_ArgName, ArgFormat}}) ->
-    [format_arg(Element, ArgFormat) || Element <- string:tokens(Arg, ",")];
+    [format_arg(string:trim(Element), ArgFormat) || Element <- string:tokens(Arg, ",")];
 format_arg(Arg, {list, ArgFormat}) ->
-    [format_arg(Element, ArgFormat) || Element <- string:tokens(Arg, ",")];
+    [format_arg(string:trim(Element), ArgFormat) || Element <- string:tokens(Arg, ",")];
 format_arg(Arg, {tuple, Elements}) ->
     Args = string:tokens(Arg, ":"),
     list_to_tuple(format_args(Args, Elements));
