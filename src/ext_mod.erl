@@ -37,13 +37,14 @@
          config_dir/0, get_commands_spec/0]).
 -export([modules_configs/0, module_ebin_dir/1]).
 -export([compile_erlang_file/2, compile_elixir_file/2]).
--export([web_menu_node/3, web_page_node/5, get_page/3]).
+-export([web_menu_node/3, web_page_node/3, webadmin_node_contrib/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
 -include("ejabberd_commands.hrl").
+-include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
@@ -924,26 +925,156 @@ parse_details(Body) ->
            )
        ).
 
-web_menu_node(Acc, _Node, Lang) ->
-    Acc ++ [{<<"contrib">>, translate:translate(Lang, ?T("Contrib Modules"))}].
+%% @format-begin
 
-web_page_node(_, Node, [<<"contrib">>], Query, Lang) ->
-    Res = rpc:call(Node, ?MODULE, get_page, [Node, Query, Lang]),
-    {stop, Res};
-web_page_node(Acc, _, _, _, _) ->
+web_menu_node(Acc, _Node, _Lang) ->
+    Acc
+    ++ [{<<"contrib">>, <<"Contrib Modules (Detailed)">>},
+        {<<"contrib-api">>, <<"Contrib Modules (API)">>}].
+
+web_page_node(_,
+              Node,
+              #request{path = [<<"contrib">>],
+                       q = Query,
+                       lang = Lang} =
+                  R) ->
+    Title =
+        ?H1GL(<<"Contrib Modules (Detailed)">>,
+              <<"../../developer/extending-ejabberd/modules/#ejabberd-contrib">>,
+              <<"ejabberd-contrib">>),
+    Res = [ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [webadmin_node_contrib,
+                                  R,
+                                  [{<<"node">>, Node}, {<<"query">>, Query}, {<<"lang">>, Lang}],
+                                  []])],
+    {stop, Title ++ Res};
+web_page_node(_, Node, #request{path = [<<"contrib-api">> | RPath]} = R) ->
+    Title =
+        ?H1GL(<<"Contrib Modules (API)">>,
+              <<"../../developer/extending-ejabberd/modules/#ejabberd-contrib">>,
+              <<"ejabberd-contrib">>),
+    _TableInstalled = make_table_installed(Node, R, RPath),
+    _TableAvailable = make_table_available(Node, R, RPath),
+    TableInstalled = make_table_installed(Node, R, RPath),
+    TableAvailable = make_table_available(Node, R, RPath),
+    Res = [?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"specs">>}], <<"Specs">>),
+           ?XE(<<"blockquote">>,
+               [ejabberd_cluster:call(Node,
+                                      ejabberd_web_admin,
+                                      make_command,
+                                      [modules_update_specs, R])]),
+           ?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"installed">>}], <<"Installed">>),
+           ?XE(<<"blockquote">>,
+               [ejabberd_cluster:call(Node,
+                                      ejabberd_web_admin,
+                                      make_command,
+                                      [modules_installed, R, [], [{only, presentation}]]),
+                ejabberd_cluster:call(Node,
+                                      ejabberd_web_admin,
+                                      make_command,
+                                      [module_uninstall, R, [], [{only, presentation}]]),
+                ejabberd_cluster:call(Node,
+                                      ejabberd_web_admin,
+                                      make_command,
+                                      [module_upgrade, R, [], [{only, presentation}]]),
+                TableInstalled]),
+           ?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"available">>}], <<"Available">>),
+           ?XE(<<"blockquote">>,
+               [ejabberd_cluster:call(Node,
+                                      ejabberd_web_admin,
+                                      make_command,
+                                      [modules_available, R, [], [{only, presentation}]]),
+                ejabberd_cluster:call(Node,
+                                      ejabberd_web_admin,
+                                      make_command,
+                                      [module_install, R, [], [{only, presentation}]]),
+                TableAvailable,
+                ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [module_check, R])])],
+    {stop, Title ++ Res};
+web_page_node(Acc, _, _) ->
     Acc.
 
-get_page(Node, Query, Lang) ->
+make_table_installed(Node, R, RPath) ->
+    Columns = [<<"Name">>, <<"Summary">>, <<"">>, <<"">>],
+    ModulesInstalled =
+        ejabberd_cluster:call(Node,
+                              ejabberd_web_admin,
+                              make_command_raw_value,
+                              [modules_installed, R, []]),
+    Rows =
+        lists:map(fun({Name, Summary}) ->
+                     NameBin = misc:atom_to_binary(Name),
+                     Upgrade =
+                         ejabberd_cluster:call(Node,
+                                               ejabberd_web_admin,
+                                               make_command,
+                                               [module_upgrade,
+                                                R,
+                                                [{<<"module">>, NameBin}],
+                                                [{only, button}, {input_name_append, [NameBin]}]]),
+                     Uninstall =
+                         ejabberd_cluster:call(Node,
+                                               ejabberd_web_admin,
+                                               make_command,
+                                               [module_uninstall,
+                                                R,
+                                                [{<<"module">>, NameBin}],
+                                                [{only, button},
+                                                 {style, danger},
+                                                 {input_name_append, [NameBin]}]]),
+                     {?C(NameBin), ?C(list_to_binary(Summary)), Upgrade, Uninstall}
+                  end,
+                  ModulesInstalled),
+    ejabberd_web_admin:make_table(200, RPath, Columns, Rows).
+
+make_table_available(Node, R, RPath) ->
+    Columns = [<<"Name">>, <<"Summary">>, <<"">>],
+    ModulesAll =
+        ejabberd_cluster:call(Node,
+                              ejabberd_web_admin,
+                              make_command_raw_value,
+                              [modules_available, R, []]),
+    ModulesInstalled =
+        ejabberd_cluster:call(Node,
+                              ejabberd_web_admin,
+                              make_command_raw_value,
+                              [modules_installed, R, []]),
+    ModulesNotInstalled =
+        lists:filter(fun({Mod, _}) -> not lists:keymember(Mod, 1, ModulesInstalled) end,
+                     ModulesAll),
+    Rows =
+        lists:map(fun({Name, Summary}) ->
+                     NameBin = misc:atom_to_binary(Name),
+                     Install =
+                         ejabberd_cluster:call(Node,
+                                               ejabberd_web_admin,
+                                               make_command,
+                                               [module_install,
+                                                R,
+                                                [{<<"module">>, NameBin}],
+                                                [{only, button}, {input_name_append, [NameBin]}]]),
+                     {?C(NameBin), ?C(list_to_binary(Summary)), Install}
+                  end,
+                  ModulesNotInstalled),
+    ejabberd_web_admin:make_table(200, RPath, Columns, Rows).
+
+webadmin_node_contrib(Node, Query, Lang) ->
     QueryRes = list_modules_parse_query(Query),
-    Title = ?H1GL(translate:translate(Lang, ?T("Contrib Modules")),
-                  <<"../../developer/extending-ejabberd/modules/#ejabberd-contrib">>,
-                  <<"ejabberd-contrib">>),
     Contents = get_content(Node, Query, Lang),
-    Result = case QueryRes of
-                 ok -> [?XREST(?T("Submitted"))];
-                 nothing -> []
-             end,
-    Title ++ Result ++ Contents.
+    Result =
+        case QueryRes of
+            ok ->
+                [?XREST(?T("Submitted"))];
+            nothing ->
+                []
+        end,
+    Result ++ Contents.
+%% @format-end
 
 get_module_home(Module, Attrs) ->
     case get_module_information(home, Attrs) of

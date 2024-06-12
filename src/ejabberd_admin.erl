@@ -39,7 +39,9 @@
 	 dump_config/1,
 	 convert_to_yaml/2,
 	 %% Cluster
-	 join_cluster/1, leave_cluster/1, list_cluster/0,
+	 join_cluster/1, leave_cluster/1,
+	 list_cluster/0, list_cluster_detailed/0,
+	 get_cluster_node_details3/0,
 	 %% Erlang
 	 update_list/0, update/1, update/0,
 	 %% Accounts
@@ -50,7 +52,7 @@
 	 %% Purge DB
 	 delete_expired_messages/0, delete_old_messages/1,
 	 %% Mnesia
-	 set_master/1,
+	 get_master/0, set_master/1,
 	 backup_mnesia/1, restore_mnesia/1,
 	 dump_mnesia/1, dump_table/2, load_mnesia/1,
 	 mnesia_info/0, mnesia_table_info/1,
@@ -61,13 +63,27 @@
 	 clear_cache/0,
 	 gc/0,
 	 get_commands_spec/0,
-	 delete_old_messages_batch/4, delete_old_messages_status/1, delete_old_messages_abort/1]).
+	 delete_old_messages_batch/4, delete_old_messages_status/1, delete_old_messages_abort/1,
+	 %% Internal
+	 mnesia_list_tables/0,
+	 mnesia_table_details/1,
+	 mnesia_table_change_storage/2,
+	 mnesia_table_clear/1,
+	 mnesia_table_delete/1,
+	 echo/1, echo3/3]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--include("logger.hrl").
+-export([web_menu_main/2, web_page_main/2,
+         web_menu_node/3, web_page_node/3]).
+
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
+-include("logger.hrl").
+-include("translate.hrl"). %+++ TODO
 
 -record(state, {}).
 
@@ -77,6 +93,10 @@ start_link() ->
 init([]) ->
     process_flag(trap_exit, true),
     ejabberd_commands:register_commands(get_commands_spec()),
+    ejabberd_hooks:add(webadmin_menu_main, ?MODULE, web_menu_main, 50),
+    ejabberd_hooks:add(webadmin_page_main, ?MODULE, web_page_main, 50),
+    ejabberd_hooks:add(webadmin_menu_node, ?MODULE, web_menu_node, 50),
+    ejabberd_hooks:add(webadmin_page_node, ?MODULE, web_page_node, 50),
     {ok, #state{}}.
 
 handle_call(Request, From, State) ->
@@ -92,6 +112,10 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    ejabberd_hooks:delete(webadmin_menu_main, ?MODULE, web_menu_main, 50),
+    ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
+    ejabberd_hooks:delete(webadmin_menu_node, ?MODULE, web_menu_node, 50),
+    ejabberd_hooks:delete(webadmin_page_node, ?MODULE, web_page_node, 50),
     ejabberd_commands:unregister_commands(get_commands_spec()).
 
 code_change(_OldVsn, State, _Extra) ->
@@ -179,8 +203,9 @@ get_commands_spec() ->
 			desc = "Update the given module",
 			longdesc = "To update all the possible modules, use `all`.",
 			module = ?MODULE, function = update,
-			args_example = ["mod_vcard"],
+			args_example = ["all"],
 			args = [{module, string}],
+			result_example = {ok, <<"Updated modules: mod_configure, mod_vcard">>},
 			result = {res, restuple}},
 
      #ejabberd_commands{name = register, tags = [accounts],
@@ -225,14 +250,12 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = join_cluster, tags = [cluster],
 			desc = "Join this node into the cluster handled by Node",
-			longdesc = "This command works only with ejabberdctl, "
-			"not mod_http_api or other code that runs inside the "
-			"same ejabberd node that will be joined.",
+			note = "improved in 24.xx",
 			module = ?MODULE, function = join_cluster,
 			args_desc = ["Nodename of the node to join"],
 			args_example = [<<"ejabberd1@machine7">>],
 			args = [{node, binary}],
-			result = {res, rescode}},
+			result = {res, restuple}},
      #ejabberd_commands{name = leave_cluster, tags = [cluster],
 			desc = "Remove and shutdown Node from the running cluster",
 			longdesc = "This command can be run from any running "
@@ -247,11 +270,27 @@ get_commands_spec() ->
 			result = {res, rescode}},
 
      #ejabberd_commands{name = list_cluster, tags = [cluster],
-			desc = "List nodes that are part of the cluster handled by Node",
+			desc = "List running nodes that are part of this cluster",
 			module = ?MODULE, function = list_cluster,
 			result_example = [ejabberd1@machine7, ejabberd1@machine8],
 			args = [],
 			result = {nodes, {list, {node, atom}}}},
+     #ejabberd_commands{name = list_cluster_detailed, tags = [cluster],
+			desc = "List nodes (both running and known) and some stats",
+			note = "added in 24.xx",
+			module = ?MODULE, function = list_cluster_detailed,
+			args = [],
+			result_example = [{'ejabberd@localhost', "true",
+                                       "The node ejabberd is started. Status...",
+                                       7, 348, 60, none}],
+			result = {nodes, {list, {node, {tuple, [{name, atom},
+                                                                {running, string},
+                                                                {status, string},
+                                                                {online_users, integer},
+                                                                {processes, integer},
+                                                                {uptime_seconds, integer},
+                                                                {master_node, atom}
+                                                               ]}}}}},
 
      #ejabberd_commands{name = import_file, tags = [mnesia],
 			desc = "Import user data from jabberd14 spool file",
@@ -377,6 +416,12 @@ get_commands_spec() ->
 			args_example = ["example.com", "/var/lib/ejabberd/example.com.sql"],
 			args = [{host, string}, {file, string}],
 			result = {res, rescode}},
+     #ejabberd_commands{name = get_master, tags = [cluster],
+			desc = "Get master node of the clustered Mnesia tables",
+			note = "added in 24.xx",
+			longdesc = "If there is no master, returns `none`.",
+			module = ?MODULE, function = get_master,
+			result = {nodename, atom}},
      #ejabberd_commands{name = set_master, tags = [cluster],
 			desc = "Set master node of the clustered Mnesia tables",
 			longdesc = "If `nodename` is set to `self`, then this "
@@ -472,9 +517,100 @@ get_commands_spec() ->
                         desc = "Generate Unix manpage for current ejabberd version",
                         note = "added in 20.01",
                         module = ejabberd_doc, function = man,
-                        args = [], result = {res, restuple}}
-    ].
+                        args = [], result = {res, restuple}},
 
+     #ejabberd_commands{name = webadmin_host_user_queue, tags = [internal],
+			desc = "Generate WebAdmin offline queue HTML",
+			module = mod_offline, function = webadmin_host_user_queue,
+			args = [{user, binary}, {host, binary}, {query, any}, {lang, binary}],
+			result = {res, any}},
+
+     #ejabberd_commands{name = webadmin_host_last_activity, tags = [internal],
+			desc = "Generate WebAdmin Last Activity HTML",
+			module = ejabberd_web_admin, function = webadmin_host_last_activity,
+			args = [{host, binary}, {query, any}, {lang, binary}],
+			result = {res, any}},
+     #ejabberd_commands{name = webadmin_host_srg, tags = [internal],
+			desc = "Generate WebAdmin Shared Roster Group HTML",
+			module = mod_shared_roster, function = webadmin_host_srg,
+			args = [{host, binary}, {query, any}, {lang, binary}],
+			result = {res, any}},
+     #ejabberd_commands{name = webadmin_host_srg_group, tags = [internal],
+			desc = "Generate WebAdmin Shared Roster Group HTML for a group",
+			module = mod_shared_roster, function = webadmin_host_srg_group,
+			args = [{host, binary}, {group, binary}, {query, any}, {lang, binary}],
+			result = {res, any}},
+
+     #ejabberd_commands{name = webadmin_node_contrib, tags = [internal],
+			desc = "Generate WebAdmin ejabberd-contrib HTML",
+			module = ext_mod, function = webadmin_node_contrib,
+			args = [{node, atom}, {query, any}, {lang, binary}],
+			result = {res, any}},
+     #ejabberd_commands{name = webadmin_node_db, tags = [internal],
+			desc = "Generate WebAdmin Mnesia database HTML",
+			module = ejabberd_web_admin, function = webadmin_node_db,
+			args = [{node, atom}, {query, any}, {lang, binary}],
+			result = {res, any}},
+     #ejabberd_commands{name = webadmin_node_db_table, tags = [internal],
+			desc = "Generate WebAdmin Mnesia database HTML for a table",
+			module = ejabberd_web_admin, function = webadmin_node_db_table,
+			args = [{node, atom}, {table, binary}, {lang, binary}],
+			result = {res, any}},
+     #ejabberd_commands{name = webadmin_node_db_table_page, tags = [internal],
+			desc = "Generate WebAdmin Mnesia database HTML for a table content",
+			module = ejabberd_web_admin, function = webadmin_node_db_table_page,
+			args = [{node, atom}, {table, binary}, {page, integer}],
+			result = {res, any}},
+
+     #ejabberd_commands{name = mnesia_list_tables, tags = [internal, mnesia],
+                        desc = "List of Mnesia tables",
+                        module = ?MODULE, function = mnesia_list_tables,
+			result = {tables, {list, {table, {tuple, [{name, atom},
+                                                                {storage_type, binary},
+                                                                {elements, integer},
+                                                                {memory_kb, integer},
+                                                                {memory_mb, integer}
+                                                               ]}}}}},
+     #ejabberd_commands{name = mnesia_table_details, tags = [internal, mnesia],
+                        desc = "Get details of a Mnesia table",
+                        module = ?MODULE, function = mnesia_table_details,
+			args = [{table, binary}],
+			result = {details, {list, {detail, {tuple, [{name, atom},
+                                                                {value, binary}
+                                                               ]}}}}},
+
+     #ejabberd_commands{name = mnesia_table_change_storage, tags = [internal, mnesia],
+                        desc = "Change storage type of a Mnesia table to: ram_copies, disc_copies, or disc_only_copies.",
+                        module = ?MODULE, function = mnesia_table_change_storage,
+			args = [{table, binary}, {storage_type, binary}],
+			result = {res, restuple}},
+     #ejabberd_commands{name = mnesia_table_clear, tags = [internal, mnesia],
+                        desc = "Delete all content in a Mnesia table",
+                        module = ?MODULE, function = mnesia_table_clear,
+			args = [{table, binary}],
+			result = {res, restuple}},
+     #ejabberd_commands{name = mnesia_table_destroy, tags = [internal, mnesia],
+                        desc = "Destroy a Mnesia table",
+                        module = ?MODULE, function = mnesia_table_destroy,
+			args = [{table, binary}],
+			result = {res, restuple}},
+     #ejabberd_commands{name = echo, tags = [internal],
+                        desc = "Return the same sentence that was provided",
+                        module = ?MODULE, function = echo,
+                        args_desc = ["Sentence to echoe"],
+                        args_example = [<<"Test Sentence">>],
+                        args = [{sentence, binary}],
+                        result = {sentence, string},
+                        result_example = "Test Sentence"},
+     #ejabberd_commands{name = echo3, tags = [internal],
+                        desc = "Return the same sentence that was provided",
+                        module = ?MODULE, function = echo3,
+                        args_desc = ["First argument", "Second argument", "Sentence to echoe"],
+                        args_example = [<<"example.com">>, <<"Group1">>, <<"Test Sentence">>],
+                        args = [{first, binary}, {second, binary}, {sentence, binary}],
+                        result = {sentence, string},
+                        result_example = "Test Sentence"}
+    ].
 
 %%%
 %%% Server management
@@ -491,7 +627,7 @@ status() ->
 	    {value, {_, _, Version}} ->
 		{ok, io_lib:format("ejabberd ~s is running in that node", [Version])}
 	end,
-    {Is_running, String1 ++ String2}.
+    {Is_running, String1 ++ "  " ++String2}.
 
 stop() ->
     _ = supervisor:terminate_child(ejabberd_sup, ejabberd_sm),
@@ -583,8 +719,14 @@ update_list() ->
     [atom_to_list(Beam) || Beam <- UpdatedBeams].
 
 update("all") ->
-    [update_module(ModStr) || ModStr <- update_list()],
-    {ok, []};
+    ResList = [{ModStr, update_module(ModStr)} || ModStr <- update_list()],
+    String = case string:join([Mod || {Mod, {ok, _}} <- ResList], ", ") of
+                 [] ->
+                     "No modules updated";
+                 ModulesString ->
+                     "Updated modules: " ++ ModulesString
+             end,
+    {ok, String};
 update(ModStr) ->
     update_module(ModStr).
 
@@ -593,7 +735,10 @@ update_module(ModuleNameBin) when is_binary(ModuleNameBin) ->
 update_module(ModuleNameString) ->
     ModuleName = list_to_atom(ModuleNameString),
     case ejabberd_update:update([ModuleName]) of
-	{ok, _Res} -> {ok, []};
+	{ok, []} ->
+            {ok, "Not updated: "++ModuleNameString};
+	{ok, [{ModuleName, _}]} ->
+            {ok, "Updated: "++ModuleNameString};
 	{error, Reason} -> {error, Reason}
     end.
 
@@ -681,13 +826,58 @@ convert_to_yaml(In, Out) ->
 %%%
 
 join_cluster(NodeBin) ->
-    ejabberd_cluster:join(list_to_atom(binary_to_list(NodeBin))).
+    Node = list_to_atom(binary_to_list(NodeBin)),
+    IsNodes = lists:member(Node, ejabberd_cluster:get_nodes()),
+    IsKnownNodes = lists:member(Node, ejabberd_cluster:get_known_nodes()),
+    Ping = net_adm:ping(Node),
+    join_cluster(Node, IsNodes, IsKnownNodes, Ping).
+
+join_cluster(_Node, true, _IsKnownNodes, _Ping) ->
+    {error, "This node already joined that running node."};
+join_cluster(_Node, _IsNodes, true, _Ping) ->
+    {error, "This node already joined that known node."};
+join_cluster(_Node, _IsNodes, _IsKnownNodes, pang) ->
+    {error, "This node cannot reach that node."};
+join_cluster(Node, false, false, pong) ->
+    case timer:apply_after(1000, ejabberd_cluster, join, [Node]) of
+        {ok, _} ->
+            {ok, "Trying to join the cluster, wait a few seconds and check the list of nodes."};
+        Error ->
+            {error, io_lib:format("Can't join cluster: ~p", [Error])}
+    end.
 
 leave_cluster(NodeBin) ->
     ejabberd_cluster:leave(list_to_atom(binary_to_list(NodeBin))).
 
 list_cluster() ->
     ejabberd_cluster:get_nodes().
+
+list_cluster_detailed() ->
+    KnownNodes = ejabberd_cluster:get_known_nodes(),
+    RunningNodes = ejabberd_cluster:get_nodes(),
+    [get_cluster_node_details(Node, RunningNodes) || Node <- KnownNodes].
+
+get_cluster_node_details(Node, RunningNodes) ->
+    get_cluster_node_details2(Node, lists:member(Node, RunningNodes)).
+
+get_cluster_node_details2(Node, false) ->
+    {Node, "false", "", -1, -1, -1, "unknown"};
+get_cluster_node_details2(Node, true) ->
+    try ejabberd_cluster:call(Node, ejabberd_admin, get_cluster_node_details3, []) of
+        Result -> Result
+    catch
+        E:R ->
+            Status = io_lib:format("~p: ~p", [E, R]),
+            {Node, "true", Status, -1, -1, -1, "unknown"}
+    end.
+
+get_cluster_node_details3() ->
+    {ok, StatusString} = status(),
+    UptimeSeconds = mod_admin_extra:stats(<<"uptimeseconds">>),
+    Processes = mod_admin_extra:stats(<<"processes">>),
+    OnlineUsers = mod_admin_extra:stats(<<"onlineusersnode">>),
+    GetMaster = get_master(),
+    {node(), "true", StatusString, OnlineUsers, Processes, UptimeSeconds, GetMaster}.
 
 %%%
 %%% Migration management
@@ -791,6 +981,12 @@ delete_old_messages_abort(Server) ->
 %%% Mnesia management
 %%%
 
+get_master() ->
+    case mnesia:table_info(session, master_nodes) of
+    [] -> none;
+    [Node] -> Node
+    end.
+
 set_master("self") ->
     set_master(node());
 set_master(NodeString) when is_list(NodeString) ->
@@ -798,7 +994,7 @@ set_master(NodeString) when is_list(NodeString) ->
 set_master(Node) when is_atom(Node) ->
     case mnesia:set_master_nodes([Node]) of
         ok ->
-	    {ok, ""};
+	    {ok, "ok"};
 	{error, Reason} ->
 	    String = io_lib:format("Can't set master node ~p at node ~p:~n~p",
 				   [Node, node(), Reason]),
@@ -1008,3 +1204,222 @@ is_my_host(Host) ->
     try ejabberd_router:is_my_host(Host)
     catch _:{invalid_domain, _} -> false
     end.
+
+%%%
+%%% Internal
+%%%
+
+%% @format-begin
+
+%% mnesia:del_table_copy(Table, Node);
+%% mnesia:change_table_copy_type(Table, Node, Type);
+
+mnesia_table_change_storage(STable, SType) ->
+    Table = binary_to_existing_atom(STable, latin1),
+    Type =
+        case SType of
+            <<"ram_copies">> ->
+                ram_copies;
+            <<"disc_copies">> ->
+                disc_copies;
+            <<"disc_only_copies">> ->
+                disc_only_copies;
+            _ ->
+                false
+        end,
+    mnesia:add_table_copy(Table, node(), Type).
+
+mnesia_table_clear(STable) ->
+    Table = binary_to_existing_atom(STable, latin1),
+    mnesia:clear_table(Table).
+
+mnesia_table_delete(STable) ->
+    Table = binary_to_existing_atom(STable, latin1),
+    mnesia:delete_table(Table).
+
+mnesia_table_details(STable) ->
+    Table = binary_to_existing_atom(STable, latin1),
+    [{Name, iolist_to_binary(str:format("~p", [Value]))}
+     || {Name, Value} <- mnesia:table_info(Table, all)].
+
+mnesia_list_tables() ->
+    STables =
+        lists:sort(
+            mnesia:system_info(tables)),
+    lists:map(fun(Table) ->
+                 TInfo = mnesia:table_info(Table, all),
+                 {value, {storage_type, Type}} = lists:keysearch(storage_type, 1, TInfo),
+                 {value, {size, Size}} = lists:keysearch(size, 1, TInfo),
+                 {value, {memory, Memory}} = lists:keysearch(memory, 1, TInfo),
+                 MemoryB = Memory * erlang:system_info(wordsize),
+                 MemoryKB = MemoryB div 1024,
+                 MemoryMB = MemoryKB div 1024,
+                 {Table, storage_type_bin(Type), Size, MemoryKB, MemoryMB}
+              end,
+              STables).
+
+storage_type_bin(ram_copies) ->
+    <<"RAM copy">>;
+storage_type_bin(disc_copies) ->
+    <<"RAM and disc copy">>;
+storage_type_bin(disc_only_copies) ->
+    <<"Disc only copy">>;
+storage_type_bin(unknown) ->
+    <<"Remote copy">>.
+
+echo(Sentence) ->
+    Sentence.
+
+echo3(_, _, Sentence) ->
+    Sentence.
+
+%%%
+%%% Web Admin: Main
+%%%
+
+web_menu_main(Acc, _Lang) ->
+    Acc ++ [{<<"purge">>, <<"Purge">>}, {<<"stanza">>, <<"Stanza">>}].
+
+web_page_main(_, #request{path = [<<"purge">>]} = R) ->
+    Types =
+        [{<<"#erlang">>, <<"Erlang">>},
+         {<<"#users">>, <<"Users">>},
+         {<<"#offline">>, <<"Offline">>},
+         {<<"#mam">>, <<"MAM">>},
+         {<<"#pubsub">>, <<"PubSub">>},
+         {<<"#push">>, <<"Push">>}],
+    Head = [?XC(<<"h1">>, <<"Purge">>)],
+    Set = [?XE(<<"ul">>, [?LI([?AC(MIU, MIN)]) || {MIU, MIN} <- Types]),
+           ?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"erlang">>}], <<"Erlang">>),
+           ?XE(<<"blockquote">>,
+               [ejabberd_web_admin:make_command(clear_cache, R),
+                ejabberd_web_admin:make_command(gc, R)]),
+           ?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"users">>}], <<"Users">>),
+           ?XE(<<"blockquote">>, [ejabberd_web_admin:make_command(delete_old_users, R)]),
+           ?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"offline">>}], <<"Offline">>),
+           ?XE(<<"blockquote">>,
+               [ejabberd_web_admin:make_command(delete_expired_messages, R),
+                ejabberd_web_admin:make_command(delete_old_messages, R),
+                ejabberd_web_admin:make_command(delete_old_messages_batch, R),
+                ejabberd_web_admin:make_command(delete_old_messages_status, R)]),
+           ?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"mam">>}], <<"MAM">>),
+           ?XE(<<"blockquote">>,
+               [ejabberd_web_admin:make_command(delete_old_mam_messages, R),
+                ejabberd_web_admin:make_command(delete_old_mam_messages_batch, R),
+                ejabberd_web_admin:make_command(delete_old_mam_messages_status, R)]),
+           ?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"pubsub">>}], <<"PubSub">>),
+           ?XE(<<"blockquote">>,
+               [ejabberd_web_admin:make_command(delete_expired_pubsub_items, R),
+                ejabberd_web_admin:make_command(delete_old_pubsub_items, R)]),
+           ?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"push">>}], <<"Push">>),
+           ?XE(<<"blockquote">>, [ejabberd_web_admin:make_command(delete_old_push_sessions, R)])],
+    {stop, Head ++ Set};
+web_page_main(_, #request{path = [<<"stanza">>]} = R) ->
+    Head = [?XC(<<"h1">>, <<"Stanza">>)],
+    Set = [ejabberd_web_admin:make_command(send_message, R),
+           ejabberd_web_admin:make_command(send_stanza, R),
+           ejabberd_web_admin:make_command(send_stanza_c2s, R)],
+    {stop, Head ++ Set};
+web_page_main(Acc, _) ->
+    Acc.
+
+%%%
+%%% Web Admin: Node
+%%%
+
+web_menu_node(Acc, _Node, _Lang) ->
+    Acc
+    ++ [{<<"cluster">>, <<"Clustering">>},
+        {<<"update">>, <<"Code Update">>},
+        {<<"config-file">>, <<"Configuration File">>},
+        {<<"logs">>, <<"Logs">>},
+        {<<"stop">>, <<"Stop Node">>}].
+
+web_page_node(_, Node, #request{path = [<<"cluster">>]} = R) ->
+    {ok, Names} = net_adm:names(),
+    NodeNames = lists:join(", ", [Name || {Name, _Port} <- Names]),
+    Hint =
+        list_to_binary(io_lib:format("Hint: Erlang nodes found in this machine that may be running ejabberd: ~s",
+                                     [NodeNames])),
+    Head = ?H1GLraw(<<"Clustering">>, <<"admin/guide/clustering/">>, <<"Clustering">>),
+    Set1 =
+        [ejabberd_cluster:call(Node,
+                               ejabberd_web_admin,
+                               make_command,
+                               [join_cluster, R, [], [{style, danger}]]),
+         ?XE(<<"blockquote">>, [?C(Hint)]),
+         ejabberd_cluster:call(Node,
+                               ejabberd_web_admin,
+                               make_command,
+                               [leave_cluster, R, [], [{style, danger}]])],
+    Set2 =
+        [ejabberd_cluster:call(Node,
+                               ejabberd_web_admin,
+                               make_command,
+                               [set_master, R, [], [{style, danger}]])],
+    timer:sleep(100), % leaving a cluster takes a while, let's delay the get commands
+    Get1 =
+        [ejabberd_cluster:call(Node,
+                               ejabberd_web_admin,
+                               make_command,
+                               [list_cluster_detailed,
+                                R,
+                                [],
+                                [{result_links, [{name, node, 3, <<"">>}]}]])],
+    Get2 =
+        [ejabberd_cluster:call(Node,
+                               ejabberd_web_admin,
+                               make_command,
+                               [get_master,
+                                R,
+                                [],
+                                [{result_named, true},
+                                 {result_links, [{nodename, node, 3, <<"">>}]}]])],
+    {stop, Head ++ Get1 ++ Set1 ++ Get2 ++ Set2};
+web_page_node(_, Node, #request{path = [<<"update">>]} = R) ->
+    Head = [?XC(<<"h1">>, <<"Code Update">>)],
+    Set = [ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [update, R])],
+    Get = [ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [update_list, R])],
+    {stop, Head ++ Get ++ Set};
+web_page_node(_, Node, #request{path = [<<"config-file">>]} = R) ->
+    Res = ?H1GLraw(<<"Configuration File">>,
+                   <<"admin/configuration/file-format/">>,
+                   <<"File Format">>)
+          ++ [ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [convert_to_yaml, R]),
+              ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [dump_config, R]),
+              ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [reload_config, R])],
+    {stop, Res};
+web_page_node(_, Node, #request{path = [<<"stop">>]} = R) ->
+    Res = [?XC(<<"h1">>, <<"Stop This Node">>),
+           ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [restart, R, [], [{style, danger}]]),
+           ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [stop_kindly, R, [], [{style, danger}]]),
+           ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [stop, R, [], [{style, danger}]]),
+           ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [halt, R, [], [{style, danger}]])],
+    {stop, Res};
+web_page_node(_, Node, #request{path = [<<"logs">>]} = R) ->
+    Res = ?H1GLraw(<<"Logs">>, <<"admin/configuration/basic/#logging">>, <<"Logging">>)
+          ++ [ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [set_loglevel, R]),
+              ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [get_loglevel, R]),
+              ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [reopen_log, R]),
+              ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [rotate_log, R])],
+    {stop, Res};
+web_page_node(Acc, _, _) ->
+    Acc.

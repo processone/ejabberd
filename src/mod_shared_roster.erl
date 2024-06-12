@@ -41,6 +41,8 @@
 	 is_user_in_group/3, add_user_to_group/3, opts_to_binary/1,
 	 remove_user_from_group/3, mod_opt_type/1, mod_options/1, mod_doc/0, depends/2]).
 
+-import(ejabberd_web_admin, [make_command/4, make_command_raw_value/3, make_table/2, make_table/4]).
+
 -include("logger.hrl").
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -861,303 +863,408 @@ unset_presence(User, Server, Resource, Status) ->
     end.
 
 %%---------------------
-%% Web Admin
+%% Web Admin: Page Frontend
 %%---------------------
 
+%% @format-begin
+
 webadmin_menu(Acc, _Host, Lang) ->
-    [{<<"shared-roster">>, translate:translate(Lang, ?T("Shared Roster Groups"))}
-     | Acc].
+    [{<<"shared-roster">>, translate:translate(Lang, ?T("Shared Roster Groups"))} | Acc].
 
-webadmin_page(_, Host,
-	      #request{us = _US, path = [<<"shared-roster">>],
-		       q = Query, lang = Lang} =
-		  _Request) ->
-    Res = list_shared_roster_groups(Host, Query, Lang),
-    {stop, Res};
-webadmin_page(_, Host,
-	      #request{us = _US, path = [<<"shared-roster">>, Group],
-		       q = Query, lang = Lang} =
-		  _Request) ->
-    Res = shared_roster_group(Host, Group, Query, Lang),
-    {stop, Res};
-webadmin_page(Acc, _, _) -> Acc.
+webadmin_page(_,
+              Host,
+              #request{us = _US,
+                       path = [<<"shared-roster">> | RPath],
+                       lang = Lang} =
+                  R) ->
+    PageTitle = translate:translate(Lang, ?T("Shared Roster Groups")),
+    Head = ?H1GL(PageTitle, <<"modules/#mod_shared_roster">>, <<"mod_shared_roster">>),
+    Level = length(RPath),
+    Res = case check_group_exists(Host, RPath) of
+              true ->
+                  webadmin_page_backend(Host, RPath, R, Lang, Level);
+              false ->
+                  [?XREST(<<"Group does not exist.">>)]
+          end,
+    {stop, Head ++ Res};
+webadmin_page(Acc, _, _) ->
+    Acc.
 
-list_shared_roster_groups(Host, Query, Lang) ->
-    Res = list_sr_groups_parse_query(Host, Query),
-    SRGroups = list_groups(Host),
-    FGroups = (?XAE(<<"table">>, [],
-		    [?XE(<<"tbody">>,
-			 [?XE(<<"tr">>,
-				 [?X(<<"td">>),
-				  ?XE(<<"td">>, [?CT(?T("Name:"))])
-				  ])]++
-			 (lists:map(fun (Group) ->
-					    ?XE(<<"tr">>,
-						[?XE(<<"td">>,
-						     [?INPUT(<<"checkbox">>,
-							     <<"selected">>,
-							     Group)]),
-						 ?XE(<<"td">>,
-						     [?AC(<<Group/binary, "/">>,
-							  Group)])])
-				    end,
-				    lists:sort(SRGroups))
-			    ++
-			    [?XE(<<"tr">>,
-				 [?X(<<"td">>),
-				  ?XE(<<"td">>,
-				      [?INPUT(<<"text">>, <<"namenew">>,
-					      <<"">>),
-				       ?C(<<" ">>),
-				       ?INPUTT(<<"submit">>, <<"addnew">>,
-					       ?T("Add New"))])])]))])),
-    (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
-	   <<"modules/#mod_shared_roster">>, <<"mod_shared_roster">>))
-      ++
-      case Res of
-	ok -> [?XREST(?T("Submitted"))];
-	error -> [?XREST(?T("Bad format"))];
-	nothing -> []
-      end
-	++
-	[?XAE(<<"form">>,
-	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-	      [FGroups, ?BR,
-	       ?INPUTTD(<<"submit">>, <<"delete">>,
-		       ?T("Delete Selected"))])].
+check_group_exists(Host, [<<"group">>, Id | _]) ->
+    case get_group_opts(Host, Id) of
+        error ->
+            false;
+        _ ->
+            true
+    end;
+check_group_exists(_, _) ->
+    true.
 
-list_sr_groups_parse_query(Host, Query) ->
-    case lists:keysearch(<<"addnew">>, 1, Query) of
-      {value, _} -> list_sr_groups_parse_addnew(Host, Query);
-      _ ->
-	  case lists:keysearch(<<"delete">>, 1, Query) of
-	    {value, _} -> list_sr_groups_parse_delete(Host, Query);
-	    _ -> nothing
-	  end
-    end.
+%%---------------------
+%% Web Admin: Page Backend
+%%---------------------
 
-list_sr_groups_parse_addnew(Host, Query) ->
-    case lists:keysearch(<<"namenew">>, 1, Query) of
-      {value, {_, Group}} when Group /= <<"">> ->
-	  create_group(Host, Group),
-	  ok;
-      _ ->
-	  error
-    end.
+webadmin_page_backend(Host, [<<"group">>, Id, <<"info">> | RPath], R, _Lang, Level) ->
+    Breadcrumb =
+        make_breadcrumb({group_section,
+                         Level,
+                         <<"Groups of ", Host/binary>>,
+                         Id,
+                         <<"Information">>,
+                         RPath}),
+    SetLabel =
+        make_command(srg_set_info,
+                     R,
+                     [{<<"host">>, Host}, {<<"group">>, Id}, {<<"key">>, <<"label">>}],
+                     [{only, without_presentation}, {input_name_append, [Id, Host, <<"label">>]}]),
+    SetDescription =
+        make_command(srg_set_info,
+                     R,
+                     [{<<"host">>, Host}, {<<"group">>, Id}, {<<"key">>, <<"description">>}],
+                     [{only, without_presentation},
+                      {input_name_append, [Id, Host, <<"description">>]}]),
+    SetAll =
+        make_command(srg_set_info,
+                     R,
+                     [{<<"host">>, Host},
+                      {<<"group">>, Id},
+                      {<<"key">>, <<"all_users">>},
+                      {<<"value">>, <<"true">>}],
+                     [{only, button},
+                      {input_name_append, [Id, Host, <<"all_users">>, <<"true">>]}]),
+    UnsetAll =
+        make_command(srg_set_info,
+                     R,
+                     [{<<"host">>, Host},
+                      {<<"group">>, Id},
+                      {<<"key">>, <<"all_users">>},
+                      {<<"value">>, <<"false">>}],
+                     [{only, button},
+                      {input_name_append, [Id, Host, <<"all_users">>, <<"false">>]}]),
+    SetOnline =
+        make_command(srg_set_info,
+                     R,
+                     [{<<"host">>, Host},
+                      {<<"group">>, Id},
+                      {<<"key">>, <<"online_users">>},
+                      {<<"value">>, <<"true">>}],
+                     [{only, button},
+                      {input_name_append, [Id, Host, <<"online_users">>, <<"true">>]}]),
+    UnsetOnline =
+        make_command(srg_set_info,
+                     R,
+                     [{<<"host">>, Host},
+                      {<<"group">>, Id},
+                      {<<"key">>, <<"online_users">>},
+                      {<<"value">>, <<"false">>}],
+                     [{only, button},
+                      {input_name_append, [Id, Host, <<"online_users">>, <<"false">>]}]),
+    GetInfo =
+        make_command_raw_value(srg_get_info, R, [{<<"group">>, Id}, {<<"host">>, Host}]),
+    AllElement =
+        case proplists:get_value(<<"all_users">>, GetInfo, not_found) of
+            "true" ->
+                {?C("Unset @all@: "), UnsetAll};
+            _ ->
+                {?C("Set @all@: "), SetAll}
+        end,
+    OnlineElement =
+        case proplists:get_value(<<"online_users">>, GetInfo, not_found) of
+            "true" ->
+                {?C("Unset @online@: "), UnsetOnline};
+            _ ->
+                {?C("Set @online@: "), SetOnline}
+        end,
+    Types =
+        [{?C("Set label: "), SetLabel},
+         {?C("Set description: "), SetDescription},
+         AllElement,
+         OnlineElement],
+    Get = [?BR,
+           make_command(srg_get_info, R, [{<<"host">>, Host}, {<<"group">>, Id}], []),
+           make_command(srg_set_info, R, [], [{only, presentation}]),
+           make_table(20, [], [{<<"">>, right}, <<"">>], Types)],
+    Breadcrumb ++ Get;
+webadmin_page_backend(Host,
+                      [<<"group">>, Id, <<"displayed">> | RPath],
+                      R,
+                      _Lang,
+                      Level) ->
+    Breadcrumb =
+        make_breadcrumb({group_section,
+                         Level,
+                         <<"Groups of ", Host/binary>>,
+                         Id,
+                         <<"Displayed Groups">>,
+                         RPath}),
+    AddDisplayed =
+        make_command(srg_add_displayed, R, [{<<"host">>, Host}, {<<"group">>, Id}], []),
+    _ = make_webadmin_displayed_table(Host, Id, R),
+    DisplayedTable = make_webadmin_displayed_table(Host, Id, R),
+    Get = [?BR,
+           make_command(srg_get_displayed, R, [], [{only, presentation}]),
+           make_command(srg_del_displayed, R, [], [{only, presentation}]),
+           ?XE(<<"blockquote">>, [DisplayedTable]),
+           AddDisplayed],
+    Breadcrumb ++ Get;
+webadmin_page_backend(Host, [<<"group">>, Id, <<"members">> | RPath], R, _Lang, Level) ->
+    Breadcrumb =
+        make_breadcrumb({group_section,
+                         Level,
+                         <<"Groups of ", Host/binary>>,
+                         Id,
+                         <<"Members">>,
+                         RPath}),
+    UserAdd = make_command(srg_user_add, R, [{<<"grouphost">>, Host}, {<<"group">>, Id}], []),
+    _ = make_webadmin_members_table(Host, Id, R),
+    MembersTable = make_webadmin_members_table(Host, Id, R),
+    Get = [make_command(srg_get_members, R, [], [{only, presentation}]),
+           make_command(srg_user_del, R, [], [{only, presentation}]),
+           ?XE(<<"blockquote">>, [MembersTable]),
+           UserAdd],
+    Breadcrumb ++ Get;
+webadmin_page_backend(Host, [<<"group">>, Id, <<"delete">> | RPath], R, _Lang, Level) ->
+    Breadcrumb =
+        make_breadcrumb({group_section,
+                         Level,
+                         <<"Groups of ", Host/binary>>,
+                         Id,
+                         <<"Delete">>,
+                         RPath}),
+    Get = [make_command(srg_delete,
+                        R,
+                        [{<<"host">>, Host}, {<<"group">>, Id}],
+                        [{style, danger}])],
+    Breadcrumb ++ Get;
+webadmin_page_backend(Host, [<<"group">>, Id | _RPath], _R, _Lang, Level) ->
+    Breadcrumb = make_breadcrumb({group, Level, <<"Groups of ", Host/binary>>, Id}),
+    MenuItems =
+        [{<<"info/">>, <<"Information">>},
+         {<<"members/">>, <<"Members">>},
+         {<<"displayed/">>, <<"Displayed Groups">>},
+         {<<"delete/">>, <<"Delete">>}],
+    Get = [?XE(<<"ul">>, [?LI([?AC(MIU, MIN)]) || {MIU, MIN} <- MenuItems])],
+    Breadcrumb ++ Get;
+webadmin_page_backend(Host, RPath, R, _Lang, Level) ->
+    Breadcrumb = make_breadcrumb({groups, <<"Groups of ", Host/binary>>}),
+    _ = make_webadmin_srg_table(Host, R, 3 + Level, RPath),
+    Set = [make_command(srg_add, R, [{<<"host">>, Host}], []),
+           make_command(srg_create, R, [{<<"host">>, Host}], [])],
+    RV2 = make_webadmin_srg_table(Host, R, 3 + Level, RPath),
+    Get = [make_command(srg_list, R, [{<<"host">>, Host}], [{only, presentation}]),
+           make_command(srg_get_info, R, [{<<"host">>, Host}], [{only, presentation}]),
+           make_command(srg_delete, R, [{<<"host">>, Host}], [{only, presentation}]),
+           ?XE(<<"blockquote">>, [RV2])],
+    Breadcrumb ++ Get ++ Set.
 
-list_sr_groups_parse_delete(Host, Query) ->
-    SRGroups = list_groups(Host),
-    lists:foreach(fun (Group) ->
-			  case lists:member({<<"selected">>, Group}, Query) of
-			    true -> delete_group(Host, Group);
-			    _ -> ok
-			  end
-		  end,
-		  SRGroups),
-    ok.
+%%---------------------
+%% Web Admin: Table Generation
+%%---------------------
 
-shared_roster_group(Host, Group, Query, Lang) ->
-    Res = shared_roster_group_parse_query(Host, Group,
-					  Query),
-    GroupOpts = get_group_opts(Host, Group),
-    Label = get_opt(GroupOpts, label, <<"">>), %%++
-    Description = get_opt(GroupOpts, description, <<"">>),
-    AllUsers = get_opt(GroupOpts, all_users, false),
-    OnlineUsers = get_opt(GroupOpts, online_users, false),
-    DisplayedGroups = get_opt(GroupOpts, displayed_groups,
-			      []),
-    Members = get_group_explicit_users(Host,
-				       Group),
-    FMembers = iolist_to_binary(
-                 [if AllUsers -> <<"@all@\n">>;
-                     true -> <<"">>
-                  end,
-                  if OnlineUsers -> <<"@online@\n">>;
-                     true -> <<"">>
-                  end,
-                  [[us_to_list(Member), $\n] || Member <- Members]]),
-    FDisplayedGroups = [<<DG/binary, $\n>> || DG <- DisplayedGroups],
-    DescNL = length(ejabberd_regexp:split(Description,
-					   <<"\n">>)),
-    FGroup = (?XAE(<<"table">>,
-		   [{<<"class">>, <<"withtextareas">>}],
-		   [?XE(<<"tbody">>,
-			[?XE(<<"tr">>,
-			     [?XCT(<<"td">>, ?T("Name:")),
-			      ?XE(<<"td">>, [?C(Group)]),
-			      ?XE(<<"td">>, [?C(<<"">>)])]),
-			 ?XE(<<"tr">>,
-			     [?XCT(<<"td">>, ?T("Label:")),
-			      ?XE(<<"td">>,
-				  [?INPUT(<<"text">>, <<"label">>, Label)]),
-			      ?XE(<<"td">>, [?CT(?T("Name in the rosters where this group will be displayed"))])]),
-			 ?XE(<<"tr">>,
-			     [?XCT(<<"td">>, ?T("Description:")),
-			      ?XE(<<"td">>,
-				  [?TEXTAREA(<<"description">>,
-					     integer_to_binary(lists:max([3,
-                                                                               DescNL])),
-					     <<"20">>, Description)]),
-			      ?XE(<<"td">>, [?CT(?T("Only admins can see this"))])
-]),
-			 ?XE(<<"tr">>,
-			     [?XCT(<<"td">>, ?T("Members:")),
-			      ?XE(<<"td">>,
-				  [?TEXTAREA(<<"members">>,
-					     integer_to_binary(lists:max([3,
-                                                                               length(Members)+3])),
-					     <<"20">>, FMembers)]),
-			      ?XE(<<"td">>, [?C(<<"JIDs, @all@, @online@">>)])
-]),
-			 ?XE(<<"tr">>,
-			     [?XCT(<<"td">>, ?T("Displayed:")),
-			      ?XE(<<"td">>,
-				  [?TEXTAREA(<<"dispgroups">>,
-					     integer_to_binary(lists:max([3,											        length(FDisplayedGroups)])),
-					     <<"20">>,
-					     list_to_binary(FDisplayedGroups))]),
-			      ?XE(<<"td">>, [?CT(?T("Groups that will be displayed to the members"))])
-])])])),
-    (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
-	   <<"modules/#mod_shared_roster">>, <<"mod_shared_roster">>))
-      ++
-      [?XC(<<"h2">>, translate:translate(Lang, ?T("Group")))] ++
-	case Res of
-	  ok -> [?XREST(?T("Submitted"))];
-	  {error_elements, NonAddedList1, NG1} ->
-		make_error_el(Lang,
-		    ?T("Members not added (inexistent vhost!): "),
-		    [jid:encode({U,S,<<>>}) || {U,S} <- NonAddedList1])
-		++ make_error_el(Lang, ?T("'Displayed groups' not added (they do not exist!): "), NG1);
-	  error -> [?XREST(?T("Bad format"))];
-	  nothing -> []
-	end
-	  ++
-	  [?XAE(<<"form">>,
-		[{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-		[FGroup, ?BR,
-		 ?INPUTT(<<"submit">>, <<"submit">>, ?T("Submit"))])].
+make_webadmin_srg_table(Host, R, Level, RPath) ->
+    Groups =
+        case make_command_raw_value(srg_list, R, [{<<"host">>, Host}]) of
+            Gs when is_list(Gs) ->
+                Gs;
+            _ ->
+                []
+        end,
+    Columns =
+        [<<"id">>,
+         <<"label">>,
+         <<"description">>,
+         <<"all">>,
+         <<"online">>,
+         {<<"members">>, right},
+         {<<"displayed">>, right},
+         <<"">>],
+    Rows =
+        [{make_command(echo3,
+                       R,
+                       [{<<"first">>, Id}, {<<"second">>, Host}, {<<"sentence">>, Id}],
+                       [{only, value}, {result_links, [{sentence, shared_roster, Level, <<"">>}]}]),
+          make_command(echo3,
+                       R,
+                       [{<<"first">>, Id},
+                        {<<"second">>, Host},
+                        {<<"sentence">>,
+                         iolist_to_binary(proplists:get_value(<<"label">>,
+                                                              make_command_raw_value(srg_get_info,
+                                                                                     R,
+                                                                                     [{<<"group">>,
+                                                                                       Id},
+                                                                                      {<<"host">>,
+                                                                                       Host}]),
+                                                              ""))}],
+                       [{only, value},
+                        {result_links, [{sentence, shared_roster, Level, <<"info">>}]}]),
+          make_command(echo3,
+                       R,
+                       [{<<"first">>, Id},
+                        {<<"second">>, Host},
+                        {<<"sentence">>,
+                         iolist_to_binary(proplists:get_value(<<"description">>,
+                                                              make_command_raw_value(srg_get_info,
+                                                                                     R,
+                                                                                     [{<<"group">>,
+                                                                                       Id},
+                                                                                      {<<"host">>,
+                                                                                       Host}]),
+                                                              ""))}],
+                       [{only, value},
+                        {result_links, [{sentence, shared_roster, Level, <<"info">>}]}]),
+          make_command(echo3,
+                       R,
+                       [{<<"first">>, Id},
+                        {<<"second">>, Host},
+                        {<<"sentence">>,
+                         iolist_to_binary(proplists:get_value(<<"all_users">>,
+                                                              make_command_raw_value(srg_get_info,
+                                                                                     R,
+                                                                                     [{<<"group">>,
+                                                                                       Id},
+                                                                                      {<<"host">>,
+                                                                                       Host}]),
+                                                              ""))}],
+                       [{only, value},
+                        {result_links, [{sentence, shared_roster, Level, <<"info">>}]}]),
+          make_command(echo3,
+                       R,
+                       [{<<"first">>, Id},
+                        {<<"second">>, Host},
+                        {<<"sentence">>,
+                         iolist_to_binary(proplists:get_value(<<"online_users">>,
+                                                              make_command_raw_value(srg_get_info,
+                                                                                     R,
+                                                                                     [{<<"group">>,
+                                                                                       Id},
+                                                                                      {<<"host">>,
+                                                                                       Host}]),
+                                                              ""))}],
+                       [{only, value},
+                        {result_links, [{sentence, shared_roster, Level, <<"info">>}]}]),
+          make_command(echo3,
+                       R,
+                       [{<<"first">>, Id},
+                        {<<"second">>, Host},
+                        {<<"sentence">>,
+                         integer_to_binary(length(make_command_raw_value(srg_get_members,
+                                                                         R,
+                                                                         [{<<"group">>, Id},
+                                                                          {<<"host">>, Host}])))}],
+                       [{only, value},
+                        {result_links, [{sentence, shared_roster, Level, <<"members">>}]}]),
+          make_command(echo3,
+                       R,
+                       [{<<"first">>, Id},
+                        {<<"second">>, Host},
+                        {<<"sentence">>,
+                         integer_to_binary(length(make_command_raw_value(srg_get_displayed,
+                                                                         R,
+                                                                         [{<<"group">>, Id},
+                                                                          {<<"host">>, Host}])))}],
+                       [{only, value},
+                        {result_links, [{sentence, shared_roster, Level, <<"displayed">>}]}]),
+          make_command(srg_delete,
+                       R,
+                       [{<<"group">>, Id}, {<<"host">>, Host}],
+                       [{only, button}, {style, danger}, {input_name_append, [Id, Host]}])}
+         || Id <- Groups],
+    make_table(20, RPath, Columns, Rows).
 
-make_error_el(_, _, []) ->
-    [];
-make_error_el(Lang, Message, BinList) ->
-    NG2 = str:join(BinList, <<", ">>),
-    NG3 = translate:translate(Lang, Message),
-    NG4 = str:concat(NG3, NG2),
-    [?XRES(NG4)].
+make_webadmin_members_table(Host, Id, R) ->
+    Members =
+        case make_command_raw_value(srg_get_members, R, [{<<"host">>, Host}, {<<"group">>, Id}])
+        of
+            Ms when is_list(Ms) ->
+                Ms;
+            _ ->
+                []
+        end,
+    make_table([<<"member">>, <<"">>],
+               [{make_command(echo,
+                              R,
+                              [{<<"sentence">>, Jid}],
+                              [{only, value}, {result_links, [{sentence, user, 6, <<"">>}]}]),
+                 make_command(srg_user_del,
+                              R,
+                              [{<<"user">>,
+                                element(1,
+                                        jid:split(
+                                            jid:decode(Jid)))},
+                               {<<"host">>,
+                                element(2,
+                                        jid:split(
+                                            jid:decode(Jid)))},
+                               {<<"group">>, Id},
+                               {<<"grouphost">>, Host}],
+                              [{only, button},
+                               {style, danger},
+                               {input_name_append,
+                                [element(1,
+                                         jid:split(
+                                             jid:decode(Jid))),
+                                 element(2,
+                                         jid:split(
+                                             jid:decode(Jid))),
+                                 Id,
+                                 Host]}])}
+                || Jid <- Members]).
 
-shared_roster_group_parse_query(Host, Group, Query) ->
-    case lists:keysearch(<<"submit">>, 1, Query) of
-      {value, _} ->
-	  {value, {_, Label}} = lists:keysearch(<<"label">>, 1,
-					       Query), %++
-	  {value, {_, Description}} =
-	      lists:keysearch(<<"description">>, 1, Query),
-	  {value, {_, SMembers}} = lists:keysearch(<<"members">>,
-						   1, Query),
-	  {value, {_, SDispGroups}} =
-	      lists:keysearch(<<"dispgroups">>, 1, Query),
-	  LabelOpt = if Label == <<"">> -> [];
-		       true -> [{label, Label}] %++
-		    end,
-	  DescriptionOpt = if Description == <<"">> -> [];
-			      true -> [{description, Description}]
-			   end,
-	  DispGroups1 = str:tokens(SDispGroups, <<"\r\n">>),
-	  {DispGroups, WrongDispGroups} = filter_groups_existence(Host, DispGroups1),
-	  DispGroupsOpt = if DispGroups == [] -> [];
-			     true -> [{displayed_groups, DispGroups}]
-			  end,
-	  OldMembers = get_group_explicit_users(Host,
-							  Group),
-	  SJIDs = str:tokens(SMembers, <<", \r\n">>),
-	  NewMembers = lists:foldl(fun (_SJID, error) -> error;
-				       (SJID, USs) ->
-					   case SJID of
-					     <<"@all@">> -> USs;
-					     <<"@online@">> -> USs;
-					     _ ->
-						 try jid:decode(SJID) of
-						     JID ->
-						       [{JID#jid.luser,
-							 JID#jid.lserver}
-							| USs]
-						 catch _:{bad_jid, _} ->
-							 error
-						 end
-					   end
-				   end,
-				   [], SJIDs),
-	  AllUsersOpt = case lists:member(<<"@all@">>, SJIDs) of
-			  true -> [{all_users, true}];
-			  false -> []
-			end,
-	  OnlineUsersOpt = case lists:member(<<"@online@">>,
-					     SJIDs)
-			       of
-			     true -> [{online_users, true}];
-			     false -> []
-			   end,
-	  CurrentDisplayedGroups = get_displayed_groups(Group, Host),
-	  AddedDisplayedGroups =  DispGroups -- CurrentDisplayedGroups,
-	  RemovedDisplayedGroups = CurrentDisplayedGroups -- DispGroups,
-	  displayed_groups_update(OldMembers, RemovedDisplayedGroups, remove),
-	  displayed_groups_update(OldMembers, AddedDisplayedGroups, both),
-	  set_group_opts(Host, Group,
-			 LabelOpt ++
-			 DispGroupsOpt ++
-			 DescriptionOpt ++
-			 AllUsersOpt ++ OnlineUsersOpt),
-	  if NewMembers == error -> error;
-	     true ->
-		 AddedMembers = NewMembers -- OldMembers,
-		 RemovedMembers = OldMembers -- NewMembers,
-		 lists:foreach(
-		     fun(US) ->
-			 remove_user_from_group(Host,
-						US,
-						Group)
-		     end,
-		     RemovedMembers),
-		 NonAddedMembers = lists:filter(
-		     fun(US) ->
-			 error == add_user_to_group(Host, US,
-						    Group)
-		     end,
-		     AddedMembers),
-		 case (NonAddedMembers /= []) or (WrongDispGroups /= []) of
-		    true -> {error_elements, NonAddedMembers, WrongDispGroups};
-		    false -> ok
-		 end
-	  end;
-      _ -> nothing
-    end.
+make_webadmin_displayed_table(Host, Id, R) ->
+    Displayed =
+        case make_command_raw_value(srg_get_displayed, R, [{<<"host">>, Host}, {<<"group">>, Id}])
+        of
+            Ms when is_list(Ms) ->
+                Ms;
+            _ ->
+                []
+        end,
+    make_table([<<"group">>, <<"">>],
+               [{make_command(echo3,
+                              R,
+                              [{<<"first">>, ThisId},
+                               {<<"second">>, Host},
+                               {<<"sentence">>, ThisId}],
+                              [{only, value},
+                               {result_links, [{sentence, shared_roster, 6, <<"">>}]}]),
+                 make_command(srg_del_displayed,
+                              R,
+                              [{<<"group">>, Id}, {<<"host">>, Host}, {<<"del">>, ThisId}],
+                              [{only, button},
+                               {style, danger},
+                               {input_name_append, [Id, Host, ThisId]}])}
+                || ThisId <- Displayed]).
 
-get_opt(Opts, Opt, Default) ->
-    case lists:keysearch(Opt, 1, Opts) of
-      {value, {_, Val}} -> Val;
-      false -> Default
-    end.
-
-us_to_list({User, Server}) ->
-    jid:encode({User, Server, <<"">>}).
+make_breadcrumb({groups, Service}) ->
+    make_breadcrumb([Service]);
+make_breadcrumb({group, Level, Service, Name}) ->
+    make_breadcrumb([{Level, Service}, separator, Name]);
+make_breadcrumb({group_section, Level, Service, Name, Section, RPath}) ->
+    make_breadcrumb([{Level, Service}, separator, {Level - 2, Name}, separator, Section
+                     | RPath]);
+make_breadcrumb(Elements) ->
+    lists:map(fun ({xmlel, _, _, _} = Xmlel) ->
+                      Xmlel;
+                  (<<"sort">>) ->
+                      ?C(<<" +">>);
+                  (<<"page">>) ->
+                      ?C(<<" #">>);
+                  (separator) ->
+                      ?C(<<" > ">>);
+                  (Bin) when is_binary(Bin) ->
+                      ?C(Bin);
+                  ({Level, Bin}) when is_integer(Level) and is_binary(Bin) ->
+                      ?AC(binary:copy(<<"../">>, Level), Bin)
+              end,
+              Elements).
+%% @format-end
 
 split_grouphost(Host, Group) ->
     case str:tokens(Group, <<"@">>) of
       [GroupName, HostName] -> {HostName, GroupName};
       [_] -> {Host, Group}
     end.
-
-filter_groups_existence(Host, Groups) ->
-    lists:partition(
-	fun(Group) -> error /= get_group_opts(Host, Group) end,
-	Groups).
-
-displayed_groups_update(Members, DisplayedGroups, Subscription) ->
-    lists:foreach(
-      fun({U, S}) ->
-	      push_displayed_to_user(U, S, S, Subscription, DisplayedGroups)
-      end, Members).
 
 opts_to_binary(Opts) ->
     lists:map(

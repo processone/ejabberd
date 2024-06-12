@@ -59,7 +59,7 @@
 
 	 % Roster
 	 add_rosteritem/7, delete_rosteritem/4,
-	 get_roster/2, push_roster/3,
+	 get_roster/2, get_roster_count/2, push_roster/3,
 	 push_roster_all/1, push_alltoall/2,
 	 push_roster_item/5, build_roster_item/3,
 
@@ -67,8 +67,10 @@
 	 private_get/4, private_set/3,
 
 	 % Shared roster
-	 srg_create/5,
+	 srg_create/5, srg_add/2,
 	 srg_delete/2, srg_list/1, srg_get_info/2,
+	 srg_set_info/4,
+	 srg_get_displayed/2, srg_add_displayed/3, srg_del_displayed/3,
 	 srg_get_members/2, srg_user_add/4, srg_user_del/4,
 
 	 % Send message
@@ -80,9 +82,17 @@
 	 % Stats
 	 stats/1, stats/2
 	]).
+-export([web_menu_main/2, web_page_main/2,
+         web_menu_host/3, web_page_host/3,
+         web_menu_hostuser/4, web_page_hostuser/4,
+         web_menu_hostnode/4, web_page_hostnode/4,
+         web_menu_node/3, web_page_node/3]).
 
+-import(ejabberd_web_admin, [make_command/4, make_table/2]).
 
 -include("ejabberd_commands.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 -include("mod_roster.hrl").
 -include("mod_privacy.hrl").
 -include("ejabberd_sm.hrl").
@@ -94,7 +104,17 @@
 %%%
 
 start(_Host, _Opts) ->
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()).
+    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
+    {ok, [{hook, webadmin_menu_main, web_menu_main, 50, global},
+	  {hook, webadmin_page_main, web_page_main, 50, global},
+	  {hook, webadmin_menu_host, web_menu_host, 50},
+	  {hook, webadmin_page_host, web_page_host, 50},
+	  {hook, webadmin_menu_hostuser, web_menu_hostuser, 50},
+	  {hook, webadmin_page_hostuser, web_page_hostuser, 50},
+	  {hook, webadmin_menu_hostnode, web_menu_hostnode, 50},
+	  {hook, webadmin_page_hostnode, web_page_hostnode, 50},
+	  {hook, webadmin_menu_node, web_menu_node, 50, global},
+	  {hook, webadmin_page_node, web_page_node, 50, global}]}.
 
 stop(Host) ->
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
@@ -670,6 +690,16 @@ get_commands_spec() ->
 								      {pending, string},
 								      {groups, {list, {group, string}}}
 								     ]}}}}},
+     #ejabberd_commands{name = get_roster_count, tags = [roster],
+			desc = "Get number of contacts in a local user roster",
+			note = "added in 24.xx",
+                        policy = user,
+			module = ?MODULE, function = get_roster_count,
+			args = [],
+			args_rename = [{server, host}],
+			result_example = 5,
+			result_desc = "Number",
+			result = {value, integer}},
      #ejabberd_commands{name = push_roster, tags = [roster],
 			desc = "Push template roster from file to a user",
 			longdesc = "The text file must contain an erlang term: a list "
@@ -777,6 +807,14 @@ get_commands_spec() ->
 			args_desc = ["Group identifier", "Group server name", "Group name",
 				"Group description", "List of groups to display"],
 			result = {res, rescode}},
+     #ejabberd_commands{name = srg_add, tags = [shared_roster_group],
+			desc = "Add/Create a Shared Roster Group (without details)",
+			module = ?MODULE, function = srg_add,
+			note = "added in 24.xx",
+			args = [{group, binary}, {host, binary}],
+			args_example = [<<"group3">>, <<"myserver.com">>],
+			args_desc = ["Group identifier", "Group server name"],
+			result = {res, rescode}},
      #ejabberd_commands{name = srg_delete, tags = [shared_roster_group],
 			desc = "Delete a Shared Roster Group",
 			module = ?MODULE, function = srg_delete,
@@ -802,6 +840,48 @@ get_commands_spec() ->
 			result_example = [{<<"name">>, "Group 3"}, {<<"displayed_groups">>, "group1"}],
 			result_desc = "List of group information, as key and value",
 			result = {informations, {list, {information, {tuple, [{key, string}, {value, string}]}}}}},
+     #ejabberd_commands{name = srg_set_info, tags = [shared_roster_group],
+			desc = "Set info of a Shared Roster Group",
+			module = ?MODULE, function = srg_set_info,
+			note = "added in 24.xx",
+			args = [{group, binary}, {host, binary}, {key, binary}, {value, binary}],
+			args_example = [<<"group3">>, <<"myserver.com">>, <<"label">>, <<"Family">>],
+			args_desc = ["Group identifier", "Group server name",
+                                     "Information key: label, description",
+                                     "Information value"],
+			result = {res, rescode}},
+
+     #ejabberd_commands{name = srg_get_displayed, tags = [shared_roster_group],
+			desc = "Get displayed groups of a Shared Roster Group",
+			module = ?MODULE, function = srg_get_displayed,
+			note = "added in 24.xx",
+			args = [{group, binary}, {host, binary}],
+			args_example = [<<"group3">>, <<"myserver.com">>],
+			args_desc = ["Group identifier", "Group server name"],
+                        result_example = [<<"group1">>, <<"group2">>],
+                        result_desc = "List of groups to display",
+			result = {display, {list, {group, binary}}}},
+     #ejabberd_commands{name = srg_add_displayed, tags = [shared_roster_group],
+			desc = "Add a group to displayed_groups of a Shared Roster Group",
+			module = ?MODULE, function = srg_add_displayed,
+			note = "added in 24.xx",
+			args = [{group, binary}, {host, binary},
+				{add, binary}],
+			args_example = [<<"group3">>, <<"myserver.com">>, <<"group1">>],
+			args_desc = ["Group identifier", "Group server name",
+				"Group to add to displayed_groups"],
+			result = {res, rescode}},
+     #ejabberd_commands{name = srg_del_displayed, tags = [shared_roster_group],
+			desc = "Delete a group from displayed_groups of a Shared Roster Group",
+			module = ?MODULE, function = srg_del_displayed,
+			note = "added in 24.xx",
+			args = [{group, binary}, {host, binary},
+				{del, binary}],
+			args_example = [<<"group3">>, <<"myserver.com">>, <<"group1">>],
+			args_desc = ["Group identifier", "Group server name",
+				"Group to delete from displayed_groups"],
+			result = {res, rescode}},
+
      #ejabberd_commands{name = srg_get_members, tags = [shared_roster_group],
 			desc = "Get members of a Shared Roster Group",
 			module = ?MODULE, function = srg_get_members,
@@ -836,6 +916,18 @@ get_commands_spec() ->
 			result_example = 5,
 			result_desc = "Number",
 			result = {value, integer}},
+     #ejabberd_commands{name = get_offline_messages,
+			tags = [internal, offline],
+			desc = "Get the offline messages",
+			policy = user,
+			module = mod_offline, function = get_offline_messages,
+			args = [],
+			result = {queue, {list, {messages, {tuple, [{time, string},
+                                                                    {from, string},
+                                                                    {to, string},
+                                                                    {packet, string}
+                                                                   ]}}}}},
+
      #ejabberd_commands{name = send_message, tags = [stanza],
 			desc = "Send a message to a local or remote bare of full JID",
 			longdesc = "When sending a groupchat message to a MUC room, "
@@ -1586,6 +1678,15 @@ make_roster_xmlrpc(Roster) ->
       end,
       Roster).
 
+get_roster_count(User, Server) ->
+    case jid:make(User, Server) of
+	error ->
+	    throw({error, "Invalid 'user'/'server'"});
+	#jid{luser = U, lserver = S} ->
+	    Items = ejabberd_hooks:run_fold(roster_get, S, [], [{U, S}]),
+	    length(Items)
+    end.
+
 %%-----------------------------
 %% Push Roster from file
 %%-----------------------------
@@ -1748,9 +1849,26 @@ srg_create(Group, Host, Label, Description, Display) when is_binary(Display) ->
     srg_create(Group, Host, Label, Description, DisplayList);
 
 srg_create(Group, Host, Label, Description, DisplayList) ->
+    {_DispGroups, WrongDispGroups} = filter_groups_existence(Host, DisplayList),
+    case (WrongDispGroups -- [Group]) /= [] of
+        true ->
+            {wrong_displayed_groups, WrongDispGroups};
+        false ->
+            srg_create2(Group, Host, Label, Description, DisplayList)
+    end.
+
+srg_create2(Group, Host, Label, Description, DisplayList) ->
     Opts = [{label, Label},
 	    {displayed_groups, DisplayList},
 	    {description, Description}],
+    {atomic, _} = mod_shared_roster:create_group(Host, Group, Opts),
+    ok.
+
+srg_add(Group, Host) ->
+    Opts = [{label, <<"">>},
+            {description, <<"">>},
+            {displayed_groups, []}
+           ],
     {atomic, _} = mod_shared_roster:create_group(Host, Group, Opts),
     ok.
 
@@ -1769,9 +1887,109 @@ srg_get_info(Group, Host) ->
     [{misc:atom_to_binary(Title), to_list(Value)} || {Title, Value} <- Opts].
 
 to_list([]) -> [];
-to_list([H|T]) -> [to_list(H)|to_list(T)];
+to_list([H|_]=List) when is_binary(H) -> lists:join(", ", [to_list(E) || E <- List]);
 to_list(E) when is_atom(E) -> atom_to_list(E);
-to_list(E) -> binary_to_list(E).
+to_list(E) when is_binary(E) -> binary_to_list(E).
+
+%% @format-begin
+
+srg_set_info(Group, Host, Key, Value) ->
+    Opts =
+        case mod_shared_roster:get_group_opts(Host, Group) of
+            Os when is_list(Os) ->
+                Os;
+            error ->
+                []
+        end,
+    Opts2 = srg_set_info(Key, Value, Opts),
+    case mod_shared_roster:set_group_opts(Host, Group, Opts2) of
+        {atomic, ok} ->
+            ok;
+        Problem ->
+            ?INFO_MSG("Problem: ~n  ~p", [Problem]), %+++
+            error
+    end.
+
+srg_set_info(<<"description">>, Value, Opts) ->
+    [{description, Value} | proplists:delete(description, Opts)];
+srg_set_info(<<"label">>, Value, Opts) ->
+    [{label, Value} | proplists:delete(label, Opts)];
+srg_set_info(<<"all_users">>, <<"true">>, Opts) ->
+    [{all_users, true} | proplists:delete(all_users, Opts)];
+srg_set_info(<<"online_users">>, <<"true">>, Opts) ->
+    [{online_users, true} | proplists:delete(online_users, Opts)];
+srg_set_info(<<"all_users">>, _, Opts) ->
+    proplists:delete(all_users, Opts);
+srg_set_info(<<"online_users">>, _, Opts) ->
+    proplists:delete(online_users, Opts);
+srg_set_info(Key, _Value, Opts) ->
+    ?ERROR_MSG("Unknown Key in srg_set_info: ~p", [Key]),
+    Opts.
+
+srg_get_displayed(Group, Host) ->
+    Opts =
+        case mod_shared_roster:get_group_opts(Host, Group) of
+            Os when is_list(Os) ->
+                Os;
+            error ->
+                []
+        end,
+    proplists:get_value(displayed_groups, Opts).
+
+srg_add_displayed(Group, Host, NewGroup) ->
+    Opts =
+        case mod_shared_roster:get_group_opts(Host, Group) of
+            Os when is_list(Os) ->
+                Os;
+            error ->
+                []
+        end,
+    {DispGroups, WrongDispGroups} = filter_groups_existence(Host, [NewGroup]),
+    case WrongDispGroups /= [] of
+        true ->
+            {wrong_displayed_groups, WrongDispGroups};
+        false ->
+            DisplayedOld = proplists:get_value(displayed_groups, Opts, []),
+            Opts2 =
+                [{displayed_groups, lists:flatten(DisplayedOld, DispGroups)}
+                 | proplists:delete(displayed_groups, Opts)],
+            case mod_shared_roster:set_group_opts(Host, Group, Opts2) of
+                {atomic, ok} ->
+                    ok;
+                Problem ->
+                    ?INFO_MSG("Problem: ~n  ~p", [Problem]), %+++
+                    error
+            end
+    end.
+
+srg_del_displayed(Group, Host, OldGroup) ->
+    Opts =
+        case mod_shared_roster:get_group_opts(Host, Group) of
+            Os when is_list(Os) ->
+                Os;
+            error ->
+                []
+        end,
+    DisplayedOld = proplists:get_value(displayed_groups, Opts, []),
+    {DispGroups, OldDispGroups} = lists:partition(fun(G) -> G /= OldGroup end, DisplayedOld),
+    case OldDispGroups == [] of
+        true ->
+            {inexistent_displayed_groups, OldGroup};
+        false ->
+            Opts2 = [{displayed_groups, DispGroups} | proplists:delete(displayed_groups, Opts)],
+            case mod_shared_roster:set_group_opts(Host, Group, Opts2) of
+                {atomic, ok} ->
+                    ok;
+                Problem ->
+                    ?INFO_MSG("Problem: ~n  ~p", [Problem]), %+++
+                    error
+            end
+    end.
+
+filter_groups_existence(Host, Groups) ->
+    lists:partition(fun(Group) -> error /= mod_shared_roster:get_group_opts(Host, Group) end,
+                    Groups).
+%% @format-end
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
@@ -1914,6 +2132,256 @@ num_prio(Priority) when is_integer(Priority) ->
     Priority;
 num_prio(_) ->
     -1.
+
+%%%
+%%% Web Admin
+%%%
+
+%% @format-begin
+
+%%% Main
+
+web_menu_main(Acc, _Lang) ->
+    Acc ++ [{<<"stats">>, <<"Statistics">>}].
+
+web_page_main(_, #request{path = [<<"stats">>]} = R) ->
+    Res = ?H1GL(<<"Statistics">>, <<"modules/#mod_stats">>, <<"mod_stats">>)
+          ++ [make_command(stats_host, R, [], [{only, presentation}]),
+              make_command(incoming_s2s_number, R, [], [{only, presentation}]),
+              make_command(outgoing_s2s_number, R, [], [{only, presentation}]),
+              make_table([<<"stat name">>, {<<"stat value">>, right}],
+                         [{?C(<<"Registered Users:">>),
+                           make_command(stats,
+                                        R,
+                                        [{<<"name">>, <<"registeredusers">>}],
+                                        [{only, value}])},
+                          {?C(<<"Online Users:">>),
+                           make_command(stats,
+                                        R,
+                                        [{<<"name">>, <<"onlineusers">>}],
+                                        [{only, value}])},
+                          {?C(<<"S2S Connections Incoming:">>),
+                           make_command(incoming_s2s_number, R, [], [{only, value}])},
+                          {?C(<<"S2S Connections Outgoing:">>),
+                           make_command(outgoing_s2s_number, R, [], [{only, value}])}])],
+    {stop, Res};
+web_page_main(Acc, _) ->
+    Acc.
+
+%%% Host
+
+web_menu_host(Acc, _Host, _Lang) ->
+    Acc ++ [{<<"purge">>, <<"Purge">>}, {<<"stats">>, <<"Statistics">>}].
+
+web_page_host(_, Host, #request{path = [<<"purge">>]} = R) ->
+    Head = [?XC(<<"h1">>, <<"Purge">>)],
+    Set = [ejabberd_web_admin:make_command(delete_old_users_vhost,
+                                           R,
+                                           [{<<"host">>, Host}],
+                                           [])],
+    {stop, Head ++ Set};
+web_page_host(_, Host, #request{path = [<<"stats">>]} = R) ->
+    Res = ?H1GL(<<"Statistics">>, <<"modules/#mod_stats">>, <<"mod_stats">>)
+          ++ [make_command(stats_host, R, [], [{only, presentation}]),
+              make_table([<<"stat name">>, {<<"stat value">>, right}],
+                         [{?C(<<"Registered Users:">>),
+                           make_command(stats_host,
+                                        R,
+                                        [{<<"host">>, Host}, {<<"name">>, <<"registeredusers">>}],
+                                        [{only, value},
+                                         {result_links, [{stat, arg_host, 3, <<"users">>}]}])},
+                          {?C(<<"Online Users:">>),
+                           make_command(stats_host,
+                                        R,
+                                        [{<<"host">>, Host}, {<<"name">>, <<"onlineusers">>}],
+                                        [{only, value},
+                                         {result_links,
+                                          [{stat, arg_host, 3, <<"online-users">>}]}])}])],
+    {stop, Res};
+web_page_host(Acc, _, _) ->
+    Acc.
+
+%%% HostUser
+
+web_menu_hostuser(Acc, _Host, _Username, _Lang) ->
+    Acc
+    ++ [{<<"auth">>, <<"Authentication">>},
+        {<<"mam">>, <<"MAM">>},
+        {<<"privacy">>, <<"Privacy Lists">>},
+        {<<"private">>, <<"Private XML Storage">>},
+        {<<"session">>, <<"Sessions">>},
+        {<<"vcard">>, <<"vCard">>}].
+
+web_page_hostuser(_, Host, User, #request{path = [<<"auth">>]} = R) ->
+    Ban = make_command(ban_account,
+                       R,
+                       [{<<"user">>, User}, {<<"host">>, Host}],
+                       [{style, danger}]),
+    Unban = make_command(unban_account, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+    Res = ?H1GLraw(<<"Authentication">>,
+                   <<"admin/configuration/authentication/">>,
+                   <<"Authentication">>)
+          ++ [make_command(register, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+              make_command(check_account, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+              ?X(<<"hr">>),
+              make_command(check_password, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+              make_command(check_password_hash, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+              make_command(change_password,
+                           R,
+                           [{<<"user">>, User}, {<<"host">>, Host}],
+                           [{style, danger}]),
+              ?X(<<"hr">>),
+              make_command(get_ban_details, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+              Ban,
+              Unban,
+              ?X(<<"hr">>),
+              make_command(unregister,
+                           R,
+                           [{<<"user">>, User}, {<<"host">>, Host}],
+                           [{style, danger}])],
+    {stop, Res};
+web_page_hostuser(_, Host, User, #request{path = [<<"mam">>]} = R) ->
+    Res = ?H1GL(<<"MAM">>, <<"modules/#mod_mam">>, <<"mod_mam">>)
+          ++ [make_command(remove_mam_for_user,
+                           R,
+                           [{<<"user">>, User}, {<<"host">>, Host}],
+                           [{style, danger}]),
+              make_command(remove_mam_for_user_with_peer,
+                           R,
+                           [{<<"user">>, User}, {<<"host">>, Host}],
+                           [{style, danger}])],
+    {stop, Res};
+web_page_hostuser(_, Host, User, #request{path = [<<"privacy">>]} = R) ->
+    Res = ?H1GL(<<"Privacy Lists">>, <<"modules/#mod_privacy">>, <<"mod_privacy">>)
+          ++ [make_command(privacy_set, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
+    {stop, Res};
+web_page_hostuser(_, Host, User, #request{path = [<<"private">>]} = R) ->
+    Res = ?H1GL(<<"Private XML Storage">>, <<"modules/#mod_private">>, <<"mod_private">>)
+          ++ [make_command(private_set, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+              make_command(private_get, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
+    {stop, Res};
+web_page_hostuser(_, Host, User, #request{path = [<<"session">>]} = R) ->
+    Head = [?XC(<<"h1">>, <<"Sessions">>), ?BR],
+    Set = [make_command(resource_num, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(set_presence, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(kick_user, R, [{<<"user">>, User}, {<<"host">>, Host}], [{style, danger}]),
+           make_command(kick_session,
+                        R,
+                        [{<<"user">>, User}, {<<"host">>, Host}],
+                        [{style, danger}])],
+    timer:sleep(100), % kicking sessions takes a while, let's delay the get commands
+    Get = [make_command(user_sessions_info,
+                        R,
+                        [{<<"user">>, User}, {<<"host">>, Host}],
+                        [{result_links, [{node, node, 5, <<>>}]}]),
+           make_command(user_resources, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(get_presence, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(num_resources, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
+    {stop, Head ++ Get ++ Set};
+web_page_hostuser(_, Host, User, #request{path = [<<"vcard">>]} = R) ->
+    Head = ?H1GL(<<"vCard">>, <<"modules/#mod_vcard">>, <<"mod_vcard">>),
+    Set = [make_command(set_nickname, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(set_vcard, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(set_vcard2, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(set_vcard2_multi, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
+    timer:sleep(100), % setting vcard takes a while, let's delay the get commands
+    FieldNames = [<<"VERSION">>, <<"FN">>, <<"NICKNAME">>, <<"BDAY">>],
+    FieldNames2 =
+        [{<<"N">>, <<"FAMILY">>},
+         {<<"N">>, <<"GIVEN">>},
+         {<<"N">>, <<"MIDDLE">>},
+         {<<"ADR">>, <<"CTRY">>},
+         {<<"ADR">>, <<"LOCALITY">>},
+         {<<"EMAIL">>, <<"USERID">>}],
+    Get = [make_command(get_vcard, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           ?XE(<<"blockquote">>,
+               [make_table([<<"name">>, <<"value">>],
+                           [{?C(FieldName),
+                             make_command(get_vcard,
+                                          R,
+                                          [{<<"user">>, User},
+                                           {<<"host">>, Host},
+                                           {<<"name">>, FieldName}],
+                                          [{only, value}])}
+                            || FieldName <- FieldNames])]),
+           make_command(get_vcard2, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           ?XE(<<"blockquote">>,
+               [make_table([<<"name">>, <<"subname">>, <<"value">>],
+                           [{?C(FieldName),
+                             ?C(FieldSubName),
+                             make_command(get_vcard2,
+                                          R,
+                                          [{<<"user">>, User},
+                                           {<<"host">>, Host},
+                                           {<<"name">>, FieldName},
+                                           {<<"subname">>, FieldSubName}],
+                                          [{only, value}])}
+                            || {FieldName, FieldSubName} <- FieldNames2])]),
+           make_command(get_vcard2_multi, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
+    {stop, Head ++ Get ++ Set};
+web_page_hostuser(Acc, _, _, _) ->
+    Acc.
+
+%%% HostNode
+
+web_menu_hostnode(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"modules">>, <<"Modules">>}].
+
+web_page_hostnode(_, Host, Node, #request{path = [<<"modules">>]} = R) ->
+    Res = ?H1GLraw(<<"Modules">>, <<"admin/configuration/modules/">>, <<"Modules Options">>)
+          ++ [ejabberd_cluster:call(Node,
+                                    ejabberd_web_admin,
+                                    make_command,
+                                    [restart_module, R, [{<<"host">>, Host}], []])],
+    {stop, Res};
+web_page_hostnode(Acc, _Host, _Node, _Request) ->
+    Acc.
+
+%%% Node
+
+web_menu_node(Acc, _Node, _Lang) ->
+    Acc ++ [{<<"stats">>, <<"Statistics">>}].
+
+web_page_node(_, Node, #request{path = [<<"stats">>]} = R) ->
+    UpSecs =
+        ejabberd_cluster:call(Node,
+                              ejabberd_web_admin,
+                              make_command,
+                              [stats, R, [{<<"name">>, <<"uptimeseconds">>}], [{only, value}]]),
+    UpDaysBin = integer_to_binary(binary_to_integer(fxml:get_tag_cdata(UpSecs)) div 24000),
+    UpDays =
+        #xmlel{name = <<"code">>,
+               attrs = [],
+               children = [{xmlcdata, UpDaysBin}]},
+    Res = ?H1GL(<<"Statistics">>, <<"modules/#mod_stats">>, <<"mod_stats">>)
+          ++ [make_command(stats, R, [], [{only, presentation}]),
+              make_table([<<"stat name">>, {<<"stat value">>, right}],
+                         [{?C(<<"Online Users in this node:">>),
+                           ejabberd_cluster:call(Node,
+                                                 ejabberd_web_admin,
+                                                 make_command,
+                                                 [stats,
+                                                  R,
+                                                  [{<<"name">>, <<"onlineusersnode">>}],
+                                                  [{only, value}]])},
+                          {?C(<<"Uptime Seconds:">>), UpSecs},
+                          {?C(<<"Uptime Seconds (rounded to days):">>), UpDays},
+                          {?C(<<"Processes:">>),
+                           ejabberd_cluster:call(Node,
+                                                 ejabberd_web_admin,
+                                                 make_command,
+                                                 [stats,
+                                                  R,
+                                                  [{<<"name">>, <<"processes">>}],
+                                                  [{only, value}]])}])],
+    {stop, Res};
+web_page_node(Acc, _, _) ->
+    Acc.
+%% @format-end
+
+%%%
+%%% Document
+%%%
 
 mod_options(_) -> [].
 

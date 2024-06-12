@@ -60,12 +60,16 @@
 	 find_x_expire/2,
 	 c2s_handle_info/2,
 	 c2s_copy_session/2,
-	 webadmin_page/3,
+         get_offline_messages/2,
+	 webadmin_menu_hostuser/4,
+	 webadmin_page_hostuser/4,
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5,
 	 c2s_handle_bind2_inline/1]).
 
 -export([mod_opt_type/1, mod_options/1, mod_doc/0, depends/2]).
+
+-import(ejabberd_web_admin, [make_command/4, make_command/2]).
 
 -deprecated({get_queue_length,2}).
 
@@ -133,7 +137,8 @@ start(Host, Opts) ->
           {hook, c2s_handle_info, c2s_handle_info, 50},
           {hook, c2s_copy_session, c2s_copy_session, 50},
 	  {hook, c2s_handle_bind2_inline, c2s_handle_bind2_inline, 50},
-          {hook, webadmin_page_host, webadmin_page, 50},
+          {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
+          {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50},
           {hook, webadmin_user, webadmin_user, 50},
           {hook, webadmin_user_parse_query,  webadmin_user_parse_query, 50},
           {iq_handler, ejabberd_sm, ?NS_FLEX_OFFLINE, handle_offline_query}]}.
@@ -730,12 +735,39 @@ discard_warn_sender(Packet, Reason) ->
 	    ok
     end.
 
-webadmin_page(_, Host,
-	      #request{us = _US, path = [<<"user">>, U, <<"queue">>],
-		       q = Query, lang = Lang} =
-		  _Request) ->
-    Res = user_queue(U, Host, Query, Lang), {stop, Res};
-webadmin_page(Acc, _, _) -> Acc.
+%%%
+%%% Commands
+%%%
+
+get_offline_messages(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    HdrsAll = case Mod:read_message_headers(LUser, LServer) of
+		  error -> [];
+		  L -> L
+	      end,
+    format_user_queue(HdrsAll).
+
+%%%
+%%% WebAdmin
+%%%
+
+webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"queue">>, <<"Offline Queue">>}].
+
+webadmin_page_hostuser(_, Host, U,
+	      #request{us = _US, path = [<<"queue">> | RPath],
+		       lang = Lang} = R) ->
+    US = {U, Host},
+    PageTitle = str:translate_and_format(Lang, ?T("~ts's Offline Messages Queue"), [us_to_list(US)]),
+    Head = ?H1GL(PageTitle, <<"modules/#mod_offline">>, <<"mod_offline">>),
+    Res = make_command(get_offline_messages, R, [{<<"user">>, U},
+                                                     {<<"host">>, Host}],
+                        [{table_options, {10, RPath}},
+                         {result_links, [{packet, paragraph, 1, <<"">>}]}]),
+    {stop, Head ++ [Res]};
+webadmin_page_hostuser(Acc, _, _, _) -> Acc.
 
 get_offline_els(LUser, LServer) ->
     [Packet || {_Seq, Packet} <- read_messages(LUser, LServer)].
@@ -939,8 +971,7 @@ count_mam_messages(LUser, LServer, ReadMsgs) ->
 
 format_user_queue(Hdrs) ->
     lists:map(
-      fun({Seq, From, To, TS, El}) ->
-	      ID = integer_to_binary(Seq),
+      fun({_Seq, From, To, TS, El}) ->
 	      FPacket = ejabberd_web_admin:pretty_print_xml(El),
 	      SFrom = jid:encode(From),
 	      STo = jid:encode(To),
@@ -956,14 +987,7 @@ format_user_queue(Hdrs) ->
 			 {_, _, _} = Now ->
 			     format_time(Now)
 		     end,
-	      ?XE(<<"tr">>,
-		  [?XAE(<<"td">>, [{<<"class">>, <<"valign">>}],
-			[?INPUT(<<"checkbox">>, <<"selected">>, ID)]),
-		   ?XAC(<<"td">>, [{<<"class">>, <<"valign">>}], Time),
-		   ?XAC(<<"td">>, [{<<"class">>, <<"valign">>}], SFrom),
-		   ?XAC(<<"td">>, [{<<"class">>, <<"valign">>}], STo),
-		   ?XAE(<<"td">>, [{<<"class">>, <<"valign">>}],
-			[?XC(<<"pre">>, FPacket)])])
+              {Time, SFrom, STo, FPacket}
       end, Hdrs).
 
 format_time(Now) ->
@@ -971,111 +995,18 @@ format_time(Now) ->
     str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 	       [Year, Month, Day, Hour, Minute,	Second]).
 
-user_queue(User, Server, Query, Lang) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    US = {LUser, LServer},
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    user_queue_parse_query(LUser, LServer, Query),
-    HdrsAll = case Mod:read_message_headers(LUser, LServer) of
-		  error -> [];
-		  L -> L
-	      end,
-    Hdrs = get_messages_subset(User, Server, HdrsAll),
-    FMsgs = format_user_queue(Hdrs),
-    PageTitle = str:translate_and_format(Lang, ?T("~ts's Offline Messages Queue"), [us_to_list(US)]),
-    (?H1GL(PageTitle, <<"modules/#mod_offline">>, <<"mod_offline">>))
-      ++ [?XREST(?T("Submitted"))] ++
-	[?XAE(<<"form">>,
-	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-	      [?XE(<<"table">>,
-		   [?XE(<<"thead">>,
-			[?XE(<<"tr">>,
-			     [?X(<<"td">>), ?XCT(<<"td">>, ?T("Time")),
-			      ?XCT(<<"td">>, ?T("From")),
-			      ?XCT(<<"td">>, ?T("To")),
-			      ?XCT(<<"td">>, ?T("Packet"))])]),
-		    ?XE(<<"tbody">>,
-			if FMsgs == [] ->
-			       [?XE(<<"tr">>,
-				    [?XAC(<<"td">>, [{<<"colspan">>, <<"4">>}],
-					  <<" ">>)])];
-			   true -> FMsgs
-			end)]),
-	       ?BR,
-	       ?INPUTTD(<<"submit">>, <<"delete">>,
-		       ?T("Delete Selected"))])].
-
-user_queue_parse_query(LUser, LServer, Query) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case lists:keysearch(<<"delete">>, 1, Query) of
-	{value, _} ->
-	    case user_queue_parse_query(LUser, LServer, Query, Mod, false) of
-		true ->
-		    flush_cache(Mod, LUser, LServer);
-		false ->
-		    ok
-	    end;
-	_ ->
-	    ok
-    end.
-
-user_queue_parse_query(LUser, LServer, Query, Mod, Acc) ->
-    case lists:keytake(<<"selected">>, 1, Query) of
-	{value, {_, Seq}, Query2} ->
-	    NewAcc = case catch binary_to_integer(Seq) of
-			 I when is_integer(I), I>=0 ->
-			     Mod:remove_message(LUser, LServer, I),
-			     true;
-			 _ ->
-			     Acc
-		     end,
-	    user_queue_parse_query(LUser, LServer, Query2, Mod, NewAcc);
-	false ->
-	    Acc
-    end.
-
 us_to_list({User, Server}) ->
     jid:encode({User, Server, <<"">>}).
 
 get_queue_length(LUser, LServer) ->
     count_offline_messages(LUser, LServer).
 
-get_messages_subset(User, Host, MsgsAll) ->
-    MaxOfflineMsgs = case get_max_user_messages(User, Host) of
-		       Number when is_integer(Number) -> Number;
-		       _ -> 100
-		     end,
-    Length = length(MsgsAll),
-    get_messages_subset2(MaxOfflineMsgs, Length, MsgsAll).
+webadmin_user(Acc, User, Server, R) ->
+    Acc ++ [make_command(get_offline_count, R, [{<<"user">>, User}, {<<"host">>, Server}], [])].
 
-get_messages_subset2(Max, Length, MsgsAll) when Length =< Max * 2 ->
-    MsgsAll;
-get_messages_subset2(Max, Length, MsgsAll) ->
-    FirstN = Max,
-    {MsgsFirstN, Msgs2} = lists:split(FirstN, MsgsAll),
-    MsgsLastN = lists:nthtail(Length - FirstN - FirstN,
-			      Msgs2),
-    NoJID = jid:make(<<"...">>, <<"...">>),
-    Seq = <<"0">>,
-    IntermediateMsg = #xmlel{name = <<"...">>, attrs = [],
-			     children = []},
-    MsgsFirstN ++ [{Seq, NoJID, NoJID, IntermediateMsg}] ++ MsgsLastN.
-
-webadmin_user(Acc, User, Server, Lang) ->
-    QueueLen = count_offline_messages(jid:nodeprep(User),
-				jid:nameprep(Server)),
-    FQueueLen = ?C(integer_to_binary(QueueLen)),
-    FQueueView = ?AC(<<"queue/">>,
-		     ?T("View Queue")),
-    Acc ++
-        [?XCT(<<"h3">>, ?T("Offline Messages:")),
-         FQueueLen,
-         ?C(<<"  |   ">>),
-         FQueueView,
-         ?C(<<" | ">>),
-         ?INPUTTD(<<"submit">>, <<"removealloffline">>,
-                  ?T("Remove All Offline Messages"))].
+%%%
+%%%
+%%%
 
 -spec delete_all_msgs(binary(), binary()) -> {atomic, any()}.
 delete_all_msgs(User, Server) ->

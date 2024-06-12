@@ -54,6 +54,8 @@
          oauth_add_client_implicit/3,
          oauth_remove_client/1]).
 
+-export([web_menu_main/2, web_page_main/2]).
+
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
@@ -230,6 +232,8 @@ init([]) ->
     application:set_env(oauth2, expiry_time, Expire div 1000),
     application:start(oauth2),
     ejabberd_commands:register_commands(get_commands_spec()),
+    ejabberd_hooks:add(webadmin_menu_main, ?MODULE, web_menu_main, 50),
+    ejabberd_hooks:add(webadmin_page_main, ?MODULE, web_page_main, 50),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     erlang:send_after(expire(), self(), clean),
     {ok, ok}.
@@ -255,6 +259,8 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    ejabberd_hooks:delete(webadmin_menu_main, ?MODULE, web_menu_main, 50),
+    ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
     ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50).
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
@@ -794,3 +800,30 @@ logo() ->
 	{error, _} ->
 	    <<>>
     end.
+
+%%%
+%%% WebAdmin
+%%%
+
+%% @format-begin
+
+web_menu_main(Acc, _Lang) ->
+    Acc ++ [{<<"oauth">>, <<"OAuth">>}].
+
+web_page_main(_, #request{path = [<<"oauth">>]} = R) ->
+    Head = ?H1GLraw(<<"OAuth">>, <<"developer/ejabberd-api/oauth/">>, <<"OAuth">>),
+    Set = [?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"token">>}], <<"Token">>),
+           ?XE(<<"blockquote">>,
+               [ejabberd_web_admin:make_command(oauth_list_tokens, R),
+                ejabberd_web_admin:make_command(oauth_issue_token, R),
+                ejabberd_web_admin:make_command(oauth_revoke_token, R)]),
+           ?X(<<"hr">>),
+           ?XAC(<<"h2">>, [{<<"id">>, <<"client">>}], <<"Client">>),
+           ?XE(<<"blockquote">>,
+               [ejabberd_web_admin:make_command(oauth_add_client_implicit, R),
+                ejabberd_web_admin:make_command(oauth_add_client_password, R),
+                ejabberd_web_admin:make_command(oauth_remove_client, R)])],
+    {stop, Head ++ Set};
+web_page_main(Acc, _) ->
+    Acc.
