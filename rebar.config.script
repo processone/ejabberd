@@ -418,7 +418,7 @@ end,
 
 Rules = [
 	 {[plugins], IsRebar3,
-	  AppendList([{pc, "1.15.0"}]), []},
+	  AppendList([{pc, "~> 1.15.0"}]), []},
 	 {[provider_hooks], IsRebar3,
 	  AppendList([{pre, [
 			     {compile, {asn, compile}},
