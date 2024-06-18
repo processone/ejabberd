@@ -286,7 +286,11 @@ uid() {
   else
     # Erlang/OTP 23 or higher: use native dynamic node code
     # https://www.erlang.org/patches/otp-23.0#OTP-13812
-    echo undefined
+    if [ "$ERLANG_NODE" != "${ERLANG_NODE%.*}" ]; then
+      echo "undefined@${ERLANG_NODE#*@}"
+    else
+      echo "undefined"
+    fi
   fi
 }
 
