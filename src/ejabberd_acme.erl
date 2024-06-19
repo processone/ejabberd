@@ -32,11 +32,16 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
+%% WebAdmin
+-export([webadmin_menu_node/3, webadmin_page_node/3]).
 
 -include("logger.hrl").
 -include("ejabberd_commands.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 -include_lib("public_key/include/public_key.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(CALL_TIMEOUT, timer:minutes(10)).
 
@@ -108,6 +113,8 @@ init([]) ->
     ejabberd_hooks:add(config_reloaded, ?MODULE, register_certfiles, 40),
     ejabberd_hooks:add(ejabberd_started, ?MODULE, ejabberd_started, 110),
     ejabberd_hooks:add(config_reloaded, ?MODULE, ejabberd_started, 110),
+    ejabberd_hooks:add(webadmin_menu_node, ?MODULE, webadmin_menu_node, 110),
+    ejabberd_hooks:add(webadmin_page_node, ?MODULE, webadmin_page_node, 110),
     ejabberd_commands:register_commands(get_commands_spec()),
     register_certfiles(),
     {ok, #state{}}.
@@ -153,6 +160,8 @@ terminate(_Reason, _State) ->
     ejabberd_hooks:delete(config_reloaded, ?MODULE, register_certfiles, 40),
     ejabberd_hooks:delete(ejabberd_started, ?MODULE, ejabberd_started, 110),
     ejabberd_hooks:delete(config_reloaded, ?MODULE, ejabberd_started, 110),
+    ejabberd_hooks:delete(webadmin_menu_node, ?MODULE, webadmin_menu_node, 110),
+    ejabberd_hooks:delete(webadmin_page_node, ?MODULE, webadmin_page_node, 110),
     ejabberd_commands:unregister_commands(get_commands_spec()).
 
 code_change(_OldVsn, State, _Extra) ->
@@ -546,6 +555,21 @@ list_certificates() ->
 	fun({Domain, Path} = E) ->
 		{Domain, Path, sets:is_element(E, Used)}
 	end, Known)).
+
+%%%===================================================================
+%%% WebAdmin
+%%%===================================================================
+
+webadmin_menu_node(Acc, _Node, _Lang) ->
+    Acc ++ [{<<"acme">>, <<"ACME">>}].
+
+webadmin_page_node(_, Node, #request{path = [<<"acme">>]} = R) ->
+    Head = ?H1GLraw(<<"ACME Certificates">>, <<"admin/configuration/basic/#acme">>, <<"ACME">>),
+    Set = [ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [request_certificate, R]),
+           ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [revoke_certificate, R])],
+    Get = [ejabberd_cluster:call(Node, ejabberd_web_admin, make_command, [list_certificates, R])],
+    {stop, Head ++ Get ++ Set};
+webadmin_page_node(Acc, _, _) -> Acc.
 
 %%%===================================================================
 %%% Other stuff

@@ -19,12 +19,29 @@
 %%%----------------------------------------------------------------------
 
 -type aterm() :: {atom(), atype()}.
--type atype() :: integer | string | binary |
+-type atype() :: integer | string | binary | any | atom |
                  {tuple, [aterm()]} | {list, aterm()}.
 -type rterm() :: {atom(), rtype()}.
--type rtype() :: integer | string | atom |
+-type rtype() :: integer | string | atom | any |
                  {tuple, [rterm()]} | {list, rterm()} |
                  rescode | restuple.
+
+%% The 'any' and 'atom' argument types and 'any' result type
+%% should only be used %% by commands with tag 'internal',
+%% which are meant to be used only internally in ejabberd,
+%% and not called using external frontends.
+
+%% The purpose of a command can either be:
+%% - informative: its purpose is to obtain information
+%% - modifier: its purpose is to produce some change in the server
+%%
+%% A modifier command should be designed just to produce its desired side-effect,
+%% and its result term should just be success or failure: rescode or restuple.
+%%
+%% ejabberd_web_admin:make_command/2 considers that commands
+%% with result type different than rescode or restuple
+%% are commands that can be safely executed automatically
+%% to get information and build the web page.
 
 -type oauth_scope() :: atom().
 

@@ -136,11 +136,7 @@ ul li #navhead a, ul li #navheadsub a, ul li #navheadsubsub a {
   margin-bottom: -1px;
 }
 thead tr td {
-  background: #3eaffa;
-  color: #fff;
-}
-thead tr td a {
-  color: #fff;
+  background: #cae7e4;
 }
 td.copy {
   text-align: center;
@@ -227,22 +223,29 @@ h3 {
   padding-top: 25px;
   width: 70%;
 }
+div.anchorlink {
+  display: inline-block;
+  float: right;
+  margin-top: 1em;
+  margin-right: 1em;
+}
+div.anchorlink a {
+  padding: 3px;
+  background: #cae7e4;
+  font-size: 0.75em;
+  color: black;
+}
 div.guidelink,
 p[dir=ltr] {
   display: inline-block;
   float: right;
-
-  margin: 0;
+  margin-top: 1em;
   margin-right: 1em;
 }
 div.guidelink a,
 p[dir=ltr] a {
-  display: inline-block;
-  border-radius: 3px;
   padding: 3px;
-
   background: #3eaffa;
-
   font-size: 0.75em;
   color: #fff;
 }
@@ -265,7 +268,7 @@ input,
 select {
   font-size: 1em;
 }
-p.result {
+.result {
   border: 1px;
   border-style: dashed;
   border-color: #FE8A02;
@@ -283,4 +286,19 @@ p.result {
 .btn-danger {
 	color: #cb2431;
 	transition: none;
+}
+h3.api {
+  border-bottom: 1px solid #b6b6b6;
+}
+details > summary {
+  background-color: #dbeceb;
+  border: none;
+  cursor: pointer;
+  list-style: none;
+  padding: 8px;
+}
+details > pre, details > p {
+  background-color: #e6f1f0;
+  margin: 0;
+  padding: 10px;
 }

@@ -188,7 +188,9 @@ list_commands(Version) ->
     Commands = get_commands_definition(Version),
     [{Name, Args, Desc} || #ejabberd_commands{name = Name,
                                               args = Args,
-                                              desc = Desc} <- Commands].
+                                              tags = Tags,
+                                              desc = Desc} <- Commands,
+                           not lists:member(internal, Tags)].
 
 -spec get_command_format(atom()) -> {[aterm()], [{atom(),atom()}], rterm()}.
 
@@ -264,10 +266,16 @@ execute_command2(Name, Arguments, CallerInfo) ->
 
 execute_command2(Name, Arguments, CallerInfo, Version) ->
     Command = get_command_definition(Name, Version),
-    case ejabberd_access_permissions:can_access(Name, CallerInfo) of
-	allow ->
+    FrontedCalledInternal =
+        maps:get(caller_module, CallerInfo, none) /= ejabberd_web_admin
+        andalso lists:member(internal, Command#ejabberd_commands.tags),
+    case {ejabberd_access_permissions:can_access(Name, CallerInfo),
+          FrontedCalledInternal} of
+        {allow, false} ->
 	    do_execute_command(Command, Arguments);
-	_ ->
+        {_, true} ->
+	    throw({error, frontend_cannot_call_an_internal_command});
+        {deny, false} ->
 	    throw({error, access_rules_unauthorized})
     end.
 
@@ -289,7 +297,8 @@ get_tags_commands() ->
 get_tags_commands(Version) ->
     CommandTags = [{Name, Tags} ||
 		      #ejabberd_commands{name = Name, tags = Tags}
-			  <- get_commands_definition(Version)],
+			  <- get_commands_definition(Version),
+                          not lists:member(internal, Tags)],
     Dict = lists:foldl(
 	     fun({CommandNameAtom, CTags}, D) ->
 		     CommandName = atom_to_list(CommandNameAtom),

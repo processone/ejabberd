@@ -62,6 +62,11 @@
 	    [{<<"type">>, Type}, {<<"name">>, Name},
 	     {<<"value">>, Value}])).
 
+-define(INPUTPH(Type, Name, Value, PlaceHolder),
+	?XA(<<"input">>,
+	    [{<<"type">>, Type}, {<<"name">>, Name},
+	     {<<"value">>, Value}, {<<"placeholder">>, PlaceHolder}])).
+
 -define(INPUTT(Type, Name, Value),
 	?INPUT(Type, Name, (translate:translate(Lang, Value)))).
 
@@ -95,16 +100,27 @@
 -define(XRES(Text),
 	?XAC(<<"p">>, [{<<"class">>, <<"result">>}], Text)).
 
+-define(DIVRES(Elements),
+	?XAE(<<"div">>, [{<<"class">>, <<"result">>}], Elements)).
+
 %% Guide Link
 -define(XREST(Text), ?XRES((translate:translate(Lang, Text)))).
 
 -define(GL(Ref, Title),
 	?XAE(<<"div">>, [{<<"class">>, <<"guidelink">>}],
 	     [?XAE(<<"a">>,
-		   [{<<"href">>, <<"https://docs.ejabberd.im/admin/configuration/", Ref/binary>>},
+		   [{<<"href">>, <<"https://docs.ejabberd.im/", Ref/binary>>},
 		    {<<"target">>, <<"_blank">>}],
 		   [?C(<<"docs: ", Title/binary>>)])])).
 
 %% h1 with a Guide Link
--define(H1GL(Name, Ref, Title),
-	[?XC(<<"h1">>, Name), ?GL(Ref, Title)]).
+-define(H1GLraw(Name, Ref, Title),
+	[?XC(<<"h1">>, Name), ?GL(Ref, Title), ?BR]).
+-define(H1GL(Name, RefConf, Title),
+	?H1GLraw(Name, <<"admin/configuration/", RefConf/binary>>, Title)).
+
+-define(ANCHORL(Ref),
+	?XAE(<<"div">>, [{<<"class">>, <<"anchorlink">>}],
+	     [?XAE(<<"a">>,
+		   [{<<"href">>, <<"#", Ref/binary>>}],
+		   [?C(<<"<=">>)])])).

@@ -262,6 +262,16 @@ _build/edoc/logo.png: edoc_compile
 	wget https://docs.ejabberd.im/assets/img/footer_logo_e.png -O _build/edoc/logo.png
 
 #.
+#' format / indent
+#
+
+format:
+	tools/rebar3-format.sh $(REBAR)
+
+indent:
+	tools/emacs-indent.sh
+
+#.
 #' copy-files
 #
 
@@ -650,7 +660,7 @@ test:
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean prod rel \
 	install uninstall uninstall-binary uninstall-all translations deps test \
 	all dev doap help install-rel relive scripts uninstall-rel update \
-	erlang_plt deps_plt ejabberd_plt xref hooks options
+	erlang_plt deps_plt ejabberd_plt xref hooks options format indent
 
 #.
 #' help
@@ -681,6 +691,9 @@ help:
 	@echo "  options        Generate ejabberd_option.erl"
 	@echo "  translations   Extract translation files"
 	@echo "  TAGS           Generate tags file for text editors"
+	@echo ""
+	@echo "  format         Format source code using rebar3_format [rebar3]"
+	@echo "  indent         Indent source code using erlang-mode [emacs]"
 	@echo ""
 	@echo "  dialyzer       Run Dialyzer static analyzer"
 	@echo "  hooks          Run hooks validator"

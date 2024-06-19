@@ -46,12 +46,15 @@
 	 import_start/2, import_stop/2, is_subscribed/2,
 	 c2s_self_presence/1, in_subscription/2,
 	 out_subscription/1, set_items/3, remove_user/2,
-	 get_jid_info/4, encode_item/1, webadmin_page/3,
-	 webadmin_user/4, get_versioning_feature/2,
+	 get_jid_info/4, encode_item/1, get_versioning_feature/2,
 	 roster_version/2, mod_doc/0,
 	 mod_opt_type/1, mod_options/1, set_roster/1, del_roster/3,
 	 process_rosteritems/5,
 	 depends/2, set_item_and_notify_clients/3]).
+
+-export([webadmin_page_hostuser/4, webadmin_menu_hostuser/4, webadmin_user/4]).
+
+-import(ejabberd_web_admin, [make_command/4, make_command_raw_value/3, make_table/4]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -98,7 +101,8 @@ start(Host, Opts) ->
           {hook, remove_user, remove_user, 50},
           {hook, c2s_self_presence, c2s_self_presence, 50},
           {hook, c2s_post_auth_features, get_versioning_feature, 50},
-          {hook, webadmin_page_host, webadmin_page, 50},
+          {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
+          {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50},
           {hook, webadmin_user, webadmin_user, 50},
           {iq_handler, ejabberd_sm, ?NS_ROSTER, process_iq}]}.
 
@@ -1016,205 +1020,84 @@ process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-webadmin_page(_, Host,
-	      #request{us = _US, path = [<<"user">>, U, <<"roster">>],
-		       q = Query, lang = Lang} =
-		  _Request) ->
-    Res = user_roster(U, Host, Query, Lang), {stop, Res};
-webadmin_page(Acc, _, _) -> Acc.
+%%% @format-begin
 
-user_roster(User, Server, Query, Lang) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    US = {LUser, LServer},
-    Items1 = get_roster(LUser, LServer),
-    Res = user_roster_parse_query(User, Server, Items1,
-				  Query),
-    Items = get_roster(LUser, LServer),
-    SItems = lists:sort(Items),
-    FItems = case SItems of
-	       [] -> [?CT(?T("None"))];
-	       _ ->
-		   [?XE(<<"table">>,
-			[?XE(<<"thead">>,
-			     [?XE(<<"tr">>,
-				  [?XCT(<<"td">>, ?T("Jabber ID")),
-				   ?XCT(<<"td">>, ?T("Nickname")),
-				   ?XCT(<<"td">>, ?T("Subscription")),
-				   ?XCT(<<"td">>, ?T("Pending")),
-				   ?XCT(<<"td">>, ?T("Groups"))])]),
-			 ?XE(<<"tbody">>,
-			     (lists:map(fun (R) ->
-						Groups = lists:flatmap(fun
-									 (Group) ->
-									     [?C(Group),
-									      ?BR]
-								       end,
-								       R#roster.groups),
-						Pending =
-						    ask_to_pending(R#roster.ask),
-						TDJID =
-						    build_contact_jid_td(R#roster.jid),
-						?XE(<<"tr">>,
-						    [TDJID,
-						     ?XAC(<<"td">>,
-							  [{<<"class">>,
-							    <<"valign">>}],
-							  (R#roster.name)),
-						     ?XAC(<<"td">>,
-							  [{<<"class">>,
-							    <<"valign">>}],
-							  (iolist_to_binary(atom_to_list(R#roster.subscription)))),
-						     ?XAC(<<"td">>,
-							  [{<<"class">>,
-							    <<"valign">>}],
-							  (iolist_to_binary(atom_to_list(Pending)))),
-						     ?XAE(<<"td">>,
-							  [{<<"class">>,
-							    <<"valign">>}],
-							  Groups),
-						     if Pending == in ->
-							    ?XAE(<<"td">>,
-								 [{<<"class">>,
-								   <<"valign">>}],
-								 [?INPUTT(<<"submit">>,
-									  <<"validate",
-									    (ejabberd_web_admin:term_to_id(R#roster.jid))/binary>>,
-									  ?T("Validate"))]);
-							true -> ?X(<<"td">>)
-						     end,
-						     ?XAE(<<"td">>,
-							  [{<<"class">>,
-							    <<"valign">>}],
-							  [?INPUTTD(<<"submit">>,
-								   <<"remove",
-								     (ejabberd_web_admin:term_to_id(R#roster.jid))/binary>>,
-								   ?T("Remove"))])])
-					end,
-					SItems)))])]
-	     end,
-    PageTitle = str:translate_and_format(Lang, ?T("Roster of ~ts"), [us_to_list(US)]),
-    (?H1GL(PageTitle, <<"modules/#mod_roster">>, <<"mod_roster">>))
-      ++
-      case Res of
-	ok -> [?XREST(?T("Submitted"))];
-	error -> [?XREST(?T("Bad format"))];
-	nothing -> []
-      end
-	++
-	[?XAE(<<"form">>,
-	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-	      (  [?P, ?INPUT(<<"text">>, <<"newjid">>, <<"">>),
-		  ?C(<<" ">>),
-		  ?INPUTT(<<"submit">>, <<"addjid">>,
-			  ?T("Add Jabber ID"))]
-               ++ FItems))].
+webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"roster">>, <<"Roster">>}].
 
-build_contact_jid_td(RosterJID) ->
-    ContactJID = jid:make(RosterJID),
-    JIDURI = case {ContactJID#jid.luser,
-		   ContactJID#jid.lserver}
-		 of
-	       {<<"">>, _} -> <<"">>;
-	       {CUser, CServer} ->
-		   case lists:member(CServer, ejabberd_option:hosts()) of
-		     false -> <<"">>;
-		     true ->
-			 <<"../../../../../server/", CServer/binary, "/user/",
-			   CUser/binary, "/">>
-		   end
-	     end,
-    case JIDURI of
-      <<>> ->
-	  ?XAC(<<"td">>, [{<<"class">>, <<"valign">>}],
-	       (jid:encode(RosterJID)));
-      URI when is_binary(URI) ->
-	  ?XAE(<<"td">>, [{<<"class">>, <<"valign">>}],
-	       [?AC(JIDURI, (jid:encode(RosterJID)))])
-    end.
+webadmin_page_hostuser(_, Host, Username, #request{path = [<<"roster">> | RPath]} = R) ->
+    Head = ?H1GL(<<"Roster">>, <<"modules/#mod_roster">>, <<"mod_roster">>),
+    %% Execute twice: first to perform the action, the second to get new roster
+    _ = make_webadmin_roster_table(Host, Username, R, RPath),
+    RV2 = make_webadmin_roster_table(Host, Username, R, RPath),
+    Set = [make_command(add_rosteritem,
+                        R,
+                        [{<<"localuser">>, Username}, {<<"localhost">>, Host}],
+                        []),
+           make_command(push_roster, R, [{<<"user">>, Username}, {<<"host">>, Host}], [])],
+    Get = [make_command(get_roster, R, [], [{only, presentation}]),
+           make_command(delete_rosteritem, R, [], [{only, presentation}]),
+           RV2],
+    {stop, Head ++ Get ++ Set};
+webadmin_page_hostuser(Acc, _, _, _) ->
+    Acc.
 
-user_roster_parse_query(User, Server, Items, Query) ->
-    case lists:keysearch(<<"addjid">>, 1, Query) of
-      {value, _} ->
-	  case lists:keysearch(<<"newjid">>, 1, Query) of
-	    {value, {_, SJID}} ->
-		try jid:decode(SJID) of
-		  JID ->
-		      user_roster_subscribe_jid(User, Server, JID), ok
-		catch _:{bad_jid, _} ->
-			error
-		end;
-	    false -> error
-	  end;
-      false ->
-	  case catch user_roster_item_parse_query(User, Server,
-						  Items, Query)
-	      of
-	    submitted -> ok;
-	    {'EXIT', _Reason} -> error;
-	    _ -> nothing
-	  end
-    end.
+make_webadmin_roster_table(Host, Username, R, RPath) ->
+    Contacts =
+        case make_command_raw_value(get_roster, R, [{<<"user">>, Username}, {<<"host">>, Host}])
+        of
+            Cs when is_list(Cs) ->
+                Cs;
+            _ ->
+                []
+        end,
+    Level = 5 + length(RPath),
+    Columns =
+        [<<"jid">>, <<"nick">>, <<"subscription">>, <<"pending">>, <<"groups">>, <<"">>],
+    Rows =
+        lists:map(fun({Jid, Nick, Subscriptions, Pending, Groups}) ->
+                     {JidSplit, ProblematicBin} =
+                         try jid:decode(Jid) of
+                             #jid{} = J ->
+                                 {jid:split(J), <<"">>}
+                         catch
+                             _:{bad_jid, _} ->
+                                 ?INFO_MSG("Error parsing contact of ~s@~s that is invalid JID: ~s",
+                                           [Username, Host, Jid]),
+                                 {{<<"000--error-parsing-jid">>, <<"localhost">>, <<"">>},
+                                  <<", Error parsing JID: ", Jid/binary>>}
+                         end,
+                     {make_command(echo,
+                                   R,
+                                   [{<<"sentence">>, jid:encode(JidSplit)}],
+                                   [{only, raw_and_value},
+                                    {result_links, [{sentence, user, Level, <<"">>}]}]),
+                      ?C(<<Nick/binary, ProblematicBin/binary>>),
+                      ?C(Subscriptions),
+                      ?C(Pending),
+                      ?C(Groups),
+                      make_command(delete_rosteritem,
+                                   R,
+                                   [{<<"localuser">>, Username},
+                                    {<<"localhost">>, Host},
+                                    {<<"user">>, element(1, JidSplit)},
+                                    {<<"host">>, element(2, JidSplit)}],
+                                   [{only, button},
+                                    {style, danger},
+                                    {input_name_append,
+                                     [Username,
+                                      Host,
+                                      element(1, JidSplit),
+                                      element(2, JidSplit)]}])}
+                  end,
+                  lists:keysort(1, Contacts)),
+    Table = make_table(20, RPath, Columns, Rows),
+    ?XE(<<"blockquote">>, [Table]).
 
-user_roster_subscribe_jid(User, Server, JID) ->
-    UJID = jid:make(User, Server),
-    Presence = #presence{from = UJID, to = JID, type = subscribe},
-    out_subscription(Presence),
-    ejabberd_router:route(Presence).
-
-user_roster_item_parse_query(User, Server, Items,
-			     Query) ->
-    lists:foreach(fun (R) ->
-			  JID = R#roster.jid,
-			  case lists:keysearch(<<"validate",
-						 (ejabberd_web_admin:term_to_id(JID))/binary>>,
-					       1, Query)
-			      of
-			    {value, _} ->
-				JID1 = jid:make(JID),
-				UJID = jid:make(User, Server),
-				Pres = #presence{from = UJID, to = JID1,
-						 type = subscribed},
-				out_subscription(Pres),
-				ejabberd_router:route(Pres),
-				throw(submitted);
-			    false ->
-				case lists:keysearch(<<"remove",
-						       (ejabberd_web_admin:term_to_id(JID))/binary>>,
-						     1, Query)
-				    of
-				  {value, _} ->
-				      UJID = jid:make(User, Server),
-				      RosterItem = #roster_item{
-						      jid = jid:make(JID),
-						      subscription = remove},
-				      process_iq_set(
-					#iq{type = set,
-					    from = UJID,
-					    to = UJID,
-					    id = p1_rand:get_string(),
-					    sub_els = [#roster_query{
-							  items = [RosterItem]}]}),
-				      throw(submitted);
-				  false -> ok
-				end
-			  end
-		  end,
-		  Items),
-    nothing.
-
-us_to_list({User, Server}) ->
-    jid:encode({User, Server, <<"">>}).
-
-webadmin_user(Acc, User, Server, Lang) ->
-    QueueLen = length(get_roster(jid:nodeprep(User), jid:nameprep(Server))),
-    FQueueLen = ?C(integer_to_binary(QueueLen)),
-    FQueueView = ?AC(<<"roster/">>, ?T("View Roster")),
-    Acc ++
-        [?XCT(<<"h3">>, ?T("Roster:")),
-         FQueueLen,
-         ?C(<<"  |   ">>),
-         FQueueView].
+webadmin_user(Acc, User, Server, R) ->
+    Acc
+    ++ [make_command(get_roster_count, R, [{<<"user">>, User}, {<<"host">>, Server}], [])].
+%%% @format-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec has_duplicated_groups([binary()]) -> boolean().

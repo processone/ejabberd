@@ -29,18 +29,20 @@
 
 -author('alexey@process-one.net').
 
--export([process/2, list_users/4,
-	 list_users_in_diapason/4, pretty_print_xml/1,
-	 term_to_id/1]).
+-export([process/2, pretty_print_xml/1,
+         make_command/2, make_command/4, make_command_raw_value/3,
+         make_table/2, make_table/4,
+         term_to_id/1, id_to_term/1]).
 
--include("logger.hrl").
+%% Internal commands
+-export([webadmin_host_last_activity/3,
+         webadmin_node_db_table_page/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
-
+-include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
-
 -include("ejabberd_web_admin.hrl").
-
+-include("logger.hrl").
 -include("translate.hrl").
 
 -define(INPUTATTRS(Type, Name, Value, Attrs),
@@ -61,11 +63,13 @@ get_acl_rule([<<"style.css">>], _) ->
     {<<"localhost">>, [all]};
 get_acl_rule([<<"logo.png">>], _) ->
     {<<"localhost">>, [all]};
-get_acl_rule([<<"logo-fill.png">>], _) ->
-    {<<"localhost">>, [all]};
 get_acl_rule([<<"favicon.ico">>], _) ->
     {<<"localhost">>, [all]};
 get_acl_rule([<<"additions.js">>], _) ->
+    {<<"localhost">>, [all]};
+get_acl_rule([<<"sortable.min.css">>], _) ->
+    {<<"localhost">>, [all]};
+get_acl_rule([<<"sortable.min.js">>], _) ->
     {<<"localhost">>, [all]};
 %% This page only displays vhosts that the user is admin:
 get_acl_rule([<<"vhosts">>], _) ->
@@ -73,13 +77,13 @@ get_acl_rule([<<"vhosts">>], _) ->
 %% The pages of a vhost are only accessible if the user is admin of that vhost:
 get_acl_rule([<<"server">>, VHost | _RPath], Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    {VHost, [configure, webadmin_view]};
+    {VHost, [configure]};
 get_acl_rule([<<"server">>, VHost | _RPath], 'POST') ->
     {VHost, [configure]};
 %% Default rule: only global admins can access any other random page
 get_acl_rule(_RPath, Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    {global, [configure, webadmin_view]};
+    {global, [configure]};
 get_acl_rule(_RPath, 'POST') ->
     {global, [configure]}.
 
@@ -104,7 +108,7 @@ get_menu_items(global, cluster, Lang, JID, Level) ->
 	      end,
 	      Items);
 get_menu_items(Host, cluster, Lang, JID, Level) ->
-    {_Base, _, Items} = make_host_menu(Host, [], Lang, JID, Level),
+    {_Base, _, Items} = make_host_menu(Host, [], [], Lang, JID, Level),
     lists:map(fun ({URI, Name}) ->
 		      {<<URI/binary, "/">>, Name};
 		  ({URI, Name, _SubMenu}) ->
@@ -174,8 +178,7 @@ process2([<<"server">>, SHost | RPath] = Path,
 		{401,
 		 [{<<"WWW-Authenticate">>,
 		   <<"basic realm=\"ejabberd\"">>}],
-		 ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					       ?T("Unauthorized"))])};
+		 ejabberd_web:make_xhtml(make_unauthorized(Lang))};
 	    {unauthorized, Error} ->
 		{BadUser, _BadPass} = Auth,
 		{IPT, _Port} = Request#request.ip,
@@ -186,8 +189,7 @@ process2([<<"server">>, SHost | RPath] = Path,
 		 [{<<"WWW-Authenticate">>,
 		   <<"basic realm=\"auth error, retry login "
 		     "to ejabberd\"">>}],
-		 ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					       ?T("Unauthorized"))])}
+		 ejabberd_web:make_xhtml(make_unauthorized(Lang))}
 	  end;
       false -> ejabberd_web:error(not_found)
     end;
@@ -206,8 +208,7 @@ process2(RPath,
 	    {401,
 	     [{<<"WWW-Authenticate">>,
 	       <<"basic realm=\"ejabberd\"">>}],
-	     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					   ?T("Unauthorized"))])};
+	     ejabberd_web:make_xhtml(make_unauthorized(Lang))};
 	{unauthorized, Error} ->
 	    {BadUser, _BadPass} = Auth,
 	    {IPT, _Port} = Request#request.ip,
@@ -218,9 +219,13 @@ process2(RPath,
 	     [{<<"WWW-Authenticate">>,
 	       <<"basic realm=\"auth error, retry login "
 		 "to ejabberd\"">>}],
-	     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					   ?T("Unauthorized"))])}
+	     ejabberd_web:make_xhtml(make_unauthorized(Lang))}
     end.
+
+make_unauthorized(Lang) ->
+    [?XCT(<<"h1">>, ?T("Unauthorized")),
+     ?XE(<<"p">>, [?C(<<"There was some problem authenticating, or the account doesn't have privilege.">>)]),
+     ?XE(<<"p">>, [?C(<<"Please check the log file for a more precise error message.">>)])].
 
 get_auth_admin(Auth, HostHTTP, RPath, Method) ->
     case Auth of
@@ -273,18 +278,26 @@ get_auth_account2(HostOfRule, AccessRule, User, Server,
 %%%% make_xhtml
 
 make_xhtml(Els, Host, Lang, JID, Level) ->
-    make_xhtml(Els, Host, cluster, Lang, JID, Level).
+    make_xhtml(Els, Host, cluster, unspecified, Lang, JID, Level).
+
+make_xhtml(Els, Host, Username, Lang, JID, Level) when
+      (Username == unspecified) or (is_binary(Username)) ->
+    make_xhtml(Els, Host, cluster, Username, Lang, JID, Level);
+
+make_xhtml(Els, Host, Node, Lang, JID, Level) ->
+    make_xhtml(Els, Host, Node, unspecified, Lang, JID, Level).
 
 -spec make_xhtml([xmlel()],
                  Host::global | binary(),
                  Node::cluster | atom(),
+                 Username::unspecified | binary(),
                  Lang::binary(),
                  jid(),
                  Level::integer()) ->
     {200, [html], xmlel()}.
-make_xhtml(Els, Host, Node, Lang, JID, Level) ->
+make_xhtml(Els, Host, Node, Username, Lang, JID, Level) ->
     Base = get_base_path_sum(0, 0, Level),
-    MenuItems = make_navigation(Host, Node, Lang, JID, Level),
+    MenuItems = make_navigation(Host, Node, Username, Lang, JID, Level),
     {200, [html],
      #xmlel{name = <<"html">>,
 	    attrs =
@@ -319,7 +332,20 @@ make_xhtml(Els, Host, Node, Lang, JID, Level) ->
 					  <<Base/binary, "style.css">>},
 					 {<<"type">>, <<"text/css">>},
 					 {<<"rel">>, <<"stylesheet">>}],
-				    children = []}]},
+				    children = []},
+			     #xmlel{name = <<"link">>,
+				    attrs =
+					[{<<"href">>,
+					  <<Base/binary, "sortable.min.css">>},
+					 {<<"type">>, <<"text/css">>},
+					 {<<"rel">>, <<"stylesheet">>}],
+				    children = []},
+			     #xmlel{name = <<"script">>,
+				    attrs =
+					[{<<"src">>,
+					  <<Base/binary, "sortable.min.js">>},
+					 {<<"type">>, <<"text/javascript">>}],
+				    children = [?C(<<" ">>)]}]},
 		 ?XE(<<"body">>,
 		     [?XAE(<<"div">>, [{<<"id">>, <<"container">>}],
 			   [?XAE(<<"div">>, [{<<"id">>, <<"header">>}],
@@ -387,25 +413,59 @@ logo() ->
 	{error, _} -> <<>>
     end.
 
-logo_fill() ->
-    case misc:read_img("admin-logo-fill.png") of
-	{ok, Img} -> Img;
+sortable_css() ->
+    case misc:read_css("sortable.min.css") of
+	{ok, CSS} -> CSS;
+	{error, _} -> <<>>
+    end.
+
+sortable_js() ->
+    case misc:read_js("sortable.min.js") of
+	{ok, JS} -> JS;
 	{error, _} -> <<>>
     end.
 
 %%%==================================
 %%%% process_admin
 
-process_admin(global, #request{path = [], lang = Lang}, AJID) ->
+process_admin(global, #request{path = [], lang = Lang} = Request, AJID) ->
+    Title = ?H1GLraw(<<"">>, <<"">>, <<"home">>),
     MenuItems = get_menu_items(global, cluster, Lang, AJID, 0),
     Disclaimer = maybe_disclaimer_not_admin(MenuItems, AJID, Lang),
-    make_xhtml((?H1GL((translate:translate(Lang, ?T("Administration"))), <<"">>,
-		      <<"Configuration">>))
-		 ++ Disclaimer ++
-		 [?XE(<<"ul">>,
-		      [?LI([?ACT(MIU, MIN)])
-		       || {MIU, MIN}
-			      <- MenuItems])],
+    WelcomeText =
+        [?BR,
+         ?XAE(<<"p">>, [{<<"align">>, <<"center">>}],
+              [?XA(<<"img">>, [{<<"src">>, <<"logo.png">>},
+                               {<<"style">>, <<"border-radius:10px; background:#49cbc1; padding: 1.1em;">>}])
+              ]),
+         ?BR,
+         ?X(<<"hr">>)] ++ Title ++
+        [?XE(<<"blockquote">>,
+             [
+              ?XC(<<"p">>, <<"Welcome to ejabberd's WebAdmin!">>),
+              ?XC(<<"p">>, <<"Browse the menu to navigate your XMPP virtual hosts, "
+                              "Erlang nodes, and other global server pages...">>),
+              ?XC(<<"p">>, <<"Some pages have a link in the top right corner "
+                              "to relevant documentation in ejabberd Docs.">>),
+              ?X(<<"hr">>),
+              ?XE(<<"p">>,
+                  [?C(<<"Many pages use ejabberd's API commands to show information "
+                         "and to allow you perform administrative tasks. "
+                         "Click on a command name to view its details. "
+                         "You can also execute those same API commands "
+                         "using other interfaces, see: ">>),
+                   ?AC(<<"https://docs.ejabberd.im/developer/ejabberd-api/">>,
+                       <<"ejabberd Docs: API">>)
+                  ]),
+              ?XC(<<"p">>, <<"For example, this is the 'stats' command, "
+                              "it accepts an argument and returns an integer:">>),
+              make_command(stats, Request)]),
+         ?X(<<"hr">>), ?BR],
+    make_xhtml(Disclaimer ++ WelcomeText ++
+                   [?XE(<<"ul">>,
+                        [?LI([?ACT(MIU, MIN)])
+                         || {MIU, MIN}
+                                <- MenuItems])],
 	       global, Lang, AJID, 0);
 process_admin(Host, #request{path = [], lang = Lang}, AJID) ->
     make_xhtml([?XCT(<<"h1">>, ?T("Administration")),
@@ -414,6 +474,7 @@ process_admin(Host, #request{path = [], lang = Lang}, AJID) ->
 		     || {MIU, MIN}
 			    <- get_menu_items(Host, cluster, Lang, AJID, 2)])],
 	       Host, Lang, AJID, 2);
+
 process_admin(Host, #request{path = [<<"style.css">>]}, _) ->
     {200,
      [{<<"Content-Type">>, <<"text/css">>}, last_modified(),
@@ -429,203 +490,228 @@ process_admin(_Host, #request{path = [<<"logo.png">>]}, _) ->
      [{<<"Content-Type">>, <<"image/png">>}, last_modified(),
       cache_control_public()],
      logo()};
-process_admin(_Host, #request{path = [<<"logo-fill.png">>]}, _) ->
-    {200,
-     [{<<"Content-Type">>, <<"image/png">>}, last_modified(),
-      cache_control_public()],
-     logo_fill()};
 process_admin(_Host, #request{path = [<<"additions.js">>]}, _) ->
     {200,
      [{<<"Content-Type">>, <<"text/javascript">>},
       last_modified(), cache_control_public()],
      additions_js()};
-process_admin(global, #request{path = [<<"vhosts">>], lang = Lang}, AJID) ->
-    Res = list_vhosts(Lang, AJID),
-    make_xhtml((?H1GL((translate:translate(Lang, ?T("Virtual Hosts"))),
-		      <<"basic/#xmpp-domains">>, ?T("XMPP Domains")))
-		 ++ Res,
-	       global, Lang, AJID, 1);
-process_admin(Host,  #request{path = [<<"users">>], q = Query,
-			      lang = Lang}, AJID)
+process_admin(_Host, #request{path = [<<"sortable.min.css">>]}, _) ->
+    {200,
+     [{<<"Content-Type">>, <<"text/css">>}, last_modified(),
+      cache_control_public()],
+     sortable_css()};
+process_admin(_Host, #request{path = [<<"sortable.min.js">>]}, _) ->
+    {200,
+     [{<<"Content-Type">>, <<"text/javascript">>},
+      last_modified(), cache_control_public()],
+     sortable_js()};
+
+%% @format-begin
+
+process_admin(global, #request{path = [<<"vhosts">> | RPath], lang = Lang} = R, AJID) ->
+    Hosts =
+        case make_command_raw_value(registered_vhosts, R, []) of
+            Hs when is_list(Hs) ->
+                Hs;
+            _ ->
+                {User, Server} = R#request.us,
+                ?INFO_MSG("Access to WebAdmin page vhosts/ for account ~s@~s was denied",
+                          [User, Server]),
+                []
+        end,
+    Level = 1 + length(RPath),
+    HostsAllowed = [Host || Host <- Hosts, can_user_access_host(Host, R)],
+    Table =
+        make_table(20,
+                   RPath,
+                   [<<"host">>, {<<"registered users">>, right}, {<<"online users">>, right}],
+                   [{make_command(echo,
+                                  R,
+                                  [{<<"sentence">>, Host}],
+                                  [{only, value},
+                                   {result_links, [{sentence, host, Level, <<"">>}]}]),
+                     make_command(stats_host,
+                                  R,
+                                  [{<<"name">>, <<"registeredusers">>}, {<<"host">>, Host}],
+                                  [{only, value},
+                                   {result_links, [{stat, arg_host, Level, <<"users/">>}]}]),
+                     make_command(stats_host,
+                                  R,
+                                  [{<<"name">>, <<"onlineusers">>}, {<<"host">>, Host}],
+                                  [{only, value},
+                                   {result_links, [{stat, arg_host, Level, <<"online-users/">>}]}])}
+                    || Host <- HostsAllowed]),
+    VhostsElements =
+        [make_command(registered_vhosts, R, [], [{only, presentation}]),
+         make_command(stats_host, R, [], [{only, presentation}]),
+         ?XE(<<"blockquote">>, [Table])],
+    make_xhtml(?H1GL(translate:translate(Lang, ?T("Virtual Hosts")),
+                     <<"basic/#xmpp-domains">>,
+                     ?T("XMPP Domains"))
+               ++ VhostsElements,
+               global,
+               Lang,
+               AJID,
+               Level);
+process_admin(Host,
+              #request{path = [<<"users">>, <<"diapason">>, Diap | RPath], lang = Lang} = R,
+              AJID)
     when is_binary(Host) ->
-    Res = list_users(Host, Query, Lang, fun url_func/1),
-    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host,
-	       Lang, AJID, 3);
-process_admin(Host, #request{path = [<<"users">>, Diap],
-			     lang = Lang}, AJID)
+    Level = 5 + length(RPath),
+    RegisterEl = make_command(register, R, [{<<"host">>, Host}], []),
+    Res = list_users_in_diapason(Host, Level, 30, RPath, R, Diap, RegisterEl),
+    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host, Lang, AJID, Level);
+process_admin(Host,
+              #request{path = [<<"users">>, <<"top">>, Attribute | RPath], lang = Lang} = R,
+              AJID)
     when is_binary(Host) ->
-    Res = list_users_in_diapason(Host, Diap, Lang,
-				 fun url_func/1),
-    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host,
-	       Lang, AJID, 4);
-process_admin(Host, #request{path = [<<"online-users">>],
-			     lang = Lang}, AJID)
+    Level = 5 + length(RPath),
+    RegisterEl = make_command(register, R, [{<<"host">>, Host}], []),
+    Res = list_users_top(Host, Level, 30, RPath, R, Attribute, RegisterEl),
+    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host, Lang, AJID, Level);
+process_admin(Host, #request{path = [<<"users">> | RPath], lang = Lang} = R, AJID)
     when is_binary(Host) ->
-    Res = list_online_users(Host, Lang),
-    make_xhtml([?XCT(<<"h1">>, ?T("Online Users"))] ++ Res,
-	       Host, Lang, AJID, 3);
-process_admin(Host, #request{path = [<<"last-activity">>],
-			     q = Query, lang = Lang}, AJID)
+    Level = 3 + length(RPath),
+    RegisterEl = make_command(register, R, [{<<"host">>, Host}], []),
+    Res = list_users(Host, Level, 30, RPath, R, RegisterEl),
+    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host, Lang, AJID, Level);
+process_admin(Host, #request{path = [<<"online-users">> | RPath], lang = Lang} = R, AJID)
     when is_binary(Host) ->
-    ?DEBUG("Query: ~p", [Query]),
-    Month = case lists:keysearch(<<"period">>, 1, Query) of
-	      {value, {_, Val}} -> Val;
-	      _ -> <<"month">>
-	    end,
-    Res = case lists:keysearch(<<"ordinary">>, 1, Query) of
-	    {value, {_, _}} ->
-		list_last_activity(Host, Lang, false, Month);
-	    _ -> list_last_activity(Host, Lang, true, Month)
-	  end,
-    PageH1 = ?H1GL(translate:translate(Lang, ?T("Users Last Activity")), <<"modules/#mod_last">>, <<"mod_last">>),
-    make_xhtml(PageH1 ++
-		 [?XAE(<<"form">>,
-		       [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-		       [?CT(?T("Period: ")),
-			?XAE(<<"select">>, [{<<"name">>, <<"period">>}],
-			     (lists:map(fun ({O, V}) ->
-						Sel = if O == Month ->
-							     [{<<"selected">>,
-							       <<"selected">>}];
-							 true -> []
-						      end,
-						?XAC(<<"option">>,
-						     (Sel ++
-							[{<<"value">>, O}]),
-						     V)
-					end,
-					[{<<"month">>, translate:translate(Lang, ?T("Last month"))},
-					 {<<"year">>, translate:translate(Lang, ?T("Last year"))},
-					 {<<"all">>,
-					  translate:translate(Lang, ?T("All activity"))}]))),
-			?C(<<" ">>),
-			?INPUTT(<<"submit">>, <<"ordinary">>,
-				?T("Show Ordinary Table")),
-			?C(<<" ">>),
-			?INPUTT(<<"submit">>, <<"integral">>,
-				?T("Show Integral Table"))])]
-		   ++ Res,
-	       Host, Lang, AJID, 3);
-process_admin(Host, #request{path = [<<"stats">>], lang = Lang}, AJID) ->
-    Res = get_stats(Host, Lang),
-    PageH1 = ?H1GL(translate:translate(Lang, ?T("Statistics")), <<"modules/#mod_stats">>, <<"mod_stats">>),
-    Level = case Host of
-	global -> 1;
-	_ -> 3
-    end,
-    make_xhtml(PageH1 ++ Res, Host, Lang, AJID, Level);
-process_admin(Host, #request{path = [<<"user">>, U],
-			     q = Query, lang = Lang}, AJID) ->
+    Level = 3 + length(RPath),
+    Res = [make_command(connected_users_vhost,
+                        R,
+                        [{<<"host">>, Host}],
+                        [{table_options, {2, RPath}},
+                         {result_links, [{sessions, user, Level, <<"">>}]}])],
+    make_xhtml([?XCT(<<"h1">>, ?T("Online Users"))] ++ Res, Host, Lang, AJID, Level);
+process_admin(Host,
+              #request{path = [<<"last-activity">>],
+                       q = Query,
+                       lang = Lang} =
+                  R,
+              AJID)
+    when is_binary(Host) ->
+    PageH1 =
+        ?H1GL(translate:translate(Lang, ?T("Users Last Activity")),
+              <<"modules/#mod_last">>,
+              <<"mod_last">>),
+    Res = make_command(webadmin_host_last_activity,
+                       R,
+                       [{<<"host">>, Host}, {<<"query">>, Query}, {<<"lang">>, Lang}],
+                       []),
+    make_xhtml(PageH1 ++ [Res], Host, Lang, AJID, 3);
+process_admin(Host, #request{path = [<<"user">>, U], lang = Lang} = R, AJID) ->
     case ejabberd_auth:user_exists(U, Host) of
-      true ->
-	  Res = user_info(U, Host, Query, Lang),
-	  make_xhtml(Res, Host, Lang, AJID, 4);
-      false ->
-	  make_xhtml([?XCT(<<"h1">>, ?T("Not Found"))], Host,
-		     Lang, AJID, 4)
+        true ->
+            Res = user_info(U, Host, R),
+            make_xhtml(Res, Host, U, Lang, AJID, 4);
+        false ->
+            make_xhtml([?XCT(<<"h1">>, ?T("Not Found"))], Host, Lang, AJID, 4)
     end;
-process_admin(Host, #request{path = [<<"nodes">>], lang = Lang}, AJID) ->
-    Res = get_nodes(Lang),
-    Level = case Host of
-	global -> 1;
-	_ -> 3
-    end,
+process_admin(Host, #request{path = [<<"nodes">>], lang = Lang} = R, AJID) ->
+    Level =
+        case Host of
+            global ->
+                1;
+            _ ->
+                3
+        end,
+    Res = ?H1GLraw(<<"Nodes">>, <<"admin/guide/clustering/">>, <<"Clustering">>)
+          ++ [make_command(list_cluster, R, [], [{result_links, [{node, node, 1, <<"">>}]}])],
     make_xhtml(Res, Host, Lang, AJID, Level);
-process_admin(Host, #request{path = [<<"node">>, SNode | NPath],
-			     q = Query, lang = Lang}, AJID) ->
+process_admin(Host,
+              #request{path = [<<"node">>, SNode | NPath], lang = Lang} = Request,
+              AJID) ->
     case search_running_node(SNode) of
-      false ->
-	  make_xhtml([?XCT(<<"h1">>, ?T("Node not found"))], Host,
-		     Lang, AJID, 2);
-      Node ->
-	  Res = get_node(Host, Node, NPath, Query, Lang),
-	  Level = case Host of
-		global -> 2 + length(NPath);
-		_ -> 4 + length(NPath)
-	  end,
-	  make_xhtml(Res, Host, Node, Lang, AJID, Level)
+        false ->
+            make_xhtml([?XCT(<<"h1">>, ?T("Node not found"))], Host, Lang, AJID, 2);
+        Node ->
+            Res = get_node(Host, Node, NPath, Request#request{path = NPath}),
+            Level =
+                case Host of
+                    global ->
+                        2 + length(NPath);
+                    _ ->
+                        4 + length(NPath)
+                end,
+            make_xhtml(Res, Host, Node, Lang, AJID, Level)
     end;
 %%%==================================
 %%%% process_admin default case
-process_admin(Host, #request{lang = Lang} = Request, AJID) ->
-    Res = case Host of
-	      global ->
-		  ejabberd_hooks:run_fold(
-		    webadmin_page_main, Host, [], [Request]);
-	      _ ->
-		  ejabberd_hooks:run_fold(
-		    webadmin_page_host, Host, [], [Host, Request])
-	  end,
-    Level = case Host of
-	global -> length(Request#request.path);
-	_ -> 2 + length(Request#request.path)
-    end,
+process_admin(Host, #request{path = Path, lang = Lang} = Request, AJID) ->
+    {Username, RPath} =
+        case Path of
+            [<<"user">>, U | UPath] ->
+                {U, UPath};
+            _ ->
+                {unspecified, Path}
+        end,
+    Request2 = Request#request{path = RPath},
+    Res = case {Host, Username} of
+              {global, _} ->
+                  ejabberd_hooks:run_fold(webadmin_page_main, Host, [], [Request2]);
+              {_, unspecified} ->
+                  ejabberd_hooks:run_fold(webadmin_page_host, Host, [], [Host, Request2]);
+              {_Host, Username} ->
+                  ejabberd_hooks:run_fold(webadmin_page_hostuser,
+                                          Host,
+                                          [],
+                                          [Host, Username, Request2])
+          end,
+    Level =
+        case Host of
+            global ->
+                length(Request#request.path);
+            _ ->
+                2 + length(Request#request.path)
+        end,
     case Res of
-      [] ->
-	  setelement(1,
-		     make_xhtml([?XC(<<"h1">>, <<"Not Found">>)], Host, Lang,
-				AJID, Level),
-		     404);
-      _ -> make_xhtml(Res, Host, Lang, AJID, Level)
+        [] ->
+            setelement(1,
+                       make_xhtml([?XC(<<"h1">>, <<"Not Found">>)], Host, Lang, AJID, Level),
+                       404);
+        _ ->
+            make_xhtml(Res, Host, Username, Lang, AJID, Level)
+    end.
+%% @format-end
+
+term_to_id([]) -> <<>>;
+term_to_id(T) -> base64:encode((term_to_binary(T))).
+id_to_term(<<>>) -> [];
+id_to_term(I) -> binary_to_term(base64:decode(I)).
+
+can_user_access_host(Host, #request{auth = Auth,
+                                    host = HostHTTP,
+                                    method = Method}) ->
+    Path = [<<"server">>, Host],
+    case get_auth_admin(Auth, HostHTTP, Path, Method) of
+      {ok, _} ->
+	  true;
+      {unauthorized, _Error} ->
+	  false
     end.
 
-term_to_id(T) -> base64:encode((term_to_binary(T))).
 
 %%%==================================
 %%%% list_vhosts
-
-list_vhosts(Lang, JID) ->
-    list_vhosts2(Lang, list_vhosts_allowed(JID)).
 
 list_vhosts_allowed(JID) ->
     Hosts = ejabberd_option:hosts(),
     lists:filter(fun (Host) ->
 					any_rules_allowed(Host,
-						     [configure, webadmin_view],
+						     [configure],
 						     JID)
 				end,
 				Hosts).
 
-list_vhosts2(Lang, Hosts) ->
-    SHosts = lists:sort(Hosts),
-    [?XE(<<"table">>,
-	 [?XE(<<"thead">>,
-	      [?XE(<<"tr">>,
-		   [?XCT(<<"td">>, ?T("Host")),
-		    ?XACT(<<"td">>,
-                          [{<<"class">>, <<"alignright">>}],
-                          ?T("Registered Users")),
-		    ?XACT(<<"td">>,
-                          [{<<"class">>, <<"alignright">>}],
-                          ?T("Online Users"))])]),
-	  ?XE(<<"tbody">>,
-	      (lists:map(fun (Host) ->
-				 OnlineUsers =
-				     length(ejabberd_sm:get_vh_session_list(Host)),
-				 RegisteredUsers =
-				     ejabberd_auth:count_users(Host),
-				 ?XE(<<"tr">>,
-				     [?XE(<<"td">>,
-					  [?AC(<<"../server/", Host/binary,
-						 "/">>,
-					       Host)]),
-				      ?XAE(<<"td">>,
-                                           [{<<"class">>, <<"alignright">>}],
-                                           [?AC(<<"../server/", Host/binary, "/users/">>,
-                                                pretty_string_int(RegisteredUsers))]),
-				      ?XAE(<<"td">>,
-                                           [{<<"class">>, <<"alignright">>}],
-                                           [?AC(<<"../server/", Host/binary, "/online-users/">>,
-                                                pretty_string_int(OnlineUsers))])])
-			 end,
-			 SHosts)))])].
-
-maybe_disclaimer_not_admin(MenuItems, AJID, Lang) ->
+maybe_disclaimer_not_admin(MenuItems, AJID, _Lang) ->
     case {MenuItems, list_vhosts_allowed(AJID)} of
         {[_], []} ->
-            [?XREST(?T("Apparently your account has no administration rights in this server. "
-                       "Please check how to grant admin rights in: "
-                       "https://docs.ejabberd.im/admin/install/next-steps/#administration-account"))
+            [?BR,
+             ?DIVRES([?C(<<"Apparently your account has no administration rights in "
+                            "this server. Please check how to grant admin rights: ">>),
+                      ?AC(<<"https://docs.ejabberd.im/admin/install/next-steps/#administration-account">>,
+                          <<"ejabberd Docs: Administration Account">>)])
             ];
         _ ->
             []
@@ -634,186 +720,173 @@ maybe_disclaimer_not_admin(MenuItems, AJID, Lang) ->
 %%%==================================
 %%%% list_users
 
-list_users(Host, Query, Lang, URLFunc) ->
-    Res = list_users_parse_query(Query, Host),
-    Users = ejabberd_auth:get_users(Host),
-    SUsers = lists:sort([{S, U} || {U, S} <- Users]),
-    FUsers = case length(SUsers) of
-	       N when N =< 100 ->
-		   [list_given_users(Host, SUsers, <<"../">>, Lang,
-				     URLFunc)];
-	       N ->
-		   NParts = trunc(math:sqrt(N * 6.17999999999999993783e-1))
-			      + 1,
-		   M = trunc(N / NParts) + 1,
-		   lists:flatmap(fun (K) ->
-					 L = K + M - 1,
-					 Last = if L < N ->
-						       su_to_list(lists:nth(L,
-									    SUsers));
-						   true ->
-						       su_to_list(lists:last(SUsers))
-						end,
-					 Name = <<(su_to_list(lists:nth(K,
-									SUsers)))/binary,
-						  $\s, 226, 128, 148, $\s,
-						  Last/binary>>,
-					 [?AC((URLFunc({user_diapason, K, L})),
-					      Name),
-					  ?BR]
-				 end,
-				 lists:seq(1, N, M))
-	     end,
-    case Res of
-%% Parse user creation query and try register:
-      ok -> [?XREST(?T("Submitted"))];
-      error -> [?XREST(?T("Bad format"))];
-      nothing -> []
-    end
-      ++
-      [?XAE(<<"form">>,
-	    [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-	    ([?XE(<<"table">>,
-		  [?XE(<<"tr">>,
-		       [?XC(<<"td">>, <<(translate:translate(Lang, ?T("User")))/binary, ":">>),
-			?XE(<<"td">>,
-			    [?INPUT(<<"text">>, <<"newusername">>, <<"">>)]),
-			?XE(<<"td">>, [?C(<<" @ ", Host/binary>>)])]),
-		   ?XE(<<"tr">>,
-		       [?XC(<<"td">>, <<(translate:translate(Lang, ?T("Password")))/binary, ":">>),
-			?XE(<<"td">>,
-			    [?INPUT(<<"password">>, <<"newuserpassword">>,
-				    <<"">>)]),
-			?X(<<"td">>)]),
-		   ?XE(<<"tr">>,
-		       [?X(<<"td">>),
-			?XAE(<<"td">>, [{<<"class">>, <<"alignright">>}],
-			     [?INPUTT(<<"submit">>, <<"addnewuser">>,
-				      ?T("Add User"))]),
-			?X(<<"td">>)])]),
-	      ?P]
-	       ++ FUsers))].
+%% @format-begin
 
-list_users_parse_query(Query, Host) ->
-    case lists:keysearch(<<"addnewuser">>, 1, Query) of
-      {value, _} ->
-	  {value, {_, Username}} =
-	      lists:keysearch(<<"newusername">>, 1, Query),
-	  {value, {_, Password}} =
-	      lists:keysearch(<<"newuserpassword">>, 1, Query),
-	  try jid:decode(<<Username/binary, "@",
-				    Host/binary>>)
-	      of
-	    #jid{user = User, server = Server} ->
-		case ejabberd_auth:try_register(User, Server, Password)
-		    of
-		  {error, _Reason} -> error;
-		  _ -> ok
-		end
-	  catch _:{bad_jid, _} ->
-		  error
-	  end;
-      false -> nothing
+list_users(Host, Level, PageSize, RPath, R, RegisterEl) ->
+    Usernames =
+        case make_command_raw_value(registered_users, R, [{<<"host">>, Host}]) of
+            As when is_list(As) ->
+                As;
+            _ ->
+                {Aser, Aerver} = R#request.us,
+                ?INFO_MSG("Access to WebAdmin page users/ for account ~s@~s was denied",
+                          [Aser, Aerver]),
+                []
+        end,
+    case length(Usernames) of
+        N when N =< 10 ->
+            list_users(Host, Level, PageSize, RPath, R, Usernames, RegisterEl);
+        N when N > 10 ->
+            list_users_diapason(Host, R, Usernames, N, RegisterEl)
     end.
 
-list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
-    Users = ejabberd_auth:get_users(Host),
-    SUsers = lists:sort([{S, U} || {U, S} <- Users]),
+list_users(Host, Level, PageSize, RPath, R, Usernames, RegisterEl) ->
+    Columns =
+        [<<"user">>,
+         {<<"offline">>, right},
+         {<<"roster">>, right},
+         {<<"timestamp">>, left},
+         {<<"status">>, left}],
+    Rows =
+        [{make_command(echo,
+                       R,
+                       [{<<"sentence">>,
+                         jid:encode(
+                             jid:make(Username, Host))}],
+                       [{only, raw_and_value}, {result_links, [{sentence, user, Level, <<"">>}]}]),
+          make_command(get_offline_count,
+                       R,
+                       [{<<"user">>, Username}, {<<"host">>, Host}],
+                       [{only, raw_and_value},
+                        {result_links,
+                         [{value, arg_host, Level, <<"user/", Username/binary, "/queue/">>}]}]),
+          make_command(get_roster_count,
+                       R,
+                       [{<<"user">>, Username}, {<<"host">>, Host}],
+                       [{only, raw_and_value},
+                        {result_links,
+                         [{value, arg_host, Level, <<"user/", Username/binary, "/roster/">>}]}]),
+          ?C(element(1,
+                     make_command_raw_value(get_last,
+                                            R,
+                                            [{<<"user">>, Username}, {<<"host">>, Host}]))),
+          ?C(element(2,
+                     make_command_raw_value(get_last,
+                                            R,
+                                            [{<<"user">>, Username}, {<<"host">>, Host}])))}
+         || Username <- Usernames],
+    [RegisterEl,
+     make_command(registered_users, R, [], [{only, presentation}]),
+     make_command(get_offline_count, R, [], [{only, presentation}]),
+     make_command(get_roster_count, R, [], [{only, presentation}]),
+     make_command(get_last, R, [], [{only, presentation}]),
+     make_table(PageSize, RPath, Columns, Rows)].
+
+list_users_diapason(Host, R, Usernames, N, RegisterEl) ->
+    URLFunc = fun url_func/1,
+    SUsers = [{Host, U} || U <- Usernames],
+    NParts = trunc(math:sqrt(N * 6.17999999999999993783e-1)) + 1,
+    M = trunc(N / NParts) + 1,
+    FUsers =
+        lists:flatmap(fun(K) ->
+                         L = K + M - 1,
+                         Last =
+                             if L < N ->
+                                    su_to_list(lists:nth(L, SUsers));
+                                true ->
+                                    su_to_list(lists:last(SUsers))
+                             end,
+                         Name =
+                             <<(su_to_list(lists:nth(K, SUsers)))/binary,
+                               $\s,
+                               226,
+                               128,
+                               148,
+                               $\s,
+                               Last/binary>>,
+                         [?AC(URLFunc({user_diapason, K, L}), Name), ?BR]
+                      end,
+                      lists:seq(1, N, M)),
+    [RegisterEl,
+     make_command(get_offline_count, R, [], [{only, presentation}]),
+     ?AC(<<"top/offline/">>, <<"View Top Offline Queues">>),
+     make_command(get_roster_count, R, [], [{only, presentation}]),
+     ?AC(<<"top/roster/">>, <<"View Top Rosters">>),
+     make_command(get_last, R, [], [{only, presentation}]),
+     ?AC(<<"top/last/">>, <<"View Top-Oldest Last Activity">>),
+     make_command(registered_users, R, [], [{only, presentation}])]
+    ++ FUsers.
+
+list_users_in_diapason(Host, Level, PageSize, RPath, R, Diap, RegisterEl) ->
+    Usernames =
+        case make_command_raw_value(registered_users, R, [{<<"host">>, Host}]) of
+            As when is_list(As) ->
+                As;
+            _ ->
+                {Aser, Aerver} = R#request.us,
+                ?INFO_MSG("Access to WebAdmin page users/ for account ~s@~s was denied",
+                          [Aser, Aerver]),
+                []
+        end,
+    SUsers = lists:sort([{Host, U} || U <- Usernames]),
     [S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
     N1 = binary_to_integer(S1),
     N2 = binary_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
-    [list_given_users(Host, Sub, <<"../../">>, Lang,
-		      URLFunc)].
+    Usernames2 = [U || {_, U} <- Sub],
+    list_users(Host, Level, PageSize, RPath, R, Usernames2, RegisterEl).
 
-list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
-    ModOffline = get_offlinemsg_module(Host),
-    ?XE(<<"table">>,
-	[?XE(<<"thead">>,
-	     [?XE(<<"tr">>,
-		  [?XCT(<<"td">>, ?T("User")),
-		   ?XACT(<<"td">>,
-                         [{<<"class">>, <<"alignright">>}],
-                         ?T("Offline Messages")),
-		   ?XCT(<<"td">>, ?T("Last Activity"))])]),
-	 ?XE(<<"tbody">>,
-	     (lists:map(fun (_SU = {Server, User}) ->
-				US = {User, Server},
-				QueueLenStr = get_offlinemsg_length(ModOffline,
-								    User,
-								    Server),
-				FQueueLen = [?AC((URLFunc({users_queue, Prefix,
-							   User, Server})),
-						 QueueLenStr)],
-				FLast = case
-					  ejabberd_sm:get_user_resources(User,
-									 Server)
-					    of
-					  [] ->
-					      case get_last_info(User, Server) of
-						not_found -> translate:translate(Lang, ?T("Never"));
-						{ok, Shift, _Status} ->
-						    TimeStamp = {Shift div
-								   1000000,
-								 Shift rem
-								   1000000,
-								 0},
-						    {{Year, Month, Day},
-						     {Hour, Minute, Second}} =
-							calendar:now_to_local_time(TimeStamp),
-						    (str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
-										   [Year,
-										    Month,
-										    Day,
-										    Hour,
-										    Minute,
-										    Second]))
-					      end;
-					  _ -> translate:translate(Lang, ?T("Online"))
-					end,
-				?XE(<<"tr">>,
-				    [?XE(<<"td">>,
-					 [?AC((URLFunc({user, Prefix,
-							misc:url_encode(User),
-							Server})),
-					      (us_to_list(US)))]),
-				     ?XAE(<<"td">>,
-                                          [{<<"class">>, <<"alignright">>}],
-                                          FQueueLen),
-				     ?XC(<<"td">>, FLast)])
-			end,
-			Users)))]).
-
-get_offlinemsg_length(ModOffline, User, Server) ->
-    case ModOffline of
-      none -> <<"disabled">>;
-      _ ->
-	  pretty_string_int(ModOffline:count_offline_messages(User,Server))
-    end.
-
-get_offlinemsg_module(Server) ->
-    case gen_mod:is_loaded(Server, mod_offline) of
-      true -> mod_offline;
-      false -> none
-    end.
+list_users_top(Host, Level, PageSize, RPath, R, Operation, RegisterEl) ->
+    Usernames =
+        case make_command_raw_value(registered_users, R, [{<<"host">>, Host}]) of
+            As when is_list(As) ->
+                As;
+            _ ->
+                {Aser, Aerver} = R#request.us,
+                ?INFO_MSG("Access to WebAdmin page users/ for account ~s@~s was denied",
+                          [Aser, Aerver]),
+                []
+        end,
+    {Command, Reverse} =
+        case Operation of
+            <<"roster">> ->
+                {get_roster_count, true};
+            <<"offline">> ->
+                {get_offline_count, true};
+            <<"last">> ->
+                {get_last, false}
+        end,
+    UsernamesCounts =
+        [{U,
+          make_command(Command,
+                       R,
+                       [{<<"user">>, U}, {<<"host">>, Host}],
+                       [{only, raw_value},
+                        {result_links,
+                         [{value, arg_host, Level, <<"user/", U/binary, "/roster/">>}]}])}
+         || U <- Usernames],
+    USorted = lists:keysort(2, UsernamesCounts),
+    UReversed =
+        case Reverse of
+            true ->
+                lists:reverse(USorted);
+            false ->
+                USorted
+        end,
+    Usernames2 = [U || {U, _} <- lists:sublist(UReversed, 100)],
+    list_users(Host, Level, PageSize, RPath, R, Usernames2, RegisterEl).
 
 get_lastactivity_menuitem_list(Server) ->
     case gen_mod:is_loaded(Server, mod_last) of
-	true ->
-	    case mod_last_opt:db_type(Server) of
-		mnesia -> [{<<"last-activity">>, ?T("Last Activity")}];
-		_ -> []
-	    end;
-	false ->
-	    []
-    end.
-
-get_last_info(User, Server) ->
-    case gen_mod:is_loaded(Server, mod_last) of
-	true ->
-	    mod_last:get_last_info(User, Server);
-	false ->
-	    not_found
+        true ->
+            case mod_last_opt:db_type(Server) of
+                mnesia ->
+                    [{<<"last-activity">>, ?T("Last Activity")}];
+                _ ->
+                    []
+            end;
+        false ->
+            []
     end.
 
 us_to_list({User, Server}) ->
@@ -821,157 +894,58 @@ us_to_list({User, Server}) ->
 
 su_to_list({Server, User}) ->
     jid:encode({User, Server, <<"">>}).
+%% @format-end
+
+%%%==================================
+%%%% last-activity
+
+webadmin_host_last_activity(Host, Query, Lang) ->
+    ?DEBUG("Query: ~p", [Query]),
+    Month = case lists:keysearch(<<"period">>, 1, Query) of
+                {value, {_, Val}} -> Val;
+                _ -> <<"month">>
+	    end,
+    Res = case lists:keysearch(<<"ordinary">>, 1, Query) of
+              {value, {_, _}} ->
+                  list_last_activity(Host, Lang, false, Month);
+              _ -> list_last_activity(Host, Lang, true, Month)
+	  end,
+       [?XAE(<<"form">>,
+             [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
+             [?CT(?T("Period: ")),
+              ?XAE(<<"select">>, [{<<"name">>, <<"period">>}],
+                   (lists:map(fun ({O, V}) ->
+                                      Sel = if O == Month ->
+                                                    [{<<"selected">>,
+                                                      <<"selected">>}];
+                                               true -> []
+                                            end,
+                                      ?XAC(<<"option">>,
+                                           (Sel ++
+                                                [{<<"value">>, O}]),
+                                           V)
+                              end,
+                              [{<<"month">>, translate:translate(Lang, ?T("Last month"))},
+                               {<<"year">>, translate:translate(Lang, ?T("Last year"))},
+                               {<<"all">>,
+                                translate:translate(Lang, ?T("All activity"))}]))),
+              ?C(<<" ">>),
+              ?INPUTT(<<"submit">>, <<"ordinary">>,
+                      ?T("Show Ordinary Table")),
+              ?C(<<" ">>),
+              ?INPUTT(<<"submit">>, <<"integral">>,
+                      ?T("Show Integral Table"))])]
+   ++ Res.
 
 %%%==================================
 %%%% get_stats
 
-get_stats(global, Lang) ->
-    OnlineUsers = ejabberd_sm:connected_users_number(),
-    RegisteredUsers = lists:foldl(fun (Host, Total) ->
-					  ejabberd_auth:count_users(Host)
-					    + Total
-				  end,
-				  0, ejabberd_option:hosts()),
-    OutS2SNumber = ejabberd_s2s:outgoing_s2s_number(),
-    InS2SNumber = ejabberd_s2s:incoming_s2s_number(),
-    [?XAE(<<"table">>, [],
-	  [?XE(<<"tbody">>,
-	       [?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Registered Users:")),
-		     ?XAC(<<"td">>,
-                          [{<<"class">>, <<"alignright">>}],
-                          (pretty_string_int(RegisteredUsers)))]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Online Users:")),
-		     ?XAC(<<"td">>,
-                          [{<<"class">>, <<"alignright">>}],
-                          (pretty_string_int(OnlineUsers)))]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Outgoing s2s Connections:")),
-		     ?XAC(<<"td">>,
-                          [{<<"class">>, <<"alignright">>}],
-                          (pretty_string_int(OutS2SNumber)))]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Incoming s2s Connections:")),
-		     ?XAC(<<"td">>,
-                          [{<<"class">>, <<"alignright">>}],
-                          (pretty_string_int(InS2SNumber)))])])])];
-get_stats(Host, Lang) ->
-    OnlineUsers =
-	length(ejabberd_sm:get_vh_session_list(Host)),
-    RegisteredUsers =
-	ejabberd_auth:count_users(Host),
-    [?XAE(<<"table">>, [],
-	  [?XE(<<"tbody">>,
-	       [?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Registered Users:")),
-		     ?XAC(<<"td">>,
-                          [{<<"class">>, <<"alignright">>}],
-                          (pretty_string_int(RegisteredUsers)))]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Online Users:")),
-		     ?XAC(<<"td">>,
-                          [{<<"class">>, <<"alignright">>}],
-                          (pretty_string_int(OnlineUsers)))])])])].
-
-list_online_users(Host, _Lang) ->
-    Users = [{S, U}
-	     || {U, S, _R} <- ejabberd_sm:get_vh_session_list(Host)],
-    SUsers = lists:usort(Users),
-    lists:flatmap(fun ({_S, U} = SU) ->
-			  [?AC(<<"../user/",
-				 (misc:url_encode(U))/binary, "/">>,
-			       (su_to_list(SU))),
-			   ?BR]
-		  end,
-		  SUsers).
-
-user_info(User, Server, Query, Lang) ->
+user_info(User, Server, #request{q = Query, lang = Lang} = R) ->
     LServer = jid:nameprep(Server),
     US = {jid:nodeprep(User), LServer},
     Res = user_parse_query(User, Server, Query),
-    Resources = ejabberd_sm:get_user_resources(User,
-					       Server),
-    FResources =
-        case Resources of
-            [] -> [?CT(?T("None"))];
-            _ ->
-                [?XE(<<"ul">>,
-                     (lists:map(
-                        fun (R) ->
-                                FIP = case
-                                          ejabberd_sm:get_user_info(User,
-                                                                    Server,
-                                                                    R)
-                                      of
-                                          offline -> <<"">>;
-                                          Info
-                                            when
-                                                is_list(Info) ->
-                                              Node =
-                                                  proplists:get_value(node,
-                                                                      Info),
-                                              Conn =
-                                                  proplists:get_value(conn,
-                                                                      Info),
-                                              {IP, Port} =
-                                                  proplists:get_value(ip,
-                                                                      Info),
-                                              ConnS = case Conn of
-                                                          c2s ->
-                                                              <<"plain">>;
-                                                          c2s_tls ->
-                                                              <<"tls">>;
-                                                          c2s_compressed ->
-                                                              <<"zlib">>;
-                                                          c2s_compressed_tls ->
-                                                              <<"tls+zlib">>;
-                                                          http_bind ->
-                                                              <<"http-bind">>;
-                                                          websocket ->
-                                                              <<"websocket">>;
-                                                          _ ->
-                                                              <<"unknown">>
-                                                      end,
-                                              <<ConnS/binary,
-                                                "://",
-                                                (misc:ip_to_list(IP))/binary,
-                                                ":",
-                                                (integer_to_binary(Port))/binary,
-                                                "#",
-                                                (misc:atom_to_binary(Node))/binary>>
-                                      end,
-                                case direction(Lang) of
-				    [{_, <<"rtl">>}] -> ?LI([?C((<<FIP/binary, " - ", R/binary>>))]);
-				    _ -> ?LI([?C((<<R/binary, " - ", FIP/binary>>))])
-                                end
-                        end,
-                        lists:sort(Resources))))]
-        end,
-    FPassword = [?INPUT(<<"text">>, <<"password">>, <<"">>),
-		 ?C(<<" ">>),
-		 ?INPUTT(<<"submit">>, <<"chpassword">>,
-			 ?T("Change Password"))],
     UserItems = ejabberd_hooks:run_fold(webadmin_user,
-					LServer, [], [User, Server, Lang]),
-    LastActivity = case ejabberd_sm:get_user_resources(User,
-						       Server)
-		       of
-		     [] ->
-			 case get_last_info(User, Server) of
-			   not_found -> translate:translate(Lang, ?T("Never"));
-			   {ok, Shift, _Status} ->
-			       TimeStamp = {Shift div 1000000,
-					    Shift rem 1000000, 0},
-			       {{Year, Month, Day}, {Hour, Minute, Second}} =
-				   calendar:now_to_local_time(TimeStamp),
-			       (str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
-							      [Year, Month, Day,
-							       Hour, Minute,
-							       Second]))
-			 end;
-		     _ -> translate:translate(Lang, ?T("Online"))
-		   end,
+					LServer, [], [User, Server, R]),
     [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("User ~ts"),
                                                 [us_to_list(US)])))]
       ++
@@ -983,16 +957,24 @@ user_info(User, Server, Query, Lang) ->
 	++
 	[?XAE(<<"form">>,
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-	      ([?XCT(<<"h3">>, ?T("Connected Resources:"))] ++
-		 FResources ++
-		   [?XCT(<<"h3">>, ?T("Password:"))] ++
-		     FPassword ++
-		       [?XCT(<<"h3">>, ?T("Last Activity"))] ++
-			 [?C(LastActivity)] ++
-			   UserItems ++
-			     [?P,
-			      ?INPUTTD(<<"submit">>, <<"removeuser">>,
-				      ?T("Remove User"))]))].
+	      ([make_command(user_sessions_info, R,
+                             [{<<"user">>, User}, {<<"host">>, Server}],
+                             [{result_links, [{node, node, 4, <<>>}]}]),
+                make_command(change_password, R,
+                             [{<<"user">>, User}, {<<"host">>, Server}],
+                             [{style, danger}]),
+                make_command(get_last, R,
+                             [{<<"user">>, User}, {<<"host">>, Server}],
+                             []),
+                make_command(set_last, R,
+                             [{<<"user">>, User}, {<<"host">>, Server}],
+                             [])] ++
+                   UserItems ++
+                   [?P,
+                make_command(unregister, R,
+                             [{<<"user">>, User}, {<<"host">>, Server}],
+                             [{style, danger}])
+                    ]))].
 
 user_parse_query(User, Server, Query) ->
     lists:foldl(fun ({Action, _Value}, Acc)
@@ -1002,19 +984,6 @@ user_parse_query(User, Server, Query) ->
 		end,
 		nothing, Query).
 
-user_parse_query1(<<"password">>, _User, _Server,
-		  _Query) ->
-    nothing;
-user_parse_query1(<<"chpassword">>, User, Server,
-		  Query) ->
-    case lists:keysearch(<<"password">>, 1, Query) of
-      {value, {_, Password}} ->
-	  ejabberd_auth:set_password(User, Server, Password), ok;
-      _ -> error
-    end;
-user_parse_query1(<<"removeuser">>, User, Server,
-		  _Query) ->
-    ejabberd_auth:remove_user(User, Server), ok;
 user_parse_query1(Action, User, Server, Query) ->
     case ejabberd_hooks:run_fold(webadmin_user_parse_query,
 				 Server, [], [Action, User, Server, Query])
@@ -1086,33 +1055,6 @@ histogram([], _Integral, _Current, Count, Hist) ->
 %%%==================================
 %%%% get_nodes
 
-get_nodes(Lang) ->
-    RunningNodes = ejabberd_cluster:get_nodes(),
-    StoppedNodes = ejabberd_cluster:get_known_nodes()
-		     -- RunningNodes,
-    FRN = if RunningNodes == [] -> ?CT(?T("None"));
-	     true ->
-		 ?XE(<<"ul">>,
-		     (lists:map(fun (N) ->
-					S = iolist_to_binary(atom_to_list(N)),
-					?LI([?AC(<<"../node/", S/binary, "/">>,
-						 S)])
-				end,
-				lists:sort(RunningNodes))))
-	  end,
-    FSN = if StoppedNodes == [] -> ?CT(?T("None"));
-	     true ->
-		 ?XE(<<"ul">>,
-		     (lists:map(fun (N) ->
-					S = iolist_to_binary(atom_to_list(N)),
-					?LI([?C(S)])
-				end,
-				lists:sort(StoppedNodes))))
-	  end,
-    [?XCT(<<"h1">>, ?T("Nodes")),
-     ?XCT(<<"h3">>, ?T("Running Nodes")), FRN,
-     ?XCT(<<"h3">>, ?T("Stopped Nodes")), FSN].
-
 search_running_node(SNode) ->
     RunningNodes = ejabberd_cluster:get_nodes(),
     search_running_node(SNode, RunningNodes).
@@ -1124,601 +1066,103 @@ search_running_node(SNode, [Node | Nodes]) ->
       _ -> search_running_node(SNode, Nodes)
     end.
 
-get_node(global, Node, [], Query, Lang) ->
-    Res = node_parse_query(Node, Query),
+get_node(global, Node, [], #request{lang = Lang}) ->
     Base = get_base_path(global, Node, 2),
-    MenuItems2 = make_menu_items(global, Node, Base, Lang),
+    BaseItems = [{<<"db">>, <<"Mnesia Tables">>},
+                 {<<"backup">>, <<"Mnesia Backup">>}],
+    MenuItems = make_menu_items(global, Node, Base, Lang, BaseItems),
     [?XC(<<"h1">>,
 	 (str:translate_and_format(Lang, ?T("Node ~p"), [Node])))]
       ++
-      case Res of
-	ok -> [?XREST(?T("Submitted"))];
-	error -> [?XREST(?T("Bad format"))];
-	nothing -> []
-      end
-	++
-	[?XE(<<"ul">>,
-	     ([?LI([?ACT(<<"db/">>, ?T("Database"))]),
-	       ?LI([?ACT(<<"backup/">>, ?T("Backup"))]),
-	       ?LI([?ACT(<<"stats/">>, ?T("Statistics"))]),
-	       ?LI([?ACT(<<"update/">>, ?T("Update"))])]
-		++ MenuItems2)),
-	 ?XAE(<<"form">>,
-	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-	      [?INPUTT(<<"submit">>, <<"restart">>, ?T("Restart")),
-	       ?C(<<" ">>),
-	       ?INPUTTD(<<"submit">>, <<"stop">>, ?T("Stop"))])];
-get_node(Host, Node, [], _Query, Lang) ->
+	[?XE(<<"ul">>, MenuItems)];
+get_node(Host, Node, [], #request{lang = Lang}) ->
     Base = get_base_path(Host, Node, 4),
-    MenuItems2 = make_menu_items(Host, Node, Base, Lang),
+    MenuItems2 = make_menu_items(Host, Node, Base, Lang, []),
     [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Node ~p"), [Node]))),
      ?XE(<<"ul">>, MenuItems2)];
-get_node(global, Node, [<<"db">>], Query, Lang) ->
-    case ejabberd_cluster:call(Node, mnesia, system_info, [tables]) of
-      {badrpc, _Reason} ->
-	  [?XCT(<<"h1">>, ?T("RPC Call Error"))];
-      Tables ->
-	  ResS = case node_db_parse_query(Node, Tables, Query) of
-		   nothing -> [];
-		   ok -> [?XREST(?T("Submitted"))]
-		 end,
-	  STables = lists:sort(Tables),
-	  Rows = lists:map(fun (Table) ->
-				   STable =
-				       iolist_to_binary(atom_to_list(Table)),
-				   TInfo = case ejabberd_cluster:call(Node, mnesia,
-							 table_info,
-							 [Table, all])
-					       of
-					     {badrpc, _} -> [];
-					     I -> I
-					   end,
-				   {Type, Size, Memory} = case
-							    {lists:keysearch(storage_type,
-									     1,
-									     TInfo),
-							     lists:keysearch(size,
-									     1,
-									     TInfo),
-							     lists:keysearch(memory,
-									     1,
-									     TInfo)}
-							      of
-							    {{value,
-							      {storage_type,
-							       T}},
-							     {value, {size, S}},
-							     {value,
-							      {memory, M}}} ->
-								{T, S, M};
-							    _ -> {unknown, 0, 0}
-							  end,
-				   MemoryB = Memory*erlang:system_info(wordsize),
-				   ?XE(<<"tr">>,
-				       [?XE(<<"td">>,
-					  [?AC(<<"./", STable/binary,
-						 "/">>,
-					       STable)]),
-					?XE(<<"td">>,
-					    [db_storage_select(STable, Type,
-							       Lang)]),
-				        ?XAE(<<"td">>,
-					     [{<<"class">>, <<"alignright">>}],
-					      [?AC(<<"./", STable/binary,
-						 "/1/">>,
-					     (pretty_string_int(Size)))]),
-					?XAC(<<"td">>,
-					     [{<<"class">>, <<"alignright">>}],
-					     (pretty_string_int(MemoryB)))])
-			   end,
-			   STables),
-	  [?XC(<<"h1">>,
-	       (str:translate_and_format(Lang, ?T("Database Tables at ~p"),
-                                            [Node]))
-	  )]
-	    ++
-	    ResS ++
-	      [?XAE(<<"form">>,
-		    [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-		    [?XAE(<<"table">>, [],
-			  [?XE(<<"thead">>,
-			       [?XE(<<"tr">>,
-				    [?XCT(<<"td">>, ?T("Name")),
-				     ?XCT(<<"td">>, ?T("Storage Type")),
-				     ?XACT(<<"td">>,
-                                           [{<<"class">>, <<"alignright">>}],
-                                           ?T("Elements")),
-				     ?XACT(<<"td">>,
-                                           [{<<"class">>, <<"alignright">>}],
-                                           ?T("Memory"))])]),
-			   ?XE(<<"tbody">>,
-			       (Rows ++
-				  [?XE(<<"tr">>,
-				       [?XAE(<<"td">>,
-					     [{<<"colspan">>, <<"4">>},
-					      {<<"class">>, <<"alignright">>}],
-					     [?INPUTT(<<"submit">>,
-						      <<"submit">>,
-						      ?T("Submit"))])])]))])])]
-    end;
-get_node(global, Node, [<<"db">>, TableName], _Query, Lang) ->
-    make_table_view(Node, TableName, Lang);
-get_node(global, Node, [<<"db">>, TableName, PageNumber], _Query, Lang) ->
-    make_table_elements_view(Node, TableName, Lang, binary_to_integer(PageNumber));
-get_node(global, Node, [<<"backup">>], Query, Lang) ->
-    HomeDirRaw = case {os:getenv("HOME"), os:type()} of
-		   {EnvHome, _} when is_list(EnvHome) -> list_to_binary(EnvHome);
-		   {false, {win32, _Osname}} -> <<"C:/">>;
-		   {false, _} -> <<"/tmp/">>
-		 end,
-    HomeDir = filename:nativename(HomeDirRaw),
-    ResS = case node_backup_parse_query(Node, Query) of
-	     nothing -> [];
-	     ok -> [?XREST(?T("Submitted"))];
-	     {error, Error} ->
-		 [?XRES(<<(translate:translate(Lang, ?T("Error")))/binary, ": ",
-			  ((str:format("~p", [Error])))/binary>>)]
-	   end,
-    [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Backup of ~p"), [Node])))]
-      ++
-      ResS ++
-	[?XCT(<<"p">>,
-	      ?T("Please note that these options will "
-		 "only backup the builtin Mnesia database. "
-		 "If you are using the ODBC module, you "
-		 "also need to backup your SQL database "
-		 "separately.")),
-	 ?XAE(<<"form">>,
-	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-	      [?XAE(<<"table">>, [],
-		    [?XE(<<"tbody">>,
-			 [?XE(<<"tr">>,
-			      [?XCT(<<"td">>, ?T("Store binary backup:")),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>, <<"storepath">>,
-					   (filename:join(HomeDir,
-							  "ejabberd.backup")))]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>, <<"store">>,
-					    ?T("OK"))])]),
-			  ?XE(<<"tr">>,
-			      [?XCT(<<"td">>,
-				    ?T("Restore binary backup immediately:")),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>, <<"restorepath">>,
-					   (filename:join(HomeDir,
-							  "ejabberd.backup")))]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>, <<"restore">>,
-					    ?T("OK"))])]),
-			  ?XE(<<"tr">>,
-			      [?XCT(<<"td">>,
-				    ?T("Restore binary backup after next ejabberd "
-				       "restart (requires less memory):")),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>, <<"fallbackpath">>,
-					   (filename:join(HomeDir,
-							  "ejabberd.backup")))]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>, <<"fallback">>,
-					    ?T("OK"))])]),
-			  ?XE(<<"tr">>,
-			      [?XCT(<<"td">>, ?T("Store plain text backup:")),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>, <<"dumppath">>,
-					   (filename:join(HomeDir,
-							  "ejabberd.dump")))]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>, <<"dump">>,
-					    ?T("OK"))])]),
-			  ?XE(<<"tr">>,
-			      [?XCT(<<"td">>,
-				    ?T("Restore plain text backup immediately:")),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>, <<"loadpath">>,
-					   (filename:join(HomeDir,
-							  "ejabberd.dump")))]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>, <<"load">>,
-					    ?T("OK"))])]),
-			  ?XE(<<"tr">>,
-			      [?XCT(<<"td">>,
-				    ?T("Import users data from a PIEFXIS file "
-				       "(XEP-0227):")),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>,
-					   <<"import_piefxis_filepath">>,
-					   (filename:join(HomeDir,
-							  "users.xml")))]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>,
-					    <<"import_piefxis_file">>,
-					    ?T("OK"))])]),
-			  ?XE(<<"tr">>,
-			      [?XCT(<<"td">>,
-				    ?T("Export data of all users in the server "
-				       "to PIEFXIS files (XEP-0227):")),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>,
-					   <<"export_piefxis_dirpath">>,
-					   HomeDir)]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>,
-					    <<"export_piefxis_dir">>,
-					    ?T("OK"))])]),
-			  ?XE(<<"tr">>,
-			      [?XE(<<"td">>,
-				   [?CT(?T("Export data of users in a host to PIEFXIS "
-					   "files (XEP-0227):")),
-				    ?C(<<" ">>),
-				    make_select_host(Lang, <<"export_piefxis_host_dirhost">>)]),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>,
-					   <<"export_piefxis_host_dirpath">>,
-					   HomeDir)]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>,
-					    <<"export_piefxis_host_dir">>,
-					    ?T("OK"))])]),
-                          ?XE(<<"tr">>,
-                              [?XE(<<"td">>,
-                                   [?CT(?T("Export all tables as SQL queries "
-					   "to a file:")),
-                                    ?C(<<" ">>),
-                                    make_select_host(Lang, <<"export_sql_filehost">>)]),
-                               ?XE(<<"td">>,
-				   [?INPUT(<<"text">>,
-                                           <<"export_sql_filepath">>,
-					   (filename:join(HomeDir,
-							  "db.sql")))]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>, <<"export_sql_file">>,
-					    ?T("OK"))])]),
-			  ?XE(<<"tr">>,
-			      [?XCT(<<"td">>,
-				    ?T("Import user data from jabberd14 spool "
-				       "file:")),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>, <<"import_filepath">>,
-					   (filename:join(HomeDir,
-							  "user1.xml")))]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>, <<"import_file">>,
-					    ?T("OK"))])]),
-			  ?XE(<<"tr">>,
-			      [?XCT(<<"td">>,
-				    ?T("Import users data from jabberd14 spool "
-				       "directory:")),
-			       ?XE(<<"td">>,
-				   [?INPUT(<<"text">>, <<"import_dirpath">>,
-					   <<"/var/spool/jabber/">>)]),
-			       ?XE(<<"td">>,
-				   [?INPUTT(<<"submit">>, <<"import_dir">>,
-					    ?T("OK"))])])])])])];
-get_node(global, Node, [<<"stats">>], _Query, Lang) ->
-    UpTime = ejabberd_cluster:call(Node, erlang, statistics,
-		      [wall_clock]),
-    UpTimeS = (str:format("~.3f",
-                                           [element(1, UpTime) / 1000])),
-    UpTimeDate = uptime_date(Node),
-    CPUTime = ejabberd_cluster:call(Node, erlang, statistics, [runtime]),
-    CPUTimeS = (str:format("~.3f",
-                                            [element(1, CPUTime) / 1000])),
-    OnlineUsers = ejabberd_sm:connected_users_number(),
-    TransactionsCommitted = ejabberd_cluster:call(Node, mnesia,
-				     system_info, [transaction_commits]),
-    TransactionsAborted = ejabberd_cluster:call(Node, mnesia,
-				   system_info, [transaction_failures]),
-    TransactionsRestarted = ejabberd_cluster:call(Node, mnesia,
-				     system_info, [transaction_restarts]),
-    TransactionsLogged = ejabberd_cluster:call(Node, mnesia, system_info,
-				  [transaction_log_writes]),
-    ?H1GL(str:translate_and_format(Lang, ?T("Statistics of ~p"), [Node]),
-          <<"modules/#mod_stats">>,
-          <<"mod_stats">>) ++ [
-     ?XAE(<<"table">>, [],
-	  [?XE(<<"tbody">>,
-	       [?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Uptime:")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-			  UpTimeS)]),
-		?XE(<<"tr">>,
-		    [?X(<<"td">>),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-			  UpTimeDate)]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("CPU Time:")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-			  CPUTimeS)]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Online Users:")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-			  (pretty_string_int(OnlineUsers)))]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Transactions Committed:")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-			  (pretty_string_int(TransactionsCommitted)))]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Transactions Aborted:")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-			  (pretty_string_int(TransactionsAborted)))]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Transactions Restarted:")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-			  (pretty_string_int(TransactionsRestarted)))]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Transactions Logged:")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-			  (pretty_string_int(TransactionsLogged)))])])])];
-get_node(global, Node, [<<"update">>], Query, Lang) ->
-    ejabberd_cluster:call(Node, code, purge, [ejabberd_update]),
-    Res = node_update_parse_query(Node, Query),
-    ejabberd_cluster:call(Node, code, load_file, [ejabberd_update]),
-    {ok, _Dir, UpdatedBeams, Script, LowLevelScript,
-     Check} =
-	ejabberd_cluster:call(Node, ejabberd_update, update_info, []),
-    Mods = case UpdatedBeams of
-	     [] -> ?CT(?T("None"));
-	     _ ->
-		 BeamsLis = lists:map(fun (Beam) ->
-					      BeamString =
-						  iolist_to_binary(atom_to_list(Beam)),
-					      ?LI([?INPUT(<<"checkbox">>,
-							  <<"selected">>,
-							  BeamString),
-						   ?C(BeamString)])
-				      end,
-				      UpdatedBeams),
-		 SelectButtons = [?BR,
-				  ?INPUTATTRS(<<"button">>, <<"selectall">>,
-					      ?T("Select All"),
-					      [{<<"onClick">>,
-						<<"selectAll()">>}]),
-				  ?C(<<" ">>),
-				  ?INPUTATTRS(<<"button">>, <<"unselectall">>,
-					      ?T("Unselect All"),
-					      [{<<"onClick">>,
-						<<"unSelectAll()">>}])],
-		 ?XAE(<<"ul">>, [{<<"class">>, <<"nolistyle">>}],
-		      (BeamsLis ++ SelectButtons))
-	   end,
-    FmtScript = (?XC(<<"pre">>,
-		     (str:format("~p", [Script])))),
-    FmtLowLevelScript = (?XC(<<"pre">>,
-			     (str:format("~p", [LowLevelScript])))),
-    [?XC(<<"h1">>,
-	 (str:translate_and_format(Lang, ?T("Update ~p"), [Node])))]
-      ++
-      case Res of
-	ok -> [?XREST(?T("Submitted"))];
-	{error, ErrorText} ->
-	    [?XREST(<<"Error: ", ErrorText/binary>>)];
-	nothing -> []
-      end
-	++
-	[?XAE(<<"form">>,
-	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-	      [?XCT(<<"h2">>, ?T("Update plan")),
-	       ?XCT(<<"h3">>, ?T("Modified modules")), Mods,
-	       ?XCT(<<"h3">>, ?T("Update script")), FmtScript,
-	       ?XCT(<<"h3">>, ?T("Low level update script")),
-	       FmtLowLevelScript, ?XCT(<<"h3">>, ?T("Script check")),
-	       ?XC(<<"pre">>, (misc:atom_to_binary(Check))),
-	       ?BR,
-	       ?INPUTT(<<"submit">>, <<"update">>, ?T("Update"))])];
-get_node(Host, Node, NPath, Query, Lang) ->
+
+get_node(global, Node, [<<"db">> | RPath], R) ->
+    PageTitle = <<"Mnesia Tables">>,
+    Title = ?XC(<<"h1">>, PageTitle),
+    Level = length(RPath),
+    [Title, ?BR | webadmin_db(Node, RPath, R, Level)];
+
+get_node(global, Node, [<<"backup">>], #request{lang = Lang} = R) ->
+    Types = [{<<"#binary">>, <<"Binary">>},
+             {<<"#plaintext">>, <<"Plain Text">>},
+             {<<"#piefxis">>, <<"PIEXFIS (XEP-0227)">>},
+             {<<"#sql">>, <<"SQL">>},
+             {<<"#prosody">>, <<"Prosody">>},
+             {<<"#jabberd14">>, <<"jabberd 1.4">>}],
+
+    [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Backup of ~p"), [Node]))),
+     ?XCT(<<"p">>,
+          ?T("Please note that these options will "
+             "only backup the builtin Mnesia database. "
+             "If you are using the ODBC module, you "
+             "also need to backup your SQL database "
+             "separately.")),
+     ?XE(<<"ul">>, [?LI([?AC(MIU, MIN)]) || {MIU, MIN} <- Types]),
+
+     ?X(<<"hr">>),
+     ?XAC(<<"h2">>, [{<<"id">>, <<"binary">>}], <<"Binary">>),
+     ?XCT(<<"p">>, ?T("Store binary backup:")),
+     ?XE(<<"blockquote">>, [make_command(backup, R)]),
+     ?XCT(<<"p">>, ?T("Restore binary backup immediately:")),
+     ?XE(<<"blockquote">>, [make_command(restore, R, [], [{style, danger}])]),
+     ?XCT(<<"p">>, ?T("Restore binary backup after next ejabberd "
+                      "restart (requires less memory):")),
+     ?XE(<<"blockquote">>, [make_command(install_fallback, R, [], [{style, danger}])]),
+
+     ?X(<<"hr">>),
+     ?XAC(<<"h2">>, [{<<"id">>, <<"plaintext">>}], <<"Plain Text">>),
+     ?XCT(<<"p">>, ?T("Store plain text backup:")),
+     ?XE(<<"blockquote">>, [make_command(dump, R)]),
+     ?XCT(<<"p">>, ?T("Restore plain text backup immediately:")),
+     ?XE(<<"blockquote">>, [make_command(load, R, [], [{style, danger}])]),
+
+     ?X(<<"hr">>),
+     ?XAC(<<"h2">>, [{<<"id">>, <<"piefxis">>}], <<"PIEFXIS (XEP-0227)">>),
+     ?XCT(<<"p">>, ?T("Import users data from a PIEFXIS file (XEP-0227):")),
+     ?XE(<<"blockquote">>, [make_command(import_piefxis, R)]),
+     ?XCT(<<"p">>, ?T("Export data of all users in the server to PIEFXIS files (XEP-0227):")),
+     ?XE(<<"blockquote">>, [make_command(export_piefxis, R)]),
+     ?XCT(<<"p">>, ?T("Export data of users in a host to PIEFXIS files (XEP-0227):")),
+     ?XE(<<"blockquote">>, [make_command(export_piefxis_host, R)]),
+
+     ?X(<<"hr">>),
+     ?XAC(<<"h2">>, [{<<"id">>, <<"sql">>}], <<"SQL">>),
+     ?XCT(<<"p">>, ?T("Export all tables as SQL queries to a file:")),
+     ?XE(<<"blockquote">>, [make_command(export2sql, R)]),
+
+     ?X(<<"hr">>),
+     ?XAC(<<"h2">>, [{<<"id">>, <<"prosody">>}], <<"Prosody">>),
+     ?XCT(<<"p">>, <<"Import data from Prosody:">>),
+     ?XE(<<"blockquote">>, [make_command(import_prosody, R)]),
+
+     ?X(<<"hr">>),
+     ?XAC(<<"h2">>, [{<<"id">>, <<"jabberd14">>}], <<"jabberd 1.4">>),
+     ?XCT(<<"p">>, ?T("Import user data from jabberd14 spool file:")),
+     ?XE(<<"blockquote">>, [make_command(import_file, R)]),
+     ?XCT(<<"p">>, ?T("Import users data from jabberd14 spool directory:")),
+     ?XE(<<"blockquote">>, [make_command(import_dir, R)])
+    ];
+get_node(Host, Node, _NPath, Request) ->
     Res = case Host of
 	      global ->
 		  ejabberd_hooks:run_fold(webadmin_page_node, Host, [],
-					  [Node, NPath, Query, Lang]);
+					  [Node, Request]);
 	      _ ->
 		  ejabberd_hooks:run_fold(webadmin_page_hostnode, Host, [],
-					  [Host, Node, NPath, Query, Lang])
+					  [Host, Node, Request])
 	  end,
     case Res of
       [] -> [?XC(<<"h1">>, <<"Not Found">>)];
       _ -> Res
     end.
 
-uptime_date(Node) ->
-    Localtime = ejabberd_cluster:call(Node, erlang, localtime, []),
-    Now = calendar:datetime_to_gregorian_seconds(Localtime),
-    {Wall, _} = ejabberd_cluster:call(Node, erlang, statistics, [wall_clock]),
-    LastRestart = Now - (Wall div 1000),
-    {{Year, Month, Day}, {Hour, Minute, Second}} =
-        calendar:gregorian_seconds_to_datetime(LastRestart),
-    str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
-               [Year, Month, Day, Hour, Minute, Second]).
-
 %%%==================================
 %%%% node parse
-
-node_parse_query(Node, Query) ->
-    case lists:keysearch(<<"restart">>, 1, Query) of
-      {value, _} ->
-	  case ejabberd_cluster:call(Node, init, restart, []) of
-	    {badrpc, _Reason} -> error;
-	    _ -> ok
-	  end;
-      _ ->
-	  case lists:keysearch(<<"stop">>, 1, Query) of
-	    {value, _} ->
-		case ejabberd_cluster:call(Node, init, stop, []) of
-		  {badrpc, _Reason} -> error;
-		  _ -> ok
-		end;
-	    _ -> nothing
-	  end
-    end.
-
-make_select_host(Lang, Name) ->
-    ?XAE(<<"select">>,
-	 [{<<"name">>, Name}],
-	 (lists:map(fun (Host) ->
-			    ?XACT(<<"option">>,
-				  ([{<<"value">>, Host}]), Host)
-		    end,
-		    ejabberd_config:get_option(hosts)))).
-
-db_storage_select(ID, Opt, Lang) ->
-    ?XAE(<<"select">>,
-	 [{<<"name">>, <<"table", ID/binary>>}],
-	 (lists:map(fun ({O, Desc}) ->
-			    Sel = if O == Opt ->
-					 [{<<"selected">>, <<"selected">>}];
-				     true -> []
-				  end,
-			    ?XACT(<<"option">>,
-				  (Sel ++
-				     [{<<"value">>,
-				       iolist_to_binary(atom_to_list(O))}]),
-				  Desc)
-		    end,
-		    [{ram_copies, ?T("RAM copy")},
-		     {disc_copies, ?T("RAM and disc copy")},
-		     {disc_only_copies, ?T("Disc only copy")},
-		     {unknown, ?T("Remote copy")},
-		     {delete_content, ?T("Delete content")},
-		     {delete_table, ?T("Delete table")}]))).
-
-node_db_parse_query(_Node, _Tables, [{nokey, <<>>}]) ->
-    nothing;
-node_db_parse_query(Node, Tables, Query) ->
-    lists:foreach(fun (Table) ->
-			  STable = iolist_to_binary(atom_to_list(Table)),
-			  case lists:keysearch(<<"table", STable/binary>>, 1,
-					       Query)
-			      of
-			    {value, {_, SType}} ->
-				Type = case SType of
-					 <<"unknown">> -> unknown;
-					 <<"ram_copies">> -> ram_copies;
-					 <<"disc_copies">> -> disc_copies;
-					 <<"disc_only_copies">> ->
-					     disc_only_copies;
-					 <<"delete_content">> -> delete_content;
-					 <<"delete_table">> -> delete_table;
-					 _ -> false
-				       end,
-				if Type == false -> ok;
-				   Type == delete_content ->
-				       mnesia:clear_table(Table);
-				   Type == delete_table ->
-				       mnesia:delete_table(Table);
-				   Type == unknown ->
-				       mnesia:del_table_copy(Table, Node);
-				   true ->
-				       case mnesia:add_table_copy(Table, Node,
-								  Type)
-					   of
-					 {aborted, _} ->
-					     mnesia:change_table_copy_type(Table,
-									   Node,
-									   Type);
-					 _ -> ok
-				       end
-				end;
-			    _ -> ok
-			  end
-		  end,
-		  Tables),
-    ok.
-
-node_backup_parse_query(_Node, [{nokey, <<>>}]) ->
-    nothing;
-node_backup_parse_query(Node, Query) ->
-    lists:foldl(fun (Action, nothing) ->
-			case lists:keysearch(Action, 1, Query) of
-			  {value, _} ->
-			      case lists:keysearch(<<Action/binary, "path">>, 1,
-						   Query)
-				  of
-				{value, {_, Path}} ->
-				    Res = case Action of
-					    <<"store">> ->
-						ejabberd_cluster:call(Node, mnesia, backup,
-							 [binary_to_list(Path)]);
-					    <<"restore">> ->
-						ejabberd_cluster:call(Node, ejabberd_admin,
-							 restore, [Path]);
-					    <<"fallback">> ->
-						ejabberd_cluster:call(Node, mnesia,
-							 install_fallback,
-							 [binary_to_list(Path)]);
-					    <<"dump">> ->
-						ejabberd_cluster:call(Node, ejabberd_admin,
-							 dump_to_textfile,
-							 [Path]);
-					    <<"load">> ->
-						ejabberd_cluster:call(Node, mnesia,
-							 load_textfile,
-                                                         [binary_to_list(Path)]);
-					    <<"import_piefxis_file">> ->
-						ejabberd_cluster:call(Node, ejabberd_piefxis,
-							 import_file, [Path]);
-					    <<"export_piefxis_dir">> ->
-						ejabberd_cluster:call(Node, ejabberd_piefxis,
-							 export_server, [Path]);
-					    <<"export_piefxis_host_dir">> ->
-						{value, {_, Host}} =
-						    lists:keysearch(<<Action/binary,
-								      "host">>,
-								    1, Query),
-						ejabberd_cluster:call(Node, ejabberd_piefxis,
-							 export_host,
-							 [Path, Host]);
-                                            <<"export_sql_file">> ->
-                                                {value, {_, Host}} =
-                                                    lists:keysearch(<<Action/binary,
-                                                                      "host">>,
-                                                                    1, Query),
-                                                ejabberd_cluster:call(Node, ejd2sql,
-                                                         export, [Host, Path]);
-					    <<"import_file">> ->
-						ejabberd_cluster:call(Node, ejabberd_admin,
-							 import_file, [Path]);
-					    <<"import_dir">> ->
-						ejabberd_cluster:call(Node, ejabberd_admin,
-							 import_dir, [Path])
-					  end,
-				    case Res of
-				      {error, Reason} -> {error, Reason};
-				      {badrpc, Reason} -> {badrpc, Reason};
-				      _ -> ok
-				    end;
-				OtherError -> {error, OtherError}
-			      end;
-			  _ -> nothing
-			end;
-		    (_Action, Res) -> Res
-		end,
-		nothing,
-		[<<"store">>, <<"restore">>, <<"fallback">>, <<"dump">>,
-		 <<"load">>, <<"import_file">>, <<"import_dir">>,
-		 <<"import_piefxis_file">>, <<"export_piefxis_dir">>,
-		 <<"export_piefxis_host_dir">>, <<"export_sql_file">>]).
-
-node_update_parse_query(Node, Query) ->
-    case lists:keysearch(<<"update">>, 1, Query) of
-      {value, _} ->
-	  ModulesToUpdateStrings =
-	      proplists:get_all_values(<<"selected">>, Query),
-	  ModulesToUpdate = [misc:binary_to_atom(M)
-			     || M <- ModulesToUpdateStrings],
-	  case ejabberd_cluster:call(Node, ejabberd_update, update,
-			[ModulesToUpdate])
-	      of
-	    {ok, _} -> ok;
-	    {error, Error} ->
-		?ERROR_MSG("~p~n", [Error]),
-		{error, (str:format("~p", [Error]))};
-	    {badrpc, Error} ->
-		?ERROR_MSG("Bad RPC: ~p~n", [Error]),
-		{error,
-		 <<"Bad RPC: ", ((str:format("~p", [Error])))/binary>>}
-	  end;
-      _ -> nothing
-    end.
 
 pretty_print_xml(El) ->
     list_to_binary(pretty_print_xml(El, <<"">>)).
@@ -1778,12 +1222,8 @@ pretty_print_xml(#xmlel{name = Name, attrs = Attrs,
      end].
 
 url_func({user_diapason, From, To}) ->
-    <<(integer_to_binary(From))/binary, "-",
-      (integer_to_binary(To))/binary, "/">>;
-url_func({users_queue, Prefix, User, _Server}) ->
-    <<Prefix/binary, "user/", User/binary, "/queue/">>;
-url_func({user, Prefix, User, _Server}) ->
-    <<Prefix/binary, "user/", User/binary, "/">>.
+    <<"diapason/", (integer_to_binary(From))/binary, "-",
+      (integer_to_binary(To))/binary, "/">>.
 
 last_modified() ->
     {<<"Last-Modified">>,
@@ -1807,49 +1247,7 @@ pretty_string_int(String) when is_binary(String) ->
 %%%==================================
 %%%% mnesia table view
 
-make_table_view(Node, STable, Lang) ->
-    Table = misc:binary_to_atom(STable),
-    TInfo = ejabberd_cluster:call(Node, mnesia, table_info, [Table, all]),
-    {value, {storage_type, Type}} = lists:keysearch(storage_type, 1, TInfo),
-    {value, {size, Size}} = lists:keysearch(size, 1, TInfo),
-    {value, {memory, Memory}} = lists:keysearch(memory, 1, TInfo),
-    MemoryB = Memory*erlang:system_info(wordsize),
-    TableInfo = str:format("~p", [TInfo]),
-    [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Database Tables at ~p"),
-                                             [Node]))),
-     ?XAE(<<"table">>, [],
-	  [?XE(<<"tbody">>,
-	       [?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Name")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-                          STable
-                         )]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Node")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-                          misc:atom_to_binary(Node)
-                         )]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Storage Type")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-                          misc:atom_to_binary(Type)
-                         )]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Elements")),
-                     ?XAE(<<"td">>,
-                          [{<<"class">>, <<"alignright">>}],
-                          [?AC(<<"1/">>,
-                               (pretty_string_int(Size)))])
-                    ]),
-		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, ?T("Memory")),
-		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
-                          (pretty_string_int(MemoryB))
-                         )])
-               ])]),
-     ?XC(<<"pre">>, TableInfo)].
-
-make_table_elements_view(Node, STable, Lang, PageNumber) ->
+webadmin_node_db_table_page(Node, STable, PageNumber) ->
     Table = misc:binary_to_atom(STable),
     TInfo = ejabberd_cluster:call(Node, mnesia, table_info, [Table, all]),
     {value, {storage_type, Type}} = lists:keysearch(storage_type, 1, TInfo),
@@ -1858,10 +1256,7 @@ make_table_elements_view(Node, STable, Lang, PageNumber) ->
     TableContentErl = get_table_content(Node, Table, Type, PageNumber, PageSize),
     TableContent = str:format("~p", [TableContentErl]),
     PagesLinks = build_elements_pages_list(Size, PageNumber, PageSize),
-    [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Database Tables at ~p"),
-                                             [Node]))),
-     ?P, ?AC(<<"../">>, STable), ?P
-    ] ++ PagesLinks ++ [?XC(<<"pre">>, TableContent)].
+    [?P] ++ PagesLinks ++ [?XC(<<"pre">>, TableContent)].
 
 build_elements_pages_list(Size, PageNumber, PageSize) ->
     PagesNumber = calculate_pages_number(Size, PageSize),
@@ -1893,39 +1288,147 @@ get_table_content(Node, Table, _Type, PageNumber, PageSize) ->
            || Key <- Keys],
     lists:flatten(Res).
 
+%% @format-begin
+
+webadmin_db(Node, [<<"table">>, TableName, <<"details">> | RPath], R, Level) ->
+    Service = <<"Mnesia Tables">>,
+    Breadcrumb =
+        make_breadcrumb({table_section, Level, Service, TableName, <<"Details">>, RPath}),
+    Get = [ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [mnesia_table_details, R, [{<<"table">>, TableName}], []])],
+    Breadcrumb ++ Get;
+webadmin_db(Node,
+            [<<"table">>, TableName, <<"elements">>, PageNumber | RPath],
+            R,
+            Level) ->
+    Service = <<"Mnesia Tables">>,
+    Breadcrumb =
+        make_breadcrumb({table_section, Level, Service, TableName, <<"Elements">>, RPath}),
+    Get = [ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [webadmin_node_db_table_page,
+                                  R,
+                                  [{<<"node">>, Node},
+                                   {<<"table">>, TableName},
+                                   {<<"page">>, PageNumber}],
+                                  []])],
+    Breadcrumb ++ Get;
+webadmin_db(Node, [<<"table">>, TableName, <<"change-storage">> | RPath], R, Level) ->
+    Service = <<"Mnesia Tables">>,
+    Breadcrumb =
+        make_breadcrumb({table_section, Level, Service, TableName, <<"Change Storage">>, RPath}),
+    Set = [ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [mnesia_table_change_storage, R, [{<<"table">>, TableName}], []])],
+    Breadcrumb ++ Set;
+webadmin_db(Node, [<<"table">>, TableName, <<"clear">> | RPath], R, Level) ->
+    Service = <<"Mnesia Tables">>,
+    Breadcrumb =
+        make_breadcrumb({table_section, Level, Service, TableName, <<"Clear Content">>, RPath}),
+    Set = [ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [mnesia_table_clear,
+                                  R,
+                                  [{<<"table">>, TableName}],
+                                  [{style, danger}]])],
+    Breadcrumb ++ Set;
+webadmin_db(Node, [<<"table">>, TableName, <<"destroy">> | RPath], R, Level) ->
+    Service = <<"Mnesia Tables">>,
+    Breadcrumb =
+        make_breadcrumb({table_section, Level, Service, TableName, <<"Destroy Table">>, RPath}),
+    Set = [ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [mnesia_table_destroy,
+                                  R,
+                                  [{<<"table">>, TableName}],
+                                  [{style, danger}]])],
+    Breadcrumb ++ Set;
+webadmin_db(_Node, [<<"table">>, TableName | _RPath], _R, Level) ->
+    Service = <<"Mnesia Tables">>,
+    Breadcrumb = make_breadcrumb({table, Level, Service, TableName}),
+    MenuItems =
+        [{<<"details/">>, <<"Details">>},
+         {<<"elements/1/">>, <<"Elements">>},
+         {<<"change-storage/">>, <<"Change Storage">>},
+         {<<"clear/">>, <<"Clear Content">>},
+         {<<"destroy/">>, <<"Destroy Table">>}],
+    Get = [?XE(<<"ul">>, [?LI([?AC(MIU, MIN)]) || {MIU, MIN} <- MenuItems])],
+    Breadcrumb ++ Get;
+webadmin_db(Node, _RPath, R, _Level) ->
+    Service = <<"Mnesia Tables">>,
+    Breadcrumb = make_breadcrumb({service, Service}),
+    Get = [ejabberd_cluster:call(Node,
+                                 ejabberd_web_admin,
+                                 make_command,
+                                 [mnesia_list_tables,
+                                  R,
+                                  [],
+                                  [{result_links, [{name, mnesia_table, 3, <<"">>}]}]])],
+    Breadcrumb ++ Get.
+
+make_breadcrumb({service, Service}) ->
+    make_breadcrumb([Service]);
+make_breadcrumb({table, Level, Service, Name}) ->
+    make_breadcrumb([{Level, Service}, separator, Name]);
+make_breadcrumb({table_section, Level, Service, Name, Section, RPath}) ->
+    make_breadcrumb([{Level, Service}, separator, {Level - 2, Name}, separator, Section
+                     | RPath]);
+make_breadcrumb(Elements) ->
+    lists:map(fun ({xmlel, _, _, _} = Xmlel) ->
+                      Xmlel;
+                  (<<"sort">>) ->
+                      ?C(<<" +">>);
+                  (<<"page">>) ->
+                      ?C(<<" #">>);
+                  (separator) ->
+                      ?C(<<" > ">>);
+                  (Bin) when is_binary(Bin) ->
+                      ?C(Bin);
+                  ({Level, Bin}) when is_integer(Level) and is_binary(Bin) ->
+                      ?AC(binary:copy(<<"../">>, Level), Bin)
+              end,
+              Elements).
+%% @format-end
+
 %%%==================================
 %%%% navigation menu
 
-make_navigation(Host, Node, Lang, JID, Level) ->
-    Menu = make_navigation_menu(Host, Node, Lang, JID, Level),
+make_navigation(Host, Node, Username, Lang, JID, Level) ->
+    Menu = make_navigation_menu(Host, Node, Username, Lang, JID, Level),
     make_menu_items(Lang, Menu).
 
 -spec make_navigation_menu(Host::global | binary(),
                            Node::cluster | atom(),
+                           Username::unspecified | binary(),
                            Lang::binary(), JID::jid(), Level::integer()) ->
     Menu::{URL::binary(), Title::binary()}
     | {URL::binary(), Title::binary(), [Menu::any()]}.
-make_navigation_menu(Host, Node, Lang, JID, Level) ->
+make_navigation_menu(Host, Node, Username, Lang, JID, Level) ->
     HostNodeMenu = make_host_node_menu(Host, Node, Lang,
 				       JID, Level),
-    HostMenu = make_host_menu(Host, HostNodeMenu, Lang,
+    HostUserMenu = make_host_user_menu(Host, Username, Lang,
+                                       JID, Level),
+    HostMenu = make_host_menu(Host, HostNodeMenu, HostUserMenu, Lang,
 			      JID, Level),
     NodeMenu = make_node_menu(Host, Node, Lang, Level),
     make_server_menu(HostMenu, NodeMenu, Lang, JID, Level).
 
-make_menu_items(global, cluster, Base, Lang) ->
-    HookItems = get_menu_items_hook(server, Lang),
-    make_menu_items(Lang, {Base, <<"">>, HookItems});
-make_menu_items(global, Node, Base, Lang) ->
-    HookItems = get_menu_items_hook({node, Node}, Lang),
-    make_menu_items(Lang, {Base, <<"">>, HookItems});
-make_menu_items(Host, cluster, Base, Lang) ->
-    HookItems = get_menu_items_hook({host, Host}, Lang),
-    make_menu_items(Lang, {Base, <<"">>, HookItems});
-make_menu_items(Host, Node, Base, Lang) ->
-    HookItems = get_menu_items_hook({hostnode, Host, Node},
-				    Lang),
-    make_menu_items(Lang, {Base, <<"">>, HookItems}).
+make_menu_items(Host, Node, Base, Lang, Acc) ->
+    Place = case {Host, Node} of
+                {global, cluster} -> server;
+                {global, Node} -> {node, Node};
+                {Host, cluster} -> {host, Host};
+                {Host, Node} -> {hostnode, Host, Node}
+            end,
+    HookItems = get_menu_items_hook(Place, Lang),
+    Items = lists:keysort(2, HookItems ++ Acc),
+    make_menu_items(Lang, {Base, <<"">>, Items}).
 
 make_host_node_menu(global, _, _Lang, _JID, _Level) ->
     {<<"">>, <<"">>, []};
@@ -1938,21 +1441,34 @@ make_host_node_menu(Host, Node, Lang, JID, Level) ->
 		      || Tuple <- HostNodeFixed,
 			 is_allowed_path(Host, Tuple, JID)],
     {HostNodeBase, iolist_to_binary(atom_to_list(Node)),
-     HostNodeFixed2}.
+     lists:keysort(2, HostNodeFixed2)}.
 
-make_host_menu(global, _HostNodeMenu, _Lang, _JID, _Level) ->
+make_host_user_menu(global, _, _Lang, _JID, _Level) ->
     {<<"">>, <<"">>, []};
-make_host_menu(Host, HostNodeMenu, Lang, JID, Level) ->
+make_host_user_menu(_, unspecified, _Lang, _JID, _Level) ->
+    {<<"">>, <<"">>, []};
+make_host_user_menu(Host, Username, Lang, JID, Level) ->
+    HostNodeBase = get_base_path(Host, Username, Level),
+    HostNodeFixed = get_menu_items_hook({hostuser, Host, Username}, Lang),
+    HostNodeFixed2 = [Tuple
+		      || Tuple <- HostNodeFixed,
+			 is_allowed_path(Host, Tuple, JID)],
+    {HostNodeBase, Username,
+     lists:keysort(2, HostNodeFixed2)}.
+
+make_host_menu(global, _HostNodeMenu, _HostUserMenu, _Lang, _JID, _Level) ->
+    {<<"">>, <<"">>, []};
+make_host_menu(Host, HostNodeMenu, HostUserMenu, Lang, JID, Level) ->
     HostBase = get_base_path(Host, cluster, Level),
-    HostFixed = [{<<"users">>, ?T("Users")},
-		 {<<"online-users">>, ?T("Online Users")}]
-		  ++
+    HostFixed = [{<<"users">>, ?T("Users"), HostUserMenu},
+		 {<<"online-users">>, ?T("Online Users")}],
+    HostFixedAdditional =
 		  get_lastactivity_menuitem_list(Host) ++
-		    [{<<"nodes">>, ?T("Nodes"), HostNodeMenu},
-		     {<<"stats">>, ?T("Statistics")}]
+		    [{<<"nodes">>, ?T("Nodes"), HostNodeMenu}]
 		      ++ get_menu_items_hook({host, Host}, Lang),
+    HostFixedAll = HostFixed ++ lists:keysort(2, HostFixedAdditional),
     HostFixed2 = [Tuple
-		  || Tuple <- HostFixed,
+		  || Tuple <- HostFixedAll,
 		     is_allowed_path(Host, Tuple, JID)],
     {HostBase, Host, HostFixed2}.
 
@@ -1960,30 +1476,31 @@ make_node_menu(_Host, cluster, _Lang, _Level) ->
     {<<"">>, <<"">>, []};
 make_node_menu(global, Node, Lang, Level) ->
     NodeBase = get_base_path(global, Node, Level),
-    NodeFixed = [{<<"db">>, ?T("Database")},
-		 {<<"backup">>, ?T("Backup")},
-		 {<<"stats">>, ?T("Statistics")},
-		 {<<"update">>, ?T("Update")}]
+    NodeFixed = [{<<"db">>, <<"Mnesia Tables">>},
+		 {<<"backup">>, <<"Mnesia Backup">>}]
 		  ++ get_menu_items_hook({node, Node}, Lang),
     {NodeBase, iolist_to_binary(atom_to_list(Node)),
-     NodeFixed};
+     lists:keysort(2, NodeFixed)};
 make_node_menu(_Host, _Node, _Lang, _Level) ->
     {<<"">>, <<"">>, []}.
 
 make_server_menu(HostMenu, NodeMenu, Lang, JID, Level) ->
     Base = get_base_path(global, cluster, Level),
     Fixed = [{<<"vhosts">>, ?T("Virtual Hosts"), HostMenu},
-	     {<<"nodes">>, ?T("Nodes"), NodeMenu},
-	     {<<"stats">>, ?T("Statistics")}]
-	      ++ get_menu_items_hook(server, Lang),
+	     {<<"nodes">>, ?T("Nodes"), NodeMenu}],
+    FixedAdditional = get_menu_items_hook(server, Lang),
+    FixedAll = Fixed ++ lists:keysort(2, FixedAdditional),
     Fixed2 = [Tuple
-	      || Tuple <- Fixed,
+	      || Tuple <- FixedAll,
 		 is_allowed_path(global, Tuple, JID)],
     {Base, <<"">>, Fixed2}.
 
 get_menu_items_hook({hostnode, Host, Node}, Lang) ->
     ejabberd_hooks:run_fold(webadmin_menu_hostnode, Host,
 			    [], [Host, Node, Lang]);
+get_menu_items_hook({hostuser, Host, Username}, Lang) ->
+    ejabberd_hooks:run_fold(webadmin_menu_hostuser, Host,
+			    [], [Host, Username, Lang]);
 get_menu_items_hook({host, Host}, Lang) ->
     ejabberd_hooks:run_fold(webadmin_menu_host, Host, [],
 			    [Host, Lang]);
@@ -2052,4 +1569,897 @@ any_rules_allowed(Host, Access, Entity) ->
 	      allow == acl:match_rule(Host, Rule, Entity)
       end, Access).
 
+%%%==================================
+
+%%% @format-begin
+
+%%%% make_command: API
+
+-spec make_command(Name :: atom(), Request :: http_request()) -> xmlel().
+make_command(Name, Request) ->
+    make_command2(Name, Request, [], []).
+
+-spec make_command(Name :: atom(),
+                   Request :: http_request(),
+                   BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}],
+                   [Option]) ->
+                      xmlel() | {raw_and_value, any(), xmlel()}
+    when Option ::
+             {only, presentation | without_presentation | button | result | value | raw_and_value} |
+             {input_name_append, [binary()]} |
+             {force_execution, boolean()} |
+             {table_options, {PageSize :: integer(), RemainingPath :: [binary()]}} |
+             {result_named, boolean()} |
+             {result_links,
+              [{ResultName :: atom(),
+                LinkType :: host | node | user | room | shared_roster | arg_host | paragraph,
+                Level :: integer(),
+                Append :: binary()}]} |
+             {style, normal | danger}.
+make_command(Name, Request, BaseArguments, Options) ->
+    make_command2(Name, Request, BaseArguments, Options).
+
+-spec make_command_raw_value(Name :: atom(),
+                             Request :: http_request(),
+                             BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}]) ->
+                                any().
+make_command_raw_value(Name, Request, BaseArguments) ->
+    make_command2(Name, Request, BaseArguments, [{only, raw_value}]).
+
+%%%==================================
+%%%% make_command: main
+
+-spec make_command2(Name :: atom(),
+                    Request :: http_request(),
+                    BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}],
+                    [Option]) ->
+                       xmlel() | any()
+    when Option ::
+             {only,
+              presentation |
+              without_presentation |
+              button |
+              result |
+              value |
+              raw_value |
+              raw_and_value} |
+             {input_name_append, [binary()]} |
+             {force_execution, boolean()} |
+             {table_options, {PageSize :: integer(), RemainingPath :: [binary()]}} |
+             {result_named, boolean()} |
+             {result_links,
+              [{ResultName :: atom(),
+                LinkType :: host | node | user | room | shared_roster | arg_host | paragraph,
+                Level :: integer(),
+                Append :: binary()}]} |
+             {style, normal | danger}.
+make_command2(Name, Request, BaseArguments, Options) ->
+    Only = proplists:get_value(only, Options, all),
+    ForceExecution = proplists:get_value(force_execution, Options, false),
+    InputNameAppend = proplists:get_value(input_name_append, Options, []),
+    Resultnamed = proplists:get_value(result_named, Options, false),
+    ResultLinks = proplists:get_value(result_links, Options, []),
+    TO = proplists:get_value(table_options, Options, {999999, []}),
+    Style = proplists:get_value(style, Options, normal),
+    #request{us = {RUser, RServer},
+             ip = RIp,
+             host = RHost} =
+        Request,
+    CallerInfo =
+        #{usr => {RUser, RServer, <<"">>},
+          ip => RIp,
+          caller_host => RHost,
+          caller_module => ?MODULE},
+    try {ejabberd_commands:get_command_definition(Name),
+         ejabberd_access_permissions:can_access(Name, CallerInfo)}
+    of
+        {C, allow} ->
+            make_command2(Name,
+                          Request,
+                          CallerInfo,
+                          BaseArguments,
+                          C,
+                          Only,
+                          ForceExecution,
+                          InputNameAppend,
+                          Resultnamed,
+                          ResultLinks,
+                          Style,
+                          TO);
+        {_C, deny} ->
+            ?DEBUG("Blocked access to command ~p for~n CallerInfo: ~p", [Name, CallerInfo]),
+            ?C(<<"">>)
+    catch
+        A:B ->
+            ?INFO_MSG("Problem preparing command ~p: ~p", [Name, {A, B}]),
+            ?C(<<"">>)
+    end.
+
+make_command2(Name,
+              Request,
+              CallerInfo,
+              BaseArguments,
+              C,
+              Only,
+              ForceExecution,
+              InputNameAppend,
+              Resultnamed,
+              ResultLinks,
+              Style,
+              TO) ->
+    {ArgumentsFormat, _Rename, ResultFormatApi} = ejabberd_commands:get_command_format(Name),
+    Method =
+        case {ForceExecution, ResultFormatApi} of
+            {true, _} ->
+                auto;
+            {_, {_, rescode}} ->
+                manual;
+            {_, {_, restuple}} ->
+                manual;
+            _ ->
+                auto
+        end,
+    PresentationEls = make_command_presentation(Name, C#ejabberd_commands.tags),
+    Query = Request#request.q,
+    {ArgumentsUsed1, ExecRes} =
+        execute_command(Name,
+                        Query,
+                        BaseArguments,
+                        Method,
+                        ArgumentsFormat,
+                        CallerInfo,
+                        InputNameAppend),
+    ArgumentsFormatDetailed =
+        add_arguments_details(ArgumentsFormat,
+                              C#ejabberd_commands.args_desc,
+                              C#ejabberd_commands.args_example),
+    ArgumentsEls =
+        make_command_arguments(Name,
+                               Query,
+                               Only,
+                               Method,
+                               Style,
+                               ArgumentsFormatDetailed,
+                               BaseArguments,
+                               InputNameAppend),
+    Automated =
+        case ArgumentsEls of
+            [] ->
+                true;
+            _ ->
+                false
+        end,
+    ArgumentsUsed =
+        (catch lists:zip(
+                   lists:map(fun({A, _}) -> A end, ArgumentsFormat), ArgumentsUsed1)),
+    ResultEls =
+        make_command_result(ExecRes,
+                            ArgumentsUsed,
+                            ResultFormatApi,
+                            Automated,
+                            Resultnamed,
+                            ResultLinks,
+                            TO),
+    make_command3(Only, ExecRes, PresentationEls, ArgumentsEls, ResultEls).
+
+make_command3(presentation, _ExecRes, PresentationEls, _ArgumentsEls, _ResultEls) ->
+    ?XAE(<<"p">>, [{<<"class">>, <<"api">>}], PresentationEls);
+make_command3(button, _ExecRes, _PresentationEls, [Button], _ResultEls) ->
+    Button;
+make_command3(result,
+              _ExecRes,
+              _PresentationEls,
+              _ArgumentsEls,
+              [{xmlcdata, _}, Xmlel]) ->
+    ?XAE(<<"p">>, [{<<"class">>, <<"api">>}], [Xmlel]);
+make_command3(value, _ExecRes, _PresentationEls, _ArgumentsEls, [{xmlcdata, _}, Xmlel]) ->
+    Xmlel;
+make_command3(value,
+              _ExecRes,
+              _PresentationEls,
+              _ArgumentsEls,
+              [{xmlel, _, _, _} = Xmlel]) ->
+    Xmlel;
+make_command3(raw_and_value,
+              ExecRes,
+              _PresentationEls,
+              _ArgumentsEls,
+              [{xmlel, _, _, _} = Xmlel]) ->
+    {raw_and_value, ExecRes, Xmlel};
+make_command3(raw_value, ExecRes, _PresentationEls, _ArgumentsEls, _ResultEls) ->
+    ExecRes;
+make_command3(without_presentation,
+              _ExecRes,
+              _PresentationEls,
+              ArgumentsEls,
+              ResultEls) ->
+    ?XAE(<<"p">>,
+         [{<<"class">>, <<"api">>}],
+         [?XE(<<"blockquote">>, ArgumentsEls ++ ResultEls)]);
+make_command3(all, _ExecRes, PresentationEls, ArgumentsEls, ResultEls) ->
+    ?XAE(<<"p">>,
+         [{<<"class">>, <<"api">>}],
+         PresentationEls ++ [?XE(<<"blockquote">>, ArgumentsEls ++ ResultEls)]).
+
+add_arguments_details(ArgumentsFormat, Descriptions, none) ->
+    add_arguments_details(ArgumentsFormat, Descriptions, []);
+add_arguments_details(ArgumentsFormat, none, Examples) ->
+    add_arguments_details(ArgumentsFormat, [], Examples);
+add_arguments_details(ArgumentsFormat, Descriptions, Examples) ->
+    lists_zipwith3(fun({A, B}, C, D) -> {A, B, C, D} end,
+                   ArgumentsFormat,
+                   Descriptions,
+                   Examples,
+                   {pad, {none, "", ""}}).
+
+-ifdef(OTP_BELOW_26).
+
+lists_zipwith3(Combine, List1, List2, List3, {pad, {DefaultX, DefaultY, DefaultZ}}) ->
+    lists_zipwith3(Combine, List1, List2, List3, DefaultX, DefaultY, DefaultZ, []).
+
+lists_zipwith3(_Combine, [], [], [], _DefaultX, _DefaultY, _DefaultZ, Res) ->
+    lists:reverse(Res);
+lists_zipwith3(Combine,
+               [E1 | List1],
+               [E2 | List2],
+               [E3 | List3],
+               DefX,
+               DefY,
+               DefZ,
+               Res) ->
+    E123 = Combine(E1, E2, E3),
+    lists_zipwith3(Combine, List1, List2, List3, DefX, DefY, DefZ, [E123 | Res]);
+lists_zipwith3(Combine, [E1 | List1], [], [], DefX, DefY, DefZ, Res) ->
+    E123 = Combine(E1, DefY, DefZ),
+    lists_zipwith3(Combine, List1, [], [], DefX, DefY, DefZ, [E123 | Res]);
+lists_zipwith3(Combine, [E1 | List1], [], [E3 | List3], DefX, DefY, DefZ, Res) ->
+    E123 = Combine(E1, DefY, E3),
+    lists_zipwith3(Combine, List1, [], List3, DefX, DefY, DefZ, [E123 | Res]);
+lists_zipwith3(Combine, [E1 | List1], [E2 | List2], [], DefX, DefY, DefZ, Res) ->
+    E123 = Combine(E1, E2, DefZ),
+    lists_zipwith3(Combine, List1, List2, [], DefX, DefY, DefZ, [E123 | Res]).
+
+-else.
+
+lists_zipwith3(Combine, List1, List2, List3, How) ->
+    lists:zipwith3(Combine, List1, List2, List3, How).
+
+-endif.
+
+%%%==================================
+%%%% make_command: presentation
+
+make_command_presentation(Name, Tags) ->
+    NameBin = misc:atom_to_binary(Name),
+    NiceNameBin = nice_this(Name),
+    Text = ejabberd_ctl:get_usage_command(atom_to_list(Name), 100, false, 1000000),
+    AnchorLink = [?ANCHORL(NameBin)],
+    MaybeDocsLink =
+        case lists:member(internal, Tags) of
+            true ->
+                [];
+            false ->
+                [?GL(<<"developer/ejabberd-api/admin-api/#", NameBin/binary>>, NameBin)]
+        end,
+    [?XE(<<"details">>,
+         [?XAE(<<"summary">>, [{<<"id">>, NameBin}], [?XC(<<"strong">>, NiceNameBin)])]
+         ++ MaybeDocsLink
+         ++ AnchorLink
+         ++ [?XC(<<"pre">>, list_to_binary(Text))])].
+
+nice_this(This, integer) ->
+    {nice_this(This), right};
+nice_this(This, _Format) ->
+    nice_this(This).
+
+-spec nice_this(This :: atom() | string() | [byte()]) -> NiceThis :: binary().
+nice_this(This) when is_atom(This) ->
+    nice_this(atom_to_list(This));
+nice_this(This) when is_binary(This) ->
+    nice_this(binary_to_list(This));
+nice_this(This) when is_list(This) ->
+    list_to_binary(lists:flatten([string:titlecase(Word)
+                                  || Word <- string:replace(This, "_", " ", all)])).
+
+-spec long_this(These :: [This :: atom()]) -> Long :: binary().
+long_this(These) ->
+    list_to_binary(lists:join($/, [atom_to_list(This) || This <- These])).
+
+%%%==================================
+%%%% make_command: arguments
+
+make_command_arguments(Name,
+                       Query,
+                       Only,
+                       Method,
+                       Style,
+                       ArgumentsFormat,
+                       BaseArguments,
+                       InputNameAppend) ->
+    ArgumentsFormat2 = remove_base_arguments(ArgumentsFormat, BaseArguments),
+    ArgumentsFields = make_arguments_fields(Name, Query, ArgumentsFormat2),
+    Button = make_button_element(Name, Method, Style, InputNameAppend),
+    ButtonElement =
+        ?XE(<<"tr">>,
+            [?X(<<"td">>), ?XAE(<<"td">>, [{<<"class">>, <<"alignright">>}], [Button])]),
+    case {(ArgumentsFields /= []) or (Method == manual), Only} of
+        {false, _} ->
+            [];
+        {true, button} ->
+            [?XAE(<<"form">>, [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}], [Button])];
+        {true, _} ->
+            [?XAE(<<"form">>,
+                  [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
+                  [?XE(<<"table">>, ArgumentsFields ++ [ButtonElement])])]
+    end.
+
+remove_base_arguments(ArgumentsFormat, BaseArguments) ->
+    lists:filter(fun({ArgName, _ArgFormat, _ArgDesc, _ArgExample}) ->
+                    not
+                        lists:keymember(
+                            misc:atom_to_binary(ArgName), 1, BaseArguments)
+                 end,
+                 ArgumentsFormat).
+
+make_button_element(Name, _, Style, InputNameAppend) ->
+    Id = term_to_id(InputNameAppend),
+    NameBin = <<(misc:atom_to_binary(Name))/binary, Id/binary>>,
+    NiceNameBin = nice_this(Name),
+    case Style of
+        danger ->
+            ?INPUTD(<<"submit">>, NameBin, NiceNameBin);
+        _ ->
+            ?INPUT(<<"submit">>, NameBin, NiceNameBin)
+    end.
+
+make_arguments_fields(Name, Query, ArgumentsFormat) ->
+    lists:map(fun({ArgName, ArgFormat, _ArgDescription, ArgExample}) ->
+                 ArgExampleBin = format_result(ArgExample, {ArgName, ArgFormat}),
+                 ArgNiceNameBin = nice_this(ArgName),
+                 ArgLongNameBin = long_this([Name, ArgName]),
+                 ArgValue =
+                     case lists:keysearch(ArgLongNameBin, 1, Query) of
+                         {value, {ArgLongNameBin, V}} ->
+                             V;
+                         _ ->
+                             <<"">>
+                     end,
+                 ?XE(<<"tr">>,
+                     [?XC(<<"td">>, <<ArgNiceNameBin/binary, ":">>),
+                      ?XE(<<"td">>,
+                          [?INPUTPH(<<"text">>, ArgLongNameBin, ArgValue, ArgExampleBin)])])
+              end,
+              ArgumentsFormat).
+
+%%%==================================
+%%%% make_command: execute
+
+execute_command(Name,
+                Query,
+                BaseArguments,
+                Method,
+                ArgumentsFormat,
+                CallerInfo,
+                InputNameAppend) ->
+    try Args = prepare_arguments(Name, BaseArguments ++ Query, ArgumentsFormat),
+        {Args,
+         execute_command2(Name, Query, Args, Method, ArgumentsFormat, CallerInfo, InputNameAppend)}
+    of
+        R ->
+            R
+    catch
+        A:E ->
+            {error, {A, E}}
+    end.
+
+execute_command2(Name,
+                 Query,
+                 Arguments,
+                 Method,
+                 ArgumentsFormat,
+                 CallerInfo,
+                 InputNameAppend) ->
+    AllArgumentsProvided = length(Arguments) == length(ArgumentsFormat),
+    PressedExecuteButton = is_this_to_execute(Name, Query, Arguments, InputNameAppend),
+    LetsExecute =
+        case {Method, PressedExecuteButton, AllArgumentsProvided} of
+            {auto, _, true} ->
+                true;
+            {manual, true, true} ->
+                true;
+            _ ->
+                false
+        end,
+    case LetsExecute of
+        true ->
+            catch ejabberd_commands:execute_command2(Name, Arguments, CallerInfo);
+        false ->
+            not_executed
+    end.
+
+is_this_to_execute(Name, Query, Arguments, InputNameAppend) ->
+    NiceNameBin = nice_this(Name),
+    NameBin = misc:atom_to_binary(Name),
+    AppendBin = term_to_id(lists:sublist(Arguments, length(InputNameAppend))),
+    ArgumentsId = <<NameBin/binary, AppendBin/binary>>,
+    {value, {ArgumentsId, NiceNameBin}} == lists:keysearch(ArgumentsId, 1, Query).
+
+prepare_arguments(ComName, Args, ArgsFormat) ->
+    lists:foldl(fun({ArgName, ArgFormat}, FinalArguments) ->
+                   %% Give priority to the value enforced in our code
+                   %% Otherwise use the value provided by the user
+                   case {lists:keyfind(
+                             misc:atom_to_binary(ArgName), 1, Args),
+                         lists:keyfind(long_this([ComName, ArgName]), 1, Args)}
+                   of
+                       %% Value enforced in our code
+                       {{_, Value}, _} ->
+                           [format_arg(Value, ArgFormat) | FinalArguments];
+                       %% User didn't provide value in the field
+                       {_, {_, <<>>}} ->
+                           FinalArguments;
+                       %% Value provided by the user in the form field
+                       {_, {_, Value}} ->
+                           [format_arg(Value, ArgFormat) | FinalArguments];
+                       {false, false} ->
+                           FinalArguments
+                   end
+                end,
+                [],
+                lists:reverse(ArgsFormat)).
+
+format_arg(Value, any) ->
+    Value;
+format_arg(Value, atom) when is_atom(Value) ->
+    Value;
+format_arg(Value, binary) when is_binary(Value) ->
+    Value;
+format_arg(Value, ArgFormat) ->
+    ejabberd_ctl:format_arg(binary_to_list(Value), ArgFormat).
+
+%%%==================================
+%%%% make_command: result
+
+make_command_result(not_executed, _, _, _, _, _, _) ->
+    [];
+make_command_result({error, ErrorElement}, _, _, _, _, _, _) ->
+    [?DIVRES([?C(<<"Error: ">>),
+              ?XC(<<"code">>, list_to_binary(io_lib:format("~p", [ErrorElement])))])];
+make_command_result(Value,
+                    ArgumentsUsed,
+                    {ResName, _ResFormat} = ResultFormatApi,
+                    Automated,
+                    Resultnamed,
+                    ResultLinks,
+                    TO) ->
+    ResNameBin = nice_this(ResName),
+    ResultValueEl =
+        make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, TO),
+    ResultEls =
+        case Resultnamed of
+            true ->
+                [?C(<<ResNameBin/binary, ": ">>), ResultValueEl];
+            false ->
+                [ResultValueEl]
+        end,
+    case Automated of
+        true ->
+            ResultEls;
+        false ->
+            [?DIVRES(ResultEls)]
+    end.
+
+make_command_result_element(ArgumentsUsed,
+                            ListOfTuples,
+                            {_ArgName, {list, {_ListElementsName, {tuple, TupleElements}}}},
+                            ResultLinks,
+                            {PageSize, RPath}) ->
+    HeadElements =
+        [nice_this(ElementName, ElementFormat) || {ElementName, ElementFormat} <- TupleElements],
+    ContentElements =
+        [list_to_tuple([make_result(format_result(V, {ElementName, ElementFormat}),
+                                    ElementName,
+                                    ArgumentsUsed,
+                                    ResultLinks)
+                        || {V, {ElementName, ElementFormat}}
+                               <- lists:zip(tuple_to_list(Tuple), TupleElements)])
+         || Tuple <- ListOfTuples],
+    make_table(PageSize, RPath, HeadElements, ContentElements);
+make_command_result_element(_ArgumentsUsed,
+                            Values,
+                            {_ArgName, {tuple, TupleElements}},
+                            _ResultLinks,
+                            _TO) ->
+    ?XE(<<"table">>,
+        [?XE(<<"thead">>,
+             [?XE(<<"tr">>,
+                  [?XC(<<"td">>, nice_this(ElementName))
+                   || {ElementName, _ElementFormat} <- TupleElements])]),
+         ?XE(<<"tbody">>,
+             [?XE(<<"tr">>,
+                  [?XC(<<"td">>, format_result(V, {ElementName, ElementFormat}))
+                   || {V, {ElementName, ElementFormat}}
+                          <- lists:zip(tuple_to_list(Values), TupleElements)])])]);
+make_command_result_element(ArgumentsUsed,
+                            Value,
+                            {_ArgName, {list, {ElementsName, ElementsFormat}}},
+                            ResultLinks,
+                            {PageSize, RPath}) ->
+    HeadElements = [nice_this(ElementsName)],
+    ContentElements =
+        [{make_result(format_result(V, {ElementsName, ElementsFormat}),
+                      ElementsName,
+                      ArgumentsUsed,
+                      ResultLinks)}
+         || V <- Value],
+    make_table(PageSize, RPath, HeadElements, ContentElements);
+make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, _TO) ->
+    Res = make_result(format_result(Value, ResultFormatApi),
+                      unknown_element_name,
+                      ArgumentsUsed,
+                      ResultLinks),
+    Res2 =
+        case Res of
+            [{xmlel, _, _, _} | _] = X ->
+                X;
+            Z ->
+                [Z]
+        end,
+    ?XE(<<"code">>, Res2).
+
+make_result(Binary, ElementName, ArgumentsUsed, [{ResultName, arg_host, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    {_, Host} = lists:keyfind(host, 1, ArgumentsUsed),
+    UrlBinary =
+        replace_url_elements([<<"server/">>, host, <<"/">>, Append], [{host, Host}], Level),
+    ?AC(UrlBinary, Binary);
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, host, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    UrlBinary =
+        replace_url_elements([<<"server/">>, host, <<"/">>, Append], [{host, Binary}], Level),
+    ?AC(UrlBinary, Binary);
+make_result(Binary,
+            ElementName,
+            _ArgumentsUsed,
+            [{ResultName, mnesia_table, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    Node = misc:atom_to_binary(node()),
+    UrlBinary =
+        replace_url_elements([<<"node/">>, node, <<"/db/table/">>, tablename, <<"/">>, Append],
+                             [{node, Node}, {tablename, Binary}],
+                             Level),
+    ?AC(UrlBinary, Binary);
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, node, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    UrlBinary =
+        replace_url_elements([<<"node/">>, node, <<"/">>, Append], [{node, Binary}], Level),
+    ?AC(UrlBinary, Binary);
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, user, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    Jid = try jid:decode(Binary) of
+              #jid{} = J ->
+                  J
+          catch
+              _:{bad_jid, _} ->
+                  %% TODO: Find a method to be able to link to this user to delete it
+                  ?INFO_MSG("Error parsing Binary that is not a valid JID:~n  ~p", [Binary]),
+                  jid:decode(<<"unknown-username@localhost">>)
+          end,
+    {User, Host, _R} = jid:split(Jid),
+    case lists:member(Host, ejabberd_config:get_option(hosts)) of
+        true ->
+            UrlBinary =
+                replace_url_elements([<<"server/">>, host, <<"/user/">>, user, <<"/">>, Append],
+                                     [{user, misc:url_encode(User)}, {host, Host}],
+                                     Level),
+            ?AC(UrlBinary, Binary);
+        false ->
+            ?C(Binary)
+    end;
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, room, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    Jid = jid:decode(Binary),
+    {Roomname, Service, _} = jid:split(Jid),
+    Host = ejabberd_router:host_of_route(Service),
+    case lists:member(Host, ejabberd_config:get_option(hosts)) of
+        true ->
+            UrlBinary =
+                replace_url_elements([<<"server/">>,
+                                      host,
+                                      <<"/muc/rooms/room/">>,
+                                      room,
+                                      <<"/">>,
+                                      Append],
+                                     [{room, misc:url_encode(Roomname)}, {host, Host}],
+                                     Level),
+            ?AC(UrlBinary, Binary);
+        false ->
+            ?C(Binary)
+    end;
+make_result(Binary,
+            ElementName,
+            ArgumentsUsed,
+            [{ResultName, shared_roster, Level, Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    First = proplists:get_value(first, ArgumentsUsed),
+    Second = proplists:get_value(second, ArgumentsUsed),
+    {GroupId, Host} =
+        case jid:decode(First) of
+            #jid{luser = <<"">>, lserver = G} ->
+                {G, Second};
+            #jid{luser = G, lserver = H} ->
+                {G, H}
+        end,
+    UrlBinary =
+        replace_url_elements([<<"server/">>,
+                              host,
+                              <<"/shared-roster/group/">>,
+                              srg,
+                              <<"/">>,
+                              Append],
+                             [{host, Host}, {srg, GroupId}],
+                             Level),
+    ?AC(UrlBinary, Binary);
+make_result([{xmlcdata, _, _, _} | _] = Any,
+            _ElementName,
+            _ArgumentsUsed,
+            _ResultLinks) ->
+    Any;
+make_result([{xmlel, _, _, _} | _] = Any, _ElementName, _ArgumentsUsed, _ResultLinks) ->
+    Any;
+make_result(Binary,
+            ElementName,
+            _ArgumentsUsed,
+            [{ResultName, paragraph, _Level, _Append}])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    ?XC(<<"pre">>, Binary);
+make_result(Binary, _ElementName, _ArgumentsUsed, _ResultLinks) ->
+    ?C(Binary).
+
+replace_url_elements(UrlComponents, Replacements, Level) ->
+    Base = get_base_path_sum(0, 0, Level),
+    Binary2 =
+        lists:foldl(fun (El, Acc) when is_binary(El) ->
+                            [El | Acc];
+                        (El, Acc) when is_atom(El) ->
+                            {El, Value} = lists:keyfind(El, 1, Replacements),
+                            [Value | Acc]
+                    end,
+                    [],
+                    UrlComponents),
+    Binary3 =
+        binary:list_to_bin(
+            lists:reverse(Binary2)),
+    <<Base/binary, Binary3/binary>>.
+
+format_result(Value, {_ResultName, integer}) when is_integer(Value) ->
+    integer_to_binary(Value);
+format_result(Value, {_ResultName, string}) when is_list(Value) ->
+    Value;
+format_result(Value, {_ResultName, string}) when is_binary(Value) ->
+    Value;
+format_result(Value, {_ResultName, atom}) when is_atom(Value) ->
+    misc:atom_to_binary(Value);
+format_result(Value, {_ResultName, any}) ->
+    Value;
+format_result({ok, String}, {_ResultName, restuple}) when is_list(String) ->
+    list_to_binary(String);
+format_result({error, Type, Code, Desc}, {_ResultName, restuple}) ->
+    <<"Error: ",
+      (misc:atom_to_binary(Type))/binary,
+      " ",
+      (integer_to_binary(Code))/binary,
+      ": ",
+      (list_to_binary(Desc))/binary>>;
+format_result([], {_Name, {list, _ElementsDef}}) ->
+    "";
+format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}) ->
+    Separator = ",",
+    [format_result(FirstElement, ElementsDef) | lists:map(fun(Element) ->
+                                                             [Separator | format_result(Element,
+                                                                                        ElementsDef)]
+                                                          end,
+                                                          Elements)];
+format_result(Value, _ResultFormat) when is_atom(Value) ->
+    misc:atom_to_binary(Value);
+format_result(Value, _ResultFormat) when is_list(Value) ->
+    list_to_binary(Value);
+format_result(Value, _ResultFormat) when is_binary(Value) ->
+    Value;
+format_result(Value, _ResultFormat) ->
+    io_lib:format("~p", [Value]).
+
+%%%==================================
+%%%% make_table
+
+-spec make_table(PageSize :: integer(),
+                 RemainingPath :: [binary()],
+                 NameOptionList :: [Name :: binary() | {Name :: binary(), left | right}],
+                 Values :: [tuple()]) ->
+                    xmlel().
+make_table(PageSize, RPath, NameOptionList, Values1) ->
+    Values =
+        case lists:member(<<"sort">>, RPath) of
+            true ->
+                Values1;
+            false ->
+                GetXmlValue =
+                    fun ({xmlcdata, _} = X) ->
+                            X;
+                        ({xmlel, _, _, _} = X) ->
+                            X;
+                        ({raw_and_value, _V, X}) ->
+                            X
+                    end,
+                ConvertTupleToTuple =
+                    fun(Row1) -> list_to_tuple(lists:map(GetXmlValue, tuple_to_list(Row1))) end,
+                lists:map(ConvertTupleToTuple, Values1)
+        end,
+    make_table1(PageSize, RPath, <<"">>, <<"">>, 1, NameOptionList, Values).
+
+make_table1(PageSize,
+            [<<"page">>, PageNumber | RPath],
+            PageUrlBase,
+            SortUrlBase,
+            _Start,
+            NameOptionList,
+            Values1) ->
+    make_table1(PageSize,
+                RPath,
+                <<PageUrlBase/binary, "../../">>,
+                <<SortUrlBase/binary, "../../">>,
+                1 + PageSize * binary_to_integer(PageNumber),
+                NameOptionList,
+                Values1);
+make_table1(PageSize,
+            [<<"sort">>, SortType | RPath],
+            PageUrlBase,
+            SortUrlBase,
+            Start,
+            NameOptionList,
+            Rows1) ->
+    ColumnToSort =
+        length(lists:takewhile(fun (A) when A == SortType ->
+                                       false;
+                                   ({A, _}) when A == SortType ->
+                                       false;
+                                   (_) ->
+                                       true
+                               end,
+                               NameOptionList))
+        + 1,
+    Direction =
+        case lists:nth(ColumnToSort, NameOptionList) of
+            {_, right} ->
+                descending;
+            {_, left} ->
+                ascending;
+            _ ->
+                ascending
+        end,
+    ColumnToSort = ColumnToSort,
+    GetRawValue =
+        fun ({xmlcdata, _} = X) ->
+                X;
+            ({xmlel, _, _, _} = X) ->
+                X;
+            ({raw_and_value, R, _X}) ->
+                R
+        end,
+    GetXmlValue =
+        fun ({xmlcdata, _} = X) ->
+                X;
+            ({xmlel, _, _, _} = X) ->
+                X;
+            ({raw_and_value, _R, X}) ->
+                X
+        end,
+    SortTwo =
+        fun(A1, B1) ->
+           A2 = GetRawValue(element(ColumnToSort, A1)),
+           B2 = GetRawValue(element(ColumnToSort, B1)),
+           case Direction of
+               ascending ->
+                   A2 < B2;
+               descending ->
+                   A2 > B2
+           end
+        end,
+    Rows1Sorted = lists:sort(SortTwo, Rows1),
+    ConvertTupleToTuple =
+        fun(Row1) -> list_to_tuple(lists:map(GetXmlValue, tuple_to_list(Row1))) end,
+    Rows = lists:map(ConvertTupleToTuple, Rows1Sorted),
+    make_table1(PageSize,
+                RPath,
+                PageUrlBase,
+                <<SortUrlBase/binary, "../../">>,
+                Start,
+                NameOptionList,
+                Rows);
+make_table1(PageSize, [], PageUrlBase, SortUrlBase, Start, NameOptionList, Values1) ->
+    Values = lists:sublist(Values1, Start, PageSize),
+    Table = make_table(NameOptionList, Values),
+    Size = length(Values1),
+    Remaining =
+        case Size rem PageSize of
+            0 ->
+                0;
+            _ ->
+                1
+        end,
+    NumPages = max(0, Size div PageSize + Remaining - 1),
+    PLinks1 =
+        lists:foldl(fun(N, Acc) ->
+                       NBin = integer_to_binary(N),
+                       Acc
+                       ++ [?C(<<", ">>),
+                           ?AC(<<PageUrlBase/binary, "page/", NBin/binary, "/">>, NBin)]
+                    end,
+                    [],
+                    lists:seq(1, NumPages)),
+    PLinks =
+        case PLinks1 of
+            [] ->
+                [];
+            _ ->
+                [?XE(<<"p">>, [?C(<<"Page: ">>), ?AC(<<PageUrlBase/binary>>, <<"0">>) | PLinks1])]
+        end,
+
+    Names =
+        lists:map(fun ({Name, _}) ->
+                          Name;
+                      (Name) ->
+                          Name
+                  end,
+                  NameOptionList),
+    [_ | SLinks1] =
+        lists:foldl(fun(N, Acc) ->
+                       [?C(<<", ">>), ?AC(<<SortUrlBase/binary, "sort/", N/binary, "/">>, N) | Acc]
+                    end,
+                    [],
+                    lists:reverse(Names)),
+    SLinks =
+        case {PLinks, SLinks1} of
+            {_, []} ->
+                [];
+            {[], _} ->
+                [];
+            {_, [_]} ->
+                [];
+            {_, SLinks2} ->
+                [?XE(<<"p">>, [?C(<<"Sort all pages by: ">>) | SLinks2])]
+        end,
+
+    ?XE(<<"div">>, [Table | PLinks ++ SLinks]).
+
+-spec make_table(NameOptionList :: [Name :: binary() | {Name :: binary(), left | right}],
+                 Values :: [tuple()]) ->
+                    xmlel().
+make_table(NameOptionList, Values) ->
+    NamesAndAttributes = [make_column_attributes(NameOption) || NameOption <- NameOptionList],
+    {Names, ColumnsAttributes} = lists:unzip(NamesAndAttributes),
+    make_table(Names, ColumnsAttributes, Values).
+
+make_table(Names, ColumnsAttributes, Values) ->
+    ?XAE(<<"table">>,
+         [{<<"class">>, <<"sortable">>}],
+         [?XE(<<"thead">>,
+              [?XE(<<"tr">>, [?XC(<<"th">>, nice_this(HeadElement)) || HeadElement <- Names])]),
+          ?XE(<<"tbody">>,
+              [?XE(<<"tr">>,
+                   [?XAE(<<"td">>, CAs, [V])
+                    || {CAs, V} <- lists:zip(ColumnsAttributes, tuple_to_list(ValueTuple))])
+               || ValueTuple <- Values])]).
+
+make_column_attributes({Name, Option}) ->
+    {Name, [make_column_attribute(Option)]};
+make_column_attributes(Name) ->
+    {Name, []}.
+
+make_column_attribute(left) ->
+    {<<"class">>, <<"alignleft">>};
+make_column_attribute(right) ->
+    {<<"class">>, <<"alignright">>}.
+
+%%%==================================
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:

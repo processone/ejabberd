@@ -34,7 +34,7 @@
 	 process_iq/1,
 	 get_mix_roster_items/2,
 	 webadmin_user/4,
-	 webadmin_page/3]).
+	 webadmin_menu_hostuser/4, webadmin_page_hostuser/4]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -69,7 +69,8 @@ start(Host, Opts) ->
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50),
 	    ejabberd_hooks:add(roster_get, Host, ?MODULE, get_mix_roster_items, 50),
 	    ejabberd_hooks:add(webadmin_user, Host, ?MODULE, webadmin_user, 50),
-	    ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, webadmin_page, 50),
+	    ejabberd_hooks:add(webadmin_menu_hostuser, Host, ?MODULE, webadmin_menu_hostuser, 50),
+	    ejabberd_hooks:add(webadmin_page_hostuser, Host, ?MODULE, webadmin_page_hostuser, 50),
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0, ?MODULE, process_iq),
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_2, ?MODULE, process_iq);
 	Err ->
@@ -82,7 +83,8 @@ stop(Host) ->
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(roster_get, Host, ?MODULE, get_mix_roster_items, 50),
     ejabberd_hooks:delete(webadmin_user, Host, ?MODULE, webadmin_user, 50),
-    ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, webadmin_page, 50),
+    ejabberd_hooks:delete(webadmin_menu_hostuser, Host, ?MODULE, webadmin_menu_hostuser, 50),
+    ejabberd_hooks:delete(webadmin_page_hostuser, Host, ?MODULE, webadmin_page_hostuser, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_2).
 
@@ -469,7 +471,7 @@ delete_cache(Mod, JID, Channel) ->
 %%%===================================================================
 %%% Webadmin interface
 %%%===================================================================
-webadmin_user(Acc, User, Server, Lang) ->
+webadmin_user(Acc, User, Server, #request{lang = Lang}) ->
     QueueLen = case get_channels({jid:nodeprep(User), jid:nameprep(Server), <<>>}) of
 	{ok, Channels} -> length(Channels);
 	error -> -1
@@ -482,12 +484,13 @@ webadmin_user(Acc, User, Server, Lang) ->
          ?C(<<"  |   ">>),
          FQueueView].
 
-webadmin_page(_, Host,
-              #request{us = _US, path = [<<"user">>, U, <<"mix_channels">>],
-                       lang = Lang} = _Request) ->
+webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"mix_channels">>, <<"MIX Channels">>}].
+
+webadmin_page_hostuser(_, Host, U, #request{path = [<<"mix_channels">>], lang = Lang}) ->
     Res = web_mix_channels(U, Host, Lang),
     {stop, Res};
-webadmin_page(Acc, _, _) -> Acc.
+webadmin_page_hostuser(Acc, _, _, _) -> Acc.
 
 web_mix_channels(User, Server, Lang) ->
     LUser = jid:nodeprep(User),

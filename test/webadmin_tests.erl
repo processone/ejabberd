@@ -76,10 +76,11 @@ adduser(Config) ->
     Body = make_query(
 	     Config,
 	     "server/" ++ binary_to_list(Server) ++ "/users/",
-	     <<"newusername=", (mue(User))/binary, "&newuserpassword=",
-	       (mue(Password))/binary, "&addnewuser=Add+User">>),
+	     <<"register/user=", (mue(User))/binary, "&register/password=",
+	       (mue(Password))/binary, "&register=Register">>),
     Password = ejabberd_auth:get_password(User, Server),
-    ?match({_, _}, binary:match(Body, <<"<a href='../user/">>)).
+    ?match({_, _}, binary:match(Body, <<"User ", User/binary, "@", Server/binary,
+                                        " successfully registered">>)).
 
 changepassword(Config) ->
     User = <<"userwebadmin-", (?config(user, Config))/binary>>,
@@ -89,10 +90,10 @@ changepassword(Config) ->
 	     Config,
 	     "server/" ++ binary_to_list(Server)
 	     ++ "/user/" ++ binary_to_list(mue(User)) ++ "/",
-	     <<"password=", (mue(Password))/binary,
-	       "&chpassword=Change+Password">>),
+	     <<"change_password/newpass=", (mue(Password))/binary,
+	       "&change_password=Change+Password">>),
     ?match(Password, ejabberd_auth:get_password(User, Server)),
-    ?match({_, _}, binary:match(Body, <<"<p class='result'>Submitted</p>">>)).
+    ?match({_, _}, binary:match(Body, <<"<div class='result'><code>ok</code></div>">>)).
 
 removeuser(Config) ->
     User = <<"userwebadmin-", (?config(user, Config))/binary>>,
@@ -101,7 +102,7 @@ removeuser(Config) ->
 	     Config,
 	     "server/" ++ binary_to_list(Server)
 	     ++ "/user/" ++ binary_to_list(mue(User)) ++ "/",
-	     <<"password=&removeuser=Remove+User">>),
+	     <<"&unregister=Unregister">>),
     false = ejabberd_auth:user_exists(User, Server),
     ?match(nomatch, binary:match(Body, <<"<h3>Last Activity</h3>20">>)).
 
