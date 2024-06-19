@@ -410,13 +410,13 @@ format_result([A|_]=String, {_Name, string}, _Version) when is_list(String) and 
     io_lib:format("~ts", [String]);
 
 format_result(Binary, {_Name, binary}, _Version) when is_binary(Binary) ->
-    io_lib:format("~ts", [binary_to_list(Binary)]);
+    io_lib:format("~ts", [Binary]);
 
 format_result(String, {_Name, binary}, _Version) when is_list(String) ->
     io_lib:format("~ts", [String]);
 
 format_result(Binary, {_Name, string}, _Version) when is_binary(Binary) ->
-    io_lib:format("~ts", [binary_to_list(Binary)]);
+    io_lib:format("~ts", [Binary]);
 
 format_result(Atom, {_Name, string}, _Version) when is_atom(Atom) ->
     io_lib:format("~ts", [atom_to_list(Atom)]);
