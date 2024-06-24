@@ -437,12 +437,11 @@ process_admin(global, #request{path = [], lang = Lang} = Request, AJID) ->
          ?XAE(<<"p">>, [{<<"align">>, <<"center">>}],
               [?XA(<<"img">>, [{<<"src">>, <<"logo.png">>},
                                {<<"style">>, <<"border-radius:10px; background:#49cbc1; padding: 1.1em;">>}])
-              ]),
-         ?BR,
-         ?X(<<"hr">>)] ++ Title ++
-        [?XE(<<"blockquote">>,
-             [
-              ?XC(<<"p">>, <<"Welcome to ejabberd's WebAdmin!">>),
+              ])
+         ] ++ Title ++ [
+         ?XAE(<<"blockquote">>,
+	     [{<<"id">>, <<"welcome">>}],
+             [?XC(<<"p">>, <<"Welcome to ejabberd's WebAdmin!">>),
               ?XC(<<"p">>, <<"Browse the menu to navigate your XMPP virtual hosts, "
                               "Erlang nodes, and other global server pages...">>),
               ?XC(<<"p">>, <<"Some pages have a link in the top right corner "
@@ -460,7 +459,7 @@ process_admin(global, #request{path = [], lang = Lang} = Request, AJID) ->
               ?XC(<<"p">>, <<"For example, this is the 'stats' command, "
                               "it accepts an argument and returns an integer:">>),
               make_command(stats, Request)]),
-         ?X(<<"hr">>), ?BR],
+         ?BR],
     make_xhtml(Disclaimer ++ WelcomeText ++
                    [?XE(<<"ul">>,
                         [?LI([?ACT(MIU, MIN)])

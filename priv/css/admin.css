@@ -131,6 +131,12 @@ ul li #navhead a, ul li #navheadsub a, ul li #navheadsubsub a {
   background: #424a55;
   color: #fff;
 }
+#welcome {
+  padding: 2em;
+  border-top: 0.2em solid #cae7e4;
+  border-bottom: 0.2em solid #cae7e4;
+  background-color: #f4f9f9;
+}
 #lastactivity li {
   padding: 2px;
   margin-bottom: -1px;
@@ -248,6 +254,7 @@ p[dir=ltr] a {
   background: #3eaffa;
   font-size: 0.75em;
   color: #fff;
+  border-radius: 2px;
 }
 table {
   margin-top: 1em;
@@ -296,9 +303,11 @@ details > summary {
   cursor: pointer;
   list-style: none;
   padding: 8px;
+  border-radius: 4px;
 }
 details > pre, details > p {
-  background-color: #e6f1f0;
+  background-color: #f2f8f7;
+  border-bottom: 0.2em solid #dbeceb;
   margin: 0;
   padding: 10px;
 }

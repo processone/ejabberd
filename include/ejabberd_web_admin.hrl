@@ -115,7 +115,7 @@
 
 %% h1 with a Guide Link
 -define(H1GLraw(Name, Ref, Title),
-	[?XC(<<"h1">>, Name), ?GL(Ref, Title), ?BR]).
+	[?XC(<<"h1">>, Name), ?GL(Ref, Title), ?BR, ?BR]).
 -define(H1GL(Name, RefConf, Title),
 	?H1GLraw(Name, <<"admin/configuration/", RefConf/binary>>, Title)).
 
@@ -123,4 +123,4 @@
 	?XAE(<<"div">>, [{<<"class">>, <<"anchorlink">>}],
 	     [?XAE(<<"a">>,
 		   [{<<"href">>, <<"#", Ref/binary>>}],
-		   [?C(<<"<=">>)])])).
+		   [?C(unicode:characters_to_binary("¶"))])])).
