@@ -598,17 +598,9 @@ get_shell_info() ->
 	_:_ -> {78, false}
     end.
 
-%% Erlang/OTP 20.0 introduced string:find/2, but we must support old 19.3
-string_find([], _SearchPattern) ->
-    nomatch;
-string_find([A | String], [A]) ->
-    String;
-string_find([_ | String], SearchPattern) ->
-    string_find(String, SearchPattern).
-
 %% Split this command description in several lines of proper length
 prepare_description(DescInit, MaxC, Desc) ->
-    case string_find(Desc, "\n") of
+    case string:find(Desc, "\n") of
         nomatch ->
             prepare_description2(DescInit, MaxC, Desc);
         _ ->
