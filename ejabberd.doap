@@ -759,7 +759,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0425.html"/>
         <xmpp:version>0.3.0</xmpp:version>
-        <xmpp:since>/home/bernar/e/git/ejabberd/src/mod_mam.erl:-protocol({xep, 425, '0.3.0', '24.xx', "", ""}).</xmpp:since>
+        <xmpp:since>24.xx</xmpp:since>
         <xmpp:status></xmpp:status>
         <xmpp:note>mod_mam</xmpp:note>
       </xmpp:SupportedXep>
