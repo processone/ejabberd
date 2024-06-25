@@ -1607,7 +1607,7 @@ make_login_items(#request{us = {Username, Host}} = R, Level) ->
               ?LI([?C(unicode:characters_to_binary("🏭")),
                    make_command(echo,
                                 R,
-                                [{<<"sentence">>, atom_to_binary(node())}],
+                                [{<<"sentence">>, misc:atom_to_binary(node())}],
                                 [{only, value},
                                  {result_links, [{sentence, node, Level, <<"">>}]}])]),
               ?LI([?C(unicode:characters_to_binary("📤")),

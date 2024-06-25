@@ -869,7 +869,7 @@ join_cluster_here(_Node, _IsNodes, true, _Ping) ->
 join_cluster_here(_Node, _IsNodes, _IsKnownNodes, pang) ->
     {error, "This node cannot reach that node."};
 join_cluster_here(Node, false, false, pong) ->
-    case ejabberd_cluster:call(Node, ejabberd_admin, join_cluster, [atom_to_binary(node())]) of
+    case ejabberd_cluster:call(Node, ejabberd_admin, join_cluster, [misc:atom_to_binary(node())]) of
         {ok, _} ->
             {ok, "Trying to join node to this cluster, wait a few seconds and check the list of nodes."};
         Error ->

@@ -316,6 +316,9 @@ binary_to_atom(Bin) ->
 tuple_to_binary(T) ->
     iolist_to_binary(tuple_to_list(T)).
 
+%% erlang:atom_to_binary/1 is available since OTP 23
+%% https://www.erlang.org/doc/apps/erts/erlang#atom_to_binary/1
+%% Let's use /2 for backwards compatibility.
 atom_to_binary(A) ->
     erlang:atom_to_binary(A, utf8).
 
