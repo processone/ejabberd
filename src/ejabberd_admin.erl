@@ -834,8 +834,9 @@ convert_to_yaml(In, Out) ->
 %%% Cluster management
 %%%
 
-join_cluster(NodeBin) ->
-    Node = list_to_atom(binary_to_list(NodeBin)),
+join_cluster(NodeBin) when is_binary(NodeBin) ->
+    join_cluster(list_to_atom(binary_to_list(NodeBin)));
+join_cluster(Node) when is_atom(Node) ->
     IsNodes = lists:member(Node, ejabberd_cluster:get_nodes()),
     IsKnownNodes = lists:member(Node, ejabberd_cluster:get_known_nodes()),
     Ping = net_adm:ping(Node),
@@ -876,8 +877,10 @@ join_cluster_here(Node, false, false, pong) ->
             {error, io_lib:format("Can't join node to this cluster: ~p", [Error])}
     end.
 
-leave_cluster(NodeBin) ->
-    ejabberd_cluster:leave(list_to_atom(binary_to_list(NodeBin))).
+leave_cluster(NodeBin) when is_binary(NodeBin) ->
+    leave_cluster(list_to_atom(binary_to_list(NodeBin)));
+leave_cluster(Node) ->
+    ejabberd_cluster:leave(Node).
 
 list_cluster() ->
     ejabberd_cluster:get_nodes().
