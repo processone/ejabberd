@@ -653,12 +653,15 @@ test:
 	@cd priv && ln -sf ../sql
 	$(REBAR) $(SKIPDEPS) ct
 
+test-eunit:
+	$(REBAR) $(SKIPDEPS) eunit --verbose
+
 #.
 #' phony
 #
 
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean prod rel \
-	install uninstall uninstall-binary uninstall-all translations deps test \
+	install uninstall uninstall-binary uninstall-all translations deps test test-eunit \
 	all dev doap help install-rel relive scripts uninstall-rel update \
 	erlang_plt deps_plt ejabberd_plt xref hooks options format indent
 
@@ -698,6 +701,7 @@ help:
 	@echo "  dialyzer       Run Dialyzer static analyzer"
 	@echo "  hooks          Run hooks validator"
 	@echo "  test           Run Common Tests suite [rebar3]"
+	@echo "  test-eunit     Run EUnit suite [rebar3]"
 	@echo "  xref           Run cross reference analysis [rebar3]"
 
 #.

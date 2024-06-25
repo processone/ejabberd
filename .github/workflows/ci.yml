@@ -132,6 +132,7 @@ jobs:
     - run: make options
     - run: make xref
     - run: make dialyzer
+    - run: make test-eunit
 
     - name: Check Production Release
       run: |
