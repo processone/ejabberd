@@ -160,6 +160,12 @@ process(Path, #request{raw_path = RawPath} = Request) ->
 	    {301, [{<<"Location">>, <<RawPath/binary, "/">>}], <<>>}
     end.
 
+process2([<<"logout">> | _], #request{lang = Lang}) ->
+    Text = [?XCT(<<"h1">>, ?T("Logged Out")),
+            ?XE(<<"p">>, [?C(<<"Your web browser has logout from WebAdmin. Close this window, or login again in: ">>),
+                          ?AC(<<"../">>, <<"ejabberd WebAdmin">>)])],
+    {401, [{<<"WWW-Authenticate">>, <<"basic realm=\"ejabberd\"">>}],
+     ejabberd_web:make_xhtml(Text)};
 process2([<<"server">>, SHost | RPath] = Path,
 	#request{auth = Auth, lang = Lang, host = HostHTTP,
 		 method = Method} =
@@ -277,27 +283,28 @@ get_auth_account2(HostOfRule, AccessRule, User, Server,
 %%%==================================
 %%%% make_xhtml
 
-make_xhtml(Els, Host, Lang, JID, Level) ->
-    make_xhtml(Els, Host, cluster, unspecified, Lang, JID, Level).
+make_xhtml(Els, Host, Request, JID, Level) ->
+    make_xhtml(Els, Host, cluster, unspecified, Request, JID, Level).
 
-make_xhtml(Els, Host, Username, Lang, JID, Level) when
+make_xhtml(Els, Host, Username, Request, JID, Level) when
       (Username == unspecified) or (is_binary(Username)) ->
-    make_xhtml(Els, Host, cluster, Username, Lang, JID, Level);
+    make_xhtml(Els, Host, cluster, Username, Request, JID, Level);
 
-make_xhtml(Els, Host, Node, Lang, JID, Level) ->
-    make_xhtml(Els, Host, Node, unspecified, Lang, JID, Level).
+make_xhtml(Els, Host, Node, Request, JID, Level) ->
+    make_xhtml(Els, Host, Node, unspecified, Request, JID, Level).
 
 -spec make_xhtml([xmlel()],
                  Host::global | binary(),
                  Node::cluster | atom(),
                  Username::unspecified | binary(),
-                 Lang::binary(),
+                 Request::http_request(),
                  jid(),
                  Level::integer()) ->
     {200, [html], xmlel()}.
-make_xhtml(Els, Host, Node, Username, Lang, JID, Level) ->
+make_xhtml(Els, Host, Node, Username, #request{lang = Lang} = R, JID, Level) ->
     Base = get_base_path_sum(0, 0, Level),
-    MenuItems = make_navigation(Host, Node, Username, Lang, JID, Level),
+    MenuItems = make_navigation(Host, Node, Username, Lang, JID, Level)
+    ++ make_login_items(R, Level),
     {200, [html],
      #xmlel{name = <<"html">>,
 	    attrs =
@@ -465,14 +472,14 @@ process_admin(global, #request{path = [], lang = Lang} = Request, AJID) ->
                         [?LI([?ACT(MIU, MIN)])
                          || {MIU, MIN}
                                 <- MenuItems])],
-	       global, Lang, AJID, 0);
-process_admin(Host, #request{path = [], lang = Lang}, AJID) ->
+	       global, Request, AJID, 0);
+process_admin(Host, #request{path = [], lang = Lang} = R, AJID) ->
     make_xhtml([?XCT(<<"h1">>, ?T("Administration")),
 		?XE(<<"ul">>,
 		    [?LI([?ACT(MIU, MIN)])
 		     || {MIU, MIN}
 			    <- get_menu_items(Host, cluster, Lang, AJID, 2)])],
-	       Host, Lang, AJID, 2);
+	       Host, R, AJID, 2);
 
 process_admin(Host, #request{path = [<<"style.css">>]}, _) ->
     {200,
@@ -549,7 +556,7 @@ process_admin(global, #request{path = [<<"vhosts">> | RPath], lang = Lang} = R, 
                      ?T("XMPP Domains"))
                ++ VhostsElements,
                global,
-               Lang,
+               R,
                AJID,
                Level);
 process_admin(Host,
@@ -559,7 +566,7 @@ process_admin(Host,
     Level = 5 + length(RPath),
     RegisterEl = make_command(register, R, [{<<"host">>, Host}], []),
     Res = list_users_in_diapason(Host, Level, 30, RPath, R, Diap, RegisterEl),
-    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host, Lang, AJID, Level);
+    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host, R, AJID, Level);
 process_admin(Host,
               #request{path = [<<"users">>, <<"top">>, Attribute | RPath], lang = Lang} = R,
               AJID)
@@ -567,13 +574,13 @@ process_admin(Host,
     Level = 5 + length(RPath),
     RegisterEl = make_command(register, R, [{<<"host">>, Host}], []),
     Res = list_users_top(Host, Level, 30, RPath, R, Attribute, RegisterEl),
-    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host, Lang, AJID, Level);
+    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host, R, AJID, Level);
 process_admin(Host, #request{path = [<<"users">> | RPath], lang = Lang} = R, AJID)
     when is_binary(Host) ->
     Level = 3 + length(RPath),
     RegisterEl = make_command(register, R, [{<<"host">>, Host}], []),
     Res = list_users(Host, Level, 30, RPath, R, RegisterEl),
-    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host, Lang, AJID, Level);
+    make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host, R, AJID, Level);
 process_admin(Host, #request{path = [<<"online-users">> | RPath], lang = Lang} = R, AJID)
     when is_binary(Host) ->
     Level = 3 + length(RPath),
@@ -582,7 +589,7 @@ process_admin(Host, #request{path = [<<"online-users">> | RPath], lang = Lang} =
                         [{<<"host">>, Host}],
                         [{table_options, {2, RPath}},
                          {result_links, [{sessions, user, Level, <<"">>}]}])],
-    make_xhtml([?XCT(<<"h1">>, ?T("Online Users"))] ++ Res, Host, Lang, AJID, Level);
+    make_xhtml([?XCT(<<"h1">>, ?T("Online Users"))] ++ Res, Host, R, AJID, Level);
 process_admin(Host,
               #request{path = [<<"last-activity">>],
                        q = Query,
@@ -598,16 +605,16 @@ process_admin(Host,
                        R,
                        [{<<"host">>, Host}, {<<"query">>, Query}, {<<"lang">>, Lang}],
                        []),
-    make_xhtml(PageH1 ++ [Res], Host, Lang, AJID, 3);
+    make_xhtml(PageH1 ++ [Res], Host, R, AJID, 3);
 process_admin(Host, #request{path = [<<"user">>, U], lang = Lang} = R, AJID) ->
     case ejabberd_auth:user_exists(U, Host) of
         true ->
             Res = user_info(U, Host, R),
-            make_xhtml(Res, Host, U, Lang, AJID, 4);
+            make_xhtml(Res, Host, U, R, AJID, 4);
         false ->
-            make_xhtml([?XCT(<<"h1">>, ?T("Not Found"))], Host, Lang, AJID, 4)
+            make_xhtml([?XCT(<<"h1">>, ?T("Not Found"))], Host, R, AJID, 4)
     end;
-process_admin(Host, #request{path = [<<"nodes">>], lang = Lang} = R, AJID) ->
+process_admin(Host, #request{path = [<<"nodes">>]} = R, AJID) ->
     Level =
         case Host of
             global ->
@@ -617,13 +624,13 @@ process_admin(Host, #request{path = [<<"nodes">>], lang = Lang} = R, AJID) ->
         end,
     Res = ?H1GLraw(<<"Nodes">>, <<"admin/guide/clustering/">>, <<"Clustering">>)
           ++ [make_command(list_cluster, R, [], [{result_links, [{node, node, 1, <<"">>}]}])],
-    make_xhtml(Res, Host, Lang, AJID, Level);
+    make_xhtml(Res, Host, R, AJID, Level);
 process_admin(Host,
               #request{path = [<<"node">>, SNode | NPath], lang = Lang} = Request,
               AJID) ->
     case search_running_node(SNode) of
         false ->
-            make_xhtml([?XCT(<<"h1">>, ?T("Node not found"))], Host, Lang, AJID, 2);
+            make_xhtml([?XCT(<<"h1">>, ?T("Node not found"))], Host, Request, AJID, 2);
         Node ->
             Res = get_node(Host, Node, NPath, Request#request{path = NPath}),
             Level =
@@ -633,11 +640,11 @@ process_admin(Host,
                     _ ->
                         4 + length(NPath)
                 end,
-            make_xhtml(Res, Host, Node, Lang, AJID, Level)
+            make_xhtml(Res, Host, Node, Request, AJID, Level)
     end;
 %%%==================================
 %%%% process_admin default case
-process_admin(Host, #request{path = Path, lang = Lang} = Request, AJID) ->
+process_admin(Host, #request{path = Path} = Request, AJID) ->
     {Username, RPath} =
         case Path of
             [<<"user">>, U | UPath] ->
@@ -667,10 +674,10 @@ process_admin(Host, #request{path = Path, lang = Lang} = Request, AJID) ->
     case Res of
         [] ->
             setelement(1,
-                       make_xhtml([?XC(<<"h1">>, <<"Not Found">>)], Host, Lang, AJID, Level),
+                       make_xhtml([?XC(<<"h1">>, <<"Not Found">>)], Host, Request, AJID, Level),
                        404);
         _ ->
-            make_xhtml(Res, Host, Username, Lang, AJID, Level)
+            make_xhtml(Res, Host, Username, Request, AJID, Level)
     end.
 %% @format-end
 
@@ -1569,8 +1576,45 @@ any_rules_allowed(Host, Access, Entity) ->
       end, Access).
 
 %%%==================================
+%%%% login box
 
 %%% @format-begin
+
+make_login_items(#request{us = {Username, Host}} = R, Level) ->
+    UserBin =
+        jid:encode(
+            jid:make(Username, Host, <<"">>)),
+    UserEl =
+        make_command(echo,
+                     R,
+                     [{<<"sentence">>, UserBin}],
+                     [{only, value}, {result_links, [{sentence, user, Level, <<"">>}]}]),
+    UserEl2 =
+        case UserEl of
+            {xmlcdata, <<>>} ->
+                {xmlel, <<"code">>, [], [{xmlel, <<"a">>, [], [{xmlcdata, UserBin}]}]};
+            _ ->
+                UserEl
+        end,
+    [{xmlel,
+      <<"li">>,
+      [],
+      [{xmlel,
+        <<"div">>,
+        [{<<"id">>, <<"navitemlogin">>}],
+        [?XE(<<"ul">>,
+             [?LI([?C(unicode:characters_to_binary("👤")), UserEl2]),
+              ?LI([?C(unicode:characters_to_binary("🏭")),
+                   make_command(echo,
+                                R,
+                                [{<<"sentence">>, atom_to_binary(node())}],
+                                [{only, value},
+                                 {result_links, [{sentence, node, Level, <<"">>}]}])]),
+              ?LI([?C(unicode:characters_to_binary("📤")),
+                   ?AC(<<(binary:copy(<<"../">>, Level))/binary, "logout/">>,
+                       <<"Logout">>)])])]}]}].
+
+%%%==================================
 
 %%%% make_command: API
 
@@ -1582,7 +1626,7 @@ make_command(Name, Request) ->
                    Request :: http_request(),
                    BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}],
                    [Option]) ->
-                      xmlel() | {raw_and_value, any(), xmlel()}
+                      xmlel() | {xmlcdata, binary()} | {raw_and_value, any(), xmlel()}
     when Option ::
              {only, presentation | without_presentation | button | result | value | raw_and_value} |
              {input_name_append, [binary()]} |
