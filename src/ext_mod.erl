@@ -594,15 +594,15 @@ compile_deps(LibDir) ->
 
 compile(LibDir) ->
     Bin = filename:join(LibDir, "ebin"),
-    Inc = filename:join(LibDir, "include"),
     Lib = filename:join(LibDir, "lib"),
     Src = filename:join(LibDir, "src"),
-    Options = [{outdir, Bin}, {i, Inc} | compile_options()],
+    Includes = [{i, Inc} || Inc <- filelib:wildcard(LibDir++"/../../**/include")],
+    Options = [{outdir, Bin}, {i, LibDir++"/.."} | Includes ++ compile_options()],
     filelib:ensure_dir(filename:join(Bin, ".")),
     [copy(App, Bin) || App <- filelib:wildcard(Src++"/*.app")],
     compile_c_files(LibDir),
     Er = [compile_erlang_file(Bin, File, Options)
-          || File <- filelib:wildcard(Src++"/*.erl")],
+          || File <- filelib:wildcard(Src++"/**/*.erl")],
     Ex = [compile_elixir_file(Bin, File)
           || File <- filelib:wildcard(Lib ++ "/**/*.ex")],
     compile_result(lists:flatten([Er, Ex])).
