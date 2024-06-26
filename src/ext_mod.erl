@@ -599,7 +599,7 @@ compile(LibDir) ->
     Includes = [{i, Inc} || Inc <- filelib:wildcard(LibDir++"/../../**/include")],
     Options = [{outdir, Bin}, {i, LibDir++"/.."} | Includes ++ compile_options()],
     filelib:ensure_dir(filename:join(Bin, ".")),
-    [copy(App, Bin) || App <- filelib:wildcard(Src++"/*.app")],
+    [copy(App, filename:join(Bin, filename:basename(App, ".src"))) || App <- filelib:wildcard(Src++"/*.app*")],
     compile_c_files(LibDir),
     Er = [compile_erlang_file(Bin, File, Options)
           || File <- filelib:wildcard(Src++"/**/*.erl")],
