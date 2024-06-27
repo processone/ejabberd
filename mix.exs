@@ -171,7 +171,7 @@ defmodule Ejabberd.MixProject do
                          {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {if_version_above(~c"23", true), {:jose, "~> 1.11.10"}},
-                         {if_version_below(~c"24", true), {:jose, "1.11.1"}},
+                         {if_version_below(~c"24", true), {:jose, "1.11.1", override: true}},
                          {if_version_below(~c"27", true), {:jiffy, "~> 1.1.1"}},
                          {if_version_below(~c"22", true), {:lager, "~> 3.9.1"}},
                          {config(:lua), {:luerl, "~> 1.2.0"}},
