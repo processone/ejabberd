@@ -923,9 +923,11 @@ doc() ->
              [binary:part(ejabberd_config:version(), {0,5})]}}},
      {update_sql_schema,
       #{value => "true | false",
-        note => "added in 23.10",
+        note => "updated in 24.06",
         desc =>
             ?T("Allow ejabberd to update SQL schema. "
+               "This option was added in ejabberd 23.10, "
+               "and enabled by default since 24.06. "
                "The default value is 'true'.")}},
      {oauth_access,
       #{value => ?T("AccessName"),
@@ -1379,7 +1381,7 @@ doc() ->
                "or 'ram' if the latter is not set.")}},
      {sql_server,
       #{value => "Host | IP Address | ODBC Connection String | Unix Socket Path",
-        note => "improved in 24.xx",
+        note => "improved in 24.06",
         desc =>
             ?T("The hostname or IP address of the SQL server. For _`sql_type`_ "
                "'mssql' or 'odbc' this can also be an ODBC connection string. "

@@ -247,7 +247,7 @@ get_commands_spec() ->
 		       longdesc = "The MUC service argument can be `global` to get all hosts.",
 		       module = ?MODULE, function = rooms_empty_destroy_restuple,
                        version = 2,
-                       note = "modified in 24.xx",
+                       note = "modified in 24.06",
 		       args_desc = ["MUC service, or `global` for all"],
 		       args_example = ["conference.example.com"],
 		       result_desc = "List of empty rooms that have been destroyed",

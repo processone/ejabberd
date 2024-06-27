@@ -1054,7 +1054,7 @@ get_commands_spec() ->
 			desc = "Disconnect user's active sessions",
 			module = ?MODULE, function = kick_user_restuple,
 			version = 2,
-			note = "modified in 24.xx",
+			note = "modified in 24.06",
 			args = [{user, binary}, {host, binary}],
 			args_desc = ["User name", "Server name"],
 			args_example = [<<"user1">>, <<"example.com">>],
