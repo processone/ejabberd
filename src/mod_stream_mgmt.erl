@@ -950,7 +950,7 @@ mod_doc() ->
              "https://xmpp.org/extensions/xep-0198.html"
              "[XEP-0198: Stream Management]. This protocol allows "
              "active management of an XML stream between two XMPP "
-             "entities, including features for stanza acknowledgements "
+             "entities, including features for stanza acknowledgments "
              "and stream resumption."),
       opts =>
           [{max_ack_queue,
@@ -992,7 +992,7 @@ mod_doc() ->
            {ack_timeout,
             #{value => "timeout()",
               desc =>
-                  ?T("A time to wait for stanza acknowledgements. "
+                  ?T("A time to wait for stanza acknowledgments. "
                      "Setting it to 'infinity' effectively disables the timeout. "
                      "The default value is '1' minute.")}},
            {resend_on_timeout,

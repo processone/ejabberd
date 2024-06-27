@@ -176,7 +176,7 @@ mod_doc() ->
              "\"app servers\" operated by third-party vendors of "
              "mobile apps. Those app servers will usually trigger "
              "notification delivery to the user's mobile device using "
-             "platform-dependant backend services such as FCM or APNS."),
+             "platform-dependent backend services such as FCM or APNS."),
       opts =>
           [{notify_on,
             #{value => "messages | all",

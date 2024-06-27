@@ -2389,7 +2389,7 @@ mod_doc() ->
     #{desc =>
           [?T("This module provides additional administrative commands."), "",
            ?T("Details for some commands:"), "",
-           ?T("- 'ban-acount':"),
+           ?T("- 'ban_account':"),
            ?T("This command kicks all the connected sessions of the account "
 	      "from the server. It also changes their password to a randomly "
 	      "generated one, so they can't login anymore unless a server "
@@ -2402,8 +2402,8 @@ mod_doc() ->
 	      "`C:/Program Files/ejabberd` or similar. If you use other "
 	      "Operating System, place the file on the same directory where "
 	      "the .beam files are installed. See below an example roster file."),
-           ?T("- 'srg-create':"),
-           ?T("If you want to put a group Name with blankspaces, use the "
+           ?T("- 'srg_create':"),
+           ?T("If you want to put a group Name with blank spaces, use the "
 	      "characters \"\' and \'\" to define when the Name starts and "
 	      "ends. See an example below.")],
       example =>
@@ -2427,6 +2427,6 @@ mod_doc() ->
 	      "boby@example.org will be kicked, and its password will be set "
 	      "to something like "
 	      "'BANNED_ACCOUNT--20080425T21:45:07--2176635--Spammed_rooms'"),
-	    ["ejabberdctl vhost example.org ban-account boby \"Spammed rooms\""]},
-	   {?T("Call to srg-create using double-quotes and single-quotes:"),
-	    ["ejabberdctl srg-create g1 example.org \"\'Group number 1\'\" this_is_g1 g1"]}]}.
+	    ["ejabberdctl vhost example.org ban_account boby \"Spammed rooms\""]},
+	   {?T("Call to srg_create using double-quotes and single-quotes:"),
+	    ["ejabberdctl srg_create g1 example.org \"\'Group number 1\'\" this_is_g1 g1"]}]}.

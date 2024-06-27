@@ -1225,7 +1225,7 @@ mod_doc() ->
            {bounce_groupchat,
             #{value => "true | false",
               desc =>
-                  ?T("This option is use the disable an optimisation that "
+                  ?T("This option is use the disable an optimization that "
                      "avoids bouncing error messages when groupchat messages "
                      "could not be stored as offline. It will reduce chat "
                      "room load, without any drawback in standard use cases. "
@@ -1235,7 +1235,7 @@ mod_doc() ->
                      "but the bounce is much more likely to happen in the context "
                      "of MucSub, so it is even more important to have it on "
                      "large MucSub services. The default value is 'false', meaning "
-                     "the optimisation is enabled.")}},
+                     "the optimization is enabled.")}},
            {db_type,
             #{value => "mnesia | sql",
               desc =>

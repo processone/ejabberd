@@ -1582,7 +1582,7 @@ mod_doc() ->
               desc =>
                   ?T("This option defines after how many users in the room, "
                      "it is considered overcrowded. When a MUC room is considered "
-                     "overcrowed, presence broadcasts are limited to reduce load, "
+                     "overcrowded, presence broadcasts are limited to reduce load, "
                      "traffic and excessive presence \"storm\" received by participants. "
                      "The default value is '1000'.")}},
            {min_message_interval,

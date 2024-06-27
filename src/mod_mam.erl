@@ -1678,7 +1678,7 @@ mod_doc() ->
             #{value => "true | false",
               desc =>
                   ?T("When this option is disabled, for each individual "
-		     "subscriber a separa mucsub message is stored. With this "
+		     "subscriber a separate mucsub message is stored. With this "
 		     "option enabled, when a user fetches archive virtual "
 		     "mucsub, messages are generated from muc archives. "
 		     "The default value is 'false'.")}}]}.
