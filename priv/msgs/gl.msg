@@ -9,8 +9,6 @@
 {"Accept","Aceptar"}.
 {"Access denied by service policy","Acceso denegado pola política do servizo"}.
 {"Action on user","Acción no usuario"}.
-{"Add Jabber ID","Engadir ID Jabber"}.
-{"Add New","Engadir novo"}.
 {"Add User","Engadir usuario"}.
 {"Administration of ","Administración de "}.
 {"Administration","Administración"}.
@@ -60,22 +58,17 @@
 {"Conference room does not exist","A sala de conferencias non existe"}.
 {"Configuration of room ~s","Configuración para a sala ~s"}.
 {"Configuration","Configuración"}.
-{"Connected Resources:","Recursos conectados:"}.
 {"Country","País"}.
-{"CPU Time:","Tempo da CPU:"}.
 {"Database failure","Erro na base de datos"}.
-{"Database Tables at ~p","Táboas da base de datos en ~p"}.
 {"Database Tables Configuration at ","Configuración de táboas da base de datos en "}.
 {"Database","Base de datos"}.
 {"December","Decembro"}.
 {"Default users as participants","Os usuarios son participantes por defecto"}.
 {"Delete message of the day on all hosts","Borrar a mensaxe do día en todos os dominios"}.
 {"Delete message of the day","Borrar mensaxe do dia"}.
-{"Delete Selected","Eliminar os seleccionados"}.
 {"Delete User","Borrar usuario"}.
 {"Deliver event notifications","Entregar notificacións de eventos"}.
 {"Deliver payloads with event notifications","Enviar payloads xunto coas notificacións de eventos"}.
-{"Description:","Descrición:"}.
 {"Disc only copy","Copia en disco soamente"}.
 {"Dump Backup to Text File at ","Exporta copia de seguridade a ficheiro de texto en "}.
 {"Dump to Text File","Exportar a ficheiro de texto"}.
@@ -87,7 +80,6 @@
 {"ejabberd SOCKS5 Bytestreams module","Módulo SOCKS5 Bytestreams para ejabberd"}.
 {"ejabberd vCard module","Módulo vCard para ejabberd"}.
 {"ejabberd Web Admin","ejabberd Administrador Web"}.
-{"Elements","Elementos"}.
 {"Email","Email"}.
 {"Enable logging","Gardar históricos"}.
 {"Enable message archiving","Activar o almacenamento de mensaxes"}.
@@ -99,7 +91,6 @@
 {"Enter path to jabberd14 spool file","Introduce ruta ao ficheiro jabberd14 spool"}.
 {"Enter path to text file","Introduce ruta ao ficheiro de texto"}.
 {"Enter the text you see","Introduza o texto que ves"}.
-{"Error","Erro"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Excluír Jabber IDs das probas de CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Exportar todas as táboas a un ficheiro SQL:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS (XEP-0227):"}.
@@ -115,24 +106,19 @@
 {"February","Febreiro"}.
 {"File larger than ~w bytes","O ficheiro é maior que ~w bytes"}.
 {"Friday","Venres"}.
-{"From","De"}.
 {"Full Name","Nome completo"}.
 {"Get Number of Online Users","Ver número de usuarios conectados"}.
 {"Get Number of Registered Users","Ver número de usuarios rexistrados"}.
 {"Get User Last Login Time","Ver data da última conexión de usuario"}.
-{"Get User Password","Ver contrasinal de usuario"}.
 {"Get User Statistics","Ver estatísticas de usuario"}.
 {"Given Name","Nome"}.
 {"Grant voice to this person?","¿Conceder voz a esta persoa?"}.
-{"Group","Grupo"}.
-{"Groups","Grupos"}.
 {"has been banned","foi bloqueado"}.
 {"has been kicked because of a system shutdown","foi expulsado porque o sistema vaise a deter"}.
 {"has been kicked because of an affiliation change","foi expulsado debido a un cambio de afiliación"}.
 {"has been kicked because the room has been changed to members-only","foi expulsado, porque a sala cambiouse a só-membros"}.
 {"has been kicked","foi expulsado"}.
 {"Host unknown","Dominio descoñecido"}.
-{"Host","Host"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Si non ves a imaxe CAPTCHA aquí, visita a páxina web."}.
 {"Import Directory","Importar directorio"}.
 {"Import File","Importar ficheiro"}.
@@ -144,7 +130,6 @@
 {"Import Users From jabberd14 Spool Files","Importar usuarios de ficheiros spool de jabberd-1.4"}.
 {"Improper domain part of 'from' attribute","Parte de dominio impropio no atributo 'from'"}.
 {"Improper message type","Tipo de mensaxe incorrecta"}.
-{"Incoming s2s Connections:","Conexións S2S saíntes:"}.
 {"Incorrect CAPTCHA submit","O CAPTCHA proporcionado é incorrecto"}.
 {"Incorrect data form","Formulario de datos incorrecto"}.
 {"Incorrect password","Contrasinal incorrecta"}.
@@ -169,8 +154,6 @@
 {"Last month","Último mes"}.
 {"Last year","Último ano"}.
 {"leaves the room","sae da sala"}.
-{"List of rooms","Lista de salas"}.
-{"Low level update script","Script de actualización a baixo nivel"}.
 {"Make participants list public","A lista de participantes é pública"}.
 {"Make room CAPTCHA protected","Protexer a sala con CAPTCHA"}.
 {"Make room members-only","Sala só para membros"}.
@@ -184,21 +167,17 @@
 {"Maximum Number of Occupants","Número máximo de ocupantes"}.
 {"May","Maio"}.
 {"Membership is required to enter this room","Necesitas ser membro desta sala para poder entrar"}.
-{"Members:","Membros:"}.
-{"Memory","Memoria"}.
 {"Message body","Corpo da mensaxe"}.
 {"Message not found in forwarded payload","Mensaxe non atopada no contido reenviado"}.
 {"Middle Name","Segundo nome"}.
 {"Minimum interval between voice requests (in seconds)","Intervalo mínimo entre peticións de voz (en segundos)"}.
 {"Moderator privileges required","Necesítase privilexios de moderador"}.
 {"Moderator","Moderator"}.
-{"Modified modules","Módulos Modificados"}.
 {"Module failed to handle the query","O módulo non puido xestionar a consulta"}.
 {"Monday","Luns"}.
 {"Multicast","Multicast"}.
 {"Multi-User Chat","Salas de Charla"}.
 {"Name","Nome"}.
-{"Name:","Nome:"}.
 {"Neither 'jid' nor 'nick' attribute found","Non se atopou o atributo 'jid' nin 'nick'"}.
 {"Neither 'role' nor 'affiliation' attribute found","Non se atopou o atributo 'role' nin 'affiliation'"}.
 {"Never","Nunca"}.
@@ -247,12 +226,9 @@
 {"Number of online users","Número de usuarios conectados"}.
 {"Number of registered users","Número de usuarios rexistrados"}.
 {"October","Outubro"}.
-{"Offline Messages","Mensaxes diferidas"}.
-{"Offline Messages:","Mensaxes sen conexión:"}.
 {"OK","Aceptar"}.
 {"Old Password:","Contrasinal anterior:"}.
 {"Online Users","Usuarios conectados"}.
-{"Online Users:","Usuarios conectados:"}.
 {"Online","Conectado"}.
 {"Only deliver notifications to available users","Só enviar notificacións aos usuarios dispoñibles"}.
 {"Only <enable/> or <disable/> tags are allowed","Só se permiten etiquetas <enable/> ou <disable/>"}.
@@ -267,9 +243,7 @@
 {"Organization Name","Nome da organización"}.
 {"Organization Unit","Unidade da organización"}.
 {"Outgoing s2s Connections","Conexións S2S saíntes"}.
-{"Outgoing s2s Connections:","Conexións S2S saíntes:"}.
 {"Owner privileges required","Requírense privilexios de propietario da sala"}.
-{"Packet","Paquete"}.
 {"Participant","Participante"}.
 {"Password Verification","Verificación da contrasinal"}.
 {"Password Verification:","Verificación da Contrasinal:"}.
@@ -277,7 +251,6 @@
 {"Password:","Contrasinal:"}.
 {"Path to Dir","Ruta ao directorio"}.
 {"Path to File","Ruta ao ficheiro"}.
-{"Pending","Pendente"}.
 {"Period: ","Periodo: "}.
 {"Persist items to storage","Persistir elementos ao almacenar"}.
 {"Ping query is incorrect","A solicitude de Ping é incorrecta"}.
@@ -296,17 +269,12 @@
 {"RAM copy","Copia en RAM"}.
 {"Really delete message of the day?","¿Está seguro que quere borrar a mensaxe do dia?"}.
 {"Recipient is not in the conference room","O receptor non está na sala de conferencia"}.
-{"Registered Users","Usuarios rexistrados"}.
-{"Registered Users:","Usuarios rexistrados:"}.
 {"Register","Rexistrar"}.
 {"Remote copy","Copia remota"}.
-{"Remove All Offline Messages","Borrar Todas as Mensaxes Sen conexión"}.
 {"Remove User","Eliminar usuario"}.
-{"Remove","Borrar"}.
 {"Replaced by new connection","Substituído por unha nova conexión"}.
 {"Resources","Recursos"}.
 {"Restart Service","Reiniciar o servizo"}.
-{"Restart","Reiniciar"}.
 {"Restore Backup from File at ","Restaura copia de seguridade desde o ficheiro en "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Restaurar copia de seguridade binaria no seguinte reinicio de ejabberd (require menos memoria):"}.
 {"Restore binary backup immediately:","Restaurar inmediatamente copia de seguridade binaria:"}.
@@ -320,10 +288,8 @@
 {"Room title","Título da sala"}.
 {"Roster groups allowed to subscribe","Lista de grupos autorizados a subscribir"}.
 {"Roster size","Tamaño da lista de contactos"}.
-{"RPC Call Error","Erro na chamada RPC"}.
 {"Running Nodes","Nodos funcionando"}.
 {"Saturday","Sábado"}.
-{"Script check","Comprobación de script"}.
 {"Search Results for ","Buscar resultados por "}.
 {"Search users in ","Buscar usuarios en "}.
 {"Send announcement to all online users on all hosts","Enviar anuncio a todos os usuarios conectados en todos os dominios"}.
@@ -341,19 +307,13 @@
 {"Specify the access model","Especifica o modelo de acceso"}.
 {"Specify the event message type","Especifica o tipo da mensaxe de evento"}.
 {"Specify the publisher model","Especificar o modelo do publicante"}.
-{"Statistics of ~p","Estatísticas de ~p"}.
-{"Statistics","Estatísticas"}.
-{"Stop","Deter"}.
 {"Stopped Nodes","Nodos detidos"}.
-{"Storage Type","Tipo de almacenamento"}.
 {"Store binary backup:","Gardar copia de seguridade binaria:"}.
 {"Store plain text backup:","Gardar copia de seguridade en texto plano:"}.
 {"Subject","Asunto"}.
-{"Submit","Enviar"}.
 {"Submitted","Enviado"}.
 {"Subscriber Address","Dirección do subscriptor"}.
 {"Subscriptions are not allowed","Non se permiten subscricións"}.
-{"Subscription","Subscripción"}.
 {"Sunday","Domingo"}.
 {"That nickname is already in use by another occupant","Ese alcume xa está a ser usado por outro ocupante"}.
 {"That nickname is registered by another person","O alcume xa está rexistrado por outra persoa"}.
@@ -372,7 +332,6 @@
 {"This room is not anonymous","Sala non anónima"}.
 {"Thursday","Xoves"}.
 {"Time delay","Atraso temporal"}.
-{"Time","Data"}.
 {"To register, visit ~s","Para rexistrarse, visita ~s"}.
 {"Token TTL","Token TTL"}.
 {"Too many active bytestreams","Demasiados bytestreams activos"}.
@@ -382,13 +341,7 @@
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Demasiados (~p) fallou autenticaciones desde esta dirección IP (~s). A dirección será desbloqueada as ~s UTC"}.
 {"Too many unacked stanzas","Demasiadas mensaxes sen recoñecer recibilos"}.
 {"Too many users in this conference","Demasiados usuarios nesta sala"}.
-{"To","Para"}.
-{"Total rooms","Salas totais"}.
 {"Traffic rate limit is exceeded","Hase exedido o límite de tráfico"}.
-{"Transactions Aborted:","Transaccións abortadas:"}.
-{"Transactions Committed:","Transaccións finalizadas:"}.
-{"Transactions Logged:","Transaccións rexistradas:"}.
-{"Transactions Restarted:","Transaccións reiniciadas:"}.
 {"Tuesday","Martes"}.
 {"Unable to generate a CAPTCHA","No se pudo generar un CAPTCHA"}.
 {"Unable to register route on existing local domain","Non se pode rexistrar a ruta no dominio local existente"}.
@@ -398,11 +351,6 @@
 {"Unsupported <index/> element","Elemento <index/> non soportado"}.
 {"Update message of the day (don't send)","Actualizar mensaxe do dia, pero non envialo"}.
 {"Update message of the day on all hosts (don't send)","Actualizar a mensaxe do día en todos os dominos (pero non envialo)"}.
-{"Update ~p","Actualizar ~p"}.
-{"Update plan","Plan de actualización"}.
-{"Update script","Script de actualización"}.
-{"Update","Actualizar"}.
-{"Uptime:","Tempo desde o inicio:"}.
 {"User already exists","O usuario xa existe"}.
 {"User JID","Jabber ID do usuario"}.
 {"User (jid)","Usuario (jid)"}.
@@ -414,7 +362,6 @@
 {"Users Last Activity","Última actividade dos usuarios"}.
 {"Users","Usuarios"}.
 {"User","Usuario"}.
-{"Validate","Validar"}.
 {"Value 'get' of 'type' attribute is not allowed","O valor \"get\" do atributo 'type' non está permitido"}.
 {"Value of '~s' should be boolean","O valor de '~s' debería ser booleano"}.
 {"Value of '~s' should be datetime string","O valor de '~s' debería ser unha data"}.

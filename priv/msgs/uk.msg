@@ -16,8 +16,6 @@
 {"Account doesn't exist","Обліковий запис не існує"}.
 {"Action on user","Дія над користувачем"}.
 {"Add a hat to a user","Додати капелюх користувачу"}.
-{"Add Jabber ID","Додати Jabber ID"}.
-{"Add New","Додати"}.
 {"Add User","Додати користувача"}.
 {"Administration of ","Адміністрування "}.
 {"Administration","Адміністрування"}.
@@ -48,7 +46,6 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Будь-хто, хто має підписку на отримання інформації про присутність в обох випадках або може підписуватись та отримувати матеріали"}.
 {"Anyone with Voice","Будь-хто, хто має голос"}.
 {"Anyone","Будь-хто"}.
-{"Apparently your account has no administration rights in this server. Please check how to grant admin rights in: https://docs.ejabberd.im/admin/installation/#administration-account","Очевидно, ваш обліковий запис не має прав адміністратора на цьому сервері. Будь ласка, перевірте, як отримати права адміністратора за посиланням: https://docs.ejabberd.im/admin/installation/#administration-account"}.
 {"April","Квітень"}.
 {"Attribute 'channel' is required for this request","Атрибут \"канал\" є обов'язковим для цього запиту"}.
 {"Attribute 'id' is mandatory for MIX messages","Атрибут 'id' обов'язковий для MIX повідомлень"}.
@@ -93,30 +90,20 @@
 {"Conference room does not exist","Кімната для переговорів відсутня"}.
 {"Configuration of room ~s","Конфігурація кімнати ~s"}.
 {"Configuration","Конфігурація"}.
-{"Connected Resources:","Підключені ресурси:"}.
 {"Contact Addresses (normally, room owner or owners)","Контактні адреси (зазвичай, власника або власників кімнати)"}.
-{"Contrib Modules","Запуск модулів"}.
 {"Country","Країна"}.
-{"CPU Time:","Час роботи процесора:"}.
 {"Current Discussion Topic","Поточна тема обговорення"}.
 {"Database failure","Збій бази даних"}.
-{"Database Tables at ~p","Таблиці бази даних на ~p"}.
 {"Database Tables Configuration at ","Конфігурація таблиць бази даних на "}.
 {"Database","База даних"}.
 {"December","Грудень"}.
 {"Default users as participants","Користувачі за замовчуванням як учасники"}.
-{"Delete content","Видалити вміст"}.
 {"Delete message of the day on all hosts","Видалити повідомлення дня на усіх хостах"}.
 {"Delete message of the day","Видалити повідомлення дня"}.
-{"Delete Selected","Видалити вибране"}.
-{"Delete table","Видалити таблицю"}.
 {"Delete User","Видалити користувача"}.
 {"Deliver event notifications","Доставляти сповіщення про події"}.
 {"Deliver payloads with event notifications","Доставляти разом з повідомленнями про публікації самі публікації"}.
-{"Description:","Опис:"}.
 {"Disc only copy","Тільки диск"}.
-{"'Displayed groups' not added (they do not exist!): ","\"Відображені групи\" не додано (вони не існують!): "}.
-{"Displayed:","Відображено:"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","Нікому не кажіть свій пароль, навіть адміністраторам XMPP-сервера."}.
 {"Dump Backup to Text File at ","Копіювання в текстовий файл на "}.
 {"Dump to Text File","Копіювання в текстовий файл"}.
@@ -131,7 +118,6 @@
 {"ejabberd vCard module","ejabberd vCard модуль"}.
 {"ejabberd Web Admin","Веб-інтерфейс Адміністрування ejabberd"}.
 {"ejabberd","ejabberd"}.
-{"Elements","Елементи"}.
 {"Email Address","Адреса ел. пошти"}.
 {"Email","Електронна пошта"}.
 {"Enable hats","Увімкнути капелюхи"}.
@@ -145,7 +131,6 @@
 {"Enter path to text file","Введіть шлях до текстового файла"}.
 {"Enter the text you see","Введіть текст, що ви бачите"}.
 {"Erlang XMPP Server","Ерланґ XMPP Сервер"}.
-{"Error","Помилка"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Пропускати ці Jabber ID без CAPTCHA-запиту"}.
 {"Export all tables as SQL queries to a file:","Експортувати всі таблиці у файл як SQL запити:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Експорт даних всіх користувачів сервера до файлу PIEFXIS (XEP-0227):"}.
@@ -164,7 +149,6 @@
 {"Fill in the form to search for any matching XMPP User","Заповніть форму для пошуку будь-якого відповідного користувача XMPP"}.
 {"Friday","П'ятниця"}.
 {"From ~ts","Від ~ts"}.
-{"From","Від кого"}.
 {"Full List of Room Admins","Повний перелік адміністраторів кімнати"}.
 {"Full List of Room Owners","Повний перелік власників кімнати"}.
 {"Full Name","Повне ім'я"}.
@@ -174,13 +158,9 @@
 {"Get Number of Registered Users","Отримати Кількість Зареєстрованих Користувачів"}.
 {"Get Pending","Очікування"}.
 {"Get User Last Login Time","Отримати Час Останнього Підключення Користувача"}.
-{"Get User Password","Отримати Пароль Користувача"}.
 {"Get User Statistics","Отримати Статистику по Користувачу"}.
 {"Given Name","По-батькові"}.
 {"Grant voice to this person?","Надати голос персоні?"}.
-{"Groups that will be displayed to the members","Групи, які показуватимуться учасникам"}.
-{"Groups","Групи"}.
-{"Group","Група"}.
 {"has been banned","заборонили вхід в кімнату"}.
 {"has been kicked because of a system shutdown","вигнано з кімнати внаслідок зупинки системи"}.
 {"has been kicked because of an affiliation change","вигнано з кімнати внаслідок зміни рангу"}.
@@ -190,7 +170,6 @@
 {"Hat URI","Назва URI"}.
 {"Hats limit exceeded","Перевищено швидкість передачі інформації"}.
 {"Host unknown","Невідоме ім'я сервера"}.
-{"Host","Хост"}.
 {"HTTP File Upload","Відвантаження файлів по HTTP"}.
 {"Idle connection","Неактивне підключення"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Якщо ви не бачите зображення CAPTCHA, перейдіть за адресою."}.
@@ -204,7 +183,6 @@
 {"Import Users From jabberd14 Spool Files","Імпорт користувачів з jabberd14 файлів \"Spool\""}.
 {"Improper domain part of 'from' attribute","Неправильна доменна частина атрибута \"from\""}.
 {"Improper message type","Неправильний тип повідомлення"}.
-{"Incoming s2s Connections:","Вхідні s2s-з'єднання:"}.
 {"Incorrect CAPTCHA submit","Неправильний ввід CAPTCHA"}.
 {"Incorrect data form","Неправильна форма даних"}.
 {"Incorrect password","Неправильний пароль"}.
@@ -232,7 +210,6 @@
 {"July","липня"}.
 {"June","червня"}.
 {"Just created","Щойно створено"}.
-{"Label:","Мітка:"}.
 {"Last Activity","Останнє підключення"}.
 {"Last login","Останнє підключення"}.
 {"Last message","Останнє повідомлення"}.
@@ -240,11 +217,9 @@
 {"Last year","За останній рік"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Найменш значущі біти хеш-функції SHA-256 від тексту мають відповідати шістнадцятковій мітці."}.
 {"leaves the room","вийшов(ла) з кімнати"}.
-{"List of rooms","Перелік кімнат"}.
 {"List of users with hats","Список користувачів із капелюхами"}.
 {"List users with hats","Список користувачів із капелюхами"}.
 {"Logging","Журналювання"}.
-{"Low level update script","Низькорівневий сценарій поновлення"}.
 {"Make participants list public","Зробити список учасників видимим всім"}.
 {"Make room CAPTCHA protected","Зробити кімнату захищеною капчею"}.
 {"Make room members-only","Кімната тільки для зареєтрованых учасників"}.
@@ -262,11 +237,8 @@
 {"Maximum number of items to persist","Максимальна кількість елементів для збереження"}.
 {"Maximum Number of Occupants","Максимальна кількість учасників"}.
 {"May","травня"}.
-{"Members not added (inexistent vhost!): ","Учасників не додано (вірт. сервер не існує!): "}.
 {"Membership is required to enter this room","В цю конференцію можуть входити тільки її члени"}.
-{"Members:","Члени:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Запам'ятайте свій пароль або запишіть його на папері та зберігайте у безпечному місці. У XMPP не існує автоматизованого способу відновлення паролю, якщо ви його забудете."}.
-{"Memory","Пам'ять"}.
 {"Mere Availability in XMPP (No Show Value)","Проста доступність у XMPP (без показу статусу)"}.
 {"Message body","Тіло повідомлення"}.
 {"Message not found in forwarded payload","Повідомлення не знайдено в пересланому вмісті"}.
@@ -278,15 +250,12 @@
 {"Moderator privileges required","Необхідні права модератора"}.
 {"Moderators Only","Тільки модераторам"}.
 {"Moderator","Модератор"}.
-{"Modified modules","Змінені модулі"}.
 {"Module failed to handle the query","Модулю не вдалося обробити запит"}.
 {"Monday","Понеділок"}.
 {"Multicast","Мультікаст"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Кілька елементів <item/> не дозволені RFC6121"}.
 {"Multi-User Chat","Багато-користувальницький чат"}.
-{"Name in the rosters where this group will be displayed","Назва у списку контактів, де ця група буде відображена"}.
 {"Name","Назва"}.
-{"Name:","Назва:"}.
 {"Natural Language for Room Discussions","Розмовна мова для обговорень у кімнаті"}.
 {"Natural-Language Room Name","Назва кімнати розмовною мовою"}.
 {"Neither 'jid' nor 'nick' attribute found","Не знайдено ні атрибута \"jid\", ні \"nick\""}.
@@ -351,14 +320,10 @@
 {"Occupants are allowed to query others","Учасникам дозволено ставити запитання іншим"}.
 {"Occupants May Change the Subject","Учасникам дозволено змінювати тему"}.
 {"October","грудня"}.
-{"Offline Messages","Офлайнові повідомлення"}.
-{"Offline Messages:","Офлайнові повідомлення:"}.
 {"OK","Продовжити"}.
 {"Old Password:","Старий пароль:"}.
 {"Online Users","Підключені користувачі"}.
-{"Online Users:","Підключені користувачі:"}.
 {"Online","Підключений"}.
-{"Only admins can see this","Тільки адміністратори можуть це бачити"}.
 {"Only collection node owners may associate leaf nodes with the collection","Лише власники вузлів колекції можуть асоціювати листові вузли з колекцією"}.
 {"Only deliver notifications to available users","Доставляти повідомленнями тільки доступним користувачам"}.
 {"Only <enable/> or <disable/> tags are allowed","Дозволені лише теги <enable/> або <disable/>"}.
@@ -378,10 +343,8 @@
 {"Organization Unit","Відділ організації"}.
 {"Other Modules Available:","Інші доступні модулі:"}.
 {"Outgoing s2s Connections","Вихідні s2s-з'єднання"}.
-{"Outgoing s2s Connections:","Вихідні s2s-з'єднання:"}.
 {"Owner privileges required","Необхідні права власника"}.
 {"Packet relay is denied by service policy","Пересилання пакетів заборонене політикою сервісу"}.
-{"Packet","Пакет"}.
 {"Participant ID","ID учасника"}.
 {"Participant","Учасник"}.
 {"Password Verification","Перевірка Пароля"}.
@@ -391,7 +354,6 @@
 {"Path to Dir","Шлях до директорії"}.
 {"Path to File","Шлях до файла"}.
 {"Payload semantic type information","Інформація про тип вмісту даних"}.
-{"Pending","Очікування"}.
 {"Period: ","Період: "}.
 {"Persist items to storage","Зберігати елементи в сховищі"}.
 {"Persistent","Тривалий"}.
@@ -422,17 +384,12 @@
 {"Receive notification from all descendent nodes","Отримувати сповіщення від усіх підпорядкованих вузлів"}.
 {"Recipient is not in the conference room","Адресата немає в конференції"}.
 {"Register an XMPP account","Зареєструвати XMPP-запис"}.
-{"Registered Users","Зареєстровані користувачі"}.
-{"Registered Users:","Зареєстровані користувачі:"}.
 {"Register","Реєстрація"}.
 {"Remote copy","не зберігаеться локально"}.
-{"Remove All Offline Messages","Видалити всі офлайнові повідомлення"}.
 {"Remove User","Видалити користувача"}.
-{"Remove","Видалити"}.
 {"Replaced by new connection","Замінено новим з'єднанням"}.
 {"Resources","Ресурси"}.
 {"Restart Service","Перезапустити Сервіс"}.
-{"Restart","Перезапустити"}.
 {"Restore Backup from File at ","Відновлення з резервної копії на "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Відновити з бінарної резервної копії при наступному запуску (потребує менше пам'яті):"}.
 {"Restore binary backup immediately:","Відновити з бінарної резервної копії негайно:"}.
@@ -447,14 +404,10 @@
 {"Room terminates","Кімната припиняється"}.
 {"Room title","Назва кімнати"}.
 {"Roster groups allowed to subscribe","Дозволені для підписки групи ростера"}.
-{"Roster of ~ts","Список контактів ~ts"}.
 {"Roster size","Кількість контактів"}.
-{"Roster:","Список контактів:"}.
-{"RPC Call Error","Помилка виклику RPC"}.
 {"Running Nodes","Працюючі вузли"}.
 {"~s invites you to the room ~s","~s запрошує вас до кімнати ~s"}.
 {"Saturday","Субота"}.
-{"Script check","Перевірка сценарію"}.
 {"Search Results for ","Результати пошуку в "}.
 {"Search users in ","Пошук користувачів в "}.
 {"Send announcement to all online users on all hosts","Надіслати сповіщення всім підключеним користувачам на всіх віртуальних серверах"}.
@@ -472,18 +425,12 @@
 {"Specify the access model","Визначити модель доступу"}.
 {"Specify the event message type","Вкажіть тип повідомлень зі сповіщеннями про події"}.
 {"Specify the publisher model","Умови публікації"}.
-{"Statistics of ~p","Статистика вузла ~p"}.
-{"Statistics","Статистика"}.
 {"Stopped Nodes","Зупинені вузли"}.
-{"Stop","Зупинити"}.
-{"Storage Type","Тип таблиці"}.
 {"Store binary backup:","Зберегти бінарну резервну копію:"}.
 {"Store plain text backup:","Зберегти текстову резервну копію:"}.
 {"Subject","Тема"}.
 {"Submitted","Відправлено"}.
-{"Submit","Надіслати"}.
 {"Subscriber Address","Адреса абонента"}.
-{"Subscription","Підписка"}.
 {"Sunday","Неділя"}.
 {"That nickname is already in use by another occupant","Псевдонім зайнято кимось з присутніх"}.
 {"That nickname is registered by another person","Псевдонім зареєстровано кимось іншим"}.
@@ -508,7 +455,6 @@
 {"Thursday","Четвер"}.
 {"Time delay","Час затримки"}.
 {"Timed out waiting for stream resumption","Час очікування на відновлення потоку закінчився"}.
-{"Time","Час"}.
 {"To register, visit ~s","Щоб зареєструватися, відвідайте ~s"}.
 {"To ~ts","До ~ts"}.
 {"Token TTL","Токен TTL"}.
@@ -521,13 +467,7 @@
 {"Too many receiver fields were specified","Вказано забагато одержувачів"}.
 {"Too many unacked stanzas","Занадто багато пакетів без відповідей"}.
 {"Too many users in this conference","Надто багато користувачів у цій конференції"}.
-{"Total rooms","Всього кімнат"}.
-{"To","Кому"}.
 {"Traffic rate limit is exceeded","Швидкість передачі інформації було перевищено"}.
-{"Transactions Aborted:","Транзакції відмінені:"}.
-{"Transactions Committed:","Транзакції завершені:"}.
-{"Transactions Logged:","Транзакції запротокольовані:"}.
-{"Transactions Restarted:","Транзакції перезапущені:"}.
 {"~ts's Offline Messages Queue","Черга автономних повідомлень ~ts"}.
 {"Tuesday","Вівторок"}.
 {"Unable to generate a CAPTCHA","Нема можливості згенерувати капчу"}.
@@ -537,16 +477,10 @@
 {"Unexpected error condition: ~p","Умова несподіваної помилки: ~p"}.
 {"Unregister an XMPP account","Видалити обліковий запис XMPP"}.
 {"Unregister","Видалити"}.
-{"Unselect All","Скасувати виділення з усіх"}.
 {"Unsupported <index/> element","Непідтримуваний елемент <index/>"}.
 {"Unsupported version","Непідтримувана версія"}.
 {"Update message of the day (don't send)","Оновити повідомлення дня (не надсилати)"}.
 {"Update message of the day on all hosts (don't send)","Оновити повідомлення дня на всіх хостах (не надсилати)"}.
-{"Update plan","План оновлення"}.
-{"Update ~p","Оновлення ~p"}.
-{"Update script","Сценарій поновлення"}.
-{"Update","Обновити"}.
-{"Uptime:","Час роботи:"}.
 {"URL for Archived Discussion Logs","URL-адреса для журналів архівних обговорень"}.
 {"User already exists","Користувач уже існує"}.
 {"User JID","JID Користувача"}.
@@ -561,12 +495,10 @@
 {"Users Last Activity","Статистика останнього підключення користувачів"}.
 {"Users","Користувачі"}.
 {"User","Користувач"}.
-{"Validate","Затвердити"}.
 {"Value of '~s' should be boolean","Значення \"~s\" має бути логічним"}.
 {"Value of '~s' should be datetime string","Значення \"~s\" має бути рядком дати і часу"}.
 {"Value of '~s' should be integer","Значення \"~s\" має бути цілим числом"}.
 {"vCard User Search","Пошук користувачів по vCard"}.
-{"View Queue","Переглянути чергу"}.
 {"Virtual Hosts","віртуальні хости"}.
 {"Visitors are not allowed to change their nicknames in this room","Відвідувачам не дозволяється змінювати псевдонім в цій кімнаті"}.
 {"Visitors are not allowed to send messages to all occupants","Відвідувачам не дозволяється надсилати повідомлення всім присутнім"}.

@@ -9,8 +9,6 @@
 {"Accept","Accepter"}.
 {"Access denied by service policy","L' accès a stî rfuzé pal politike do siervice"}.
 {"Action on user","Accion so l' uzeu"}.
-{"Add Jabber ID","Radjouter èn ID Jabber"}.
-{"Add New","Radjouter"}.
 {"Add User","Radjouter èn uzeu"}.
 {"Administration of ","Manaedjaedje di "}.
 {"Administration","Manaedjaedje"}.
@@ -53,21 +51,16 @@
 {"Conference room does not exist","Li såle di conferince n' egzistêye nén"}.
 {"Configuration of room ~s","Apontiaedje del såle ~s"}.
 {"Configuration","Apontiaedjes"}.
-{"Connected Resources:","Raloyî avou les rsoûces:"}.
 {"Country","Payis"}.
-{"CPU Time:","Tins CPU:"}.
-{"Database Tables at ~p","Tåves del båze di dnêyes so ~p"}.
 {"Database Tables Configuration at ","Apontiaedje des tåves del båze di dnêyes so "}.
 {"Database","Båze di dnêyes"}.
 {"December","decimbe"}.
 {"Default users as participants","Les uzeus sont des pårticipants come prémetowe dujhance"}.
 {"Delete message of the day on all hosts","Disfacer l' messaedje do djoû so tos les lodjoes"}.
 {"Delete message of the day","Disfacer l' messaedje do djoû"}.
-{"Delete Selected","Disfacer les elemints tchoezis"}.
 {"Delete User","Disfacer èn uzeu"}.
 {"Deliver event notifications","Evoyî des notifiaedjes d' evenmints"}.
 {"Deliver payloads with event notifications","Evoyî l' contnou avou les notifiaedjes d' evenmints"}.
-{"Description:","Discrijhaedje:"}.
 {"Disc only copy","Copeye seulmint sol deure plake"}.
 {"Dump Backup to Text File at ","Copeye di såvritè viè on fitchî tecse so "}.
 {"Dump to Text File","Schaper en on fitchî tecse"}.
@@ -79,7 +72,6 @@
 {"ejabberd SOCKS5 Bytestreams module","Module SOCKS5 Bytestreams po ejabberd"}.
 {"ejabberd vCard module","Module vCard ejabberd"}.
 {"ejabberd Web Admin","Manaedjeu waibe ejabberd"}.
-{"Elements","Elemints"}.
 {"Email","Emile"}.
 {"Enable logging","Mete en alaedje li djournå"}.
 {"Enable message archiving","Mete en alaedje l' årtchivaedje des messaedjes"}.
@@ -90,7 +82,6 @@
 {"Enter path to jabberd14 spool file","Dinez l' tchimin viè l' fitchî di spool jabberd14"}.
 {"Enter path to text file","Dinez l' tchimin viè l' fitchî tecse"}.
 {"Enter the text you see","Tapez l' tecse ki vos voeyoz"}.
-{"Error","Aroke"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Esclure les IDs Jabber des kesses CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Espoirter totes les tåves, come des cmandes SQL, viè on fitchî"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Espoirter les dnêyes di tos les uzeus do sierveu viè des fitchîs PIEFXIS (XEP-0227):"}.
@@ -99,22 +90,17 @@
 {"Family Name","No d' famile"}.
 {"February","fevrî"}.
 {"Friday","vénrdi"}.
-{"From","Di"}.
 {"Full Name","No etir"}.
 {"Get Number of Online Users","Riçure li nombe d' uzeus raloyîs"}.
 {"Get Number of Registered Users","Riçure li nombe d' uzeus edjîstrés"}.
 {"Get User Last Login Time","Riçure li date/eure do dierin elodjaedje di l' uzeu"}.
-{"Get User Password","Riçure sicret d' l' uzeu"}.
 {"Get User Statistics","Riçure les statistikes di l' uzeu"}.
 {"Grant voice to this person?","Permete li vwès po cisse djin ci?"}.
-{"Group","Groupe"}.
-{"Groups","Groupes"}.
 {"has been banned","a stî bani"}.
 {"has been kicked because of a system shutdown","a stî pité evoye cåze d' èn arestaedje do sistinme"}.
 {"has been kicked because of an affiliation change","a stî pité evoye cåze d' on candjmint d' afiyaedje"}.
 {"has been kicked because the room has been changed to members-only","a stî pité evoye cåze ki l' såle a stî ristrindowe åzès mimbes seulmint"}.
 {"has been kicked","a stî pité evoye"}.
-{"Host","Sierveu"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Si vos n' voeyoz nole imådje CAPTCHA chal, vizitez l' pådje waibe."}.
 {"Import Directory","Sititchî d' on ridant"}.
 {"Import File","Sititchî d' on fitchî"}.
@@ -125,7 +111,6 @@
 {"Import Users from Dir at ","Sitichî des uzeus d' on ridant so "}.
 {"Import Users From jabberd14 Spool Files","Sititchî des uzeus Jabberd 1.4"}.
 {"Improper message type","Sôre di messaedje nén valide"}.
-{"Incoming s2s Connections:","Raloyaedjes s2s en intrêye:"}.
 {"Incorrect password","Sicret nén corek"}.
 {"IP addresses","Adresses IP"}.
 {"is now known as","est asteure kinoxhou come"}.
@@ -142,8 +127,6 @@
 {"Last month","Dierin moes"}.
 {"Last year","Dierinne anêye"}.
 {"leaves the room","cwite li såle"}.
-{"List of rooms","Djivêye des såles"}.
-{"Low level update script","Sicripe di metaedje a djoû d' bas livea"}.
 {"Make participants list public","Rinde publike li djivêye des pårticipants"}.
 {"Make room CAPTCHA protected","Rinde li såle di berdelaedje protedjeye pa CAPTCHA"}.
 {"Make room members-only","Rinde li såle di berdelaedje ristrindowe ås mimbes seulmint"}.
@@ -156,19 +139,15 @@
 {"Maximum Number of Occupants","Nombe macsimom di prezints"}.
 {"May","may"}.
 {"Membership is required to enter this room","I fåt esse mimbe po poleur intrer dins cisse såle ci"}.
-{"Members:","Mimbes:"}.
-{"Memory","Memwere"}.
 {"Message body","Coir do messaedje"}.
 {"Middle Name","No do mitan"}.
 {"Minimum interval between voice requests (in seconds)","Tins minimom etur deus dmandes di vwès (e segondes)"}.
 {"Moderator privileges required","I fåt des priviledjes di moderateu"}.
 {"Moderator","Moderateu"}.
-{"Modified modules","Modules di candjîs"}.
 {"Monday","londi"}.
 {"Multicast","Multicast"}.
 {"Multi-User Chat","Berdelaedje a sacwants"}.
 {"Name","No"}.
-{"Name:","Pitit no:"}.
 {"Never","Måy"}.
 {"New Password:","Novea scret:"}.
 {"Nickname Registration at ","Edjîstraedje di metou no amon "}.
@@ -191,12 +170,9 @@
 {"Number of online users","Nombe d' uzeus raloyîs"}.
 {"Number of registered users","Nombe d' uzeus edjîstrés"}.
 {"October","octôbe"}.
-{"Offline Messages","Messaedjes ki ratindèt"}.
-{"Offline Messages:","Messaedjes ki ratindèt:"}.
 {"OK","'l est bon"}.
 {"Old Password:","Vî scret:"}.
 {"Online Users","Uzeus raloyîs"}.
-{"Online Users:","Uzeus raloyîs:"}.
 {"Online","Raloyî"}.
 {"Only deliver notifications to available users","Seulmint evoyî des notifiaedje åzès uzeus disponibes"}.
 {"Only members may query archives of this room","Seulmint les mimbes polèt cweri les årtchives dins cisse såle ci"}.
@@ -209,9 +185,7 @@
 {"Organization Name","No d' l' organizåcion"}.
 {"Organization Unit","Unité d' l' organizåcion"}.
 {"Outgoing s2s Connections","Raloyaedjes s2s e rexhowe"}.
-{"Outgoing s2s Connections:","Raloyaedjes s2s e rexhowe:"}.
 {"Owner privileges required","I fåt des priviledjes di prôpietaire"}.
-{"Packet","Paket"}.
 {"Participant","Pårticipant"}.
 {"Password Verification","Acertinaedje do scret"}.
 {"Password Verification:","Acertinaedje do scret:"}.
@@ -219,7 +193,6 @@
 {"Password:","Sicret:"}.
 {"Path to Dir","Tchimin viè l' ridant"}.
 {"Path to File","Tchimin viè l' fitchî"}.
-{"Pending","Ratindant"}.
 {"Period: ","Termene:"}.
 {"Persist items to storage","Cayets permanints a wårder"}.
 {"Ping","Ping"}.
@@ -236,17 +209,12 @@
 {"RAM copy","Copeye e memwere (RAM)"}.
 {"Really delete message of the day?","Voloz vs vormint disfacer l' messaedje do djoû?"}.
 {"Recipient is not in the conference room","Li riçuveu n' est nén dins l' såle di conferince"}.
-{"Registered Users","Uzeus edjistrés"}.
-{"Registered Users:","Uzeus edjistrés:"}.
 {"Register","Edjîstrer"}.
 {"Remote copy","Copeye å lon"}.
-{"Remove All Offline Messages","Oister tos les messaedjes ki ratindèt"}.
 {"Remove User","Disfacer l' uzeu"}.
-{"Remove","Oister"}.
 {"Replaced by new connection","Replaecî pa on novea raloyaedje"}.
 {"Resources","Rissoûces"}.
 {"Restart Service","Renonder siervice"}.
-{"Restart","Renonder"}.
 {"Restore Backup from File at ","Rapexhî dispoy li fitchî copeye di såvrité so "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Rapexhî l' copeye di såvrité binaire après l' renondaedje ki vént d' ejabberd (çoula prind moens d' memwere del fé insi):"}.
 {"Restore binary backup immediately:","Rapexhî do côp foû d' ene copeye di såvrité binaire:"}.
@@ -260,10 +228,8 @@
 {"Room title","Tite del såle"}.
 {"Roster groups allowed to subscribe","Pårtaedjîs groupes di soçons k' on s' î pout abouner"}.
 {"Roster size","Grandeu del djivêye des soçons"}.
-{"RPC Call Error","Aroke di houcaedje RPC"}.
 {"Running Nodes","Nuks en alaedje"}.
 {"Saturday","semdi"}.
-{"Script check","Acertinaedje do scripe"}.
 {"Search Results for ","Rizultats do cweraedje po "}.
 {"Search users in ","Cweri des uzeus dins "}.
 {"Send announcement to all online users on all hosts","Evoyî l' anonce a tos les uzeus raloyîs so tos les lodjoes"}.
@@ -281,18 +247,12 @@
 {"Specify the access model","Sipecifyî l' modele d' accès"}.
 {"Specify the event message type","Sipecifyî l' sôre do messaedje d' evenmint"}.
 {"Specify the publisher model","Dinez l' modele d' eplaideu"}.
-{"Statistics of ~p","Sitatistikes di ~p"}.
-{"Statistics","Sitatistikes"}.
-{"Stop","Arester"}.
 {"Stopped Nodes","Nuks essoctés"}.
-{"Storage Type","Sôre di wårdaedje"}.
 {"Store binary backup:","Copeye di såvrité binaire:"}.
 {"Store plain text backup:","Copeye di såvrité tecse:"}.
 {"Subject","Sudjet"}.
-{"Submit","Evoyî"}.
 {"Submitted","Candjmints evoyîs"}.
 {"Subscriber Address","Adresse di l' abouné"}.
-{"Subscription","Abounmimnt"}.
 {"Sunday","dimegne"}.
 {"That nickname is already in use by another occupant","Li metou no est ddja eployî pa ene ôte sakî sol såle"}.
 {"That nickname is registered by another person","Li metou no est ddja edjîstré pa ene ôte sakî"}.
@@ -306,28 +266,16 @@
 {"This room is not anonymous","Cisse såle ci n' est nén anonime"}.
 {"Thursday","djudi"}.
 {"Time delay","Tårdjaedje"}.
-{"Time","Date"}.
 {"Too many CAPTCHA requests","Pår trop di dmandes CAPTCHA"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","I gn a-st avou pår trop (~p) d' otintifiaedjes k' ont fwait berwete vinant di ciste adresse IP la (~s). L' adresse serè disblokêye a ~s UTC"}.
 {"Too many unacked stanzas","Pår trop di messaedjes sins acertinaedje di rçuvaedje"}.
-{"To","Po"}.
-{"Total rooms","Totå di såles"}.
 {"Traffic rate limit is exceeded","Li limite pol volume di trafik a stî passêye"}.
-{"Transactions Aborted:","Transaccions arestêyes:"}.
-{"Transactions Committed:","Transaccions evoyeyes:"}.
-{"Transactions Logged:","Transaccions wårdêyes e djournå:"}.
-{"Transactions Restarted:","Transaccions renondêyes:"}.
 {"Tuesday","mårdi"}.
 {"Unable to generate a CAPTCHA","Nén moyén di djenerer on CAPTCHA"}.
 {"Unauthorized","Nén otorijhî"}.
 {"Unregister","Disdjîstrer"}.
 {"Update message of the day (don't send)","Mete a djoû l' messaedje do djoû (nén l' evoyî)"}.
 {"Update message of the day on all hosts (don't send)","Mete a djoû l' messaedje do djoû so tos les lodjoes (nén l' evoyî)"}.
-{"Update plan","Plan d' metaedje a djoû"}.
-{"Update ~p","Metaedje a djoû di ~p"}.
-{"Update script","Sicripe di metaedje a djoû"}.
-{"Update","Mete a djoû"}.
-{"Uptime:","Tins dispoy l' enondaedje:"}.
 {"User JID","JID d' l' uzeu"}.
 {"User Management","Manaedjaedje des uzeus"}.
 {"Username:","No d' uzeu:"}.
@@ -335,7 +283,6 @@
 {"Users Last Activity","Dierinne activité des uzeus"}.
 {"Users","Uzeus"}.
 {"User","Uzeu"}.
-{"Validate","Valider"}.
 {"vCard User Search","Calpin des uzeus"}.
 {"Virtual Hosts","Forveyous sierveus"}.
 {"Visitors are not allowed to change their nicknames in this room","Les viziteus èn polèt nén candjî leus metous no po ç' såle ci"}.

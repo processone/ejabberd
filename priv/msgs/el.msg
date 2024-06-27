@@ -15,8 +15,6 @@
 {"Access model","Καθορίστε το μοντέλο πρόσβασης"}.
 {"Account doesn't exist","Ο λογαριασμός δεν υπάρχει"}.
 {"Action on user","Eνέργεια για το χρήστη"}.
-{"Add Jabber ID","Προσθήκη Jabber Ταυτότητας"}.
-{"Add New","Προσθήκη νέου"}.
 {"Add User","Προσθήκη Χρήστη"}.
 {"Administration of ","Διαχείριση του "}.
 {"Administration","Διαχείριση"}.
@@ -90,29 +88,20 @@
 {"Conference room does not exist","Η αίθουσα σύνεδριασης δεν υπάρχει"}.
 {"Configuration of room ~s","Διαμόρφωση δωματίου ~ s"}.
 {"Configuration","Ρύθμιση παραμέτρων"}.
-{"Connected Resources:","Συνδεδεμένοι Πόροι:"}.
 {"Contact Addresses (normally, room owner or owners)","Διευθύνσεις της Επαφής (κανονικά, ιδιοκτήτης (-ες) αίθουσας)"}.
 {"Country","Χώρα"}.
-{"CPU Time:","Ώρα CPU:"}.
 {"Current Discussion Topic","Τρέχων θέμα συζήτησης"}.
 {"Database failure","Αποτυχία βάσης δεδομένων"}.
-{"Database Tables at ~p","Πίνακες βάσης δεδομένων στο ~p"}.
 {"Database Tables Configuration at ","Διαμόρφωση Πίνακων βάσης δεδομένων στο "}.
 {"Database","Βάση δεδομένων"}.
 {"December","Δεκέμβριος"}.
 {"Default users as participants","Προρυθμισμένοι χρήστες ως συμμετέχοντες"}.
-{"Delete content","Διαγραφή περιεχομένων"}.
 {"Delete message of the day on all hosts","Διαγράψτε το μήνυμα της ημέρας σε όλους τους κεντρικούς υπολογιστές"}.
 {"Delete message of the day","Διαγράψτε το μήνυμα της ημέρας"}.
-{"Delete Selected","Διαγραφή επιλεγμένων"}.
-{"Delete table","Διαγραφή Πίνακα"}.
 {"Delete User","Διαγραφή Χρήστη"}.
 {"Deliver event notifications","Παράδοση ειδοποιήσεων συμβάντων"}.
 {"Deliver payloads with event notifications","Κοινοποίηση φόρτου εργασιών με τις ειδοποιήσεις συμβάντων"}.
-{"Description:","Περιγραφή:"}.
 {"Disc only copy","Αντίγραφο μόνο σε δίσκο"}.
-{"'Displayed groups' not added (they do not exist!): ","'Οι εμφανιζόμενες ομάδες' δεν προστέθηκαν (δεν υπάρχουν!): "}.
-{"Displayed:","Απεικονίζεται:"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","Μην πείτε τον κωδικό πρόσβασής σας σε κανέναν, ούτε στους διαχειριστές του διακομιστή XMPP."}.
 {"Dump Backup to Text File at ","Αποθήκευση Αντιγράφου Ασφαλείας σε αρχείο κειμένου στο "}.
 {"Dump to Text File","Αποθήκευση σε αρχείο κειμένου"}.
@@ -128,7 +117,6 @@
 {"ejabberd vCard module","ejabberd vCard module"}.
 {"ejabberd Web Admin","ejabberd Web Admin"}.
 {"ejabberd","ejabberd"}.
-{"Elements","Στοιχεία"}.
 {"Email Address","Ηλεκτρονική Διεύθυνση"}.
 {"Email","Ηλεκτρονικό ταχυδρομείο"}.
 {"Enable logging","Ενεργοποίηση καταγραφής"}.
@@ -142,7 +130,6 @@
 {"Enter path to text file","Εισάγετε Τοποθεσία Αρχείου Κειμένου"}.
 {"Enter the text you see","Πληκτρολογήστε το κείμενο που βλέπετε"}.
 {"Erlang XMPP Server","Διακομιστής Erlang XMPP"}.
-{"Error","Σφάλμα"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Εξαίρεσε αυτές τις ταυτότητες Jabber από την CAPTCHA πρόκληση"}.
 {"Export all tables as SQL queries to a file:","Εξαγωγή όλων των πινάκων ως ερωτημάτων SQL σε ένα αρχείο:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Εξαγωγή δεδομένων όλων των χρηστών του διακομιστή σε PIEFXIS αρχεία (XEP-0227):"}.
@@ -161,7 +148,6 @@
 {"Fill in the form to search for any matching XMPP User","Συμπληρώστε την φόρμα για αναζήτηση χρηστών XMPP"}.
 {"Friday","Παρασκευή"}.
 {"From ~ts","Από ~ts"}.
-{"From","Από"}.
 {"Full List of Room Admins","Πλήρης Κατάλογος Διαχειριστών αιθουσών"}.
 {"Full List of Room Owners","Πλήρης Κατάλογος Ιδιοκτητών αιθουσών"}.
 {"Full Name","Ονοματεπώνυμο"}.
@@ -169,20 +155,15 @@
 {"Get Number of Registered Users","Έκθεση αριθμού εγγεγραμμένων χρηστών"}.
 {"Get Pending","Λήψη των εκκρεμοτήτων"}.
 {"Get User Last Login Time","Έκθεση Τελευταίας Ώρας Σύνδεσης Χρήστη"}.
-{"Get User Password","Έκθεση Κωδικού Πρόσβασης Χρήστη"}.
 {"Get User Statistics","Έκθεση Στατιστικών Χρήστη"}.
 {"Given Name","Όνομα"}.
 {"Grant voice to this person?","Παραχώρηση φωνής σε αυτό το άτομο;"}.
-{"Groups that will be displayed to the members","Ομάδες που θα εμφανίζονται στα μέλη"}.
-{"Groups","Ομάδες"}.
-{"Group","Ομάδα"}.
 {"has been banned","έχει αποβληθεί διαπαντώς"}.
 {"has been kicked because of a system shutdown","αποβλήθηκε λόγω τερματισμού συστήματος"}.
 {"has been kicked because of an affiliation change","έχει αποβληθεί λόγω αλλαγής υπαγωγής"}.
 {"has been kicked because the room has been changed to members-only","αποβλήθηκε επειδή η αίθουσα αλλάξε γιά μέλη μόνο"}.
 {"has been kicked","αποβλήθηκε"}.
 {"Host unknown","Άγνωστος εξυπηρετητής"}.
-{"Host","Εξυπηρετητής"}.
 {"HTTP File Upload","Ανέβασμα αρχείου"}.
 {"Idle connection","Αδρανής σύνδεση"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Εάν δεν βλέπετε την εικόνα CAPTCHA εδώ, επισκεφθείτε την ιστοσελίδα."}.
@@ -196,7 +177,6 @@
 {"Import Users From jabberd14 Spool Files","Εισαγωγή Χρηστών από αρχεία σειράς jabberd14"}.
 {"Improper domain part of 'from' attribute","Ανάρμοστο τμήμα τομέα του χαρακτηριστικού 'from'"}.
 {"Improper message type","Ακατάλληλο είδος μηνύματος"}.
-{"Incoming s2s Connections:","Εισερχόμενες συνδέσεις s2s:"}.
 {"Incorrect CAPTCHA submit","Λάθος υποβολή CAPTCHA"}.
 {"Incorrect data form","Εσφαλμένη φόρμα δεδομένων"}.
 {"Incorrect password","Εσφαλμένος κωδικός πρόσβασης"}.
@@ -222,7 +202,6 @@
 {"July","Ιούλιος"}.
 {"June","Ιούνιος"}.
 {"Just created","Μόλις δημιουργήθηκε"}.
-{"Label:","Ετικέτα:"}.
 {"Last Activity","Τελευταία Δραστηριότητα"}.
 {"Last login","Τελευταία σύνδεση"}.
 {"Last message","Τελευταίο μήνυμα"}.
@@ -230,9 +209,7 @@
 {"Last year","Πέρυσι"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Τα ψηφία μικρότερης αξίας του αθροίσματος SHA-256 του κειμένου θα έπρεπε να ισούνται με την δεκαεξαδική ετικέτα"}.
 {"leaves the room","εγκαταλείπει την αίθουσα"}.
-{"List of rooms","Κατάλογος αιθουσών"}.
 {"Logging","Καταγραφή"}.
-{"Low level update script","Προγράμα ενημέρωσης χαμηλού επίπεδου"}.
 {"Make participants list public","Κάντε δημόσιο τον κατάλογο συμμετεχόντων"}.
 {"Make room CAPTCHA protected","Κάντε την αίθουσα προστατεύομενη με CAPTCHA"}.
 {"Make room members-only","Κάντε την αίθουσα μόνο για μέλη"}.
@@ -249,11 +226,8 @@
 {"Maximum number of items to persist","Μέγιστος αριθμός μόνιμων στοιχείων"}.
 {"Maximum Number of Occupants","Μέγιστος αριθμός συμμετεχόντων"}.
 {"May","Μάιος"}.
-{"Members not added (inexistent vhost!): ","Τα μέλη δεν προστέθηκαν (ανύπαρκτος vhost!): "}.
 {"Membership is required to enter this room","Απαιτείται αίτηση συμετοχής για είσοδο σε αυτή την αίθουσα"}.
-{"Members:","Μέλη:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Απομνημονεύστε τον κωδικό πρόσβασής σας ή γράψτε τον σε χαρτί που βρίσκεται σε ασφαλές μέρος. Στο XMPP δεν υπάρχει αυτοματοποιημένος τρόπος ανάκτησης του κωδικού πρόσβασής σας εάν τον ξεχάσετε."}.
-{"Memory","Μνήμη"}.
 {"Mere Availability in XMPP (No Show Value)","Διαθεσιμότητα στο XMPP (Χωρίς ένδειξη)"}.
 {"Message body","Περιεχόμενο μηνύματος"}.
 {"Message not found in forwarded payload","Δεν βρέθηκε μήνυμα στον προωθημένο φόρτο εργασίας"}.
@@ -265,15 +239,12 @@
 {"Moderator privileges required","Aπαιτούνται προνόμια επόπτου"}.
 {"Moderators Only","Επόπτες μόμον"}.
 {"Moderator","Επόπτης"}.
-{"Modified modules","Τροποποιημένα modules"}.
 {"Module failed to handle the query","Το module απέτυχε να χειριστεί το ερώτημα"}.
 {"Monday","Δευτέρα"}.
 {"Multicast","Πολλαπλή διανομή (Multicast)"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Πολλαπλά στοιχεία <item/> δεν επιτρέπονται από το RFC6121"}.
 {"Multi-User Chat","Συνομιλία με πολλούς χρήστες"}.
-{"Name in the rosters where this group will be displayed","Όνομα στις λίστες όπου αυτή η ομάδα θα εμφανίζεται"}.
 {"Name","Όνομα"}.
-{"Name:","Όνομα:"}.
 {"Natural Language for Room Discussions","Μητρική Γλώσσα για τις Συζητήσεις Αιθουσών"}.
 {"Natural-Language Room Name","Αίθουσα Μητρικής Γλώσσας"}.
 {"Neither 'jid' nor 'nick' attribute found","Δεν βρέθηκε κανένα χαρακτηριστικό 'jid' ούτε 'nick'"}.
@@ -335,14 +306,10 @@
 {"Occupants are allowed to invite others","Οι συμμετέχοντες μπορούν να προσκαλέσουν και άλλους"}.
 {"Occupants May Change the Subject","Επιτρέψτε στους χρήστες να αλλάζουν το Θέμα"}.
 {"October","Οκτώβριος"}.
-{"Offline Messages","Χωρίς Σύνδεση Μηνύματα"}.
-{"Offline Messages:","Χωρίς Σύνδεση Μηνύματα:"}.
 {"OK","Εντάξει"}.
 {"Old Password:","Παλαιός κωδικός πρόσβασης:"}.
-{"Online Users:","Online Χρήστες:"}.
 {"Online Users","Συνδεμένοι χρήστες"}.
 {"Online","Συνδεδεμένο"}.
-{"Only admins can see this","Μόνον οι διαχειριστές μπορούν να το δουν αυτό"}.
 {"Only collection node owners may associate leaf nodes with the collection","Μόνον οι ιδιοκτήτες των κόμβων μπορούν να συσχετίσουν leaf nodes με την Συλλογή"}.
 {"Only deliver notifications to available users","Παράδοση ειδοποιήσεων μόνο σε διαθέσιμους χρήστες"}.
 {"Only <enable/> or <disable/> tags are allowed","Επιτρέπονται μόνο tags <enable /> ή <disable />"}.
@@ -360,10 +327,8 @@
 {"Organization Name","Όνομα Οργανισμού"}.
 {"Organization Unit","Μονάδα Οργανισμού"}.
 {"Outgoing s2s Connections","Εξερχόμενες S2S Συνδέσεις"}.
-{"Outgoing s2s Connections:","Εξερχόμενες S2S Συνδέσεις:"}.
 {"Owner privileges required","Aπαιτούνται προνόμια ιδιοκτήτη"}.
 {"Packet relay is denied by service policy","Απαγορεύεται η αναμετάδοση πακέτων, λόγω της τακτικής Παροχής Υπηρεσιών"}.
-{"Packet","Πακέτο"}.
 {"Participant","Συμμετέχων"}.
 {"Password Verification","Επαλήθευση κωδικού πρόσβασης"}.
 {"Password Verification:","Επαλήθευση κωδικού πρόσβασης:"}.
@@ -371,7 +336,6 @@
 {"Password:","Κωδικός πρόσβασης:"}.
 {"Path to Dir","Τοποθεσία κατάλογου αρχείων"}.
 {"Path to File","Τοποθεσία Αρχείου"}.
-{"Pending","Εκκρεμεί"}.
 {"Period: ","Περίοδος: "}.
 {"Persist items to storage","Μόνιμη αποθήκευση στοιχείων"}.
 {"Persistent","Μόνιμη"}.
@@ -405,20 +369,15 @@
 {"Receive notification of new nodes only","Λάβετε ειδοποίηση μόνο από νέους κόμβους"}.
 {"Recipient is not in the conference room","Ο παραλήπτης δεν είναι στην αίθουσα συνεδριάσεων"}.
 {"Register an XMPP account","Καταχωρείστε έναν XMPP λογαριασμό χρήστη"}.
-{"Registered Users","Εγγεγραμμένοι Χρήστες"}.
-{"Registered Users:","Εγγεγραμμένοι Χρήστες:"}.
 {"Register","Καταχωρήστε"}.
 {"Remote copy","Εξ αποστάσεως αντίγραφο"}.
-{"Remove All Offline Messages","Αφαίρεση όλων των μηνυμάτων χωρίς σύνδεση"}.
 {"Remove User","Αφαίρεση χρήστη"}.
-{"Remove","Αφαίρεση"}.
 {"Replaced by new connection","Αντικαταστάθηκε από μια νέα σύνδεση"}.
 {"Request has timed out","Το αίτημα έληξε"}.
 {"Request is ignored","Το αίτημα θα αγνοηθεί"}.
 {"Requested role","Αιτούμενος ρόλος"}.
 {"Resources","Πόροι"}.
 {"Restart Service","Επανεκκίνηση Υπηρεσίας"}.
-{"Restart","Επανεκκίνηση"}.
 {"Restore Backup from File at ","Επαναφορά Αντιγράφου Ασφαλείας από αρχείο στο "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Επαναφορά δυαδικού αντιγράφου ασφαλείας μετά την επόμενη επανεκκίνηση του ejabberd (απαιτεί λιγότερη μνήμη):"}.
 {"Restore binary backup immediately:","Επαναφορά δυαδικού αντιγράφου ασφαλείας αμέσως:"}.
@@ -434,20 +393,15 @@
 {"Room terminates","Τερματισμός Αίθουσας"}.
 {"Room title","Τίτλος Αίθουσας"}.
 {"Roster groups allowed to subscribe","Ομάδες Καταλόγου Επαφών μπορούν να εγγραφούν"}.
-{"Roster of ~ts","Καταλόγου Επαφών του ~ts"}.
 {"Roster size","Μέγεθος Καταλόγου Επαφών"}.
-{"Roster:","Καταλόγος Επαφών:"}.
-{"RPC Call Error","Σφάλμα RPC Κλήσης"}.
 {"Running Nodes","Ενεργοί Κόμβοι"}.
 {"~s invites you to the room ~s","~s Σας καλεί στο δωμάτιο ~s"}.
 {"Saturday","Σάββατο"}.
-{"Script check","Script ελέγχου"}.
 {"Search from the date","Αναζήτηση από της"}.
 {"Search Results for ","Αποτελέσματα αναζήτησης για "}.
 {"Search the text","Αναζήτηση του κειμένου"}.
 {"Search until the date","Αναζήτηση μέχρι της"}.
 {"Search users in ","Αναζήτηση χρηστών στο "}.
-{"Select All","Επιλογή όλων"}.
 {"Send announcement to all online users on all hosts","Αποστολή ανακοίνωσης σε όλους τους συνδεδεμένους χρήστες σε όλους τους κεντρικούς υπολογιστές"}.
 {"Send announcement to all online users","Αποστολή ανακοίνωσης σε όλους τους συνδεδεμένους χρήστες"}.
 {"Send announcement to all users on all hosts","Αποστολή ανακοίνωσης σε όλους τους χρήστες σε όλους τους κεντρικούς υπολογιστές"}.
@@ -469,23 +423,17 @@
 {"Specify the publisher model","Καθορίστε το μοντέλο εκδότη"}.
 {"Stanza ID","Ταυτότητα Δωματίου"}.
 {"Statically specify a replyto of the node owner(s)","Προσδιορίστε (στατικά) το Απάντηση Προς του ιδιοκτήτη-ων του κόμβου"}.
-{"Statistics of ~p","Στατιστικές του ~p"}.
-{"Statistics","Στατιστικές"}.
 {"Stopped Nodes","Σταματημένοι Κόμβοι"}.
-{"Stop","Σταμάτημα"}.
-{"Storage Type","Τύπος Αποθήκευσης"}.
 {"Store binary backup:","Αποθηκεύση δυαδικού αντιγράφου ασφαλείας:"}.
 {"Store plain text backup:","Αποθηκεύση αντιγράφου ασφαλείας σε αρχείο κειμένου:"}.
 {"Stream management is already enabled","Η διαχείριση Ροών επιτρέπεται ηδη"}.
 {"Stream management is not enabled","Η διαχείριση Ροών δεν είναι ενεργοποιημένη"}.
 {"Subject","Θέμα"}.
 {"Submitted","Υποβλήθηκε"}.
-{"Submit","Υποβολή"}.
 {"Subscriber Address","Διεύθυνση Συνδρομητή"}.
 {"Subscribers may publish","Οι συνδρομητές μπορούν να δημοσιεύσουν"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","Τα αιτήματα για συνδρομή πρέπει να εγκριθούν και μόνο οι συνδρομητές μπορούν να λάβουν αντικείμενα"}.
 {"Subscriptions are not allowed","Οι συνδρομές δεν επιτρέπονται"}.
-{"Subscription","Συνδρομή"}.
 {"Sunday","Κυριακή"}.
 {"Text associated with a picture","Το κείμενο σχετίστηκε με μία εικόνα"}.
 {"Text associated with a sound","Το κείμενο σχετίστηκε με έναν ήχο"}.
@@ -544,7 +492,6 @@
 {"Thursday","Πέμπτη"}.
 {"Time delay","Χρόνος καθυστέρησης"}.
 {"Timed out waiting for stream resumption","Υπερέβην το όριο αναμονής για επανασύνδεση της Ροής"}.
-{"Time","Χρόνος"}.
 {"To register, visit ~s","Για να εγγραφείτε, επισκεφθείτε το ~s"}.
 {"To ~ts","Προς ~ts"}.
 {"Token TTL","Διακριτικό TTL"}.
@@ -557,13 +504,7 @@
 {"Too many receiver fields were specified","Πάρα πολλά πεδία δεκτών προσδιορίστηκαν"}.
 {"Too many unacked stanzas","Πάρα πολλές μη αναγνωρισμένες stanzas"}.
 {"Too many users in this conference","Πάρα πολλοί χρήστες σε αυτή τη διάσκεψη"}.
-{"Total rooms","Συνολικές Αίθουσες σύνεδριασης"}.
-{"To","Προς"}.
 {"Traffic rate limit is exceeded","Υπέρφορτωση"}.
-{"Transactions Aborted:","Αποτυχημένες συναλλαγές:"}.
-{"Transactions Committed:","Παραδοθείσες συναλλαγές:"}.
-{"Transactions Logged:","Καταγεγραμμένες συναλλαγές:"}.
-{"Transactions Restarted:","Επανειλημμένες συναλλαγές:"}.
 {"~ts's Offline Messages Queue","~ts's Χωρίς Σύνδεση Μηνύματα"}.
 {"Tuesday","Τρίτη"}.
 {"Unable to generate a CAPTCHA","Αδύνατη η δημιουργία CAPTCHA"}.
@@ -573,16 +514,10 @@
 {"Unexpected error condition: ~p","Απροσδόκητες συνθήκες σφάλματος: ~p"}.
 {"Unregister an XMPP account","Καταργήση λογαριασμού XMPP"}.
 {"Unregister","Καταργήση εγγραφής"}.
-{"Unselect All","Αποεπιλογή όλων"}.
 {"Unsupported <index/> element","Μη υποστηριζόμενο στοιχείο <index />"}.
 {"Unsupported version","Μη υποστηριζόμενη έκδοση"}.
 {"Update message of the day (don't send)","Ενημέρωση μηνύματος ημέρας (χωρίς άμεση αποστολή)"}.
 {"Update message of the day on all hosts (don't send)","Ενημέρωση μηνύματος ημέρας σε όλους τους κεντρικούς υπολογιστές (χωρίς άμεση αποστολή)"}.
-{"Update plan","Σχέδιο ενημέρωσης"}.
-{"Update ~p","Ενημέρωση ~p"}.
-{"Update script","Προγράμα ενημέρωσης"}.
-{"Update","Ενημέρωση"}.
-{"Uptime:","Χρόνος σε λειτουργία:"}.
 {"URL for Archived Discussion Logs","URL αρχειοθετημένων καταγραφών συζητήσεων"}.
 {"User already exists","Ο χρήστης υπάρχει ήδη"}.
 {"User JID","JID Χρήστη"}.
@@ -597,15 +532,12 @@
 {"Users Last Activity","Τελευταία Δραστηριότητα Χρήστη"}.
 {"Users","Χρήστες"}.
 {"User","Χρήστης"}.
-{"Validate","Επαληθεύστε"}.
 {"Value 'get' of 'type' attribute is not allowed","Η τιμή 'get' του 'type' δεν επιτρέπεται"}.
 {"Value of '~s' should be boolean","Η τιμή του '~s' πρέπει να είναι boolean"}.
 {"Value of '~s' should be datetime string","Η τιμή του '~s' θα πρέπει να είναι χρονοσειρά"}.
 {"Value of '~s' should be integer","Η τιμή του '~s' θα πρέπει να είναι ακέραιος"}.
 {"Value 'set' of 'type' attribute is not allowed","Δεν επιτρέπεται η παράμετρος 'set' του 'type'"}.
 {"vCard User Search","vCard Αναζήτηση χρηστών"}.
-{"View Queue","Εμφάνιση λίστας αναμονής"}.
-{"View Roster","Εμφάνιση λίστας Επαφών"}.
 {"Virtual Hosts","Eικονικοί κεντρικοί υπολογιστές"}.
 {"Visitors are not allowed to change their nicknames in this room","Οι επισκέπτες δεν επιτρέπεται να αλλάξουν τα ψευδώνυμα τους σε αυτή την αίθουσα"}.
 {"Visitors are not allowed to send messages to all occupants","Οι επισκέπτες δεν επιτρέπεται να στείλουν μηνύματα σε όλους τους συμμετέχοντες"}.

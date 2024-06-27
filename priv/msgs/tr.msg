@@ -8,8 +8,6 @@
 {"A password is required to enter this room","Bu odaya girmek için parola gerekiyor"}.
 {"Access denied by service policy","Servis politikası gereği erişim engellendi"}.
 {"Action on user","Kullanıcıya uygulanacak eylem"}.
-{"Add Jabber ID","Jabber ID'si Ekle"}.
-{"Add New","Yeni Ekle"}.
 {"Add User","Kullanıcı Ekle"}.
 {"Administration of ","Yönetim : "}.
 {"Administration","Yönetim"}.
@@ -51,20 +49,16 @@
 {"Conference room does not exist","Konferans odası bulunamadı"}.
 {"Configuration of room ~s","~s odasının ayarları"}.
 {"Configuration","Ayarlar"}.
-{"Connected Resources:","Bağlı Kaynaklar:"}.
 {"Country","Ülke"}.
-{"CPU Time:","İşlemci Zamanı:"}.
 {"Database Tables Configuration at ","Veritabanı Tablo Ayarları : "}.
 {"Database","Veritabanı"}.
 {"December","Aralık"}.
 {"Default users as participants","Kullanıcılar öntanımlı olarak katılımcı olsun"}.
 {"Delete message of the day on all hosts","Tüm sunuculardaki günün mesajını sil"}.
 {"Delete message of the day","Günün mesajını sil"}.
-{"Delete Selected","Seçilenleri Sil"}.
 {"Delete User","Kullanıcıyı Sil"}.
 {"Deliver event notifications","Olay uyarıları gönderilsin"}.
 {"Deliver payloads with event notifications","Yükleri (payload) olay uyarıları ile beraber gönder"}.
-{"Description:","Tanım:"}.
 {"Disc only copy","Sadece disk kopyala"}.
 {"Dump Backup to Text File at ","Metin Dosyasına Döküm Alarak Yedekle : "}.
 {"Dump to Text File","Metin Dosyasına Döküm Al"}.
@@ -75,7 +69,6 @@
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams modülü"}.
 {"ejabberd vCard module","ejabberd vCard modülü"}.
 {"ejabberd Web Admin","ejabberd Web Yöneticisi"}.
-{"Elements","Elementler"}.
 {"Email","E-posta"}.
 {"Enable logging","Kayıt tutma özelliğini aç"}.
 {"End User Session","Kullanıcı Oturumunu Kapat"}.
@@ -85,7 +78,6 @@
 {"Enter path to jabberd14 spool file","jabberd14 spool dosyası için yol giriniz"}.
 {"Enter path to text file","Metin dosyasının yolunu giriniz"}.
 {"Enter the text you see","Gördüğünüz metni giriniz"}.
-{"Error","Hata"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","CAPTCHA doğrulamasını şu Jabber ID'ler için yapma"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Sunucudaki tüm kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa aktar:"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Bir sunucudaki kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa aktar:"}.
@@ -93,21 +85,17 @@
 {"Family Name","Soyisim"}.
 {"February","Şubat"}.
 {"Friday","Cuma"}.
-{"From","Kimden"}.
 {"Full Name","Tam İsim"}.
 {"Get Number of Online Users","Bağlı Kullanıcı Sayısını Al"}.
 {"Get Number of Registered Users","Kayıtlı Kullanıcı Sayısını Al"}.
 {"Get User Last Login Time","Kullanıcı Son Giriş Zamanınlarını Al"}.
-{"Get User Password","Kullanıcı Parolasını Al"}.
 {"Get User Statistics","Kullanıcı İstatistiklerini Al"}.
 {"Grant voice to this person?","Bu kişiye ses verelim mi?"}.
-{"Groups","Gruplar"}.
 {"has been banned","odaya girmesi yasaklandı"}.
 {"has been kicked because of a system shutdown","sistem kapandığından dolayı atıldı"}.
 {"has been kicked because of an affiliation change","ilişki değişikliğinden dolayı atıldı"}.
 {"has been kicked because the room has been changed to members-only","oda üyelere-özel hale getirildiğinden dolayı atıldı"}.
 {"has been kicked","odadan atıldı"}.
-{"Host","Sunucu"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Eğer burada CAPTCHA resmini göremiyorsanız, web sayfasını ziyaret edin."}.
 {"Import Directory","Dizini İçe Aktar"}.
 {"Import File","Dosyayı İçe Aktar"}.
@@ -133,7 +121,6 @@
 {"Last month","Geçen ay"}.
 {"Last year","Geçen yıl"}.
 {"leaves the room","odadan ayrıldı"}.
-{"Low level update script","Düşük seviye güncelleme betiği"}.
 {"Make participants list public","Katılımcı listesini herkese açık hale getir"}.
 {"Make room CAPTCHA protected","Odayı insan doğrulaması (captcha) korumalı hale getir"}.
 {"Make room members-only","Odayı sadece üyelere açık hale getir"}.
@@ -146,16 +133,12 @@
 {"Maximum Number of Occupants","Odada En Fazla Bulunabilecek Kişi Sayısı"}.
 {"May","Mayıs"}.
 {"Membership is required to enter this room","Bu odaya girmek için üyelik gerekiyor"}.
-{"Members:","Üyeler:"}.
-{"Memory","Bellek"}.
 {"Message body","Mesajın gövdesi"}.
 {"Middle Name","Ortanca İsim"}.
 {"Minimum interval between voice requests (in seconds)","Ses istekleri arasında olabilecek en az aralık (saniye olarak)"}.
 {"Moderator privileges required","Moderatör yetkileri gerekli"}.
-{"Modified modules","Değişen modüller"}.
 {"Monday","Pazartesi"}.
 {"Name","İsim"}.
-{"Name:","İsim:"}.
 {"Never","Asla"}.
 {"New Password:","Yeni Parola:"}.
 {"Nickname Registration at ","Takma İsim Kaydı : "}.
@@ -177,12 +160,9 @@
 {"Number of online users","Bağlı kullanıcı sayısı"}.
 {"Number of registered users","Kayıtlı kullanıcı sayısı"}.
 {"October","Ekim"}.
-{"Offline Messages","Çevirim-dışı Mesajlar"}.
-{"Offline Messages:","Çevirim-dışı Mesajlar:"}.
 {"OK","Tamam"}.
 {"Old Password:","Eski Parola:"}.
 {"Online Users","Bağlı Kullanıcılar"}.
-{"Online Users:","Bağlı Kullanıcılar:"}.
 {"Online","Bağlı"}.
 {"Only deliver notifications to available users","Uyarıları sadece durumu uygun kullanıcılara ulaştır"}.
 {"Only moderators and participants are allowed to change the subject in this room","Sadece moderatörlerin ve katılımcıların bu odanın konusunu değiştirmesine izin veriliyor"}.
@@ -194,16 +174,13 @@
 {"Organization Name","Kurum İsmi"}.
 {"Organization Unit","Kurumun İlgili Birimi"}.
 {"Outgoing s2s Connections","Giden s2s Bağlantıları"}.
-{"Outgoing s2s Connections:","Giden s2s Bağlantıları:"}.
 {"Owner privileges required","Sahip yetkileri gerekli"}.
-{"Packet","Paket"}.
 {"Password Verification","Parola Doğrulaması"}.
 {"Password Verification:","Parola Doğrulaması:"}.
 {"Password","Parola"}.
 {"Password:","Parola:"}.
 {"Path to Dir","Dizinin Yolu"}.
 {"Path to File","Dosyanın Yolu"}.
-{"Pending","Sıra Bekleyen"}.
 {"Period: ","Periyot:"}.
 {"Persist items to storage","Öğeleri depoda kalıcı hale getir"}.
 {"Ping","Ping"}.
@@ -220,17 +197,12 @@
 {"RAM copy","RAM kopyala"}.
 {"Really delete message of the day?","Günün mesajını silmek istediğinize emin misiniz?"}.
 {"Recipient is not in the conference room","Alıcı konferans odasında değil"}.
-{"Registered Users","Kayıtlı Kullanıcılar"}.
-{"Registered Users:","Kayıtlı Kullanıcılar:"}.
 {"Register","Kayıt Ol"}.
 {"Remote copy","Uzak kopyala"}.
-{"Remove All Offline Messages","Tüm Çevirim-dışı Mesajları Kaldır"}.
 {"Remove User","Kullanıcıyı Kaldır"}.
-{"Remove","Kaldır"}.
 {"Replaced by new connection","Eski bağlantı yenisi ile değiştirildi"}.
 {"Resources","Kaynaklar"}.
 {"Restart Service","Servisi Tekrar Başlat"}.
-{"Restart","Tekrar Başlat"}.
 {"Restore Backup from File at ","Dosyadaki Yedekten Geri Al : "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","ejabberd'nin bir sonraki tekrar başlatılışında ikili yedekten geri al (daha az bellek gerektirir)"}.
 {"Restore binary backup immediately:","Hemen ikili yedekten geri al:"}.
@@ -243,10 +215,8 @@
 {"Room title","Oda başlığı"}.
 {"Roster groups allowed to subscribe","Üye olunmasına izin verilen kontak listesi grupları"}.
 {"Roster size","İsim listesi boyutu"}.
-{"RPC Call Error","RPC Çağrı Hatası"}.
 {"Running Nodes","Çalışan Düğümler"}.
 {"Saturday","Cumartesi"}.
-{"Script check","Betik kontrolü"}.
 {"Search Results for ","Arama sonuçları : "}.
 {"Search users in ","Kullanıcılarda arama yap : "}.
 {"Send announcement to all online users on all hosts","Duyuruyu tüm sunuculardaki tüm bağlı kullanıcılara yolla"}.
@@ -264,18 +234,12 @@
 {"Specify the access model","Erişim modelini belirtiniz"}.
 {"Specify the event message type","Olay mesaj tipini belirtiniz"}.
 {"Specify the publisher model","Yayıncı modelini belirtiniz"}.
-{"Statistics of ~p","~p istatistikleri"}.
-{"Statistics","İstatistikler"}.
-{"Stop","Durdur"}.
 {"Stopped Nodes","Durdurulmuş Düğümler"}.
-{"Storage Type","Depolama Tipi"}.
 {"Store binary backup:","İkili yedeği sakla:"}.
 {"Store plain text backup:","Düz metin yedeği sakla:"}.
 {"Subject","Konu"}.
-{"Submit","Gönder"}.
 {"Submitted","Gönderilenler"}.
 {"Subscriber Address","Üye Olanın Adresi"}.
-{"Subscription","Üyelik"}.
 {"Sunday","Pazar"}.
 {"That nickname is already in use by another occupant","Takma isim odanın başka bir sakini tarafından halihazırda kullanımda"}.
 {"That nickname is registered by another person","O takma isim başka biri tarafından kaydettirilmiş"}.
@@ -289,24 +253,14 @@
 {"This room is not anonymous","Bu oda anonim değil"}.
 {"Thursday","Perşembe"}.
 {"Time delay","Zaman gecikmesi"}.
-{"Time","Zaman"}.
-{"To","Kime"}.
 {"Too many CAPTCHA requests","Çok fazla CAPTCHA isteği"}.
 {"Traffic rate limit is exceeded","Trafik oran sınırı aşıldı"}.
-{"Transactions Aborted:","İptal Edilen Hareketler (Transactions):"}.
-{"Transactions Committed:","Tamamlanan Hareketler (Transactions Committed):"}.
-{"Transactions Logged:","Kaydı Tutulan Hareketler (Transactions):"}.
-{"Transactions Restarted:","Tekrar Başlatılan Hareketler (Transactions):"}.
 {"Tuesday","Salı"}.
 {"Unable to generate a CAPTCHA","İnsan doğrulaması (CAPTCHA) oluşturulamadı"}.
 {"Unauthorized","Yetkisiz"}.
 {"Unregister","Kaydı Sil"}.
 {"Update message of the day (don't send)","Günün mesajını güncelle (gönderme)"}.
 {"Update message of the day on all hosts (don't send)","Tüm sunuculardaki günün mesajını güncelle (gönderme)"}.
-{"Update plan","Planı güncelle"}.
-{"Update script","Betiği Güncelle"}.
-{"Update","GÜncelle"}.
-{"Uptime:","Hizmet Süresi:"}.
 {"User JID","Kullanıcı JID"}.
 {"User Management","Kullanıcı Yönetimi"}.
 {"User","Kullanıcı"}.
@@ -314,7 +268,6 @@
 {"Users are not allowed to register accounts so quickly","Kullanıcıların bu kadar hızlı hesap açmalarına izin verilmiyor"}.
 {"Users Last Activity","Kullanıcıların Son Aktiviteleri"}.
 {"Users","Kullanıcılar"}.
-{"Validate","Geçerli"}.
 {"vCard User Search","vCard Kullanıcı Araması"}.
 {"Virtual Hosts","Sanal Sunucuları"}.
 {"Visitors are not allowed to change their nicknames in this room","Bu odada ziyaretçilerin takma isimlerini değiştirmesine izin verilmiyor"}.

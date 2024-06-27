@@ -9,8 +9,6 @@
 {"Accept","קבל"}.
 {"Access denied by service policy","גישה נדחתה על ידי פוליסת שירות"}.
 {"Action on user","פעולה על משתמש"}.
-{"Add Jabber ID","הוסף מזהה Jabber"}.
-{"Add New","הוסף חדש"}.
 {"Add User","הוסף משתמש"}.
 {"Administration of ","ניהול של "}.
 {"Administration","הנהלה"}.
@@ -58,22 +56,17 @@
 {"Conference room does not exist","חדר ועידה לא קיים"}.
 {"Configuration of room ~s","תצורת חדר ~s"}.
 {"Configuration","תצורה"}.
-{"Connected Resources:","משאבים מחוברים:"}.
 {"Country","ארץ"}.
-{"CPU Time:","זמן מחשב (CPU):"}.
 {"Database failure","כשל מסד נתונים"}.
-{"Database Tables at ~p","טבלאות מסד נתונים אצל ~p"}.
 {"Database Tables Configuration at ","תצורת טבלאות מסד נתונים אצל "}.
 {"Database","מסד נתונים"}.
 {"December","דצמבר"}.
 {"Default users as participants","משתמשים שגרתיים כמשתתפים"}.
 {"Delete message of the day on all hosts","מחק את בשורת היום בכל המארחים"}.
 {"Delete message of the day","מחק את בשורת היום"}.
-{"Delete Selected","מחק נבחרות"}.
 {"Delete User","מחק משתמש"}.
 {"Deliver event notifications","מסור התראות אירוע"}.
 {"Deliver payloads with event notifications","מסור מטעני ייעוד (מטע״ד) יחד עם התראות אירוע"}.
-{"Description:","תיאור:"}.
 {"Disc only copy","העתק של תקליטור בלבד"}.
 {"Dump Backup to Text File at ","השלך גיבוי לקובץ טקסט אצל "}.
 {"Dump to Text File","השלך לקובץ טקסט"}.
@@ -85,7 +78,6 @@
 {"ejabberd SOCKS5 Bytestreams module","מודול SOCKS5 Bytestreams של ejabberd"}.
 {"ejabberd vCard module","מודול vCard של ejabberd"}.
 {"ejabberd Web Admin","מנהל רשת ejabberd"}.
-{"Elements","אלמנטים"}.
 {"Email","דוא״ל"}.
 {"Enable logging","אפשר רישום פעילות"}.
 {"Enable message archiving","אפשר אחסון הודעות"}.
@@ -96,7 +88,6 @@
 {"Enter path to jabberd14 spool file","הזן נתיב לקובץ סליל (spool file) של jabberd14"}.
 {"Enter path to text file","הזן נתיב לקובץ טקסט"}.
 {"Enter the text you see","הזן את הכיתוב שאתה רואה"}.
-{"Error","שגיאה"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","הוצא כתובות Jabber מתוך אתגר CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","יצא את כל הטבלאות בתור שאילתות SQL לתוך קובץ:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","יצא מידע של כל המשתמשים שבתוך שרת זה לתוך קבצי PIEFXIS ‏(XEP-0227):"}.
@@ -109,24 +100,19 @@
 {"February","פברואר"}.
 {"File larger than ~w bytes","קובץ גדול יותר משיעור של ~w בייטים"}.
 {"Friday","יום שישי"}.
-{"From","מאת"}.
 {"Full Name","שם מלא"}.
 {"Get Number of Online Users","השג מספר של משתמשים מקוונים"}.
 {"Get Number of Registered Users","השג מספר של משתמשים רשומים"}.
 {"Get User Last Login Time","השג זמן כניסה אחרון של משתמש"}.
-{"Get User Password","השג סיסמת משתמש"}.
 {"Get User Statistics","השג סטטיסטיקת משתמש"}.
 {"Given Name","שם פרטי"}.
 {"Grant voice to this person?","להעניק ביטוי לאישיות זו?"}.
-{"Groups","קבוצות"}.
-{"Group","קבוצה"}.
 {"has been banned","נאסר/ה"}.
 {"has been kicked because of a system shutdown","נבעט/ה משום כיבוי מערכת"}.
 {"has been kicked because of an affiliation change","נבעט/ה משום שינוי סינוף"}.
 {"has been kicked because the room has been changed to members-only","נבעט/ה משום שהחדר שונה אל חברים-בלבד"}.
 {"has been kicked","נבעט/ה"}.
 {"Host unknown","מארח לא ידוע"}.
-{"Host","מארח"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","אם אינך רואה תמונת CAPTCHA כאן, בקר בעמוד רשת."}.
 {"Import Directory","ייבוא מדור"}.
 {"Import File","ייבוא קובץ"}.
@@ -137,7 +123,6 @@
 {"Import Users from Dir at ","ייבוא משתמשים מתוך מדור אצל "}.
 {"Import Users From jabberd14 Spool Files","יבא משתמשים מתוך קבצי סליל (Spool Files) של jabberd14"}.
 {"Improper message type","טיפוס הודעה לא מתאים"}.
-{"Incoming s2s Connections:","חיבורי s2s נכנסים:"}.
 {"Incorrect CAPTCHA submit","נשלחה CAPTCHA שגויה"}.
 {"Incorrect data form","טופס מידע לא תקין"}.
 {"Incorrect password","מילת מעבר שגויה"}.
@@ -158,8 +143,6 @@
 {"Last month","חודש אחרון"}.
 {"Last year","שנה אחרונה"}.
 {"leaves the room","עוזב/ת את החדר"}.
-{"List of rooms","רשימה של חדרים"}.
-{"Low level update script","תסריט עדכון Low level"}.
 {"Make participants list public","הפוך רשימת משתתפים לפומבית"}.
 {"Make room CAPTCHA protected","הפוך חדר לחדר מוגן CAPTCHA"}.
 {"Make room members-only","הפוך חדר לחדר עבור חברים-בלבד"}.
@@ -173,20 +156,16 @@
 {"Maximum Number of Occupants","מספר מרבי של נוכחים"}.
 {"May","מאי"}.
 {"Membership is required to enter this room","נדרשת חברות כדי להיכנס אל חדר זה"}.
-{"Members:","חברים:"}.
-{"Memory","זיכרון"}.
 {"Message body","גוף הודעה"}.
 {"Middle Name","שם אמצעי"}.
 {"Minimum interval between voice requests (in seconds)","תדירות מינימלית בין בקשות ביטוי (בשניות)"}.
 {"Moderator privileges required","נדרשות הרשאות אחראי"}.
 {"Moderator","אחראי"}.
-{"Modified modules","מודולים שהותאמו"}.
 {"Module failed to handle the query","מודול נכשל לטפל בשאילתא"}.
 {"Monday","יום שני"}.
 {"Multicast","שידור מרובב"}.
 {"Multi-User Chat","שיחה מרובת משתמשים"}.
 {"Name","שם"}.
-{"Name:","שם:"}.
 {"Never","אף פעם"}.
 {"New Password:","סיסמה חדשה:"}.
 {"Nickname Registration at ","רישום שם כינוי אצל "}.
@@ -223,12 +202,9 @@
 {"Number of online users","מספר של משתמשים מקוונים"}.
 {"Number of registered users","מספר של משתמשים רשומים"}.
 {"October","אוקטובר"}.
-{"Offline Messages","הודעות לא מקוונות"}.
-{"Offline Messages:","הודעות לא מקוונות:"}.
 {"OK","אישור"}.
 {"Old Password:","סיסמה ישנה:"}.
 {"Online Users","משתמשים מקוונים"}.
-{"Online Users:","משתמשים מקוונים:"}.
 {"Online","מקוון"}.
 {"Only deliver notifications to available users","מסור התראות למשתמשים זמינים בלבד"}.
 {"Only <enable/> or <disable/> tags are allowed","רק תגיות <enable/> או <disable/> הינן מורשות"}.
@@ -242,9 +218,7 @@
 {"Organization Name","שם ארגון"}.
 {"Organization Unit","יחידת איגוד"}.
 {"Outgoing s2s Connections","חיבורי s2s יוצאים"}.
-{"Outgoing s2s Connections:","חיבורי s2s יוצאים:"}.
 {"Owner privileges required","נדרשות הרשאות בעלים"}.
-{"Packet","חבילת מידע"}.
 {"Participant","משתתף"}.
 {"Password Verification","אימות סיסמה"}.
 {"Password Verification:","אימות סיסמה:"}.
@@ -252,7 +226,6 @@
 {"Password:","סיסמה:"}.
 {"Path to Dir","נתיב למדור"}.
 {"Path to File","נתיב לקובץ"}.
-{"Pending","ממתינות"}.
 {"Period: ","משך זמן: "}.
 {"Persist items to storage","פריטים קבועים לאחסון"}.
 {"Ping query is incorrect","שאילתת פינג הינה שגויה"}.
@@ -270,17 +243,12 @@
 {"RAM copy","העתק RAM"}.
 {"Really delete message of the day?","באמת למחוק את בשורת היום?"}.
 {"Recipient is not in the conference room","מקבל אינו מצוי בחדר הועידה"}.
-{"Registered Users","משתמשים רשומים"}.
-{"Registered Users:","משתמשים רשומים:"}.
 {"Register","הרשם"}.
 {"Remote copy","העתק מרוחק"}.
-{"Remove All Offline Messages","הסר את כל ההודעות הלא מקוונות"}.
 {"Remove User","הסר משתמש"}.
-{"Remove","הסר"}.
 {"Replaced by new connection","הוחלף בחיבור חדש"}.
 {"Resources","משאבים"}.
 {"Restart Service","אתחל שירות"}.
-{"Restart","אתחל"}.
 {"Restore Backup from File at ","שחזר גיבוי מתוך קובץ אצל "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","שחזר גיבוי בינארי לאחר האתחול הבא של ejabberd (מצריך פחות זיכרון):"}.
 {"Restore binary backup immediately:","שחזר גיבוי בינארי לאלתר:"}.
@@ -294,10 +262,8 @@
 {"Room title","כותרת חדר"}.
 {"Roster groups allowed to subscribe","קבוצות רשימה מורשות להירשם"}.
 {"Roster size","גודל רשימה"}.
-{"RPC Call Error","שגיאת קריאת RPC"}.
 {"Running Nodes","צמתים מורצים"}.
 {"Saturday","יום שבת"}.
-{"Script check","בדיקת תסריט"}.
 {"Search Results for ","תוצאות חיפוש עבור "}.
 {"Search users in ","חיפוש משתמשים אצל "}.
 {"Send announcement to all online users on all hosts","שלח בשורה לכל המשתמשים המקוונים בכל המארחים"}.
@@ -315,19 +281,13 @@
 {"Specify the access model","ציין מודל גישה"}.
 {"Specify the event message type","ציין טיפוס הודעת אירוע"}.
 {"Specify the publisher model","ציין מודל פרסום"}.
-{"Statistics of ~p","סטטיסטיקות של ~p"}.
-{"Statistics","סטטיסטיקה"}.
 {"Stopped Nodes","צמתים שנפסקו"}.
-{"Stop","הפסק"}.
-{"Storage Type","טיפוס אחסון"}.
 {"Store binary backup:","אחסן גיבוי בינארי:"}.
 {"Store plain text backup:","אחסן גיבוי טקסט גלוי (plain text):"}.
 {"Subject","נושא"}.
 {"Submitted","נשלח"}.
-{"Submit","שלח"}.
 {"Subscriber Address","כתובת מנוי"}.
 {"Subscriptions are not allowed","הרשמות אינן מורשות"}.
-{"Subscription","הרשמה"}.
 {"Sunday","יום ראשון"}.
 {"That nickname is already in use by another occupant","שם כינוי זה כבר מצוי בשימוש על ידי נוכח אחר"}.
 {"That nickname is registered by another person","שם כינוי זה הינו רשום על ידי מישהו אחר"}.
@@ -341,7 +301,6 @@
 {"This room is not anonymous","חדר זה אינו אנונימי"}.
 {"Thursday","יום חמישי"}.
 {"Time delay","זמן שיהוי"}.
-{"Time","זמן"}.
 {"To register, visit ~s","כדי להירשם, בקרו ~s"}.
 {"Token TTL","סימן TTL"}.
 {"Too many active bytestreams","יותר מדי יחידות bytestream פעילות"}.
@@ -349,13 +308,7 @@
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","יותר מדי (~p) אימותים כושלים מתוך כתובת IP זו (~s). הכתובת תורשה לקבל גישה בשעה ~s UTC"}.
 {"Too many unacked stanzas","יותר מדי סטנזות בלי אישורי קבלה"}.
 {"Too many users in this conference","יותר מדי משתמשים בועידה זו"}.
-{"Total rooms","חדרים סה״כ"}.
-{"To","לכבוד"}.
 {"Traffic rate limit is exceeded","מגבלת שיעור תעבורה נחצתה"}.
-{"Transactions Aborted:","טרנזקציות שבוטלו:"}.
-{"Transactions Committed:","טרנזקציות שבוצעו:"}.
-{"Transactions Logged:","טרנזקציות שנרשמו:"}.
-{"Transactions Restarted:","טרנזקציות שהותחלו מחדש:"}.
 {"Tuesday","יום שלישי"}.
 {"Unable to generate a CAPTCHA","אין אפשרות להפיק CAPTCHA"}.
 {"Unauthorized","לא מורשה"}.
@@ -363,11 +316,6 @@
 {"Unregister","בטל רישום"}.
 {"Update message of the day (don't send)","עדכן את בשורת היום (אל תשלח)"}.
 {"Update message of the day on all hosts (don't send)","עדכן את בשורת היום בכל המארחים (אל תשלח)"}.
-{"Update plan","תכנית עדכון"}.
-{"Update ~p","עדכון ~p"}.
-{"Update script","תסריט עדכון"}.
-{"Update","עדכן"}.
-{"Uptime:","זמן פעילות:"}.
 {"User already exists","משתמש כבר קיים"}.
 {"User JID","‏JID משתמש"}.
 {"User (jid)","משתמש (jid)"}.
@@ -379,7 +327,6 @@
 {"Users Last Activity","פעילות משתמשים אחרונה"}.
 {"Users","משתמשים"}.
 {"User","משתמש"}.
-{"Validate","הענק תוקף"}.
 {"Value of '~s' should be boolean","ערך של '~s' צריך להיות boolean"}.
 {"Value of '~s' should be datetime string","ערך של '~s' צריך להיות מחרוזת datetime"}.
 {"Value of '~s' should be integer","ערך של '~s' צריך להיות integer"}.

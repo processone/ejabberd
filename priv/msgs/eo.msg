@@ -15,8 +15,6 @@
 {"Access model","Atingomodelo"}.
 {"Account doesn't exist","Konto ne ekzistas"}.
 {"Action on user","Ago je uzanto"}.
-{"Add Jabber ID","Aldonu Jabber ID"}.
-{"Add New","Aldonu novan"}.
 {"Add User","Aldonu Uzanton"}.
 {"Administration of ","Mastrumado de "}.
 {"Administration","Administro"}.
@@ -76,22 +74,17 @@
 {"Conference room does not exist","Babilejo ne ekzistas"}.
 {"Configuration of room ~s","Agordo de babilejo ~s"}.
 {"Configuration","Agordo"}.
-{"Connected Resources:","Konektataj risurcoj:"}.
 {"Country","Lando"}.
-{"CPU Time:","CPU-tempo"}.
 {"Current Discussion Topic","Aktuala Diskuta Temo"}.
-{"Database Tables at ~p","Datumbaz-tabeloj je ~p"}.
 {"Database Tables Configuration at ","Agordo de datumbaz-tabeloj je "}.
 {"Database","Datumbazo"}.
 {"December","Decembro"}.
 {"Default users as participants","Kutime farigu uzantojn kiel partpoprenantoj"}.
 {"Delete message of the day on all hosts","Forigu mesaĝo de la tago je ĉiu gastigo"}.
 {"Delete message of the day","Forigu mesaĝo de la tago"}.
-{"Delete Selected","Forigu elektata(j)n"}.
 {"Delete User","Forigu Uzanton"}.
 {"Deliver event notifications","Liveru event-sciigojn"}.
 {"Deliver payloads with event notifications","Liveru aĵojn de event-sciigoj"}.
-{"Description:","Priskribo:"}.
 {"Disc only copy","Nur disk-kopio"}.
 {"Dump Backup to Text File at ","Skribu sekurkopion en plata teksto al "}.
 {"Dump to Text File","Skribu en plata tekst-dosiero"}.
@@ -105,7 +98,6 @@
 {"ejabberd vCard module","ejabberd vCard-modulo"}.
 {"ejabberd Web Admin","ejabberd Teksaĵa Administro"}.
 {"ejabberd","ejabberd"}.
-{"Elements","Eroj"}.
 {"Email Address","Retpoŝta Adreso"}.
 {"Email","Retpoŝto"}.
 {"Enable logging","Ŝaltu protokoladon"}.
@@ -117,7 +109,6 @@
 {"Enter path to jabberd14 spool file","Enmetu vojon al jabberd14-uzantdosiero"}.
 {"Enter path to text file","Enmetu vojon al plata teksto"}.
 {"Enter the text you see","Enmetu montrita teksto"}.
-{"Error","Eraro"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Esceptu Ĵabber-identigilojn je CAPTCHA-defio"}.
 {"Export all tables as SQL queries to a file:","Eksportu ĉiuj tabeloj kiel SQL-informmendo al dosierujo:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Eksportu datumojn de ĉiuj uzantoj en servilo al PIEFXIS dosieroj (XEP-0227):"}.
@@ -127,23 +118,18 @@
 {"February","Februaro"}.
 {"File larger than ~w bytes","Dosiero pli granda ol ~w bajtoj"}.
 {"Friday","Vendredo"}.
-{"From","De"}.
 {"Full Name","Plena Nomo"}.
 {"Get Number of Online Users","Montru nombron de konektataj uzantoj"}.
 {"Get Number of Registered Users","Montru nombron de registritaj uzantoj"}.
 {"Get User Last Login Time","Montru tempon de lasta ensaluto"}.
-{"Get User Password","Montru pasvorton de uzanto"}.
 {"Get User Statistics","Montru statistikojn de uzanto"}.
 {"Given Name","Persona Nomo"}.
 {"Grant voice to this person?","Koncedu voĉon al ĉi-persono?"}.
-{"Group","Grupo"}.
-{"Groups","Grupoj"}.
 {"has been banned","estas forbarita"}.
 {"has been kicked because of a system shutdown","estas forpelita pro sistem-haltigo"}.
 {"has been kicked because of an affiliation change","estas forpelita pro aparteneca ŝanĝo"}.
 {"has been kicked because the room has been changed to members-only","estas forpelita ĉar la babilejo fariĝis sole por membroj"}.
 {"has been kicked","estas forpelita"}.
-{"Host","Gastigo"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Se vi ne vidas la CAPTCHA-imagon jene, vizitu la teksaĵ-paĝon."}.
 {"Import Directory","Importu dosierujo"}.
 {"Import File","Importu dosieron"}.
@@ -166,14 +152,11 @@
 {"July","Julio"}.
 {"June","Junio"}.
 {"Just created","Ĵus kreita"}.
-{"Label:","Etikedo:"}.
 {"Last Activity","Lasta aktiveco"}.
 {"Last login","Lasta ensaluto"}.
 {"Last month","Lasta monato"}.
 {"Last year","Lasta jaro"}.
 {"leaves the room","eliras la babilejo"}.
-{"List of rooms","Listo de babilejoj"}.
-{"Low level update script","Bazanivela ĝisdatigo-skripto"}.
 {"Make participants list public","Farigu partoprento-liston publika"}.
 {"Make room CAPTCHA protected","Protektu babilejon per CAPTCHA"}.
 {"Make room members-only","Farigu babilejon sole por membroj"}.
@@ -187,20 +170,16 @@
 {"Maximum Number of Occupants","Limigo de nombro de partoprenantoj"}.
 {"May","Majo"}.
 {"Membership is required to enter this room","Membreco estas bezonata por eniri ĉi tiun babilejon"}.
-{"Members:","Membroj:"}.
-{"Memory","Memoro"}.
 {"Message body","Teksto de mesaĝo"}.
 {"Middle Name","Meza Nomo"}.
 {"Minimum interval between voice requests (in seconds)","Minimuma intervalo inter voĉ-petoj (je sekundoj)"}.
 {"Moderator privileges required","Moderantaj rajtoj bezonata"}.
-{"Modified modules","Ĝisdatigitaj moduloj"}.
 {"Module failed to handle the query","Modulo malsukcesis trakti la informpeton"}.
 {"Monday","Lundo"}.
 {"Multicast","Multicast"}.
 {"Multiple <item/> elements are not allowed by RFC6121","RFC 6121 ne permesas plurajn <item/>-elementojn"}.
 {"Multi-User Chat","Grupbabilado"}.
 {"Name","Nomo"}.
-{"Name:","Nomo:"}.
 {"Natural Language for Room Discussions","Homa Lingvo por Diskutoj en Babilejo"}.
 {"Never","Neniam"}.
 {"New Password:","Nova Pasvorto:"}.
@@ -232,11 +211,8 @@
 {"Number of online users","Nombro de konektataj uzantoj"}.
 {"Number of registered users","Nombro de registritaj uzantoj"}.
 {"October","Oktobro"}.
-{"Offline Messages","Liverontaj mesaĝoj"}.
-{"Offline Messages:","Liverontaj mesaĝoj"}.
 {"OK","Bone"}.
 {"Old Password:","Malnova Pasvorto:"}.
-{"Online Users:","Konektataj uzantoj:"}.
 {"Online Users","Konektataj Uzantoj"}.
 {"Online","Konektata"}.
 {"Only deliver notifications to available users","Nur liveru sciigojn al konektataj uzantoj"}.
@@ -253,16 +229,13 @@
 {"Organization Name","Organiz-nomo"}.
 {"Organization Unit","Organiz-parto"}.
 {"Outgoing s2s Connections","Elirantaj s-al-s-konektoj"}.
-{"Outgoing s2s Connections:","Elirantaj s-al-s-konektoj:"}.
 {"Owner privileges required","Mastraj rajtoj bezonata"}.
-{"Packet","Pakaĵo"}.
 {"Password Verification","Pasvortkontrolo"}.
 {"Password Verification:","Pasvortkontrolo:"}.
 {"Password","Pasvorto"}.
 {"Password:","Pasvorto:"}.
 {"Path to Dir","Vojo al dosierujo"}.
 {"Path to File","Voje de dosiero"}.
-{"Pending","Atendanta"}.
 {"Period: ","Periodo: "}.
 {"Persist items to storage","Savu erojn en konservado"}.
 {"Ping","Sondaĵo"}.
@@ -281,17 +254,12 @@
 {"RAM copy","RAM-kopio"}.
 {"Really delete message of the day?","Ĉu vere forigi mesaĝon de la tago?"}.
 {"Recipient is not in the conference room","Ricevanto ne ĉeestas en la babilejo"}.
-{"Registered Users","Registritaj uzantoj"}.
-{"Registered Users:","Registritaj uzantoj:"}.
 {"Register","Registru"}.
 {"Remote copy","Fora kopio"}.
-{"Remove All Offline Messages","Forigu ĉiujn liverontajn mesaĝojn"}.
 {"Remove User","Forigu uzanton"}.
-{"Remove","Forigu"}.
 {"Replaced by new connection","Anstataŭigita je nova konekto"}.
 {"Resources","Risurcoj"}.
 {"Restart Service","Restartu Servon"}.
-{"Restart","Restartu"}.
 {"Restore Backup from File at ","Restaŭrigu de dosiero el "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Restaŭrigu duuman sekurkopion post sekvonta ejabberd-restarto"}.
 {"Restore binary backup immediately:","Restaŭrigu duuman sekurkopion tuj:"}.
@@ -304,10 +272,8 @@
 {"Room title","Babilejo-nomo"}.
 {"Roster groups allowed to subscribe","Kontaktlist-grupoj kiuj rajtas aboni"}.
 {"Roster size","Kontaktlist-grando"}.
-{"RPC Call Error","Eraro de RPC-alvoko"}.
 {"Running Nodes","Funkciantaj Nodoj"}.
 {"Saturday","Sabato"}.
-{"Script check","Skript-kontrolo"}.
 {"Search Results for ","Serĉ-rezultoj de "}.
 {"Search users in ","Serĉu uzantojn en "}.
 {"Send announcement to all online users on all hosts","Sendu anoncon al ĉiu konektata uzanto de ĉiu gastigo"}.
@@ -325,19 +291,13 @@
 {"Specify the access model","Specifu atingo-modelon"}.
 {"Specify the event message type","Specifu tipo de event-mesaĝo"}.
 {"Specify the publisher model","Enmetu publikadan modelon"}.
-{"Statistics of ~p","Statistikoj de ~p"}.
-{"Statistics","Statistikoj"}.
-{"Stop","Haltigu"}.
 {"Stopped Nodes","Neaktivaj Nodoj"}.
-{"Storage Type","Konserv-tipo"}.
 {"Store binary backup:","Konservu duuman sekurkopion:"}.
 {"Store plain text backup:","Skribu sekurkopion en plata tekstdosiero"}.
 {"Subject","Temo"}.
-{"Submit","Sendu"}.
 {"Submitted","Sendita"}.
 {"Subscriber Address","Abonanta adreso"}.
 {"Subscribers may publish","Abonantoj rajtas publici"}.
-{"Subscription","Abono"}.
 {"Sunday","Dimanĉo"}.
 {"That nickname is already in use by another occupant","Tiu kaŝnomo jam estas uzata de alia partoprenanto"}.
 {"That nickname is registered by another person","Kaŝnomo estas registrita de alia persono"}.
@@ -354,28 +314,16 @@
 {"This room is not anonymous","Ĉi tiu babilejo ne estas anonima"}.
 {"Thursday","Ĵaŭdo"}.
 {"Time delay","Prokrasto"}.
-{"Time","Tempo"}.
-{"To","Ĝis"}.
 {"Too many CAPTCHA requests","Tro multaj CAPTCHA-petoj"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Tro da malsukcesaj aŭtentprovoj (~p) de ĉi tiu IP-adreso (~s). La adreso estos malbarata je ~s UTC."}.
 {"Too many unacked stanzas","Tro da neagnoskitaj stancoj"}.
-{"Total rooms","Babilejoj"}.
 {"Traffic rate limit is exceeded","Trafikrapida limigo superita"}.
-{"Transactions Aborted:","Transakcioj nuligitaj"}.
-{"Transactions Committed:","Transakcioj enmetitaj"}.
-{"Transactions Logged:","Transakcioj protokolitaj"}.
-{"Transactions Restarted:","Transakcioj restartitaj"}.
 {"Tuesday","Mardo"}.
 {"Unable to generate a CAPTCHA","Ne eblis krei CAPTCHA"}.
 {"Unauthorized","Nepermesita"}.
 {"Unregister","Malregistru"}.
 {"Update message of the day (don't send)","Ŝanĝu mesaĝon de la tago (ne sendu)"}.
 {"Update message of the day on all hosts (don't send)","Ŝanĝu mesaĝon de la tago je ĉiu gastigo (ne sendu)"}.
-{"Update ~p","Ĝisdatigu ~p-n"}.
-{"Update plan","Ĝisdatigo-plano"}.
-{"Update script","Ĝisdatigo-skripto"}.
-{"Update","Ĝisdatigu"}.
-{"Uptime:","Daŭro de funkciado"}.
 {"URL for Archived Discussion Logs","Retpaĝa adreso de Enarkivigitaj Diskutprotokoloj"}.
 {"User JID","Uzant-JID"}.
 {"User Management","Uzanto-administrado"}.
@@ -384,7 +332,6 @@
 {"Users Last Activity","Lasta aktiveco de uzanto"}.
 {"Users","Uzantoj"}.
 {"User","Uzanto"}.
-{"Validate","Validigu"}.
 {"vCard User Search","Serĉado de vizitkartoj"}.
 {"Virtual Hosts","Virtual-gastigoj"}.
 {"Visitors are not allowed to change their nicknames in this room","Ne estas permesata al vizitantoj ŝanĝi siajn kaŝnomojn en ĉi tiu ĉambro"}.

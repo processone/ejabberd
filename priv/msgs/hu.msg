@@ -10,8 +10,6 @@
 {"Access denied by service policy","Hozzáférés megtagadva a szolgáltatási irányelv miatt"}.
 {"Account doesn't exist","A fiók nem létezik"}.
 {"Action on user","Művelet a felhasználón"}.
-{"Add Jabber ID","Jabber-azonosító hozzáadása"}.
-{"Add New","Új hozzáadása"}.
 {"Add User","Felhasználó hozzáadása"}.
 {"Administration of ","Adminisztrációja ennek: "}.
 {"Administration","Adminisztráció"}.
@@ -66,22 +64,15 @@
 {"Conference room does not exist","A konferenciaszoba nem létezik"}.
 {"Configuration of room ~s","A(z) ~s szoba beállítása"}.
 {"Configuration","Beállítás"}.
-{"Connected Resources:","Kapcsolódott erőforrások:"}.
 {"Country","Ország"}.
-{"CPU Time:","Processzoridő:"}.
 {"Database failure","Adatbázishiba"}.
-{"Database Tables at ~p","Adatbázistáblák itt: ~p"}.
 {"Database Tables Configuration at ","Adatbázistáblák beállítása itt: "}.
 {"Database","Adatbázis"}.
 {"December","december"}.
 {"Default users as participants","Alapértelmezett felhasználók mint résztvevők"}.
-{"Delete content","Tartalom törlése"}.
 {"Delete message of the day on all hosts","Napi üzenet törlése az összes gépen"}.
 {"Delete message of the day","Napi üzenet törlése"}.
-{"Delete Selected","Kijelöltek törlése"}.
-{"Delete table","Tábla törlése"}.
 {"Delete User","Felhasználó törlése"}.
-{"Description:","Leírás:"}.
 {"Disc only copy","Csak lemez másolása"}.
 {"Dump Backup to Text File at ","Biztonsági mentés kiírása szövegfájlba itt: "}.
 {"Dump to Text File","Kiírás szövegfájlba"}.
@@ -95,7 +86,6 @@
 {"ejabberd vCard module","ejabberd vCard modul"}.
 {"ejabberd Web Admin","ejabberd webes adminisztráció"}.
 {"ejabberd","ejabberd"}.
-{"Elements","Elemek"}.
 {"Email","E-mail"}.
 {"Enable logging","Naplózás engedélyezése"}.
 {"Enabling push without 'node' attribute is not supported","A „node” attribútum nélküli felküldés engedélyezése nem támogatott"}.
@@ -106,7 +96,6 @@
 {"Enter path to jabberd14 spool file","Adja meg a jabberd14 tárolófájl útvonalát"}.
 {"Enter path to text file","Adja meg a szövegfájl útvonalát"}.
 {"Enter the text you see","Írja be a látott szöveget"}.
-{"Error","Hiba"}.
 {"Export all tables as SQL queries to a file:","Összes tábla exportálása SQL-lekérdezésekként egy fájlba:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","A kiszolgálón lévő összes felhasználó adatainak exportálása PIEFXIS-fájlokba (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Egy gépen lévő felhasználók adatainak exportálása PIEFXIS-fájlokba (XEP-0227):"}.
@@ -121,24 +110,19 @@
 {"File larger than ~w bytes","A fájl nagyobb ~w bájtnál"}.
 {"Friday","péntek"}.
 {"From ~ts","Feladó: ~ts"}.
-{"From","Feladó"}.
 {"Full Name","Teljes név"}.
 {"Get Number of Online Users","Elérhető felhasználók számának lekérése"}.
 {"Get Number of Registered Users","Regisztrált felhasználók számának lekérése"}.
 {"Get Pending","Függőben lévő lekérése"}.
 {"Get User Last Login Time","Felhasználó legutolsó bejelentkezési idejének lekérése"}.
-{"Get User Password","Felhasználó jelszavának lekérése"}.
 {"Get User Statistics","Felhasználói statisztikák lekérése"}.
 {"Given Name","Keresztnév"}.
-{"Group","Csoport"}.
-{"Groups","Csoportok"}.
 {"has been banned","ki lett tiltva"}.
 {"has been kicked because of a system shutdown","ki lett rúgva egy rendszerleállítás miatt"}.
 {"has been kicked because of an affiliation change","ki lett rúgva egy hovatartozás megváltozása miatt"}.
 {"has been kicked because the room has been changed to members-only","ki lett rúgva, mert a szobát megváltoztatták csak tagok részére"}.
 {"has been kicked","ki lett rúgva"}.
 {"Host unknown","Gép ismeretlen"}.
-{"Host","Gép"}.
 {"HTTP File Upload","HTTP fájlfeltöltés"}.
 {"Idle connection","Tétlen kapcsolat"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Ha nem látja itt a CAPTCHA képet, akkor látogassa meg a weboldalt."}.
@@ -152,7 +136,6 @@
 {"Import Users From jabberd14 Spool Files","Felhasználók importálása jabberd14 tárolófájlokból"}.
 {"Improper domain part of 'from' attribute","A „from” attribútum tartományrésze helytelen"}.
 {"Improper message type","Helytelen üzenettípus"}.
-{"Incoming s2s Connections:","Bejövő s2s kapcsolatok:"}.
 {"Incorrect CAPTCHA submit","Hibás CAPTCHA beküldés"}.
 {"Incorrect data form","Hibás adatűrlap"}.
 {"Incorrect password","Hibás jelszó"}.
@@ -182,8 +165,6 @@
 {"Last month","Múlt hónap"}.
 {"Last year","Múlt év"}.
 {"leaves the room","elhagyta a szobát"}.
-{"List of rooms","Szobák listája"}.
-{"Low level update script","Alacsony szintű frissítő parancsfájl"}.
 {"Make participants list public","Résztvevőlista nyilvánossá tétele"}.
 {"Make room CAPTCHA protected","Szoba CAPTCHA-védetté tétele"}.
 {"Make room members-only","Szoba beállítása csak tagoknak"}.
@@ -197,20 +178,16 @@
 {"Maximum Number of Occupants","Résztvevők legnagyobb száma"}.
 {"May","május"}.
 {"Membership is required to enter this room","Tagság szükséges a szobába lépéshez"}.
-{"Members:","Tagok:"}.
-{"Memory","Memória"}.
 {"Message body","Üzenettörzs"}.
 {"Message not found in forwarded payload","Nem található üzenet a továbbított adatokban"}.
 {"Messages from strangers are rejected","Idegenektől származó üzenetek vissza vannak utasítva"}.
 {"Middle Name","Középső név"}.
 {"Moderator privileges required","Moderátori jogosultságok szükségesek"}.
-{"Modified modules","Módosított modulok"}.
 {"Module failed to handle the query","A modul nem tudta kezelni a lekérdezést"}.
 {"Monday","hétfő"}.
 {"Multicast","Csoportcímzés"}.
 {"Multi-User Chat","Többfelhasználós csevegés"}.
 {"Name","Név"}.
-{"Name:","Név:"}.
 {"Neither 'jid' nor 'nick' attribute found","Sem a „jid”, sem a „nick” attribútum nem található"}.
 {"Neither 'role' nor 'affiliation' attribute found","Sem a „role”, sem az „affiliation” attribútum nem található"}.
 {"Never","Soha"}.
@@ -259,12 +236,9 @@
 {"Number of online users","Elérhető felhasználók száma"}.
 {"Number of registered users","Regisztrált felhasználók száma"}.
 {"October","október"}.
-{"Offline Messages","Kapcsolat nélküli üzenetek"}.
-{"Offline Messages:","Kapcsolat nélküli üzenetek:"}.
 {"OK","Rendben"}.
 {"Old Password:","Régi jelszó:"}.
 {"Online Users","Elérhető felhasználók"}.
-{"Online Users:","Elérhető felhasználók:"}.
 {"Online","Elérhető"}.
 {"Only <enable/> or <disable/> tags are allowed","Csak az <enable/> vagy <disable/> címkék engedélyezettek"}.
 {"Only <list/> element is allowed in this query","Csak a <list/> elem engedélyezett ebben a lekérdezésben"}.
@@ -278,17 +252,14 @@
 {"Organization Name","Szervezet neve"}.
 {"Organization Unit","Szervezeti egység"}.
 {"Outgoing s2s Connections","Kimenő s2s kapcsolatok"}.
-{"Outgoing s2s Connections:","Kimenő s2s kapcsolatok:"}.
 {"Owner privileges required","Tulajdonosi jogosultságok szükségesek"}.
 {"Packet relay is denied by service policy","Csomagátjátszás megtagadva a szolgáltatási irányelv miatt"}.
-{"Packet","Csomag"}.
 {"Password Verification","Jelszó ellenőrzése"}.
 {"Password Verification:","Jelszó ellenőrzése:"}.
 {"Password","Jelszó"}.
 {"Password:","Jelszó:"}.
 {"Path to Dir","Útvonal a könyvtárhoz"}.
 {"Path to File","Útvonal a fájlhoz"}.
-{"Pending","Függőben"}.
 {"Period: ","Időszak: "}.
 {"Ping query is incorrect","A lekérdezés pingelése hibás"}.
 {"Ping","Ping"}.
@@ -310,19 +281,14 @@
 {"RAM copy","RAM másolás"}.
 {"Really delete message of the day?","Valóban törli a napi üzenetet?"}.
 {"Recipient is not in the conference room","A címzett nincs a konferenciaszobában"}.
-{"Registered Users","Regisztrált felhasználók"}.
-{"Registered Users:","Regisztrált felhasználók:"}.
 {"Register","Regisztráció"}.
 {"Remote copy","Távoli másolás"}.
-{"Remove All Offline Messages","Összes kapcsolat nélküli üzenet eltávolítása"}.
 {"Remove User","Felhasználó eltávolítása"}.
-{"Remove","Eltávolítás"}.
 {"Replaced by new connection","Kicserélve egy új kapcsolattal"}.
 {"Request has timed out","A kérés túllépte az időkorlátot"}.
 {"Request is ignored","A kérés mellőzve lett"}.
 {"Resources","Erőforrások"}.
 {"Restart Service","Szolgáltatás újraindítása"}.
-{"Restart","Újraindítás"}.
 {"Restore Backup from File at ","Biztonsági mentés visszaállítása fájlból itt: "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Bináris biztonsági mentés visszaállítása az ejabberd következő újraindítása után (kevesebb memóriát igényel):"}.
 {"Restore binary backup immediately:","Bináris biztonsági mentés visszaállítása azonnal:"}.
@@ -334,15 +300,11 @@
 {"Room Occupants","Szoba résztvevői"}.
 {"Room terminates","Szoba megszűnik"}.
 {"Room title","Szoba címe"}.
-{"Roster of ~ts","~ts névsora"}.
 {"Roster size","Névsor mérete"}.
-{"RPC Call Error","RPC hívási hiba"}.
 {"Running Nodes","Futó csomópontok"}.
 {"Saturday","szombat"}.
-{"Script check","Parancsfájl-ellenőrzés"}.
 {"Search Results for ","Keresési eredménye ennek: "}.
 {"Search users in ","Felhasználók keresése ebben: "}.
-{"Select All","Összes kijelölése"}.
 {"Send announcement to all online users on all hosts","Közlemény küldése az összes elérhető felhasználónak az összes gépen"}.
 {"Send announcement to all online users","Közlemény küldése az összes elérhető felhasználónak"}.
 {"Send announcement to all users on all hosts","Közlemény küldése az összes felhasználónak az összes gépen"}.
@@ -357,19 +319,13 @@
 {"Show Ordinary Table","Szokásos táblázat megjelenítése"}.
 {"Shut Down Service","Szolgáltatás leállítása"}.
 {"SOCKS5 Bytestreams","SOCKS5 bájtfolyamok"}.
-{"Statistics of ~p","~p statisztikái"}.
-{"Statistics","Statisztikák"}.
-{"Stop","Leállítás"}.
 {"Stopped Nodes","Leállított csomópontok"}.
-{"Storage Type","Tárolótípus"}.
 {"Store binary backup:","Bináris biztonsági mentés tárolása:"}.
 {"Store plain text backup:","Egyszerű szöveges biztonsági mentés tárolása:"}.
 {"Stream management is already enabled","A folyamkezelés már engedélyezve van"}.
 {"Stream management is not enabled","A folyamkezelés nincs engedélyezve"}.
 {"Subject","Tárgy"}.
-{"Submit","Elküldés"}.
 {"Submitted","Elküldve"}.
-{"Subscription","Feliratkozás"}.
 {"Subscriptions are not allowed","Feliratkozások nem engedélyezettek"}.
 {"Sunday","vasárnap"}.
 {"That nickname is already in use by another occupant","Ezt a becenevet már használja egy másik résztvevő"}.
@@ -394,10 +350,8 @@
 {"Thursday","csütörtök"}.
 {"Time delay","Időkésleltetés"}.
 {"Timed out waiting for stream resumption","Időtúllépés a folyam újrakezdésére várakozásnál"}.
-{"Time","Idő"}.
 {"To register, visit ~s","Regisztráláshoz látogassa meg ezt az oldalt: ~s"}.
 {"To ~ts","Címzett: ~ts"}.
-{"To","Címzett"}.
 {"Token TTL","Token élettartama"}.
 {"Too many active bytestreams","Túl sok aktív bájtfolyam"}.
 {"Too many CAPTCHA requests","Túl sok CAPTCHA kérés"}.
@@ -408,12 +362,7 @@
 {"Too many receiver fields were specified","Túl sok fogadómező lett meghatározva"}.
 {"Too many unacked stanzas","Túl sok nyugtázatlan stanza"}.
 {"Too many users in this conference","Túl sok felhasználó ebben a konferenciában"}.
-{"Total rooms","Szobák összesen"}.
 {"Traffic rate limit is exceeded","Forgalom sebességkorlátja elérve"}.
-{"Transactions Aborted:","Megszakított tranzakciók:"}.
-{"Transactions Committed:","Véglegesített tranzakciók:"}.
-{"Transactions Logged:","Naplózott tranzakciók:"}.
-{"Transactions Restarted:","Újraindított tranzakciók:"}.
 {"~ts's Offline Messages Queue","~ts kapcsolat nélküli üzeneteinek tárolója"}.
 {"Tuesday","kedd"}.
 {"Unable to generate a CAPTCHA","Nem lehet előállítani CAPTCHA-t"}.
@@ -422,16 +371,10 @@
 {"Unexpected action","Váratlan művelet"}.
 {"Unexpected error condition: ~p","Váratlan hibafeltétel: ~p"}.
 {"Unregister","Regisztráció törlése"}.
-{"Unselect All","Összes kijelölésének megszüntetése"}.
 {"Unsupported <index/> element","Nem támogatott <index/> elem"}.
 {"Unsupported version","Nem támogatott verzió"}.
 {"Update message of the day (don't send)","Napi üzenet frissítése (ne küldje el)"}.
 {"Update message of the day on all hosts (don't send)","Napi üzenet frissítése az összes gépen (ne küldje el)"}.
-{"Update plan","Frissítési terv"}.
-{"Update ~p","~p frissítése"}.
-{"Update script","Frissítő parancsfájl"}.
-{"Update","Frissítés"}.
-{"Uptime:","Működési idő:"}.
 {"User already exists","A felhasználó már létezik"}.
 {"User (jid)","Felhasználó (JID)"}.
 {"User Management","Felhasználó-kezelés"}.
@@ -444,7 +387,6 @@
 {"Users are not allowed to register accounts so quickly","A felhasználóknak nem engedélyezett fiókokat regisztrálni ilyen gyorsan"}.
 {"Users Last Activity","Felhasználók utolsó tevékenysége"}.
 {"Users","Felhasználók"}.
-{"Validate","Ellenőrzés"}.
 {"Value 'get' of 'type' attribute is not allowed","A „type” attribútum „get” értéke nem engedélyezett"}.
 {"Value of '~s' should be boolean","A(z) „~s” értéke csak logikai lehet"}.
 {"Value of '~s' should be datetime string","A(z) „~s” értéke csak dátum és idő karakterlánc lehet"}.

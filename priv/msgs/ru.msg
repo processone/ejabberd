@@ -12,8 +12,6 @@
 {"Access denied by service policy","Доступ запрещён политикой службы"}.
 {"Account doesn't exist","Учётная запись не существует"}.
 {"Action on user","Действие над пользователем"}.
-{"Add Jabber ID","Добавить Jabber ID"}.
-{"Add New","Добавить"}.
 {"Add User","Добавить пользователя"}.
 {"Administration of ","Администрирование "}.
 {"Administration","Администрирование"}.
@@ -72,24 +70,17 @@
 {"Conference room does not exist","Конференция не существует"}.
 {"Configuration of room ~s","Конфигурация комнаты ~s"}.
 {"Configuration","Конфигурация"}.
-{"Connected Resources:","Подключённые ресурсы:"}.
 {"Country","Страна"}.
-{"CPU Time:","Процессорное время:"}.
 {"Database failure","Ошибка базы данных"}.
-{"Database Tables at ~p","Таблицы базы данных на ~p"}.
 {"Database Tables Configuration at ","Конфигурация таблиц базы данных на "}.
 {"Database","База данных"}.
 {"December","декабря"}.
 {"Default users as participants","Сделать пользователей участниками по умолчанию"}.
-{"Delete content","Удалить содержимое"}.
 {"Delete message of the day on all hosts","Удалить сообщение дня со всех виртуальных серверов"}.
 {"Delete message of the day","Удалить сообщение дня"}.
-{"Delete Selected","Удалить выделенные"}.
-{"Delete table","Удалить таблицу"}.
 {"Delete User","Удалить пользователя"}.
 {"Deliver event notifications","Доставлять уведомления о событиях"}.
 {"Deliver payloads with event notifications","Доставлять вместе с уведомлениями o публикациях сами публикации"}.
-{"Description:","Описание:"}.
 {"Disc only copy","только диск"}.
 {"Dump Backup to Text File at ","Копирование в текстовый файл на "}.
 {"Dump to Text File","Копирование в текстовый файл"}.
@@ -102,7 +93,6 @@
 {"ejabberd vCard module","ejabberd vCard модуль"}.
 {"ejabberd Web Admin","Web-интерфейс администрирования ejabberd"}.
 {"ejabberd","ejabberd"}.
-{"Elements","Элементы"}.
 {"Email","Электронная почта"}.
 {"Enable logging","Включить журналирование"}.
 {"Enable message archiving","Включить хранение сообщений"}.
@@ -114,7 +104,6 @@
 {"Enter path to jabberd14 spool file","Введите путь к файлу из спула jabberd14"}.
 {"Enter path to text file","Введите путь к текстовому файлу"}.
 {"Enter the text you see","Введите увиденный текст"}.
-{"Error","Ошибка"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Исключить показ капчи для списка Jabber ID"}.
 {"Export all tables as SQL queries to a file:","Экспортировать все таблицы в виде SQL запросов в файл:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0227):"}.
@@ -130,25 +119,20 @@
 {"February","февраля"}.
 {"File larger than ~w bytes","Файл больше ~w байт"}.
 {"Friday","Пятница"}.
-{"From","От кого"}.
 {"Full Name","Полное имя"}.
 {"Get Number of Online Users","Получить количество подключённых пользователей"}.
 {"Get Number of Registered Users","Получить количество зарегистрированных пользователей"}.
 {"Get Pending","Получить отложенные"}.
 {"Get User Last Login Time","Получить время последнего подключения пользователя"}.
-{"Get User Password","Получить пароль пользователя"}.
 {"Get User Statistics","Получить статистику по пользователю"}.
 {"Given Name","Имя"}.
 {"Grant voice to this person?","Предоставить голос?"}.
-{"Groups","Группы"}.
-{"Group","Группа"}.
 {"has been banned","запретили входить в комнату"}.
 {"has been kicked because of a system shutdown","выгнали из комнаты из-за останова системы"}.
 {"has been kicked because of an affiliation change","выгнали из комнаты вследствие смены ранга"}.
 {"has been kicked because the room has been changed to members-only","выгнали из комнаты потому что она стала только для членов"}.
 {"has been kicked","выгнали из комнаты"}.
 {"Host unknown","Неизвестное имя сервера"}.
-{"Host","Хост"}.
 {"HTTP File Upload","Передача файлов по HTTP"}.
 {"Idle connection","Неиспользуемое соединение"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Если вы не видите изображение капчи, перейдите по ссылке."}.
@@ -162,7 +146,6 @@
 {"Import Users From jabberd14 Spool Files","Импорт пользователей из спула jabberd14"}.
 {"Improper domain part of 'from' attribute","Неправильная доменная часть атрибута 'from'"}.
 {"Improper message type","Неправильный тип сообщения"}.
-{"Incoming s2s Connections:","Входящие s2s соединения:"}.
 {"Incorrect CAPTCHA submit","Неверный ввод капчи"}.
 {"Incorrect data form","Некорректная форма данных"}.
 {"Incorrect password","Неправильный пароль"}.
@@ -190,8 +173,6 @@
 {"Last month","За последний месяц"}.
 {"Last year","За последний год"}.
 {"leaves the room","вышел(а) из комнаты"}.
-{"List of rooms","Список комнат"}.
-{"Low level update script","Низкоуровневый сценарий обновления"}.
 {"Make participants list public","Сделать список участников видимым всем"}.
 {"Make room CAPTCHA protected","Сделать комнату защищённой капчей"}.
 {"Make room members-only","Комната только для зарегистрированных участников"}.
@@ -206,21 +187,17 @@
 {"Maximum Number of Occupants","Максимальное количество участников"}.
 {"May","мая"}.
 {"Membership is required to enter this room","В эту конференцию могут входить только её члены"}.
-{"Members:","Члены:"}.
-{"Memory","Память"}.
 {"Message body","Тело сообщения"}.
 {"Message not found in forwarded payload","Сообщение не найдено в пересылаемом вложении"}.
 {"Messages from strangers are rejected","Сообщения от незнакомцев запрещены"}.
 {"Middle Name","Отчество"}.
 {"Minimum interval between voice requests (in seconds)","Минимальный интервал между запросами на право голоса"}.
 {"Moderator privileges required","Требуются права модератора"}.
-{"Modified modules","Изменённые модули"}.
 {"Module failed to handle the query","Ошибка модуля при обработке запроса"}.
 {"Monday","Понедельник"}.
 {"Multicast","Мультикаст"}.
 {"Multi-User Chat","Конференция"}.
 {"Name","Название"}.
-{"Name:","Название:"}.
 {"Neither 'jid' nor 'nick' attribute found","Не найден атрибут 'jid' или 'nick'"}.
 {"Neither 'role' nor 'affiliation' attribute found","Не найден атрибут 'role' или 'affiliation'"}.
 {"Never","Никогда"}.
@@ -275,12 +252,9 @@
 {"Number of online users","Количество подключённых пользователей"}.
 {"Number of registered users","Количество зарегистрированных пользователей"}.
 {"October","октября"}.
-{"Offline Messages","Офлайновые сообщения"}.
-{"Offline Messages:","Офлайновые сообщения:"}.
 {"OK","Продолжить"}.
 {"Old Password:","Старый пароль:"}.
 {"Online Users","Подключённые пользователи"}.
-{"Online Users:","Подключённые пользователи:"}.
 {"Online","Подключён"}.
 {"Only deliver notifications to available users","Доставлять уведомления только доступным пользователям"}.
 {"Only <enable/> or <disable/> tags are allowed","Допустимы только тэги <enable/> или <disable/>"}.
@@ -294,18 +268,15 @@
 {"Only service administrators are allowed to send service messages","Только администратор службы может посылать служебные сообщения"}.
 {"Organization Name","Название организации"}.
 {"Organization Unit","Отдел организации"}.
-{"Outgoing s2s Connections:","Исходящие s2s-серверы:"}.
 {"Outgoing s2s Connections","Исходящие s2s-соединения"}.
 {"Owner privileges required","Требуются права владельца"}.
 {"Packet relay is denied by service policy","Пересылка пакетов запрещена политикой службы"}.
-{"Packet","Пакет"}.
 {"Password Verification","Проверка пароля"}.
 {"Password Verification:","Проверка пароля:"}.
 {"Password","Пароль"}.
 {"Password:","Пароль:"}.
 {"Path to Dir","Путь к директории"}.
 {"Path to File","Путь к файлу"}.
-{"Pending","Ожидание"}.
 {"Period: ","Период"}.
 {"Persist items to storage","Сохранять публикации в хранилище"}.
 {"Ping query is incorrect","Некорректный пинг-запрос"}.
@@ -330,18 +301,13 @@
 {"RAM copy","ОЗУ"}.
 {"Really delete message of the day?","Действительно удалить сообщение дня?"}.
 {"Recipient is not in the conference room","Адресата нет в конференции"}.
-{"Registered Users","Зарегистрированные пользователи"}.
-{"Registered Users:","Зарегистрированные пользователи:"}.
 {"Register","Зарегистрировать"}.
 {"Remote copy","не хранится локально"}.
-{"Remove All Offline Messages","Удалить все офлайновые сообщения"}.
 {"Remove User","Удалить пользователя"}.
-{"Remove","Удалить"}.
 {"Replaced by new connection","Заменено новым соединением"}.
 {"Request has timed out","Истекло время ожидания запроса"}.
 {"Resources","Ресурсы"}.
 {"Restart Service","Перезапустить службу"}.
-{"Restart","Перезапустить"}.
 {"Restore Backup from File at ","Восстановление из резервной копии на "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Восстановить из бинарной резервной копии при следующем запуске (требует меньше памяти):"}.
 {"Restore binary backup immediately:","Восстановить из бинарной резервной копии немедленно:"}.
@@ -355,13 +321,10 @@
 {"Room title","Название комнаты"}.
 {"Roster groups allowed to subscribe","Группы списка контактов, которым разрешена подписка"}.
 {"Roster size","Размер списка контактов"}.
-{"RPC Call Error","Ошибка вызова RPC"}.
 {"Running Nodes","Работающие узлы"}.
 {"Saturday","Суббота"}.
-{"Script check","Проверка сценария"}.
 {"Search Results for ","Результаты поиска в "}.
 {"Search users in ","Поиск пользователей в "}.
-{"Select All","Выбрать всё"}.
 {"Send announcement to all online users on all hosts","Разослать объявление всем подключённым пользователям на всех виртуальных серверах"}.
 {"Send announcement to all online users","Разослать объявление всем подключённым пользователям"}.
 {"Send announcement to all users on all hosts","Разослать объявление всем пользователям на всех виртуальных серверах"}.
@@ -379,21 +342,15 @@
 {"Specify the access model","Укажите механизм управления доступом"}.
 {"Specify the event message type","Укажите тип сообщения о событии"}.
 {"Specify the publisher model","Условия публикации"}.
-{"Statistics of ~p","статистика узла ~p"}.
-{"Statistics","Статистика"}.
 {"Stopped Nodes","Остановленные узлы"}.
-{"Stop","Остановить"}.
-{"Storage Type","Тип таблицы"}.
 {"Store binary backup:","Сохранить бинарную резервную копию:"}.
 {"Store plain text backup:","Сохранить текстовую резервную копию:"}.
 {"Stream management is already enabled","Управление потоком уже активировано"}.
 {"Stream management is not enabled","Управление потоком не активировано"}.
 {"Subject","Тема"}.
 {"Submitted","Отправлено"}.
-{"Submit","Отправить"}.
 {"Subscriber Address","Адрес подписчика"}.
 {"Subscriptions are not allowed","Подписки недопустимы"}.
-{"Subscription","Подписка"}.
 {"Sunday","Воскресенье"}.
 {"That nickname is already in use by another occupant","Этот псевдоним уже занят другим участником"}.
 {"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
@@ -418,7 +375,6 @@
 {"Thursday","Четверг"}.
 {"Time delay","По истечение"}.
 {"Timed out waiting for stream resumption","Истекло время ожидания возобновления потока"}.
-{"Time","Время"}.
 {"To register, visit ~s","Для регистрации посетите ~s"}.
 {"Token TTL","Токен TTL"}.
 {"Too many active bytestreams","Слишком много активных потоков данных"}.
@@ -430,13 +386,7 @@
 {"Too many receiver fields were specified","Указано слишком много получателей"}.
 {"Too many unacked stanzas","Слишком много неподтверждённых пакетов"}.
 {"Too many users in this conference","Слишком много пользователей в этой конференции"}.
-{"Total rooms","Все комнаты"}.
-{"To","Кому"}.
 {"Traffic rate limit is exceeded","Превышен лимит скорости посылки информации"}.
-{"Transactions Aborted:","Транзакции отмененные:"}.
-{"Transactions Committed:","Транзакции завершенные:"}.
-{"Transactions Logged:","Транзакции запротоколированные:"}.
-{"Transactions Restarted:","Транзакции перезапущенные:"}.
 {"Tuesday","Вторник"}.
 {"Unable to generate a CAPTCHA","Не получилось создать капчу"}.
 {"Unable to register route on existing local domain","Нельзя регистрировать маршруты на существующие локальные домены"}.
@@ -444,16 +394,10 @@
 {"Unexpected action","Неожиданное действие"}.
 {"Unexpected error condition: ~p","Неожиданная ошибка: ~p"}.
 {"Unregister","Удалить"}.
-{"Unselect All","Снять всё выделение"}.
 {"Unsupported <index/> element","Элемент <index/> не поддерживается"}.
 {"Unsupported version","Неподдерживаемая версия"}.
 {"Update message of the day (don't send)","Обновить сообщение дня (не рассылать)"}.
 {"Update message of the day on all hosts (don't send)","Обновить сообщение дня на всех виртуальных серверах (не рассылать)"}.
-{"Update plan","План обновления"}.
-{"Update ~p","Обновление ~p"}.
-{"Update script","Сценарий обновления"}.
-{"Update","Обновить"}.
-{"Uptime:","Время работы:"}.
 {"User already exists","Пользователь уже существует"}.
 {"User JID","JID пользователя"}.
 {"User (jid)","Пользователь (XMPP адрес)"}.
@@ -466,7 +410,6 @@
 {"Users Last Activity","Статистика последнего подключения пользователей"}.
 {"Users","Пользователи"}.
 {"User","Пользователь"}.
-{"Validate","Утвердить"}.
 {"Value 'get' of 'type' attribute is not allowed","Значение 'get' атрибута 'type' недопустимо"}.
 {"Value of '~s' should be boolean","Значение '~s' должно быть булевым"}.
 {"Value of '~s' should be datetime string","Значение '~s' должно быть датой"}.

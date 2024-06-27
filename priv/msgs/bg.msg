@@ -16,8 +16,6 @@
 {"Account doesn't exist","Профилът не съществува"}.
 {"Action on user","Действие върху потребител"}.
 {"Add a hat to a user","Добави шапка към потребител"}.
-{"Add Jabber ID","Добави Jabber ID"}.
-{"Add New","Добави нов"}.
 {"Add User","Добави потребител"}.
 {"Administration of ","Администриране на "}.
 {"Administration","Администриране"}.
@@ -48,7 +46,6 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Всеки, който има абонамент за присъствие на двете или от: може да се абонира и да извлича елементи"}.
 {"Anyone with Voice","Всеки, с възможност за гласово обаждане"}.
 {"Anyone","Всеки"}.
-{"Apparently your account has no administration rights in this server. Please check how to grant admin rights in: https://docs.ejabberd.im/admin/installation/#administration-account","Очевидно Вашият акаунт няма административни права за този сървър. Моля, проверете как да предоставите администраторски права на: https://docs.ejabberd.im/admin/installation/#administration-account"}.
 {"April","Април"}.
 {"Attribute 'channel' is required for this request","Атрибутът 'канал' е задължителен за тази заявка"}.
 {"Attribute 'id' is mandatory for MIX messages","Атрибутът 'id' е задължителен за MIX съобщения"}.
@@ -93,30 +90,20 @@
 {"Conference room does not exist","Конферентната стая не съществува"}.
 {"Configuration of room ~s","Конфигурация на стая ~s"}.
 {"Configuration","Конфигурация"}.
-{"Connected Resources:","Свързани ресурси:"}.
 {"Contact Addresses (normally, room owner or owners)","Адреси за контакт (обикновено собственик или собственици на стая)"}.
-{"Contrib Modules","Сътруднически модули"}.
 {"Country","Държава"}.
-{"CPU Time:","Процесорно време:"}.
 {"Current Discussion Topic","Текуща тема на дискусита"}.
 {"Database failure","Грешка в базата данни"}.
-{"Database Tables at ~p","Таблици на базата данни при ~p"}.
 {"Database Tables Configuration at ","Конфигурация на таблиците в базата данни при "}.
 {"Database","База данни"}.
 {"December","Декември"}.
 {"Default users as participants","Потребители по подразбиране като участници"}.
-{"Delete content","Изтрий съдържанието"}.
 {"Delete message of the day on all hosts","Изтрий съобщението на деня от всички нодове"}.
 {"Delete message of the day","Изтрий съобщението на деня"}.
-{"Delete Selected","Изтрий избраните"}.
-{"Delete table","Изтрий таблицата"}.
 {"Delete User","Изтрий потребителя"}.
 {"Deliver event notifications","Достави известията за събития"}.
 {"Deliver payloads with event notifications","Достави прикачените обекти с известията за събития"}.
-{"Description:","Описание:"}.
 {"Disc only copy","Копие само на диска"}.
-{"'Displayed groups' not added (they do not exist!): ","'Показаните групи' не са добавени (не съществуват!): "}.
-{"Displayed:","Показва се:"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","Не казвайте паролата си на никого, дори на администраторите на XMPP сървъра."}.
 {"Dump Backup to Text File at ","Архивиране в текстов файл при "}.
 {"Dump to Text File","Архивиране в текстов файл"}.
@@ -127,7 +114,6 @@
 {"ejabberd vCard module","ejabberd vCard модул"}.
 {"ejabberd Web Admin","Уеб администрация на ejabberd"}.
 {"ejabberd","ejabberd"}.
-{"Elements","Елементи"}.
 {"Email Address","Имейл адрес"}.
 {"Email","Илейл"}.
 {"Enable hats","Активиране на шапки"}.
@@ -142,7 +128,6 @@
 {"Enter path to text file","Въведете пътя към текстовия файл"}.
 {"Enter the text you see","Въведете текста, който виждате"}.
 {"Erlang XMPP Server","Erlang XMPP сървър"}.
-{"Error","Грешка"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Изключи CAPTCHA предизвикателство за следните Jabber ID-та"}.
 {"Export all tables as SQL queries to a file:","Експортирай всички таблици като SQL заявки във файл:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Експортирай данните за всички потребители на сървъра в PIEFXIS файлове (XEP-0227):"}.
@@ -161,7 +146,6 @@
 {"Fill in the form to search for any matching XMPP User","Попълнете формата, за да търсите съвпадащ XMPP потребител"}.
 {"Friday","Петък"}.
 {"From ~ts","От ~ts"}.
-{"From","От"}.
 {"Full List of Room Admins","Пълен списък на администраторите на стаята"}.
 {"Full List of Room Owners","Пълен списък на собствениците на стаята"}.
 {"Full Name","Пълно име"}.
@@ -171,18 +155,13 @@
 {"Get Number of Registered Users","Брой на регистрираните потребители"}.
 {"Get Pending","Виж чакащи"}.
 {"Get User Last Login Time","Покажи времето, когато потребителят е влязъл за последно"}.
-{"Get User Password","Покажи паролата на потребителя"}.
 {"Get User Statistics","Покажи статистика за потребителя"}.
 {"Given Name","Име"}.
 {"Grant voice to this person?","Предоставяне на глас за потребителя?"}.
-{"Groups that will be displayed to the members","Групи, които ще се показват на членовете"}.
-{"Groups","Групи"}.
-{"Group","Група"}.
 {"Hat title","Заглавие на шапката"}.
 {"Hat URI","URI адрес за шапка"}.
 {"Hats limit exceeded","Превишен е лимитът за шапка"}.
 {"Host unknown","Неизвестен хост"}.
-{"Host","Хост"}.
 {"HTTP File Upload","Качване на файл по HTTP"}.
 {"Idle connection","Неактивна връзка"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Ако не виждате CAPTCHA изображението, посетете уеб страницата."}.
@@ -196,7 +175,6 @@
 {"Import Users From jabberd14 Spool Files","Импорт на потребители от jabberd14 Spool файлове"}.
 {"Improper domain part of 'from' attribute","Неправилна част за домейн в атрибута 'from'"}.
 {"Improper message type","Неправилен тип съобщение"}.
-{"Incoming s2s Connections:","Входящи s2s връзки:"}.
 {"Incorrect CAPTCHA submit","Неправилно CAPTCHA въвеждане"}.
 {"Incorrect data form","Неправилна форма на данните"}.
 {"Incorrect password","Грешна парола"}.
@@ -224,18 +202,15 @@
 {"July","Юли"}.
 {"June","Юни"}.
 {"Just created","Току що създаден"}.
-{"Label:","Етикет:"}.
 {"Last Activity","Последна активност"}.
 {"Last login","Последно влизане"}.
 {"Last message","Последно съобщение"}.
 {"Last month","Миналия месец"}.
 {"Last year","Миналата година"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Най-малко значимите битове SHA-256 хеш на текст трябва да са равни на шестнайсетичния етикет"}.
-{"List of rooms","Списък на стаите"}.
 {"List of users with hats","Списък на потребителите с шапки"}.
 {"List users with hats","Избройте потребителите с шапки"}.
 {"Logging","Регистриране на събития"}.
-{"Low level update script","Скрипт за актуализация на ниско ниво"}.
 {"Make participants list public","Направи списъка с участниците публичен"}.
 {"Make room CAPTCHA protected","Защити стаята с CAPTCHA"}.
 {"Make room members-only","Направи стаята само за членове"}.
@@ -253,11 +228,8 @@
 {"Maximum number of items to persist","Максимален брой елементи за запазване"}.
 {"Maximum Number of Occupants","Максимален брой участници"}.
 {"May","Май"}.
-{"Members not added (inexistent vhost!): ","Членовете не са добавени (несъществуващ vhost!): "}.
 {"Membership is required to enter this room","Изисква се членство, за вход в тази стая"}.
-{"Members:","Членове:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Запомнете паролата си или я запишете на лист хартия, поставен на сигурно място. В XMPP няма автоматичен начин за възстановяване на паролата в случай, че я забравите."}.
-{"Memory","Памет"}.
 {"Mere Availability in XMPP (No Show Value)","Наличност в XMPP (Не показвай стойност)"}.
 {"Message body","Текст на съобщението"}.
 {"Message not found in forwarded payload","Съобщението не е намерено в препратения прикачен елемент"}.
@@ -269,15 +241,12 @@
 {"Moderator privileges required","Изискват се права на модератор"}.
 {"Moderators Only","Само модератори"}.
 {"Moderator","Модератор"}.
-{"Modified modules","Модифицирани модули"}.
 {"Module failed to handle the query","Модулът не успя да обработи заявката"}.
 {"Monday","Понеделник"}.
 {"Multicast","Мултикаст"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Повече от един <item/> елемента не се разрешават от RFC6121"}.
 {"Multi-User Chat","Групов чат (MUC)"}.
-{"Name in the rosters where this group will be displayed","Име в списъците с контакти, където ще се показва тази група"}.
 {"Name","Име"}.
-{"Name:","Име:"}.
 {"Natural Language for Room Discussions","Език за дискусии в стаята"}.
 {"Natural-Language Room Name","Име на стаята на предпочитания език"}.
 {"Neither 'jid' nor 'nick' attribute found","Атрибутите 'jid' и 'nick' не са намерени"}.
@@ -342,14 +311,10 @@
 {"Occupants are allowed to query others","Участниците могат да отправят заявки към други лица"}.
 {"Occupants May Change the Subject","Участниците могат да променят темата"}.
 {"October","Октомври"}.
-{"Offline Messages","Офлайн съобщения"}.
-{"Offline Messages:","Офлайн съобщения:"}.
 {"OK","ДОБРЕ"}.
 {"Old Password:","Стара парола:"}.
 {"Online Users","Онлайн потребители"}.
-{"Online Users:","Онлайн потребители:"}.
 {"Online","Онлайн"}.
-{"Only admins can see this","Само администратори могат да видят това"}.
 {"Only collection node owners may associate leaf nodes with the collection","Само собственици на колекционни нодове имат право да свързват листови нодове към колекцията"}.
 {"Only deliver notifications to available users","Доставяне на известия само до наличните потребители"}.
 {"Only <enable/> or <disable/> tags are allowed","Само тагове <enable/> и <disable/> са разрешени"}.
@@ -369,10 +334,8 @@
 {"Organization Unit","Отдел"}.
 {"Other Modules Available:","Други налични модули:"}.
 {"Outgoing s2s Connections","Изходящи s2s връзки"}.
-{"Outgoing s2s Connections:","Изходящи s2s връзки:"}.
 {"Owner privileges required","Изискват се привилегии на собственик"}.
 {"Packet relay is denied by service policy","Предаването на пакети е отказано от политиката на услугата"}.
-{"Packet","Пакет"}.
 {"Participant ID","ID на участник"}.
 {"Participant","Участник"}.
 {"Password Verification","Проверка на паролата"}.
@@ -382,7 +345,6 @@
 {"Path to Dir","Път към директория"}.
 {"Path to File","Път до файл"}.
 {"Payload semantic type information","Информация за семантичен тип полезен товар"}.
-{"Pending","В очакване"}.
 {"Period: ","Период: "}.
 {"Persist items to storage","Запазване на елементите в хранилището"}.
 {"Persistent","Постоянен"}.
@@ -415,21 +377,16 @@
 {"Receive notification of new nodes only","Получаване на известия само за нови нодове"}.
 {"Recipient is not in the conference room","Получателят не е в конферентната стая"}.
 {"Register an XMPP account","Регистрирай XMPP акаунт"}.
-{"Registered Users","Регистрирани потребители"}.
-{"Registered Users:","Регистрирани потребители:"}.
 {"Register","Регистрирай"}.
 {"Remote copy","Отдалечено копие"}.
 {"Remove a hat from a user","Премахни шапка от потребител"}.
-{"Remove All Offline Messages","Премахни всички офлайн съобщения"}.
 {"Remove User","Премахни потребител"}.
-{"Remove","Премахни"}.
 {"Replaced by new connection","Заменен от нова връзка"}.
 {"Request has timed out","Времето за заявка изтече"}.
 {"Request is ignored","Заявката е игнорирано"}.
 {"Requested role","Заявена роля"}.
 {"Resources","Ресурси"}.
 {"Restart Service","Рестартирай услугата"}.
-{"Restart","Рестартирай"}.
 {"Restore Backup from File at ","Възстанови резервно копие от файл в "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Възстановяване на бинарно копие след следващото рестартиране на ejabberd (изисква по-малко памет):"}.
 {"Restore binary backup immediately:","Възстанови незабавно двоично копие:"}.
@@ -445,20 +402,15 @@
 {"Room terminates","Стаята се прекратява"}.
 {"Room title","Заглавие на стаята"}.
 {"Roster groups allowed to subscribe","Групи от списъци с контакти, на които е разрешено да се абонират"}.
-{"Roster of ~ts","Списък с контакти на ~ts"}.
 {"Roster size","Размер на списъка с контакти"}.
-{"Roster:","Списък с контакти:"}.
-{"RPC Call Error","Грешка при RPC повикване"}.
 {"Running Nodes","Работещи нодове"}.
 {"~s invites you to the room ~s","~s ви кани в стая ~s"}.
 {"Saturday","Събота"}.
-{"Script check","Проверка на скрипт"}.
 {"Search from the date","Търси от дата"}.
 {"Search Results for ","Резултати от търсенето за "}.
 {"Search the text","Търси текста"}.
 {"Search until the date","Търси до дата"}.
 {"Search users in ","Търси потребители в "}.
-{"Select All","Избери всички"}.
 {"Send announcement to all online users on all hosts","Изпрати съобщение до всички онлайн потребители на всички хостове"}.
 {"Send announcement to all online users","Изпрати съобщение до всички онлайн потребители"}.
 {"Send announcement to all users on all hosts","Изпрати съобщение до всички потребители на всички хостове"}.
@@ -482,23 +434,17 @@
 {"Stanza id is not valid","Невалидно ID на строфата"}.
 {"Stanza ID","ID на строфа"}.
 {"Statically specify a replyto of the node owner(s)","Статично задаване на replyto на собственика(ците) на нода"}.
-{"Statistics of ~p","Статистики на ~p"}.
-{"Statistics","Статистики"}.
 {"Stopped Nodes","Спрени нодове"}.
-{"Stop","Спри"}.
-{"Storage Type","Тип хранилище"}.
 {"Store binary backup:","Запази бинарен архив:"}.
 {"Store plain text backup:","Запази архив като обикновен текст:"}.
 {"Stream management is already enabled","Управлението на потока вече е активирано"}.
 {"Stream management is not enabled","Управлението на потока не е активирано"}.
 {"Subject","Тема"}.
 {"Submitted","Изпратено"}.
-{"Submit","Изпрати"}.
 {"Subscriber Address","Адрес на абоната"}.
 {"Subscribers may publish","Абонатите могат да публикуват"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","Заявките за абонамент трябва да бъдат одобрени и само абонатите могат да извличат елементи"}.
 {"Subscriptions are not allowed","Абонаментите не са разрешени"}.
-{"Subscription","Абонамент"}.
 {"Sunday","Неделя"}.
 {"Text associated with a picture","Текст, свързан със снимка"}.
 {"Text associated with a sound","Текст, свързан със звук"}.
@@ -560,7 +506,6 @@
 {"Thursday","Четвъртък"}.
 {"Time delay","Закъснение"}.
 {"Timed out waiting for stream resumption","Времето за изчакване за възобновяване на потока изтече"}.
-{"Time","Час"}.
 {"To register, visit ~s","За да се регистрирате, посетете ~s"}.
 {"To ~ts","До ~ts"}.
 {"Token TTL","Токен TTL"}.
@@ -573,13 +518,7 @@
 {"Too many receiver fields were specified","Посочени са твърде много полета за получател"}.
 {"Too many unacked stanzas","Твърде много непотвърдени строфи"}.
 {"Too many users in this conference","Твърде много потребители в тази конференция"}.
-{"Total rooms","Общо стаи"}.
-{"To","До"}.
 {"Traffic rate limit is exceeded","Лимитът за трафик е надвишен"}.
-{"Transactions Aborted:","Прекратени транзакции:"}.
-{"Transactions Committed:","Извършени транзакции:"}.
-{"Transactions Logged:","Регистрирани транзакции:"}.
-{"Transactions Restarted:","Рестартирани транзакции:"}.
 {"~ts's Offline Messages Queue","Офлайн съобщения на ~ts"}.
 {"Tuesday","Вторник"}.
 {"Unable to generate a CAPTCHA","Не може да се генерира CAPTCHA"}.
@@ -590,19 +529,13 @@
 {"Uninstall","Деинсталирай"}.
 {"Unregister an XMPP account","Дерегистрирай XMPP профил"}.
 {"Unregister","Дерегистрирай"}.
-{"Unselect All","Размаркирай всички"}.
 {"Unsupported <index/> element","Неподдържан елемент <index/>"}.
 {"Unsupported version","Неподдържана версия"}.
 {"Update message of the day (don't send)","Актуализирай съобщението на деня (не изпращай)"}.
 {"Update message of the day on all hosts (don't send)","Актуализирай съобщението на деня на всички хостове (не изпращай)"}.
-{"Update plan","План за актуализация"}.
-{"Update ~p","Актуализирай ~p"}.
-{"Update script","Актуализиращ скрипт"}.
 {"Update specs to get modules source, then install desired ones.","Актуализирайте спецификациите, за да получите източник на модули, след което инсталирайте желаните."}.
 {"Update Specs","Актуализирай спецификациите"}.
-{"Update","Актуализирай"}.
 {"Upgrade","Обнови"}.
-{"Uptime:","Време на работа:"}.
 {"URL for Archived Discussion Logs","URL адрес за дневници на архивирани дискусии"}.
 {"User already exists","Потребителят вече съществува"}.
 {"User (jid)","Потребител (jid)"}.
@@ -617,15 +550,12 @@
 {"Users Last Activity","Последна активност на потребителите"}.
 {"Users","Потребители"}.
 {"User","Потребител"}.
-{"Validate","Валидирай"}.
 {"Value 'get' of 'type' attribute is not allowed","Стойността 'get' на атрибут 'type' не е разрешена"}.
 {"Value of '~s' should be boolean","Стойността на '~s' трябва да е булева"}.
 {"Value of '~s' should be datetime string","Стойността на '~s' трябва да бъде низ за дата и час"}.
 {"Value of '~s' should be integer","Стойността на '~s' трябва да бъде цяло число"}.
 {"Value 'set' of 'type' attribute is not allowed","Стойността 'set' на атрибут 'type' не е разрешена"}.
 {"View joined MIX channels","Вижте присъединените MIX канали"}.
-{"View Queue","Вижте опашката"}.
-{"View Roster","Преглед на списъка с контакти"}.
 {"Virtual Hosts","Виртуални хостове"}.
 {"Visitors are not allowed to change their nicknames in this room","Посетителите нямат право да променят псевдонимите си в тази стая"}.
 {"Visitors are not allowed to send messages to all occupants","На посетителите не е разрешено да изпращат съобщения до всички участници"}.

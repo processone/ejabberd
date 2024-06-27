@@ -8,4 +8,3 @@
 {"# participants","# المشاركين"}.
 {"A description of the node","وصف العقدة"}.
 {"A Web Page","موقع الكتروني"}.
-{"'Displayed groups' not added (they do not exist!): ","لم تتم إضافة \"المجموعات المعروضة\" (فهي غير موجودة!): "}.

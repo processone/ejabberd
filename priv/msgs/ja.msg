@@ -14,8 +14,6 @@
 {"Access model","アクセスモデル"}.
 {"Account doesn't exist","アカウントは存在しません"}.
 {"Action on user","ユーザー操作"}.
-{"Add Jabber ID","Jabber ID を追加"}.
-{"Add New","新規追加"}.
 {"Add User","ユーザーを追加"}.
 {"Administration of ","管理: "}.
 {"Administration","管理"}.
@@ -68,26 +66,19 @@
 {"Conference room does not exist","会議室は存在しません"}.
 {"Configuration of room ~s","チャットルーム ~s の設定"}.
 {"Configuration","設定"}.
-{"Connected Resources:","接続リソース:"}.
 {"Contact Addresses (normally, room owner or owners)","連絡先 (通常は会議室の主宰者またはその複数)"}.
 {"Country","国"}.
-{"CPU Time:","CPU時間:"}.
 {"Current Discussion Topic","現在の話題"}.
 {"Database failure","データーベース障害"}.
-{"Database Tables at ~p","データーベーステーブル: ~p"}.
 {"Database Tables Configuration at ","データーベーステーブル設定 "}.
 {"Database","データーベース"}.
 {"December","12月"}.
 {"Default users as participants","デフォルトのユーザーは参加者"}.
-{"Delete content","内容を削除"}.
 {"Delete message of the day on all hosts","全ホストのお知らせメッセージを削除"}.
 {"Delete message of the day","お知らせメッセージを削除"}.
-{"Delete Selected","選択した項目を削除"}.
-{"Delete table","テーブルを削除"}.
 {"Delete User","ユーザーを削除"}.
 {"Deliver event notifications","イベント通知を配送する"}.
 {"Deliver payloads with event notifications","イベント通知と同時にペイロードを配送する"}.
-{"Description:","説明:"}.
 {"Disc only copy","ディスクだけのコピー"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","パスワードは誰にも(たとえ XMPP サーバーの管理者でも)教えないようにしてください。"}.
 {"Dump Backup to Text File at ","テキストファイルにバックアップ: "}.
@@ -103,7 +94,6 @@
 {"ejabberd vCard module","ejabberd vCard モジュール"}.
 {"ejabberd Web Admin","ejabberd ウェブ管理"}.
 {"ejabberd","ejabberd"}.
-{"Elements","要素"}.
 {"Email Address","メールアドレス"}.
 {"Email","メール"}.
 {"Enable logging","ロギングを有効"}.
@@ -116,7 +106,6 @@
 {"Enter path to text file","テキストファイルのパスを入力してください"}.
 {"Enter the text you see","見えているテキストを入力してください"}.
 {"Erlang XMPP Server","Erlang XMPP サーバー"}.
-{"Error","エラー"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","CAPTCHA 入力を免除する Jabber ID"}.
 {"Export all tables as SQL queries to a file:","すべてのテーブルをSQL形式でファイルにエクスポート: "}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","サーバーにあるすべてのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"}.
@@ -131,7 +120,6 @@
 {"Fill in the form to search for any matching XMPP User","XMPP ユーザーを検索するには欄に入力してください"}.
 {"Friday","金曜日"}.
 {"From ~ts","From ~ts"}.
-{"From","差出人"}.
 {"Full List of Room Admins","チャットルーム管理者の一覧"}.
 {"Full List of Room Owners","チャットルーム主宰者の一覧"}.
 {"Full Name","氏名"}.
@@ -141,19 +129,15 @@
 {"Get Number of Registered Users","登録ユーザー数を取得"}.
 {"Get Pending","保留中の取得"}.
 {"Get User Last Login Time","最終ログイン時間を取得"}.
-{"Get User Password","パスワードを取得"}.
 {"Get User Statistics","ユーザー統計を取得"}.
 {"Given Name","名"}.
 {"Grant voice to this person?","この人に発言権を与えますか ?"}.
-{"Groups","グループ"}.
-{"Group","グループ"}.
 {"has been banned","はバンされました"}.
 {"has been kicked because of a system shutdown","はシステムシャットダウンのためキックされました"}.
 {"has been kicked because of an affiliation change","は分掌が変更されたためキックされました"}.
 {"has been kicked because the room has been changed to members-only","はチャットルームがメンバー制に変更されたためキックされました"}.
 {"has been kicked","はキックされました"}.
 {"Host unknown","不明なホスト"}.
-{"Host","ホスト"}.
 {"HTTP File Upload","HTTP ファイルアップロード"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","ここに CAPTCHA 画像が表示されない場合、ウェブページを参照してください。"}.
 {"Import Directory","ディレクトリインポート"}.
@@ -165,7 +149,6 @@
 {"Import Users from Dir at ","ディレクトリからユーザーをインポート: "}.
 {"Import Users From jabberd14 Spool Files","jabberd14 Spool ファイルからユーザーをインポート"}.
 {"Improper message type","誤ったメッセージタイプです"}.
-{"Incoming s2s Connections:","内向き s2s コネクション:"}.
 {"Incorrect data form","データ形式が違います"}.
 {"Incorrect password","パスワードが違います"}.
 {"Installed Modules:","インストールされているモジュール:"}.
@@ -187,15 +170,12 @@
 {"July","7月"}.
 {"June","6月"}.
 {"Just created","作成しました"}.
-{"Label:","ラベル:"}.
 {"Last Activity","活動履歴"}.
 {"Last login","最終ログイン"}.
 {"Last message","最終メッセージ"}.
 {"Last month","先月"}.
 {"Last year","去年"}.
 {"leaves the room","がチャットルームから退出しました"}.
-{"List of rooms","チャットルームの一覧"}.
-{"Low level update script","低レベル更新スクリプト"}.
 {"Make participants list public","参加者一覧を公開"}.
 {"Make room CAPTCHA protected","チャットルームを CAPTCHA で保護"}.
 {"Make room members-only","チャットルームをメンバーのみに制限"}.
@@ -210,20 +190,16 @@
 {"Maximum Number of Occupants","最大在室者数"}.
 {"May","5月"}.
 {"Membership is required to enter this room","このチャットルームに入るにはメンバーでなければなりません"}.
-{"Members:","メンバー:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","パスワードは記憶するか、紙に書いて安全な場所に保管してください。もしあなたがパスワードを忘れてしまった場合、XMPP ではパスワードのリカバリを自動的に行うことはできません。"}.
-{"Memory","メモリ"}.
 {"Message body","本文"}.
 {"Middle Name","ミドルネーム"}.
 {"Minimum interval between voice requests (in seconds)","発言権の要求の最小時間間隔 (秒)"}.
 {"Moderator privileges required","モデレーター権限が必要です"}.
 {"Moderator","モデレーター"}.
-{"Modified modules","更新されたモジュール"}.
 {"Monday","月曜日"}.
 {"Multicast","マルチキャスト"}.
 {"Multi-User Chat","マルチユーザーチャット"}.
 {"Name","名"}.
-{"Name:","名前:"}.
 {"Natural-Language Room Name","自然言語での会議室名"}.
 {"Never","なし"}.
 {"New Password:","新しいパスワード:"}.
@@ -260,12 +236,9 @@
 {"Occupants are allowed to invite others","在室者は誰かを招待することができます"}.
 {"Occupants May Change the Subject","ユーザーによる件名の変更を許可"}.
 {"October","10月"}.
-{"Offline Messages","オフラインメッセージ"}.
-{"Offline Messages:","オフラインメッセージ:"}.
 {"OK","OK"}.
 {"Old Password:","古いパスワード:"}.
 {"Online Users","オンラインユーザー"}.
-{"Online Users:","オンラインユーザー:"}.
 {"Online","オンライン"}.
 {"Only deliver notifications to available users","有効なユーザーにのみ告知を送信する"}.
 {"Only <enable/> or <disable/> tags are allowed","<enable/> タグまたは <disable/> タグのみが許可されます"}.
@@ -280,9 +253,7 @@
 {"Organization Name","会社名"}.
 {"Organization Unit","部署名"}.
 {"Outgoing s2s Connections","外向き s2s コネクション"}.
-{"Outgoing s2s Connections:","外向き s2s コネクション:"}.
 {"Owner privileges required","主宰者の権限が必要です"}.
-{"Packet","パケット"}.
 {"Participant ID","参加者 ID"}.
 {"Participant","参加者"}.
 {"Password Verification","パスワード (確認)"}.
@@ -291,7 +262,6 @@
 {"Password:","パスワード:"}.
 {"Path to Dir","ディレクトリのパス"}.
 {"Path to File","ファイルのパス"}.
-{"Pending","保留"}.
 {"Period: ","期間: "}.
 {"Persist items to storage","アイテムをストレージに保存する"}.
 {"Persistent","チャットルームを永続化"}.
@@ -313,18 +283,13 @@
 {"Really delete message of the day?","本当にお知らせメッセージを削除しますか ?"}.
 {"Recipient is not in the conference room","受信者はこの会議室にいません"}.
 {"Register an XMPP account","XMPP アカウントを登録"}.
-{"Registered Users","登録ユーザー"}.
-{"Registered Users:","登録ユーザー:"}.
 {"Register","登録"}.
 {"Remote copy","リモートコピー"}.
-{"Remove All Offline Messages","すべてのオフラインメッセージを削除"}.
 {"Remove User","ユーザーを削除"}.
-{"Remove","削除"}.
 {"Replaced by new connection","新しいコネクションによって置き換えられました"}.
 {"Request is ignored","リクエストは無視されます"}.
 {"Resources","リソース"}.
 {"Restart Service","サービスを再起動"}.
-{"Restart","再起動"}.
 {"Restore Backup from File at ","ファイルからバックアップをリストア: "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","ejabberd の再起動時にバイナリバックアップからリストア (メモリ少):"}.
 {"Restore binary backup immediately:","直ちにバイナリバックアップからリストア:"}.
@@ -337,17 +302,12 @@
 {"Room Occupants","在室者"}.
 {"Room title","チャットルームのタイトル"}.
 {"Roster groups allowed to subscribe","名簿グループは購読を許可しました"}.
-{"Roster of ~ts","~ts の名簿"}.
 {"Roster size","名簿サイズ"}.
-{"Roster:","名簿:"}.
-{"RPC Call Error","RPC 呼び出しエラー"}.
 {"Running Nodes","起動ノード"}.
 {"~s invites you to the room ~s","~s はあなたをチャットルーム ~s に招待しています"}.
 {"Saturday","土曜日"}.
-{"Script check","スクリプトチェック"}.
 {"Search Results for ","検索結果: "}.
 {"Search users in ","ユーザーの検索: "}.
-{"Select All","すべて選択"}.
 {"Send announcement to all online users on all hosts","全ホストのオンラインユーザーにアナウンスを送信"}.
 {"Send announcement to all online users","すべてのオンラインユーザーにアナウンスを送信"}.
 {"Send announcement to all users on all hosts","全ホストのユーザーにアナウンスを送信"}.
@@ -366,18 +326,12 @@
 {"Specify the event message type","イベントメッセージ種別を設定"}.
 {"Specify the publisher model","公開モデルを指定する"}.
 {"Stanza ID","スタンザ ID"}.
-{"Statistics of ~p","~p の統計"}.
-{"Statistics","統計"}.
 {"Stopped Nodes","停止ノード"}.
-{"Stop","停止"}.
-{"Storage Type","ストレージタイプ"}.
 {"Store binary backup:","バイナリバックアップを保存:"}.
 {"Store plain text backup:","プレーンテキストバックアップを保存:"}.
 {"Subject","件名"}.
 {"Submitted","送信完了"}.
-{"Submit","送信"}.
 {"Subscriber Address","購読者のアドレス"}.
-{"Subscription","認可"}.
 {"Sunday","日曜日"}.
 {"That nickname is already in use by another occupant","そのニックネームは既にほかの在室者によって使用されています"}.
 {"That nickname is registered by another person","ニックネームはほかの人によって登録されています"}.
@@ -404,18 +358,11 @@
 {"This room is not anonymous","このチャットルームは非匿名です"}.
 {"Thursday","木曜日"}.
 {"Time delay","遅延時間"}.
-{"Time","時間"}.
 {"Too many CAPTCHA requests","CAPTCHA 要求が多すぎます"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","~p回の認証に失敗しました。このIPアドレス(~s)は~s UTCまでブロックされます。"}.
 {"Too many unacked stanzas","多くのスタンザが応答していません"}.
 {"Too many users in this conference","この会議にはユーザーが多すぎます"}.
-{"Total rooms","チャットルーム数"}.
-{"To","To"}.
 {"Traffic rate limit is exceeded","トラフィックレートの制限を超えました"}.
-{"Transactions Aborted:","トランザクションの失敗:"}.
-{"Transactions Committed:","トランザクションのコミット:"}.
-{"Transactions Logged:","トランザクションのログ: "}.
-{"Transactions Restarted:","トランザクションの再起動:"}.
 {"~ts's Offline Messages Queue","~ts のオフラインメッセージキュー"}.
 {"Tuesday","火曜日"}.
 {"Unable to generate a CAPTCHA","CAPTCHA を生成できません"}.
@@ -425,16 +372,10 @@
 {"Uninstall","アンインストール"}.
 {"Unregister an XMPP account","XMPP アカウントを削除"}.
 {"Unregister","削除"}.
-{"Unselect All","すべての選択を解除"}.
 {"Unsupported version","対応していないバージョン"}.
 {"Update message of the day (don't send)","お知らせメッセージを更新 (送信しない)"}.
 {"Update message of the day on all hosts (don't send)","全ホストのお知らせメッセージを更新 (送信しない)"}.
-{"Update plan","更新計画"}.
-{"Update ~p","更新 ~p"}.
-{"Update script","スクリプトの更新"}.
-{"Update","更新"}.
 {"Upgrade","アップグレード"}.
-{"Uptime:","起動時間:"}.
 {"User already exists","ユーザーは既に存在しています"}.
 {"User (jid)","ユーザー (JID)"}.
 {"User JID","ユーザー JID"}.
@@ -448,12 +389,9 @@
 {"Users Last Activity","ユーザーの活動履歴"}.
 {"Users","ユーザー"}.
 {"User","ユーザー"}.
-{"Validate","検証"}.
 {"Value of '~s' should be boolean","'~s' の値はブール値である必要があります"}.
 {"Value of '~s' should be integer","'~s' の値は整数である必要があります"}.
 {"vCard User Search","vCard検索"}.
-{"View Queue","キューを表示"}.
-{"View Roster","名簿を表示"}.
 {"Virtual Hosts","バーチャルホスト"}.
 {"Visitors are not allowed to change their nicknames in this room","傍聴者はこのチャットルームでニックネームを変更することはできません"}.
 {"Visitors are not allowed to send messages to all occupants","傍聴者はすべての在室者にメッセージを送信することはできません"}.
