@@ -256,8 +256,8 @@ CREATE TABLE pubsub_item (
   nodeid bigint,
   itemid text NOT NULL,
   publisher text NOT NULL,
-  creation varchar(32) NOT NULL,
-  modification varchar(32) NOT NULL,
+  creation BIGINT UNSIGNED NOT NULL,
+  modification BIGINT UNSIGNED NOT NULL,
   payload mediumtext NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX i_pubsub_item_itemid ON pubsub_item(itemid(36));
