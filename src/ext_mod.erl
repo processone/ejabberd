@@ -1195,7 +1195,7 @@ is_elixir_module(Module) ->
           filelib:wildcard(Src++"/*.{erl}")} of
         {[_ | _], []} ->
             true;
-        {[], [_ | _]} ->
+        {[], _} ->
             false
     end.
 
