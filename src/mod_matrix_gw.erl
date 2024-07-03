@@ -673,7 +673,7 @@ get_pruned_event_id(PrunedEvent) ->
 
 encode_canonical_json(JSON) ->
     JSON2 = sort_json(JSON),
-    misc:json_encode(JSON2).
+    misc:json_encode_with_kv_lists(JSON2).
 
 sort_json(#{} = Map) ->
     Map2 = maps:map(fun(_K, V) ->
