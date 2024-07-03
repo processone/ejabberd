@@ -1691,7 +1691,7 @@ make_command2(Name, Request, BaseArguments, Options) ->
     CallerInfo =
         #{usr => {RUser, RServer, <<"">>},
           ip => RIp,
-          caller_host => RHost,
+          caller_host => RServer,
           caller_module => ?MODULE},
     try {ejabberd_commands:get_command_definition(Name),
          ejabberd_access_permissions:can_access(Name, CallerInfo)}
