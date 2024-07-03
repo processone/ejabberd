@@ -190,6 +190,8 @@ end_per_group(pgsql, Config) ->
     case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [Query]) of
         {selected, [t]} ->
             clear_sql_tables(pgsql, Config);
+	{selected, _, [[<<"t">>]]} ->
+	    clear_sql_tables(pgsql, Config);
         Other ->
             ct:fail({failed_to_check_table_existence, pgsql, Other})
     end,
