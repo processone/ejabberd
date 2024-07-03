@@ -1685,8 +1685,7 @@ make_command2(Name, Request, BaseArguments, Options) ->
     TO = proplists:get_value(table_options, Options, {999999, []}),
     Style = proplists:get_value(style, Options, normal),
     #request{us = {RUser, RServer},
-             ip = RIp,
-             host = RHost} =
+             ip = RIp} =
         Request,
     CallerInfo =
         #{usr => {RUser, RServer, <<"">>},
