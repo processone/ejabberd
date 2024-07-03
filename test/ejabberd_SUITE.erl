@@ -186,7 +186,7 @@ end_per_group(mssql, Config) ->
     end,
     ok;
 end_per_group(pgsql, Config) ->
-    Query = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'mqtt_pub');",
+    Query = "SELECT EXISTS (SELECT 0 FROM information_schema.tables WHERE table_name = 'mqtt_pub');",
     case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [Query]) of
         {selected, [t]} ->
             clear_sql_tables(pgsql, Config);
