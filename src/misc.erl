@@ -140,12 +140,12 @@ json_decode(Bin) ->
     jiffy:decode(Bin, [return_maps]).
 -else.
 json_encode_with_kv_lists(Term) ->
-    iolist_to_binary(json:encode(Term),
+    iolist_to_binary(json:encode(Term,
 		     fun([{_, _} | _] = Val, Encoder) ->
 			 json:encode_key_value_list(Val, Encoder);
 			(Val, Encoder) ->
 			    json:encode_value(Val, Encoder)
-		     end).
+		     end)).
 json_encode(Term) ->
     iolist_to_binary(json:encode(Term)).
 json_decode(Bin) ->
