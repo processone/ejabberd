@@ -505,12 +505,12 @@ normal_state({route, <<"">>,
 			       process_iq_adhoc(From, IQ, StateData);
 			   #register{} ->
                                mod_muc:process_iq_register(IQ);
-			   #message_moderate{} = Moderate -> % moderate:1
-			       process_iq_moderate(From, IQ, Moderate, StateData);
+			   #message_moderate{id = Id, reason = Reason} -> % moderate:1
+			       process_iq_moderate(From, IQ, Id, Reason, StateData);
 			   #fasten_apply_to{id = ModerateId} = ApplyTo ->
-			       case xmpp:get_subtag(ApplyTo, #message_moderate{}) of
-				   #message_moderate{} = Moderate -> % moderate:0
-				       process_iq_moderate(From, IQ, Moderate#message_moderate{id = ModerateId}, StateData);
+			       case xmpp:get_subtag(ApplyTo, #message_moderate_21{}) of
+				   #message_moderate_21{reason = Reason} -> % moderate:0
+				       process_iq_moderate(From, IQ, ModerateId, Reason, StateData);
 				   _ ->
 				       Txt = ?T("The feature requested is not "
 						"supported by the conference"),
@@ -5162,13 +5162,12 @@ add_presence_hats(JID, Pres, StateData) ->
             Pres
     end.
 
--spec process_iq_moderate(jid(), iq(), message_moderate(), state()) ->
+-spec process_iq_moderate(jid(), iq(), binary(), binary() | undefined, state()) ->
     {result, undefined, state()} |
     {error, stanza_error()}.
-process_iq_moderate(_From, #iq{type = get}, _Moderate, _StateData) ->
+process_iq_moderate(_From, #iq{type = get}, _Id, _Reason, _StateData) ->
     {error, xmpp:err_bad_request()};
-process_iq_moderate(From, #iq{type = set, lang = Lang},
-		    #message_moderate{id = Id, reason = Reason, xmlns = Xmlns},
+process_iq_moderate(From, #iq{type = set, lang = Lang}, Id, Reason,
 		    #state{config = Config, room = Room, host = Host,
                            jid = JID, server_host = Server} = StateData) ->
     FAffiliation = get_affiliation(From, StateData),
@@ -5189,25 +5188,17 @@ process_iq_moderate(From, #iq{type = set, lang = Lang},
 			    ok
 		    end,
 		    By = jid:replace_resource(JID, find_nick_by_jid(From, StateData)),
-                    SubEl = case Xmlns of
-                                ?NS_MESSAGE_MODERATE_0 ->
-                                    SubEls = [#xmlel{name = <<"reason">>,
-                                                    attrs = [],
-                                                    children = [{xmlcdata, Reason}]},
-                                              #message_retract{id = Id}],
-                                    ModeratedEl = #message_moderated{by = By,
-                                                                   sub_els = SubEls},
-                                    #fasten_apply_to{id = Id,
-                                                     sub_els = [ModeratedEl]};
-                                ?NS_MESSAGE_MODERATE_1 ->
-                                    ModeratedEl = #message_moderated{by = By},
-                                    #message_retract{id = Id,
-                                                     reason = Reason,
-                                                     moderated = ModeratedEl}
-                            end,
+		    Mod21 = #message_moderated_21{by = By,
+						  reason = Reason,
+						  sub_els = [#message_retract_30{}]},
+		    SubEl = [#fasten_apply_to{id = Id,
+					      sub_els = [Mod21]},
+			     #message_retract{id = Id,
+					      reason = Reason,
+					      moderated = #message_moderated{by = By}}],
 		    Packet0 = #message{type = groupchat,
                                        from = From,
-                                       sub_els = [SubEl]},
+                                       sub_els = SubEl},
 	            {FromNick, _Role} = get_participant_data(From, StateData),
                     Packet = ejabberd_hooks:run_fold(muc_filter_message,
 						     StateData#state.server_host,
