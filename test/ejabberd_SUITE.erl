@@ -390,6 +390,7 @@ no_db_tests() ->
      auth_external_wrong_jid,
      auth_external_wrong_server,
      auth_external_invalid_cert,
+     commands_tests:single_cases(),
      jidprep_tests:single_cases(),
      sm_tests:single_cases(),
      sm_tests:master_slave_cases(),
