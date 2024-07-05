@@ -117,7 +117,7 @@ opt_type(captcha_cmd) ->
 	fun(V) ->
 		V2 = misc:expand_keyword(<<"@SEMVER@">>, V,
 				    ejabberd_option:version()),
-		misc:expand_keyword(<<"@VERSION">>, V2,
+		misc:expand_keyword(<<"@VERSION@">>, V2,
 				    misc:semver_to_xxyy(ejabberd_option:version()))
 	end);
 opt_type(captcha_host) ->
