@@ -702,4 +702,13 @@ mod_doc() ->
             #{value => "{subject: Subject, body: Body}",
               desc =>
                   ?T("Set a welcome message that is sent to each newly registered account. "
-                     "The message will have subject 'Subject' and text 'Body'.")}}]}.
+                     "The message will have subject 'Subject' and text 'Body'."),
+              example =>
+                    ["modules:",
+                     "  mod_register:",
+                     "    welcome_message:",
+                     "      subject: \"Welcome!\"",
+                     "      body: |-",
+                     "        Hi!",
+                     "        Welcome to this XMPP server"]}}
+          ]}.
