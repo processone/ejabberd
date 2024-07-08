@@ -36,7 +36,7 @@
          install_contrib_modules/2,
          config_dir/0, get_commands_spec/0]).
 -export([modules_configs/0, module_ebin_dir/1]).
--export([compile_erlang_file/2, compile_elixir_file/2]).
+-export([compile_erlang_file/2, compile_elixir_files/2]).
 -export([web_menu_node/3, web_page_node/3, webadmin_node_contrib/3]).
 
 %% gen_server callbacks
@@ -603,8 +603,7 @@ compile(LibDir) ->
     compile_c_files(LibDir),
     Er = [compile_erlang_file(Bin, File, Options)
           || File <- filelib:wildcard(Src++"/**/*.erl")],
-    Ex = [compile_elixir_file(Bin, File)
-          || File <- filelib:wildcard(Lib ++ "/**/*.ex")],
+    Ex = compile_elixir_files(Bin, filelib:wildcard(Lib ++ "/**/*.ex")),
     compile_result(lists:flatten([Er, Ex])).
 
 compile_c_files(LibDir) ->
@@ -669,18 +668,23 @@ compile_erlang_file(Dest, File, ErlOptions) ->
     end.
 
 -ifdef(ELIXIR_ENABLED).
-compile_elixir_file(Dest, File) when is_list(Dest) and is_list(File) ->
-  compile_elixir_file(list_to_binary(Dest), list_to_binary(File));
+compile_elixir_files(Dest, [File | _] = Files) when is_list(Dest) and is_list(File) ->
+  BinFiles = [list_to_binary(F) || F <- Files],
+  compile_elixir_files(list_to_binary(Dest), BinFiles);
 
-compile_elixir_file(Dest, File) ->
-  try 'Elixir.Kernel.ParallelCompiler':files_to_path([File], Dest, []) of
+compile_elixir_files(Dest, Files) ->
+  try 'Elixir.Kernel.ParallelCompiler':files_to_path(Files, Dest, []) of
     Modules when is_list(Modules) -> {ok, Modules}
   catch
-    _ -> {error, {compilation_failed, File}}
+    A:B ->
+          ?ERROR_MSG("Problem ~p compiling Elixir files: ~p~nFiles: ~p", [A, B, Files]),
+          {error, {compilation_failed, Files}}
   end.
 -else.
-compile_elixir_file(_, File) ->
-    {error, {compilation_failed, File}}.
+compile_elixir_files(_, []) ->
+    ok;
+compile_elixir_files(_, Files) ->
+    {error, {compilation_failed, Files}}.
 -endif.
 
 install(Module, Spec, SrcDir, LibDir, Config) ->
