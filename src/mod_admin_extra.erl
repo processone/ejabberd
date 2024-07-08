@@ -1934,7 +1934,7 @@ srg_get_displayed(Group, Host) ->
             error ->
                 []
         end,
-    proplists:get_value(displayed_groups, Opts).
+    proplists:get_value(displayed_groups, Opts, []).
 
 srg_add_displayed(Group, Host, NewGroup) ->
     Opts =
