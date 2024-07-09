@@ -673,8 +673,12 @@ compile_elixir_files(Dest, [File | _] = Files) when is_list(Dest) and is_list(Fi
   compile_elixir_files(list_to_binary(Dest), BinFiles);
 
 compile_elixir_files(Dest, Files) ->
-  try 'Elixir.Kernel.ParallelCompiler':files_to_path(Files, Dest, []) of
-    Modules when is_list(Modules) -> {ok, Modules}
+  try 'Elixir.Kernel.ParallelCompiler':compile_to_path(Files, Dest, [{return_diagnostics, true}]) of
+      {ok, Modules, []} when is_list(Modules) ->
+          {ok, Modules};
+      {ok, Modules, Warnings} when is_list(Modules) ->
+          ?WARNING_MSG("Warnings compiling module: ~n~p", [Warnings]),
+          {ok, Modules}
   catch
     A:B ->
           ?ERROR_MSG("Problem ~p compiling Elixir files: ~p~nFiles: ~p", [A, B, Files]),
