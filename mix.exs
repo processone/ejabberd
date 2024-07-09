@@ -43,7 +43,7 @@ defmodule Ejabberd.MixProject do
 
   def application do
     [mod: {:ejabberd_app, []},
-     applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib, :mix,
+     applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib, :mix, :logger,
                     :fast_tls, :fast_xml, :fast_yaml, :jose,
                     :p1_utils, :stringprep, :syntax_tools, :yconf, :xmpp]
      ++ cond_apps(),
