@@ -111,9 +111,12 @@ access_rules:
 
 api_permissions:
   "console commands":
-    from:
-      - ejabberd_ctl
+    from: ejabberd_ctl
     who: all
+    what: "*"
+  "webadmin commands":
+    from: ejabberd_web_admin
+    who: admin
     what: "*"
   "admin access":
     who:
