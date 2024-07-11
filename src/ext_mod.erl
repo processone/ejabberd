@@ -688,7 +688,12 @@ compile_elixir_files(Dest, Files) ->
 compile_elixir_files(_, []) ->
     ok;
 compile_elixir_files(_, Files) ->
-    {error, {compilation_failed, Files}}.
+    ErrorString = "Attempted to compile Elixir files, but Elixir support is "
+        "not available in ejabberd. Try compiling ejabberd using "
+        "'./configure --enable-elixir' or './configure --with-rebar=mix'",
+    ?ERROR_MSG(ErrorString, []),
+    io:format("Error: " ++ ErrorString ++ "~n", []),
+    {error, {elixir_not_available, Files}}.
 -endif.
 
 install(Module, Spec, SrcDir, LibDir, Config) ->
