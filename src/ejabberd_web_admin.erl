@@ -2225,8 +2225,11 @@ make_result(Binary,
     when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
     First = proplists:get_value(first, ArgumentsUsed),
     Second = proplists:get_value(second, ArgumentsUsed),
+    FirstUrlencoded =
+        hd(string:replace(
+               misc:url_encode(First), "%40", "@")),
     {GroupId, Host} =
-        case jid:decode(First) of
+        case jid:decode(FirstUrlencoded) of
             #jid{luser = <<"">>, lserver = G} ->
                 {G, Second};
             #jid{luser = G, lserver = H} ->
