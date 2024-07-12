@@ -920,6 +920,8 @@ presence_broadcast(Config) ->
     IQ = #iq{type = get,
 	     from = JID,
 	     sub_els = [#disco_info{node = Node}]} = recv_iq(Config),
+    #message{type = chat,
+             subject = [#text{lang = <<"en">>,data = <<"Welcome!">>}]} = recv_message(Config),
     #message{type = normal,
              subject = [#text{lang = <<"en">>,data = <<"Welcome!">>}]} = recv_message(Config),
     #presence{from = JID, to = JID} = recv_presence(Config),
