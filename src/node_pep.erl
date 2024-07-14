@@ -86,6 +86,7 @@ features() ->
 	<<"delete-nodes">>,
 	<<"delete-items">>,
 	<<"filtered-notifications">>,
+	<<"item-ids">>,
 	<<"modify-affiliations">>,
 	<<"multi-items">>,
 	<<"outcast-affiliation">>,
