@@ -668,6 +668,8 @@ compile_erlang_file(Dest, File, ErlOptions) ->
     end.
 
 -ifdef(ELIXIR_ENABLED).
+compile_elixir_files(_, []) ->
+    ok;
 compile_elixir_files(Dest, [File | _] = Files) when is_list(Dest) and is_list(File) ->
   BinFiles = [list_to_binary(F) || F <- Files],
   compile_elixir_files(list_to_binary(Dest), BinFiles);
