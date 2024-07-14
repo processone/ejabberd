@@ -587,7 +587,7 @@ process_admin(Host, #request{path = [<<"online-users">> | RPath], lang = Lang} =
     Res = [make_command(connected_users_vhost,
                         R,
                         [{<<"host">>, Host}],
-                        [{table_options, {2, RPath}},
+                        [{table_options, {100, RPath}},
                          {result_links, [{sessions, user, Level, <<"">>}]}])],
     make_xhtml([?XCT(<<"h1">>, ?T("Online Users"))] ++ Res, Host, R, AJID, Level);
 process_admin(Host,
