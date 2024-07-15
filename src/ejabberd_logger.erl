@@ -370,7 +370,16 @@ console_template() ->
         andalso
         'Elixir.System':version() >= <<"1.15">> of
         true ->
-            [date, " ", time, " [", level, "] ", msg, "\n"];
+            {ok, DC} = logger:get_handler_config(default),
+            MessageFormat = case maps:get(formatter, DC) of
+                %% https://hexdocs.pm/logger/1.17.2/Logger.Formatter.html#module-formatting
+                {'Elixir.Logger.Formatter', _} ->
+                    message;
+                %% https://www.erlang.org/doc/apps/kernel/logger_formatter#t:template/0
+                {logger_formatter, _} ->
+                    msg
+            end,
+            [date, " ", time, " [", level, "] ", MessageFormat, "\n"];
         false ->
             [time, " [", level, "] " | msg()]
     end.
