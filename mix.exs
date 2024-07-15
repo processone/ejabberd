@@ -209,6 +209,7 @@ defmodule Ejabberd.MixProject do
     [# These are the default files included in the package
       files: ["include", "lib", "priv", "sql", "src",
               "COPYING", "README.md",
+              "ejabberd.yml.example", "config/runtime.exs",
               "mix.exs", "rebar.config", "rebar.config.script", "vars.config"],
       maintainers: ["ProcessOne"],
       licenses: ["GPL-2.0-or-later"],
