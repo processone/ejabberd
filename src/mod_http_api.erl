@@ -332,6 +332,14 @@ format_arg({Elements},
 		 ({Val}) when is_list(Val) ->
 		      format_arg({Val}, Tuple)
 	      end, Elements);
+format_arg(Map,
+	   {list, {_ElementDefName, {tuple, [{_Tuple1N, Tuple1S}, {_Tuple2N, Tuple2S}]}}})
+    when is_map(Map) andalso
+	 (Tuple1S == binary orelse Tuple1S == string) ->
+    maps:fold(
+	fun(K, V, Acc) ->
+	    [{format_arg(K, Tuple1S), format_arg(V, Tuple2S)} | Acc]
+	end, [], Map);
 format_arg(Elements,
 	   {list, {_ElementDefName, {list, _} = ElementDefFormat}})
     when is_list(Elements) ->
