@@ -370,7 +370,7 @@ console_template() ->
         andalso
         'Elixir.System':version() >= <<"1.15">> of
         true ->
-            [date, " ", time, " [", level, "] ", message, "\n"];
+            [date, " ", time, " [", level, "] ", msg, "\n"];
         false ->
             [time, " [", level, "] " | msg()]
     end.
