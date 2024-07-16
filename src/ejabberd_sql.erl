@@ -542,8 +542,6 @@ run_sql_cmd(Command, From, State, Timestamp) ->
     {error, Reason::binary()} | {aborted, Reason::binary()} | {atomic, Result::any()}.
 outer_op({sql_query, Query}) ->
     sql_query_internal(Query);
-outer_op({sql_transaction, F}) ->
-    outer_op({sql_transaction, F, ?MAX_TRANSACTION_RESTARTS});
 outer_op({sql_transaction, F, Restarts}) ->
     outer_transaction(F, Restarts, <<"">>);
 outer_op({sql_bloc, F}) -> execute_bloc(F).
@@ -552,8 +550,6 @@ outer_op({sql_bloc, F}) -> execute_bloc(F).
 %% nested operation
 nested_op({sql_query, Query}) ->
     sql_query_internal(Query);
-nested_op({sql_transaction, F}) ->
-    nested_op({sql_transaction, F, ?MAX_TRANSACTION_RESTARTS});
 nested_op({sql_transaction, F, Restarts}) ->
     NestingLevel = get(?NESTING_KEY),
     if NestingLevel =:= (?TOP_LEVEL_TXN) ->
