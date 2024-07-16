@@ -264,6 +264,8 @@ opt_type(new_sql_schema) ->
     econf:bool();
 opt_type(update_sql_schema) ->
     econf:bool();
+opt_type(update_sql_schema_timeout) ->
+    econf:timeout(second, infinity);
 opt_type(oauth_access) ->
     econf:acl();
 opt_type(oauth_cache_life_time) ->
@@ -613,6 +615,7 @@ options() ->
      {net_ticktime, timer:seconds(60)},
      {new_sql_schema, ?USE_NEW_SQL_SCHEMA_DEFAULT},
      {update_sql_schema, true},
+     {update_sql_schema_timeout, timer:minutes(5)},
      {oauth_access, none},
      {oauth_cache_life_time,
       fun(Host) -> ejabberd_config:get_option({cache_life_time, Host}) end},

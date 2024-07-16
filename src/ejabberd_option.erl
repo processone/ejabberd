@@ -164,6 +164,7 @@
 -export([sql_username/0, sql_username/1]).
 -export([trusted_proxies/0]).
 -export([update_sql_schema/0]).
+-export([update_sql_schema_timeout/0, update_sql_schema_timeout/1]).
 -export([use_cache/0, use_cache/1]).
 -export([validate_stream/0]).
 -export([version/0]).
@@ -1108,6 +1109,13 @@ trusted_proxies() ->
 -spec update_sql_schema() -> boolean().
 update_sql_schema() ->
     ejabberd_config:get_option({update_sql_schema, global}).
+
+-spec update_sql_schema_timeout() -> 'infinity' | pos_integer().
+update_sql_schema_timeout() ->
+    update_sql_schema_timeout(global).
+-spec update_sql_schema_timeout(global | binary()) -> 'infinity' | pos_integer().
+update_sql_schema_timeout(Host) ->
+    ejabberd_config:get_option({update_sql_schema_timeout, Host}).
 
 -spec use_cache() -> boolean().
 use_cache() ->

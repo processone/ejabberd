@@ -929,6 +929,12 @@ doc() ->
                "This option was added in ejabberd 23.10, "
                "and enabled by default since 24.06. "
                "The default value is 'true'.")}},
+     {update_sql_schema_timeout,
+      #{value => "timeout()",
+        note => "added in 24.07",
+        desc =>
+        ?T("Time allocated to SQL schema update queries. "
+           "The default value is set to 5 minutes.")}},
      {oauth_access,
       #{value => ?T("AccessName"),
         desc => ?T("By default creating OAuth tokens is not allowed. "
