@@ -6,22 +6,22 @@
 - `ejabberd_logger`: Reloading configuration will update logger settings
 - `gen_mod`: Add support to specify a hook global, not vhost-specific
 - [`mod_configure`](https://docs.ejabberd.im/admin/configuration/modules/#mod_configure): Retract `Get User Password` command to update [XEP-0133](https://xmpp.org/extensions/xep-0133.html) 1.3.0
-- [`mod_conversejs`](https://docs.ejabberd.im/admin/configuration/modules/#mod_conversejs): Simplify support for `@HOST@` in `default_domain` option ([#4167](https://github.com/processone/issues/4167))
+- [`mod_conversejs`](https://docs.ejabberd.im/admin/configuration/modules/#mod_conversejs): Simplify support for `@HOST@` in `default_domain` option ([#4167](https://github.com/processone/ejabberd/issues/4167))
 - [`mod_mam`](https://docs.ejabberd.im/admin/configuration/modules/#mod_mam): Document that [XEP-0441](https://xmpp.org/extensions/xep-0441.html) is implemented as well
-- [`mod_mam`](https://docs.ejabberd.im/admin/configuration/modules/#mod_mam): Update support for [XEP-0425](https://xmpp.org/extensions/xep-0425.html) version 0.3.0, keep supporting 0.2.1 ([#4193](https://github.com/processone/issues/4193))
-- [`mod_matrix_gw`](https://docs.ejabberd.im/admin/configuration/modules/#mod_matrix_gw): Fix support for `@HOST@` in `matrix_domain` option ([#4167](https://github.com/processone/issues/4167))
+- [`mod_mam`](https://docs.ejabberd.im/admin/configuration/modules/#mod_mam): Update support for [XEP-0425](https://xmpp.org/extensions/xep-0425.html) version 0.3.0, keep supporting 0.2.1 ([#4193](https://github.com/processone/ejabberd/issues/4193))
+- [`mod_matrix_gw`](https://docs.ejabberd.im/admin/configuration/modules/#mod_matrix_gw): Fix support for `@HOST@` in `matrix_domain` option ([#4167](https://github.com/processone/ejabberd/issues/4167))
 - [`mod_muc_log`](https://docs.ejabberd.im/admin/configuration/modules/#mod_muc_log): Hide join/leave lines, add method to show them
 - [`mod_muc_log`](https://docs.ejabberd.im/admin/configuration/modules/#mod_muc_log): Support `allowpm` introduced in 2bd61ab
-- [`mod_muc_room`](https://docs.ejabberd.im/admin/configuration/modules/#mod_muc_room): Use ejabberd hooks instead of function calls to `mod_muc_log` ([#4191](https://github.com/processone/issues/4191))
+- [`mod_muc_room`](https://docs.ejabberd.im/admin/configuration/modules/#mod_muc_room): Use ejabberd hooks instead of function calls to `mod_muc_log` ([#4191](https://github.com/processone/ejabberd/issues/4191))
 - [`mod_private`](https://docs.ejabberd.im/admin/configuration/modules/#mod_private): Cope with bookmark decoding errors
 - [`mod_vcard_xupdate`](https://docs.ejabberd.im/admin/configuration/modules/#mod_vcard_xupdate): Send hash after avatar get set for first time
-- `prosody2ejabberd`: Handle the `approved` attribute. As feature isn't implemented, discard it ([#4188](https://github.com/processone/issues/4188))
+- `prosody2ejabberd`: Handle the `approved` attribute. As feature isn't implemented, discard it ([#4188](https://github.com/processone/ejabberd/issues/4188))
 
 #### SQL
 
 - [`update_sql_schema`](https://docs.ejabberd.im/admin/configuration/toplevel/#update_sql_schema): Enable this option by default
 - CI: Don't load database schema files for mysql and pgsql
-- Support Unix Domain Socket with updated p1_pgsql and p1_mysql ([#3716](https://github.com/processone/issues/3716))
+- Support Unix Domain Socket with updated p1_pgsql and p1_mysql ([#3716](https://github.com/processone/ejabberd/issues/3716))
 - Fix handling of `mqtt_pub` table definition from `mysql.sql` and fix `should_update_schema/1` in `ejabberd_sql_schema.erl`
 - Don't start sql connection pools for unknown hosts
 - Add `update_primary_key` command to sql schema updater
@@ -30,24 +30,24 @@
 
 #### Commands API
 
-- New ban commands use private storage to keep ban information ([#4201](https://github.com/processone/issues/4201))
+- New ban commands use private storage to keep ban information ([#4201](https://github.com/processone/ejabberd/issues/4201))
 - [`join_cluster_here`](https://docs.ejabberd.im/developer/ejabberd-api/admin-api/#join_cluster_here): New command to join a remote node into our local cluster
-- Don't name integer and string results in API examples ([#4198](https://github.com/processone/issues/4198))
+- Don't name integer and string results in API examples ([#4198](https://github.com/processone/ejabberd/issues/4198))
 - [`get_user_subscriptions`](https://docs.ejabberd.im/developer/ejabberd-api/admin-api/#get_user_subscriptions): Fix validation of user field in that command
-- [`mod_admin_extra`](https://docs.ejabberd.im/admin/configuration/modules/#mod_admin_extra): Handle case when `mod_private` is not enabled ([#4201](https://github.com/processone/issues/4201))
+- [`mod_admin_extra`](https://docs.ejabberd.im/admin/configuration/modules/#mod_admin_extra): Handle case when `mod_private` is not enabled ([#4201](https://github.com/processone/ejabberd/issues/4201))
 - [`mod_muc_admin`](https://docs.ejabberd.im/admin/configuration/modules/#mod_muc_admin): Improve validation of arguments in several commands
 
 #### Compile
 
-- `ejabberdctl`: Comment ERTS_VSN variable when not used ([#4194](https://github.com/processone/issues/4194))
+- `ejabberdctl`: Comment ERTS_VSN variable when not used ([#4194](https://github.com/processone/ejabberd/issues/4194))
 - `ejabberdctl`: Fix iexlive after `make prod` when using Elixir
-- `ejabberdctl`: If `INET_DIST_INTERFACE` is IPv6, set required option ([#4189](https://github.com/processone/issues/4189))
+- `ejabberdctl`: If `INET_DIST_INTERFACE` is IPv6, set required option ([#4189](https://github.com/processone/ejabberd/issues/4189))
 - `ejabberdctl`: Make native dynamic node names work when using fully qualified domain names
-- `rebar.config.script`: Support relaxed dependency version ([#4192](https://github.com/processone/issues/4192))
+- `rebar.config.script`: Support relaxed dependency version ([#4192](https://github.com/processone/ejabberd/issues/4192))
 - `rebar.config`: Update deps version to rebar3's relaxed versioning
 - `rebar.lock`: Track file, now that rebar3 uses loose dependency versioning
-- `configure.ac`: When using rebar3, unlock dependencies that are disabled ([#4212](https://github.com/processone/issues/4212))
-- `configure.ac`: When using rebar3 with old Erlang, unlock some dependencies ([#4213](https://github.com/processone/issues/4213))
+- `configure.ac`: When using rebar3, unlock dependencies that are disabled ([#4212](https://github.com/processone/ejabberd/issues/4212))
+- `configure.ac`: When using rebar3 with old Erlang, unlock some dependencies ([#4213](https://github.com/processone/ejabberd/issues/4213))
 - `mix:exs`: Move `xmpp` from `included_applications` to `applications`
 
 #### Dependencies
@@ -57,7 +57,7 @@
 - Jiffy: Use Json module when Erlang/OTP 27, jiffy with older ones
 - Jose: Update to the new 1.11.10 for Erlang/OTP higher than 23
 - Luerl: Update to 1.2.0 when OTP same or higher than 20, simplifies commit a09f222
-- P1_acme: Update to support Jose 1.11.10 and Ipv6 support ([#4170](https://github.com/processone/issues/4170))
+- P1_acme: Update to support Jose 1.11.10 and Ipv6 support ([#4170](https://github.com/processone/ejabberd/issues/4170))
 - P1_acme: Update to use Erlang's json library instead of jiffy when OTP 27
 - Port_compiler: Update to 1.15.0 that supports Erlang/OTP 27.0
 
@@ -89,7 +89,7 @@
 - make-binaries: Bump OpenSSL to 3.3.1
 - make-binaries: Bump Linux-PAM to 1.6.1
 - make-binaries: Bump Expat to 2.6.2
-- make-binaries: Revert temporarily an OTP commit that breaks MSSQL ([#4178](https://github.com/processone/issues/4178))
+- make-binaries: Revert temporarily an OTP commit that breaks MSSQL ([#4178](https://github.com/processone/ejabberd/issues/4178))
 - CONTAINER.md: Invalid `CTL_ON_CREATE` usage in docker-compose example
 
 #### WebAdmin
