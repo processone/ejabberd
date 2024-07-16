@@ -620,7 +620,7 @@ outer_transaction(F, NRestarts, _Reason) ->
 			       [?MAX_TRANSACTION_RESTARTS, Reason,
 				StackTrace, get(?STATE_KEY)]),
 		    maybe_restart_transaction(F, NRestarts, Reason, true);
-		?EX_RULE(exit, Reason, _) ->
+		?EX_RULE(_, Reason, _) ->
 		    maybe_restart_transaction(F, 0, Reason, true)
 	    end
     end.
