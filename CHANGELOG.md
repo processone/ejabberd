@@ -5,37 +5,37 @@
 - `econf`: Add ability to use additional custom errors when parsing options
 - `ejabberd_logger`: Reloading configuration will update logger settings
 - `gen_mod`: Add support to specify a hook global, not vhost-specific
-- [`mod_configure`](https://docs.ejabberd.im/admin/configuration/modules/#mod_configure): Retract `Get User Password` command to update [XEP-0133](https://xmpp.org/extensions/xep-0133.html) 1.3.0
-- [`mod_conversejs`](https://docs.ejabberd.im/admin/configuration/modules/#mod_conversejs): Simplify support for `@HOST@` in `default_domain` option ([#4167](https://github.com/processone/ejabberd/issues/4167))
-- [`mod_mam`](https://docs.ejabberd.im/admin/configuration/modules/#mod_mam): Document that [XEP-0441](https://xmpp.org/extensions/xep-0441.html) is implemented as well
-- [`mod_mam`](https://docs.ejabberd.im/admin/configuration/modules/#mod_mam): Update support for [XEP-0425](https://xmpp.org/extensions/xep-0425.html) version 0.3.0, keep supporting 0.2.1 ([#4193](https://github.com/processone/ejabberd/issues/4193))
-- [`mod_matrix_gw`](https://docs.ejabberd.im/admin/configuration/modules/#mod_matrix_gw): Fix support for `@HOST@` in `matrix_domain` option ([#4167](https://github.com/processone/ejabberd/issues/4167))
-- [`mod_muc_log`](https://docs.ejabberd.im/admin/configuration/modules/#mod_muc_log): Hide join/leave lines, add method to show them
-- [`mod_muc_log`](https://docs.ejabberd.im/admin/configuration/modules/#mod_muc_log): Support `allowpm` introduced in 2bd61ab
-- [`mod_muc_room`](https://docs.ejabberd.im/admin/configuration/modules/#mod_muc_room): Use ejabberd hooks instead of function calls to `mod_muc_log` ([#4191](https://github.com/processone/ejabberd/issues/4191))
-- [`mod_private`](https://docs.ejabberd.im/admin/configuration/modules/#mod_private): Cope with bookmark decoding errors
-- [`mod_vcard_xupdate`](https://docs.ejabberd.im/admin/configuration/modules/#mod_vcard_xupdate): Send hash after avatar get set for first time
+- `mod_configure`: Retract `Get User Password` command to update XEP-0133 1.3.0
+- `mod_conversejs`: Simplify support for `@HOST@` in `default_domain` option ([#4167](https://github.com/processone/ejabberd/issues/4167))
+- `mod_mam`: Document that XEP-0441 is implemented as well
+- `mod_mam`: Update support for XEP-0425 version 0.3.0, keep supporting 0.2.1 ([#4193](https://github.com/processone/ejabberd/issues/4193))
+- `mod_matrix_gw`: Fix support for `@HOST@` in `matrix_domain` option ([#4167](https://github.com/processone/ejabberd/issues/4167))
+- `mod_muc_log`: Hide join/leave lines, add method to show them
+- `mod_muc_log`: Support `allowpm` introduced in 2bd61ab
+- `mod_muc_room`: Use ejabberd hooks instead of function calls to `mod_muc_log` ([#4191](https://github.com/processone/ejabberd/issues/4191))
+- `mod_private`): Cope with bookmark decoding errors
+- `mod_vcard_xupdate`: Send hash after avatar get set for first time
 - `prosody2ejabberd`: Handle the `approved` attribute. As feature isn't implemented, discard it ([#4188](https://github.com/processone/ejabberd/issues/4188))
 
 #### SQL
 
-- [`update_sql_schema`](https://docs.ejabberd.im/admin/configuration/toplevel/#update_sql_schema): Enable this option by default
+- `update_sql_schema`: Enable this option by default
 - CI: Don't load database schema files for mysql and pgsql
 - Support Unix Domain Socket with updated p1_pgsql and p1_mysql ([#3716](https://github.com/processone/ejabberd/issues/3716))
 - Fix handling of `mqtt_pub` table definition from `mysql.sql` and fix `should_update_schema/1` in `ejabberd_sql_schema.erl`
 - Don't start sql connection pools for unknown hosts
 - Add `update_primary_key` command to sql schema updater
-- Fix crash running [`export2sql`](https://docs.ejabberd.im/developer/ejabberd-api/admin-api/#export2sql) when MAM enabled but MUC disabled
+- Fix crash running `export2sql` when MAM enabled but MUC disabled
 - Improve detection of types in odbc
 
 #### Commands API
 
 - New ban commands use private storage to keep ban information ([#4201](https://github.com/processone/ejabberd/issues/4201))
-- [`join_cluster_here`](https://docs.ejabberd.im/developer/ejabberd-api/admin-api/#join_cluster_here): New command to join a remote node into our local cluster
+- `join_cluster_here`: New command to join a remote node into our local cluster
 - Don't name integer and string results in API examples ([#4198](https://github.com/processone/ejabberd/issues/4198))
-- [`get_user_subscriptions`](https://docs.ejabberd.im/developer/ejabberd-api/admin-api/#get_user_subscriptions): Fix validation of user field in that command
-- [`mod_admin_extra`](https://docs.ejabberd.im/admin/configuration/modules/#mod_admin_extra): Handle case when `mod_private` is not enabled ([#4201](https://github.com/processone/ejabberd/issues/4201))
-- [`mod_muc_admin`](https://docs.ejabberd.im/admin/configuration/modules/#mod_muc_admin): Improve validation of arguments in several commands
+- `get_user_subscriptions`: Fix validation of user field in that command
+- `mod_admin_extra`: Handle case when `mod_private` is not enabled ([#4201](https://github.com/processone/ejabberd/issues/4201))
+- `mod_muc_admin`: Improve validation of arguments in several commands
 
 #### Compile
 
@@ -116,8 +116,8 @@
 - Support tls-exporter channel binding
 - Support XEP-0474: SASL SCRAM Downgrade Protection
 - Fix presenting features and returning results of inline bind2 elements
-- [`disable_sasl_scram_downgrade_protection`](https://docs.ejabberd.im/admin/configuration/toplevel/#disable-sasl-scram-downgrade-protection): New option to disable XEP-0474
-- [`negotiation_timeout`](https://docs.ejabberd.im/admin/configuration/toplevel/#negotiation-timeout): Increase default value from 30s to 2m
+- `disable_sasl_scram_downgrade_protection`: New option to disable XEP-0474
+- `negotiation_timeout`: Increase default value from 30s to 2m
 - mod_carboncopy: Teach how to interact with bind2 inline requests
 
 #### Other:
@@ -155,10 +155,10 @@
 - ejabberdctl: Rework temporary node name generation
 - ejabberdctl: Print argument description, examples and note in help
 - ejabberdctl: Document exclusive ejabberdctl commands like all the others
-- Commands: Add a new [`muc_sub`](https://docs.ejabberd.im/developer/ejabberd-api/admin-tags/#muc-sub) tag to all the relevant commands
+- Commands: Add a new `muc_sub` tag to all the relevant commands
 - Commands: Improve syntax of many commands documentation
 - Commands: Use list arguments in many commands that used separators
-- Commands: [`set_presence`](https://docs.ejabberd.im/developer/ejabberd-api/admin-api/#set-presence): switch priority argument from string to integer
+- Commands: `set_presence`: switch priority argument from string to integer
 - ejabberd_commands: Add the command API version as [a tag `vX`](https://docs.ejabberd.im/developer/ejabberd-api/admin-tags/#v1)
 - ejabberd_ctl: Add support for list and tuple arguments
 - ejabberd_xmlrpc: Fix support for restuple error response
