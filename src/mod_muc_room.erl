@@ -4576,8 +4576,14 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 	      false ->
 		  Fs3
 	  end,
+    Fs5 = case (StateData#state.config)#config.vcard_xupdate of
+	      Hash when is_binary(Hash) ->
+		  [{avatarhash, [Hash]} | Fs4];
+	      _ ->
+		  Fs4
+	  end,
     #xdata{type = result,
-	   fields = muc_roominfo:encode(Fs4, Lang)}.
+	   fields = muc_roominfo:encode(Fs5, Lang)}.
 
 -spec process_iq_disco_items(jid(), iq(), state()) ->
 				    {error, stanza_error()} | {result, disco_items()}.
