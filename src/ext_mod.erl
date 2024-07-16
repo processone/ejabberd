@@ -790,7 +790,7 @@ rebar_dep({App, Version, Git}) when Version /= ".*" ->
             {App, "mix hex.package fetch "++AppS++" "++Version++" --unpack"};
         false ->
             io:format("I'll download ~p using git because I can't use Mix "
-                      "to fetch from hex.pm:~n~s", [AppS, help]),
+                      "to fetch from hex.pm:~n~s", [AppS, Help]),
             rebar_dep({App, ".*", Git})
     end;
 
