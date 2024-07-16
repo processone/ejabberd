@@ -2,9 +2,9 @@
     {ok, Terms} ->
         Backends = [mssql, mysql, odbc, pgsql, redis, sqlite],
         EBs = lists:filter(fun(Backend) -> lists:member({Backend, true}, Terms) end, Backends),
-        Elixirs = case lists:keyfind(elixir, 1, Terms) of
-            {elixir, true} -> [elixir, iex, logger, mix];
-            _ -> []
+        Elixirs = case proplists:get_bool(elixir, Terms) of
+            true -> [elixir, logger, mix];
+            false -> []
         end,
 
         ProfileEnvironmentVariable = os:getenv("REBAR_PROFILE"),
