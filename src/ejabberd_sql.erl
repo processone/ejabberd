@@ -35,7 +35,7 @@
 	 sql_query/3,
 	 sql_query_t/1,
 	 sql_transaction/2,
-	 sql_transaction/3,
+	 sql_transaction/4,
 	 sql_bloc/2,
 	 sql_bloc/3,
 	 abort/1,
@@ -134,19 +134,19 @@ sql_query(Host, Query) ->
 
 %% SQL transaction based on a list of queries
 %% This function automatically
--spec sql_transaction(binary(), [sql_query(T)] | fun(() -> T), pos_integer()) ->
+-spec sql_transaction(binary(), [sql_query(T)] | fun(() -> T), pos_integer(), pos_integer()) ->
                              {atomic, T} |
                              {aborted, any()}.
-sql_transaction(Host, Queries, Timeout)
+sql_transaction(Host, Queries, Timeout, Restarts)
     when is_list(Queries) ->
     F = fun () ->
 		lists:foreach(fun (Query) -> sql_query_t(Query) end,
 			      Queries)
 	end,
-    sql_transaction(Host, F, Timeout);
+    sql_transaction(Host, F, Timeout, Restarts);
 %% SQL transaction, based on a erlang anonymous function (F = fun)
-sql_transaction(Host, F, Timeout) when is_function(F) ->
-    case sql_call(Host, {sql_transaction, F}, Timeout) of
+sql_transaction(Host, F, Timeout, Restarts) when is_function(F) ->
+    case sql_call(Host, {sql_transaction, F, Restarts}, Timeout) of
 	{atomic, _} = Ret -> Ret;
 	{aborted, _} = Ret -> Ret;
 	Err -> {aborted, Err}
@@ -156,7 +156,7 @@ sql_transaction(Host, F, Timeout) when is_function(F) ->
     {atomic, T} |
     {aborted, any()}.
 sql_transaction(Host, Queries) ->
-    sql_transaction(Host, Queries, query_timeout(Host)).
+    sql_transaction(Host, Queries, query_timeout(Host), ?MAX_TRANSACTION_RESTARTS).
 
 %% SQL bloc, based on a erlang anonymous function (F = fun)
 sql_bloc(Host, F, Timeout) ->
@@ -538,12 +538,14 @@ run_sql_cmd(Command, From, State, Timestamp) ->
     end.
 
 %% @doc Only called by handle_call, only handles top level operations.
--spec outer_op(Op::{atom(), binary()}) ->
+-spec outer_op(Op::{atom(), binary()} | {sql_transaction, binary(), pos_integer()}) ->
     {error, Reason::binary()} | {aborted, Reason::binary()} | {atomic, Result::any()}.
 outer_op({sql_query, Query}) ->
     sql_query_internal(Query);
 outer_op({sql_transaction, F}) ->
-    outer_transaction(F, ?MAX_TRANSACTION_RESTARTS, <<"">>);
+    outer_op({sql_transaction, F, ?MAX_TRANSACTION_RESTARTS});
+outer_op({sql_transaction, F, Restarts}) ->
+    outer_transaction(F, Restarts, <<"">>);
 outer_op({sql_bloc, F}) -> execute_bloc(F).
 
 %% Called via sql_query/transaction/bloc from client code when inside a
@@ -551,10 +553,12 @@ outer_op({sql_bloc, F}) -> execute_bloc(F).
 nested_op({sql_query, Query}) ->
     sql_query_internal(Query);
 nested_op({sql_transaction, F}) ->
+    nested_op({sql_transaction, F, ?MAX_TRANSACTION_RESTARTS});
+nested_op({sql_transaction, F, Restarts}) ->
     NestingLevel = get(?NESTING_KEY),
     if NestingLevel =:= (?TOP_LEVEL_TXN) ->
-	   outer_transaction(F, ?MAX_TRANSACTION_RESTARTS, <<"">>);
-       true -> inner_transaction(F)
+	outer_transaction(F, Restarts, <<"">>);
+	true -> inner_transaction(F)
     end;
 nested_op({sql_bloc, F}) -> execute_bloc(F).
 
