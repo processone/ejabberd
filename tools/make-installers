@@ -247,7 +247,6 @@ create_setup_script()
 	if [ "\$code_dir" != '$default_code_dir' ]
 	then
 		sed -i "s|$default_code_dir|\$code_dir|g" \
-		    "\$code_dir/bin/${rel_name}ctl" \
 		    "\$code_dir/bin/$rel_name.init" \
 		    "\$code_dir/bin/$rel_name.service"
 	fi
@@ -255,8 +254,6 @@ create_setup_script()
 	then
 		sed -i "s|$default_data_dir|\$data_dir|g" \
 		    "\$code_dir/bin/${rel_name}ctl" \
-		    "\$code_dir/bin/$rel_name.init" \
-		    "\$code_dir/bin/$rel_name.service" \
 		    "\$data_dir/conf/$rel_name.yml" \
 		    "\$data_dir/conf/${rel_name}ctl.cfg"
 	fi
