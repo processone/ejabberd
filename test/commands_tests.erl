@@ -141,7 +141,9 @@ http_list_tuple(Config) ->
     ?match(LTB, query(Config, "command_test_list_tuple", #{arg_list => LTB})).
 
 http_list_tuple_map(Config) ->
-    LTA = #{<<"one">> => <<"uno">>, <<"dos">> => <<"two">>, <<"three">> => <<"tres">>},
+    LTA = #{<<"one">> => <<"uno">>,
+            <<"dos">> => <<"two">>,
+            <<"three">> => <<"tres">>},
     LTB = lists:sort([#{<<"element1">> => <<"one">>, <<"element2">> => <<"uno">>},
                       #{<<"element1">> => <<"dos">>, <<"element2">> => <<"two">>},
                       #{<<"element1">> => <<"three">>, <<"element2">> => <<"tres">>}]),
