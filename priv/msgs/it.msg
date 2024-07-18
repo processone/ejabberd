@@ -223,6 +223,7 @@
 {"leaves the room","esce dalla stanza"}.
 {"List of users with hats","Elenco degli utenti con cappelli"}.
 {"List users with hats","Elenca gli utenti con cappelli"}.
+{"Logged Out","Disconnesso"}.
 {"Logging","Registrazione"}.
 {"Make participants list public","Rendere pubblica la lista dei partecipanti"}.
 {"Make room CAPTCHA protected","Rendere la stanza protetta da CAPTCHA"}.
@@ -437,6 +438,7 @@
 {"Set message of the day on all hosts and send to online users","Impostare il messaggio del giorno (MOTD) su tutti gli host e inviarlo agli utenti online"}.
 {"Shared Roster Groups","Gruppi di liste di contatti comuni"}.
 {"Show Integral Table","Mostrare la tabella integrale"}.
+{"Show Occupants Join/Leave","Mostra gli occupanti che si uniscono/escono"}.
 {"Show Ordinary Table","Mostrare la tabella normale"}.
 {"Shut Down Service","Terminare il servizio"}.
 {"SOCKS5 Bytestreams","SOCKS5 flussi di byte"}.
@@ -531,6 +533,7 @@
 {"Too many <list/> elements","Troppi elementi <list/>"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Troppe (~p) autenticazioni non riuscite da questo indirizzo IP (~s). L'indirizzo verrà sbloccato alle ~s UTC"}.
 {"Too many receiver fields were specified","Sono stati specificati troppi campi del ricevitore"}.
+{"Too many unacked stanzas","Troppe stanze non riconosciute"}.
 {"Too many users in this conference","Troppi utenti in questa conferenza"}.
 {"Traffic rate limit is exceeded","Limite di traffico superato"}.
 {"~ts's Offline Messages Queue","La Coda dei Messaggi Offline di ~ts"}.
