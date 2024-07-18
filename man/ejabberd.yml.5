@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 06/27/2024
+.\"      Date: 07/18/2024
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "06/27/2024" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "07/18/2024" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/24\&.06/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/24\&.07/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 24\&.06\&. The options that changed in this version are marked with 🟤\&.
+This section describes top level options of ejabberd 24\&.07\&. The options that changed in this version are marked with 🟤\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLRules|ACLName}}\fR
 .RS 4
@@ -1150,7 +1150,7 @@ This option can be used to tune tick time parameter of
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/24\&.06/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/24\&.07/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema can handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1772,7 +1772,7 @@ or
 if the latter is not set\&.
 .RE
 .PP
-\fBsql_server 🟤\fR: \fIHost | IP Address | ODBC Connection String | Unix Socket Path\fR
+\fBsql_server\fR: \fIHost | IP Address | ODBC Connection String | Unix Socket Path\fR
 .RS 4
 \fINote\fR
 about this option: improved in 24\&.06\&. The hostname or IP address of the SQL server\&. For
@@ -1855,11 +1855,17 @@ to allow all proxies, or specify a list of IPs, possibly with masks\&. The defau
 header if you enable this option as, otherwise, the client can set it itself and as a result the IP value cannot be trusted for security rules in ejabberd\&.
 .RE
 .PP
-\fBupdate_sql_schema 🟤\fR: \fItrue | false\fR
+\fBupdate_sql_schema\fR: \fItrue | false\fR
 .RS 4
 \fINote\fR
 about this option: updated in 24\&.06\&. Allow ejabberd to update SQL schema\&. This option was added in ejabberd 23\&.10, and enabled by default since 24\&.06\&. The default value is
 \fItrue\fR\&.
+.RE
+.PP
+\fBupdate_sql_schema_timeout 🟤\fR: \fItimeout()\fR
+.RS 4
+\fINote\fR
+about this option: added in 24\&.07\&. Time allocated to SQL schema update queries\&. The default value is set to 5 minutes\&.
 .RE
 .PP
 \fBuse_cache\fR: \fItrue | false\fR
@@ -1913,7 +1919,12 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 24\&.06\&. The modules that changed in this version are marked with 🟤\&.
+This section describes modules options of ejabberd 24\&.07\&. The modules that changed in this version are marked with 🟤\&.
+.SS "Elixir\&.ModPresenceDemo"
+.sp
+This is just a demonstration\&.
+.sp
+The module has no options\&.
 .SS "mod_adhoc"
 .sp
 This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary module and is only needed by some of the other modules\&.
@@ -1946,7 +1957,7 @@ Details for some commands:
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIban\-acount\fR: This command kicks all the connected sessions of the account from the server\&. It also changes their password to a randomly generated one, so they can\(cqt login anymore unless a server administrator changes their password again\&. It is possible to define the reason of the ban\&. The new password also includes the reason and the date and time of the ban\&. See an example below\&.
+\fIban_account\fR: This command kicks all the connected sessions of the account from the server\&. It also changes their password to a randomly generated one, so they can\(cqt login anymore unless a server administrator changes their password again\&. It is possible to define the reason of the ban\&. The new password also includes the reason and the date and time of the ban\&. See an example below\&.
 .RE
 .sp
 .RS 4
@@ -1971,7 +1982,7 @@ or similar\&. If you use other Operating System, place the file on the same dire
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIsrg\-create\fR: If you want to put a group Name with blankspaces, use the characters "\*(Aq and \*(Aq" to define when the Name starts and ends\&. See an example below\&.
+\fIsrg_create\fR: If you want to put a group Name with blank spaces, use the characters "\*(Aq and \*(Aq" to define when the Name starts and ends\&. See an example below\&.
 .RE
 .sp
 The module has no options\&.
@@ -2025,19 +2036,19 @@ With this call, the sessions of the local account which JID is boby@example\&.or
 .RS 4
 .\}
 .nf
-ejabberdctl vhost example\&.org ban\-account boby "Spammed rooms"
+ejabberdctl vhost example\&.org ban_account boby "Spammed rooms"
 .fi
 .if n \{\
 .RE
 .\}
 .sp
-Call to srg\-create using double\-quotes and single\-quotes:
+Call to srg_create using double\-quotes and single\-quotes:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-ejabberdctl srg\-create g1 example\&.org "\*(AqGroup number 1\*(Aq" this_is_g1 g1
+ejabberdctl srg_create g1 example\&.org "\*(AqGroup number 1\*(Aq" this_is_g1 g1
 .fi
 .if n \{\
 .RE
@@ -3541,7 +3552,7 @@ option, but applied to this module only\&.
 .PP
 \fBuser_mucsub_from_muc_archive\fR: \fItrue | false\fR
 .RS 4
-When this option is disabled, for each individual subscriber a separa mucsub message is stored\&. With this option enabled, when a user fetches archive virtual mucsub, messages are generated from muc archives\&. The default value is
+When this option is disabled, for each individual subscriber a separate mucsub message is stored\&. With this option enabled, when a user fetches archive virtual mucsub, messages are generated from muc archives\&. The default value is
 \fIfalse\fR\&.
 .RE
 .RE
@@ -3590,11 +3601,11 @@ is replaced with the hostname\&. The default value is
 \fBmatrix_id_as_jid\fR: \fItrue | false\fR
 .RS 4
 If set to
-\fIfalse\fR, all packets failing to be delivered via an XMPP server\-to\-server connection will then be routed to the Matrix gateway by translating a Jabber ID
+\fItrue\fR, all packets failing to be delivered via an XMPP server\-to\-server connection will then be routed to the Matrix gateway by translating a Jabber ID
 \fIuser@matrixdomain\&.tld\fR
 to a Matrix user identifier
 \fI@user:matrixdomain\&.tld\fR\&. When set to
-\fItrue\fR, messages must be explicitly sent to the matrix gateway service Jabber ID to be routed to a remote Matrix server\&. In this case, to send a message to Matrix user
+\fIfalse\fR, messages must be explicitly sent to the matrix gateway service Jabber ID to be routed to a remote Matrix server\&. In this case, to send a message to Matrix user
 \fI@user:matrixdomain\&.tld\fR, the client must send a message to the JID
 \fIuser%\fR\fImatrixdomain\&.tld@matrix\&.myxmppdomain\fR\fI\&.tld\fR, where
 \fImatrix\&.myxmppdomain\&.tld\fR
@@ -4405,7 +4416,7 @@ This option defines the number of service admins or room owners allowed to enter
 .PP
 \fBmax_users_presence\fR: \fINumber\fR
 .RS 4
-This option defines after how many users in the room, it is considered overcrowded\&. When a MUC room is considered overcrowed, presence broadcasts are limited to reduce load, traffic and excessive presence "storm" received by participants\&. The default value is
+This option defines after how many users in the room, it is considered overcrowded\&. When a MUC room is considered overcrowded, presence broadcasts are limited to reduce load, traffic and excessive presence "storm" received by participants\&. The default value is
 \fI1000\fR\&.
 .RE
 .PP
@@ -5013,9 +5024,9 @@ This option defines which access rule will be enforced to limit the maximum numb
 .PP
 \fBbounce_groupchat\fR: \fItrue | false\fR
 .RS 4
-This option is use the disable an optimisation that avoids bouncing error messages when groupchat messages could not be stored as offline\&. It will reduce chat room load, without any drawback in standard use cases\&. You may change default value only if you have a custom module which uses offline hook after
+This option is use the disable an optimization that avoids bouncing error messages when groupchat messages could not be stored as offline\&. It will reduce chat room load, without any drawback in standard use cases\&. You may change default value only if you have a custom module which uses offline hook after
 \fImod_offline\fR\&. This option can be useful for both standard MUC and MucSub, but the bounce is much more likely to happen in the context of MucSub, so it is even more important to have it on large MucSub services\&. The default value is
-\fIfalse\fR, meaning the optimisation is enabled\&.
+\fIfalse\fR, meaning the optimization is enabled\&.
 .RE
 .PP
 \fBcache_life_time\fR: \fItimeout()\fR
@@ -5949,7 +5960,7 @@ modules:
 .RE
 .SS "mod_push"
 .sp
-This module implements the XMPP server\(cqs part of the push notification solution specified in XEP\-0357: Push Notifications\&. It does not generate, for example, APNS or FCM notifications directly\&. Instead, it\(cqs designed to work with so\-called "app servers" operated by third\-party vendors of mobile apps\&. Those app servers will usually trigger notification delivery to the user\(cqs mobile device using platform\-dependant backend services such as FCM or APNS\&.
+This module implements the XMPP server\(cqs part of the push notification solution specified in XEP\-0357: Push Notifications\&. It does not generate, for example, APNS or FCM notifications directly\&. Instead, it\(cqs designed to work with so\-called "app servers" operated by third\-party vendors of mobile apps\&. Those app servers will usually trigger notification delivery to the user\(cqs mobile device using platform\-dependent backend services such as FCM or APNS\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -6176,6 +6187,24 @@ Set a welcome message that is sent to each newly registered account\&. The messa
 \fISubject\fR
 and text
 \fIBody\fR\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_register:
+    welcome_message:
+      subject: "Welcome!"
+      body: |\-
+        Hi!
+        Welcome to this XMPP server
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .RE
 .SS "mod_register_web"
@@ -7119,7 +7148,7 @@ The protocol extension is deferred and seems like even a few clients that were s
 The module has no options\&.
 .SS "mod_stream_mgmt"
 .sp
-This module adds support for XEP\-0198: Stream Management\&. This protocol allows active management of an XML stream between two XMPP entities, including features for stanza acknowledgements and stream resumption\&.
+This module adds support for XEP\-0198: Stream Management\&. This protocol allows active management of an XML stream between two XMPP entities, including features for stanza acknowledgments and stream resumption\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -7131,7 +7160,7 @@ This module adds support for XEP\-0198: Stream Management\&. This protocol allow
 .PP
 \fBack_timeout\fR: \fItimeout()\fR
 .RS 4
-A time to wait for stanza acknowledgements\&. Setting it to
+A time to wait for stanza acknowledgments\&. Setting it to
 \fIinfinity\fR
 effectively disables the timeout\&. The default value is
 \fI1\fR
@@ -7804,7 +7833,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 24\&.06\&.
+This section describes listeners options of ejabberd 24\&.07\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -7812,13 +7841,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 24\&.06\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 24\&.07\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/24\&.06/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/24\&.07/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
