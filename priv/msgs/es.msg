@@ -223,6 +223,7 @@
 {"leaves the room","sale de la sala"}.
 {"List of users with hats","Lista de usuarios con sombreros"}.
 {"List users with hats","Listar usuarios con sombreros"}.
+{"Logged Out","Desconectad@"}.
 {"Logging","Histórico de mensajes"}.
 {"Make participants list public","La lista de participantes es pública"}.
 {"Make room CAPTCHA protected","Proteger la sala con CAPTCHA"}.
@@ -437,6 +438,7 @@
 {"Set message of the day on all hosts and send to online users","Poner mensaje del día en todos los dominios y enviar a los usuarios conectados"}.
 {"Shared Roster Groups","Grupos Compartidos"}.
 {"Show Integral Table","Mostrar Tabla Integral"}.
+{"Show Occupants Join/Leave","Mostrar personas activas Entrar/Salir"}.
 {"Show Ordinary Table","Mostrar Tabla Ordinaria"}.
 {"Shut Down Service","Detener el servicio"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.

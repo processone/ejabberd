@@ -4,6 +4,7 @@
   "dialyxir": {:hex, :dialyxir, "1.4.3", "edd0124f358f0b9e95bfe53a9fcf806d615d8f838e2202a9f430d59566b6b53b", [:mix], [{:erlex, ">= 0.2.6", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm", "bf2cfb75cd5c5006bec30141b131663299c661a864ec7fbbc72dfa557487a986"},
   "earmark_parser": {:hex, :earmark_parser, "1.4.41", "ab34711c9dc6212dda44fcd20ecb87ac3f3fce6f0ca2f28d4a00e4154f8cd599", [:mix], [], "hexpm", "a81a04c7e34b6617c2792e291b5a2e57ab316365c2644ddc553bb9ed863ebefa"},
   "eimp": {:hex, :eimp, "1.0.23", "aaf32efab061143403dadbaa63e699ef8e81702fbfa96fd436d5e9be4d6a8d3a", [:rebar3], [{:p1_utils, "1.0.26", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm", "907c780023cb2893e4fc4bdbe6a4f02c355913862ac67f0ecc26605e816b628a"},
+  "ejabberd_po": {:git, "https://github.com/processone/ejabberd-po.git", "6ef974cbc28e1a52d7a35fd4d9081d175d0ac10d", []},
   "epam": {:hex, :epam, "1.0.14", "aa0b85d27f4ef3a756ae995179df952a0721237e83c6b79d644347b75016681a", [:rebar3], [], "hexpm", "2f3449e72885a72a6c2a843f561add0fc2f70d7a21f61456930a547473d4d989"},
   "eredis": {:hex, :eredis, "1.2.0", "0b8e9cfc2c00fa1374cd107ea63b49be08d933df2cf175e6a89b73dd9c380de4", [:rebar3], [], "hexpm", "d9b5abef2c2c8aba8f32aa018203e0b3dc8b1157773b254ab1d4c2002317f1e1"},
   "erlex": {:hex, :erlex, "0.2.7", "810e8725f96ab74d17aac676e748627a07bc87eb950d2b83acd29dc047a30595", [:mix], [], "hexpm", "3ed95f79d1a844c3f6bf0cea61e0d5612a42ce56da9c03f01df538685365efb0"},

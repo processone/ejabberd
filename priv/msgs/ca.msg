@@ -223,6 +223,7 @@
 {"leaves the room","surt de la sala"}.
 {"List of users with hats","Llista d'usuaris amb barrets"}.
 {"List users with hats","Llista d'usuaris amb barrets"}.
+{"Logged Out","Desconectat"}.
 {"Logging","Registre"}.
 {"Make participants list public","Crear una llista de participants pública"}.
 {"Make room CAPTCHA protected","Crear una sala protegida per CAPTCHA"}.
@@ -437,6 +438,7 @@
 {"Set message of the day on all hosts and send to online users","Escriure missatge del dia en tots els hosts i enviar-ho als usuaris connectats"}.
 {"Shared Roster Groups","Grups de contactes compartits"}.
 {"Show Integral Table","Mostrar Taula Integral"}.
+{"Show Occupants Join/Leave","Mostrar Entrades/Eixides dels Ocupants"}.
 {"Show Ordinary Table","Mostrar Taula Ordinaria"}.
 {"Shut Down Service","Apager el Servei"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.

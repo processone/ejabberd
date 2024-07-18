@@ -222,7 +222,7 @@
 {"Logging","Журналювання"}.
 {"Make participants list public","Зробити список учасників видимим всім"}.
 {"Make room CAPTCHA protected","Зробити кімнату захищеною капчею"}.
-{"Make room members-only","Кімната тільки для зареєтрованых учасників"}.
+{"Make room members-only","Кімната тільки для зареєтрованих учасників"}.
 {"Make room moderated","Зробити кімнату модерованою"}.
 {"Make room password protected","Зробити кімнату захищеною паролем"}.
 {"Make room persistent","Зробити кімнату постійною"}.
