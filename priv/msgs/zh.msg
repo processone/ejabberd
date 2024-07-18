@@ -33,17 +33,17 @@
 {"Allow visitors to send private messages to","允许访客发送私信至"}.
 {"Allow visitors to send status text in presence updates","允许访客在在线状态更新中发送状态文本"}.
 {"Allow visitors to send voice requests","允许访客发送发言请求"}.
-{"An associated LDAP group that defines room membership; this should be an LDAP Distinguished Name according to an implementation-specific or deployment-specific definition of a group.","与定义群聊成员资格相关联的 LDAP 群组；按群组特定于实现或特定于部署的定义，应该是一个 LDAP 专有名称。"}.
+{"An associated LDAP group that defines room membership; this should be an LDAP Distinguished Name according to an implementation-specific or deployment-specific definition of a group.","与定义群聊成员资格相关联的 LDAP 组；根据组的特定实施或特定部署的定义，使用 LDAP 专有名称。"}.
 {"Announcements","公告"}.
 {"Answer associated with a picture","与图片相关的答案"}.
 {"Answer associated with a video","与视频相关的答案"}.
 {"Answer associated with speech","与讲话相关的答案"}.
 {"Answer to a question","问题的答案"}.
-{"Anyone in the specified roster group(s) may subscribe and retrieve items","指定花名册群组中的人可以订阅并检索内容项"}.
-{"Anyone may associate leaf nodes with the collection","任何人都可以将叶子节点与集合关联"}.
+{"Anyone in the specified roster group(s) may subscribe and retrieve items","指定花名册组中的任何人都可以订阅和检索项目"}.
+{"Anyone may associate leaf nodes with the collection","任何人都可以将叶节点与集合关联"}.
 {"Anyone may publish","任何人都可以发布"}.
 {"Anyone may subscribe and retrieve items","任何人都可以订阅和检索内容项"}.
-{"Anyone with a presence subscription of both or from may subscribe and retrieve items","对全部或来源进行了状态订阅的任何人均可订阅并检索内容项"}.
+{"Anyone with a presence subscription of both or from may subscribe and retrieve items","任何拥有 both 或 from 的在线状态订阅的用户都可以订阅和检索项目"}.
 {"Anyone with Voice","任何有发言权的人"}.
 {"Anyone","任何人"}.
 {"April","四月"}.
@@ -82,7 +82,7 @@
 {"Chatroom is stopped","群聊已停止"}.
 {"Chatrooms","群聊"}.
 {"Choose a username and password to register with this server","请选择要在此服务器中注册的用户名和密码"}.
-{"Choose storage type of tables","请选择表单的存储类型"}.
+{"Choose storage type of tables","选择表的存储类型"}.
 {"Choose whether to approve this entity's subscription.","选择是否批准此实体的订阅。"}.
 {"City","城市"}.
 {"Client acknowledged more stanzas than sent by server","客户端确认的节数多于服务器发送的节数"}.
@@ -94,7 +94,7 @@
 {"Country","国家/地区"}.
 {"Current Discussion Topic","当前讨论话题"}.
 {"Database failure","数据库失败"}.
-{"Database Tables Configuration at ","数据库表格配置位于 "}.
+{"Database Tables Configuration at ","数据库表配置在 "}.
 {"Database","数据库"}.
 {"December","十二月"}.
 {"Default users as participants","默认用户为参与者"}.
@@ -103,21 +103,21 @@
 {"Delete User","删除用户"}.
 {"Deliver event notifications","传递事件通知"}.
 {"Deliver payloads with event notifications","用事件通知传递有效负载"}.
-{"Disc only copy","仅磁盘复制"}.
+{"Disc only copy","仅磁盘副本"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","不要将密码告诉任何人，甚至是 XMPP 服务的管理员。"}.
 {"Dump Backup to Text File at ","将备份转储到位于以下位置的文本文件 "}.
 {"Dump to Text File","转储到文本文件"}.
-{"Duplicated groups are not allowed by RFC6121","按照 RFC6121 的规则，不允许有重复的群组"}.
-{"Dynamically specify a replyto of the item publisher","为项目发布者动态指定一个 replyto"}.
+{"Duplicated groups are not allowed by RFC6121","按照 RFC6121 的规则，不允许重复的组"}.
+{"Dynamically specify a replyto of the item publisher","动态指定项目发布者的 replyto"}.
 {"Edit Properties","编辑属性"}.
 {"Either approve or decline the voice request.","批准或拒绝发言请求。"}.
 {"ejabberd HTTP Upload service","ejabberd HTTP 上传服务"}.
 {"ejabberd MUC module","ejabberd MUC 模块"}.
 {"ejabberd Multicast service","ejabberd 多重映射服务"}.
-{"ejabberd Publish-Subscribe module","ejabberd 发布—订阅模块"}.
+{"ejabberd Publish-Subscribe module","ejabberd 发布–订阅模块"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 字节流模块"}.
 {"ejabberd vCard module","ejabberd vCard 模块"}.
-{"ejabberd Web Admin","ejabberd Web 管理员"}.
+{"ejabberd Web Admin","ejabberd Web 管理"}.
 {"ejabberd","ejabberd"}.
 {"Email Address","电子邮件地址"}.
 {"Email","电子邮件"}.
@@ -134,14 +134,14 @@
 {"Enter the text you see","请输入您看到的文本"}.
 {"Erlang XMPP Server","Erlang XMPP 服务器"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","从验证码挑战中排除 Jabber ID"}.
-{"Export all tables as SQL queries to a file:","将所有表以 SQL 查询语句导出到文件："}.
+{"Export all tables as SQL queries to a file:","将所有表以 SQL 查询导出到文件："}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","将服务器中所有用户的数据导出到 PIEFXIS 文件（XEP-0227）："}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","将主机中用户的数据导出到 PIEFXIS 文件（XEP-0227）："}.
 {"External component failure","外部组件故障"}.
 {"External component timeout","外部组件超时"}.
 {"Failed to activate bytestream","激活字节流失败"}.
-{"Failed to extract JID from your voice request approval","无法从您的发言请求批准中提取 JID"}.
-{"Failed to map delegated namespace to external component","未能将代理命名空间映射到外部组件"}.
+{"Failed to extract JID from your voice request approval","无法从发言请求批准中提取 JID"}.
+{"Failed to map delegated namespace to external component","未能将委托命名空间映射到外部组件"}.
 {"Failed to parse HTTP response","HTTP 响应解析失败"}.
 {"Failed to process option '~s'","无法处理选项“~s”"}.
 {"Family Name","姓氏"}.
@@ -149,7 +149,7 @@
 {"February","二月"}.
 {"File larger than ~w bytes","文件大于 ~w 字节"}.
 {"Fill in the form to search for any matching XMPP User","填写表单以搜索任何匹配的 XMPP 用户"}.
-{"Friday","星期五"}.
+{"Friday","周五"}.
 {"From ~ts","来自 ~ts"}.
 {"Full List of Room Admins","群聊管理员完整列表"}.
 {"Full List of Room Owners","群聊所有者完整列表"}.
@@ -160,12 +160,12 @@
 {"Get Number of Registered Users","获取注册用户数"}.
 {"Get Pending","获取待处理"}.
 {"Get User Last Login Time","获取用户上次登录时间"}.
-{"Get User Statistics","获取用户统计"}.
+{"Get User Statistics","获取用户统计数据"}.
 {"Given Name","中间名"}.
 {"Grant voice to this person?","授予此用户发言权？"}.
 {"has been banned","已被封禁"}.
-{"has been kicked because of a system shutdown","因系统关机而被踢出"}.
-{"has been kicked because of an affiliation change","由于从属关系的改变而踢出"}.
+{"has been kicked because of a system shutdown","因系统关闭而被踢出"}.
+{"has been kicked because of an affiliation change","由于从属关系的更改而被踢出"}.
 {"has been kicked because the room has been changed to members-only","被踢出，因为群聊已更改为仅成员进入"}.
 {"has been kicked","已被踢出"}.
 {"Hat title","头衔标题"}.
@@ -180,13 +180,13 @@
 {"Import user data from jabberd14 spool file:","从 jabberd14 Spool 文件导入用户数据："}.
 {"Import User from File at ","从以下位置的文件导入用户 "}.
 {"Import users data from a PIEFXIS file (XEP-0227):","从 PIEFXIS 文件（XEP-0227）导入用户数据："}.
-{"Import users data from jabberd14 spool directory:","从jabberd14 Spool目录导入用户数据："}.
-{"Import Users from Dir at ","从以下位置目录导入用户 "}.
+{"Import users data from jabberd14 spool directory:","从 jabberd14 spool 目录导入用户数据："}.
+{"Import Users from Dir at ","从以下位置的目录导入用户 "}.
 {"Import Users From jabberd14 Spool Files","从 jabberd14 Spool 文件导入用户"}.
 {"Improper domain part of 'from' attribute","“from”属性域名部分不正确"}.
 {"Improper message type","消息类型不正确"}.
 {"Incorrect CAPTCHA submit","提交的验证码不正确"}.
-{"Incorrect data form","数据形式不正确"}.
+{"Incorrect data form","数据表单不正确"}.
 {"Incorrect password","密码不正确"}.
 {"Incorrect value of 'action' attribute","“action”属性的值不正确"}.
 {"Incorrect value of 'action' in data form","数据表单中“action”的值不正确"}.
@@ -202,11 +202,11 @@
 {"IP addresses","IP 地址"}.
 {"is now known as","现在昵称为"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","不允许向此群聊发送错误消息。参与者（~s）发送了错误消息（~s），被踢出了群聊"}.
-{"It is not allowed to send private messages of type \"groupchat\"","不允许发送“群聊”类型的私信"}.
+{"It is not allowed to send private messages of type \"groupchat\"","不允许发送“groupchat”类型的私信"}.
 {"It is not allowed to send private messages to the conference","不允许向群聊发送私信"}.
 {"Jabber ID","Jabber ID"}.
 {"January","一月"}.
-{"JID normalization denied by service policy","JID 规范化被服务策略拒绝"}.
+{"JID normalization denied by service policy","服务策略拒绝 JID 规范化"}.
 {"JID normalization failed","JID 规范化失败"}.
 {"Joined MIX channels of ~ts","加入了 ~ts 的 MIX 频道"}.
 {"Joined MIX channels:","加入了 MIX 频道："}.
@@ -223,7 +223,8 @@
 {"leaves the room","离开群聊"}.
 {"List of users with hats","有头衔用户的列表"}.
 {"List users with hats","有头衔用户列表"}.
-{"Logging","正在记录"}.
+{"Logged Out","已登出"}.
+{"Logging","日志记录"}.
 {"Make participants list public","公开参与者列表"}.
 {"Make room CAPTCHA protected","让群聊受验证码保护"}.
 {"Make room members-only","让群聊仅成员进入"}.
@@ -232,20 +233,20 @@
 {"Make room persistent","让群聊持续存在"}.
 {"Make room public searchable","让群聊可公开搜索"}.
 {"Malformed username","用户名格式不正确"}.
-{"MAM preference modification denied by service policy","MAM 偏好被服务策略拒绝"}.
+{"MAM preference modification denied by service policy","服务策略拒绝修改 MAM 首选项"}.
 {"March","三月"}.
 {"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","要持久化的最大项目数 #，或“max”表示除服务器施加的最大值之外没有特定限制"}.
-{"Max payload size in bytes","最大有效负载字节数"}.
+{"Max payload size in bytes","最大有效负载大小（字节）"}.
 {"Maximum file size","最大文件大小"}.
 {"Maximum Number of History Messages Returned by Room","群聊返回的聊天记录消息的最大值"}.
 {"Maximum number of items to persist","要持久化的最大项目数"}.
-{"Maximum Number of Occupants","最大占用人数"}.
+{"Maximum Number of Occupants","最大参与者人数"}.
 {"May","五月"}.
 {"Membership is required to enter this room","进入此群聊需要成员资格"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","请记住密码，或将密码写在纸上，放在安全的地方。在 XMPP 中，如果您忘记密码，没有自动恢复密码的方法。"}.
 {"Mere Availability in XMPP (No Show Value)","XMPP 中的可用性（无显示值）"}.
-{"Message body","消息主体"}.
-{"Message not found in forwarded payload","转发的有效载荷中找不到消息"}.
+{"Message body","消息正文"}.
+{"Message not found in forwarded payload","在转发的有效负载中找不到消息"}.
 {"Messages from strangers are rejected","拒绝来自陌生人的消息"}.
 {"Messages of type headline","标题类型的消息"}.
 {"Messages of type normal","普通类型的消息"}.
@@ -255,7 +256,7 @@
 {"Moderators Only","仅主持人"}.
 {"Moderator","主持人"}.
 {"Module failed to handle the query","模块无法处理查询"}.
-{"Monday","星期一"}.
+{"Monday","周一"}.
 {"Multicast","多重映射"}.
 {"Multiple <item/> elements are not allowed by RFC6121","按照 RFC6121，多个 <item/> 元素是不允许的"}.
 {"Multi-User Chat","多用户聊天"}.
@@ -278,24 +279,24 @@
 {"No child elements found","没有找到子元素"}.
 {"No data form found","没有找到数据表单"}.
 {"No Data","没有数据"}.
-{"No features available","没有可用特征"}.
+{"No features available","没有可用功能"}.
 {"No <forwarded/> element found","未找到 <forwarded/> 元素"}.
-{"No hook has processed this command","没有任何钩子已处理此命令"}.
-{"No info about last activity found","未找到上次活动的信息"}.
+{"No hook has processed this command","没有钩子处理此命令"}.
+{"No info about last activity found","未找到有关上次活动的信息"}.
 {"No 'item' element found","未找到“item”元素"}.
 {"No items found in this query","在此查询中找不到任何项目"}.
-{"No limit","不限"}.
+{"No limit","没有限制"}.
 {"No module is handling this query","没有模块正在处理此查询"}.
 {"No node specified","未指定节点"}.
 {"No 'password' found in data form","在数据表单中找不到“password”"}.
 {"No 'password' found in this query","在此查询中找不到“password”"}.
 {"No 'path' found in data form","在数据表单中找不到“path”"}.
 {"No pending subscriptions found","未找到待处理的订阅"}.
-{"No privacy list with this name found","未找到带此名称的隐私列表"}.
-{"No private data found in this query","此查询中未发现私有数据"}.
-{"No running node found","没有找到运行中的节点"}.
+{"No privacy list with this name found","未找到具有此名称的隐私列表"}.
+{"No private data found in this query","在此查询中找不到专用数据"}.
+{"No running node found","找不到正在运行的节点"}.
 {"No services available","无可用服务"}.
-{"No statistics found for this item","未找到此项的统计数据"}.
+{"No statistics found for this item","未找到此项目的统计数据"}.
 {"No 'to' attribute found in the invitation","邀请中未找到“to”属性"}.
 {"Nobody","没有人"}.
 {"Node already exists","节点已存在"}.
@@ -310,92 +311,92 @@
 {"Not allowed","不允许"}.
 {"Not Found","没有找到"}.
 {"Not subscribed","未订阅"}.
-{"Notify subscribers when items are removed from the node","当从节点删除内容条目时通知订阅者"}.
-{"Notify subscribers when the node configuration changes","当节点设置改变时通知订阅者"}.
-{"Notify subscribers when the node is deleted","当节点被删除时通知订阅者"}.
+{"Notify subscribers when items are removed from the node","从节点中移除项目时通知订阅者"}.
+{"Notify subscribers when the node configuration changes","节点配置更改时通知订阅者"}.
+{"Notify subscribers when the node is deleted","删除节点时通知订阅者"}.
 {"November","十一月"}.
 {"Number of answers required","所需答案数量"}.
-{"Number of occupants","占用人数"}.
+{"Number of occupants","参与者人数"}.
 {"Number of Offline Messages","离线消息数量"}.
 {"Number of online users","在线用户数"}.
 {"Number of registered users","注册用户数"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","等待多少秒后自动清除项目，“max”表示除服务器施加的最大值外没有特定限制"}.
-{"Occupants are allowed to invite others","允许占用者邀请别人"}.
-{"Occupants are allowed to query others","允许占用者查询别人"}.
-{"Occupants May Change the Subject","占用者可以更改话题"}.
+{"Occupants are allowed to invite others","允许参与者邀请别人"}.
+{"Occupants are allowed to query others","允许参与者查询别人"}.
+{"Occupants May Change the Subject","参与者可以更改话题"}.
 {"October","十月"}.
 {"OK","确定"}.
 {"Old Password:","旧密码："}.
 {"Online Users","在线用户"}.
 {"Online","在线"}.
-{"Only collection node owners may associate leaf nodes with the collection","只有集合节点所有者可以将叶子节点与集合关联"}.
-{"Only deliver notifications to available users","仅将通知发送给可发送的用户"}.
+{"Only collection node owners may associate leaf nodes with the collection","只有集合节点所有者可以将叶节点与集合关联"}.
+{"Only deliver notifications to available users","仅向在线用户发送通知"}.
 {"Only <enable/> or <disable/> tags are allowed","仅允许 <enable/> 或 <disable/> 标签"}.
 {"Only <list/> element is allowed in this query","此查询中只允许 <list/> 元素"}.
 {"Only members may query archives of this room","只有成员才能查询此群聊的存档"}.
-{"Only moderators and participants are allowed to change the subject in this room","只有主持人和参与者才允许在此群聊更改话题"}.
-{"Only moderators are allowed to change the subject in this room","只有主持人才允许在此群聊更改话题"}.
-{"Only moderators are allowed to retract messages","只有主持人才允许撤回消息"}.
+{"Only moderators and participants are allowed to change the subject in this room","只允许主持人和参与者在此群聊更改话题"}.
+{"Only moderators are allowed to change the subject in this room","只允许主持人在此群聊更改话题"}.
+{"Only moderators are allowed to retract messages","只允许主持人撤回消息"}.
 {"Only moderators can approve voice requests","只有主持人才能批准发言请求"}.
-{"Only occupants are allowed to send messages to the conference","只有占用者才允许向群聊发送消息"}.
-{"Only occupants are allowed to send queries to the conference","只有占用者才允许向群聊发送查询"}.
-{"Only publishers may publish","只有发布人可以发布"}.
-{"Only service administrators are allowed to send service messages","只有服务管理员才允许发送服务消息"}.
-{"Only those on a whitelist may associate leaf nodes with the collection","仅白名单用户可以将叶节点与集合关联"}.
-{"Only those on a whitelist may subscribe and retrieve items","仅白名单用户可以订阅和检索内容项"}.
+{"Only occupants are allowed to send messages to the conference","只允许参与者向群聊发送消息"}.
+{"Only occupants are allowed to send queries to the conference","只允许参与者向群聊发送查询"}.
+{"Only publishers may publish","只有发布者才能发布"}.
+{"Only service administrators are allowed to send service messages","只允许服务管理员发送服务消息"}.
+{"Only those on a whitelist may associate leaf nodes with the collection","只有白名单上的那些可以将叶节点与集合关联"}.
+{"Only those on a whitelist may subscribe and retrieve items","只有白名单上的那些才可以订阅和检索项目"}.
 {"Organization Name","组织名称"}.
 {"Organization Unit","组织单位"}.
 {"Other Modules Available:","其他可用模块："}.
-{"Outgoing s2s Connections","出站 s2s 连接"}.
+{"Outgoing s2s Connections","传出 s2s 连接"}.
 {"Owner privileges required","需要所有者权限"}.
-{"Packet relay is denied by service policy","包中继被服务策略拒绝"}.
+{"Packet relay is denied by service policy","服务策略拒绝数据包中继"}.
 {"Participant ID","参与者 ID"}.
 {"Participant","参与者"}.
 {"Password Verification","密码验证"}.
 {"Password Verification:","密码验证："}.
 {"Password","密码"}.
 {"Password:","密码："}.
-{"Path to Dir","目录的路径"}.
+{"Path to Dir","目录路径"}.
 {"Path to File","文件路径"}.
-{"Payload semantic type information","有效载荷语义类型信息"}.
+{"Payload semantic type information","有效负载语义类型信息"}.
 {"Period: ","持续时间： "}.
-{"Persist items to storage","持久化内容条目"}.
+{"Persist items to storage","将项目持久化到存储"}.
 {"Persistent","持久"}.
 {"Ping query is incorrect","Ping 查询不正确"}.
 {"Ping","Ping"}.
-{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","注意：这些选项仅将备份内置的 Mnesia 数据库。如果您正在使用 ODBC 模块，您还需要分别备份您的数据库。"}.
+{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","注意：这些选项只会备份内置的 Mnesia 数据库。如果使用 ODBC 模块，还需要单独备份 SQL 数据库。"}.
 {"Please, wait for a while before sending new voice request","请稍候，然后再发送新的发言请求"}.
 {"Pong","Pong"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","按照 RFC6121， 不允许有“ask”属性"}.
 {"Present real Jabber IDs to","将用户真实 JID 显示给"}.
 {"Previous session not found","上一个会话未找到"}.
-{"Previous session PID has been killed","上一个会话的 PID 已被杀掉"}.
-{"Previous session PID has exited","上一个会话的 PID 已退出"}.
-{"Previous session PID is dead","上一个会话的 PID 已死"}.
-{"Previous session timed out","上一个会话已超时"}.
+{"Previous session PID has been killed","上一个会话 PID 已终止"}.
+{"Previous session PID has exited","上一个会话 PID 已退出"}.
+{"Previous session PID is dead","上一个会话 PID 已失效"}.
+{"Previous session timed out","上一个会话超时"}.
 {"private, ","私人， "}.
 {"Public","公开"}.
 {"Publish model","发布模型"}.
-{"Publish-Subscribe","发布—订阅"}.
+{"Publish-Subscribe","发布–订阅"}.
 {"PubSub subscriber request","PubSub 订阅者请求"}.
-{"Purge all items when the relevant publisher goes offline","相关发布人离线后清除所有选项"}.
-{"Push record not found","没有找到推送记录"}.
+{"Purge all items when the relevant publisher goes offline","相关发布者离线后清除所有项目"}.
+{"Push record not found","推送记录未找到"}.
 {"Queries to the conference members are not allowed in this room","不允许在此群聊中查询群聊成员"}.
 {"Query to another users is forbidden","禁止查询其他用户"}.
-{"RAM and disc copy","内存与磁盘复制"}.
-{"RAM copy","内存(RAM)复制"}.
-{"Really delete message of the day?","确实要删除每日消息吗?"}.
+{"RAM and disc copy","RAM 和磁盘副本"}.
+{"RAM copy","RAM 副本"}.
+{"Really delete message of the day?","是否确定删除每日消息？"}.
 {"Receive notification from all descendent nodes","接收所有后代节点的通知"}.
-{"Receive notification from direct child nodes only","仅接收所有直接子节点的通知"}.
-{"Receive notification of new items only","仅接收新内容项的通知"}.
+{"Receive notification from direct child nodes only","仅接收直接子节点的通知"}.
+{"Receive notification of new items only","仅接收新项目的通知"}.
 {"Receive notification of new nodes only","仅接收新节点的通知"}.
 {"Recipient is not in the conference room","接收者不在群聊"}.
 {"Register an XMPP account","注册 XMPP 账号"}.
 {"Register","注册"}.
-{"Remote copy","远程复制"}.
+{"Remote copy","远程副本"}.
 {"Remove a hat from a user","移除用户头衔"}.
 {"Remove User","移除用户"}.
-{"Replaced by new connection","被新的连接替换"}.
+{"Replaced by new connection","替换为新连接"}.
 {"Request has timed out","请求已超时"}.
 {"Request is ignored","请求被忽略"}.
 {"Requested role","请求的角色"}.
@@ -410,47 +411,48 @@
 {"Roles for which Presence is Broadcasted","广播在线状态的角色"}.
 {"Roles that May Send Private Messages","可以发送私信的角色"}.
 {"Room Configuration","群聊配置"}.
-{"Room creation is denied by service policy","群聊创建被服务策略拒绝"}.
+{"Room creation is denied by service policy","服务策略拒绝群聊创建"}.
 {"Room description","群聊描述"}.
-{"Room Occupants","群聊占用者"}.
+{"Room Occupants","群聊参与者"}.
 {"Room terminates","群聊终止"}.
 {"Room title","群聊标题"}.
 {"Roster groups allowed to subscribe","允许订阅的花名册组"}.
 {"Roster size","花名册大小"}.
-{"Running Nodes","运行中的节点"}.
+{"Running Nodes","正在运行的节点"}.
 {"~s invites you to the room ~s","~s 邀请您加入群聊 ~s"}.
-{"Saturday","星期六"}.
+{"Saturday","周六"}.
 {"Search from the date","从日期搜索"}.
 {"Search Results for ","搜索结果 "}.
 {"Search the text","搜索文本"}.
 {"Search until the date","搜索截至日期"}.
 {"Search users in ","在以下位置搜索用户 "}.
-{"Send announcement to all online users on all hosts","发送通知给所有主机的在线用户"}.
-{"Send announcement to all online users","发送通知给所有在线用户"}.
-{"Send announcement to all users on all hosts","发送通知给所有主机上的所有用户"}.
-{"Send announcement to all users","发送通知给所有用户"}.
+{"Send announcement to all online users on all hosts","向所有主机上的所有在线用户发送公告"}.
+{"Send announcement to all online users","向所有在线用户发送公告"}.
+{"Send announcement to all users on all hosts","向所有主机上的所有用户发送公告"}.
+{"Send announcement to all users","向所有用户发送公告"}.
 {"September","九月"}.
 {"Server:","服务器："}.
 {"Service list retrieval timed out","服务列表检索超时"}.
 {"Session state copying timed out","会话状态复制超时"}.
 {"Set message of the day and send to online users","设置每日消息并发送给在线用户"}.
 {"Set message of the day on all hosts and send to online users","在所有主机上设置每日消息并发送给在线用户"}.
-{"Shared Roster Groups","共享的花名册组群"}.
-{"Show Integral Table","显示完整列表"}.
-{"Show Ordinary Table","显示普通列表"}.
+{"Shared Roster Groups","共享的花名册组"}.
+{"Show Integral Table","显示完整表"}.
+{"Show Occupants Join/Leave","显示参与者加入/离开"}.
+{"Show Ordinary Table","显示普通表"}.
 {"Shut Down Service","关闭服务"}.
 {"SOCKS5 Bytestreams","SOCKS5 字节流"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","某些 XMPP 客户端可以将您的密码存储在计算机中，但出于安全考虑，您应该仅在个人计算机中存储密码。"}.
-{"Sources Specs:","源参数："}.
-{"Specify the access model","指定访问范例"}.
+{"Sources Specs:","源规格："}.
+{"Specify the access model","指定访问模型"}.
 {"Specify the event message type","指定事件消息类型"}.
-{"Specify the publisher model","指定发布人范例"}.
-{"Stanza id is not valid","节 id 无效"}.
+{"Specify the publisher model","指定发布者模型"}.
+{"Stanza id is not valid","节 ID 无效"}.
 {"Stanza ID","节 ID"}.
-{"Statically specify a replyto of the node owner(s)","静态指定节点所有者的回复"}.
-{"Stopped Nodes","已经停止的节点"}.
-{"Store binary backup:","存储为二进制备份："}.
-{"Store plain text backup:","存储为普通文本备份："}.
+{"Statically specify a replyto of the node owner(s)","静态指定节点所有者的 replyto"}.
+{"Stopped Nodes","已停止的节点"}.
+{"Store binary backup:","存储二进制备份："}.
+{"Store plain text backup:","存储明文备份："}.
 {"Stream management is already enabled","流管理已启用"}.
 {"Stream management is not enabled","流管理未启用"}.
 {"Subject","话题"}.
@@ -459,12 +461,12 @@
 {"Subscribers may publish","订阅者可以发布"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","订阅请求必须得到批准，只有订阅者才能检索项目"}.
 {"Subscriptions are not allowed","不允许订阅"}.
-{"Sunday","星期天"}.
+{"Sunday","周日"}.
 {"Text associated with a picture","与图片相关的文字"}.
 {"Text associated with a sound","与声音相关的文字"}.
 {"Text associated with a video","与视频相关的文字"}.
 {"Text associated with speech","与语音相关的文字"}.
-{"That nickname is already in use by another occupant","该昵称已被另一占用者使用了"}.
+{"That nickname is already in use by another occupant","该昵称已被另一参与者使用了"}.
 {"That nickname is registered by another person","该昵称已被另一用户注册了"}.
 {"The account already exists","此账号已存在"}.
 {"The account was not unregistered","此账号未注销"}.
@@ -472,35 +474,35 @@
 {"The CAPTCHA is valid.","验证码有效。"}.
 {"The CAPTCHA verification has failed","验证码检查失败"}.
 {"The captcha you entered is wrong","您输入的验证码错误"}.
-{"The child nodes (leaf or collection) associated with a collection","关联集合的字节点(叶子或集合)"}.
-{"The collections with which a node is affiliated","加入结点的集合"}.
+{"The child nodes (leaf or collection) associated with a collection","与集合关联的子节点（叶或集合）"}.
+{"The collections with which a node is affiliated","节点所属的集合"}.
 {"The DateTime at which a leased subscription will end or has ended","租赁订阅将结束或已结束的日期时间"}.
-{"The datetime when the node was created","节点创建的日期时间"}.
-{"The default language of the node","该节点的默认语言"}.
+{"The datetime when the node was created","创建节点的日期时间"}.
+{"The default language of the node","节点的默认语言"}.
 {"The feature requested is not supported by the conference","群聊不支持请求的功能"}.
 {"The JID of the node creator","节点创建者的 JID"}.
-{"The JIDs of those to contact with questions","问题联系人的 JID"}.
-{"The JIDs of those with an affiliation of owner","拥有所有者从属关系的用户的 JID"}.
+{"The JIDs of those to contact with questions","有问题要联系的人的 JID"}.
+{"The JIDs of those with an affiliation of owner","与所有者的从属关系有关的用户 JID"}.
 {"The JIDs of those with an affiliation of publisher","与发布者的从属关系有关的用户 JID"}.
-{"The list of all online users","所有在线用户列表"}.
-{"The list of all users","所有用户列表"}.
+{"The list of all online users","所有在线用户的列表"}.
+{"The list of all users","所有用户的列表"}.
 {"The list of JIDs that may associate leaf nodes with a collection","可以将叶节点与集合关联的 JID 列表"}.
-{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","可以与集合相关联的最大子节点数，“max”表示除服务器施加的最大值外没有特定限制"}.
-{"The minimum number of milliseconds between sending any two notification digests","发送任何两个通知摘要之间的最小毫秒数"}.
-{"The name of the node","该节点的名称"}.
-{"The node is a collection node","该节点是集合节点"}.
-{"The node is a leaf node (default)","该节点是叶子节点(默认)"}.
+{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","可以与集合关联的子节点的最大数量，或“max”表示除服务器施加的最大值外没有特定限制"}.
+{"The minimum number of milliseconds between sending any two notification digests","发送任意两个通知摘要之间的最小毫秒数"}.
+{"The name of the node","节点的名称"}.
+{"The node is a collection node","节点是集合节点"}.
+{"The node is a leaf node (default)","节点是叶节点（默认）"}.
 {"The NodeID of the relevant node","相关节点的 NodeID"}.
-{"The number of pending incoming presence subscription requests","待处理的传入状态订阅请求数"}.
-{"The number of subscribers to the node","该节点的订阅用户数"}.
-{"The number of unread or undelivered messages","未读或未发送的消息数"}.
+{"The number of pending incoming presence subscription requests","待处理的传入在线状态订阅请求数"}.
+{"The number of subscribers to the node","节点的订阅者数量"}.
+{"The number of unread or undelivered messages","未读或未传递的消息数"}.
 {"The password contains unacceptable characters","密码包含不可接受的字符"}.
-{"The password is too weak","密码强度太弱"}.
+{"The password is too weak","密码太弱"}.
 {"the password is","密码是"}.
 {"The password of your XMPP account was successfully changed.","您的 XMPP 账号密码已成功更改。"}.
 {"The password was not changed","密码未更改"}.
-{"The passwords are different","密码不一致"}.
-{"The presence states for which an entity wants to receive notifications","实体要为其接收通知的状态"}.
+{"The passwords are different","密码不同"}.
+{"The presence states for which an entity wants to receive notifications","实体要接收通知的在线状态"}.
 {"The query is only allowed from local users","仅允许本地用户查询"}.
 {"The query must not contain <item/> elements","查询不能包含 <item/> 元素"}.
 {"The room subject can be modified by participants","群聊话题可由参与者修改"}.
@@ -516,30 +518,30 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","此处不区分大小写：MacBeth 和 Macbeth 都是 macbeth。"}.
 {"This page allows to register an XMPP account in this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","本页面允许在此服务器中注册 XMPP 账号，您的 JID（Jabber ID）的格式为：用户名@服务器。请仔细阅读说明以正确填写字段。"}.
 {"This page allows to unregister an XMPP account in this XMPP server.","本页面允许在此 XMPP 服务器中注销 XMPP 账号。"}.
-{"This room is not anonymous","此群聊不是匿名的"}.
+{"This room is not anonymous","此群聊是非匿名的"}.
 {"This service can not process the address: ~s","此服务无法处理地址：~s"}.
-{"Thursday","星期四"}.
+{"Thursday","周四"}.
 {"Time delay","时间延迟"}.
 {"Timed out waiting for stream resumption","等待流恢复超时"}.
 {"To register, visit ~s","要注册，请访问 ~s"}.
-{"To ~ts","发送到~ts"}.
-{"Token TTL","TTL 令牌"}.
-{"Too many active bytestreams","活跃的字节流太多"}.
+{"To ~ts","到 ~ts"}.
+{"Token TTL","令牌 TTL"}.
+{"Too many active bytestreams","活动字节流太多"}.
 {"Too many CAPTCHA requests","验证码请求太多"}.
 {"Too many child elements","太多子元素"}.
 {"Too many <item/> elements","太多 <item/> 元素"}.
 {"Too many <list/> elements","太多 <list/> 元素"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","来自 IP 地址(~p)的(~s)失败认证太多。将在 UTC 时间 ~s 解除对该地址的封锁"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","有太多 (~p) 失败的身份验证来自此 IP 地址 (~s)，将在 UTC 时间 ~s 解除对该地址的屏蔽"}.
 {"Too many receiver fields were specified","指定的接收者字段太多"}.
-{"Too many unacked stanzas","未被确认的节太多"}.
+{"Too many unacked stanzas","太多未确认的节"}.
 {"Too many users in this conference","此群聊中的用户太多"}.
-{"Traffic rate limit is exceeded","已经超过传输率限制"}.
+{"Traffic rate limit is exceeded","超过流量速率限制"}.
 {"~ts's Offline Messages Queue","~ts 的离线消息队列"}.
-{"Tuesday","星期二"}.
+{"Tuesday","周二"}.
 {"Unable to generate a CAPTCHA","无法生成验证码"}.
-{"Unable to register route on existing local domain","在已存在的本地域上无法注册路由"}.
-{"Unauthorized","未认证的"}.
-{"Unexpected action","意外行为"}.
+{"Unable to register route on existing local domain","无法在现有本地域上注册路由"}.
+{"Unauthorized","未经授权"}.
+{"Unexpected action","意外的操作"}.
 {"Unexpected error condition: ~p","意外错误条件：~p"}.
 {"Uninstall","卸载"}.
 {"Unregister an XMPP account","注销 XMPP 账号"}.
@@ -548,8 +550,8 @@
 {"Unsupported version","不支持的版本"}.
 {"Update message of the day (don't send)","更新每日消息（不发送）"}.
 {"Update message of the day on all hosts (don't send)","更新所有主机上的每日消息（不发送）"}.
-{"Update specs to get modules source, then install desired ones.","更新参数获取模块源，然后安装所需的模块。"}.
-{"Update Specs","更新参数"}.
+{"Update specs to get modules source, then install desired ones.","更新规格以获取模块源，然后安装所需的模块。"}.
+{"Update Specs","更新规格"}.
 {"Upgrade","升级"}.
 {"URL for Archived Discussion Logs","存档讨论日志的 URL"}.
 {"User already exists","用户已存在"}.
@@ -566,33 +568,33 @@
 {"Users","用户"}.
 {"User","用户"}.
 {"Value 'get' of 'type' attribute is not allowed","不允许“type”属性的“get”值"}.
-{"Value of '~s' should be boolean","'~s' 的值应为布尔型"}.
-{"Value of '~s' should be datetime string","'~s' 的值应为日期时间字符串"}.
-{"Value of '~s' should be integer","'~s' 的值应为整数"}.
+{"Value of '~s' should be boolean","“~s”的值应为布尔值"}.
+{"Value of '~s' should be datetime string","“~s”的值应为日期时间字符串"}.
+{"Value of '~s' should be integer","“~s”的值应为整数"}.
 {"Value 'set' of 'type' attribute is not allowed","不允许“type”属性的“set”值"}.
 {"vCard User Search","vCard 用户搜索"}.
 {"View joined MIX channels","查看已加入的 MIX 频道"}.
 {"Virtual Hosts","虚拟主机"}.
 {"Visitors are not allowed to change their nicknames in this room","不允许访客在此群聊中更改其昵称"}.
-{"Visitors are not allowed to send messages to all occupants","不允许访客向所有占用者发送信息"}.
+{"Visitors are not allowed to send messages to all occupants","不允许访客向所有参与者发送消息"}.
 {"Visitor","访客"}.
 {"Voice requests are disabled in this conference","此群聊中禁用发言请求"}.
 {"Voice request","发言请求"}.
-{"Wednesday","星期三"}.
-{"When a new subscription is processed and whenever a subscriber comes online","当新的订阅被处理和当订阅者上线"}.
-{"When a new subscription is processed","当新的订阅被处理"}.
-{"When to send the last published item","何时发送最新发布的内容条目"}.
-{"Whether an entity wants to receive an XMPP message body in addition to the payload format","除有效载荷格式外，实体是否还希望接收 XMPP 消息正文"}.
-{"Whether an entity wants to receive digests (aggregations) of notifications or all notifications individually","实体是否要接收通知的摘要(汇总)或单独接收所有通知"}.
+{"Wednesday","周三"}.
+{"When a new subscription is processed and whenever a subscriber comes online","处理新订阅时和订阅者上线时"}.
+{"When a new subscription is processed","处理新订阅时"}.
+{"When to send the last published item","何时发送最后发布的项目"}.
+{"Whether an entity wants to receive an XMPP message body in addition to the payload format","除有效负载格式外，实体是否还希望接收 XMPP 消息正文"}.
+{"Whether an entity wants to receive digests (aggregations) of notifications or all notifications individually","实体是要接收通知摘要（汇总） 还是要单独接收所有通知"}.
 {"Whether an entity wants to receive or disable notifications","实体是否要接收或禁用通知"}.
 {"Whether owners or publisher should receive replies to items","所有者或发布者是否应收到对项目的回复"}.
-{"Whether the node is a leaf (default) or a collection","节点是叶子(默认)还是集合"}.
+{"Whether the node is a leaf (default) or a collection","节点是叶（默认）还是集合"}.
 {"Whether to allow subscriptions","是否允许订阅"}.
-{"Whether to make all subscriptions temporary, based on subscriber presence","是否根据订阅者的存在将所有订阅设为临时"}.
+{"Whether to make all subscriptions temporary, based on subscriber presence","是否根据订阅者的在线状态将所有订阅设为临时订阅"}.
 {"Whether to notify owners about new subscribers and unsubscribes","是否通知所有者新的订阅者和退订者"}.
 {"Who can send private messages","谁可以发送私信"}.
-{"Who may associate leaf nodes with a collection","谁可以将叶子节点与集合关联"}.
-{"Wrong parameters in the web formulary","网络配方中的参数错误"}.
+{"Who may associate leaf nodes with a collection","谁可以将叶节点与集合关联"}.
+{"Wrong parameters in the web formulary","web 公式中的参数错误"}.
 {"Wrong xmlns","错误的 xmlns"}.
 {"XMPP Account Registration","XMPP 账号注册"}.
 {"XMPP Domains","XMPP 域"}.
@@ -600,7 +602,7 @@
 {"XMPP Show Value of Chat","XMPP 的聊天显示值"}.
 {"XMPP Show Value of DND (Do Not Disturb)","XMPP 的 DND（请勿打扰）显示值"}.
 {"XMPP Show Value of XA (Extended Away)","XMPP 的 XA（延长离开）显示值"}.
-{"XMPP URI of Associated Publish-Subscribe Node","关联发布—订阅节点的 XMPP URI"}.
+{"XMPP URI of Associated Publish-Subscribe Node","关联发布–订阅节点的 XMPP URI"}.
 {"You are being removed from the room because of a system shutdown","由于系统关闭，您将会从群聊中移除"}.
 {"You are not allowed to send private messages","不允许您发送私信"}.
 {"You are not joined to the channel","您未加入频道"}.
