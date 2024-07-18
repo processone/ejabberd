@@ -1,3 +1,58 @@
+## Version 24.07
+
+#### Core
+
+- `ejabberd_options`: Add trailing `@` to `@VERSION@` parsing
+- `mod_http_api`: Fix problem parsing tuples when using OTP 27 json library ([#4242](https://github.com/processone/ejabberd/issues/4242))
+- `mod_http_api`: Restore args conversion of `{"k":"v"}` to tuple lists
+- `mod_matrix_gw`: Add misc:json_encode_With_kv_lists and use it in matrix sign function
+- `mod_muc`: Output `muc#roominfo_avatarhash` in room disco info as per updated XEP-0486 ([#4234](https://github.com/processone/ejabberd/issues/4234))
+- `mod_muc`: Improve cross version handling of muc retractions
+- `node_pep`: Add missing feature `item-ids` to node_pep
+- `mod_register`: Send welcome message as `chat` too ([#4246](https://github.com/processone/ejabberd/issues/4246))
+- `ejabberd_hooks`: Support for ejabberd hook subscribers, useful for [mod_prometheus](https://github.com/processone/ejabberd-contrib/tree/master/mod_prometheus)
+- `ejabberd.app`: Don't add `iex` to included_applications
+- `make-installers`: Fix path in scripts in regular user install ([#4258](https://github.com/processone/ejabberd/issues/4258))
+- Test: New tests for API commands
+
+#### Documentation
+
+- `mod_matrix_gw`: Fix `matrix_id_as_jid` option documentation
+- `mod_register`: Add example configuration of `welcome_message` option
+- `mix.exs`: Add ejabberd example config files to the hex package
+- Update `CODE_OF_CONDUCT.md`
+
+#### ext_mod
+
+- Fetch dependencies from hex.pm when mix is available
+- files_to_path is deprecated, use compile_to_path
+- Compile all Elixir files in a library with one function call
+- Improve error result when problem compiling elixir file
+- Handle case when contrib module has no `*.ex` and no `*.erl`
+- `mix.exs`: Include Elixir's Logger in the OTP release, useful for [mod_libcluster](https://github.com/processone/ejabberd-contrib/tree/master/mod_libcluster)
+
+#### Logs
+
+- Print message when starting ejabberd application fails
+- Use error_logger when printing startup failure message
+- Use proper format depending on the formatter ([#4256](https://github.com/processone/ejabberd/issues/4256))
+
+#### SQL
+
+- Add option `update_sql_schema_timeout` to allow schema update use longer timeouts
+- Add ability to specify custom timeout for sql operations
+- Allow to configure number of restart in `sql_transaction()`
+- Make sql query in testsuite compatible with pg9.1
+- In `mysql.sql`, fix update instructions for the `archive` table, `origin_id` column ([#4259](https://github.com/processone/ejabberd/issues/4259))
+
+#### WebAdmin
+
+- `ejabberd.yml.example`: Add `api_permissions` group for webadmin ([#4249](https://github.com/processone/ejabberd/issues/4249))
+- Don't use host from url in webadmin, prefer host used for authentication
+- Fix number of accounts shown in the online-users page
+- Fix crash when viewing old shared roster groups ([#4245](https://github.com/processone/ejabberd/issues/4245))
+- Support groupid with spaces when making shared roster result ([#4245](https://github.com/processone/ejabberd/issues/4245))
+
 ## Version 24.06
 
 #### Core
