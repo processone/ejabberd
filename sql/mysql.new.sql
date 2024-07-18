@@ -122,7 +122,7 @@ CREATE INDEX i_archive_sh_timestamp USING BTREE ON archive(server_host(191), tim
 CREATE INDEX i_archive_sh_username_origin_id USING BTREE ON archive(server_host(191), username(191), origin_id(191));
 
 -- To update 'archive' from ejabberd <= 23.10:
--- ALTER TABLE archive ADD COLUMN origin_id text NOT NULL DEFAULT '';
+-- ALTER TABLE archive ADD COLUMN origin_id varchar(191) NOT NULL DEFAULT '';
 -- ALTER TABLE archive ALTER COLUMN origin_id DROP DEFAULT;
 -- CREATE INDEX i_archive_sh_username_origin_id USING BTREE ON archive(server_host(191), username(191), origin_id(191));
 
