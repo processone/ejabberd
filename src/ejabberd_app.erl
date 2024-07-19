@@ -175,7 +175,11 @@ file_queue_init() ->
 -ifdef(ELIXIR_ENABLED).
 is_using_elixir_config() ->
     Config = ejabberd_config:path(),
-    'Elixir.Ejabberd.ConfigUtil':is_elixir_config(Config).
+    try 'Elixir.Ejabberd.ConfigUtil':is_elixir_config(Config) of
+        B when is_boolean(B) -> B
+    catch
+        _:_ -> false
+    end.
 
 setup_if_elixir_conf_used() ->
   case is_using_elixir_config() of
