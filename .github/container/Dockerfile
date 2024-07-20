@@ -1,7 +1,7 @@
 #' Define default build variables
 ## source ARGs
 ARG OTP_VSN='27'
-ARG ELIXIR_VSN='1.16.3'
+ARG ELIXIR_VSN='1.17.2'
 ## general ARGs
 ARG UID='9000'
 ARG USER='ejabberd'
@@ -103,13 +103,27 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
     && tar -xzf /tmp/ejabberd-*-linux-musl-$ARCH.tar.gz -C $home_root_dir
 
 ################################################################################
+#' OpenSSL - Create server certificate for localhost,
+#            because wolfi misses openssl config file
+FROM docker.io/library/alpine AS servercert
+RUN apk -U add --no-cache openssl
+RUN export PEM=/tmp/server.pem \
+    && openssl req -x509 \
+            -batch \
+            -nodes \
+            -newkey rsa:4096 \
+            -keyout $PEM \
+            -out $PEM \
+            -days 3650 \
+            -subj "/CN=localhost"
+
+################################################################################
 #' Prepare ejabberd for runtime
 FROM ${METHOD} AS ejabberd
 RUN apk -U add --no-cache \
         git \
         libcap-utils \
-        pax-utils \
-        openssl
+        pax-utils
 
 WORKDIR /rootfs
 ARG HOME
@@ -125,17 +139,7 @@ RUN if [ ! -d $HOME/.ejabberd-modules ]; \
         fi \
     fi
 
-RUN export PEM=$HOME/conf/server.pem \
-    && wget -O /etc/ssl/openssl.cnf \
-        https://raw.githubusercontent.com/openssl/openssl/openssl-3.3/apps/openssl.cnf \
-    && openssl req -x509 \
-            -batch \
-            -nodes \
-            -newkey rsa:4096 \
-            -keyout $PEM \
-            -out $PEM \
-            -days 3650 \
-            -subj "/CN=localhost"
+COPY --from=servercert /tmp/server.pem $HOME/conf/server.pem
 
 RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
     && setcap 'cap_net_bind_service=+ep' $(find $home_root_dir -name beam.smp) \
