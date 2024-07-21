@@ -2,9 +2,10 @@ name: Container
 
 on:
   workflow_run:
-      workflows: [Installers]
-      types:
-        - completed
+    workflows: [Installers]
+    types:
+      - completed
+    branches: [master]
 
 env:
   REGISTRY: ghcr.io
@@ -26,7 +27,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: tarballs
-          pattern: tarballs
+          pattern: ejabberd-tarballs
           merge-multiple: true
 
       - name: Checkout ejabberd-contrib

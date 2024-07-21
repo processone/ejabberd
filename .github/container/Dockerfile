@@ -94,13 +94,13 @@ RUN sed -i '/^loglevel:/a \ \
 ################################################################################
 #' METHOD='package' - install ejabberd from binary tarball package
 FROM cgr.dev/chainguard/wolfi-base AS package
-COPY tarballs/ejabberd-*-linux-glibc-*.tar.gz /tmp/
+COPY tarballs/ejabberd-*-linux-gnu-*.tar.gz /tmp/
 WORKDIR /rootfs
 ARG HOME
 RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
     && mkdir -p $home_root_dir \
     && ARCH=$(uname -m | sed -e 's/x86_64/x64/;s/aarch64/arm64/') \
-    && tar -xzf /tmp/ejabberd-*-linux-musl-$ARCH.tar.gz -C $home_root_dir
+    && tar -xzf /tmp/ejabberd-*-linux-gnu-$ARCH.tar.gz -C $home_root_dir
 
 ################################################################################
 #' OpenSSL - Create server certificate for localhost,
