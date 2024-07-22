@@ -46,7 +46,7 @@ start(Host, _Opts) ->
     gen_server:start({local, gen_mod:get_module_proc(Host, ?MODULE)}, ?MODULE, [Host], []).
 
 stop(Host) ->
-    gen_server:stop({local, gen_mod:get_module_proc(Host, ?MODULE)}).
+    gen_server:stop(gen_mod:get_module_proc(Host, ?MODULE)).
 
 init([Host]) ->
     ejabberd_mnesia:create(?MODULE, muc_rtbl,
