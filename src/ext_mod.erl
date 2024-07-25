@@ -79,6 +79,11 @@ handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
+handle_info({'ETS-TRANSFER', Table, Process, Module}, State) ->
+    ?DEBUG("ejabberd now controls ETS table ~p from process ~p for module ~p",
+              [Table, Process, Module]),
+    {noreply, State};
+
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
