@@ -433,8 +433,8 @@ CREATE TABLE pubsub_item (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
   itemid text NOT NULL,
   publisher text NOT NULL,
-  creation varchar(32) NOT NULL,
-  modification varchar(32) NOT NULL,
+  creation BIGINT NOT NULL,
+  modification BIGINT NOT NULL,
   payload text NOT NULL DEFAULT ''
 );
 CREATE INDEX i_pubsub_item_itemid ON pubsub_item USING btree (itemid);
