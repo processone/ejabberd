@@ -68,8 +68,8 @@ jobs:
 
     - name: Prepare databases
       run: |
-        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
-        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.sql
+        docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
+        docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.sql
         sudo systemctl start mysql.service
         sudo systemctl start postgresql.service
         mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
@@ -256,12 +256,12 @@ jobs:
       run: |
         [[ -d logs ]] && rm -rf logs
         [[ -d _build/test/logs ]] && rm -rf _build/test/logs || true
-        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -Q "drop database [ejabberd_test];"
-        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -Q "drop login [ejabberd_test];"
+        docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -Q "drop database [ejabberd_test];"
+        docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -Q "drop login [ejabberd_test];"
         mysql -u root -proot -e "DROP DATABASE ejabberd_test;"
         sudo -u postgres psql -c "DROP DATABASE ejabberd_test;"
-        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
-        docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.new.sql
+        docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
+        docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.new.sql
         mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
         mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
                                  TO 'ejabberd_test'@'localhost';"
