@@ -66,6 +66,22 @@ jobs:
           #
           path: ejabberd-packages*
           retention-days: 14
+      - name: Collect binary tarballs
+        run: |
+          mkdir tarballs
+          mv ejabberd-*.tar.gz tarballs
+      - name: Upload binary tarballs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ejabberd-tarballs
+          #
+          # Appending the wildcard character ("*") is a trick to make
+          # "ejabberd-packages" the root directory of the uploaded ZIP file:
+          #
+          # https://github.com/actions/upload-artifact#upload-using-multiple-paths-and-exclusions
+          #
+          path: tarballs*
+          retention-days: 14
 
   release:
     name: Release
