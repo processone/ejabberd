@@ -18,7 +18,7 @@ GO
 USE ejabberd_test;
 GO
 
-CREATE LOGIN ejabberd_test WITH PASSWORD = 'ejabberd_Test1';
+CREATE LOGIN ejabberd_test WITH PASSWORD = 'ejabberd_Test1', CHECK_POLICY = OFF;
 GO
 
 CREATE USER ejabberd_test FOR LOGIN ejabberd_test;
