@@ -949,7 +949,8 @@ doc() ->
       #{value => "true | false",
         note => "updated in 24.06",
         desc =>
-            ?T("Allow ejabberd to update SQL schema. "
+            ?T("Allow ejabberd to update SQL schema in "
+               "MySQL, PostgreSQL and SQLite databases. "
                "This option was added in ejabberd 23.10, "
                "and enabled by default since 24.06. "
                "The default value is 'true'.")}},
