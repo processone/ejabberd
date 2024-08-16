@@ -398,13 +398,17 @@ vcard_iq_set(#iq{from = From, lang = Lang, sub_els = [VCard]} = IQ) ->
 	    %% Should not be here?
 	    Txt = ?T("Nodeprep has failed"),
 	    {stop, xmpp:err_internal_server_error(Txt, Lang)};
+	{error, not_implemented} ->
+	    Txt = ?T("Updating the vCard is not supported by the vCard storage backend"),
+	    {stop, xmpp:err_feature_not_implemented(Txt, Lang)};
 	ok ->
 	    IQ
     end;
 vcard_iq_set(Acc) ->
     Acc.
 
--spec set_vcard(binary(), binary(), xmlel() | vcard_temp()) -> {error, badarg|binary()} | ok.
+-spec set_vcard(binary(), binary(), xmlel() | vcard_temp()) ->
+    {error, badarg | not_implemented | binary()} | ok.
 set_vcard(User, LServer, VCARD) ->
     case jid:nodeprep(User) of
 	error ->
