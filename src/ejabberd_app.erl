@@ -59,6 +59,7 @@ start(normal, _Args) ->
 			ejabberd_hooks:run(ejabberd_started, []),
 			ejabberd:check_apps(),
 			ejabberd_systemd:ready(),
+			maybe_start_exsync(),
 			{T2, _} = statistics(wall_clock),
 			?INFO_MSG("ejabberd ~ts is started in the node ~p in ~.2fs",
 				  [ejabberd_option:version(),
@@ -198,8 +199,15 @@ start_elixir_application() ->
 	ok -> ok;
 	{error, _Msg} -> ?ERROR_MSG("Elixir application not started.", [])
     end.
+
+maybe_start_exsync() ->
+    case os:getenv("RELIVE") of
+        "true" -> rpc:call(node(), 'Elixir.ExSync.Application', start, []);
+        _ -> ok
+    end.
 -else.
 setup_if_elixir_conf_used() -> ok.
 register_elixir_config_hooks() -> ok.
 start_elixir_application() -> ok.
+maybe_start_exsync() -> ok.
 -endif.

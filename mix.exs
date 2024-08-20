@@ -165,7 +165,7 @@ defmodule Ejabberd.MixProject do
                          {Mix.env() == :translations,
                           {:ejabberd_po, git: "https://github.com/processone/ejabberd-po.git"}},
                          {Mix.env() == :dev,
-                          {:exsync, "~> 0.2"}},
+                          {:exsync, "~> 0.2", optional: true, runtime: false}},
                          {config(:redis), {:eredis, "~> 1.2.0"}},
                          {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
@@ -183,7 +183,6 @@ defmodule Ejabberd.MixProject do
 
   defp cond_apps do
     for {:true, app} <- [{config(:stun), :stun},
-                         {Map.has_key?(System.get_env(), "RELIVE"), :exsync},
                          {if_version_below(~c"27", true), :jiffy},
                          {config(:tools), :observer}], do:
       app
