@@ -1,7 +1,7 @@
 
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/processone/ejabberd?sort=semver&logo=embarcadero&label=&color=49c0c4)](https://github.com/processone/ejabberd/tags)
-[![GitHub Container](https://img.shields.io/github/v/tag/processone/ejabberd?label=ejabberd&sort=semver&logo=docker)](https://github.com/processone/ejabberd/pkgs/container/ejabberd)
-
+[![ejabberd Container on GitHub](https://img.shields.io/github/v/tag/processone/ejabberd?label=ejabberd&sort=semver&logo=docker)](https://github.com/processone/ejabberd/pkgs/container/ejabberd)
+[![ecs Container on Docker](https://img.shields.io/docker/v/ejabberd/ecs?label=ecs&sort=semver&logo=docker)](https://hub.docker.com/r/ejabberd/ecs/)
 
 `ejabberd` Container Image
 ==========================
