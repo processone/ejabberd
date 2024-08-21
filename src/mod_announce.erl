@@ -494,9 +494,6 @@ announce_commands(From, To,
 	    {error, xmpp:err_bad_request(Txt, Lang)}
     end.
 
--define(TVFIELD(Type, Var, Val),
-	#xdata_field{type = Type, var = Var, values = vvaluel(Val)}).
-
 vvaluel(Val) ->
     case Val of
         <<>> -> [];

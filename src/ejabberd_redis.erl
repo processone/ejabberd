@@ -42,8 +42,6 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--define(SERVER, ?MODULE).
--define(PROCNAME, 'ejabberd_redis_client').
 -define(TR_STACK, redis_transaction_stack).
 -define(DEFAULT_MAX_QUEUE, 10000).
 -define(MAX_RETRIES, 1).

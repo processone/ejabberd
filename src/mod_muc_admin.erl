@@ -620,9 +620,6 @@ web_menu_host(Acc, _Host, Lang) ->
 %%---------------
 %% Web Admin Page
 
--define(TDTD(L, N),
-        ?XE(<<"tr">>, [?XCT(<<"td">>, L), ?XC(<<"td">>, integer_to_binary(N))])).
-
 web_page_main(_, #request{path = [<<"muc">>], lang = Lang} = R) ->
     PageTitle = translate:translate(Lang, ?T("Multi-User Chat")),
     Title = ?H1GL(PageTitle, <<"modules/#mod_muc">>, <<"mod_muc">>),

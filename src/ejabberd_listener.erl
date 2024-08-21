@@ -60,8 +60,6 @@
 
 -optional_callbacks([listen_opt_type/1, tcp_init/2, udp_init/2]).
 
--define(TCP_SEND_TIMEOUT, 15000).
-
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 

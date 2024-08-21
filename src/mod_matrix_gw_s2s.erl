@@ -35,8 +35,6 @@
 -export([init/1, terminate/3, code_change/4, callback_mode/0]).
 -export([handle_event/4]).
 
--define(SERVER, ?MODULE).
-
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include_lib("kernel/include/inet.hrl").

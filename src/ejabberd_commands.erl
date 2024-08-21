@@ -56,8 +56,6 @@
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
--define(POLICY_ACCESS, '$policy').
-
 -type auth() :: {binary(), binary(), binary() | {oauth, binary()}, boolean()} | map().
 
 -record(state, {}).

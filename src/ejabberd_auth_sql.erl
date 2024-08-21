@@ -41,8 +41,6 @@
 -include("ejabberd_sql_pt.hrl").
 -include("ejabberd_auth.hrl").
 
--define(SALT_LENGTH, 16).
-
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -160,8 +158,6 @@ remove_user(User, Server) ->
 	_ ->
 	    {error, db_failure}
     end.
-
--define(BATCH_SIZE, 1000).
 
 scram_hash_encode(Hash, StoreKey) ->
     case Hash of

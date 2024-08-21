@@ -39,7 +39,6 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--define(STORAGE_TYPES, [disc_copies, disc_only_copies, ram_copies]).
 -define(NEED_RESET, [local_content, type]).
 
 -include("logger.hrl").
