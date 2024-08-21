@@ -44,9 +44,9 @@
 %%%----------------------------------------------------------------------
 start(Host) ->
     %% We add our default JWT verifier with hook priority 100.
-    %% So if you need to check or verify your custom JWT before the 
-    %% default verifier, It's better to use this hook with priority 
-    %% little than 100 and return bool() or {stop, bool()} in your own 
+    %% So if you need to check or verify your custom JWT before the
+    %% default verifier, It's better to use this hook with priority
+    %% little than 100 and return bool() or {stop, bool()} in your own
     %% callback function.
     ejabberd_hooks:add(check_decoded_jwt, Host, ?MODULE, check_decoded_jwt, 100),
     case ejabberd_option:jwt_key(Host) of

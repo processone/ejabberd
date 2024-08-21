@@ -263,7 +263,7 @@ remove_user(LUser, LServer) ->
                      " where lusername=%(LUser)s and %(LServer)H"))
       end).
 
-export(_Server) ->   
+export(_Server) ->
     [{vcard,
       fun(Host, #vcard{us = {LUser, LServer}, vcard = VCARD})
             when LServer == Host ->

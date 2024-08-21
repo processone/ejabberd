@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_push_sql.erl
 %%% Author  : Evgeniy Khramtsov <ekhramtsov@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 26 Oct 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%

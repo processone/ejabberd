@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_bosh_sql.erl
 %%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 28 Mar 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
