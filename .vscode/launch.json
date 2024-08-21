@@ -2,6 +2,23 @@
         "version": "0.2.0",
         "configurations": [
                 {
+                        "name": "Relive (Vim)",
+                        "type": "erlang",
+                        "request": "launch",
+                        "runinterminal": [
+                                "./rebar3", "shell",
+                                "--apps", "ejabberd",
+                                "--config", "rel/relive.config",
+                                "--script", "rel/relive.escript",
+                                "--name", "ejabberd@localhost",
+                                "--setcookie", "COOKIE"
+                        ],
+                        "projectnode": "ejabberd@localhost",
+                        "cookie": "COOKIE",
+                        "timeout": 900,
+                        "cwd": "."
+                },
+                {
                         "name": "Relive",
                         "type": "erlang",
                         "request": "launch",
