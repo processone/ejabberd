@@ -43,9 +43,8 @@ defmodule Ejabberd.MixProject do
 
   def application do
     [mod: {:ejabberd_app, []},
-     extra_applications: [:idna, :inets, :kernel, :sasl, :ssl, :stdlib, :mix,
-                    :fast_tls, :fast_xml, :fast_yaml, :jose, :logger,
-                    :p1_utils, :stringprep, :syntax_tools, :yconf, :xmpp]
+     extra_applications: [:inets, :kernel, :sasl, :ssl, :stdlib, :syntax_tools,
+                          :logger, :mix]
      ++ cond_apps(),
      included_applications: [:mnesia, :os_mon,
                              :cache_tab, :eimp, :mqtree, :p1_acme,
