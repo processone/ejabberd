@@ -283,7 +283,7 @@ start(Level) ->
 	       burst_limit_window_time => LogBurstLimitWindowTime,
 	       burst_limit_max_count => LogBurstLimitCount},
     FmtConfig = #{legacy_header => false,
-		  time_designator => $ ,
+		  time_designator => $\s,
 		  max_size => 100*1024,
 		  single_line => false},
     FileFmtConfig = FmtConfig#{template => file_template()},

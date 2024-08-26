@@ -1180,7 +1180,7 @@ pretty_print_xml({xmlcdata, CData}, Prefix) ->
                         ($\n) -> true;
                         ($\t) -> true;
                         ($\v) -> true;
-                        ($ ) -> true;
+                        ($\s) -> true;
                         (_) -> false
                      end, binary_to_list(CData)),
     if IsBlankCData ->
