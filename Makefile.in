@@ -643,6 +643,13 @@ endif
 endif
 
 #.
+#' elvis
+#
+
+elvis:
+	$(REBAR) lint
+
+#.
 #' test
 #
 
@@ -699,6 +706,7 @@ help:
 	@echo "  indent         Indent source code using erlang-mode [emacs]"
 	@echo ""
 	@echo "  dialyzer       Run Dialyzer static analyzer"
+	@echo "  elvis          Run Elvis source code style reviewer [rebar3]"
 	@echo "  hooks          Run hooks validator"
 	@echo "  test           Run Common Tests suite [rebar3]"
 	@echo "  test-eunit     Run EUnit suite [rebar3]"
