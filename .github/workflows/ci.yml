@@ -133,6 +133,8 @@ jobs:
     - run: make xref
     - run: make dialyzer
     - run: make test-eunit
+    - run: make elvis
+      if: matrix.otp >= 23
 
     - name: Check Production Release
       run: |
