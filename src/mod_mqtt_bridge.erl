@@ -142,8 +142,8 @@ mod_opt_type(servers) ->
 			econf:options(
 			    #{
 				certfile => econf:pem()
-			    }, [{return, map}])
-		    )}, [{return, map}]),
+			    }, [{return, map}]))},
+		    [{return, map}]),
 		  [{return, map}]),
 	fun(Servers) ->
 	    maps:fold(

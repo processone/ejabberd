@@ -619,7 +619,7 @@ strings_to_binary(L) when is_list(L) ->
     end;
 strings_to_binary({A, B, C, D}) when
 	is_integer(A), is_integer(B), is_integer(C), is_integer(D) ->
-    {A, B, C ,D};
+    {A, B, C, D};
 strings_to_binary(T) when is_tuple(T) ->
     list_to_tuple(strings_to_binary1(tuple_to_list(T)));
 strings_to_binary(X) ->

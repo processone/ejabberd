@@ -217,7 +217,7 @@ need_transform(_) ->
 
 transform({offline_msg, {U, S}, Timestamp, Expire, From, To, _, Packet}) ->
     #offline_msg{us = {U, S}, timestamp = Timestamp, expire = Expire,
-		 from = From ,to = To, packet = Packet};
+		 from = From, to = To, packet = Packet};
 transform(#offline_msg{us = {U, S}, from = From, to = To,
 		       packet = El} = R) ->
     R#offline_msg{us = {iolist_to_binary(U), iolist_to_binary(S)},

@@ -1471,7 +1471,7 @@ get_room_occupants(Pid) ->
 
 get_room_occupants_number(Room, Host) ->
     case get_room_pid_validate(Room, Host, <<"name">>, <<"service">>) of
-	{Pid, _, _} when is_pid(Pid )->
+	{Pid, _, _} when is_pid(Pid)->
 	    {ok, #{occupants_number := N}} = mod_muc_room:get_info(Pid),
 	    N;
 	_ ->

@@ -4200,7 +4200,7 @@ delete_old_items(N) ->
 				  fun(#pubsub_node{id = Nidx, type = Type}) ->
 					  case node_action(Host, Type,
 							   remove_extra_items,
-							   [Nidx , N]) of
+							   [Nidx, N]) of
 					      {result, _} ->
 						  ok;
 					      {error, _} ->

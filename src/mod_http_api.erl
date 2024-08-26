@@ -542,7 +542,7 @@ log(Call, Args, IP) ->
     ?INFO_MSG("API call ~ts ~p (~p)", [Call, hide_sensitive_args(Args), IP]).
 
 hide_sensitive_args(Args=[_H|_T]) ->
-    lists:map( fun({<<"password">>, Password}) -> {<<"password">>, ejabberd_config:may_hide_data(Password)};
+    lists:map(fun({<<"password">>, Password}) -> {<<"password">>, ejabberd_config:may_hide_data(Password)};
          ({<<"newpass">>,NewPassword}) -> {<<"newpass">>, ejabberd_config:may_hide_data(NewPassword)};
          (E) -> E end,
          Args);

@@ -39,9 +39,8 @@ get_nameservers() ->
 is_good_ns(Addr) ->
     element(1,
 	    inet_res:nnslookup("a.root-servers.net", in, a, [{Addr,53}],
-			       timer:seconds(5)
-			      )
-	   ) =:= ok.
+			       timer:seconds(5)))
+	   =:= ok.
 
 reg() ->
     {ok, R} = win32reg:open([read]),

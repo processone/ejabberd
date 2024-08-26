@@ -189,7 +189,7 @@ handle_sync_event({send_xml, Packet}, _From, StateName,
                                             El2
                                     end
                             end,
-                      {xmlstreamelement , El3};
+                      {xmlstreamelement, El3};
                   _ ->
                       Packet
               end,

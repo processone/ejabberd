@@ -80,7 +80,7 @@ start_link() ->
 add(Hook, Function, Seq) when is_function(Function) ->
     add(Hook, global, undefined, Function, Seq).
 
--spec add(atom(), HostOrModule :: binary() | atom(), fun() | atom() , integer()) -> ok.
+-spec add(atom(), HostOrModule :: binary() | atom(), fun() | atom(), integer()) -> ok.
 add(Hook, Host, Function, Seq) when is_function(Function) ->
     add(Hook, Host, undefined, Function, Seq);
 
