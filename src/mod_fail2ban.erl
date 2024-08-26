@@ -139,8 +139,8 @@ handle_call(Request, From, State) ->
     ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
 
-handle_cast(_Msg, State) ->
-    ?WARNING_MSG("Unexpected cast = ~p", [_Msg]),
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast = ~p", [Msg]),
     {noreply, State}.
 
 handle_info(clean, State) ->
@@ -151,8 +151,8 @@ handle_info(clean, State) ->
       ets:fun2ms(fun({_, _, UnbanTS, _}) -> UnbanTS =< Now end)),
     erlang:send_after(?CLEAN_INTERVAL, self(), clean),
     {noreply, State};
-handle_info(_Info, State) ->
-    ?WARNING_MSG("Unexpected info = ~p", [_Info]),
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info = ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, #state{host = Host}) ->

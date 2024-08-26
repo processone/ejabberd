@@ -256,9 +256,9 @@ ws_loop(Codec, Socket, WsHandleLoopPid, SockMod, Shaper) ->
 		 "with pid ~p",
 		 [self()]),
             websocket_close(Codec, Socket, WsHandleLoopPid, SockMod, 1001); % going away
-        _Ignored ->
+        Ignored ->
             ?WARNING_MSG("Received unexpected message, ignoring: ~p",
-                         [_Ignored]),
+                         [Ignored]),
             ws_loop(Codec, Socket, WsHandleLoopPid,
                     SockMod, Shaper)
     end.

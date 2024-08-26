@@ -340,16 +340,16 @@ update_roster_sql({LUser, LServer, SJID, Name, SSubscription, SAsk, AskMessage},
 
 raw_to_record(LServer,
 	      [User, LServer, SJID, Nick, SSubscription, SAsk, SAskMessage,
-	       _SServer, _SSubscribe, _SType]) ->
+	       SServer, SSubscribe, SType]) ->
     raw_to_record(LServer,
                   {User, LServer, SJID, Nick, SSubscription, SAsk, SAskMessage,
-                   _SServer, _SSubscribe, _SType});
+                   SServer, SSubscribe, SType});
 raw_to_record(LServer,
 	      {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
-	       _SServer, _SSubscribe, _SType}) ->
+	       SServer, SSubscribe, SType}) ->
     raw_to_record(LServer,
                   {User, LServer, SJID, Nick, SSubscription, SAsk, SAskMessage,
-                   _SServer, _SSubscribe, _SType});
+                   SServer, SSubscribe, SType});
 raw_to_record(LServer,
 	      {User, LServer, SJID, Nick, SSubscription, SAsk, SAskMessage,
 	       _SServer, _SSubscribe, _SType}) ->

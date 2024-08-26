@@ -308,9 +308,9 @@ init([#body{attrs = Attrs}, IP, SID]) ->
 	    ignore
     end.
 
-wait_for_session(_Event, State) ->
+wait_for_session(Event, State) ->
     ?ERROR_MSG("Unexpected event in 'wait_for_session': ~p",
-	       [_Event]),
+	       [Event]),
     {next_state, wait_for_session, State}.
 
 wait_for_session(#body{attrs = Attrs} = Req, From,
@@ -367,16 +367,16 @@ wait_for_session(#body{attrs = Attrs} = Req, From,
 	    reply_next_state(State4, Resp#body{els = RespEls}, RID,
 			     From)
     end;
-wait_for_session(_Event, _From, State) ->
+wait_for_session(Event, _From, State) ->
     ?ERROR_MSG("Unexpected sync event in 'wait_for_session': ~p",
-	       [_Event]),
+	       [Event]),
     {reply, {error, badarg}, wait_for_session, State}.
 
 active({#body{} = Body, From}, State) ->
     active1(Body, From, State);
-active(_Event, State) ->
+active(Event, State) ->
     ?ERROR_MSG("Unexpected event in 'active': ~p",
-	       [_Event]),
+	       [Event]),
     {next_state, active, State}.
 
 active(#body{attrs = Attrs, size = Size} = Req, From,
@@ -408,9 +408,9 @@ active(#body{attrs = Attrs, size = Size} = Req, From,
 	   end;
        true -> active1(Req, From, State1)
     end;
-active(_Event, _From, State) ->
+active(Event, _From, State) ->
     ?ERROR_MSG("Unexpected sync event in 'active': ~p",
-	       [_Event]),
+	       [Event]),
     {reply, {error, badarg}, active, State}.
 
 active1(#body{attrs = Attrs} = Req, From, State) ->
@@ -517,9 +517,9 @@ handle_event({activate, C2SPid}, StateName,
 handle_event({change_shaper, Shaper}, StateName,
 	     State) ->
     {next_state, StateName, State#state{shaper_state = Shaper}};
-handle_event(_Event, StateName, State) ->
+handle_event(Event, StateName, State) ->
     ?ERROR_MSG("Unexpected event in '~ts': ~p",
-	       [StateName, _Event]),
+	       [StateName, Event]),
     {next_state, StateName, State}.
 
 handle_sync_event({send_xml,
@@ -557,9 +557,9 @@ handle_sync_event(deactivate_socket, _From, StateName,
 		  StateData) ->
     {reply, ok, StateName,
      StateData#state{c2s_pid = undefined}};
-handle_sync_event(_Event, _From, StateName, State) ->
+handle_sync_event(Event, _From, StateName, State) ->
     ?ERROR_MSG("Unexpected sync event in '~ts': ~p",
-	       [StateName, _Event]),
+	       [StateName, Event]),
     {reply, {error, badarg}, StateName, State}.
 
 handle_info({timeout, TRef, wait_timeout}, StateName,
@@ -583,9 +583,9 @@ handle_info({timeout, TRef, shaper_timeout}, StateName,
 	  {stop, normal, State};
       _ -> {next_state, StateName, State}
     end;
-handle_info(_Info, StateName, State) ->
+handle_info(Info, StateName, State) ->
     ?ERROR_MSG("Unexpected info:~n** Msg: ~p~n** StateName: ~p",
-	       [_Info, StateName]),
+	       [Info, StateName]),
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, State) ->

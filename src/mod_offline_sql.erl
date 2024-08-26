@@ -127,8 +127,8 @@ remove_old_messages(Days, LServer) ->
         of
 	{updated, N} ->
 	    ?INFO_MSG("~p message(s) deleted from offline spool", [N]);
-	_Error ->
-	    ?ERROR_MSG("Cannot delete message in offline spool: ~p", [_Error])
+	Error ->
+	    ?ERROR_MSG("Cannot delete message in offline spool: ~p", [Error])
     end,
     {atomic, ok}.
 

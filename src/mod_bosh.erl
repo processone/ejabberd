@@ -74,8 +74,8 @@ process([], #request{method = 'GET', data = <<>>}) ->
     {200, ?HEADER(?CT_XML), get_human_html_xmlel()};
 process([], #request{method = 'OPTIONS', data = <<>>}) ->
     {200, ?OPTIONS_HEADER, []};
-process(_Path, _Request) ->
-    ?DEBUG("Bad Request: ~p", [_Request]),
+process(_Path, Request) ->
+    ?DEBUG("Bad Request: ~p", [Request]),
     {400, ?HEADER(?CT_XML),
      #xmlel{name = <<"h1">>, attrs = [],
 	    children = [{xmlcdata, <<"400 Bad Request">>}]}}.

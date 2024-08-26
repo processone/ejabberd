@@ -183,8 +183,8 @@ keep_alive(Host, Proc) ->
 	   Timeout) of
 	{selected,_,[[<<"1">>]]} ->
 	    ok;
-	_Err ->
-	    ?ERROR_MSG("Keep alive query failed, closing connection: ~p", [_Err]),
+	Err ->
+	    ?ERROR_MSG("Keep alive query failed, closing connection: ~p", [Err]),
 	    sync_send_event(Proc, force_timeout, Timeout)
     end.
 

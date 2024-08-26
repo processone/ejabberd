@@ -386,8 +386,8 @@ process([<<"federation">>, <<"v2">>, <<"send_join">>, RoomID, EventID],
         {result, HTTPResult} ->
             HTTPResult
     end;
-process(_Path, _Request) ->
-    ?DEBUG("matrix 404: ~p~n~p~n", [_Path, _Request]),
+process(Path, Request) ->
+    ?DEBUG("matrix 404: ~p~n~p~n", [Path, Request]),
     ejabberd_web:error(not_found).
 
 preprocess_federation_request(Request) ->
