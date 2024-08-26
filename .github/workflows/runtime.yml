@@ -61,6 +61,13 @@ jobs:
         apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
                             libsqlite3-dev libwebp-dev libyaml-dev
 
+    - name: Cache Hex.pm
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/rebar3/
+        key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
+
     - name: Compile
       run: |
         ./autogen.sh
@@ -204,6 +211,13 @@ jobs:
         sed -i 's|^{deps, \[\(.*\)|{deps, [{decimal, ".*", {git, "https://github.com/ericmj/decimal", {branch, "main"}}},\n \1|g' rebar.config
         cat rebar.config
 
+    - name: Cache Hex.pm
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/rebar3/
+        key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
+
     - name: Compile
       run: |
         ./autogen.sh
@@ -346,6 +360,13 @@ jobs:
       if: matrix.otp < 24
       run: |
         mix deps.unlock jose
+
+    - name: Cache Hex.pm
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.hex/
+        key: ${{matrix.otp}}-${{hashFiles('mix.exs')}}
 
     - name: Compile
       run: |
