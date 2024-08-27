@@ -573,24 +573,24 @@ may_remove_resource(From) -> From.
 get_ip_access(Host) ->
     mod_register_opt:ip_access(Host).
 
-check_ip_access({User, Server, Resource}, IPAccess) ->
+check_ip_access(Server, {User, Server, Resource}, IPAccess) ->
     case ejabberd_sm:get_user_ip(User, Server, Resource) of
         {IPAddress, _PortNumber} ->
-            check_ip_access(IPAddress, IPAccess);
+            check_ip_access(Server, IPAddress, IPAccess);
         _ ->
             deny
     end;
-check_ip_access(undefined, _IPAccess) ->
+check_ip_access(_Server, undefined, _IPAccess) ->
     deny;
-check_ip_access(IPAddress, IPAccess) ->
-    acl:match_rule(global, IPAccess, IPAddress).
+check_ip_access(Server, IPAddress, IPAccess) ->
+    acl:match_rule(Server, IPAccess, IPAddress).
 
 check_access(User, Server, Source) ->
     JID = jid:make(User, Server),
     Access = mod_register_opt:access(Server),
     IPAccess = get_ip_access(Server),
     case acl:match_rule(Server, Access, JID) of
-	allow -> check_ip_access(Source, IPAccess);
+	allow -> check_ip_access(Server, Source, IPAccess);
 	deny -> deny
     end.
 
