@@ -32,7 +32,8 @@
 -export([start/2, stop/1, reload/3, mod_doc/0,
          depends/2, mod_opt_type/1, mod_options/1]).
 
--export([filter_packet/1, filter_offline_msg/1, filter_subscription/2]).
+-export([filter_packet/1, filter_offline_msg/1, filter_subscription/2,
+         get_sm_features/5]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -40,13 +41,17 @@
 
 -define(SETS, gb_sets).
 
+-define(NS_BLOCK_STRANGERS, <<"urn:ejabberd:block-strangers">>).
+
 -type c2s_state() :: ejabberd_c2s:state().
 
 %%%===================================================================
 %%% Callbacks and hooks
 %%%===================================================================
 start(_Host, _Opts) ->
-    {ok, [{hook, user_receive_packet, filter_packet, 25},
+    {ok, [{hook, disco_local_features, get_sm_features, 50},
+          {hook, disco_sm_features, get_sm_features, 50},
+          {hook, user_receive_packet, filter_packet, 25},
           {hook, roster_in_subscription, filter_subscription, 25},
           {hook, offline_message_hook, filter_offline_msg, 25}]}.
 
@@ -55,6 +60,16 @@ stop(_Host) ->
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
+
+get_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
+    Features = case Acc of
+		{result, I} -> I;
+		_ -> []
+	    end,
+    {result, [?NS_BLOCK_STRANGERS | Features]};
+
+get_sm_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
 
 -spec filter_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()} |
 						{stop, {drop, c2s_state()}}.
