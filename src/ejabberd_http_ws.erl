@@ -165,58 +165,43 @@ handle_event({new_shaper, Shaper}, StateName, #state{ws = {_, WsPid}} = StateDat
     {next_state, StateName, StateData}.
 
 handle_sync_event({send_xml, Packet}, _From, StateName,
-		  #state{ws = {_, WsPid}} = StateData) ->
-    Packet2 = case Packet of
-                  {xmlstreamstart, _, Attrs} ->
-                      Attrs2 = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>} |
-                                lists:keydelete(<<"xmlns">>, 1, lists:keydelete(<<"xmlns:stream">>, 1, Attrs))],
-                      {xmlstreamelement, #xmlel{name = <<"open">>, attrs = Attrs2}};
-                  {xmlstreamend, _} ->
-                      {xmlstreamelement, #xmlel{name = <<"close">>,
-                                                attrs = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>}]}};
-                  {xmlstreamraw, <<"\r\n\r\n">>} -> % cdata ping
-                      skip;
-                  {xmlstreamelement, #xmlel{name=Name2} = El2} ->
-                      El3 = case Name2 of
-                                <<"stream:", _/binary>> ->
-                                    fxml:replace_tag_attr(<<"xmlns:stream">>, ?NS_STREAM, El2);
-                                _ ->
-                                    case fxml:get_tag_attr_s(<<"xmlns">>, El2) of
-                                        <<"">> ->
-                                            fxml:replace_tag_attr(<<"xmlns">>, <<"jabber:client">>, El2);
-                                        _ ->
-                                            El2
-                                    end
-                            end,
-                      {xmlstreamelement, El3}
-              end,
-    case Packet2 of
-        {xmlstreamstart, Name, Attrs3} ->
-            B = fxml:element_to_binary(#xmlel{name = Name, attrs = Attrs3}),
-            route_text(WsPid, <<(binary:part(B, 0, byte_size(B)-2))/binary, ">">>);
-        {xmlstreamend, Name} ->
-            route_text(WsPid, <<"</", Name/binary, ">">>);
-        {xmlstreamelement, El} ->
-            route_text(WsPid, fxml:element_to_binary(El));
-        {xmlstreamraw, Bin} ->
-            route_text(WsPid, Bin);
-        {xmlstreamcdata, Bin2} ->
-            route_text(WsPid, Bin2);
-        skip ->
-            ok
-    end,
-    SN2 = case Packet2 of
-              {xmlstreamelement, #xmlel{name = <<"close">>}} ->
-                  stream_end_sent;
-              _ ->
-                  StateName
-          end,
+                  #state{ws = {_, WsPid}} = StateData) ->
+    SN2 = case Packet of
+	      {xmlstreamstart, _, Attrs} ->
+		  Attrs2 = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>} |
+			    lists:keydelete(<<"xmlns">>, 1, lists:keydelete(<<"xmlns:stream">>, 1, Attrs))],
+		  route_el(WsPid, #xmlel{name = <<"open">>, attrs = Attrs2}),
+		  StateName;
+	      {xmlstreamend, _} ->
+		  route_el(WsPid, #xmlel{name = <<"close">>,
+					 attrs = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>}]}),
+		  stream_end_sent;
+	      {xmlstreamraw, <<"\r\n\r\n">>} ->
+		  % cdata ping
+		  StateName;
+	      {xmlstreamelement, #xmlel{name = Name2} = El2} ->
+		  El3 = case Name2 of
+			    <<"stream:", _/binary>> ->
+				fxml:replace_tag_attr(<<"xmlns:stream">>, ?NS_STREAM, El2);
+			    _ ->
+				case fxml:get_tag_attr_s(<<"xmlns">>, El2) of
+				    <<"">> ->
+					fxml:replace_tag_attr(<<"xmlns">>, <<"jabber:client">>, El2);
+				    _ ->
+					El2
+				end
+			end,
+		  route_el(WsPid, El3),
+		  StateName
+	  end,
     {reply, ok, SN2, StateData};
 handle_sync_event(close, _From, StateName, #state{ws = {_, WsPid}} = StateData)
-  when StateName /= stream_end_sent ->
+    when StateName /= stream_end_sent ->
     Close = #xmlel{name = <<"close">>,
                    attrs = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>}]},
     route_text(WsPid, fxml:element_to_binary(Close)),
+    {stop, normal, StateData};
+handle_sync_event(close, _From, _StateName, StateData) ->
     {stop, normal, StateData}.
 
 handle_info(closed, _StateName, StateData) ->
@@ -225,7 +210,7 @@ handle_info({received, Packet}, StateName, StateDataI) ->
     {StateData, Parsed} = parse(StateDataI, Packet),
     SD = case StateData#state.active of
              false ->
-                 Input = StateData#state.input ++ if is_binary(Parsed) -> [Parsed]; true -> Parsed end,
+                 Input = StateData#state.input ++ Parsed,
                  StateData#state{input = Input};
              true ->
                  StateData#state.c2s_pid ! {tcp, StateData#state.socket, Parsed},
@@ -330,3 +315,7 @@ route_text(Pid, Data) ->
         {text_reply, Pid} ->
             ok
     end.
+
+-spec route_el(pid(), xmlel() | cdata()) -> ok.
+route_el(Pid, Data) ->
+    route_text(Pid, fxml:element_to_binary(Data)).
