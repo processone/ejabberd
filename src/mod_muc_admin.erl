@@ -1501,8 +1501,10 @@ send_direct_invitation(RoomName, RoomService, Password, Reason, UsersStrings) ->
 get_users_to_invite(RoomJid, UsersStrings) ->
     OccupantsTuples = get_room_occupants(RoomJid#jid.luser,
 					 RoomJid#jid.lserver),
-    OccupantsJids = [jid:decode(JidString)
-		     || {JidString, _Nick, _} <- OccupantsTuples],
+    OccupantsJids = try [jid:decode(JidString)
+			 || {JidString, _Nick, _} <- OccupantsTuples]
+		    catch _:{bad_jid, _} -> throw({error, "Malformed JID of invited user"})
+		    end,
     lists:filtermap(
       fun(UserString) ->
 	      UserJid = jid:decode(UserString),
