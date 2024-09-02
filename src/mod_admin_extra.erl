@@ -1425,8 +1425,10 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
         show = misc:binary_to_atom(Show),
         priority = Priority,
         sub_els = []},
-    Ref = ejabberd_sm:get_session_pid(User, Host, Resource),
-    ejabberd_c2s:set_presence(Ref, Pres).
+    case ejabberd_sm:get_session_pid(User, Host, Resource) of
+	none -> throw({error, "User session not found"});
+	Ref -> ejabberd_c2s:set_presence(Ref, Pres)
+    end.
 
 user_sessions_info(User, Host) ->
     lists:filtermap(fun(Resource) ->
