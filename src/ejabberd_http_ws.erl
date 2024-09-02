@@ -50,8 +50,7 @@
          input = []                   :: list(),
 	 active = false               :: boolean(),
 	 c2s_pid                      :: pid(),
-         ws                           :: {#ws{}, pid()},
-         rfc_compliant = undefined    :: boolean() | undefined}).
+         ws                           :: {#ws{}, pid()}}).
 
 %-define(DBGFSM, true).
 
@@ -166,18 +165,18 @@ handle_event({new_shaper, Shaper}, StateName, #state{ws = {_, WsPid}} = StateDat
     {next_state, StateName, StateData}.
 
 handle_sync_event({send_xml, Packet}, _From, StateName,
-		  #state{ws = {_, WsPid}, rfc_compliant = R} = StateData) ->
-    Packet2 = case {case R of undefined -> true; V -> V end, Packet} of
-                  {true, {xmlstreamstart, _, Attrs}} ->
+		  #state{ws = {_, WsPid}} = StateData) ->
+    Packet2 = case Packet of
+                  {xmlstreamstart, _, Attrs} ->
                       Attrs2 = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>} |
                                 lists:keydelete(<<"xmlns">>, 1, lists:keydelete(<<"xmlns:stream">>, 1, Attrs))],
                       {xmlstreamelement, #xmlel{name = <<"open">>, attrs = Attrs2}};
-                  {true, {xmlstreamend, _}} ->
+                  {xmlstreamend, _} ->
                       {xmlstreamelement, #xmlel{name = <<"close">>,
                                                 attrs = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>}]}};
-                  {true, {xmlstreamraw, <<"\r\n\r\n">>}} -> % cdata ping
+                  {xmlstreamraw, <<"\r\n\r\n">>} -> % cdata ping
                       skip;
-                  {true, {xmlstreamelement, #xmlel{name=Name2} = El2}} ->
+                  {xmlstreamelement, #xmlel{name=Name2} = El2} ->
                       El3 = case Name2 of
                                 <<"stream:", _/binary>> ->
                                     fxml:replace_tag_attr(<<"xmlns:stream">>, ?NS_STREAM, El2);
@@ -189,9 +188,7 @@ handle_sync_event({send_xml, Packet}, _From, StateName,
                                             El2
                                     end
                             end,
-                      {xmlstreamelement, El3};
-                  _ ->
-                      Packet
+                      {xmlstreamelement, El3}
               end,
     case Packet2 of
         {xmlstreamstart, Name, Attrs3} ->
@@ -215,13 +212,11 @@ handle_sync_event({send_xml, Packet}, _From, StateName,
                   StateName
           end,
     {reply, ok, SN2, StateData};
-handle_sync_event(close, _From, StateName, #state{ws = {_, WsPid}, rfc_compliant = true} = StateData)
+handle_sync_event(close, _From, StateName, #state{ws = {_, WsPid}} = StateData)
   when StateName /= stream_end_sent ->
     Close = #xmlel{name = <<"close">>,
                    attrs = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>}]},
     route_text(WsPid, fxml:element_to_binary(Close)),
-    {stop, normal, StateData};
-handle_sync_event(close, _From, _StateName, StateData) ->
     {stop, normal, StateData}.
 
 handle_info(closed, _StateName, StateData) ->
@@ -313,53 +308,19 @@ get_human_html_xmlel() ->
                                            "client that supports it.">>}]}]}]}.
 
 
-parse(#state{rfc_compliant = C} = State, Data) ->
-    case C of
-        undefined ->
-            P = fxml_stream:new(self()),
-            P2 = fxml_stream:parse(P, Data),
-            fxml_stream:close(P2),
-            case parsed_items([]) of
-                error ->
-                    {State#state{rfc_compliant = true}, <<"parse error">>};
-                [] ->
-                    {State#state{rfc_compliant = true}, <<"parse error">>};
-                [{xmlstreamstart, <<"open">>, _} | _] ->
-                    parse(State#state{rfc_compliant = true}, Data);
-                _ ->
-                    parse(State#state{rfc_compliant = false}, Data)
-            end;
-        true ->
-            El = fxml_stream:parse_element(Data),
-            case El of
-                #xmlel{name = <<"open">>, attrs = Attrs} ->
-                    Attrs2 = [{<<"xmlns:stream">>, ?NS_STREAM}, {<<"xmlns">>, <<"jabber:client">>} |
-                              lists:keydelete(<<"xmlns">>, 1, lists:keydelete(<<"xmlns:stream">>, 1, Attrs))],
-                    {State, [{xmlstreamstart, <<"stream:stream">>, Attrs2}]};
-                #xmlel{name = <<"close">>} ->
-                    {State, [{xmlstreamend, <<"stream:stream">>}]};
-                {error, _} ->
-                    {State, <<"parse error">>};
-                _ ->
-                    {State, [El]}
-            end;
-        false ->
-            {State, Data}
-    end.
-
-parsed_items(List) ->
-    receive
-        {'$gen_event', El}
-          when element(1, El) == xmlel;
-               element(1, El) == xmlstreamstart;
-               element(1, El) == xmlstreamelement;
-               element(1, El) == xmlstreamcdata;
-               element(1, El) == xmlstreamend ->
-            parsed_items([El | List]);
-        {'$gen_event', {xmlstreamerror, _}} ->
-            error
-    after 0 ->
-            lists:reverse(List)
+parse(State, Data) ->
+    El = fxml_stream:parse_element(Data),
+    case El of
+        #xmlel{name = <<"open">>, attrs = Attrs} ->
+            Attrs2 = [{<<"xmlns:stream">>, ?NS_STREAM}, {<<"xmlns">>, <<"jabber:client">>} |
+                      lists:keydelete(<<"xmlns">>, 1, lists:keydelete(<<"xmlns:stream">>, 1, Attrs))],
+            {State, [{xmlstreamstart, <<"stream:stream">>, Attrs2}]};
+        #xmlel{name = <<"close">>} ->
+            {State, [{xmlstreamend, <<"stream:stream">>}]};
+        {error, _} ->
+            {State, [{xmlstreamerror, {4, <<"not well-formed">>}}]};
+        _ ->
+            {State, [El]}
     end.
 
 -spec route_text(pid(), binary()) -> ok.
