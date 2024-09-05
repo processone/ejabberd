@@ -82,7 +82,9 @@ config_reloaded() ->
 %%%===================================================================
 %%% gen_event callbacks
 %%%===================================================================
-init([]) ->
+init({[], _}) -> % Called by gen_event:swap_handler
+    {ok, #state{}};
+init([]) -> % Called by gen_event:add_handler
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     {ok, #state{}}.
 
