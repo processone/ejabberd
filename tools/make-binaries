@@ -179,7 +179,7 @@ check_vsn()
 check_configured_dep_vsns()
 {
 	check_vsn 'OpenSSL' "$ssl_vsn" \
-	          'https://www.openssl.org/source/' \
+	          'https://openssl-library.org/source/' \
 	          'openssl-\(3\.[1-9]\.[0-9.]*\)\.tar\.gz'
 	check_vsn 'LibYAML' "$yaml_vsn" \
 	          'https://pyyaml.org/wiki/LibYAML' \
@@ -878,7 +878,7 @@ else
 	curl -fsSLO "https://github.com/libexpat/libexpat/releases/download/R_$(printf '%s' "$expat_vsn" | sed 's/\./_/g')/$expat_tar"
 	curl -fsSLO "https://zlib.net/fossils/$zlib_tar"
 	curl -fsSLO "https://pyyaml.org/download/libyaml/$yaml_tar"
-	curl -fsSLO "https://www.openssl.org/source/$ssl_tar"
+	curl -fsSLO "https://github.com/openssl/openssl/releases/download/openssl-$ssl_vsn/$ssl_tar"
 	curl -fsSLO "https://github.com/erlang/otp/releases/download/OTP-$otp_vsn/$otp_tar"
 	curl -fsSLO "https://github.com/elixir-lang/elixir/archive/v$elixir_vsn.tar.gz"
 	curl -fsSLO "https://github.com/linux-pam/linux-pam/releases/download/v$pam_vsn/$pam_tar"
