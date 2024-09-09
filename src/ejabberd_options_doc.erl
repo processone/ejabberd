@@ -750,19 +750,22 @@ doc() ->
      {ldap_servers,
       #{value => "[Host, ...]",
         desc =>
-            ?T("A list of IP addresses or DNS names of your LDAP servers. "
+            ?T("A list of IP addresses or DNS names of your LDAP servers (see "
+               "_`../configuration/ldap.md#ldap-connection|LDAP connection`_). "
+               "ejabberd connects immediately to all of them, "
+               "and reconnects infinitely if connection is lost. "
                "The default value is '[localhost]'.")}},
      {ldap_backups,
       #{value => "[Host, ...]",
         desc =>
-            ?T("A list of IP addresses or DNS names of LDAP backup servers. "
+            ?T("A list of IP addresses or DNS names of LDAP backup servers (see "
+               "_`../configuration/ldap.md#ldap-connection|LDAP connection`_). "
                "When no servers listed in _`ldap_servers`_ option are reachable, "
-               "ejabberd will try to connect to these backup servers. "
+               "ejabberd connects to these backup servers. "
                "The default is an empty list, i.e. no backup servers specified. "
-               "WARNING: ejabberd doesn't try to reconnect back to the main "
-               "servers when they become operational again, so the only way "
-               "to restore these connections is to restart ejabberd. This "
-               "limitation might be fixed in future releases.")}},
+               "Please notice that ejabberd only connects to the next server "
+               "when the existing connection is lost; it doesn't detect when a "
+               "previously-attempted server becomes available again.")}},
      {ldap_encrypt,
       #{value => "tls | none",
         desc =>
