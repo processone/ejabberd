@@ -1487,7 +1487,8 @@ get_jids(Js) ->
     [jid:tolower(jid:remove_resource(J)) || J <- Js].
 
 get_commands_spec() ->
-    [#ejabberd_commands{name = delete_old_mam_messages, tags = [purge],
+    [
+     #ejabberd_commands{name = delete_old_mam_messages, tags = [mam, purge],
 			desc = "Delete MAM messages older than DAYS",
 			longdesc = "Valid message TYPEs: "
 				   "`chat`, `groupchat`, `all`.",
@@ -1497,7 +1498,7 @@ get_commands_spec() ->
 			args_example = [<<"all">>, 31],
 			args = [{type, binary}, {days, integer}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = delete_old_mam_messages_batch, tags = [purge],
+     #ejabberd_commands{name = delete_old_mam_messages_batch, tags = [mam, purge],
 			desc = "Delete MAM messages older than DAYS",
 			note = "added in 22.05",
 			longdesc = "Valid message TYPEs: "
@@ -1513,7 +1514,7 @@ get_commands_spec() ->
 			result = {res, restuple},
 			result_desc = "Result tuple",
 			result_example = {ok, <<"Removal of 5000 messages in progress">>}},
-     #ejabberd_commands{name = delete_old_mam_messages_status, tags = [purge],
+     #ejabberd_commands{name = delete_old_mam_messages_status, tags = [mam, purge],
 			desc = "Status of delete old MAM messages operation",
 			note = "added in 22.05",
 			module = ?MODULE, function = delete_old_messages_status,
@@ -1523,7 +1524,7 @@ get_commands_spec() ->
 			result = {status, string},
 			result_desc = "Status test",
 			result_example = "Operation in progress, delete 5000 messages"},
-     #ejabberd_commands{name = abort_delete_old_mam_messages, tags = [purge],
+     #ejabberd_commands{name = abort_delete_old_mam_messages, tags = [mam, purge],
 			desc = "Abort currently running delete old MAM messages operation",
 			note = "added in 22.05",
 			module = ?MODULE, function = delete_old_messages_abort,
