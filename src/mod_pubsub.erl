@@ -3029,7 +3029,8 @@ broadcast_stanza(Host, _Node, _Nidx, _Type, NodeOptions, SubsByDepth, NotifyType
 		end,
 		lists:foreach(fun(To) ->
 			    ejabberd_router:route(
-			      xmpp:set_to(StanzaToSend, jid:make(To)))
+			      xmpp:set_to(xmpp:put_meta(StanzaToSend, ignore_sm_bounce, true),
+				          jid:make(To)))
 		    end, LJIDs)
 	end, SubIDsByJID).
 
@@ -3052,7 +3053,8 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
     Pred = fun(To) -> delivery_permitted(Owner, To, NodeOptions) end,
     ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
 		      {pep_message, <<((Node))/binary, "+notify">>, Stanza, Pred}),
-    ejabberd_router:route(xmpp:set_to(Stanza, jid:make(LUser, LServer)));
+    ejabberd_router:route(xmpp:set_to(xmpp:put_meta(Stanza, ignore_sm_bounce, true),
+		                      jid:make(LUser, LServer)));
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
 

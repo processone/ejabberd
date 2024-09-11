@@ -206,6 +206,18 @@ bounce_offline_message(Acc) ->
     Acc.
 
 -spec bounce_sm_packet({bounce | term(), stanza()}) -> any().
+bounce_sm_packet({bounce, #message{meta = #{ignore_sm_bounce := true}} = Packet} = Acc) ->
+    ?DEBUG("Dropping packet to unavailable resource:~n~ts",
+	   [xmpp:pp(Packet)]),
+    Acc;
+bounce_sm_packet({bounce, #iq{meta = #{ignore_sm_bounce := true}} = Packet} = Acc) ->
+    ?DEBUG("Dropping packet to unavailable resource:~n~ts",
+	   [xmpp:pp(Packet)]),
+    Acc;
+bounce_sm_packet({bounce, #presence{meta = #{ignore_sm_bounce := true}} = Packet} = Acc) ->
+    ?DEBUG("Dropping packet to unavailable resource:~n~ts",
+	   [xmpp:pp(Packet)]),
+    Acc;
 bounce_sm_packet({bounce, Packet} = Acc) ->
     Lang = xmpp:get_lang(Packet),
     Txt = ?T("User session not found"),
