@@ -491,6 +491,7 @@ opt_type(jwt_auth_only_rule) ->
 		    {c2s_protocol_options, undefined | binary()} |
                     {s2s_ciphers, undefined | binary()} |
                     {c2s_ciphers, undefined | binary()} |
+		    {captcha_cmd, undefined | binary()} |
 		    {websocket_origin, [binary()]} |
 		    {disable_sasl_mechanisms, [binary()]} |
 		    {s2s_zlib, boolean()} |

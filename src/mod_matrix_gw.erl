@@ -873,6 +873,9 @@ mod_opt_type(matrix_id_as_jid) ->
 mod_opt_type(persist) ->
     econf:bool().
 
+-spec mod_options(binary()) -> [{key, {binary(), binary()}} |
+                                {atom(), any()}].
+
 mod_options(Host) ->
     [{matrix_domain, Host},
      {host, <<"matrix.", Host/binary>>},
