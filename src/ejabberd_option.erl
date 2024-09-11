@@ -330,7 +330,7 @@ cache_size() ->
 cache_size(Host) ->
     ejabberd_config:get_option({cache_size, Host}).
 
--spec captcha_cmd() -> any().
+-spec captcha_cmd() -> 'undefined' | binary().
 captcha_cmd() ->
     ejabberd_config:get_option({captcha_cmd, global}).
 
