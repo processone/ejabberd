@@ -45,6 +45,7 @@
 	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2,
 	 is_empty_for_user/2, is_empty_for_room/3, check_create_room/4,
 	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/7,
+	 get_mam_count/2,
 	 delete_old_messages_batch/5, delete_old_messages_status/1, delete_old_messages_abort/1,
 	 remove_message_from_archive/3]).
 
@@ -613,6 +614,20 @@ message_is_archived(false, #{lserver := LServer}, Pkt) ->
 	false ->
 	    false
     end.
+
+%%%
+%%% Commands
+%%%
+
+get_mam_count(User, Host) ->
+    Jid = jid:make(User, Host),
+    {_, _, Count} = select(Host, Jid, Jid, [], #rsm_set{}, chat, only_count),
+    Count.
+
+
+%%%
+%%% Commands: Purge
+%%%
 
 delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"chat">>;
 								  Type == <<"groupchat">>;
@@ -1488,6 +1503,16 @@ get_jids(Js) ->
 
 get_commands_spec() ->
     [
+     #ejabberd_commands{name = get_mam_count, tags = [mam],
+			desc = "Get number of MAM messages in a local user archive",
+			module = ?MODULE, function = get_mam_count,
+			note = "added in 24.xx",
+			policy = user,
+			args = [],
+			result_example = 5,
+			result_desc = "Number",
+			result = {value, integer}},
+
      #ejabberd_commands{name = delete_old_mam_messages, tags = [mam, purge],
 			desc = "Delete MAM messages older than DAYS",
 			longdesc = "Valid message TYPEs: "
