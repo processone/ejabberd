@@ -1096,7 +1096,11 @@ make_webadmin_roster_table(Host, Username, R, RPath) ->
 
 webadmin_user(Acc, User, Server, R) ->
     Acc
-    ++ [make_command(get_roster_count, R, [{<<"user">>, User}, {<<"host">>, Server}], [])].
+    ++ [make_command(get_roster_count,
+                     R,
+                     [{<<"user">>, User}, {<<"host">>, Server}],
+                     [{result_links,
+                       [{value, arg_host, 4, <<"user/", User/binary, "/roster/">>}]}])].
 %%% @format-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

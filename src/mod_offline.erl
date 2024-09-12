@@ -1002,7 +1002,9 @@ get_queue_length(LUser, LServer) ->
     count_offline_messages(LUser, LServer).
 
 webadmin_user(Acc, User, Server, R) ->
-    Acc ++ [make_command(get_offline_count, R, [{<<"user">>, User}, {<<"host">>, Server}], [])].
+    Acc ++ [make_command(get_offline_count, R, [{<<"user">>, User}, {<<"host">>, Server}],
+                         [{result_links, [{value, arg_host, 4, <<"user/", User/binary, "/queue/">>}]}]
+                        )].
 
 %%%
 %%%
