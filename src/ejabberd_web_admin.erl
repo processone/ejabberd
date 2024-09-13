@@ -747,46 +747,99 @@ list_users(Host, Level, PageSize, RPath, R, RegisterEl) ->
     end.
 
 list_users(Host, Level, PageSize, RPath, R, Usernames, RegisterEl) ->
+    IsOffline = gen_mod:is_loaded(Host, mod_offline),
+    IsMam = gen_mod:is_loaded(Host, mod_mam),
+    IsRoster = gen_mod:is_loaded(Host, mod_roster),
+    IsLast = gen_mod:is_loaded(Host, mod_last),
     Columns =
         [<<"user">>,
-         {<<"offline">>, right},
-         {<<"roster">>, right},
-         {<<"timestamp">>, left},
-         {<<"status">>, left}],
+         list_users_element(IsOffline, column, offline, {}),
+         list_users_element(IsMam, column, mam, {}),
+         list_users_element(IsRoster, column, roster, {}),
+         list_users_element(IsLast, column, timestamp, {}),
+         list_users_element(IsLast, column, status, {})],
     Rows =
-        [{make_command(echo,
-                       R,
-                       [{<<"sentence">>,
-                         jid:encode(
-                             jid:make(Username, Host))}],
-                       [{only, raw_and_value}, {result_links, [{sentence, user, Level, <<"">>}]}]),
-          make_command(get_offline_count,
-                       R,
-                       [{<<"user">>, Username}, {<<"host">>, Host}],
-                       [{only, raw_and_value},
-                        {result_links,
-                         [{value, arg_host, Level, <<"user/", Username/binary, "/queue/">>}]}]),
-          make_command(get_roster_count,
-                       R,
-                       [{<<"user">>, Username}, {<<"host">>, Host}],
-                       [{only, raw_and_value},
-                        {result_links,
-                         [{value, arg_host, Level, <<"user/", Username/binary, "/roster/">>}]}]),
-          ?C(element(1,
-                     make_command_raw_value(get_last,
-                                            R,
-                                            [{<<"user">>, Username}, {<<"host">>, Host}]))),
-          ?C(element(2,
-                     make_command_raw_value(get_last,
-                                            R,
-                                            [{<<"user">>, Username}, {<<"host">>, Host}])))}
+        [list_to_tuple(lists:flatten([make_command(echo,
+                                                   R,
+                                                   [{<<"sentence">>,
+                                                     jid:encode(
+                                                         jid:make(Username, Host))}],
+                                                   [{only, raw_and_value},
+                                                    {result_links,
+                                                     [{sentence, user, Level, <<"">>}]}]),
+                                      list_users_element(IsOffline,
+                                                         row,
+                                                         offline,
+                                                         {R, Username, Host, Level}),
+                                      list_users_element(IsMam,
+                                                         row,
+                                                         mam,
+                                                         {R, Username, Host, Level}),
+                                      list_users_element(IsRoster,
+                                                         row,
+                                                         roster,
+                                                         {R, Username, Host, Level}),
+                                      list_users_element(IsLast, row, last, {R, Username, Host})]))
          || Username <- Usernames],
-    [RegisterEl,
-     make_command(registered_users, R, [], [{only, presentation}]),
-     make_command(get_offline_count, R, [], [{only, presentation}]),
-     make_command(get_roster_count, R, [], [{only, presentation}]),
-     make_command(get_last, R, [], [{only, presentation}]),
-     make_table(PageSize, RPath, Columns, Rows)].
+    Table = make_table(PageSize, RPath, lists:flatten(Columns), Rows),
+    Result =
+        [RegisterEl,
+         make_command(registered_users, R, [], [{only, presentation}]),
+         list_users_element(IsOffline, presentation, offline, R),
+         list_users_element(IsMam, presentation, mam, R),
+         list_users_element(IsRoster, presentation, roster, R),
+         list_users_element(IsLast, presentation, last, R),
+         Table],
+    lists:flatten(Result).
+
+list_users_element(false, _, _, _) ->
+    [];
+list_users_element(_, column, offline, _) ->
+    {<<"offline">>, right};
+list_users_element(_, column, mam, _) ->
+    {<<"mam">>, right};
+list_users_element(_, column, roster, _) ->
+    {<<"roster">>, right};
+list_users_element(_, column, timestamp, _) ->
+    {<<"timestamp">>, left};
+list_users_element(_, column, status, _) ->
+    {<<"status">>, left};
+list_users_element(_, row, offline, {R, Username, Host, Level}) ->
+    make_command(get_offline_count,
+                 R,
+                 [{<<"user">>, Username}, {<<"host">>, Host}],
+                 [{only, raw_and_value},
+                  {result_links,
+                   [{value, arg_host, Level, <<"user/", Username/binary, "/queue/">>}]}]);
+list_users_element(_, row, mam, {R, Username, Host, Level}) ->
+    make_command(get_mam_count,
+                 R,
+                 [{<<"user">>, Username}, {<<"host">>, Host}],
+                 [{only, raw_and_value},
+                  {result_links,
+                   [{value, arg_host, Level, <<"user/", Username/binary, "/mam/">>}]}]);
+list_users_element(_, row, roster, {R, Username, Host, Level}) ->
+    make_command(get_roster_count,
+                 R,
+                 [{<<"user">>, Username}, {<<"host">>, Host}],
+                 [{only, raw_and_value},
+                  {result_links,
+                   [{value, arg_host, Level, <<"user/", Username/binary, "/roster/">>}]}]);
+list_users_element(_, row, last, {R, Username, Host}) ->
+    [?C(element(1,
+                make_command_raw_value(get_last, R, [{<<"user">>, Username}, {<<"host">>, Host}]))),
+     ?C(element(2,
+                make_command_raw_value(get_last,
+                                       R,
+                                       [{<<"user">>, Username}, {<<"host">>, Host}])))];
+list_users_element(_, presentation, offline, R) ->
+    make_command(get_offline_count, R, [], [{only, presentation}]);
+list_users_element(_, presentation, mam, R) ->
+    make_command(get_mam_count, R, [], [{only, presentation}]);
+list_users_element(_, presentation, roster, R) ->
+    make_command(get_roster_count, R, [], [{only, presentation}]);
+list_users_element(_, presentation, last, R) ->
+    make_command(get_last, R, [], [{only, presentation}]).
 
 list_users_diapason(Host, R, Usernames, N, RegisterEl) ->
     URLFunc = fun url_func/1,
@@ -952,6 +1005,17 @@ user_info(User, Server, #request{q = Query, lang = Lang} = R) ->
     Res = user_parse_query(User, Server, Query),
     UserItems = ejabberd_hooks:run_fold(webadmin_user,
 					LServer, [], [User, Server, R]),
+    Lasts = case gen_mod:is_loaded(Server, mod_last) of
+                true ->
+                    [make_command(get_last, R,
+                                  [{<<"user">>, User}, {<<"host">>, Server}],
+                                  []),
+                     make_command(set_last, R,
+                                  [{<<"user">>, User}, {<<"host">>, Server}],
+                                  [])];
+                false ->
+                    []
+            end,
     [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("User ~ts"),
                                                 [us_to_list(US)])))]
       ++
@@ -968,13 +1032,8 @@ user_info(User, Server, #request{q = Query, lang = Lang} = R) ->
                              [{result_links, [{node, node, 4, <<>>}]}]),
                 make_command(change_password, R,
                              [{<<"user">>, User}, {<<"host">>, Server}],
-                             [{style, danger}]),
-                make_command(get_last, R,
-                             [{<<"user">>, User}, {<<"host">>, Server}],
-                             []),
-                make_command(set_last, R,
-                             [{<<"user">>, User}, {<<"host">>, Server}],
-                             [])] ++
+                             [{style, danger}])] ++
+                   Lasts ++
                    UserItems ++
                    [?P,
                 make_command(unregister, R,
