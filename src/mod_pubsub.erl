@@ -3052,9 +3052,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
 	       extended_headers([Publisher])),
     Pred = fun(To) -> delivery_permitted(Owner, To, NodeOptions) end,
     ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
-		      {pep_message, <<((Node))/binary, "+notify">>, Stanza, Pred}),
-    ejabberd_router:route(xmpp:set_to(xmpp:put_meta(Stanza, ignore_sm_bounce, true),
-		                      jid:make(LUser, LServer)));
+		      {pep_message, <<((Node))/binary, "+notify">>, Stanza, Pred});
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
 
