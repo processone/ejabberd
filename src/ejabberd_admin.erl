@@ -746,7 +746,7 @@ update_module(ModuleNameString) ->
     case ejabberd_update:update([ModuleName]) of
 	{ok, []} ->
             {ok, "Not updated: "++ModuleNameString};
-	{ok, [{ModuleName, _}]} ->
+	{ok, [ModuleName]} ->
             {ok, "Updated: "++ModuleNameString};
 	{error, Reason} -> {error, Reason}
     end.

@@ -38,13 +38,17 @@
 %% Update all the modified modules
 update() ->
     case update_info() of
-	{ok, Dir, _UpdatedBeams, _Script, LowLevelScript, _Check} ->
-	    Eval =
-		eval_script(
-		  LowLevelScript, [],
-		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    ?DEBUG("Eval: ~p~n", [Eval]),
-	    Eval;
+	{ok, Dir, UpdatedBeams, _Script, LowLevelScript, _Check} ->
+	    case eval_script(
+		   LowLevelScript, [],
+		   [{ejabberd, "", filename:join(Dir, "..")}]) of
+		{ok, _} ->
+		    ?DEBUG("Updated: ~p~n", [UpdatedBeams]),
+		    {ok, UpdatedBeams};
+		Eval ->
+		    ?DEBUG("Eval: ~p~n", [Eval]),
+		    Eval
+	    end;
 	{error, Reason} ->
 	    {error, Reason}
     end.
@@ -56,12 +60,16 @@ update(ModulesToUpdate) ->
 	    UpdatedBeamsNow =
 		[A || A <- UpdatedBeamsAll, B <- ModulesToUpdate, A == B],
 	    {_, LowLevelScript, _} = build_script(Dir, UpdatedBeamsNow),
-	    Eval =
-		eval_script(
-		  LowLevelScript, [],
-		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    ?DEBUG("Eval: ~p~n", [Eval]),
-	    Eval;
+	    case eval_script(
+		   LowLevelScript, [],
+		   [{ejabberd, "", filename:join(Dir, "..")}]) of
+		{ok, _} ->
+		    ?DEBUG("Updated: ~p~n", [UpdatedBeamsNow]),
+		    {ok, UpdatedBeamsNow};
+		Eval ->
+		    ?DEBUG("Eval: ~p~n", [Eval]),
+		    Eval
+	    end;
 	{error, Reason} ->
 	    {error, Reason}
     end.
