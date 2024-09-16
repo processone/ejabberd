@@ -2206,13 +2206,7 @@ web_page_host(Acc, _, _) ->
 %%% HostUser
 
 web_menu_hostuser(Acc, _Host, _Username, _Lang) ->
-    Acc
-    ++ [{<<"auth">>, <<"Authentication">>},
-        {<<"mam">>, <<"MAM">>},
-        {<<"privacy">>, <<"Privacy Lists">>},
-        {<<"private">>, <<"Private XML Storage">>},
-        {<<"session">>, <<"Sessions">>},
-        {<<"vcard">>, <<"vCard">>}].
+    Acc ++ [{<<"auth">>, <<"Authentication">>}, {<<"session">>, <<"Sessions">>}].
 
 web_page_hostuser(_, Host, User, #request{path = [<<"auth">>]} = R) ->
     Ban = make_command(ban_account,
@@ -2242,26 +2236,6 @@ web_page_hostuser(_, Host, User, #request{path = [<<"auth">>]} = R) ->
                            [{<<"user">>, User}, {<<"host">>, Host}],
                            [{style, danger}])],
     {stop, Res};
-web_page_hostuser(_, Host, User, #request{path = [<<"mam">>]} = R) ->
-    Res = ?H1GL(<<"MAM">>, <<"modules/#mod_mam">>, <<"mod_mam">>)
-          ++ [make_command(remove_mam_for_user,
-                           R,
-                           [{<<"user">>, User}, {<<"host">>, Host}],
-                           [{style, danger}]),
-              make_command(remove_mam_for_user_with_peer,
-                           R,
-                           [{<<"user">>, User}, {<<"host">>, Host}],
-                           [{style, danger}])],
-    {stop, Res};
-web_page_hostuser(_, Host, User, #request{path = [<<"privacy">>]} = R) ->
-    Res = ?H1GL(<<"Privacy Lists">>, <<"modules/#mod_privacy">>, <<"mod_privacy">>)
-          ++ [make_command(privacy_set, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
-    {stop, Res};
-web_page_hostuser(_, Host, User, #request{path = [<<"private">>]} = R) ->
-    Res = ?H1GL(<<"Private XML Storage">>, <<"modules/#mod_private">>, <<"mod_private">>)
-          ++ [make_command(private_set, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
-              make_command(private_get, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
-    {stop, Res};
 web_page_hostuser(_, Host, User, #request{path = [<<"session">>]} = R) ->
     Head = [?XC(<<"h1">>, <<"Sessions">>), ?BR],
     Set = [make_command(resource_num, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
@@ -2279,47 +2253,6 @@ web_page_hostuser(_, Host, User, #request{path = [<<"session">>]} = R) ->
            make_command(user_resources, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
            make_command(get_presence, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
            make_command(num_resources, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
-    {stop, Head ++ Get ++ Set};
-web_page_hostuser(_, Host, User, #request{path = [<<"vcard">>]} = R) ->
-    Head = ?H1GL(<<"vCard">>, <<"modules/#mod_vcard">>, <<"mod_vcard">>),
-    Set = [make_command(set_nickname, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
-           make_command(set_vcard, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
-           make_command(set_vcard2, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
-           make_command(set_vcard2_multi, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
-    timer:sleep(100), % setting vcard takes a while, let's delay the get commands
-    FieldNames = [<<"VERSION">>, <<"FN">>, <<"NICKNAME">>, <<"BDAY">>],
-    FieldNames2 =
-        [{<<"N">>, <<"FAMILY">>},
-         {<<"N">>, <<"GIVEN">>},
-         {<<"N">>, <<"MIDDLE">>},
-         {<<"ADR">>, <<"CTRY">>},
-         {<<"ADR">>, <<"LOCALITY">>},
-         {<<"EMAIL">>, <<"USERID">>}],
-    Get = [make_command(get_vcard, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
-           ?XE(<<"blockquote">>,
-               [make_table([<<"name">>, <<"value">>],
-                           [{?C(FieldName),
-                             make_command(get_vcard,
-                                          R,
-                                          [{<<"user">>, User},
-                                           {<<"host">>, Host},
-                                           {<<"name">>, FieldName}],
-                                          [{only, value}])}
-                            || FieldName <- FieldNames])]),
-           make_command(get_vcard2, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
-           ?XE(<<"blockquote">>,
-               [make_table([<<"name">>, <<"subname">>, <<"value">>],
-                           [{?C(FieldName),
-                             ?C(FieldSubName),
-                             make_command(get_vcard2,
-                                          R,
-                                          [{<<"user">>, User},
-                                           {<<"host">>, Host},
-                                           {<<"name">>, FieldName},
-                                           {<<"subname">>, FieldSubName}],
-                                          [{only, value}])}
-                            || {FieldName, FieldSubName} <- FieldNames2])]),
-           make_command(get_vcard2_multi, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
     {stop, Head ++ Get ++ Set};
 web_page_hostuser(Acc, _, _, _) ->
     Acc.

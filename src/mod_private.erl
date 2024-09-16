@@ -41,10 +41,16 @@
 
 -export([get_commands_spec/0, bookmarks_to_pep/2]).
 
+-export([webadmin_menu_hostuser/4, webadmin_page_hostuser/4]).
+
+-import(ejabberd_web_admin, [make_command/4, make_command/2]).
+
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_private.hrl").
 -include("ejabberd_commands.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 -include("translate.hrl").
 -include("pubsub.hrl").
 
@@ -71,6 +77,8 @@ start(Host, Opts) ->
           {hook, pubsub_publish_item, pubsub_publish_item, 50},
           {hook, pubsub_delete_item, pubsub_delete_item, 50},
 	  {hook, pubsub_tree_call, pubsub_tree_call, 50},
+          {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
+          {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50},
           {iq_handler, ejabberd_sm, ?NS_PRIVATE, process_sm_iq}]}.
 
 stop(Host) ->
@@ -543,6 +551,21 @@ bookmarks_to_pep(User, Server) ->
 	_ ->
 	    {error, <<"Cannot retrieve bookmarks from private XML storage">>}
     end.
+
+%%%===================================================================
+%%% WebAdmin
+%%%===================================================================
+
+webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"private">>, <<"Private XML Storage">>}].
+
+webadmin_page_hostuser(_, Host, User,
+	      #request{path = [<<"private">>]} = R) ->
+    Res = ?H1GL(<<"Private XML Storage">>, <<"modules/#mod_private">>, <<"mod_private">>)
+          ++ [make_command(private_set, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+              make_command(private_get, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
+    {stop, Res};
+webadmin_page_hostuser(Acc, _, _, _) -> Acc.
 
 %%%===================================================================
 %%% Cache

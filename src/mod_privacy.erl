@@ -40,8 +40,14 @@
 	 import_start/2, import_stop/2, import/5, import_info/0,
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
+-export([webadmin_menu_hostuser/4, webadmin_page_hostuser/4]).
+
+-import(ejabberd_web_admin, [make_command/4, make_command/2]).
+
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 -include("mod_privacy.hrl").
 -include("translate.hrl").
 
@@ -78,6 +84,8 @@ start(Host, Opts) ->
           {hook, user_send_packet, user_send_packet, 50},
           {hook, privacy_check_packet, check_packet, 50},
           {hook, remove_user, remove_user, 50},
+          {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
+          {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50},
           {iq_handler, ejabberd_sm, ?NS_PRIVACY, process_iq}]}.
 
 stop(_Host) ->
@@ -839,6 +847,24 @@ import_next(DBType, US) ->
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
+
+%%%
+%%% WebAdmin
+%%%
+
+webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"privacy">>, <<"Privacy Lists">>}].
+
+webadmin_page_hostuser(_, Host, User,
+	      #request{us = _US, path = [<<"privacy">>]} = R) ->
+    Res = ?H1GL(<<"Privacy Lists">>, <<"modules/#mod_privacy">>, <<"mod_privacy">>)
+          ++ [make_command(privacy_set, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
+    {stop, Res};
+webadmin_page_hostuser(Acc, _, _, _) -> Acc.
+
+%%%
+%%% Documentation
+%%%
 
 depends(_Host, _Opts) ->
     [].

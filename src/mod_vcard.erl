@@ -43,12 +43,17 @@
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 -export([route/1]).
+-export([webadmin_menu_hostuser/4, webadmin_page_hostuser/4]).
+
+-import(ejabberd_web_admin, [make_command/4, make_command/2, make_table/2]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("translate.hrl").
 -include("ejabberd_stacktrace.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 
 -define(VCARD_CACHE, vcard_cache).
 
@@ -98,6 +103,8 @@ init([Host|_]) ->
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
 		       get_sm_features, 50),
     ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE, vcard_iq_set, 50),
+    ejabberd_hooks:add(webadmin_menu_hostuser, Host, ?MODULE, webadmin_menu_hostuser, 50),
+    ejabberd_hooks:add(webadmin_page_hostuser, Host, ?MODULE, webadmin_page_hostuser, 50),
     MyHosts = gen_mod:get_opt_hosts(Opts),
     Search = mod_vcard_opt:search(Opts),
     if Search ->
@@ -161,6 +168,8 @@ terminate(_Reason, #state{hosts = MyHosts, server_host = Host}) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE, vcard_iq_set, 50),
+    ejabberd_hooks:delete(webadmin_menu_hostuser, Host, ?MODULE, webadmin_menu_hostuser, 50),
+    ejabberd_hooks:delete(webadmin_page_hostuser, Host, ?MODULE, webadmin_page_hostuser, 50),
     Mod = gen_mod:db_mod(Host, ?MODULE),
     Mod:stop(Host),
     lists:foreach(
@@ -553,6 +562,61 @@ import(LServer, {sql, _}, DBType, Tab, L) ->
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
+
+%%%
+%%% WebAdmin
+%%%
+
+webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"vcard">>, <<"vCard">>}].
+
+webadmin_page_hostuser(_, Host, User,
+	      #request{path = [<<"vcard">>]} = R) ->
+    Head = ?H1GL(<<"vCard">>, <<"modules/#mod_vcard">>, <<"mod_vcard">>),
+    Set = [make_command(set_nickname, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(set_vcard, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(set_vcard2, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           make_command(set_vcard2_multi, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
+    timer:sleep(100), % setting vcard takes a while, let's delay the get commands
+    FieldNames = [<<"VERSION">>, <<"FN">>, <<"NICKNAME">>, <<"BDAY">>],
+    FieldNames2 =
+        [{<<"N">>, <<"FAMILY">>},
+         {<<"N">>, <<"GIVEN">>},
+         {<<"N">>, <<"MIDDLE">>},
+         {<<"ADR">>, <<"CTRY">>},
+         {<<"ADR">>, <<"LOCALITY">>},
+         {<<"EMAIL">>, <<"USERID">>}],
+    Get = [make_command(get_vcard, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           ?XE(<<"blockquote">>,
+               [make_table([<<"name">>, <<"value">>],
+                           [{?C(FieldName),
+                             make_command(get_vcard,
+                                          R,
+                                          [{<<"user">>, User},
+                                           {<<"host">>, Host},
+                                           {<<"name">>, FieldName}],
+                                          [{only, value}])}
+                            || FieldName <- FieldNames])]),
+           make_command(get_vcard2, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
+           ?XE(<<"blockquote">>,
+               [make_table([<<"name">>, <<"subname">>, <<"value">>],
+                           [{?C(FieldName),
+                             ?C(FieldSubName),
+                             make_command(get_vcard2,
+                                          R,
+                                          [{<<"user">>, User},
+                                           {<<"host">>, Host},
+                                           {<<"name">>, FieldName},
+                                           {<<"subname">>, FieldSubName}],
+                                          [{only, value}])}
+                            || {FieldName, FieldSubName} <- FieldNames2])]),
+           make_command(get_vcard2_multi, R, [{<<"user">>, User}, {<<"host">>, Host}], [])],
+    {stop, Head ++ Get ++ Set};
+webadmin_page_hostuser(Acc, _, _, _) -> Acc.
+
+%%%
+%%% Documentation
+%%%
 
 depends(_Host, _Opts) ->
     [].
