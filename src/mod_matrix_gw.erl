@@ -869,8 +869,6 @@ mod_opt_type(key) ->
             crypto:generate_key(eddsa, ed25519, Key2)
     end;
 mod_opt_type(matrix_id_as_jid) ->
-    econf:bool();
-mod_opt_type(persist) ->
     econf:bool().
 
 -spec mod_options(binary()) -> [{key, {binary(), binary()}} |
@@ -881,8 +879,7 @@ mod_options(Host) ->
      {host, <<"matrix.", Host/binary>>},
      {key_name, <<"">>},
      {key, {<<"">>, <<"">>}},
-     {matrix_id_as_jid, false},
-     {persist, false}].
+     {matrix_id_as_jid, false}].
 
 mod_doc() ->
     #{desc =>
