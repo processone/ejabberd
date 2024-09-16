@@ -616,8 +616,7 @@ return(Port, TRef, Result) ->
 
 is_feature_available() ->
     case get_prog_name() of
-      Prog when is_binary(Prog) -> true;
-      MF when is_list(MF) -> true;
+      PathOrModule when is_binary(PathOrModule) -> true;
       false -> false
     end.
 
