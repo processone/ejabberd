@@ -46,13 +46,20 @@
 	 is_empty_for_user/2, is_empty_for_room/3, check_create_room/4,
 	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/7,
 	 get_mam_count/2,
+	 webadmin_menu_hostuser/4,
+	 webadmin_page_hostuser/4,
+	 get_mam_messages/2, webadmin_user/4,
 	 delete_old_messages_batch/5, delete_old_messages_status/1, delete_old_messages_abort/1,
 	 remove_message_from_archive/3]).
+
+-import(ejabberd_web_admin, [make_command/4, make_command/2]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_commands.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 -include("mod_mam.hrl").
 -include("translate.hrl").
 
@@ -150,6 +157,12 @@ start(Host, Opts) ->
 			       set_room_option, 50),
 	    ejabberd_hooks:add(store_mam_message, Host, ?MODULE,
 			       store_mam_message, 100),
+	    ejabberd_hooks:add(webadmin_menu_hostuser, Host, ?MODULE,
+			       webadmin_menu_hostuser, 50),
+	    ejabberd_hooks:add(webadmin_page_hostuser, Host, ?MODULE,
+			       webadmin_page_hostuser, 50),
+	    ejabberd_hooks:add(webadmin_user, Host, ?MODULE,
+			       webadmin_user, 50),
 	    case mod_mam_opt:assume_mam_usage(Opts) of
 		true ->
 		    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
@@ -223,6 +236,12 @@ stop(Host) ->
 			  set_room_option, 50),
     ejabberd_hooks:delete(store_mam_message, Host, ?MODULE,
 			  store_mam_message, 100),
+    ejabberd_hooks:delete(webadmin_menu_hostuser, Host, ?MODULE,
+			  webadmin_menu_hostuser, 50),
+    ejabberd_hooks:delete(webadmin_page_hostuser, Host, ?MODULE,
+			  webadmin_page_hostuser, 50),
+    ejabberd_hooks:delete(webadmin_user, Host, ?MODULE,
+			  webadmin_user, 50),
     case mod_mam_opt:assume_mam_usage(Host) of
 	true ->
 	    ejabberd_hooks:delete(message_is_archived, Host, ?MODULE,
@@ -619,11 +638,43 @@ message_is_archived(false, #{lserver := LServer}, Pkt) ->
 %%% Commands
 %%%
 
+%% @format-begin
+
 get_mam_count(User, Host) ->
     Jid = jid:make(User, Host),
     {_, _, Count} = select(Host, Jid, Jid, [], #rsm_set{}, chat, only_count),
     Count.
 
+get_mam_messages(User, Host) ->
+    Jid = jid:make(User, Host),
+    {Messages, _, _} = select(Host, Jid, Jid, [], #rsm_set{}, chat, only_messages),
+    format_user_messages(Messages).
+
+format_user_messages(Messages) ->
+    lists:map(fun({_ID, _IDInt, Fwd}) ->
+                 El = hd(Fwd#forwarded.sub_els),
+                 FPacket =
+                     ejabberd_web_admin:pretty_print_xml(
+                         xmpp:encode(El)),
+                 SFrom = jid:encode(El#message.from),
+                 STo = jid:encode(El#message.to),
+                 Time = format_time(Fwd#forwarded.delay#delay.stamp),
+                 {Time, SFrom, STo, FPacket}
+              end,
+              Messages).
+
+format_time(Now) ->
+    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:now_to_local_time(Now),
+    str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+               [Year, Month, Day, Hour, Minute, Second]).
+
+webadmin_user(Acc, User, Server, R) ->
+    Acc
+    ++ [make_command(get_mam_count,
+                     R,
+                     [{<<"user">>, User}, {<<"host">>, Server}],
+                     [{result_links, [{value, arg_host, 4, <<"user/", User/binary, "/mam/">>}]}])].
+%% @format-end
 
 %%%
 %%% Commands: Purge
@@ -1512,6 +1563,17 @@ get_commands_spec() ->
 			result_example = 5,
 			result_desc = "Number",
 			result = {value, integer}},
+     #ejabberd_commands{name = get_mam_messages,
+			tags = [internal, mam],
+			desc = "Get the mam messages",
+			policy = user,
+			module = mod_mam, function = get_mam_messages,
+			args = [],
+			result = {archive, {list, {messages, {tuple, [{time, string},
+                                                                    {from, string},
+                                                                    {to, string},
+                                                                    {packet, string}
+                                                                   ]}}}}},
 
      #ejabberd_commands{name = delete_old_mam_messages, tags = [mam, purge],
 			desc = "Delete MAM messages older than DAYS",
@@ -1580,6 +1642,49 @@ get_commands_spec() ->
 			result_desc = "Result tuple",
 			result_example = {ok, <<"MAM archive removed">>}}
 	].
+
+
+%%%
+%%% WebAdmin
+%%%
+
+webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
+    Acc ++ [{<<"mam">>, <<"MAM">>},
+    {<<"mam-archive">>, <<"MAM Archive">>}].
+
+webadmin_page_hostuser(_, Host, U,
+	      #request{us = _US, path = [<<"mam">>]} = R) ->
+    Res = ?H1GL(<<"MAM">>, <<"modules/#mod_mam">>, <<"mod_mam">>)
+          ++ [make_command(get_mam_count,
+                           R,
+                           [{<<"user">>, U}, {<<"host">>, Host}],
+                           [{result_links,
+                             [{value, arg_host, 5, <<"user/", U/binary, "/mam-archive/">>}]}]),
+              make_command(remove_mam_for_user,
+                           R,
+                           [{<<"user">>, U}, {<<"host">>, Host}],
+                           [{style, danger}]),
+              make_command(remove_mam_for_user_with_peer,
+                           R,
+                           [{<<"user">>, U}, {<<"host">>, Host}],
+                           [{style, danger}])],
+    {stop, Res};
+webadmin_page_hostuser(_, Host, U,
+	      #request{us = _US, path = [<<"mam-archive">> | RPath],
+		       lang = Lang} = R) ->
+    PageTitle =
+        str:translate_and_format(Lang, ?T("~ts's MAM Archive"), [jid:encode({U, Host, <<"">>})]),
+    Head = ?H1GL(PageTitle, <<"modules/#mod_mam">>, <<"mod_mam">>),
+    Res = make_command(get_mam_messages, R, [{<<"user">>, U},
+                                                     {<<"host">>, Host}],
+                        [{table_options, {10, RPath}},
+                         {result_links, [{packet, paragraph, 1, <<"">>}]}]),
+    {stop, Head ++ [Res]};
+webadmin_page_hostuser(Acc, _, _, _) -> Acc.
+
+%%%
+%%% Documentation
+%%%
 
 mod_opt_type(compress_xml) ->
     econf:bool();
