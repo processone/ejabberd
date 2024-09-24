@@ -305,6 +305,8 @@ warn_type({var, _, 'Type'}, #state{module = mod_delegation}, "not an atom") ->
     ok;
 warn_type({var, _, 'NS'}, #state{module = mod_delegation}, "not a binary") ->
     ok;
+warn_type({var, _, _}, #state{module = gen_mod}, _) ->
+    ok;
 warn_type(Form, State, Warning) ->
     log("~s:~p: Warning: " ++ Warning ++ ": ~s~n",
 	[State#state.file,
