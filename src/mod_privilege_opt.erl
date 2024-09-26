@@ -3,9 +3,16 @@
 
 -module(mod_privilege_opt).
 
+-export([iq/1]).
 -export([message/1]).
 -export([presence/1]).
 -export([roster/1]).
+
+-spec iq(gen_mod:opts() | global | binary()) -> [{binary(),[{'both',acl:acl()} | {'get',acl:acl()} | {'set',acl:acl()}]}].
+iq(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(iq, Opts);
+iq(Host) ->
+    gen_mod:get_module_opt(Host, mod_privilege, iq).
 
 -spec message(gen_mod:opts() | global | binary()) -> [{'outgoing','none' | acl:acl()}].
 message(Opts) when is_map(Opts) ->

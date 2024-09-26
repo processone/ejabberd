@@ -25,7 +25,7 @@
 
 -author('amuhar3@gmail.com').
 
--protocol({xep, 356, '0.2.1', '16.09', "", ""}).
+-protocol({xep, 356, '0.4.1', '24.xx', "", ""}).
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -37,6 +37,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 -export([component_connected/1, component_disconnected/2,
+	 component_send_packet/1,
 	 roster_access/2, process_message/1,
 	 process_presence_out/1, process_presence_in/1]).
 
@@ -45,14 +46,17 @@
 -include("translate.hrl").
 
 -type roster_permission() :: both | get | set.
+-type iq_permission() :: both | get | set.
 -type presence_permission() :: managed_entity | roster.
 -type message_permission() :: outgoing.
 -type roster_permissions() :: [{roster_permission(), acl:acl()}].
+-type iq_permissions() :: [{iq_permission(), acl:acl()}].
 -type presence_permissions() :: [{presence_permission(), acl:acl()}].
 -type message_permissions() :: [{message_permission(), acl:acl()}].
--type access() :: [{roster, roster_permissions()} |
-		   {presence, presence_permissions()} |
-		   {message, message_permissions()}].
+-type access() :: [{roster, roster_permission()} |
+		   {iq, [privilege_namespace()]} |
+		   {presence, presence_permission()} |
+		   {message, message_permission()}].
 -type permissions() :: #{binary() => access()}.
 -record(state, {server_host = <<"">> :: binary()}).
 
@@ -71,6 +75,10 @@ reload(_Host, _NewOpts, _OldOpts) ->
 mod_opt_type(roster) ->
     econf:options(
       #{both => econf:acl(), get => econf:acl(), set => econf:acl()});
+mod_opt_type(iq) ->
+    econf:map(
+      econf:binary(),
+      econf:options(#{both => econf:acl(), get => econf:acl(), set => econf:acl()}));
 mod_opt_type(message) ->
     econf:options(
       #{outgoing => econf:acl()});
@@ -80,6 +88,7 @@ mod_opt_type(presence) ->
 
 mod_options(_) ->
     [{roster, [{both, none}, {get, none}, {set, none}]},
+     {iq, []},
      {presence, [{managed_entity, none}, {roster, none}]},
      {message, [{outgoing,none}]}].
 
@@ -130,6 +139,27 @@ mod_doc() ->
                 desc =>
                     ?T("Sets write access to a user's roster. "
                        "The default value is 'none'.")}}]},
+           {iq,
+            #{value => "{Namespace: Options}",
+              desc =>
+                  ?T("This option defines namespaces and their IQ permissions. "
+                     "By default no permissions are given. "
+                     "The 'Options' are:")},
+            [{both,
+              #{value => ?T("AccessName"),
+                desc =>
+                    ?T("Allows sending IQ stanzas of type 'get' and 'set'. "
+                       "The default value is 'none'.")}},
+             {get,
+              #{value => ?T("AccessName"),
+                desc =>
+                    ?T("Allows sending IQ stanzas of type 'get'. "
+                       "The default value is 'none'.")}},
+             {set,
+              #{value => ?T("AccessName"),
+                desc =>
+                    ?T("Allows sending IQ stanzas of type 'set'. "
+                       "The default value is 'none'.")}}]},
            {message,
             #{value => ?T("Options"),
               desc =>
@@ -164,6 +194,9 @@ mod_doc() ->
       example =>
           ["modules:",
            "  mod_privilege:",
+           "    iq:",
+           "      http://jabber.org/protocol/pubsub:",
+           "        get: all",
            "    roster:",
            "      get: all",
            "    presence:",
@@ -190,6 +223,10 @@ component_disconnected(Host, _Reason) ->
 	      gen_server:cast(Proc, {component_disconnected, Host})
       end, ejabberd_option:hosts()).
 
+%%
+%% Message processing
+%%
+
 -spec process_message(stanza()) -> stop | ok.
 process_message(#message{from = #jid{luser = <<"">>, lresource = <<"">>} = From,
 			 to = #jid{lresource = <<"">>} = To,
@@ -212,8 +249,72 @@ process_message(#message{from = #jid{luser = <<"">>, lresource = <<"">>} = From,
 	    %% Component is disconnected
 	    ok
     end;
+
 process_message(_Stanza) ->
     ok.
+
+%%
+%% IQ processing
+%%
+
+%% @format-begin
+
+component_send_packet({#iq{from = From,
+                           to = #jid{lresource = <<"">>} = To,
+                           id = Id,
+                           type = Type} =
+                           IQ,
+                       State})
+    when Type /= error ->
+    Host = From#jid.lserver,
+    ServerHost = To#jid.lserver,
+    Permissions = get_permissions(ServerHost),
+    Result =
+        case {maps:find(Host, Permissions), get_iq_encapsulated_details(IQ)} of
+            {{ok, Access}, {ok, EncapType, EncapNs, EncapFrom, EncIq}}
+                when (EncapType == Type) and ((EncapFrom == undefined) or (EncapFrom == To)) ->
+                NsPermissions = proplists:get_value(iq, Access, none),
+                Permission =
+                    case lists:keyfind(EncapNs, 2, NsPermissions) of
+                        #privilege_namespace{type = AllowedType} ->
+                            AllowedType;
+                        _ ->
+                            none
+                    end,
+                case Permission == both
+                     orelse Permission == get andalso Type == get
+                     orelse Permission == set andalso Type == set
+                of
+                    true ->
+                        forward_iq(Host, To, Id, EncIq);
+                    false ->
+                        ?INFO_MSG("IQ not forwarded: Permission not granted to ns=~s with type=~p",
+                                  [EncapNs, Type]),
+                        drop
+                end;
+            {error, _} ->
+                %% Component is disconnected
+                ?INFO_MSG("IQ not forwarded: Component seems disconnected", []),
+                drop;
+            {_, {ok, E, _, _, _}} when E /= Type ->
+                ?INFO_MSG("IQ not forwarded: The encapsulated IQ stanza type=~p "
+                          "does not match the top-level IQ stanza type=~p",
+                          [E, Type]),
+                drop;
+            {_, {ok, _, _, EF, _}} when (EF /= undefined) and (EF /= To) ->
+                ?INFO_MSG("IQ not forwarded: The FROM attribute in the encapsulated "
+                          "IQ stanza and the TO in top-level IQ stanza do not match",
+                          []),
+                drop
+        end,
+    {Result, State};
+component_send_packet(Acc) ->
+    Acc.
+%% @format-end
+
+%%
+%% Roster processing
+%%
 
 -spec roster_access({true, iq()} | false, iq()) -> {true, iq()} | false.
 roster_access({true, _IQ} = Acc, _) ->
@@ -309,6 +410,8 @@ init([Host|_]) ->
 		       process_presence_out, 50),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
 		       process_presence_in, 50),
+    ejabberd_hooks:add(component_send_packet, ?MODULE,
+                       component_send_packet, 50),
     {ok, #state{server_host = Host}}.
 
 handle_call(Request, From, State) ->
@@ -320,22 +423,26 @@ handle_cast({component_connected, Host}, State) ->
     From = jid:make(ServerHost),
     To = jid:make(Host),
     RosterPerm = get_roster_permission(ServerHost, Host),
+    IqNamespaces = get_iq_namespaces(ServerHost, Host),
     PresencePerm = get_presence_permission(ServerHost, Host),
     MessagePerm = get_message_permission(ServerHost, Host),
-    if RosterPerm /= none; PresencePerm /= none; MessagePerm /= none ->
+    if RosterPerm /= none; IqNamespaces /= []; PresencePerm /= none; MessagePerm /= none ->
 	    Priv = #privilege{perms = [#privilege_perm{access = message,
 						       type = MessagePerm},
 				       #privilege_perm{access = roster,
 						       type = RosterPerm},
+				       #privilege_perm{access = iq,
+						       namespaces = IqNamespaces},
 				       #privilege_perm{access = presence,
 						       type = PresencePerm}]},
 	    ?INFO_MSG("Granting permissions to external "
 		      "component '~ts': roster = ~ts, presence = ~ts, "
-		      "message = ~ts",
-		      [Host, RosterPerm, PresencePerm, MessagePerm]),
+		      "message = ~ts,~n iq = ~p",
+		      [Host, RosterPerm, PresencePerm, MessagePerm, IqNamespaces]),
 	    Msg = #message{from = From, to = To,  sub_els = [Priv]},
 	    ejabberd_router:route(Msg),
 	    Permissions = maps:put(Host, [{roster, RosterPerm},
+					  {iq, IqNamespaces},
 					  {presence, PresencePerm},
 					  {message, MessagePerm}],
 				   get_permissions(ServerHost)),
@@ -366,6 +473,8 @@ terminate(_Reason, State) ->
     Host = State#state.server_host,
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
 	false ->
+	    ejabberd_hooks:delete(component_send_packet, ?MODULE,
+				  component_send_packet, 50),
 	    ejabberd_hooks:delete(component_connected, ?MODULE,
 				  component_connected, 50),
 	    ejabberd_hooks:delete(component_disconnected, ?MODULE,
@@ -395,6 +504,10 @@ get_permissions(ServerHost) ->
         [] -> #{};
         [{_, Permissions}] -> Permissions
     end.
+
+%%
+%% Message
+%%
 
 -spec forward_message(message()) -> ok.
 forward_message(#message{to = To} = Msg) ->
@@ -436,9 +549,68 @@ forward_message(#message{to = To} = Msg) ->
 	    ejabberd_router:route_error(Msg, Err)
     end.
 
+%%
+%% IQ
+%%
+
+%% @format-begin
+
+-spec get_iq_encapsulated_details(iq()) ->
+                                     {ok, set | get, binary(), jid(), iq()} |
+                                     {error, Why :: atom(), any(), iq()}.
+get_iq_encapsulated_details(#iq{sub_els = [IqSub]} = Msg) ->
+    Lang = xmpp:get_lang(Msg),
+    try xmpp:try_subtag(Msg, #privileged_iq{}) of
+        #privileged_iq{iq = #iq{type = EncapsulatedType, from = From} = EncIq} ->
+            [IqSubSub] = xmpp:get_els(IqSub),
+            [Element] = xmpp:get_els(IqSubSub),
+            Ns = xmpp:get_ns(Element),
+            {ok, EncapsulatedType, Ns, From, EncIq};
+        _ ->
+            Txt = ?T("No <privileged_iq/> element found"),
+            Err = xmpp:err_bad_request(Txt, Lang),
+            {error, no_privileged_iq, Err}
+    catch
+        _:{xmpp_codec, Why} ->
+            Txt = xmpp:io_format_error(Why),
+            Err = xmpp:err_bad_request(Txt, Lang),
+            {error, codec_error, Err}
+    end.
+
+-spec forward_iq(binary(), jid(), binary(), iq()) -> iq().
+forward_iq(Host, ToplevelTo, Id, Iq) ->
+    FromJID = ToplevelTo,
+    NewIq0 = Iq#iq{from = FromJID},
+    xmpp:put_meta(NewIq0, privilege_iq, {Id, Host, FromJID}).
+%% @format-end
+
+%%
+%% Permissions
+%%
+
 -spec get_roster_permission(binary(), binary()) -> roster_permission() | none.
 get_roster_permission(ServerHost, Host) ->
     Perms = mod_privilege_opt:roster(ServerHost),
+    case match_rule(ServerHost, Host, Perms, both) of
+	allow ->
+	    both;
+	deny ->
+	    Get = match_rule(ServerHost, Host, Perms, get),
+	    Set = match_rule(ServerHost, Host, Perms, set),
+	    if Get == allow, Set == allow -> both;
+	       Get == allow -> get;
+	       Set == allow -> set;
+	       true -> none
+	    end
+    end.
+
+-spec get_iq_namespaces(binary(), binary()) -> [privilege_namespace()].
+get_iq_namespaces(ServerHost, Host) ->
+    NsPerms = mod_privilege_opt:iq(ServerHost),
+    [#privilege_namespace{ns = Ns, type = get_iq_permission(ServerHost, Host, Perms)} || {Ns, Perms} <- NsPerms].
+
+-spec get_iq_permission(binary(), binary(), [iq_permission()]) -> iq_permission() | none.
+get_iq_permission(ServerHost, Host, Perms) ->
     case match_rule(ServerHost, Host, Perms, both) of
 	allow ->
 	    both;
@@ -473,7 +645,12 @@ get_presence_permission(ServerHost, Host) ->
 	    end
     end.
 
+-ifdef(OTP_BELOW_26).
+-dialyzer({no_contracts, match_rule/4}).
+-endif.
+
 -spec match_rule(binary(), binary(), roster_permissions(), roster_permission()) -> allow | deny;
+		(binary(), binary(), iq_permissions(), iq_permission()) -> allow | deny;
 		(binary(), binary(), presence_permissions(), presence_permission()) -> allow | deny;
 		(binary(), binary(), message_permissions(), message_permission()) -> allow | deny.
 match_rule(ServerHost, Host, Perms, Type) ->
