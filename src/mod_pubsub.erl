@@ -3371,7 +3371,7 @@ node_options(Host, Type) ->
     case lists:member(Type, config(Host, plugins)) of
 	true ->
             merge_config([ConfigOpts, DefaultOpts]);
-	false -> DefaultOpts
+	false -> ConfigOpts
     end.
 
 -spec node_plugin_options(host(), binary()) -> [{atom(), any()}].
