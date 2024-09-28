@@ -265,10 +265,7 @@ init([ServerHost|_]) ->
 		  ejabberd_router:register_route(
 		    Host, ServerHost, {apply, ?MODULE, route}),
 		  {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
-		  DefaultModule = plugin(Host, hd(Plugins)),
-		  DefaultNodeCfg = merge_config(
-				     [mod_pubsub_opt:default_node_config(Opts),
-				      DefaultModule:options()]),
+		  DefaultNodeCfg = mod_pubsub_opt:default_node_config(Opts),
 		  lists:foreach(
 		    fun(H) ->
 			    T = gen_mod:get_module_proc(H, config),
