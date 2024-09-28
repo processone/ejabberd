@@ -3366,23 +3366,19 @@ get_option(Options, Var, Def) ->
 
 -spec node_options(host(), binary()) -> [{atom(), any()}].
 node_options(Host, Type) ->
-    DefaultOpts = node_plugin_options(Host, Type),
     ConfigOpts = config(Host, default_node_config),
-    case lists:member(Type, config(Host, plugins)) of
-	true ->
-            merge_config([ConfigOpts, DefaultOpts]);
-	false -> ConfigOpts
-    end.
+    PluginOpts = node_plugin_options(Host, Type),
+    merge_config([ConfigOpts, PluginOpts]).
 
 -spec node_plugin_options(host(), binary()) -> [{atom(), any()}].
 node_plugin_options(Host, Type) ->
     Module = plugin(Host, Type),
-    case catch Module:options() of
-	{'EXIT', {undef, _}} ->
+    case {lists:member(Type, config(Host, plugins)), catch Module:options()} of
+	{true, Opts} when is_list(Opts) ->
+	    Opts;
+	{_, _} ->
 	    DefaultModule = plugin(Host, ?STDNODE),
-	    DefaultModule:options();
-	Result ->
-	    Result
+	    DefaultModule:options()
     end.
 
 -spec node_owners_action(host(), binary(), nodeIdx(), [ljid()]) -> [ljid()].
