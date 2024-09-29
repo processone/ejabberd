@@ -35,16 +35,16 @@
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 -export([tls_options/1, tls_required/1, tls_enabled/1,
-	 compress_methods/1, bind/2, sasl_mechanisms/2,
-	 get_password_fun/2, check_password_fun/2, check_password_digest_fun/2,
-	 unauthenticated_stream_features/1, authenticated_stream_features/1,
-	 handle_stream_start/2, handle_stream_end/2,
-	 handle_unauthenticated_packet/2, handle_authenticated_packet/2,
-	 handle_auth_success/4, handle_auth_failure/4, handle_send/3,
-	 handle_recv/3, handle_cdata/2, handle_unbinded_packet/2,
-	 inline_stream_features/1, handle_sasl2_inline/2,
-	 handle_sasl2_inline_post/3, handle_bind2_inline/2,
-	 handle_bind2_inline_post/3, sasl_options/1]).
+	 allow_unencrypted_sasl2/1, compress_methods/1, bind/2,
+	 sasl_mechanisms/2, get_password_fun/2, check_password_fun/2,
+	 check_password_digest_fun/2, unauthenticated_stream_features/1,
+	 authenticated_stream_features/1, handle_stream_start/2,
+	 handle_stream_end/2, handle_unauthenticated_packet/2,
+	 handle_authenticated_packet/2, handle_auth_success/4,
+	 handle_auth_failure/4, handle_send/3, handle_recv/3, handle_cdata/2,
+	 handle_unbinded_packet/2, inline_stream_features/1,
+	 handle_sasl2_inline/2, handle_sasl2_inline_post/3,
+	 handle_bind2_inline/2, handle_bind2_inline_post/3, sasl_options/1]).
 %% Hooks
 -export([handle_unexpected_cast/2, handle_unexpected_call/3,
 	 process_auth_result/3, reject_unauthenticated_packet/2,
@@ -392,6 +392,9 @@ tls_enabled(#{tls_enabled := TLSEnabled,
 	      tls_verify := TLSVerify}) ->
     TLSEnabled or TLSRequired or TLSVerify.
 
+allow_unencrypted_sasl2(#{allow_unencrypted_sasl2 := AllowUnencryptedSasl2}) ->
+    AllowUnencryptedSasl2.
+
 compress_methods(#{zlib := true}) ->
     [<<"zlib">>];
 compress_methods(_) ->
@@ -604,12 +607,14 @@ init([State, Opts]) ->
     TLSEnabled = proplists:get_bool(starttls, Opts),
     TLSRequired = proplists:get_bool(starttls_required, Opts),
     TLSVerify = proplists:get_bool(tls_verify, Opts),
+    AllowUnencryptedSasl2 = proplists:get_bool(allow_unencrypted_sasl2, Opts),
     Zlib = proplists:get_bool(zlib, Opts),
     Timeout = ejabberd_option:negotiation_timeout(),
     State1 = State#{tls_options => TLSOpts2,
 		    tls_required => TLSRequired,
 		    tls_enabled => TLSEnabled,
 		    tls_verify => TLSVerify,
+		    allow_unencrypted_sasl2 => AllowUnencryptedSasl2,
 		    pres_a => ?SETS:new(),
 		    zlib => Zlib,
 		    lang => ejabberd_option:language(),
@@ -1047,6 +1052,8 @@ listen_opt_type(starttls) ->
     econf:bool();
 listen_opt_type(starttls_required) ->
     econf:bool();
+listen_opt_type(allow_unencrypted_sasl2) ->
+    econf:bool();
 listen_opt_type(tls_verify) ->
     econf:bool();
 listen_opt_type(zlib) ->
@@ -1069,6 +1076,7 @@ listen_options() ->
      {tls_compression, false},
      {starttls, false},
      {starttls_required, false},
+     {allow_unencrypted_sasl2, false},
      {tls_verify, false},
      {zlib, false},
      {max_stanza_size, infinity},
