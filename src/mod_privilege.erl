@@ -391,8 +391,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 -spec get_permissions(binary()) -> permissions().
 get_permissions(ServerHost) ->
-    try ets:lookup_element(?MODULE, ServerHost, 2)
-    catch _:badarg -> #{}
+    case ets:lookup(?MODULE, ServerHost) of
+        [] -> #{};
+        [{_, Permissions}] -> Permissions
     end.
 
 -spec forward_message(message()) -> ok.
