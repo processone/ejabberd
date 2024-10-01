@@ -654,7 +654,10 @@ mod_doc() ->
                   ?T("Specify rules to restrict what usernames can be registered. "
                      "If a rule returns 'deny' on the requested username, "
                      "registration of that user name is denied. There are no "
-                     "restrictions by default.")}},
+                     "restrictions by default. "
+                     "If 'AccessName' is 'none', then registering new accounts using "
+                     "In-Band Registration is disabled and the corresponding "
+                     "stream feature is not announced to clients.")}},
            {access_from,
             #{value => ?T("AccessName"),
               desc =>
