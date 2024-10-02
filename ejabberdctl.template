@@ -66,6 +66,7 @@ done
 # shellcheck source=ejabberdctl.cfg.example
 [ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
 [ -n "$ERLANG_NODE_ARG" ] && ERLANG_NODE="$ERLANG_NODE_ARG"
+[ "$ERLANG_NODE" = "${ERLANG_NODE%@*}" ] && ERLANG_NODE="$ERLANG_NODE@$(hostname -s)"
 [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && S="-s"
 : "${SPOOL_DIR:="{{spool_dir}}"}"
 : "${EJABBERD_LOG_PATH:="$LOGS_DIR/ejabberd.log"}"
