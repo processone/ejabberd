@@ -64,6 +64,9 @@ start(normal, _Args) ->
 			?INFO_MSG("ejabberd ~ts is started in the node ~p in ~.2fs",
 				  [ejabberd_option:version(),
 				   node(), (T2-T1)/1000]),
+			maybe_print_elixir_version(),
+			?INFO_MSG("~ts",
+				  [erlang:system_info(system_version)]),
 			{ok, SupPid};
 		    Err ->
 			?CRITICAL_MSG("Failed to start ejabberd application: ~p", [Err]),
@@ -205,9 +208,13 @@ maybe_start_exsync() ->
         "true" -> rpc:call(node(), 'Elixir.ExSync.Application', start, []);
         _ -> ok
     end.
+
+maybe_print_elixir_version() ->
+    ?INFO_MSG("Elixir ~ts", [maps:get(build, 'Elixir.System':build_info())]).
 -else.
 setup_if_elixir_conf_used() -> ok.
 register_elixir_config_hooks() -> ok.
 start_elixir_application() -> ok.
 maybe_start_exsync() -> ok.
+maybe_print_elixir_version() -> ok.
 -endif.
