@@ -400,6 +400,12 @@ make_vcard_search(User, LUser, LServer, VCARD) ->
 		  lorgunit = LOrgUnit}.
 
 -spec vcard_iq_set(iq()) -> iq() | {stop, stanza_error()}.
+vcard_iq_set(#iq{from = #jid{user = FromUser, lserver = FromLServer},
+                 to = #jid{user = ToUser, lserver = ToLServer},
+                 lang = Lang})
+  when (FromUser /= ToUser) or (FromLServer /= ToLServer) ->
+    Txt = ?T("User not allowed to perform an IQ set on another user's vCard."),
+    {stop, xmpp:err_forbidden(Txt, Lang)};
 vcard_iq_set(#iq{from = From, lang = Lang, sub_els = [VCard]} = IQ) ->
     #jid{user = User, lserver = LServer} = From,
     case set_vcard(User, LServer, VCard) of
