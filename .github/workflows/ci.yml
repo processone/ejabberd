@@ -147,12 +147,29 @@ jobs:
         cat $RE/logs/ejabberd.log
         grep -q "is stopped in" $RE/logs/ejabberd.log
 
-    - name: Check Development Release
+    - name: Start Development Release
       run: |
         make dev
         RE=_build/dev/rel/ejabberd
+        sed -i 's/starttls_required: true/starttls_required: false/g'  $RE/conf/ejabberd.yml
         $RE/bin/ejabberdctl start
         $RE/bin/ejabberdctl started
+        $RE/bin/ejabberdctl register admin localhost admin
+        grep -q "is started in" $RE/logs/ejabberd.log
+
+    - name: Run XMPP Interoperability Tests against CI server.
+      if: matrix.otp == '26'
+      continue-on-error: true
+      uses: XMPP-Interop-Testing/xmpp-interop-tests-action@v1.4.0
+      with:
+        domain: 'localhost'
+        adminAccountUsername: 'admin'
+        adminAccountPassword: 'admin'
+
+    - name: Stop Development Release
+      if: always()
+      run: |
+        RE=_build/dev/rel/ejabberd
         $RE/bin/ejabberdctl stop
         $RE/bin/ejabberdctl stopped
         cat $RE/logs/ejabberd.log
