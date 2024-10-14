@@ -38,6 +38,7 @@
 
 -export([sm_receive_packet/1, user_receive_packet/1, user_send_packet/1,
 	 user_send_packet_strip_tag/1, process_iq_v0_2/1, process_iq_v0_3/1,
+	 disco_local_features/5,
 	 disco_sm_features/5, remove_user/2, remove_room/3, mod_opt_type/1,
 	 muc_process_iq/2, muc_filter_message/3, message_is_archived/3,
 	 delete_old_messages/2, get_commands_spec/0, msg_to_el/4,
@@ -147,6 +148,8 @@ start(Host, Opts) ->
 			       muc_filter_message, 50),
 	    ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
 			       muc_process_iq, 50),
+	    ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
+			       disco_local_features, 50),
 	    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
 			       disco_sm_features, 50),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE,
@@ -226,6 +229,8 @@ stop(Host) ->
 			  muc_filter_message, 50),
     ejabberd_hooks:delete(muc_process_iq, Host, ?MODULE,
 			  muc_process_iq, 50),
+    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE,
+			  disco_local_features, 50),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
 			  disco_sm_features, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
@@ -611,6 +616,20 @@ parse_query(#mam_query{xdata = #xdata{}} = Query, Lang) ->
     end;
 parse_query(#mam_query{}, _Lang) ->
     {ok, []}.
+
+disco_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc;
+disco_local_features(Acc, _From, _To, <<"">>, _Lang) ->
+    Features = case Acc of
+		   {result, Fs} -> Fs;
+		   empty -> []
+	       end,
+    {result, [?NS_MESSAGE_RETRACT | Features]};
+disco_local_features(empty, _From, _To, _Node, Lang) ->
+    Txt = ?T("No features available"),
+    {error, xmpp:err_item_not_found(Txt, Lang)};
+disco_local_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
 
 disco_sm_features(empty, From, To, Node, Lang) ->
     disco_sm_features({result, []}, From, To, Node, Lang);
