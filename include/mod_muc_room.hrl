@@ -44,7 +44,7 @@
     allow_visitor_nickchange             = true :: boolean(),
     public                               = true :: boolean(),
     public_list                          = true :: boolean(),
-    persistent                           = false :: boolean(),
+    persistent                           = false :: boolean() | {destroying, boolean()},
     moderated                            = true :: boolean(),
     captcha_protected                    = false :: boolean(),
     members_by_default                   = true :: boolean(),

@@ -293,6 +293,8 @@ try_register(User, Server, Password) ->
 		false ->
 		    case ejabberd_router:is_my_host(LServer) of
 			true ->
+			    case ejabberd_hooks:run_fold(check_register_user, LServer, true, [User, Server, Password]) of
+				true ->
 			    case lists:foldl(
 				   fun(_, ok) ->
 					   ok;
@@ -306,6 +308,9 @@ try_register(User, Server, Password) ->
 				      register_user, LServer, [LUser, LServer]);
 				{error, _} = Err ->
 				    Err
+			    end;
+				false ->
+				    {error, not_allowed}
 			    end;
 			false ->
 			    {error, not_allowed}

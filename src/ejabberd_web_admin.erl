@@ -1726,7 +1726,7 @@ make_command_raw_value(Name, Request, BaseArguments) ->
               raw_value |
               raw_and_value} |
              {input_name_append, [binary()]} |
-             {force_execution, boolean()} |
+             {force_execution, boolean() | undefined} |
              {table_options, {PageSize :: integer(), RemainingPath :: [binary()]}} |
              {result_named, boolean()} |
              {result_links,
@@ -1737,7 +1737,7 @@ make_command_raw_value(Name, Request, BaseArguments) ->
              {style, normal | danger}.
 make_command2(Name, Request, BaseArguments, Options) ->
     Only = proplists:get_value(only, Options, all),
-    ForceExecution = proplists:get_value(force_execution, Options, false),
+    ForceExecution = proplists:get_value(force_execution, Options, undefined),
     InputNameAppend = proplists:get_value(input_name_append, Options, []),
     Resultnamed = proplists:get_value(result_named, Options, false),
     ResultLinks = proplists:get_value(result_links, Options, []),
@@ -1791,6 +1791,8 @@ make_command2(Name,
         case {ForceExecution, ResultFormatApi} of
             {true, _} ->
                 auto;
+            {false, _} ->
+                manual;
             {_, {_, rescode}} ->
                 manual;
             {_, {_, restuple}} ->

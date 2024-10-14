@@ -540,7 +540,7 @@ normal_state({route, <<"">>,
 		case NewStateData of
 		    stop ->
 			Conf = StateData#state.config,
-			{stop, normal, StateData#state{config = Conf#config{persistent = false}}};
+			{stop, normal, StateData#state{config = Conf#config{persistent = {destroying, Conf#config.persistent}}}};
 		    _ when NewStateData#state.just_created ->
 			close_room_if_temporary_and_empty(NewStateData);
 		    _ ->
@@ -736,7 +736,7 @@ handle_event({destroy, Reason}, _StateName,
 	      [jid:encode(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
     Conf = StateData#state.config,
-    {stop, shutdown, StateData#state{config = Conf#config{persistent = false}}};
+    {stop, shutdown, StateData#state{config = Conf#config{persistent = {destroying, Conf#config.persistent}}}};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~ts",
 	      [jid:encode(StateData#state.jid)]),
@@ -856,7 +856,7 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName,
 	     from = From, sub_els = [#muc_unsubscribe{}]},
     case process_iq_mucsub(From, IQ, StateData) of
 	{result, _, stop} ->
-	    {stop, normal, StateData#state{config = Conf#config{persistent = false}}};
+	    {stop, normal, StateData#state{config = Conf#config{persistent = {destroying, Conf#config.persistent}}}};
 	{result, _, NewState} ->
 	    {reply, ok, StateName, NewState};
 	{ignore, NewState} ->
@@ -1015,8 +1015,10 @@ terminate(Reason, _StateName,
 	    _ ->
 		add_to_log(room_existence, stopped, StateData),
 		case (StateData#state.config)#config.persistent of
-		    false ->
-			ejabberd_hooks:run(room_destroyed, LServer, [LServer, Room, Host]);
+                    false ->
+			ejabberd_hooks:run(room_destroyed, LServer, [LServer, Room, Host, false]);
+                    {destroying, Persistent} ->
+			ejabberd_hooks:run(room_destroyed, LServer, [LServer, Room, Host, Persistent]);
 		    _ ->
 			ok
 		end
