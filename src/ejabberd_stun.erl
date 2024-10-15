@@ -106,7 +106,6 @@ prepare_turn_opts(Opts) ->
 prepare_turn_opts(Opts, _UseTurn = false) ->
     set_certfile(Opts);
 prepare_turn_opts(Opts, _UseTurn = true) ->
-    NumberOfMyHosts = length(ejabberd_option:hosts()),
     TurnIP = case proplists:get_value(turn_ipv4_address, Opts) of
 		 undefined ->
 		     MyIP = misc:get_my_ipv4_address(),
@@ -129,18 +128,9 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
     AuthType = proplists:get_value(auth_type, Opts, user),
     Realm = case proplists:get_value(auth_realm, Opts) of
 		undefined when AuthType == user ->
-		    if NumberOfMyHosts > 1 ->
-			    ?INFO_MSG("You have several virtual hosts "
-				      "configured, but option 'auth_realm' is "
-				      "undefined and 'auth_type' is set to "
-				      "'user', so the TURN relay might not be "
-				      "working properly. Using ~ts as a "
-				      "fallback",
-				      [ejabberd_config:get_myname()]);
-		       true ->
-			    ok
-		    end,
-		    [{auth_realm, ejabberd_config:get_myname()}];
+		    MyName = ejabberd_config:get_myname(),
+		    ?DEBUG("Using ~ts as TURN realm", [MyName]),
+		    [{auth_realm, MyName}];
 		_ ->
 		    []
 	    end,
