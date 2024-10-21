@@ -32,6 +32,6 @@
   "stringprep": {:hex, :stringprep, "1.0.30", "46cf0ff631b3e7328f61f20b454d59428d87738f25d709798b5dcbb9b83c23f1", [:rebar3], [{:p1_utils, "1.0.26", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm", "f6fc9b3384a03877830f89b2f38580caf3f4a27448a4a333d6a8c3975c220b9a"},
   "stun": {:hex, :stun, "1.2.14", "6f538ac80c842131dbd149055570d116bfabc9b5ebff4bd6af2e7888958c660c", [:rebar3], [{:fast_tls, "1.1.21", [hex: :fast_tls, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.26", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm", "e134807b1b7a8dffd94e64eefee00e65c7b4042f3d14e16f8f43566d20371583"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.7.0", "bc84380c9ab48177092f43ac89e4dfa2c6d62b40b8bd132b1059ecc7232f9a78", [:rebar3], [], "hexpm", "25eee6d67df61960cf6a794239566599b09e17e668d3700247bc498638152521"},
-  "xmpp": {:git, "https://github.com/processone/xmpp.git", "422c107a882b6967e615ea69b33fac4897048fbb", [ref: "422c107a882b6967e615ea69b33fac4897048fbb"]},
+  "xmpp": {:git, "https://github.com/processone/xmpp.git", "c045d4d8555e251f2212743db8af90255da2ab57", [ref: "c045d4d8555e251f2212743db8af90255da2ab57"]},
   "yconf": {:hex, :yconf, "1.0.16", "d59521d66ff89f219411b6e9277cd6feec7cc6fce11554e67de02a8d0a470479", [:rebar3], [{:fast_yaml, "1.0.37", [hex: :fast_yaml, repo: "hexpm", optional: false]}], "hexpm", "e947813273f38711c7b2e5a8e4acc9a51c7bbe854f744a345f60300b38586c89"},
 }
