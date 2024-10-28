@@ -7516,44 +7516,6 @@ services:
 This module adds support for XEP\-0202: Entity Time\&. In other words, the module reports server\(cqs system time\&.
 .sp
 The module has no options\&.
-.SS "mod_tombstones"
-.sp
-\fINote\fR about this option: added in 24\&.xx\&.
-.sp
-Keep tombstones for accounts and rooms that were removed\&. This prevents registration of that account, and creation of that room\&.
-.sp
-.it 1 an-trap
-.nr an-no-space-flag 1
-.nr an-break-flag 1
-.br
-.ps +1
-\fBAvailable options:\fR
-.RS 4
-.PP
-\fBdb_type\fR: \fImnesia | sql | ldap\fR
-.RS 4
-Same as top\-level
-\fIdefault_db\fR
-option, but applied to this module only\&.
-.RE
-.PP
-\fBroom_tombstone_expiry\fR: \fItime | infinity\fR
-.RS 4
-How long to keep MUC room tombstones\&. If set to
-\fIinfinity\fR
-the tombstones are forever\&. The default value is
-\fI30 days\fR\&.
-.RE
-.PP
-\fBuser_tombstone_expiry\fR: \fItime | infinity\fR
-.RS 4
-How long to keep users tombstones, for example
-\fI365 days\fR\&. If set to
-\fIinfinity\fR
-the tombstones are forever\&. The default value is
-\fI365 days\fR\&.
-.RE
-.RE
 .SS "mod_vcard"
 .sp
 This module allows end users to store and retrieve their vCard, and to retrieve other users vCards, as defined in XEP\-0054: vcard\-temp\&. The module also implements an uncomplicated Jabber User Directory based on the vCards of these users\&. Moreover, it enables the server to send its vCard when queried\&.
