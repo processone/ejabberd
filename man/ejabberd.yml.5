@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 07/18/2024
+.\"      Date: 10/28/2024
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "07/18/2024" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "10/28/2024" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/24\&.07/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/24\&.10/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 24\&.07\&. The options that changed in this version are marked with 🟤\&.
+This section describes top level options of ejabberd 24\&.10\&. The options that changed in this version are marked with 🟤\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLRules|ACLName}}\fR
 .RS 4
@@ -138,7 +138,8 @@ access_rules:
 .PP
 \fBacl\fR: \fI{ACLName: {ACLType: ACLValue}}\fR
 .RS 4
-The option defines access control lists: named sets of rules which are used to match against different targets (such as a JID or an IP address)\&. Every set of rules has name
+This option defines
+\fI\&.\&./configuration/basic\&.md#acl|access control lists\fR: named sets of rules which are used to match against different targets (such as a JID or an IP address)\&. Every set of rules has name
 \fIACLName\fR: it can be any string except
 \fIall\fR
 or
@@ -319,7 +320,9 @@ means that the same username can be taken multiple times in anonymous login mode
 .PP
 \fBanonymous_protocol\fR: \fIlogin_anon | sasl_anon | both\fR
 .RS 4
-Define what anonymous protocol will be used:
+Define what
+\fIauthentication\&.md#anonymous\-login\-and\-sasl\-anonymous|anonymous\fR
+protocol will be used:
 .sp
 .RS 4
 .ie n \{\
@@ -368,11 +371,8 @@ Define the permissions for API access\&. Please consult the ejabberd Docs web �
 .PP
 \fBappend_host_config\fR: \fI{Host: Options}\fR
 .RS 4
-To define specific ejabberd modules in a virtual host, you can define the global
-\fImodules\fR
-option with the common modules, and later add specific modules to certain virtual hosts\&. To accomplish that,
-\fIappend_host_config\fR
-option can be used\&.
+Add a few specific options to a certain
+\fI\&.\&./configuration/basic\&.md#virtual\-hosting|virtual host\fR\&.
 .RE
 .PP
 \fBauth_cache_life_time\fR: \fItimeout()\fR
@@ -412,7 +412,9 @@ and certificate based authentication)\&. This helps with processing offline mess
 .PP
 \fBauth_method\fR: \fI[mnesia | sql | anonymous | external | jwt | ldap | pam, \&.\&.\&.]\fR
 .RS 4
-A list of authentication methods to use\&. If several methods are defined, authentication is considered successful as long as authentication of at least one of the methods succeeds\&. The default value is
+A list of
+\fIauthentication\&.md|authentication\fR
+methods to use\&. If several methods are defined, authentication is considered successful as long as authentication of at least one of the methods succeeds\&. The default value is
 \fI[mnesia]\fR\&.
 .RE
 .PP
@@ -682,7 +684,8 @@ A list of Erlang nodes to connect on ejabberd startup\&. This option is mostly i
 .PP
 \fBdefault_db\fR: \fImnesia | sql\fR
 .RS 4
-Default persistent storage for ejabberd\&. Modules and other components (e\&.g\&. authentication) may have its own value\&. The default value is
+\fIdatabase\&.md#default\-database|Default database\fR
+to store persistent data in ejabberd\&. Modules and other components (e\&.g\&. authentication) may have its own value\&. The default value is
 \fImnesia\fR\&.
 .RE
 .PP
@@ -694,7 +697,8 @@ Default volatile (in\-memory) storage for ejabberd\&. Modules and other componen
 .PP
 \fBdefine_macro\fR: \fI{MacroName: MacroValue}\fR
 .RS 4
-Defines a macro\&. The value can be any valid arbitrary YAML value\&. For convenience, it\(cqs recommended to define a
+Defines a
+\fI\&.\&./configuration/file\-format\&.md#macros\-in\-configuration\-file|macro\fR\&. The value can be any valid arbitrary YAML value\&. For convenience, it\(cqs recommended to define a
 \fIMacroName\fR
 in capital letters\&. Duplicated macros are not allowed\&. Macros are processed after additional configuration files have been included, so it is possible to use macros that are defined in configuration files included before the usage\&. It is possible to use a
 \fIMacroValue\fR
@@ -742,7 +746,9 @@ which enables this extension\&.
 .PP
 \fBdomain_balancing\fR: \fI{Domain: Options}\fR
 .RS 4
-An algorithm to load balance the components that are plugged on an ejabberd cluster\&. It means that you can plug one or several instances of the same component on each ejabberd node and that the traffic will be automatically distributed\&. The algorithm to deliver messages to the component(s) can be specified by this option\&. For any component connected as
+An algorithm to
+\fI\&.\&./guide/clustering\&.md#service\-load\-balancing|load\-balance\fR
+the components that are plugged on an ejabberd cluster\&. It means that you can plug one or several instances of the same component on each ejabberd node and that the traffic will be automatically distributed\&. The algorithm to deliver messages to the component(s) can be specified by this option\&. For any component connected as
 \fIDomain\fR, available
 \fIOptions\fR
 are:
@@ -821,18 +827,22 @@ Define the base URI when performing ReST requests\&. The default value is:
 .PP
 \fBextauth_pool_name\fR: \fIName\fR
 .RS 4
-Define the pool name appendix, so the full pool name will be
+Define the pool name appendix in
+\fIauthentication\&.md#external\-script|external auth\fR, so the full pool name will be
 \fIextauth_pool_Name\fR\&. The default value is the hostname\&.
 .RE
 .PP
 \fBextauth_pool_size\fR: \fISize\fR
 .RS 4
-The option defines the number of instances of the same external program to start for better load balancing\&. The default is the number of available CPU cores\&.
+The option defines the number of instances of the same
+\fIauthentication\&.md#external\-script|external auth\fR
+program to start for better load balancing\&. The default is the number of available CPU cores\&.
 .RE
 .PP
 \fBextauth_program\fR: \fIPath\fR
 .RS 4
-Indicate in this option the full path to the external authentication script\&. The script must be executable by ejabberd\&.
+Indicate in this option the full path to the
+\fIauthentication\&.md#external\-script|external authentication script\fR\&. The script must be executable by ejabberd\&.
 .RE
 .PP
 \fBfqdn\fR: \fIDomain\fR
@@ -851,7 +861,8 @@ for backward compatibility\&.
 .RS 4
 The option is used to redefine
 \fIOptions\fR
-for virtual host
+for
+\fI\&.\&./configuration/basic\&.md#virtual\-hosting|virtual host\fR
 \fIHost\fR\&. In the example below LDAP authentication method will be used on virtual host
 \fIdomain\&.tld\fR
 and SQL method will be used on virtual host
@@ -882,7 +893,9 @@ host_config:
 .PP
 \fBhosts\fR: \fI[Domain1, Domain2, \&.\&.\&.]\fR
 .RS 4
-The option defines a list containing one or more domains that
+List of one or more
+\fI\&.\&./configuration/basic\&.md#host\-names|host names\fR
+(or domains) that
 \fIejabberd\fR
 will serve\&. This is a
 \fBmandatory\fR
@@ -891,7 +904,9 @@ option\&.
 .PP
 \fBinclude_config_file\fR: \fI[Filename, \&.\&.\&.] | {Filename: Options}\fR
 .RS 4
-Read additional configuration from
+Read and
+\fI\&.\&./configuration/file\-format\&.md#include\-additional\-files|include additional file\fR
+from
 \fIFilename\fR\&. If the value is provided in
 \fI{Filename: Options}\fR
 format, the
@@ -922,7 +937,9 @@ at start time\&. The default value is an empty list of modules:
 .PP
 \fBjwt_auth_only_rule\fR: \fIAccessName\fR
 .RS 4
-This ACL rule defines accounts that can use only this auth method, even if others are also defined in the ejabberd configuration file\&. In other words: if there are several auth methods enabled for this host (JWT, SQL, \&...), users that match this rule can only use JWT\&. The default value is
+This ACL rule defines accounts that can use only the
+\fIauthentication\&.md#jwt\-authentication|JWT\fR
+auth method, even if others are also defined in the ejabberd configuration file\&. In other words: if there are several auth methods enabled for this host (JWT, SQL, \&...), users that match this rule can only use JWT\&. The default value is
 \fInone\fR\&.
 .RE
 .PP
@@ -930,18 +947,24 @@ This ACL rule defines accounts that can use only this auth method, even if other
 .RS 4
 By default, the JID is defined in the
 \fI"jid"\fR
-JWT field\&. In this option you can specify other JWT field name where the JID is defined\&.
+JWT field\&. In this option you can specify other
+\fIauthentication\&.md#jwt\-authentication|JWT\fR
+field name where the JID is defined\&.
 .RE
 .PP
 \fBjwt_key\fR: \fIFilePath\fR
 .RS 4
-Path to the file that contains the JWK Key\&. The default value is
+Path to the file that contains the
+\fIauthentication\&.md#jwt\-authentication|JWT\fR
+key\&. The default value is
 \fIundefined\fR\&.
 .RE
 .PP
 \fBlanguage\fR: \fILanguage\fR
 .RS 4
-The option defines the default language of server strings that can be seen by XMPP clients\&. If an XMPP client does not possess
+Define the
+\fI\&.\&./configuration/basic\&.md#default\-language|default language\fR
+of server strings that can be seen by XMPP clients\&. If an XMPP client does not possess
 \fIxml:lang\fR
 attribute, the specified language is used\&. The default value is
 \fI"en"\fR\&.
@@ -949,9 +972,10 @@ attribute, the specified language is used\&. The default value is
 .PP
 \fBldap_backups\fR: \fI[Host, \&.\&.\&.]\fR
 .RS 4
-A list of IP addresses or DNS names of LDAP backup servers\&. When no servers listed in
+A list of IP addresses or DNS names of LDAP backup servers (see
+\fI\&.\&./configuration/ldap\&.md#ldap\-connection|LDAP connection\fR)\&. When no servers listed in
 \fIldap_servers\fR
-option are reachable, ejabberd will try to connect to these backup servers\&. The default is an empty list, i\&.e\&. no backup servers specified\&. WARNING: ejabberd doesn\(cqt try to reconnect back to the main servers when they become operational again, so the only way to restore these connections is to restart ejabberd\&. This limitation might be fixed in future releases\&.
+option are reachable, ejabberd connects to these backup servers\&. The default is an empty list, i\&.e\&. no backup servers specified\&. Please notice that ejabberd only connects to the next server when the existing connection is lost; it doesn\(cqt detect when a previously\-attempted server becomes available again\&.
 .RE
 .PP
 \fBldap_base\fR: \fIBase\fR
@@ -1022,7 +1046,8 @@ Bind Distinguished Name\&. The default value is an empty string, which means "an
 .PP
 \fBldap_servers\fR: \fI[Host, \&.\&.\&.]\fR
 .RS 4
-A list of IP addresses or DNS names of your LDAP servers\&. The default value is
+A list of IP addresses or DNS names of your LDAP servers (see
+\fI\&.\&./configuration/ldap\&.md#ldap\-connection|LDAP connection\fR)\&. ejabberd connects immediately to all of them, and reconnects infinitely if connection is lost\&. The default value is
 \fI[localhost]\fR\&.
 .RE
 .PP
@@ -1114,7 +1139,8 @@ The size (in bytes) of a log file to trigger rotation\&. If set to
 .PP
 \fBloglevel\fR: \fInone | emergency | alert | critical | error | warning | notice | info | debug\fR
 .RS 4
-Verbosity of log files generated by ejabberd\&. The default value is
+Verbosity of ejabberd
+\fI\&.\&./configuration/basic\&.md#logging|logging\fR\&. The default value is
 \fIinfo\fR\&. NOTE: previous versions of ejabberd had log levels defined in numeric format (\fI0\&.\&.5\fR)\&. The numeric values are still accepted for backward compatibility, but are not recommended\&.
 .RE
 .PP
@@ -1126,9 +1152,9 @@ This option specifies the maximum number of elements in the queue of the FSM (Fi
 .PP
 \fBmodules\fR: \fI{Module: Options}\fR
 .RS 4
-The option for modules configuration\&. See
-\fImodules\&.md|Modules\fR
-section for details\&.
+Set all the
+\fImodules\&.md|modules\fR
+configuration options\&.
 .RE
 .PP
 \fBnegotiation_timeout\fR: \fItimeout()\fR
@@ -1147,10 +1173,9 @@ This option can be used to tune tick time parameter of
 .PP
 \fBnew_sql_schema\fR: \fItrue | false\fR
 .RS 4
-Whether to use
-\fInew\fR
-SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/24\&.07/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
+Whether to use the
+\fIdatabase\&.md#default\-and\-new\-schemas|new SQL schema\fR\&. All schemas are located at
+https://github\&.com/processone/ejabberd/tree/24\&.10/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema can handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1296,13 +1321,17 @@ seconds\&.
 .PP
 \fBpam_service\fR: \fIName\fR
 .RS 4
-This option defines the PAM service name\&. Refer to the PAM documentation of your operation system for more information\&. The default value is
+This option defines the
+\fIauthentication\&.md#pam\-authentication|PAM\fR
+service name\&. Refer to the PAM documentation of your operation system for more information\&. The default value is
 \fIejabberd\fR\&.
 .RE
 .PP
 \fBpam_userinfotype\fR: \fIusername | jid\fR
 .RS 4
-This option defines what type of information about the user ejabberd provides to the PAM service: only the username, or the user\(cqs JID\&. Default is
+This option defines what type of information about the user ejabberd provides to the
+\fIauthentication\&.md#pam\-authentication|PAM\fR
+service: only the username, or the user\(cqs JID\&. Default is
 \fIusername\fR\&.
 .RE
 .PP
@@ -1336,36 +1365,47 @@ option where file queues will be placed\&. The default value is
 .PP
 \fBredis_connect_timeout\fR: \fItimeout()\fR
 .RS 4
-A timeout to wait for the connection to be re\-established to the Redis server\&. The default is
+A timeout to wait for the connection to be re\-established to the
+\fIdatabase\&.md#redis|Redis\fR
+server\&. The default is
 \fI1 second\fR\&.
 .RE
 .PP
 \fBredis_db\fR: \fINumber\fR
 .RS 4
-Redis database number\&. The default is
+\fIdatabase\&.md#redis|Redis\fR
+database number\&. The default is
 \fI0\fR\&.
 .RE
 .PP
 \fBredis_password\fR: \fIPassword\fR
 .RS 4
-The password to the Redis server\&. The default is an empty string, i\&.e\&. no password\&.
+The password to the
+\fIdatabase\&.md#redis|Redis\fR
+server\&. The default is an empty string, i\&.e\&. no password\&.
 .RE
 .PP
 \fBredis_pool_size\fR: \fINumber\fR
 .RS 4
-The number of simultaneous connections to the Redis server\&. The default value is
+The number of simultaneous connections to the
+\fIdatabase\&.md#redis|Redis\fR
+server\&. The default value is
 \fI10\fR\&.
 .RE
 .PP
 \fBredis_port\fR: \fI1\&.\&.65535\fR
 .RS 4
-The port where the Redis server is accepting connections\&. The default is
+The port where the
+\fIdatabase\&.md#redis|Redis\fR
+server is accepting connections\&. The default is
 \fI6379\fR\&.
 .RE
 .PP
 \fBredis_queue_type\fR: \fIram | file\fR
 .RS 4
-The type of request queue for the Redis server\&. See description of
+The type of request queue for the
+\fIdatabase\&.md#redis|Redis\fR
+server\&. See description of
 \fIqueue_type\fR
 option for the explanation\&. The default value is the value defined in
 \fIqueue_type\fR
@@ -1376,7 +1416,9 @@ if the latter is not set\&.
 .PP
 \fBredis_server\fR: \fIHostname\fR
 .RS 4
-A hostname or an IP address of the Redis server\&. The default is
+A hostname or an IP address of the
+\fIdatabase\&.md#redis|Redis\fR
+server\&.The default is
 \fIlocalhost\fR\&.
 .RE
 .PP
@@ -1579,7 +1621,8 @@ XEP\-0138) or not\&. The default value is
 .PP
 \fBshaper\fR: \fI{ShaperName: Rate}\fR
 .RS 4
-The option defines a set of shapers\&. Every shaper is assigned a name
+The option defines a set of
+\fI\&.\&./configuration/basic\&.md#shapers|shapers\fR\&. Every shaper is assigned a name
 \fIShaperName\fR
 that can be used in other parts of the configuration file, such as
 \fIshaper_rules\fR
@@ -1611,7 +1654,9 @@ shaper:
 .PP
 \fBshaper_rules\fR: \fI{ShaperRuleName: {Number|ShaperName: ACLRule|ACLName}}\fR
 .RS 4
-An entry allowing to declaring shaper to use for matching user/hosts\&. Semantics is similar to
+This option defines
+\fI\&.\&./configuration/basic\&.md#shaper\-rules|shaper rules\fR
+to use for matching user/hosts\&. Semantics is similar to
 \fIaccess_rules\fR
 option, the only difference is that instead using
 \fIallow\fR
@@ -1858,11 +1903,11 @@ header if you enable this option as, otherwise, the client can set it itself and
 \fBupdate_sql_schema\fR: \fItrue | false\fR
 .RS 4
 \fINote\fR
-about this option: updated in 24\&.06\&. Allow ejabberd to update SQL schema\&. This option was added in ejabberd 23\&.10, and enabled by default since 24\&.06\&. The default value is
+about this option: updated in 24\&.06\&. Allow ejabberd to update SQL schema in MySQL, PostgreSQL and SQLite databases\&. This option was added in ejabberd 23\&.10, and enabled by default since 24\&.06\&. The default value is
 \fItrue\fR\&.
 .RE
 .PP
-\fBupdate_sql_schema_timeout 🟤\fR: \fItimeout()\fR
+\fBupdate_sql_schema_timeout\fR: \fItimeout()\fR
 .RS 4
 \fINote\fR
 about this option: added in 24\&.07\&. Time allocated to SQL schema update queries\&. The default value is set to 5 minutes\&.
@@ -1919,12 +1964,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 24\&.07\&. The modules that changed in this version are marked with 🟤\&.
-.SS "Elixir\&.ModPresenceDemo"
-.sp
-This is just a demonstration\&.
-.sp
-The module has no options\&.
+This section describes modules options of ejabberd 24\&.10\&. The modules that changed in this version are marked with 🟤\&.
 .SS "mod_adhoc"
 .sp
 This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary module and is only needed by some of the other modules\&.
@@ -5367,6 +5407,8 @@ option, but applied to this module only\&.
 .RE
 .SS "mod_privilege"
 .sp
+\fINote\fR about this option: improved in 24\&.10\&.
+.sp
 This module is an implementation of XEP\-0356: Privileged Entity\&. This extension allows components to have privileged access to other entity data (send messages on behalf of the server or on behalf of a user, get/set user roster, access presence information, etc\&.)\&. This may be used to write powerful external components, for example implementing an external PEP or MAM service\&.
 .sp
 By default a component does not have any privileged access\&. It is worth noting that the permissions grant access to the component to a specific data type for all users of the virtual host on which \fImod_privilege\fR is loaded\&.
@@ -5412,6 +5454,36 @@ This module is complementary to \fImod_delegation\fR, but can also be used separ
 .ps +1
 \fBAvailable options:\fR
 .RS 4
+.PP
+\fBiq\fR: \fI{Namespace: Options}\fR
+.RS 4
+This option defines namespaces and their IQ permissions\&. By default no permissions are given\&. The
+\fIOptions\fR
+are:
+.PP
+\fBboth\fR: \fIAccessName\fR
+.RS 4
+Allows sending IQ stanzas of type
+\fIget\fR
+and
+\fIset\fR\&. The default value is
+\fInone\fR\&.
+.RE
+.PP
+\fBget\fR: \fIAccessName\fR
+.RS 4
+Allows sending IQ stanzas of type
+\fIget\fR\&. The default value is
+\fInone\fR\&.
+.RE
+.PP
+\fBset\fR: \fIAccessName\fR
+.RS 4
+Allows sending IQ stanzas of type
+\fIset\fR\&. The default value is
+\fInone\fR\&.
+.RE
+.RE
 .PP
 \fBmessage\fR: \fIOptions\fR
 .RS 4
@@ -5485,6 +5557,9 @@ Sets write access to a user\(cqs roster\&. The default value is
 .nf
 modules:
   mod_privilege:
+    iq:
+      http://jabber\&.org/protocol/pubsub:
+        get: all
     roster:
       get: all
     presence:
@@ -6120,7 +6195,10 @@ This module reads also the top\-level \fIregistration_timeout\fR option defined 
 .RS 4
 Specify rules to restrict what usernames can be registered\&. If a rule returns
 \fIdeny\fR
-on the requested username, registration of that user name is denied\&. There are no restrictions by default\&.
+on the requested username, registration of that user name is denied\&. There are no restrictions by default\&. If
+\fIAccessName\fR
+is
+\fInone\fR, then registering new accounts using In\-Band Registration is disabled and the corresponding stream feature is not announced to clients\&.
 .RE
 .PP
 \fBaccess_from\fR: \fIAccessName\fR
@@ -6376,6 +6454,33 @@ modules:
 .RE
 .\}
 .RE
+.SS "mod_s2s_bidi"
+.sp
+\fINote\fR about this option: added in 24\&.10\&.
+.sp
+The module adds support for XEP\-0288: Bidirectional Server\-to\-Server Connections that allows using single s2s connection to communicate in both directions\&.
+.sp
+The module has no options\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_s2s_bidi: {}
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SS "mod_s2s_dialback"
 .sp
 The module adds support for XEP\-0220: Server Dialback to provide server identity verification based on DNS\&.
@@ -6430,6 +6535,48 @@ modules:
         server: legacy\&.domain\&.tld
         server: invalid\-cert\&.example\&.org
       deny: all
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.SS "mod_scram_upgrade"
+.sp
+\fINote\fR about this option: added in 24\&.10\&.
+.sp
+The module adds support for XEP\-0480: SASL Upgrade Tasks that allows users to upgrade passwords to more secure representation\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBoffered_upgrades\fR: \fIlist(sha256, sha512)\fR
+.RS 4
+List with upgrade types that should be offered
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_scram_upgrade:
+    offered_upgrades:
+      \- sha256
+      \- sha512
 .fi
 .if n \{\
 .RE
@@ -7369,6 +7516,44 @@ services:
 This module adds support for XEP\-0202: Entity Time\&. In other words, the module reports server\(cqs system time\&.
 .sp
 The module has no options\&.
+.SS "mod_tombstones"
+.sp
+\fINote\fR about this option: added in 24\&.xx\&.
+.sp
+Keep tombstones for accounts and rooms that were removed\&. This prevents registration of that account, and creation of that room\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBdb_type\fR: \fImnesia | sql | ldap\fR
+.RS 4
+Same as top\-level
+\fIdefault_db\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBroom_tombstone_expiry\fR: \fItime | infinity\fR
+.RS 4
+How long to keep MUC room tombstones\&. If set to
+\fIinfinity\fR
+the tombstones are forever\&. The default value is
+\fI30 days\fR\&.
+.RE
+.PP
+\fBuser_tombstone_expiry\fR: \fItime | infinity\fR
+.RS 4
+How long to keep users tombstones, for example
+\fI365 days\fR\&. If set to
+\fIinfinity\fR
+the tombstones are forever\&. The default value is
+\fI365 days\fR\&.
+.RE
+.RE
 .SS "mod_vcard"
 .sp
 This module allows end users to store and retrieve their vCard, and to retrieve other users vCards, as defined in XEP\-0054: vcard\-temp\&. The module also implements an uncomplicated Jabber User Directory based on the vCards of these users\&. Moreover, it enables the server to send its vCard when queried\&.
@@ -7833,7 +8018,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 24\&.07\&.
+This section describes listeners options of ejabberd 24\&.10\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -7841,13 +8026,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 24\&.07\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 24\&.10\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/24\&.07/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/24\&.10/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
