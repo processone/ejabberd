@@ -122,11 +122,12 @@ c2s_stream_features(Acc, Host) ->
 	    Acc
     end.
 
-c2s_inline_features({Sasl, Bind} = Acc, Host) ->
+c2s_inline_features({Sasl, Bind, Extra} = Acc, Host) ->
     case gen_mod:is_loaded(Host, ?MODULE) of
 	true ->
 	    {[#feature_sm{xmlns = ?NS_STREAM_MGMT_3} | Sasl],
-	     [#bind2_feature{var = ?NS_STREAM_MGMT_3} | Bind]};
+	     [#bind2_feature{var = ?NS_STREAM_MGMT_3} | Bind],
+	     Extra};
 	false ->
 	    Acc
     end.

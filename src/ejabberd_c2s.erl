@@ -44,7 +44,7 @@
 	 handle_auth_failure/4, handle_send/3, handle_recv/3, handle_cdata/2,
 	 handle_unbinded_packet/2, inline_stream_features/1,
 	 handle_sasl2_inline/2, handle_sasl2_inline_post/3,
-	 handle_bind2_inline/2, handle_bind2_inline_post/3, sasl_options/1]).
+	 handle_bind2_inline/2, handle_bind2_inline_post/3, sasl_options/1, handle_sasl2_task_next/4, handle_sasl2_task_data/3]).
 %% Hooks
 -export([handle_unexpected_cast/2, handle_unexpected_call/3,
 	 process_auth_result/3, reject_unauthenticated_packet/2,
@@ -83,7 +83,7 @@ accept(Ref) ->
 %%%===================================================================
 %%% Common API
 %%%===================================================================
--spec call(pid(), term(), non_neg_integer() | infinity) -> term().
+-spec call(pid(), term(), non_neg_integer() | infinity) -> dynamic().
 call(Ref, Msg, Timeout) ->
     xmpp_stream_in:call(Ref, Msg, Timeout).
 
@@ -255,7 +255,7 @@ process_info(#{lserver := LServer} = State, {route, Packet}) ->
 process_info(State, reset_vcard_xupdate_resend_presence) ->
     case maps:get(pres_last, State, error) of
 	error -> State;
-	Pres ->
+	#presence{} = Pres ->
 	    Pres2 = xmpp:remove_subtag(Pres, #vcard_xupdate{}),
 	    process_self_presence(State#{pres_last => Pres2}, Pres2)
     end;
@@ -407,7 +407,7 @@ authenticated_stream_features(#{lserver := LServer}) ->
     ejabberd_hooks:run_fold(c2s_post_auth_features, LServer, [], [LServer]).
 
 inline_stream_features(#{lserver := LServer}) ->
-    ejabberd_hooks:run_fold(c2s_inline_features, LServer, {[], []}, [LServer]).
+    ejabberd_hooks:run_fold(c2s_inline_features, LServer, {[], [], []}, [LServer]).
 
 sasl_mechanisms(Mechs, #{lserver := LServer, stream_encrypted := Encrypted} = State) ->
     Type = ejabberd_auth:store_type(LServer),
@@ -473,7 +473,7 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 	closenew ->
 	    {error, xmpp:err_conflict(), State};
 	{accept_resource, Resource} ->
-	    JID = jid:make(U, S, Resource),
+	    JID = #jid{} = jid:make(U, S, Resource),
 	    case acl:match_rule(LServer, Access,
 				#{usr => jid:split(JID), ip => IP}) of
 		allow ->
@@ -582,6 +582,14 @@ handle_bind2_inline(Els, #{lserver := LServer} = State) ->
 handle_bind2_inline_post(Els, Results, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_bind2_inline_post, LServer,
 			    State, [Els, Results]).
+
+handle_sasl2_task_next(Task, Els, InlineEls, #{lserver := LServer} = State) ->
+    ejabberd_hooks:run_fold(c2s_handle_sasl2_task_next, LServer,
+			    {abort, State}, [Task, Els, InlineEls]).
+
+handle_sasl2_task_data(Els, InlineEls, #{lserver := LServer} = State) ->
+    ejabberd_hooks:run_fold(c2s_handle_sasl2_task_data, LServer,
+			    {abort, State}, [Els, InlineEls]).
 
 handle_recv(El, Pkt, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_recv, LServer, State, [El, Pkt]).
@@ -692,7 +700,7 @@ process_message_in(State, #message{type = T} = Msg) ->
 
 -spec process_presence_in(state(), presence()) -> {boolean(), state()}.
 process_presence_in(#{lserver := LServer, pres_a := PresA} = State0,
-		    #presence{from = From, type = T} = Pres) ->
+		    #presence{from = #jid{} = From, type = T} = Pres) ->
     State = ejabberd_hooks:run_fold(c2s_presence_in, LServer, State0, [Pres]),
     case T of
 	probe ->
@@ -742,7 +750,8 @@ route_probe_reply(_, _) ->
 -spec process_presence_out(state(), presence()) -> state().
 process_presence_out(#{lserver := LServer, jid := JID,
 		       lang := Lang, pres_a := PresA} = State0,
-		     #presence{from = From, to = To, type = Type} = Pres) ->
+		     #presence{from = #jid{} = From, to = #jid{} = To, type = Type} = Pres) ->
+			#jid{} = From,
     State1 =
 	if Type == subscribe; Type == subscribed;
 	   Type == unsubscribe; Type == unsubscribed ->
@@ -850,7 +859,7 @@ broadcast_presence_unavailable(#{jid := JID, pres_a := PresA} = State, Pres,
 
     JIDs = lists:filtermap(
 	fun(LJid) ->
-	    To = jid:make(LJid),
+	    To = #jid{} = jid:make(LJid),
 	    P = xmpp:set_to(Pres, To),
 	    case privacy_check_packet(State, P, out) of
 		allow -> {true, To};
@@ -938,7 +947,7 @@ get_priority_from_presence(#presence{priority = Prio}) ->
 
 -spec route_multiple(state(), [jid()], stanza()) -> ok.
 route_multiple(#{lserver := LServer}, JIDs, Pkt) ->
-    From = xmpp:get_from(Pkt),
+    From = #jid{} = xmpp:get_from(Pkt),
     ejabberd_router_multicast:route_multicast(From, LServer, JIDs, Pkt, false).
 
 get_subscription(#jid{luser = LUser, lserver = LServer}, JID) ->
@@ -1007,7 +1016,7 @@ get_conn_type(State) ->
 	websocket -> websocket
     end.
 
--spec fix_from_to(xmpp_element(), state()) -> stanza().
+-spec fix_from_to(xmpp_element(), state()) -> stanza() | xmpp_element().
 fix_from_to(Pkt, #{jid := JID}) when ?is_stanza(Pkt) ->
     #jid{luser = U, lserver = S, lresource = R} = JID,
     case xmpp:get_from(Pkt) of

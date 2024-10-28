@@ -145,10 +145,10 @@ c2s_session_resumed(State) ->
 c2s_session_opened(State) ->
     maps:remove(carboncopy, State).
 
-c2s_inline_features({Sasl, Bind} = Acc, Host) ->
+c2s_inline_features({Sasl, Bind, Extra} = Acc, Host) ->
     case gen_mod:is_loaded(Host, ?MODULE) of
 	true ->
-	    {Sasl, [#bind2_feature{var = ?NS_CARBONS_2} | Bind]};
+	    {Sasl, [#bind2_feature{var = ?NS_CARBONS_2} | Bind], Extra};
 	false ->
 	    Acc
     end.
