@@ -168,6 +168,7 @@
 {"has been kicked because of an affiliation change","foi desconectado porque por afiliação inválida"}.
 {"has been kicked because the room has been changed to members-only","foi desconectado porque a política da sala mudou, só membros são permitidos"}.
 {"has been kicked","foi removido"}.
+{"Hash of the vCard-temp avatar of this room","Hash do avatar do vCard-temp desta sala"}.
 {"Hat title","Título do chapéu"}.
 {"Hat URI","URI do chapéu"}.
 {"Hats limit exceeded","O limite dos chapéus foi excedido"}.
