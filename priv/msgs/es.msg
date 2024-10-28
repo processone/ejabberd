@@ -168,6 +168,7 @@
 {"has been kicked because of an affiliation change","ha sido expulsado por un cambio de su afiliación"}.
 {"has been kicked because the room has been changed to members-only","ha sido expulsado porque la sala es ahora solo para miembros"}.
 {"has been kicked","ha sido expulsado"}.
+{"Hash of the vCard-temp avatar of this room","Hash del avatar vCard-temp de esta sala"}.
 {"Hat title","Título del sombrero"}.
 {"Hat URI","Dirección del sombrero"}.
 {"Hats limit exceeded","Se ha excedido el límite de sombreros"}.

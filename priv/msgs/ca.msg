@@ -168,6 +168,7 @@
 {"has been kicked because of an affiliation change","ha sigut expulsat a causa d'un canvi d'afiliació"}.
 {"has been kicked because the room has been changed to members-only","ha sigut expulsat perquè la sala ara és només per a membres"}.
 {"has been kicked","ha sigut expulsat"}.
+{"Hash of the vCard-temp avatar of this room","Hash del avatar a vCard-temp d'esta sala"}.
 {"Hat title","Títol del barret"}.
 {"Hat URI","URI del barret"}.
 {"Hats limit exceeded","El límit de tràfic ha sigut sobrepassat"}.
