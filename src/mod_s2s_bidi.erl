@@ -21,7 +21,7 @@
 %%%-------------------------------------------------------------------
 -module(mod_s2s_bidi).
 -behaviour(gen_mod).
--protocol({xep, 288, '1.0.1'}).
+-protocol({xep, 288, '1.0.1', '24.10', "complete", ""}).
 
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_options/1]).
@@ -65,6 +65,7 @@ mod_doc() ->
 	  "https://xmpp.org/extensions/xep-0288.html"
 	  "[XEP-0288: Bidirectional Server-to-Server Connections] that allows using "
 	  "single s2s connection to communicate in both directions.")],
+      note => "added in 24.10",
       opts => [],
       example =>
       ["modules:",

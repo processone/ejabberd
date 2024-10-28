@@ -1576,7 +1576,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = get_mam_count, tags = [mam],
 			desc = "Get number of MAM messages in a local user archive",
 			module = ?MODULE, function = get_mam_count,
-			note = "added in 24.xx",
+			note = "added in 24.10",
 			policy = user,
 			args = [],
 			result_example = 5,

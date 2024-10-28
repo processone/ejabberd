@@ -21,7 +21,7 @@
 %%%-------------------------------------------------------------------
 -module(mod_scram_upgrade).
 -behaviour(gen_mod).
--protocol({xep, 480, '0.1'}).
+-protocol({xep, 480, '0.1', '24.10', "complete", ""}).
 
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_options/1, mod_opt_type/1]).
@@ -65,6 +65,7 @@ mod_doc() ->
 	  "https://xmpp.org/extensions/xep-0480.html"
 	  "[XEP-0480: SASL Upgrade Tasks] that allows users to upgrade "
 	  "passwords to more secure representation.")],
+      note => "added in 24.10",
       opts => [{offered_upgrades,
 		#{value => "list(sha256, sha512)",
 		  desc => ?T("List with upgrade types that should be offered")}}],
