@@ -168,6 +168,7 @@
 {"has been kicked because of an affiliation change","由于从属关系的更改而被踢出"}.
 {"has been kicked because the room has been changed to members-only","被踢出，因为群聊已更改为仅成员进入"}.
 {"has been kicked","已被踢出"}.
+{"Hash of the vCard-temp avatar of this room","此群聊 vCard-temp 头像的散列值"}.
 {"Hat title","头衔标题"}.
 {"Hat URI","头衔 URI"}.
 {"Hats limit exceeded","已超过头衔限制"}.
@@ -226,12 +227,12 @@
 {"Logged Out","已登出"}.
 {"Logging","日志记录"}.
 {"Make participants list public","公开参与者列表"}.
-{"Make room CAPTCHA protected","让群聊受验证码保护"}.
-{"Make room members-only","让群聊仅成员进入"}.
+{"Make room CAPTCHA protected","开启群聊验证码保护"}.
+{"Make room members-only","仅成员进入的群聊"}.
 {"Make room moderated","开启群聊发言审核"}.
-{"Make room password protected","让群聊受密码保护"}.
-{"Make room persistent","让群聊持续存在"}.
-{"Make room public searchable","让群聊可公开搜索"}.
+{"Make room password protected","开启群聊密码保护"}.
+{"Make room persistent","持续存在的群聊"}.
+{"Make room public searchable","可公开搜索的群聊"}.
 {"Malformed username","用户名格式不正确"}.
 {"MAM preference modification denied by service policy","服务策略拒绝修改 MAM 首选项"}.
 {"March","三月"}.
@@ -607,7 +608,7 @@
 {"You are not allowed to send private messages","不允许您发送私信"}.
 {"You are not joined to the channel","您未加入频道"}.
 {"You can later change your password using an XMPP client.","您之后可以使用 XMPP 客户端更改密码。"}.
-{"You have been banned from this room","您已被此群聊封禁"}.
+{"You have been banned from this room","禁止您进入此群聊"}.
 {"You have joined too many conferences","您加入了太多群聊"}.
 {"You must fill in field \"Nickname\" in the form","您必须在表单中填写“昵称”字段"}.
 {"You need a client that supports x:data and CAPTCHA to register","您需要支持 x:data 和验证码的客户端来注册"}.
