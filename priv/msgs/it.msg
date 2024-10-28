@@ -9,19 +9,19 @@
 {"A description of the node","Una descrizione del nodo"}.
 {"A friendly name for the node","Un nome comodo per il nodo"}.
 {"A password is required to enter this room","Per entrare in questa stanza è necessaria una password"}.
-{"A Web Page","Un Pagina Web"}.
+{"A Web Page","Una pagina web"}.
 {"Accept","Accettare"}.
-{"Access denied by service policy","Accesso impedito dalle politiche del servizio"}.
+{"Access denied by service policy","Accesso negato dalle politiche del servizio"}.
 {"Access model","Modello di accesso"}.
 {"Account doesn't exist","L'account non esiste"}.
 {"Action on user","Azione sull'utente"}.
 {"Add a hat to a user","Aggiungere un cappello a un utente"}.
-{"Add User","Aggiungere un Utente"}.
+{"Add User","Aggiungere un utente"}.
 {"Administration of ","Amministrazione di "}.
 {"Administration","Amministrazione"}.
 {"Administrator privileges required","Sono richiesti privilegi di amministratore"}.
 {"All activity","Tutta l'attività"}.
-{"All Users","Tutti gli Utenti"}.
+{"All Users","Tutti gli utenti"}.
 {"Allow subscription","Consenti iscrizione"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Consentire a questo ID Jabber di iscriversi a questo nodo pubsub?"}.
 {"Allow this person to register with the room?","Permettere a questa persona di registrarsi con la stanza?"}.
