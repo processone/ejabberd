@@ -111,6 +111,11 @@
 {"Dynamically specify a replyto of the item publisher","Динамично задаване на отговор към публикувалия елемента"}.
 {"Edit Properties","Редактиране на свойства"}.
 {"Either approve or decline the voice request.","Одобрете или отхвърлете заявката за гласова връзка."}.
+{"ejabberd HTTP Upload service","ejabberd HTTP Upload услуга"}.
+{"ejabberd MUC module","ejabberd MUC модул"}.
+{"ejabberd Multicast service","ejabberd Multicast услуга"}.
+{"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe модул"}.
+{"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams модул"}.
 {"ejabberd vCard module","ejabberd vCard модул"}.
 {"ejabberd Web Admin","Уеб администрация на ejabberd"}.
 {"ejabberd","ejabberd"}.
@@ -158,6 +163,12 @@
 {"Get User Statistics","Покажи статистика за потребителя"}.
 {"Given Name","Име"}.
 {"Grant voice to this person?","Предоставяне на глас за потребителя?"}.
+{"has been banned","е със забранен достъп"}.
+{"has been kicked because of a system shutdown","е отстранен поради изключване на системата"}.
+{"has been kicked because of an affiliation change","е отстранен поради промяна на принадлежността"}.
+{"has been kicked because the room has been changed to members-only","е изгонен, защото стаята е променена и е само за членове"}.
+{"has been kicked","е отстранен"}.
+{"Hash of the vCard-temp avatar of this room","Хеш на временния vCard аватар на тази стая"}.
 {"Hat title","Заглавие на шапката"}.
 {"Hat URI","URI адрес за шапка"}.
 {"Hats limit exceeded","Превишен е лимитът за шапка"}.
@@ -190,6 +201,7 @@
 {"Invalid 'previd' value","Невалидна стойност на 'previd'"}.
 {"Invitations are not allowed in this conference","Поканите не са разрешени в тази конференция"}.
 {"IP addresses","IP адреси"}.
+{"is now known as","е известен като"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Не е позволено да изпращате съобщения за грешки в стаята. Участникът (~s) е изпратил съобщение за грешка (~s) и е бил отстранен от стаята"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Изпращането на лични съобщения от тип \"групов чат\" не е разрешено"}.
 {"It is not allowed to send private messages to the conference","Изпращането на лични съобщения до конференцията не е разрешено"}.
@@ -199,6 +211,7 @@
 {"JID normalization failed","Нормализирането на JID е неуспешно"}.
 {"Joined MIX channels of ~ts","Свързани MIX канали на ~ts"}.
 {"Joined MIX channels:","Свързани MIX канали:"}.
+{"joins the room","се присъединява към стаята"}.
 {"July","Юли"}.
 {"June","Юни"}.
 {"Just created","Току що създаден"}.
@@ -208,8 +221,10 @@
 {"Last month","Миналия месец"}.
 {"Last year","Миналата година"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Най-малко значимите битове SHA-256 хеш на текст трябва да са равни на шестнайсетичния етикет"}.
+{"leaves the room","напуска стаята"}.
 {"List of users with hats","Списък на потребителите с шапки"}.
 {"List users with hats","Избройте потребителите с шапки"}.
+{"Logged Out","Излязъл"}.
 {"Logging","Регистриране на събития"}.
 {"Make participants list public","Направи списъка с участниците публичен"}.
 {"Make room CAPTCHA protected","Защити стаята с CAPTCHA"}.
@@ -360,6 +375,7 @@
 {"Previous session PID has exited","Предишният PID на сесията е излязъл"}.
 {"Previous session PID is dead","PID от предишната сесия не съществува"}.
 {"Previous session timed out","Времето на предишната сесия изтече"}.
+{"private, ","частна, "}.
 {"Public","Публичен"}.
 {"Publish model","Модел за публикуване"}.
 {"Publish-Subscribe","Публикуване-Абониране"}.
@@ -423,6 +439,7 @@
 {"Set message of the day on all hosts and send to online users","Задавай съобщение на деня на всички хостове и изпрати на онлайн потребителите"}.
 {"Shared Roster Groups","Споделени групи от списъци с контакти"}.
 {"Show Integral Table","Покажи интегрална таблица"}.
+{"Show Occupants Join/Leave","Покажи участници Влязъл/Напускнал"}.
 {"Show Ordinary Table","Покажи обикновена таблица"}.
 {"Shut Down Service","Изключи услугата"}.
 {"SOCKS5 Bytestreams","SOCKS5 байтови потоци"}.
@@ -482,6 +499,7 @@
 {"The number of unread or undelivered messages","Броят непрочетени или недоставени съобщения"}.
 {"The password contains unacceptable characters","Паролата съдържа недопустими символи"}.
 {"The password is too weak","Паролата е твърде слаба"}.
+{"the password is","паролата е"}.
 {"The password of your XMPP account was successfully changed.","Паролата на вашия XMPP профил беше успешно променена."}.
 {"The password was not changed","Паролата не е променена"}.
 {"The passwords are different","Паролите са различни"}.
@@ -555,6 +573,7 @@
 {"Value of '~s' should be datetime string","Стойността на '~s' трябва да бъде низ за дата и час"}.
 {"Value of '~s' should be integer","Стойността на '~s' трябва да бъде цяло число"}.
 {"Value 'set' of 'type' attribute is not allowed","Стойността 'set' на атрибут 'type' не е разрешена"}.
+{"vCard User Search","vCard търсене на потребител"}.
 {"View joined MIX channels","Вижте присъединените MIX канали"}.
 {"Virtual Hosts","Виртуални хостове"}.
 {"Visitors are not allowed to change their nicknames in this room","Посетителите нямат право да променят псевдонимите си в тази стая"}.
@@ -584,6 +603,7 @@
 {"XMPP Show Value of Chat","XMPP покажи стойност на Чат"}.
 {"XMPP Show Value of DND (Do Not Disturb)","XMPP покажи стойност на DND (Не ме безпокой)"}.
 {"XMPP Show Value of XA (Extended Away)","XMPP покажи стойност на Продължително отсъствие"}.
+{"XMPP URI of Associated Publish-Subscribe Node","XMPP URI на асоцииран Publish-Subscribe нод"}.
 {"You are being removed from the room because of a system shutdown","Премахнати сте от стаята поради изключване на системата"}.
 {"You are not allowed to send private messages","Нямате право да изпращате лични съобщения"}.
 {"You are not joined to the channel","Не сте присъединени към канала"}.
@@ -594,6 +614,9 @@
 {"You need a client that supports x:data and CAPTCHA to register","За да се регистрирате Ви е нужен клиент, който поддържа x:data и CAPTCHA"}.
 {"You need a client that supports x:data to register the nickname","За да регистрирате псевдонима, Ви е необходим клиент, който поддържа x:data"}.
 {"You need an x:data capable client to search","За да търсите, Ви е нужен клиент, който поддържа x:data"}.
+{"Your active privacy list has denied the routing of this stanza.","Вашият активен списък за поверителност отказа маршрутизирането на тази строфа."}.
+{"Your contact offline message queue is full. The message has been discarded.","Достигнат е максималният брой офлайн съобщения за вашия контакт. Съобщението е отхвърлено."}.
+{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Вашата заявка за абонамент и/или съобщения до ~s са блокирани. За да отблокирате заявката си за абонамент, посетете ~s"}.
 {"Your XMPP account was successfully registered.","Вашият XMPP акаунт, беше регистриран успешно."}.
 {"Your XMPP account was successfully unregistered.","Вашият XMPP акаунт, беше успешно дерегистриран."}.
 {"You're not allowed to create nodes","Нямате право да създавате нодове"}.
