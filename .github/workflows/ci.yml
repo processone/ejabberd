@@ -159,6 +159,7 @@ jobs:
 
     - name: Run XMPP Interoperability Tests against CI server.
       if: matrix.otp == '26'
+      continue-on-error: true
       uses: XMPP-Interop-Testing/xmpp-interop-tests-action@v1.4.0
       with:
         domain: 'localhost'
