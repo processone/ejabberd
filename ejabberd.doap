@@ -568,6 +568,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0288.html"/>
+        <xmpp:version>1.0.1</xmpp:version>
+        <xmpp:since>24.10</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>mod_s2s_bidi</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0313.html"/>
         <xmpp:version>0.6.1</xmpp:version>
         <xmpp:since>15.06</xmpp:since>
@@ -623,8 +632,8 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0356.html"/>
-        <xmpp:version>0.2.1</xmpp:version>
-        <xmpp:since>16.09</xmpp:since>
+        <xmpp:version>0.4.1</xmpp:version>
+        <xmpp:since>24.10</xmpp:since>
         <xmpp:status></xmpp:status>
         <xmpp:note>mod_privilege</xmpp:note>
       </xmpp:SupportedXep>
@@ -789,6 +798,15 @@
         <xmpp:since>24.02</xmpp:since>
         <xmpp:status></xmpp:status>
         <xmpp:note></xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0480.html"/>
+        <xmpp:version>0.1</xmpp:version>
+        <xmpp:since>24.10</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>mod_scram_upgrade</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
