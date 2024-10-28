@@ -203,6 +203,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = update, tags = [server],
 			desc = "Update the given module",
 			longdesc = "To update all the possible modules, use `all`.",
+			note = "improved in 24.10",
 			module = ?MODULE, function = update,
 			args_example = ["all"],
 			args = [{module, string}],

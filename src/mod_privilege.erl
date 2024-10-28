@@ -117,6 +117,7 @@ mod_doc() ->
 	      "carefully, only if you trust a component."), "",
            ?T("NOTE: This module is complementary to _`mod_delegation`_, "
               "but can also be used separately.")],
+      note => "improved in 24.10",
       opts =>
           [{roster,
             #{value => ?T("Options"),
