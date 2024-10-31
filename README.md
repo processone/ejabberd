@@ -24,7 +24,6 @@
        <img src="https://img.shields.io/github/v/tag/processone/docs.ejabberd.im?sort=semver&logo=&label=docs&logoWidth=0" /></a>
 </p>
 
-
 [ejabberd][im] is an open-source,
 robust, scalable and extensible realtime platform built using [Erlang/OTP][erlang],
 that includes [XMPP][xmpp] Server, [MQTT][mqtt] Broker and [SIP][sip] Service.
@@ -39,12 +38,16 @@ Installation
 There are several ways to install ejabberd:
 
 - Source code: compile yourself, see [COMPILE](COMPILE.md)
-- Installers: [ProcessOne Download][p1download] and [GitHub Releases][releases] for releases, [GitHub Actions](https://github.com/processone/ejabberd/actions/workflows/installers.yml) for master branch (run/deb/rpm for x64 and arm64)
-- `ecs` container image: [Docker Hub][hubecs] and [Github Packages][packagesecs], see [ecs README][docker-ecs-readme] (for x64)
-- `ejabberd` container image: [Github Packages][packages] for releases and master branch, see [CONTAINER](CONTAINER.md) (for x64 and arm64)
+- Installers:
+  - [ProcessOne Download Page][p1download] or [GitHub Releases][releases] for releases.
+  - [GitHub Actions](https://github.com/processone/ejabberd/actions/workflows/installers.yml) for master branch (`run`/`deb`/`rpm` for `x64` and `arm64`)
+- Docker Containers:
+  - `ecs` container image: [Docker Hub][hubecs] and [Github Packages][packagesecs], see [ecs README][docker-ecs-readme] (for `x64`)
+  - `ejabberd` container image: [Github Packages][packages] for releases and master branch, see [CONTAINER](CONTAINER.md) (for `x64` and `arm64`)
 - Using your [Operating System package][osp]
 - Using the [Homebrew][homebrew] package manager
 
+More info can be found in the `Installation` part of [ejabberd Docs](https://docs.ejabberd.im/admin/install/).
 
 Documentation
 -------------
@@ -61,7 +64,6 @@ Once ejabberd is installed, try:
     ejabberdctl help
     man ejabberd.yml
 
-
 Development
 -----------
 
@@ -74,6 +76,7 @@ or in your local machine as explained in [Localization][localization].
 Documentation for developers is available in [ejabberd docs: Developers][docs-dev].
 
 There are nightly builds of ejabberd, both for `master` branch and for Pull Requests:
+
 - Installers: go to [GitHub Actions: Installers](https://github.com/processone/ejabberd/actions/workflows/installers.yml), open the most recent commit, on the bottom of that commit page, download the `ejabberd-packages.zip` artifact.
 - `ejabberd` container image: go to [ejabberd Github Packages][packages]
 
@@ -84,7 +87,6 @@ or some other method from [ProcessOne Contact][p1contact].
 For commercial offering and support, including [ejabberd Business Edition][p1home]
 and [Fluux (ejabberd in the Cloud)][fluux], please check [ProcessOne ejabberd page][p1home].
 
-
 Community
 ---------
 
@@ -94,13 +96,11 @@ There are several places to get in touch with other ejabberd developers and admi
 - [GitHub Discussions][discussions]
 - [Stack Overflow][stackoverflow]
 
-
 License
 -------
 
-ejabberd is released under the GNU General Public License v2 (see [COPYING](COPYING)),
-and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MIT License.
-
+- `ejabberd` is released under the __GNU General Public License v2__ (see [COPYING](COPYING))
+- [ejabberd translations](https://github.com/processone/ejabberd-po/) under __MIT License__.
 
 [discussions]: https://github.com/processone/ejabberd/discussions
 [docker-ecs-readme]: https://github.com/processone/docker-ejabberd/tree/master/ecs#readme
@@ -117,16 +117,15 @@ and [ejabberd translations](https://github.com/processone/ejabberd-po/) under MI
 [mqtt]: https://mqtt.org/
 [muc]: xmpp:ejabberd@conference.process-one.net
 [osp]: https://docs.ejabberd.im/admin/install/os-package/
-[p1contact]: https://www.process-one.net/en/company/contact/
-[p1download]: https://www.process-one.net/en/ejabberd/downloads/
-[p1home]: https://www.process-one.net/en/ejabberd/
+[p1contact]: https://www.process-one.net/contact/
+[p1download]: https://www.process-one.net/download/ejabberd/
+[p1home]: https://www.process-one.net/ejabberd/
 [packages]: https://github.com/processone/ejabberd/pkgs/container/ejabberd
 [packagesecs]: https://github.com/processone/docker-ejabberd/pkgs/container/ecs
 [releases]: https://github.com/processone/ejabberd/releases
 [sip]: https://en.wikipedia.org/wiki/Session_Initiation_Protocol
 [stackoverflow]: https://stackoverflow.com/questions/tagged/ejabberd?sort=newest
 [weblate]: https://hosted.weblate.org/projects/ejabberd/ejabberd-po/
-[xeps]: https://www.process-one.net/en/ejabberd/protocols/
+[xeps]: https://www.process-one.net/ejabberd-features/
 [xmpp]: https://xmpp.org/
 [xmppej]: https://xmpp.org/software/servers/ejabberd/
-

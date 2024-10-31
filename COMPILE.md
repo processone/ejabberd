@@ -44,7 +44,7 @@ There are several ways to obtain the ejabberd source code:
 - Source code package from [ejabberd GitHub Releases][ghr]
 - Latest development code from [ejabberd Git repository][gitrepo]
 
-[p1dl]: https://www.process-one.net/en/ejabberd/downloads/
+[p1dl]: https://www.process-one.net/download/ejabberd/
 [ghr]: https://github.com/processone/ejabberd/releases
 [gitrepo]: https://github.com/processone/ejabberd
 

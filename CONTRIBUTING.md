@@ -25,18 +25,18 @@ support platforms, the best being [Stack Overflow][stackoverflow].
 
 Stack Overflow is a much better place to ask questions since:
 
-- there are thousands of people willing to help on Stack Overflow
-- questions and answers stay available for public viewing so your question / answer might help
+* there are thousands of people willing to help on Stack Overflow
+* questions and answers stay available for public viewing so your question / answer might help
   someone else
-- Stack Overflow's voting system assures that the best answers are prominently visible.
+* Stack Overflow's voting system assures that the best answers are prominently visible.
 
 To save your and our time, we will systematically close all issues that are requests for general
 support and redirect people to the section you are reading right now.
 
 Other channels for support are:
-- ejabberd XMPP room: [ejabberd@conference.process-one.net][muc]
-- [ejabberd XMPP room logs][logs]
-- [ejabberd Mailing List][list]
+
+* ejabberd XMPP room: [ejabberd@conference.process-one.net][muc]
+* [ejabberd Mailing List][list]
 
 ### Found an Issue or Bug?
 
@@ -80,6 +80,7 @@ Before you submit your pull request consider the following guidelines:
     ```shell
     git checkout -b my-fix-branch master
     ```
+
 * Test your changes and, if relevant, expand the automated test suite.
 * Create your patch commit, including appropriate test cases.
 * If the changes affect public APIs, change or add relevant [documentation][doc-repo].
@@ -88,6 +89,7 @@ Before you submit your pull request consider the following guidelines:
     ```shell
     git commit -a
     ```
+
   Note: the optional commit `-a` command line option will automatically "add" and "rm" edited files.
 
 * Push your branch to GitHub:
@@ -128,22 +130,20 @@ That's it! Thank you for your contribution!
 Upon submitting a Pull Request, we will ask you to sign our CLA if you haven't done
 so before. It's a quick process, we promise, and you will be able to do it all online
 
-You can read [ProcessOne Contribution License Agreement][cla] in PDF.
+Here's a link to the  [ProcessOne Contribution License Agreement][cla].
 
 This is part of the legal framework of the open-source ecosystem that adds some red tape,
 but protects both the contributor and the company / foundation behind the project. It also
 gives us the option to relicense the code with a more permissive license in the future.
 
-
 [coc]: https://github.com/processone/ejabberd/blob/master/CODE_OF_CONDUCT.md
 [stackoverflow]: https://stackoverflow.com/questions/tagged/ejabberd?sort=newest
 [list]: https://lists.jabber.ru/mailman/listinfo/ejabberd
 [muc]: xmpp:ejabberd@conference.process-one.net
-[logs]: https://process-one.net/logs/ejabberd@conference.process-one.net/
 [github]: https://github.com/processone/ejabberd
 [github-issues]: https://github.com/processone/ejabberd/issues
 [github-new-issue]: https://github.com/processone/ejabberd/issues/new
 [github-pr]: https://github.com/processone/ejabberd/pulls
 [doc-repo]: https://github.com/processone/docs.ejabberd.im
 [developer-setup]: https://docs.ejabberd.im/developer/
-[cla]: https://www.process-one.net/resources/ejabberd-cla.pdf
+[cla]: https://cla.process-one.net/

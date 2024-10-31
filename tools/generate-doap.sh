@@ -45,7 +45,7 @@ write_doap_head()
     <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-xmpp"/>
 
     <homepage rdf:resource="https://www.ejabberd.im"/>
-    <download-page rdf:resource="https://www.process-one.net/en/ejabberd/downloads/"/>
+    <download-page rdf:resource="https://www.process-one.net/download/ejabberd/"/>
     <download-mirror rdf:resource="https://github.com/processone/ejabberd/tags"/>
     <license rdf:resource="https://raw.githubusercontent.com/processone/ejabberd/master/COPYING"/>
     <schema:logo rdf:resource="https://docs.ejabberd.im/assets/img/footer_logo_e@2x.png"/>

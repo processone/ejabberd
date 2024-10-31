@@ -212,9 +212,9 @@ defmodule Ejabberd.MixProject do
       maintainers: ["ProcessOne"],
       licenses: ["GPL-2.0-or-later"],
       links: %{"ejabberd.im" => "https://www.ejabberd.im",
-               "ejabberd Docs" => "http://docs.ejabberd.im",
+               "ejabberd Docs" => "https://docs.ejabberd.im",
                "GitHub" => "https://github.com/processone/ejabberd",
-               "ProcessOne" => "http://www.process-one.net/"}]
+               "ProcessOne" => "https://www.process-one.net/"}]
   end
 
   defp vars do

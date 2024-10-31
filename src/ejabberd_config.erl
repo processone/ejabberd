@@ -206,7 +206,7 @@ get_lang(Host) ->
 
 -spec get_uri() -> binary().
 get_uri() ->
-    <<"http://www.process-one.net/en/ejabberd/">>.
+    <<"https://www.process-one.net/ejabberd/">>.
 
 -spec get_copyright() -> binary().
 get_copyright() ->

@@ -9,7 +9,7 @@
 
 -define(PUBSUB(Node), <<(?NS_PUBSUB)/binary, "#", Node>>).
 
--define(EJABBERD_CT_URI, <<"http://www.process-one.net/en/ejabberd_ct/">>).
+-define(EJABBERD_CT_URI, <<"https://docs.ejabberd.im/developer/extending-ejabberd/testing/">>).
 
 -define(recv1(P1),
         P1 = (fun() ->
