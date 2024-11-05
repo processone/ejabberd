@@ -313,9 +313,9 @@ component_send_packet({#iq{from = From,
                 drop;
             {_, {error, roster_query, _Err}} ->
                 IQ;
-            {_, {error, Type, _Err}} ->
+            {_, {error, ErrType, _Err}} ->
                 ?INFO_MSG("IQ not forwarded: Component tried to send not valid IQ stanza: ~p.",
-                          [Type]),
+                          [ErrType]),
                 drop
         end,
     {Result, State};
