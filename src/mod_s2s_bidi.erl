@@ -84,10 +84,14 @@ s2s_out_unauthenticated_features(#{db_verify := _} = State, _) ->
 s2s_out_unauthenticated_features(State, #stream_features{} = Pkt) ->
     try xmpp:try_subtag(Pkt, #s2s_bidi{}) of
 	#s2s_bidi{} ->
-	    ejabberd_s2s_out:send(State#{bidi_enabled => true}, #s2s_bidi{})
+	    ejabberd_s2s_out:send(State#{bidi_enabled => true}, #s2s_bidi{});
+	_ ->
+	    State
     catch _:{xmpp_codec, _Why} ->
 	State
-    end.
+    end;
+s2s_out_unauthenticated_features(State, _Pkt) ->
+    State.
 
 s2s_out_packet(#{bidi_enabled := true, ip := {IP, _}} = State, Pkt0)
     when ?is_stanza(Pkt0) ->
