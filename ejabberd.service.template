@@ -9,7 +9,6 @@ Group=@installuser@
 LimitNOFILE=65536
 Restart=on-failure
 RestartSec=5
-WatchdogSec=30
 ExecStart=@ctlscriptpath@/ejabberdctl foreground
 ExecStop=/bin/sh -c '@ctlscriptpath@/ejabberdctl stop && @ctlscriptpath@/ejabberdctl stopped'
 ExecReload=@ctlscriptpath@/ejabberdctl reload_config
