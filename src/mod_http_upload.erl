@@ -27,7 +27,7 @@
 -author('holger@zedat.fu-berlin.de').
 -behaviour(gen_server).
 -behaviour(gen_mod).
--protocol({xep, 363, '0.2', '15.10', "", ""}).
+-protocol({xep, 363, '0.3.0', '15.10', "complete", ""}).
 
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(CALL_TIMEOUT, 60000). % 1 minute.

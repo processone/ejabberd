@@ -27,7 +27,7 @@
 -protocol({rfc, 3921}).
 -protocol({rfc, 6120}).
 -protocol({rfc, 6121}).
--protocol({xep, 138, '2.1'}).
+-protocol({xep, 138, '2.1', '1.1.0', "complete", ""}).
 
 %% ejabberd_listener callbacks
 -export([start/3, start_link/3, accept/1, listen_opt_type/1, listen_options/0]).

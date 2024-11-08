@@ -21,8 +21,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_s2s_dialback).
 -behaviour(gen_mod).
--protocol({xep, 220, '1.1.1'}).
--protocol({xep, 185, '1.0'}).
+-protocol({xep, 220, '1.1.1', '17.03', "complete", ""}).
+-protocol({xep, 185, '1.0', '17.03', "complete", ""}).
 
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).

@@ -27,7 +27,7 @@
 
 -author('henoch@dtek.chalmers.se').
 
--protocol({xep, 50, '1.2'}).
+-protocol({xep, 50, '1.2', '1.1.0', "complete", ""}).
 
 -behaviour(gen_mod).
 

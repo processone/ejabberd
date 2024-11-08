@@ -27,7 +27,7 @@
 
 -author('alexey@process-one.net').
 
--protocol({xep, 92, '1.1'}).
+-protocol({xep, 92, '1.1', '0.1.0', "complete", ""}).
 
 -behaviour(gen_mod).
 

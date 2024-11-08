@@ -25,8 +25,6 @@
 
 -module(ejabberd_s2s).
 
--protocol({xep, 220, '1.1'}).
-
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).

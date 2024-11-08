@@ -25,7 +25,7 @@
 
 -module(mod_sic).
 
--protocol({xep, 279, '0.2'}).
+-protocol({xep, 279, '0.2', '2.1.3', "complete", ""}).
 
 -author('karim.gemayel@process-one.net').
 

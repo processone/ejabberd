@@ -23,7 +23,7 @@
 -behaviour(xmpp_stream_in).
 -behaviour(ejabberd_listener).
 
--protocol({xep, 114, '1.6'}).
+-protocol({xep, 114, '1.6', '0.1.0', "complete", ""}).
 
 %% ejabberd_listener callbacks
 -export([start/3, start_link/3, stop/0, accept/1]).

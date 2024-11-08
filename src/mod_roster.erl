@@ -34,7 +34,7 @@
 
 -module(mod_roster).
 
--protocol({xep, 237, '1.3'}).
+-protocol({xep, 237, '1.3', '2.1.0', "complete", ""}).
 
 -author('alexey@process-one.net').
 

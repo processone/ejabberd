@@ -22,7 +22,7 @@
 -module(mod_legacy_auth).
 -behaviour(gen_mod).
 
--protocol({xep, 78, '2.5'}).
+-protocol({xep, 78, '2.5', '17.03', "complete", ""}).
 
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_options/1, mod_doc/0]).

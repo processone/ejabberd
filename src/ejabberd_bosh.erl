@@ -25,8 +25,8 @@
 -module(ejabberd_bosh).
 -behaviour(xmpp_socket).
 -behaviour(p1_fsm).
--protocol({xep, 124, '1.11'}).
--protocol({xep, 206, '1.4'}).
+-protocol({xep, 124, '1.11', '16.12', "complete", ""}).
+-protocol({xep, 206, '1.4', '16.12', "complete", ""}).
 
 %% API
 -export([start/2, start/3, start_link/3]).

@@ -25,8 +25,8 @@
 
 -module(ejabberd_captcha).
 
--protocol({xep, 158, '1.0'}).
--protocol({xep, 231, '1.0'}).
+-protocol({xep, 158, '1.0', '2.1.0', "complete", ""}).
+-protocol({xep, 231, '1.0', '2.1.0', "complete", ""}).
 
 -behaviour(gen_server).
 

@@ -27,7 +27,7 @@
 
 -author('xram@jabber.ru').
 
--protocol({xep, 65, '1.8'}).
+-protocol({xep, 65, '1.8', '2.0.0', "complete", ""}).
 
 -behaviour(gen_mod).
 

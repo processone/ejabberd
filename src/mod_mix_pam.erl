@@ -22,7 +22,7 @@
 %%%----------------------------------------------------------------------
 -module(mod_mix_pam).
 -behaviour(gen_mod).
--protocol({xep, 405, '0.3.0'}).
+-protocol({xep, 405, '0.3.0', '19.02', "complete", ""}).
 
 %% gen_mod callbacks
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).

@@ -25,8 +25,8 @@
 
 -module(mod_client_state).
 -author('holger@zedat.fu-berlin.de').
--protocol({xep, 85, '2.1'}).
--protocol({xep, 352, '0.1', '14.12', "", ""}).
+-protocol({xep, 85, '2.1', '2.1.0', "complete", ""}).
+-protocol({xep, 352, '0.1', '14.12', "complete", ""}).
 
 -behaviour(gen_mod).
 

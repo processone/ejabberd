@@ -24,7 +24,7 @@
 %%%----------------------------------------------------------------------
 -module(mod_muc).
 -author('alexey@process-one.net').
--protocol({xep, 45, '1.25'}).
+-protocol({xep, 45, '1.25', '0.5.0', "complete", ""}).
 -protocol({xep, 249, '1.2'}).
 -ifndef(GEN_SERVER).
 -define(GEN_SERVER, gen_server).

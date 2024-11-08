@@ -27,8 +27,8 @@
 
 -author('alexey@process-one.net').
 
--protocol({xep, 317, '0.1', '21.12', "", "conversejs/prosody compatible"}).
--protocol({xep, 410, '1.1.0', '18.12', "", ""}).
+-protocol({xep, 317, '0.1', '21.12', "complete", "conversejs/prosody compatible"}).
+-protocol({xep, 410, '1.1.0', '18.12', "complete", ""}).
 
 -behaviour(p1_fsm).
 

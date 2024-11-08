@@ -32,7 +32,7 @@
 
 -module(ejabberd_piefxis).
 
--protocol({xep, 227, '1.1'}).
+-protocol({xep, 227, '1.1', '2.1.0', "partial", ""}).
 
 -export([import_file/1, export_server/1, export_host/2]).
 

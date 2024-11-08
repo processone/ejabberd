@@ -28,7 +28,7 @@
 -behaviour(ejabberd_auth).
 -author('mickael.remond@process-one.net').
 
--protocol({xep, 175, '1.2'}).
+-protocol({xep, 175, '1.2', '1.1.0', "complete", ""}).
 
 -export([start/1,
 	 stop/1,

@@ -27,9 +27,9 @@
 
 -author('alexey@process-one.net').
 
--protocol({xep, 54, '1.2'}).
--protocol({xep, 55, '1.3'}).
--protocol({xep, 153, '1.1'}).
+-protocol({xep, 54, '1.2', '0.1.0', "complete", ""}).
+-protocol({xep, 55, '1.3', '0.1.0', "complete", ""}).
+-protocol({xep, 153, '1.1', '17.09', "complete", ""}).
 
 -behaviour(gen_server).
 -behaviour(gen_mod).

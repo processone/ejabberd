@@ -25,7 +25,7 @@
 
 -module(mod_jidprep).
 -author('holger@zedat.fu-berlin.de').
--protocol({xep, 328, '0.1', '19.09', "", ""}).
+-protocol({xep, 328, '0.1', '19.09', "complete", ""}).
 
 -behaviour(gen_mod).
 
