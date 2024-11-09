@@ -277,7 +277,11 @@ indent:
 
 JOIN_PATHS=$(if $(wordlist 2,1000,$(1)),$(firstword $(1))/$(call JOIN_PATHS,$(wordlist 2,1000,$(1))),$(1))
 
+ifdef INSTALL_NOT_VERSIONED_DEP
+VERSIONED_DEP=$(1)
+else
 VERSIONED_DEP=$(if $(DEP_$(1)_VERSION),$(DEP_$(1)_VERSION),$(1))
+endif
 
 DEPIX:=$(words $(subst /, ,$(DEPSDIR)))
 LIBIX:=$(shell expr "$(DEPIX)" + 2)
