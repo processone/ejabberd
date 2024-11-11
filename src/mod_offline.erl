@@ -306,7 +306,12 @@ c2s_copy_session(State, _) ->
     State.
 
 c2s_handle_bind2_inline({#{jid := #jid{luser = LUser, lserver = LServer}} = State, Els, Results}) ->
-    delete_all_msgs(LUser, LServer),
+    case mod_mam:is_archiving_enabled(LUser, LServer) of
+        true ->
+            delete_all_msgs(LUser, LServer);
+        false ->
+            ok
+    end,
     {State, Els, Results}.
 
 -spec handle_offline_query(iq()) -> iq().
