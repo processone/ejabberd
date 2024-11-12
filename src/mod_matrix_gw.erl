@@ -24,7 +24,7 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_matrix_gw).
--ifndef(OTP_BELOW_24).
+-ifndef(OTP_BELOW_25).
 
 -author('alexey@process-one.net').
 
@@ -883,7 +883,8 @@ mod_options(Host) ->
 
 mod_doc() ->
     #{desc =>
-          [?T("https://matrix.org/[Matrix] gateway.")],
+          [?T("https://matrix.org/[Matrix] gateway. "
+              "Erlang/OTP 25 or higher is required to use this module.")],
       note => "added in 24.02",
       example =>
 	  ["listen:",
