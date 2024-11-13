@@ -26,7 +26,6 @@
 -module(ejabberd_stun).
 -behaviour(ejabberd_listener).
 -protocol({rfc, 5766}).
--protocol({xep, 176, '1.0'}).
 
 -ifndef(STUN).
 -include("logger.hrl").
