@@ -81,6 +81,8 @@ jobs:
 
     - run: make xref
 
+    - run: make dialyzer
+
     - name: Prepare rel (rebar2)
       if: matrix.rebar == 'rebar'
       run: |
