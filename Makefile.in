@@ -3,8 +3,8 @@
 #
 
 ESCRIPT = @ESCRIPT@
-REBAR = @rebar@ # This rebar|rebar3|mix binary (or path to binary)
-REBAR3 = @REBAR3@ # This is path to rebar3 binary
+REBAR = @rebar@ # rebar|rebar3|mix binary (or path to binary)
+REBAR3 = @REBAR3@ # path to rebar3 binary
 MIX = @rebar@
 AWK = @AWK@
 INSTALL = @INSTALL@
