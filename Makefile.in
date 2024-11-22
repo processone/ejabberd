@@ -3,7 +3,8 @@
 #
 
 ESCRIPT = @ESCRIPT@
-REBAR = @rebar@
+REBAR = @rebar@ # This rebar|rebar3|mix binary (or path to binary)
+REBAR3 = @REBAR3@ # This is path to rebar3 binary
 MIX = @rebar@
 AWK = @AWK@
 INSTALL = @INSTALL@
@@ -266,7 +267,7 @@ _build/edoc/logo.png: edoc_compile
 #
 
 format:
-	tools/rebar3-format.sh $(REBAR)
+	tools/rebar3-format.sh $(REBAR3)
 
 indent:
 	tools/emacs-indent.sh
@@ -702,7 +703,7 @@ help:
 	@echo "  translations   Extract translation files"
 	@echo "  TAGS           Generate tags file for text editors"
 	@echo ""
-	@echo "  format         Format source code using rebar3_format [rebar3]"
+	@echo "  format         Format source code using rebar3_format"
 	@echo "  indent         Indent source code using erlang-mode [emacs]"
 	@echo ""
 	@echo "  dialyzer       Run Dialyzer static analyzer"
