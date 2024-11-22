@@ -57,6 +57,10 @@ init(Host, Opts) ->
 	    transient, 5000, worker, [?MODULE]},
     case supervisor:start_child(ejabberd_backend_sup, Spec) of
 	{ok, _Pid} -> ok;
+        %% Maybe started for a vhost which only wanted mnesia for ram
+        %% and this vhost wants mnesia for persitent storage too
+        {error, {already_started, _Pid}} ->
+            init([Host, Opts]);
 	Err -> Err
     end.
 
