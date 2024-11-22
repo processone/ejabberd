@@ -505,10 +505,15 @@ db_type(M) ->
     and_then(
       atom(),
       fun(T) ->
-	      case code:ensure_loaded(db_module(M, T)) of
-		  {module, _} -> T;
-		  {error, _} -> fail({bad_db_type, M, T})
-	      end
+        case code:ensure_loaded(db_module(M, T)) of
+          {module, _} -> T;
+          {error, _} ->
+            ElixirModule = "Elixir." ++ atom_to_list(T),
+            case code:ensure_loaded(list_to_atom(ElixirModule)) of
+              {module, _} -> list_to_atom(ElixirModule);
+              {error, _} -> fail({bad_db_type, M, T})
+            end
+          end
       end).
 
 -spec queue_type() -> yconf:validator(ram | file).
