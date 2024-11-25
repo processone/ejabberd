@@ -893,7 +893,7 @@ auth_modules() ->
 auth_modules(Server) ->
     LServer = jid:nameprep(Server),
     Methods = ejabberd_option:auth_method(LServer),
-    [ejabberd:module_name([<<"ejabberd">>, <<"auth">>,
+    [ejabberd:module_name([<<"auth">>,
 			   misc:atom_to_binary(M)])
      || M <- Methods].
 

@@ -177,6 +177,15 @@ module_name([Dir, _, <<H,_/binary>> | _] = Mod) when H >= 65, H =< 90 ->
 	Lib -> <<"Elixir.Ejabberd.", Lib/binary, ".">>
     end,
     misc:binary_to_atom(<<Prefix/binary, Module/binary>>);
+
+module_name([<<"auth">> | T] = Mod) ->
+    case hd(T) of
+        %% T already starts with "Elixir" if an Elixir module is
+        %% loaded with that name, as per `econf:db_type/1`
+        <<"Elixir", _/binary>> ->  misc:binary_to_atom(hd(T));
+        _ -> module_name([<<"ejabberd">>] ++ Mod)
+    end;
+
 module_name([<<"ejabberd">> | _] = Mod) ->
     Module = str:join([erlang_name(M) || M<-Mod], $_),
     misc:binary_to_atom(Module);
