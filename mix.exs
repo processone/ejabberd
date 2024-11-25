@@ -184,7 +184,9 @@ defmodule Ejabberd.MixProject do
   defp cond_apps do
     for {:true, app} <- [{config(:stun), :stun},
                          {if_version_below(~c"27", true), :jiffy},
-                         {config(:tools), :observer}], do:
+                         {config(:tools), :debugger},
+                         {config(:tools), :observer},
+                         {config(:tools), :wx}], do:
       app
   end
 
