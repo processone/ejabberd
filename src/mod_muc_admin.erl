@@ -160,6 +160,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = create_rooms_file, tags = [muc],
 		       desc = "Create the rooms indicated in file",
 		       longdesc = "Provide one room JID per line. Rooms will be created after restart.",
+                       note = "improved in 24.xx",
 		       module = ?MODULE, function = create_rooms_file,
 		       args_desc = ["Path to the text file with one room JID per line"],
 		       args_example = ["/home/ejabberd/rooms.txt"],
@@ -1245,11 +1246,23 @@ create_rooms_file(Filename) ->
     RJID = read_room(F),
     Rooms = read_rooms(F, RJID, []),
     file:close(F),
-    %% Read the default room options defined for the first virtual host
-    DefRoomOpts = mod_muc_opt:default_room_options(ejabberd_config:get_myname()),
-    [muc_create_room(ejabberd_config:get_myname(), A, DefRoomOpts) || A <- Rooms],
+    HostsDetails = get_hosts_details(Rooms),
+    [muc_create_room(HostsDetails, A) || A <- Rooms],
     ok.
 
+muc_create_room(HostsDetails, {_, Host, _} = RoomTuple) ->
+    {_Host, ServerHost, DefRoomOpts} = get_host_details(Host, HostsDetails),
+    muc_create_room(ServerHost, RoomTuple, DefRoomOpts).
+
+get_hosts_details(Rooms) ->
+    Hosts = lists:uniq([Host || {_, Host, _} <- Rooms]),
+    lists:map(fun(H) ->
+                      SH = get_room_serverhost(H),
+                      {H, SH, mod_muc_opt:default_room_options(SH)}
+              end, Hosts).
+
+get_host_details(Host, ServerHostsDetails) ->
+    lists:keyfind(Host, 1, ServerHostsDetails).
 
 %%---------------------------------
 %% List/Delete Unused/Empty Rooms
