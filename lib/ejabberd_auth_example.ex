@@ -1,22 +1,27 @@
-defmodule ModAuthExample do
+defmodule Ejabberd.Auth.Example do
+
   @moduledoc """
+  Example ejabberd auth method written in Elixir.
 
-  This is a dummy auth module to demonstrate the usage of Elixir to
-  create Ejabberd Auth modules.
+  This is an example to demonstrate the usage of Elixir to
+  create ejabberd auth methods.
 
+  Example configuration:
+      auth_method: 'Ejabberd.Auth.Example'
   """
-  import Ejabberd.Logger
+
   @behaviour :ejabberd_auth
+  import Ejabberd.Logger
 
   @impl true
   def start(host) do
-    info("Using mod_auth_example to authenticate #{host} users")
+    info("Starting Ejabberd.Auth.Example to authenticate '#{host}' users")
     nil
   end
 
   @impl true
   def stop(host) do
-    info("Stop using mod_auth_example to authenticate #{host} users")
+    info("Stopping Ejabberd.Auth.Example to authenticate '#{host}' users")
     nil
   end
 

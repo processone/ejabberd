@@ -1,14 +1,27 @@
-defmodule ModPresenceDemo do
-  use Ejabberd.Module
+defmodule Ejabberd.Module.Example do
+
+  @moduledoc """
+  Example ejabberd module written in Elixir.
+
+  This is an example to demonstrate the usage of Elixir to
+  create ejabberd modules.
+
+  Example configuration:
+      modules:
+        'Ejabberd.Module.Example': {}
+  """
+
+  @behaviour :gen_mod
+  import Ejabberd.Logger
 
   def start(host, _opts) do
-    info("Starting ejabberd module Presence Demo")
+    info("Starting Ejabberd.Module.Example for host '#{host}'")
     Ejabberd.Hooks.add(:set_presence_hook, host, __MODULE__, :on_presence, 50)
     :ok
   end
 
   def stop(host) do
-    info("Stopping ejabberd module Presence Demo")
+    info("Stopping Ejabberd.Module.Example for host '#{host}'")
     Ejabberd.Hooks.delete(:set_presence_hook, host, __MODULE__, :on_presence, 50)
     :ok
   end
