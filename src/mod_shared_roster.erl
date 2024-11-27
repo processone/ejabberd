@@ -494,7 +494,8 @@ get_online_users(Host) ->
     lists:usort([{U, S}
 		 || {U, S, _} <- ejabberd_sm:get_vh_session_list(Host)]).
 
-get_group_users_cached(Host, Group, Cache) ->
+get_group_users_cached(Host1, Group1, Cache) ->
+    {Host, Group} = split_grouphost(Host1, Group1),
     {Opts, _} = get_groups_opts_cached(Host, Group, Cache),
     get_group_users(Host, Group, Opts).
 
