@@ -2289,9 +2289,9 @@ make_result(Binary,
                misc:url_encode(First), "%40", "@")),
     {GroupId, Host} =
         case jid:decode(FirstUrlencoded) of
-            #jid{luser = <<"">>, lserver = G} ->
+            #jid{luser = <<"">>, server = G} ->
                 {G, Second};
-            #jid{luser = G, lserver = H} ->
+            #jid{user = G, lserver = H} ->
                 {G, H}
         end,
     UrlBinary =
