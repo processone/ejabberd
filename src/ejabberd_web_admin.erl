@@ -2285,7 +2285,7 @@ make_result(Binary,
     First = proplists:get_value(first, ArgumentsUsed),
     Second = proplists:get_value(second, ArgumentsUsed),
     FirstUrlencoded =
-        hd(string:replace(
+        list_to_binary(string:replace(
                misc:url_encode(First), "%40", "@")),
     {GroupId, Host} =
         case jid:decode(FirstUrlencoded) of
