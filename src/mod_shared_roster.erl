@@ -381,6 +381,19 @@ create_group(Host, Group) ->
     create_group(Host, Group, []).
 
 create_group(Host, Group, Opts) ->
+    case jid:nodeprep(Group) of
+	error ->
+	    {error, invalid_group_name};
+	LGroup ->
+	    case jid:nameprep(Host) of
+		error ->
+		    {error, invalid_group_host};
+		LHost ->
+		    create_group2(LHost, LGroup, Opts)
+	    end
+    end.
+
+create_group2(Host, Group, Opts) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
     case proplists:get_value(all_users, Opts, false) orelse
 	 proplists:get_value(online_users, Opts, false) of
