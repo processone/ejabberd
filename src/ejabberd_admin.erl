@@ -268,6 +268,16 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = join_cluster, tags = [cluster],
 			desc = "Join our local node into the cluster handled by Node",
+			longdesc = "This command returns immediately,
+			even before the joining process has
+			completed. Consequently, if you are using
+			`ejabberdctl` (or some `CTL_ON_` container
+			environment variables) to run more commands
+			afterwards, you may want to precede them with
+			the _`started`_ command to ensure the
+			clustering process has completed before
+			proceeding. For example: `join_cluster
+			ejabberd@main` > `started` > `list_cluster`.",
 			note = "improved in 24.06",
 			module = ?MODULE, function = join_cluster,
 			args_desc = ["Nodename of the node to join"],
