@@ -56,15 +56,15 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include_lib("kernel/include/file.hrl").
 
+-ifdef(OTP_BELOW_27).
 %% Copied from erlang/otp/lib/stdlib/src/re.erl
 -type re_mp() :: {re_pattern, _, _, _, _}.
--export_type([re_mp/0]).
-
--ifdef(OTP_BELOW_27).
 -type json_value() :: jiffy:json_value().
 -else.
+-type re_mp() :: re:mp().
 -type json_value() :: json:encode_value().
 -endif.
+-export_type([re_mp/0]).
 -export_type([json_value/0]).
 
 -type distance_cache() :: #{{string(), string()} => non_neg_integer()}.
