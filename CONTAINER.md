@@ -234,6 +234,30 @@ Example usage (or check the [full example](#customized-example)):
 ```
 
 
+### Macros in environment
+
+ejabberd reads `EJABBERD_MACRO_*` environment variables
+and uses them to define the `*`
+[macros](https://docs.ejabberd.im/admin/configuration/file-format/#macros-in-configuration-file),
+overwriting the corresponding macro definition if it was set in the configuration file.
+
+For example, if you configure this in `ejabberd.yml`:
+
+```yaml
+acl:
+  admin:
+    user: ADMINJID
+```
+
+now you can define the admin account JID using an environment variable:
+```yaml
+    environment:
+      - EJABBERD_MACRO_ADMINJID=admin@localhost
+```
+
+Check the [full example](#customized-example) for other example.
+
+
 ### Clustering
 
 When setting several containers to form a
@@ -371,6 +395,7 @@ docker-compose up
 
 This example shows the usage of several customizations:
 it uses a local configuration file,
+defines a configuration macro using an environment variable,
 stores the mnesia database in a local path,
 registers an account when it's created,
 and checks the number of registered accounts every time it's started.
@@ -379,6 +404,14 @@ Download or copy the ejabberd configuration file:
 ```bash
 wget https://raw.githubusercontent.com/processone/ejabberd/master/ejabberd.yml.example
 mv ejabberd.yml.example ejabberd.yml
+```
+
+Use a macro in `ejabberd.yml` to set the served vhost, with `localhost` as default value:
+```bash
+define_macro:
+  XMPPHOST: localhost
+hosts:
+  - XMPPHOST
 ```
 
 Create the database directory and allow the container access to it:
@@ -397,8 +430,9 @@ services:
     image: ghcr.io/processone/ejabberd
     container_name: ejabberd
     environment:
-      - CTL_ON_CREATE=register admin localhost asd
-      - CTL_ON_START=registered_users localhost ;
+      - EJABBERD_MACRO_XMPPHOST=example.com
+      - CTL_ON_CREATE=register admin example.com asd
+      - CTL_ON_START=registered_users example.com ;
                      status
     ports:
       - "5222:5222"

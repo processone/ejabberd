@@ -516,8 +516,23 @@ read_file(File, Opts) ->
 	    Err
     end.
 
+get_additional_macros() ->
+    MacroStrings = lists:foldl(fun([$E, $J, $A, $B, $B, $E, $R, $D, $_, $M, $A, $C, $R, $O, $_ | MacroString], Acc) ->
+                                        [parse_macro_string(MacroString) | Acc];
+                                   (_, Acc) ->
+                                        Acc
+                                end,
+                                [],
+                                os:getenv()),
+    {additional_macros, MacroStrings}.
+
+parse_macro_string(MacroString) ->
+    [NameString, ValueString] = string:split(MacroString, "="),
+    {ok, [ValueDecoded]} = fast_yaml:decode(ValueString, [plain_as_atom]),
+    {list_to_atom(NameString), ValueDecoded}.
+
 read_yaml_files(Files, Opts) ->
-    ParseOpts = [plain_as_atom | lists:flatten(Opts)],
+    ParseOpts = [plain_as_atom, get_additional_macros() | lists:flatten(Opts)],
     lists:foldl(
       fun(File, {ok, Y1}) ->
 	      case econf:parse(File, #{'_' => econf:any()}, ParseOpts) of
