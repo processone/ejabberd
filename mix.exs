@@ -166,7 +166,7 @@ defmodule Ejabberd.MixProject do
                           {:ejabberd_po, git: "https://github.com/processone/ejabberd-po.git"}},
                          {Mix.env() == :dev,
                           {:exsync, "~> 0.2", optional: true, runtime: false}},
-                         {config(:redis), {:eredis, "~> 1.2.0"}},
+                         {config(:redis), {:eredis, "~> 1.7.1"}},
                          {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {if_version_above(~c"23", true), {:jose, "~> 1.11.10"}},

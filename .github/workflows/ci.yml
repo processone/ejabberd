@@ -107,6 +107,10 @@ jobs:
           ~/.cache/rebar3/
         key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
 
+    - name: Get compatible Rebar binaries
+      if: matrix.otp < 21
+      run: ./rebar3 unlock eredis
+
     - name: Download test logs
       if: matrix.otp == '26' && github.repository == 'processone/ejabberd'
       continue-on-error: true
