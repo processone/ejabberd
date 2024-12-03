@@ -2283,7 +2283,9 @@ web_page_node(_, Node, #request{path = [<<"stats">>]} = R) ->
                               ejabberd_web_admin,
                               make_command,
                               [stats, R, [{<<"name">>, <<"uptimeseconds">>}], [{only, value}]]),
-    UpDaysBin = integer_to_binary(binary_to_integer(fxml:get_tag_cdata(UpSecs)) div 24000),
+    UpDaysBin = integer_to_binary(
+                  binary_to_integer(fxml:get_tag_cdata(UpSecs))
+                  div 86400), % 24*60*60
     UpDays =
         #xmlel{name = <<"code">>,
                attrs = [],
