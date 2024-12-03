@@ -457,11 +457,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 -spec connect(state()) -> {ok, pid()} | {error, any()}.
 connect(#state{num = Num}) ->
-    Server = ejabberd_option:redis_server(),
+    Server1 = ejabberd_option:redis_server(),
     Port = ejabberd_option:redis_port(),
     DB = ejabberd_option:redis_db(),
     Pass = ejabberd_option:redis_password(),
     ConnTimeout = ejabberd_option:redis_connect_timeout(),
+    Server = parse_server(Server1),
     try case do_connect(Num, Server, Port, Pass, DB, ConnTimeout) of
 	    {ok, Client} ->
 		?DEBUG("Connection #~p established to Redis at ~ts:~p",
@@ -480,6 +481,11 @@ connect(#state{num = Num}) ->
 	    erlang:send_after(timer:seconds(Timeout), self(), connect),
 	    {error, Reason}
     end.
+
+parse_server([$u,$n,$i,$x,$: | Path]) ->
+    {local, Path};
+parse_server(Server) ->
+    Server.
 
 do_connect(1, Server, Port, Pass, _DB, _ConnTimeout) ->
     %% First connection in the pool is always a subscriber

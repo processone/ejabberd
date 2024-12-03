@@ -1137,11 +1137,13 @@ doc() ->
                "The default value is the value defined in _`queue_type`_ "
                "or 'ram' if the latter is not set.")}},
      {redis_server,
-      #{value => ?T("Hostname"),
+      #{value => "Host | IP Address | Unix Socket Path",
+        note => "improved in 24.xx",
         desc =>
-            ?T("A hostname or an IP address of the "
-               "_`database.md#redis|Redis`_ server."
-               "The default is 'localhost'.")}},
+            ?T("A hostname, IP address or unix domain socket file of the "
+               "_`database.md#redis|Redis`_ server. "
+               "Setup the path to unix domain socket like: '\"unix:/path/to/socket\"'. "
+               "The default value is 'localhost'.")}},
      {registration_timeout,
       #{value => "timeout()",
         desc =>
@@ -1434,7 +1436,7 @@ doc() ->
             ?T("The hostname or IP address of the SQL server. For _`sql_type`_ "
                "'mssql' or 'odbc' this can also be an ODBC connection string. "
                "When _`sql_type`_ is 'mysql' or 'pgsql', this can be the path to "
-               "a unix domain socket expressed like: \"unix:/path/to/socket\"."
+               "a unix domain socket expressed like: '\"unix:/path/to/socket\"'."
                "The default value is 'localhost'.")}},
      {sql_ssl,
       #{value => "true | false",
