@@ -69,6 +69,7 @@
 		default_host,
 		custom_headers,
 		trail = <<>>,
+		allow_unencrypted_sasl2,
 		addr_re,
 		sock_peer_name = none
 	       }).
@@ -133,10 +134,12 @@ init(SockMod, Socket, Opts) ->
 
     CustomHeaders = proplists:get_value(custom_headers, Opts, []),
 
+    AllowUnencryptedSasl2 = proplists:get_bool(allow_unencrypted_sasl2, Opts),
     State = #state{sockmod = SockMod1,
                    socket = Socket1,
 		   custom_headers = CustomHeaders,
 		   options = Opts,
+		   allow_unencrypted_sasl2 = AllowUnencryptedSasl2,
 		   request_handlers = RequestHandlers,
 		   sock_peer_name = SockPeer,
 		   addr_re = RE},
@@ -916,6 +919,8 @@ normalize_path([Part | Path], Norm) ->
 
 listen_opt_type(tag) ->
     econf:binary();
+listen_opt_type(allow_unencrypted_sasl2) ->
+    econf:bool();
 listen_opt_type(request_handlers) ->
     econf:map(
       econf:and_then(
@@ -941,6 +946,7 @@ listen_options() ->
      {protocol_options, undefined},
      {tls, false},
      {tls_compression, false},
+     {allow_unencrypted_sasl2, false},
      {request_handlers, []},
      {tag, <<>>},
      {default_host, undefined},

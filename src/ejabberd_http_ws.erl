@@ -122,6 +122,7 @@ init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
                                ({max_ack_queue, _}) -> true;
                                ({ack_timeout, _}) -> true;
                                ({resume_timeout, _}) -> true;
+                               ({allow_unencrypted_sasl2, _}) -> true;
                                ({max_resume_timeout, _}) -> true;
                                ({resend_on_timeout, _}) -> true;
                                ({access, _}) -> true;
