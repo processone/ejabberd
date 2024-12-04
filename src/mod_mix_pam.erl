@@ -227,7 +227,7 @@ get_mix_roster_items(Acc, {LUser, LServer}) ->
                         name = <<>>,
                         subscription = both,
                         ask = undefined,
-                        groups = [<<"Channels">>],
+                        groups = [],
                         mix_channel = #mix_roster_channel{participant_id = Id}
                     }
                 end, Channels);
