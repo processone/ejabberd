@@ -483,14 +483,26 @@ connect(#state{num = Num}) ->
 
 do_connect(1, Server, Port, Pass, _DB, _ConnTimeout) ->
     %% First connection in the pool is always a subscriber
-    Res = eredis_sub:start_link(Server, Port, Pass, no_reconnect, infinity, drop),
+    Options = [{host, Server},
+               {port, Port},
+               {password, Pass},
+               {reconnect_sleep, no_reconnect},
+               {max_queue_size, infinity},
+               {queue_behaviour, drop}],
+    Res = eredis_sub:start_link(Options),
     case Res of
 	{ok, Pid} -> eredis_sub:controlling_process(Pid);
 	_ -> ok
     end,
     Res;
 do_connect(_, Server, Port, Pass, DB, ConnTimeout) ->
-    eredis:start_link(Server, Port, DB, Pass, no_reconnect, ConnTimeout).
+    Options = [{host, Server},
+               {port, Port},
+               {database, DB},
+               {password, Pass},
+               {reconnect_sleep, no_reconnect},
+               {connect_timeout, ConnTimeout}],
+    eredis:start_link(Options).
 
 -spec call(pos_integer(), {q, redis_command()}, integer()) ->
 		  {ok, redis_reply()} | redis_error();
