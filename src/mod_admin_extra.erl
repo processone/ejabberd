@@ -274,9 +274,9 @@ get_commands_spec() ->
 			longdesc = "This command kicks the account sessions, "
                         "sets a random password, and stores ban details in the "
                         "account private storage. "
-                        "This command requires mod_private to be enabled. "
+                        "This command requires _`mod_private`_ to be enabled. "
                         "Check also _`get_ban_details`_ API "
-                        "and `_unban_account`_ API.",
+                        "and _`unban_account`_ API.",
 			module = ?MODULE, function = ban_account_v2,
 			version = 2,
 			note = "improved in 24.06",
@@ -2326,22 +2326,22 @@ mod_doc() ->
     #{desc =>
           [?T("This module provides additional administrative commands."), "",
            ?T("Details for some commands:"), "",
-           ?T("- 'ban_account':"),
+           ?T("_`ban_account`_ API:"),
            ?T("This command kicks all the connected sessions of the account "
 	      "from the server. It also changes their password to a randomly "
 	      "generated one, so they can't login anymore unless a server "
 	      "administrator changes their password again. It is possible to "
 	      "define the reason of the ban. The new password also includes "
-	      "the reason and the date and time of the ban. See an example below."),
-           ?T("- 'pushroster': (and 'pushroster-all')"),
+	      "the reason and the date and time of the ban. See an example below."), "",
+           ?T("_`push_roster`_ API (and _`push_roster_all`_ API):"),
            ?T("The roster file must be placed, if using Windows, on the "
 	      "directory where you installed ejabberd: "
 	      "`C:/Program Files/ejabberd` or similar. If you use other "
 	      "Operating System, place the file on the same directory where "
-	      "the .beam files are installed. See below an example roster file."),
-           ?T("- 'srg_create':"),
+	      "the .beam files are installed. See below an example roster file."), "",
+           ?T("_`srg_create`_ API:"),
            ?T("If you want to put a group Name with blank spaces, use the "
-	      "characters \"\' and \'\" to define when the Name starts and "
+	      "characters '\"\'' and '\'\"' to define when the Name starts and "
 	      "ends. See an example below.")],
       example =>
 	  [{?T("With this configuration, vCards can only be modified with "
@@ -2356,14 +2356,14 @@ mod_doc() ->
 	     "  mod_admin_extra: {}",
 	     "  mod_vcard:",
 	     "    access_set: vcard_set"]},
-	   {?T("Content of roster file for 'pushroster' command:"),
+	   {?T("Content of roster file for _`push_roster`_ API:"),
 	    ["[{<<\"bob\">>, <<\"example.org\">>, <<\"workers\">>, <<\"Bob\">>},",
 	     "{<<\"mart\">>, <<\"example.org\">>, <<\"workers\">>, <<\"Mart\">>},",
 	     "{<<\"Rich\">>, <<\"example.org\">>, <<\"bosses\">>, <<\"Rich\">>}]."]},
 	   {?T("With this call, the sessions of the local account which JID is "
-	      "boby@example.org will be kicked, and its password will be set "
+	      "'boby@example.org' will be kicked, and its password will be set "
 	      "to something like "
 	      "'BANNED_ACCOUNT--20080425T21:45:07--2176635--Spammed_rooms'"),
 	    ["ejabberdctl vhost example.org ban_account boby \"Spammed rooms\""]},
-	   {?T("Call to srg_create using double-quotes and single-quotes:"),
+	   {?T("Call to _`srg_create`_ API using double-quotes and single-quotes:"),
 	    ["ejabberdctl srg_create g1 example.org \"\'Group number 1\'\" this_is_g1 g1"]}]}.

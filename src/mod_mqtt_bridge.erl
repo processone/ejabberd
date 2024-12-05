@@ -179,24 +179,35 @@ mod_doc() ->
       example =>
       ["modules:",
        "  mod_mqtt_bridge:",
+       "    replication_user: \"mqtt@xmpp.server.com\"",
        "    servers:",
        "      \"mqtt://server.com\":",
+       "        authentication:",
+       "          certfile: \"/etc/ejabberd/mqtt_server.pem\"",
        "        publish:",
        "          \"localA\": \"remoteA\" # local changes to 'localA' will be replicated on remote server as 'remoteA'",
        "          \"topicB\": \"topicB\"",
        "        subscribe:",
-       "          \"remoteB\": \"localB\" # changes to 'remoteB' on remote server will be stored as 'localB' on local server",
-       "        authentication:",
-       "          certfile: \"/etc/ejabberd/mqtt_server.pem\"",
-       "    replication_user: \"mqtt@xmpp.server.com\""],
+       "          \"remoteB\": \"localB\" # changes to 'remoteB' on remote server will be stored as 'localB' on local server"],
       opts =>
       [{servers,
-	#{value => "{ServerUrl: {publish: [TopicPairs], subscribe: [TopicPairs], authentication: [AuthInfo]}}",
+	#{value => "{ServerUrl: {Key: Value}}",
 	  desc =>
-	  ?T("Declaration of data to share, must contain 'publish' or 'subscribe' or both, and 'authentication' "
-	     "section with username/password field or certfile pointing to client certificate. "
-	     "Accepted urls can use schema mqtt, mqtts (mqtt with tls), mqtt5, mqtt5s (both to trigger v5 protocol), "
-	      "ws, wss, ws5, wss5. Certificate authentication can be only used with mqtts, mqtt5s, wss, wss5.")}},
+	  ?T("Declaration of data to share for each ServerUrl. "
+	     "Server URLs can use schemas: 'mqtt', 'mqtts' (mqtt with tls), 'mqtt5', "
+             "'mqtt5s' (both to trigger v5 protocol), 'ws', 'wss', 'ws5', 'wss5'. "
+             "Keys must be:")},
+        [{authentication,
+          #{value => "{AuthKey: AuthValue}",
+            desc => ?T("List of authentication information, where AuthKey can be: "
+                       "'username' and 'password' fields, or 'certfile' pointing to client certificate. "
+                       "Certificate authentication can be used only with mqtts, mqtt5s, wss, wss5.")}},
+         {publish,
+          #{value => "{LocalTopic: RemoteTopic}",
+            desc => ?T("Either publish or subscribe must be set, or both.")}},
+         {subscribe,
+          #{value => "{RemoteTopic: LocalTopic}",
+            desc => ?T("Either publish or subscribe must be set, or both.")}}]},
        {replication_user,
 	#{value => "JID",
 	  desc =>

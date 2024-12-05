@@ -297,7 +297,7 @@ get_commands_spec() ->
 			longdesc = "This command can be run from any running "
 			"node of the cluster, even the node to be removed. "
 			"In the removed node, this command works only when "
-			"using ejabberdctl, not mod_http_api or other code that "
+			"using ejabberdctl, not _`mod_http_api`_ or other code that "
 			"runs inside the same ejabberd node that will leave.",
 			module = ?MODULE, function = leave_cluster,
 			args_desc = ["Nodename of the node to kick from the cluster"],

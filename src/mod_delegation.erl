@@ -117,7 +117,7 @@ mod_doc() ->
 	  [{?T("Make sure you do not delegate the same namespace to several "
 	       "services at the same time. As in the example provided later, "
 	       "to have the 'sat-pubsub.example.org' component perform "
-	       "correctly disable the 'mod_pubsub' module."),
+	       "correctly disable the _`mod_pubsub`_ module."),
           ["access_rules:",
            "  external_pubsub:",
            "    allow: external_component",

@@ -269,5 +269,5 @@ mod_doc() ->
           [?T("The module implements "
               "https://xmpp.org/extensions/xep-0191.html"
               "[XEP-0191: Blocking Command]."), "",
-           ?T("This module depends on 'mod_privacy' where "
+           ?T("This module depends on _`mod_privacy`_ where "
               "all the configuration is performed.")]}.

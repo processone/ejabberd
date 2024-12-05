@@ -243,14 +243,14 @@ mod_doc() ->
               desc =>
                   ?T("This option defines the Jabber IDs of the service. "
                      "If the 'hosts' option is not specified, the only Jabber ID will "
-                     "be the hostname of the virtual host with the prefix \"upload.\". "
+                     "be the hostname of the virtual host with the prefix '\"upload.\"'. "
                      "The keyword '@HOST@' is replaced with the real virtual host name.")}},
            {name,
             #{value => ?T("Name"),
               desc =>
                   ?T("A name of the service in the Service Discovery. "
-                     "This will only be displayed by special XMPP clients. "
-                     "The default value is \"HTTP File Upload\".")}},
+                     "The default value is '\"HTTP File Upload\"'. "
+                     "Please note this will only be displayed by some XMPP clients.")}},
            {access,
             #{value => ?T("AccessName"),
               desc =>
@@ -270,7 +270,7 @@ mod_doc() ->
               desc =>
                   ?T("This option defines the length of the random "
                      "string included in the GET and PUT URLs generated "
-                     "by 'mod_http_upload'. The minimum length is 8 characters, "
+                     "by 'mod_http_upload'. The minimum length is '8' characters, "
                      "but it is recommended to choose a larger value. "
                      "The default value is '40'.")}},
            {jid_in_url,
@@ -293,8 +293,8 @@ mod_doc() ->
             #{value => ?T("Permission"),
               desc =>
                   ?T("This option defines the permission bits of uploaded files. "
-                     "The bits are specified as an octal number (see the chmod(1) "
-                     "manual page) within double quotes. For example: \"0644\". "
+                     "The bits are specified as an octal number (see the 'chmod(1)' "
+                     "manual page) within double quotes. For example: '\"0644\"'. "
                      "The default is undefined, which means no explicit permissions "
                      "will be set.")}},
            {dir_mode,
@@ -302,8 +302,8 @@ mod_doc() ->
               desc =>
                   ?T("This option defines the permission bits of the 'docroot' "
                      "directory and any directories created during file uploads. "
-                     "The bits are specified as an octal number (see the chmod(1) "
-                     "manual page) within double quotes. For example: \"0755\". "
+                     "The bits are specified as an octal number (see the 'chmod(1)' "
+                     "manual page) within double quotes. For example: '\"0755\"'. "
                      "The default is undefined, which means no explicit permissions "
                      "will be set.")}},
            {docroot,
@@ -311,26 +311,26 @@ mod_doc() ->
               desc =>
                   ?T("Uploaded files are stored below the directory specified "
                        "(as an absolute path) with this option. The keyword "
-                     "@HOME@ is replaced with the home directory of the user "
-                     "running ejabberd, and the keyword @HOST@ with the virtual "
-                     "host name. The default value is \"@HOME@/upload\".")}},
+                     "'@HOME@' is replaced with the home directory of the user "
+                     "running ejabberd, and the keyword '@HOST@' with the virtual "
+                     "host name. The default value is '\"@HOME@/upload\"'.")}},
            {put_url,
             #{value => ?T("URL"),
               desc =>
                   ?T("This option specifies the initial part of the PUT URLs "
-                     "used for file uploads. The keyword @HOST@ is replaced "
+                     "used for file uploads. The keyword '@HOST@' is replaced "
                      "with the virtual host name. NOTE: different virtual "
                      "hosts cannot use the same PUT URL. "
-                     "The default value is \"https://@HOST@:5443/upload\".")}},
+                     "The default value is '\"https://@HOST@:5443/upload\"'.")}},
            {get_url,
             #{value => ?T("URL"),
               desc =>
                   ?T("This option specifies the initial part of the GET URLs "
                      "used for downloading the files. The default value is 'undefined'. "
                      "When this option is 'undefined', this option is set "
-                     "to the same value as 'put_url'. The keyword @HOST@ is "
+                     "to the same value as 'put_url'. The keyword '@HOST@' is "
                      "replaced with the virtual host name. NOTE: if GET requests "
-                     "are handled by 'mod_http_upload', the 'get_url' must match the "
+                     "are handled by this module, the 'get_url' must match the "
                      "'put_url'. Setting it to a different value only makes "
                      "sense if an external web server or _`mod_http_fileserver`_ "
                      "is used to serve the uploaded files.")}},
@@ -349,9 +349,9 @@ mod_doc() ->
                      "Upload processing to a separate HTTP server. "
                      "Both ejabberd and the HTTP server should share this "
                      "secret and behave exactly as described at "
-                     "https://modules.prosody.im/mod_http_upload_external.html"
-                     "[Prosody's mod_http_upload_external] in the "
-                     "'Implementation' section. There is no default value.")}},
+                     "https://modules.prosody.im/mod_http_upload_external.html#implementation"
+                     "[Prosody's mod_http_upload_external: Implementation]. "
+                     "There is no default value.")}},
            {rm_on_unregister,
             #{value => "true | false",
               desc =>

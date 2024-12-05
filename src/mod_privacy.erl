@@ -895,8 +895,8 @@ mod_doc() ->
            ?T("NOTE: Nowadays modern XMPP clients rely on "
               "https://xmpp.org/extensions/xep-0191.html"
               "[XEP-0191: Blocking Command] which is implemented by "
-              "'mod_blocking' module. However, you still need "
-              "'mod_privacy' loaded in order for _`mod_blocking`_ to work.")],
+              "_`mod_blocking`_. However, you still need "
+              "'mod_privacy' loaded in order for 'mod_blocking' to work.")],
       opts =>
           [{db_type,
             #{value => "mnesia | sql",

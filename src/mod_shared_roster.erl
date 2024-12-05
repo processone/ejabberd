@@ -1343,7 +1343,7 @@ mod_doc() ->
 	      "contacts are merged to the relevant users at retrieval time. "
 	      "The standard user rosters thus stay unmodified."), "",
 	   ?T("Shared roster groups can be edited via the Web Admin, "
-	      "and some API commands called 'srg_*'. "
+	      "and some API commands called 'srg_', for example _`srg_add`_ API. "
 	      "Each group has a unique name and those parameters:"), "",
 	   ?T("- Label: Used in the rosters where this group is displayed."),"",
 	   ?T("- Description: of the group, which has no effect."), "",

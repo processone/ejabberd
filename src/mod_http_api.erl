@@ -561,10 +561,10 @@ mod_doc() ->
 	      "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
               "_`listen-options.md#request_handlers|request_handlers`_."), "",
 	   ?T("To use a specific API version N, when defining the URL path "
-	      "in the request_handlers, add a 'vN'. "
-	      "For example: '/api/v2: mod_http_api'"), "",
+	      "in the request_handlers, add a vN. "
+	      "For example: '/api/v2: mod_http_api'."), "",
 	   ?T("To run a command, send a POST request to the corresponding "
-	      "URL: 'http://localhost:5280/api/<command_name>'")],
+	      "URL: 'http://localhost:5280/api/COMMAND-NAME'")],
      example =>
          ["listen:",
           "  -",

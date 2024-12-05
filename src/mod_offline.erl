@@ -1184,10 +1184,8 @@ mod_doc() ->
               "again. Thus it is very similar to how email works. A user "
               "is considered offline if no session presence priority > 0 "
               "are currently open."), "",
-           ?T("NOTE: 'ejabberdctl' has a command to "
-              "delete expired messages (see chapter "
-              "_`../guide/managing.md|Managing an ejabberd server`_ "
-              "in online documentation.")],
+           ?T("The _`delete_expired_messages`_ API allows to delete expired messages, "
+              "and _`delete_old_messages`_ API deletes older ones.")],
       opts =>
           [{access_max_user_messages,
             #{value => ?T("AccessName"),
@@ -1196,16 +1194,16 @@ mod_doc() ->
                      "enforced to limit the maximum number of offline "
                      "messages that a user can have (quota). When a user "
                      "has too many offline messages, any new messages that "
-                     "they receive are discarded, and a <resource-constraint/> "
+                     "they receive are discarded, and a '<resource-constraint/>' "
                      "error is returned to the sender. The default value is "
                      "'max_user_offline_messages'.")}},
            {store_empty_body,
             #{value => "true | false | unless_chat_state",
               desc =>
-                  ?T("Whether or not to store messages that lack a <body/> "
+                  ?T("Whether or not to store messages that lack a '<body/>' "
                      "element. The default value is 'unless_chat_state', "
                      "which tells ejabberd to store messages even if they "
-                     "lack the <body/> element, unless they only contain a "
+                     "lack the '<body/>' element, unless they only contain a "
                      "chat state notification (as defined in "
                      "https://xmpp.org/extensions/xep-0085.html"
                      "[XEP-0085: Chat State Notifications].")}},
@@ -1217,8 +1215,8 @@ mod_doc() ->
            {use_mam_for_storage,
             #{value => "true | false",
               desc =>
-                  ?T("This is an experimental option. Enabling this option, "
-                     "'mod_offline' uses the 'mod_mam' archive table instead "
+                  ?T("This is an experimental option. By enabling the option, "
+                     "this module uses the 'archive' table from _`mod_mam`_ instead "
                      "of its own spool table to retrieve the messages received "
                      "when the user was offline. This allows client "
                      "developers to slowly drop XEP-0160 and rely on XEP-0313 "

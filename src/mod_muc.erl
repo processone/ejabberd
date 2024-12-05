@@ -1497,12 +1497,12 @@ mod_doc() ->
                   ?T("A small history of the current discussion is sent to users "
                      "when they enter the room. With this option you can define the "
                      "number of history messages to keep and send to users joining the room. "
-                     "The value is a non-negative integer. Setting the value to 0 disables "
+                     "The value is a non-negative integer. Setting the value to '0' disables "
                      "the history feature and, as a result, nothing is kept in memory. "
-                     "The default value is 20. This value affects all rooms on the service. "
+                     "The default value is '20'. This value affects all rooms on the service. "
                      "NOTE: modern XMPP clients rely on Message Archives (XEP-0313), so feel "
                      "free to disable the history feature if you're only using modern clients "
-                     "and have 'mod_mam' module loaded.")}},
+                     "and have _`mod_mam`_ module loaded.")}},
            {host, #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
            {hosts,
             #{value => ?T("[Host, ...]"),
@@ -1593,7 +1593,7 @@ mod_doc() ->
                      "When this option is not defined, message rate is not limited. "
                      "This feature can be used to protect a MUC service from occupant "
                      "abuses and limit number of messages that will be broadcasted by "
-                     "the service. A good value for this minimum message interval is 0.4 second. "
+                     "the service. A good value for this minimum message interval is '0.4' second. "
                      "If an occupant tries to send messages faster, an error is send back "
                      "explaining that the message has been discarded and describing the "
                      "reason why the message is not acceptable.")}},
@@ -1610,7 +1610,7 @@ mod_doc() ->
                      "the presence is cached by ejabberd and only the last presence "
                      "is broadcasted to all occupants in the room after expiration "
                      "of the interval delay. Intermediate presence packets are "
-                     "silently discarded. A good value for this option is 4 seconds.")}},
+                     "silently discarded. A good value for this option is '4' seconds.")}},
            {queue_type,
             #{value => "ram | file",
               desc =>
@@ -1843,7 +1843,7 @@ mod_doc() ->
                     ?T("Maximum number of occupants in the room. "
                        "The default value is '200'.")}},
              {presence_broadcast,
-              #{value => "[moderator | participant | visitor, ...]",
+              #{value => "[Role]",
                 desc =>
                     ?T("List of roles for which presence is broadcasted. "
                        "The list can contain one or several of: 'moderator', "

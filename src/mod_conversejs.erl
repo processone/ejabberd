@@ -256,9 +256,8 @@ mod_doc() ->
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
               "_`listen-options.md#request_handlers|request_handlers`_."), "",
-           ?T("Make sure either 'mod_bosh' or 'ejabberd_http_ws' "
-              "_`listen-options.md#request_handlers|request_handlers`_ "
-              "are enabled."), "",
+           ?T("Make sure either _`mod_bosh`_ or _`listen.md#ejabberd_http_ws|ejabberd_http_ws`_ "
+              "are enabled in at least one 'request_handlers'."), "",
            ?T("When 'conversejs_css' and 'conversejs_script' are 'auto', "
               "by default they point to the public Converse client.")
           ],
@@ -308,7 +307,7 @@ mod_doc() ->
             #{value => ?T("auto | WebSocketURL"),
               desc =>
                   ?T("A WebSocket URL to which Converse can connect to. "
-                     "The keyword '@HOST@' is replaced with the real virtual "
+                     "The '@HOST@' keyword is replaced with the real virtual "
                      "host name. "
                      "If set to 'auto', it will build the URL of the first "
                      "configured WebSocket request handler. "

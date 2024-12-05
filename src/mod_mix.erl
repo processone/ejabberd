@@ -122,7 +122,7 @@ mod_doc() ->
               desc =>
                   ?T("This option defines the Jabber IDs of the service. "
                      "If the 'hosts' option is not specified, the only Jabber ID will "
-                     "be the hostname of the virtual host with the prefix \"mix.\". "
+                     "be the hostname of the virtual host with the prefix '\"mix.\"'. "
                      "The keyword '@HOST@' is replaced with the real virtual host name.")}},
            {name,
             #{value => ?T("Name"),

@@ -135,7 +135,7 @@ mod_doc() ->
               "[XEP-0048: Bookmarks])."), "",
            ?T("It also implements the bookmark conversion described in "
               "https://xmpp.org/extensions/xep-0402.html[XEP-0402: PEP Native Bookmarks]"
-              ", see the command _`bookmarks_to_pep`_ API.")],
+              ", see _`bookmarks_to_pep`_ API.")],
       opts =>
           [{db_type,
             #{value => "mnesia | sql",

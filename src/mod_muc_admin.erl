@@ -2096,5 +2096,5 @@ mod_doc() ->
               note => "added in 22.05",
               desc =>
                   ?T("How many users can be subscribed to a room at once using "
-                     "the 'subscribe_room_many' command. "
+                     "the _`subscribe_room_many`_ API. "
                      "The default value is '50'.")}}]}.

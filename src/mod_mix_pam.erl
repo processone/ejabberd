@@ -128,7 +128,7 @@ mod_doc() ->
               "The module is needed if MIX compatible clients "
               "on your server are going to join MIX channels "
               "(either on your server or on any remote servers)."), "",
-           ?T("NOTE: 'mod_mix' is not required for this module "
+           ?T("NOTE: _`mod_mix`_ is not required for this module "
               "to work, however, without 'mod_mix_pam' the MIX "
               "functionality of your local XMPP clients will be impaired.")],
       opts =>

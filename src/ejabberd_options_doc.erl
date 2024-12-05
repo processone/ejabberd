@@ -403,7 +403,7 @@ doc() ->
       #{value => "true | false",
         note => "added in 23.10",
         desc =>
-        ?T("Supplement check for user existence based on 'mod_last' data, for authentication "
+        ?T("Supplement check for user existence based on _`mod_last`_ data, for authentication "
            "methods that don't have a way to reliably tell if a user exists (like is the case for "
            "'jwt' and certificate based authentication). This helps with processing offline message "
            "for those users. The default value is 'true'.")}},
@@ -440,8 +440,8 @@ doc() ->
         desc =>
             ?T("Full path to a file containing custom DH parameters "
                "to use for c2s connections. "
-               "Such a file could be created with the command \"openssl "
-               "dhparam -out dh.pem 2048\". If this option is not specified, "
+               "Such a file could be created with the command '\"openssl "
+               "dhparam -out dh.pem 2048\"'. If this option is not specified, "
                "2048-bit MODP Group with 256-bit Prime Order Subgroup will be "
                "used as defined in RFC5114 Section 2.3.")}},
      {c2s_protocol_options,
@@ -500,7 +500,7 @@ doc() ->
                "If set to 'auto', it builds the URL using a 'request_handler' "
                "already enabled, with encryption if available. "
                "If set to 'undefined', it builds the URL using "
-               "the deprecated _`captcha_host`_ + /captcha. "
+               "the deprecated _`captcha_host`_ '+ /captcha'. "
                "The default value is 'auto'.")}},
      {certfiles,
       #{value => "[Path, ...]",
@@ -595,17 +595,25 @@ doc() ->
              "  transport.example.org:",
              "    type: bare_source"]},
       [{type,
-        #{value => "random | source | destination | bare_source | bare_destination",
+        #{value => ?T("Value"),
           desc =>
-              ?T("How to deliver stanzas to connected components: "
-                 "'random' - an instance is chosen at random; "
-                 "'destination' - an instance is chosen by the full JID of "
-                 "the packet's 'to' attribute; "
-                 "'source' - by the full JID of the packet's 'from' attribute; "
-                 "'bare_destination' - by the bare JID (without resource) "
-                 "of the packet's 'to' attribute; "
-                 "'bare_source' - by the bare JID (without resource) of the "
-                 "packet's 'from' attribute is used. The default value is 'random'.")}},
+              ?T("How to deliver stanzas to connected components. "
+                 "The default value is 'random'. Possible values: ")},
+            [{'- random',
+              #{desc =>
+                    ?T("an instance is chosen at random")}},
+             {'- source',
+              #{desc =>
+                    ?T("by the full JID of the packet's 'from' attribute")}},
+             {'- bare_destination',
+              #{desc =>
+                    ?T("by the bare JID (without resource) of the packet's 'to' attribute")}},
+             {'- bare_source',
+              #{desc =>
+                    ?T("by the bare JID (without resource) of the packet's 'from' attribute is used")}},
+             {'- destination',
+              #{desc =>
+                    ?T("an instance is chosen by the full JID of the packet's 'to' attribute")}}]},
        {component_number,
         #{value => "2..1000",
           desc =>
@@ -881,20 +889,20 @@ doc() ->
         desc =>
             ?T("The size (in bytes) of a log file to trigger rotation. "
                "If set to 'infinity', log rotation is disabled. "
-               "The default value is '10485760' (that is, 10 Mb).")}},
+               "The default value is 10 Mb expressed in bytes: '10485760'.")}},
      {log_burst_limit_count,
       #{value => ?T("Number"),
         note => "added in 22.10",
         desc =>
             ?T("The number of messages to accept in "
                "`log_burst_limit_window_time` period before starting to "
-               "drop them. Default 500")}},
+               "drop them. Default `500`")}},
      {log_burst_limit_window_time,
       #{value => ?T("Number"),
         note => "added in 22.10",
         desc =>
             ?T("The time period to rate-limit log messages "
-               "by. Defaults to 1 second.")}},
+               "by. Defaults to `1` second.")}},
      {log_modules_fully,
       #{value => "[Module, ...]",
         note => "added in 23.01",
@@ -1032,7 +1040,7 @@ doc() ->
             ?T("Trigger OOM killer when some of the running Erlang processes "
                "have messages queue above this 'Size'. Note that "
                "such processes won't be killed if _`oom_killer`_ option is set "
-               "to 'false' or if 'oom_watermark' is not reached yet.")}},
+               "to 'false' or if _`oom_watermark`_ is not reached yet.")}},
      {oom_watermark,
       #{value => ?T("Percent"),
         desc =>
@@ -1055,7 +1063,7 @@ doc() ->
         note => "added in 20.12",
         desc =>
             ?T("Specify the IPv4 address that will be used when establishing "
-               "an outgoing S2S IPv4 connection, for example \"127.0.0.1\". "
+               "an outgoing S2S IPv4 connection, for example '\"127.0.0.1\"'. "
                "The default value is 'undefined'.")}},
      {outgoing_s2s_ipv6_address,
       #{value => "Address",
@@ -1063,7 +1071,7 @@ doc() ->
         desc =>
             ?T("Specify the IPv6 address that will be used when establishing "
                "an outgoing S2S IPv6 connection, for example "
-               "\"::FFFF:127.0.0.1\". The default value is 'undefined'.")}},
+               "'\"::FFFF:127.0.0.1\"'. The default value is 'undefined'.")}},
      {outgoing_s2s_port,
       #{value => "1..65535",
         desc =>
@@ -1232,8 +1240,8 @@ doc() ->
         desc =>
             ?T("Full path to a file containing custom DH parameters "
                "to use for s2s connections. "
-               "Such a file could be created with the command \"openssl "
-               "dhparam -out dh.pem 2048\". If this option is not specified, "
+               "Such a file could be created with the command '\"openssl "
+               "dhparam -out dh.pem 2048\"'. If this option is not specified, "
                "2048-bit MODP Group with 256-bit Prime Order Subgroup will be "
                "used as defined in RFC5114 Section 2.3.")}},
      {s2s_protocol_options,
@@ -1396,7 +1404,7 @@ doc() ->
       #{value => ?T("Size"),
         desc =>
             ?T("Number of connections to the SQL server that ejabberd will "
-               "open for each virtual host. The default value is 10. WARNING: "
+               "open for each virtual host. The default value is '10'. WARNING: "
                "for SQLite this value is '1' by default and it's not recommended "
                "to change it due to potential race conditions.")}},
      {sql_port,
@@ -1490,7 +1498,7 @@ doc() ->
                "possibly with masks. The default value is an empty list. "
                "Using this option you can know the real IP "
                "of the request, for admin purpose, or security configuration "
-               "(for example using 'mod_fail2ban'). IMPORTANT: The proxy MUST "
+               "(for example using _`mod_fail2ban`_). IMPORTANT: The proxy MUST "
                "be configured to set the 'X-Forwarded-For' header if you "
                "enable this option as, otherwise, the client can set it "
                "itself and as a result the IP value cannot be trusted for "
@@ -1513,7 +1521,7 @@ doc() ->
                "balancer can be chosen for a specific ejabberd implementation "
                "while still providing a secure WebSocket connection. "
                "The default value is 'ignore'. An example value of the 'URL' is "
-               "\"https://test.example.org:8081\".")}},
+               "'\"https://test.example.org:8081\"'.")}},
      {websocket_ping_interval,
       #{value => "timeout()",
         desc =>

@@ -214,7 +214,8 @@ mod_doc() ->
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
               "_`listen-options.md#request_handlers|request_handlers`_."), "",
-           ?T("Notice it only works if ejabberd_http has tls enabled.")],
+           ?T("Notice it only works if _`listen.md#ejabberd_http|ejabberd_http`_ "
+              "has _`listen-options.md#tls|tls`_ enabled.")],
       note => "added in 22.05",
       example =>
           ["listen:",
