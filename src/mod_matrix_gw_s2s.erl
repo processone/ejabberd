@@ -337,50 +337,44 @@ handle_event(cast, {query, AuthParams, _Query, _JSON, _Request} = Msg,
              []}
     end;
 handle_event(cast, {key_reply, KeyID, HTTPResult}, State, Data) ->
-    case HTTPResult of
-        {{_, 200, _}, _, SJSON} ->
-            try
-                JSON = misc:json_decode(SJSON),
-                ?DEBUG("key ~p~n", [JSON]),
-                #{<<"verify_keys">> := VerifyKeys} = JSON,
-                #{KeyID := KeyData} = VerifyKeys,
-                #{<<"key">> := SKey} = KeyData,
-                VerifyKey = mod_matrix_gw:base64_decode(SKey),
-                ?DEBUG("key ~p~n", [VerifyKey]),
-                ?DEBUG("check ~p~n",
-                       [catch check_signature(
-                                JSON, Data#data.matrix_server,
-                                KeyID, VerifyKey)]),
-                true = check_signature(
-                         JSON, Data#data.matrix_server,
-                         KeyID, VerifyKey),
-                #{<<"valid_until_ts">> := ValidUntil} = JSON,
-                ValidUntil2 =
-                    min(ValidUntil,
-                        erlang:system_time(millisecond) + timer:hours(24 * 7)),
-                Keys = (Data#data.keys)#{KeyID => {ok, VerifyKey, ValidUntil2}},
-                Froms = maps:get(KeyID, Data#data.key_queue, []),
-                KeyQueue = maps:remove(KeyID, Data#data.key_queue),
-                Data2 = Data#data{keys = Keys,
-                                  key_queue = KeyQueue},
-                Replies =
-                    lists:map(
-                      fun(From) ->
-                              {reply, From, {ok, VerifyKey, ValidUntil2}}
-                      end, Froms),
-                ?DEBUG("KEYS ~p~n", [{Keys, Data2}]),
-                {next_state, State, Data2, Replies}
-            catch
-                _:_ ->
-                    %% TODO
-                    Keys2 = (Data#data.keys)#{KeyID => error},
-                    {next_state, State, Data#data{keys = Keys2}, []}
-            end;
-        _ ->
-            %% TODO
-            Keys = (Data#data.keys)#{KeyID => error},
-            {next_state, State, Data#data{keys = Keys}, []}
-    end;
+    KeyVal =
+        case HTTPResult of
+            {{_, 200, _}, _, SJSON} ->
+                try
+                    JSON = misc:json_decode(SJSON),
+                    ?DEBUG("key ~p~n", [JSON]),
+                    #{<<"verify_keys">> := VerifyKeys} = JSON,
+                    #{KeyID := KeyData} = VerifyKeys,
+                    #{<<"key">> := SKey} = KeyData,
+                    VerifyKey = mod_matrix_gw:base64_decode(SKey),
+                    ?DEBUG("key ~p~n", [VerifyKey]),
+                    ?DEBUG("check ~p~n",
+                           [catch check_signature(
+                                    JSON, Data#data.matrix_server,
+                                    KeyID, VerifyKey)]),
+                    true = check_signature(
+                             JSON, Data#data.matrix_server,
+                             KeyID, VerifyKey),
+                    #{<<"valid_until_ts">> := ValidUntil} = JSON,
+                    ValidUntil2 =
+                        min(ValidUntil,
+                            erlang:system_time(millisecond) + timer:hours(24 * 7)),
+                    {ok, VerifyKey, ValidUntil2}
+                catch
+                    _:_ ->
+                        error
+                end;
+            _ ->
+                error
+        end,
+    Keys = (Data#data.keys)#{KeyID => KeyVal},
+    Froms = maps:get(KeyID, Data#data.key_queue, []),
+    KeyQueue = maps:remove(KeyID, Data#data.key_queue),
+    Data2 = Data#data{keys = Keys,
+                      key_queue = KeyQueue},
+    Replies = lists:map(fun(From) -> {reply, From, KeyVal} end, Froms),
+    ?DEBUG("KEYS ~p~n", [{Keys, Data2}]),
+    {next_state, State, Data2, Replies};
 handle_event(cast, Msg, State, Data) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {next_state, State, Data, []};

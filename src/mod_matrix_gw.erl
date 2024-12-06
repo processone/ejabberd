@@ -57,6 +57,11 @@
 
 -define(MAX_REQUEST_SIZE, 1000000).
 
+-define(CORS_HEADERS,
+        [{<<"Access-Control-Allow-Origin">>, <<"*">>},
+         {<<"Access-Control-Allow-Methods">>, <<"GET, POST, PUT, DELETE, OPTIONS">>},
+         {<<"Access-Control-Allow-Headers">>, <<"X-Requested-With, Content-Type, Authorization">>}]).
+
 process([<<"key">>, <<"v2">>, <<"server">> | _],
         #request{method = 'GET', host = _Host} = _Request) ->
     Host = ejabberd_config:get_myname(),
@@ -137,6 +142,7 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
         #request{method = 'PUT', host = _Host} = Request) ->
     case preprocess_federation_request(Request) of
         {ok, #{<<"event">> := #{%<<"origin">> := Origin,
+                                <<"content">> := Content,
                                 <<"room_id">> := RoomID,
                                 <<"sender">> := Sender,
                                 <<"state_key">> := UserID} = Event,
@@ -155,7 +161,12 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
                                     SEvent = sign_pruned_event(Host, PrunedEvent),
                                     ?DEBUG("sign event ~p~n", [SEvent]),
                                     ResJSON = #{<<"event">> => SEvent},
-                                    mod_matrix_gw_room:join(Host, Origin, RoomID, Sender, UserID),
+                                    case Content of
+                                        #{<<"is_direct">> := true} ->
+                                            mod_matrix_gw_room:join_direct(Host, Origin, RoomID, Sender, UserID);
+                                        _ ->
+                                            mod_matrix_gw_room:send_muc_invite(Host, Origin, RoomID, Sender, UserID, Event)
+                                    end,
                                     ?DEBUG("res ~s~n", [misc:json_encode(ResJSON)]),
                                     {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], misc:json_encode(ResJSON)};
                                 _ ->
@@ -386,6 +397,13 @@ process([<<"federation">>, <<"v2">>, <<"send_join">>, RoomID, EventID],
         {result, HTTPResult} ->
             HTTPResult
     end;
+%process([<<"client">> | ClientPath], Request) ->
+%    {HTTPCode, Headers, JSON} = mod_matrix_gw_c2s:process(ClientPath, Request),
+%    ?DEBUG("resp ~p~n", [JSON]),
+%    {HTTPCode,
+%     [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>} |
+%      ?CORS_HEADERS] ++ Headers,
+%     jiffy:encode(JSON)};
 process(Path, Request) ->
     ?DEBUG("matrix 404: ~p~n~p~n", [Path, Request]),
     ejabberd_web:error(not_found).
@@ -494,6 +512,7 @@ init([Host]) ->
     process_flag(trap_exit, true),
     mod_matrix_gw_s2s:create_db(),
     mod_matrix_gw_room:create_db(),
+    %mod_matrix_gw_c2s:create_db(),
     Opts = gen_mod:get_module_opts(Host, ?MODULE),
     MyHost = gen_mod:get_opt(host, Opts),
     register_routes(Host, [MyHost]),
@@ -780,10 +799,14 @@ send_request(Host, Method, MatrixServer, Path, Query, JSON,
             _ ->
                 {URL, Headers, "application/json;charset=UTF-8", Content}
         end,
-    httpc:request(Method,
-                  Request,
-                  HTTPOptions,
-                  Options).
+    ?DEBUG("httpc request ~p", [{Method, Request, HTTPOptions, Options}]),
+    HTTPRes =
+        httpc:request(Method,
+                      Request,
+                      HTTPOptions,
+                      Options),
+    ?DEBUG("httpc request res ~p", [HTTPRes]),
+    HTTPRes.
 
 make_auth_header(Host, MatrixServer, Method, URI, Content) ->
     Origin = mod_matrix_gw_opt:matrix_domain(Host),
