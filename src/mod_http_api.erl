@@ -31,7 +31,7 @@
 
 -export([start/2, stop/1, reload/3, process/2, depends/2,
          format_arg/2,
-	 mod_options/1, mod_doc/0]).
+	 mod_opt_type/1, mod_options/1, mod_doc/0]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -201,19 +201,20 @@ extract_args(Data) ->
     maps:to_list(Maps).
 
 % get API version N from last "vN" element in URL path
-get_api_version(#request{path = Path}) ->
-    get_api_version(lists:reverse(Path));
-get_api_version([<<"v", String/binary>> | Tail]) ->
+get_api_version(#request{path = Path, host = Host}) ->
+    get_api_version(lists:reverse(Path), Host).
+
+get_api_version([<<"v", String/binary>> | Tail], Host) ->
     case catch binary_to_integer(String) of
 	N when is_integer(N) ->
 	    N;
 	_ ->
-	    get_api_version(Tail)
+	    get_api_version(Tail, Host)
     end;
-get_api_version([_Head | Tail]) ->
-    get_api_version(Tail);
-get_api_version([]) ->
-    ?DEFAULT_API_VERSION.
+get_api_version([_Head | Tail], Host) ->
+    get_api_version(Tail, Host);
+get_api_version([], Host) ->
+    mod_http_api_opt:default_version(Host).
 
 %% ----------------
 %% command handlers
@@ -549,8 +550,24 @@ hide_sensitive_args(Args=[_H|_T]) ->
 hide_sensitive_args(NonListArgs) ->
     NonListArgs.
 
+mod_opt_type(default_version) ->
+    econf:either(
+        econf:int(0, 3),
+        econf:and_then(
+            econf:binary(),
+            fun(Binary) ->
+               case binary_to_list(Binary) of
+                   F when F >= "24.06" ->
+                       2;
+                   F when (F > "23.10") and (F < "24.06") ->
+                       1;
+                   F when F =< "23.10" ->
+                       0
+               end
+            end)).
+
 mod_options(_) ->
-    [].
+    [{default_version, ?DEFAULT_API_VERSION}].
 
 mod_doc() ->
     #{desc =>
@@ -565,6 +582,15 @@ mod_doc() ->
 	      "For example: '/api/v2: mod_http_api'."), "",
 	   ?T("To run a command, send a POST request to the corresponding "
 	      "URL: 'http://localhost:5280/api/COMMAND-NAME'")],
+     opts =>
+          [{default_version,
+            #{value => "integer() | string()",
+              desc =>
+                  ?T("What API version to use when none is specified in the URL path. "
+                     "If setting an ejabberd version, it will use the latest API "
+                     "version that was available in that ejabberd version. "
+                     "For example, setting '\"24.06\"' in this option implies '2'. "
+                     "The default value is the latest version.")}}],
      example =>
          ["listen:",
           "  -",
@@ -574,4 +600,5 @@ mod_doc() ->
           "      /api: mod_http_api",
           "",
           "modules:",
-          "  mod_http_api: {}"]}.
+          "  mod_http_api:",
+          "    default_version: 2"]}.
