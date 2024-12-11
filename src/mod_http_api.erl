@@ -214,7 +214,12 @@ get_api_version([<<"v", String/binary>> | Tail], Host) ->
 get_api_version([_Head | Tail], Host) ->
     get_api_version(Tail, Host);
 get_api_version([], Host) ->
-    mod_http_api_opt:default_version(Host).
+    try mod_http_api_opt:default_version(Host)
+    catch error:{module_not_loaded, ?MODULE, Host} ->
+        ?WARNING_MSG("Using module ~p for host ~s, but it isn't configured "
+                     "in the configuration file", [?MODULE, Host]),
+        ?DEFAULT_API_VERSION
+    end.
 
 %% ----------------
 %% command handlers
