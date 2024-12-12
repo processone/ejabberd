@@ -389,6 +389,7 @@ case $1 in
                  -eval 'net_kernel:connect_node('"'$PEER'"')' \
                  -eval 'io:format("~p~n",[net_adm:ping('"'$PEER'"')])' \
                  -s erlang halt -output text
+        stop_epmd
         ;;
     started)
         set_dist_client
