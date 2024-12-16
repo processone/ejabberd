@@ -553,7 +553,8 @@ case $1 in
                  -noinput -hidden \
                  -eval 'net_kernel:connect_node('"'$PEER'"')' \
                  -eval 'io:format("~p~n",[net_adm:ping('"'$PEER'"')])' \
-                 -s erlang halt -output text
+                 -eval 'halt(case net_adm:ping('"'$PEER'"') of pong -> 0; pang -> 1 end).' \
+                 -output text
         ;;
     started)
         set_dist_client
