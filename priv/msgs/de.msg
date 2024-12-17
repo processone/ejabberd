@@ -223,6 +223,7 @@
 {"leaves the room","verlässt den Raum"}.
 {"List of users with hats","Liste der Benutzer mit Funktionen"}.
 {"List users with hats","Benutzer mit Funktionen auflisten"}.
+{"Logged Out","Abgemeldet"}.
 {"Logging","Protokollierung"}.
 {"Make participants list public","Teilnehmerliste öffentlich machen"}.
 {"Make room CAPTCHA protected","Raum mittels CAPTCHA schützen"}.
@@ -293,6 +294,7 @@
 {"No pending subscriptions found","Keine ausstehenden Abonnements gefunden"}.
 {"No privacy list with this name found","Keine Privacy-Liste mit diesem Namen gefunden"}.
 {"No private data found in this query","Keine privaten Daten in dieser Anfrage gefunden"}.
+{"No <privileged_iq/> element found","Kein <privileged_iq/>-Element gefunden"}.
 {"No running node found","Kein laufender Knoten gefunden"}.
 {"No services available","Keine Dienste verfügbar"}.
 {"No statistics found for this item","Keine Statistiken für dieses Item gefunden"}.
@@ -532,6 +534,7 @@
 {"Too many unacked stanzas","Zu viele unbestätigte Stanzas"}.
 {"Too many users in this conference","Zu viele Benutzer in dieser Konferenz"}.
 {"Traffic rate limit is exceeded","Datenratenlimit wurde überschritten"}.
+{"~ts's MAM Archive","~ts's MAM Archiv"}.
 {"~ts's Offline Messages Queue","Offline-Nachrichten-Warteschlange von ~ts"}.
 {"Tuesday","Dienstag"}.
 {"Unable to generate a CAPTCHA","Konnte kein CAPTCHA erstellen"}.
@@ -588,6 +591,7 @@
 {"Whether to allow subscriptions","Ob Abonnements erlaubt sind"}.
 {"Whether to make all subscriptions temporary, based on subscriber presence","Ob alle Abonnements temporär gemacht werden sollen, basierend auf der Abonnentenpräsenz"}.
 {"Whether to notify owners about new subscribers and unsubscribes","Ob Besitzer über neue Abonnenten und Abbestellungen benachrichtigt werden sollen"}.
+{"Who can send private messages","Wer kann private Nachrichten senden"}.
 {"Who may associate leaf nodes with a collection","Wer Blattknoten mit einer Sammlung verknüpfen darf"}.
 {"Wrong parameters in the web formulary","Falsche Parameter im Webformular"}.
 {"Wrong xmlns","Falscher xmlns"}.
