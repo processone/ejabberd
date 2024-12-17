@@ -140,7 +140,6 @@ gen_token(#{sasl2_ua_id := UA, server := Server, user := User}) ->
 c2s_handle_sasl2_inline({#{server := Server, user := User, sasl2_ua_id := UA,
 			   sasl2_axtra_auth_info := Extra} = State, Els, Results} = Acc) ->
     Mod = gen_mod:db_mod(Server, ?MODULE),
-    ?ERROR_MSG("inl ~p", [Extra]),
     NeedRegen =
 	case Extra of
 	    {token, {next, Rotate}} ->
