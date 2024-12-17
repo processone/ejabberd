@@ -776,10 +776,19 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0480.html"/>
-        <xmpp:version>0.1</xmpp:version>
+        <xmpp:version>0.2.0</xmpp:version>
         <xmpp:since>24.10</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_scram_upgrade</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0484.html"/>
+        <xmpp:version>0.2.0</xmpp:version>
+        <xmpp:since>24.12</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>mod_auth_fast</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
