@@ -135,7 +135,7 @@ defmodule Ejabberd.MixProject do
      {:eimp, "~> 1.0"},
      {:ex_doc, "~> 0.31", only: [:dev, :edoc], runtime: false},
      {:fast_tls, "~> 1.1.22"},
-     {:fast_xml, "~> 1.1.53"},
+     {:fast_xml, "~> 1.1.53", override: true},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
      {:mqtree, "~> 1.0"},
@@ -144,7 +144,7 @@ defmodule Ejabberd.MixProject do
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
-     {:xmpp, "~> 1.9"},
+     {:xmpp, git: "https://github.com/processone/xmpp", ref: "333f688da2f52c73f374a46df139789a48c45395", override: true},
      {:yconf, git: "https://github.com/processone/yconf.git", ref: "9898754f16cbd4585a1c2061d72fa441ecb2e938", override: true}]
     ++ cond_deps()
   end

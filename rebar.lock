@@ -10,7 +10,7 @@
  {<<"fast_xml">>,{pkg,<<"fast_xml">>,<<"1.1.53">>},0},
  {<<"fast_yaml">>,{pkg,<<"fast_yaml">>,<<"1.0.37">>},0},
  {<<"idna">>,{pkg,<<"idna">>,<<"6.1.1">>},0},
- {<<"jiffy">>,{pkg,<<"jiffy">>,<<"1.1.2">>},1},
+ {<<"jiffy">>,{pkg,<<"jiffy">>,<<"1.1.2">>},0},
  {<<"jose">>,{pkg,<<"jose">>,<<"1.11.10">>},0},
  {<<"luerl">>,{pkg,<<"luerl">>,<<"1.2.0">>},0},
  {<<"mqtree">>,{pkg,<<"mqtree">>,<<"1.0.17">>},0},
@@ -24,7 +24,10 @@
  {<<"stringprep">>,{pkg,<<"stringprep">>,<<"1.0.30">>},0},
  {<<"stun">>,{pkg,<<"stun">>,<<"1.2.15">>},0},
  {<<"unicode_util_compat">>,{pkg,<<"unicode_util_compat">>,<<"0.7.0">>},1},
- {<<"xmpp">>,{pkg,<<"xmpp">>,<<"1.9.0">>},0},
+ {<<"xmpp">>,
+  {git,"https://github.com/processone/xmpp",
+       {ref,"333f688da2f52c73f374a46df139789a48c45395"}},
+  0},
  {<<"yconf">>,
   {git,"https://github.com/processone/yconf",
        {ref,"9898754f16cbd4585a1c2061d72fa441ecb2e938"}},
@@ -55,8 +58,7 @@
  {<<"sqlite3">>, <<"E819DEFD280145C328457D7AF897D2E45E8E5270E18812EE30B607C99CDD21AF">>},
  {<<"stringprep">>, <<"46CF0FF631B3E7328F61F20B454D59428D87738F25D709798B5DCBB9B83C23F1">>},
  {<<"stun">>, <<"EEC510AF6509201FF97F1F2C87B7977C833BF29C04E985383370EC21F04E4CCF">>},
- {<<"unicode_util_compat">>, <<"BC84380C9AB48177092F43AC89E4DFA2C6D62B40B8BD132B1059ECC7232F9A78">>},
- {<<"xmpp">>, <<"D92446BF51D36ADDA02DB63B963FE6D4A1EDE33E59B38A43D9B90AFD20C25B74">>}]},
+ {<<"unicode_util_compat">>, <<"BC84380C9AB48177092F43AC89E4DFA2C6D62B40B8BD132B1059ECC7232F9A78">>}]},
 {pkg_hash_ext,[
  {<<"base64url">>, <<"F9B3ADD4731A02A9B0410398B475B33E7566A695365237A6BDEE1BB447719F5C">>},
  {<<"cache_tab">>, <<"8582B60A4A09B247EF86355BA9E07FCE9E11EDC0345A775C9171F971C72B6351">>},
@@ -82,6 +84,5 @@
  {<<"sqlite3">>, <<"3C0BA4E13322C2AD49DE4E2DDD28311366ADDE54BEAE8DBA9D9E3888F69D2857">>},
  {<<"stringprep">>, <<"F6FC9B3384A03877830F89B2F38580CAF3F4A27448A4A333D6A8C3975C220B9A">>},
  {<<"stun">>, <<"F6D8A541A29FD13F2CE658B676C0CC661262B96E045B52DEF1644B75EBC0EDEF">>},
- {<<"unicode_util_compat">>, <<"25EEE6D67DF61960CF6A794239566599B09E17E668D3700247BC498638152521">>},
- {<<"xmpp">>, <<"C1B91BE74A9A9503AFA6766F756477516920FFBFEEA0C260C2FA171355F53C27">>}]}
+ {<<"unicode_util_compat">>, <<"25EEE6D67DF61960CF6A794239566599B09E17E668D3700247BC498638152521">>}]}
 ].
