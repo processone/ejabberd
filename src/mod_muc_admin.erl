@@ -185,7 +185,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = create_rooms_file, tags = [muc],
 		       desc = "Create the rooms indicated in file",
 		       longdesc = "Provide one room JID per line. Rooms will be created after restart.",
-                       note = "improved in 24.xx",
+                       note = "improved in 24.12",
 		       module = ?MODULE, function = create_rooms_file,
 		       args_desc = ["Path to the text file with one room JID per line"],
 		       args_example = ["/home/ejabberd/rooms.txt"],

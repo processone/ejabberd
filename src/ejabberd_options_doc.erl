@@ -1146,7 +1146,7 @@ doc() ->
                "or 'ram' if the latter is not set.")}},
      {redis_server,
       #{value => "Host | IP Address | Unix Socket Path",
-        note => "improved in 24.xx",
+        note => "improved in 24.12",
         desc =>
             ?T("A hostname, IP address or unix domain socket file of the "
                "_`database.md#redis|Redis`_ server. "

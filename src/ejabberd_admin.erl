@@ -175,7 +175,7 @@ get_commands_spec() ->
 			"announcement quoted, for example: \n"
 			"`ejabberdctl evacuate_kindly 60 "
 			"\\\"The server will stop in one minute.\\\"`",
-			note = "added in 24.xx",
+			note = "added in 24.12",
 			module = ?MODULE, function = evacuate_kindly,
 			args_desc = ["Seconds to wait", "Announcement to send, with quotes"],
 			args_example = [60, <<"Server will stop now.">>],
