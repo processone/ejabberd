@@ -87,7 +87,7 @@ mod_opt_type(token_refresh_age) ->
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {token_lifetime, 30*24*60*60},
-     {token_refresh_age, 2*60*605}].
+     {token_refresh_age, 24*60*60}].
 
 mod_doc() ->
     #{desc =>
