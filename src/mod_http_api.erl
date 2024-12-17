@@ -590,6 +590,7 @@ mod_doc() ->
      opts =>
           [{default_version,
             #{value => "integer() | string()",
+              note => "added in 24.12",
               desc =>
                   ?T("What API version to use when none is specified in the URL path. "
                      "If setting an ejabberd version, it will use the latest API "
