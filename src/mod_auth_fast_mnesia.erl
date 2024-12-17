@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% File    : mod_announce_mnesia.erl
+%%% File    : mod_auth_fast_mnesia.erl
 %%% Author  : Pawel Chmielowski <pawel@process-one.net>
 %%% Created : 1 Dec 2024 by Pawel Chmielowski <pawel@process-one.net>
 %%%
