@@ -2286,7 +2286,7 @@ make_result(Binary,
     Second = proplists:get_value(second, ArgumentsUsed),
     FirstUrlencoded =
         list_to_binary(string:replace(
-               misc:url_encode(First), "%40", "@")),
+                           misc:url_encode(First), "%40", "@")),
     {GroupId, Host} =
         case jid:decode(FirstUrlencoded) of
             #jid{luser = <<"">>, server = G} ->

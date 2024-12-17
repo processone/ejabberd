@@ -859,8 +859,6 @@ webadmin_muc_host(_Host,
                         [{table_options, {20, RPath}},
                          {result_links, [{jid, user, 3 + Level, <<"">>}]}])],
     Title ++ Breadcrumb ++ Get ++ Set;
-
-
 webadmin_muc_host(_Host,
                   Service,
                   [<<"rooms">>, <<"room">>, Name, <<"history">> | RPath],
