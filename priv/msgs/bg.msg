@@ -161,7 +161,7 @@
 {"Get Pending","Виж чакащи"}.
 {"Get User Last Login Time","Покажи времето, когато потребителят е влязъл за последно"}.
 {"Get User Statistics","Покажи статистика за потребителя"}.
-{"Given Name","Име"}.
+{"Given Name","Наименование"}.
 {"Grant voice to this person?","Предоставяне на глас за потребителя?"}.
 {"has been banned","е със забранен достъп"}.
 {"has been kicked because of a system shutdown","е отстранен поради изключване на системата"}.
@@ -295,6 +295,7 @@
 {"No pending subscriptions found","Не са намерени чакащи абонаменти"}.
 {"No privacy list with this name found","Не е намерен списък за поверителност с това име"}.
 {"No private data found in this query","Няма открити лични данни в тази заявка"}.
+{"No <privileged_iq/> element found","Елементът <privileged_iq/> не е намерен"}.
 {"No running node found","Не е намерен работещ нод"}.
 {"No services available","Няма налични услуги"}.
 {"No statistics found for this item","Не е налична статистика за този елемент"}.
@@ -512,7 +513,7 @@
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Строфата ТРЯБВА да съдържа само един <active/> елемент, един <default/> елемент или един <list/> елемент"}.
 {"The subscription identifier associated with the subscription request","Идентификаторът на абонамента, свързан със заявката за абонамент"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","URL адрес на XSL трансформацията, която може да се приложи към прикачените данни, за да се генерира подходящ елемент от тялото на съобщението."}.
-{"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","URL адрес на XSL трансформацията, която може да се приложи към формата на прикачените данни, за да се генерира валиден резултат от Data Forms, който клиентът може да покаже с помощта на общ механизъм за визуализация на Data Forms."}.
+{"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","URL адрес на XSL трансформацията, която може да се приложи към формата на прикачените данни, за да се генерира валиден резултат от Data Forms, който клиентът може да покаже с помощта на общ механизъм за визуализация на Data Forms"}.
 {"There was an error changing the password: ","Възникна грешка при промяна на паролата: "}.
 {"There was an error creating the account: ","Възникна грешка при създаването на профила: "}.
 {"There was an error deleting the account: ","Възникна грешка при изтриването на профила: "}.
@@ -537,6 +538,7 @@
 {"Too many unacked stanzas","Твърде много непотвърдени строфи"}.
 {"Too many users in this conference","Твърде много потребители в тази конференция"}.
 {"Traffic rate limit is exceeded","Лимитът за трафик е надвишен"}.
+{"~ts's MAM Archive","~ts's MAM архив"}.
 {"~ts's Offline Messages Queue","Офлайн съобщения на ~ts"}.
 {"Tuesday","Вторник"}.
 {"Unable to generate a CAPTCHA","Не може да се генерира CAPTCHA"}.
@@ -553,12 +555,14 @@
 {"Update message of the day on all hosts (don't send)","Актуализирай съобщението на деня на всички хостове (не изпращай)"}.
 {"Update specs to get modules source, then install desired ones.","Актуализирайте спецификациите, за да получите източник на модули, след което инсталирайте желаните."}.
 {"Update Specs","Актуализирай спецификациите"}.
+{"Updating the vCard is not supported by the vCard storage backend","Актуализирането на vCard не се поддържа от настройката за съхранение на vCard"}.
 {"Upgrade","Обнови"}.
 {"URL for Archived Discussion Logs","URL адрес за дневници на архивирани дискусии"}.
 {"User already exists","Потребителят вече съществува"}.
 {"User (jid)","Потребител (jid)"}.
 {"User JID","Потребител JID"}.
 {"User Management","Управление на потребители"}.
+{"User not allowed to perform an IQ set on another user's vCard.","Потребителят не може да извършва IQ настрийка на vCard на друг потребител."}.
 {"User removed","Потребителят е премахнат"}.
 {"User session not found","Потребителската сесия не е намерена"}.
 {"User session terminated","Потребителската сесия е прекратена"}.
