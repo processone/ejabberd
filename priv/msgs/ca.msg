@@ -295,6 +295,7 @@
 {"No pending subscriptions found","No s'han trobat subscripcions pendents"}.
 {"No privacy list with this name found","No s'ha trobat cap llista de privacitat amb aquest nom"}.
 {"No private data found in this query","No s'ha trobat dades privades en esta petició"}.
+{"No <privileged_iq/> element found","No s'ha trobat cap element <privileged_iq/>"}.
 {"No running node found","No s'ha trobat node en marxa"}.
 {"No services available","No n'hi ha serveis disponibles"}.
 {"No statistics found for this item","No n'hi ha estadístiques disponibles per a aquest element"}.
@@ -537,6 +538,7 @@
 {"Too many unacked stanzas","Massa missatges sense haver reconegut la seva recepció"}.
 {"Too many users in this conference","N'hi ha massa usuaris en esta sala de conferència"}.
 {"Traffic rate limit is exceeded","El límit de tràfic ha sigut sobrepassat"}.
+{"~ts's MAM Archive","Arxiu MAM de ~ts"}.
 {"~ts's Offline Messages Queue","~ts's cua de missatges offline"}.
 {"Tuesday","Dimarts"}.
 {"Unable to generate a CAPTCHA","No s'ha pogut generar un CAPTCHA"}.
@@ -553,12 +555,14 @@
 {"Update message of the day on all hosts (don't send)","Actualitza el missatge del dia en tots els hosts (no enviar)"}.
 {"Update specs to get modules source, then install desired ones.","Actualitza les especificacions per obtindre el codi font dels mòduls, després instal·la els que vulgues."}.
 {"Update Specs","Actualitzar Especificacions"}.
+{"Updating the vCard is not supported by the vCard storage backend","El sistema d'almacenament de vCard no te capacitat per a actualitzar la vCard"}.
 {"Upgrade","Actualitza"}.
 {"URL for Archived Discussion Logs","URL dels Arxius de Discussions"}.
 {"User already exists","El usuari ja existeix"}.
 {"User JID","JID del usuari"}.
 {"User (jid)","Usuari (jid)"}.
 {"User Management","Gestió d'Usuaris"}.
+{"User not allowed to perform an IQ set on another user's vCard.","L'usuari no te permis per a modificar la vCard d'altre usuari."}.
 {"User removed","Usuari borrat"}.
 {"User session not found","Sessió d'usuari no trobada"}.
 {"User session terminated","Sessió d'usuari terminada"}.
