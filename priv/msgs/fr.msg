@@ -184,6 +184,7 @@
 {"Incorrect value of 'action' attribute","Valeur de l'attribut 'action' incorrecte"}.
 {"Incorrect value of 'action' in data form","Valeur de l'attribut 'action' incorrecte dans le formulaire"}.
 {"Incorrect value of 'path' in data form","Valeur de l'attribut 'path' incorrecte dans le formulaire"}.
+{"Install","Installer"}.
 {"Insufficient privilege","Droits insuffisants"}.
 {"Internal server error","Erreur interne du serveur"}.
 {"Invalid 'from' attribute in forwarded message","L'attribut 'from' du message transféré est incorrect"}.
@@ -480,12 +481,14 @@
 {"Unauthorized","Non autorisé"}.
 {"Unexpected action","Action inattendu"}.
 {"Unexpected error condition: ~p","Condition d’erreur inattendue : ~p"}.
+{"Uninstall","Désinstaller"}.
 {"Unregister an XMPP account","Annuler l’enregistrement d’un compte XMPP"}.
 {"Unregister","Désinscrire"}.
 {"Unsupported <index/> element","Elément <index/> non supporté"}.
 {"Unsupported version","Version non prise en charge"}.
 {"Update message of the day (don't send)","Mise à jour du message du jour (pas d'envoi)"}.
 {"Update message of the day on all hosts (don't send)","Mettre à jour le message du jour sur tous les domaines (ne pas envoyer)"}.
+{"Upgrade","Mise à niveau"}.
 {"URL for Archived Discussion Logs","URL des journaux de discussion archivés"}.
 {"User already exists","L'utilisateur existe déjà"}.
 {"User JID","JID de l'utilisateur"}.
