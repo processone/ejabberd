@@ -86,8 +86,8 @@ mod_opt_type(token_refresh_age) ->
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
-     {token_lifetime, timer:hours(30*24)},
-     {token_refresh_age, timer:hours(24)}].
+     {token_lifetime, 30*24*60*60},
+     {token_refresh_age, 2*60*605}].
 
 mod_doc() ->
     #{desc =>
@@ -136,7 +136,7 @@ gen_token(#{sasl2_ua_id := UA, server := Server, user := User}) ->
     Token = base64:encode(ua_hash(<<UA/binary, (p1_rand:get_string())/binary>>)),
     ExpiresAt = erlang:system_time(second) + mod_auth_fast_opt:token_lifetime(Server),
     Mod:set_token(Server, User, ua_hash(UA), next, Token, ExpiresAt),
-    #fast_token{token = Token, expiry = misc:usec_to_now(ExpiresAt)}.
+    #fast_token{token = Token, expiry = misc:usec_to_now(ExpiresAt*1000000)}.
 
 c2s_handle_sasl2_inline({#{server := Server, user := User, sasl2_ua_id := UA,
 			   sasl2_axtra_auth_info := Extra} = State, Els, Results} = Acc) ->
