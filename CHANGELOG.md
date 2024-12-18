@@ -1,3 +1,49 @@
+## Version 24.12
+
+#### Miscelanea
+
+- Elixir: support loading Elixir modules for auth ([#4315](https://github.com/processone/ejabberd/issues/4315))
+- Environment variables `EJABBERD_MACRO` to define macros
+- Fix problem starting ejabberd when first host uses SQL, other one mnesia
+- HTTP Websocket: Enable `allow_unencrypted_sasl2` on websockets ([#4323](https://github.com/processone/ejabberd/issues/4323))
+- Relax checks for channels bindings for connections using external encryption
+- Redis: Add support for unix domain socket ([#4318](https://github.com/processone/ejabberd/issues/4318))
+- Redis: Use eredis 1.7.1 from Nordix when using mix/rebar3 and Erlang 21+
+- `mod_auth_fast`: New module with support XEP-0484: Fast Authentication Streamlining Tokens
+- `mod_http_api`: Fix crash when module not enabled (for example, in CT tests)
+- `mod_http_api`: New option `default_version`
+- `mod_muc`: Make rsm handling in disco items, correctly count skipped rooms
+- `mod_offline`: Only delete offline msgs when user has MAM enabled ([#4287](https://github.com/processone/ejabberd/issues/4287))
+- `mod_priviled`: Handle properly roster iq
+- `mod_pubsub`: Send notifications on PEP item retract
+- `mod_s2s_bidi`: Catch extra case in check for s2s bidi element
+- `mod_scram_upgrade`: Don't abort the upgrade
+- `mod_shared_roster`: The name of a new group is lowercased
+- `mod_shared_roster`: Get back support for `groupid@vhost` in `displayed`
+
+#### Commands API
+
+- Change arguments and result to consistent names (API v3)
+- `create_rooms_file`: Improve to support vhosts with different config
+- `evacuate_kindly`: New command to kick users and prevent login ([#4309](https://github.com/processone/ejabberd/issues/4309))
+- `join_cluster`: Explain that this returns immediately (since 5a34020, 24.06)
+- `mod_muc_admin`: Rename argument `name` to `room` for consistency
+
+#### Documentation
+
+- Fix some documentation syntax, add links to toplevel, modules and API
+- `CONTAINER.md`: Add kubernetes yaml examples to use with podman
+- `SECURITY.md`: Add security policy and reporting guidelines
+- `ejabberd.service`: Disable the systemd watchdog by default
+- `ejabberd.yml.example`: Use non-standard STUN port
+
+#### WebAdmin
+
+- Shared group names are case sensitive, use original case instead of lowercase
+- Use lowercase username and server authentication credentials
+- Fix calculation of node's uptime days
+- Fix link to displayed group when it is from another vhost
+
 ## Version 24.10
 
 #### Miscelanea
@@ -29,17 +75,20 @@
 - `make-binaries`: Bump dependency versions: Elixir 1.17.2, OpenSSL 3.3.2, ...
 
 #### Administration
+
 - `ejabberdctl`: If `ERLANG_NODE` lacks host, add hostname ([#4288](https://github.com/processone/ejabberd/issues/4288))
 - `ejabberd_app`: At server start, log Erlang and Elixir versions
 - MySQL: Fix column type in the schema update of `archive` table in schema update
 
 #### Commands API
+
 - `get_mam_count`: New command to get number of archived messages for an account
 - `set_presence`: Return error when session not found
 - `update`: Fix command output
 - Add `mam` and `offline` tags to the related purge commands
 
 #### Code Quality
+
 - Fix warnings about unused macro definitions reported by Erlang LS
 - Fix Elvis report: Fix dollar space syntax
 - Fix Elvis report: Remove spaces in weird places
@@ -51,6 +100,7 @@
 - `mod_privilege`: Replace `try...catch` with a clean alternative
 
 #### Development Help
+
 - `elvis.config`: Fix file syntax, set vim mode, disable many tests
 - `erlang_ls.config`: Let it find paths, update to Erlang 26, enable crossref
 - `hooks_deps`: Hide false-positive warnings about `gen_mod`
@@ -61,18 +111,21 @@
 - Runtime: Cache hex.pm archive from rebar3 and mix
 
 #### Documentation
+
 - Add links in top-level options documentation to their Docs website sections
 - Document which SQL servers can really use `update_sql_schema`
 - Improve documentation of `ldap_servers` and `ldap_backups` options ([#3977](https://github.com/processone/ejabberd/issues/3977))
 - `mod_register`: Document behavior when `access` is set to `none` ([#4078](https://github.com/processone/ejabberd/issues/4078))
 
 #### Elixir
+
 - Handle case when elixir support is enabled but not available
 - Start ExSync manually to ensure it's started if (and only if) Relive
 - `mix.exs`: Fix `mix release` error: `logger` being regular and included application ([#4265](https://github.com/processone/ejabberd/issues/4265))
 - `mix.exs`: Remove from `extra_applications` the apps already defined in `deps` ([#4265](https://github.com/processone/ejabberd/issues/4265))
 
 #### WebAdmin
+
 - Add links in user page to offline and roster pages
 - Add new "MAM Archive" page to webadmin
 - Improve many pages to handle when modules are disabled
