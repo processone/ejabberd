@@ -308,8 +308,7 @@ component_send_packet({#iq{from = From,
                           []),
                 drop;
             {_, {error, no_privileged_iq, _Err}} ->
-                ?INFO_MSG("IQ not forwarded: Component tried to send not wrapped IQ stanza.",
-                          []),
+                ?INFO_MSG("IQ not forwarded: Component tried to send not wrapped IQ stanza.", []),
                 drop;
             {_, {error, roster_query, _Err}} ->
                 IQ;

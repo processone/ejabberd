@@ -994,15 +994,38 @@ iq_disco_items(ServerHost, Host, From, Lang, MaxRoomsDiscoItems, Node, RSM)
 		   #rsm_set{max = Max} ->
 		       Max
 	       end,
-    {Items, HitMax} = lists:foldr(
-	fun(_, {Acc, _}) when length(Acc) >= MaxItems ->
-	    {Acc, true};
-	   (R, {Acc, _}) ->
-	    case get_room_disco_item(R, Query) of
-		{ok, Item} -> {[Item | Acc], false};
-		{error, _} -> {Acc, false}
+    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+    RsmSupported = RMod:rsm_supported(),
+    GetRooms =
+	fun GetRooms(AccInit, Rooms) ->
+	    {Items, HitMax, DidSkip, Last, First} = lists:foldr(
+		fun(_, {Acc, _, Skip, F, L}) when length(Acc) >= MaxItems ->
+		    {Acc, true, Skip, F, L};
+		   ({RN, _, _} = R, {Acc, _, Skip, F, _}) ->
+		       F2 = if F == undefined -> RN; true -> F end,
+		       case get_room_disco_item(R, Query) of
+			   {ok, Item} -> {[Item | Acc], false, Skip, F2, RN};
+			   {error, _} -> {Acc, false, true, F2, RN}
+		       end
+		end, AccInit, Rooms),
+	    if RsmSupported andalso not HitMax andalso DidSkip ->
+		RSM2 = case RSM of
+			   #rsm_set{'after' = undefined, before = undefined} ->
+			       #rsm_set{max = MaxItems - length(Items), 'after' = Last};
+			   #rsm_set{'after' = undefined} ->
+			       #rsm_set{max = MaxItems - length(Items), 'before' = First};
+			   _ ->
+			       #rsm_set{max = MaxItems - length(Items), 'after' = Last}
+		       end,
+		GetRooms({Items, false, false, undefined, undefined},
+			 get_online_rooms(ServerHost, Host, RSM2));
+		true -> {Items, HitMax}
 	    end
-	end, {[], false}, get_online_rooms(ServerHost, Host, RSM)),
+	end,
+
+    {Items, HitMax} =
+	GetRooms({[], false, false, undefined, undefined},
+		 get_online_rooms(ServerHost, Host, RSM)),
     ResRSM = case Items of
 		 [_|_] when RSM /= undefined; HitMax ->
 		     #disco_item{jid = #jid{luser = First}} = hd(Items),

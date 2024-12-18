@@ -295,6 +295,7 @@
 {"No pending subscriptions found","未找到待处理的订阅"}.
 {"No privacy list with this name found","未找到具有此名称的隐私列表"}.
 {"No private data found in this query","在此查询中找不到专用数据"}.
+{"No <privileged_iq/> element found","未找到 <privileged_iq/> 元素"}.
 {"No running node found","找不到正在运行的节点"}.
 {"No services available","无可用服务"}.
 {"No statistics found for this item","未找到此项目的统计数据"}.
@@ -537,6 +538,7 @@
 {"Too many unacked stanzas","太多未确认的节"}.
 {"Too many users in this conference","此群聊中的用户太多"}.
 {"Traffic rate limit is exceeded","超过流量速率限制"}.
+{"~ts's MAM Archive","~ts 的 MAM 存档"}.
 {"~ts's Offline Messages Queue","~ts 的离线消息队列"}.
 {"Tuesday","周二"}.
 {"Unable to generate a CAPTCHA","无法生成验证码"}.
@@ -553,12 +555,14 @@
 {"Update message of the day on all hosts (don't send)","更新所有主机上的每日消息（不发送）"}.
 {"Update specs to get modules source, then install desired ones.","更新规格以获取模块源，然后安装所需的模块。"}.
 {"Update Specs","更新规格"}.
+{"Updating the vCard is not supported by the vCard storage backend","vCard 存储后端不支持更新 vCard"}.
 {"Upgrade","升级"}.
 {"URL for Archived Discussion Logs","存档讨论日志的 URL"}.
 {"User already exists","用户已存在"}.
 {"User (jid)","用户 (jid)"}.
 {"User JID","用户 JID"}.
 {"User Management","用户管理"}.
+{"User not allowed to perform an IQ set on another user's vCard.","不允许用户在其他用户的 vCard 上执行 IQ 设置。"}.
 {"User removed","用户已移除"}.
 {"User session not found","用户会话未找到"}.
 {"User session terminated","用户会话已终止"}.

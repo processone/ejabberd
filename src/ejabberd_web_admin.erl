@@ -238,7 +238,7 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
       {SJID, Pass} ->
 	  {HostOfRule, AccessRule} = get_acl_rule(RPath, Method),
 	    try jid:decode(SJID) of
-		#jid{user = <<"">>, server = User} ->
+		#jid{luser = <<"">>, lserver = User} ->
 		    case ejabberd_router:is_my_host(HostHTTP) of
 			true ->
 			    get_auth_account(HostOfRule, AccessRule, User, HostHTTP,
@@ -246,7 +246,7 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
 			_ ->
 			    {unauthorized, <<"missing-server">>}
 		    end;
-		#jid{user = User, server = Server} ->
+		#jid{luser = User, lserver = Server} ->
 		    get_auth_account(HostOfRule, AccessRule, User, Server,
 				     Pass)
 	    catch _:{bad_jid, _} ->
@@ -2286,7 +2286,7 @@ make_result(Binary,
     Second = proplists:get_value(second, ArgumentsUsed),
     FirstUrlencoded =
         list_to_binary(string:replace(
-               misc:url_encode(First), "%40", "@")),
+                           misc:url_encode(First), "%40", "@")),
     {GroupId, Host} =
         case jid:decode(FirstUrlencoded) of
             #jid{luser = <<"">>, server = G} ->

@@ -259,7 +259,9 @@ set_room_affiliation(Config) ->
   RequestURL = "http://" ++ ServerHost ++ ":" ++ integer_to_list(WebPort) ++ "/api/set_room_affiliation",
   Headers = [{"X-Admin", "true"}],
   ContentType = "application/json",
-  Body = misc:json_encode(#{name => RoomName, service => RoomService, jid => jid:encode(PeerJID), affiliation => member}),
+  Body = misc:json_encode(#{room => RoomName, service => RoomService,
+                            user => PeerJID#jid.luser, host => PeerJID#jid.lserver,
+                            affiliation => member}),
   {ok, {{_, 200, _}, _, _}} = httpc:request(post, {RequestURL, Headers, ContentType, Body}, [], []),
 
   #message{id = _, from = RoomJID, to = MyJID, sub_els = [

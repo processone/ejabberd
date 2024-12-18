@@ -43,7 +43,8 @@
 	 % Sessions
 	 num_resources/2, resource_num/3,
 	 kick_session/4, status_num/2, status_num/1,
-	 status_list/2, status_list/1, connected_users_info/0,
+	 status_list/2, status_list_v3/2,
+	 status_list/1, status_list_v3/1, connected_users_info/0,
 	 connected_users_vhost/1, set_presence/7,
 	 get_presence/2, user_sessions_info/2, get_last/2, set_last/4,
 
@@ -380,6 +381,21 @@ get_commands_spec() ->
 								{status, string}
 							       ]}}
 					 }}},
+     #ejabberd_commands{name = status_list_host, tags = [session],
+			desc = "List of users logged in host with their statuses",
+			module = ?MODULE, function = status_list_v3,
+			version = 3,
+			note = "updated in 24.12",
+			args = [{host, binary}, {status, binary}],
+			args_example = [<<"myserver.com">>, <<"dnd">>],
+			args_desc = ["Server name", "Status type to check"],
+			result_example = [{<<"peter@myserver.com/tka">>,6,<<"Busy">>}],
+			result = {users, {list,
+					  {userstatus, {tuple, [{jid, string},
+								{priority, integer},
+								{status, string}
+							       ]}}
+					 }}},
      #ejabberd_commands{name = status_list, tags = [session],
 			desc = "List of logged users with this status",
 			module = ?MODULE, function = status_list,
@@ -392,6 +408,21 @@ get_commands_spec() ->
 								{user, string},
 								{host, string},
 								{resource, string},
+								{priority, integer},
+								{status, string}
+							       ]}}
+					 }}},
+     #ejabberd_commands{name = status_list, tags = [session],
+			desc = "List of logged users with this status",
+			module = ?MODULE, function = status_list_v3,
+			version = 3,
+			note = "updated in 24.12",
+			args = [{status, binary}],
+			args_example = [<<"dnd">>],
+			args_desc = ["Status type to check"],
+			result_example = [{<<"peter@myserver.com/tka">>,6,<<"Busy">>}],
+			result = {users, {list,
+					  {userstatus, {tuple, [{jid, string},
 								{priority, integer},
 								{status, string}
 							       ]}}
@@ -426,8 +457,9 @@ get_commands_spec() ->
 			module = ?MODULE, function = connected_users_vhost,
 			args_example = [<<"myexample.com">>],
 			args_desc = ["Server name"],
-			result_example = [<<"user1@myserver.com/tka">>, <<"user2@localhost/tka">>],
 			args = [{host, binary}],
+			result_example = [<<"user1@myserver.com/tka">>, <<"user2@localhost/tka">>],
+			result_desc = "List of sessions full JIDs",
 			result = {connected_users_vhost, {list, {sessions, string}}}},
      #ejabberd_commands{name = user_sessions_info,
 			tags = [session],
@@ -683,6 +715,7 @@ get_commands_spec() ->
 			module = ?MODULE, function = get_roster,
 			args = [],
 			args_rename = [{server, host}],
+			result_example = [{<<"user2@localhost">>, <<"User 2">>, <<"none">>, <<"subscribe">>, [<<"Group1">>]}],
 			result = {contacts, {list, {contact, {tuple, [
 								      {jid, string},
 								      {nick, string},
@@ -696,6 +729,7 @@ get_commands_spec() ->
                         policy = user,
 			module = ?MODULE, function = get_roster_count,
 			args = [],
+			args_example = [<<"sun">>, <<"localhost">>],
 			args_rename = [{server, host}],
 			result_example = 5,
 			result_desc = "Number",
@@ -1332,6 +1366,14 @@ status_list(Host, Status) ->
     [{U, S, R, num_prio(P), St} || {U, S, R, P, St} <- Res].
 status_list(Status) ->
     status_list(<<"all">>, Status).
+
+status_list_v3(ArgHost, Status) ->
+    List = status_list(ArgHost, Status),
+    [{jid:encode(jid:make(User, Host, Resource)), Priority, StatusText}
+     || {User, Host, Resource, Priority, StatusText} <- List].
+
+status_list_v3(Status) ->
+    status_list_v3(<<"all">>, Status).
 
 
 get_status_list(Host, Status_required) ->
@@ -2283,9 +2325,9 @@ web_page_node(_, Node, #request{path = [<<"stats">>]} = R) ->
                               ejabberd_web_admin,
                               make_command,
                               [stats, R, [{<<"name">>, <<"uptimeseconds">>}], [{only, value}]]),
-    UpDaysBin = integer_to_binary(
-                  binary_to_integer(fxml:get_tag_cdata(UpSecs))
-                  div 86400), % 24*60*60
+    UpDaysBin =
+        integer_to_binary(binary_to_integer(fxml:get_tag_cdata(UpSecs))
+                          div 86400), % 24*60*60
     UpDays =
         #xmlel{name = <<"code">>,
                attrs = [],

@@ -50,6 +50,7 @@
 {"Changing role/affiliation is not allowed","Nuk lejohet ndryshim roli/përkatësie"}.
 {"Channel already exists","Kanali ekziston tashmë"}.
 {"Channel does not exist","Kanali s’ekziston"}.
+{"Channel JID","JID Kanali"}.
 {"Channels","Kanale"}.
 {"Characters not allowed:","Shenja të palejuara:"}.
 {"Chatroom configuration modified","Ndryshoi formësimi i dhomës së fjalosjeve"}.
@@ -99,6 +100,8 @@
 {"Full List of Room Admins","Listë e Plotë Përgjegjësish Dhome"}.
 {"Full List of Room Owners","Listë e Plotë të Zotësh Dhome"}.
 {"Full Name","Emër i Plotë"}.
+{"Get List of Online Users","Merr Listë Përdoruesish Në Linjë"}.
+{"Get List of Registered Users","Merr Listë Përdoruesish të Regjistruar"}.
 {"Get Number of Online Users","Merr Numër Përdoruesish Në Linjë"}.
 {"Get Number of Registered Users","Merr Numër Përdoruesish të Regjistruar"}.
 {"Get User Statistics","Merr Statistika Përdoruesi"}.
@@ -106,6 +109,7 @@
 {"Grant voice to this person?","T’i akordohet zë këtij personi?"}.
 {"has been banned","është dëbuar"}.
 {"has been kicked","është përzënë"}.
+{"Hat title","Titull kapeleje"}.
 {"Host unknown","Strehë e panjohur"}.
 {"HTTP File Upload","Ngarkim Kartelash HTTP"}.
 {"Idle connection","Lidhje e plogësht"}.
@@ -182,6 +186,7 @@
 {"No node specified","S’u përcaktua nyjë"}.
 {"No pending subscriptions found","S’u gjetën pajtime pezull"}.
 {"No privacy list with this name found","S’u gjet listë privatësie me atë emër"}.
+{"No <privileged_iq/> element found","S’u gjetën elementë <privileged_iq/>"}.
 {"No running node found","S’u gjet nyjë në funksionim"}.
 {"No services available","S’ka shërbime të gatshme"}.
 {"No statistics found for this item","S’u gjetën statistika për këtë objekt"}.
@@ -191,6 +196,7 @@
 {"Node index not found","S’u gjet tregues nyje"}.
 {"Node not found","S’u gjet nyjë"}.
 {"Node ~p","Nyjë ~p"}.
+{"Node","Nyjë"}.
 {"Nodes","Nyja"}.
 {"None","Asnjë"}.
 {"Not allowed","E palejuar"}.
@@ -203,6 +209,7 @@
 {"Number of online users","Numër përdoruesish në linjë"}.
 {"Number of registered users","Numër përdoruesish të regjistruar"}.
 {"Occupants are allowed to invite others","Të pranishmëve u është lejuar të ftojnë të tjerë"}.
+{"Occupants are allowed to query others","Të pranishmëve u është lejuar t’u bëjnë kërkim të tjerëve"}.
 {"Occupants May Change the Subject","Të pranishmit Mund të Ndryshojnë Subjektin"}.
 {"October","Tetor"}.
 {"OK","OK"}.
@@ -210,12 +217,14 @@
 {"Online Users","Përdorues Në Linjë"}.
 {"Online","Në linjë"}.
 {"Only deliver notifications to available users","Dorëzo njoftime vetëm te përdoruesit e pranishëm"}.
+{"Only moderators are allowed to retract messages","Vetëm të moderatorëve u lejohet të tërheqin mbrapsht mesazhe"}.
 {"Only occupants are allowed to send messages to the conference","Vetëm të pranishmëve u lejohet të dërgojnë mesazhe te konferenca"}.
 {"Only publishers may publish","Vetëm botuesit mund të botojnë"}.
 {"Organization Name","Emër Enti"}.
 {"Organization Unit","Njësi Organizative"}.
 {"Outgoing s2s Connections","Lidhje s2s Ikëse"}.
 {"Owner privileges required","Lypset privilegje të zoti"}.
+{"Participant ID","ID Pjesëmarrësi"}.
 {"Participant","Pjesëmarrës"}.
 {"Password Verification","Verifikim Fjalëkalimi"}.
 {"Password Verification:","Verifikim Fjalëkalimi:"}.
@@ -266,6 +275,7 @@
 {"Specify the access model","Specifikoni model hyrjeje"}.
 {"Specify the event message type","Përcaktoni llojin e mesazhit për aktin"}.
 {"Specify the publisher model","Përcaktoni model botuesi"}.
+{"Stanza id is not valid","ID Stanza s’është i vlefshëm"}.
 {"Stopped Nodes","Nyja të Ndalura"}.
 {"Subject","Subjekti"}.
 {"Submitted","Parashtruar"}.
@@ -277,6 +287,7 @@
 {"The default language of the node","Gjuha parazgjedhje e nyjës"}.
 {"The feature requested is not supported by the conference","Veçoria e kërkuar nuk mbulohen nga konferenca"}.
 {"The JID of the node creator","JID i krijjuesit të nyjës"}.
+{"The list of all online users","Lista e krejt përdoruesve në linjë"}.
 {"The name of the node","Emri i nyjës"}.
 {"The number of subscribers to the node","Numri i pajtimtarëve te nyja"}.
 {"The number of unread or undelivered messages","Numri i mesazheve të palexuar ose të padorëzuar"}.
@@ -303,6 +314,7 @@
 {"Unregister an XMPP account","Çregjistroni një llogari XMPP"}.
 {"Unregister","Çregjistrohuni"}.
 {"Unsupported version","Version i pambuluar"}.
+{"Updating the vCard is not supported by the vCard storage backend","Përditësimi i vCard-it nuk mbulohet nga mekanizmi i depozitimit të vCard-ve"}.
 {"User already exists","Ka tashmë një përdorues të tillë"}.
 {"User JID","JID përdoruesi"}.
 {"User (jid)","Përdorues (jid)"}.
@@ -319,9 +331,11 @@
 {"Wednesday","E mërkurë"}.
 {"When a new subscription is processed","Kur përpunohet një pajtim i ri"}.
 {"Whether to allow subscriptions","Nëse duhen lejuar apo jo pajtime"}.
+{"Who can send private messages","Cilët mund të dërgojnë mesazhe private"}.
 {"Wrong parameters in the web formulary","Parametër i gabuar në formular web"}.
 {"XMPP Account Registration","Regjistrim Llogarish XMPP"}.
 {"XMPP Domains","Përkatësi XMPP"}.
+{"You are not allowed to send private messages","S’keni leje të dërgoni mesazhe private"}.
 {"You are not joined to the channel","S’keni hyrë te kanali"}.
 {"You have been banned from this room","Jeni dëbuar prej kësaj dhome"}.
 {"You have joined too many conferences","Keni hyrë në shumë konferenca"}.

@@ -295,6 +295,7 @@
 {"No pending subscriptions found","Não foram encontradas subscrições"}.
 {"No privacy list with this name found","Nenhuma lista de privacidade encontrada com este nome"}.
 {"No private data found in this query","Nenhum dado privado encontrado nesta consulta"}.
+{"No <privileged_iq/> element found","Nenhum elemento <privileged_iq/> foi encontrado"}.
 {"No running node found","Nenhum nó em execução foi encontrado"}.
 {"No services available","Não há serviços disponíveis"}.
 {"No statistics found for this item","Não foram encontradas estatísticas para este item"}.
@@ -537,6 +538,7 @@
 {"Too many unacked stanzas","Número excessivo de instâncias sem confirmação"}.
 {"Too many users in this conference","Há uma quantidade excessiva de usuários nesta conferência"}.
 {"Traffic rate limit is exceeded","Limite de banda excedido"}.
+{"~ts's MAM Archive","Arquivo ~ts's MAM"}.
 {"~ts's Offline Messages Queue","~s's Fila de Mensagens Offline"}.
 {"Tuesday","Terça"}.
 {"Unable to generate a CAPTCHA","Impossível gerar um CAPTCHA"}.
@@ -553,12 +555,14 @@
 {"Update message of the day on all hosts (don't send)","Atualizar a mensagem do dia em todos os host (não enviar)"}.
 {"Update specs to get modules source, then install desired ones.","Atualize as especificações para obter a fonte dos módulos e instale os que desejar."}.
 {"Update Specs","Atualizar as especificações"}.
+{"Updating the vCard is not supported by the vCard storage backend","A atualização do vCard não é compatível com o back-end de armazenamento do vCard"}.
 {"Upgrade","Atualização"}.
 {"URL for Archived Discussion Logs","A URL para o arquivamento dos registros da discussão"}.
 {"User already exists","Usuário já existe"}.
 {"User (jid)","Usuário (jid)"}.
 {"User JID","Usuário JID"}.
 {"User Management","Gerenciamento de Usuários"}.
+{"User not allowed to perform an IQ set on another user's vCard.","O usuário não tem permissão para executar um conjunto de QI no vCard de outro usuário."}.
 {"User removed","O usuário foi removido"}.
 {"User session not found","A sessão do usuário não foi encontrada"}.
 {"User session terminated","Sessão de usuário terminada"}.
