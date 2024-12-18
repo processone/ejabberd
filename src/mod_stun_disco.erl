@@ -484,13 +484,15 @@ process_iq(#iq{lang = Lang} = IQ) ->
 
 -spec process_iq_get(iq(), request()) -> iq().
 process_iq_get(#iq{from = From, to = #jid{lserver = Host}, lang = Lang} = IQ,
-	       Request) ->
+	       #request{restricted = Restricted} = Request) ->
     Access = mod_stun_disco_opt:access(Host),
     case acl:match_rule(Host, Access, From) of
         allow ->
 	    ?DEBUG("Performing external service discovery for ~ts",
 		   [jid:encode(From)]),
 	    case get_services(Host, From, Request) of
+		{ok, Services} when Restricted -> % A <credentials/> request.
+		    xmpp:make_iq_result(IQ, #credentials{services = Services});
 		{ok, Services} ->
 		    xmpp:make_iq_result(IQ, #services{list = Services});
 		{error, timeout} -> % Has been logged already.
