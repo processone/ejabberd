@@ -44,7 +44,7 @@ docker run --name ejabberd -d -p 5222:5222 ghcr.io/processone/ejabberd
 ```
 
 That runs the container as a daemon,
-using ejabberd default configuration file and XMPP domain "localhost".
+using ejabberd default configuration file and XMPP domain `localhost`.
 
 Stop the running container:
 
@@ -67,7 +67,7 @@ Start ejabberd with an Erlang console attached using the `live` command:
 docker run --name ejabberd -it -p 5222:5222 ghcr.io/processone/ejabberd live
 ```
 
-That uses the default configuration file and XMPP domain "localhost".
+That uses the default configuration file and XMPP domain `localhost`.
 
 
 ### Start with your configuration and database
@@ -269,10 +269,12 @@ and the same
 [Erlang Cookie](https://docs.ejabberd.im/admin/guide/security/#erlang-cookie).
 
 For this you can either:
+
 - edit `conf/ejabberdctl.cfg` and set variables `ERLANG_NODE` and `ERLANG_COOKIE`
 - set the environment variables `ERLANG_NODE_ARG` and `ERLANG_COOKIE`
 
 Example to connect a local `ejabberdctl` to a containerized ejabberd:
+
 1. When creating the container, export port 5210, and set `ERLANG_COOKIE`:
     ```sh
     docker run --name ejabberd -it \
@@ -321,10 +323,12 @@ docker buildx build \
 
 ### Podman build
 
-To build the image using podman instead of docker, notice:
+To build the image using Podman, please notice:
+
 - `EXPOSE 4369-4399` port range is not supported, remove that in Dockerfile
 - It mentions that `healthcheck` is not supported by the Open Container Initiative image format
 - to start with command `live`, you may want to add environment variable `EJABBERD_BYPASS_WARNINGS=true`
+
 ```bash
 podman build \
     -t ejabberd \
@@ -433,9 +437,10 @@ mv ejabberd.yml.example ejabberd.yml
 ```
 
 Use a macro in `ejabberd.yml` to set the served vhost, with `localhost` as default value:
-```bash
+```yaml
 define_macro:
   XMPPHOST: localhost
+
 hosts:
   - XMPPHOST
 ```
@@ -530,7 +535,7 @@ and once ejabberd is started in it, it joins the first one.
 
 An account is registered in the first node when created (and
 we ignore errors that can happen when doing that - for example
-whenn account already exists),
+when account already exists),
 and it should exist in the second node after join.
 
 Notice that in this example the main container does not have access
@@ -572,7 +577,7 @@ services:
 ```
 
 If using Podman, write this `cluster.yml` file
-and start it with `podman kube play cluster.yml`.
+and start it with `podman kube play cluster.yml`:
 
 ```yaml
 apiVersion: v1
