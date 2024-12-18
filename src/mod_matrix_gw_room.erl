@@ -29,14 +29,11 @@
 
 %% API
 -export([start_link/2, supervisor/1, create_db/0,
-         get_room_pid/2, join_direct/5, process_pdu/3,
+         get_room_pid/2, join/5, process_pdu/3,
          get_missing_events/7, get_state_ids/4,
          get_rooms_list/0, get_event/3,
          make_join/4, send_join/5,
-         create_new_room/3, room_add_event/3,
          binary_to_room_version/1,
-         parse_user_id/1,
-         send_muc_invite/6,
          escape/1, unescape/1,
          route/1]).
 
@@ -71,28 +68,18 @@
          json :: #{atom() | binary() => misc:json_value()},
          state_map}).
 
--record(direct,
-        {local_user :: jid() | undefined,
-         remote_user :: binary() | undefined,
-         client_state}).
-
--record(multi,
-        {users :: #{}}).
-
--record(multi_user,
-        {join_ts :: integer()}).
-
 -record(data,
         {host :: binary(),
-         kind :: #direct{} | undefined,
+         local_user :: jid() | undefined,
+         remote_user :: binary() | undefined,
+         remote_servers = #{},
          room_id :: binary(),
-         room_jid :: jid(),
          room_version :: #room_version{},
          events = #{},
          latest_events = sets:new([{version, 2}]),
          nonlatest_events = sets:new([{version, 2}]),
-         event_queue = treap:empty(),
-         outgoing_txns = #{}}).
+         outgoing_txns = #{},
+         client_state}).
 
 -define(ROOM_CREATE, <<"m.room.create">>).
 -define(ROOM_MEMBER, <<"m.room.member">>).
@@ -103,7 +90,6 @@
 -define(ROOM_HISTORY_VISIBILITY, <<"m.room.history_visibility">>).
 
 -define(MAX_DEPTH, 16#7FFFFFFFFFFFFFFF).
--define(MAX_TXN_RETRIES, 5).
 
 %%%===================================================================
 %%% API
@@ -162,85 +148,23 @@ get_existing_room_pid(_Host, RoomID) ->
             {ok, Pid}
     end.
 
-join_direct(Host, MatrixServer, RoomID, Sender, UserID) ->
+join(Host, MatrixServer, RoomID, Sender, UserID) ->
     case get_room_pid(Host, RoomID) of
         {ok, Pid} ->
-            gen_statem:cast(Pid, {join_direct, MatrixServer, RoomID, Sender, UserID});
+            gen_statem:cast(Pid, {join, MatrixServer, RoomID, Sender, UserID});
         {error, _} = Error ->
             Error
     end.
 
-route(#presence{from = From, to = #jid{luser = <<$!, _/binary>>} = To,
-                type = Type} = Packet) ->
-    case room_id_from_xmpp(To#jid.luser) of
-        {ok, RoomID} ->
-            Host = ejabberd_config:get_myname(),
-            case From#jid.lserver of
-                Host ->
-                    case Type of
-                        available ->
-                            case get_room_pid(Host, RoomID) of
-                                {ok, Pid} ->
-                                    gen_statem:cast(Pid, {join, From, Packet});
-                                {error, _} = Error ->
-                                    ?DEBUG("join failed ~p", [{From, To, Error}]),
-                                    ok
-                            end;
-                        unavailable ->
-                            case get_existing_room_pid(Host, RoomID) of
-                                {ok, Pid} ->
-                                    gen_statem:cast(Pid, {leave, From});
-                                _ ->
-                                    ok
-                            end;
-                        _ ->
-                            ok
-                    end;
-                _ ->
-                    ok
-            end;
-        error ->
-            ok
-    end;
-route(#message{from = From, to = #jid{luser = <<$!, _/binary>>} = To,
-               type = groupchat,
-               body = Body}) ->
-    case room_id_from_xmpp(To#jid.luser) of
-        {ok, RoomID} ->
-            Host = ejabberd_config:get_myname(),
-            case From#jid.lserver of
-                Host ->
-                    case user_id_from_jid(From, Host) of
-                        {ok, UserID} ->
-                            case get_existing_room_pid(Host, RoomID) of
-                                {ok, Pid} ->
-                                    Text = xmpp:get_text(Body),
-                                    JSON =
-                                        #{<<"content">> =>
-                                              #{<<"body">> => Text,
-                                                <<"msgtype">> => <<"m.text">>},
-                                          <<"sender">> => UserID,
-                                          <<"type">> => ?ROOM_MESSAGE},
-                                    gen_statem:cast(Pid, {add_event, JSON}),
-                                    ok;
-                                _ ->
-                                    ok
-                            end;
-                        error ->
-                            ok
-                    end;
-                _ ->
-                    ok
-            end;
-        error ->
-            ok
-    end;
 route(#message{from = From, to = To, body = Body} = _Pkt) ->
-    Host = ejabberd_config:get_myname(),
-    case user_id_from_jid(To, Host) of
-        {ok, ToMatrixID} ->
+    case binary:split(To#jid.luser, <<"%">>) of
+        [EscU, EscS] ->
+            U = unescape(EscU),
+            S = unescape(EscS),
+            ToMatrixID = <<$@, U/binary, $:, S/binary>>,
             Key = {{From#jid.luser, From#jid.lserver}, ToMatrixID},
             Text = xmpp:get_text(Body),
+            Host = ejabberd_config:get_myname(),
             case mnesia:dirty_read(matrix_direct, Key) of
                 [#matrix_direct{room_id = RoomID}] ->
                     ?DEBUG("msg ~p~n", [{RoomID, From, ToMatrixID, Text}]),
@@ -340,7 +264,7 @@ route(#message{from = From, to = To, body = Body} = _Pkt) ->
                             ok
                     end
             end;
-        error ->
+        _ ->
             ok
     end;
 route(_) ->
@@ -409,26 +333,6 @@ send_join(Host, Origin, RoomID, EventID, JSON) ->
             Error
     end.
 
-create_new_room(Host, XMPPID, MatrixID) ->
-    RoomID = new_room_id(),
-    case get_room_pid(Host, RoomID) of
-        {ok, Pid} ->
-            MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
-            gen_statem:cast(Pid, {create, MatrixServer, RoomID,
-                                  XMPPID, MatrixID}),
-            {ok, RoomID};
-        {error, _} = Error ->
-            Error
-    end.
-
-room_add_event(Host, RoomID, Event) ->
-    case get_existing_room_pid(Host, RoomID) of
-        {ok, Pid} ->
-            gen_statem:call(Pid, {add_event, Event});
-        {error, _} ->
-            {error, room_not_found}
-    end.
-
 %%%===================================================================
 %%% gen_statem callbacks
 %%%===================================================================
@@ -443,16 +347,12 @@ room_add_event(Host, RoomID, Event) ->
 %%--------------------------------------------------------------------
 -spec init(Args :: term()) -> gen_statem:init_result(term()).
 init([Host, RoomID]) ->
-    ServiceHost = mod_matrix_gw_opt:host(Host),
-    {ok, RID} = room_id_to_xmpp(RoomID),
-    RoomJID = jid:make(RID, ServiceHost),
     mnesia:dirty_write(
       #matrix_room{room_id = RoomID,
                    pid = self()}),
     {ok, state_name,
      #data{host = Host,
            room_id = RoomID,
-           room_jid = RoomJID,
            room_version = binary_to_room_version(<<"9">>)}}.
 
 %%--------------------------------------------------------------------
@@ -584,7 +484,7 @@ handle_event({call, From},
             ?INFO_MSG("failed make_join: ~p", [{Class, Reason, ST}]),
             {keep_state, Data, [{reply, From, {error, Reason}}]}
     end;
-handle_event(cast, {join_direct, MatrixServer, RoomID, Sender, UserID}, State, Data) ->
+handle_event(cast, {join, MatrixServer, RoomID, Sender, UserID}, State, Data) ->
     Host = Data#data.host,
     %% TODO: check if there is another solution to "You are not invited to this room" and not receiving the first messages in the room
     timer:sleep(1000),
@@ -636,17 +536,14 @@ handle_event(cast, {join_direct, MatrixServer, RoomID, Sender, UserID}, State, D
                                            RoomID, EventID],
                                           [],
                                           Event4,
-                                          [{connect_timeout, 5000},
-                                           {timeout, 60000}],
+                                          [{timeout, 5000}],
                                           [{sync, true},
                                            {body_format, binary}]),
                                     ?DEBUG("send_join ~p~n", [SendJoinRes]),
-                                    process_send_join_res(
-                                      MatrixServer, SendJoinRes, RoomVersion,
-                                      Data#data{
-                                        kind = #direct{local_user = UserJID,
-                                                       remote_user = Sender},
-                                        room_version = RoomVersion})
+                                    process_send_join_res(MatrixServer, SendJoinRes, RoomVersion,
+                                                          Data#data{local_user = UserJID,
+                                                                    remote_user = Sender,
+                                                                    room_version = RoomVersion})
                             end;
                         _JSON ->
                             ?DEBUG("received bad JSON on make_join: ~p", [MakeJoinRes]),
@@ -664,172 +561,6 @@ handle_event(cast, {join_direct, MatrixServer, RoomID, Sender, UserID}, State, D
             ?INFO_MSG("bad join user id: ~p", [{UserID, UserJID}]),
             {stop, normal}
     end;
-handle_event(cast, {join, UserJID, Packet}, _State, Data) ->
-    Host = Data#data.host,
-    {LUser, LServer, LResource} = jid:tolower(UserJID),
-    case Data#data.kind of
-        #multi{users = #{{LUser, LServer} := #{LResource := _}}} ->
-            {keep_state_and_data, []};
-        #multi{} = Kind ->
-            case user_id_from_jid(UserJID, Host) of
-                {ok, UserID} ->
-                    JoinTS = erlang:system_time(millisecond),
-                    JSON = #{<<"content">> =>
-                                 #{<<"membership">> => <<"join">>},
-                             <<"sender">> => UserID,
-                             <<"state_key">> => UserID,
-                             <<"type">> => ?ROOM_MEMBER},
-                    Users = Kind#multi.users,
-                    Resources =
-                        case Users of
-                            #{{LUser, LServer} := Rs} -> Rs;
-                            _ -> #{}
-                        end,
-                    Data2 =
-                        Data#data{
-                          kind =
-                              Kind#multi{
-                                users =
-                                    Users#{{LUser, LServer} =>
-                                               Resources#{LResource =>
-                                                              #multi_user{join_ts = JoinTS}}}}},
-                    {keep_state, Data2, [{next_event, cast, {add_event, JSON}}]};
-                error ->
-                    ?INFO_MSG("bad join user id: ~p", [UserJID]),
-                    {keep_state_and_data, []}
-            end;
-        #direct{} ->
-            {keep_state_and_data, []};
-        _ ->
-            Lang = xmpp:get_lang(Packet),
-            case user_id_from_jid(UserJID, Host) of
-                {ok, UserID} ->
-                    %% TODO: async
-                    RoomID = Data#data.room_id,
-                    {ok, MatrixServer} =
-                        case binary:split(RoomID, <<":">>) of
-                            [_, MS] -> {ok, MS};
-                            _ -> error
-                        end,
-                    MakeJoinRes =
-                        mod_matrix_gw:send_request(
-                          Host, get, MatrixServer,
-                          [<<"_matrix">>, <<"federation">>, <<"v1">>, <<"make_join">>,
-                           RoomID, UserID],
-                          [{<<"ver">>, <<"9">>},
-                           {<<"ver">>, <<"10">>},
-                           {<<"ver">>, <<"11">>}],
-                          none,
-                          [{timeout, 5000}],
-                          [{sync, true},
-                           {body_format, binary}]),
-                    ?DEBUG("make_join ~p~n", [MakeJoinRes]),
-                    case MakeJoinRes of
-                        {ok, {{_, 200, _}, _Headers, Body}} ->
-                            try misc:json_decode(Body) of
-                                #{<<"event">> := Event,
-                                  <<"room_version">> := SRoomVersion} ->
-                                    case binary_to_room_version(SRoomVersion) of
-                                        false ->
-                                            ?DEBUG("unsupported room version on make_join: ~p", [MakeJoinRes]),
-                                            {stop, normal};
-                                        #room_version{} = RoomVersion ->
-                                            JoinTS = erlang:system_time(millisecond),
-                                            Origin = mod_matrix_gw_opt:matrix_domain(Host),
-                                            Event2 =
-                                                Event#{<<"origin">> => Origin,
-                                                       <<"origin_server_ts">> => JoinTS},
-                                            CHash = mod_matrix_gw:content_hash(Event2),
-                                            Event3 =
-                                                Event2#{<<"hashes">> =>
-                                                            #{<<"sha256">> =>
-                                                                  mod_matrix_gw:base64_encode(CHash)}},
-                                            Event4 = mod_matrix_gw:sign_event(Host, Event3, RoomVersion),
-                                            EventID = mod_matrix_gw:get_event_id(Event4, RoomVersion),
-                                            SendJoinRes =
-                                                mod_matrix_gw:send_request(
-                                                  Data#data.host, put, MatrixServer,
-                                                  [<<"_matrix">>, <<"federation">>,
-                                                   <<"v2">>, <<"send_join">>,
-                                                   RoomID, EventID],
-                                                  [],
-                                                  Event4,
-                                                  [{connect_timeout, 5000},
-                                                   {timeout, 60000}],
-                                                  [{sync, true},
-                                                   {body_format, binary}]),
-                                            ?DEBUG("send_join ~p~n", [SendJoinRes]),
-                                            process_send_join_res(
-                                              MatrixServer, SendJoinRes, RoomVersion,
-                                              Data#data{
-                                                kind =
-                                                    #multi{users =
-                                                               #{{LUser, LServer} =>
-                                                                     #{LResource => #multi_user{join_ts = JoinTS}}}},
-                                                room_version = RoomVersion})
-                                    end;
-                                _JSON ->
-                                    ?DEBUG("received bad JSON on make_join: ~p", [MakeJoinRes]),
-                                    Txt = <<"received bad JSON on make_join">>,
-                                    Err = xmpp:err_bad_request(Txt, Lang),
-                                    ejabberd_router:route_error(Packet, Err),
-                                    {stop, normal}
-                            catch
-                                _:_ ->
-                                    ?DEBUG("received bad JSON on make_join: ~p", [MakeJoinRes]),
-                                    Txt = <<"received bad JSON on make_join">>,
-                                    Err = xmpp:err_bad_request(Txt, Lang),
-                                    ejabberd_router:route_error(Packet, Err),
-                                    {stop, normal}
-                            end;
-                        {ok, {{_, 400, _}, _Headers, Body}} ->
-                            ?DEBUG("failed make_join: ~p", [MakeJoinRes]),
-                            Txt = <<"make_join failed: ", Body/binary>>,
-                            Err = xmpp:err_bad_request(Txt, Lang),
-                            ejabberd_router:route_error(Packet, Err),
-                            {stop, normal};
-                        _ ->
-                            ?DEBUG("failed make_join: ~p", [MakeJoinRes]),
-                            Txt = "make_join failed",
-                            Err = xmpp:err_bad_request(Txt, Lang),
-                            ejabberd_router:route_error(Packet, Err),
-                            {stop, normal}
-                    end;
-                error ->
-                    ?INFO_MSG("bad join user id: ~p", [UserJID]),
-                    Txt = <<"bad user id">>,
-                    Err = xmpp:err_bad_request(Txt, Lang),
-                    ejabberd_router:route_error(Packet, Err),
-                    {stop, normal}
-            end
-    end;
-handle_event(cast, {leave, UserJID}, _State, Data) ->
-    Host = Data#data.host,
-    {LUser, LServer, LResource} = jid:tolower(UserJID),
-    case Data#data.kind of
-        #multi{users = #{{LUser, LServer} := #{LResource := _} = Resources} = Users} ->
-            Resources2 = maps:remove(LResource, Resources),
-            if
-                Resources2 == #{} ->
-                    Users2 = maps:remove({LUser, LServer}, Users),
-                    Kind = (Data#data.kind)#multi{users = Users2},
-                    Data2 = Data#data{kind = Kind},
-                    {ok, UserID} = user_id_from_jid(UserJID, Host),
-                    JSON = #{<<"content">> =>
-                                 #{<<"membership">> => <<"leave">>},
-                             <<"sender">> => UserID,
-                             <<"state_key">> => UserID,
-                             <<"type">> => ?ROOM_MEMBER},
-                    {keep_state, Data2, [{next_event, cast, {add_event, JSON}}]};
-                true ->
-                    Users2 = Users#{{LUser, LServer} => Resources2},
-                    Kind = (Data#data.kind)#multi{users = Users2},
-                    Data2 = Data#data{kind = Kind},
-                    {keep_state, Data2, []}
-            end;
-        _ ->
-            {keep_state_and_data, []}
-    end;
 handle_event(cast, {create, _MatrixServer, RoomID, LocalUserID, RemoteUserID}, _State, Data) ->
     Host = Data#data.host,
     case user_id_to_jid(LocalUserID, Data) of
@@ -837,27 +568,16 @@ handle_event(cast, {create, _MatrixServer, RoomID, LocalUserID, RemoteUserID}, _
             mnesia:dirty_write(
               #matrix_direct{local_remote = {{UserJID#jid.luser, UserJID#jid.lserver}, RemoteUserID},
                              room_id = RoomID}),
-            {keep_state,
-             Data#data{kind = #direct{local_user = UserJID,
-                                      remote_user = RemoteUserID}}, []};
+            {keep_state, Data#data{local_user = UserJID,
+                                   remote_user = RemoteUserID}, []};
         UserJID ->
             ?INFO_MSG("bad create user id: ~p", [{LocalUserID, UserJID}]),
             {stop, normal}
     end;
 handle_event(cast, {add_event, JSON}, _State, Data) ->
     try
-        {Data2, _Event} = add_event(JSON, Data),
+        Data2 = add_event(JSON, Data),
         {keep_state, Data2, [{next_event, internal, update_client}]}
-    catch
-        Class:Reason:ST ->
-            ?INFO_MSG("failed add_event: ~p", [{Class, Reason, ST}]),
-            {keep_state, Data, []}
-    end;
-handle_event({call, From}, {add_event, JSON}, _State, Data) ->
-    try
-        {Data2, Event} = add_event(JSON, Data),
-        {keep_state, Data2, [{reply, From, {ok, Event#event.id}},
-                             {next_event, internal, update_client}]}
     catch
         Class:Reason:ST ->
             ?INFO_MSG("failed add_event: ~p", [{Class, Reason, ST}]),
@@ -866,8 +586,7 @@ handle_event({call, From}, {add_event, JSON}, _State, Data) ->
 handle_event(cast, Msg, State, Data) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {next_state, State, Data, []};
-handle_event(internal, update_client, _State,
-             #data{kind = #direct{local_user = JID}} = Data) ->
+handle_event(internal, update_client, _State, Data) ->
     try
         case update_client(Data) of
             {ok, Data2} ->
@@ -876,6 +595,7 @@ handle_event(internal, update_client, _State,
                 ?INFO_MSG("leaving ~p: ~p", [Data#data.room_id, LeaveReason]),
                 Host = Data#data.host,
                 MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
+                JID = Data#data.local_user,
                 LocalUserID = <<$@, (JID#jid.luser)/binary, $:, MatrixServer/binary>>,
                 JSON = #{<<"content">> =>
                              #{<<"membership">> => <<"leave">>},
@@ -889,36 +609,13 @@ handle_event(internal, update_client, _State,
     catch
         Class:Reason:ST ->
             ?INFO_MSG("failed update_client: ~p", [{Class, Reason, ST}]),
-            {keep_state_and_data, []}
+            {keep_state, Data, []}
     end;
-handle_event(internal, update_client, _State,
-             #data{kind = #multi{}} = Data) ->
-    try
-        case update_client(Data) of
-            {ok, Data2} ->
-                {keep_state, Data2, []};
-            stop ->
-                {stop, normal}
-        end
-    catch
-        Class:Reason:ST ->
-            ?INFO_MSG("failed update_client: ~p", [{Class, Reason, ST}]),
-            {keep_state_and_data, []}
-    end;
-handle_event(internal, update_client, _State, #data{kind = undefined}) ->
-    {keep_state_and_data, []};
 handle_event(info, {send_txn_res, RequestID, TxnID, Server, Res}, _State, Data) ->
-    ?DEBUG("send_txn_res ~p", [{RequestID, TxnID, Server, Res}]),
     case Data#data.outgoing_txns of
-        #{Server := {{RequestID, TxnID, _Events, Count}, Queue}} ->
-            Done =
-                case Res of
-                    {{_, 200, _}, _Headers, _Body} -> true;
-                    _ when Count < ?MAX_TXN_RETRIES -> false;
-                    _ -> true
-                end,
-            case Done of
-                true ->
+        #{Server := {{RequestID, TxnID, _Events}, Queue}} ->
+            case Res of
+                {{_, 200, _}, _Headers, _Body} ->
                     Data2 =
                         case Queue of
                             [] ->
@@ -928,7 +625,8 @@ handle_event(info, {send_txn_res, RequestID, TxnID, Server, Res}, _State, Data) 
                                 send_new_txn(lists:reverse(Queue), Server, Data)
                         end,
                     {keep_state, Data2, []};
-                false ->
+                _ ->
+                    %% TODO
                     erlang:send_after(30000, self(), {resend_txn, Server}),
                     {keep_state, Data, []}
             end;
@@ -937,8 +635,8 @@ handle_event(info, {send_txn_res, RequestID, TxnID, Server, Res}, _State, Data) 
     end;
 handle_event(info, {resend_txn, Server}, _State, Data) ->
     case Data#data.outgoing_txns of
-        #{Server := {{_RequestID, TxnID, Events, Count}, Queue}} ->
-            Data2 = send_txn(TxnID, Events, Server, Count + 1, Queue, Data),
+        #{Server := {{_RequestID, TxnID, Events}, Queue}} ->
+            Data2 = send_txn(TxnID, Events, Server, Queue, Data),
             {keep_state, Data2, []};
         _ ->
             {keep_state, Data, []}
@@ -963,12 +661,11 @@ terminate(Reason, _State, Data) ->
       #matrix_room{room_id = Data#data.room_id,
                    pid = self()}),
     %% TODO: wait for messages
-    case Data#data.kind of
-        #direct{local_user = #jid{} = LocalUserJID,
-                remote_user = RemoteUser} ->
+    case Data#data.local_user of
+        #jid{} = LocalUserJID ->
             mnesia:dirty_delete_object(
               #matrix_direct{local_remote = {{LocalUserJID#jid.luser, LocalUserJID#jid.lserver},
-                                             RemoteUser},
+                                             Data#data.remote_user},
                              room_id = Data#data.room_id});
         _ ->
             ok
@@ -1016,20 +713,13 @@ process_send_join_res(MatrixServer, SendJoinRes, RoomVersion, Data) ->
                                       JSONState),
                         Event = json_to_event(JSONEvent, RoomVersion),
                         ?DEBUG("send_join res: ~p~n", [JSON]),
-                        case Data#data.kind of
-                            #multi{} ->
-                                %% TODO: do check_event_sig_and_hash, but faster
-                                ok;
-                            _ ->
-                                lists:foreach(
-                                  fun(E) ->
-                                          ?DEBUG("send_join res check ~p~n", [E]),
-                                          case check_event_sig_and_hash(Data#data.host, E) of
-                                              {ok, _} -> ok;
-                                              {error, Error} -> error(Error)
-                                          end
-                                  end, [Event] ++ AuthChain ++ State)
-                        end,
+                        lists:foreach(
+                          fun(E) ->
+                                  case check_event_sig_and_hash(Data#data.host, E) of
+                                      {ok, _} -> ok;
+                                      {error, Error} -> error(Error)
+                                  end
+                          end, [Event] ++ AuthChain ++ State),
                         CreateEvents =
                             lists:filter(
                               fun(#event{type = ?ROOM_CREATE,
@@ -1066,20 +756,20 @@ process_send_join_res(MatrixServer, SendJoinRes, RoomVersion, Data) ->
                                 end;
                             _ ->
                                 ?DEBUG("bad create event: ~p", [CreateEvents]),
-                                {stop, normal, Data}
+                                {keep_state, Data, []}
                         end
                 end
             catch
                 error:{invalid_signature, EventID} ->
                     ?INFO_MSG("failed signature check on event ~p", [EventID]),
-                    {stop, normal, Data};
+                    {keep_state, Data, []};
                 Class:Reason:ST ->
                     ?INFO_MSG("failed send_join: ~p", [{Class, Reason, ST}]),
-                    {stop, normal, Data}
+                    {keep_state, Data, []}
             end;
         _ ->
             ?DEBUG("failed send_join: ~p", [SendJoinRes]),
-            {stop, normal, Data}
+            {keep_state, Data, []}
     end.
 
 process_send_join_res2(MatrixServer, AuthChain, Event, State, Data) ->
@@ -1123,11 +813,8 @@ process_send_join_res2(MatrixServer, AuthChain, Event, State, Data) ->
        {body_format, binary},
        {receiver,
         fun({_, Res}) ->
-                spawn(fun() ->
-                              process_missing_events_res(
-                                Host, MatrixServer, Pid, RoomID, RoomVersion,
-                                {ok, Res})
-                      end)
+                process_missing_events_res(Host, MatrixServer, Pid, RoomID, RoomVersion,
+                                           {ok, Res})
         end}]),
     Data3.
 
@@ -1677,7 +1364,6 @@ fill_event(JSON, Data) ->
                          (maps:get(EID, Data#data.events))#event.depth
                  end, PrevEvents)]),
     Depth2 = min(Depth + 1, ?MAX_DEPTH),
-    ?DEBUG("fill ~p", [{PrevEvents, Data#data.events}]),
     StateMaps =
         lists:map(
           fun(EID) ->
@@ -1731,7 +1417,7 @@ add_event(JSON, Data) ->
     case check_event_auth(Event2, Data) of
         true ->
             %%TODO: soft fail
-            {store_event(Event2, Data), Event2};
+            store_event(Event2, Data);
         false ->
             error({event_auth_error, Event2#event.id})
     end.
@@ -1748,38 +1434,23 @@ store_event(Event, Data) ->
         error ->
             ?DEBUG("store ~p~n", [Event#event.id]),
             Data2 = notify_event(Event, Data),
-            {LatestEvents, NonLatestEvents} =
-                case Event of
-                    #event{state_map = undefined} ->
-                        {Data2#data.latest_events, Data2#data.nonlatest_events};
-                    _ ->
-                        SeenEvents = Event#event.prev_events ++ Event#event.auth_events,
-                        LatestEs =
-                            lists:foldl(fun(E, Acc) -> sets:del_element(E, Acc) end, Data2#data.latest_events,
-                                        SeenEvents),
-                        NonLatestEs =
-                            lists:foldl(fun(E, Acc) -> sets:add_element(E, Acc) end, Data2#data.nonlatest_events,
-                                        SeenEvents),
-                        LatestEs2 =
-                            case maps:is_key(Event#event.id, NonLatestEs) of
-                                true ->
-                                    LatestEs;
-                                false ->
-                                    LatestEs#{Event#event.id => []}
-                            end,
-                        %%?DEBUG("latest ~p~n", [{LatestEvents2, NonLatestEvents}]),
-                        {LatestEs2, NonLatestEs}
+            LatestEvents =
+                lists:foldl(fun(E, Acc) -> sets:del_element(E, Acc) end, Data2#data.latest_events,
+                            Event#event.prev_events),
+            NonLatestEvents =
+                lists:foldl(fun(E, Acc) -> sets:add_element(E, Acc) end, Data2#data.nonlatest_events,
+                            Event#event.prev_events),
+            LatestEvents2 =
+                case maps:is_key(Event#event.id, NonLatestEvents) of
+                    true ->
+                        LatestEvents;
+                    false ->
+                        LatestEvents#{Event#event.id => []}
                 end,
-            EventQueue =
-                treap:insert(
-                  Event#event.id,
-                  {erlang:monotonic_time(micro_seconds),
-                   erlang:unique_integer([monotonic])},
-                  [], Data2#data.event_queue),
+            ?DEBUG("latest ~p~n", [{LatestEvents2, NonLatestEvents}]),
             Data2#data{events = Events#{Event#event.id => Event},
-                       latest_events = LatestEvents,
-                       nonlatest_events = NonLatestEvents,
-                       event_queue = EventQueue}
+                       latest_events = LatestEvents2,
+                       nonlatest_events = NonLatestEvents}
     end.
 
 simple_toposort(Events) ->
@@ -1799,8 +1470,7 @@ simple_toposort(Events) ->
 simple_toposort_dfs(EventID, {Res, Used}, Events) ->
     case maps:find(EventID, Events) of
         error ->
-            %error({unknown_event, EventID});
-            {Res, Used};
+            error({unknown_event, EventID});
         {ok, Event} ->
             Used2 = Used#{EventID => gray},
             {Res8, Used8} =
@@ -1995,8 +1665,7 @@ request_room_state(Host, Origin, _Pid, RoomID, RoomVersion, Event) ->
            RoomID],
           [{<<"event_id">>, Event#event.id}],
           none,
-          [{connect_timeout, 5000},
-           {timeout, 60000}],
+          [{timeout, 5000}],
           [{sync, true},
            {body_format, binary}]),
     case Res of
@@ -2312,7 +1981,6 @@ lexicographic_toposort_prepare(EventID, Used, EventSet, Data) ->
     Used4.
 
 lexicographic_toposort_loop(Current, IncomingCnt, Res, Data) ->
-    %?DEBUG("toposort ~p", [{gb_trees:to_list(Current), IncomingCnt, Res}]),
     case gb_trees:is_empty(Current) of
         true ->
             case maps:size(IncomingCnt) of
@@ -2324,27 +1992,23 @@ lexicographic_toposort_loop(Current, IncomingCnt, Res, Data) ->
         false ->
             {{_, _, EventID}, _, Current2} = gb_trees:take_smallest(Current),
             Event = maps:get(EventID, Data#data.events),
-            %?DEBUG("toposort ev ~p", [Event]),
-            {IncomingCnt2, Current3} =
+            IncomingCnt2 =
                 lists:foldl(
-                  fun(EID, {InCnt, Cur} = Acc) ->
-                          case maps:is_key(EID, InCnt) of
+                  fun(EID, Acc) ->
+                          case maps:is_key(EID, Acc) of
                               true ->
-                                  C = maps:get(EID, InCnt) - 1,
+                                  C = maps:get(EID, Acc) - 1,
                                   case C of
                                       0 ->
-                                          E = maps:get(EID, Data#data.events),
-                                          PowerLevel = get_sender_power_level(EID, Data),
-                                          Cur2 = gb_trees:enter({-PowerLevel, E#event.origin_server_ts, EID}, [], Cur),
-                                          {maps:remove(EID, InCnt), Cur2};
+                                          maps:remove(EID, Acc);
                                       _ ->
-                                          {maps:put(EID, C, InCnt), Cur}
+                                          maps:put(EID, C, Acc)
                                   end;
                               false ->
                                   Acc
                           end
-                  end, {IncomingCnt, Current2}, Event#event.auth_events),
-            lexicographic_toposort_loop(Current3, IncomingCnt2, [EventID | Res], Data)
+                  end, IncomingCnt, Event#event.auth_events),
+            lexicographic_toposort_loop(Current2, IncomingCnt2, [EventID | Res], Data)
     end.
 
 get_sender_power_level(EventID, Data) ->
@@ -2512,16 +2176,82 @@ check_event_content_hash(Event) ->
             false
     end.
 
-notify_event(Event, Data) ->
-    Data2 = notify_event_matrix(Event, Data),
-    notify_event_xmpp(Event, Data2).
-
-notify_event_matrix(
-  #event{type = ?ROOM_MEMBER,
-         state_key = StateKey,
-         sender = Sender,
-         json = #{<<"content">> := #{<<"membership">> := <<"invite">>}}} = Event,
-  #data{kind = #direct{}} = Data) ->
+notify_event(#event{sender = Sender,
+                    json = #{<<"test">> := true}} = Event,
+             Data) ->
+    case user_id_to_jid(Sender, Data) of
+        #jid{} = SenderJID ->
+            LSenderServer = SenderJID#jid.lserver,
+            UserJID = Data#data.local_user,
+            LUserServer = UserJID#jid.lserver,
+            case LSenderServer of
+                LUserServer ->
+                    %RemoteServers = maps:keys(Data#data.remote_servers),
+                    RemoteServers = get_remote_servers(Data),
+                    lists:foldl(
+                      fun(Server, DataAcc) ->
+                              case DataAcc#data.outgoing_txns of
+                                  #{Server := {T, Queue}} ->
+                                      Queue2 = [Event | Queue],
+                                      DataAcc#data{outgoing_txns =
+                                                       maps:put(Server, {T, Queue2},
+                                                                DataAcc#data.outgoing_txns)};
+                                  _ ->
+                                      send_new_txn([Event], Server, DataAcc)
+                              end
+                      end, Data, RemoteServers);
+                _ ->
+                    Data
+            end;
+        error ->
+            Data
+    end;
+notify_event(#event{type = ?ROOM_MESSAGE, sender = Sender,
+                    json = #{<<"content">> := #{<<"msgtype">> := <<"m.text">>,
+                                                <<"body">> := Body}}} = Event,
+             Data) ->
+    case user_id_to_jid(Sender, Data) of
+        #jid{} = SenderJID ->
+            LSenderJID = jid:tolower(SenderJID),
+            UserJID = Data#data.local_user,
+            LUserJID = jid:tolower(UserJID),
+            case LSenderJID of
+                LUserJID ->
+                    %RemoteServers = maps:keys(Data#data.remote_servers),
+                    RemoteServers = get_remote_servers(Data),
+                    lists:foldl(
+                      fun(Server, DataAcc) ->
+                              case DataAcc#data.outgoing_txns of
+                                  #{Server := {T, Queue}} ->
+                                      Queue2 = [Event | Queue],
+                                      DataAcc#data{outgoing_txns =
+                                                       maps:put(Server, {T, Queue2},
+                                                                DataAcc#data.outgoing_txns)};
+                                  _ ->
+                                      send_new_txn([Event], Server, DataAcc)
+                              end
+                      end, Data, RemoteServers);
+                _ ->
+                    RoomID = Data#data.room_id,
+                    Msg = #message{from = SenderJID,
+                                   to = UserJID,
+                                   type = chat,
+                                   body = [#text{data = Body}],
+                                   sub_els = [#xmlel{name = <<"x">>,
+                                                     attrs = [{<<"xmlns">>, <<"p1:matrix">>},
+                                                              {<<"room_id">>, RoomID}]}]
+                                  },
+                    ejabberd_router:route(Msg),
+                    Data
+            end;
+        error ->
+            Data
+    end;
+notify_event(#event{type = ?ROOM_MEMBER,
+                    state_key = StateKey,
+                    sender = Sender,
+                    json = #{<<"content">> := #{<<"membership">> := <<"invite">>}}} = Event,
+             Data) ->
     Host = Data#data.host,
     MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
     case mod_matrix_gw:get_id_domain_exn(StateKey) of
@@ -2556,229 +2286,15 @@ notify_event_matrix(
             ?DEBUG("send invite ~p~n", [InviteRes]),
             Data
     end;
-notify_event_matrix(#event{sender = Sender} = Event,
-                    Data) ->
-    case user_id_to_jid(Sender, Data) of
-        #jid{} = SenderJID ->
-            %RemoteServers = maps:keys(Data#data.remote_servers),
-            RemoteServers = get_remote_servers(Data),
-            Host = Data#data.host,
-            MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
-            lists:foldl(
-              fun(Server, DataAcc) ->
-                      case Server of
-                          MatrixServer ->
-                              %% TODO
-                              %case parse_user_id(Data#data.remote_user) of
-                              %    {ok, U, MatrixServer} ->
-                              %        mod_matrix_gw_c2s:notify(
-                              %          Host, U, Event);
-                              %    _ ->
-                              %        ok
-                              %end,
-                              DataAcc;
-                          _ ->
-                              case SenderJID#jid.lserver of
-                                  Host ->
-                                      case DataAcc#data.outgoing_txns of
-                                          #{Server := {T, Queue}} ->
-                                              Queue2 = [Event | Queue],
-                                              DataAcc#data{
-                                                outgoing_txns =
-                                                    maps:put(Server, {T, Queue2},
-                                                             DataAcc#data.outgoing_txns)};
-                                          _ ->
-                                              send_new_txn([Event], Server, DataAcc)
-                                      end;
-                                  _ ->
-                                      Data
-                              end
-                      end
-              end, Data, RemoteServers);
-        error ->
-            Data
-    end.
-
-notify_event_xmpp(
-  #event{type = ?ROOM_MESSAGE, sender = Sender,
-         json = #{<<"content">> := #{<<"msgtype">> := <<"m.text">>,
-                                     <<"body">> := Body}}},
-  #data{kind = #direct{local_user = UserJID}} = Data) ->
-    case user_id_to_jid(Sender, Data) of
-        #jid{} = SenderJID ->
-            LSenderJID = jid:tolower(SenderJID),
-            LUserJID = jid:tolower(UserJID),
-            case LSenderJID of
-                LUserJID ->
-                    Data;
-                _ ->
-                    RoomID = Data#data.room_id,
-                    Msg = #message{from = SenderJID,
-                                   to = UserJID,
-                                   type = chat,
-                                   body = [#text{data = Body}],
-                                   sub_els = [#xmlel{name = <<"x">>,
-                                                     attrs = [{<<"xmlns">>, <<"p1:matrix">>},
-                                                              {<<"room_id">>, RoomID}]}]
-                                  },
-                    ejabberd_router:route(Msg),
-                    Data
-            end;
-        error ->
-            Data
-    end;
-notify_event_xmpp(
-  #event{type = ?ROOM_MESSAGE, sender = Sender,
-         json = #{<<"content">> := #{<<"msgtype">> := <<"m.text">>,
-                                     <<"body">> := Body},
-                  <<"origin_server_ts">> := OriginTS}},
-  #data{kind = #multi{users = Users}} = Data) ->
-    case Sender of
-        <<$@, SenderUser/binary>> ->
-            ?DEBUG("notify xmpp ~p", [Users]),
-            From = jid:replace_resource(Data#data.room_jid, SenderUser),
-            maps:fold(
-              fun({LUser, LServer}, Resources, ok) ->
-                      maps:fold(
-                        fun(LResource, #multi_user{join_ts = JoinTS}, ok)
-                              when JoinTS =< OriginTS ->
-                                UserJID = jid:make(LUser, LServer, LResource),
-                                Msg = #message{from = From,
-                                               to = UserJID,
-                                               type = groupchat,
-                                               body = [#text{data = Body}]
-                                              },
-                                TimeStamp = misc:usec_to_now(OriginTS * 1000),
-                                TSMsg = misc:add_delay_info(
-                                          Msg, Data#data.room_jid, TimeStamp),
-                                ejabberd_router:route(TSMsg);
-                           (_, _, _) -> ok
-                        end, ok, Resources)
-              end, ok, Users),
-            Data;
-        _ ->
-            Data
-    end;
-notify_event_xmpp(
-  #event{type = ?ROOM_MEMBER, sender = Sender,
-         json = #{<<"content">> := #{<<"membership">> := <<"join">>},
-                  <<"origin_server_ts">> := OriginTS}} = Event,
-  #data{kind = #multi{users = Users}} = Data) ->
-    case user_id_to_jid(Sender, Data) of
-        #jid{} = SenderJID ->
-            <<$@, SenderUser/binary>> = Sender,
-            From = jid:replace_resource(Data#data.room_jid, SenderUser),
-            maps:fold(
-              fun({LUser, LServer}, Resources, ok) ->
-                      maps:fold(
-                        fun(LResource, #multi_user{join_ts = JoinTS}, ok)
-                              when JoinTS =< OriginTS ->
-                                case jid:tolower(SenderJID) of
-                                    {LUser, LServer, _} ->
-                                        send_initial_presences(
-                                          SenderJID, Event, Data);
-                                    _ ->
-                                        ok
-                                end,
-                                UserJID = jid:make(LUser, LServer, LResource),
-                                Pres = #presence{from = From,
-                                                 to = UserJID,
-                                                 type = available
-                                                },
-                                ejabberd_router:route(Pres);
-                           (_, _, _) -> ok
-                        end, ok, Resources)
-              end, ok, Users),
-            Data;
-        error ->
-            Data
-    end;
-notify_event_xmpp(
-  #event{type = ?ROOM_MEMBER,
-         state_key = StateKey,
-         json = #{<<"content">> := #{<<"membership">> := Membership},
-                  <<"origin_server_ts">> := OriginTS}},
-  #data{kind = #multi{users = Users}} = Data)
-  when Membership == <<"leave">>;
-       Membership == <<"ban">> ->
-    case StateKey of
-        <<$@, RUser/binary>> ->
-            From = jid:replace_resource(Data#data.room_jid, RUser),
-            maps:fold(
-              fun({LUser, LServer}, Resources, ok) ->
-                      maps:fold(
-                        fun(LResource, #multi_user{join_ts = JoinTS}, ok)
-                              when JoinTS =< OriginTS ->
-                                UserJID = jid:make(LUser, LServer, LResource),
-                                Pres = #presence{from = From,
-                                                 to = UserJID,
-                                                 type = unavailable
-                                                },
-                                ejabberd_router:route(Pres);
-                           (_, _, _) -> ok
-                        end, ok, Resources)
-              end, ok, Users),
-            case user_id_to_jid(StateKey, Data) of
-                #jid{} = RJID ->
-                    US = {RJID#jid.luser, RJID#jid.lserver},
-                    case Users of
-                        #{US := Resources} ->
-                            JoinTS =
-                                maps:fold(
-                                  fun(_, #multi_user{join_ts = TS}, Acc) ->
-                                          max(Acc, TS)
-                                  end, 0, Resources),
-                            if
-                                JoinTS =< OriginTS ->
-                                    Users2 = maps:remove(US, Users),
-                                    Data#data{
-                                      kind = (Data#data.kind)#multi{
-                                               users = Users2}};
-                                true ->
-                                    Data
-                            end;
-                        _ ->
-                            Data
-                    end;
-                error ->
-                    Data
-            end;
-        error ->
-            Data
-    end;
-notify_event_xmpp(_Event, Data) ->
+notify_event(_Event, Data) ->
     Data.
-
-send_initial_presences(JID, Event, Data) ->
-    ?DEBUG("send_initial_presences ~p", [{JID, Event}]),
-    maps:fold(
-      fun({?ROOM_MEMBER, _}, EID, ok) ->
-              case maps:find(EID, Data#data.events) of
-                  {ok, #event{
-                          sender = <<$@, SenderUser/binary>>,
-                          json = #{<<"content">> :=
-                                       #{<<"membership">> := <<"join">>}}}} ->
-                      From = jid:replace_resource(Data#data.room_jid, SenderUser),
-                      Pres = #presence{from = From,
-                                       to = JID,
-                                       type = available
-                                      },
-                      ejabberd_router:route(Pres),
-                      ok;
-                  _ ->
-                      ok
-              end;
-         (_, _, ok) ->
-              ok
-      end, ok, Event#event.state_map).
-
 
 send_new_txn(Events, Server, Data) ->
     TxnID = p1_rand:get_string(),
-    send_txn(TxnID, Events, Server, 1, [], Data).
+    send_txn(TxnID, Events, Server, [], Data).
 
-send_txn(TxnID, Events, Server, Count, Queue, Data) ->
-    ?DEBUG("send txn ~p~n", [{TxnID, Server}]),
+send_txn(TxnID, Events, Server, Queue, Data) ->
+    ?DEBUG("send txn ~p~n", [TxnID]),
     Host = Data#data.host,
     Origin = mod_matrix_gw_opt:matrix_domain(Host),
     PDUs =
@@ -2791,7 +2307,6 @@ send_txn(TxnID, Events, Server, Count, Queue, Data) ->
     Self = self(),
     Receiver =
         fun({RequestID, Res}) ->
-                ?DEBUG("send_txn_res ~p", [{RequestID, Res}]),
                 Self ! {send_txn_res, RequestID, TxnID, Server, Res}
         end,
     {ok, RequestID} =
@@ -2806,7 +2321,7 @@ send_txn(TxnID, Events, Server, Count, Queue, Data) ->
           [{sync, false},
            {receiver, Receiver}]),
     Data#data{outgoing_txns =
-                  maps:put(Server, {{RequestID, TxnID, Events, Count}, Queue},
+                  maps:put(Server, {{RequestID, TxnID, Events}, Queue},
                            Data#data.outgoing_txns)}.
 
 do_get_missing_events(Origin, EarliestEvents, LatestEvents, Limit, MinDepth, Data) ->
@@ -2932,7 +2447,7 @@ get_remote_servers(Data) ->
         maps:fold(
           fun(EventID, _, Acc) ->
                   case maps:find(EventID, Data#data.events) of
-                      {ok, Event} when is_map(Event#event.state_map) ->
+                      {ok, Event} ->
                           maps:fold(
                             fun({?ROOM_MEMBER, UserID}, EID, Acc2) ->
                                     Server = mod_matrix_gw:get_id_domain_exn(UserID),
@@ -2952,7 +2467,9 @@ get_remote_servers(Data) ->
                           Acc
                   end
           end, #{}, Data#data.latest_events),
-    maps:keys(Servers).
+    MatrixServer = mod_matrix_gw_opt:matrix_domain(Data#data.host),
+    Servers2 = maps:remove(MatrixServer, Servers),
+    maps:keys(Servers2).
 
 get_joined_users(Data) ->
     Users =
@@ -2980,9 +2497,8 @@ get_joined_users(Data) ->
           end, #{}, Data#data.latest_events),
     maps:keys(Users).
 
-user_id_to_jid(Str, #data{} = Data) ->
-    user_id_to_jid(Str, Data#data.host);
-user_id_to_jid(Str, Host) when is_binary(Host) ->
+user_id_to_jid(Str, Data) ->
+    Host = Data#data.host,
     ServerName = mod_matrix_gw_opt:matrix_domain(Host),
     case parse_user_id(Str) of
         {ok, U, ServerName} ->
@@ -2993,19 +2509,6 @@ user_id_to_jid(Str, Host) when is_binary(Host) ->
             EscS = escape(S),
             jid:make(<<EscU/binary, $%, EscS/binary>>, ServiceHost);
         error ->
-            error
-    end.
-
-user_id_from_jid(#jid{luser = U, lserver = Host}, Host) ->
-    ServerName = mod_matrix_gw_opt:matrix_domain(Host),
-    {ok, <<$@, U/binary, $:, ServerName/binary>>};
-user_id_from_jid(JID, _Host) ->
-    case binary:split(JID#jid.luser, <<"%">>) of
-        [EscU, EscS] ->
-            U = unescape(EscU),
-            S = unescape(EscS),
-            {ok, <<$@, U/binary, $:, S/binary>>};
-        _ ->
             error
     end.
 
@@ -3054,35 +2557,33 @@ compute_event_auth_keys(#{<<"type">> := _, <<"sender">> := Sender}) ->
      {?ROOM_MEMBER, Sender}].
 
 
-update_client(#data{kind = #direct{client_state = undefined,
-                                   local_user = JID,
-                                   remote_user = RemoteUserID}} = Data) ->
+update_client(#data{client_state = undefined,
+                    remote_user = RemoteUserID} = Data) ->
     Host = Data#data.host,
     MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
+    JID = Data#data.local_user,
     LocalUserID = <<$@, (JID#jid.luser)/binary, $:, MatrixServer/binary>>,
     Users = get_joined_users(Data),
     case lists:member(LocalUserID, Users) of
         true ->
             case lists:delete(LocalUserID, Users) of
                 [RemoteUserID] ->
-                    {ok, Data#data{kind = (Data#data.kind)#direct{client_state = established}}};
+                    {ok, Data#data{client_state = established}};
                 [_] ->
-                    {leave, unknown_remote_user,
-                     Data#data{kind = (Data#data.kind)#direct{client_state = leave}}};
+                    {leave, unknown_remote_user, Data#data{client_state = leave}};
                 [] ->
                     {ok, Data};
                 _ ->
-                    {leave, too_many_users,
-                     Data#data{kind = (Data#data.kind)#direct{client_state = leave}}}
+                    {leave, too_many_users, Data#data{client_state = leave}}
             end;
         false ->
             {ok, Data}
     end;
-update_client(#data{kind = #direct{client_state = established,
-                                   local_user = JID,
-                                   remote_user = RemoteUserID}} = Data) ->
+update_client(#data{client_state = established,
+                    remote_user = RemoteUserID} = Data) ->
     Host = Data#data.host,
     MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
+    JID = Data#data.local_user,
     LocalUserID = <<$@, (JID#jid.luser)/binary, $:, MatrixServer/binary>>,
     Users = get_joined_users(Data),
     case lists:member(LocalUserID, Users) of
@@ -3091,73 +2592,13 @@ update_client(#data{kind = #direct{client_state = established,
                 true ->
                     {ok, Data};
                 false ->
-                    {leave, remote_user_left, Data#data{kind = (Data#data.kind)#direct{client_state = leave}}}
+                    {leave, remote_user_left, Data#data{client_state = leave}}
             end;
         false ->
             stop
     end;
-update_client(#data{kind = #direct{client_state = leave}}) ->
-    stop;
-update_client(#data{kind = #multi{users = Users}} = Data) ->
-    ?DEBUG("update_client ~p", [Data#data.kind]),
-    if
-        Users == #{} ->
-            stop;
-        true ->
-            {ok, Data}
-    end.
-
-
-send_muc_invite(Host, Origin, RoomID, Sender, UserID, Event) ->
-    case {user_id_to_jid(Sender, Host), user_id_to_jid(UserID, Host)} of
-        {#jid{} = SenderJID, #jid{lserver = Host} = UserJID} ->
-            process_pdu(Host, Origin, Event),
-            ServiceHost = mod_matrix_gw_opt:host(Host),
-            {ok, EscRoomID} = room_id_to_xmpp(RoomID),
-            RoomJID = jid:make(EscRoomID, ServiceHost),
-            Invite = #muc_invite{to = undefined, from = SenderJID},
-            XUser = #muc_user{invites = [Invite]},
-            Msg = #message{
-                     from = RoomJID,
-                     to = UserJID,
-                     sub_els = [XUser]
-                    },
-            ejabberd_router:route(Msg);
-        _ ->
-            ok
-    end.
-
-room_id_to_xmpp(RoomID) ->
-    case RoomID of
-        <<$!, Parts/binary>> ->
-            case binary:split(Parts, <<":">>) of
-                [R, S] ->
-                    Len = 8 * size(R),
-                    <<IR:Len>> = R,
-                    HR = integer_to_binary(IR, 16),
-                    {ok, <<$!, HR/binary, $%, S/binary>>};
-                _ -> error
-            end;
-        _ ->
-            error
-    end.
-
-room_id_from_xmpp(RID) ->
-    case RID of
-        <<$!, Parts/binary>> ->
-            case binary:split(Parts, <<"%">>) of
-                [R, S] ->
-                    IR = binary_to_integer(R, 16),
-                    Len = size(R) * 4,
-                    RoomID = <<IR:Len>>,
-                    {ok, <<$!, RoomID/binary, $:, S/binary>>};
-                _ -> error
-            end;
-        _ ->
-            error
-    end.
-
-
+update_client(#data{client_state = leave}) ->
+    stop.
 
 escape(S) ->
     escape(S, <<>>).
