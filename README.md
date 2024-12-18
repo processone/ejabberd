@@ -87,6 +87,11 @@ or some other method from [ProcessOne Contact][p1contact].
 For commercial offering and support, including [ejabberd Business Edition][p1home]
 and [Fluux (ejabberd in the Cloud)][fluux], please check [ProcessOne ejabberd page][p1home].
 
+Security
+--------
+
+For information on how to report security vulnerabilities, please refer to the [SECURITY.md](SECURITY.md) file. It contains guidelines on how to report vulnerabilities privately and securely, ensuring that any issues are addressed in a timely and confidential manner.
+
 Community
 ---------
 
