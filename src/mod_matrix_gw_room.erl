@@ -76,15 +76,15 @@
          remote_user :: binary() | undefined,
          client_state}).
 
+-record(multi,
+        {users :: #{}}).
+
 -record(multi_user,
         {join_ts :: integer()}).
 
--record(multi,
-        {users :: #{{binary(), binary()} => #{binary() => #multi_user{}}}}).
-
 -record(data,
         {host :: binary(),
-         kind :: #direct{} | #multi{} | undefined,
+         kind :: #direct{} | undefined,
          room_id :: binary(),
          room_jid :: jid(),
          room_version :: #room_version{},
@@ -790,7 +790,7 @@ handle_event(cast, {join, UserJID, Packet}, _State, Data) ->
                             {stop, normal};
                         _ ->
                             ?DEBUG("failed make_join: ~p", [MakeJoinRes]),
-                            Txt = <<"make_join failed">>,
+                            Txt = "make_join failed",
                             Err = xmpp:err_bad_request(Txt, Lang),
                             ejabberd_router:route_error(Packet, Err),
                             {stop, normal}
@@ -2743,7 +2743,7 @@ notify_event_xmpp(
                 error ->
                     Data
             end;
-        _ ->
+        error ->
             Data
     end;
 notify_event_xmpp(_Event, Data) ->
