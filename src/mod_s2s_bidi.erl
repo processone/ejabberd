@@ -72,7 +72,7 @@ mod_doc() ->
        "  mod_s2s_bidi: {}"]}.
 
 s2s_in_features(Acc, _) ->
-    [#s2s_bidi{}|Acc].
+    [#s2s_bidi_feature{}|Acc].
 
 s2s_in_packet(State, #s2s_bidi{}) ->
     {stop, State#{bidi_enabled => true}};
@@ -115,8 +115,8 @@ s2s_out_packet(#{bidi_enabled := true, ip := {IP, _}} = State, Pkt0)
 s2s_out_packet(#{db_verify := _} = State, #stream_features{}) ->
     State;
 s2s_out_packet(State, #stream_features{} = Pkt) ->
-    try xmpp:try_subtag(Pkt, #s2s_bidi{}) of
-	#s2s_bidi{} ->
+    try xmpp:try_subtag(Pkt, #s2s_bidi_feature{}) of
+	#s2s_bidi_feature{} ->
 	    ejabberd_s2s_out:send(State#{bidi_enabled => true}, #s2s_bidi{})
     catch _:{xmpp_codec, _Why} ->
 	State
