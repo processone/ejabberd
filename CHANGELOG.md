@@ -20,6 +20,7 @@
 - `mod_scram_upgrade`: Don't abort the upgrade
 - `mod_shared_roster`: The name of a new group is lowercased
 - `mod_shared_roster`: Get back support for `groupid@vhost` in `displayed`
+- `mod_stun_disco`: Fix syntax of credentials response
 
 #### Commands API
 
