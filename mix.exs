@@ -135,7 +135,7 @@ defmodule Ejabberd.MixProject do
      {:eimp, "~> 1.0"},
      {:ex_doc, "~> 0.31", only: [:dev, :edoc], runtime: false},
      {:fast_tls, "~> 1.1.22"},
-     {:fast_xml, "~> 1.1.53", override: true},
+     {:fast_xml, "~> 1.1.53"},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
      {:mqtree, "~> 1.0"},
