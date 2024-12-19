@@ -111,15 +111,6 @@ jobs:
       if: matrix.otp < 21
       run: ./rebar3 unlock eredis
 
-    - name: Download test logs
-      if: matrix.otp == '26' && github.repository == 'processone/ejabberd'
-      continue-on-error: true
-      run: |
-        mkdir -p _build/test
-        curl -sSL https://github.com/processone/ecil/tarball/gh-pages |
-          tar -C _build/test --strip-components=1 --wildcards -xzf -
-        rm -rf _build/test/logs/last/
-
     - name: Compile
       run: |
         ./autogen.sh
@@ -223,22 +214,6 @@ jobs:
                       "repo_token":"$GITHUB_TOKEN",
                       "payload":{"build_num":$GITHUB_RUN_ID,
                                  "status":"done"}}'
-
-    - name: Upload test logs
-      if: always() && steps.ct.outcome == 'failure' && github.repository == 'processone/ejabberd'
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        publish_dir: _build/test
-        exclude_assets: '.github,lib,plugins'
-        external_repository: processone/ecil
-        deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-        keep_files: true
-
-    - name: View ECIL address
-      if: always() && steps.ct.outcome == 'failure' && github.repository == 'processone/ejabberd'
-      run: |
-        CTRUN=`ls -la _build/test/logs/last | sed 's|.*-> ||'`
-        echo "::notice::View CT results: https://processone.github.io/ecil/logs/$CTRUN/"
 
     - name: Check for changes to trigger schema upgrade test
       uses: dorny/paths-filter@v3
