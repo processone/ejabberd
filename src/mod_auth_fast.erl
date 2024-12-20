@@ -98,7 +98,7 @@ mod_doc() ->
       note => "added in 24.12",
       opts =>
       [{db_type,
-	#{value => "mnesia | sql",
+	#{value => "mnesia",
 	  desc =>
 	  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
        {token_lifetime,
