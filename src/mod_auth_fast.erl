@@ -112,7 +112,7 @@ mod_doc() ->
       example =>
       ["modules:",
        "  mod_auth_fast:",
-       "    token_timeout: 14days"]}.
+       "    token_lifetime: 14days"]}.
 
 get_mechanisms(_LServer) ->
     [<<"HT-SHA-256-NONE">>, <<"HT-SHA-256-UNIQ">>, <<"HT-SHA-256-EXPR">>, <<"HT-SHA-256-ENDP">>].
