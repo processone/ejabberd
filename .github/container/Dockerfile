@@ -137,6 +137,11 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
 ARG UID
 RUN chown -R $UID:$UID $HOME
 
+ARG VERSION
+RUN cp /rootfs/$HOME-$VERSION/lib/captcha*.sh usr/local/bin/
+RUN mkdir $HOME/sql \
+    && find /rootfs/$HOME-$VERSION/lib/ -name *.sql -exec cp {} $HOME/sql \; -exec cp {} $HOME/database \;
+
 ################################################################################
 #' METHOD='direct' - Remove erlang/OTP & rebar3
 FROM docker.io/erlang:${OTP_VSN}-alpine AS runtime-direct
@@ -166,6 +171,10 @@ ARG UID
 ARG HOME
 RUN addgroup $USER -g $UID \
     && adduser -s /sbin/nologin -D -u $UID -h /$HOME -G $USER $USER
+
+RUN ln -fs /usr/local/bin/ /opt/ejabberd/bin
+RUN rm -rf /home \
+    && ln -fs /opt /home
 
 ################################################################################
 #' Build together production image
