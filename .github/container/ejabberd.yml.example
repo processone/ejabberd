@@ -14,8 +14,20 @@
 ### Refer to http://en.wikipedia.org/wiki/YAML for the brief description.
 ###
 
+define_macro:
+  HOST: localhost
+  ADMIN: "admin@localhost"
+  PORT_C2S: 5222
+  PORT_C2S_TLS: 5223
+  PORT_S2S: 5269
+  PORT_HTTP_TLS: 5443
+  PORT_HTTP: 5280
+  PORT_STUN: 5478
+  PORT_MQTT: 1883
+  PORT_PROXY65: 7777
+
 hosts:
-  - localhost
+  - HOST
 
 loglevel: info
 
@@ -30,7 +42,7 @@ certfiles:
 
 listen:
   -
-    port: 5222
+    port: PORT_C2S
     ip: "::"
     module: ejabberd_c2s
     max_stanza_size: 262144
@@ -38,7 +50,7 @@ listen:
     access: c2s
     starttls_required: true
   -
-    port: 5223
+    port: PORT_C2S_TLS
     ip: "::"
     module: ejabberd_c2s
     max_stanza_size: 262144
@@ -46,13 +58,13 @@ listen:
     access: c2s
     tls: true
   -
-    port: 5269
+    port: PORT_S2S
     ip: "::"
     module: ejabberd_s2s_in
     max_stanza_size: 524288
     shaper: s2s_shaper
   -
-    port: 5443
+    port: PORT_HTTP_TLS
     ip: "::"
     module: ejabberd_http
     tls: true
@@ -64,14 +76,14 @@ listen:
       /upload: mod_http_upload
       /ws: ejabberd_http_ws
   -
-    port: 5280
+    port: PORT_HTTP
     ip: "::"
     module: ejabberd_http
     request_handlers:
       /admin: ejabberd_web_admin
       /.well-known/acme-challenge: ejabberd_acme
   -
-    port: 5478
+    port: PORT_STUN
     ip: "::"
     transport: udp
     module: ejabberd_stun
@@ -81,7 +93,7 @@ listen:
     ## The server's public IPv6 address:
     # turn_ipv6_address: "2001:db8::3"
   -
-    port: 1883
+    port: PORT_MQTT
     ip: "::"
     module: mod_mqtt
     backlog: 1000
@@ -95,6 +107,9 @@ acl:
     ip:
       - 127.0.0.0/8
       - ::1/128
+  admin:
+    user:
+      - ADMIN
 
 access_rules:
   local:
@@ -211,6 +226,7 @@ modules:
   mod_proxy65:
     access: local
     max_connections: 5
+    port: PORT_PROXY65
   mod_pubsub:
     access_createnode: pubsub_createnode
     plugins:
