@@ -16,7 +16,7 @@
 
 define_macro:
   HOST: localhost
-  ADMIN: "admin@localhost"
+  ## ADMIN: ... # set by /usr/local/bin/ejabberdctl
   PORT_C2S: 5222
   PORT_C2S_TLS: 5223
   PORT_S2S: 5269

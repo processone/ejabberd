@@ -125,6 +125,28 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
     && echo -e \
         "#!/bin/sh \
         \n[ -z \$ERLANG_NODE_ARG ] && export ERLANG_NODE_ARG=ejabberd@localhost \
+        \nexport EMA=\"\$EJABBERD_MACRO_ADMIN\" \
+        \nexport HOST=\"\${EJABBERD_MACRO_HOST:-localhost}\" \
+        \nif [ -n \"\$EMA\" ] \
+        \nthen \
+        \n    if [ \"\$EMA\" != \"\${EMA%%@*}\" ] \
+        \n    then \
+        \n        export USERNAME=\"\${EMA%%@*}\" \
+        \n        export HOST=\"\${EMA##*@}\" \
+        \n    else \
+        \n        export USERNAME=\"\$EMA\" \
+        \n        export SHOW_WARNING=\"true\" \
+        \n    fi \
+        \nelif [ -n \"\$REGISTER_ADMIN_PASSWORD\" ] \
+        \nthen \
+        \n    export USERNAME=\"admin\" \
+        \nelse \
+        \n    export USERNAME=\"\$(od -A n -N 8 -t x8 /dev/urandom)\" \
+        \nfi \
+        \nexport EJABBERD_MACRO_ADMIN=\"\$USERNAME@\$HOST\" \
+        \n[ -n \"\$SHOW_WARNING\" ] && echo \"WARNING: The EJABBERD_MACRO_ADMIN environment variable was set to '\$EMA', but it should include the host... I'll overwrite it to become '\$EJABBERD_MACRO_ADMIN'.\" \
+        \n[ -n \"\$CTL_ON_CREATE\" ] && export SEPARATOR=\";\" \
+        \n[ -n \"\$REGISTER_ADMIN_PASSWORD\" ] && export CTL_ON_CREATE=\"register \${EJABBERD_MACRO_ADMIN%%@*} \${EJABBERD_MACRO_ADMIN##*@} \$REGISTER_ADMIN_PASSWORD \$SEPARATOR \$CTL_ON_CREATE\" \
         \nexport CONFIG_DIR=/$HOME/conf \
         \nexport LOGS_DIR=/$HOME/logs \
         \nexport SPOOL_DIR=/$HOME/database \
