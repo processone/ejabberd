@@ -50,6 +50,7 @@ COPY / $BUILD_DIR/
 
 WORKDIR $BUILD_DIR
 RUN mv .github/container/ejabberdctl.template . \
+    && mv .github/container/ejabberd.yml.example . \
     && ./autogen.sh \
     && ./configure --with-rebar=mix --enable-all \
     && make deps \
