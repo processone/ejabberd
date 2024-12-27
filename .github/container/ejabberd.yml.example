@@ -22,6 +22,7 @@ define_macro:
   PORT_S2S: 5269
   PORT_HTTP_TLS: 5443
   PORT_HTTP: 5280
+  PORT_BROWSER: 1880
   PORT_STUN: 5478
   PORT_MQTT: 1883
   PORT_PROXY65: 7777
@@ -82,6 +83,12 @@ listen:
     request_handlers:
       /admin: ejabberd_web_admin
       /.well-known/acme-challenge: ejabberd_acme
+  -
+    port: PORT_BROWSER
+    ip: "::"
+    module: ejabberd_http
+    request_handlers:
+      /: ejabberd_web_admin
   -
     port: PORT_STUN
     ip: "::"
