@@ -24,6 +24,10 @@ loglevel: info
 #  - /etc/letsencrypt/live/domain.tld/fullchain.pem
 #  - /etc/letsencrypt/live/domain.tld/privkey.pem
 
+ca_file: /opt/ejabberd/conf/cacert.pem
+certfiles:
+  - /opt/ejabberd/conf/server.pem
+
 listen:
   -
     port: 5222

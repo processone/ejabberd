@@ -68,11 +68,7 @@ RUN cp -p $BUILD_DIR/tools/captcha*.sh $HOME-$VERSION/lib
 RUN find "$HOME-$VERSION/bin" -name 'ejabberd' -delete \
     && find "$HOME-$VERSION/releases" -name 'COOKIE' -delete
 
-RUN wget -O "$HOME/conf/cacert.pem" 'https://curl.se/ca/cacert.pem' \
-    && sed -i '/^loglevel:/a \ \
-        \nca_file: /opt/ejabberd/conf/cacert.pem \
-        \ncertfiles: \
-        \n  - /opt/ejabberd/conf/server.pem' "$HOME/conf/ejabberd.yml"
+RUN wget -O "$HOME/conf/cacert.pem" 'https://curl.se/ca/cacert.pem'
 
 ################################################################################
 #' METHOD='package' - install ejabberd from binary tarball package
