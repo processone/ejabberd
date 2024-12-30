@@ -96,19 +96,29 @@ Next steps
 
 ### Register the administrator account
 
-The default ejabberd configuration does not grant admin privileges
-to any account,
-you may want to register a new account in ejabberd
-and grant it admin rights.
+If you set the `REGISTER_ADMIN_PASSWORD` environment variable,
+an account is registered with that password,
+and admin privileges are granted to it.
+The account created may be:
 
-Register an account using the `ejabberdctl` script:
+- `EJABBERD_MACRO_ADMIN=juliet@example.org` --> `juliet@example.org`
+- `EJABBERD_MACRO_HOST=example.org` --> `admin@example.org`
+- None of those variables are set --> `admin@localhost`
+
+The account registration is shown in the container log:
+
+```
+:> ejabberdctl register admin example.org somePassw0rd
+User admin@example.org successfully registered
+```
+
+Alternatively, you can register the account manually yourself
+and edit conf/ejabberd.yml and add the ACL as explained in
+[ejabberd Docs: Administration Account](https://docs.ejabberd.im/admin/install/next-steps/#administration-account):
 
 ```bash
 docker exec -it ejabberd ejabberdctl register admin localhost passw0rd
 ```
-
-Then edit conf/ejabberd.yml and add the ACL as explained in
-[ejabberd Docs: Administration Account](https://docs.ejabberd.im/admin/install/next-steps/#administration-account)
 
 
 ### Check ejabberd log files
@@ -185,7 +195,8 @@ This container image exposes the ports:
 
 - `5222`: The default port for XMPP clients.
 - `5269`: For XMPP federation. Only needed if you want to communicate with users on other servers.
-- `5280`: For admin interface.
+- `5280`: For admin interface (URL is `admin/`).
+- `1880`: For admin interface (URL is `/`, useful for podman-desktop and docker-desktop)
 - `5443`: With encryption, used for admin interface, API, CAPTCHA, OAuth, Websockets and XMPP BOSH.
 - `1883`: Used for MQTT
 - `4369-4399`: EPMD and Erlang connectivity, used for `ejabberdctl` and clustering
@@ -299,8 +310,8 @@ Example using environment variables (see full example [docker-compose.yml](https
 ```
 
 
-Build a Container Image
------------------------
+Build `ejabberd` Container Image
+--------------------------------
 
 This container image includes ejabberd as a standalone OTP release built using Elixir.
 That OTP release is configured with:
@@ -368,6 +379,33 @@ docker buildx build \
     -t personal/ejabberd:$VERSION \
     -f .github/container/Dockerfile \
     .
+```
+
+Build `ecs` Container Image
+---------------------------
+
+### Configuration
+
+Image is built by embedding an ejabberd Erlang/OTP standalone release in the image.
+
+The configuration of ejabberd Erlang/OTP release is customized with:
+
+- `rel/config.exs`: Customize ejabberd release
+- `rel/dev.exs`: ejabberd environment configuration for development release
+- `rel/prod.exs`: ejabberd environment configuration for production release
+- `vars.config`: ejabberd compilation configuration options
+- `conf/ejabberd.yml`: ejabberd default config file
+
+Build ejabberd Community Server base image from ejabberd master on Github:
+
+```bash
+docker build -t docker.io/ejabberd/ecs .
+```
+
+Build ejabberd Community Server base image for a given ejabberd version:
+
+```bash
+./build.sh 18.03
 ```
 
 
