@@ -82,6 +82,13 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
     && tar -xzf /tmp/ejabberd-*-linux-musl-$ARCH.tar.gz -C $home_root_dir
 
 ################################################################################
+#' Compile ejabberdapi
+FROM docker.io/golang:1.23-alpine AS api
+RUN go install -v \
+    github.com/processone/ejabberd-api/cmd/ejabberd@master \
+    && mv bin/ejabberd bin/ejabberdapi
+
+################################################################################
 #' Prepare ejabberd for runtime
 FROM ${METHOD} AS ejabberd
 RUN apk -U add --no-cache \
@@ -130,6 +137,8 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
         | awk 'system("[ -e $home_root_dir" $1 " ]") == 0 { next } { print "so:" $1 }' \
         | sed -e "s|so:libc.so|so:libc.musl-$(uname -m).so.1|" \
             > /tmp/runDeps
+
+COPY --from=api /go/bin/ejabberdapi usr/local/bin/
 
 ARG UID
 RUN chown -R $UID:$UID $HOME
