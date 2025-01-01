@@ -1,9 +1,7 @@
 #' Define default build variables
-## specifc ARGs for METHOD='direct'
-ARG OTP_VSN='26.2'
-ARG ELIXIR_VSN='1.16.2'
-## specifc ARGs for METHOD='package'
-ARG ALPINE_VSN='3.19'
+## source ARGs
+ARG OTP_VSN='27'
+ARG ELIXIR_VSN='1.17.2'
 ## general ARGs
 ARG UID='9000'
 ARG USER='ejabberd'
@@ -13,37 +11,59 @@ ARG BUILD_DIR="/$USER"
 ARG VERSION='master'
 
 ################################################################################
-#' METHOD='direct' - build and install ejabberd directly from source
-FROM docker.io/erlang:${OTP_VSN}-alpine AS direct
+#' Build and base image
+FROM cgr.dev/chainguard/wolfi-base AS erlang
+ARG OTP_VSN
+ENV LC_ALL='C.UTF-8' \
+    LANG='C.UTF-8'
 
-RUN apk -U add --no-cache \
+RUN apk -U upgrade --available && apk add --no-cache  \
         autoconf \
         automake \
         bash \
         build-base \
+        ca-certificates-bundle \
         curl \
         expat-dev \
+        erlang-$OTP_VSN \
+        erlang-$OTP_VSN-dev \
+        erlang-$OTP_VSN-odbc \
         file \
+        freetds freetds-dev \
+        freetype-dev \
         gd-dev \
         git \
-        jpeg-dev \
+        libjpeg-dev \
         libpng-dev \
         libwebp-dev \
         linux-pam-dev \
+        ncurses-dev \
+        pax-utils \
+        perl-dev \
+        openssl \
         openssl-dev \
         sqlite-dev \
+        unixodbc unixodbc-dev \
+        wget \
         yaml-dev \
         zlib-dev
 
+WORKDIR /
 ARG ELIXIR_VSN
-RUN wget -O - https://github.com/elixir-lang/elixir/archive/v$ELIXIR_VSN.tar.gz \
+RUN wget -O - https://github.com/elixir-lang/elixir/archive/v"$ELIXIR_VSN".tar.gz \
         | tar -xzf -
 
-WORKDIR elixir-$ELIXIR_VSN
+WORKDIR /elixir-"$ELIXIR_VSN"
 RUN make install clean
 
 RUN mix local.hex --force \
     && mix local.rebar --force
+
+################################################################################
+#' Build and prepare ejabberd
+FROM erlang AS direct
+ENV LC_ALL='C.UTF-8' \
+    LANG='C.UTF-8'
 
 ARG BUILD_DIR
 COPY / $BUILD_DIR/
@@ -59,7 +79,7 @@ WORKDIR /rootfs
 ARG VERSION
 ARG HOME
 RUN mkdir -p $HOME $HOME-$VERSION \
-    && cp -r $BUILD_DIR/_build/prod/rel/ejabberd/* $HOME-$VERSION \
+&& cp -r $BUILD_DIR/_build/prod/rel/ejabberd/* $HOME-$VERSION \
     && mv $HOME-$VERSION/conf $HOME/conf
 
 RUN cp -p $BUILD_DIR/tools/captcha*.sh $HOME-$VERSION/lib
@@ -67,30 +87,43 @@ RUN cp -p $BUILD_DIR/tools/captcha*.sh $HOME-$VERSION/lib
 RUN find "$HOME-$VERSION/bin" -name 'ejabberd' -delete \
     && find "$HOME-$VERSION/releases" -name 'COOKIE' -delete
 
-RUN wget -O "$HOME/conf/cacert.pem" 'https://curl.se/ca/cacert.pem' \
-    && sed -i '/^loglevel:/a \ \
-        \nca_file: /opt/ejabberd/conf/cacert.pem \
+RUN sed -i '/^loglevel:/a \ \
         \ncertfiles: \
         \n  - /opt/ejabberd/conf/server.pem' "$HOME/conf/ejabberd.yml"
 
 ################################################################################
 #' METHOD='package' - install ejabberd from binary tarball package
-FROM docker.io/alpine:${ALPINE_VSN} AS package
-COPY tarballs/ejabberd-*-linux-musl-*.tar.gz /tmp/
+FROM cgr.dev/chainguard/wolfi-base AS package
+COPY tarballs/ejabberd-*-linux-gnu-*.tar.gz /tmp/
 WORKDIR /rootfs
 ARG HOME
 RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
     && mkdir -p $home_root_dir \
     && ARCH=$(uname -m | sed -e 's/x86_64/x64/;s/aarch64/arm64/') \
-    && tar -xzf /tmp/ejabberd-*-linux-musl-$ARCH.tar.gz -C $home_root_dir
+    && tar -xzf /tmp/ejabberd-*-linux-gnu-$ARCH.tar.gz -C $home_root_dir
+
+################################################################################
+#' OpenSSL - Create server certificate for localhost,
+#            because wolfi misses openssl config file
+FROM docker.io/library/alpine AS servercert
+RUN apk -U add --no-cache openssl
+RUN export PEM=/tmp/server.pem \
+    && openssl req -x509 \
+            -batch \
+            -nodes \
+            -newkey rsa:4096 \
+            -keyout $PEM \
+            -out $PEM \
+            -days 3650 \
+            -subj "/CN=localhost"
 
 ################################################################################
 #' Prepare ejabberd for runtime
 FROM ${METHOD} AS ejabberd
 RUN apk -U add --no-cache \
         git \
-        libcap \
-        openssl
+        libcap-utils \
+        pax-utils
 
 WORKDIR /rootfs
 ARG HOME
@@ -106,15 +139,7 @@ RUN if [ ! -d $HOME/.ejabberd-modules ]; \
         fi \
     fi
 
-RUN export PEM=$HOME/conf/server.pem \
-    && openssl req -x509 \
-            -batch \
-            -nodes \
-            -newkey rsa:4096 \
-            -keyout $PEM \
-            -out $PEM \
-            -days 3650 \
-            -subj "/CN=localhost"
+COPY --from=servercert /tmp/server.pem $HOME/conf/server.pem
 
 RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
     && setcap 'cap_net_bind_service=+ep' $(find $home_root_dir -name beam.smp) \
@@ -127,54 +152,40 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
         \nexec /$(find $home_root_dir -name ejabberdctl) \"\$@\"" \
             > usr/local/bin/ejabberdctl \
     && chmod +x usr/local/bin/* \
-    && scanelf --needed --nobanner --format '%n#p' --recursive $home_root_dir \
+    && scanelf --needed --nobanner --format '%n#p' --recursive "$PWD" \
         | tr ',' '\n' \
         | sort -u \
-        | awk 'system("[ -e $home_root_dir" $1 " ]") == 0 { next } { print "so:" $1 }' \
-        | sed -e "s|so:libc.so|so:libc.musl-$(uname -m).so.1|" \
+        | awk 'system("[ -e $PWD" $1 " ]") == 0 { next } { print "so:" $1 }' \
             > /tmp/runDeps
 
 ARG UID
 RUN chown -R $UID:$UID $HOME
 
 ################################################################################
-#' METHOD='direct' - Remove erlang/OTP & rebar3
-FROM docker.io/erlang:${OTP_VSN}-alpine AS runtime-direct
-RUN apk del .erlang-rundeps \
-    && rm -f $(which rebar3) \
-    && find /usr -type d -name 'erlang' -exec rm -rf {} + \
-    && find /usr -type l -exec test ! -e {} \; -delete
-
-################################################################################
-#' METHOD='package' - define runtime base image
-FROM docker.io/alpine:${ALPINE_VSN} AS runtime-package
-
-################################################################################
-#' Update alpine, finalize runtime environment
-FROM runtime-${METHOD} AS runtime
-COPY --from=ejabberd /tmp/runDeps /tmp/runDeps
-RUN apk -U upgrade --available --no-cache \
-    && apk add --no-cache \
-        $(cat /tmp/runDeps) \
-        so:libcap.so.2 \
-        so:libtdsodbc.so.0 \
-        tini \
-    && ln -fs /usr/lib/libtdsodbc.so.0 /usr/lib/libtdsodbc.so
-
+#' Build release image
+FROM cgr.dev/chainguard/wolfi-base AS release
 ARG USER
 ARG UID
 ARG HOME
 RUN addgroup $USER -g $UID \
     && adduser -s /sbin/nologin -D -u $UID -h /$HOME -G $USER $USER
 
-################################################################################
-#' Build together production image
-FROM scratch AS prod
-ARG USER
-ARG HOME
+COPY --from=ejabberd /tmp/runDeps /tmp/runDeps
+RUN apk -U upgrade --available --no-cache \
+    && apk add --no-cache -t .ejabberd-rundeps \
+        $(cat /tmp/runDeps) \
+        freetds \
+        unixodbc \
+        libcap \
+        busybox \
+        ca-certificates-bundle \
+        tini
 
-COPY --from=runtime / /
 COPY --from=ejabberd /rootfs /
+
+ENV ERL_DIST_PORT='5210' \
+    LC_ALL='C.UTF-8' \
+    LANG='C.UTF-8'
 
 HEALTHCHECK \
     --interval=1m \
