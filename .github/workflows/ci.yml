@@ -38,7 +38,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Test shell scripts
-      if: matrix.otp == '26'
+      if: matrix.otp == '27'
       run: |
         shellcheck test/ejabberd_SUITE_data/gencerts.sh
         shellcheck tools/captcha.sh
@@ -153,7 +153,7 @@ jobs:
         grep -q "is started in" $RE/logs/ejabberd.log
 
     - name: Run XMPP Interoperability Tests against CI server.
-      if: matrix.otp == '26'
+      if: matrix.otp == '27'
       continue-on-error: true
       uses: XMPP-Interop-Testing/xmpp-interop-tests-action@v1.4.0
       with:
@@ -203,7 +203,7 @@ jobs:
         find logs/ -name exunit.log -exec cat '{}' ';'
 
     - name: Send to coveralls
-      if: matrix.otp == '26'
+      if: matrix.otp == '27'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
