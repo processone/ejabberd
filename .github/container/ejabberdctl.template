@@ -305,6 +305,8 @@ stop_epmd()
 # if all ok, ensure runtime directory exists and make it current directory
 check_start()
 {
+    ECSIMAGE_DBPATH=$HOME/database/$ERLANG_NODE
+    [ ! -d "$ECSIMAGE_DBPATH" ] && ln -s $HOME/database $HOME/database/$ERLANG_NODE
     [ -n "$ERL_DIST_PORT" ] && return
     "$EPMD" -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
         pgrep -f "$ERLANG_NODE" >/dev/null && {
