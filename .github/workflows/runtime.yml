@@ -164,7 +164,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        elixir: ['1.13', '1.14', '1.15', '1.16', '1.17']
+        elixir: ['1.13', '1.14', '1.15', '1.16', '1.17', '1.18']
     runs-on: ubuntu-24.04
     container:
       image: elixir:${{ matrix.elixir }}
@@ -287,7 +287,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        elixir: ['1.13', '1.14', '1.15', '1.16', '1.17']
+        elixir: ['1.13', '1.14', '1.15', '1.16', '1.17', '1.18']
     runs-on: ubuntu-24.04
     container:
       image: elixir:${{ matrix.elixir }}
