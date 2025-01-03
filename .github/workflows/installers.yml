@@ -21,7 +21,7 @@ on:
 jobs:
   binaries:
     name: Binaries
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Cache build directory
         uses: actions/cache@v4
@@ -70,7 +70,7 @@ jobs:
   release:
     name: Release
     needs: [binaries]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     if: github.ref_type == 'tag'
     steps:
       - name: Download packages
