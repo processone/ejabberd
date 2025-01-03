@@ -236,7 +236,7 @@ get_definitive_udsocket_path(<<"unix", _>> = Unix) ->
 get_definitive_udsocket_path(ProvisionalPath) ->
     PathBase64 = filename:basename(ProvisionalPath),
     {term, Path} = misc:base64_to_term(PathBase64),
-    Path.
+    relative_socket_to_mnesia(Path).
 
 set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
     Prov = get_provisional_udsocket_path(Path),
@@ -268,9 +268,18 @@ set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
                     throw({error_setting_socket_group, Group, Prov})
             end
     end,
-    file:rename(Prov, Path);
+    file:rename(Prov, relative_socket_to_mnesia(Path));
 set_definitive_udsocket(_Port, _Opts) ->
     ok.
+
+relative_socket_to_mnesia(Path1) ->
+    case filename:pathtype(Path1) of
+        absolute ->
+            Path1;
+        relative ->
+            MnesiaDir = mnesia:system_info(directory),
+            filename:join(MnesiaDir, Path1)
+    end.
 
 %%%
 %%%
