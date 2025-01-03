@@ -844,16 +844,16 @@ set_item(Item) ->
     P = encode_jid(JID),
     Payload = Item#pubsub_item.payload,
     XML = str:join([fxml:element_to_binary(X) || X<-Payload], <<>>),
-    SM = encode_now(M),
-    SC = encode_now(C),
+    SM = misc:now_to_usec(M),
+    SC = misc:now_to_usec(C),
     ?SQL_UPSERT_T(
        "pubsub_item",
        ["!nodeid=%(Nidx)d",
         "!itemid=%(ItemId)s",
         "publisher=%(P)s",
-        "modification=%(SM)s",
+        "modification=%(SM)d",
         "payload=%(XML)s",
-        "-creation=%(SC)s"
+        "-creation=%(SC)d"
        ]),
     ok.
 
@@ -1087,20 +1087,27 @@ rsm_page(Count, Index, Offset, Items) ->
 	     first = #rsm_first{index = Offset, data = First},
 	     last = Last}.
 
+%% Convert <<"2021-08-22T19:25:52.817368Z">> to <<"1629660352817368">>.
+-spec encode_stamp(binary()) -> binary().
 encode_stamp(Stamp) ->
     try xmpp_util:decode_timestamp(Stamp) of
 	Now ->
 	    encode_now(Now)
     catch _:{bad_timestamp, _} ->
-	    Stamp % We should return a proper error to the client instead.
+	    <<"0">> % We should return a proper error to the client instead.
     end.
+
+%% Convert <<"1629660352817368">> to <<"2021-08-22T19:25:52.817368Z">>.
+-spec decode_stamp(binary()) -> binary().
 decode_stamp(Stamp) ->
     xmpp_util:encode_timestamp(decode_now(Stamp)).
 
-encode_now({T1, T2, T3}) ->
-    <<(misc:i2l(T1, 6))/binary, ":",
-      (misc:i2l(T2, 6))/binary, ":",
-      (misc:i2l(T3, 6))/binary>>.
-decode_now(NowStr) ->
-    [MS, S, US] = binary:split(NowStr, <<":">>, [global]),
-    {binary_to_integer(MS), binary_to_integer(S), binary_to_integer(US)}.
+%% Convert {1629, 660352, 817368} to <<"1629660352817368">>.
+-spec encode_now(erlang:timestamp()) -> binary().
+encode_now(Now) ->
+    integer_to_binary(misc:now_to_usec(Now)).
+
+%% Convert <<"1629660352817368">> to {1629, 660352, 817368}.
+-spec decode_now(binary()) -> erlang:timestamp().
+decode_now(Str) ->
+    misc:usec_to_now(binary_to_integer(Str)).
