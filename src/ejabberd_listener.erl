@@ -562,10 +562,12 @@ format_error(Reason) ->
     end.
 
 -spec format_endpoint(endpoint()) -> string().
-format_endpoint({Port, IP, _Transport}) ->
+format_endpoint({Port, IP, Transport}) ->
     case Port of
         <<"unix:", _/binary>> ->
             Port;
+        <<>> when (IP == local) and (Transport == tcp) ->
+            "local-unix-socket-domain";
 	Unix when is_binary(Unix) ->
             Def = get_definitive_udsocket_path(Unix),
             <<"unix:", Def/binary>>;
