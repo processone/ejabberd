@@ -199,5 +199,16 @@
 #CONTRIB_MODULES_CONF_DIR=/etc/ejabberd/modules
 
 #.
+#' CTL_OVER_HTTP: Path to ejabberdctl HTTP listener socket
+#
+# To speedup ejabberdctl execution time for ejabberd commands,
+# you can setup an ejabberd_http listener with ejabberd_ctl handling requests,
+# listening in a unix domain socket.
+#
+# Default: disabled
+#
+#CTL_OVER_HTTP=sockets/ctl_over_http.sock
+
+#.
 #'
 # vim: foldmarker=#',#. foldmethod=marker:

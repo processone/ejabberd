@@ -28,7 +28,7 @@
 -behaviour(gen_server).
 -author('alexey@process-one.net').
 
--export([start/0, start_link/0, process/1, process2/2]).
+-export([start/0, start_link/0, process/1, process/2, process2/2]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -37,6 +37,7 @@
 
 -include("ejabberd_ctl.hrl").
 -include("ejabberd_commands.hrl").
+-include("ejabberd_http.hrl").
 -include("logger.hrl").
 -include("ejabberd_stacktrace.hrl").
 
@@ -115,15 +116,51 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%-----------------------------
-%% Process
+%% Process http
+%%-----------------------------
+
+-spec process_http([binary()], tuple()) -> {non_neg_integer(), [{binary(), binary()}], string()}.
+
+process_http([Call], #request{data = Data} = Request) when is_binary(Call) and is_record(Request, request) ->
+    [{<<"ctl-command-line">>, LineBin}] = extract_args(Data),
+    LineStrings = string:split(binary_to_list(LineBin), " ", all),
+    process_http2(LineStrings, ?DEFAULT_VERSION).
+
+process_http2(["--version", Arg | Args], _) ->
+    Version =
+	try
+	    list_to_integer(Arg)
+	catch _:_ ->
+		throw({invalid_version, Arg})
+	end,
+    process_http2(Args, Version);
+
+process_http2(Args, Version) ->
+    {String, Code} = process2(Args, [], Version),
+    String2 = case String of
+                  [] -> String;
+                  _ -> [String, "\n"]
+              end,
+    {200, [{<<"status-code">>, integer_to_binary(Code)}], String2}.
+
+%% Be tolerant to make API more easily usable from command-line pipe.
+extract_args(<<"\n">>) -> [];
+extract_args(Data) ->
+    Maps = misc:json_decode(Data),
+    maps:to_list(Maps).
+
+%%-----------------------------
+%% Process command line
 %%-----------------------------
 
 -spec process([string()]) -> non_neg_integer().
 process(Args) ->
     process(Args, ?DEFAULT_VERSION).
 
+-spec process([string() | binary()], non_neg_integer() | tuple()) -> non_neg_integer().
 
--spec process([string()], non_neg_integer()) -> non_neg_integer().
+process([Call], Request) when is_binary(Call) and is_record(Request, request) ->
+    process_http([Call], Request);
 
 %% The commands status, stop and restart are defined here to ensure
 %% they are usable even if ejabberd is completely stopped.
@@ -232,7 +269,7 @@ process2(Args, AccessCommands, Auth, Version) ->
 	    io:format(lists:flatten(["\n" | String]++["\n"])),
 	    [CommandString | _] = Args,
             process(["help" | [CommandString]], Version),
-	    {lists:flatten(String), ?STATUS_ERROR};
+	    {lists:flatten(String), ?STATUS_USAGE};
 	{String, Code}
           when is_list(String) and is_integer(Code) ->
 	    {lists:flatten(String), Code};
@@ -271,7 +308,7 @@ try_run_ctp(Args, Auth, AccessCommands, Version) ->
 	    try_call_command(Args, Auth, AccessCommands, Version);
 	false ->
 	    print_usage(Version),
-	    {"", ?STATUS_USAGE};
+	    {"", ?STATUS_BADRPC};
 	Status ->
 	    {"", Status}
     catch
@@ -288,7 +325,7 @@ try_run_ctp(Args, Auth, AccessCommands, Version) ->
 try_call_command(Args, Auth, AccessCommands, Version) ->
     try call_command(Args, Auth, AccessCommands, Version) of
 	{Reason, wrong_command_arguments} ->
-	    {Reason, ?STATUS_ERROR};
+	    {Reason, ?STATUS_USAGE};
 	Res ->
 	    Res
     catch
