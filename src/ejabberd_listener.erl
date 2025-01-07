@@ -216,18 +216,13 @@ listen_tcp(Port, SockOpts) ->
 
 setup_provisional_udsocket_dir(DefinitivePath) ->
     ProvisionalPath = get_provisional_udsocket_path(DefinitivePath),
-    SocketDir = filename:dirname(ProvisionalPath),
-    file:make_dir(SocketDir),
-    file:change_mode(SocketDir, 8#00700),
     ?DEBUG("Creating a Unix Domain Socket provisional file at ~ts for the definitive path ~s",
               [ProvisionalPath, DefinitivePath]),
     ProvisionalPath.
 
 get_provisional_udsocket_path(Path) ->
-    MnesiaDir = mnesia:system_info(directory),
-    SocketDir = filename:join(MnesiaDir, "socket"),
     PathBase64 = misc:term_to_base64(Path),
-    PathBuild = filename:join(SocketDir, PathBase64),
+    PathBuild = filename:join(os:getenv("HOME"), PathBase64),
     %% Shorthen the path, a long path produces a crash when opening the socket.
     binary:part(PathBuild, {0, erlang:min(107, byte_size(PathBuild))}).
 
@@ -268,7 +263,15 @@ set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
                     throw({error_setting_socket_group, Group, Prov})
             end
     end,
-    file:rename(Prov, relative_socket_to_mnesia(Path));
+    FinalPath = relative_socket_to_mnesia(Path),
+    FinalPathDir = filename:dirname(FinalPath),
+    case file:make_dir(FinalPathDir) of
+        ok ->
+            file:change_mode(FinalPathDir, 8#00700);
+        _ ->
+            ok
+    end,
+    file:rename(Prov, FinalPath);
 set_definitive_udsocket(_Port, _Opts) ->
     ok.
 
