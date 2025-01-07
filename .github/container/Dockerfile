@@ -191,6 +191,7 @@ RUN apk -U upgrade --available --no-cache \
         $(cat /tmp/runDeps) \
         so:libcap.so.2 \
         so:libtdsodbc.so.0 \
+        curl \
         tini \
     && rm /tmp/runDeps \
     && ln -fs /usr/lib/libtdsodbc.so.0 /usr/lib/libtdsodbc.so
