@@ -90,6 +90,13 @@ listen:
     request_handlers:
       /: ejabberd_web_admin
   -
+    port: "unix:sockets/ctl_over_http.sock"
+    module: ejabberd_http
+    unix_socket:
+      mode: '0600'
+    request_handlers:
+      /ctl: ejabberd_ctl
+  -
     port: PORT_STUN
     ip: "::"
     transport: udp
