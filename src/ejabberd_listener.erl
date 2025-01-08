@@ -358,11 +358,20 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 				       gen_tcp:close(Socket),
 				       none
 			       end,
-		    ?INFO_MSG("(~p) Accepted connection ~ts -> ~ts",
-			      [Receiver,
-			       ejabberd_config:may_hide_data(
-				 format_endpoint({PPort, PAddr, tcp})),
-			       format_endpoint({Port, Addr, tcp})]);
+                    case is_ctl_over_http(State) of
+                        false ->
+                            ?INFO_MSG("(~p) Accepted connection ~ts -> ~ts",
+                                      [Receiver,
+                                       ejabberd_config:may_hide_data(
+                                         format_endpoint({PPort, PAddr, tcp})),
+                                       format_endpoint({Port, Addr, tcp})]);
+                        true ->
+                            ?DEBUG("(~p) Accepted connection ~ts -> ~ts",
+                                      [Receiver,
+                                       ejabberd_config:may_hide_data(
+                                         format_endpoint({PPort, PAddr, tcp})),
+                                       format_endpoint({Port, Addr, tcp})])
+                    end;
 		_ ->
 		    gen_tcp:close(Socket)
 	    end,
@@ -371,6 +380,16 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 	    ?ERROR_MSG("(~w) Failed TCP accept: ~ts",
 		       [ListenSocket, format_error(Reason)]),
 	    accept(ListenSocket, Module, State, Sup, NewInterval, Proxy, Arity)
+    end.
+
+is_ctl_over_http(State) ->
+    case lists:keyfind(request_handlers, 1, State) of
+        {request_handlers, Handlers} ->
+           case lists:keyfind(ejabberd_ctl, 2, Handlers) of
+               {_, ejabberd_ctl} -> true;
+               _ -> false
+           end;
+        _ -> false
     end.
 
 -spec udp_recv(inet:socket(), module(), state()) -> no_return().
