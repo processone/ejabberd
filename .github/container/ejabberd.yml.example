@@ -90,6 +90,14 @@ listen:
     request_handlers:
       /: ejabberd_web_admin
   -
+    port: "unix:sockets/ctl_over_http.sock"
+    module: ejabberd_http
+    tag: "ctl_over_http"
+    unix_socket:
+      mode: '0600'
+    request_handlers:
+      /ctl: ejabberd_ctl
+  -
     port: PORT_STUN
     ip: "::"
     transport: udp
@@ -138,6 +146,11 @@ access_rules:
 api_permissions:
   "console commands":
     from: ejabberd_ctl
+    who: all
+    what: "*"
+  "console commands over http":
+    from:
+      - tag: "ctl_over_http"
     who: all
     what: "*"
   "webadmin commands":
