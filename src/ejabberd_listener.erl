@@ -235,7 +235,6 @@ get_definitive_udsocket_path(ProvisionalPath) ->
 
 set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
     Prov = get_provisional_udsocket_path(Path),
-    timer:sleep(5000),
     Usd = maps:get(unix_socket, Opts),
     case maps:get(mode, Usd, undefined) of
         undefined -> ok;
