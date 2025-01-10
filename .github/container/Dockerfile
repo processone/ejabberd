@@ -192,6 +192,7 @@ RUN apk -U upgrade --available --no-cache \
         so:libcap.so.2 \
         so:libtdsodbc.so.0 \
         tini \
+    && rm /tmp/runDeps \
     && ln -fs /usr/lib/libtdsodbc.so.0 /usr/lib/libtdsodbc.so
 
 ARG USER
