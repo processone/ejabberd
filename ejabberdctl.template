@@ -253,7 +253,7 @@ help()
 
 # dynamic node name helper
 uid() {
-  ERTSVERSION="$("$ERL" -version 2>&1 | sed 's|.*\([0-9][0-9]\).*|\1|g')"
+  ERTSVERSION="$("$ERL" -version 2>&1 | sed 's|.* \([0-9]*[0-9]\).*|\1|g')"
   if [ $ERTSVERSION -lt 11 ] ; then # otp 23.0 includes erts 11.0
     # Erlang/OTP lower than 23, which doesn's support dynamic node code
     N=1
