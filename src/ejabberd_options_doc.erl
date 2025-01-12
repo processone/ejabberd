@@ -222,7 +222,7 @@ doc() ->
                  "specified 'Pattern' according to the rules used by the "
                  "Unix shell.")}}]},
      {access_rules,
-      #{value => "{AccessName: {allow|deny: ACLRules|ACLName}}",
+      #{value => "{AccessName: {allow|deny: ACLName|ACLDefinition}}",
         desc =>
             ?T("This option defines "
                "_`basic.md#access-rules|Access Rules`_. "
@@ -1322,7 +1322,7 @@ doc() ->
              "  normal: 1000",
              "  fast: 50000"]}},
      {shaper_rules,
-      #{value => "{ShaperRuleName: {Number|ShaperName: ACLRule|ACLName}}",
+      #{value => "{ShaperRuleName: {Number|ShaperName: ACLName|ACLDefinition}}",
         desc =>
             ?T("This option defines "
                "_`../configuration/basic.md#shaper-rules|shaper rules`_ "
