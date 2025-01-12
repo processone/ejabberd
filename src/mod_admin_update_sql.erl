@@ -286,6 +286,7 @@ update_tables(State) ->
         true ->
             drop_index(State, "private_storage", "i_private_storage_username"),
             drop_index(State, "private_storage", "i_private_storage_username_namespace"),
+            drop_pkey(State, "private_storage"),
             add_pkey(State, "private_storage", ["server_host", "username", "namespace"]),
             drop_sh_default(State, "private_storage");
         false ->
@@ -342,6 +343,7 @@ update_tables(State) ->
         true ->
             drop_index(State, "sm", "i_sm_sid"),
             drop_index(State, "sm", "i_sm_username"),
+            drop_pkey(State, "sm"),
             add_pkey(State, "sm", ["usec", "pid"]),
             create_index(State, "sm", "i_sm_sh_username", ["server_host", "username"]),
             drop_sh_default(State, "sm");
