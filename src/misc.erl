@@ -141,8 +141,9 @@ json_decode(Bin) ->
 -else.
 json_encode_with_kv_lists(Term) ->
     iolist_to_binary(json:encode(Term,
-		     fun([{_, _} | _] = Val, Encoder) ->
-			 json:encode_key_value_list(Val, Encoder);
+		     fun({[{_, _} | _]} = Val, Encoder) ->
+			 json:encode_key_value_list(element(1, Val), Encoder);
+			({[]}, _Encoder) -> <<"{}">>;
 			(Val, Encoder) ->
 			    json:encode_value(Val, Encoder)
 		     end)).
