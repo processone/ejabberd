@@ -69,3 +69,11 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
+      mod_mix:
+        db_type: sql
+      mod_mix_pam:
+        db_type: sql
+      mod_mqtt:
+        db_type: sql
+      mod_shared_roster:
+        db_type: sql

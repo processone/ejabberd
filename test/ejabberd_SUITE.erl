@@ -100,6 +100,7 @@ do_init_per_group(mysql, Config) ->
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MYSQL_VHOST),
             update_sql(?MYSQL_VHOST, Config),
+            stop_temporary_modules(?MYSQL_VHOST),
             set_opt(server, ?MYSQL_VHOST, Config);
         Err ->
             {skip, {mysql_not_available, Err}}
@@ -109,6 +110,7 @@ do_init_per_group(mssql, Config) ->
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MSSQL_VHOST),
             update_sql(?MSSQL_VHOST, Config),
+            stop_temporary_modules(?MSSQL_VHOST),
             set_opt(server, ?MSSQL_VHOST, Config);
         Err ->
             {skip, {mssql_not_available, Err}}
@@ -118,6 +120,7 @@ do_init_per_group(pgsql, Config) ->
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?PGSQL_VHOST),
             update_sql(?PGSQL_VHOST, Config),
+            stop_temporary_modules(?PGSQL_VHOST),
             set_opt(server, ?PGSQL_VHOST, Config);
         Err ->
             {skip, {pgsql_not_available, Err}}
@@ -160,6 +163,10 @@ do_init_per_group(GroupName, Config) ->
 	anonymous -> set_opt(anonymous, true, NewConfig);
 	_ -> NewConfig
     end.
+
+stop_temporary_modules(Host) ->
+    Modules = [mod_shared_roster],
+    [gen_mod:stop_module(Host, M) || M <- Modules].
 
 end_per_group(mnesia, _Config) ->
     ok;
@@ -1094,7 +1101,17 @@ clear_table_queries(Queries) ->
       fun(Query, Acc) ->
               case split(str:to_lower(Query)) of
                   [<<"create">>, <<"table">>, Table|_] ->
-                      [<<"DELETE FROM ", Table/binary, ";">>|Acc];
+                      GlobalRamTables = [<<"bosh">>,
+                                         <<"oauth_client">>,
+                                         <<"oauth_token">>,
+                                         <<"proxy65">>,
+                                         <<"route">>],
+                      case lists:member(Table, GlobalRamTables) of
+                          true ->
+                              Acc;
+                          false ->
+                              [<<"DELETE FROM ", Table/binary, ";">>|Acc]
+                      end;
                   _ ->
                       Acc
               end
