@@ -32,7 +32,7 @@ doc() ->
         desc =>
             ?T("List of one or more "
                "_`../configuration/basic.md#host-names|host names`_ "
-               "(or domains) that 'ejabberd' will serve. This is a "
+               "(or domains) that ejabberd will serve. This is a "
                "**mandatory** option.")}},
      {listen,
       #{value => "[Options, ...]",

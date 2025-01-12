@@ -104,7 +104,7 @@ There are several places to get in touch with other ejabberd developers and admi
 License
 -------
 
-- `ejabberd` is released under the __GNU General Public License v2__ (see [COPYING](COPYING))
+- ejabberd is released under the __GNU General Public License v2__ (see [COPYING](COPYING))
 - [ejabberd translations](https://github.com/processone/ejabberd-po/) under __MIT License__.
 
 [discussions]: https://github.com/processone/ejabberd/discussions
