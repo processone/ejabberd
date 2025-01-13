@@ -594,8 +594,22 @@ mssql_clustered(_) -> "CLUSTERED ".
 mysql_keylen(_, "bare_peer") -> "(191)";
 mysql_keylen(_, "channel") -> "(191)";
 mysql_keylen(_, "domain") -> "(75)";
+mysql_keylen(_, "grp") -> "(191)"; %% in mysql*.sql this is text, not varchar(191)
 mysql_keylen(_, "jid") -> "(75)";
+mysql_keylen(_, "lbday") -> "(191)";
+mysql_keylen(_, "lctry") -> "(191)";
+mysql_keylen(_, "lemail") -> "(191)";
+mysql_keylen(_, "lfamily") -> "(191)";
+mysql_keylen(_, "lfn") -> "(191)";
+mysql_keylen(_, "lgiven") -> "(191)";
+mysql_keylen(_, "llocality") -> "(191)";
+mysql_keylen(_, "lmiddle") -> "(191)";
+mysql_keylen(_, "lnickname") -> "(191)";
+mysql_keylen(_, "lorgname") -> "(191)";
+mysql_keylen(_, "lorgunit") -> "(191)";
+mysql_keylen(_, "lusername") -> "(191)";
 mysql_keylen(_, "name") -> "(75)";
+mysql_keylen(_, "namespace") -> "(191)";
 mysql_keylen(_, "node") -> "(75)";
 mysql_keylen(_, "peer") -> "(191)";
 mysql_keylen(_, "pid") -> "(75)";
