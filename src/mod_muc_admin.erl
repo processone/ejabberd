@@ -1737,16 +1737,16 @@ format_room_option(OptionString, ValueString) ->
                 allow_private_messages_from_visitors when
                       (ValueString == <<"anyone">>) or
                       (ValueString == <<"moderators">>) or
-                      (ValueString == <<"nobody">>) -> binary_to_existing_atom(ValueString);
+                      (ValueString == <<"nobody">>) -> binary_to_existing_atom(ValueString, utf8);
                 allowpm when
                       (ValueString == <<"anyone">>) or
                       (ValueString == <<"participants">>) or
                       (ValueString == <<"moderators">>) or
-                      (ValueString == <<"none">>) -> binary_to_existing_atom(ValueString);
+                      (ValueString == <<"none">>) -> binary_to_existing_atom(ValueString, utf8);
 		presence_broadcast when
                       (ValueString == <<"participant">>) or
                       (ValueString == <<"moderator">>) or
-                      (ValueString == <<"visitor">>) -> binary_to_existing_atom(ValueString);
+                      (ValueString == <<"visitor">>) -> binary_to_existing_atom(ValueString, utf8);
 		_ when ValueString == <<"true">> -> true;
 		_ when ValueString == <<"false">> -> false;
                 _ -> throw_error(Option, ValueString)
