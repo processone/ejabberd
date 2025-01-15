@@ -1860,6 +1860,7 @@ change_option(Option, Value, Config) ->
 	anonymous -> Config#config{anonymous = Value};
 	captcha_protected -> Config#config{captcha_protected = Value};
 	description -> Config#config{description = Value};
+	enable_hats -> Config#config{enable_hats = Value};
 	lang -> Config#config{lang = Value};
 	logging -> Config#config{logging = Value};
 	mam -> Config#config{mam = Value};
