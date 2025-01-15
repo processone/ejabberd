@@ -48,11 +48,12 @@ single_cases() ->
       single_test(http_list),
       single_test(http_tuple),
       single_test(http_list_tuple),
-      single_test(http_list_tuple_map)]}.
+      single_test(http_list_tuple_map),
+      single_test(clean)]}.
 
 setup(_Config) ->
     M = <<"mod_example">>,
-    execute(module_uninstall, [M]),
+    clean(_Config),
     case execute(module_install, [M]) of
         ok ->
             ok;
@@ -62,6 +63,12 @@ setup(_Config) ->
     end,
     Installed = execute(modules_installed, []),
     ?match(true, lists:keymember(mod_example, 1, Installed)).
+
+clean(_Config) ->
+    M = <<"mod_example">>,
+    execute(module_uninstall, [M]),
+    Installed = execute(modules_installed, []),
+    ?match(false, lists:keymember(mod_example, 1, Installed)).
 
 %%%==================================
 %%%% ejabberdctl
