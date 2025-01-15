@@ -1692,6 +1692,11 @@ mod_doc() ->
                    "    -",
                    "      work: true",
                    "      street: Elm Street"]}},
+           {vcard_xupdate,
+            #{value => "undefined | external | AvatarHash",
+              desc =>
+                  ?T("Set the hash of the avatar image. "
+		     "The default value is 'undefined'.")}},
            {cleanup_affiliations_on_start,
             #{value => "true | false",
               note => "added in 22.05",
