@@ -133,7 +133,7 @@ defmodule Ejabberd.MixProject do
     [{:cache_tab, "~> 1.0"},
      {:dialyxir, "~> 1.2", only: [:test], runtime: false},
      {:eimp, "~> 1.0"},
-     {:ex_doc, "~> 0.31", only: [:dev, :edoc], runtime: false},
+     {:ex_doc, "~> 0.31", only: [:edoc], runtime: false},
      {:fast_tls, "~> 1.1.22"},
      {:fast_xml, "~> 1.1.53"},
      {:fast_yaml, "~> 1.0"},
