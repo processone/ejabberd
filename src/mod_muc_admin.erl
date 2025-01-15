@@ -1722,9 +1722,8 @@ format_room_option(OptionString, ValueString) ->
 		password -> ValueString;
 		subject ->ValueString;
 		subject_author ->ValueString;
-		presence_broadcast ->misc:expr_to_term(ValueString);
-		max_users -> binary_to_integer(ValueString);
-		voice_request_min_interval -> binary_to_integer(ValueString);
+		max_users -> try_convert_integer(Option, ValueString);
+		voice_request_min_interval -> try_convert_integer(Option, ValueString);
 		vcard -> ValueString;
 		vcard_xupdate when ValueString /= <<"undefined">>,
 				   ValueString /= <<"external">> ->
@@ -1735,9 +1734,34 @@ format_room_option(OptionString, ValueString) ->
 		    [parse_affiliation_string(Opt) || Opt <- str:tokens(ValueString, <<",">>)];
 		subscribers ->
 		    [parse_subscription_string(Opt) || Opt <- str:tokens(ValueString, <<",">>)];
-		_ -> misc:binary_to_atom(ValueString)
+                allow_private_messages_from_visitors when
+                      (ValueString == <<"anyone">>) or
+                      (ValueString == <<"moderators">>) or
+                      (ValueString == <<"nobody">>) -> binary_to_existing_atom(ValueString);
+                allowpm when
+                      (ValueString == <<"anyone">>) or
+                      (ValueString == <<"participants">>) or
+                      (ValueString == <<"moderators">>) or
+                      (ValueString == <<"none">>) -> binary_to_existing_atom(ValueString);
+		presence_broadcast when
+                      (ValueString == <<"participant">>) or
+                      (ValueString == <<"moderator">>) or
+                      (ValueString == <<"visitor">>) -> binary_to_existing_atom(ValueString);
+		_ when ValueString == <<"true">> -> true;
+		_ when ValueString == <<"false">> -> false;
+                _ -> throw_error(Option, ValueString)
 	    end,
     {Option, Value}.
+
+try_convert_integer(Option, ValueString) ->
+    try binary_to_integer(ValueString) of
+	I when is_integer(I) -> I
+    catch _:badarg ->
+        throw_error(Option, ValueString)
+    end.
+
+throw_error(O, V) ->
+    throw({error, "Invalid value for that option", O, V}).
 
 parse_affiliation_string(String) ->
     {Type, JidS} = case String of
