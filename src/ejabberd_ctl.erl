@@ -121,10 +121,9 @@ code_change(_OldVsn, State, _Extra) ->
 
 -spec process_http([binary()], tuple()) -> {non_neg_integer(), [{binary(), binary()}], string()}.
 
-process_http([Call], #request{data = Data} = Request) when is_binary(Call) and is_record(Request, request) ->
-    [{<<"ctl-command-line">>, LineBin}] = extract_args(Data),
-    LineStrings = string:split(binary_to_list(LineBin), " ", all),
-    process_http2(LineStrings, ?DEFAULT_VERSION).
+process_http([_Call], #request{data = Data, path = [<<"ctl">> | _]}) ->
+    Args = [binary_to_list(E) || E <- misc:json_decode(Data)],
+    process_http2(Args, ?DEFAULT_VERSION).
 
 process_http2(["--version", Arg | Args], _) ->
     Version =
@@ -142,12 +141,6 @@ process_http2(Args, Version) ->
                   _ -> [String, "\n"]
               end,
     {200, [{<<"status-code">>, integer_to_binary(Code)}], String2}.
-
-%% Be tolerant to make API more easily usable from command-line pipe.
-extract_args(<<"\n">>) -> [];
-extract_args(Data) ->
-    Maps = misc:json_decode(Data),
-    maps:to_list(Maps).
 
 %%-----------------------------
 %% Process command line
