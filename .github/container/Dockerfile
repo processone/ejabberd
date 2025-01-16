@@ -102,7 +102,7 @@ RUN export PEM=$HOME/conf/server.pem \
             -days 3650 \
             -subj "/CN=localhost"
 
-RUN sed -i 's|^#CTL_OVER_HTTP=|CTL_OVER_HTTP=|' "$HOME/conf/ejabberdctl.cfg"
+RUN sed -i 's|^#CTL_OVER_HTTP=|CTL_OVER_HTTP=../|' "$HOME/conf/ejabberdctl.cfg"
 
 RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
     && setcap 'cap_net_bind_service=+ep' $(find $home_root_dir -name beam.smp) \
