@@ -107,7 +107,7 @@ Next steps
 
 ### Register admin account
 
-#### [![ejabberd Container](https://img.shields.io/badge/ejabberd-grey?logo=opencontainersinitiative&logoColor=2094f3)](https://github.com/processone/ejabberd/pkgs/container/ejabberd)
+#### [![ejabberd Container](https://img.shields.io/badge/ejabberd-grey?logo=opencontainersinitiative&logoColor=2094f3)](https://github.com/processone/ejabberd/pkgs/container/ejabberd) [:orange_circle:](#images-comparison)
 
 If you set the `REGISTER_ADMIN_PASSWORD` environment variable,
 an account is automatically registered with that password,
@@ -217,11 +217,11 @@ The container image exposes several ports
 - `5222`: The default port for XMPP clients.
 - `5269`: For XMPP federation. Only needed if you want to communicate with users on other servers.
 - `5280`: For admin interface (URL is `admin/`).
-- `1880`: For admin interface (URL is `/`, useful for [podman-desktop](https://podman-desktop.io/) and [docker-desktop](https://www.docker.com/products/docker-desktop/))
+- `1880`: For admin interface (URL is `/`, useful for [podman-desktop](https://podman-desktop.io/) and [docker-desktop](https://www.docker.com/products/docker-desktop/)) [:orange_circle:](#images-comparison)
 - `5443`: With encryption, used for admin interface, API, CAPTCHA, OAuth, Websockets and XMPP BOSH.
 - `1883`: Used for MQTT
 - `4369-4399`: EPMD and Erlang connectivity, used for `ejabberdctl` and clustering
-- `5210`: Erlang connectivity when `ERL_DIST_PORT` is set, alternative to EPMD
+- `5210`: Erlang connectivity when `ERL_DIST_PORT` is set, alternative to EPMD [:orange_circle:](#images-comparison)
 
 
 ### Volumes
@@ -281,7 +281,7 @@ Example usage (or check the [full example](#customized-example)):
 ```
 
 
-### Macros in environment
+### Macros in environment [:high_brightness:](#images-comparison)
 
 ejabberd reads `EJABBERD_MACRO_*` environment variables
 and uses them to define the corresponding
@@ -909,7 +909,12 @@ spec:
 Images Comparison
 -----------------
 
-Let's summarize the differences between both container images:
+Let's summarize the differences between both container images. Legend:
+
+- :sparkle: is the recommended alternative
+- :orange_circle: added in the latest release (ejabberd 25.xx)
+- :high_brightness: added in the previous release (ejabberd 24.12)
+- :low_brightness: added in the pre-previous release (ejabberd 24.10)
 
 |                       | [![ejabberd Container](https://img.shields.io/badge/ejabberd-grey?logo=opencontainersinitiative&logoColor=2094f3)](https://github.com/processone/ejabberd/pkgs/container/ejabberd) | [![ecs Container](https://img.shields.io/badge/ecs-grey?logo=docker&logoColor=2094f3)](https://hub.docker.com/r/ejabberd/ecs/) |
 |:----------------------|:------------------|:-----------------------|
@@ -938,10 +943,3 @@ Let's summarize the differences between both container images:
 | [`EJABBERD_MACRO_ADMIN`](#register-admin-account) | Grant admin rights :orange_circle: <br /> (default `admin@localhost`) <br /> | Hardcoded `admin@localhost` |
 | [`REGISTER_ADMIN_PASSWORD`](#register-admin-account) | Register admin account :orange_circle: | unsupported |
 | `CTL_OVER_HTTP`       | enabled :orange_circle: | unsupported |
-
-Legend:
-
-- :sparkle: is the recommended alternative
-- :orange_circle: added in the latest release (ejabberd 25.xx)
-- :high_brightness: added in the previous release (ejabberd 24.12)
-- :low_brightness: added in the pre-previous release (ejabberd 24.10)
