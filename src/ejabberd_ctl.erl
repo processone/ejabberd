@@ -550,7 +550,8 @@ print_usage(HelpMode, MaxC, ShCode, Version) ->
     AllCommands = get_list_commands(Version),
 
     print(
-       ["Usage: ", "ejabberdctl", " [--no-timeout] [--node ", ?A("nodename"), "] [--version ", ?A("api_version"), "] ",
+       ["Usage: ", "ejabberdctl", " [--no-timeout] [--node ", ?A("name"), "] [--version ", ?A("apiv"), "] ",
+        "[--auth ", ?A("user host pass"), "] ",
 	?C("command"), " [", ?A("arguments"), "]\n"
 	"\n"
 	"Available commands in this ejabberd node:\n"], []),
