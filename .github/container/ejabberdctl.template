@@ -381,7 +381,8 @@ wait_status()
 
 exec_other_command()
 {
-    if [ -z "$CTL_OVER_HTTP" ] || [ -z "$1" ] || [ "$1" = "help" ] \
+    if [ -z "$CTL_OVER_HTTP" ] || [ ! -S "$CTL_OVER_HTTP" ] \
+        || [ -z "$1" ] || [ "$1" = "help" ] \
         || [ "$1" = "mnesia_info_ctl" ]|| [ "$1" = "print_sql_schema" ] ; then
         run_erl "$(uid ctl)" -hidden -noinput \
                  -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
