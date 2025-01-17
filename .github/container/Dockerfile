@@ -41,7 +41,7 @@ ARG ELIXIR_VSN
 RUN wget -O - https://github.com/elixir-lang/elixir/archive/v$ELIXIR_VSN.tar.gz \
         | tar -xzf -
 
-WORKDIR elixir-$ELIXIR_VSN
+WORKDIR /elixir-$ELIXIR_VSN
 ENV ERL_FLAGS="+JPperf true"
 RUN make install clean
 
