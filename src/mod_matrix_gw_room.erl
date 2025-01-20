@@ -1232,8 +1232,14 @@ check_event_auth(Event, StateMap, Data) ->
                                                            <<"join">>}}}} ->
                                     case Event#event.type of
                                         ?ROOM_3PI ->
-                                            %% TODO
-                                            {todo, Event};
+                                            SenderLevel = get_user_power_level(Event#event.sender, StateMap, Data),
+                                            InviteLevel =
+                                                case maps:find({?ROOM_POWER_LEVELS, <<"">>}, StateMap) of
+                                                    {ok, #event{json = #{<<"content">> := #{<<"invite">> := S}}}} ->
+                                                        get_int(S);
+                                                    _ -> 0
+                                                end,
+                                            SenderLevel >= InviteLevel;
                                         _ ->
                                             case check_event_power_level(
                                                    Event, StateMap, Data) of
