@@ -19,7 +19,7 @@
                         "cwd": "."
                 },
                 {
-                        "name": "Relive",
+                        "name": "Relive (VSCode)",
                         "type": "erlang",
                         "request": "launch",
                         "runinterminal": [
