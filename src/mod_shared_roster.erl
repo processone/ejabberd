@@ -439,8 +439,7 @@ get_group_opts(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
     get_group_opts_int(Host, Group).
 
-get_group_opts_int(Host1, Group1) ->
-    {Host, Group} = split_grouphost(Host1, Group1),
+get_group_opts_int(Host, Group) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
     Res = case use_cache(Mod, Host) of
 	true ->
