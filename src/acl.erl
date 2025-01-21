@@ -106,8 +106,8 @@ match_acl(_Host, {shared_group, {G, H}}, #{usr := {U, S, _}}) ->
 	undefined -> false;
 	Mod -> Mod:is_user_in_group({U, S}, G, H)
     end;
-match_acl(Host, {shared_group, G}, Map) ->
-    match_acl(Host, {shared_group, {G, Host}}, Map);
+match_acl(Host, {shared_group, G}, #{usr := {_, S, _}} = Map) ->
+    match_acl(Host, {shared_group, {G, S}}, Map);
 match_acl(_Host, {user_regexp, {UR, S1}}, #{usr := {U, S2, _}}) ->
     S1 == S2 andalso match_regexp(U, UR);
 match_acl(_Host, {user_regexp, UR}, #{usr := {U, S, _}}) ->
