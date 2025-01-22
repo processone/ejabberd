@@ -125,7 +125,7 @@ s2s_out_packet(State, _Pkt) ->
     State.
 
 s2s_in_handle_info(State, {route, Pkt}) when ?is_stanza(Pkt) ->
-    ejabberd_s2s_in:send(State, Pkt);
+    {stop, ejabberd_s2s_in:send(State, Pkt)};
 s2s_in_handle_info(State, _Info) ->
     State.
 
