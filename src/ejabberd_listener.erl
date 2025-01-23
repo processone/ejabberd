@@ -283,6 +283,12 @@ relative_socket_to_mnesia(Path1) ->
             filename:join(MnesiaDir, Path1)
     end.
 
+maybe_delete_udsocket_file(<<"unix:", Path/binary>>) ->
+    PathAbsolute = relative_socket_to_mnesia(Path),
+    file:delete(PathAbsolute);
+maybe_delete_udsocket_file(_Port) ->
+    ok.
+
 %%%
 %%%
 %%%
@@ -481,12 +487,13 @@ stop_listeners() ->
       Ports).
 
 -spec stop_listener(endpoint(), module(), opts()) -> ok | {error, any()}.
-stop_listener({_, _, Transport} = EndPoint, Module, Opts) ->
+stop_listener({Port, _, Transport} = EndPoint, Module, Opts) ->
     case supervisor:terminate_child(?MODULE, EndPoint) of
 	ok ->
 	    ?INFO_MSG("Stop accepting ~ts connections at ~ts for ~p",
 		      [format_transport(Transport, Opts),
 		       format_endpoint(EndPoint), Module]),
+	    maybe_delete_udsocket_file(Port),
 	    ets:delete(?MODULE, EndPoint),
 	    supervisor:delete_child(?MODULE, EndPoint);
 	Err ->
