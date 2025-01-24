@@ -70,10 +70,21 @@
 -export([connecting/2, connecting/3,
 	 session_established/2, session_established/3]).
 
--ifdef(ODBC_HAS_TYPES).
-    -type(odbc_connection_reference() ::  odbc:connection_reference()).
+-ifdef(OTP_BELOW_28).
+-ifdef(OTP_BELOW_26).
+%% OTP 25 or lower
+-type(odbc_connection_reference() ::  pid()).
+-type(db_ref_pid() :: pid()).
 -else.
-    -type(odbc_connection_reference() ::  pid()).
+%% OTP 26 or 27
+-type(odbc_connection_reference() ::  odbc:connection_reference()).
+-type(db_ref_pid() :: pid()).
+-endif.
+-else.
+%% OTP 28 or higher
+-nominal(odbc_connection_reference() :: odbc:connection_reference()).
+-nominal(db_ref_pid() :: pid()).
+-dialyzer([no_opaque_union]).
 -endif.
 
 -include("logger.hrl").
@@ -81,7 +92,7 @@
 -include("ejabberd_stacktrace.hrl").
 
 -record(state,
-	{db_ref               :: undefined | pid() | odbc_connection_reference(),
+	{db_ref               :: undefined | db_ref_pid() | odbc_connection_reference(),
 	 db_type = odbc       :: pgsql | mysql | sqlite | odbc | mssql,
 	 db_version           :: undefined | non_neg_integer() | {non_neg_integer(), atom(), non_neg_integer()},
 	 reconnect_count = 0  :: non_neg_integer(),
