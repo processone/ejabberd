@@ -62,6 +62,11 @@
                           ?AC_ALLOW_HEADERS, ?AC_MAX_AGE]).
 -define(HEADER, [?CT_XML, ?AC_ALLOW_ORIGIN, ?AC_ALLOW_HEADERS]).
 
+-ifndef(OTP_BELOW_28).
+-dialyzer([no_opaque_union]).
+-endif.
+
+
 is_valid_websocket_upgrade(_Path, Headers) ->
     HeadersToValidate = [{'Upgrade', <<"websocket">>},
                          {'Connection', ignore},

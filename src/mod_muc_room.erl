@@ -116,6 +116,10 @@
 -callback search_affiliation(binary(), binary(), binary(), affiliation()) ->
     {ok, [{ljid(), {affiliation(), binary()}}]} | {error, any()}.
 
+-ifndef(OTP_BELOW_28).
+-dialyzer([no_opaque_union]).
+-endif.
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
