@@ -5,7 +5,7 @@
 
 -export([default_version/1]).
 
--spec default_version(gen_mod:opts() | global | binary()) -> any().
+-spec default_version(gen_mod:opts() | global | binary()) -> integer().
 default_version(Opts) when is_map(Opts) ->
     gen_mod:get_opt(default_version, Opts);
 default_version(Host) ->

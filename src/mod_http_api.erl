@@ -571,6 +571,8 @@ mod_opt_type(default_version) ->
                end
             end)).
 
+-spec mod_options(binary()) -> [{default_version, integer()}].
+
 mod_options(_) ->
     [{default_version, ?DEFAULT_API_VERSION}].
 
