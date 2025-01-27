@@ -454,12 +454,15 @@ get_prog_name() ->
 
 maybe_warning_norequesthandler() ->
     Host = hd(ejabberd_option:hosts()),
-    URL = get_auto_url(any, ?MODULE, Host),
-    case URL of
-        undefined ->
-            ?WARNING_MSG("The option captcha_cmd is configured, "
-                   "but there is NO request_handler in listen option "
-                   "configured with ejabberd_captcha. Please check "
+    AutoURL = get_auto_url(any, ?MODULE, Host),
+    ManualURL = ejabberd_option:captcha_url(),
+    case (AutoURL == undefined) and not is_binary(ManualURL) of
+        true ->
+            ?CRITICAL_MSG("The option captcha_cmd is configured "
+                   "and captcha_url is set to auto, "
+                   "but I couldn't find a request_handler in listen option "
+                   "configured with ejabberd_captcha and integer port. "
+                   "Please setup the URL with option captcha_url, see "
                    "https://docs.ejabberd.im/admin/configuration/basic/#captcha",
                    []);
         _ ->
@@ -523,7 +526,7 @@ find_handler_port_path(Tls, Module) ->
       fun({{Port, _, _},
            ejabberd_http,
            #{tls := ThisTls, request_handlers := Handlers}})
-            when (Tls == any) or (Tls == ThisTls) ->
+            when is_integer(Port) and ((Tls == any) or (Tls == ThisTls)) ->
               case lists:keyfind(Module, 2, Handlers) of
                   false -> false;
                   {Path, Module} -> {true, {ThisTls, Port, Path}}
