@@ -447,17 +447,20 @@ pubsub_delete_item(_, _, _, _, _) ->
 
 -spec pubsub_item_to_storage_bookmark(#pubsub_item{}) -> {true, bookmark_conference()} | false.
 pubsub_item_to_storage_bookmark(#pubsub_item{itemid = {Id, _}, payload = [#xmlel{} = B | _]}) ->
-    case xmpp:decode(B) of
+    try
 	#pep_bookmarks_conference{name = Name, autojoin = AutoJoin, nick = Nick,
-				  password = Password} ->
-	    try jid:decode(Id) of
-		#jid{} = Jid ->
-		    {true, #bookmark_conference{jid = Jid, name = Name, autojoin = AutoJoin, nick = Nick,
-						password = Password}}
-	    catch _:_ ->
-		false
-	    end;
-	_ ->
+				  password = Password} = xmpp:decode(B),
+	#jid{} = Jid = jid:decode(Id),
+	{true, #bookmark_conference{jid = Jid, name = Name,
+				    autojoin = AutoJoin, nick = Nick,
+				    password = Password}}
+    catch
+	_:{xmpp_codec, Why} ->
+	    ?DEBUG("Failed to decode bookmark element (~ts): ~ts",
+		   [Id, xmpp:format_error(Why)]),
+	    false;
+	_:{bad_jid, _} ->
+	    ?DEBUG("Failed to decode bookmark ID (~ts)", [Id]),
 	    false
     end;
 pubsub_item_to_storage_bookmark(_) ->
