@@ -340,8 +340,8 @@ publish_pep_native_bookmarks(JID, Data) ->
 				    #bookmark_storage{conference = C} -> C;
 				    _ -> []
 				catch _:{xmpp_codec, Why} ->
-					  ?WARNING_MSG("Failed to decode bookmarks of ~ts: ~ts",
-						       [jid:encode(JID), xmpp:format_error(Why)]),
+					  ?DEBUG("Failed to decode bookmarks of ~ts: ~ts",
+						 [jid:encode(JID), xmpp:format_error(Why)]),
 					  []
 				end,
 		    PubOpts = [{persist_items, true}, {access_model, whitelist}, {max_items, max}, {notify_retract,true}, {notify_delete,true}, {send_last_published_item, never}],
