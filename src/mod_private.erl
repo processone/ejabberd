@@ -490,15 +490,19 @@ storage_bookmark_to_xmpp_bookmark(#bookmark_conference{name = Name, autojoin = A
 
 -spec pubsub_item_to_map(#pubsub_item{}, map()) -> map().
 pubsub_item_to_map(#pubsub_item{itemid = {Id, _}, payload = [#xmlel{} = B | _]}, Map) ->
-    case xmpp:decode(B) of
-	#pep_bookmarks_conference{} = B2 ->
-	    try jid:decode(Id) of
-		#jid{} = Jid ->
-		    maps:put(jid:tolower(Jid), B2#pep_bookmarks_conference{extensions = undefined}, Map)
-	    catch _:_ ->
-		Map
-	    end;
-	_ ->
+    try {xmpp:decode(B), jid:decode(Id)} of
+	{#pep_bookmarks_conference{} = B1, #jid{} = Jid} ->
+	    B2 = B1#pep_bookmarks_conference{extensions = undefined},
+	    maps:put(jid:tolower(Jid), B2, Map);
+	{_, _} ->
+	    Map
+    catch
+	_:{xmpp_codec, Why} ->
+	    ?DEBUG("Failed to decode bookmark element (~ts): ~ts",
+		   [Id, xmpp:format_error(Why)]),
+	    Map;
+	_:{bad_jid, _} ->
+	    ?DEBUG("Failed to decode bookmark ID (~ts)", [Id]),
 	    Map
     end;
 pubsub_item_to_map(_, Map) ->
