@@ -139,7 +139,7 @@ opt_type(default_db) ->
 opt_type(default_ram_db) ->
     econf:enum([mnesia, sql, redis]);
 opt_type(define_macro) ->
-    econf:any();
+    econf:map(econf:binary(), econf:any(), [unique]);
 opt_type(disable_sasl_scram_downgrade_protection) ->
     econf:bool();
 opt_type(disable_sasl_mechanisms) ->
