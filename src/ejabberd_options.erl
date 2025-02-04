@@ -750,6 +750,7 @@ globals() ->
      certfiles,
      cluster_backend,
      cluster_nodes,
+     define_macro,
      domain_balancing,
      ext_api_path_oauth,
      fqdn,
