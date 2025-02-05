@@ -546,14 +546,10 @@ sip_uri() ->
 -spec host() -> yconf:validator(binary()).
 host() ->
     fun(Domain) ->
-	    Host = ejabberd_config:get_myname(),
 	    Hosts = ejabberd_config:get_option(hosts),
-	    Domain1 = (binary())(Domain),
-	    Domain2 = misc:expand_keyword(<<"@HOST@">>, Domain1, Host),
-	    Domain3 = (domain())(Domain2),
-	    case lists:member(Domain3, Hosts) of
-		true -> fail({route_conflict, Domain3});
-		false -> Domain3
+	    case lists:member(Domain, Hosts) of
+		true -> fail({route_conflict, Domain});
+		false -> Domain
 	    end
     end.
 
