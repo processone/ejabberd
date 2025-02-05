@@ -112,14 +112,7 @@ opt_type(cache_missed) ->
 opt_type(cache_size) ->
     econf:pos_int(infinity);
 opt_type(captcha_cmd) ->
-    econf:and_then(
-	econf:binary(),
-	fun(V) ->
-		V2 = misc:expand_keyword(<<"@SEMVER@">>, V,
-				    ejabberd_option:version()),
-		misc:expand_keyword(<<"@VERSION@">>, V2,
-				    misc:semver_to_xxyy(ejabberd_option:version()))
-	end);
+    econf:binary();
 opt_type(captcha_host) ->
     econf:binary();
 opt_type(captcha_limit) ->
@@ -493,7 +486,6 @@ opt_type(jwt_auth_only_rule) ->
 		    {c2s_protocol_options, undefined | binary()} |
                     {s2s_ciphers, undefined | binary()} |
                     {c2s_ciphers, undefined | binary()} |
-		    {captcha_cmd, undefined | binary()} |
 		    {websocket_origin, [binary()]} |
 		    {disable_sasl_mechanisms, [binary()]} |
 		    {s2s_zlib, boolean()} |
