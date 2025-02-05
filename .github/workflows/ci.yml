@@ -293,6 +293,25 @@ jobs:
         find logs/ -name error.log -exec cat '{}' ';'
         find logs/ -name exunit.log -exec cat '{}' ';'
 
+    - name: Run config tests
+      run: CT_BACKENDS=configtest make test
+      id: ctconfigtest
+    - name: Check results
+      if: always() && steps.ctconfigtest.outcome != 'skipped'
+      run: |
+        [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
+        ln `find logs/ -name suite.log` logs/suite.log
+        grep 'TEST COMPLETE' logs/suite.log
+        grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
+        test $(find logs/ -empty -name error.log)
+    - name: View logs failures
+      if: failure() && steps.ctconfigtest.outcome != 'skipped'
+      run: |
+        cat logs/suite.log | awk \
+          'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+        find logs/ -name error.log -exec cat '{}' ';'
+        find logs/ -name exunit.log -exec cat '{}' ';'
+
     - name: Upload CT logs
       if: failure()
       uses: actions/upload-artifact@v4
