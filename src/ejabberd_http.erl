@@ -932,12 +932,7 @@ listen_opt_type(default_host) ->
 listen_opt_type(custom_headers) ->
     econf:map(
       econf:binary(),
-      econf:and_then(
-	econf:binary(),
-	fun(V) ->
-		misc:expand_keyword(<<"@VERSION@">>, V,
-				    ejabberd_option:version())
-	end)).
+      econf:binary()).
 
 listen_options() ->
     [{ciphers, undefined},

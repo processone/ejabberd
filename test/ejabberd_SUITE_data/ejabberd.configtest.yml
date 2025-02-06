@@ -1,0 +1,138 @@
+
+define_macro:
+  CONFIGTEST_CONFIG:
+    modules:
+      mod_mam: {}
+      mod_muc: {}
+
+## Macro over keyword
+
+define_macro:
+  LIMIT: 12345
+
+define_keyword:
+  LIMIT: 67890
+
+captcha_limit: LIMIT
+
+## Keyword inside macro
+
+define_macro:
+  URL_MACRO: "http://example.org/@URL_KEYWORD@"
+
+define_keyword:
+  URL_KEYWORD: "captcha"
+
+captcha_url: URL_MACRO
+
+## MTGS
+
+define_macro:
+  MACRO_GLOBAL_SERVER: "macro-global-server"
+
+sql_server: MACRO_GLOBAL_SERVER
+
+## MTGI
+
+define_macro:
+  MACRO_GLOBAL_PORT: 1111
+
+sql_port: MACRO_GLOBAL_PORT
+
+## MTLS
+
+define_macro:
+  MACRO_LOCAL_SERVER: "macro-local-server"
+
+host_config:
+  configtest.localhost:
+    sql_server: MACRO_LOCAL_SERVER
+
+## MTLI
+
+define_macro:
+  MACRO_LOCAL_PORT: 2222
+
+host_config:
+  configtest.localhost:
+    sql_port: MACRO_LOCAL_PORT
+
+## KTGS
+
+define_keyword:
+  KEYWORD_USERNAME: "global-keyword-username"
+
+sql_username: KEYWORD_USERNAME
+
+## KTGS inside
+
+sql_password: "password--@KEYWORD_USERNAME@"
+
+## KTLS
+## KTLS inside
+
+host_config:
+  configtest.localhost:
+    define_keyword:
+      KEYWORD_USERNAME: "local-keyword-username"
+
+## MMLS
+
+define_macro:
+  MACRO_LOCAL_NAME: "macro-local-name"
+
+append_host_config:
+  configtest.localhost:
+    modules:
+      mod_proxy65:
+        name: MACRO_LOCAL_NAME
+
+## MMLI
+
+define_macro:
+  MACRO_LOCAL_MATCHES: 3333
+
+append_host_config:
+  configtest.localhost:
+    modules:
+      mod_vcard:
+        matches: MACRO_LOCAL_MATCHES
+
+## KMLS
+
+define_keyword:
+  KEYWORD_LOCAL_NAME: "keyword-local-name"
+
+append_host_config:
+  configtest.localhost:
+    modules:
+      mod_disco:
+        name: KEYWORD_LOCAL_NAME
+
+## KMLS inside
+
+append_host_config:
+  configtest.localhost:
+    modules:
+      mod_mix:
+        name: "mix.@KEYWORD_LOCAL_NAME@"
+
+## KMLI
+
+define_keyword:
+  KEYWORD_LOCAL_INTERVAL: 4444
+
+append_host_config:
+  configtest.localhost:
+    modules:
+      mod_muc_admin:
+        subscribe_room_many_max_users: KEYWORD_LOCAL_INTERVAL
+
+## Predefined keywords
+
+append_host_config:
+  configtest.localhost:
+    modules:
+      mod_multicast:
+        name: "host: @HOST@, version: @VERSION@"
+

@@ -38,6 +38,7 @@
 -export([dump/0, dump/1, convert_to_yaml/1, convert_to_yaml/2]).
 -export([callback_modules/1]).
 -export([set_option/2]).
+-export([get_predefined_keywords/0, replace_keywords/2]).
 
 %% Deprecated functions
 -export([get_option/2]).
@@ -166,7 +167,7 @@ get_option({O, Host} = Opt) ->
 	      undefined -> ejabberd_options;
 	      T -> T
 	  end,
-    try ets:lookup_element(Tab, Opt, 2)
+    try replace_keywords_toplevel(Tab, Host, ets:lookup_element(Tab, Opt, 2))
     catch ?EX_RULE(error, badarg, St) when Host /= global ->
 	    StackTrace = ?EX_STACK(St),
 	    Val = get_option({O, global}),
@@ -403,6 +404,98 @@ format_error({error, {exception, Class, Reason, St}}) ->
 	"code, please report the bug with ejabberd configuration "
 	"file attached and the following stacktrace included:~n** ~ts",
 	[misc:format_exception(2, Class, Reason, St)])).
+
+%% @format-begin
+
+replace_keywords(Host, Value) ->
+    Tab = case get_tmp_config() of
+              undefined ->
+                  ejabberd_options;
+              T ->
+                  T
+          end,
+    replace_keywords(Tab, Host, Value).
+
+replace_keywords(Tab, Host, List) when is_list(List) ->
+    [replace_keywords(Tab, Host, Element) || Element <- List];
+replace_keywords(Tab, Host, Atom) when is_atom(Atom) ->
+    Str = atom_to_list(Atom),
+    case Str == string:uppercase(Str) of
+        false ->
+            Atom;
+        true ->
+            MacroName = iolist_to_binary(Str),
+            DK = get_defined_keywords(Tab, Host),
+            case proplists:get_value(MacroName, DK) of
+                undefined ->
+                    Atom;
+                Replacement ->
+                    Replacement
+            end
+    end;
+replace_keywords(Tab, Host, Binary) when is_binary(Binary) ->
+    DK = get_defined_keywords(Tab, Host),
+    lists:foldl(fun ({Key, Replacement}, V) when is_binary(Replacement) ->
+                        misc:expand_keyword(<<"@", Key/binary, "@">>, V, Replacement);
+                    ({_, _}, V) ->
+                        V
+                end,
+                Binary,
+                DK);
+replace_keywords(_Tab, _Host, Value) ->
+    Value.
+
+%% This function is called by ejabberd_config for toplevel options
+replace_keywords_toplevel(Tab, Host, Value) when is_binary(Value) ->
+    DefinedKeywords = get_defined_keywords(Tab, Host),
+    case proplists:lookup(Value, DefinedKeywords) of
+        {Value, Replacement} ->
+            Replacement;
+        none ->
+            case binary:split(Value, [<<"@">>], [global]) of
+                [_, _, _ | _] ->
+                    replace_keywords_toplevel_insidestring(Value, DefinedKeywords);
+                _ ->
+                    Value
+            end
+    end;
+replace_keywords_toplevel(_Tab, _Host, Value) ->
+    Value.
+
+replace_keywords_toplevel_insidestring(Value, DefinedKeywords) ->
+    lists:foldl(fun ({Key, Replacement}, V) when is_binary(Replacement) ->
+                        misc:expand_keyword(<<"@", Key/binary, "@">>, V, Replacement);
+                    ({_Key, _Replacement}, V) ->
+                        V
+                end,
+                Value,
+                DefinedKeywords).
+
+get_defined_keywords(Tab, Host) ->
+    KeysHost =
+        case ets:lookup(Tab, {define_keyword, Host}) of
+            [{_, List}] ->
+                List;
+            _ ->
+                []
+        end,
+    KeysGlobal =
+        case Host /= global andalso ets:lookup(Tab, {define_keyword, global}) of
+            [{_, ListG}] ->
+                ListG;
+            _ ->
+                []
+        end,
+    lists:reverse([{<<"HOST">>, Host} | KeysGlobal ++ KeysHost]).
+
+get_predefined_keywords() ->
+    {ok, [[Home]]} = init:get_argument(home),
+    [{<<"HOME">>, list_to_binary(Home)},
+     {<<"SEMVER">>, ejabberd_option:version()},
+     {<<"VERSION">>,
+      misc:semver_to_xxyy(
+          ejabberd_option:version())}].
+%% @format-end
 
 %%%===================================================================
 %%% Internal functions
