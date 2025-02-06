@@ -38,7 +38,7 @@
 -export([cluster_nodes/0]).
 -export([default_db/0, default_db/1]).
 -export([default_ram_db/0, default_ram_db/1]).
--export([define_macro/0, define_macro/1]).
+-export([define_macro/0]).
 -export([disable_sasl_mechanisms/0, disable_sasl_mechanisms/1]).
 -export([disable_sasl_scram_downgrade_protection/0, disable_sasl_scram_downgrade_protection/1]).
 -export([domain_balancing/0]).
@@ -374,10 +374,7 @@ default_ram_db(Host) ->
 
 -spec define_macro() -> any().
 define_macro() ->
-    define_macro(global).
--spec define_macro(global | binary()) -> any().
-define_macro(Host) ->
-    ejabberd_config:get_option({define_macro, Host}).
+    ejabberd_config:get_option({define_macro, global}).
 
 -spec disable_sasl_mechanisms() -> [binary()].
 disable_sasl_mechanisms() ->

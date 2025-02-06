@@ -767,10 +767,10 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0474.html"/>
-        <xmpp:version>0.3.0</xmpp:version>
+        <xmpp:version>0.4.0</xmpp:version>
         <xmpp:since>24.02</xmpp:since>
         <xmpp:status>complete</xmpp:status>
-        <xmpp:note></xmpp:note>
+        <xmpp:note>, 0.4.0 since 25.xx</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
