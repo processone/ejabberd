@@ -138,6 +138,8 @@ opt_type(default_db) ->
     econf:enum([mnesia, sql]);
 opt_type(default_ram_db) ->
     econf:enum([mnesia, sql, redis]);
+opt_type(define_keyword) ->
+    econf:map(econf:binary(), econf:any(), [unique]);
 opt_type(define_macro) ->
     econf:map(econf:binary(), econf:any(), [unique]);
 opt_type(disable_sasl_scram_downgrade_protection) ->
@@ -567,6 +569,7 @@ options() ->
      {certfiles, undefined},
      {cluster_backend, mnesia},
      {cluster_nodes, []},
+     {define_keyword, []},
      {define_macro, []},
      {disable_sasl_scram_downgrade_protection, false},
      {disable_sasl_mechanisms, []},
