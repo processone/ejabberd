@@ -38,6 +38,7 @@
 -export([cluster_nodes/0]).
 -export([default_db/0, default_db/1]).
 -export([default_ram_db/0, default_ram_db/1]).
+-export([define_keyword/0, define_keyword/1]).
 -export([define_macro/0]).
 -export([disable_sasl_mechanisms/0, disable_sasl_mechanisms/1]).
 -export([disable_sasl_scram_downgrade_protection/0, disable_sasl_scram_downgrade_protection/1]).
@@ -371,6 +372,13 @@ default_ram_db() ->
 -spec default_ram_db(global | binary()) -> 'mnesia' | 'redis' | 'sql'.
 default_ram_db(Host) ->
     ejabberd_config:get_option({default_ram_db, Host}).
+
+-spec define_keyword() -> any().
+define_keyword() ->
+    define_keyword(global).
+-spec define_keyword(global | binary()) -> any().
+define_keyword(Host) ->
+    ejabberd_config:get_option({define_keyword, Host}).
 
 -spec define_macro() -> any().
 define_macro() ->

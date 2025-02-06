@@ -138,6 +138,8 @@ opt_type(default_db) ->
     econf:enum([mnesia, sql]);
 opt_type(default_ram_db) ->
     econf:enum([mnesia, sql, redis]);
+opt_type(define_keyword) ->
+    econf:map(econf:binary(), econf:any(), [unique]);
 opt_type(define_macro) ->
     econf:map(econf:binary(), econf:any(), [unique]);
 opt_type(disable_sasl_scram_downgrade_protection) ->
@@ -510,6 +512,7 @@ opt_type(jwt_auth_only_rule) ->
 		    {jwt_key, jose_jwk:key() | undefined} |
 		    {append_host_config, [{binary(), any()}]} |
 		    {host_config, [{binary(), any()}]} |
+		    {define_keyword, any()} |
 		    {define_macro, any()} |
 		    {include_config_file, any()} |
 		    {atom(), any()}].
@@ -567,6 +570,7 @@ options() ->
      {certfiles, undefined},
      {cluster_backend, mnesia},
      {cluster_nodes, []},
+     {define_keyword, []},
      {define_macro, []},
      {disable_sasl_scram_downgrade_protection, false},
      {disable_sasl_mechanisms, []},
