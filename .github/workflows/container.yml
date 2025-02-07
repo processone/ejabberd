@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/build/
-          key: ${{runner.os}}-ctr-ct-ng-1.26.0
+          key: ${{runner.os}}-ctr-ct-ng-1.27.0
 
       - name: Get erlang/OTP version for bootstrapping
         run: |
