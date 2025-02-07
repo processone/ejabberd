@@ -1760,13 +1760,17 @@ mod_options(Host) ->
 
 mod_doc() ->
     #{desc =>
-          ?T("This module implements "
+          [?T("This module implements "
              "https://xmpp.org/extensions/xep-0313.html"
              "[XEP-0313: Message Archive Management] and "
              "https://xmpp.org/extensions/xep-0441.html"
              "[XEP-0441: Message Archive Management Preferences]. "
              "Compatible XMPP clients can use it to store their "
-             "chat history on the server."),
+             "chat history on the server."), "",
+           ?T("NOTE: Mnesia backend for mod_mam is not recommended: it's limited "
+             "to 2GB and often gets corrupted when reaching this limit. "
+             "SQL backend is recommended. Namely, for small servers SQLite "
+             "is a preferred choice because it's very easy to configure.")],
       opts =>
           [{access_preferences,
             #{value => ?T("AccessName"),
