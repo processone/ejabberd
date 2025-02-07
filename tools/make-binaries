@@ -547,6 +547,7 @@ build_deps()
 
 	info "Building Termcap $termcap_vsn for $arch-$libc ..."
 	cd "$target_src_dir/$termcap_dir"
+	sed -i 's/CFLAGS =/CFLAGS = -Wno-error=implicit-function-declaration/' 'Makefile.in'
 	$configure --prefix="$prefix"
 	cat >'config.h' <<-'EOF'
 		#ifndef CONFIG_H
@@ -630,7 +631,7 @@ build_deps()
 	$configure --prefix="$prefix" --includedir="$prefix/include/security" \
 	    --enable-static --disable-shared --disable-doc --disable-examples \
 	    --enable-db=no \
-	    CFLAGS="$CFLAGS -O3 -fPIC"
+	    CFLAGS="$CFLAGS -O3 -fPIC -Wno-error=implicit-function-declaration"
 	make
 	make install
 	cd "$OLDPWD"
