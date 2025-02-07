@@ -73,7 +73,7 @@ yaml_vsn='0.2.5'
 ssl_vsn='3.4.0'
 otp_vsn='27.2'
 elixir_vsn='1.18.1'
-pam_vsn='1.6.1'
+pam_vsn='1.6.1' # Newer Linux-PAM versions use Meson, we don't support that yet.
 png_vsn='1.6.44'
 jpeg_vsn='9f'
 webp_vsn='1.5.0'
@@ -199,9 +199,13 @@ check_configured_dep_vsns()
 	check_vsn 'ODBC' "$odbc_vsn" \
 	          'http://www.unixodbc.org/download.html' \
 	          'unixODBC-\([1-9][0-9.]*\)\.tar\.gz'
-	check_vsn 'Linux-PAM' "$pam_vsn" \
-	          'https://github.com/linux-pam/linux-pam/releases' \
-	          '[0-9]\]Linux-PAM \([1-9][0-9.]*\)'
+	#
+	# Linux-PAM uses Meson since version 1.7.0, we don't support that yet.
+	#
+	# check_vsn 'Linux-PAM' "$pam_vsn" \
+	#           'https://github.com/linux-pam/linux-pam/releases' \
+	#           '[0-9]\]Linux-PAM \([1-9][0-9.]*\)'
+	#
 	check_vsn 'libpng' "$png_vsn" \
 	          'http://www.libpng.org/pub/png/libpng.html' \
 		  'libpng-\([1-9][0-9.]*\)\.tar\.gz'
