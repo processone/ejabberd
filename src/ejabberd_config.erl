@@ -38,6 +38,7 @@
 -export([dump/0, dump/1, convert_to_yaml/1, convert_to_yaml/2]).
 -export([callback_modules/1]).
 -export([set_option/2]).
+-export([get_defined_keywords/1, get_predefined_keywords/1, replace_keywords/2, replace_keywords/3]).
 
 %% Deprecated functions
 -export([get_option/2]).
@@ -403,6 +404,93 @@ format_error({error, {exception, Class, Reason, St}}) ->
 	"code, please report the bug with ejabberd configuration "
 	"file attached and the following stacktrace included:~n** ~ts",
 	[misc:format_exception(2, Class, Reason, St)])).
+
+%% @format-begin
+
+replace_keywords(Host, Value) ->
+    Keywords = get_defined_keywords(Host) ++ get_predefined_keywords(Host),
+    replace_keywords(Host, Value, Keywords).
+
+replace_keywords(Host, List, Keywords) when is_list(List) ->
+    [replace_keywords(Host, Element, Keywords) || Element <- List];
+replace_keywords(_Host, Atom, Keywords) when is_atom(Atom) ->
+    Str = atom_to_list(Atom),
+    case Str == string:uppercase(Str) of
+        false ->
+            Atom;
+        true ->
+            MacroName = iolist_to_binary(Str),
+            case proplists:get_value(MacroName, Keywords) of
+                undefined ->
+                    Atom;
+                Replacement ->
+                    Replacement
+            end
+    end;
+replace_keywords(_Host, Binary, Keywords) when is_binary(Binary) ->
+    lists:foldl(fun ({Key, Replacement}, V) when is_binary(Replacement) ->
+                        misc:expand_keyword(<<"@", Key/binary, "@">>, V, Replacement);
+                    ({_, _}, V) ->
+                        V
+                end,
+                Binary,
+                Keywords);
+replace_keywords(Host, {Element1, Element2}, Keywords) ->
+    {Element1, replace_keywords(Host, Element2, Keywords)};
+replace_keywords(_Host, Value, _DK) ->
+    Value.
+
+get_defined_keywords(Host) ->
+    Tab = case get_tmp_config() of
+              undefined ->
+                  ejabberd_options;
+              T ->
+                  T
+          end,
+    get_defined_keywords(Tab, Host).
+
+get_defined_keywords(Tab, Host) ->
+    KeysHost =
+        case ets:lookup(Tab, {define_keyword, Host}) of
+            [{_, List}] ->
+                List;
+            _ ->
+                []
+        end,
+    KeysGlobal =
+        case Host /= global andalso ets:lookup(Tab, {define_keyword, global}) of
+            [{_, ListG}] ->
+                ListG;
+            _ ->
+                []
+        end,
+    %% Trying to get defined keywords in host_config when starting ejabberd,
+    %% the options are not yet stored in ets
+    KeysTemp = case not is_atom(Tab) andalso KeysHost == [] andalso KeysGlobal == [] of
+                   true ->
+		       get_defined_keywords_yaml_config(ets:lookup_element(Tab, {yaml_config, global}, 2));
+                   false ->
+                       []
+               end,
+    lists:reverse(KeysTemp ++ KeysGlobal ++ KeysHost).
+
+get_defined_keywords_yaml_config(Y) ->
+    [{erlang:atom_to_binary(KwAtom, latin1), KwValue}
+     || {KwAtom, KwValue} <- proplists:get_value(define_keyword, Y, [])].
+
+get_predefined_keywords(Host) ->
+    HostList = case Host of
+        global -> [];
+        _ -> [{<<"HOST">>, Host}]
+    end,
+    {ok, [[Home]]} = init:get_argument(home),
+    HostList ++
+    [{<<"HOME">>, list_to_binary(Home)},
+     {<<"SEMVER">>, ejabberd_option:version()},
+     {<<"VERSION">>,
+      misc:semver_to_xxyy(
+          ejabberd_option:version())}].
+%% @format-end
 
 %%%===================================================================
 %%% Internal functions
