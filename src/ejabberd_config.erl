@@ -343,12 +343,20 @@ env_binary_to_list(Application, Parameter) ->
             Other
     end.
 
+%% ejabberd_options calls this function when parsing options inside host_config
 -spec validators([atom()]) -> {econf:validators(), [atom()]}.
 validators(Disallowed) ->
+    Host = global,
+    DefinedKeywords = get_defined_keywords(Host),
+    validators(Disallowed, DefinedKeywords).
+
+%% validate/1 calls this function when parsing toplevel options
+-spec validators([atom()], [any()]) -> {econf:validators(), [atom()]}.
+validators(Disallowed, DK) ->
     Modules = callback_modules(all),
     Validators = lists:foldl(
 		   fun(M, Vs) ->
-			   maps:merge(Vs, validators(M, Disallowed))
+			   maps:merge(Vs, validators(M, Disallowed, DK))
 		   end, #{}, Modules),
     Required = lists:flatmap(
 		 fun(M) ->
@@ -560,19 +568,27 @@ callback_modules(external) ->
 callback_modules(all) ->
     callback_modules(local) ++ callback_modules(external).
 
--spec validators(module(), [atom()]) -> econf:validators().
-validators(Mod, Disallowed) ->
+-spec validators(module(), [atom()], [any()]) -> econf:validators().
+validators(Mod, Disallowed, DK) ->
+    Keywords = DK ++ get_predefined_keywords(global),
     maps:from_list(
       lists:filtermap(
 	fun(O) ->
 		case lists:member(O, Disallowed) of
 		    true -> false;
 		    false ->
-			{true,
-			 try {O, Mod:opt_type(O)}
+			Type =
+			 try Mod:opt_type(O)
 			 catch _:_ ->
-				 {O, ejabberd_options:opt_type(O)}
-			 end}
+				 ejabberd_options:opt_type(O)
+			 end,
+                         TypeProcessed =
+                             econf:and_then(
+                                  fun(B) ->
+                                      replace_keywords(global, B, Keywords)
+                                  end,
+                              Type),
+			{true, {O, TypeProcessed}}
 		end
 	end, proplists:get_keys(Mod:options()))).
 
@@ -665,12 +681,13 @@ validate(Y1) ->
 		{ok, Y3} ->
 		    Hosts = proplists:get_value(hosts, Y3),
 		    Version = proplists:get_value(version, Y3, version()),
+		    DK = get_defined_keywords_yaml_config(Y3),
 		    create_tmp_config(),
 		    set_option(hosts, Hosts),
 		    set_option(host, hd(Hosts)),
 		    set_option(version, Version),
 		    set_option(yaml_config, Y3),
-		    {Validators, Required} = validators([]),
+		    {Validators, Required} = validators([], DK),
 		    Validator = econf:options(Validators,
 					      [{required, Required},
 					       unique]),
