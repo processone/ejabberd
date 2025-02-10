@@ -272,7 +272,7 @@ component_send_packet({#iq{from = From,
     Permissions = get_permissions(ServerHost),
     Result =
         case {maps:find(Host, Permissions), get_iq_encapsulated_details(IQ)} of
-            {{ok, Access}, {ok, EncapType, EncapNs, EncapFrom, EncIq}}
+            {{ok, Access}, {privileged_iq, EncapType, EncapNs, EncapFrom, EncIq}}
                 when (EncapType == Type) and ((EncapFrom == undefined) or (EncapFrom == To)) ->
                 NsPermissions = proplists:get_value(iq, Access, []),
                 Permission =
@@ -297,20 +297,18 @@ component_send_packet({#iq{from = From,
                 %% Component is disconnected
                 ?INFO_MSG("IQ not forwarded: Component seems disconnected", []),
                 drop;
-            {_, {ok, E, _, _, _}} when E /= Type ->
+            {_, {privileged_iq, E, _, _, _}} when E /= Type ->
                 ?INFO_MSG("IQ not forwarded: The encapsulated IQ stanza type=~p "
                           "does not match the top-level IQ stanza type=~p",
                           [E, Type]),
                 drop;
-            {_, {ok, _, _, EF, _}} when (EF /= undefined) and (EF /= To) ->
+            {_, {privileged_iq, _, _, EF, _}} when (EF /= undefined) and (EF /= To) ->
                 ?INFO_MSG("IQ not forwarded: The FROM attribute in the encapsulated "
                           "IQ stanza and the TO in top-level IQ stanza do not match",
                           []),
                 drop;
-            {_, {error, no_privileged_iq, _Err}} ->
-                ?INFO_MSG("IQ not forwarded: Component tried to send not wrapped IQ stanza.", []),
-                drop;
-            {_, {error, roster_query, _Err}} ->
+            {_, {unprivileged_iq}} ->
+                ?DEBUG("Component ~ts sent a not-wrapped IQ stanza, routing it as-is.", [From#jid.lserver]),
                 IQ;
             {_, {error, ErrType, _Err}} ->
                 ?INFO_MSG("IQ not forwarded: Component tried to send not valid IQ stanza: ~p.",
@@ -566,7 +564,8 @@ forward_message(#message{to = To} = Msg) ->
 %% @format-begin
 
 -spec get_iq_encapsulated_details(iq()) ->
-                                     {ok, iq_type(), binary(), jid(), iq()} |
+                                     {privileged_iq, iq_type(), binary(), jid(), iq()} |
+                                     {unprivileged_iq} |
                                      {error, Why :: atom(), stanza_error()}.
 get_iq_encapsulated_details(#iq{sub_els = [IqSub]} = Msg) ->
     Lang = xmpp:get_lang(Msg),
@@ -575,21 +574,9 @@ get_iq_encapsulated_details(#iq{sub_els = [IqSub]} = Msg) ->
             [IqSubSub] = xmpp:get_els(IqSub),
             [Element] = xmpp:get_els(IqSubSub),
             Ns = xmpp:get_ns(Element),
-            {ok, EncapsulatedType, Ns, From, EncIq};
+            {privileged_iq, EncapsulatedType, Ns, From, EncIq};
         _ ->
-            try xmpp:try_subtag(Msg, #roster_query{}) of
-                #roster_query{} ->
-                    {error, roster_query, xmpp:err_bad_request()};
-                _ ->
-                    Txt = ?T("No <privileged_iq/> element found"),
-                    Err = xmpp:err_bad_request(Txt, Lang),
-                    {error, no_privileged_iq, Err}
-            catch
-                _:{xmpp_codec, Why} ->
-                    Txt = xmpp:io_format_error(Why),
-                    Err = xmpp:err_bad_request(Txt, Lang),
-                    {error, codec_error, Err}
-            end
+            {unprivileged_iq}
     catch
         _:{xmpp_codec, Why} ->
             Txt = xmpp:io_format_error(Why),
