@@ -566,7 +566,15 @@ callback_modules(external) ->
 	      end
       end, beams(external));
 callback_modules(all) ->
-    callback_modules(local) ++ callback_modules(external).
+    lists_uniq(callback_modules(local) ++ callback_modules(external)).
+
+-ifdef(OTP_BELOW_25).
+lists_uniq(List) ->
+    lists:usort(List).
+-else.
+lists_uniq(List) ->
+    lists:uniq(List).
+-endif.
 
 -spec validators(module(), [atom()], [any()]) -> econf:validators().
 validators(Mod, Disallowed, DK) ->
