@@ -77,7 +77,8 @@
          client_state}).
 
 -record(multi_user,
-        {join_ts :: integer()}).
+        {join_ts :: integer(),
+         room_jid :: jid()}).
 
 -record(multi,
         {users :: #{{binary(), binary()} => #{binary() => #multi_user{}}}}).
@@ -104,6 +105,9 @@
 
 -define(MAX_DEPTH, 16#7FFFFFFFFFFFFFFF).
 -define(MAX_TXN_RETRIES, 5).
+
+-define(MATRIX_ROOM_ALIAS_CACHE, matrix_room_alias_cache).
+-define(MATRIX_ROOM_ALIAS_CACHE_ERROR_TIMEOUT, 60000).
 
 %%%===================================================================
 %%% API
@@ -140,6 +144,7 @@ create_db() ->
       [{ram_copies, [node()]},
        {type, set},
        {attributes, record_info(fields, matrix_direct)}]),
+    ets_cache:new(?MATRIX_ROOM_ALIAS_CACHE),
     ok.
 
 get_room_pid(Host, RoomID) ->
@@ -170,11 +175,13 @@ join_direct(Host, MatrixServer, RoomID, Sender, UserID) ->
             Error
     end.
 
-route(#presence{from = From, to = #jid{luser = <<$!, _/binary>>} = To,
-                type = Type} = Packet) ->
-    case room_id_from_xmpp(To#jid.luser) of
+route(#presence{from = From, to = #jid{luser = <<C, _/binary>>} = To,
+                type = Type} = Packet)
+  when C == $!;
+       C == $# ->
+    Host = ejabberd_config:get_myname(),
+    case room_id_from_xmpp(Host, To#jid.luser) of
         {ok, RoomID} ->
-            Host = ejabberd_config:get_myname(),
             case From#jid.lserver of
                 Host ->
                     case Type of
@@ -200,14 +207,20 @@ route(#presence{from = From, to = #jid{luser = <<$!, _/binary>>} = To,
                     ok
             end;
         error ->
+            Lang = xmpp:get_lang(Packet),
+            Txt = <<"bad or non-existing room id">>,
+            Err = xmpp:err_not_acceptable(Txt, Lang),
+            ejabberd_router:route_error(Packet, Err),
             ok
     end;
-route(#message{from = From, to = #jid{luser = <<$!, _/binary>>} = To,
+route(#message{from = From, to = #jid{luser = <<C, _/binary>>} = To,
                type = groupchat,
-               body = Body}) ->
-    case room_id_from_xmpp(To#jid.luser) of
+               body = Body})
+  when C == $!;
+       C == $# ->
+    Host = ejabberd_config:get_myname(),
+    case room_id_from_xmpp(Host, To#jid.luser) of
         {ok, RoomID} ->
-            Host = ejabberd_config:get_myname(),
             case From#jid.lserver of
                 Host ->
                     case user_id_from_jid(From, Host) of
@@ -685,6 +698,7 @@ handle_event(cast, {join, UserJID, Packet}, _State, Data) ->
                             #{{LUser, LServer} := Rs} -> Rs;
                             _ -> #{}
                         end,
+                    RoomJID = jid:remove_resource(xmpp:get_to(Packet)),
                     Data2 =
                         Data#data{
                           kind =
@@ -692,7 +706,8 @@ handle_event(cast, {join, UserJID, Packet}, _State, Data) ->
                                 users =
                                     Users#{{LUser, LServer} =>
                                                Resources#{LResource =>
-                                                              #multi_user{join_ts = JoinTS}}}}},
+                                                              #multi_user{join_ts = JoinTS,
+                                                                          room_jid = RoomJID}}}}},
                     {keep_state, Data2, [{next_event, cast, {add_event, JSON}}]};
                 error ->
                     ?INFO_MSG("bad join user id: ~p", [UserJID]),
@@ -758,6 +773,7 @@ handle_event(cast, {join, UserJID, Packet}, _State, Data) ->
                                                    {timeout, 60000}],
                                                   [{sync, true},
                                                    {body_format, binary}]),
+                                            RoomJID = jid:remove_resource(xmpp:get_to(Packet)),
                                             ?DEBUG("send_join ~p~n", [SendJoinRes]),
                                             process_send_join_res(
                                               MatrixServer, SendJoinRes, RoomVersion,
@@ -765,7 +781,8 @@ handle_event(cast, {join, UserJID, Packet}, _State, Data) ->
                                                 kind =
                                                     #multi{users =
                                                                #{{LUser, LServer} =>
-                                                                     #{LResource => #multi_user{join_ts = JoinTS}}}},
+                                                                     #{LResource => #multi_user{join_ts = JoinTS,
+                                                                                                room_jid = RoomJID}}}},
                                                 room_version = RoomVersion})
                                     end;
                                 _JSON ->
@@ -2642,12 +2659,13 @@ notify_event_xmpp(
     case Sender of
         <<$@, SenderUser/binary>> ->
             ?DEBUG("notify xmpp ~p", [Users]),
-            From = jid:replace_resource(Data#data.room_jid, SenderUser),
             maps:fold(
               fun({LUser, LServer}, Resources, ok) ->
                       maps:fold(
-                        fun(LResource, #multi_user{join_ts = JoinTS}, ok)
+                        fun(LResource, #multi_user{join_ts = JoinTS,
+                                                   room_jid = RoomJID}, ok)
                               when JoinTS =< OriginTS ->
+                                From = jid:replace_resource(RoomJID, SenderUser),
                                 UserJID = jid:make(LUser, LServer, LResource),
                                 Msg = #message{from = From,
                                                to = UserJID,
@@ -2673,16 +2691,17 @@ notify_event_xmpp(
     case user_id_to_jid(Sender, Data) of
         #jid{} = SenderJID ->
             <<$@, SenderUser/binary>> = Sender,
-            From = jid:replace_resource(Data#data.room_jid, SenderUser),
             maps:fold(
               fun({LUser, LServer}, Resources, ok) ->
                       maps:fold(
-                        fun(LResource, #multi_user{join_ts = JoinTS}, ok)
+                        fun(LResource, #multi_user{join_ts = JoinTS,
+                                                   room_jid = RoomJID}, ok)
                               when JoinTS =< OriginTS ->
+                                From = jid:replace_resource(RoomJID, SenderUser),
                                 case jid:tolower(SenderJID) of
                                     {LUser, LServer, _} ->
                                         send_initial_presences(
-                                          SenderJID, Event, Data);
+                                          SenderJID, RoomJID, Event, Data);
                                     _ ->
                                         ok
                                 end,
@@ -2709,12 +2728,13 @@ notify_event_xmpp(
        Membership == <<"ban">> ->
     case StateKey of
         <<$@, RUser/binary>> ->
-            From = jid:replace_resource(Data#data.room_jid, RUser),
             maps:fold(
               fun({LUser, LServer}, Resources, ok) ->
                       maps:fold(
-                        fun(LResource, #multi_user{join_ts = JoinTS}, ok)
+                        fun(LResource, #multi_user{join_ts = JoinTS,
+                                                   room_jid = RoomJID}, ok)
                               when JoinTS =< OriginTS ->
+                                From = jid:replace_resource(RoomJID, RUser),
                                 UserJID = jid:make(LUser, LServer, LResource),
                                 Pres = #presence{from = From,
                                                  to = UserJID,
@@ -2755,7 +2775,7 @@ notify_event_xmpp(
 notify_event_xmpp(_Event, Data) ->
     Data.
 
-send_initial_presences(JID, Event, Data) ->
+send_initial_presences(JID, RoomJID, Event, Data) ->
     ?DEBUG("send_initial_presences ~p", [{JID, Event}]),
     maps:fold(
       fun({?ROOM_MEMBER, _}, EID, ok) ->
@@ -2764,7 +2784,7 @@ send_initial_presences(JID, Event, Data) ->
                           sender = <<$@, SenderUser/binary>>,
                           json = #{<<"content">> :=
                                        #{<<"membership">> := <<"join">>}}}} ->
-                      From = jid:replace_resource(Data#data.room_jid, SenderUser),
+                      From = jid:replace_resource(RoomJID, SenderUser),
                       Pres = #presence{from = From,
                                        to = JID,
                                        type = available
@@ -3148,7 +3168,7 @@ room_id_to_xmpp(RoomID) ->
             error
     end.
 
-room_id_from_xmpp(RID) ->
+room_id_from_xmpp(Host, RID) ->
     case RID of
         <<$!, Parts/binary>> ->
             case binary:split(Parts, <<"%">>) of
@@ -3159,10 +3179,54 @@ room_id_from_xmpp(RID) ->
                     {ok, <<$!, RoomID/binary, $:, S/binary>>};
                 _ -> error
             end;
+        <<$#, Parts/binary>> ->
+            case binary:split(Parts, <<"%">>) of
+                [R, S] ->
+                    Alias = <<$#, R/binary, $:, S/binary>>,
+                    case resolve_alias(Host, S, Alias) of
+                        {ok, <<$!, _/binary>> = RoomID} ->
+                            {ok, RoomID};
+                        error ->
+                            error
+                    end;
+                _ -> error
+            end;
         _ ->
             error
     end.
 
+resolve_alias(Host, Origin, Alias) ->
+    ets_cache:lookup(
+      ?MATRIX_ROOM_ALIAS_CACHE, Alias,
+      fun() ->
+              Res =
+                  mod_matrix_gw:send_request(
+                    Host, get, Origin,
+                    [<<"_matrix">>, <<"federation">>,
+                     <<"v1">>, <<"query">>, <<"directory">>],
+                    [{<<"room_alias">>, Alias}],
+                    none,
+                    [{timeout, 5000}],
+                    [{sync, true},
+                     {body_format, binary}]),
+              case Res of
+                  {ok, {{_, 200, _}, _Headers, Body}} ->
+                      try
+                          case misc:json_decode(Body) of
+                              #{<<"room_id">> := RoomID} ->
+                                  {ok, RoomID}
+                          end
+                      catch
+                          Class:Reason:ST ->
+                              ?DEBUG("failed resolve_alias: ~p", [{Class, Reason, ST}]),
+                              {cache_with_timeout, error, ?MATRIX_ROOM_ALIAS_CACHE_ERROR_TIMEOUT}
+                      end;
+                  {ok, {{_, _Status, _Reason}, _Headers, _Body}} ->
+                      {cache_with_timeout, error, ?MATRIX_ROOM_ALIAS_CACHE_ERROR_TIMEOUT};
+                  {error, _Reason} ->
+                      {cache_with_timeout, error, ?MATRIX_ROOM_ALIAS_CACHE_ERROR_TIMEOUT}
+              end
+      end).
 
 
 escape(S) ->
