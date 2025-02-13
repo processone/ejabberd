@@ -35,5 +35,5 @@
   "stun": {:hex, :stun, "1.2.15", "eec510af6509201ff97f1f2c87b7977c833bf29c04e985383370ec21f04e4ccf", [:rebar3], [{:fast_tls, "1.1.22", [hex: :fast_tls, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.26", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm", "f6d8a541a29fd13f2ce658b676c0cc661262b96e045b52def1644b75ebc0edef"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.7.0", "bc84380c9ab48177092f43ac89e4dfa2c6d62b40b8bd132b1059ecc7232f9a78", [:rebar3], [], "hexpm", "25eee6d67df61960cf6a794239566599b09e17e668d3700247bc498638152521"},
   "xmpp": {:git, "https://github.com/processone/xmpp", "64d6d292015a7ec4de0b9e963d20b7ac5b63c7f0", [ref: "64d6d292015a7ec4de0b9e963d20b7ac5b63c7f0"]},
-  "yconf": {:hex, :yconf, "1.0.17", "dcf242e27f3fc5d0743d6b8175dd39bc14a1f4ed7e6ea986366a44a6ff3b2a3a", [:rebar3], [{:fast_yaml, "1.0.37", [hex: :fast_yaml, repo: "hexpm", optional: false]}], "hexpm", "dd2892923241449a46cc8457b9ec0fb14030700735a5885955677c735c341a25"},
+  "yconf": {:git, "https://github.com/processone/yconf", "9682a6025ed543eedf34637e4cfcc66837074af6", [ref: "9682a6025ed543eedf34637e4cfcc66837074af6"]},
 }
