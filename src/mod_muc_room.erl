@@ -27,7 +27,7 @@
 
 -author('alexey@process-one.net').
 
--protocol({xep, 317, '0.1', '21.12', "complete", "conversejs/prosody compatible"}).
+-protocol({xep, 317, '0.2.0', '25.xx', "complete", ""}).
 -protocol({xep, 410, '1.1.0', '18.12', "complete", ""}).
 
 -behaviour(p1_fsm).
@@ -79,9 +79,9 @@
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
 
--define(MUC_HAT_ADD_CMD, <<"http://prosody.im/protocol/hats#add">>).
--define(MUC_HAT_REMOVE_CMD, <<"http://prosody.im/protocol/hats#remove">>).
--define(MUC_HAT_LIST_CMD, <<"p1:hats#list">>).
+-define(MUC_HAT_ADD_CMD, <<"urn:xmpp:hats:commands:don">>).
+-define(MUC_HAT_REMOVE_CMD, <<"urn:xmpp:hats:commands:doff">>).
+-define(MUC_HAT_LIST_CMD, <<"urn:xmpp:hats:commands:dlist">>).
 -define(MAX_HATS_USERS, 100).
 -define(MAX_HATS_PER_USER, 10).
 -define(CLEAN_ROOM_TIMEOUT, 30000).

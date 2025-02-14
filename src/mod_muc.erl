@@ -1770,8 +1770,10 @@ mod_doc() ->
                        "The default value is an empty string.")}},
              {enable_hats,
               #{value => "true | false",
+                note => "improved in 25.xx",
                 desc =>
                     ?T("Allow extended roles as defined in XEP-0317 Hats. "
+                       "Check the _`../../tutorials/muc-hats.md|MUC Hats`_ tutorial. "
                        "The default value is 'false'.")}},
              {lang,
               #{value => ?T("Language"),
