@@ -1692,11 +1692,6 @@ mod_doc() ->
                    "    -",
                    "      work: true",
                    "      street: Elm Street"]}},
-           {vcard_xupdate,
-            #{value => "undefined | external | AvatarHash",
-              desc =>
-                  ?T("Set the hash of the avatar image. "
-		     "The default value is 'undefined'.")}},
            {cleanup_affiliations_on_start,
             #{value => "true | false",
               note => "added in 22.05",
@@ -1840,6 +1835,11 @@ mod_doc() ->
                 desc =>
                     ?T("A custom vCard for the room. See the equivalent mod_muc option."
                        "The default value is an empty string.")}},
+             {vcard_xupdate,
+              #{value => "undefined | external | AvatarHash",
+                desc =>
+                    ?T("Set the hash of the avatar image. "
+                       "The default value is 'undefined'.")}},
              {voice_request_min_interval,
               #{value => ?T("Number"),
                 desc =>
