@@ -51,13 +51,23 @@ jobs:
       run: |
         sed -i "s|13.0 |9.0.5 |g" configure.ac
 
-    - name: Get compatible Rebar binaries
+    - name: Get old compatible Rebar binaries
       if: matrix.otp < 24
       run: |
         rm rebar
         rm rebar3
         wget https://github.com/processone/ejabberd/raw/21.12/rebar
         wget https://github.com/processone/ejabberd/raw/21.12/rebar3
+        chmod +x rebar
+        chmod +x rebar3
+
+    - name: Get recent compatible Rebar binaries
+      if: matrix.otp > 23 && matrix.otp < 25
+      run: |
+        rm rebar
+        rm rebar3
+        wget https://github.com/processone/ejabberd/raw/24.12/rebar
+        wget https://github.com/processone/ejabberd/raw/24.12/rebar3
         chmod +x rebar
         chmod +x rebar3
 
