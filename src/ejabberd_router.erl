@@ -408,9 +408,9 @@ do_route(OrigPacket1) ->
 
 %% @format-begin
 process_privilege_iq(Packet) ->
-    To = xmpp:get_to(Packet),
+    Type = xmpp:get_type(Packet),
     case xmpp:get_meta(Packet, privilege_iq, none) of
-        {OriginalId, OriginalHost, ReplacedJid} when ReplacedJid == To ->
+        {OriginalId, OriginalHost, ReplacedJid} when (Type == result) or (Type == error) ->
             Privilege = #privilege{forwarded = #forwarded{sub_els = [Packet]}},
             #iq{type = xmpp:get_type(Packet),
                 id = OriginalId,
