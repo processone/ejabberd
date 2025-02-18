@@ -107,7 +107,7 @@ jobs:
           ~/.cache/rebar3/
         key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
 
-    - name: Get compatible Rebar binaries
+    - name: Get old eredis for old Erlang
       if: matrix.otp < 21
       run: ./rebar3 unlock eredis
 
@@ -185,7 +185,7 @@ jobs:
         ./rebar3 cover
 
     - name: Check results
-      if: always() && (steps.ct.outcome != 'skipped' || steps.ct2.outcome != 'skipped')
+      if: always() && (steps.ct.outcome != 'skipped')
       id: ctresults
       run: |
         [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
