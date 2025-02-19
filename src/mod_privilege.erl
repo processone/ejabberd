@@ -308,7 +308,8 @@ component_send_packet({#iq{from = From,
                           []),
                 drop;
             {_, {unprivileged_iq}} ->
-                ?DEBUG("Component ~ts sent a not-wrapped IQ stanza, routing it as-is.", [From#jid.lserver]),
+                ?DEBUG("Component ~ts sent a not-wrapped IQ stanza, routing it as-is.",
+                       [From#jid.lserver]),
                 IQ;
             {_, {error, ErrType, _Err}} ->
                 ?INFO_MSG("IQ not forwarded: Component tried to send not valid IQ stanza: ~p.",
