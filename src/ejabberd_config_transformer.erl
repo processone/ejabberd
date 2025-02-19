@@ -271,25 +271,25 @@ replace_request_handlers(Opts) ->
     Handlers = proplists:get_value(request_handlers, Opts, []),
     Handlers1 =
 	lists:foldl(
-	  fun({captcha, true}, Acc) ->
+	  fun({captcha, IsEnabled}, Acc) ->
 		  Handler = {<<"/captcha">>, ejabberd_captcha},
-		  warn_replaced_handler(captcha, Handler),
+		  warn_replaced_handler(captcha, Handler, IsEnabled),
 		  [Handler|Acc];
-	     ({register, true}, Acc) ->
+	     ({register, IsEnabled}, Acc) ->
 		  Handler = {<<"/register">>, mod_register_web},
-		  warn_replaced_handler(register, Handler),
+		  warn_replaced_handler(register, Handler, IsEnabled),
 		  [Handler|Acc];
-	     ({web_admin, true}, Acc) ->
+	     ({web_admin, IsEnabled}, Acc) ->
 		  Handler = {<<"/admin">>, ejabberd_web_admin},
-		  warn_replaced_handler(web_admin, Handler),
+		  warn_replaced_handler(web_admin, Handler, IsEnabled),
 		  [Handler|Acc];
-	     ({http_bind, true}, Acc) ->
+	     ({http_bind, IsEnabled}, Acc) ->
 		  Handler = {<<"/bosh">>, mod_bosh},
-		  warn_replaced_handler(http_bind, Handler),
+		  warn_replaced_handler(http_bind, Handler, IsEnabled),
 		  [Handler|Acc];
-	     ({xmlrpc, true}, Acc) ->
+	     ({xmlrpc, IsEnabled}, Acc) ->
 		  Handler = {<<"/">>, ejabberd_xmlrpc},
-		  warn_replaced_handler(xmlrpc, Handler),
+		  warn_replaced_handler(xmlrpc, Handler, IsEnabled),
 		  Acc ++ [Handler];
 	     (_, Acc) ->
 		  Acc
@@ -538,7 +538,12 @@ warn_removed_module(Mod) ->
     ?WARNING_MSG("Module ~ts is deprecated and was automatically "
 		 "removed from the configuration. ~ts", [Mod, adjust_hint()]).
 
-warn_replaced_handler(Opt, {Path, Module}) ->
+warn_replaced_handler(Opt, {Path, Module}, false) ->
+    ?WARNING_MSG("Listening option '~ts' is deprecated, "
+		 "please use instead the "
+		 "HTTP request handler: \"~ts\" -> ~ts. ~ts",
+		 [Opt, Path, Module, adjust_hint()]);
+warn_replaced_handler(Opt, {Path, Module}, true) ->
     ?WARNING_MSG("Listening option '~ts' is deprecated "
 		 "and was automatically replaced by "
 		 "HTTP request handler: \"~ts\" -> ~ts. ~ts",
