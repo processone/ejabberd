@@ -83,7 +83,7 @@
 get_commands_spec() ->
     [
      #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
-                        desc = "Issue an _`oauth.md|OAuth`_ token for the given jid",
+                        desc = "Issue an OAuth token for the given jid",
                         module = ?MODULE, function = oauth_issue_token,
                         args = [{jid, string},{ttl, integer}, {scopes, string}],
                         policy = restricted,
@@ -94,7 +94,7 @@ get_commands_spec() ->
                         result = {result, {tuple, [{token, string}, {scopes, string}, {expires_in, string}]}}
                        },
      #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
-                        desc = "Issue an _`oauth.md|OAuth`_ optionredir token for the given jid",
+                        desc = "Issue an OAuth token for the given jid",
                         module = ?MODULE, function = oauth_issue_token,
                         version = 1,
                         note = "updated in 24.02",
@@ -107,15 +107,15 @@ get_commands_spec() ->
                         result = {result, {tuple, [{token, string}, {scopes, {list, {scope, string}}}, {expires_in, string}]}}
                        },
      #ejabberd_commands{name = oauth_list_tokens, tags = [oauth],
-                        desc = "List _`oauth.md|OAuth`_ tokens, user, scope, and seconds to expire (only Mnesia)",
-                        longdesc = "List OAuth tokens, their user and scope, and how many seconds remain until expirity",
+                        desc = "List OAuth tokens, user, scope, and seconds to expire (only Mnesia)",
+                        longdesc = "List  _`oauth.md|OAuth`_ tokens, their user and scope, and how many seconds remain until expiry",
                         module = ?MODULE, function = oauth_list_tokens,
                         args = [],
                         policy = restricted,
                         result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}}
                        },
      #ejabberd_commands{name = oauth_revoke_token, tags = [oauth],
-                        desc = "Revoke authorization for an _`oauth.md|OAuth`_ token",
+                        desc = "Revoke authorization for an OAuth token",
 			note = "changed in 22.05",
                         module = ?MODULE, function = oauth_revoke_token,
                         args = [{token, binary}],
@@ -124,7 +124,7 @@ get_commands_spec() ->
                         result_desc = "Result code"
                        },
      #ejabberd_commands{name = oauth_add_client_password, tags = [oauth],
-                        desc = "Add _`oauth.md|OAuth`_ client_id with password grant type",
+                        desc = "Add OAuth client_id with password grant type",
                         module = ?MODULE, function = oauth_add_client_password,
                         args = [{client_id, binary},
                                 {client_name, binary},
@@ -133,7 +133,7 @@ get_commands_spec() ->
                         result = {res, restuple}
                        },
      #ejabberd_commands{name = oauth_add_client_implicit, tags = [oauth],
-                        desc = "Add _`oauth.md|OAuth`_ client_id with implicit grant type",
+                        desc = "Add OAuth client_id with implicit grant type",
                         module = ?MODULE, function = oauth_add_client_implicit,
                         args = [{client_id, binary},
                                 {client_name, binary},
@@ -142,7 +142,7 @@ get_commands_spec() ->
                         result = {res, restuple}
                        },
      #ejabberd_commands{name = oauth_remove_client, tags = [oauth],
-                        desc = "Remove _`oauth.md|OAuth`_ client_id",
+                        desc = "Remove OAuth client_id",
                         module = ?MODULE, function = oauth_remove_client,
                         args = [{client_id, binary}],
                         policy = restricted,
