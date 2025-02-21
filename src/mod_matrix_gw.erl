@@ -543,10 +543,8 @@ handle_info(Info, State) ->
 -spec terminate(term(), state()) -> any().
 terminate(_Reason, #state{host = Host}) ->
     unregister_routes([Host]),
-    gen_iq_handler:del_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
-                                  ?MODULE, process_disco_info),
-    gen_iq_handler:del_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
-                                  ?MODULE, process_disco_items).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS).
 
 -spec code_change(term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
