@@ -356,6 +356,42 @@ route(#message{from = From, to = To, body = Body} = _Pkt) ->
         error ->
             ok
     end;
+route(#iq{type = Type}) when Type == error; Type == result ->
+    ok;
+route(#iq{type = Type, lang = Lang, sub_els = [_]} = IQ0) ->
+    try xmpp:decode_els(IQ0) of
+        #iq{sub_els = [SubEl]} = IQ ->
+            Result =
+                case {Type, SubEl} of
+                    {set, _} ->
+                        {error, xmpp:err_not_allowed()};
+                    {get, #disco_info{node = <<>>}} ->
+                        {result,
+                         #disco_info{identities =
+                                         [#identity{category = <<"conference">>,
+                                                    type = <<"text">>}],
+                                     features = [?NS_MUC, ?NS_DISCO_INFO, ?NS_DISCO_ITEMS]}};
+                    {get, #disco_info{node = _}} ->
+                        {error, xmpp:err_item_not_found()};
+                    {get, #disco_items{node = <<>>}} ->
+                        {result, #disco_items{}};
+                    {get, #disco_items{node = _}} ->
+                        {error, xmpp:err_item_not_found()};
+                    _ ->
+                        {error, xmpp:err_service_unavailable()}
+                end,
+            case Result of
+                {result, Res} ->
+                    ejabberd_router:route(xmpp:make_iq_result(IQ, Res));
+                {error, Error} ->
+                    ejabberd_router:route(xmpp:make_error(IQ, Error))
+            end
+    catch _:{xmpp_codec, Why} ->
+            ErrTxt = xmpp:io_format_error(Why),
+	    Err = xmpp:err_bad_request(ErrTxt, Lang),
+	    ejabberd_router:route_error(IQ0, Err),
+	    ok
+    end;
 route(_) ->
     ok.
 
