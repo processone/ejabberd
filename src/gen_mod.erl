@@ -551,10 +551,10 @@ validator(Host, Module, Opts) ->
 		  lists:mapfoldl(
 		    fun({Opt, Def}, {DAcc1, VAcc1}) ->
 			    {[], {DAcc1#{Opt => Def},
-				  VAcc1#{Opt => get_opt_type(Module, M, Opt)}}};
+				  VAcc1#{Opt => get_opt_type(Host, Module, M, Opt)}}};
 		       (Opt, {DAcc1, VAcc1}) ->
 			    {[Opt], {DAcc1,
-				     VAcc1#{Opt => get_opt_type(Module, M, Opt)}}}
+				     VAcc1#{Opt => get_opt_type(Host, Module, M, Opt)}}}
 		    end, {DAcc, VAcc}, DefOpts)
 	  end, {#{}, #{}}, get_defaults(Host, Module, Opts)),
     econf:and_then(
@@ -604,11 +604,16 @@ get_defaults(Host, Module, Opts) ->
 	       false
        end, DefaultOpts)].
 
--spec get_opt_type(module(), module(), atom()) -> econf:validator().
-get_opt_type(Mod, SubMod, Opt) ->
-    try SubMod:mod_opt_type(Opt)
+-spec get_opt_type(binary(), module(), module(), atom()) -> econf:validator().
+get_opt_type(Host, Mod, SubMod, Opt) ->
+    Type = try SubMod:mod_opt_type(Opt)
     catch _:_ -> Mod:mod_opt_type(Opt)
-    end.
+    end,
+    econf:and_then(
+      fun(B) ->
+              ejabberd_config:replace_keywords(Host, B)
+      end,
+      Type).
 
 -spec sort_modules(binary(), [{module(), opts()}]) -> {ok, [{module(), opts(), integer()}]}.
 sort_modules(Host, ModOpts) ->
