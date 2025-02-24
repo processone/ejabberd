@@ -2734,19 +2734,42 @@ notify_event_xmpp(
                                                    room_jid = RoomJID}, ok)
                               when JoinTS =< OriginTS ->
                                 From = jid:replace_resource(RoomJID, SenderUser),
-                                case jid:tolower(SenderJID) of
-                                    {LUser, LServer, _} ->
-                                        send_initial_presences(
-                                          SenderJID, RoomJID, Event, Data);
-                                    _ ->
-                                        ok
-                                end,
+                                IsSelfPresence =
+                                    case jid:tolower(SenderJID) of
+                                        {LUser, LServer, _} ->
+                                            send_initial_presences(
+                                              SenderJID, RoomJID, Event, Data),
+                                            true;
+                                        _ ->
+                                            false
+                                    end,
                                 UserJID = jid:make(LUser, LServer, LResource),
-                                Pres = #presence{from = From,
-                                                 to = UserJID,
-                                                 type = available
-                                                },
-                                ejabberd_router:route(Pres);
+                                Item = #muc_item{affiliation = member,
+                                                 role = participant},
+                                Status = case IsSelfPresence of
+                                             true -> [110];
+                                             false -> []
+                                         end,
+                                Pres = #presence{
+                                          from = From,
+                                          to = UserJID,
+                                          type = available,
+                                          sub_els = [#muc_user{items = [Item],
+                                                               status_codes = Status}]
+                                         },
+                                ejabberd_router:route(Pres),
+                                case IsSelfPresence of
+                                    true ->
+                                        Subject =
+                                            #message{
+                                               from = RoomJID,
+                                               to = UserJID,
+                                               type = groupchat,
+                                               subject = [#text{}]
+                                              },
+                                        ejabberd_router:route(Subject);
+                                    false -> ok
+                                end;
                            (_, _, _) -> ok
                         end, ok, Resources)
               end, ok, Users),
@@ -2772,9 +2795,12 @@ notify_event_xmpp(
                               when JoinTS =< OriginTS ->
                                 From = jid:replace_resource(RoomJID, RUser),
                                 UserJID = jid:make(LUser, LServer, LResource),
+                                Item = #muc_item{affiliation = member,
+                                                 role = none},
                                 Pres = #presence{from = From,
                                                  to = UserJID,
-                                                 type = unavailable
+                                                 type = unavailable,
+                                                 sub_els = [#muc_user{items = [Item]}]
                                                 },
                                 ejabberd_router:route(Pres);
                            (_, _, _) -> ok
@@ -2821,9 +2847,11 @@ send_initial_presences(JID, RoomJID, Event, Data) ->
                           json = #{<<"content">> :=
                                        #{<<"membership">> := <<"join">>}}}} ->
                       From = jid:replace_resource(RoomJID, SenderUser),
+                      Item = #muc_item{affiliation = member, role = participant},
                       Pres = #presence{from = From,
                                        to = JID,
-                                       type = available
+                                       type = available,
+                                       sub_els = [#muc_user{items = [Item]}]
                                       },
                       ejabberd_router:route(Pres),
                       ok;
