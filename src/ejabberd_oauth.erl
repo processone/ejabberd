@@ -595,61 +595,71 @@ process(_Handlers,
     RedirectURI = proplists:get_value(<<"redirect_uri">>, Q, <<"">>),
     SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
     StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
-    #jid{user = Username, server = Server} = jid:decode(StringJID),
-    Password = proplists:get_value(<<"password">>, Q, <<"">>),
-    State = proplists:get_value(<<"state">>, Q, <<"">>),
-    Scope = str:tokens(SScope, <<" ">>),
-    TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
-    ExpiresIn = case TTL of
-                    <<>> -> undefined;
-                    _ -> binary_to_integer(TTL)
-                end,
-    case oauth2:authorize_password({Username, Server},
-                                   ClientId,
-                                   RedirectURI,
-                                   Scope,
-                                   #oauth_ctx{password = Password}) of
-        {ok, {_AppContext, Authorization}} ->
-            {ok, {_AppContext2, Response}} =
-                oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined ]),
-            {ok, AccessToken} = oauth2_response:access_token(Response),
-            {ok, Type} = oauth2_response:token_type(Response),
-            %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
-            %%per-case expirity time.
-            Expires = case ExpiresIn of
-                          undefined ->
-                             {ok, Ex} = oauth2_response:expires_in(Response),
-                             Ex;
-                          _ ->
-                            ExpiresIn
-                      end,
-            {ok, VerifiedScope} = oauth2_response:scope(Response),
-            %oauth2_wrq:redirected_access_token_response(ReqData,
-            %                                            RedirectURI,
-            %                                            AccessToken,
-            %                                            Type,
-            %                                            Expires,
-            %                                            VerifiedScope,
-            %                                            State,
-            %                                            Context);
-            {302, [{<<"Location">>,
-                    <<RedirectURI/binary,
-                     "?access_token=", AccessToken/binary,
-                     "&token_type=", Type/binary,
-                     "&expires_in=", (integer_to_binary(Expires))/binary,
-                     "&scope=", (str:join(VerifiedScope, <<" ">>))/binary,
-                     "&state=", State/binary>>
-                   }],
-             ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"302 Found">>)])};
-        {error, Error} when is_atom(Error) ->
-            %oauth2_wrq:redirected_error_response(
-            %    ReqData, RedirectURI, Error, State, Context)
-            {302, [{<<"Location">>,
-                    <<RedirectURI/binary,
-                     "?error=", (atom_to_binary(Error, utf8))/binary,
-                     "&state=", State/binary>>
-                   }],
-             ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"302 Found">>)])}
+    try jid:decode(StringJID) of
+        #jid{user = Username, server = Server} ->
+            Password = proplists:get_value(<<"password">>, Q, <<"">>),
+            State = proplists:get_value(<<"state">>, Q, <<"">>),
+            Scope = str:tokens(SScope, <<" ">>),
+            TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
+            ExpiresIn = case TTL of
+                            <<>> -> undefined;
+                            _ -> binary_to_integer(TTL)
+                        end,
+            case oauth2:authorize_password({Username, Server},
+                                           ClientId,
+                                           RedirectURI,
+                                           Scope,
+                                           #oauth_ctx{password = Password}) of
+                {ok, {_AppContext, Authorization}} ->
+                    {ok, {_AppContext2, Response}} =
+                        oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined]),
+                    {ok, AccessToken} = oauth2_response:access_token(Response),
+                    {ok, Type} = oauth2_response:token_type(Response),
+                    %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
+                    %%per-case expirity time.
+                    Expires = case ExpiresIn of
+                                  undefined ->
+                                      {ok, Ex} = oauth2_response:expires_in(Response),
+                                      Ex;
+                                  _ ->
+                                      ExpiresIn
+                              end,
+                    {ok, VerifiedScope} = oauth2_response:scope(Response),
+                    %oauth2_wrq:redirected_access_token_response(ReqData,
+                    %                                            RedirectURI,
+                    %                                            AccessToken,
+                    %                                            Type,
+                    %                                            Expires,
+                    %                                            VerifiedScope,
+                    %                                            State,
+                    %                                            Context);
+                    {302, [{<<"Location">>,
+                            <<RedirectURI/binary,
+                              "?access_token=", AccessToken/binary,
+                              "&token_type=", Type/binary,
+                              "&expires_in=", (integer_to_binary(Expires))/binary,
+                              "&scope=", (str:join(VerifiedScope, <<" ">>))/binary,
+                              "&state=", State/binary>>
+                           }],
+                     ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"302 Found">>)])};
+                {error, Error} when is_atom(Error) ->
+                    %oauth2_wrq:redirected_error_response(
+                    %    ReqData, RedirectURI, Error, State, Context)
+                    {302, [{<<"Location">>,
+                            <<RedirectURI/binary,
+                              "?error=", (atom_to_binary(Error, utf8))/binary,
+                              "&state=", State/binary>>
+                           }],
+                     ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"302 Found">>)])}
+            end
+    catch _:{bad_jid, _} ->
+        State = proplists:get_value(<<"state">>, Q, <<"">>),
+        {400, [{<<"Location">>,
+                <<RedirectURI/binary,
+                  "?error=invalid_request",
+                  "&state=", State/binary>>
+               }],
+         ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"400 Invalid request">>)])}
     end;
 process(_Handlers,
 	#request{method = 'POST', q = Q, lang = _Lang,
@@ -701,38 +711,42 @@ process(_Handlers,
         password ->
             SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
             StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
-            #jid{user = Username, server = Server} = jid:decode(StringJID),
-            Password = proplists:get_value(<<"password">>, Q, <<"">>),
-            Scope = str:tokens(SScope, <<" ">>),
-            TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
-            ExpiresIn = case TTL of
-                            <<>> -> undefined;
-                            _ -> binary_to_integer(TTL)
-                        end,
-            case oauth2:authorize_password({Username, Server},
-                                           Scope,
-                                           #oauth_ctx{password = Password}) of
-                {ok, {_AppContext, Authorization}} ->
-                    {ok, {_AppContext2, Response}} =
-                        oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined ]),
-                    {ok, AccessToken} = oauth2_response:access_token(Response),
-                    {ok, Type} = oauth2_response:token_type(Response),
-                    %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
-                    %%per-case expirity time.
-                    Expires = case ExpiresIn of
-                                  undefined ->
-                                      {ok, Ex} = oauth2_response:expires_in(Response),
-                                      Ex;
-                                  _ ->
-                                      ExpiresIn
-                              end,
-                    {ok, VerifiedScope} = oauth2_response:scope(Response),
-                    json_response(200, #{<<"access_token">> => AccessToken,
-                                         <<"token_type">> => Type,
-                                         <<"scope">> => str:join(VerifiedScope, <<" ">>),
-                                         <<"expires_in">> => Expires});
-                {error, Error} when is_atom(Error) ->
-                    json_error(400, <<"invalid_grant">>, Error)
+            try jid:decode(StringJID) of
+                #jid{user = Username, server = Server} ->
+                    Password = proplists:get_value(<<"password">>, Q, <<"">>),
+                    Scope = str:tokens(SScope, <<" ">>),
+                    TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
+                    ExpiresIn = case TTL of
+                                    <<>> -> undefined;
+                                    _ -> binary_to_integer(TTL)
+                                end,
+                    case oauth2:authorize_password({Username, Server},
+                                                   Scope,
+                                                   #oauth_ctx{password = Password}) of
+                        {ok, {_AppContext, Authorization}} ->
+                            {ok, {_AppContext2, Response}} =
+                                oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined]),
+                            {ok, AccessToken} = oauth2_response:access_token(Response),
+                            {ok, Type} = oauth2_response:token_type(Response),
+                            %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
+                            %%per-case expirity time.
+                            Expires = case ExpiresIn of
+                                          undefined ->
+                                              {ok, Ex} = oauth2_response:expires_in(Response),
+                                              Ex;
+                                          _ ->
+                                              ExpiresIn
+                                      end,
+                            {ok, VerifiedScope} = oauth2_response:scope(Response),
+                            json_response(200, #{<<"access_token">> => AccessToken,
+                                                 <<"token_type">> => Type,
+                                                 <<"scope">> => str:join(VerifiedScope, <<" ">>),
+                                                 <<"expires_in">> => Expires});
+                        {error, Error} when is_atom(Error) ->
+                            json_error(400, <<"invalid_grant">>, Error)
+                    end
+            catch _:{bad_jid, _} ->
+                json_error(400, <<"invalid_request">>, invalid_jid)
             end;
         unsupported_grant_type ->
             json_error(400, <<"unsupported_grant_type">>,
@@ -774,7 +788,8 @@ json_error(Code, Error, Reason) ->
 json_error_desc(access_denied)          -> <<"Access denied">>;
 json_error_desc(badpass)                -> <<"Bad password">>;
 json_error_desc(unsupported_grant_type) -> <<"Unsupported grant type">>;
-json_error_desc(invalid_scope)          -> <<"Invalid scope">>.
+json_error_desc(invalid_scope)          -> <<"Invalid scope">>;
+json_error_desc(invalid_jid)            -> <<"Invalid JID">>.
 
 web_head() ->
     [?XA(<<"meta">>, [{<<"http-equiv">>, <<"X-UA-Compatible">>},
