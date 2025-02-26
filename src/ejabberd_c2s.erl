@@ -49,8 +49,9 @@
 	 get_fast_tokens_fun/2, fast_mechanisms/1]).
 %% Hooks
 -export([handle_unexpected_cast/2, handle_unexpected_call/3,
-	 process_auth_result/3, reject_unauthenticated_packet/2,
-	 process_closed/2, process_terminated/2, process_info/2]).
+	 process_auth_result/3, c2s_handle_bind/1,
+     reject_unauthenticated_packet/2, process_closed/2,
+     process_terminated/2, process_info/2]).
 %% API
 -export([get_presence/1, set_presence/2, resend_presence/1, resend_presence/2,
 	 open_session/1, call/3, cast/2, send/2, close/1, close/2, stop_async/1,
@@ -165,6 +166,7 @@ host_up(Host) ->
     ejabberd_hooks:add(c2s_closed, Host, ?MODULE, process_closed, 100),
     ejabberd_hooks:add(c2s_terminated, Host, ?MODULE,
 		       process_terminated, 100),
+    ejabberd_hooks:add(c2s_handle_bind, Host, ?MODULE, c2s_handle_bind, 100),
     ejabberd_hooks:add(c2s_unauthenticated_packet, Host, ?MODULE,
 		       reject_unauthenticated_packet, 100),
     ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
@@ -181,6 +183,7 @@ host_down(Host) ->
     ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, process_closed, 100),
     ejabberd_hooks:delete(c2s_terminated, Host, ?MODULE,
 			  process_terminated, 100),
+    ejabberd_hooks:delete(c2s_handle_bind, Host, ?MODULE, c2s_handle_bind, 100),
     ejabberd_hooks:delete(c2s_unauthenticated_packet, Host, ?MODULE,
 			  reject_unauthenticated_packet, 100),
     ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE,
@@ -284,6 +287,11 @@ handle_unexpected_call(State, From, Msg) ->
 handle_unexpected_cast(State, Msg) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     State.
+
+c2s_handle_bind({<<"">>, {ok, State}}) ->
+    {new_uniq_id(), {ok, State}};
+c2s_handle_bind(Acc) ->
+    Acc.
 
 reject_unauthenticated_packet(State, _Pkt) ->
     Err = xmpp:serr_not_authorized(),
@@ -480,33 +488,60 @@ fast_mechanisms(#{lserver := LServer}) ->
 	_  -> mod_auth_fast:get_mechanisms(LServer)
     end.
 
-bind(<<"">>, State) ->
-    bind(new_uniq_id(), State);
-bind(R, #{user := U, server := S, access := Access, lang := Lang,
-	  lserver := LServer, socket := Socket,
-	  ip := IP} = State) ->
-    case resource_conflict_action(U, S, R) of
-	closenew ->
-	    {error, xmpp:err_conflict(), State};
-	{accept_resource, Resource} ->
-	    JID = jid:make(U, S, Resource),
-	    case acl:match_rule(LServer, Access,
-				#{usr => jid:split(JID), ip => IP}) of
-		allow ->
-		    State1 = open_session(State#{resource => Resource,
-						 sid => ejabberd_sm:make_sid()}),
-		    State2 = ejabberd_hooks:run_fold(
-			       c2s_session_opened, LServer, State1, []),
-		    ?INFO_MSG("(~ts) Opened c2s session for ~ts",
-			      [xmpp_socket:pp(Socket), jid:encode(JID)]),
-		    {ok, State2};
-		deny ->
-		    ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
-		    ?WARNING_MSG("(~ts) Forbidden c2s session for ~ts",
-				 [xmpp_socket:pp(Socket), jid:encode(JID)]),
-		    Txt = ?T("Access denied by service policy"),
-		    {error, xmpp:err_not_allowed(Txt, Lang), State}
-	    end
+bind(
+    R,
+    #{
+        user := U,
+        server := S,
+        lserver := LServer,
+        access := Access,
+        lang := Lang,
+        socket := Socket,
+        ip := IP
+    }=State
+) ->
+    case ejabberd_hooks:run_fold(c2s_handle_bind, LServer, {R, {ok, State}}, []) of
+        {R2, {ok, State2}} ->
+            case resource_conflict_action(U, S, R2) of
+                closenew ->
+                    {error, xmpp:err_conflict(), State2};
+                {accept_resource, Resource} ->
+                    JID = jid:make(U, S, Resource),
+                    case acl:match_rule(LServer, Access, #{usr => jid:split(JID), ip => IP}) of
+                        allow ->
+                            State3 = open_session(
+                                State2#{resource => Resource, sid => ejabberd_sm:make_sid()}
+                            ),
+                            State4 = ejabberd_hooks:run_fold(
+                                c2s_session_opened, LServer, State3, []
+                            ),
+                            ?INFO_MSG(
+                                "(~ts) Opened c2s session for ~ts", [xmpp_socket:pp(Socket), jid:encode(JID)]
+                            ),
+                            {ok, State4};
+                        deny ->
+                            ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
+                            ?WARNING_MSG(
+                                "(~ts) Forbidden c2s session for ~ts",
+                                [xmpp_socket:pp(Socket), jid:encode(JID)]
+                            ),
+                            Txt = ?T("Access denied by service policy"),
+                            {error, xmpp:err_not_allowed(Txt, Lang), State2}
+                    end
+            end;
+        {R2, {error, XmppErr, _State2}=Err} ->
+            case XmppErr of
+                #stanza_error{reason = 'not-allowed'} ->
+                    JID = jid:make(U, S, R2),
+                    ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
+                    ?WARNING_MSG(
+                        "(~ts) Forbidden c2s session for ~ts",
+                        [xmpp_socket:pp(Socket), jid:encode(JID)]
+                    );
+                _ ->
+                    ok
+            end,
+            Err
     end.
 
 handle_stream_start(StreamStart, #{lserver := LServer} = State) ->
