@@ -112,14 +112,7 @@ opt_type(cache_missed) ->
 opt_type(cache_size) ->
     econf:pos_int(infinity);
 opt_type(captcha_cmd) ->
-    econf:and_then(
-	econf:binary(),
-	fun(V) ->
-		V2 = misc:expand_keyword(<<"@SEMVER@">>, V,
-				    ejabberd_option:version()),
-		misc:expand_keyword(<<"@VERSION@">>, V2,
-				    misc:semver_to_xxyy(ejabberd_option:version()))
-	end);
+    econf:binary();
 opt_type(captcha_host) ->
     econf:binary();
 opt_type(captcha_limit) ->
@@ -138,6 +131,8 @@ opt_type(default_db) ->
     econf:enum([mnesia, sql]);
 opt_type(default_ram_db) ->
     econf:enum([mnesia, sql, redis]);
+opt_type(define_keyword) ->
+    econf:map(econf:binary(), econf:any(), [unique]);
 opt_type(define_macro) ->
     econf:map(econf:binary(), econf:any(), [unique]);
 opt_type(disable_sasl_scram_downgrade_protection) ->
@@ -567,6 +562,7 @@ options() ->
      {certfiles, undefined},
      {cluster_backend, mnesia},
      {cluster_nodes, []},
+     {define_keyword, []},
      {define_macro, []},
      {disable_sasl_scram_downgrade_protection, false},
      {disable_sasl_mechanisms, []},
