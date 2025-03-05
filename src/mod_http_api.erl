@@ -473,14 +473,17 @@ format_result(Code, {Name, restuple}) ->
      {[{<<"res">>, Code == true orelse Code == ok},
        {<<"text">>, <<"">>}]}};
 
-format_result(Els, {Name, {list, {_, {tuple, [{_, atom}, _]}} = Fmt}}) ->
+format_result(Els1, {Name, {list, {_, {tuple, [{_, atom}, _]}} = Fmt}}) ->
+    Els = lists:keysort(1, Els1),
     {misc:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
 
-format_result(Els, {Name, {list, {_, {tuple, [{name, string}, {value, _}]}} = Fmt}}) ->
+format_result(Els1, {Name, {list, {_, {tuple, [{name, string}, {value, _}]}} = Fmt}}) ->
+    Els = lists:keysort(1, Els1),
     {misc:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
 
 %% Covered by command_test_list and command_test_list_tuple
-format_result(Els, {Name, {list, Def}}) ->
+format_result(Els1, {Name, {list, Def}}) ->
+    Els = lists:sort(Els1),
     {misc:atom_to_binary(Name), [element(2, format_result(El, Def)) || El <- Els]};
 
 format_result(Tuple, {_Name, {tuple, [{_, atom}, ValFmt]}}) ->

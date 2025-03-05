@@ -130,7 +130,7 @@ http_restuple(Config) ->
 
 http_list(Config) ->
     ListS = ["one", "first", "primary"],
-    ListB = [<<"one">>, <<"first">>, <<"primary">>],
+    ListB = lists:sort([<<"one">>, <<"first">>, <<"primary">>]),
     ?match(ListB, query(Config, "command_test_list", #{arg_list => ListS})),
     ?match(ListB, query(Config, "command_test_list", #{arg_list => ListB})).
 
@@ -148,20 +148,20 @@ http_tuple(Config) ->
 
 http_list_tuple(Config) ->
     LTA = [#{element1 => "one", element2 => "uno"},
-           #{element1 => "dos", element2 => "two"},
+           #{element1 => "two", element2 => "dos"},
            #{element1 => "three", element2 => "tres"}],
-    LTB = [#{<<"element1">> => <<"one">>, <<"element2">> => <<"uno">>},
-           #{<<"element1">> => <<"dos">>, <<"element2">> => <<"two">>},
-           #{<<"element1">> => <<"three">>, <<"element2">> => <<"tres">>}],
+    LTB = lists:sort([#{<<"element1">> => <<"one">>, <<"element2">> => <<"uno">>},
+                      #{<<"element1">> => <<"two">>, <<"element2">> => <<"dos">>},
+                      #{<<"element1">> => <<"three">>, <<"element2">> => <<"tres">>}]),
     ?match(LTB, query(Config, "command_test_list_tuple", #{arg_list => LTA})),
     ?match(LTB, query(Config, "command_test_list_tuple", #{arg_list => LTB})).
 
 http_list_tuple_map(Config) ->
     LTA = #{<<"one">> => <<"uno">>,
-            <<"dos">> => <<"two">>,
+            <<"two">> => <<"dos">>,
             <<"three">> => <<"tres">>},
     LTB = lists:sort([#{<<"element1">> => <<"one">>, <<"element2">> => <<"uno">>},
-                      #{<<"element1">> => <<"dos">>, <<"element2">> => <<"two">>},
+                      #{<<"element1">> => <<"two">>, <<"element2">> => <<"dos">>},
                       #{<<"element1">> => <<"three">>, <<"element2">> => <<"tres">>}]),
     ?match(LTB, lists:sort(query(Config, "command_test_list_tuple", #{arg_list => LTA}))).
 
