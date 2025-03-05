@@ -118,7 +118,12 @@ api_permissions:
     from: ejabberd_web_admin
     who: admin
     what: "*"
-  "admin access":
+  "adhoc commands":
+    from: mod_adhoc_api
+    who: admin
+    what: "*"
+  "http access":
+    from: mod_http_api
     who:
       access:
         allow:
@@ -159,6 +164,7 @@ shaper_rules:
 
 modules:
   mod_adhoc: {}
+  mod_adhoc_api: {}
   mod_admin_extra: {}
   mod_announce:
     access: announce

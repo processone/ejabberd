@@ -33,6 +33,7 @@
 -export([start_link/0,
 	 list_commands/0,
 	 list_commands/1,
+	 list_commands/2,
 	 get_command_format/1,
 	 get_command_format/2,
 	 get_command_format/3,
@@ -216,6 +217,16 @@ list_commands(Version) ->
                                               tags = Tags,
                                               desc = Desc} <- Commands,
                            not lists:member(internal, Tags)].
+
+-spec list_commands(integer(), map()) -> [{atom(), [aterm()], string()}].
+
+list_commands(Version, CallerInfo) ->
+    lists:filter(
+      fun({Name, _Args, _Desc}) ->
+        allow == ejabberd_access_permissions:can_access(Name, CallerInfo)
+      end,
+      list_commands(Version)
+    ).
 
 -spec get_command_format(atom()) -> {[aterm()], [{atom(),atom()}], rterm()}.
 
