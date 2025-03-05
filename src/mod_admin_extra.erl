@@ -729,7 +729,6 @@ get_commands_spec() ->
                         policy = user,
 			module = ?MODULE, function = get_roster_count,
 			args = [],
-			args_example = [<<"sun">>, <<"localhost">>],
 			args_rename = [{server, host}],
 			result_example = 5,
 			result_desc = "Number",
