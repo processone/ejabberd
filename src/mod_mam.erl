@@ -182,7 +182,7 @@ start(Host, Opts) ->
 		    ejabberd_hooks:add(check_create_room, Host, ?MODULE,
 				       check_create_room, 50)
 	    end,
-	    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
+	    ejabberd_commands:register_commands(Host, ?MODULE, get_commands_spec()),
 	    ok;
 	Err ->
 	    Err
@@ -263,12 +263,7 @@ stop(Host) ->
 	    ejabberd_hooks:delete(check_create_room, Host, ?MODULE,
 				  check_create_room, 50)
     end,
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_commands:unregister_commands(get_commands_spec());
-        true ->
-            ok
-    end.
+    ejabberd_commands:unregister_commands(Host, ?MODULE, get_commands_spec()).
 
 reload(Host, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
