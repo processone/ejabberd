@@ -931,14 +931,14 @@ get_cluster_node_details(Node, RunningNodes) ->
     get_cluster_node_details2(Node, lists:member(Node, RunningNodes)).
 
 get_cluster_node_details2(Node, false) ->
-    {Node, "false", "", -1, -1, -1, "unknown"};
+    {Node, "false", "", -1, -1, -1, unknown};
 get_cluster_node_details2(Node, true) ->
     try ejabberd_cluster:call(Node, ejabberd_admin, get_cluster_node_details3, []) of
         Result -> Result
     catch
         E:R ->
             Status = io_lib:format("~p: ~p", [E, R]),
-            {Node, "true", Status, -1, -1, -1, "unknown"}
+            {Node, "true", Status, -1, -1, -1, unknown}
     end.
 
 get_cluster_node_details3() ->
