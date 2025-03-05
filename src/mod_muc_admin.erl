@@ -68,8 +68,8 @@
 %% gen_mod
 %%----------------------------
 
-start(_Host, _Opts) ->
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
+start(Host, _Opts) ->
+    ejabberd_commands:register_commands(Host, ?MODULE, get_commands_spec()),
     {ok, [{hook, webadmin_menu_main, web_menu_main, 50, global},
 	  {hook, webadmin_page_main, web_page_main, 50, global},
 	  {hook, webadmin_menu_host, web_menu_host, 50},
@@ -79,12 +79,7 @@ start(_Host, _Opts) ->
          ]}.
 
 stop(Host) ->
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_commands:unregister_commands(get_commands_spec());
-        true ->
-            ok
-    end.
+    ejabberd_commands:unregister_commands(Host, ?MODULE, get_commands_spec()).
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
