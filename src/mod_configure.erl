@@ -1546,14 +1546,49 @@ mod_options(_Host) ->
 
 %% @format-begin
 
+%% All ad-hoc commands implemented by mod_configure are available as API Commands:
+%% - add-user                  -> register
+%% - delete-user               -> unregister
+%% - end-user-session          -> kick_session / kick_user
+%% - change-user-password      -> change_password
+%% - get-user-lastlogin        -> get_last
+%% - user-stats                -> user_sessions_info
+%% - get-registered-users-list -> registered_users
+%% - get-registered-users-num  -> stats
+%% - get-online-users-list     -> connected_users
+%% - get-online-users-num      -> stats
+%% - stopped nodes             -> list_cluster_detailed
+%% - DB                        -> mnesia_list_tables and mnesia_table_change_storage
+%% - restart                   -> stop_kindly / restart
+%% - shutdown                  -> stop_kindly
+%% - backup                    -> backup
+%% - restore                   -> restore
+%% - textfile                  -> dump
+%% - import/file               -> import_file
+%% - import/dir                -> import_dir
+%%
+%% An exclusive feature available only in this module is to list items and discover them:
+%% - outgoing s2s
+%% - online users
+%% - all users
+
 mod_doc() ->
     #{desc =>
-          ?T("The module provides server configuration functionality via "
-             "https://xmpp.org/extensions/xep-0050.html[XEP-0050: Ad-Hoc Commands]. "
-             "It also implements many commands as defined in "
-             "https://xmpp.org/extensions/xep-0133.html[XEP-0133: Service Administration]. "
-             "This module requires _`mod_adhoc`_ (to execute the commands), "
-             "and recommends _`mod_disco`_ (to discover the commands). "),
+          [?T("The module provides server configuration functionalities using "
+              "https://xmpp.org/extensions/xep-0030.html[XEP-0030: Service Discovery] and "
+              "https://xmpp.org/extensions/xep-0050.html[XEP-0050: Ad-Hoc Commands]:"),
+           "",
+           "- List and discover outgoing s2s, online client sessions and all registered accounts",
+           "- Most of the ad-hoc commands defined in https://xmpp.org/extensions/xep-0133.html[XEP-0133: Service Administration]",
+           "- Additional custom ad-hoc commands specific to ejabberd",
+           "",
+           ?T("This module requires _`mod_adhoc`_ (to execute the commands), "
+              "and recommends _`mod_disco`_ (to discover the commands). "),
+           "",
+           ?T("Please notice that all the ad-hoc commands implemented by this module "
+              "have an equivalent "
+              "https://docs.ejabberd.im/developer/ejabberd-api/[API Command] "
+              "that you can execute using _`mod_adhoc_api`_ or any other API frontend.")],
       opts =>
           [{access,
             #{value => ?T("AccessName"),
