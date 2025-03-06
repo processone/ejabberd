@@ -920,38 +920,43 @@ mod_doc() ->
           [?T("This module enables configured users to broadcast "
               "announcements and to set the message of the day (MOTD). "
               "Configured users can perform these actions with an XMPP "
-              "client either using Ad-hoc Commands or sending messages "
+              "client either using Ad-Hoc Commands or sending messages "
               "to specific JIDs."), "",
-	   ?T("Note that this module can be resource intensive on large "
+	   ?T("NOTE: This module can be resource intensive on large "
 	      "deployments as it may broadcast a lot of messages. This module "
 	      "should be disabled for instances of ejabberd with hundreds of "
 	      "thousands users."), "",
-           ?T("The Ad-hoc Commands are listed in the Server Discovery. "
-              "For this feature to work, _`mod_adhoc`_ must be enabled."), "",
-           ?T("The specific JIDs where messages can be sent are listed below. "
-              "The first JID in each entry will apply only to the specified "
-              "virtual host example.org, while the JID between brackets "
-              "will apply to all virtual hosts in ejabberd:"), "",
-           "- example.org/announce/all (example.org/announce/all-hosts/all)::",
-           ?T("The message is sent to all registered users. If the user is "
+           ?T("To send announcements using "
+              "https://xmpp.org/extensions/xep-0050.html[XEP-0050: Ad-Hoc Commands], "
+              "this module requires _`mod_adhoc`_ (to execute the commands), "
+              "and recommends _`mod_disco`_ (to discover the commands)."), "",
+           ?T("To send announcements by sending messages to specific JIDs, these are the destination JIDs:"), "",
+           "- 'example.org/announce/all':",
+           ?T("Send the message to all registered users in that vhost. If the user is "
               "online and connected to several resources, only the resource "
               "with the highest priority will receive the message. "
-              "If the registered user is not connected, the message will be "
+              "If the registered user is not connected, the message is "
               "stored offline in assumption that offline storage (see _`mod_offline`_) "
               "is enabled."),
-           "- example.org/announce/online (example.org/announce/all-hosts/online)::",
-           ?T("The message is sent to all connected users. If the user is "
+           "- 'example.org/announce/online':",
+           ?T("Send the message to all connected users. If the user is "
               "online and connected to several resources, all resources will "
               "receive the message."),
-           "- example.org/announce/motd (example.org/announce/all-hosts/motd)::",
-           ?T("The message is set as the message of the day (MOTD) and is sent "
-              "to users when they login. In addition the message is sent to all "
-              "connected users (similar to announce/online)."),
-           "- example.org/announce/motd/update (example.org/announce/all-hosts/motd/update)::",
-           ?T("The message is set as message of the day (MOTD) and is sent to users "
-              "when they login. The message is not sent to any currently connected user."),
-           "- example.org/announce/motd/delete (example.org/announce/all-hosts/motd/delete)::",
-           ?T("Any message sent to this JID removes the existing message of the day (MOTD).")],
+           "- 'example.org/announce/motd':",
+           ?T("Set the message of the day (MOTD) that is sent "
+              "to users when they login. Also sends the message to all "
+              "connected users (similar to 'announce/online')."),
+           "- 'example.org/announce/motd/update':",
+           ?T("Set the message of the day (MOTD) that is sent to users "
+              "when they login. This does not send the message to any currently connected user."),
+           "- 'example.org/announce/motd/delete':",
+           ?T("Remove the existing message of the day (MOTD) by sending a message to this JID."), "",
+           ?T("There are similar destination JIDs to apply to all virtual hosts in ejabberd:"), "",
+           "- 'example.org/announce/all-hosts/all': send to all registered accounts",
+           "- 'example.org/announce/all-hosts/online': send to online sessions",
+           "- 'example.org/announce/all-hosts/motd': set MOTD and send to online",
+           "- 'example.org/announce/all-hosts/motd/update': update MOTD",
+           "- 'example.org/announce/all-hosts/motd/delete': delete MOTD"],
       opts =>
           [{access,
             #{value => ?T("AccessName"),
