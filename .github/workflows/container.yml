@@ -1,8 +1,6 @@
 name: Container
 
 on:
-  schedule:
-    - cron: '22 2 */6 * *' # every 6 days to avoid gha cache being evicted
   push:
     paths-ignore:
     - '.devcontainer/**'
@@ -27,52 +25,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Cache build directory
-        uses: actions/cache@v4
-        with:
-          path: ~/build/
-          key: ${{runner.os}}-ctr-ct-ng-1.27.0
-
-      - name: Get erlang/OTP version for bootstrapping
-        run: |
-          echo "OTP_VSN=$(awk '/^otp_vsn=/ {{gsub(/[^0-9.rc-]/, ""); print}}' tools/make-binaries)" >> $GITHUB_ENV
-          echo "ELIXIR_VSN=$(awk '/^elixir_vsn=/ {{gsub(/[^0-9.]/, ""); print}}' tools/make-binaries)" >> $GITHUB_ENV
-
-      - name: Install prerequisites
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get -qq install makeself
-          # https://github.com/crosstool-ng/crosstool-ng/blob/master/testing/docker/ubuntu21.10/Dockerfile
-          sudo apt-get -qq install build-essential autoconf bison flex gawk
-          sudo apt-get -qq install help2man libncurses5-dev libtool libtool-bin
-          sudo apt-get -qq install python3-dev texinfo unzip
-
-      - name: Install erlang/OTP
-        uses: erlef/setup-beam@v1
-        with:
-          otp-version: ${{ env.OTP_VSN }}
-          elixir-version: ${{ env.ELIXIR_VSN }}
-          version-type: strict
-
-      - name: Remove Elixir Matchers
-        run: |
-          echo "::remove-matcher owner=elixir-mixCompileWarning::"
-          echo "::remove-matcher owner=elixir-credoOutputDefault::"
-          echo "::remove-matcher owner=elixir-mixCompileError::"
-          echo "::remove-matcher owner=elixir-mixTestFailure::"
-          echo "::remove-matcher owner=elixir-dialyzerOutputDefault::"
-
-      - name: Build musl-libc based binary archives
-        run: |
-          sed -i "s|targets='.*'|targets='x86_64-linux-musl aarch64-linux-musl'|" tools/make-binaries
-          mv .github/container/ejabberdctl.template .
-          CHECK_DEPS=false tools/make-binaries
-
-      - name: Collect packages
-        run: |
-          mkdir tarballs
-          mv ejabberd-*.tar.gz tarballs
 
       - name: Checkout ejabberd-contrib
         uses: actions/checkout@v4
@@ -111,7 +63,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           build-args: |
-            METHOD=package
             VERSION=${{ steps.gitdescribe.outputs.ver }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

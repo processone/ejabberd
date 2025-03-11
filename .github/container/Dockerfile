@@ -1,20 +1,22 @@
 #' Define default build variables
-## specifc ARGs for METHOD='direct'
 ARG OTP_VSN='27.2'
 ARG ELIXIR_VSN='1.18.1'
-## specifc ARGs for METHOD='package'
-ARG ALPINE_VSN='3.19'
-## general ARGs
 ARG UID='9000'
 ARG USER='ejabberd'
 ARG HOME="opt/$USER"
-ARG METHOD='direct'
 ARG BUILD_DIR="/$USER"
 ARG VERSION='master'
 
 ################################################################################
-#' METHOD='direct' - build and install ejabberd directly from source
-FROM docker.io/erlang:${OTP_VSN}-alpine AS direct
+#' Compile ejabberdapi
+FROM docker.io/golang:1.23-alpine AS api
+RUN go install -v \
+    github.com/processone/ejabberd-api/cmd/ejabberd@master \
+    && mv bin/ejabberd bin/ejabberdapi
+
+################################################################################
+#' build and install ejabberd directly from source
+FROM docker.io/erlang:${OTP_VSN}-alpine AS ejabberd
 
 RUN apk -U add --no-cache \
         autoconf \
@@ -70,37 +72,16 @@ RUN find "$HOME-$VERSION/bin" -name 'ejabberd' -delete \
 
 RUN wget -O "$HOME/conf/cacert.pem" 'https://curl.se/ca/cacert.pem'
 
-################################################################################
-#' METHOD='package' - install ejabberd from binary tarball package
-FROM docker.io/alpine:${ALPINE_VSN} AS package
-COPY tarballs/ejabberd-*-linux-musl-*.tar.gz /tmp/
-WORKDIR /rootfs
-ARG HOME
-RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
-    && mkdir -p $home_root_dir \
-    && ARCH=$(uname -m | sed -e 's/x86_64/x64/;s/aarch64/arm64/') \
-    && tar -xzf /tmp/ejabberd-*-linux-musl-$ARCH.tar.gz -C $home_root_dir
-
-################################################################################
-#' Compile ejabberdapi
-FROM docker.io/golang:1.23-alpine AS api
-RUN go install -v \
-    github.com/processone/ejabberd-api/cmd/ejabberd@master \
-    && mv bin/ejabberd bin/ejabberdapi
-
-################################################################################
 #' Prepare ejabberd for runtime
-FROM ${METHOD} AS ejabberd
 RUN apk -U add --no-cache \
         git \
         libcap \
         openssl
 
-WORKDIR /rootfs
-ARG HOME
 RUN mkdir -p usr/local/bin $HOME/conf $HOME/database $HOME/logs $HOME/upload
 
-ARG BUILD_DIR
+COPY --from=api /go/bin/ejabberdapi usr/local/bin/
+
 RUN if [ ! -d $HOME/.ejabberd-modules ]; \
     then \
         if [ -d $BUILD_DIR/.ejabberd-modules ]; \
@@ -162,31 +143,22 @@ RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
         | sed -e "s|so:libc.so|so:libc.musl-$(uname -m).so.1|" \
             > /tmp/runDeps
 
-COPY --from=api /go/bin/ejabberdapi usr/local/bin/
-
 ARG UID
 RUN chown -R $UID:$UID $HOME
 
-ARG VERSION
 RUN cp /rootfs/$HOME-$VERSION/lib/captcha*.sh usr/local/bin/
 RUN mkdir $HOME/sql \
     && find /rootfs/$HOME-$VERSION/lib/ -name *.sql -exec cp {} $HOME/sql \; -exec cp {} $HOME/database \;
 
 ################################################################################
-#' METHOD='direct' - Remove erlang/OTP & rebar3
-FROM docker.io/erlang:${OTP_VSN}-alpine AS runtime-direct
+#' Remove erlang/OTP & rebar3
+FROM docker.io/erlang:${OTP_VSN}-alpine AS runtime
 RUN apk del .erlang-rundeps \
     && rm -f $(which rebar3) \
     && find /usr -type d -name 'erlang' -exec rm -rf {} + \
     && find /usr -type l -exec test ! -e {} \; -delete
 
-################################################################################
-#' METHOD='package' - define runtime base image
-FROM docker.io/alpine:${ALPINE_VSN} AS runtime-package
-
-################################################################################
 #' Update alpine, finalize runtime environment
-FROM runtime-${METHOD} AS runtime
 COPY --from=ejabberd /tmp/runDeps /tmp/runDeps
 RUN apk -U upgrade --available --no-cache \
     && apk add --no-cache \
@@ -210,7 +182,7 @@ RUN rm -rf /home \
 
 ################################################################################
 #' Build together production image
-FROM scratch AS prod
+FROM scratch
 ARG USER
 ARG HOME
 
