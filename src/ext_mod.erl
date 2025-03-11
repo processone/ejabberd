@@ -573,7 +573,7 @@ compile_and_install(Module, Spec, Config) ->
         true ->
             case compile_deps(SrcDir) of
                 ok ->
-                    case compile(SrcDir) of
+                    case compile(SrcDir, filename:join(SrcDir, "deps")) of
                         ok -> install(Module, Spec, SrcDir, LibDir, Config);
                         Error -> Error
                     end;
@@ -589,25 +589,28 @@ compile_and_install(Module, Spec, Config) ->
     end.
 
 compile_deps(LibDir) ->
-    Deps = filename:join(LibDir, "deps"),
-    case filelib:is_dir(Deps) of
+    DepsDir = filename:join(LibDir, "deps"),
+    case filelib:is_dir(DepsDir) of
         true -> ok;  % assume deps are included
         false -> fetch_rebar_deps(LibDir)
     end,
-    Rs = [compile(Dep) || Dep <- filelib:wildcard(filename:join(Deps, "*"))],
+    Rs = [compile(Dep, DepsDir) || Dep <- filelib:wildcard(filename:join(DepsDir, "*"))],
     compile_result(Rs).
 
-compile(LibDir) ->
+compile(LibDir, DepsDir) ->
     Bin = filename:join(LibDir, "ebin"),
     Lib = filename:join(LibDir, "lib"),
     Src = filename:join(LibDir, "src"),
-    Includes = [{i, Inc} || Inc <- filelib:wildcard(LibDir++"/../../**/include")],
+    Includes = [{i, Inc} || Inc <- filelib:wildcard(DepsDir++"/**/include")],
     Options = [{outdir, Bin}, {i, LibDir++"/.."} | Includes ++ compile_options()],
+    ?DEBUG("compile options: ~p", [Options]),
     filelib:ensure_dir(filename:join(Bin, ".")),
     [copy(App, filename:join(Bin, filename:basename(App, ".src"))) || App <- filelib:wildcard(Src++"/*.app*")],
     compile_c_files(LibDir),
+    ErlFiles = filelib:wildcard(Src++"/**/*.erl"),
+    ?DEBUG("erl files to compile: ~p", [ErlFiles]),
     Er = [compile_erlang_file(Bin, File, Options)
-          || File <- filelib:wildcard(Src++"/**/*.erl")],
+          || File <- ErlFiles],
     Ex = compile_elixir_files(Bin, filelib:wildcard(Lib ++ "/**/*.ex")),
     compile_result(lists:flatten([Er, Ex])).
 
