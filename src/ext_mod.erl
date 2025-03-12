@@ -601,8 +601,11 @@ compile(LibDir, DepsDir) ->
     Bin = filename:join(LibDir, "ebin"),
     Lib = filename:join(LibDir, "lib"),
     Src = filename:join(LibDir, "src"),
-    Includes = [{i, Inc} || Inc <- filelib:wildcard(DepsDir++"/**/include")],
-    Options = [{outdir, Bin}, {i, LibDir++"/.."} | Includes ++ compile_options()],
+    Includes = [ {i, Inc} || Inc <- filelib:wildcard(DepsDir++"/**/include") ],
+    Options = [ {outdir, Bin},
+                {i, LibDir++"/.."},
+                {i, filename:join(LibDir, "include")}
+              | Includes ++ compile_options()],
     ?DEBUG("compile options: ~p", [Options]),
     filelib:ensure_dir(filename:join(Bin, ".")),
     [copy(App, filename:join(Bin, filename:basename(App, ".src"))) || App <- filelib:wildcard(Src++"/*.app*")],

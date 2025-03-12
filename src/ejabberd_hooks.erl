@@ -152,7 +152,7 @@ unsubscribe(Hook, Host, Module, Function, InitArg) ->
 
 
 -spec run(atom(), list()) -> ok.
-%% @doc Run the calls (and subscibers) of this hook in order, don't care about function results.
+%% @doc Run the calls (and subscribers) of this hook in order, don't care about function results.
 %% If a call returns stop, no more calls are performed.
 run(Hook, Args) ->
     run(Hook, global, Args).
@@ -475,7 +475,7 @@ call_subscriber_list([], _Host, _Hook, _CallbackOrArgs, _Event, Result) ->
     lists:reverse(Result);
 call_subscriber_list([{Mod, Func, InitArg} | SubscriberList], Host, Hook, CallbackOrArgs, Event, Result) ->
     SubscriberArgs = [InitArg, Event, Host, Hook, CallbackOrArgs],
-    ?DEBUG("Running hook subsciber ~p: ~p:~p/~B with event ~p",
+    ?DEBUG("Running hook subscriber ~p: ~p:~p/~B with event ~p",
         [Hook, Mod, Func, length(SubscriberArgs), Event]),
     try apply(Mod, Func, SubscriberArgs) of
         State ->
