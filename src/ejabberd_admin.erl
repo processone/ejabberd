@@ -663,7 +663,7 @@ status() ->
 	    {value, {_, _, Version}} ->
 		{ok, io_lib:format("ejabberd ~s is running in that node", [Version])}
 	end,
-    {Is_running, String1 ++ "  " ++String2}.
+    {Is_running, String1 ++ "\n" ++String2}.
 
 stop() ->
     _ = supervisor:terminate_child(ejabberd_sup, ejabberd_sm),

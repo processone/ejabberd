@@ -179,7 +179,9 @@ livewarning()
         echo "Please be extremely cautious with your actions,"
         echo "and exit immediately if you are not completely sure."
         echo ""
-        echo "To exit and detach this shell from ejabberd, press:"
+        echo "To stop ejabberd gracefully:"
+        echo "  ejabberd:stop()."
+        echo "To quit erlang immediately, press:"
         echo "  control+g and then q"
         echo ""
         echo "--------------------------------------------------------------------"
@@ -332,6 +334,54 @@ wait_status()
     [ $timeout -gt 0 ]
 }
 
+exec_other_command()
+{
+    if [ -z "$CTL_OVER_HTTP" ] || [ ! -S "$CTL_OVER_HTTP" ] \
+        || [ ! -x "$(command -v curl)" ] || [ -z "$1" ] || [ "$1" = "help" ] \
+        || [ "$1" = "mnesia_info_ctl" ]|| [ "$1" = "print_sql_schema" ] ; then
+        exec_erl "$(uid ctl)" -hidden -noinput \
+                 -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
+                 -s ejabberd_ctl \
+                 -extra "$ERLANG_NODE" $NO_TIMEOUT "$@"
+        result=$?
+        case $result in
+            3) help;;
+            *) :;;
+        esac
+        exit $result
+    else
+        exec_ctl_over_http_socket "$@"
+    fi
+}
+
+exec_ctl_over_http_socket()
+{
+    COMMAND=${1}
+    CARGS=""
+    while [ $# -gt 0 ]; do
+        [ -z "$CARGS" ] && CARGS="[" || CARGS="${CARGS}, "
+        CARGS="${CARGS}\"$1\""
+        shift
+    done
+    CARGS="${CARGS}]"
+    TEMPHEADERS=temp-headers.log
+    curl \
+        --unix-socket ${CTL_OVER_HTTP} \
+        --header "Content-Type: application/json" \
+        --header "Accept: application/json" \
+        --data "${CARGS}" \
+        --dump-header ${TEMPHEADERS} \
+        --no-progress-meter \
+        "http://localhost/ctl/${COMMAND}"
+    result=$(sed -n 's/.*status-code: \([0-9]*\).*/\1/p' < $TEMPHEADERS)
+    rm ${TEMPHEADERS}
+    case $result in
+        2|3) exec_other_command help ${COMMAND};;
+        *) :;;
+    esac
+    exit $result
+}
+
 # ensure we can change current directory to SPOOL_DIR
 [ -d "$SPOOL_DIR" ] || exec_cmd mkdir -p "$SPOOL_DIR"
 cd "$SPOOL_DIR" || {
@@ -400,15 +450,6 @@ case $1 in
         ;;
     *)
         set_dist_client
-        exec_erl "$(uid ctl)" -hidden -noinput \
-                 -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
-                 -s ejabberd_ctl \
-                 -extra "$ERLANG_NODE" $NO_TIMEOUT "$@"
-        result=$?
-        case $result in
-            2|3) help;;
-            *) :;;
-        esac
-        exit $result
+        exec_other_command "$@"
         ;;
 esac

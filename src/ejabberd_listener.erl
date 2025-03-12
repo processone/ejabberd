@@ -216,18 +216,13 @@ listen_tcp(Port, SockOpts) ->
 
 setup_provisional_udsocket_dir(DefinitivePath) ->
     ProvisionalPath = get_provisional_udsocket_path(DefinitivePath),
-    SocketDir = filename:dirname(ProvisionalPath),
-    file:make_dir(SocketDir),
-    file:change_mode(SocketDir, 8#00700),
     ?DEBUG("Creating a Unix Domain Socket provisional file at ~ts for the definitive path ~s",
               [ProvisionalPath, DefinitivePath]),
     ProvisionalPath.
 
 get_provisional_udsocket_path(Path) ->
-    MnesiaDir = mnesia:system_info(directory),
-    SocketDir = filename:join(MnesiaDir, "socket"),
     PathBase64 = misc:term_to_base64(Path),
-    PathBuild = filename:join(SocketDir, PathBase64),
+    PathBuild = filename:join(os:getenv("HOME"), PathBase64),
     %% Shorthen the path, a long path produces a crash when opening the socket.
     binary:part(PathBuild, {0, erlang:min(107, byte_size(PathBuild))}).
 
@@ -236,11 +231,10 @@ get_definitive_udsocket_path(<<"unix", _>> = Unix) ->
 get_definitive_udsocket_path(ProvisionalPath) ->
     PathBase64 = filename:basename(ProvisionalPath),
     {term, Path} = misc:base64_to_term(PathBase64),
-    Path.
+    relative_socket_to_mnesia(Path).
 
 set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
     Prov = get_provisional_udsocket_path(Path),
-    timer:sleep(5000),
     Usd = maps:get(unix_socket, Opts),
     case maps:get(mode, Usd, undefined) of
         undefined -> ok;
@@ -268,8 +262,31 @@ set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
                     throw({error_setting_socket_group, Group, Prov})
             end
     end,
-    file:rename(Prov, Path);
+    FinalPath = relative_socket_to_mnesia(Path),
+    FinalPathDir = filename:dirname(FinalPath),
+    case file:make_dir(FinalPathDir) of
+        ok ->
+            file:change_mode(FinalPathDir, 8#00700);
+        _ ->
+            ok
+    end,
+    file:rename(Prov, FinalPath);
 set_definitive_udsocket(_Port, _Opts) ->
+    ok.
+
+relative_socket_to_mnesia(Path1) ->
+    case filename:pathtype(Path1) of
+        absolute ->
+            Path1;
+        relative ->
+            MnesiaDir = mnesia:system_info(directory),
+            filename:join(MnesiaDir, Path1)
+    end.
+
+maybe_delete_udsocket_file(<<"unix:", Path/binary>>) ->
+    PathAbsolute = relative_socket_to_mnesia(Path),
+    file:delete(PathAbsolute);
+maybe_delete_udsocket_file(_Port) ->
     ok.
 
 %%%
@@ -341,11 +358,20 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 				       gen_tcp:close(Socket),
 				       none
 			       end,
-		    ?INFO_MSG("(~p) Accepted connection ~ts -> ~ts",
-			      [Receiver,
-			       ejabberd_config:may_hide_data(
-				 format_endpoint({PPort, PAddr, tcp})),
-			       format_endpoint({Port, Addr, tcp})]);
+                    case is_ctl_over_http(State) of
+                        false ->
+                            ?INFO_MSG("(~p) Accepted connection ~ts -> ~ts",
+                                      [Receiver,
+                                       ejabberd_config:may_hide_data(
+                                         format_endpoint({PPort, PAddr, tcp})),
+                                       format_endpoint({Port, Addr, tcp})]);
+                        true ->
+                            ?DEBUG("(~p) Accepted connection ~ts -> ~ts",
+                                      [Receiver,
+                                       ejabberd_config:may_hide_data(
+                                         format_endpoint({PPort, PAddr, tcp})),
+                                       format_endpoint({Port, Addr, tcp})])
+                    end;
 		_ ->
 		    gen_tcp:close(Socket)
 	    end,
@@ -354,6 +380,16 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 	    ?ERROR_MSG("(~w) Failed TCP accept: ~ts",
 		       [ListenSocket, format_error(Reason)]),
 	    accept(ListenSocket, Module, State, Sup, NewInterval, Proxy, Arity)
+    end.
+
+is_ctl_over_http(State) ->
+    case lists:keyfind(request_handlers, 1, State) of
+        {request_handlers, Handlers} ->
+           case lists:keyfind(ejabberd_ctl, 2, Handlers) of
+               {_, ejabberd_ctl} -> true;
+               _ -> false
+           end;
+        _ -> false
     end.
 
 -spec udp_recv(inet:socket(), module(), state()) -> no_return().
@@ -470,12 +506,13 @@ stop_listeners() ->
       Ports).
 
 -spec stop_listener(endpoint(), module(), opts()) -> ok | {error, any()}.
-stop_listener({_, _, Transport} = EndPoint, Module, Opts) ->
+stop_listener({Port, _, Transport} = EndPoint, Module, Opts) ->
     case supervisor:terminate_child(?MODULE, EndPoint) of
 	ok ->
 	    ?INFO_MSG("Stop accepting ~ts connections at ~ts for ~p",
 		      [format_transport(Transport, Opts),
 		       format_endpoint(EndPoint), Module]),
+	    maybe_delete_udsocket_file(Port),
 	    ets:delete(?MODULE, EndPoint),
 	    supervisor:delete_child(?MODULE, EndPoint);
 	Err ->
@@ -562,10 +599,12 @@ format_error(Reason) ->
     end.
 
 -spec format_endpoint(endpoint()) -> string().
-format_endpoint({Port, IP, _Transport}) ->
+format_endpoint({Port, IP, Transport}) ->
     case Port of
         <<"unix:", _/binary>> ->
             Port;
+        <<>> when (IP == local) and (Transport == tcp) ->
+            "local-unix-socket-domain";
 	Unix when is_binary(Unix) ->
             Def = get_definitive_udsocket_path(Unix),
             <<"unix:", Def/binary>>;

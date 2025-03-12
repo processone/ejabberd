@@ -305,6 +305,8 @@ stop_epmd()
 # if all ok, ensure runtime directory exists and make it current directory
 check_start()
 {
+    ECSIMAGE_DBPATH=$HOME/database/$ERLANG_NODE
+    [ ! -d "$ECSIMAGE_DBPATH" ] && ln -s $HOME/database $HOME/database/$ERLANG_NODE
     [ -n "$ERL_DIST_PORT" ] && return
     "$EPMD" -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
         pgrep -f "$ERLANG_NODE" >/dev/null && {
@@ -375,6 +377,54 @@ wait_status()
         fi
     done
     [ $timeout -gt 0 ]
+}
+
+exec_other_command()
+{
+    if [ -z "$CTL_OVER_HTTP" ] || [ ! -S "$CTL_OVER_HTTP" ] \
+        || [ ! -x "$(command -v curl)" ] || [ -z "$1" ] || [ "$1" = "help" ] \
+        || [ "$1" = "mnesia_info_ctl" ]|| [ "$1" = "print_sql_schema" ] ; then
+        run_erl "$(uid ctl)" -hidden -noinput \
+                 -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
+                 -s ejabberd_ctl \
+                 -extra "$ERLANG_NODE" $NO_TIMEOUT "$@"
+        result=$?
+        case $result in
+            3) help;;
+            *) :;;
+        esac
+        exit $result
+    else
+        exec_ctl_over_http_socket "$@"
+    fi
+}
+
+exec_ctl_over_http_socket()
+{
+    COMMAND=${1}
+    CARGS=""
+    while [ $# -gt 0 ]; do
+        [ -z "$CARGS" ] && CARGS="[" || CARGS="${CARGS}, "
+        CARGS="${CARGS}\"$1\""
+        shift
+    done
+    CARGS="${CARGS}]"
+    TEMPHEADERS=temp-headers.log
+    curl \
+        --unix-socket ${CTL_OVER_HTTP} \
+        --header "Content-Type: application/json" \
+        --header "Accept: application/json" \
+        --data "${CARGS}" \
+        --dump-header ${TEMPHEADERS} \
+        --no-progress-meter \
+        "http://localhost/ctl/${COMMAND}"
+    result=$(sed -n 's/.*status-code: \([0-9]*\).*/\1/p' < $TEMPHEADERS)
+    rm ${TEMPHEADERS}
+    case $result in
+        2|3) exec_other_command help ${COMMAND};;
+        *) :;;
+    esac
+    exit $result
 }
 
 # ensure we can change current directory to SPOOL_DIR
@@ -452,15 +502,6 @@ case $1 in
         ;;
     *)
         set_dist_client
-        run_erl "$(uid ctl)" -hidden -noinput \
-                 -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
-                 -s ejabberd_ctl \
-                 -extra "$ERLANG_NODE" $NO_TIMEOUT "$@"
-        result=$?
-        case $result in
-            2|3) help;;
-            *) :;;
-        esac
-        exit $result
+        exec_other_command "$@"
         ;;
 esac
