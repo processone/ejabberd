@@ -798,7 +798,7 @@ rebar_dep({App, Version, Git}) when Version /= ".*" ->
     Help = os:cmd("mix hex.package"),
     case string:find(Help, "mix hex.package fetch") /= nomatch of
         true ->
-            {App, "mix hex.package fetch "++AppS++" "++Version++" --unpack"};
+            {App, "mix hex.package fetch "++AppS++" "++Version++" --unpack --output "++AppS};
         false ->
             io:format("I'll download ~p using git because I can't use Mix "
                       "to fetch from hex.pm:~n~s", [AppS, Help]),
