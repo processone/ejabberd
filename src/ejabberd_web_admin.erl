@@ -2359,11 +2359,21 @@ format_result([], {_Name, {list, _ElementsDef}}) ->
     "";
 format_result([FirstElement | Elements], {_Name, {list, ElementsDef}}) ->
     Separator = ",",
-    [format_result(FirstElement, ElementsDef) | lists:map(fun(Element) ->
-                                                             [Separator | format_result(Element,
-                                                                                        ElementsDef)]
-                                                          end,
-                                                          Elements)];
+    Head = format_result(FirstElement, ElementsDef),
+    Tail =
+        lists:map(fun(Element) -> [Separator | format_result(Element, ElementsDef)] end,
+                  Elements),
+    [Head | Tail];
+format_result([], {_Name, {tuple, _ElementsDef}}) ->
+    "";
+format_result(Value, {_Name, {tuple, [FirstDef | ElementsDef]}}) ->
+    [FirstElement | Elements] = tuple_to_list(Value),
+    Separator = ":",
+    Head = format_result(FirstElement, FirstDef),
+    Tail =
+        lists:map(fun(Element) -> [Separator | format_result(Element, ElementsDef)] end,
+                  Elements),
+    [Head | Tail];
 format_result(Value, _ResultFormat) when is_atom(Value) ->
     misc:atom_to_binary(Value);
 format_result(Value, _ResultFormat) when is_list(Value) ->
