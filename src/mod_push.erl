@@ -96,7 +96,7 @@ start(Host, Opts) ->
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
+    ejabberd_commands:register_commands(Host, ?MODULE, get_commands_spec()),
     {ok, [{iq_handler, ejabberd_sm,  ?NS_PUSH_0, process_iq},
           {hook, disco_sm_features, disco_sm_features, 50},
           {hook, c2s_session_pending, c2s_session_pending, 50},
@@ -111,12 +111,7 @@ start(Host, Opts) ->
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_commands:unregister_commands(get_commands_spec());
-        true ->
-            ok
-    end.
+    ejabberd_commands:unregister_commands(Host, ?MODULE, get_commands_spec()).
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(Host, NewOpts, OldOpts) ->

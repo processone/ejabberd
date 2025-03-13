@@ -47,11 +47,11 @@
 %%% gen_mod
 %%%
 
-start(_Host, _Opts) ->
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()).
+start(Host, _Opts) ->
+    ejabberd_commands:register_commands(Host, ?MODULE, get_commands_spec()).
 
-stop(_Host) ->
-    ejabberd_commands:unregister_commands(get_commands_spec()).
+stop(Host) ->
+    ejabberd_commands:unregister_commands(Host, ?MODULE, get_commands_spec()).
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

@@ -338,7 +338,7 @@ init([ServerHost|_]) ->
 	false ->
 	    ok
     end,
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
+    ejabberd_commands:register_commands(ServerHost, ?MODULE, get_commands_spec()),
     NodeTree = config(ServerHost, nodetree),
     Plugins = config(ServerHost, plugins),
     PepMapping = config(ServerHost, pep_mapping),
@@ -809,12 +809,7 @@ terminate(_Reason,
 	      terminate_plugins(Host, ServerHost, Plugins, TreePlugin),
 	      ejabberd_router:unregister_route(Host)
       end, Hosts),
-    case gen_mod:is_loaded_elsewhere(ServerHost, ?MODULE) of
-	false ->
-	    ejabberd_commands:unregister_commands(get_commands_spec());
-	true ->
-	    ok
-    end.
+    ejabberd_commands:unregister_commands(ServerHost, ?MODULE, get_commands_spec()).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}

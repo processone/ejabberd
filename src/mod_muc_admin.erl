@@ -68,8 +68,8 @@
 %% gen_mod
 %%----------------------------
 
-start(_Host, _Opts) ->
-    ejabberd_commands:register_commands(?MODULE, get_commands_spec()),
+start(Host, _Opts) ->
+    ejabberd_commands:register_commands(Host, ?MODULE, get_commands_spec()),
     {ok, [{hook, webadmin_menu_main, web_menu_main, 50, global},
 	  {hook, webadmin_page_main, web_page_main, 50, global},
 	  {hook, webadmin_menu_host, web_menu_host, 50},
@@ -79,12 +79,7 @@ start(_Host, _Opts) ->
          ]}.
 
 stop(Host) ->
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_commands:unregister_commands(get_commands_spec());
-        true ->
-            ok
-    end.
+    ejabberd_commands:unregister_commands(Host, ?MODULE, get_commands_spec()).
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
@@ -194,14 +189,20 @@ get_commands_spec() ->
      #ejabberd_commands{name = create_room_with_opts, tags = [muc_room, muc_sub],
 		       desc = "Create a MUC room name@service in host with given options",
 		       longdesc =
-                        "The syntax of `affiliations` is: `Type:JID,Type:JID`. "
-                        "The syntax of `subscribers` is: `JID:Nick:Node:Node2:Node3,JID:Nick:Node`.",
+                        "Options `affiliations` and `subscribers` are lists of tuples. "
+                        "The tuples in the list are separated with `;` and "
+                        "the elements in each tuple are separated with `=` "
+                        "(until ejabberd 24.12 the separators were `,` and `:` respectively). "
+                        "Each subscriber can have one or more nodes. "
+                        "In summary, `affiliations` is like `Type1=JID1;Type2=JID2` "
+                        "and `subscribers` is like `JID1=Nick1=Node1A=Node1B=Node1C;JID2=Nick2=Node2`.",
+                       note = "modified in 25.xx",
 		       module = ?MODULE, function = create_room_with_opts,
 		       args_desc = ["Room name", "MUC service", "Server host", "List of options"],
 		       args_example = ["room1", "conference.example.com", "localhost",
 				       [{"members_only","true"},
-                                        {"affiliations", "owner:bob@example.com,member:peter@example.com"},
-                                        {"subscribers", "bob@example.com:Bob:messages:subject,anne@example.com:Anne:messages"}]],
+                                        {"affiliations", "owner=user1@localhost;member=user2@localhost"},
+                                        {"subscribers", "user3@localhost=User3=messages=subject;user4@localhost=User4=messages"}]],
 		       args = [{room, binary}, {service, binary},
 			       {host, binary},
 			       {options, {list,
@@ -1731,9 +1732,9 @@ format_room_option(OptionString, ValueString) ->
 		lang -> ValueString;
 		pubsub -> ValueString;
 		affiliations ->
-		    [parse_affiliation_string(Opt) || Opt <- str:tokens(ValueString, <<",">>)];
+		    [parse_affiliation_string(Opt) || Opt <- str:tokens(ValueString, <<";,">>)];
 		subscribers ->
-		    [parse_subscription_string(Opt) || Opt <- str:tokens(ValueString, <<",">>)];
+		    [parse_subscription_string(Opt) || Opt <- str:tokens(ValueString, <<";,">>)];
                 allow_private_messages_from_visitors when
                       (ValueString == <<"anyone">>) or
                       (ValueString == <<"moderators">>) or
@@ -1765,10 +1766,16 @@ throw_error(O, V) ->
 
 parse_affiliation_string(String) ->
     {Type, JidS} = case String of
+                       %% Old syntax
 		       <<"owner:", Jid/binary>> -> {owner, Jid};
 		       <<"admin:", Jid/binary>> -> {admin, Jid};
 		       <<"member:", Jid/binary>> -> {member, Jid};
 		       <<"outcast:", Jid/binary>> -> {outcast, Jid};
+                       %% New syntax
+		       <<"owner=", Jid/binary>> -> {owner, Jid};
+		       <<"admin=", Jid/binary>> -> {admin, Jid};
+		       <<"member=", Jid/binary>> -> {member, Jid};
+		       <<"outcast=", Jid/binary>> -> {outcast, Jid};
 		       _ -> throw({error, "Invalid 'affiliation'"})
 		   end,
     try jid:decode(JidS) of
@@ -1779,7 +1786,7 @@ parse_affiliation_string(String) ->
     end.
 
 parse_subscription_string(String) ->
-    case str:tokens(String, <<":">>) of
+    case str:tokens(String, <<"=:">>) of
 	[_] ->
 	    throw({error, "Invalid 'subscribers' - missing nick"});
 	[_, _] ->
