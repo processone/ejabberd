@@ -677,13 +677,21 @@ validator(M, T) ->
 		    true ->
 			 []
 		 end,
+    Keywords = ejabberd_config:get_defined_keywords(global) ++ ejabberd_config:get_predefined_keywords(global),
     Validator = maps:from_list(
 		  lists:map(
 		    fun(Opt) ->
-			    try {Opt, M:listen_opt_type(Opt)}
+			    Type = try M:listen_opt_type(Opt)
 			    catch _:_ when M /= ?MODULE ->
-				    {Opt, listen_opt_type(Opt)}
-			    end
+				    listen_opt_type(Opt)
+			    end,
+			    TypeProcessed =
+			        econf:and_then(
+			             fun(B) ->
+			                 ejabberd_config:replace_keywords(global, B, Keywords)
+			             end,
+			             Type),
+			    {Opt, TypeProcessed}
 		    end, proplists:get_keys(Options))),
     econf:options(
       Validator,
