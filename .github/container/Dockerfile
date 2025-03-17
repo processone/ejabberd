@@ -1,6 +1,6 @@
 #' Define default build variables
-ARG OTP_VSN='27.3.3'
-ARG ELIXIR_VSN='1.18.3'
+ARG OTP_VSN='27.3.4'
+ARG ELIXIR_VSN='1.18.4'
 ARG UID='9000'
 ARG USER='ejabberd'
 ARG HOME="opt/$USER"
