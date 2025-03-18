@@ -84,6 +84,7 @@ init_config(Config) ->
 		       {priv_dir, PrivDir}]),
     MacrosPath = filename:join([CWD, "macros.yml"]),
     ok = file:write_file(MacrosPath, MacrosContent),
+    copy_configtest_yml(DataDir, CWD),
     copy_backend_configs(DataDir, CWD, Backends),
     setup_ejabberd_lib_path(Config),
     case application:load(sasl) of
@@ -137,11 +138,32 @@ init_config(Config) ->
      {backends, Backends}
      |Config].
 
+copy_configtest_yml(DataDir, CWD) ->
+    Files = filelib:wildcard(filename:join([DataDir, "configtest.yml"])),
+    lists:foreach(
+	fun(Src) ->
+	    ct:pal("copying ~p", [Src]),
+	    File = filename:basename(Src),
+	    case string:tokens(File, ".") of
+		["configtest", "yml"] ->
+		    Dst = filename:join([CWD, File]),
+		    case true of
+			true ->
+			    {ok, _} = file:copy(Src, Dst);
+			false ->
+			    ok
+		    end;
+		_ ->
+		    ok
+	    end
+	end, Files).
+
+
 copy_backend_configs(DataDir, CWD, Backends) ->
     Files = filelib:wildcard(filename:join([DataDir, "ejabberd.*.yml"])),
     lists:foreach(
 	fun(Src) ->
-	    io:format("copying ~p", [Src]),
+	    ct:pal("copying ~p", [Src]),
 	    File = filename:basename(Src),
 	    case string:tokens(File, ".") of
 		["ejabberd", SBackend, "yml"] ->

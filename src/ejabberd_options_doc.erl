@@ -534,18 +534,26 @@ doc() ->
             ?T("A list of Erlang nodes to connect on ejabberd startup. "
                "This option is mostly intended for ejabberd customization "
                "and sophisticated setups. The default value is an empty list.")}},
-     {define_macro,
-      #{value => "{MacroName: MacroValue}",
+     {define_keyword,
+      #{value => "{NAME: Value}",
         desc =>
-            ?T("Defines a "
-               "_`../configuration/file-format.md#macros-in-configuration-file|macro`_. "
-               "The value can be any valid arbitrary "
-               "YAML value. For convenience, it's recommended to define "
-               "a 'MacroName' in capital letters. Duplicated macros are not allowed. "
-               "Macros are processed after additional configuration files have "
-               "been included, so it is possible to use macros that are defined "
-               "in configuration files included before the usage. "
-               "It is possible to use a 'MacroValue' in the definition of another macro."),
+            ?T("Allows to define configuration "
+                "_`../configuration/file-format.md#keywords|keywords`_. "),
+        example =>
+            ["define_keyword:",
+             "  SQL_USERNAME: \"eja.global\"",
+             "",
+             "host_config:",
+             "  localhost:",
+             "    define_keyword:",
+             "      SQL_USERNAME: \"eja.localhost\"",
+             "",
+             "sql_username: \"prefix.@SQL_USERNAME@\""]}},
+     {define_macro,
+      #{value => "{NAME: Value}",
+        desc =>
+            ?T("Allows to define configuration "
+                "_`../configuration/file-format.md#macros|macros`_. "),
         example =>
             ["define_macro:",
              "  DEBUG: debug",

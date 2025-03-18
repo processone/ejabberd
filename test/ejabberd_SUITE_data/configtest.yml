@@ -1,0 +1,119 @@
+
+define_macro:
+  CONFIGTEST_CONFIG:
+    modules:
+      mod_mam: {}
+      mod_muc: {}
+
+## Interactions
+
+define_macro:
+  MOK: macro
+
+define_keyword:
+  MOK: keyword
+
+macro_over_keyword: MOK
+
+##
+
+define_keyword:
+  KIM_KEYWORD: "-keyword-"
+
+define_macro:
+  KIM_MACRO: "+macro+/@KIM_KEYWORD@"
+
+keyword_inside_macro: KIM_MACRO
+
+##
+
+define_macro:
+  MAK_MACRO: "+macro+"
+
+define_keyword:
+  MAK_KEYWORD: "-keyword-"
+
+macro_and_keyword: "@MAK_MACRO@&@MAK_KEYWORD@"
+
+##
+
+define_macro:
+  MD: "macro"
+
+macro_double: "@MD@--@MD@"
+
+##
+
+define_keyword:
+  KD: "keyword"
+
+keyword_double: "@KD@--@KD@"
+
+## Macro Toplevel
+
+define_macro:
+  MTGA: mtga
+  MTGS: "Mtgs"
+  MTLA: mtla
+  MTLS: "Mtls"
+
+mtga: MTGA
+mtgs: MTGS
+mtgsi: "@MTGS@i"
+
+host_config:
+  configtest.localhost:
+    mtla: MTLA
+    mtls: MTLS
+    mtlsi: "@MTLS@i"
+
+## Keyword Toplevel
+
+define_keyword:
+  KTGA: ktga
+  KTLA: ktla
+  KTGS: "Ktgs"
+  KTLS: "Ktls"
+
+ktga: KTGA
+ktgs: KTGS
+ktgsi: "@KTGS@i"
+
+host_config:
+  configtest.localhost:
+    ktla: KTLA
+    ktls: KTLS
+    ktlsi: "@KTLS@i"
+
+## Macro Module
+## Keyword Module
+## Predefined Module
+
+define_macro:
+  MMA: mma
+  MMS: "Mms"
+
+define_keyword:
+  KMA: kma
+  KMS: "Kms"
+
+append_host_config:
+  configtest.localhost:
+    modules:
+      mod_configtest:
+        mma: MMA
+        mms: MMS
+        mmsi: "@MMS@i"
+        kma: KMA
+        kms: KMS
+        kmsi: "@KMS@i"
+        predefined_keywords: "mp - host: @HOST@, semver: @SEMVER@, version: @VERSION@"
+
+## Predefined
+
+tgp: "tgp - semver: @SEMVER@, version: @VERSION@"
+
+host_config:
+  configtest.localhost:
+    tlp: "tlp - semver: @SEMVER@, version: @VERSION@"
+

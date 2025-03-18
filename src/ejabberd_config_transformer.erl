@@ -128,6 +128,11 @@ transform(Host, s2s_use_starttls, required_trusted, Acc) ->
     Hosts = maps:get(remove_s2s_dialback, Acc, []),
     Acc1 = maps:put(remove_s2s_dialback, [Host|Hosts], Acc),
     {{true, {s2s_use_starttls, required}}, Acc1};
+transform(Host, define_macro, Macro, Acc) when is_binary(Host) ->
+    ?WARNING_MSG("The option 'define_macro' is not supported inside 'host_config'. "
+		 "Consequently those macro definitions for host '~ts' are unused: ~ts",
+		 [Host, io_lib:format("~p", [Macro])]),
+    {true, Acc};
 transform(_Host, _Opt, _Val, Acc) ->
     {true, Acc}.
 
