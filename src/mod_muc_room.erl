@@ -4588,8 +4588,12 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 	      _ ->
 		  Fs4
 	  end,
+    Fs6 = ejabberd_hooks:run_fold(muc_disco_info_extras,
+				   StateData#state.server_host,
+				   Fs5,
+				   [StateData]),
     #xdata{type = result,
-	   fields = muc_roominfo:encode(Fs5, Lang)}.
+	   fields = muc_roominfo:encode(Fs6, Lang)}.
 
 -spec process_iq_disco_items(jid(), iq(), state()) ->
 				    {error, stanza_error()} | {result, disco_items()}.
