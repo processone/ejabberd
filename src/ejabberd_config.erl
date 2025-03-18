@@ -474,12 +474,13 @@ get_defined_keywords(Tab, Host) ->
         end,
     %% Trying to get defined keywords in host_config when starting ejabberd,
     %% the options are not yet stored in ets
-    KeysTemp = case not is_atom(Tab) andalso KeysHost == [] andalso KeysGlobal == [] of
-                   true ->
-		       get_defined_keywords_yaml_config(ets:lookup_element(Tab, {yaml_config, global}, 2));
-                   false ->
-                       []
-               end,
+    KeysTemp =
+        case not is_atom(Tab) andalso KeysHost == [] andalso KeysGlobal == [] of
+            true ->
+                get_defined_keywords_yaml_config(ets:lookup_element(Tab, {yaml_config, global}, 2));
+            false ->
+                []
+        end,
     lists:reverse(KeysTemp ++ KeysGlobal ++ KeysHost).
 
 get_defined_keywords_yaml_config(Y) ->
@@ -487,17 +488,20 @@ get_defined_keywords_yaml_config(Y) ->
      || {KwAtom, KwValue} <- proplists:get_value(define_keyword, Y, [])].
 
 get_predefined_keywords(Host) ->
-    HostList = case Host of
-        global -> [];
-        _ -> [{<<"HOST">>, Host}]
-    end,
+    HostList =
+        case Host of
+            global ->
+                [];
+            _ ->
+                [{<<"HOST">>, Host}]
+        end,
     {ok, [[Home]]} = init:get_argument(home),
-    HostList ++
-    [{<<"HOME">>, list_to_binary(Home)},
-     {<<"SEMVER">>, ejabberd_option:version()},
-     {<<"VERSION">>,
-      misc:semver_to_xxyy(
-          ejabberd_option:version())}].
+    HostList
+    ++ [{<<"HOME">>, list_to_binary(Home)},
+        {<<"SEMVER">>, ejabberd_option:version()},
+        {<<"VERSION">>,
+         misc:semver_to_xxyy(
+             ejabberd_option:version())}].
 %% @format-end
 
 %%%===================================================================
