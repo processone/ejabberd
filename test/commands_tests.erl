@@ -34,6 +34,13 @@
 %%%==================================
 %%%% setup
 
+-ifdef(OTP_BELOW_24).
+
+single_cases() ->
+    {commands_single, [sequence], []}.
+
+-else.
+
 single_cases() ->
     {commands_single,
      [sequence],
@@ -50,6 +57,8 @@ single_cases() ->
       single_test(http_list_tuple),
       single_test(http_list_tuple_map),
       single_test(clean)]}.
+
+-endif.
 
 setup(_Config) ->
     M = <<"mod_example">>,
