@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_muc_log.erl
-%%% Author  : Badlop@process-one.net
+%%% Author  : Badlop <badlop@process-one.net>
 %%% Purpose : MUC room logging
 %%% Created : 12 Mar 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%

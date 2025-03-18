@@ -1,8 +1,8 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_muc_admin.erl
-%%% Author  : Badlop <badlop@ono.com>
+%%% Author  : Badlop <badlop@process-one.net>
 %%% Purpose : Tools for additional MUC administration
-%%% Created : 8 Sep 2007 by Badlop <badlop@ono.com>
+%%% Created : 8 Sep 2007 by Badlop <badlop@process-one.net>
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2002-2025   ProcessOne
@@ -24,7 +24,7 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_muc_admin).
--author('badlop@ono.com').
+-author('badlop@process-one.net').
 
 -behaviour(gen_mod).
 
