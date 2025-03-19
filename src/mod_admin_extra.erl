@@ -235,7 +235,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = check_password_hash, tags = [accounts],
 			desc = "Check if the password hash is correct",
 			longdesc = "Allows hash methods from the Erlang/OTP "
-                        "[crypto](https://www.erlang.org/doc/man/crypto) application.",
+                        "[crypto](https://www.erlang.org/doc/apps/crypto/crypto.html) application.",
 			module = ?MODULE, function = check_password_hash,
 			args = [{user, binary}, {host, binary}, {passwordhash, binary},
 				{hashmethod, binary}],

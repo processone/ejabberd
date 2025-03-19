@@ -116,7 +116,7 @@ License
 [fluux]: https://fluux.io/
 [homebrew]: https://docs.ejabberd.im/admin/install/homebrew/
 [hubecs]: https://hub.docker.com/r/ejabberd/ecs/
-[im]: https://ejabberd.im/
+[im]: https://www.ejabberd.im/
 [issues]: https://github.com/processone/ejabberd/issues
 [localization]: https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 [mqtt]: https://mqtt.org/

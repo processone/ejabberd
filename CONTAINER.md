@@ -10,7 +10,7 @@ ejabberd Container Images
 robust, scalable and extensible realtime platform built using [Erlang/OTP][erlang],
 that includes [XMPP][xmpp] Server, [MQTT][mqtt] Broker and [SIP][sip] Service.
 
-[home]: https://ejabberd.im/
+[home]: https://www.ejabberd.im/
 [erlang]: https://www.erlang.org/
 [xmpp]: https://xmpp.org/
 [mqtt]: https://mqtt.org/
@@ -255,7 +255,7 @@ podman unshare chown 9000:9000 database
 ```
 
 It's possible to install additional ejabberd modules using volumes, check
-[this Docs tutorial](http://docs.ejabberd.im/developer/extending-ejabberd/modules/#your-module-in-ejabberd-modules-with-ejabberd-container).
+[this Docs tutorial](https://docs.ejabberd.im/developer/extending-ejabberd/modules/#your-module-in-ejabberd-modules-with-ejabberd-container).
 
 
 ### Commands on start
