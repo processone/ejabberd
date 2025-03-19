@@ -57,10 +57,9 @@ CREATE INDEX i_rosteru_jid ON rosterusers USING btree (jid);
 CREATE TABLE rostergroups (
     username text NOT NULL,
     jid text NOT NULL,
-    grp text NOT NULL
+    grp text NOT NULL,
+    PRIMARY KEY (username, jid, grp)
 );
-
-CREATE INDEX pk_rosterg_user_jid ON rostergroups USING btree (username, jid);
 
 CREATE TABLE sr_group (
     name text NOT NULL,
@@ -82,7 +81,7 @@ CREATE INDEX i_sr_user_grp ON sr_user USING btree (grp);
 CREATE TABLE spool (
     username text NOT NULL,
     xml text NOT NULL,
-    seq BIGSERIAL,
+    seq BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -95,7 +94,7 @@ CREATE TABLE archive (
     bare_peer text NOT NULL,
     xml text NOT NULL,
     txt text,
-    id BIGSERIAL,
+    id BIGSERIAL PRIMARY KEY,
     kind text,
     nick text,
     origin_id text,
@@ -181,6 +180,7 @@ CREATE TABLE privacy_list (
 CREATE UNIQUE INDEX i_privacy_list_username_name ON privacy_list USING btree (username, name);
 
 CREATE TABLE privacy_list_data (
+    seq BIGSERIAL PRIMARY KEY,
     id bigint REFERENCES privacy_list(id) ON DELETE CASCADE,
     t character(1) NOT NULL,
     value text NOT NULL,
@@ -235,15 +235,14 @@ CREATE UNIQUE INDEX i_pubsub_node_tuple ON pubsub_node USING btree (host, node);
 CREATE TABLE pubsub_node_option (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
   name text NOT NULL,
-  val text NOT NULL
+  val text NOT NULL,
+  PRIMARY KEY (nodeid, name)
 );
-CREATE INDEX i_pubsub_node_option_nodeid ON pubsub_node_option USING btree (nodeid);
 
 CREATE TABLE pubsub_node_owner (
-  nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
+  nodeid bigint PRIMARY KEY REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
   owner text NOT NULL
 );
-CREATE INDEX i_pubsub_node_owner_nodeid ON pubsub_node_owner USING btree (nodeid);
 
 CREATE TABLE pubsub_state (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
@@ -336,10 +335,9 @@ CREATE TABLE caps_features (
     node text NOT NULL,
     subnode text NOT NULL,
     feature text,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    PRIMARY KEY (node, subnode, feature)
 );
-
-CREATE INDEX i_caps_features_node_subnode ON caps_features USING btree (node, subnode);
 
 CREATE TABLE sm (
     usec bigint NOT NULL,
