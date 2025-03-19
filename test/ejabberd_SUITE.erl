@@ -60,7 +60,11 @@ init_per_suite(Config) ->
     NewConfig.
 
 start_ejabberd(_) ->
-    application:set_env(ejabberd, external_beams, "../../lib/ejabberd/test/"),
+    TestBeams = case filelib:is_dir("../../test/") of
+       true -> "../../test/";
+       _ -> "../../lib/ejabberd/test/"
+    end,
+    application:set_env(ejabberd, external_beams, TestBeams),
     {ok, _} = application:ensure_all_started(ejabberd, transient).
 
 end_per_suite(_Config) ->
