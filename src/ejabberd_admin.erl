@@ -598,8 +598,9 @@ get_commands_spec() ->
 			args = [{node, atom}, {table, binary}, {page, integer}],
 			result = {res, any}},
 
-     #ejabberd_commands{name = mnesia_list_tables, tags = [internal, mnesia],
+     #ejabberd_commands{name = mnesia_list_tables, tags = [mnesia],
                         desc = "List of Mnesia tables",
+			note = "added in 25.xx",
                         module = ?MODULE, function = mnesia_list_tables,
 			result = {tables, {list, {table, {tuple, [{name, atom},
                                                                 {storage_type, binary},
@@ -615,8 +616,10 @@ get_commands_spec() ->
                                                                 {value, binary}
                                                                ]}}}}},
 
-     #ejabberd_commands{name = mnesia_table_change_storage, tags = [internal, mnesia],
-                        desc = "Change storage type of a Mnesia table to: ram_copies, disc_copies, or disc_only_copies.",
+     #ejabberd_commands{name = mnesia_table_change_storage, tags = [mnesia],
+                        desc = "Change storage type of a Mnesia table",
+			note = "added in 25.xx",
+			longdesc = "Storage type can be: `ram_copies`, `disc_copies`, `disc_only_copies`, `remote_copy`.",
                         module = ?MODULE, function = mnesia_table_change_storage,
 			args = [{table, binary}, {storage_type, binary}],
 			result = {res, restuple}},
@@ -1281,13 +1284,12 @@ is_my_host(Host) ->
 
 %% @format-begin
 
-%% mnesia:del_table_copy(Table, Node);
-%% mnesia:change_table_copy_type(Table, Node, Type);
-
 mnesia_table_change_storage(STable, SType) ->
     Table = binary_to_existing_atom(STable, latin1),
     Type =
         case SType of
+            <<"remote_copy">> ->
+                remote_copy;
             <<"ram_copies">> ->
                 ram_copies;
             <<"disc_copies">> ->
@@ -1297,7 +1299,24 @@ mnesia_table_change_storage(STable, SType) ->
             _ ->
                 false
         end,
-    mnesia:add_table_copy(Table, node(), Type).
+    Node = node(),
+    Result =
+        case Type of
+            false ->
+                "Nothing to do";
+            remote_copy ->
+                mnesia:del_table_copy(Table, Node),
+                "Deleted table copy";
+            _ ->
+                case mnesia:add_table_copy(Table, Node, Type) of
+                    {aborted, _} ->
+                        mnesia:change_table_copy_type(Table, Node, Type),
+                        "Changed table copy type";
+                    _ ->
+                        "Added table copy"
+                end
+        end,
+    {ok, Result}.
 
 mnesia_table_clear(STable) ->
     Table = binary_to_existing_atom(STable, latin1),

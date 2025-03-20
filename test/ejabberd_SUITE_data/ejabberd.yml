@@ -111,6 +111,7 @@ max_fsm_queue: 1000
 queue_type: file
 modules:
   mod_adhoc: []
+  mod_adhoc_api: []
   mod_admin_extra: []
   mod_admin_update_sql: []
   mod_announce: []

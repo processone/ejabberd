@@ -30,7 +30,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process/2, depends/2,
-         format_arg/2,
+         format_arg/2, handle/4,
 	 mod_opt_type/1, mod_options/1, mod_doc/0]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -353,6 +353,9 @@ format_arg(Elements,
      || Element <- Elements];
 
 %% Covered by command_test_list and command_test_list_tuple
+format_arg(Element, {list, Def})
+    when not is_list(Element) ->
+    format_arg([Element], {list, Def});
 format_arg(Elements,
 	   {list, {_ElementDefName, ElementDefFormat}})
     when is_list(Elements) ->
@@ -395,6 +398,7 @@ format_arg(Elements, {list, ElementsDef})
      || Element <- Elements];
 
 format_arg(Arg, integer) when is_integer(Arg) -> Arg;
+format_arg(Arg, integer) when is_binary(Arg) -> binary_to_integer(Arg);
 format_arg(Arg, binary) when is_list(Arg) -> process_unicode_codepoints(Arg);
 format_arg(Arg, binary) when is_binary(Arg) -> Arg;
 format_arg(Arg, string) when is_list(Arg) -> Arg;
@@ -460,6 +464,9 @@ format_result([String | _] = StringList, {Name, string}) when is_list(String) ->
 format_result(String, {Name, string}) ->
     {misc:atom_to_binary(Name), iolist_to_binary(String)};
 
+format_result(Binary, {Name, binary}) ->
+    {misc:atom_to_binary(Name), Binary};
+
 format_result(Code, {Name, rescode}) ->
     {misc:atom_to_binary(Name), Code == true orelse Code == ok};
 
@@ -473,14 +480,17 @@ format_result(Code, {Name, restuple}) ->
      {[{<<"res">>, Code == true orelse Code == ok},
        {<<"text">>, <<"">>}]}};
 
-format_result(Els, {Name, {list, {_, {tuple, [{_, atom}, _]}} = Fmt}}) ->
+format_result(Els1, {Name, {list, {_, {tuple, [{_, atom}, _]}} = Fmt}}) ->
+    Els = lists:keysort(1, Els1),
     {misc:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
 
-format_result(Els, {Name, {list, {_, {tuple, [{name, string}, {value, _}]}} = Fmt}}) ->
+format_result(Els1, {Name, {list, {_, {tuple, [{name, string}, {value, _}]}} = Fmt}}) ->
+    Els = lists:keysort(1, Els1),
     {misc:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
 
 %% Covered by command_test_list and command_test_list_tuple
-format_result(Els, {Name, {list, Def}}) ->
+format_result(Els1, {Name, {list, Def}}) ->
+    Els = lists:sort(Els1),
     {misc:atom_to_binary(Name), [element(2, format_result(El, Def)) || El <- Els]};
 
 format_result(Tuple, {_Name, {tuple, [{_, atom}, ValFmt]}}) ->
