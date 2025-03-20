@@ -148,7 +148,7 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
                                 <<"room_id">> := RoomID,
                                 <<"sender">> := Sender,
                                 <<"state_key">> := UserID} = Event,
-               <<"room_version">> := RoomVer},
+               <<"room_version">> := RoomVer} = JSON,
          Origin} ->
             case mod_matrix_gw_room:binary_to_room_version(RoomVer) of
                 #room_version{} = RoomVersion ->
@@ -167,7 +167,11 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
                                         #{<<"is_direct">> := true} ->
                                             mod_matrix_gw_room:join_direct(Host, Origin, RoomID, Sender, UserID);
                                         _ ->
-                                            mod_matrix_gw_room:send_muc_invite(Host, Origin, RoomID, Sender, UserID, Event)
+                                            IRS = case JSON of
+                                                      #{<<"invite_room_state">> := IRS1} -> IRS1;
+                                                      _ -> []
+                                                  end,
+                                            mod_matrix_gw_room:send_muc_invite(Host, Origin, RoomID, Sender, UserID, Event, IRS)
                                     end,
                                     ?DEBUG("res ~s~n", [misc:json_encode(ResJSON)]),
                                     {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], misc:json_encode(ResJSON)};

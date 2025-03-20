@@ -36,7 +36,7 @@
          create_new_room/3, room_add_event/3,
          binary_to_room_version/1,
          parse_user_id/1,
-         send_muc_invite/6,
+         send_muc_invite/7,
          escape/1, unescape/1,
          route/1]).
 
@@ -102,6 +102,7 @@
 -define(ROOM_3PI, <<"m.room.third_party_invite">>).
 -define(ROOM_MESSAGE, <<"m.room.message">>).
 -define(ROOM_HISTORY_VISIBILITY, <<"m.room.history_visibility">>).
+-define(ROOM_TOPIC, <<"m.room.topic">>).
 
 -define(MAX_DEPTH, 16#7FFFFFFFFFFFFFFF).
 -define(MAX_TXN_RETRIES, 5).
@@ -1206,6 +1207,16 @@ do_auth_and_store_external_events(EventList, Data) ->
 auth_and_store_external_events(Pid, EventList) ->
     gen_statem:call(Pid, {auth_and_store_external_events, EventList}).
 
+statemap_find(Key, StateMap, Data) ->
+    case maps:find(Key, StateMap) of
+        {ok, #event{}} = Res ->
+            Res;
+        {ok, EventID} when is_binary(EventID) ->
+            maps:find(EventID, Data#data.events);
+        error ->
+            error
+    end.
+
 check_event_auth(Event, Data) ->
     StateMap =
         maps:from_list(
@@ -1572,7 +1583,7 @@ get_event_power_level(Type, PL) ->
 get_user_power_level(User, StateMap, Data) ->
     RoomVersion = Data#data.room_version,
     PL =
-        case maps:find({?ROOM_POWER_LEVELS, <<"">>}, StateMap) of
+        case statemap_find({?ROOM_POWER_LEVELS, <<"">>}, StateMap, Data) of
             {ok, #event{json = #{<<"content">> := C}}} -> C;
             _ -> #{}
         end,
@@ -1580,12 +1591,12 @@ get_user_power_level(User, StateMap, Data) ->
         #{<<"users">> := #{User := Level}} -> get_int(Level);
         #{<<"users_default">> := Level} -> get_int(Level);
         _ ->
-            case {RoomVersion#room_version.implicit_room_creator, StateMap} of
+            case {RoomVersion#room_version.implicit_room_creator,
+                  statemap_find({?ROOM_CREATE, <<"">>}, StateMap, Data)} of
                 {false,
-                 #{{?ROOM_CREATE, <<"">>} :=
-                       #event{json = #{<<"content">> := #{<<"creator">> := User}}}}} ->
+                 {ok, #event{json = #{<<"content">> := #{<<"creator">> := User}}}}} ->
                     100;
-                {true, #{{?ROOM_CREATE, <<"">>} := #event{sender = User}}} ->
+                {true, {ok, #event{sender = User}}} ->
                     100;
                 _ ->
                     0
@@ -2744,8 +2755,9 @@ notify_event_xmpp(
                                             false
                                     end,
                                 UserJID = jid:make(LUser, LServer, LResource),
-                                Item = #muc_item{affiliation = member,
-                                                 role = participant},
+                                Item =
+                                    get_user_muc_item(
+                                      Sender, Event#event.state_map, Data),
                                 Status = case IsSelfPresence of
                                              true -> [110];
                                              false -> []
@@ -2760,12 +2772,24 @@ notify_event_xmpp(
                                 ejabberd_router:route(Pres),
                                 case IsSelfPresence of
                                     true ->
+                                        Topic =
+                                            case Event#event.state_map of
+                                                #{{?ROOM_TOPIC, <<"">>} := TEID} ->
+                                                    case maps:find(TEID, Data#data.events) of
+                                                        {ok, #event{json = #{<<"content">> := #{<<"topic">> := T}}}} when is_binary(T) ->
+                                                            T;
+                                                        _ ->
+                                                            <<"">>
+                                                    end;
+                                                _ ->
+                                                    <<"">>
+                                            end,
                                         Subject =
                                             #message{
                                                from = RoomJID,
                                                to = UserJID,
                                                type = groupchat,
-                                               subject = [#text{}]
+                                               subject = [#text{data = Topic}]
                                               },
                                         ejabberd_router:route(Subject);
                                     false -> ok
@@ -2795,7 +2819,7 @@ notify_event_xmpp(
                               when JoinTS =< OriginTS ->
                                 From = jid:replace_resource(RoomJID, RUser),
                                 UserJID = jid:make(LUser, LServer, LResource),
-                                Item = #muc_item{affiliation = member,
+                                Item = #muc_item{affiliation = none,
                                                  role = none},
                                 Pres = #presence{from = From,
                                                  to = UserJID,
@@ -2843,11 +2867,13 @@ send_initial_presences(JID, RoomJID, Event, Data) ->
       fun({?ROOM_MEMBER, _}, EID, ok) ->
               case maps:find(EID, Data#data.events) of
                   {ok, #event{
-                          sender = <<$@, SenderUser/binary>>,
+                          sender = <<$@, SenderUser/binary>> = Sender,
                           json = #{<<"content">> :=
                                        #{<<"membership">> := <<"join">>}}}} ->
                       From = jid:replace_resource(RoomJID, SenderUser),
-                      Item = #muc_item{affiliation = member, role = participant},
+                      Item =
+                          get_user_muc_item(
+                            Sender, Event#event.state_map, Data),
                       Pres = #presence{from = From,
                                        to = JID,
                                        type = available,
@@ -2861,6 +2887,23 @@ send_initial_presences(JID, RoomJID, Event, Data) ->
          (_, _, ok) ->
               ok
       end, ok, Event#event.state_map).
+
+get_user_muc_item(User, StateMap, Data) ->
+    SenderLevel = get_user_power_level(User, StateMap, Data),
+    BanLevel =
+        case statemap_find({?ROOM_POWER_LEVELS, <<"">>}, StateMap, Data) of
+            {ok, #event{json = #{<<"content">> := #{<<"ban">> := S}}}} ->
+                get_int(S);
+            _ -> 50
+        end,
+    if
+        SenderLevel >= BanLevel ->
+            #muc_item{affiliation = admin,
+                      role = moderator};
+        true ->
+            #muc_item{affiliation = member,
+                      role = participant}
+    end.
 
 
 send_new_txn(Events, Server, Data) ->
@@ -3198,12 +3241,36 @@ update_client(#data{kind = #multi{users = Users}} = Data) ->
     end.
 
 
-send_muc_invite(Host, Origin, RoomID, Sender, UserID, Event) ->
+send_muc_invite(Host, Origin, RoomID, Sender, UserID, Event, IRS) ->
     case {user_id_to_jid(Sender, Host), user_id_to_jid(UserID, Host)} of
         {#jid{} = SenderJID, #jid{lserver = Host} = UserJID} ->
             process_pdu(Host, Origin, Event),
             ServiceHost = mod_matrix_gw_opt:host(Host),
-            {ok, EscRoomID} = room_id_to_xmpp(RoomID),
+            Alias =
+                lists:foldl(
+                  fun(#{<<"type">> := <<"m.room.canonical_alias">>,
+                        <<"content">> := #{<<"alias">> := A}}, _)
+                        when is_binary(A) -> A;
+                     (_, Acc) -> Acc
+                  end, none, IRS),
+            {ok, EscRoomID} =
+                case Alias of
+                    <<$#, Parts/binary>> ->
+                        case binary:split(Parts, <<":">>) of
+                            [R, S] ->
+                                User = <<$#, R/binary, $%, S/binary>>,
+                                case jid:nodeprep(User) of
+                                    error ->
+                                        room_id_to_xmpp(RoomID);
+                                    _ ->
+                                        {ok, User}
+                                end;
+                            _ ->
+                                room_id_to_xmpp(RoomID)
+                        end;
+                    _ ->
+                        room_id_to_xmpp(RoomID)
+                end,
             RoomJID = jid:make(EscRoomID, ServiceHost),
             Invite = #muc_invite{to = undefined, from = SenderJID},
             XUser = #muc_user{invites = [Invite]},
