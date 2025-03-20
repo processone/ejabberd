@@ -538,7 +538,7 @@ doc() ->
       #{value => "{NAME: Value}",
         desc =>
             ?T("Allows to define configuration "
-                "_`../configuration/file-format.md#keywords|keywords`_. "),
+                "_`../configuration/file-format.md#macros-and-keywords|keywords`_. "),
         example =>
             ["define_keyword:",
              "  SQL_USERNAME: \"eja.global\"",
@@ -553,7 +553,7 @@ doc() ->
       #{value => "{NAME: Value}",
         desc =>
             ?T("Allows to define configuration "
-                "_`../configuration/file-format.md#macros|macros`_. "),
+                "_`../configuration/file-format.md#macros-and-keywords|macros`_. "),
         example =>
             ["define_macro:",
              "  DEBUG: debug",
