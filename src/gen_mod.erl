@@ -45,6 +45,7 @@
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("ejabberd_stacktrace.hrl").
+-include("ejabberd_commands.hrl").
 
 -record(ejabberd_module,
         {module_host = {undefined, <<"">>} :: {atom(), binary()},
@@ -63,6 +64,11 @@
         {hook, atom(), atom(), integer()} |
         {hook, atom(), atom(), integer(), binary() | global} |
         {hook, atom(), module(), atom(), integer()} |
+        {hook_subscribe, atom(), atom(), [any()]} |
+        {hook_subscribe, atom(), atom(), [any()], binary() | global} |
+        {hook_subscribe, atom(), module(), atom(), [any()]} |
+        {hook_subscribe, atom(), module(), atom(), [any()], binary() | global} |
+        {commands, [ejabberd_commands()]} |
         {iq_handler, component(), binary(), atom()} |
         {iq_handler, component(), binary(), module(), atom()}.
 -export_type([registration/0]).
@@ -346,6 +352,16 @@ add_registrations(Host, Module, Registrations) ->
               ejabberd_hooks:add(Hook, Host1, Module, Function, Seq);
          ({hook, Hook, Module1, Function, Seq}) when is_integer(Seq) ->
               ejabberd_hooks:add(Hook, Host, Module1, Function, Seq);
+         ({hook_subscribe, Hook, Function, InitArg}) ->
+              ejabberd_hooks:subscribe(Hook, Host, Module, Function, InitArg);
+         ({hook_subscribe, Hook, Function, InitArg, Host1}) when is_binary(Host1) or (Host1 == global) ->
+              ejabberd_hooks:subscribe(Hook, Host1, Module, Function, InitArg);
+         ({hook_subscribe, Hook, Module1, Function, InitArg}) ->
+              ejabberd_hooks:subscribe(Hook, Host, Module1, Function, InitArg);
+         ({hook_subscribe, Hook, Module1, Function, InitArg, Host1}) ->
+              ejabberd_hooks:subscribe(Hook, Host1, Module1, Function, InitArg);
+         ({commands, Commands}) ->
+              ejabberd_commands:register_commands(Host, Module, Commands);
          ({iq_handler, Component, NS, Function}) ->
               gen_iq_handler:add_iq_handler(
                 Component, Host, NS, Module, Function);
@@ -363,6 +379,16 @@ del_registrations(Host, Module, Registrations) ->
               ejabberd_hooks:delete(Hook, Host1, Module, Function, Seq);
          ({hook, Hook, Module1, Function, Seq}) when is_integer(Seq) ->
               ejabberd_hooks:delete(Hook, Host, Module1, Function, Seq);
+         ({hook_subscribe, Hook, Function, InitArg}) ->
+              ejabberd_hooks:unsubscribe(Hook, Host, Module, Function, InitArg);
+         ({hook_subscribe, Hook, Function, InitArg, Host1}) when is_binary(Host1) or (Host1 == global) ->
+              ejabberd_hooks:unsubscribe(Hook, Host1, Module, Function, InitArg);
+         ({hook_subscribe, Hook, Module1, Function, InitArg}) ->
+              ejabberd_hooks:unsubscribe(Hook, Host, Module1, Function, InitArg);
+         ({hook_subscribe, Hook, Module1, Function, InitArg, Host1}) ->
+              ejabberd_hooks:unsubscribe(Hook, Host1, Module1, Function, InitArg);
+         ({commands, Commands}) ->
+              ejabberd_commands:unregister_commands(Host, Module, Commands);
          ({iq_handler, Component, NS, _Function}) ->
               gen_iq_handler:remove_iq_handler(Component, Host, NS);
          ({iq_handler, Component, NS, _Module, _Function}) ->
