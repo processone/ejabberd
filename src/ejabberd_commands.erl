@@ -188,7 +188,7 @@ register_command_prepare(Command, Definer) ->
 unregister_commands(Commands) ->
     lists:foreach(
       fun(Command) ->
-	      mnesia:dirty_delete_object(Command)
+	      mnesia:dirty_delete(ejabberd_commands, Command#ejabberd_commands.name)
       end,
       Commands),
     ejabberd_access_permissions:invalidate().
