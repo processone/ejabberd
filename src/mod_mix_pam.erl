@@ -64,29 +64,22 @@ start(Host, Opts) ->
     case Mod:init(Host, Opts) of
 	ok ->
 	    init_cache(Mod, Host, Opts),
-	    ejabberd_hooks:add(bounce_sm_packet, Host, ?MODULE, bounce_sm_packet, 50),
-	    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, disco_sm_features, 50),
-	    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50),
-	    ejabberd_hooks:add(roster_get, Host, ?MODULE, get_mix_roster_items, 50),
-	    ejabberd_hooks:add(webadmin_user, Host, ?MODULE, webadmin_user, 50),
-	    ejabberd_hooks:add(webadmin_menu_hostuser, Host, ?MODULE, webadmin_menu_hostuser, 50),
-	    ejabberd_hooks:add(webadmin_page_hostuser, Host, ?MODULE, webadmin_page_hostuser, 50),
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0, ?MODULE, process_iq),
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_2, ?MODULE, process_iq);
+	    {ok,
+	     [{hook, bounce_sm_packet, bounce_sm_packet, 50},
+	      {hook, disco_sm_features, disco_sm_features, 50},
+	      {hook, remove_user, remove_user, 50},
+	      {hook, roster_get, get_mix_roster_items, 50},
+	      {hook, webadmin_user, webadmin_user, 50},
+	      {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
+	      {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50},
+	      {iq_handler, ejabberd_sm, ?NS_MIX_PAM_0, process_iq},
+	      {iq_handler, ejabberd_sm, ?NS_MIX_PAM_2, process_iq}]};
 	Err ->
 	    Err
     end.
 
-stop(Host) ->
-    ejabberd_hooks:delete(bounce_sm_packet, Host, ?MODULE, bounce_sm_packet, 50),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, disco_sm_features, 50),
-    ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(roster_get, Host, ?MODULE, get_mix_roster_items, 50),
-    ejabberd_hooks:delete(webadmin_user, Host, ?MODULE, webadmin_user, 50),
-    ejabberd_hooks:delete(webadmin_menu_hostuser, Host, ?MODULE, webadmin_menu_hostuser, 50),
-    ejabberd_hooks:delete(webadmin_page_hostuser, Host, ?MODULE, webadmin_page_hostuser, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_0),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_PAM_2).
+stop(_Host) ->
+    ok.
 
 reload(Host, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(NewOpts, ?MODULE),

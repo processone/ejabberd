@@ -47,13 +47,22 @@
 %%--------------------------------------------------------------------
 %% gen_mod callbacks.
 %%--------------------------------------------------------------------
--spec start(binary(), gen_mod:opts()) -> ok.
-start(Host, _Opts) ->
-    register_hooks(Host).
+-spec start(binary(), gen_mod:opts()) -> {ok, [gen_mod:registration()]}.
+start(_Host, _Opts) ->
+    {ok,
+     [{hook, c2s_session_pending, c2s_session_pending, 50},
+      {hook, c2s_session_resumed, c2s_session_resumed, 50},
+      {hook, c2s_copy_session, c2s_copy_session, 50},
+      {hook, c2s_handle_cast, c2s_handle_cast, 40},
+      {hook, c2s_handle_info, c2s_handle_info, 50},
+      {hook, c2s_handle_send, c2s_stanza, 50},
+      %% Wait for ejabberd_pkix before running our ejabberd_started/0, so that we
+      %% don't initiate s2s connections before certificates are loaded:
+      {hook, ejabberd_started, ejabberd_started, 90, global}]}.
 
 -spec stop(binary()) -> ok.
-stop(Host) ->
-    unregister_hooks(Host).
+stop(_Host) ->
+    ok.
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(_Host, _NewOpts, _OldOpts) ->
@@ -118,49 +127,6 @@ mod_doc() ->
                      "is generated shortly before the session would time "
                      "out as per the 'resume_timeout' option. "
                      "The default value is 'true'.")}}]}.
-
-%%--------------------------------------------------------------------
-%% Register/unregister hooks.
-%%--------------------------------------------------------------------
--spec register_hooks(binary()) -> ok.
-register_hooks(Host) ->
-    ejabberd_hooks:add(c2s_session_pending, Host, ?MODULE,
-		       c2s_session_pending, 50),
-    ejabberd_hooks:add(c2s_session_resumed, Host, ?MODULE,
-		       c2s_session_resumed, 50),
-    ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE,
-		       c2s_copy_session, 50),
-    ejabberd_hooks:add(c2s_handle_cast, Host, ?MODULE,
-		       c2s_handle_cast, 40),
-    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
-		       c2s_handle_info, 50),
-    ejabberd_hooks:add(c2s_handle_send, Host, ?MODULE,
-		       c2s_stanza, 50),
-    % Wait for ejabberd_pkix before running our ejabberd_started/0, so that we
-    % don't initiate s2s connections before certificates are loaded:
-    ejabberd_hooks:add(ejabberd_started, ?MODULE, ejabberd_started, 90).
-
--spec unregister_hooks(binary()) -> ok.
-unregister_hooks(Host) ->
-    ejabberd_hooks:delete(c2s_session_pending, Host, ?MODULE,
-			  c2s_session_pending, 50),
-    ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE,
-			  c2s_session_resumed, 50),
-    ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE,
-			  c2s_copy_session, 50),
-    ejabberd_hooks:delete(c2s_handle_cast, Host, ?MODULE,
-			  c2s_handle_cast, 40),
-    ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE,
-			  c2s_handle_info, 50),
-    ejabberd_hooks:delete(c2s_handle_send, Host, ?MODULE,
-			  c2s_stanza, 50),
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-	false ->
-	    ejabberd_hooks:delete(
-	      ejabberd_started, ?MODULE, ejabberd_started, 90);
-	true ->
-	    ok
-    end.
 
 %%--------------------------------------------------------------------
 %% Hook callbacks.
