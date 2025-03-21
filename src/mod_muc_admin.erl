@@ -68,9 +68,9 @@
 %% gen_mod
 %%----------------------------
 
-start(Host, _Opts) ->
-    ejabberd_commands:register_commands(Host, ?MODULE, get_commands_spec()),
-    {ok, [{hook, webadmin_menu_main, web_menu_main, 50, global},
+start(_Host, _Opts) ->
+    {ok, [{commands, get_commands_spec()},
+          {hook, webadmin_menu_main, web_menu_main, 50, global},
 	  {hook, webadmin_page_main, web_page_main, 50, global},
 	  {hook, webadmin_menu_host, web_menu_host, 50},
 	  {hook, webadmin_page_host, web_page_host, 50},
@@ -78,8 +78,8 @@ start(Host, _Opts) ->
 	  {hook, webadmin_page_hostuser, web_page_hostuser, 50}
          ]}.
 
-stop(Host) ->
-    ejabberd_commands:unregister_commands(Host, ?MODULE, get_commands_spec()).
+stop(_Host) ->
+    ok.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

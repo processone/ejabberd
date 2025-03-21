@@ -71,8 +71,8 @@ start(Host, Opts) ->
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
-    ejabberd_commands:register_commands(Host, ?MODULE, get_commands_spec()),
-    {ok, [{hook, remove_user, remove_user, 50},
+    {ok, [{commands, get_commands_spec()},
+          {hook, remove_user, remove_user, 50},
           {hook, disco_sm_features, get_sm_features, 50},
           {hook, pubsub_publish_item, pubsub_publish_item, 50},
           {hook, pubsub_delete_item, pubsub_delete_item, 50},
@@ -81,8 +81,8 @@ start(Host, Opts) ->
           {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50},
           {iq_handler, ejabberd_sm, ?NS_PRIVATE, process_sm_iq}]}.
 
-stop(Host) ->
-    ejabberd_commands:unregister_commands(Host, ?MODULE, get_commands_spec()).
+stop(_Host) ->
+    ok.
 
 reload(Host, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
