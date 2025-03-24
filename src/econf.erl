@@ -547,9 +547,10 @@ sip_uri() ->
 host() ->
     fun(Domain) ->
 	    Hosts = ejabberd_config:get_option(hosts),
-	    case lists:member(Domain, Hosts) of
+	    Domain3 = (domain())(Domain),
+	    case lists:member(Domain3, Hosts) of
 		true -> fail({route_conflict, Domain});
-		false -> Domain
+		false -> Domain3
 	    end
     end.
 
