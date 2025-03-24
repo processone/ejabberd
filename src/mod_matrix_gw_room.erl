@@ -216,7 +216,8 @@ route(#presence{from = From, to = #jid{luser = <<C, _/binary>>} = To,
     end;
 route(#message{from = From, to = #jid{luser = <<C, _/binary>>} = To,
                type = groupchat,
-               body = Body})
+               body = Body,
+               id = MsgID})
   when C == $!;
        C == $# ->
     Host = ejabberd_config:get_myname(),
@@ -232,7 +233,8 @@ route(#message{from = From, to = #jid{luser = <<C, _/binary>>} = To,
                                     JSON =
                                         #{<<"content">> =>
                                               #{<<"body">> => Text,
-                                                <<"msgtype">> => <<"m.text">>},
+                                                <<"msgtype">> => <<"m.text">>,
+                                                <<"net.process-one.xmpp-id">> => MsgID},
                                           <<"sender">> => UserID,
                                           <<"type">> => ?ROOM_MESSAGE},
                                     gen_statem:cast(Pid, {add_event, JSON}),
@@ -2700,7 +2702,7 @@ notify_event_xmpp(
 notify_event_xmpp(
   #event{type = ?ROOM_MESSAGE, sender = Sender,
          json = #{<<"content">> := #{<<"msgtype">> := <<"m.text">>,
-                                     <<"body">> := Body},
+                                     <<"body">> := Body} = Content,
                   <<"origin_server_ts">> := OriginTS}},
   #data{kind = #multi{users = Users}} = Data) ->
     case Sender of
@@ -2714,7 +2716,15 @@ notify_event_xmpp(
                               when JoinTS =< OriginTS ->
                                 From = jid:replace_resource(RoomJID, SenderUser),
                                 UserJID = jid:make(LUser, LServer, LResource),
-                                Msg = #message{from = From,
+                                MsgID =
+                                    case Content of
+                                        #{<<"net.process-one.xmpp-id">> := MID} ->
+                                            MID;
+                                        _ ->
+                                            <<"">>
+                                    end,
+                                Msg = #message{id = MsgID,
+                                               from = From,
                                                to = UserJID,
                                                type = groupchat,
                                                body = [#text{data = Body}]
