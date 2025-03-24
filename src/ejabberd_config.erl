@@ -421,14 +421,15 @@ replace_keywords(Host, Value) ->
 
 replace_keywords(Host, List, Keywords) when is_list(List) ->
     [replace_keywords(Host, Element, Keywords) || Element <- List];
-replace_keywords(_Host, Atom, Keywords) when is_atom(Atom) ->
+replace_keywords(Host, Atom, Keywords) when is_atom(Atom) ->
     Str = atom_to_list(Atom),
+    Bin = iolist_to_binary(Str),
     case Str == string:uppercase(Str) of
         false ->
-            Atom;
+            BinaryReplaced = replace_keywords(Host, Bin, Keywords),
+            binary_to_atom(BinaryReplaced, utf8);
         true ->
-            MacroName = iolist_to_binary(Str),
-            case proplists:get_value(MacroName, Keywords) of
+            case proplists:get_value(Bin, Keywords) of
                 undefined ->
                     Atom;
                 Replacement ->
