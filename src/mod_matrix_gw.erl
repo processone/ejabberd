@@ -46,6 +46,8 @@
          prune_event/2, get_event_id/2, content_hash/1,
          sign_event/3, sign_pruned_event/2, sign_json/2,
          send_request/8, s2s_out_bounce_packet/2, user_receive_packet/1,
+	 process_disco_info/1,
+	 process_disco_items/1,
          route/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -56,6 +58,11 @@
 -include("mod_matrix_gw.hrl").
 
 -define(MAX_REQUEST_SIZE, 1000000).
+
+-define(CORS_HEADERS,
+        [{<<"Access-Control-Allow-Origin">>, <<"*">>},
+         {<<"Access-Control-Allow-Methods">>, <<"GET, POST, PUT, DELETE, OPTIONS">>},
+         {<<"Access-Control-Allow-Headers">>, <<"X-Requested-With, Content-Type, Authorization">>}]).
 
 process([<<"key">>, <<"v2">>, <<"server">> | _],
         #request{method = 'GET', host = _Host} = _Request) ->
@@ -137,10 +144,11 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
         #request{method = 'PUT', host = _Host} = Request) ->
     case preprocess_federation_request(Request) of
         {ok, #{<<"event">> := #{%<<"origin">> := Origin,
+                                <<"content">> := Content,
                                 <<"room_id">> := RoomID,
                                 <<"sender">> := Sender,
                                 <<"state_key">> := UserID} = Event,
-               <<"room_version">> := RoomVer},
+               <<"room_version">> := RoomVer} = JSON,
          Origin} ->
             case mod_matrix_gw_room:binary_to_room_version(RoomVer) of
                 #room_version{} = RoomVersion ->
@@ -155,7 +163,16 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
                                     SEvent = sign_pruned_event(Host, PrunedEvent),
                                     ?DEBUG("sign event ~p~n", [SEvent]),
                                     ResJSON = #{<<"event">> => SEvent},
-                                    mod_matrix_gw_room:join(Host, Origin, RoomID, Sender, UserID),
+                                    case Content of
+                                        #{<<"is_direct">> := true} ->
+                                            mod_matrix_gw_room:join_direct(Host, Origin, RoomID, Sender, UserID);
+                                        _ ->
+                                            IRS = case JSON of
+                                                      #{<<"invite_room_state">> := IRS1} -> IRS1;
+                                                      _ -> []
+                                                  end,
+                                            mod_matrix_gw_room:send_muc_invite(Host, Origin, RoomID, Sender, UserID, Event, IRS)
+                                    end,
                                     ?DEBUG("res ~s~n", [misc:json_encode(ResJSON)]),
                                     {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], misc:json_encode(ResJSON)};
                                 _ ->
@@ -386,6 +403,13 @@ process([<<"federation">>, <<"v2">>, <<"send_join">>, RoomID, EventID],
         {result, HTTPResult} ->
             HTTPResult
     end;
+%process([<<"client">> | ClientPath], Request) ->
+%    {HTTPCode, Headers, JSON} = mod_matrix_gw_c2s:process(ClientPath, Request),
+%    ?DEBUG("resp ~p~n", [JSON]),
+%    {HTTPCode,
+%     [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>} |
+%      ?CORS_HEADERS] ++ Headers,
+%     jiffy:encode(JSON)};
 process(Path, Request) ->
     ?DEBUG("matrix 404: ~p~n~p~n", [Path, Request]),
     ejabberd_web:error(not_found).
@@ -494,9 +518,14 @@ init([Host]) ->
     process_flag(trap_exit, true),
     mod_matrix_gw_s2s:create_db(),
     mod_matrix_gw_room:create_db(),
+    %mod_matrix_gw_c2s:create_db(),
     Opts = gen_mod:get_module_opts(Host, ?MODULE),
     MyHost = gen_mod:get_opt(host, Opts),
     register_routes(Host, [MyHost]),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
+                                  ?MODULE, process_disco_info),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS,
+                                  ?MODULE, process_disco_items),
     {ok, #state{server_host = Host, host = MyHost}}.
 
 -spec handle_call(term(), {pid(), term()}, state()) ->
@@ -517,7 +546,9 @@ handle_info(Info, State) ->
 
 -spec terminate(term(), state()) -> any().
 terminate(_Reason, #state{host = Host}) ->
-    unregister_routes([Host]).
+    unregister_routes([Host]),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS).
 
 -spec code_change(term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
@@ -780,10 +811,14 @@ send_request(Host, Method, MatrixServer, Path, Query, JSON,
             _ ->
                 {URL, Headers, "application/json;charset=UTF-8", Content}
         end,
-    httpc:request(Method,
-                  Request,
-                  HTTPOptions,
-                  Options).
+    ?DEBUG("httpc request ~p", [{Method, Request, HTTPOptions, Options}]),
+    HTTPRes =
+        httpc:request(Method,
+                      Request,
+                      HTTPOptions,
+                      Options),
+    ?DEBUG("httpc request res ~p", [HTTPRes]),
+    HTTPRes.
 
 make_auth_header(Host, MatrixServer, Method, URI, Content) ->
     Origin = mod_matrix_gw_opt:matrix_domain(Host),
@@ -850,8 +885,45 @@ user_receive_packet({Pkt, C2SState} = Acc) ->
             end
     end.
 
+-spec route(stanza()) -> ok.
+route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>}} = IQ) ->
+    ejabberd_router:process_iq(IQ);
 route(Pkt) ->
     mod_matrix_gw_room:route(Pkt).
+
+-spec process_disco_info(iq()) -> iq().
+process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_info(#iq{type = get,
+		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
+    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MUC],
+    Identity = #identity{category = <<"gateway">>,
+			 type = <<"matrix">>},
+    xmpp:make_iq_result(
+      IQ, #disco_info{features = Features,
+		      identities = [Identity]});
+process_disco_info(#iq{type = get, lang = Lang,
+		       sub_els = [#disco_info{}]} = IQ) ->
+    xmpp:make_error(IQ, xmpp:err_item_not_found(?T("Node not found"), Lang));
+process_disco_info(#iq{lang = Lang} = IQ) ->
+    Txt = ?T("No module is handling this query"),
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
+
+-spec process_disco_items(iq()) -> iq().
+process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_items(#iq{type = get,
+			sub_els = [#disco_items{node = <<>>}]} = IQ) ->
+    xmpp:make_iq_result(IQ, #disco_items{});
+process_disco_items(#iq{type = get, lang = Lang,
+                        sub_els = [#disco_items{}]} = IQ) ->
+    xmpp:make_error(IQ, xmpp:err_item_not_found(?T("Node not found"), Lang));
+process_disco_items(#iq{lang = Lang} = IQ) ->
+    Txt = ?T("No module is handling this query"),
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
+
 
 depends(_Host, _Opts) ->
     [].
