@@ -35,8 +35,10 @@
 -behaviour(gen_mod).
 -behaviour(gen_server).
 -author('christophe.romain@process-one.net').
+-protocol({xep, 48, '1.2', '0.5.0', "complete", ""}).
 -protocol({xep, 60, '1.14', '0.5.0', "partial", ""}).
 -protocol({xep, 163, '1.2', '2.0.0', "complete", ""}).
+-protocol({xep, 223, '1.1.1', '2.0.0', "complete", ""}).
 -protocol({xep, 248, '0.2', '2.1.0', "complete", ""}).
 
 -include("logger.hrl").
