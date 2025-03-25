@@ -2718,7 +2718,8 @@ notify_event_xmpp(
                                 UserJID = jid:make(LUser, LServer, LResource),
                                 MsgID =
                                     case Content of
-                                        #{<<"net.process-one.xmpp-id">> := MID} ->
+                                        #{<<"net.process-one.xmpp-id">> := MID}
+                                          when is_binary(MID) ->
                                             MID;
                                         _ ->
                                             <<"">>
