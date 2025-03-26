@@ -769,6 +769,7 @@ db_get_password(User, Server, Mod) ->
 		not_found -> error;
 		{ok, List} = V when is_list(List) -> V;
 		{ok, Single} -> {ok, [Single]};
+		Other -> Other
 	    end;
 	false ->
 	    error;
