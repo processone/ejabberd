@@ -767,7 +767,8 @@ db_get_password(User, Server, Mod) ->
 	    case ets_cache:lookup(cache_tab(Mod), {User, Server}) of
 		{ok, exists} -> error;
 		not_found -> error;
-		Other -> Other
+		{ok, List} = V when is_list(List) -> V;
+		{ok, Single} -> {ok, [Single]};
 	    end;
 	false ->
 	    error;
