@@ -19,6 +19,7 @@
 -export([auth_opts/0, auth_opts/1]).
 -export([auth_password_format/0, auth_password_format/1]).
 -export([auth_scram_hash/0, auth_scram_hash/1]).
+-export([auth_stored_password_types/0, auth_stored_password_types/1]).
 -export([auth_use_cache/0, auth_use_cache/1]).
 -export([c2s_cafile/0, c2s_cafile/1]).
 -export([c2s_ciphers/0, c2s_ciphers/1]).
@@ -263,6 +264,13 @@ auth_scram_hash() ->
 -spec auth_scram_hash(global | binary()) -> 'sha' | 'sha256' | 'sha512'.
 auth_scram_hash(Host) ->
     ejabberd_config:get_option({auth_scram_hash, Host}).
+
+-spec auth_stored_password_types() -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
+auth_stored_password_types() ->
+    auth_stored_password_types(global).
+-spec auth_stored_password_types(global | binary()) -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
+auth_stored_password_types(Host) ->
+    ejabberd_config:get_option({auth_stored_password_types, Host}).
 
 -spec auth_use_cache() -> boolean().
 auth_use_cache() ->

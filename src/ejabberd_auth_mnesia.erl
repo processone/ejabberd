@@ -29,11 +29,11 @@
 
 -behaviour(ejabberd_auth).
 
--export([start/1, stop/1, set_password/3, try_register/3,
+-export([start/1, stop/1, set_password_multiple/3, try_register_multiple/3,
 	 get_users/2, init_db/0,
 	 count_users/2, get_password/2,
 	 remove_user/2, store_type/1, import/2,
-	 plain_password_required/1, use_cache/1]).
+	 plain_password_required/1, use_cache/1, drop_password_type/2, set_password_instance/3]).
 -export([need_transform/1, transform/1]).
 
 -include("logger.hrl").
@@ -86,30 +86,58 @@ plain_password_required(Server) ->
 store_type(Server) ->
     ejabberd_auth:password_format(Server).
 
-set_password(User, Server, Password) ->
-    US = {User, Server},
-    F = fun () ->
-		mnesia:write(#passwd{us = US, password = Password})
+set_password_multiple(User, Server, Passwords) ->
+    F = fun() ->
+	lists:foreach(
+	    fun(#scram{hash = Hash} = Password) ->
+		mnesia:write(#passwd{us = {User, Server, Hash}, password = Password});
+	       (Plain) ->
+		   mnesia:write(#passwd{us = {User, Server, plain}, password = Plain})
+	    end, Passwords)
 	end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
-	    {cache, {ok, Password}};
+	    {cache, {ok, Passwords}};
 	{aborted, Reason} ->
 	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
 	    {nocache, {error, db_failure}}
     end.
 
-try_register(User, Server, Password) ->
-    US = {User, Server},
-    F = fun () ->
-		case mnesia:read({passwd, US}) of
-		    [] ->
-			mnesia:write(#passwd{us = US, password = Password}),
-			mnesia:dirty_update_counter(reg_users_counter, Server, 1),
-			{ok, Password};
-		    [_] ->
-			{error, exists}
-		end
+set_password_instance(User, Server, Password) ->
+    F = fun() ->
+	case Password of
+	    #scram{hash = Hash} = Password ->
+		mnesia:write(#passwd{us = {User, Server, Hash}, password = Password});
+	    Plain ->
+		mnesia:write(#passwd{us = {User, Server, plain}, password = Plain})
+	end
+	end,
+    case mnesia:transaction(F) of
+	{atomic, ok} ->
+	    ok;
+	{aborted, Reason} ->
+	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
+	    {error, db_failure}
+    end.
+
+try_register_multiple(User, Server, Passwords) ->
+    F = fun() ->
+	case mnesia:select(passwd, [{{'_', {'$1', '$2', '_'}, '$3'},
+				     [{'==', '$1', User},
+				      {'==', '$2', Server}],
+				     ['$3']}]) of
+	    [] ->
+		lists:foreach(
+		    fun(#scram{hash = Hash} = Password) ->
+			mnesia:write(#passwd{us = {User, Server, Hash}, password = Password});
+		       (Plain) ->
+			   mnesia:write(#passwd{us = {User, Server, plain}, password = Plain})
+		    end, Passwords),
+		mnesia:dirty_update_counter(reg_users_counter, Server, 1),
+		{ok, Passwords};
+	    [_] ->
+		{error, exists}
+	end
 	end,
     case mnesia:transaction(F) of
 	{atomic, Res} ->
@@ -120,9 +148,10 @@ try_register(User, Server, Password) ->
     end.
 
 get_users(Server, []) ->
-    mnesia:dirty_select(passwd,
+    Users = mnesia:dirty_select(passwd,
 			[{#passwd{us = '$1', _ = '_'},
-			  [{'==', {element, 2, '$1'}, Server}], ['$1']}]);
+			  [{'==', {element, 2, '$1'}, Server}], ['$1']}]),
+    lists:uniq(lists:map(fun({U, S, _}) -> {U, S} end, Users));
 get_users(Server, [{from, Start}, {to, End}])
   when is_integer(Start) and is_integer(End) ->
     get_users(Server, [{limit, End - Start + 1}, {offset, Start}]);
@@ -179,22 +208,48 @@ count_users(Server, _) ->
     count_users(Server, []).
 
 get_password(User, Server) ->
-    case mnesia:dirty_read(passwd, {User, Server}) of
-	[{passwd, _, {scram, SK, SEK, Salt, IC}}] ->
-	    {cache, {ok, #scram{storedkey = SK, serverkey = SEK,
-				salt = Salt, hash = sha, iterationcount = IC}}};
-	[#passwd{password = Password}] ->
-	    {cache, {ok, Password}};
+    case mnesia:dirty_select(passwd, [{{'_', {'$1', '$2', '_'}, '$3'},
+				       [{'==', '$1', User},
+					{'==', '$2', Server}],
+				       ['$3']}]) of
+	[_|_] = List ->
+	    List2 = lists:map(
+		fun({scram, SK, SEK, Salt, IC}) ->
+		    #scram{storedkey = SK, serverkey = SEK,
+			   salt = Salt, hash = sha, iterationcount = IC};
+		   (Other) -> Other
+		end, List),
+	    {cache, {ok, List2}};
 	_ ->
 	    {cache, error}
     end.
 
+drop_password_type(Server, Hash) ->
+    F = fun() ->
+	Keys = mnesia:select(passwd, [{{'_', '$1', '_'},
+				       [{'==', {element, 3, '$1'}, Hash},
+					{'==', {element, 2, '$1'}, Server}],
+				       ['$1']}]),
+	lists:foreach(fun(Key) -> mnesia:delete({passwd, Key}) end, Keys),
+	ok
+	end,
+    case mnesia:transaction(F) of
+	{atomic, ok} ->
+	    ok;
+	{aborted, Reason} ->
+	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
+	    {error, db_failure}
+    end.
+
 remove_user(User, Server) ->
-    US = {User, Server},
     F = fun () ->
-		mnesia:delete({passwd, US}),
-		mnesia:dirty_update_counter(reg_users_counter, Server, -1),
-		ok
+	Keys = mnesia:select(passwd, [{{'_', '$1', '_'},
+				       [{'==', {element, 1, '$1'}, User},
+					{'==', {element, 2, '$1'}, Server}],
+				       ['$1']}]),
+	lists:foreach(fun(Key) -> mnesia:delete({passwd, Key}) end, Keys),
+	mnesia:dirty_update_counter(reg_users_counter, Server, -1),
+	ok
 	end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
@@ -206,45 +261,10 @@ remove_user(User, Server) ->
 
 need_transform(#reg_users_counter{}) ->
     false;
-need_transform({passwd, {U, S}, Pass}) ->
-    case Pass of
-	_ when is_binary(Pass) ->
-	    case store_type(S) of
-		scram ->
-		    ?INFO_MSG("Passwords in Mnesia table 'passwd' "
-			      "will be SCRAM'ed", []),
-		    true;
-		plain ->
-		    false
-	    end;
-	{scram, _, _, _, _} ->
-	    case store_type(S) of
-		scram ->
-		    false;
-		plain ->
-		    ?WARNING_MSG("Some passwords were stored in the database "
-				 "as SCRAM, but 'auth_password_format' "
-				 "is not configured as 'scram': some "
-				 "authentication mechanisms such as DIGEST-MD5 "
-				 "would *fail*", []),
-		    false
-	    end;
-	#scram{} ->
-	    case store_type(S) of
-		scram ->
-		    false;
-		plain ->
-		    ?WARNING_MSG("Some passwords were stored in the database "
-				 "as SCRAM, but 'auth_password_format' "
-				 "is not configured as 'scram': some "
-				 "authentication mechanisms such as DIGEST-MD5 "
-				 "would *fail*", []),
-		    false
-	    end;
-	_ when is_list(U) orelse is_list(S) orelse is_list(Pass) ->
-	    ?INFO_MSG("Mnesia table 'passwd' will be converted to binary", []),
-	    true
-    end.
+need_transform({passwd, {_U, _S, _T}, _Pass}) ->
+    false;
+need_transform({passwd, {_U, _S}, _Pass}) ->
+    true.
 
 transform({passwd, {U, S}, Pass})
   when is_list(U) orelse is_list(S) orelse is_list(Pass) ->
@@ -263,24 +283,14 @@ transform({passwd, {U, S}, Pass})
     transform(#passwd{us = NewUS, password = NewPass});
 transform(#passwd{us = {U, S}, password = Password} = P)
   when is_binary(Password) ->
-    case store_type(S) of
-	scram ->
-	    case jid:resourceprep(Password) of
-		error ->
-		    ?ERROR_MSG("SASLprep failed for password of user ~ts@~ts",
-			       [U, S]),
-		    P;
-		_ ->
-		    Scram = ejabberd_auth:password_to_scram(S, Password),
-		    P#passwd{password = Scram}
-	    end;
-	plain ->
-	    P
-    end;
-transform({passwd, _, {scram, _, _, _, _}} = P) ->
-    P;
-transform(#passwd{password = #scram{}} = P) ->
-    P.
+    P#passwd{us = {U, S, plain}, password = Password};
+transform({passwd, {U, S}, {scram, SK, SEK, Salt, IC}}) ->
+    #passwd{us = {U, S, sha},
+	    password = #scram{storedkey = SK, serverkey = SEK,
+			      salt = Salt, hash = sha, iterationcount = IC}};
+transform(#passwd{us = {U, S}, password = #scram{hash = Hash}} = P) ->
+    P#passwd{us = {U, S, Hash}};
+transform(Other) -> Other.
 
 import(LServer, [LUser, Password, _TimeStamp]) ->
     mnesia:dirty_write(

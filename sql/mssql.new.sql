@@ -403,6 +403,7 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 CREATE TABLE [dbo].[users] (
         [username] [varchar] (250) NOT NULL,
         [server_host] [varchar] (250) NOT NULL,
+        [type] [smallint] NOT NULL,
         [password] [text] NOT NULL,
         [serverkey] [text] NOT NULL DEFAULT '',
         [salt] [text] NOT NULL DEFAULT '',
@@ -411,7 +412,8 @@ CREATE TABLE [dbo].[users] (
  CONSTRAINT [users_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [server_host] ASC,
-        [username] ASC
+        [username] ASC,
+        [type] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 ) TEXTIMAGE_ON [PRIMARY];
 

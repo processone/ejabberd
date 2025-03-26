@@ -107,7 +107,7 @@ c2s_handle_sasl2_task_data({_, #{user := User, server := Server,
 	#scram_upgrade_hash{data = SaltedPassword} ->
 	    StoredKey = scram:stored_key(Algo, scram:client_key(Algo, SaltedPassword)),
 	    ServerKey = scram:server_key(Algo, SaltedPassword),
-	    ejabberd_auth:set_password(User, Server,
+	    ejabberd_auth:set_password_instance(User, Server,
 				       #scram{hash = Algo, iterationcount = Iter, salt = Salt,
 					      serverkey = ServerKey, storedkey = StoredKey}),
 	    State2 = maps:remove(scram_upgrade, State),

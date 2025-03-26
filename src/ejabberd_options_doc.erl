@@ -399,6 +399,14 @@ doc() ->
            "You shouldn't change this if you already have passwords generated with "
            "a different algorithm - users that have such passwords will not be able "
            "to authenticate. The default value is 'sha'.")}},
+     {auth_stored_password_types,
+      #{value => "[plain | scram_sha1 | scram_sha256 | scram_sha512]",
+        desc =>
+        ?T("List with password types that should be stored concurently for each user in database. "
+           "Each time user set it password, database will be updated to store passwords in format "
+           "compatible with each format listed here. This can be used to migrate user passwords "
+           "to more secure format. This options if set, will override values set in 'auth_scream_hash' "
+           "and 'auth_password_format'. By default this value is not set.")}},
      {auth_external_user_exists_check,
       #{value => "true | false",
         note => "added in 23.10",

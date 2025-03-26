@@ -172,12 +172,13 @@
 CREATE TABLE users (
     username text NOT NULL,
     server_host text NOT NULL,
+    "type" smallint NOT NULL,
     "password" text NOT NULL,
     serverkey text NOT NULL DEFAULT '',
     salt text NOT NULL DEFAULT '',
     iterationcount integer NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
-    PRIMARY KEY (server_host, username)
+    PRIMARY KEY (server_host, username, "type")
 );
 
 -- Add support for SCRAM auth to a database created before ejabberd 16.03:

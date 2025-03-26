@@ -78,7 +78,7 @@ adduser(Config) ->
 	     "server/" ++ binary_to_list(Server) ++ "/users/",
 	     <<"register/user=", (mue(User))/binary, "&register/password=",
 	       (mue(Password))/binary, "&register=Register">>),
-    Password = ejabberd_auth:get_password(User, Server),
+    Password = ejabberd_auth:get_password_s(User, Server),
     ?match({_, _}, binary:match(Body, <<"User ", User/binary, "@", Server/binary,
                                         " successfully registered">>)).
 
@@ -92,7 +92,7 @@ changepassword(Config) ->
 	     ++ "/user/" ++ binary_to_list(mue(User)) ++ "/",
 	     <<"change_password/newpass=", (mue(Password))/binary,
 	       "&change_password=Change+Password">>),
-    ?match(Password, ejabberd_auth:get_password(User, Server)),
+    ?match(Password, ejabberd_auth:get_password_s(User, Server)),
     ?match({_, _}, binary:match(Body, <<"<div class='result'><code>ok</code></div>">>)).
 
 removeuser(Config) ->
