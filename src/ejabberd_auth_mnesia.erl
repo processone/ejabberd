@@ -151,7 +151,13 @@ get_users(Server, []) ->
     Users = mnesia:dirty_select(passwd,
 			[{#passwd{us = '$1', _ = '_'},
 			  [{'==', {element, 2, '$1'}, Server}], ['$1']}]),
-    lists:uniq(lists:map(fun({U, S, _}) -> {U, S} end, Users));
+    {_, Res} = lists:foldl(
+	fun({U, S, _}, {{U2, S2}, _} = Acc) when U == U2 andalso S == S2 ->
+	    Acc;
+	   ({U, S, _}, {_, Res}) ->
+	       {{U, S}, [{U, S} | Res]}
+	end, {{none, none}, []}, Users),
+    Res;
 get_users(Server, [{from, Start}, {to, End}])
   when is_integer(Start) and is_integer(End) ->
     get_users(Server, [{limit, End - Start + 1}, {offset, Start}]);
