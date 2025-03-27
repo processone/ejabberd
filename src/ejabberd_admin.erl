@@ -600,7 +600,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = mnesia_list_tables, tags = [mnesia],
                         desc = "List of Mnesia tables",
-			note = "added in 25.xx",
+			note = "added in 25.03",
                         module = ?MODULE, function = mnesia_list_tables,
 			result = {tables, {list, {table, {tuple, [{name, atom},
                                                                 {storage_type, binary},
@@ -618,7 +618,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = mnesia_table_change_storage, tags = [mnesia],
                         desc = "Change storage type of a Mnesia table",
-			note = "added in 25.xx",
+			note = "added in 25.03",
 			longdesc = "Storage type can be: `ram_copies`, `disc_copies`, `disc_only_copies`, `remote_copy`.",
                         module = ?MODULE, function = mnesia_table_change_storage,
 			args = [{table, binary}, {storage_type, binary}],

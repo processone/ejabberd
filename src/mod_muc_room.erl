@@ -27,7 +27,7 @@
 
 -author('alexey@process-one.net').
 
--protocol({xep, 317, '0.2.0', '25.xx', "complete", ""}).
+-protocol({xep, 317, '0.2.0', '21.12', "complete", "0.2.0 since 25.03"}).
 -protocol({xep, 410, '1.1.0', '18.12', "complete", ""}).
 
 -behaviour(p1_fsm).

@@ -1592,7 +1592,7 @@ mod_doc() ->
       opts =>
           [{access,
             #{value => ?T("AccessName"),
-              note => "added in 25.xx",
+              note => "added in 25.03",
               desc =>
                   ?T("This option defines which access rule will be used to "
                      "control who is allowed to access the features provided by this module. "

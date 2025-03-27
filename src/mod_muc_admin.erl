@@ -196,7 +196,7 @@ get_commands_spec() ->
                         "Each subscriber can have one or more nodes. "
                         "In summary, `affiliations` is like `Type1=JID1;Type2=JID2` "
                         "and `subscribers` is like `JID1=Nick1=Node1A=Node1B=Node1C;JID2=Nick2=Node2`.",
-                       note = "modified in 25.xx",
+                       note = "modified in 25.03",
 		       module = ?MODULE, function = create_room_with_opts,
 		       args_desc = ["Room name", "MUC service", "Server host", "List of options"],
 		       args_example = ["room1", "conference.example.com", "localhost",

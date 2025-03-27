@@ -545,6 +545,7 @@ doc() ->
                "and sophisticated setups. The default value is an empty list.")}},
      {define_keyword,
       #{value => "{NAME: Value}",
+        note => "added in 25.03",
         desc =>
             ?T("Allows to define configuration "
                 "_`../configuration/file-format.md#macros-and-keywords|keywords`_. "),
@@ -560,6 +561,7 @@ doc() ->
              "sql_username: \"prefix.@SQL_USERNAME@\""]}},
      {define_macro,
       #{value => "{NAME: Value}",
+        note => "improved in 25.03",
         desc =>
             ?T("Allows to define configuration "
                 "_`../configuration/file-format.md#macros-and-keywords|macros`_. "),

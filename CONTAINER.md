@@ -910,7 +910,7 @@ Images Comparison
 Let's summarize the differences between both container images. Legend:
 
 - :sparkle: is the recommended alternative
-- :orange_circle: added in the latest release (ejabberd 25.xx)
+- :orange_circle: added in the latest release (ejabberd 25.03)
 - :high_brightness: added in the previous release (ejabberd 24.12)
 - :low_brightness: added in the pre-previous release (ejabberd 24.10)
 

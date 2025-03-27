@@ -770,7 +770,7 @@
         <xmpp:version>0.4.0</xmpp:version>
         <xmpp:since>24.02</xmpp:since>
         <xmpp:status>complete</xmpp:status>
-        <xmpp:note>, 0.4.0 since 25.xx</xmpp:note>
+        <xmpp:note>, 0.4.0 since 25.03</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
