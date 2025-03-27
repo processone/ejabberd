@@ -130,8 +130,8 @@ defmodule Ejabberd.MixProject do
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
-     {:xmpp, git: "https://github.com/processone/xmpp", ref: "be24923968261c2661a9e116650dce5ac95c9d23", override: true},
-     {:yconf, git: "https://github.com/processone/yconf", ref: "9682a6025ed543eedf34637e4cfcc66837074af6", override: true}]
+     {:xmpp, "~> 1.10.0"},
+     {:yconf, ">= 1.0.18"}]
     ++ cond_deps()
   end
 
@@ -161,7 +161,7 @@ defmodule Ejabberd.MixProject do
                          {if_version_below(~c"22", true), {:lager, "~> 3.9.1"}},
                          {config(:lua), {:luerl, "~> 1.2.0"}},
                          {config(:mysql), {:p1_mysql, ">= 1.0.24"}},
-                         {config(:pgsql), {:p1_pgsql, ">= 1.1.26"}},
+                         {config(:pgsql), {:p1_pgsql, ">= 1.1.32"}},
                          {config(:sqlite), {:sqlite3, "~> 1.1"}},
                          {config(:stun), {:stun, "~> 1.0"}}], do:
       dep
