@@ -504,7 +504,7 @@ set_form_api_command(From, Host, CommandNameBin, XData, _Lang) ->
                               var = <<"error">>}]
         end,
     FieldsResultWithHeads =
-        [#xdata_field{type = fixed, label = ?T("")},
+        [#xdata_field{type = fixed, label = <<"">>},
          #xdata_field{type = fixed, label = ?T("Result")}
          | FieldsResult2],
 
