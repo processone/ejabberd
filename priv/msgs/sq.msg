@@ -186,7 +186,6 @@
 {"No node specified","S’u përcaktua nyjë"}.
 {"No pending subscriptions found","S’u gjetën pajtime pezull"}.
 {"No privacy list with this name found","S’u gjet listë privatësie me atë emër"}.
-{"No <privileged_iq/> element found","S’u gjetën elementë <privileged_iq/>"}.
 {"No running node found","S’u gjet nyjë në funksionim"}.
 {"No services available","S’ka shërbime të gatshme"}.
 {"No statistics found for this item","S’u gjetën statistika për këtë objekt"}.

@@ -295,7 +295,6 @@
 {"No pending subscriptions found","Не са намерени чакащи абонаменти"}.
 {"No privacy list with this name found","Не е намерен списък за поверителност с това име"}.
 {"No private data found in this query","Няма открити лични данни в тази заявка"}.
-{"No <privileged_iq/> element found","Елементът <privileged_iq/> не е намерен"}.
 {"No running node found","Не е намерен работещ нод"}.
 {"No services available","Няма налични услуги"}.
 {"No statistics found for this item","Не е налична статистика за този елемент"}.

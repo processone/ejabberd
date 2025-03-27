@@ -295,7 +295,6 @@
 {"No pending subscriptions found","Não foram encontradas subscrições"}.
 {"No privacy list with this name found","Nenhuma lista de privacidade encontrada com este nome"}.
 {"No private data found in this query","Nenhum dado privado encontrado nesta consulta"}.
-{"No <privileged_iq/> element found","Nenhum elemento <privileged_iq/> foi encontrado"}.
 {"No running node found","Nenhum nó em execução foi encontrado"}.
 {"No services available","Não há serviços disponíveis"}.
 {"No statistics found for this item","Não foram encontradas estatísticas para este item"}.

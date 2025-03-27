@@ -22,7 +22,7 @@
 {"Administrator privileges required","Es necessita tenir privilegis d'administrador"}.
 {"All activity","Tota l'activitat"}.
 {"All Users","Tots els usuaris"}.
-{"Allow subscription","Permetre subscripcions"}.
+{"Allow subscription","Permetre subscripció"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Permetre que aquesta Jabber ID es puga subscriure a aquest node pubsub?"}.
 {"Allow this person to register with the room?","Permetre a esta persona registrar-se a la sala?"}.
 {"Allow users to change the subject","Permetre que els usuaris canviïn el tema"}.
@@ -295,7 +295,6 @@
 {"No pending subscriptions found","No s'han trobat subscripcions pendents"}.
 {"No privacy list with this name found","No s'ha trobat cap llista de privacitat amb aquest nom"}.
 {"No private data found in this query","No s'ha trobat dades privades en esta petició"}.
-{"No <privileged_iq/> element found","No s'ha trobat cap element <privileged_iq/>"}.
 {"No running node found","No s'ha trobat node en marxa"}.
 {"No services available","No n'hi ha serveis disponibles"}.
 {"No statistics found for this item","No n'hi ha estadístiques disponibles per a aquest element"}.
@@ -594,7 +593,7 @@
 {"Whether an entity wants to receive or disable notifications","Si una entitat vol rebre notificacions o no"}.
 {"Whether owners or publisher should receive replies to items","Si el propietaris o publicadors deurien de rebre respostes als elements"}.
 {"Whether the node is a leaf (default) or a collection","Si el node es fulla (per defecte) o es una col·lecció"}.
-{"Whether to allow subscriptions","Permetre subscripcions"}.
+{"Whether to allow subscriptions","Si s'hauria de permetre subscripcions"}.
 {"Whether to make all subscriptions temporary, based on subscriber presence","Si fer totes les subscripcions temporals, basat en la presencia del subscriptor"}.
 {"Whether to notify owners about new subscribers and unsubscribes","Si notificar als propietaris sobre noves subscripcions i desubscripcions"}.
 {"Who can send private messages","Qui pot enviar missatges privats"}.
