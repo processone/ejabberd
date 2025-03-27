@@ -401,12 +401,13 @@ doc() ->
            "to authenticate. The default value is 'sha'.")}},
      {auth_stored_password_types,
       #{value => "[plain | scram_sha1 | scram_sha256 | scram_sha512]",
+        note => "added in 25.03",
         desc =>
-        ?T("List with password types that should be stored concurently for each user in database. "
-           "Each time user set it password, database will be updated to store passwords in format "
-           "compatible with each format listed here. This can be used to migrate user passwords "
-           "to more secure format. This options if set, will override values set in 'auth_scream_hash' "
-           "and 'auth_password_format'. By default this value is not set.")}},
+        ?T("List of password types that should be stored simultaneously for each user in database. "
+           "When the user sets the account password, database will be updated to store the password in formats "
+           "compatible with each type listed here. This can be used to migrate user passwords "
+           "to a more secure format. If this option if set, it will override values set in _`auth_scram_hash`_ "
+           "and _`auth_password_format`_ options. The default value is `[]`.")}},
      {auth_external_user_exists_check,
       #{value => "true | false",
         note => "added in 23.10",
