@@ -38,11 +38,12 @@ Vars = case file:consult(filename:join([TopDir, "vars.config"])) of
 
 RequiredOTPApps = [sasl, crypto, public_key, ssl,
                    mnesia, inets, compiler, asn1,
+                   observer, tools,
                    syntax_tools, os_mon, xmerl],
 
 ConfiguredOTPApps = lists:flatmap(
                       fun({tools, true}) ->
-                              [tools, runtime_tools];
+                              [runtime_tools];
                          ({odbc, true}) ->
                               [odbc];
                          (_) ->
