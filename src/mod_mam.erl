@@ -28,6 +28,7 @@
 -protocol({xep, 313, '0.6.1', '15.06', "complete", ""}).
 -protocol({xep, 334, '0.2', '16.01', "complete", ""}).
 -protocol({xep, 359, '0.5.0', '15.09', "complete", ""}).
+-protocol({xep, 424, '0.4.2', '24.02', "partial", "Tombstones not implemented"}).
 -protocol({xep, 425, '0.3.0', '24.06', "complete", ""}).
 -protocol({xep, 441, '0.2.0', '15.06', "complete", ""}).
 

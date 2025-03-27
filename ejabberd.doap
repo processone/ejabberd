@@ -758,10 +758,10 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0424.html"/>
-        <xmpp:version>0.4.0</xmpp:version>
+        <xmpp:version>0.4.2</xmpp:version>
         <xmpp:since>24.02</xmpp:since>
-        <xmpp:status>complete</xmpp:status>
-        <xmpp:note></xmpp:note>
+        <xmpp:status>partial</xmpp:status>
+        <xmpp:note>mod_mam, Tombstones not implemented</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>

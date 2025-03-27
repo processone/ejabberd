@@ -40,7 +40,6 @@
 -protocol({xep, 368, '1.1.0', '17.09', "complete", ""}).
 -protocol({xep, 386, '0.3.0', '24.02', "complete", ""}).
 -protocol({xep, 388, '0.4.0', '24.02', "complete", ""}).
--protocol({xep, 424, '0.4.0', '24.02', "complete", ""}).
 -protocol({xep, 440, '0.4.0', '24.02', "complete", ""}).
 -protocol({xep, 474, '0.4.0', '24.02', "complete", "0.4.0 since 25.03"}).
 -protocol({xep, 485, '0.2.0', '24.02', "complete", "mod_pubsub_serverinfo in ejabberd-contrib.git"}).
