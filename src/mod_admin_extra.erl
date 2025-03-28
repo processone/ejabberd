@@ -2277,6 +2277,7 @@ web_page_hostuser(_, Host, User, #request{path = [<<"session">>]} = R) ->
     Set = [make_command(resource_num, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
            make_command(set_presence, R, [{<<"user">>, User}, {<<"host">>, Host}], []),
            make_command(kick_user, R, [{<<"user">>, User}, {<<"host">>, Host}], [{style, danger}]),
+           make_command(kick_users, R, [{<<"host">>, Host}], [{style, danger}]),
            make_command(kick_session,
                         R,
                         [{<<"user">>, User}, {<<"host">>, Host}],
