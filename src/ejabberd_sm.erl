@@ -63,6 +63,7 @@
 	 kick_user/2,
 	 kick_user/3,
 	 kick_user_restuple/2,
+	 kick_users/1,
 	 get_session_pid/3,
 	 get_session_sid/3,
 	 get_session_sids/2,
@@ -1072,7 +1073,17 @@ get_commands_spec() ->
 			args_example = [<<"user1">>, <<"example.com">>],
 			result_desc = "The result text indicates the number of sessions that were kicked",
 			result_example = {ok, <<"Kicked sessions: 2">>},
-			result = {res, restuple}}].
+			result = {res, restuple}},
+
+    #ejabberd_commands{name = kick_users, tags = [session],
+			desc = "Disconnect all given host users' active sessions",
+			module = ?MODULE, function = kick_users,
+			args = [{host, binary}],
+			args_desc = ["Server name"],
+			args_example = [<<"example.com">>],
+			result_desc = "Number of sessions that were kicked",
+			result_example = 3,
+			result = {num_sessions, integer}}].
 
 -spec connected_users() -> [binary()].
 
@@ -1110,6 +1121,11 @@ kick_user(User, Server, Resource) ->
 kick_user_restuple(User, Server) ->
     NumberBin = integer_to_binary(kick_user(User, Server)),
     {ok, <<"Kicked sessions: ", NumberBin/binary>>}.
+
+-spec kick_users(binary()) -> non_neg_integer().
+kick_users(Server) ->
+    length([kick_user(U, S, R) || {U, S, R} <-get_vh_session_list(Server)]).
+
 
 make_sid() ->
     {misc:unique_timestamp(), self()}.
