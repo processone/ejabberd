@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 12/17/2024
+.\"      Date: 03/28/2025
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "12/17/2024" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "03/28/2025" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,14 +82,14 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/24\&.12/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/25\&.03/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 24\&.12\&. The options that changed in this version are marked with 🟤\&.
+This section describes top level options of ejabberd 25\&.03\&. The options that changed in this version are marked with 🟤\&.
 .PP
-\fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLRules|ACLName}}\fR
+\fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLName|ACLDefinition}}\fR
 .RS 4
 This option defines
 \fIbasic\&.md#access\-rules|Access Rules\fR\&. Each access rule is assigned a name that can be referenced from other parts of the configuration file (mostly from
@@ -305,7 +305,7 @@ acme:
 \fBallow_contrib_modules\fR: \fItrue | false\fR
 .RS 4
 Whether to allow installation of third\-party modules or not\&. See
-\fI\&.\&./\&.\&./developer/extending\-ejabberd/modules\&.md#ejabberd\-contrib|ejabberd\-contrib\fR
+\fI\&.\&./\&.\&./admin/guide/modules\&.md#ejabberd\-contrib|ejabberd\-contrib\fR
 documentation section\&. The default value is
 \fItrue\fR\&.
 .RE
@@ -423,7 +423,7 @@ methods to use\&. If several methods are defined, authentication is considered s
 This is used by the contributed module
 \fIejabberd_auth_http\fR
 that can be installed from the
-ejabberd\-contrib
+\fI\&.\&./\&.\&./admin/guide/modules\&.md#ejabberd\-contrib|ejabberd\-contrib\fR
 Git repository\&. Please refer to that module\(cqs README file for details\&.
 .RE
 .PP
@@ -467,6 +467,17 @@ Hash algorithm that should be used to store password in
 \fIauthentication\&.md#scram|SCRAM\fR
 format\&. You shouldn\(cqt change this if you already have passwords generated with a different algorithm \- users that have such passwords will not be able to authenticate\&. The default value is
 \fIsha\fR\&.
+.RE
+.PP
+\fBauth_stored_password_types 🟤\fR: \fI[plain | scram_sha1 | scram_sha256 | scram_sha512]\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.03\&. List of password types that should be stored simultaneously for each user in database\&. When the user sets the account password, database will be updated to store the password in formats compatible with each type listed here\&. This can be used to migrate user passwords to a more secure format\&. If this option if set, it will override values set in
+\fIauth_scram_hash\fR
+and
+\fIauth_password_format\fR
+options\&. The default value is
+[]\&.
 .RE
 .PP
 \fBauth_use_cache\fR: \fItrue | false\fR
@@ -587,11 +598,11 @@ A maximum number of items (not memory!) in cache\&. The rule of thumb, for all t
 \fINote\fR
 about this option: improved in 23\&.01\&. Full path to a script that generates
 \fIbasic\&.md#captcha|CAPTCHA\fR
-images\&.
+images\&. The keyword
 \fI@VERSION@\fR
 is replaced with ejabberd version number in
 \fIXX\&.YY\fR
-format\&.
+format\&. The keyword
 \fI@SEMVER@\fR
 is replaced with ejabberd version number in semver format when compiled with Elixir\(cqs mix, or XX\&.YY format otherwise\&. Alternatively, it can be the name of a module that implements ejabberd CAPTCHA support\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
 .sp
@@ -696,14 +707,38 @@ Default volatile (in\-memory) storage for ejabberd\&. Modules and other componen
 \fImnesia\fR\&.
 .RE
 .PP
-\fBdefine_macro\fR: \fI{MacroName: MacroValue}\fR
+\fBdefine_keyword 🟤\fR: \fI{NAME: Value}\fR
 .RS 4
-Defines a
-\fI\&.\&./configuration/file\-format\&.md#macros\-in\-configuration\-file|macro\fR\&. The value can be any valid arbitrary YAML value\&. For convenience, it\(cqs recommended to define a
-\fIMacroName\fR
-in capital letters\&. Duplicated macros are not allowed\&. Macros are processed after additional configuration files have been included, so it is possible to use macros that are defined in configuration files included before the usage\&. It is possible to use a
-\fIMacroValue\fR
-in the definition of another macro\&.
+\fINote\fR
+about this option: added in 25\&.03\&. Allows to define configuration
+\fI\&.\&./configuration/file\-format\&.md#macros\-and\-keywords|keywords\fR\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+define_keyword:
+  SQL_USERNAME: "eja\&.global"
+
+host_config:
+  localhost:
+    define_keyword:
+      SQL_USERNAME: "eja\&.localhost"
+
+sql_username: "prefix\&.@SQL_USERNAME@"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBdefine_macro 🟤\fR: \fI{NAME: Value}\fR
+.RS 4
+\fINote\fR
+about this option: improved in 25\&.03\&. Allows to define configuration
+\fI\&.\&./configuration/file\-format\&.md#macros\-and\-keywords|macros\fR\&.
 .sp
 \fBExample\fR:
 .sp
@@ -911,9 +946,7 @@ host_config:
 .RS 4
 List of one or more
 \fI\&.\&./configuration/basic\&.md#host\-names|host names\fR
-(or domains) that
-\fIejabberd\fR
-will serve\&. This is a
+(or domains) that ejabberd will serve\&. This is a
 \fBmandatory\fR
 option\&.
 .RE
@@ -946,7 +979,7 @@ Disallows the usage of those options in the included file
 .RS 4
 \fINote\fR
 about this option: added in 23\&.10\&. Modules to install from
-\fI\&.\&./\&.\&./developer/extending\-ejabberd/modules\&.md#ejabberd\-contrib|ejabberd\-contrib\fR
+\fI\&.\&./\&.\&./admin/guide/modules\&.md#ejabberd\-contrib|ejabberd\-contrib\fR
 at start time\&. The default value is an empty list of modules:
 \fI[]\fR\&.
 .RE
@@ -1008,10 +1041,23 @@ Whether to dereference aliases or not\&. The default value is
 \fBldap_dn_filter\fR: \fI{Filter: FilterAttrs}\fR
 .RS 4
 This filter is applied on the results returned by the main filter\&. The filter performs an additional LDAP lookup to make the complete result\&. This is useful when you are unable to define all filter rules in
-\fIldap_filter\fR\&. You can define "%u", "%d", "%s" and "%D" pattern variables in
-\fIFilter\fR: "%u" is replaced by a user\(cqs part of the JID, "%d" is replaced by the corresponding domain (virtual host), all "%s" variables are consecutively replaced by values from the attributes in
+\fIldap_filter\fR\&. You can define
+\fI"%u"\fR,
+\fI"%d"\fR,
+\fI"%s"\fR
+and
+\fI"%D"\fR
+pattern variables in
+\fIFilter: "%u"\fR
+is replaced by a user\(cqs part of the JID,
+\fI"%d"\fR
+is replaced by the corresponding domain (virtual host), all
+\fI"%s"\fR
+variables are consecutively replaced by values from the attributes in
 \fIFilterAttrs\fR
-and "%D" is replaced by Distinguished Name from the result set\&. There is no default value, which means the result is not filtered\&. WARNING: Since this filter makes additional LDAP lookups, use it only as the last resort: try to define all filter rules in
+and
+\fI"%D"\fR
+is replaced by Distinguished Name from the result set\&. There is no default value, which means the result is not filtered\&. WARNING: Since this filter makes additional LDAP lookups, use it only as the last resort: try to define all filter rules in
 \fIldap_filter\fR
 option if possible\&.
 .sp
@@ -1038,7 +1084,10 @@ Whether to encrypt LDAP connection using TLS or not\&. The default value is
 \fBldap_filter\fR: \fIFilter\fR
 .RS 4
 An LDAP filter as defined in
-RFC4515\&. There is no default value\&. Example: "(&(objectClass=shadowAccount)(memberOf=XMPP Users))"\&. NOTE: don\(cqt forget to close brackets and don\(cqt use superfluous whitespaces\&. Also you must not use "uid" attribute in the filter because this attribute will be appended to the filter automatically\&.
+RFC4515\&. There is no default value\&. Example:
+\fI"(&(objectClass=shadowAccount)(memberOf=XMPP Users))"\fR\&. NOTE: don\(cqt forget to close brackets and don\(cqt use superfluous whitespaces\&. Also you must not use
+\fI"uid"\fR
+attribute in the filter because this attribute will be appended to the filter automatically\&.
 .RE
 .PP
 \fBldap_password\fR: \fIPassword\fR
@@ -1101,11 +1150,15 @@ LDAP attributes which hold a list of attributes to use as alternatives for getti
 \fIAttr\fR
 is an LDAP attribute which holds the user\(cqs part of the JID and
 \fIAttrFormat\fR
-must contain one and only one pattern variable "%u" which will be replaced by the user\(cqs part of the JID\&. For example, "%u@example\&.org"\&. If the value is in the form of
+must contain one and only one pattern variable
+\fI"%u"\fR
+which will be replaced by the user\(cqs part of the JID\&. For example,
+\fI"%\fR\fIu@example\fR\fI\&.org"\fR\&. If the value is in the form of
 \fI[Attr]\fR
 then
 \fIAttrFormat\fR
-is assumed to be "%u"\&.
+is assumed to be
+\fI"%u"\fR\&.
 .RE
 .PP
 \fBlisten\fR: \fI[Options, \&.\&.\&.]\fR
@@ -1193,7 +1246,7 @@ This option can be used to tune tick time parameter of
 .RS 4
 Whether to use the
 \fIdatabase\&.md#default\-and\-new\-schemas|new SQL schema\fR\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/24\&.12/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/25\&.03/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema can handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1434,7 +1487,7 @@ or
 if the latter is not set\&.
 .RE
 .PP
-\fBredis_server 🟤\fR: \fIHost | IP Address | Unix Socket Path\fR
+\fBredis_server\fR: \fIHost | IP Address | Unix Socket Path\fR
 .RS 4
 \fINote\fR
 about this option: improved in 24\&.12\&. A hostname, IP address or unix domain socket file of the
@@ -1675,7 +1728,7 @@ shaper:
 .\}
 .RE
 .PP
-\fBshaper_rules\fR: \fI{ShaperRuleName: {Number|ShaperName: ACLRule|ACLName}}\fR
+\fBshaper_rules\fR: \fI{ShaperRuleName: {Number|ShaperName: ACLName|ACLDefinition}}\fR
 .RS 4
 This option defines
 \fI\&.\&./configuration/basic\&.md#shaper\-rules|shaper rules\fR
@@ -1990,7 +2043,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 24\&.12\&. The modules that changed in this version are marked with 🟤\&.
+This section describes modules options of ejabberd 25\&.03\&. The modules that changed in this version are marked with 🟤\&.
 .SS "mod_adhoc"
 .sp
 This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary module and is only needed by some of the other modules\&.
@@ -2008,6 +2061,63 @@ This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary modul
 Provide the Commands item in the Service Discovery\&. Default value:
 \fIfalse\fR\&.
 .RE
+.RE
+.SS "mod_adhoc_api 🟤"
+.sp
+\fINote\fR about this option: added in 25\&.03\&.
+.sp
+Execute API Commands in a XMPP client using XEP\-0050: Ad\-Hoc Commands\&. This module requires \fImod_adhoc\fR (to execute the commands), and recommends \fImod_disco\fR (to discover the commands)\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBdefault_version\fR: \fIinteger() | string()\fR
+.RS 4
+What API version to use\&. If setting an ejabberd version, it will use the latest API version that was available in that ejabberd version\&. For example, setting
+\fI"24\&.06"\fR
+in this option implies
+\fI2\fR\&. The default value is the latest version\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+acl:
+  admin:
+    user: jan@localhost
+
+api_permissions:
+  "adhoc commands":
+    from: mod_adhoc_api
+    who: admin
+    what:
+      \- "[tag:roster]"
+      \- "[tag:session]"
+      \- stats
+      \- status
+
+modules:
+  mod_adhoc_api:
+    default_version: 2
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .SS "mod_admin_extra"
 .sp
@@ -2097,13 +2207,27 @@ This module can be used to update existing SQL database from the default to the 
 The module has no options\&.
 .SS "mod_announce"
 .sp
-This module enables configured users to broadcast announcements and to set the message of the day (MOTD)\&. Configured users can perform these actions with an XMPP client either using Ad\-hoc Commands or sending messages to specific JIDs\&.
+This module enables configured users to broadcast announcements and to set the message of the day (MOTD)\&. Configured users can perform these actions with an XMPP client either using Ad\-Hoc Commands or sending messages to specific JIDs\&.
+.if n \{\
 .sp
-Note that this module can be resource intensive on large deployments as it may broadcast a lot of messages\&. This module should be disabled for instances of ejabberd with hundreds of thousands users\&.
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
 .sp
-The Ad\-hoc Commands are listed in the Server Discovery\&. For this feature to work, \fImod_adhoc\fR must be enabled\&.
+This module can be resource intensive on large deployments as it may broadcast a lot of messages\&. This module should be disabled for instances of ejabberd with hundreds of thousands users\&.
+.sp .5v
+.RE
 .sp
-The specific JIDs where messages can be sent are listed below\&. The first JID in each entry will apply only to the specified virtual host example\&.org, while the JID between brackets will apply to all virtual hosts in ejabberd:
+To send announcements using XEP\-0050: Ad\-Hoc Commands, this module requires \fImod_adhoc\fR (to execute the commands), and recommends \fImod_disco\fR (to discover the commands)\&.
+.sp
+To send announcements by sending messages to specific JIDs, these are the destination JIDs:
 .sp
 .RS 4
 .ie n \{\
@@ -2113,7 +2237,7 @@ The specific JIDs where messages can be sent are listed below\&. The first JID i
 .sp -1
 .IP \(bu 2.3
 .\}
-example\&.org/announce/all (example\&.org/announce/all\-hosts/all):: The message is sent to all registered users\&. If the user is online and connected to several resources, only the resource with the highest priority will receive the message\&. If the registered user is not connected, the message will be stored offline in assumption that offline storage (see
+\fIexample\&.org/announce/all\fR: Send the message to all registered users in that vhost\&. If the user is online and connected to several resources, only the resource with the highest priority will receive the message\&. If the registered user is not connected, the message is stored offline in assumption that offline storage (see
 \fImod_offline\fR) is enabled\&.
 .RE
 .sp
@@ -2125,7 +2249,7 @@ example\&.org/announce/all (example\&.org/announce/all\-hosts/all):: The message
 .sp -1
 .IP \(bu 2.3
 .\}
-example\&.org/announce/online (example\&.org/announce/all\-hosts/online):: The message is sent to all connected users\&. If the user is online and connected to several resources, all resources will receive the message\&.
+\fIexample\&.org/announce/online\fR: Send the message to all connected users\&. If the user is online and connected to several resources, all resources will receive the message\&.
 .RE
 .sp
 .RS 4
@@ -2136,7 +2260,8 @@ example\&.org/announce/online (example\&.org/announce/all\-hosts/online):: The m
 .sp -1
 .IP \(bu 2.3
 .\}
-example\&.org/announce/motd (example\&.org/announce/all\-hosts/motd):: The message is set as the message of the day (MOTD) and is sent to users when they login\&. In addition the message is sent to all connected users (similar to announce/online)\&.
+\fIexample\&.org/announce/motd\fR: Set the message of the day (MOTD) that is sent to users when they login\&. Also sends the message to all connected users (similar to
+\fIannounce/online\fR)\&.
 .RE
 .sp
 .RS 4
@@ -2147,7 +2272,7 @@ example\&.org/announce/motd (example\&.org/announce/all\-hosts/motd):: The messa
 .sp -1
 .IP \(bu 2.3
 .\}
-example\&.org/announce/motd/update (example\&.org/announce/all\-hosts/motd/update):: The message is set as message of the day (MOTD) and is sent to users when they login\&. The message is not sent to any currently connected user\&.
+\fIexample\&.org/announce/motd/update\fR: Set the message of the day (MOTD) that is sent to users when they login\&. This does not send the message to any currently connected user\&.
 .RE
 .sp
 .RS 4
@@ -2158,7 +2283,64 @@ example\&.org/announce/motd/update (example\&.org/announce/all\-hosts/motd/updat
 .sp -1
 .IP \(bu 2.3
 .\}
-example\&.org/announce/motd/delete (example\&.org/announce/all\-hosts/motd/delete):: Any message sent to this JID removes the existing message of the day (MOTD)\&.
+\fIexample\&.org/announce/motd/delete\fR: Remove the existing message of the day (MOTD) by sending a message to this JID\&.
+.RE
+.sp
+There are similar destination JIDs to apply to all virtual hosts in ejabberd:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIexample\&.org/announce/all\-hosts/all\fR: send to all registered accounts
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIexample\&.org/announce/all\-hosts/online\fR: send to online sessions
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIexample\&.org/announce/all\-hosts/motd\fR: set MOTD and send to online
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIexample\&.org/announce/all\-hosts/motd/update\fR: update MOTD
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIexample\&.org/announce/all\-hosts/motd/delete\fR: delete MOTD
 .RE
 .sp
 .it 1 an-trap
@@ -2211,11 +2393,11 @@ Same as top\-level
 option, but applied to this module only\&.
 .RE
 .RE
-.SS "mod_auth_fast 🟤"
+.SS "mod_auth_fast"
 .sp
 \fINote\fR about this option: added in 24\&.12\&.
 .sp
-The module adds support for XEP\-0480: Fast Authentication Streamlining Tokens that allows users to authenticate using self managed tokens\&.
+The module adds support for XEP\-0484: Fast Authentication Streamlining Tokens that allows users to authenticate using self\-managed tokens\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -2225,7 +2407,7 @@ The module adds support for XEP\-0480: Fast Authentication Streamlining Tokens t
 \fBAvailable options:\fR
 .RS 4
 .PP
-\fBdb_type\fR: \fImnesia | sql\fR
+\fBdb_type\fR: \fImnesia\fR
 .RS 4
 Same as top\-level
 \fIdefault_db\fR
@@ -2234,7 +2416,7 @@ option, but applied to this module only\&.
 .PP
 \fBtoken_lifetime\fR: \fItimeout()\fR
 .RS 4
-Time that tokens will be keept, measured from it\(cqs creation time\&. Default value set to 30 days
+Time that tokens will be kept, measured from it\(cqs creation time\&. Default value set to 30 days
 .RE
 .PP
 \fBtoken_refresh_age\fR: \fItimeout()\fR
@@ -2257,7 +2439,7 @@ This time determines age of token, that qualifies for automatic refresh\&. Defau
 .nf
 modules:
   mod_auth_fast:
-    token_timeout: 14days
+    token_lifetime: 14days
 .fi
 .if n \{\
 .RE
@@ -2578,9 +2760,90 @@ While a client is inactive, queue presence stanzas that indicate (un)availabilit
 .RE
 .SS "mod_configure"
 .sp
-The module provides server configuration functionality via XEP\-0050: Ad\-Hoc Commands\&. Implements many commands as defined in XEP\-0133: Service Administration\&. This module requires \fImod_adhoc\fR to be loaded\&.
+The module provides server configuration functionalities using XEP\-0030: Service Discovery and XEP\-0050: Ad\-Hoc Commands:
 .sp
-The module has no options\&.
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+List and discover outgoing s2s, online client sessions and all registered accounts
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Most of the ad\-hoc commands defined in
+XEP\-0133: Service Administration
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Additional custom ad\-hoc commands specific to ejabberd
+.RE
+.sp
+This module requires \fImod_adhoc\fR (to execute the commands), and recommends \fImod_disco\fR (to discover the commands)\&.
+.sp
+Please notice that all the ad\-hoc commands implemented by this module have an equivalent API Command that you can execute using \fImod_adhoc_api\fR or any other API frontend\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBaccess 🟤\fR: \fIAccessName\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.03\&. This option defines which access rule will be used to control who is allowed to access the features provided by this module\&. The default value is
+\fIconfigure\fR\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+acl:
+  admin:
+    user: sun@localhost
+
+access_rules:
+  configure:
+    allow: admin
+
+modules:
+  mod_configure:
+    access: configure
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SS "mod_conversejs"
 .sp
 \fINote\fR about this option: added in 21\&.12 and improved in 22\&.05\&.
@@ -3060,7 +3323,8 @@ To run a command, send a POST request to the corresponding URL: \fIhttp://localh
 .PP
 \fBdefault_version\fR: \fIinteger() | string()\fR
 .RS 4
-What API version to use when none is specified in the URL path\&. If setting an ejabberd version, it will use the latest API version that was available in that ejabberd version\&. For example, setting
+\fINote\fR
+about this option: added in 24\&.12\&. What API version to use when none is specified in the URL path\&. If setting an ejabberd version, it will use the latest API version that was available in that ejabberd version\&. For example, setting
 \fI"24\&.06"\fR
 in this option implies
 \fI2\fR\&. The default value is the latest version\&.
@@ -3578,6 +3842,22 @@ The module has no options\&.
 .SS "mod_mam"
 .sp
 This module implements XEP\-0313: Message Archive Management and XEP\-0441: Message Archive Management Preferences\&. Compatible XMPP clients can use it to store their chat history on the server\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+Mnesia backend for mod_mam is not recommended: it\(cqs limited to 2GB and often gets corrupted when reaching this limit\&. SQL backend is recommended\&. Namely, for small servers SQLite is a preferred choice because it\(cqs very easy to configure\&.
+.sp .5v
+.RE
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -3676,11 +3956,11 @@ When this option is disabled, for each individual subscriber a separate mucsub m
 \fIfalse\fR\&.
 .RE
 .RE
-.SS "mod_matrix_gw"
+.SS "mod_matrix_gw 🟤"
 .sp
-\fINote\fR about this option: added in 24\&.02\&.
+\fINote\fR about this option: improved in 25\&.03\&.
 .sp
-Matrix gateway\&. Erlang/OTP 25 or higher is required to use this module\&.
+Matrix gateway\&. Erlang/OTP 25 or higher is required to use this module\&. This module is available since ejabberd 24\&.02\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -4349,9 +4629,12 @@ in order to accept their join in the room\&. The default value is
 Short description of the room\&. The default value is an empty string\&.
 .RE
 .PP
-\fBenable_hats\fR: \fItrue | false\fR
+\fBenable_hats 🟤\fR: \fItrue | false\fR
 .RS 4
-Allow extended roles as defined in XEP\-0317 Hats\&. The default value is
+\fINote\fR
+about this option: improved in 25\&.03\&. Allow extended roles as defined in XEP\-0317 Hats\&. Check the
+\fI\&.\&./\&.\&./tutorials/muc\-hats\&.md|MUC Hats\fR
+tutorial\&. The default value is
 \fIfalse\fR\&.
 .RE
 .PP
@@ -4465,6 +4748,12 @@ A human\-readable title of the room\&. There is no default value
 \fBvcard\fR: \fIvCard\fR
 .RS 4
 A custom vCard for the room\&. See the equivalent mod_muc option\&.The default value is an empty string\&.
+.RE
+.PP
+\fBvcard_xupdate\fR: \fIundefined | external | AvatarHash\fR
+.RS 4
+Set the hash of the avatar image\&. The default value is
+\fIundefined\fR\&.
 .RE
 .PP
 \fBvoice_request_min_interval\fR: \fINumber\fR
@@ -6308,9 +6597,7 @@ is
 .PP
 \fBaccess_from\fR: \fIAccessName\fR
 .RS 4
-By default,
-\fIejabberd\fR
-doesn\(cqt allow the client to register new accounts from s2s or existing c2s sessions\&. You can change it by defining access rule in this option\&. Use with care: allowing registration from s2s leads to uncontrolled massive accounts creation by rogue users\&.
+By default, ejabberd doesn\(cqt allow the client to register new accounts from s2s or existing c2s sessions\&. You can change it by defining access rule in this option\&. Use with care: allowing registration from s2s leads to uncontrolled massive accounts creation by rogue users\&.
 .RE
 .PP
 \fBaccess_remove\fR: \fIAccessName\fR
@@ -8085,7 +8372,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 24\&.12\&.
+This section describes listeners options of ejabberd 25\&.03\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -8093,13 +8380,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 24\&.12\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 25\&.03\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/24\&.12/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/25\&.03/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
