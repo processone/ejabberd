@@ -1,3 +1,117 @@
+## Version 25.03
+
+#### Commands API
+- `ejabberdctl`: New option `CTL_OVER_HTTP` ([#4340](https://github.com/processone/ejabberd/issues/4340))
+- `ejabberd_web_admin`: Support commands with tuple arguments
+- `mod_adhoc_api`: New module to execute API Commands using Ad-Hoc Commands ([#4357](https://github.com/processone/ejabberd/issues/4357))
+- `mod_http_api`: Sort list elements in a command result
+- Show warning when registering command with an existing name
+- Fix commands unregistration
+- `change_room_option`: Add forgotten support to set `enable_hats` room option
+- `change_room_option`: Verify room option value before setting it ([#4337](https://github.com/processone/ejabberd/issues/4337))
+- `create_room_with_opts`: Recommend using `;` and `=` separators
+- `list_cluster_detailed`: Fix crash when a node is down
+- `mnesia_list_tables`: Allow using this internal command
+- `mnesia_table_change_storage`: Allow using this internal command
+- `status`: Separate command result with newline
+- `update_sql`: Fix updating tables created by ejabberd internally
+- `update_sql`: Fix MySQL support
+
+#### Configuration
+- `acl`: Fix bug matching the acl `shared_group: NAME`
+- `define_keyword`: New option to define keywords ([#4350](https://github.com/processone/ejabberd/issues/4350))
+- `define_macro`: Add option to `globals()` because it's useless inside `host_config`
+- `ejabberd.yml.example`: Enable `mod_muc_occupantid` by default
+- Add support to use keywords in toplevel, listener and modules
+- Show warning also when deprecated listener option is set as disabled ([#4345](https://github.com/processone/ejabberd/issues/4345))
+
+#### Container
+- Bump versions to Erlang/OTP 27.3 and Elixir 1.18.3
+- Add `ERL_FLAGS` to compile elixir on qemu cross-platform
+- Copy files to stable path, add ecs backwards compatibility
+- Fix warning about relative workdir
+- Improve entrypoint script: register account, or set random
+- Link path to Mnesia spool dir for backwards compatibility
+- Place `sockets/` outside `database/`
+- Use again direct METHOD, qemu got fixed ([#4280](https://github.com/processone/ejabberd/issues/4280))
+- `ejabberd.yml.example`: Copy main example configuration file
+- `ejabberd.yml.example`: Define and use macros in the default configuration file
+- `ejabberd.yml.example`: Enable `CTL_OVER_HTTP` by default
+- `ejabberd.yml.example`: Listen for webadmin in a port number lower than any other
+- `ejabberdapi`: Compile during build
+- `CONTAINER.md`: Include documentation for ecs container image
+
+#### Core and Modules
+- `ejabberd_auth`: Add support for `auth_stored_password_types`
+- `ejabberd_router`: Don't rewrite "self-addressed" privileged IQs as results ([#4348](https://github.com/processone/ejabberd/issues/4348))
+- `misc`: Fix json version of `json_encode_with_kv_list` for nested kv lists ([#4338](https://github.com/processone/ejabberd/issues/4338))
+- OAuth: Fix crashes when oauth is feed with invalid jid ([#4355](https://github.com/processone/ejabberd/issues/4355))
+- PubSub: Bubble up db errors in `nodetree_tree_sql:set_node`
+- `mod_configure`: Add option `access` to let configure the access name
+- `mod_mix_pam`: Remove `Channels` roster group of mix channels ([#4297](https://github.com/processone/ejabberd/issues/4297))
+- `mod_muc`: Document MUC room option vcard_xupdate
+- `mod_privilege`: Accept non-privileged IQs from privileged components ([#4341](https://github.com/processone/ejabberd/issues/4341))
+- `mod_private`: Improve exception handling
+- `mod_private`: Don't warn on conversion errors
+- `mod_private`: Handle invalid PEP-native bookmarks
+- `mod_private`: Don't crash on invalid bookmarks
+- `mod_s2s_bidi`: Stop processing other handlers in s2s_in_handle_info ([#4344](https://github.com/processone/ejabberd/issues/4344))
+- `mod_s2s_bidi`: Fix issue with wrong namespace
+
+#### Dependencies
+- `ex_doc`: Bump to 0.37.2
+- `stringprep`: Bump to 1.0.31
+- `provider_asn1`: Bump to 0.4.1
+- `xmpp` Bump to bring fix for ssdp hash calculation
+- `xmpp` Bump to get support for webchat_url ([#3041](https://github.com/processone/ejabberd/issues/3041))
+- `xmpp` Bump to get XEP-0317 Hats namespaces version 0.2.0
+- `xmpp` Bump to bring SSDP to XEP version 0.4
+- `yconf` Bump to support macro inside string
+
+#### Development and Testing
+- `mix.exs`: Keep debug info when building `dev` release
+- `mix.exs`: The `ex_doc` dependency is only relevant for the `edoc` Mix environment
+- `ext_mod`: add `$libdir/include` to include path
+- `ext_mod`: fix greedy include path ([#4359](https://github.com/processone/ejabberd/issues/4359))
+- `gen_mod`: Support registering commands and `hook_subscribe` in `start/2` result
+- `c2s_handle_bind`: New event in `ejabberd_c2s` ([#4356](https://github.com/processone/ejabberd/issues/4356))
+- `muc_disco_info_extras`: New event `mod_muc_room` useful for `mod_muc_webchat_url` ([#3041](https://github.com/processone/ejabberd/issues/3041))
+- VSCode: Fix compiling support
+- Add tests for config features `define_macro` and `define_keyword`
+- Allow test to run using `ct_run`
+- Fixes to handle re-running test after `update_sql`
+- Uninstall `mod_example` when the tests has finished
+
+#### Documentation
+- Add XEPs that are indirectly supported and required by XEP-0479
+- Document that XEP-0474 0.4.0 was recently upgraded
+- Don't use backtick quotes for ejabberd name
+- Fix values allowed in db_type of mod_auth_fast documentation
+- Reword explanation about ACL names and definitions
+- Update moved or broken URLs in documentation
+
+#### Installers
+- Bump Erlang/OTP 27.3 and Elixir 1.18.3
+- Bump OpenSSL 3.4.1
+- Bump crosstool-NG 1.27.0
+- Fix building Termcap and Linux-PAM
+
+#### Matrix Gateway
+- Preserve XMPP message IDs in Matrix rooms
+- Better Matrix room topic and room roles to MUC conversion, support room aliases in invites
+- Add `muc#user` element to presences and an initial empty subject
+- Fix `gen_iq_handler:remove_iq_handler` call
+- Properly handle IQ requests
+- Support Matrix room aliases
+- Fix handling of 3PI events
+
+#### Unix Domain Socket
+- Add support for socket relative path
+- Use `/tmp` for temporary socket, as path is restricted to 107 chars
+- Handle unix socket when logging remote client
+- When stopping listener, delete Unix Domain Socket file
+- `get_auto_url` option: Don't build auto URL if port is unix domain socket ([#4345](https://github.com/processone/ejabberd/issues/4345))
+
 ## Version 24.12
 
 #### Miscelanea
