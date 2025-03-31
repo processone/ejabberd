@@ -80,10 +80,11 @@ init([]) ->
 	    Schema = read_schema_file(),
 	    {ok, #state{schema = Schema}};
 	false ->
-	    ?CRITICAL_MSG("Node name mismatch: I'm [~ts], "
-			  "the database is owned by ~p", [MyNode, DbNodes]),
+	    ?CRITICAL_MSG("Erlang node name mismatch: I'm running in node [~ts], "
+			  "but the mnesia database is owned by ~p", [MyNode, DbNodes]),
 	    ?CRITICAL_MSG("Either set ERLANG_NODE in ejabberdctl.cfg "
-			  "or change node name in Mnesia", []),
+			  "or change node name in Mnesia by running: "
+			  "ejabberdctl mnesia_change ~ts", [hd(DbNodes)]),
 	    {stop, node_name_mismatch}
     end.
 

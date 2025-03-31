@@ -1148,6 +1148,17 @@ get_commands_spec() ->
 			desc = "Get list of commands, or help of a command (only ejabberdctl)",
 			longdesc = "This command is exclusive for the ejabberdctl command-line script, "
 			"don't attempt to execute it using any other API frontend."},
+     #ejabberd_commands{name = mnesia_change, tags = [ejabberdctl, mnesia],
+			desc = "Change the erlang node name in the mnesia database (only ejabberdctl)",
+			longdesc = "This command internally calls the _`mnesia_change_nodename`_ API. "
+			"This is a special command that starts and stops ejabberd several times: "
+			"do not attempt to run this command when ejabberd is running. "
+			"This command is exclusive for the ejabberdctl command-line script, "
+			"don't attempt to execute it using any other API frontend.",
+			note = "added in 25.xx",
+			args = [{old_node_name, string}],
+			args_desc = ["Old erlang node name"],
+			args_example = ["ejabberd@oldmachine"]},
      #ejabberd_commands{name = mnesia_info_ctl, tags = [ejabberdctl, mnesia],
 			desc = "Show information of Mnesia system (only ejabberdctl)",
 			note = "renamed in 24.02",
