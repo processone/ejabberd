@@ -71,6 +71,10 @@ done
 : "${SPOOL_DIR:="{{spool_dir}}"}"
 : "${EJABBERD_LOG_PATH:="$LOGS_DIR/ejabberd.log"}"
 
+# backward support for old mnesia spool dir path
+: "${SPOOL_DIR_OLD:="$SPOOL_DIR/$ERLANG_NODE"}"
+[ -r "$SPOOL_DIR_OLD/schema.DAT" ] && [ ! -r "$SPOOL_DIR/schema.DAT" ] && SPOOL_DIR="$SPOOL_DIR_OLD"
+
 # define erl parameters
 ERLANG_OPTS="+K $POLL +P $ERL_PROCESSES $ERL_OPTIONS"
 if [ -n "$FIREWALL_WINDOW" ] ; then
