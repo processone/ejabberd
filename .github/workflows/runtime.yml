@@ -38,7 +38,7 @@ jobs:
           rebar: 'rebar'
     runs-on: ubuntu-24.04
     container:
-      image: erlang:${{ matrix.otp }}
+      image: public.ecr.aws/docker/library/erlang:${{ matrix.otp }}
 
     steps:
 
@@ -167,7 +167,7 @@ jobs:
         elixir: ['1.13', '1.14', '1.15', '1.16', '1.17', '1.18']
     runs-on: ubuntu-24.04
     container:
-      image: elixir:${{ matrix.elixir }}
+      image: public.ecr.aws/docker/library/elixir:${{ matrix.elixir }}
 
     steps:
 
@@ -290,7 +290,7 @@ jobs:
         elixir: ['1.13', '1.14', '1.15', '1.16', '1.17', '1.18']
     runs-on: ubuntu-24.04
     container:
-      image: elixir:${{ matrix.elixir }}
+      image: public.ecr.aws/docker/library/elixir:${{ matrix.elixir }}
 
     steps:
 
