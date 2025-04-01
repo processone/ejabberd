@@ -25,8 +25,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['20.0', '25', '26', '27']
-    runs-on: ubuntu-20.04
+        otp: ['25', '26', '27']
+    runs-on: ubuntu-24.04
     services:
       redis:
         image: public.ecr.aws/docker/library/redis
@@ -49,13 +49,6 @@ jobs:
       uses: erlef/setup-beam@v1
       with:
         otp-version: ${{ matrix.otp }}
-
-    - name: Get a compatible Rebar3
-      if: matrix.otp < 24
-      run: |
-        rm rebar3
-        wget https://github.com/processone/ejabberd/raw/21.12/rebar3
-        chmod +x rebar3
 
     - name: Install MS SQL Server
       run: |
@@ -83,6 +76,8 @@ jobs:
                                   WITH PASSWORD 'ejabberd_test';"
         sudo -u postgres psql -c "GRANT ALL PRIVILEGES
                                   ON DATABASE ejabberd_test TO ejabberd_test;"
+        sudo -u postgres psql -c "GRANT ALL ON SCHEMA public TO ejabberd_test;"
+        sudo -u postgres psql -c "ALTER DATABASE ejabberd_test OWNER TO ejabberd_test;"
         sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
                                                 TABLES IN SCHEMA public
                                                 TO ejabberd_test;"
@@ -107,10 +102,6 @@ jobs:
           ~/.cache/rebar3/
         key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
 
-    - name: Get old eredis for old Erlang
-      if: matrix.otp < 21
-      run: ./rebar3 unlock eredis
-
     - name: Compile
       run: |
         ./autogen.sh
@@ -129,7 +120,6 @@ jobs:
     - run: make dialyzer
     - run: make test-eunit
     - run: make elvis
-      if: matrix.otp >= 23
 
     - name: Check Production Release
       run: |
@@ -267,6 +257,8 @@ jobs:
         sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
         sudo -u postgres psql -c "GRANT ALL PRIVILEGES
                                   ON DATABASE ejabberd_test TO ejabberd_test;"
+        sudo -u postgres psql -c "GRANT ALL ON SCHEMA public TO ejabberd_test;"
+        sudo -u postgres psql -c "ALTER DATABASE ejabberd_test OWNER TO ejabberd_test;"
         sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
                                                 TABLES IN SCHEMA public
                                                 TO ejabberd_test;"
