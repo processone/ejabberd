@@ -266,15 +266,21 @@ and reads `CTL_ON_START` every time the container is started.
 Those variables can contain one ejabberdctl command,
 or several commands separated with the blankspace and `;` characters.
 
-By default failure of any of commands executed that way would
-abort start, this can be disabled by prefixing commands with `!`
+If any of those commands returns a failure, the container starting gets aborted.
+If there is a command with a result that can be ignored,
+prefix that command with `!`
 
-Example usage (or check the [full example](#customized-example)):
+This example, registers an `admin@localhost` account when the container is first created.
+Everytime the container starts, it shows the list of registered accounts,
+checks that the admin account exists and password is valid,
+changes the password of an account if it exists (ignoring any failure),
+and shows the ejabberd starts (check also the [full example](#customized-example)):
 ```yaml
     environment:
-      - CTL_ON_CREATE=! register admin localhost asd
+      - CTL_ON_CREATE=register admin localhost asd
       - CTL_ON_START=stats registeredusers ;
                      check_password admin localhost asd ;
+                     ! change_password bot123 localhost qqq ;
                      status
 ```
 
