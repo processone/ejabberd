@@ -584,12 +584,15 @@ process_admin(Host, #request{path = [<<"users">> | RPath], lang = Lang} = R, AJI
 process_admin(Host, #request{path = [<<"online-users">> | RPath], lang = Lang} = R, AJID)
     when is_binary(Host) ->
     Level = 3 + length(RPath),
-    Res = [make_command(connected_users_vhost,
+    Set = [make_command(kick_users, R, [{<<"host">>, Host}],
+                        [{style, danger}, {force_execution, false}])],
+    timer:sleep(200), % small delay after kicking users before getting the updated list
+    Get = [make_command(connected_users_vhost,
                         R,
                         [{<<"host">>, Host}],
                         [{table_options, {100, RPath}},
                          {result_links, [{sessions, user, Level, <<"">>}]}])],
-    make_xhtml([?XCT(<<"h1">>, ?T("Online Users"))] ++ Res, Host, R, AJID, Level);
+    make_xhtml([?XCT(<<"h1">>, ?T("Online Users"))] ++ Set ++ Get, Host, R, AJID, Level);
 process_admin(Host,
               #request{path = [<<"last-activity">>],
                        q = Query,
