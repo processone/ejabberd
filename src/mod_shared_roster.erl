@@ -381,7 +381,7 @@ create_group(Host, Group) ->
     create_group(Host, Group, []).
 
 create_group(Host, Group, Opts) ->
-    case jid:nodeprep(Group) of
+    case jid:nameprep(Group) of
 	error ->
 	    {error, invalid_group_name};
 	LGroup ->
