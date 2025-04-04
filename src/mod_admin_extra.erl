@@ -1899,16 +1899,20 @@ srg_create2(Group, Host, Label, Description, DisplayList) ->
     Opts = [{label, Label},
 	    {displayed_groups, DisplayList},
 	    {description, Description}],
-    {atomic, _} = mod_shared_roster:create_group(Host, Group, Opts),
-    ok.
+    case mod_shared_roster:create_group(Host, Group, Opts) of
+	{atomic, _} -> ok;
+	{error, Err} -> Err
+    end.
 
 srg_add(Group, Host) ->
     Opts = [{label, <<"">>},
             {description, <<"">>},
             {displayed_groups, []}
            ],
-    {atomic, _} = mod_shared_roster:create_group(Host, Group, Opts),
-    ok.
+    case mod_shared_roster:create_group(Host, Group, Opts) of
+	{atomic, _} -> ok;
+	{error, Err} -> Err
+    end.
 
 srg_delete(Group, Host) ->
     {atomic, _} = mod_shared_roster:delete_group(Host, Group),
