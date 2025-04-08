@@ -305,14 +305,21 @@ beams(external) ->
               end
       end, ExtMods),
     case application:get_env(ejabberd, external_beams) of
-        {ok, Path} ->
-            case lists:member(Path, code:get_path()) of
-                true -> ok;
-                false -> code:add_patha(Path)
-            end,
-            Beams = filelib:wildcard(filename:join(Path, "*\.beam")),
-            CustMods = [list_to_atom(filename:rootname(filename:basename(Beam)))
-                        || Beam <- Beams],
+        {ok, Path0} ->
+	    Paths = case Path0 of
+		[L|_] = V when is_list(L) -> V;
+		L -> [L]
+	    end,
+	    CustMods = lists:foldl(
+		fun(Path, CM) ->
+		    case lists:member(Path, code:get_path()) of
+			true -> ok;
+			false -> code:add_patha(Path)
+		    end,
+		    Beams = filelib:wildcard(filename:join(Path, "*\.beam")),
+		    CM ++ [list_to_atom(filename:rootname(filename:basename(Beam)))
+			   || Beam <- Beams]
+		end, [], Paths),
             CustMods ++ ExtMods;
         _ ->
             ExtMods
