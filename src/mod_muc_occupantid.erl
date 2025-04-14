@@ -71,7 +71,7 @@ add_occupantid_packet(Packet, RoomJid) ->
     From = xmpp:get_from(Packet),
     OccupantId = calculate_occupantid(From, RoomJid),
     OccupantElement = #occupant_id{id = OccupantId},
-    xmpp:set_subtag(Packet, OccupantElement).
+    xmpp:append_subtags(xmpp:remove_subtag(Packet, OccupantElement), [OccupantElement]).
 
 calculate_occupantid(From, RoomJid) ->
     Term = {jid:remove_resource(From), get_salt(RoomJid)},
