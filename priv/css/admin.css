@@ -131,9 +131,12 @@ ul li #navhead a, ul li #navheadsub a, ul li #navheadsubsub a {
   background: #424a55;
   color: #fff;
 }
+
+#navitemlogin-start {
+  border-top: 0.2em solid #cae7e4;
+}
 #navitemlogin {
   padding: 0.5em;
-  border-top: 0.2em solid #cae7e4;
   border-bottom: 0.2em solid #cae7e4;
   padding-left: 0.5em;
 }

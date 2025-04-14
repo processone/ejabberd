@@ -1660,9 +1660,19 @@ make_login_items(#request{us = {Username, Host}} = R, Level) ->
             _ ->
                 UserEl
         end,
+    MenuPost =
+        case ejabberd_hooks:run_fold(webadmin_menu_system_post, [], [R]) of
+            [] ->
+                [];
+            PostElements ->
+                [{xmlel,
+                  <<"div">>,
+                  [{<<"id">>, <<"navitemlogin">>}],
+                  [?XE(<<"ul">>, PostElements)]}]
+        end,
     [{xmlel,
       <<"li">>,
-      [],
+      [{<<"id">>, <<"navitemlogin-start">>}],
       [{xmlel,
         <<"div">>,
         [{<<"id">>, <<"navitemlogin">>}],
@@ -1673,10 +1683,12 @@ make_login_items(#request{us = {Username, Host}} = R, Level) ->
                                 R,
                                 [{<<"sentence">>, misc:atom_to_binary(node())}],
                                 [{only, value},
-                                 {result_links, [{sentence, node, Level, <<"">>}]}])]),
-              ?LI([?C(unicode:characters_to_binary("📤")),
-                   ?AC(<<(binary:copy(<<"../">>, Level))/binary, "logout/">>,
-                       <<"Logout">>)])])]}]}].
+                                 {result_links, [{sentence, node, Level, <<"">>}]}])])]
+             ++ ejabberd_hooks:run_fold(webadmin_menu_system_inside, [], [R])
+             ++ [?LI([?C(unicode:characters_to_binary("📤")),
+                      ?AC(<<(binary:copy(<<"../">>, Level))/binary, "logout/">>,
+                          <<"Logout">>)])])]}]
+      ++ MenuPost}].
 
 %%%==================================
 
