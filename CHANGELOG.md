@@ -2,12 +2,12 @@
 
 #### Security fixes
 - Fixes issue with handling of user provided occupant-id in messages and presences sent to muc room. Server was replacing
-  just first instance of occupant-id with it's own version, leaving other one untouched. That would mean that depending
-  on order in which clients seen occupant-id, they could see value provided by sender, and that could be used to spoof
-  as different sender. 
+  just first instance of occupant-id with its own version, leaving other ones untouched. That would mean that depending
+  on order in which clients send occupant-id, they could see value provided by sender, and that could be used to spoof
+  as different sender.
 
 #### Commands API
-- `kick_users`: New command that allow to kick all logged users for a given host
+- `kick_users`: New command to kick all logged users for a given host
 
 #### Bugfixes
 - Fix issue with sql schema auto upgrade when using `sqlite` database
