@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 03/28/2025
+.\"      Date: 04/16/2025
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "03/28/2025" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "04/16/2025" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/25\&.03/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/25\&.04/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 25\&.03\&. The options that changed in this version are marked with 🟤\&.
+This section describes top level options of ejabberd 25\&.04\&. The options that changed in this version are marked with 🟤\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLName|ACLDefinition}}\fR
 .RS 4
@@ -469,7 +469,7 @@ format\&. You shouldn\(cqt change this if you already have passwords generated w
 \fIsha\fR\&.
 .RE
 .PP
-\fBauth_stored_password_types 🟤\fR: \fI[plain | scram_sha1 | scram_sha256 | scram_sha512]\fR
+\fBauth_stored_password_types\fR: \fI[plain | scram_sha1 | scram_sha256 | scram_sha512]\fR
 .RS 4
 \fINote\fR
 about this option: added in 25\&.03\&. List of password types that should be stored simultaneously for each user in database\&. When the user sets the account password, database will be updated to store the password in formats compatible with each type listed here\&. This can be used to migrate user passwords to a more secure format\&. If this option if set, it will override values set in
@@ -707,7 +707,7 @@ Default volatile (in\-memory) storage for ejabberd\&. Modules and other componen
 \fImnesia\fR\&.
 .RE
 .PP
-\fBdefine_keyword 🟤\fR: \fI{NAME: Value}\fR
+\fBdefine_keyword\fR: \fI{NAME: Value}\fR
 .RS 4
 \fINote\fR
 about this option: added in 25\&.03\&. Allows to define configuration
@@ -734,7 +734,7 @@ sql_username: "prefix\&.@SQL_USERNAME@"
 .\}
 .RE
 .PP
-\fBdefine_macro 🟤\fR: \fI{NAME: Value}\fR
+\fBdefine_macro\fR: \fI{NAME: Value}\fR
 .RS 4
 \fINote\fR
 about this option: improved in 25\&.03\&. Allows to define configuration
@@ -1246,7 +1246,7 @@ This option can be used to tune tick time parameter of
 .RS 4
 Whether to use the
 \fIdatabase\&.md#default\-and\-new\-schemas|new SQL schema\fR\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/25\&.03/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/25\&.04/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema can handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -2043,7 +2043,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 25\&.03\&. The modules that changed in this version are marked with 🟤\&.
+This section describes modules options of ejabberd 25\&.04\&. The modules that changed in this version are marked with 🟤\&.
 .SS "mod_adhoc"
 .sp
 This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary module and is only needed by some of the other modules\&.
@@ -2062,7 +2062,7 @@ Provide the Commands item in the Service Discovery\&. Default value:
 \fIfalse\fR\&.
 .RE
 .RE
-.SS "mod_adhoc_api 🟤"
+.SS "mod_adhoc_api"
 .sp
 \fINote\fR about this option: added in 25\&.03\&.
 .sp
@@ -2808,7 +2808,7 @@ Please notice that all the ad\-hoc commands implemented by this module have an e
 \fBAvailable options:\fR
 .RS 4
 .PP
-\fBaccess 🟤\fR: \fIAccessName\fR
+\fBaccess\fR: \fIAccessName\fR
 .RS 4
 \fINote\fR
 about this option: added in 25\&.03\&. This option defines which access rule will be used to control who is allowed to access the features provided by this module\&. The default value is
@@ -3956,7 +3956,7 @@ When this option is disabled, for each individual subscriber a separate mucsub m
 \fIfalse\fR\&.
 .RE
 .RE
-.SS "mod_matrix_gw 🟤"
+.SS "mod_matrix_gw"
 .sp
 \fINote\fR about this option: improved in 25\&.03\&.
 .sp
@@ -4629,7 +4629,7 @@ in order to accept their join in the room\&. The default value is
 Short description of the room\&. The default value is an empty string\&.
 .RE
 .PP
-\fBenable_hats 🟤\fR: \fItrue | false\fR
+\fBenable_hats\fR: \fItrue | false\fR
 .RS 4
 \fINote\fR
 about this option: improved in 25\&.03\&. Allow extended roles as defined in XEP\-0317 Hats\&. Check the
@@ -8372,7 +8372,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 25\&.03\&.
+This section describes listeners options of ejabberd 25\&.04\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -8380,13 +8380,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 25\&.03\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 25\&.04\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/25\&.03/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/25\&.04/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
