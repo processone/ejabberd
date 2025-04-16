@@ -46,7 +46,9 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Cualquiera con una suscripción a la presencia de 'ambos' o 'de' puede suscribirse y recibir elementos"}.
 {"Anyone with Voice","Cualquiera con Voz"}.
 {"Anyone","Cualquiera"}.
+{"API Commands","Comandos API"}.
 {"April","Abril"}.
+{"Arguments","Argumentos"}.
 {"Attribute 'channel' is required for this request","El atributo 'channel' es necesario para esta petición"}.
 {"Attribute 'id' is mandatory for MIX messages","El atributo 'id' es necesario para mensajes MIX"}.
 {"Attribute 'jid' is not allowed here","El atributo 'jid' no está permitido aqui"}.
@@ -86,6 +88,7 @@
 {"Choose whether to approve this entity's subscription.","Decidir si aprobar la subscripción de esta entidad."}.
 {"City","Ciudad"}.
 {"Client acknowledged more stanzas than sent by server","El cliente ha reconocido más paquetes de los que el servidor ha enviado"}.
+{"Clustering","Clustering"}.
 {"Commands","Comandos"}.
 {"Conference room does not exist","La sala de conferencias no existe"}.
 {"Configuration of room ~s","Configuración para la sala ~s"}.
@@ -161,7 +164,7 @@
 {"Get Pending","Obtener pendientes"}.
 {"Get User Last Login Time","Ver fecha de la última conexión de usuario"}.
 {"Get User Statistics","Ver estadísticas de usuario"}.
-{"Given Name","Nombre"}.
+{"Given Name","Nombre de pila"}.
 {"Grant voice to this person?","¿Conceder voz a esta persona?"}.
 {"has been banned","ha sido bloqueado"}.
 {"has been kicked because of a system shutdown","ha sido expulsado porque el sistema se va a detener"}.
@@ -408,6 +411,7 @@
 {"Restore binary backup immediately:","Restaurar inmediatamente copia de seguridad binaria:"}.
 {"Restore plain text backup immediately:","Restaurar copias de seguridad de texto plano inmediatamente:"}.
 {"Restore","Restaurar"}.
+{"Result","Resultado"}.
 {"Roles and Affiliations that May Retrieve Member List","Roles y Afiliaciones que pueden obtener la lista de miembros"}.
 {"Roles for which Presence is Broadcasted","Roles para los que sí se difunde su Presencia"}.
 {"Roles that May Send Private Messages","Roles que pueden enviar mensajes privados"}.
@@ -584,6 +588,7 @@
 {"Visitor","Visitante"}.
 {"Voice request","Petición de voz"}.
 {"Voice requests are disabled in this conference","Las peticiones de voz están desactivadas en esta sala"}.
+{"Web client which allows to join the room anonymously","Cliente web que permite entrar en la sala anonimamente"}.
 {"Wednesday","Miércoles"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Cuando se procesa una nueva suscripción y cuando un suscriptor se conecta"}.
 {"When a new subscription is processed","Cuando se procesa una nueva suscripción"}.

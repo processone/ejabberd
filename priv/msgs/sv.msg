@@ -34,7 +34,6 @@
 {"Chatrooms","Chattrum"}.
 {"Choose a username and password to register with this server","Välj ett användarnamn och lösenord för att registrera mot denna server"}.
 {"Choose storage type of tables","Välj lagringstyp för tabeller"}.
-{"Choose whether to approve this entity's subscription.","Välj om du vill godkänna hela denna  prenumertion."}.
 {"City","Stad"}.
 {"Commands","Kommandon"}.
 {"Conference room does not exist","Rummet finns inte"}.
@@ -196,7 +195,6 @@
 {"Search users in ","Sök efter användare på "}.
 {"Send announcement to all online users on all hosts","Sänd meddelanden till alla inloggade användare på alla värdar"}.
 {"Send announcement to all online users","Sänd meddelanden till alla inloggade användare"}.
-{"Send announcement to all users on all hosts","Sänd meddelanden till alla  användare på alla värdar"}.
 {"Send announcement to all users","Sänd meddelanden till alla användare"}.
 {"September","September"}.
 {"Set message of the day and send to online users","Sätt dagens status meddelande och skicka till alla användare"}.

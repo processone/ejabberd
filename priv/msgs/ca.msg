@@ -46,7 +46,9 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Qualsevol amb una subscripció de presencia de 'both' o 'from' pot subscriure's i publicar elements"}.
 {"Anyone with Voice","Qualsevol amb Veu"}.
 {"Anyone","Qualsevol"}.
+{"API Commands","Comandaments API"}.
 {"April","Abril"}.
+{"Arguments","Arguments"}.
 {"Attribute 'channel' is required for this request","L'atribut 'channel' és necessari per a aquesta petició"}.
 {"Attribute 'id' is mandatory for MIX messages","L'atribut 'id' es necessari per a missatges MIX"}.
 {"Attribute 'jid' is not allowed here","L'atribut 'jid' no està permès ací"}.
@@ -86,6 +88,7 @@
 {"Choose whether to approve this entity's subscription.","Tria si aproves aquesta entitat de subscripció."}.
 {"City","Ciutat"}.
 {"Client acknowledged more stanzas than sent by server","El client ha reconegut més paquets dels que ha enviat el servidor"}.
+{"Clustering","Clustering"}.
 {"Commands","Comandaments"}.
 {"Conference room does not exist","La sala de conferències no existeix"}.
 {"Configuration of room ~s","Configuració de la sala ~s"}.
@@ -408,6 +411,7 @@
 {"Restore binary backup immediately:","Restaurar una còpia de seguretat binària ara mateix:"}.
 {"Restore plain text backup immediately:","Restaurar una còpia de seguretat en format de text pla ara mateix:"}.
 {"Restore","Restaurar"}.
+{"Result","Resultat"}.
 {"Roles and Affiliations that May Retrieve Member List","Rols i Afiliacions que poden recuperar la llista de membres"}.
 {"Roles for which Presence is Broadcasted","Rols per als que sí se difon la seua presencia"}.
 {"Roles that May Send Private Messages","Rols que poden enviar missatges privats"}.
@@ -584,6 +588,7 @@
 {"Visitor","Visitant"}.
 {"Voice request","Petició de veu"}.
 {"Voice requests are disabled in this conference","Les peticions de veu es troben desactivades en aquesta conferència"}.
+{"Web client which allows to join the room anonymously","Client web que permet entrar a la sala anonimament"}.
 {"Wednesday","Dimecres"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Quan es processa una nova subscripció i un subscriptor es connecta"}.
 {"When a new subscription is processed","Quan es processa una nova subscripció"}.
