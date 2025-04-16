@@ -46,7 +46,9 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Qualquer pessoa com uma assinatura presente dos dois ou de ambos pode se inscrever e recuperar os itens"}.
 {"Anyone with Voice","Qualquer pessoa com voz"}.
 {"Anyone","Qualquer pessoa"}.
+{"API Commands","Comandos API"}.
 {"April","Abril"}.
+{"Arguments","Argumentos"}.
 {"Attribute 'channel' is required for this request","O atributo 'canal' é necessário para esta solicitação"}.
 {"Attribute 'id' is mandatory for MIX messages","O atributo 'id' é obrigatório para mensagens MIX"}.
 {"Attribute 'jid' is not allowed here","O atributo 'jid' não é permitido aqui"}.
@@ -86,6 +88,7 @@
 {"Choose whether to approve this entity's subscription.","Aprovar esta assinatura."}.
 {"City","Cidade"}.
 {"Client acknowledged more stanzas than sent by server","O cliente reconheceu mais estrofes do que as enviadas pelo servidor"}.
+{"Clustering","Agrupamento"}.
 {"Commands","Comandos"}.
 {"Conference room does not exist","A sala de conferência não existe"}.
 {"Configuration of room ~s","Configuração para ~s"}.
@@ -408,6 +411,7 @@
 {"Restore binary backup immediately:","Restaurar imediatamente o backup binário:"}.
 {"Restore plain text backup immediately:","Restaurar backup formato texto imediatamente:"}.
 {"Restore","Restaurar"}.
+{"Result","Resultado"}.
 {"Roles and Affiliations that May Retrieve Member List","As funções e as afiliações que podem recuperar a lista dos membros"}.
 {"Roles for which Presence is Broadcasted","Para quem a presença será notificada"}.
 {"Roles that May Send Private Messages","Atribuições que talvez possam enviar mensagens privadas"}.
@@ -584,6 +588,7 @@
 {"Visitor","Visitante"}.
 {"Voice request","Requisição de voz"}.
 {"Voice requests are disabled in this conference","Requisições de voz estão desabilitadas nesta sala de conferência"}.
+{"Web client which allows to join the room anonymously","Cliente da web que permite entrar na sala de forma anônima"}.
 {"Wednesday","Quarta"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Quando uma nova assinatura é processada e sempre que um assinante fica online"}.
 {"When a new subscription is processed","Quando uma nova assinatura é processada"}.
