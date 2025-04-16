@@ -1078,7 +1078,7 @@ get_commands_spec() ->
     #ejabberd_commands{name = kick_users, tags = [session],
 			desc = "Disconnect all given host users' active sessions",
 			module = ?MODULE, function = kick_users,
-			note = "added in 25.xx",
+			note = "added in 25.04",
 			args = [{host, binary}],
 			args_desc = ["Server name"],
 			args_example = [<<"example.com">>],
