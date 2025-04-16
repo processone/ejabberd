@@ -46,7 +46,9 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Jeder mit einem Präsenzabonnement von beiden oder davon darf Items abonnieren oder abrufen"}.
 {"Anyone with Voice","Jeder mit Stimme"}.
 {"Anyone","Jeder"}.
+{"API Commands","API Befehle"}.
 {"April","April"}.
+{"Arguments","Argumente"}.
 {"Attribute 'channel' is required for this request","Attribut 'channel' ist für diese Anforderung erforderlich"}.
 {"Attribute 'id' is mandatory for MIX messages","Attribut 'id' ist verpflichtend für MIX-Nachrichten"}.
 {"Attribute 'jid' is not allowed here","Attribut 'jid' ist hier nicht erlaubt"}.
@@ -168,6 +170,7 @@
 {"has been kicked because of an affiliation change","wurde wegen einer Änderung der Zugehörigkeit hinausgeworfen"}.
 {"has been kicked because the room has been changed to members-only","wurde hinausgeworfen weil der Raum zu Nur-Mitglieder geändert wurde"}.
 {"has been kicked","wurde hinausgeworfen"}.
+{"Hash of the vCard-temp avatar of this room","Hash des vCard-temp Avatars dieses Raums"}.
 {"Hat title","Funktionstitel"}.
 {"Hat URI","Funktions-URI"}.
 {"Hats limit exceeded","Funktionslimit wurde überschritten"}.
@@ -406,6 +409,7 @@
 {"Restore binary backup immediately:","Stelle binäres Backup sofort wieder her:"}.
 {"Restore plain text backup immediately:","Stelle Klartext-Backup sofort wieder her:"}.
 {"Restore","Wiederherstellung"}.
+{"Result","Ergebnis"}.
 {"Roles and Affiliations that May Retrieve Member List","Rollen und Zugehörigkeiten die Mitgliederliste abrufen dürfen"}.
 {"Roles for which Presence is Broadcasted","Rollen für welche die Präsenz übertragen wird"}.
 {"Roles that May Send Private Messages","Rollen die Privatnachrichten senden dürfen"}.
@@ -550,6 +554,7 @@
 {"Update message of the day on all hosts (don't send)","Aktualisiere Nachricht des Tages auf allen Hosts (nicht senden)"}.
 {"Update specs to get modules source, then install desired ones.","Aktualisieren Sie die Spezifikationen, um den Quellcode der Module zu erhalten und installieren Sie dann die gewünschten Module."}.
 {"Update Specs","Spezifikationen aktualisieren"}.
+{"Updating the vCard is not supported by the vCard storage backend","Aktualisierung der vCard wird vom vCard-Speicher-Backend nicht unterstützt"}.
 {"Upgrade","Upgrade"}.
 {"URL for Archived Discussion Logs","URL für archivierte Diskussionsprotokolle"}.
 {"User already exists","Benutzer existiert bereits"}.
@@ -578,6 +583,7 @@
 {"Visitors are not allowed to send messages to all occupants","Besucher dürfen nicht an alle Teilnehmer Nachrichten versenden"}.
 {"Voice requests are disabled in this conference","Sprachrecht-Anforderungen sind in diesem Raum deaktiviert"}.
 {"Voice request","Sprachrecht-Anforderung"}.
+{"Web client which allows to join the room anonymously","Web-Client, der es ermöglicht, dem Raum anonym beizutreten"}.
 {"Wednesday","Mittwoch"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Sobald ein neues Abonnement verarbeitet wird und wann immer ein Abonnent sich anmeldet"}.
 {"When a new subscription is processed","Sobald ein neues Abonnement verarbeitet wird"}.
