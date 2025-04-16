@@ -46,7 +46,9 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Qualquer pessoa com uma assinatura presente dos dois ou de ambos pode se inscrever e recuperar os itens"}.
 {"Anyone with Voice","Qualquer pessoa com voz"}.
 {"Anyone","Qualquer pessoa"}.
+{"API Commands","Comandos API"}.
 {"April","Abril"}.
+{"Arguments","Argumentos"}.
 {"Attribute 'channel' is required for this request","O atributo 'canal' é necessário para esta solicitação"}.
 {"Attribute 'id' is mandatory for MIX messages","O atributo 'id' é obrigatório para mensagens MIX"}.
 {"Attribute 'jid' is not allowed here","O atributo 'jid' não é permitido aqui"}.
@@ -86,6 +88,7 @@
 {"Choose whether to approve this entity's subscription.","Aprovar esta assinatura."}.
 {"City","Cidade"}.
 {"Client acknowledged more stanzas than sent by server","O cliente reconheceu mais estrofes do que as enviadas pelo servidor"}.
+{"Clustering","Agrupamento"}.
 {"Commands","Comandos"}.
 {"Conference room does not exist","A sala não existe"}.
 {"Configuration of room ~s","Configuração para ~s"}.
@@ -168,6 +171,7 @@
 {"has been kicked because of an affiliation change","foi desconectado porque por afiliação inválida"}.
 {"has been kicked because the room has been changed to members-only","foi desconectado porque a política da sala mudou, só membros são permitidos"}.
 {"has been kicked","foi removido"}.
+{"Hash of the vCard-temp avatar of this room","Hash do avatar do vCard-temp desta sala"}.
 {"Hat title","Título do chapéu"}.
 {"Hat URI","URI do chapéu"}.
 {"Hats limit exceeded","O limite dos chapéus foi excedido"}.
@@ -223,6 +227,7 @@
 {"leaves the room","Sair da sala"}.
 {"List of users with hats","Lista os utilizadores com chapéus"}.
 {"List users with hats","Lista os utilizadores com chapéus"}.
+{"Logged Out","Desconectado"}.
 {"Logging","Registando no log"}.
 {"Make participants list public","Tornar pública a lista de participantes"}.
 {"Make room CAPTCHA protected","Tornar protegida a palavra-passe da sala"}.
@@ -406,6 +411,7 @@
 {"Restore binary backup immediately:","Restaurar imediatamente o backup binário:"}.
 {"Restore plain text backup immediately:","Restaurar backup formato texto imediatamente:"}.
 {"Restore","Restaurar"}.
+{"Result","Resultado"}.
 {"Roles and Affiliations that May Retrieve Member List","As funções e as afiliações que podem recuperar a lista dos membros"}.
 {"Roles for which Presence is Broadcasted","Para quem a presença será notificada"}.
 {"Roles that May Send Private Messages","Atribuições que talvez possam enviar mensagens privadas"}.
@@ -437,6 +443,7 @@
 {"Set message of the day on all hosts and send to online users","Definir mensagem do dia em todos os hosts e enviar para os utilizadores online"}.
 {"Shared Roster Groups","Grupos Shared Roster"}.
 {"Show Integral Table","Mostrar Tabela Integral"}.
+{"Show Occupants Join/Leave","Mostrar a entrada e a saída de ocupantes"}.
 {"Show Ordinary Table","Mostrar Tabela Ordinária"}.
 {"Shut Down Service","Parar Serviço"}.
 {"SOCKS5 Bytestreams","Bytestreams SOCKS5"}.
@@ -534,6 +541,7 @@
 {"Too many unacked stanzas","Quantidade excessiva de instâncias sem confirmação"}.
 {"Too many users in this conference","Há uma quantidade excessiva de utilizadores nesta conferência"}.
 {"Traffic rate limit is exceeded","Limite de banda excedido"}.
+{"~ts's MAM Archive","Arquivo ~ts's MAM"}.
 {"~ts's Offline Messages Queue","~s's Fila de Mensagens Offline"}.
 {"Tuesday","Terça"}.
 {"Unable to generate a CAPTCHA","Impossível gerar um CAPTCHA"}.
@@ -550,12 +558,14 @@
 {"Update message of the day on all hosts (don't send)","Atualizar a mensagem do dia em todos os host (não enviar)"}.
 {"Update specs to get modules source, then install desired ones.","Atualize as especificações para obter a fonte dos módulos e instale os que desejar."}.
 {"Update Specs","Atualizar as especificações"}.
+{"Updating the vCard is not supported by the vCard storage backend","A atualização do vCard não é compatível com o back-end de armazenamento do vCard"}.
 {"Upgrade","Atualização"}.
 {"URL for Archived Discussion Logs","A URL para o arquivamento dos registos da discussão"}.
 {"User already exists","Utilizador já existe"}.
 {"User (jid)","Utilizador (jid)"}.
 {"User JID","Utilizador JID"}.
 {"User Management","Gestão de utilizadores"}.
+{"User not allowed to perform an IQ set on another user's vCard.","O utilizador não tem permissão para executar um conjunto de QI no vCard de outro utilizador."}.
 {"User removed","O utilizador foi removido"}.
 {"User session not found","A sessão do utilizador não foi encontrada"}.
 {"User session terminated","Sessão de utilizador terminada"}.
@@ -578,6 +588,7 @@
 {"Visitor","Visitante"}.
 {"Voice request","Requisição de voz"}.
 {"Voice requests are disabled in this conference","Requisições de voz estão desativadas nesta sala de conferência"}.
+{"Web client which allows to join the room anonymously","Cliente da web que permite entrar na sala de forma anônima"}.
 {"Wednesday","Quarta"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Quando uma nova assinatura é processada e sempre que um assinante fica online"}.
 {"When a new subscription is processed","Quando uma nova assinatura é processada"}.
