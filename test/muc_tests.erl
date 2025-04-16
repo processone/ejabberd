@@ -304,7 +304,70 @@ master_slave_cases() ->
       master_slave_test(config_allow_voice_requests),
       master_slave_test(config_voice_request_interval),
       master_slave_test(config_visitor_nickchange),
-      master_slave_test(join_conflict)]}.
+      master_slave_test(join_conflict),
+      master_slave_test(duplicate_occupantid)
+     ]}.
+
+duplicate_occupantid_master(Config) ->
+    Room = muc_room_jid(Config),
+    PeerJID = ?config(slave, Config),
+    PeerNick = ?config(slave_nick, Config),
+    PeerNickJID = jid:replace_resource(Room, PeerNick),
+    MyNick = ?config(nick, Config),
+    MyNickJID = jid:replace_resource(Room, MyNick),
+    ok = join_new(Config),
+    wait_for_slave(Config),
+    Pres = ?match(#presence{from = PeerNickJID, type = available} = Pres,
+		  recv_presence(Config), Pres),
+    ?match(#muc_user{items = [#muc_item{jid = PeerJID,
+				 role = participant,
+				 affiliation = none}]},
+	xmpp:get_subtag(Pres, #muc_user{})),
+    OccupantId = ?match([#occupant_id{id = Id}], xmpp:get_subtags(Pres, #occupant_id{}), Id),
+    Pres2 = ?match(#presence{from = PeerNickJID, type = available} = Pres2,
+		  recv_presence(Config), Pres2),
+    ?match([#occupant_id{id = OccupantId}], xmpp:get_subtags(Pres2, #occupant_id{})),
+    Body = xmpp:mk_text(<<"test-1">>),
+    Msg = ?match(#message{type = groupchat, from = PeerNickJID,
+	     body = Body} = Msg, recv_message(Config), Msg),
+    ?match([#occupant_id{id = OccupantId}], xmpp:get_subtags(Msg, #occupant_id{})),
+    recv_muc_presence(Config, PeerNickJID, unavailable),
+    ok = leave(Config),
+    disconnect(Config).
+
+duplicate_occupantid_slave(Config) ->
+    Room = muc_room_jid(Config),
+    MyNick = ?config(slave_nick, Config),
+    MyNickJID = jid:replace_resource(Room, MyNick),
+    PeerNick = ?config(master_nick, Config),
+    PeerNickJID = jid:replace_resource(Room, PeerNick),
+    wait_for_master(Config),
+    send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
+    ?match(#presence{from = Room, type = available}, recv_presence(Config)),
+    OccupantId = case recv_presence(Config) of
+		     #presence{from = MyNickJID, type = available} = Pres ->
+			 recv_muc_presence(Config, PeerNickJID, available),
+			 ?match([#occupant_id{id = Id}], xmpp:get_subtags(Pres, #occupant_id{}), Id);
+		     #presence{from = PeerNickJID, type = available} ->
+			 Pres2 = ?match(#presence{from = MyNickJID, type = available} = Pres2,
+					recv_presence(Config), Pres2),
+			 ?match([#occupant_id{id = Id}], xmpp:get_subtags(Pres2, #occupant_id{}), Id)
+		 end,
+    ?match(#message{type = groupchat, from = Room}, recv_message(Config)),
+    send(Config, #presence{to = Room, sub_els = [#occupant_id{id = <<"fake1">>},
+	#occupant_id{id = <<"fake2">>}]}),
+    Pres3 = ?match(#presence{from = MyNickJID, type = available} = Pres3,
+		  recv_presence(Config), Pres3),
+    ?match([#occupant_id{id = OccupantId}], xmpp:get_subtags(Pres3, #occupant_id{})),
+    Body = xmpp:mk_text(<<"test-1">>),
+    send(Config, #message{to = Room, type = groupchat, body = Body,
+			  sub_els = [#occupant_id{id = <<"fake1">>},
+				     #occupant_id{id = <<"fake2">>}]}),
+    Msg = ?match(#message{type = groupchat, from = MyNickJID,
+			  body = Body} = Msg, recv_message(Config), Msg),
+    ?match([#occupant_id{id = OccupantId}], xmpp:get_subtags(Msg, #occupant_id{})),
+    ok = leave(Config),
+    disconnect(Config).
 
 join_conflict_master(Config) ->
     ok = join_new(Config),
@@ -1628,7 +1691,7 @@ join(Config, Role, Aff) when is_atom(Role), is_atom(Aff) ->
 join(Config, Role, #muc{} = SubEl) when is_atom(Role) ->
     join(Config, Role, none, SubEl).
 
-join(Config, Role, Aff, SubEl) ->
+join(Config, Role, Aff, SubEls) when is_list(SubEls) ->
     ct:comment("Joining existing room as ~s/~s", [Aff, Role]),
     MyJID = my_jid(Config),
     Room = muc_room_jid(Config),
@@ -1636,7 +1699,7 @@ join(Config, Role, Aff, SubEl) ->
     MyNickJID = jid:replace_resource(Room, MyNick),
     PeerNick = ?config(peer_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    send(Config, #presence{to = MyNickJID, sub_els = [SubEl]}),
+    send(Config, #presence{to = MyNickJID, sub_els = SubEls}),
     case recv_presence(Config) of
 	#presence{type = error, from = MyNickJID} = Err ->
 	    xmpp:get_subtag(Err, #stanza_error{});
@@ -1667,7 +1730,9 @@ join(Config, Role, Aff, SubEl) ->
 		    {History, Subj} = recv_history_and_subject(Config),
 		    {empty, History, Subj, Codes}
 	    end
-    end.
+    end;
+join(Config, Role, Aff, SubEl) ->
+    join(Config, Role, Aff, [SubEl]).
 
 leave(Config) ->
     leave(Config, muc_room_jid(Config)).

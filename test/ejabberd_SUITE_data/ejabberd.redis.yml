@@ -15,6 +15,7 @@ define_macro:
       mod_muc:
         db_type: internal
         vcard: VCARD
+      mod_muc_occupantid: []
       mod_offline:
         db_type: internal
       mod_privacy:

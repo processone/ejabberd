@@ -123,6 +123,7 @@ modules:
     vcard: VCARD
   mod_muc:
     vcard: VCARD
+  mod_muc_occupantid: []
   mod_muc_admin: []
   mod_carboncopy: []
   mod_jidprep: []

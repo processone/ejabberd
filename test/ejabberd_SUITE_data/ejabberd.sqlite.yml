@@ -1,5 +1,8 @@
 define_macro:
   SQLITE_CONFIG:
+    auth_stored_password_types:
+      - plain
+      - scram_sha256
     sql_type: sqlite
     sql_pool_size: 1
     auth_method: sql
@@ -17,6 +20,7 @@ define_macro:
         db_type: sql
         ram_db_type: sql
         vcard: VCARD
+      mod_muc_occupantid: []
       mod_offline:
         db_type: sql
       mod_privacy:
