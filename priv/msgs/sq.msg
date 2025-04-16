@@ -28,7 +28,9 @@
 {"Anyone may publish","Gjithkush mund të publikojë"}.
 {"Anyone with Voice","Cilido me Zë"}.
 {"Anyone","Cilido"}.
+{"API Commands","Urdhra API"}.
 {"April","Prill"}.
+{"Arguments","Argumente"}.
 {"Attribute 'channel' is required for this request","Atributi 'channel' është i domosdoshëm për këtë kërkesë"}.
 {"Attribute 'jid' is not allowed here","Atributi 'jid' s’lejohet këtu"}.
 {"Attribute 'node' is not allowed here","Atributi 'node' s’lejohet këtu"}.
