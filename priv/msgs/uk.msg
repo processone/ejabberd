@@ -46,7 +46,9 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Будь-хто, хто має підписку на отримання інформації про присутність в обох випадках або може підписуватись та отримувати матеріали"}.
 {"Anyone with Voice","Будь-хто, хто має голос"}.
 {"Anyone","Будь-хто"}.
+{"API Commands","Команди API"}.
 {"April","Квітень"}.
+{"Arguments","Аргументи"}.
 {"Attribute 'channel' is required for this request","Атрибут \"канал\" є обов'язковим для цього запиту"}.
 {"Attribute 'id' is mandatory for MIX messages","Атрибут 'id' обов'язковий для MIX повідомлень"}.
 {"Attribute 'jid' is not allowed here","Атрибут 'jid' заборонений"}.
@@ -86,6 +88,7 @@
 {"Choose whether to approve this entity's subscription.","Виберіть, чи підтверджувати підписку."}.
 {"City","Місто"}.
 {"Client acknowledged more stanzas than sent by server","Клієнт підтвердив більше повідомлень, ніж було відправлено сервером"}.
+{"Clustering","Кластеризація"}.
 {"Commands","Команди"}.
 {"Conference room does not exist","Кімната для переговорів відсутня"}.
 {"Configuration of room ~s","Конфігурація кімнати ~s"}.
@@ -408,6 +411,7 @@
 {"Restore binary backup immediately:","Відновити з бінарної резервної копії негайно:"}.
 {"Restore plain text backup immediately:","Відновити з текстової резервної копії негайно:"}.
 {"Restore","Відновлення з резервної копії"}.
+{"Result","Результат"}.
 {"Roles and Affiliations that May Retrieve Member List","Ролі та зв’язки, які можуть отримати список учасників"}.
 {"Roles for which Presence is Broadcasted","Ролі для яких поширюється наявність"}.
 {"Roles that May Send Private Messages","Ролі, що можуть надсилати приватні повідомлення"}.
@@ -584,6 +588,7 @@
 {"Visitor","Відвідувач"}.
 {"Voice requests are disabled in this conference","Голосові запити відключені в цій конференції"}.
 {"Voice request","Голосовий запит"}.
+{"Web client which allows to join the room anonymously","Веб-клієнт, який дозволяє анонімно приєднатися до кімнати"}.
 {"Wednesday","Середа"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Коли обробляється нова підписка та щоразу, коли абонент виходить в Інтернет"}.
 {"When a new subscription is processed","Під час обробки нової підписки"}.
