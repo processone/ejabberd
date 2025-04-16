@@ -4,10 +4,10 @@
 %%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 
 {" (Add * to the end of field to match substring)"," （在字段末尾添加 * 以匹配子字符串）"}.
-{" has set the subject to: "," 已将话题设置为： "}.
+{" has set the subject to: "," 已将主题设置为： "}.
 {"# participants","# 参与者"}.
 {"A description of the node","节点的描述"}.
-{"A friendly name for the node","节点的易记名称"}.
+{"A friendly name for the node","节点的友好名称"}.
 {"A password is required to enter this room","需要密码才能进入此房间"}.
 {"A Web Page","网页"}.
 {"Accept","接受"}.
@@ -25,7 +25,7 @@
 {"Allow subscription","允许订阅"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","是否允许此 Jabber ID 订阅此 pubsub 节点？"}.
 {"Allow this person to register with the room?","是否允许此用户在房间注册？"}.
-{"Allow users to change the subject","允许用户更改话题"}.
+{"Allow users to change the subject","允许用户更改主题"}.
 {"Allow users to query other users","允许用户查询其他用户"}.
 {"Allow users to send invites","允许用户发送邀请"}.
 {"Allow users to send private messages","允许用户发送私信"}.
@@ -46,7 +46,9 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","任何拥有 both 或 from 的在线状态订阅的用户都可以订阅和检索项目"}.
 {"Anyone with Voice","任何有发言权的人"}.
 {"Anyone","任何人"}.
+{"API Commands","API 命令"}.
 {"April","四月"}.
+{"Arguments","参数"}.
 {"Attribute 'channel' is required for this request","此请求要求“channel”属性"}.
 {"Attribute 'id' is mandatory for MIX messages","对于 MIX 消息，“id”属性是必需的"}.
 {"Attribute 'jid' is not allowed here","此处不允许“jid”属性"}.
@@ -86,6 +88,7 @@
 {"Choose whether to approve this entity's subscription.","选择是否批准此实体的订阅。"}.
 {"City","城市"}.
 {"Client acknowledged more stanzas than sent by server","客户端确认的节数多于服务器发送的节数"}.
+{"Clustering","集群"}.
 {"Commands","命令"}.
 {"Conference room does not exist","会议室不存在"}.
 {"Configuration of room ~s","房间 ~s 的配置"}.
@@ -227,12 +230,12 @@
 {"Logged Out","已登出"}.
 {"Logging","日志记录"}.
 {"Make participants list public","公开参与者列表"}.
-{"Make room CAPTCHA protected","开启房间验证码保护"}.
+{"Make room CAPTCHA protected","启用房间验证码保护"}.
 {"Make room members-only","将房间设为仅成员"}.
-{"Make room moderated","开启房间发言审核"}.
-{"Make room password protected","开启房间密码保护"}.
+{"Make room moderated","启用房间发言审核"}.
+{"Make room password protected","启用房间密码保护"}.
 {"Make room persistent","将房间设为持久"}.
-{"Make room public searchable","将房间设为公开可搜索"}.
+{"Make room public searchable","将房间设为可公开搜索"}.
 {"Malformed username","用户名格式不正确"}.
 {"MAM preference modification denied by service policy","服务策略拒绝修改 MAM 首选项"}.
 {"March","三月"}.
@@ -324,7 +327,7 @@
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","自动清除项目前的秒数，`max` 表示除服务器强制规定的最大值外无其他特定限制"}.
 {"Occupants are allowed to invite others","允许使用者邀请他人"}.
 {"Occupants are allowed to query others","允许使用者查询他人"}.
-{"Occupants May Change the Subject","使用者可以更改话题"}.
+{"Occupants May Change the Subject","使用者可以更改主题"}.
 {"October","十月"}.
 {"OK","确定"}.
 {"Old Password:","旧密码："}.
@@ -335,8 +338,8 @@
 {"Only <enable/> or <disable/> tags are allowed","仅允许 <enable/> 或 <disable/> 标签"}.
 {"Only <list/> element is allowed in this query","此查询中只允许 <list/> 元素"}.
 {"Only members may query archives of this room","只有成员才能查询此房间的归档"}.
-{"Only moderators and participants are allowed to change the subject in this room","只允许主持人和参与者更改此房间的话题"}.
-{"Only moderators are allowed to change the subject in this room","只允许主持人更改此房间的话题"}.
+{"Only moderators and participants are allowed to change the subject in this room","只允许主持人和参与者更改此房间的主题"}.
+{"Only moderators are allowed to change the subject in this room","只允许主持人更改此房间的主题"}.
 {"Only moderators are allowed to retract messages","只允许主持人撤回消息"}.
 {"Only moderators can approve voice requests","只有主持人可以批准发言权请求"}.
 {"Only occupants are allowed to send messages to the conference","只允许使用者向会议发送消息"}.
@@ -408,6 +411,7 @@
 {"Restore binary backup immediately:","立即恢复二进制备份："}.
 {"Restore plain text backup immediately:","立即恢复纯文本备份："}.
 {"Restore","恢复"}.
+{"Result","结果"}.
 {"Roles and Affiliations that May Retrieve Member List","可以检索成员列表的角色和从属关系"}.
 {"Roles for which Presence is Broadcasted","广播在线状态的角色"}.
 {"Roles that May Send Private Messages","可以发送私信的角色"}.
@@ -456,7 +460,7 @@
 {"Store plain text backup:","存储纯文本备份："}.
 {"Stream management is already enabled","已启用流管理"}.
 {"Stream management is not enabled","未启用流管理"}.
-{"Subject","话题"}.
+{"Subject","主题"}.
 {"Submitted","已提交"}.
 {"Subscriber Address","订阅者地址"}.
 {"Subscribers may publish","订阅者可以发布"}.
@@ -506,7 +510,7 @@
 {"The presence states for which an entity wants to receive notifications","实体要接收通知的在线状态"}.
 {"The query is only allowed from local users","仅允许来自本地用户的查询"}.
 {"The query must not contain <item/> elements","查询不能包含 <item/> 元素"}.
-{"The room subject can be modified by participants","参与者可以修改房间话题"}.
+{"The room subject can be modified by participants","参与者可以修改房间主题"}.
 {"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","节点中数据的语义类型信息，通常由有效负载的命名空间指定（如果有）"}.
 {"The sender of the last received message","最后收到的消息的发送者"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","节必须仅包含一个 <active/> 元素、一个 <default/> 元素或一个 <list/> 元素"}.
@@ -584,6 +588,7 @@
 {"Visitor","参观者"}.
 {"Voice requests are disabled in this conference","此会议中禁用了发言权请求"}.
 {"Voice request","发言权请求"}.
+{"Web client which allows to join the room anonymously","允许匿名加入房间的 Web 客户端"}.
 {"Wednesday","周三"}.
 {"When a new subscription is processed and whenever a subscriber comes online","处理新订阅时和订阅者上线时"}.
 {"When a new subscription is processed","处理新订阅时"}.
