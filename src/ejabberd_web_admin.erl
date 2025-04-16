@@ -584,7 +584,9 @@ process_admin(Host, #request{path = [<<"users">> | RPath], lang = Lang} = R, AJI
 process_admin(Host, #request{path = [<<"online-users">> | RPath], lang = Lang} = R, AJID)
     when is_binary(Host) ->
     Level = 3 + length(RPath),
-    Set = [make_command(kick_users, R, [{<<"host">>, Host}],
+    Set = [make_command(kick_users,
+                        R,
+                        [{<<"host">>, Host}],
                         [{style, danger}, {force_execution, false}])],
     timer:sleep(200), % small delay after kicking users before getting the updated list
     Get = [make_command(connected_users_vhost,
