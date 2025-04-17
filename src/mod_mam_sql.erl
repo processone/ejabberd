@@ -213,21 +213,37 @@ count_messages_to_delete(ServerHost, TimeStamp, Type) ->
 delete_old_messages_batch(ServerHost, TimeStamp, Type, Batch) ->
     TS = misc:now_to_usec(TimeStamp),
     Res =
-    case Type of
-	all ->
-	    ejabberd_sql:sql_query(
-		ServerHost,
-		?SQL("delete from archive"
-		     " where timestamp < %(TS)d and %(ServerHost)H limit %(Batch)d"));
-	_ ->
-	    SType = misc:atom_to_binary(Type),
-	    ejabberd_sql:sql_query(
-		ServerHost,
-		?SQL("delete from archive"
-		     " where timestamp < %(TS)d"
-		     " and kind=%(SType)s"
-		     " and %(ServerHost)H limit %(Batch)d"))
-    end,
+	case Type of
+	    all ->
+		ejabberd_sql:sql_query(
+		    ServerHost,
+		    fun(sqlite, _) ->
+			ejabberd_sql:sql_query_t(
+			    ?SQL("delete from archive where rowid in "
+				 "(select rowid from archive where timestamp < %(TS)d and %(ServerHost)H limit %(Batch)d)"));
+		       (_, _) ->
+			   ejabberd_sql:sql_query_t(
+			       ?SQL("delete from archive"
+				    " where timestamp < %(TS)d and %(ServerHost)H limit %(Batch)d"))
+		    end);
+	    _ ->
+		SType = misc:atom_to_binary(Type),
+		ejabberd_sql:sql_query(
+		    ServerHost,
+		    fun(sqlire,_)->
+			ejabberd_sql:sql_query_t(
+			    ?SQL("delete from archive where rowid in ("
+				 " select rowid from archive where timestamp < %(TS)d"
+				 " and kind=%(SType)s"
+				 " and %(ServerHost)H limit %(Batch)d)"));
+		       (_,_)->
+			   ejabberd_sql:sql_query_t(
+			       ?SQL("delete from archive"
+				    " where timestamp < %(TS)d"
+				    " and kind=%(SType)s"
+				    " and %(ServerHost)H limit %(Batch)d"))
+		    end)
+	end,
     case Res of
 	{updated, Count} ->
 	    {ok, Count};
