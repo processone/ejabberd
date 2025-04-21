@@ -36,6 +36,8 @@ jobs:
         exclude:
         - otp: '27'
           rebar: 'rebar'
+        - otp: '28'
+          rebar: 'rebar'
     runs-on: ubuntu-24.04
     container:
       image: public.ecr.aws/docker/library/erlang:${{ matrix.otp }}
