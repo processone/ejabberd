@@ -313,8 +313,6 @@ duplicate_occupantid_master(Config) ->
     PeerJID = ?config(slave, Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    MyNick = ?config(nick, Config),
-    MyNickJID = jid:replace_resource(Room, MyNick),
     ok = join_new(Config),
     wait_for_slave(Config),
     Pres = ?match(#presence{from = PeerNickJID, type = available} = Pres,
