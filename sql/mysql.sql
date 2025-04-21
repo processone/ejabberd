@@ -18,7 +18,7 @@
 
 CREATE TABLE users (
     username varchar(191) NOT NULL,
-    type smallint NOT NULL,,
+    type smallint NOT NULL,
     password text NOT NULL,
     serverkey varchar(128) NOT NULL DEFAULT '',
     salt varchar(128) NOT NULL DEFAULT '',
