@@ -365,4 +365,6 @@ transform({archive_msg, US, ID, Timestamp, Peer, BarePeer,
        packet = Packet,
        nick = Nick,
        type = Type,
-       origin_id = <<"">>}.
+       origin_id = <<"">>};
+transform(Other) ->
+    Other.
