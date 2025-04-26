@@ -133,6 +133,9 @@ exec_cmd()
         as_install_user,OpenBSD)
             su -s /bin/sh "$INSTALLUSER" -c 'exec "$0" "$@"' "$@"
             ;;
+        as_install_user,NetBSD)
+            su "$INSTALLUSER" -c 'exec "$0" "$@"' -- "$@"
+            ;;
         as_install_user,*)
             su -s /bin/sh -c 'exec "$0" "$@"' "$INSTALLUSER" -- "$@"
             ;;
