@@ -582,7 +582,14 @@ callback_modules(all) ->
 
 -ifdef(OTP_BELOW_25).
 lists_uniq(List) ->
-    lists:usort(List).
+    {Res, _} = lists:foldr(
+	fun(El, {Result, Existing} = Acc) ->
+	    case maps:is_key(El, Existing) of
+		true -> Acc;
+		_ -> {[El | Result], Existing#{El => true}}
+	    end
+	end, {[], #{}}, List),
+    Res.
 -else.
 lists_uniq(List) ->
     lists:uniq(List).
