@@ -3,7 +3,16 @@
 
 AC_PREREQ(2.59)
 AC_INIT(ejabberd, m4_esyscmd([echo `git describe --tags 2>/dev/null || echo 25.04` | sed 's/-g.*//;s/-/./' | tr -d '\012']), [ejabberd@process-one.net], [ejabberd])
-REQUIRE_ERLANG_MIN="13.0 (Erlang/OTP 25.0)"
+
+AC_ARG_WITH(min-erlang,
+	AS_HELP_STRING([--with-min-erlang=version],[set minimal required erlang version, default to OTP25]),
+[if test "X$withval" = "X"; then
+    REQUIRE_ERLANG_MIN="13.0 (Erlang/OTP 25.0)"
+else
+    REQUIRE_ERLANG_MIN="$withval"
+fi
+], [REQUIRE_ERLANG_MIN="13.0 (Erlang/OTP 25.0)"])
+
 REQUIRE_ERLANG_MAX="100.0.0 (No Max)"
 
 AC_CONFIG_MACRO_DIR([m4])
