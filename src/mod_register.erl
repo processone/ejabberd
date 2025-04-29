@@ -267,8 +267,10 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 try_register_or_set_password(User, Server, Password,
 			     #iq{from = From, lang = Lang} = IQ,
 			     Source, CaptchaSucceed) ->
-    case From of
-	#jid{user = User, lserver = Server} ->
+    case {jid:nodeprep(User), From} of
+	{error, _} ->
+	    make_stripped_error(IQ, {error, invalid_jid});
+	{UserP, #jid{user = User2, lserver = Server}} when UserP == User2 ->
 	    try_set_password(User, Server, Password, IQ);
 	_ when CaptchaSucceed ->
 	    case check_from(From, Server) of

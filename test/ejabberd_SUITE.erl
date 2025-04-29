@@ -436,6 +436,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        mam_tests:single_cases(),
        csi_tests:single_cases(),
        push_tests:single_cases(),
+       test_pass_change,
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
@@ -465,6 +466,7 @@ db_tests(DB) ->
        offline_tests:single_cases(),
        mam_tests:single_cases(),
        push_tests:single_cases(),
+       test_pass_change,
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
@@ -682,6 +684,25 @@ register(Config) ->
               sub_els = [#register{username = ?config(user, Config),
                                    password = ?config(password, Config)}]}),
     Config.
+
+test_pass_change(Config) ->
+    case ?config(register, Config) of
+	true ->
+	    #iq{type = result, sub_els = []} =
+		send_recv(
+		    Config,
+		    #iq{type = set,
+			sub_els = [#register{username = ?config(user, Config),
+					     password = ?config(password, Config)}]}),
+	    #iq{type = result, sub_els = []} =
+		send_recv(
+		    Config,
+		    #iq{type = set,
+			sub_els = [#register{username = str:to_upper(?config(user, Config)),
+					     password = ?config(password, Config)}]});
+	_ ->
+	    {skipped, 'registration_not_available'}
+    end.
 
 test_unregister(Config) ->
     case ?config(register, Config) of
