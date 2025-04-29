@@ -269,7 +269,8 @@ try_register_or_set_password(User, Server, Password,
 			     Source, CaptchaSucceed) ->
     case {jid:nodeprep(User), From} of
 	{error, _} ->
-	    make_stripped_error(IQ, {error, invalid_jid});
+	    Err = xmpp:err_jid_malformed(format_error(invalid_jid), Lang),
+	    make_stripped_error(IQ, Err);
 	{UserP, #jid{user = User2, lserver = Server}} when UserP == User2 ->
 	    try_set_password(User, Server, Password, IQ);
 	_ when CaptchaSucceed ->
@@ -564,10 +565,8 @@ is_strong_password2(Server, Password) ->
             ejabberd_auth:entropy(Password) >= Entropy
     end.
 
-make_stripped_error(#iq{} = IQ, Err) ->
-    xmpp:make_error(xmpp:remove_subtag(IQ, #register{}), Err);
-make_stripped_error(Pkt, Err) ->
-    xmpp:make_error(Pkt, Err).
+make_stripped_error(IQ, Err) ->
+    xmpp:make_error(xmpp:remove_subtag(IQ, #register{}), Err).
 
 %%%
 %%% ip_access management
