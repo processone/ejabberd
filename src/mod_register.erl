@@ -87,7 +87,7 @@ c2s_unauthenticated_packet(#{ip := IP, server := Server} = State,
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:io_format_error(Why),
 	    Lang = maps:get(lang, State),
-	    Err = xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)),
+	    Err = make_stripped_error(IQ, xmpp:err_bad_request(Txt, Lang)),
 	    {stop, ejabberd_c2s:send(State, Err)}
     end;
 c2s_unauthenticated_packet(State, _) ->
@@ -116,7 +116,7 @@ process_iq(#iq{type = set, lang = Lang,
 	       sub_els = [#register{remove = true}]} = IQ,
 	   _Source, _IsCaptchaEnabled, _AllowRemove = false) ->
     Txt = ?T("Access denied by service policy"),
-    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang));
+    make_stripped_error(IQ, xmpp:err_forbidden(Txt, Lang));
 process_iq(#iq{type = set, lang = Lang, to = To, from = From,
 	       sub_els = [#register{remove = true,
 				    username = User,
@@ -141,12 +141,12 @@ process_iq(#iq{type = set, lang = Lang, to = To, from = From,
                                     ignore;
                                 false ->
                                     Txt = ?T("Incorrect password"),
-                                    xmpp:make_error(
+                                    make_stripped_error(
                                       IQ, xmpp:err_forbidden(Txt, Lang))
                             end;
 		       true ->
 			    Txt = ?T("No 'password' found in this query"),
-			    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
+			    make_stripped_error(IQ, xmpp:err_bad_request(Txt, Lang))
 		    end
 	    end;
        true ->
@@ -158,7 +158,7 @@ process_iq(#iq{type = set, lang = Lang, to = To, from = From,
 		    ignore;
 		_ ->
 		    Txt = ?T("The query is only allowed from local users"),
-		    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang))
+		    make_stripped_error(IQ, xmpp:err_not_allowed(Txt, Lang))
 	    end
     end;
 process_iq(#iq{type = set, to = To,
@@ -186,17 +186,17 @@ process_iq(#iq{type = set, to = To,
 		      User, Server, Password, IQ, Source, true);
 		_ ->
 		    Txt = ?T("Incorrect data form"),
-		    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
+		    make_stripped_error(IQ, xmpp:err_bad_request(Txt, Lang))
 	    end;
 	{error, malformed} ->
 	    Txt = ?T("Incorrect CAPTCHA submit"),
-	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
+	    make_stripped_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	_ ->
 	    ErrText = ?T("The CAPTCHA verification has failed"),
-	    xmpp:make_error(IQ, xmpp:err_not_allowed(ErrText, Lang))
+	    make_stripped_error(IQ, xmpp:err_not_allowed(ErrText, Lang))
     end;
 process_iq(#iq{type = set} = IQ, _Source, _IsCaptchaEnabled, _AllowRemove) ->
-    xmpp:make_error(IQ, xmpp:err_bad_request());
+    make_stripped_error(IQ, xmpp:err_bad_request());
 process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 	   Source, IsCaptchaEnabled, _AllowRemove) ->
     Server = To#jid.lserver,
@@ -248,11 +248,11 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 				    sub_els = [Xdata | CaptchaEls2]});
 		{error, limit} ->
 		    ErrText = ?T("Too many CAPTCHA requests"),
-		    xmpp:make_error(
+		    make_stripped_error(
 		      IQ, xmpp:err_resource_constraint(ErrText, Lang));
 		_Err ->
 		    ErrText = ?T("Unable to generate a CAPTCHA"),
-		    xmpp:make_error(
+		    make_stripped_error(
 		      IQ, xmpp:err_internal_server_error(ErrText, Lang))
 	    end;
        true ->
@@ -277,14 +277,14 @@ try_register_or_set_password(User, Server, Password,
 			ok ->
 			    xmpp:make_iq_result(IQ);
 			{error, Error} ->
-			    xmpp:make_error(IQ, Error)
+			    make_stripped_error(IQ, Error)
 		    end;
 		deny ->
 		    Txt = ?T("Access denied by service policy"),
-		    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
+		    make_stripped_error(IQ, xmpp:err_forbidden(Txt, Lang))
 	    end;
 	_ ->
-	    xmpp:make_error(IQ, xmpp:err_not_allowed())
+	    make_stripped_error(IQ, xmpp:err_not_allowed())
     end.
 
 try_set_password(User, Server, Password) ->
@@ -307,15 +307,15 @@ try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
 	    xmpp:make_iq_result(IQ);
 	{error, not_allowed} ->
 	    Txt = ?T("Changing password is not allowed"),
-	    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+	    make_stripped_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 	{error, invalid_jid = Why} ->
-	    xmpp:make_error(IQ, xmpp:err_jid_malformed(format_error(Why), Lang));
+	    make_stripped_error(IQ, xmpp:err_jid_malformed(format_error(Why), Lang));
 	{error, invalid_password = Why} ->
-	    xmpp:make_error(IQ, xmpp:err_not_allowed(format_error(Why), Lang));
+	    make_stripped_error(IQ, xmpp:err_not_allowed(format_error(Why), Lang));
 	{error, weak_password = Why} ->
-	    xmpp:make_error(IQ, xmpp:err_not_acceptable(format_error(Why), Lang));
+	    make_stripped_error(IQ, xmpp:err_not_acceptable(format_error(Why), Lang));
 	{error, db_failure = Why} ->
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error(format_error(Why), Lang))
+	    make_stripped_error(IQ, xmpp:err_internal_server_error(format_error(Why), Lang))
     end.
 
 try_register(User, Server, Password, SourceRaw, Module) ->
@@ -561,6 +561,11 @@ is_strong_password2(Server, Password) ->
         Entropy ->
             ejabberd_auth:entropy(Password) >= Entropy
     end.
+
+make_stripped_error(#iq{} = IQ, Err) ->
+    xmpp:make_error(xmpp:remove_subtag(IQ, #register{}), Err);
+make_stripped_error(Pkt, Err) ->
+    xmpp:make_error(Pkt, Err).
 
 %%%
 %%% ip_access management
