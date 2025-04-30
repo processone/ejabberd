@@ -234,7 +234,7 @@ delete_old_messages_batch(ServerHost, TimeStamp, Type, Batch) ->
 		SType = misc:atom_to_binary(Type),
 		ejabberd_sql:sql_query(
 		    ServerHost,
-		    fun(sqlire,_)->
+		    fun(sqlite,_)->
 			ejabberd_sql:sql_query_t(
 			    ?SQL("delete from archive where rowid in ("
 				 " select rowid from archive where timestamp < %(TS)d"
