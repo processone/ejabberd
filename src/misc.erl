@@ -42,7 +42,7 @@
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
 	 crypto_hmac/3, crypto_hmac/4, uri_parse/1, uri_parse/2, uri_quote/1,
-         json_encode/1, json_decode/1, json_encode_with_kv_lists/1,
+         json_encode/1, json_decode/1,
 	 set_proc_label/1,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
 	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1]).
@@ -132,20 +132,18 @@ crypto_hmac(Type, Key, Data, MacL) -> crypto:macN(hmac, Type, Key, Data, MacL).
 -endif.
 
 -ifdef(OTP_BELOW_27).
-json_encode_with_kv_lists(Term) ->
-    jiffy:encode(Term).
 json_encode(Term) ->
     jiffy:encode(Term).
 json_decode(Bin) ->
     jiffy:decode(Bin, [return_maps]).
 -else.
-json_encode_with_kv_lists(Term) ->
+json_encode({[{_Key, _Value} | _]} = Term) ->
     iolist_to_binary(json:encode(Term,
 		     fun({Val}, Encoder) when is_list(Val) ->
 			 json:encode_key_value_list(Val, Encoder);
 			(Val, Encoder) ->
-			    json:encode_value(Val, Encoder)
-		     end)).
+			 json:encode_value(Val, Encoder)
+		     end));
 json_encode(Term) ->
     iolist_to_binary(json:encode(Term)).
 json_decode(Bin) ->
