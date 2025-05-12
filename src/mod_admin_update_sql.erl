@@ -130,7 +130,7 @@ update_tables(State) ->
     case add_sh_column(State, "users") of
         true ->
             drop_pkey(State, "users"),
-            add_pkey(State, "users", ["server_host", "username"]),
+            add_pkey(State, "users", ["server_host", "username", "type"]),
             drop_sh_default(State, "users");
         false ->
             ok
@@ -443,7 +443,8 @@ drop_pkey(#state{dbtype = mysql} = State, Table) ->
       ["ALTER TABLE ", Table, " DROP PRIMARY KEY;"]).
 
 add_pkey(#state{dbtype = pgsql} = State, Table, Cols) ->
-    SCols = string:join(Cols, ", "),
+    Cols2 = lists:map(fun("type") -> "\"type\""; (V) -> V end, Cols),
+    SCols = string:join(Cols2, ", "),
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ADD PRIMARY KEY (", SCols, ");"]);

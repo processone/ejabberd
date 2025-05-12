@@ -20,7 +20,7 @@
 
 -- ALTER TABLE users ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
 -- ALTER TABLE users DROP CONSTRAINT users_pkey;
--- ALTER TABLE users ADD PRIMARY KEY (server_host, username);
+-- ALTER TABLE users ADD PRIMARY KEY (server_host, username, "type");
 -- ALTER TABLE users ALTER COLUMN server_host DROP DEFAULT;
 
 -- ALTER TABLE last ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
