@@ -31,6 +31,7 @@
 -protocol({xep, 424, '0.4.2', '24.02', "partial", "Tombstones not implemented"}).
 -protocol({xep, 425, '0.3.0', '24.06', "complete", ""}).
 -protocol({xep, 441, '0.2.0', '15.06', "complete", ""}).
+-protocol({xep, 431, '0.2.0', '24.12', "complete", ""}).
 
 -behaviour(gen_mod).
 
@@ -78,7 +79,7 @@
 -callback delete_old_messages(binary() | global,
 			      erlang:timestamp(),
 			      all | chat | groupchat) -> any().
--callback extended_fields() -> [mam_query:property() | #xdata_field{}].
+-callback extended_fields(binary()) -> [mam_query:property() | #xdata_field{}].
 -callback store(xmlel(), binary(), {binary(), binary()}, chat | groupchat,
 		jid(), binary(), recv | send, integer(), binary(),
                 {true, binary()} | false) -> ok | any().
@@ -605,8 +606,18 @@ parse_query(#mam_query{xdata = #xdata{}} = Query, Lang) ->
 	  #xdata_field{var = <<"FORM_TYPE">>,
 		       type = hidden, values = [?NS_MAM_1]},
 	  Query#mam_query.xdata),
-    try	mam_query:decode(X#xdata.fields) of
-	Form -> {ok, Form}
+    {Fields, WithText} = case lists:keytake(<<"{urn:xmpp:fulltext:0}fulltext">>, #xdata_field.var, X#xdata.fields) of
+			     false -> {X#xdata.fields, <<>>};
+			     {value, #xdata_field{values = [V]}, F} -> {F, V};
+			     {value, _, F} -> {F, <<>>}
+			 end,
+    try	mam_query:decode(Fields) of
+	Form ->
+	    if WithText /= <<>> ->
+		    {ok, lists:keystore(withtext, 1, Form, {withtext, WithText})};
+		true ->
+		    {ok, Form}
+	    end
     catch _:{mam_query, Why} ->
 	    Txt = mam_query:format_error(Why),
 	    {error, xmpp:err_bad_request(Txt, Lang)}
@@ -818,7 +829,7 @@ process_iq(LServer, #iq{sub_els = [#mam_query{xmlns = NS}]} = IQ) ->
     CommonFields = [{with, undefined},
 		    {start, undefined},
 		    {'end', undefined}],
-    ExtendedFields = Mod:extended_fields(),
+    ExtendedFields = Mod:extended_fields(LServer),
     Fields = mam_query:encode(CommonFields ++ ExtendedFields),
     X = xmpp_util:set_xdata_field(
 	  #xdata_field{var = <<"FORM_TYPE">>, type = hidden, values = [NS]},

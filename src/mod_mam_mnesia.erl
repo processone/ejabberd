@@ -28,7 +28,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/10, write_prefs/4, get_prefs/2, select/6,
+	 extended_fields/1, store/10, write_prefs/4, get_prefs/2, select/6,
          remove_from_archive/3,
 	 is_empty_for_user/2, is_empty_for_room/3, delete_old_messages_batch/5,
          transform/1]).
@@ -185,7 +185,7 @@ delete_old_messages_batch(LServer, TimeStamp, Type, Batch, LastUS) ->
 	    {error, Err}
     end.
 
-extended_fields() ->
+extended_fields(_) ->
     [].
 
 store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, TS,

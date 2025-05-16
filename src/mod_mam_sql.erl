@@ -29,7 +29,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/10, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
+	 extended_fields/1, store/10, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
 	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6,
 	 delete_old_messages_batch/4, count_messages_to_delete/3]).
 -export([sql_schemas/0]).
@@ -280,8 +280,17 @@ delete_old_messages(ServerHost, TimeStamp, Type) ->
     end,
     ok.
 
-extended_fields() ->
-    [{withtext, <<"">>}].
+extended_fields(LServer) ->
+    case ejabberd_option:sql_type(LServer) of
+	mysql ->
+	    [{withtext, <<"">>},
+	     #xdata_field{var = <<"{urn:xmpp:fulltext:0}fulltext">>,
+			  type = 'text-single',
+			  label = <<"Search the text">>,
+			  values = []}];
+	_ ->
+	    []
+    end.
 
 store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS,
       OriginID, Retract) ->
