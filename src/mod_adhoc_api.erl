@@ -90,7 +90,7 @@ depends(_Host, _Opts) ->
 
 mod_doc() ->
     #{desc =>
-          ?T("Execute https://docs.ejabberd.im/developer/ejabberd-api/[API Commands] "
+          ?T("Execute (def:API commands) "
              "in a XMPP client using "
              "https://xmpp.org/extensions/xep-0050.html[XEP-0050: Ad-Hoc Commands]. "
              "This module requires _`mod_adhoc`_ (to execute the commands), "
@@ -102,7 +102,7 @@ mod_doc() ->
               desc =>
                   ?T("What API version to use. "
                      "If setting an ejabberd version, it will use the latest API "
-                     "version that was available in that ejabberd version. "
+                     "version that was available in that (def:c2s) ejabberd version. "
                      "For example, setting '\"24.06\"' in this option implies '2'. "
                      "The default value is the latest version.")}}],
       example =>
