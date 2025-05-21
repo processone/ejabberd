@@ -333,6 +333,14 @@ opt_type(registration_timeout) ->
     econf:timeout(second, infinity);
 opt_type(resource_conflict) ->
     econf:enum([setresource, closeold, closenew, acceptnew]);
+opt_type(rest_proxy) ->
+    econf:domain();
+opt_type(rest_proxy_port) ->
+    econf:port();
+opt_type(rest_proxy_username) ->
+    econf:string();
+opt_type(rest_proxy_password) ->
+    econf:string();
 opt_type(router_cache_life_time) ->
     econf:timeout(second, infinity);
 opt_type(router_cache_missed) ->
@@ -652,6 +660,10 @@ options() ->
      {redis_server, "localhost"},
      {registration_timeout, timer:seconds(600)},
      {resource_conflict, acceptnew},
+     {rest_proxy, <<>>},
+     {rest_proxy_port, 0},
+     {rest_proxy_username, ""},
+     {rest_proxy_password, ""},
      {router_cache_life_time,
       fun(Host) -> ejabberd_config:get_option({cache_life_time, Host}) end},
      {router_cache_missed,

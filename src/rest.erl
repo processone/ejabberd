@@ -38,7 +38,14 @@
 start(Host) ->
     application:start(inets),
     Size = ejabberd_option:ext_api_http_pool_size(Host),
-    httpc:set_options([{max_sessions, Size}]).
+    Proxy = case {ejabberd_option:rest_proxy(Host),
+                  ejabberd_option:rest_proxy_port(Host)} of
+                {<<>>, _, _} ->
+                    [];
+                {Host, Port} ->
+                    [{proxy, {{binary_to_list(Host), Port}, []}}]
+            end,
+    httpc:set_options([{max_sessions, Size}] ++ Proxy).
 
 stop(_Host) ->
     ok.
@@ -87,8 +94,15 @@ request(Server, Method, Path, Params, Mime, Data) ->
 			_ -> {Params, []}
 		   end,
     URI = to_list(url(Server, Path, Query)),
-    HttpOpts = [{connect_timeout, ?CONNECT_TIMEOUT},
-		{timeout, ?HTTP_TIMEOUT}],
+    HttpOpts = case {ejabberd_option:rest_proxy_username(Server),
+                     ejabberd_option:rest_proxy_password(Server)} of
+                   {"", _} -> [{connect_timeout, ?CONNECT_TIMEOUT},
+                               {timeout, ?HTTP_TIMEOUT}];
+                   {User, Pass} ->
+                       [{connect_timeout, ?CONNECT_TIMEOUT},
+                        {timeout, ?HTTP_TIMEOUT},
+                        {proxy_auth, {User, Pass}}]
+               end,
     Hdrs = [{"connection", "keep-alive"},
             {"Accept", "application/json"},
 	    {"User-Agent", "ejabberd"}]

@@ -119,6 +119,10 @@
 -export([redis_server/0]).
 -export([registration_timeout/0]).
 -export([resource_conflict/0, resource_conflict/1]).
+-export([rest_proxy/0, rest_proxy/1]).
+-export([rest_proxy_password/0, rest_proxy_password/1]).
+-export([rest_proxy_port/0, rest_proxy_port/1]).
+-export([rest_proxy_username/0, rest_proxy_username/1]).
 -export([router_cache_life_time/0]).
 -export([router_cache_missed/0]).
 -export([router_cache_size/0]).
@@ -832,6 +836,34 @@ resource_conflict() ->
 -spec resource_conflict(global | binary()) -> 'acceptnew' | 'closenew' | 'closeold' | 'setresource'.
 resource_conflict(Host) ->
     ejabberd_config:get_option({resource_conflict, Host}).
+
+-spec rest_proxy() -> binary().
+rest_proxy() ->
+    rest_proxy(global).
+-spec rest_proxy(global | binary()) -> binary().
+rest_proxy(Host) ->
+    ejabberd_config:get_option({rest_proxy, Host}).
+
+-spec rest_proxy_password() -> string().
+rest_proxy_password() ->
+    rest_proxy_password(global).
+-spec rest_proxy_password(global | binary()) -> string().
+rest_proxy_password(Host) ->
+    ejabberd_config:get_option({rest_proxy_password, Host}).
+
+-spec rest_proxy_port() -> char().
+rest_proxy_port() ->
+    rest_proxy_port(global).
+-spec rest_proxy_port(global | binary()) -> char().
+rest_proxy_port(Host) ->
+    ejabberd_config:get_option({rest_proxy_port, Host}).
+
+-spec rest_proxy_username() -> string().
+rest_proxy_username() ->
+    rest_proxy_username(global).
+-spec rest_proxy_username(global | binary()) -> string().
+rest_proxy_username(Host) ->
+    ejabberd_config:get_option({rest_proxy_username, Host}).
 
 -spec router_cache_life_time() -> 'infinity' | pos_integer().
 router_cache_life_time() ->

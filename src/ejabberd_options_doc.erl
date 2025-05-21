@@ -1194,6 +1194,22 @@ doc() ->
                "uses old Jabber Non-SASL authentication (XEP-0078), "
                "then this option is not respected, and the action performed "
                "is 'closeold'.")}},
+     {rest_proxy,
+      #{value => "Host",
+        desc => ?T("Address of a HTTP Connect proxy used by modules issuing rest calls "
+                   "(like ejabberd_oauth_rest)")}},
+      {rest_proxy_port,
+       #{value => "1..65535",
+         desc => ?T("Port of a HTTP Connect proxy used by modules issuing rest calls "
+                    "(like ejabberd_oauth_rest)")}},
+      {rest_proxy_username,
+       #{value => "string()",
+         desc => ?T("Username used to authenticate to HTTP Connect proxy used by modules issuing rest calls "
+                    "(like ejabberd_oauth_rest)")}},
+      {rest_proxy_password,
+       #{value => "string()",
+         desc => ?T("Password used to authenticate to HTTP Connect proxy used by modules issuing rest calls "
+                    "(like ejabberd_oauth_rest)")}},
      {router_cache_life_time,
       #{value => "timeout()",
         desc =>
