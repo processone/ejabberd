@@ -40,7 +40,7 @@ start(Host) ->
     Size = ejabberd_option:ext_api_http_pool_size(Host),
     Proxy = case {ejabberd_option:rest_proxy(Host),
                   ejabberd_option:rest_proxy_port(Host)} of
-                {<<>>, _, _} ->
+                {<<>>, _} ->
                     [];
                 {Host, Port} ->
                     [{proxy, {{binary_to_list(Host), Port}, []}}]
