@@ -51,6 +51,9 @@ init_config(Config) ->
     {ok, _} = file:copy(SelfSignedCertFile,
 			filename:join([CWD, "self-signed-cert.pem"])),
     {ok, _} = file:copy(CAFile, filename:join([CWD, "ca.pem"])),
+    copy_file(Config, "spam_jids.txt"),
+    copy_file(Config, "spam_urls.txt"),
+    copy_file(Config, "spam_domains.txt"),
     {ok, MacrosContentTpl} = file:read_file(MacrosPathTpl),
     Password = <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>,
     Backends = get_config_backends(),
@@ -137,6 +140,11 @@ init_config(Config) ->
      {password, Password},
      {backends, Backends}
      |Config].
+
+copy_file(Config, File) ->
+    {ok, CWD} = file:get_cwd(),
+    DataDir = proplists:get_value(data_dir, Config),
+    {ok, _} = file:copy(filename:join([DataDir, File]), filename:join([CWD, File])).
 
 copy_configtest_yml(DataDir, CWD) ->
     Files = filelib:wildcard(filename:join([DataDir, "configtest.yml"])),
@@ -904,6 +912,21 @@ receiver(NS, Owner, Socket, MRef) ->
 	{tcp_closed, _} ->
 	    Owner ! closed,
 	    receiver(NS, Owner, Socket, MRef)
+    end.
+
+%% @doc Retry an action until success, at max N times with an interval
+%% `Interval'
+%% Shamlessly stolen (with slight adaptations) from snabbkaffee.
+-spec retry(integer(), non_neg_integer(), fun(() -> Ret)) -> Ret.
+retry(_, 0, Fun) ->
+    Fun();
+retry(Interval, N, Fun) ->
+    try Fun()
+    catch
+        EC:Err  ->
+            timer:sleep(Interval),
+            ct:pal("retrying ~p more times, result was ~p:~p", [N, EC, Err]),
+            retry(Interval, N - 1, Fun)
     end.
 
 %%%===================================================================
