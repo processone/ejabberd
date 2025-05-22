@@ -10,7 +10,7 @@ attached to it.
 ```
 mkdir test/docker/db/mysql/data
 mkdir test/docker/db/postgres/data
-(cd test/docker; docker-compose up)
+(cd test/docker; docker compose up)
 ```
 
 You can stop all the databases with CTRL-C.
@@ -20,8 +20,8 @@ You can stop all the databases with CTRL-C.
 The following commands will create the necessary login, user and database, will grant rights on the database in MSSQL and create the ejabberd schema:
 
 ```
-docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
-docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.sql
+docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql -C
+docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test -i /mssql.sql -C
 ```
 
 ## Running tests
@@ -44,7 +44,7 @@ make test
 You can fully clean up the environment with:
 
 ```
-(cd test/docker; docker-compose down)
+(cd test/docker; docker compose down)
 ```
 
 If you want to clean the data, you can remove the data volumes after the `docker-compose down` command:
