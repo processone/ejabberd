@@ -402,6 +402,7 @@ no_db_tests() ->
      auth_external_wrong_jid,
      auth_external_wrong_server,
      auth_external_invalid_cert,
+     antispam_tests:single_cases(),
      commands_tests:single_cases(),
      configtest_tests:single_cases(),
      jidprep_tests:single_cases(),
