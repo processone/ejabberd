@@ -339,6 +339,10 @@ init_per_testcase(TestCase, OrigConfig) ->
             bind(auth(connect(Config)));
 	"replaced" ++ _ ->
 	    auth(connect(Config));
+        "antispam" ++ _ ->
+            Password = ?config(password, Config),
+            ejabberd_auth:try_register(User, Server, Password),
+            open_session(bind(auth(connect(Config))));
         _ when IsMaster or IsSlave ->
             Password = ?config(password, Config),
             ejabberd_auth:try_register(User, Server, Password),
@@ -425,6 +429,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        auth_md5,
        presence_broadcast,
        last,
+       antispam_tests:single_cases(),
        webadmin_tests:single_cases(),
        roster_tests:single_cases(),
        private_tests:single_cases(),

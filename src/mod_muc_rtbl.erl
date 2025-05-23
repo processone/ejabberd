@@ -152,8 +152,8 @@ pubsub_event_handler(#message{from = #jid{luser = <<>>, lserver = SServer},
     if SServer == SServer2 ->
 	case xmpp:get_subtag(Msg, #ps_event{}) of
 	    #ps_event{items = #ps_items{node = Node, retract = Retract}} when Node == SNode,
-									      is_binary(Retract) ->
-		mnesia:dirty_delete(muc_rtbl, {Server, Retract});
+									      Retract /= undefined ->
+		lists:foreach(fun(Id) -> mnesia:dirty_delete(muc_rtbl, {Server, Id}) end, Retract);
 	    #ps_event{items = #ps_items{node = Node, items = Items}} when Node == SNode ->
 		Added = lists:foldl(
 		    fun(#ps_item{id = ID}, Acc) ->
