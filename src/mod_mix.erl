@@ -626,7 +626,7 @@ notify_participant_joined(Mod, LServer, To, From, ID, Nick) ->
 notify_participant_left(Mod, LServer, To, ID) ->
     {Chan, Host, _} = jid:tolower(To),
     Items = #ps_items{node = ?NS_MIX_NODES_PARTICIPANTS,
-		      retract = ID},
+		      retract = [ID]},
     Event = #ps_event{items = Items},
     Msg = #message{from = jid:remove_resource(To),
 		   id = p1_rand:get_string(),

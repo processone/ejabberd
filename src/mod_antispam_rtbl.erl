@@ -83,12 +83,8 @@ parse_blocked_domains(#iq{to = #jid{lserver = LServer}, type = result} = IQ) ->
 parse_pubsub_event(#message{to = #jid{lserver = LServer}} = Msg) ->
     RTBLDomainsNode = gen_mod:get_module_opt(LServer, ?SERVICE_MODULE, rtbl_domains_node),
     case xmpp:get_subtag(Msg, #ps_event{}) of
-	#ps_event{items = #ps_items{node = RTBLDomainsNode, retract = ID}} when ID /= undefined ->
-	    ?DEBUG("Got item to retract:~n~p", [ID]),
-	    #{ID => false};
-	#ps_event{items = #ps_items{node = RTBLDomainsNode, items = Items}} ->
-	    ?DEBUG("Got items:~n~p", [Items]),
-	    parse_items(Items);
+	#ps_event{items = #ps_items{node = RTBLDomainsNode, items = Items, retract = RetractIds}} ->
+	    maps:merge(retract_items(RetractIds), parse_items(Items));
 	Other ->
 	    ?WARNING_MSG("Couldn't extract items: ~p", [Other]),
 	    #{}
@@ -101,6 +97,10 @@ parse_items(Items) ->
 	      %% TODO extract meta/extra instructions
 	      maps:put(ID, true, Acc)
       end, #{}, Items).
+
+-spec retract_items([binary()]) -> #{binary() => false}.
+retract_items(Ids) ->
+    lists:foldl(fun(ID, Acc) -> Acc#{ID => false} end, #{}, Ids).
 
 -spec service_jid(binary()) -> jid().
 service_jid(Host) ->
