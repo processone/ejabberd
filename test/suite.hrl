@@ -89,6 +89,8 @@
 -define(send_recv(Send, Recv),
     ?match(Recv, suite:send_recv(Config, Send))).
 
+-define(retry(TIMEOUT, N, FUN), suite:retry(TIMEOUT, N, fun() -> FUN end)).
+
 -define(COMMON_VHOST, <<"localhost">>).
 -define(MNESIA_VHOST, <<"mnesia.localhost">>).
 -define(REDIS_VHOST, <<"redis.localhost">>).

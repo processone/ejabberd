@@ -41,7 +41,8 @@ single_cases() ->
     {antispam_single, [sequence],
     [single_test(spam_files),
      single_test(blocked_domains),
-     single_test(jid_cache)]}.
+     single_test(jid_cache),
+     single_test(rtbl_domains)]}.
 
 spam_files(Config) ->
     Host = ?config(server, Config),
@@ -67,7 +68,7 @@ spam_files(Config) ->
     ?match({ok, _}, mod_antispam:remove_blocked_domain(<<"global">>, <<"spam_domain.org">>)),
     ?match([], mod_antispam:get_blocked_domains(Host)),
     is_not_spam(SpamDomainMsg),
-    ok.
+    disconnect(Config).
 
 blocked_domains(Config) ->
     Host = ?config(server, Config),
@@ -92,7 +93,7 @@ blocked_domains(Config) ->
     is_spam(Msg),
     ?match({ok, _}, mod_antispam:remove_blocked_domain(Host, <<"spam.domain">>)),
     is_not_spam(Msg),
-    ok.
+    disconnect(Config).
 
 jid_cache(Config) ->
     Host = ?config(server, Config),
@@ -104,16 +105,33 @@ jid_cache(Config) ->
     is_spam(Msg),
     mod_antispam:drop_from_spam_filter_cache(Host, jid:to_string(SpamFrom)),
     is_not_spam(Msg),
-    ok.
+    disconnect(Config).
 
-%% TODO:
-%% [ ] tests with local rtbl node: add domain,
-%%  remove domain
-%% [x] test by sending spammy message from either blocked jid,
-%%  domain or blockable content
-%% [x] test if unblocking works
-%% [ ] test config change (???)
-
+rtbl_domains(Config) ->
+    Host = ?config(server, Config),
+    %% RTBLHost = ?config(rtbl_host, Config),
+    %% RTBLDomainsNode = ?config(rtbl_domains_node, Config),
+    RTBLHost = jid:to_string(suite:pubsub_jid(Config)),
+    RTBLDomainsNode = <<"spam_source_domains">>,
+    OldOpts = gen_mod:get_module_opts(Host, mod_antispam),
+    NewOpts = maps:merge(OldOpts, #{rtbl_host => RTBLHost, rtbl_domains_node => RTBLDomainsNode}),
+    Owner = jid:make(?config(user, Config), ?config(server, Config), <<>>),
+    {result, _} = mod_pubsub:create_node(RTBLHost, ?config(server, Config), RTBLDomainsNode, Owner, <<"flat">>),
+    {result, _} = mod_pubsub:publish_item(RTBLHost, ?config(server, Config), RTBLDomainsNode, Owner, <<"spam.source.domain">>,
+                                                 [xmpp:encode(#ps_item{id = <<"spam.source.domain">>, sub_els = []})]),
+    mod_antispam:reload(Host, OldOpts, NewOpts),
+    ?match({ok, _}, mod_antispam:remove_blocked_domain(<<"global">>, <<"spam_domain.org">>)),
+    ?retry(100, 10,
+           ?match([<<"spam.source.domain">>], mod_antispam:get_blocked_domains(Host))),
+    {result, _} = mod_pubsub:publish_item(RTBLHost, ?config(server, Config), RTBLDomainsNode, Owner, <<"spam.source.another">>,
+                                                 [xmpp:encode(#ps_item{id = <<"spam.source.another">>, sub_els = []})]),
+    ?retry(100, 10,
+           ?match(true, (has_spam_domain(<<"spam.source.another">>))(Host))),
+    {result, _} = mod_pubsub:delete_item(RTBLHost, RTBLDomainsNode, Owner, <<"spam.source.another">>, true),
+    ?retry(100, 10,
+           ?match(false, (has_spam_domain(<<"spam.source.another">>))(Host))),
+    {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
+    disconnect(Config).
 
 %%%===================================================================
 %%% Internal functions

@@ -914,6 +914,21 @@ receiver(NS, Owner, Socket, MRef) ->
 	    receiver(NS, Owner, Socket, MRef)
     end.
 
+%% @doc Retry an action until success, at max N times with an interval
+%% `Interval'
+%% Shamlessly stolen (with slight adaptations) from snabbkaffee.
+-spec retry(integer(), non_neg_integer(), fun(() -> Ret)) -> Ret.
+retry(_, 0, Fun) ->
+    Fun();
+retry(Interval, N, Fun) ->
+    try Fun()
+    catch
+        EC:Err  ->
+            timer:sleep(Interval),
+            ct:pal("retrying ~p more times, result was ~p:~p", [N, EC, Err]),
+            retry(Interval, N - 1, Fun)
+    end.
+
 %%%===================================================================
 %%% Clients puts and gets events via this relay.
 %%%===================================================================
