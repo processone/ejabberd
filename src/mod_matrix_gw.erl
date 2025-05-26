@@ -41,6 +41,7 @@
 	 handle_info/2, terminate/2, code_change/3,
          depends/2, mod_opt_type/1, mod_options/1, mod_doc/0]).
 -export([parse_auth/1, encode_canonical_json/1,
+         is_canonical_json/1,
          get_id_domain_exn/1,
          base64_decode/1, base64_encode/1,
          prune_event/2, get_event_id/2, content_hash/1,
@@ -155,8 +156,8 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
                     %% TODO: check type and userid
                     Host = ejabberd_config:get_myname(),
                     PrunedEvent = prune_event(Event, RoomVersion),
-                    ?DEBUG("invite ~p~n", [{RoomID, EventID, Event, RoomVer, catch mod_matrix_gw_s2s:check_signature(Host, PrunedEvent), get_pruned_event_id(PrunedEvent)}]),
-                    case mod_matrix_gw_s2s:check_signature(Host, PrunedEvent) of
+                    %?DEBUG("invite ~p~n", [{RoomID, EventID, Event, RoomVer, catch mod_matrix_gw_s2s:check_signature(Host, PrunedEvent, RoomVersion), get_pruned_event_id(PrunedEvent)}]),
+                    case mod_matrix_gw_s2s:check_signature(Host, PrunedEvent, RoomVersion) of
                         true ->
                             case get_pruned_event_id(PrunedEvent) of
                                 EventID ->
@@ -629,9 +630,15 @@ prune_event(#{<<"type">> := Type, <<"content">> := Content} = Event,
     Content2 =
         case Type of
             <<"m.room.member">> ->
-                C3 = maps:with([<<"membership">>,
-                                <<"join_authorised_via_users_server">>],
-                               Content),
+                C3 =
+                    case RoomVersion#room_version.restricted_join_rule_fix of
+                        true ->
+                            maps:with([<<"membership">>,
+                                       <<"join_authorised_via_users_server">>],
+                                      Content);
+                        false ->
+                            maps:with([<<"membership">>], Content)
+                    end,
                 case RoomVersion#room_version.updated_redaction_rules of
                     false ->
                         C3;
@@ -653,7 +660,12 @@ prune_event(#{<<"type">> := Type, <<"content">> := Content} = Event,
                         Content
                 end;
             <<"m.room.join_rules">> ->
-                maps:with([<<"join_rule">>, <<"allow">>], Content);
+                case RoomVersion#room_version.restricted_join_rule of
+                    false ->
+                        maps:with([<<"join_rule">>], Content);
+                    true ->
+                        maps:with([<<"join_rule">>, <<"allow">>], Content)
+                end;
             <<"m.room.power_levels">> ->
                 case RoomVersion#room_version.updated_redaction_rules of
                     false ->
@@ -677,6 +689,8 @@ prune_event(#{<<"type">> := Type, <<"content">> := Content} = Event,
                     true ->
                         maps:with([<<"redacts">>], Content)
                 end;
+            <<"m.room.aliases">> when RoomVersion#room_version.special_case_aliases_auth ->
+                maps:with([<<"aliases">>], Content);
             _ -> #{}
         end,
     Event2#{<<"content">> := Content2}.
@@ -715,6 +729,27 @@ sort_json(List) when is_list(List) ->
     lists:map(fun sort_json/1, List);
 sort_json(JSON) ->
     JSON.
+
+is_canonical_json(N) when is_integer(N),
+                          -16#1FFFFFFFFFFFFF =< N,
+                          N =< 16#1FFFFFFFFFFFFF ->
+    true;
+is_canonical_json(B) when is_binary(B) ->
+    true;
+is_canonical_json(B) when is_boolean(B) ->
+    true;
+is_canonical_json(Map) when is_map(Map) ->
+    maps:fold(
+      fun(_K, V, true) ->
+              is_canonical_json(V);
+         (_K, _V, false) ->
+              false
+      end, true, Map);
+is_canonical_json(List) when is_list(List) ->
+    lists:all(fun is_canonical_json/1, List);
+is_canonical_json(_) ->
+    false.
+
 
 base64_decode(B) ->
     Fixed =

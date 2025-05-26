@@ -103,6 +103,7 @@
 -define(ROOM_MESSAGE, <<"m.room.message">>).
 -define(ROOM_HISTORY_VISIBILITY, <<"m.room.history_visibility">>).
 -define(ROOM_TOPIC, <<"m.room.topic">>).
+-define(ROOM_ALIASES, <<"m.room.aliases">>).
 
 -define(MAX_DEPTH, 16#7FFFFFFFFFFFFFFF).
 -define(MAX_TXN_RETRIES, 5).
@@ -650,9 +651,7 @@ handle_event(cast, {join_direct, MatrixServer, RoomID, Sender, UserID}, State, D
                   Host, get, MatrixServer,
                   [<<"_matrix">>, <<"federation">>, <<"v1">>, <<"make_join">>,
                    RoomID, UserID],
-                  [{<<"ver">>, <<"9">>},
-                   {<<"ver">>, <<"10">>},
-                   {<<"ver">>, <<"11">>}],
+                  [{<<"ver">>, V} || V <- supported_versions()],
                   none,
                   [{timeout, 5000}],
                   [{sync, true},
@@ -770,9 +769,7 @@ handle_event(cast, {join, UserJID, Packet}, _State, Data) ->
                           Host, get, MatrixServer,
                           [<<"_matrix">>, <<"federation">>, <<"v1">>, <<"make_join">>,
                            RoomID, UserID],
-                          [{<<"ver">>, <<"9">>},
-                           {<<"ver">>, <<"10">>},
-                           {<<"ver">>, <<"11">>}],
+                          [{<<"ver">>, V} || V <- supported_versions()],
                           none,
                           [{timeout, 5000}],
                           [{sync, true},
@@ -1280,7 +1277,7 @@ check_event_auth(Event, StateMap, Data) ->
                                         <<"ban">> ->
                                             check_event_auth_ban(
                                               Event, StateMap, Data);
-                                        <<"knock">> ->
+                                        <<"knock">> when (Data#data.room_version)#room_version.knock_join_rule ->
                                             check_event_auth_knock(
                                               Event, StateMap, Data);
                                         _ ->
@@ -1288,6 +1285,18 @@ check_event_auth(Event, StateMap, Data) ->
                                     end;
                                 _ ->
                                     false
+                            end;
+                        ?ROOM_ALIASES when (Data#data.room_version)#room_version.special_case_aliases_auth ->
+                            case Event#event.state_key of
+                                undefined ->
+                                    false;
+                                StateKey ->
+                                    case mod_matrix_gw:get_id_domain_exn(Event#event.sender) of
+                                        StateKey ->
+                                            true;
+                                        _ ->
+                                            false
+                                    end
                             end;
                         _ ->
                             Sender = Event#event.sender,
@@ -1372,8 +1381,11 @@ check_event_auth_join(Event, StateMap, Data) ->
                             case {JoinRule, SenderMembership} of
                                 {<<"public">>, _} -> true;
                                 {<<"invite">>, <<"invite">>} -> true;
-                                {<<"knock">>, <<"invite">>} -> true;
-                                {<<"restricted">>, <<"invite">>} ->
+                                {<<"knock">>, <<"invite">>}
+                                  when (Data#data.room_version)#room_version.knock_join_rule ->
+                                    true;
+                                {<<"restricted">>, <<"invite">>}
+                                  when (Data#data.room_version)#room_version.restricted_join_rule ->
                                     %% TODO
                                     true;
                                 {<<"knock_restricted">>, <<"invite">>}
@@ -1442,7 +1454,7 @@ check_event_auth_leave(Event, StateMap, Data) ->
                     case SenderMembership of
                         <<"invite">> -> true;
                         <<"join">> -> true;
-                        <<"knock">> -> true;
+                        <<"knock">> when (Data#data.room_version)#room_version.knock_join_rule -> true;
                         _ -> false
                     end;
                 _ ->
@@ -1609,6 +1621,13 @@ check_event_auth_power_levels(Event, StateMap, Data) ->
     try
         case Event#event.json of
             #{<<"content">> := NewPL = #{<<"users">> := Users}} when is_map(Users) ->
+                CheckKeys =
+                    case (Data#data.room_version)#room_version.limit_notifications_power_levels of
+                        false ->
+                            [<<"events">>, <<"users">>];
+                        true ->
+                            [<<"events">>, <<"users">>, <<"notifications">>]
+                    end,
                 case (Data#data.room_version)#room_version.enforce_int_power_levels of
                     true ->
                         lists:foreach(
@@ -1632,7 +1651,7 @@ check_event_auth_power_levels(Event, StateMap, Data) ->
                                             end
                                     end, [], NewMap)
                           end,
-                          [<<"events">>, <<"users">>, <<"notifications">>]);
+                          CheckKeys);
                     false ->
                         ok
                 end,
@@ -1677,7 +1696,7 @@ check_event_auth_power_levels(Event, StateMap, Data) ->
                                             end
                                     end, [], maps:merge(OldMap, NewMap))
                           end,
-                          [<<"events">>, <<"users">>, <<"notifications">>]),
+                          CheckKeys),
                         true;
                     _ ->
                         true
@@ -1772,7 +1791,7 @@ fill_event(JSON, Data) ->
                         _ -> []
                     end
             end,
-            compute_event_auth_keys(JSON))),
+            compute_event_auth_keys(JSON, Data#data.room_version))),
     {JSON#{<<"auth_events">> => AuthEvents,
            <<"depth">> => Depth2,
            <<"origin">> => MatrixServer,
@@ -1923,7 +1942,8 @@ get_latest_events(Pid) ->
 check_event_signature(Host, Event) ->
     PrunedEvent = mod_matrix_gw:prune_event(Event#event.json,
                                             Event#event.room_version),
-    mod_matrix_gw_s2s:check_signature(Host, PrunedEvent).
+    mod_matrix_gw_s2s:check_signature(Host, PrunedEvent,
+                                      Event#event.room_version).
 
 find_event(Pid, EventID) ->
     gen_statem:call(Pid, {find_event, EventID}).
@@ -2526,8 +2546,85 @@ find_power_level_event(EventID, Data) ->
       end, undefined, Event#event.auth_events).
 
 
+binary_to_room_version(<<"4">>) ->
+    #room_version{id = <<"4">>,
+                  enforce_key_validity = false,
+                  special_case_aliases_auth = true,
+                  strict_canonicaljson = false,
+                  limit_notifications_power_levels = false,
+                  knock_join_rule = false,
+                  restricted_join_rule = false,
+                  restricted_join_rule_fix = false,
+                  knock_restricted_join_rule = false,
+                  enforce_int_power_levels = false,
+                  implicit_room_creator = false,
+                  updated_redaction_rules = false
+                 };
+binary_to_room_version(<<"5">>) ->
+    #room_version{id = <<"5">>,
+                  enforce_key_validity = true,
+                  special_case_aliases_auth = true,
+                  strict_canonicaljson = false,
+                  limit_notifications_power_levels = false,
+                  knock_join_rule = false,
+                  restricted_join_rule = false,
+                  restricted_join_rule_fix = false,
+                  knock_restricted_join_rule = false,
+                  enforce_int_power_levels = false,
+                  implicit_room_creator = false,
+                  updated_redaction_rules = false
+                 };
+binary_to_room_version(<<"6">>) ->
+    #room_version{id = <<"6">>,
+                  enforce_key_validity = true,
+                  special_case_aliases_auth = false,
+                  strict_canonicaljson = true,
+                  limit_notifications_power_levels = true,
+                  knock_join_rule = false,
+                  restricted_join_rule = false,
+                  restricted_join_rule_fix = false,
+                  knock_restricted_join_rule = false,
+                  enforce_int_power_levels = false,
+                  implicit_room_creator = false,
+                  updated_redaction_rules = false
+                 };
+binary_to_room_version(<<"7">>) ->
+    #room_version{id = <<"7">>,
+                  enforce_key_validity = true,
+                  special_case_aliases_auth = false,
+                  strict_canonicaljson = true,
+                  limit_notifications_power_levels = true,
+                  knock_join_rule = true,
+                  restricted_join_rule = false,
+                  restricted_join_rule_fix = false,
+                  knock_restricted_join_rule = false,
+                  enforce_int_power_levels = false,
+                  implicit_room_creator = false,
+                  updated_redaction_rules = false
+                 };
+binary_to_room_version(<<"8">>) ->
+    #room_version{id = <<"8">>,
+                  enforce_key_validity = true,
+                  special_case_aliases_auth = false,
+                  strict_canonicaljson = true,
+                  limit_notifications_power_levels = true,
+                  knock_join_rule = true,
+                  restricted_join_rule = true,
+                  restricted_join_rule_fix = false,
+                  knock_restricted_join_rule = false,
+                  enforce_int_power_levels = false,
+                  implicit_room_creator = false,
+                  updated_redaction_rules = false
+                 };
 binary_to_room_version(<<"9">>) ->
     #room_version{id = <<"9">>,
+                  enforce_key_validity = true,
+                  special_case_aliases_auth = false,
+                  strict_canonicaljson = true,
+                  limit_notifications_power_levels = true,
+                  knock_join_rule = true,
+                  restricted_join_rule = true,
+                  restricted_join_rule_fix = true,
                   knock_restricted_join_rule = false,
                   enforce_int_power_levels = false,
                   implicit_room_creator = false,
@@ -2535,6 +2632,13 @@ binary_to_room_version(<<"9">>) ->
                  };
 binary_to_room_version(<<"10">>) ->
     #room_version{id = <<"10">>,
+                  enforce_key_validity = true,
+                  special_case_aliases_auth = false,
+                  strict_canonicaljson = true,
+                  limit_notifications_power_levels = true,
+                  knock_join_rule = true,
+                  restricted_join_rule = true,
+                  restricted_join_rule_fix = true,
                   knock_restricted_join_rule = true,
                   enforce_int_power_levels = true,
                   implicit_room_creator = false,
@@ -2542,6 +2646,13 @@ binary_to_room_version(<<"10">>) ->
                  };
 binary_to_room_version(<<"11">>) ->
     #room_version{id = <<"11">>,
+                  enforce_key_validity = true,
+                  special_case_aliases_auth = false,
+                  strict_canonicaljson = true,
+                  limit_notifications_power_levels = true,
+                  knock_join_rule = true,
+                  restricted_join_rule = true,
+                  restricted_join_rule_fix = true,
                   knock_restricted_join_rule = true,
                   enforce_int_power_levels = true,
                   implicit_room_creator = true,
@@ -2549,6 +2660,10 @@ binary_to_room_version(<<"11">>) ->
                  };
 binary_to_room_version(_) ->
     false.
+
+supported_versions() ->
+    [<<"4">>, <<"5">>, <<"6">>, <<"7">>, <<"8">>, <<"9">>,
+     <<"10">>, <<"11">>].
 
 json_to_event(#{<<"type">> := Type,
                 <<"room_id">> := RoomID,
@@ -2562,6 +2677,17 @@ json_to_event(#{<<"type">> := Type,
        is_list(AuthEvents) ->
     StateKey = maps:get(<<"state_key">>, JSON, undefined),
     EventID = mod_matrix_gw:get_event_id(JSON, RoomVersion),
+    case RoomVersion#room_version.strict_canonicaljson of
+        true ->
+            case mod_matrix_gw:is_canonical_json(JSON) of
+                true ->
+                    ok;
+                false ->
+                    throw(non_canonical_json)
+            end;
+        false ->
+            ok
+    end,
     #event{id = EventID,
            room_version = RoomVersion,
            room_id = RoomID,
@@ -3162,12 +3288,13 @@ new_room_id() ->
     MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
     <<$!, S/binary, $:, MatrixServer/binary>>.
 
-compute_event_auth_keys(#{<<"type">> := ?ROOM_CREATE}) ->
+compute_event_auth_keys(#{<<"type">> := ?ROOM_CREATE}, _RoomVersion) ->
     [];
 compute_event_auth_keys(#{<<"type">> := ?ROOM_MEMBER,
                           <<"sender">> := Sender,
                           <<"content">> := #{<<"membership">> := Membership} = Content,
-                          <<"state_key">> := StateKey}) ->
+                          <<"state_key">> := StateKey},
+                        RoomVersion) ->
     Common = [{?ROOM_CREATE, <<"">>},
               {?ROOM_POWER_LEVELS, <<"">>},
               {?ROOM_MEMBER, Sender},
@@ -3175,7 +3302,8 @@ compute_event_auth_keys(#{<<"type">> := ?ROOM_MEMBER,
     case Membership of
         <<"join">> ->
             case Content of
-                #{<<"join_authorised_via_users_server">> := AuthUser} ->
+                #{<<"join_authorised_via_users_server">> := AuthUser}
+                  when RoomVersion#room_version.restricted_join_rule ->
                     [{?ROOM_MEMBER, AuthUser}, {?ROOM_JOIN_RULES, <<"">>} | Common];
                 _ ->
                     [{?ROOM_JOIN_RULES, <<"">>} | Common]
@@ -3192,7 +3320,7 @@ compute_event_auth_keys(#{<<"type">> := ?ROOM_MEMBER,
         _ ->
             Common
     end;
-compute_event_auth_keys(#{<<"type">> := _, <<"sender">> := Sender}) ->
+compute_event_auth_keys(#{<<"type">> := _, <<"sender">> := Sender}, _RoomVersion) ->
     [{?ROOM_CREATE, <<"">>},
      {?ROOM_POWER_LEVELS, <<"">>},
      {?ROOM_MEMBER, Sender}].

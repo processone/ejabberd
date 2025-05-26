@@ -28,7 +28,7 @@
 
 %% API
 -export([start_link/2, supervisor/1, create_db/0,
-         get_connection/2, check_auth/5, check_signature/2,
+         get_connection/2, check_auth/5, check_signature/3,
          get_matrix_host_port/2]).
 
 %% gen_statem callbacks
@@ -38,6 +38,7 @@
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include_lib("kernel/include/inet.hrl").
+-include("mod_matrix_gw.hrl").
 
 -record(matrix_s2s,
         {to  :: binary(),
@@ -169,23 +170,29 @@ check_auth(Host, MatrixServer, AuthParams, Content, Request) ->
             false
     end.
 
-check_signature(Host, JSON) ->
+check_signature(Host, JSON, RoomVersion) ->
     case JSON of
         #{<<"sender">> := Sender,
-          <<"signatures">> := Sigs} ->
+          <<"signatures">> := Sigs,
+          <<"origin_server_ts">> := OriginServerTS} ->
             MatrixServer = mod_matrix_gw:get_id_domain_exn(Sender),
             case Sigs of
                 #{MatrixServer := #{} = KeySig} ->
                     case maps:next(maps:iterator(KeySig)) of
                         {KeyID, _Sig, _} ->
                             case catch get_key(Host, MatrixServer, KeyID) of
-                                {ok, VerifyKey, _ValidUntil} ->
-                                    %% TODO: check ValidUntil
-                                    case check_signature(JSON, MatrixServer, KeyID, VerifyKey) of
+                                {ok, VerifyKey, ValidUntil} ->
+                                    if
+                                        not RoomVersion#room_version.enforce_key_validity or
+                                        OriginServerTS =< ValidUntil ->
+                                            case check_signature(JSON, MatrixServer, KeyID, VerifyKey) of
+                                                true ->
+                                                    true;
+                                                false ->
+                                                    ?WARNING_MSG("Failed authentication: ~p", [JSON]),
+                                                    false
+                                            end;
                                         true ->
-                                            true;
-                                        false ->
-                                            ?WARNING_MSG("Failed authentication: ~p", [JSON]),
                                             false
                                     end;
                                 _ ->
