@@ -125,12 +125,12 @@ defmodule Ejabberd.MixProject do
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
      {:mqtree, "~> 1.0"},
-     {:p1_acme, "~> 1.0"},
+     {:p1_acme, git: "https://github.com/processone/p1_acme", ref: "8471432f4df79cc8f18dbb1f2da5af11e7bf59e2", override: true},
      {:p1_oauth2, "~> 0.6"},
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
-     {:xmpp, "~> 1.10.0"},
+     {:xmpp, git: "https://github.com/processone/xmpp", ref: "e2fa1f27b66099fc44ec717636c242aaac5e40d4", override: true},
      {:yconf, ">= 1.0.18"}]
     ++ cond_deps()
   end
