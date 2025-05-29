@@ -11,6 +11,7 @@
 		mod_specs = #{} :: map()}).
 
 main([Mod|Paths]) ->
+    put(otp_version, list_to_integer(erlang:system_info(otp_release))),
     State = fold_beams(
 	      fun(File, Form, StateAcc) ->
 		      append(Form, File, StateAcc)
@@ -453,6 +454,17 @@ t_from_form(Spec) ->
     T.
 
 t_remote(Mod, Type) ->
+    case get(otp_version) >= 28  of
+        true ->
+            t_remote_newopt(Mod, Type);
+        false ->
+            t_remote_oldopt(Mod, Type)
+    end.
+
+t_remote_newopt(Mod, Type) ->
+    erl_types:t_nominal({Mod, Type, 0, opaque}, opaque).
+
+t_remote_oldopt(Mod, Type) ->
     D = maps:from_list([{{opaque, Type, []},
                          {{Mod, 1, 2, []}, type}}]),
     [T] = erl_types:t_opaque_from_records(D),
