@@ -80,7 +80,7 @@ jobs:
           ~/.cache/rebar3/
         key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
 
-    - name: Get compatible Rebar binaries
+    - name: Unlock eredis dependency
       if: matrix.rebar == 'rebar3' && matrix.otp < 21
       run: rebar3 unlock eredis
 
