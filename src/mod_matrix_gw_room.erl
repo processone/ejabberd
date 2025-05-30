@@ -222,35 +222,39 @@ route(#message{from = From, to = #jid{luser = <<C, _/binary>>} = To,
   when C == $!;
        C == $# ->
     Host = ejabberd_config:get_myname(),
-    case room_id_from_xmpp(Host, To#jid.luser) of
-        {ok, RoomID} ->
-            case From#jid.lserver of
-                Host ->
-                    case user_id_from_jid(From, Host) of
-                        {ok, UserID} ->
-                            case get_existing_room_pid(Host, RoomID) of
-                                {ok, Pid} ->
-                                    Text = xmpp:get_text(Body),
-                                    JSON =
-                                        #{<<"content">> =>
-                                              #{<<"body">> => Text,
-                                                <<"msgtype">> => <<"m.text">>,
-                                                <<"net.process-one.xmpp-id">> => MsgID},
-                                          <<"sender">> => UserID,
-                                          <<"type">> => ?ROOM_MESSAGE},
-                                    gen_statem:cast(Pid, {add_event, JSON}),
-                                    ok;
-                                _ ->
+    case xmpp:get_text(Body) of
+        <<"">> ->
+            ok;
+        Text ->
+            case room_id_from_xmpp(Host, To#jid.luser) of
+                {ok, RoomID} ->
+                    case From#jid.lserver of
+                        Host ->
+                            case user_id_from_jid(From, Host) of
+                                {ok, UserID} ->
+                                    case get_existing_room_pid(Host, RoomID) of
+                                        {ok, Pid} ->
+                                            JSON =
+                                                #{<<"content">> =>
+                                                      #{<<"body">> => Text,
+                                                        <<"msgtype">> => <<"m.text">>,
+                                                        <<"net.process-one.xmpp-id">> => MsgID},
+                                                  <<"sender">> => UserID,
+                                                  <<"type">> => ?ROOM_MESSAGE},
+                                            gen_statem:cast(Pid, {add_event, JSON}),
+                                            ok;
+                                        _ ->
+                                            ok
+                                    end;
+                                error ->
                                     ok
                             end;
-                        error ->
+                        _ ->
                             ok
                     end;
-                _ ->
+                error ->
                     ok
-            end;
-        error ->
-            ok
+            end
     end;
 route(#message{from = From, to = To, body = Body} = _Pkt) ->
     Host = ejabberd_config:get_myname(),
