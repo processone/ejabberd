@@ -184,7 +184,7 @@ check_signature(Host, JSON, RoomVersion) ->
                                 {ok, VerifyKey, ValidUntil} ->
                                     if
                                         not RoomVersion#room_version.enforce_key_validity or
-                                        OriginServerTS =< ValidUntil ->
+                                        (OriginServerTS =< ValidUntil) ->
                                             case check_signature(JSON, MatrixServer, KeyID, VerifyKey) of
                                                 true ->
                                                     true;
