@@ -258,13 +258,6 @@ drop_password_type(LServer, Hash) ->
 	?SQL("delete from users"
 	     " where type=%(Type)d and %(LServer)H")).
 
-scram_hash_encode(Hash, StoreKey) ->
-    case Hash of
-	sha -> StoreKey;
-	sha256 -> <<"sha256:", StoreKey/binary>>;
-	sha512 -> <<"sha512:", StoreKey/binary>>
-    end.
-
 set_password_scram_t(LUser, LServer, Hash,
                      StoredKey, ServerKey, Salt, IterationCount) ->
     Type = hash_to_num(Hash),
