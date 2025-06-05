@@ -38,6 +38,8 @@
 	 subscribe/3,
 	 unsubscribe/3]).
 
+%% @format-begin
+
 subscribe(RTBLHost, RTBLDomainsNode, From) ->
     FromJID = service_jid(From),
     SubIQ = #iq{type = set, to = jid:make(RTBLHost), from = FromJID,
