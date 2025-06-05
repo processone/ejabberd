@@ -11,7 +11,6 @@ encode_binary_test() ->
     Encoded = <<"\"This is an error text.\"">>,
     ?assertMatch(Encoded, misc:json_encode(Binary)).
 
--ifdef(OTP_BELOW_27).
 -ifdef(OTP_BELOW_26).
 
 %% OTP 25 or lower
@@ -24,7 +23,11 @@ encode_map_test() ->
         <<"{\"service\":\"conference\",\"name\":\"room\",\"jid\":\"user@server\",\"affiliation\":\"member\"}">>,
     ?assertMatch(Encoded, misc:json_encode(Map)).
 
--else.
+-endif.
+
+-ifdef(OTP_BELOW_27).
+
+-ifndef(OTP_BELOW_26).
 
 %% OTP 26
 encode_map_test() ->
@@ -37,8 +40,9 @@ encode_map_test() ->
     ?assertMatch(Encoded, misc:json_encode(Map)).
 
 -endif.
+-endif.
 
--else.
+-ifndef(OTP_BELOW_27).
 
 %% OTP 27 or higher or higher
 encode_map_test() ->

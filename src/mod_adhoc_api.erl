@@ -664,7 +664,9 @@ lists_zip3_pad([A | As], Nil, Nil, Xs) when (Nil == none) or (Nil == []) ->
 lists_zip3_pad([], Nil, Nil, Xs) when (Nil == none) or (Nil == []) ->
     lists:reverse(Xs).
 
--else.
+-endif.
+
+-ifndef(OTP_BELOW_26).
 
 lists_zip3_pad(As, Bs, Cs) ->
     lists:zip3(As, Bs, Cs, {pad, {error_missing_args_def, "", ""}}).

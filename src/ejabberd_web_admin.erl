@@ -1925,7 +1925,9 @@ lists_zipwith3(Combine, [E1 | List1], [E2 | List2], [], DefX, DefY, DefZ, Res) -
     E123 = Combine(E1, E2, DefZ),
     lists_zipwith3(Combine, List1, List2, [], DefX, DefY, DefZ, [E123 | Res]).
 
--else.
+-endif.
+
+-ifndef(OTP_BELOW_26).
 
 lists_zipwith3(Combine, List1, List2, List3, How) ->
     lists:zipwith3(Combine, List1, List2, List3, How).
