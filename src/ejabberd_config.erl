@@ -663,7 +663,7 @@ get_additional_macros() ->
 
 parse_macro_string(MacroString) ->
     [NameString, ValueString] = string:split(MacroString, "="),
-    {ok, [ValueDecoded]} = fast_yaml:decode(ValueString, [plain_as_atom]),
+    {ok, [ValueDecoded]} = fast_yaml:decode(ValueString),
     {list_to_atom(NameString), ValueDecoded}.
 
 read_yaml_files(Files, Opts) ->
