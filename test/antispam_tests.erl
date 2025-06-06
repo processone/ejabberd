@@ -20,6 +20,7 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
+
 -module(antispam_tests).
 
 -compile(export_all).
@@ -39,59 +40,60 @@
 %%%===================================================================
 %%% Single tests
 %%%===================================================================
+
 single_cases() ->
     {antispam_single,
      [sequence],
-     [single_test(spam_files),
-      single_test(blocked_domains),
+     [single_test(block_by_jid),
+      single_test(block_by_url),
+      single_test(blocked_jid_is_cached),
+      single_test(uncache_blocked_jid),
+      single_test(check_blocked_domain),
+      single_test(unblock_domain),
+      single_test(empty_domain_list),
+      single_test(block_domain_globally),
+      single_test(check_domain_blocked_globally),
+      single_test(unblock_domain_in_vhost),
+      single_test(unblock_domain_globally),
+      single_test(block_domain_in_vhost),
+      single_test(unblock_domain_in_vhost2),
       single_test(jid_cache),
       single_test(rtbl_domains)]}.
 
-spam_files(Config) ->
-    Host = ?config(server, Config),
+%%%===================================================================
+
+block_by_jid(Config) ->
+    is_spam(message_hello(<<"spammer_jid">>, <<"localhost">>, Config)).
+
+block_by_url(Config) ->
+    From = jid:make(<<"spammer">>, <<"localhost">>, <<"spam_client">>),
     To = my_jid(Config),
+    is_not_spam(message_hello(<<"spammer">>, <<"localhost">>, Config)),
+    is_spam(message(From, To, <<"hello world\nhttps://spam.domain.url">>)).
 
-    SpamJID = jid:make(<<"spammer_jid">>, <<"localhost">>, <<"spam_client">>),
-    SpamJIDMsg =
-        #message{from = SpamJID,
-                 to = To,
-                 type = chat,
-                 body = [#text{data = <<"hello world">>}]},
-    is_spam(SpamJIDMsg),
+blocked_jid_is_cached(Config) ->
+    is_spam(message_hello(<<"spammer">>, <<"localhost">>, Config)).
 
-    Spammer = jid:make(<<"spammer">>, <<"localhost">>, <<"spam_client">>),
-    NoSpamMsg =
-        #message{from = Spammer,
-                 to = To,
-                 type = chat,
-                 body = [#text{data = <<"hello world">>}]},
-    is_not_spam(NoSpamMsg),
-    SpamMsg =
-        #message{from = Spammer,
-                 to = To,
-                 type = chat,
-                 body = [#text{data = <<"hello world\nhttps://spam.domain.url">>}]},
-    is_spam(SpamMsg),
-    %% now check this mischief is in jid_cache
-    is_spam(NoSpamMsg),
+uncache_blocked_jid(Config) ->
+    Host = ?config(server, Config),
+    Spammer = jid:make(<<"spammer">>, <<"localhost">>, <<"">>),
     mod_antispam:drop_from_spam_filter_cache(Host, jid:to_string(Spammer)),
-    is_not_spam(NoSpamMsg),
+    is_not_spam(message_hello(<<"spammer">>, <<"localhost">>, Config)).
 
+check_blocked_domain(Config) ->
+    Host = ?config(server, Config),
     ?retry(100, 10, ?match(true, (has_spam_domain(<<"spam_domain.org">>))(Host))),
+    is_spam(message_hello(<<"other_spammer">>, <<"spam_domain.org">>, Config)).
 
-    SpamDomain = jid:make(<<"spammer">>, <<"spam_domain.org">>, <<"spam_client">>),
-    SpamDomainMsg =
-        #message{from = SpamDomain,
-                 to = To,
-                 type = chat,
-                 body = [#text{data = <<"hello world">>}]},
-    is_spam(SpamDomainMsg),
+unblock_domain(Config) ->
+    Host = ?config(server, Config),
     ?match({ok, _}, mod_antispam:remove_blocked_domain(Host, <<"spam_domain.org">>)),
     ?match([], mod_antispam:get_blocked_domains(Host)),
-    is_not_spam(SpamDomainMsg),
-    disconnect(Config).
+    is_not_spam(message_hello(<<"spammer">>, <<"spam_domain.org">>, Config)).
 
-blocked_domains(Config) ->
+%%%===================================================================
+
+empty_domain_list(Config) ->
     Host = ?config(server, Config),
     ?match([], mod_antispam:get_blocked_domains(Host)),
     SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
@@ -100,39 +102,64 @@ blocked_domains(Config) ->
                    to = To,
                    type = chat,
                    body = [#text{data = <<"hello world">>}]},
-    is_not_spam(Msg),
+    is_not_spam(Msg).
+
+block_domain_globally(Config) ->
     ?match({ok, _}, mod_antispam:add_blocked_domain(<<"global">>, <<"spam.domain">>)),
-    is_spam(Msg),
+    SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
+    To = my_jid(Config),
+    is_spam(message(SpamFrom, To, <<"hello world">>)).
+
+check_domain_blocked_globally(_Config) ->
     Vhosts = [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, mod_antispam)],
     NumVhosts = length(Vhosts),
-    ?match(NumVhosts, length(lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts))),
+    ?match(NumVhosts, length(lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts))).
+
+unblock_domain_in_vhost(Config) ->
+    Host = ?config(server, Config),
     ?match({ok, _}, mod_antispam:remove_blocked_domain(Host, <<"spam.domain">>)),
     ?match([], mod_antispam:get_blocked_domains(Host)),
-    is_not_spam(Msg),
+    SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
+    To = my_jid(Config),
+    is_not_spam(message(SpamFrom, To, <<"hello world">>)).
+
+unblock_domain_globally(_Config) ->
+    Vhosts = [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, mod_antispam)],
+    NumVhosts = length(Vhosts),
     ?match(NumVhosts, length(lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts)) + 1),
     ?match({ok, _}, mod_antispam:remove_blocked_domain(<<"global">>, <<"spam.domain">>)),
-    ?match([], lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts)),
+    ?match([], lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts)).
+
+block_domain_in_vhost(Config) ->
+    Host = ?config(server, Config),
+    Vhosts = [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, mod_antispam)],
     ?match({ok, _}, mod_antispam:add_blocked_domain(Host, <<"spam.domain">>)),
     ?match([Host], lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts)),
-    is_spam(Msg),
+    SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
+    To = my_jid(Config),
+    is_spam(message(SpamFrom, To, <<"hello world">>)).
+
+unblock_domain_in_vhost2(Config) ->
+    Host = ?config(server, Config),
     ?match({ok, _}, mod_antispam:remove_blocked_domain(Host, <<"spam.domain">>)),
-    is_not_spam(Msg),
+    SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
+    To = my_jid(Config),
+    is_not_spam(message(SpamFrom, To, <<"hello world">>)),
     disconnect(Config).
+
+%%%===================================================================
 
 jid_cache(Config) ->
     Host = ?config(server, Config),
     SpamFrom = jid:make(<<"spammer">>, Host, <<"spam_client">>),
-    To = my_jid(Config),
-    Msg = #message{from = SpamFrom,
-                   to = To,
-                   type = chat,
-                   body = [#text{data = <<"hello world">>}]},
-    is_not_spam(Msg),
+    is_not_spam(message_hello(<<"spammer">>, Host, Config)),
     mod_antispam:add_to_spam_filter_cache(Host, jid:to_string(SpamFrom)),
-    is_spam(Msg),
+    is_spam(message_hello(<<"spammer">>, Host, Config)),
     mod_antispam:drop_from_spam_filter_cache(Host, jid:to_string(SpamFrom)),
-    is_not_spam(Msg),
+    is_not_spam(message_hello(<<"spammer">>, Host, Config)),
     disconnect(Config).
+
+%%%===================================================================
 
 rtbl_domains(Config) ->
     Host = ?config(server, Config),
@@ -192,3 +219,14 @@ is_not_spam(Msg) ->
 
 is_spam(Spam) ->
     ?match({stop, {drop, undefined}}, mod_antispam:s2s_receive_packet({Spam, undefined})).
+
+message_hello(Username, Host, Config) ->
+    SpamFrom = jid:make(Username, Host, <<"spam_client">>),
+    To = my_jid(Config),
+    message(SpamFrom, To, <<"hello world">>).
+
+message(From, To, BodyText) ->
+    #message{from = From,
+             to = To,
+             type = chat,
+             body = [#text{data = BodyText}]}.
