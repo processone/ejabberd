@@ -17,7 +17,7 @@ FPATH=$1
 ERLS=$(git grep --name-only @format-begin "$FPATH"/)
 
 for ERL in $ERLS; do
-    csplit --quiet --prefix=$ERL-format- $ERL /@format-/ "{*}"
+    perl -n -e 'sub o { open(OUT, ">", sprintf("%s-format-%02d", $f, $n++));}; BEGIN{($f)=@ARGV;o()}; o() if /\@format-/; print OUT $_;' $ERL
 done
 
 EFMTS=$(find "$FPATH"/*-format-* -type f -exec grep --files-with-matches "@format-begin" '{}' ';')
