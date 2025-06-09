@@ -661,6 +661,17 @@ test:
 	@cd priv && ln -sf ../sql
 	$(REBAR) $(SKIPDEPS) ct
 
+.PHONY: test-%
+define test-group-target
+test-$1:
+	$(REBAR) $(SKIPDEPS) ct --suite=test/ejabberd_SUITE --group=$1
+endef
+
+ifneq ($(filter test-%,$(MAKECMDGOALS)),)
+group_to_test := $(patsubst test-%,%,$(filter test-%,$(MAKECMDGOALS)))
+$(eval $(call test-group-target,$(group_to_test)))
+endif
+
 test-eunit:
 	$(REBAR) $(SKIPDEPS) eunit --verbose
 
@@ -711,6 +722,7 @@ help:
 	@echo "  hooks          Run hooks validator"
 	@echo "  test           Run Common Tests suite [rebar3]"
 	@echo "  test-eunit     Run EUnit suite [rebar3]"
+	@echo "  test-<group>   Run Common Test suite for specific group only [rebar3]"
 	@echo "  xref           Run cross reference analysis [rebar3]"
 
 #.
