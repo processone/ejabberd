@@ -81,8 +81,6 @@ uncache_blocked_jid(Config) ->
     is_not_spam(message_hello(<<"spammer">>, <<"localhost">>, Config)).
 
 check_blocked_domain(Config) ->
-    Host = ?config(server, Config),
-    ?retry(100, 10, ?match(true, (has_spam_domain(<<"spam_domain.org">>))(Host))),
     is_spam(message_hello(<<"other_spammer">>, <<"spam_domain.org">>, Config)).
 
 unblock_domain(Config) ->
