@@ -138,10 +138,11 @@ mod_opt_type(spam_domains_file) ->
     econf:either(
         econf:enum([none]), econf:file());
 mod_opt_type(whitelist_domains_file) ->
-    econf:either(none, econf:binary());
+    econf:either(
+        econf:enum([none]), econf:file());
 mod_opt_type(spam_dump_file) ->
     econf:either(
-        econf:enum([none]), econf:binary());
+        econf:enum([none]), econf:file());
 mod_opt_type(spam_jids_file) ->
     econf:either(
         econf:enum([none]), econf:file());
