@@ -58,7 +58,8 @@ single_cases() ->
       single_test(block_domain_in_vhost),
       single_test(unblock_domain_in_vhost2),
       single_test(jid_cache),
-      single_test(rtbl_domains)]}.
+      single_test(rtbl_domains),
+      single_test(rtbl_domains_whitelisted)]}.
 
 %%%===================================================================
 
@@ -197,6 +198,46 @@ rtbl_domains(Config) ->
     {result, _} =
         mod_pubsub:delete_item(RTBLHost, RTBLDomainsNode, Owner, <<"spam.source.another">>, true),
     ?retry(100, 10, ?match(false, (has_spam_domain(<<"spam.source.another">>))(Host))),
+    {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
+    disconnect(Config).
+
+rtbl_domains_whitelisted(Config) ->
+    Host = ?config(server, Config),
+    RTBLHost =
+        jid:to_string(
+            suite:pubsub_jid(Config)),
+    RTBLDomainsNode = <<"spam_source_domains">>,
+    OldOpts = gen_mod:get_module_opts(Host, mod_antispam),
+    NewOpts =
+        maps:merge(OldOpts, #{rtbl_host => RTBLHost, rtbl_domains_node => RTBLDomainsNode}),
+    Owner = jid:make(?config(user, Config), ?config(server, Config), <<>>),
+    {result, _} =
+        mod_pubsub:create_node(RTBLHost,
+                               ?config(server, Config),
+                               RTBLDomainsNode,
+                               Owner,
+                               <<"flat">>),
+    {result, _} =
+        mod_pubsub:publish_item(RTBLHost,
+                                ?config(server, Config),
+                                RTBLDomainsNode,
+                                Owner,
+                                <<"whitelisted.domain">>,
+                                [xmpp:encode(#ps_item{id = <<"whitelisted.domain">>,
+                                                      sub_els = []})]),
+    mod_antispam:reload(Host, OldOpts, NewOpts),
+    {result, _} =
+        mod_pubsub:publish_item(RTBLHost,
+                                ?config(server, Config),
+                                RTBLDomainsNode,
+                                Owner,
+                                <<"yetanother.domain">>,
+                                [xmpp:encode(#ps_item{id = <<"yetanother.domain">>,
+                                                      sub_els = []})]),
+    ?retry(100, 10, ?match(true, (has_spam_domain(<<"yetanother.domain">>))(Host))),
+    %% we assume that the previous "whitelisted.domain" pubsub item has been consumed by now, so we
+    %% can check that it doesn't exist
+    ?match(false, (has_spam_domain(<<"whitelisted.domain">>))(Host)),
     {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
     disconnect(Config).
 
