@@ -96,10 +96,7 @@ empty_domain_list(Config) ->
     ?match([], mod_antispam:get_blocked_domains(Host)),
     SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
     To = my_jid(Config),
-    Msg = #message{from = SpamFrom,
-                   to = To,
-                   type = chat,
-                   body = [#text{data = <<"hello world">>}]},
+    Msg = message(SpamFrom, To, <<"hello world">>),
     is_not_spam(Msg).
 
 block_domain_globally(Config) ->
