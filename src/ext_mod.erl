@@ -543,7 +543,7 @@ check_sources(Module) ->
                     true -> Acc;
                     false -> [{missing, Name}|Acc]
                 end
-            end, HaveSrc, [{is_file, "README.txt"},
+            end, HaveSrc, [{is_file, "README.md"},
                            {is_file, "COPYING"},
                            {is_file, SpecFile}]),
     SpecCheck = case consult(SpecFile) of
