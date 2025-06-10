@@ -24,6 +24,8 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%| definitions
+
 -module(mod_antispam).
 -author('holger@zedat.fu-berlin.de').
 -author('stefan@strigler.de').
@@ -51,8 +53,7 @@
 %% ejabberd_hooks callbacks.
 -export([s2s_in_handle_info/2,
 	 s2s_receive_packet/1,
-	 sm_receive_packet/1,
-	 reopen_log/0]).
+	 sm_receive_packet/1]).
 
 %% ejabberd_commands callbacks.
 -export([add_blocked_domain/2,
@@ -67,11 +68,12 @@
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 
 -include_lib("xmpp/include/xmpp.hrl").
 
 -type url() :: binary().
--type filename() :: binary() | none.
+-type filename() :: binary() | none | false.
 -type jid_set() :: sets:set(ljid()).
 -type url_set() :: sets:set(url()).
 -type s2s_in_state() :: ejabberd_s2s_in:state().
@@ -101,8 +103,8 @@
 %% @format-begin
 
 %%--------------------------------------------------------------------
-%% gen_mod callbacks.
-%%--------------------------------------------------------------------
+%%| gen_mod callbacks
+
 -spec start(binary(), gen_mod:opts()) -> ok | {error, any()}.
 start(Host, Opts) ->
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
@@ -142,7 +144,7 @@ mod_opt_type(whitelist_domains_file) ->
         econf:enum([none]), econf:file());
 mod_opt_type(spam_dump_file) ->
     econf:either(
-        econf:enum([none]), econf:file());
+        econf:bool(), econf:file(write));
 mod_opt_type(spam_jids_file) ->
     econf:either(
         econf:enum([none]), econf:file());
@@ -163,7 +165,7 @@ mod_opt_type(rtbl_domains_node) ->
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
     [{spam_domains_file, none},
-     {spam_dump_file, none},
+     {spam_dump_file, false},
      {spam_jids_file, none},
      {spam_urls_file, none},
      {whitelist_domains_file, none},
@@ -173,15 +175,28 @@ mod_options(_Host) ->
      {rtbl_domains_node, ?DEFAULT_RTBL_DOMAINS_NODE}].
 
 mod_doc() ->
-    #{}.
+    #{desc => ?T("Reads from text file and RTBL, filters stanzas and writes dump file."),
+      note => "added in 25.xx",
+      opts =>
+          [{spam_dump_file,
+            #{value => ?T("false | true | Path"),
+              desc =>
+                  ?T("Path to the file to store blocked messages. "
+                     "Use an absolute path, or the '@LOG_PATH@' macro to store logs "
+                     "in the same place that the other ejabberd log files. "
+                     "If set to 'false', does not dump stanzas, this is the default. "
+                     "If set to 'true', it stores in '\"@LOG_PATH@/spam_dump_@HOST@.log\"'.")}}],
+      example =>
+          ["modules:",
+           "  mod_antispam:",
+           "    spam_dump_file: \"@LOG_PATH@/spam/host-@HOST@.log\""]}.
 
 %%--------------------------------------------------------------------
-%% gen_server callbacks.
-%%--------------------------------------------------------------------
+%%| gen_server callbacks
+
 -spec init(list()) -> {ok, state()} | {stop, term()}.
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    DumpFile = expand_host(gen_mod:get_opt(spam_dump_file, Opts), Host),
     Files =
         #{domains => gen_mod:get_opt(spam_domains_file, Opts),
           jid => gen_mod:get_opt(spam_jids_file, Opts),
@@ -195,7 +210,6 @@ init([Host, Opts]) ->
             ejabberd_hooks:add(s2s_in_handle_info, Host, ?MODULE, s2s_in_handle_info, 90),
             ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE, s2s_receive_packet, 50),
             ejabberd_hooks:add(sm_receive_packet, Host, ?MODULE, sm_receive_packet, 50),
-            ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 50),
             ejabberd_hooks:add(local_send_to_resource_hook,
                                Host,
                                mod_antispam_rtbl,
@@ -203,35 +217,23 @@ init([Host, Opts]) ->
                                50),
             RTBLHost = gen_mod:get_opt(rtbl_host, Opts),
             RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, Opts),
-            InitState0 =
+            InitState =
                 #state{host = Host,
                        jid_set = JIDsSet,
                        url_set = URLsSet,
+                       dump_fd = mod_antispam_dump:init_dumping(Host),
                        max_cache_size = gen_mod:get_opt(cache_size, Opts),
                        blocked_domains = set_to_map(SpamDomainsSet),
                        whitelist_domains = set_to_map(WhitelistDomains, false),
                        rtbl_host = RTBLHost,
                        rtbl_domains_node = RTBLDomainsNode},
             mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
-            InitState = init_open_dump_file(DumpFile, InitState0),
             {ok, InitState}
     catch
         {Op, File, Reason} when Op == open; Op == read ->
             ?CRITICAL_MSG("Cannot ~s ~s: ~s", [Op, File, format_error(Reason)]),
             {stop, config_error}
     end.
-
-init_open_dump_file(none, State) ->
-    State;
-init_open_dump_file(DumpFile, State) ->
-    case filelib:ensure_dir(DumpFile) of
-        ok ->
-            ok;
-        {error, Reason} ->
-            Dirname = filename:dirname(DumpFile),
-            throw({open, Dirname, Reason})
-    end,
-    open_dump_file(DumpFile, State).
 
 -spec handle_call(term(), {pid(), term()}, state()) ->
                      {reply, {spam_filter, term()}, state()} | {noreply, state()}.
@@ -296,32 +298,21 @@ handle_call(Request, From, State) ->
     {noreply, State}.
 
 -spec handle_cast(term(), state()) -> {noreply, state()}.
-handle_cast({dump, _XML}, #state{dump_fd = undefined} = State) ->
+handle_cast({dump_stanza, XML}, #state{dump_fd = Fd} = State) ->
+    mod_antispam_dump:write_stanza_dump(Fd, XML),
     {noreply, State};
-handle_cast({dump, XML}, #state{dump_fd = Fd} = State) ->
-    case file:write(Fd, [XML, <<$\n>>]) of
-        ok ->
-            ok;
-        {error, Reason} ->
-            ?ERROR_MSG("Cannot write spam to dump file: ~s", [file:format_error(Reason)])
-    end,
-    {noreply, State};
+handle_cast(reopen_log, #state{host = Host, dump_fd = Fd} = State) ->
+    {noreply, State#state{dump_fd = mod_antispam_dump:reopen_dump_file(Host, Fd)}};
 handle_cast({reload, NewOpts, OldOpts},
             #state{host = Host,
+                   dump_fd = Fd,
                    rtbl_host = OldRTBLHost,
                    rtbl_domains_node = OldRTBLDomainsNode,
                    rtbl_retry_timer = RTBLRetryTimer} =
                 State) ->
     misc:cancel_timer(RTBLRetryTimer),
     State1 =
-        case {gen_mod:get_opt(spam_dump_file, OldOpts), gen_mod:get_opt(spam_dump_file, NewOpts)}
-        of
-            {OldDumpFile, NewDumpFile} when NewDumpFile /= OldDumpFile ->
-                close_dump_file(expand_host(OldDumpFile, Host), State),
-                open_dump_file(expand_host(NewDumpFile, Host), State);
-            {_OldDumpFile, _NewDumpFile} ->
-                State
-        end,
+        State#state{dump_fd = mod_antispam_dump:reload_dumping(Host, Fd, OldOpts, NewOpts)},
     State2 =
         case {gen_mod:get_opt(cache_size, OldOpts), gen_mod:get_opt(cache_size, NewOpts)} of
             {OldMax, NewMax} when NewMax < OldMax ->
@@ -342,8 +333,6 @@ handle_cast({reload, NewOpts, OldOpts},
     RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, NewOpts),
     ok = mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
     {noreply, State3#state{rtbl_host = RTBLHost, rtbl_domains_node = RTBLDomainsNode}};
-handle_cast(reopen_log, State) ->
-    {noreply, reopen_dump_file(State)};
 handle_cast({update_blocked_domains, NewItems},
             #state{blocked_domains = BlockedDomains} = State) ->
     {noreply, State#state{blocked_domains = maps:merge(BlockedDomains, NewItems)}};
@@ -411,15 +400,14 @@ handle_info(Info, State) ->
 -spec terminate(normal | shutdown | {shutdown, term()} | term(), state()) -> ok.
 terminate(Reason,
           #state{host = Host,
+                 dump_fd = Fd,
                  rtbl_host = RTBLHost,
                  rtbl_domains_node = RTBLDomainsNode,
                  rtbl_retry_timer = RTBLRetryTimer} =
-              State) ->
+              _State) ->
     ?DEBUG("Stopping spam filter process for ~s: ~p", [Host, Reason]),
     misc:cancel_timer(RTBLRetryTimer),
-    DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
-    DumpFile1 = expand_host(DumpFile, Host),
-    close_dump_file(DumpFile1, State),
+    mod_antispam_dump:terminate_dumping(Host, Fd),
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE, s2s_receive_packet, 50),
     ejabberd_hooks:delete(sm_receive_packet, Host, ?MODULE, sm_receive_packet, 50),
     ejabberd_hooks:delete(s2s_in_handle_info, Host, ?MODULE, s2s_in_handle_info, 90),
@@ -429,12 +417,7 @@ terminate(Reason,
                           pubsub_event_handler,
                           50),
     mod_antispam_rtbl:unsubscribe(RTBLHost, RTBLDomainsNode, Host),
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_hooks:delete(reopen_log_hook, ?MODULE, reopen_log, 50);
-        true ->
-            ok
-    end.
+    ok.
 
 -spec code_change({down, term()} | term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, #state{host = Host} = State, _Extra) ->
@@ -442,8 +425,7 @@ code_change(_OldVsn, #state{host = Host} = State, _Extra) ->
     {ok, State}.
 
 %%--------------------------------------------------------------------
-%% Hook callbacks.
-%%--------------------------------------------------------------------
+%%| Hook callbacks
 
 -spec s2s_receive_packet({stanza() | drop, s2s_in_state()}) ->
                             {stanza() | drop, s2s_in_state()} | {stop, {drop, s2s_in_state()}}.
@@ -505,17 +487,9 @@ s2s_in_handle_info(State, {_Ref, {spam_filter, _}}) ->
 s2s_in_handle_info(State, _) ->
     State.
 
--spec reopen_log() -> ok.
-reopen_log() ->
-    lists:foreach(fun(Host) ->
-                     Proc = get_proc_name(Host),
-                     gen_server:cast(Proc, reopen_log)
-                  end,
-                  get_spam_filter_hosts()).
+%%--------------------------------------------------------------------
+%%| Internal functions
 
-%%--------------------------------------------------------------------
-%% Internal functions.
-%%--------------------------------------------------------------------
 -spec needs_checking(jid(), jid()) -> boolean().
 needs_checking(#jid{lserver = FromHost} = From, #jid{lserver = LServer} = To) ->
     case gen_mod:is_loaded(LServer, ?MODULE) of
@@ -814,7 +788,7 @@ reject(#message{from = From,
               [jid:encode(From), jid:encode(To)]),
     Txt = <<"Your message is unsolicited">>,
     Err = xmpp:err_policy_violation(Txt, Lang),
-    maybe_dump_spam(Msg),
+    ejabberd_hooks:run(spam_stanza_rejected, To#jid.lserver, [Msg]),
     ejabberd_router:route_error(Msg, Err);
 reject(#presence{from = From,
                  to = To,
@@ -828,48 +802,6 @@ reject(#presence{from = From,
 reject(_) ->
     ok.
 
--spec open_dump_file(filename(), state()) -> state().
-open_dump_file(none, State) ->
-    State#state{dump_fd = undefined};
-open_dump_file(Name, State) ->
-    Modes = [append, raw, binary, delayed_write],
-    case file:open(Name, Modes) of
-        {ok, Fd} ->
-            ?DEBUG("Opened ~s", [Name]),
-            State#state{dump_fd = Fd};
-        {error, Reason} ->
-            ?ERROR_MSG("Cannot open dump file ~s: ~s", [Name, file:format_error(Reason)]),
-            State#state{dump_fd = undefined}
-    end.
-
--spec close_dump_file(filename(), state()) -> ok.
-close_dump_file(_Name, #state{dump_fd = undefined}) ->
-    ok;
-close_dump_file(Name, #state{dump_fd = Fd}) ->
-    case file:close(Fd) of
-        ok ->
-            ?DEBUG("Closed ~s", [Name]);
-        {error, Reason} ->
-            ?ERROR_MSG("Cannot close ~s: ~s", [Name, file:format_error(Reason)])
-    end.
-
--spec reopen_dump_file(state()) -> state().
-reopen_dump_file(#state{host = Host} = State) ->
-    DumpFile = gen_mod:get_module_opt(Host, ?MODULE, spam_dump_file),
-    DumpFile1 = expand_host(DumpFile, Host),
-    close_dump_file(DumpFile1, State),
-    open_dump_file(DumpFile1, State).
-
--spec maybe_dump_spam(message()) -> ok.
-maybe_dump_spam(#message{to = #jid{lserver = LServer}} = Msg) ->
-    By = jid:make(<<>>, LServer),
-    Proc = get_proc_name(LServer),
-    Time = erlang:timestamp(),
-    Msg1 = misc:add_delay_info(Msg, By, Time),
-    XML = fxml:element_to_binary(
-              xmpp:encode(Msg1)),
-    gen_server:cast(Proc, {dump, XML}).
-
 -spec get_proc_name(binary()) -> atom().
 get_proc_name(Host) ->
     gen_mod:get_module_proc(Host, ?MODULE).
@@ -877,12 +809,6 @@ get_proc_name(Host) ->
 -spec get_spam_filter_hosts() -> [binary()].
 get_spam_filter_hosts() ->
     [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, ?MODULE)].
-
--spec expand_host(binary() | none, binary()) -> binary() | none.
-expand_host(none, _Host) ->
-    none;
-expand_host(Input, Host) ->
-    misc:expand_keyword(<<"@HOST@">>, Input, Host).
 
 -spec sets_equal(sets:set(), sets:set()) -> boolean().
 sets_equal(A, B) ->
@@ -901,8 +827,8 @@ format_error(Reason) ->
     list_to_binary(file:format_error(Reason)).
 
 %%--------------------------------------------------------------------
-%% Caching.
-%%--------------------------------------------------------------------
+%%| Caching
+
 -spec cache_insert(ljid(), state()) -> state().
 cache_insert(_LJID, #state{max_cache_size = 0} = State) ->
     State;
@@ -961,8 +887,8 @@ drop_from_cache(LJID, #state{jid_cache = Cache} = State) ->
     end.
 
 %%--------------------------------------------------------------------
-%% ejabberd command callbacks.
-%%--------------------------------------------------------------------
+%%| ejabberd command callbacks
+
 -spec get_commands_spec() -> [ejabberd_commands()].
 get_commands_spec() ->
     [#ejabberd_commands{name = reload_spam_filter_files,
@@ -1172,3 +1098,7 @@ drop_from_spam_filter_cache(Host, EncJID) ->
         _:{bad_jid, _} ->
             {error, "Not a valid JID: " ++ binary_to_list(EncJID)}
     end.
+
+%%--------------------------------------------------------------------
+
+%%| vim: set foldmethod=marker foldmarker=%%|,%%-:
