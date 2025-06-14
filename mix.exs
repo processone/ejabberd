@@ -125,7 +125,7 @@ defmodule Ejabberd.MixProject do
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
      {:mqtree, "~> 1.0"},
-     {:p1_acme, git: "https://github.com/processone/p1_acme", ref: "8471432f4df79cc8f18dbb1f2da5af11e7bf59e2", override: true},
+     {:p1_acme, git: "https://github.com/processone/p1_acme", ref: "27a590789add30ff507a49ffd440eeeb28c96ce5", override: true},
      {:p1_oauth2, "~> 0.6"},
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},

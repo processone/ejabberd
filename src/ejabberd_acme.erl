@@ -318,11 +318,7 @@ read_account_key() ->
     case pkix:read_file(Path) of
 	{ok, _, KeyMap} ->
 	    case maps:keys(KeyMap) of
-		[#'ECPrivateKey'{version = ecPrivkeyVer1} = Key|_] ->
-                    %% Erlang/OTP 28 generates this, but Jose doesn't support it
-                    {ok, Key#'ECPrivateKey'{version = 1}};
-		[#'ECPrivateKey'{} = Key|_] ->
-                    {ok, Key};
+		[#'ECPrivateKey'{} = Key|_] -> {ok, Key};
 		_ ->
 		    ?WARNING_MSG("File ~ts doesn't contain ACME account key. "
 				 "Trying to create a new one...",

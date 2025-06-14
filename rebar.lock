@@ -19,7 +19,7 @@
  {<<"mqtree">>,{pkg,<<"mqtree">>,<<"1.0.17">>},0},
  {<<"p1_acme">>,
   {git,"https://github.com/processone/p1_acme",
-       {ref,"8471432f4df79cc8f18dbb1f2da5af11e7bf59e2"}},
+       {ref,"27a590789add30ff507a49ffd440eeeb28c96ce5"}},
   0},
  {<<"p1_mysql">>,{pkg,<<"p1_mysql">>,<<"1.0.26">>},0},
  {<<"p1_oauth2">>,{pkg,<<"p1_oauth2">>,<<"0.6.14">>},0},

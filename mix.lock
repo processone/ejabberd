@@ -24,7 +24,7 @@
   "makeup_erlang": {:hex, :makeup_erlang, "1.0.2", "03e1804074b3aa64d5fad7aa64601ed0fb395337b982d9bcf04029d68d51b6a7", [:mix], [{:makeup, "~> 1.0", [hex: :makeup, repo: "hexpm", optional: false]}], "hexpm", "af33ff7ef368d5893e4a267933e7744e46ce3cf1f61e2dccf53a111ed3aa3727"},
   "mqtree": {:hex, :mqtree, "1.0.17", "82f54b8f2d22b4445db1d6cccb7fe9ead049d61410c29e32475f3ceb3ee62a89", [:rebar3], [{:p1_utils, "1.0.26", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm", "5fe8b7cf8fbc4783d0fceb94654ac2bbf3242a58cd0397d249ded8ae021be2a3"},
   "nimble_parsec": {:hex, :nimble_parsec, "1.4.2", "8efba0122db06df95bfaa78f791344a89352ba04baedd3849593bfce4d0dc1c6", [:mix], [], "hexpm", "4b21398942dda052b403bbe1da991ccd03a053668d147d53fb8c4e0efe09c973"},
-  "p1_acme": {:git, "https://github.com/processone/p1_acme", "8471432f4df79cc8f18dbb1f2da5af11e7bf59e2", [ref: "8471432f4df79cc8f18dbb1f2da5af11e7bf59e2"]},
+  "p1_acme": {:git, "https://github.com/processone/p1_acme", "27a590789add30ff507a49ffd440eeeb28c96ce5", [ref: "27a590789add30ff507a49ffd440eeeb28c96ce5"]},
   "p1_mysql": {:hex, :p1_mysql, "1.0.26", "574d07c9936c53b1ec3556db3cf064cc14a6c39039835b3d940471bfa5ac8e2b", [:rebar3], [], "hexpm", "ea138083f2c54719b9cf549dbf5802a288b0019ea3e5449b354c74cc03fafdec"},
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.14", "1c5f82535574de87e2059695ac4b91f8f9aebacbc1c80287dae6f02552d47aea", [:rebar3], [], "hexpm", "1fd3ac474e43722d9d5a87c6df8d36f698ed87af7bb81cbbb66361451d99ae8f"},
   "p1_pgsql": {:hex, :p1_pgsql, "1.1.32", "3f95d7e3413fc8f0be80abb4be1a0d7f67066a36905085cd5a423145598b0cb0", [:rebar3], [{:xmpp, "~> 1.10.0", [hex: :xmpp, repo: "hexpm", optional: false]}], "hexpm", "268b01e8f4eb75c211a31495a25c2815c549aecce2f0df1a161c6e0a2cde061e"},
