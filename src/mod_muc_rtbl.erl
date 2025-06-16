@@ -151,9 +151,9 @@ pubsub_event_handler(#message{from = #jid{luser = <<>>, lserver = SServer},
     SNode = mod_muc_rtbl_opt:rtbl_node(Server),
     if SServer == SServer2 ->
 	case xmpp:get_subtag(Msg, #ps_event{}) of
-	    #ps_event{items = #ps_items{node = Node, retract = Retract}} when Node == SNode,
+	    #ps_event{items = #ps_items{node = Node, retract = [Retract | _] = RetractList}} when Node == SNode,
 									      is_binary(Retract) ->
-		mnesia:dirty_delete(muc_rtbl, {Server, Retract});
+		[mnesia:dirty_delete(muc_rtbl, {Server, R1}) || R1 <- RetractList];
 	    #ps_event{items = #ps_items{node = Node, items = Items}} when Node == SNode ->
 		Added = lists:foldl(
 		    fun(#ps_item{id = ID}, Acc) ->
