@@ -128,6 +128,7 @@ set_participant(_LServer, Channel, Service, JID, ID, Nick) ->
 	 nick = Nick,
 	 created_at = erlang:timestamp()}).
 
+-spec get_participant(binary(), binary(), binary(), jid()) -> {ok, {binary(), binary()}} | {error, notfound}.
 get_participant(_LServer, Channel, Service, JID) ->
     {User, Domain, _} = jid:tolower(JID),
     case mnesia:dirty_read(mix_participant, {User, Domain, Channel, Service}) of
