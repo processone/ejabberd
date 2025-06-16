@@ -167,7 +167,7 @@ set_participant(LServer, Channel, Service, JID, ID, Nick) ->
 	_Err -> {error, db_failure}
     end.
 
--spec get_participant(binary(), binary(), binary(), jid()) -> {ok, {binary(), binary()}} | {error, notfound | db_failure}.
+-spec get_participant(binary(), binary(), binary(), jid:jid()) -> {ok, {binary(), binary()}} | {error, notfound | db_failure}.
 get_participant(LServer, Channel, Service, JID) ->
     {User, Domain, _} = jid:tolower(JID),
     case ejabberd_sql:sql_query(
