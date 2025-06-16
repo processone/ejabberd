@@ -297,11 +297,11 @@ maybe_delete_udsocket_file(_Port) ->
 split_opts(Transport, Opts) ->
     maps:fold(
       fun(Opt, Val, {ModOpts, SockOpts}) ->
-	      case OptVal = {Opt, Val} of
+	      case {Opt, Val} of
 		  {ip, _} ->
-		      {ModOpts, [OptVal|SockOpts]};
+		      {ModOpts, [{Opt, Val} | SockOpts]};
 		  {backlog, _} when Transport == tcp ->
-		      {ModOpts, [OptVal|SockOpts]};
+		      {ModOpts, [{Opt, Val} | SockOpts]};
 		  {backlog, _} ->
 		      {ModOpts, SockOpts};
 		  _ ->

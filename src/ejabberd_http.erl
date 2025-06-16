@@ -170,9 +170,8 @@ send_file(State, Fd, Size, FileName) ->
     try
 	case State#state.sockmod of
 	    gen_tcp ->
-		case file:sendfile(Fd, State#state.socket, 0, Size, []) of
-		    {ok, _} -> ok
-		end;
+		{ok, _} = file:sendfile(Fd, State#state.socket, 0, Size, []),
+		ok;
 	    _ ->
 		case file:read(Fd, ?SEND_BUF) of
 		    {ok, Data} ->

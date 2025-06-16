@@ -2230,9 +2230,8 @@ find_services_validate(Global, _Name) when Global == global;
     Global == <<"global">> ->
     find_services(Global);
 find_services_validate(Service, Name) ->
-    case validate_muc(Service, Name) of
-	Service2 -> find_services(Service2)
-    end.
+    Service2 = validate_muc(Service, Name),
+    find_services(Service2).
 
 find_services(Global) when Global == global;
 			Global == <<"global">> ->

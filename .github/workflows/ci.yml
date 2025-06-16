@@ -120,6 +120,7 @@ jobs:
     - run: make dialyzer
     - run: make test-eunit
     - run: make elvis
+      if: matrix.otp >= '26'
 
     - name: Check Production Release
       run: |

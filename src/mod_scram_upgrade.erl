@@ -112,10 +112,8 @@ c2s_handle_sasl2_task_data({_, #{user := User, server := Server,
 					      serverkey = ServerKey, storedkey = StoredKey}),
 	    State2 = maps:remove(scram_upgrade, State),
 	    InlineEls2 = lists:keydelete(sasl_upgrade, 1, InlineEls),
-	    case ejabberd_c2s:handle_sasl2_inline(InlineEls2, State2) of
-		{State3, NewEls, Results} ->
-		    {success, NewEls, Results, State3}
-	    end;
+	    {State3, NewEls, Results} = ejabberd_c2s:handle_sasl2_inline(InlineEls2, State2),
+	    {success, NewEls, Results, State3};
 	_ ->
 	    {abort, State}
     end.

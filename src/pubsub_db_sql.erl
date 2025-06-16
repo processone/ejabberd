@@ -56,7 +56,7 @@ delete_subscription(SubID) ->
            "where subid = %(SubID)s")),
     ok.
 
--spec update_subscription(#pubsub_subscription{}) -> ok .
+-spec update_subscription(#pubsub_subscription{}) -> ok.
 update_subscription(#pubsub_subscription{subid = SubId} = Sub) ->
     delete_subscription(SubId), add_subscription(Sub).
 

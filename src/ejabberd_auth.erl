@@ -423,9 +423,8 @@ count_users(Server, Opts) ->
 
 -spec get_password(binary(), binary()) -> false | [password()].
 get_password(User, Server) ->
-    case get_password_with_authmodule(User, Server) of
-	{Passwords, _} -> Passwords
-    end.
+    {Passwords, _} = get_password_with_authmodule(User, Server),
+    Passwords.
 
 -spec get_password_s(binary(), binary()) -> password().
 get_password_s(User, Server) ->
@@ -815,7 +814,7 @@ db_user_exists(User, Server, Mod) ->
 			  end,
 		    case Val of
 			{ok, _} ->
-			    {true, Mod /= ejabberd_auth_anonymous} ;
+			    {true, Mod /= ejabberd_auth_anonymous};
 			not_found ->
 			    {false, Mod /= ejabberd_auth_anonymous};
 			error ->
