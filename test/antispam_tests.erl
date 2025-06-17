@@ -59,7 +59,8 @@ single_cases() ->
       single_test(unblock_domain_in_vhost2),
       single_test(jid_cache),
       single_test(rtbl_domains),
-      single_test(rtbl_domains_whitelisted)]}.
+      single_test(rtbl_domains_whitelisted),
+      single_test(spam_dump_file)]}.
 
 %%%===================================================================
 
@@ -242,6 +243,20 @@ rtbl_domains_whitelisted(Config) ->
     disconnect(Config).
 
 %%%===================================================================
+
+spam_dump_file(Config) ->
+    {ok, CWD} = file:get_cwd(),
+    Filename = filename:join([CWD, "spam.log"]),
+    ?retry(100, 10,
+           ?match(true, size(get_bytes(Filename)) > 0)),
+    From = jid:make(<<"spammer_jid">>, <<"localhost">>, <<"spam_client">>),
+    To = my_jid(Config),
+    is_spam(message(From, To, <<"A very specific spam message">>)),
+    ?retry(100, 100,
+           ?match({match, _},
+                  re:run(get_bytes(Filename), <<"A very specific spam message">>))).
+
+%%%===================================================================
 %%% Internal functions
 %%%===================================================================
 single_test(T) ->
@@ -266,3 +281,7 @@ message(From, To, BodyText) ->
              to = To,
              type = chat,
              body = [#text{data = BodyText}]}.
+
+get_bytes(Filename) ->
+    {ok, Bytes} = file:read_file(Filename),
+    Bytes.
