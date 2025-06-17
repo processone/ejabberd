@@ -371,8 +371,6 @@ geturl(Url) ->
             {error, Reason}
     end.
 
-getenv(Env) ->
-    getenv(Env, "").
 getenv(Env, Default) ->
     case os:getenv(Env) of
         false -> Default;
@@ -453,7 +451,7 @@ delete_path(Path, Package) ->
     delete_path(filename:join(filename:dirname(Path), Package)).
 
 modules_dir() ->
-    DefaultDir = filename:join(getenv("HOME"), ".ejabberd-modules"),
+    DefaultDir = filename:join(misc:get_home(), ".ejabberd-modules"),
     getenv("CONTRIB_MODULES_PATH", DefaultDir).
 
 sources_dir() ->

@@ -717,7 +717,7 @@ get_proc_name(ServerHost, ModuleName, PutURL) ->
 
 -spec expand_home(binary()) -> binary().
 expand_home(Input) ->
-    {ok, [[Home]]} = init:get_argument(home),
+    Home = misc:get_home(),
     misc:expand_keyword(<<"@HOME@">>, Input, Home).
 
 -spec expand_host(binary(), binary()) -> binary().

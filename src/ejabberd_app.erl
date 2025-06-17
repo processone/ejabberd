@@ -44,6 +44,7 @@ start(normal, _Args) ->
 	ejabberd_logger:start(),
 	write_pid_file(),
 	start_included_apps(),
+	misc:warn_unset_home(),
 	start_elixir_application(),
 	setup_if_elixir_conf_used(),
 	case ejabberd_config:load() of
@@ -175,6 +176,10 @@ file_queue_init() ->
 	ok -> ok;
 	Err -> throw({?MODULE, Err})
     end.
+
+%%%
+%%% Elixir
+%%%
 
 -ifdef(ELIXIR_ENABLED).
 is_using_elixir_config() ->

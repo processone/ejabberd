@@ -1376,7 +1376,7 @@ write_file_if_new(File, Payload) ->
 
 tmp_dir() ->
     case os:type() of
-	{win32, _} -> filename:join([os:getenv("HOME"), "conf"]);
+	{win32, _} -> filename:join([misc:get_home(), "conf"]);
 	_ -> filename:join(["/tmp", "ejabberd"])
     end.
 

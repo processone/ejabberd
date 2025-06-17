@@ -503,7 +503,7 @@ get_predefined_keywords(Host) ->
             _ ->
                 [{<<"HOST">>, Host}]
         end,
-    {ok, [[Home]]} = init:get_argument(home),
+    Home = misc:get_home(),
     HostList
     ++ [{<<"HOME">>, list_to_binary(Home)},
         {<<"SEMVER">>, ejabberd_option:version()},

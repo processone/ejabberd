@@ -36,6 +36,7 @@
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
 	 now_to_usec/1, usec_to_now/1, encode_pid/1, decode_pid/2,
 	 compile_exprs/2, join_atoms/2, try_read_file/1, get_descr/2,
+	 get_home/0, warn_unset_home/0,
 	 css_dir/0, img_dir/0, js_dir/0, msgs_dir/0, sql_dir/0, lua_dir/0,
 	 read_css/1, read_img/1, read_js/1, read_lua/1,
 	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0,
@@ -469,6 +470,25 @@ get_descr(Lang, Text) ->
     Desc = translate:translate(Lang, Text),
     Copyright = ejabberd_config:get_copyright(),
     <<Desc/binary, $\n, Copyright/binary>>.
+
+-spec get_home() -> string().
+get_home() ->
+    case init:get_argument(home) of
+        {ok, [[Home]]} ->
+            Home;
+        error ->
+            mnesia:system_info(directory)
+    end.
+
+warn_unset_home() ->
+    case init:get_argument(home) of
+        {ok, [[_Home]]} ->
+            ok;
+        error ->
+            ?INFO_MSG("The 'HOME' environment variable is not set, "
+                 "ejabberd will use as HOME the Mnesia directory: ~s.",
+                 [mnesia:system_info(directory)])
+    end.
 
 -spec intersection(list(), list()) -> list().
 intersection(L1, L2) ->

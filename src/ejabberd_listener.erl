@@ -222,7 +222,7 @@ setup_provisional_udsocket_dir(DefinitivePath) ->
 
 get_provisional_udsocket_path(Path) ->
     PathBase64 = misc:term_to_base64(Path),
-    PathBuild = filename:join(os:getenv("HOME"), PathBase64),
+    PathBuild = filename:join(misc:get_home(), PathBase64),
     %% Shorthen the path, a long path produces a crash when opening the socket.
     binary:part(PathBuild, {0, erlang:min(107, byte_size(PathBuild))}).
 
