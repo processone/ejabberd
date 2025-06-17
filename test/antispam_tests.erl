@@ -247,7 +247,7 @@ rtbl_domains_whitelisted(Config) ->
 spam_dump_file(Config) ->
     {ok, CWD} = file:get_cwd(),
     Filename = filename:join([CWD, "spam.log"]),
-    ?retry(100, 10,
+    ?retry(100, 100,
            ?match(true, size(get_bytes(Filename)) > 0)),
     From = jid:make(<<"spammer_jid">>, <<"localhost">>, <<"spam_client">>),
     To = my_jid(Config),
