@@ -712,6 +712,23 @@ doc() ->
              "  domain.tld:",
              "    auth_method:",
              "      - ldap"]}},
+     {hosts_alias,
+      #{value => "{Alias: Host}",
+        desc =>
+            ?T("Define aliases for existing vhosts managed by ejabberd. "
+               "An alias may be a regexp expression. "
+               "This option is only consulted by the 'ejabberd_http' listener."),
+        note => "added in 25.xx",
+        example =>
+            ["hosts:",
+             "  - domain.tld",
+             "  - example.org",
+             "",
+             "hosts_alias:",
+             "  xmpp.domain.tld: domain.tld",
+             "  jabber.domain.tld: domain.tld",
+             "  mytest.net: example.org",
+             "  \"exa*\": example.org"]}},
      {include_config_file,
       #{value => "[Filename, ...\\] | {Filename: Options}",
         desc =>

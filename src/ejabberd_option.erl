@@ -55,6 +55,7 @@
 -export([hide_sensitive_log_data/0, hide_sensitive_log_data/1]).
 -export([host_config/0]).
 -export([hosts/0]).
+-export([hosts_alias/0]).
 -export([include_config_file/0, include_config_file/1]).
 -export([install_contrib_modules/0]).
 -export([jwt_auth_only_rule/0, jwt_auth_only_rule/1]).
@@ -478,6 +479,10 @@ host_config() ->
 -spec hosts() -> [binary(),...].
 hosts() ->
     ejabberd_config:get_option({hosts, global}).
+
+-spec hosts_alias() -> [{binary(),binary()}].
+hosts_alias() ->
+    ejabberd_config:get_option({hosts_alias, global}).
 
 -spec include_config_file() -> any().
 include_config_file() ->

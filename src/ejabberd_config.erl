@@ -39,6 +39,7 @@
 -export([callback_modules/1]).
 -export([set_option/2]).
 -export([get_defined_keywords/1, get_predefined_keywords/1, replace_keywords/2, replace_keywords/3]).
+-export([resolve_host_alias/1]).
 
 %% Deprecated functions
 -export([get_option/2]).
@@ -510,6 +511,45 @@ get_predefined_keywords(Host) ->
         {<<"VERSION">>,
          misc:semver_to_xxyy(
              ejabberd_option:version())}].
+
+resolve_host_alias(Host) ->
+    case lists:member(Host, ejabberd_option:hosts()) of
+        true ->
+            Host;
+        false ->
+            resolve_host_alias2(Host)
+    end.
+
+resolve_host_alias2(Host) ->
+    Result =
+        lists:filter(fun({Alias1, _Vhost}) -> is_glob_match(Host, Alias1) end,
+                     ejabberd_option:hosts_alias()),
+    case Result of
+        [{_, Vhost} | _] when is_binary(Vhost) ->
+            ?DEBUG("(~p) Alias host '~s' resolved into vhost '~s'", [self(), Host, Vhost]),
+            Vhost;
+        [] ->
+            ?DEBUG("(~p) Request sent to host '~s', which isn't a vhost or an alias",
+                   [self(), Host]),
+            Host
+    end.
+
+%% Copied from ejabberd-2.0.0/src/acl.erl
+is_regexp_match(String, RegExp) ->
+    case ejabberd_regexp:run(String, RegExp) of
+        nomatch ->
+            false;
+        match ->
+            true;
+        {error, ErrDesc} ->
+            io:format("Wrong regexp ~p in ACL: ~p", [RegExp, ErrDesc]),
+            false
+    end.
+
+is_glob_match(String, <<"!", Glob/binary>>) ->
+    not is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob));
+is_glob_match(String, Glob) ->
+    is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
 %% @format-end
 
 %%%===================================================================

@@ -273,7 +273,7 @@ process_header(State, Data) ->
 		      request_headers = add_header(Name, Langs, State)};
       {ok, {http_header, _, 'Host' = Name, _, Value}} ->
 	  {Host, Port, TP} = get_transfer_protocol(State#state.addr_re, SockMod, Value),
-	  State#state{request_host = Host,
+	  State#state{request_host = ejabberd_config:resolve_host_alias(Host),
 		      request_port = Port,
 		      request_tp = TP,
 		      request_headers = add_header(Name, Value, State)};

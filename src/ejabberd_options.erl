@@ -182,6 +182,13 @@ opt_type(host_config) ->
         [unique]));
 opt_type(hosts) ->
     econf:non_empty(econf:list(econf:domain(), [unique]));
+opt_type(hosts_alias) ->
+    econf:and_then(
+      econf:map(econf:domain(), econf:domain(), [unique]),
+      econf:map(
+        econf:domain(),
+        econf:enum(ejabberd_config:get_option(hosts)),
+        [unique]));
 opt_type(include_config_file) ->
     econf:any();
 opt_type(install_contrib_modules) ->
@@ -587,6 +594,7 @@ options() ->
      {extauth_program, undefined},
      {fqdn, fun fqdn/1},
      {hide_sensitive_log_data, false},
+     {hosts_alias, []},
      {host_config, []},
      {include_config_file, []},
      {language, <<"en">>},
@@ -766,6 +774,7 @@ globals() ->
      ext_api_path_oauth,
      fqdn,
      hosts,
+     hosts_alias,
      host_config,
      install_contrib_modules,
      listen,
