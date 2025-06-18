@@ -504,8 +504,12 @@ get_predefined_keywords(Host) ->
                 [{<<"HOST">>, Host}]
         end,
     Home = misc:get_home(),
+    LogDirPath =
+        iolist_to_binary(filename:dirname(
+                             ejabberd_logger:get_log_path())),
     HostList
     ++ [{<<"HOME">>, list_to_binary(Home)},
+        {<<"LOG_PATH">>, LogDirPath},
         {<<"SEMVER">>, ejabberd_option:version()},
         {<<"VERSION">>,
          misc:semver_to_xxyy(
