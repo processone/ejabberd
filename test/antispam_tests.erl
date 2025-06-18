@@ -247,14 +247,13 @@ rtbl_domains_whitelisted(Config) ->
 spam_dump_file(Config) ->
     {ok, CWD} = file:get_cwd(),
     Filename = filename:join([CWD, "spam.log"]),
-    ?retry(100, 100,
-           ?match(true, size(get_bytes(Filename)) > 0)),
+    ?retry(100, 100, ?match(true, size(get_bytes(Filename)) > 0)),
     From = jid:make(<<"spammer_jid">>, <<"localhost">>, <<"spam_client">>),
     To = my_jid(Config),
     is_spam(message(From, To, <<"A very specific spam message">>)),
-    ?retry(100, 100,
-           ?match({match, _},
-                  re:run(get_bytes(Filename), <<"A very specific spam message">>))).
+    ?retry(100,
+           100,
+           ?match({match, _}, re:run(get_bytes(Filename), <<"A very specific spam message">>))).
 
 %%%===================================================================
 %%% Internal functions
@@ -266,10 +265,11 @@ has_spam_domain(Domain) ->
     fun(Host) -> lists:member(Domain, mod_antispam:get_blocked_domains(Host)) end.
 
 is_not_spam(Msg) ->
-    ?match({Msg, undefined}, mod_antispam:s2s_receive_packet({Msg, undefined})).
+    ?match({Msg, undefined}, mod_antispam_filter:s2s_receive_packet({Msg, undefined})).
 
 is_spam(Spam) ->
-    ?match({stop, {drop, undefined}}, mod_antispam:s2s_receive_packet({Spam, undefined})).
+    ?match({stop, {drop, undefined}},
+           mod_antispam_filter:s2s_receive_packet({Spam, undefined})).
 
 message_hello(Username, Host, Config) ->
     SpamFrom = jid:make(Username, Host, <<"spam_client">>),
