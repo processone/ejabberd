@@ -265,10 +265,11 @@ has_spam_domain(Domain) ->
     fun(Host) -> lists:member(Domain, mod_antispam:get_blocked_domains(Host)) end.
 
 is_not_spam(Msg) ->
-    ?match({Msg, undefined}, mod_antispam:s2s_receive_packet({Msg, undefined})).
+    ?match({Msg, undefined}, mod_antispam_filter:s2s_receive_packet({Msg, undefined})).
 
 is_spam(Spam) ->
-    ?match({stop, {drop, undefined}}, mod_antispam:s2s_receive_packet({Spam, undefined})).
+    ?match({stop, {drop, undefined}},
+           mod_antispam_filter:s2s_receive_packet({Spam, undefined})).
 
 message_hello(Username, Host, Config) ->
     SpamFrom = jid:make(Username, Host, <<"spam_client">>),
