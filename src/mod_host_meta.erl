@@ -34,7 +34,7 @@
 -export([start/2, stop/1, reload/3, process/2,
          mod_opt_type/1, mod_options/1, depends/2]).
 -export([mod_doc/0]).
--export([get_url/4]).
+-export([get_url/4, get_auto_url/2]).
 
 -include("logger.hrl").
 
@@ -151,10 +151,10 @@ get_auto_url(Tls, Module) ->
         [] -> undefined;
         [{ThisTls, Port, Path} | _] ->
             Protocol = case {ThisTls, Module} of
-                           {false, mod_bosh} -> <<"http">>;
-                           {true, mod_bosh} -> <<"https">>;
                            {false, ejabberd_http_ws} -> <<"ws">>;
-                           {true, ejabberd_http_ws} -> <<"wss">>
+                           {true, ejabberd_http_ws} -> <<"wss">>;
+                           {false, _} -> <<"http">>;
+                           {true, _} -> <<"https">>
                        end,
             <<Protocol/binary,
               "://@HOST@:",
