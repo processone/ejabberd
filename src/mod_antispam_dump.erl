@@ -2,7 +2,7 @@
 %%% File    : mod_antispam_dump.erl
 %%% Author  : Holger Weiss <holger@zedat.fu-berlin.de>
 %%% Author  : Stefan Strigler <stefan@strigler.de>
-%%% Purpose : Filter spam messages based on sender JID and content
+%%% Purpose : Manage dump file for filtered spam messages
 %%% Created : 31 Mar 2019 by Holger Weiss <holger@zedat.fu-berlin.de>
 %%%
 %%%
@@ -24,7 +24,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%%| definitions
+%%| Definitions
 %% @format-begin
 
 -module(mod_antispam_dump).
@@ -34,7 +34,7 @@
 
 -export([init_dumping/1, terminate_dumping/2, reload_dumping/4, reopen_dump_file/2,
          write_stanza_dump/2]).
-%% ejabberd_hooks callbacks.
+%% ejabberd_hooks callbacks
 -export([dump_spam_stanza/1, reopen_log/0]).
 
 -include("logger.hrl").
