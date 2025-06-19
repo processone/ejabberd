@@ -66,7 +66,6 @@
 		request_headers = [],
 		end_of_request = false,
 		options = [],
-		default_host,
 		custom_headers,
 		trail = <<>>,
 		allow_unencrypted_sasl2,
@@ -300,7 +299,6 @@ process_header(State, Data) ->
 		    #state{sockmod = SockMod, socket = Socket,
 			   trail = State3#state.trail,
 			   options = State#state.options,
-			   default_host = State#state.default_host,
 			   custom_headers = State#state.custom_headers,
 			   request_handlers = State#state.request_handlers,
 			   addr_re = State#state.addr_re};
@@ -308,7 +306,6 @@ process_header(State, Data) ->
 		    #state{end_of_request = true,
 			   trail = State3#state.trail,
 			   options = State#state.options,
-			   default_host = State#state.default_host,
 			   custom_headers = State#state.custom_headers,
 			   request_handlers = State#state.request_handlers,
 			   addr_re = State#state.addr_re}
@@ -316,7 +313,6 @@ process_header(State, Data) ->
       _ ->
 	  #state{end_of_request = true,
 		 options = State#state.options,
-		 default_host = State#state.default_host,
 		 custom_headers = State#state.custom_headers,
 		 request_handlers = State#state.request_handlers,
 		 addr_re = State#state.addr_re}
@@ -926,8 +922,6 @@ listen_opt_type(request_handlers) ->
 	econf:binary(),
 	fun(Path) -> str:tokens(Path, <<"/">>) end),
       econf:beam([[{socket_handoff, 3}, {process, 2}]]));
-listen_opt_type(default_host) ->
-    econf:domain();
 listen_opt_type(custom_headers) ->
     econf:map(
       econf:binary(),
@@ -943,5 +937,4 @@ listen_options() ->
      {allow_unencrypted_sasl2, false},
      {request_handlers, []},
      {tag, <<>>},
-     {default_host, undefined},
      {custom_headers, []}].
