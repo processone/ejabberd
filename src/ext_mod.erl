@@ -148,7 +148,8 @@ get_commands_spec() ->
      #ejabberd_commands{name = module_upgrade,
                         tags = [modules],
                         desc = "Upgrade the running code of an installed module",
-                        longdesc = "In practice, this uninstalls and installs the module",
+                        longdesc = "In practice, this uninstalls, cleans the compiled files, and installs the module",
+                        note = "improved in 25.xx",
                         module = ?MODULE, function = upgrade,
                         args_desc = ["Module name"],
                         args_example = [<<"mod_rest">>],
@@ -289,7 +290,18 @@ upgrade(Module) when is_atom(Module) ->
     upgrade(misc:atom_to_binary(Module));
 upgrade(Package) when is_binary(Package) ->
     uninstall(Package),
+    clean(Package),
     install(Package).
+
+clean(Package) ->
+    Spec = [S || {Mod, S} <- available(), misc:atom_to_binary(Mod)==Package],
+    case Spec of
+        [] ->
+            {error, not_available};
+        [Attrs] ->
+            Path = proplists:get_value(path, Attrs),
+            [delete_path(SubPath) || SubPath <- filelib:wildcard(Path++"/{deps,ebin}")]
+    end.
 
 add_sources(Path) when is_list(Path) ->
     add_sources(iolist_to_binary(module_name(Path)), Path).
