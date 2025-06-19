@@ -49,6 +49,7 @@
 -include("logger.hrl").
 -include("translate.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
+-include_lib("stdlib/include/zip.hrl").
 
 -define(REPOS, "git@github.com:processone/ejabberd-contrib.git").
 
@@ -399,6 +400,23 @@ extract(tar, {ok, _, Body}, DestDir) ->
 extract(_, {error, Reason}, _) ->
     {error, Reason};
 extract(zip, Zip, DestDir) ->
+    {ok, DirList} = zip:list_dir(Zip),
+    Offending =
+        lists:filter(fun (#zip_comment{}) ->
+                             false;
+                         (#zip_file{name = Filename}) ->
+                             absolute == filename:pathtype(Filename)
+                     end,
+                     DirList),
+    case Offending of
+        [] ->
+            extract(zip_verified, Zip, DestDir);
+        _ ->
+            Filenames = [F#zip_file.name || F <- Offending],
+            ?ERROR_MSG("The zip file includes absolute file paths:~n  ~p", [Filenames]),
+            {error, {zip_absolute_path, Filenames}}
+    end;
+extract(zip_verified, Zip, DestDir) ->
     case zip:extract(Zip, [{cwd, DestDir}]) of
         {ok, _} -> ok;
         Error -> Error
