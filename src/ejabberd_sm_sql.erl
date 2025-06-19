@@ -109,7 +109,7 @@ set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
 
 delete_session(#session{usr = {_, LServer, _}, sid = {Now, Pid}}) ->
     TS = now_to_timestamp(Now),
-    PidS = list_to_binary(erlang:pid_to_list(Pid)),
+    PidS = misc:encode_pid(Pid),
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("delete from sm where usec=%(TS)d and pid=%(PidS)s")) of
