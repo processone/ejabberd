@@ -30,7 +30,7 @@
 -export([mod_doc/0]).
 %% Hooks
 -export([c2s_inline_features/2, c2s_handle_sasl2_inline/1,
-	 get_tokens/3, get_mechanisms/1]).
+	 get_tokens/3, get_mechanisms/1, remove_user_tokens/2]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include_lib("xmpp/include/scram.hrl").
@@ -54,7 +54,10 @@ start(Host, Opts) ->
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     {ok, [{hook, c2s_inline_features, c2s_inline_features, 50},
-	  {hook, c2s_handle_sasl2_inline, c2s_handle_sasl2_inline, 10}]}.
+	  {hook, c2s_handle_sasl2_inline, c2s_handle_sasl2_inline, 10},
+	  {hook, set_password, remove_user_tokens, 50},
+	  {hook, sm_kick_user, remove_user_tokens, 50},
+	  {hook, remove_user, remove_user_tokens, 50}]}.
 
 -spec stop(binary()) -> ok.
 stop(_Host) ->
@@ -165,3 +168,10 @@ c2s_handle_sasl2_inline({#{server := Server, user := User, sasl2_ua_id := UA,
 	_ ->
 	    Acc
     end.
+
+-spec remove_user_tokens(binary(), binary()) -> ok.
+remove_user_tokens(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:del_tokens(LServer, LUser).

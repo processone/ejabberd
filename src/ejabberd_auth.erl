@@ -755,7 +755,7 @@ db_set_password(User, Server, PlainPassword, Passwords, Mod) ->
 		  end
 	  end,
     case Ret of
-	{ok, _} -> ok;
+	{ok, _} -> ejabberd_hooks:run(set_password, Server, [User, Server]);
 	{error, _} = Err -> Err
     end.
 

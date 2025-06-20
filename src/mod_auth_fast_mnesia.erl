@@ -28,12 +28,12 @@
 
 %% API
 -export([init/2]).
--export([get_tokens/3, del_token/4, set_token/6, rotate_token/3]).
+-export([get_tokens/3, del_token/4, del_tokens/2, set_token/6, rotate_token/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 
--record(mod_auth_fast, {key = {<<"">>, <<"">>, <<"">>} :: {binary(), binary(), binary()} | '$1',
+-record(mod_auth_fast, {key = {<<"">>, <<"">>, <<"">>} :: {binary(), binary(), binary() | '_'} | '$1',
 			token = <<>> :: binary() | '_',
 			created_at = 0 :: non_neg_integer() | '_',
 			expires_at = 0 :: non_neg_integer() | '_'}).
@@ -91,6 +91,14 @@ rotate_token(LServer, LUser, UA) ->
 del_token(LServer, LUser, UA, Type) ->
     F = fun() ->
 	mnesia:delete({mod_auth_fast, {LServer, LUser, token_id(UA, Type)}})
+	end,
+    transaction(F).
+
+-spec del_tokens(binary(), binary()) -> ok | {error, atom()}.
+del_tokens(LServer, LUser) ->
+    F = fun() ->
+        Elements = mnesia:match_object(#mod_auth_fast{key = {LServer, LUser, '_'}, _ = '_'}),
+	[mnesia:delete_object(E) || E <- Elements]
 	end,
     transaction(F).
 

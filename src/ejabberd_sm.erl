@@ -481,8 +481,10 @@ c2s_handle_info(#{lang := Lang, bind2_session_id := {Tag, _}} = State,
     {stop, ejabberd_c2s:send(State1, Err)};
 c2s_handle_info(State, {replaced_with_bind_tag, _}) ->
     State;
-c2s_handle_info(#{lang := Lang} = State, kick) ->
+c2s_handle_info(#{lang := Lang, jid := JID} = State, kick) ->
     Err = xmpp:serr_policy_violation(?T("has been kicked"), Lang),
+    ejabberd_hooks:run(sm_kick_user, JID#jid.lserver,
+                       [JID#jid.luser, JID#jid.lserver]),
     {stop, ejabberd_c2s:send(State, Err)};
 c2s_handle_info(#{lang := Lang} = State, {exit, Reason}) ->
     Err = xmpp:serr_conflict(Reason, Lang),
