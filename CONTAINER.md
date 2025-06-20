@@ -310,6 +310,152 @@ now you can define the admin account JID using an environment variable:
 Check the [full example](#customized-example) for other example.
 
 
+### ejabberd-contrib
+
+This section addresses those topics related to
+[ejabberd-contrib](https://docs.ejabberd.im/admin/guide/modules/#ejabberd-contrib):
+
+- [Download source code](#download-source-code)
+- [Install a module](#install-a-module)
+- [Install git for dependencies](#install-git-for-dependencies)
+- [Install your module](#install-your-module)
+
+---
+
+#### Download source code
+
+The `ejabberd` container image includes the ejabberd-contrib git repository source code,
+but `ecs` does not, so first download it:
+```bash
+$ docker exec ejabberd ejabberdctl modules_update_specs
+```
+
+#### Install a module
+
+Compile and install any of the contributed modules, for example:
+```bash
+docker exec ejabberd ejabberdctl module_install mod_statsdx
+
+Module mod_statsdx has been installed and started.
+It's configured in the file:
+  /opt/ejabberd/.ejabberd-modules/mod_statsdx/conf/mod_statsdx.yml
+Configure the module in that file, or remove it
+and configure in your main ejabberd.yml
+```
+
+#### Install git for dependencies
+
+Some modules depend on erlang libraries,
+but the container images do not include `git` or `mix` to download them.
+Consequently, when you attempt to install such a module,
+there will be error messages like:
+
+```bash
+docker exec ejabberd ejabberdctl module_install ejabberd_observer_cli
+
+I'll download "recon" using git because I can't use Mix to fetch from hex.pm:
+  /bin/sh: mix: not found
+Fetching dependency observer_cli:
+  /bin/sh: git: not found
+...
+```
+
+the solution is to install `git` in the container image:
+
+```bash
+docker exec --user root ejabberd apk add git
+
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/community/x86_64/APKINDEX.tar.gz
+(1/3) Installing pcre2 (10.43-r0)
+(2/3) Installing git (2.47.2-r0)
+(3/3) Installing git-init-template (2.47.2-r0)
+Executing busybox-1.37.0-r12.trigger
+OK: 27 MiB in 42 packages
+```
+
+and now you can upgrade the module:
+
+```bash
+docker exec ejabberd ejabberdctl module_upgrade ejabberd_observer_cli
+
+I'll download "recon" using git because I can't use Mix to fetch from hex.pm:
+/bin/sh: mix: not found
+Fetching dependency observer_cli: Cloning into 'observer_cli'...
+Fetching dependency os_stats: Cloning into 'os_stats'...
+Fetching dependency recon: Cloning into 'recon'...
+Inlining: inline_size=24 inline_effort=150
+Old inliner: threshold=0 functions=[{insert,2},{merge,2}]
+Module ejabberd_observer_cli has been installed.
+Now you can configure it in your ejabberd.yml
+I'll download "recon" using git because I can't use Mix to fetch from hex.pm:
+/bin/sh: mix: not found
+```
+
+#### Install your module
+
+If you [developed an ejabberd module](https://docs.ejabberd.im/developer/extending-ejabberd/modules/),
+you can install it in your container image:
+
+1. Create a local directory for `ejabberd-modules`:
+
+    ``` sh
+    mkdir docker-modules
+    ```
+
+2. Then create the directory structure for your custom module:
+
+    ``` sh
+    cd docker-modules
+
+    mkdir -p sources/mod_hello_world/
+    touch sources/mod_hello_world/mod_hello_world.spec
+
+    mkdir sources/mod_hello_world/src/
+    mv mod_hello_world.erl sources/mod_hello_world/src/
+
+    mkdir sources/mod_hello_world/conf/
+    echo -e "modules:\n  mod_hello_world: {}" > sources/mod_hello_world/conf/mod_hello_world.yml
+
+    cd ..
+    ```
+
+3. Grant ownership of that directory to the UID that ejabberd will use inside the Docker image:
+
+    ``` sh
+    sudo chown 9000 -R docker-modules/
+    ```
+
+4. Start ejabberd in the container:
+
+    ``` sh
+    sudo docker run \
+      --name hellotest \
+      -d \
+      --volume "$(pwd)/docker-modules:/home/ejabberd/.ejabberd-modules/" \
+      -p 5222:5222 \
+      -p 5280:5280 \
+      ejabberd/ecs
+    ```
+
+5. Check the module is available for installing, and then install it:
+
+    ``` sh
+    sudo docker exec -it hellotest ejabberdctl modules_available
+    mod_hello_world []
+
+    sudo docker exec -it hellotest ejabberdctl module_install mod_hello_world
+    ```
+
+6. If the module works correctly, you will see `Hello` in the ejabberd logs when it starts:
+
+    ``` sh
+    sudo docker exec -it hellotest grep Hello logs/ejabberd.log
+    2020-10-06 13:40:13.154335+00:00 [info]
+      <0.492.0>@mod_hello_world:start/2:15 Hello, ejabberd world!
+    ```
+
+
 ### ejabberdapi
 
 When the container is running (and thus ejabberd), you can exec commands inside the container
@@ -418,12 +564,12 @@ it is necessary to change the old hostname stored in Mnesia.
 This section is equivalent to the ejabberd Documentation
 [Change Computer Hostname](https://docs.ejabberd.im/admin/guide/managing/#change-computer-hostname),
 but particularized to containers that use this
-ecs container image from ejabberd 23.01 or older.
+`ecs` container image from ejabberd 23.01 or older.
 
 #### Setup Old Container
 
 Let's assume a container running ejabberd 23.01 (or older) from
-this ecs container image, with the database directory binded
+this `ecs` container image, with the database directory binded
 and one registered account.
 This can be produced with:
 ```bash
@@ -929,7 +1075,7 @@ Let's summarize the differences between both container images. Legend:
 | Software              | Erlang/OTP 27.3.3-alpine <br /> Elixir 1.18.3 | Alpine 3.19 <br /> Erlang/OTP 26.2 <br /> Elixir 1.15.7 |
 | Published in          | [ghcr.io/processone/ejabberd](https://github.com/processone/ejabberd/pkgs/container/ejabberd) | [docker.io/ejabberd/ecs](https://hub.docker.com/r/ejabberd/ecs/) <br /> [ghcr.io/processone/ecs](https://github.com/processone/docker-ejabberd/pkgs/container/ecs) |
 | :black_square_button: **Additional content** |
-| [ejabberd-contrib](https://docs.ejabberd.im/admin/guide/modules/#ejabberd-contrib) | included | not included |
+| [ejabberd-contrib](#ejabberd-contrib) | included | not included |
 | [ejabberdapi](#ejabberdapi) | included :orange_circle: | included |
 | :black_square_button: **Ports** |
 | [1880](#ports) for WebAdmin     | yes :orange_circle: | yes :orange_circle: |
