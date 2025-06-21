@@ -125,10 +125,17 @@ depends(_Host, _Opts) ->
     [{mod_pubsub, soft}].
 
 -spec mod_opt_type(atom()) -> econf:validator().
-mod_opt_type(spam_domains_file) ->
+mod_opt_type(access_spam) ->
+    econf:acl();
+mod_opt_type(cache_size) ->
+    econf:pos_int(unlimited);
+mod_opt_type(rtbl_host) ->
     econf:either(
-        econf:enum([none]), econf:file());
-mod_opt_type(whitelist_domains_file) ->
+        econf:enum([none]), econf:host());
+mod_opt_type(rtbl_domains_node) ->
+    econf:non_empty(
+        econf:binary());
+mod_opt_type(spam_domains_file) ->
     econf:either(
         econf:enum([none]), econf:file());
 mod_opt_type(spam_dump_file) ->
@@ -140,28 +147,21 @@ mod_opt_type(spam_jids_file) ->
 mod_opt_type(spam_urls_file) ->
     econf:either(
         econf:enum([none]), econf:file());
-mod_opt_type(access_spam) ->
-    econf:acl();
-mod_opt_type(cache_size) ->
-    econf:pos_int(unlimited);
-mod_opt_type(rtbl_host) ->
+mod_opt_type(whitelist_domains_file) ->
     econf:either(
-        econf:enum([none]), econf:host());
-mod_opt_type(rtbl_domains_node) ->
-    econf:non_empty(
-        econf:binary()).
+        econf:enum([none]), econf:file()).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
-    [{spam_domains_file, none},
+    [{access_spam, none},
+     {cache_size, ?DEFAULT_CACHE_SIZE},
+     {rtbl_domains_node, ?DEFAULT_RTBL_DOMAINS_NODE},
+     {rtbl_host, none},
+     {spam_domains_file, none},
      {spam_dump_file, false},
      {spam_jids_file, none},
      {spam_urls_file, none},
-     {whitelist_domains_file, none},
-     {access_spam, none},
-     {cache_size, ?DEFAULT_CACHE_SIZE},
-     {rtbl_host, none},
-     {rtbl_domains_node, ?DEFAULT_RTBL_DOMAINS_NODE}].
+     {whitelist_domains_file, none}].
 
 mod_doc() ->
     #{desc => ?T("Reads from text file and RTBL, filters stanzas and writes dump file."),
@@ -171,10 +171,20 @@ mod_doc() ->
             #{value => ?T("Access"),
               desc =>
                   ?T("Access rule that controls what accounts may receive spam messages. "
-                     "If the rule returns `allow` for a given recipient, "
+                     "If the rule returns 'allow' for a given recipient, "
                      "spam messages aren't rejected for that recipient. "
                      "The default value is 'none', which means that all recipients "
                      "are subject to spam filtering verification.")}},
+           {spam_domains_file,
+            #{value => ?T("none | Path"),
+              desc =>
+                  ?T("Path to a plain text file containing a list of "
+                     "known spam domains, one domain per line. "
+                     "Messages and subscription requests sent from one of the listed domains "
+                     "are classified as spam if sender is not in recipient's roster. "
+                     "This list of domains gets merged with the one retrieved "
+                     "by an RTBL host if any given. "
+                     "The default value is 'none'.")}},
            {spam_dump_file,
             #{value => ?T("false | true | Path"),
               desc =>
@@ -182,7 +192,37 @@ mod_doc() ->
                      "Use an absolute path, or the '@LOG_PATH@' macro to store logs "
                      "in the same place that the other ejabberd log files. "
                      "If set to 'false', does not dump stanzas, this is the default. "
-                     "If set to 'true', it stores in '\"@LOG_PATH@/spam_dump_@HOST@.log\"'.")}}],
+                     "If set to 'true', it stores in '\"@LOG_PATH@/spam_dump_@HOST@.log\"'.")}},
+           {spam_jids_file,
+            #{value => ?T("none | Path"),
+              desc =>
+                  ?T("Path to a plain text file containing a list of "
+                     "known spammer JIDs, one JID per line. "
+                     "Messages and subscription requests sent from one of "
+                     "the listed JIDs are classified as spam. "
+                     "Messages containing at least one of the listed JIDs"
+                     "are classified as spam as well. "
+                     "Furthermore, the sender's JID will be cached, "
+                     "so that future traffic originating from that JID will also be classified as spam. "
+                     "The default value is 'none'.")}},
+           {spam_urls_file,
+            #{value => ?T("none | Path"),
+              desc =>
+                  ?T("Path to a plain text file containing a list of "
+                     "URLs known to be mentioned in spam message bodies. "
+                     "Messages containing at least one of the listed URLs are classified as spam. "
+                     "Furthermore, the sender's JID will be cached, "
+                     "so that future traffic originating from that JID will be classified as spam as well. "
+                     "The default value is 'none'.")}},
+           {whitelist_domains_file,
+            #{value => ?T("none | Path"),
+              desc =>
+                  ?T("Path to a file containing a list of "
+                     "domains to whitelist from being blocked, one per line. "
+                     "If either it is in 'spam_domains_file' or more realistically "
+                     "in a domain sent by a RTBL host (see option 'rtbl_host') "
+                     "then this domain will be ignored and stanzas from there won't be blocked. "
+                     "The default value is 'none'.")}}],
       example =>
           ["modules:",
            "  mod_antispam:",
