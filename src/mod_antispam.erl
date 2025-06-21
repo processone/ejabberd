@@ -63,14 +63,10 @@
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
+-include("mod_antispam.hrl").
 -include("translate.hrl").
 
 -include_lib("xmpp/include/xmpp.hrl").
-
--type url() :: binary().
--type filename() :: binary() | none | false.
--type jid_set() :: sets:set(ljid()).
--type url_set() :: sets:set(url()).
 
 -record(state,
 	{host = <<>>			:: binary(),

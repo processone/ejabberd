@@ -38,13 +38,12 @@
 
 -include("logger.hrl").
 -include("translate.hrl").
+-include("mod_antispam.hrl").
 
 -include_lib("xmpp/include/xmpp.hrl").
 
--type url() :: binary().
 -type s2s_in_state() :: ejabberd_s2s_in:state().
 
--define(MODULE_PARENT, mod_antispam).
 -define(HTTPC_TIMEOUT, timer:seconds(3)).
 
 %%--------------------------------------------------------------------
@@ -128,9 +127,9 @@ s2s_in_handle_info(State, _) ->
 
 -spec needs_checking(jid(), jid()) -> boolean().
 needs_checking(#jid{lserver = FromHost} = From, #jid{lserver = LServer} = To) ->
-    case gen_mod:is_loaded(LServer, ?MODULE_PARENT) of
+    case gen_mod:is_loaded(LServer, ?MODULE_ANTISPAM) of
         true ->
-            Access = gen_mod:get_module_opt(LServer, ?MODULE_PARENT, access_spam),
+            Access = gen_mod:get_module_opt(LServer, ?MODULE_ANTISPAM, access_spam),
             case acl:match_rule(LServer, Access, To) of
                 allow ->
                     ?DEBUG("Spam not filtered for ~s", [jid:encode(To)]),
@@ -144,7 +143,7 @@ needs_checking(#jid{lserver = FromHost} = From, #jid{lserver = LServer} = To) ->
                                     To) % likely a gateway
             end;
         false ->
-            ?DEBUG("~s not loaded for ~s", [?MODULE_PARENT, LServer]),
+            ?DEBUG("~s not loaded for ~s", [?MODULE_ANTISPAM, LServer]),
             false
     end.
 
@@ -292,7 +291,7 @@ reject(_) ->
 
 -spec get_proc_name(binary()) -> atom().
 get_proc_name(Host) ->
-    gen_mod:get_module_proc(Host, ?MODULE_PARENT).
+    gen_mod:get_module_proc(Host, ?MODULE_ANTISPAM).
 
 %%--------------------------------------------------------------------
 
