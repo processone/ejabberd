@@ -1,7 +1,7 @@
 {
-	"name": "ejabberd",
-	"build": {"dockerfile": "Dockerfile"},
-	"extensions": ["erlang-ls.erlang-ls"],
-	"postCreateCommand": ".devcontainer/prepare-container.sh",
-	"remoteUser": "vscode"
+  "name": "Devcontainer",
+  "postCreateCommand": ".devcontainer/prepare-container.sh",
+  "build": {
+    "dockerfile": "./Dockerfile"
+  }
 }

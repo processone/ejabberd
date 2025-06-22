@@ -1,0 +1,7 @@
+{
+  "title": "Docker",
+  "description": "The easiest way to get started from Docker in CodeSandbox",
+  "iconUrl": "https://raw.githubusercontent.com/codesandbox/sandbox-templates/main/docker/.codesandbox/icon.png",
+  "tags": ["docker", "containers", "featured"],
+  "published": true
+}
