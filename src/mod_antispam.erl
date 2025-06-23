@@ -172,7 +172,14 @@ mod_options(_Host) ->
      {whitelist_domains_file, none}].
 
 mod_doc() ->
-    #{desc => ?T("Reads from text file and RTBL, filters stanzas and writes dump file."),
+    #{desc =>
+          ?T("Filter spam messages and subscription requests received from "
+             "remote servers based on "
+             "https://xmppbl.org/[Real-Time Block Lists (RTBL)], "
+             "lists of known spammer JIDs and/or URLs mentioned in spam messages. "
+             "Traffic classified as spam is rejected with an error "
+             "(and an '[info]' message is logged) unless the sender "
+             "is subscribed to the recipient's presence."),
       note => "added in 25.xx",
       opts =>
           [{access_spam,
@@ -183,6 +190,16 @@ mod_doc() ->
                      "spam messages aren't rejected for that recipient. "
                      "The default value is 'none', which means that all recipients "
                      "are subject to spam filtering verification.")}},
+           {cache_size,
+            #{value => "pos_integer()",
+              desc =>
+                  ?T("Maximum number of JIDs that will be cached due to sending spam URLs. "
+                     "If that limit is exceeded, the least recently used "
+                     "entries are removed from the cache. "
+                     "Setting this option to '0' disables the caching feature. "
+                     "Note that separate caches are used for each virtual host, "
+                     " and that the caches aren't distributed across cluster nodes. "
+                     "The default value is '10000'.")}},
            {spam_domains_file,
             #{value => ?T("none | Path"),
               desc =>
@@ -197,9 +214,11 @@ mod_doc() ->
             #{value => ?T("false | true | Path"),
               desc =>
                   ?T("Path to the file to store blocked messages. "
-                     "Use an absolute path, or the '@LOG_PATH@' macro to store logs "
+                     "Use an absolute path, or the '@LOG_PATH@' "
+                     "https://docs.ejabberd.im/admin/configuration/file-format/#predefined-keywords[predefined keyword] "
+                     "to store logs "
                      "in the same place that the other ejabberd log files. "
-                     "If set to 'false', does not dump stanzas, this is the default. "
+                     "If set to 'false', it doesn't dump stanzas, which is the default. "
                      "If set to 'true', it stores in '\"@LOG_PATH@/spam_dump_@HOST@.log\"'.")}},
            {spam_jids_file,
             #{value => ?T("none | Path"),
@@ -228,12 +247,13 @@ mod_doc() ->
                   ?T("Path to a file containing a list of "
                      "domains to whitelist from being blocked, one per line. "
                      "If either it is in 'spam_domains_file' or more realistically "
-                     "in a domain sent by a RTBL host (see option 'rtbl_host') "
+                     "in a domain sent by a RTBL host (see option 'rtbl_services') "
                      "then this domain will be ignored and stanzas from there won't be blocked. "
                      "The default value is 'none'.")}}],
       example =>
           ["modules:",
            "  mod_antispam:",
+           "    spam_jids_file: \"@CONFIG_PATH@/spam_jids.txt\"",
            "    spam_dump_file: \"@LOG_PATH@/spam/host-@HOST@.log\""]}.
 
 %%--------------------------------------------------------------------
