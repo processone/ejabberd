@@ -27,6 +27,7 @@
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
+-include("mod_antispam.hrl").
 
 -define(SERVICE_MODULE, mod_antispam).
 -define(SERVICE_JID_PREFIX, "rtbl-").

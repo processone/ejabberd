@@ -38,13 +38,10 @@
 -export([dump_spam_stanza/1, reopen_log/0]).
 
 -include("logger.hrl").
+-include("mod_antispam.hrl").
 -include("translate.hrl").
 
 -include_lib("xmpp/include/xmpp.hrl").
-
--type filename() :: binary() | none | false.
-
--define(MODULE_PARENT, mod_antispam).
 
 %%--------------------------------------------------------------------
 %%| Exported
@@ -157,7 +154,7 @@ write_stanza_dump(Fd, XML) ->
 %%| Auxiliary
 
 get_path_option(Host) ->
-    Opts = gen_mod:get_module_opts(Host, ?MODULE_PARENT),
+    Opts = gen_mod:get_module_opts(Host, ?MODULE_ANTISPAM),
     get_path_option(Host, Opts).
 
 get_path_option(Host, Opts) ->
@@ -178,11 +175,11 @@ get_path_option(Host, Opts) ->
 
 -spec get_proc_name(binary()) -> atom().
 get_proc_name(Host) ->
-    gen_mod:get_module_proc(Host, ?MODULE_PARENT).
+    gen_mod:get_module_proc(Host, ?MODULE_ANTISPAM).
 
 -spec get_spam_filter_hosts() -> [binary()].
 get_spam_filter_hosts() ->
-    [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, ?MODULE_PARENT)].
+    [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, ?MODULE_ANTISPAM)].
 
 %%--------------------------------------------------------------------
 

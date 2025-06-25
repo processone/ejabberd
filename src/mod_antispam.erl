@@ -63,14 +63,10 @@
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
+-include("mod_antispam.hrl").
 -include("translate.hrl").
 
 -include_lib("xmpp/include/xmpp.hrl").
-
--type url() :: binary().
--type filename() :: binary() | none | false.
--type jid_set() :: sets:set(ljid()).
--type url_set() :: sets:set(url()).
 
 -record(state,
 	{host = <<>>			:: binary(),
@@ -129,10 +125,17 @@ depends(_Host, _Opts) ->
     [{mod_pubsub, soft}].
 
 -spec mod_opt_type(atom()) -> econf:validator().
-mod_opt_type(spam_domains_file) ->
+mod_opt_type(access_spam) ->
+    econf:acl();
+mod_opt_type(cache_size) ->
+    econf:pos_int(unlimited);
+mod_opt_type(rtbl_host) ->
     econf:either(
-        econf:enum([none]), econf:file());
-mod_opt_type(whitelist_domains_file) ->
+        econf:enum([none]), econf:host());
+mod_opt_type(rtbl_domains_node) ->
+    econf:non_empty(
+        econf:binary());
+mod_opt_type(spam_domains_file) ->
     econf:either(
         econf:enum([none]), econf:file());
 mod_opt_type(spam_dump_file) ->
@@ -144,28 +147,21 @@ mod_opt_type(spam_jids_file) ->
 mod_opt_type(spam_urls_file) ->
     econf:either(
         econf:enum([none]), econf:file());
-mod_opt_type(access_spam) ->
-    econf:acl();
-mod_opt_type(cache_size) ->
-    econf:pos_int(unlimited);
-mod_opt_type(rtbl_host) ->
+mod_opt_type(whitelist_domains_file) ->
     econf:either(
-        econf:enum([none]), econf:host());
-mod_opt_type(rtbl_domains_node) ->
-    econf:non_empty(
-        econf:binary()).
+        econf:enum([none]), econf:file()).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
-    [{spam_domains_file, none},
+    [{access_spam, none},
+     {cache_size, ?DEFAULT_CACHE_SIZE},
+     {rtbl_domains_node, ?DEFAULT_RTBL_DOMAINS_NODE},
+     {rtbl_host, none},
+     {spam_domains_file, none},
      {spam_dump_file, false},
      {spam_jids_file, none},
      {spam_urls_file, none},
-     {whitelist_domains_file, none},
-     {access_spam, none},
-     {cache_size, ?DEFAULT_CACHE_SIZE},
-     {rtbl_host, none},
-     {rtbl_domains_node, ?DEFAULT_RTBL_DOMAINS_NODE}].
+     {whitelist_domains_file, none}].
 
 mod_doc() ->
     #{desc => ?T("Reads from text file and RTBL, filters stanzas and writes dump file."),
@@ -175,10 +171,20 @@ mod_doc() ->
             #{value => ?T("Access"),
               desc =>
                   ?T("Access rule that controls what accounts may receive spam messages. "
-                     "If the rule returns `allow` for a given recipient, "
+                     "If the rule returns 'allow' for a given recipient, "
                      "spam messages aren't rejected for that recipient. "
                      "The default value is 'none', which means that all recipients "
                      "are subject to spam filtering verification.")}},
+           {spam_domains_file,
+            #{value => ?T("none | Path"),
+              desc =>
+                  ?T("Path to a plain text file containing a list of "
+                     "known spam domains, one domain per line. "
+                     "Messages and subscription requests sent from one of the listed domains "
+                     "are classified as spam if sender is not in recipient's roster. "
+                     "This list of domains gets merged with the one retrieved "
+                     "by an RTBL host if any given. "
+                     "The default value is 'none'.")}},
            {spam_dump_file,
             #{value => ?T("false | true | Path"),
               desc =>
@@ -186,7 +192,37 @@ mod_doc() ->
                      "Use an absolute path, or the '@LOG_PATH@' macro to store logs "
                      "in the same place that the other ejabberd log files. "
                      "If set to 'false', does not dump stanzas, this is the default. "
-                     "If set to 'true', it stores in '\"@LOG_PATH@/spam_dump_@HOST@.log\"'.")}}],
+                     "If set to 'true', it stores in '\"@LOG_PATH@/spam_dump_@HOST@.log\"'.")}},
+           {spam_jids_file,
+            #{value => ?T("none | Path"),
+              desc =>
+                  ?T("Path to a plain text file containing a list of "
+                     "known spammer JIDs, one JID per line. "
+                     "Messages and subscription requests sent from one of "
+                     "the listed JIDs are classified as spam. "
+                     "Messages containing at least one of the listed JIDs"
+                     "are classified as spam as well. "
+                     "Furthermore, the sender's JID will be cached, "
+                     "so that future traffic originating from that JID will also be classified as spam. "
+                     "The default value is 'none'.")}},
+           {spam_urls_file,
+            #{value => ?T("none | Path"),
+              desc =>
+                  ?T("Path to a plain text file containing a list of "
+                     "URLs known to be mentioned in spam message bodies. "
+                     "Messages containing at least one of the listed URLs are classified as spam. "
+                     "Furthermore, the sender's JID will be cached, "
+                     "so that future traffic originating from that JID will be classified as spam as well. "
+                     "The default value is 'none'.")}},
+           {whitelist_domains_file,
+            #{value => ?T("none | Path"),
+              desc =>
+                  ?T("Path to a file containing a list of "
+                     "domains to whitelist from being blocked, one per line. "
+                     "If either it is in 'spam_domains_file' or more realistically "
+                     "in a domain sent by a RTBL host (see option 'rtbl_host') "
+                     "then this domain will be ignored and stanzas from there won't be blocked. "
+                     "The default value is 'none'.")}}],
       example =>
           ["modules:",
            "  mod_antispam:",
@@ -198,41 +234,33 @@ mod_doc() ->
 -spec init(list()) -> {ok, state()} | {stop, term()}.
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    Files =
-        #{domains => gen_mod:get_opt(spam_domains_file, Opts),
-          jid => gen_mod:get_opt(spam_jids_file, Opts),
-          url => gen_mod:get_opt(spam_urls_file, Opts),
-          whitelist_domains => gen_mod:get_opt(whitelist_domains_file, Opts)},
-    try read_files(Files) of
-        #{jid := JIDsSet,
-          url := URLsSet,
-          domains := SpamDomainsSet,
-          whitelist_domains := WhitelistDomains} ->
-            ejabberd_hooks:add(local_send_to_resource_hook,
-                               Host,
-                               mod_antispam_rtbl,
-                               pubsub_event_handler,
-                               50),
-            RTBLHost = gen_mod:get_opt(rtbl_host, Opts),
-            RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, Opts),
-            mod_antispam_filter:init_filtering(Host),
-            InitState =
-                #state{host = Host,
-                       jid_set = JIDsSet,
-                       url_set = URLsSet,
-                       dump_fd = mod_antispam_dump:init_dumping(Host),
-                       max_cache_size = gen_mod:get_opt(cache_size, Opts),
-                       blocked_domains = set_to_map(SpamDomainsSet),
-                       whitelist_domains = set_to_map(WhitelistDomains, false),
-                       rtbl_host = RTBLHost,
-                       rtbl_domains_node = RTBLDomainsNode},
-            mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
-            {ok, InitState}
-    catch
-        {Op, File, Reason} when Op == open; Op == read ->
-            ?CRITICAL_MSG("Cannot ~s ~s: ~s", [Op, File, format_error(Reason)]),
-            {stop, config_error}
-    end.
+    mod_antispam_files:init_files(Host),
+    FilesResults = read_files(Host),
+    #{jid := JIDsSet,
+      url := URLsSet,
+      domains := SpamDomainsSet,
+      whitelist_domains := WhitelistDomains} =
+        FilesResults,
+    ejabberd_hooks:add(local_send_to_resource_hook,
+                       Host,
+                       mod_antispam_rtbl,
+                       pubsub_event_handler,
+                       50),
+    RTBLHost = gen_mod:get_opt(rtbl_host, Opts),
+    RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, Opts),
+    mod_antispam_filter:init_filtering(Host),
+    InitState =
+        #state{host = Host,
+               jid_set = JIDsSet,
+               url_set = URLsSet,
+               dump_fd = mod_antispam_dump:init_dumping(Host),
+               max_cache_size = gen_mod:get_opt(cache_size, Opts),
+               blocked_domains = set_to_map(SpamDomainsSet),
+               whitelist_domains = set_to_map(WhitelistDomains, false),
+               rtbl_host = RTBLHost,
+               rtbl_domains_node = RTBLDomainsNode},
+    mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
+    {ok, InitState}.
 
 -spec handle_call(term(), {pid(), term()}, state()) ->
                      {reply, {spam_filter, term()}, state()} | {noreply, state()}.
@@ -251,8 +279,8 @@ handle_call({check_body, URLs, JIDs, From},
                Result2
         end,
     {reply, {spam_filter, Result}, State2};
-handle_call({reload_files, Files}, _From, State) ->
-    {Result, State1} = reload_files(Files, State),
+handle_call(reload_spam_files, _From, State) ->
+    {Result, State1} = reload_files(State),
     {reply, {spam_filter, Result}, State1};
 handle_call({expire_cache, Age}, _From, State) ->
     {Result, State1} = expire_cache(Age, State),
@@ -319,12 +347,7 @@ handle_cast({reload, NewOpts, OldOpts},
                 State1
         end,
     ok = mod_antispam_rtbl:unsubscribe(OldRTBLHost, OldRTBLDomainsNode, Host),
-    Files =
-        #{domains => gen_mod:get_opt(spam_domains_file, NewOpts),
-          jid => gen_mod:get_opt(spam_jids_file, NewOpts),
-          url => gen_mod:get_opt(spam_urls_file, NewOpts),
-          whitelist_domains => gen_mod:get_opt(whitelist_domains_file, NewOpts)},
-    {_Result, State3} = reload_files(Files, State2#state{blocked_domains = #{}}),
+    {_Result, State3} = reload_files(State2#state{blocked_domains = #{}}),
     RTBLHost = gen_mod:get_opt(rtbl_host, NewOpts),
     RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, NewOpts),
     ok = mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
@@ -404,6 +427,7 @@ terminate(Reason,
     ?DEBUG("Stopping spam filter process for ~s: ~p", [Host, Reason]),
     misc:cancel_timer(RTBLRetryTimer),
     mod_antispam_dump:terminate_dumping(Host, Fd),
+    mod_antispam_files:terminate_files(Host),
     mod_antispam_filter:terminate_filtering(Host),
     ejabberd_hooks:delete(local_send_to_resource_hook,
                           Host,
@@ -458,10 +482,9 @@ filter_body({_, Addrs}, Set, From, #state{host = Host} = State) ->
 filter_body(none, _Set, _From, State) ->
     {ham, State}.
 
--spec reload_files(#{Type :: atom() => filename()}, state()) ->
-                      {ok | {error, binary()}, state()}.
-reload_files(Files, #state{host = Host, blocked_domains = BlockedDomains} = State) ->
-    try read_files(Files) of
+-spec reload_files(state()) -> {ok | {error, binary()}, state()}.
+reload_files(#state{host = Host, blocked_domains = BlockedDomains} = State) ->
+    case read_files(Host) of
         #{jid := JIDsSet,
           url := URLsSet,
           domains := SpamDomainsSet,
@@ -482,12 +505,9 @@ reload_files(Files, #state{host = Host, blocked_domains = BlockedDomains} = Stat
              State#state{jid_set = JIDsSet,
                          url_set = URLsSet,
                          blocked_domains = maps:merge(BlockedDomains, set_to_map(SpamDomainsSet)),
-                         whitelist_domains = set_to_map(WhitelistDomains, false)}}
-    catch
-        {Op, File, Reason} when Op == open; Op == read ->
-            Txt = format("Cannot ~s ~s for ~s: ~s", [Op, File, Host, format_error(Reason)]),
-            ?ERROR_MSG("~s", [Txt]),
-            {{error, Txt}, State}
+                         whitelist_domains = set_to_map(WhitelistDomains, false)}};
+        {config_error, ErrorText} ->
+            {{error, ErrorText}, State}
     end.
 
 set_to_map(Set) ->
@@ -496,80 +516,18 @@ set_to_map(Set) ->
 set_to_map(Set, V) ->
     sets:fold(fun(K, M) -> M#{K => V} end, #{}, Set).
 
--spec read_files(#{Type => filename()}) ->
-                    #{jid => jid_set(),
-                      url => url_set(),
-                      Type => sets:set(binary())}
-    when Type :: atom().
-read_files(Files) ->
-    maps:map(fun(Type, Filename) -> read_file(Filename, line_parser(Type)) end, Files).
-
--spec line_parser(Type :: atom()) -> fun((binary()) -> binary()).
-line_parser(jid) ->
-    fun parse_jid/1;
-line_parser(url) ->
-    fun parse_url/1;
-line_parser(_) ->
-    fun trim/1.
-
--spec read_file(filename(), fun((binary()) -> ljid() | url())) -> jid_set() | url_set().
-read_file(none, _ParseLine) ->
-    sets:new();
-read_file(File, ParseLine) ->
-    case file:open(File, [read, binary, raw, {read_ahead, 65536}]) of
-        {ok, Fd} ->
-            try
-                read_line(Fd, ParseLine, sets:new())
-            catch
-                E ->
-                    throw({read, File, E})
-            after
-                ok = file:close(Fd)
-            end;
-        {error, Reason} ->
-            throw({open, File, Reason})
-    end.
-
--spec read_line(file:io_device(),
-                fun((binary()) -> ljid() | url()),
-                jid_set() | url_set()) ->
-                   jid_set() | url_set().
-read_line(Fd, ParseLine, Set) ->
-    case file:read_line(Fd) of
-        {ok, Line} ->
-            read_line(Fd, ParseLine, sets:add_element(ParseLine(Line), Set));
-        {error, Reason} ->
-            throw(Reason);
-        eof ->
-            Set
-    end.
-
--spec parse_jid(binary()) -> ljid().
-parse_jid(S) ->
-    try jid:decode(trim(S)) of
-        #jid{} = JID ->
-            jid:remove_resource(
-                jid:tolower(JID))
-    catch
-        _:{bad_jid, _} ->
-            throw({bad_jid, S})
-    end.
-
--spec parse_url(binary()) -> url().
-parse_url(S) ->
-    URL = trim(S),
-    RE = <<"https?://\\S+$">>,
-    Options = [anchored, caseless, {capture, none}],
-    case re:run(URL, RE, Options) of
-        match ->
-            URL;
-        nomatch ->
-            throw({bad_url, S})
-    end.
-
--spec trim(binary()) -> binary().
-trim(S) ->
-    re:replace(S, <<"\\s+$">>, <<>>, [{return, binary}]).
+read_files(Host) ->
+    AccInitial =
+        #{jid => sets:new(),
+          url => sets:new(),
+          domains => sets:new(),
+          whitelist_domains => sets:new()},
+    Files =
+        #{jid => gen_mod:get_module_opt(Host, ?MODULE, spam_jids_file),
+          url => gen_mod:get_module_opt(Host, ?MODULE, spam_urls_file),
+          domains => gen_mod:get_module_opt(Host, ?MODULE, spam_domains_file),
+          whitelist_domains => gen_mod:get_module_opt(Host, ?MODULE, whitelist_domains_file)},
+    ejabberd_hooks:run_fold(antispam_get_lists, Host, AccInitial, [Files]).
 
 -spec get_proc_name(binary()) -> atom().
 get_proc_name(Host) ->
@@ -586,14 +544,6 @@ sets_equal(A, B) ->
 -spec format(io:format(), [term()]) -> binary().
 format(Format, Data) ->
     iolist_to_binary(io_lib:format(Format, Data)).
-
--spec format_error(atom() | tuple()) -> binary().
-format_error({bad_jid, JID}) ->
-    <<"Not a valid JID: ", JID/binary>>;
-format_error({bad_url, URL}) ->
-    <<"Not an HTTP(S) URL: ", URL/binary>>;
-format_error(Reason) ->
-    list_to_binary(file:format_error(Reason)).
 
 %%--------------------------------------------------------------------
 %%| Caching
@@ -756,16 +706,11 @@ try_call_by_host(Host, Call) ->
 reload_spam_filter_files(<<"global">>) ->
     for_all_hosts(fun reload_spam_filter_files/1, []);
 reload_spam_filter_files(Host) ->
-    LServer = jid:nameprep(Host),
-    Files =
-        #{domains => gen_mod:get_module_opt(LServer, ?MODULE, spam_domains_file),
-          jid => gen_mod:get_module_opt(LServer, ?MODULE, spam_jids_file),
-          url => gen_mod:get_module_opt(LServer, ?MODULE, spam_urls_file)},
-    case try_call_by_host(Host, {reload_files, Files}) of
+    case try_call_by_host(Host, reload_spam_files) of
         {spam_filter, ok} ->
             ok;
         {spam_filter, {error, Txt}} ->
-            {error, binary_to_list(Txt)};
+            {error, Txt};
         {error, _R} = Error ->
             Error
     end.
