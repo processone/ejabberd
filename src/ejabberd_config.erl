@@ -340,7 +340,12 @@ may_hide_data(Data) ->
 -spec env_binary_to_list(atom(), atom()) -> {ok, any()} | undefined.
 env_binary_to_list(Application, Parameter) ->
     %% Application need to be loaded to allow setting parameters
-    application:load(Application),
+    case proplists:is_defined(Application, application:loaded_applications()) of
+        true ->
+            ok;
+        false ->
+            application:load(Application)
+    end,
     case application:get_env(Application, Parameter) of
         {ok, Val} when is_binary(Val) ->
             BVal = binary_to_list(Val),
