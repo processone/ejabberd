@@ -78,7 +78,7 @@ request_blocked_domains(RTBLHost, RTBLDomainsNode, From) ->
 -spec parse_blocked_domains(stanza()) -> #{binary() => any()} | undefined.
 parse_blocked_domains(#iq{to = #jid{lserver = LServer}, type = result} = IQ) ->
     ?DEBUG("parsing iq-result items: ~p", [IQ]),
-    RTBLDomainsNode = gen_mod:get_module_opt(LServer, ?SERVICE_MODULE, rtbl_domains_node),
+    [#rtbl_service{node = RTBLDomainsNode}] = mod_antispam:get_rtbl_services_option(LServer),
     case xmpp:get_subtag(IQ, #pubsub{}) of
         #pubsub{items = #ps_items{node = RTBLDomainsNode, items = Items}} ->
             ?DEBUG("Got items:~n~p", [Items]),
@@ -89,7 +89,7 @@ parse_blocked_domains(#iq{to = #jid{lserver = LServer}, type = result} = IQ) ->
 
 -spec parse_pubsub_event(stanza()) -> #{binary() => any()}.
 parse_pubsub_event(#message{to = #jid{lserver = LServer}} = Msg) ->
-    RTBLDomainsNode = gen_mod:get_module_opt(LServer, ?SERVICE_MODULE, rtbl_domains_node),
+    [#rtbl_service{node = RTBLDomainsNode}] = mod_antispam:get_rtbl_services_option(LServer),
     case xmpp:get_subtag(Msg, #ps_event{}) of
         #ps_event{items =
                       #ps_items{node = RTBLDomainsNode,
@@ -130,7 +130,8 @@ pubsub_event_handler(#message{from = FromJid,
                          Msg) ->
     ?DEBUG("Got RTBL message:~n~p", [Msg]),
     From = jid:encode(FromJid),
-    case gen_mod:get_module_opt(LServer, ?SERVICE_MODULE, rtbl_host) of
+    [#rtbl_service{host = RTBLHost}] = mod_antispam:get_rtbl_services_option(LServer),
+    case RTBLHost of
         From ->
             ParsedItems = parse_pubsub_event(Msg),
             Proc = gen_mod:get_module_proc(LServer, ?SERVICE_MODULE),

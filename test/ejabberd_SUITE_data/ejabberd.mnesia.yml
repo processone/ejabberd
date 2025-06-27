@@ -7,7 +7,8 @@ define_macro:
         db_type: internal
         access: local
       mod_antispam:
-        rtbl_host: pubsub.mnesia.localhost
+        rtbl_services:
+          - "pubsub.mnesia.localhost"
         spam_jids_file: spam_jids.txt
         spam_domains_file: spam_domains.txt
         spam_urls_file: spam_urls.txt
