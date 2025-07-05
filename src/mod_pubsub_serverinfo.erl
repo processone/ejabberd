@@ -126,6 +126,8 @@ event_to_dir(register_in) ->
 event_to_dir(register_out) ->
     outgoing.
 
+handle_call(pubsub_host, _From, #state{pubsub_host = PubsubHost} = State) ->
+    {reply, {ok, PubsubHost}, State};
 handle_call(_Request, _From, State) ->
     {noreply, State}.
 
@@ -343,12 +345,8 @@ get_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
 
 pubsub_host(Host) ->
-    case pubsub_host(Host, gen_mod:get_module_opts(Host, ?MODULE)) of
-        {error, _Reason} = Error ->
-            throw(Error);
-        PubsubHost ->
-            PubsubHost
-    end.
+    {ok, PubsubHost} = gen_server:call(gen_mod:get_module_proc(Host, ?MODULE), pubsub_host),
+    PubsubHost.
 
 pubsub_host(Host, Opts) ->
     case gen_mod:get_opt(pubsub_host, Opts) of
