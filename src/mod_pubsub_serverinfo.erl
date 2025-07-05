@@ -30,6 +30,8 @@
 
 -include("pubsub_serverinfo_codec.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
+
 -include_lib("xmpp/include/xmpp.hrl").
 
 %% gen_mod callbacks.
@@ -192,7 +194,22 @@ mod_opt_type(pubsub_host) ->
     econf:either(undefined, econf:host()).
 
 mod_doc() ->
-    #{}.
+    #{desc => [?T("Exposes s2s information over Pub/Sub"), "",
+               ?T("Announces support for the ProtoXEP PubSub Server Information, by adding its Service Discovery feature."
+                  "Active S2S connections are published to a local pubsub node as advertised by Service Discovery. Only those connections that support this feature as well are exposed with their domain names, otherwise they are shown as anonymous nodes. At startup a list of well known public servers is being fetched. Those are not shown as anonymous even if they don't support this feature."
+                  "Currently the name of the node is hardcoded as \"serverinfo\". The local service to be used can be configured as `pubsub_host`. Otherwise a good guess is taken."
+                  "This module has a hard dependency on `mod_pubsub` for this reason. Also `mod_disco` must be configured for this feature to work."), "",
+               ?T("NOTE:  The module only shows S2S connections established while the module is running: after installing the module, please run `ejabberdctl stop_s2s_connections`, or restart ejabberd.")],
+      note => "added in 25.xx",
+      opts => [{pubsub_host,
+                #{value => "undefined | string()",
+                  desc => ?T("This option specifies which pubsub host to use to advertise S2S connections. This must be a vhost local to this service and handled by `mod_pubsub`. This is only needed if your configuration has more than one vhost in mod_pubsub's `hosts` option. If there's more than one and this option is not given, we just pick the first one.")}
+               }],
+      example =>
+          ["modules:",
+           "  mod_pubsub_serverinfo:",
+           "    pubsub_host: custom.pubsub.domain.local"]
+     }.
 
 in_auth_result(#{server_host := Host, remote_server := RServer} = State, true, _Server) ->
     gen_server:cast(
