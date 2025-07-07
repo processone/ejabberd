@@ -28,7 +28,6 @@
 -behaviour(gen_mod).
 -behaviour(gen_server).
 
--include("pubsub_serverinfo_codec.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 
@@ -51,7 +50,6 @@ start(Host, Opts) ->
         {error, _Reason} = Error ->
             Error;
         PubsubHost ->
-            xmpp:register_codec(pubsub_serverinfo_codec),
             ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
             ejabberd_hooks:add(disco_info, Host, ?MODULE, get_info, 50),
             ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE, out_auth_result, 50),
