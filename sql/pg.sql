@@ -18,7 +18,7 @@
 
 CREATE TABLE users (
     username text NOT NULL,
-    "type" smallint NOT NULL
+    "type" smallint NOT NULL,
     "password" text NOT NULL,
     serverkey text NOT NULL DEFAULT '',
     salt text NOT NULL DEFAULT '',
