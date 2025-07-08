@@ -153,6 +153,8 @@ sub edit_changelog {
     } else {
         $content =~ s/(# Version $version\n\n)/$1* \n/;
     }
+    my $changes = join "\n", map {"# $_"} @{$git_info->{$dep}->{new_commits}};
+    $content = "$changes\n\n$content";
     write_file($cl, $content);
 
     system("$ENV{EDITOR} $cl");
@@ -161,6 +163,8 @@ sub edit_changelog {
     if ($new_content eq $content) {
         write_file($cl, $old_content);
     } else {
+        $new_content =~ s/^(\# (?!VERSION).*\n)+\n//;
+        write_file($cl, $new_content);
         system("git", "-C", ".deps-update/$dep", "commit", "-a", "-m", "Update changelog");
     }
 }
@@ -179,7 +183,7 @@ sub update_deps_versions {
     my $config = slurp $config_path;
 
     for (keys %deps) {
-        $config =~ s/(\{\s*$_\s*,\s*".*?"\s*,\s*\{\s*git\s*,\s*".*?"\s*,\s*)(?:{\s*tag\s*,\s*"(.*?)"\s*}|"(.*?)")/$1\{tag, "$deps{$_}"}/s;
+        $config =~ s/(\{\s*$_\s*,\s*")(?:.*?)("\s*,\s*\{\s*git\s*,\s*".*?"\s*,\s*)(?:{\s*tag\s*,\s*"(.*?)"\s*}|"(.*?)")/$1~> $deps{$_}$2\{tag, "$deps{$_}"}/s;
     }
 
     write_file($config_path, $config);
