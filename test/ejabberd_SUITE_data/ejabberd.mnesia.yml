@@ -6,6 +6,14 @@ define_macro:
       mod_announce:
         db_type: internal
         access: local
+      mod_antispam:
+        rtbl_services:
+          - "pubsub.mnesia.localhost"
+        spam_jids_file: spam_jids.txt
+        spam_domains_file: spam_domains.txt
+        spam_urls_file: spam_urls.txt
+        whitelist_domains_file: whitelist_domains.txt
+        spam_dump_file: spam.log
       mod_blocking: []
       mod_caps:
         db_type: internal

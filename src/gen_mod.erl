@@ -27,7 +27,7 @@
 -author('alexey@process-one.net').
 
 -export([init/1, start_link/0, start_child/3, start_child/4,
-	 stop_child/1, stop_child/2, stop/0, config_reloaded/0]).
+	 stop_child/1, stop_child/2, prep_stop/0, stop/0, config_reloaded/0]).
 -export([start_module/2, stop_module/2, stop_module_keep_config/2,
 	 get_opt/2, set_opt/3, get_opt_hosts/1, is_equal_opt/3,
 	 get_module_opt/3, get_module_opts/2, get_module_opt_hosts/2,
@@ -76,6 +76,7 @@
 -callback start(binary(), opts()) ->
     ok | {ok, pid()} |
     {ok, [registration()]} | {error, term()}.
+-callback prep_stop(binary()) -> any().
 -callback stop(binary()) -> any().
 -callback reload(binary(), opts(), opts()) -> ok | {ok, pid()} | {error, term()}.
 -callback mod_opt_type(atom()) -> econf:validator().
@@ -86,7 +87,7 @@
                          example => [string()] | [{binary(), [string()]}]}.
 -callback depends(binary(), opts()) -> [{module(), hard | soft}].
 
--optional_callbacks([mod_opt_type/1, reload/3]).
+-optional_callbacks([mod_opt_type/1, reload/3, prep_stop/1]).
 
 -export_type([opts/0]).
 -export_type([db_type/0]).
@@ -113,6 +114,10 @@ init([]) ->
 	     {keypos, #ejabberd_module.module_host},
 	     {read_concurrency, true}]),
     {ok, {{one_for_one, 10, 1}, []}}.
+
+-spec prep_stop() -> ok.
+prep_stop() ->
+    prep_stop_modules().
 
 -spec stop() -> ok.
 stop() ->
@@ -301,6 +306,21 @@ is_app_running(AppName) ->
     lists:keymember(AppName, 1,
 		    application:which_applications(Timeout)).
 
+-spec prep_stop_modules() -> ok.
+prep_stop_modules() ->
+    lists:foreach(
+      fun(Host) ->
+	      prep_stop_modules(Host)
+      end, ejabberd_option:hosts()).
+
+-spec prep_stop_modules(binary()) -> ok.
+prep_stop_modules(Host) ->
+    Modules = lists:reverse(loaded_modules_with_opts(Host)),
+    lists:foreach(
+	fun({Module, _Args}) ->
+		prep_stop_module_keep_config(Host, Module)
+	end, Modules).
+
 -spec stop_modules() -> ok.
 stop_modules() ->
     lists:foreach(
@@ -319,6 +339,22 @@ stop_modules(Host) ->
 -spec stop_module(binary(), atom()) -> error | ok.
 stop_module(Host, Module) ->
     stop_module_keep_config(Host, Module).
+
+-spec prep_stop_module_keep_config(binary(), atom()) -> error | ok.
+prep_stop_module_keep_config(Host, Module) ->
+    ?DEBUG("Preparing to stop ~ts at ~ts", [Module, Host]),
+    try Module:prep_stop(Host) of
+	_ ->
+	    ok
+    catch ?EX_RULE(error, undef, _St) ->
+	    ok;
+          ?EX_RULE(Class, Reason, St) ->
+            StackTrace = ?EX_STACK(St),
+            ?ERROR_MSG("Failed to prepare stop module ~ts at ~ts:~n** ~ts",
+                       [Module, Host,
+                        misc:format_exception(2, Class, Reason, StackTrace)]),
+	    error
+    end.
 
 -spec stop_module_keep_config(binary(), atom()) -> error | ok.
 stop_module_keep_config(Host, Module) ->
