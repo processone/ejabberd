@@ -225,10 +225,7 @@ mod_doc() ->
                      "This option is only needed if your configuration has more than one host in mod_pubsub's 'hosts' option. "
                      "The default value is the first host defined in mod_pubsub 'hosts' option.")}}],
       example =>
-          ["modules:",
-           "  mod_pubsub_serverinfo:",
-           "    pubsub_host: custom.pubsub.domain.local"]
-     }.
+          ["modules:", "  mod_pubsub_serverinfo:", "    pubsub_host: custom.pubsub.domain.local"]}.
 
 in_auth_result(#{server_host := Host, remote_server := RServer} = State, true, _Server) ->
     gen_server:cast(
@@ -362,7 +359,9 @@ get_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
 
 pubsub_host(Host) ->
-    {ok, PubsubHost} = gen_server:call(gen_mod:get_module_proc(Host, ?MODULE), pubsub_host),
+    {ok, PubsubHost} =
+        gen_server:call(
+            gen_mod:get_module_proc(Host, ?MODULE), pubsub_host),
     PubsubHost.
 
 pubsub_host(Host, Opts) ->

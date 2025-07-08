@@ -775,6 +775,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0431.html"/>
+        <xmpp:version>0.2.0</xmpp:version>
+        <xmpp:since>24.12</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>mod_mam</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0440.html"/>
         <xmpp:version>0.4.0</xmpp:version>
         <xmpp:since>24.02</xmpp:since>
@@ -821,10 +830,10 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0485.html"/>
-        <xmpp:version>0.2.0</xmpp:version>
-        <xmpp:since>24.02</xmpp:since>
+        <xmpp:version>0.1.1</xmpp:version>
+        <xmpp:since>25.07</xmpp:since>
         <xmpp:status>complete</xmpp:status>
-        <xmpp:note>, mod_pubsub_serverinfo in ejabberd-contrib.git</xmpp:note>
+        <xmpp:note>mod_pubsub_serverinfo</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
   </Project>
