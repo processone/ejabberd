@@ -194,17 +194,33 @@ mod_opt_type(pubsub_host) ->
     econf:either(undefined, econf:host()).
 
 mod_doc() ->
-    #{desc => [?T("Exposes s2s information over Pub/Sub"), "",
-               ?T("Announces support for the ProtoXEP PubSub Server Information, by adding its Service Discovery feature."
-                  "Active S2S connections are published to a local pubsub node as advertised by Service Discovery. Only those connections that support this feature as well are exposed with their domain names, otherwise they are shown as anonymous nodes. At startup a list of well known public servers is being fetched. Those are not shown as anonymous even if they don't support this feature."
-                  "Currently the name of the node is hardcoded as \"serverinfo\". The local service to be used can be configured as `pubsub_host`. Otherwise a good guess is taken."
-                  "This module has a hard dependency on `mod_pubsub` for this reason. Also `mod_disco` must be configured for this feature to work."), "",
-               ?T("NOTE:  The module only shows S2S connections established while the module is running: after installing the module, please run `ejabberdctl stop_s2s_connections`, or restart ejabberd.")],
-      note => "added in 25.xx",
-      opts => [{pubsub_host,
-                #{value => "undefined | string()",
-                  desc => ?T("This option specifies which pubsub host to use to advertise S2S connections. This must be a vhost local to this service and handled by `mod_pubsub`. This is only needed if your configuration has more than one vhost in mod_pubsub's `hosts` option. If there's more than one and this option is not given, we just pick the first one.")}
-               }],
+    #{desc =>
+          [?T("This module adds support for "
+              "https://xmpp.org/extensions/xep-0485.html[XEP-0485: PubSub Server Information] "
+              "to expose S2S information over the Pub/Sub service."),
+           "",
+           ?T("Active S2S connections are published to a local PubSub node. "
+              "Currently the node name is hardcoded as '\"serverinfo\"'."),
+           "",
+           ?T("Connections that support this feature are exposed with their domain names, "
+              "otherwise they are shown as anonymous nodes. "
+              "At startup a list of well known public servers is fetched. "
+              "Those are not shown as anonymous even if they don't support this feature."),
+           "",
+           ?T("Please note that the module only shows S2S connections established while the module is running. "
+              "If you install the module at runtime, run _`stop_s2s_connections`_ API or restart ejabberd "
+              "to force S2S reconnections that the module will detect and publish."),
+           "",
+           ?T("This module depends on _`mod_pubsub`_ and _`mod_disco`_.")],
+      note => "added in 25.07",
+      opts =>
+          [{pubsub_host,
+            #{value => "undefined | string()",
+              desc =>
+                  ?T("Use this local PubSub host to advertise S2S connections. "
+                     "This must be a host local to this service handled by _`mod_pubsub`_. "
+                     "This option is only needed if your configuration has more than one host in mod_pubsub's 'hosts' option. "
+                     "The default value is the first host defined in mod_pubsub 'hosts' option.")}}],
       example =>
           ["modules:",
            "  mod_pubsub_serverinfo:",
