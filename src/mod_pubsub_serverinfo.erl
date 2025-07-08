@@ -25,6 +25,9 @@
 
 -module(mod_pubsub_serverinfo).
 -author('stefan@strigler.de').
+
+-protocol({xep, 485, '0.1.1', '25.07', "complete", ""}).
+
 -behaviour(gen_mod).
 -behaviour(gen_server).
 
