@@ -836,5 +836,14 @@
         <xmpp:note>mod_pubsub_serverinfo</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0486.html"/>
+        <xmpp:version>0.1.0</xmpp:version>
+        <xmpp:since>24.07</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>mod_muc</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
   </Project>
 </rdf:RDF>
