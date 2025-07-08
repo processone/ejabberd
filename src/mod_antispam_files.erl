@@ -52,7 +52,6 @@
 
 -define(COMMAND_TIMEOUT, timer:seconds(30)).
 -define(DEFAULT_CACHE_SIZE, 10000).
--define(DEFAULT_RTBL_DOMAINS_NODE, <<"spam_source_domains">>).
 -define(HTTPC_TIMEOUT, timer:seconds(3)).
 
 %%--------------------------------------------------------------------

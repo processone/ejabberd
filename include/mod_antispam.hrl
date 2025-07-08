@@ -24,3 +24,13 @@
 -type filename() :: binary() | none | false.
 -type jid_set() :: sets:set(ljid()).
 -type url_set() :: sets:set(url()).
+
+-define(DEFAULT_RTBL_DOMAINS_NODE, <<"spam_source_domains">>).
+
+-record(rtbl_service,
+        {host = none                       :: binary() | none,
+         node = ?DEFAULT_RTBL_DOMAINS_NODE :: binary(),
+         subscribed = false                :: boolean(),
+         retry_timer = undefined           :: reference() | undefined}).
+
+-type rtbl_service() :: #rtbl_service{}.

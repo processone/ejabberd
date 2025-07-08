@@ -31,6 +31,7 @@
 		disconnect/1, put_event/2, get_event/1, peer_muc_jid/1,
 		my_muc_jid/1, get_features/2, set_opt/3]).
 -include("suite.hrl").
+-include("mod_antispam.hrl").
 
 %% @format-begin
 
@@ -166,7 +167,8 @@ rtbl_domains(Config) ->
     RTBLDomainsNode = <<"spam_source_domains">>,
     OldOpts = gen_mod:get_module_opts(Host, mod_antispam),
     NewOpts =
-        maps:merge(OldOpts, #{rtbl_host => RTBLHost, rtbl_domains_node => RTBLDomainsNode}),
+        maps:merge(OldOpts,
+                   #{rtbl_services => [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}]}),
     Owner = jid:make(?config(user, Config), ?config(server, Config), <<>>),
     {result, _} =
         mod_pubsub:create_node(RTBLHost,
@@ -210,7 +212,8 @@ rtbl_domains_whitelisted(Config) ->
     RTBLDomainsNode = <<"spam_source_domains">>,
     OldOpts = gen_mod:get_module_opts(Host, mod_antispam),
     NewOpts =
-        maps:merge(OldOpts, #{rtbl_host => RTBLHost, rtbl_domains_node => RTBLDomainsNode}),
+        maps:merge(OldOpts,
+                   #{rtbl_services => [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}]}),
     Owner = jid:make(?config(user, Config), ?config(server, Config), <<>>),
     {result, _} =
         mod_pubsub:create_node(RTBLHost,

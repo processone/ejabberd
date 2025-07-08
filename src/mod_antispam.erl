@@ -51,6 +51,8 @@
 	 terminate/2,
 	 code_change/3]).
 
+-export([get_rtbl_services_option/1]).
+
 %% ejabberd_commands callbacks.
 -export([add_blocked_domain/2,
 	 add_to_spam_filter_cache/2,
@@ -87,7 +89,6 @@
 -type state() :: #state{}.
 
 -define(COMMAND_TIMEOUT, timer:seconds(30)).
--define(DEFAULT_RTBL_DOMAINS_NODE, <<"spam_source_domains">>).
 -define(DEFAULT_CACHE_SIZE, 10000).
 
 %% @format-begin
@@ -137,12 +138,14 @@ mod_opt_type(access_spam) ->
     econf:acl();
 mod_opt_type(cache_size) ->
     econf:pos_int(unlimited);
-mod_opt_type(rtbl_host) ->
-    econf:either(
-        econf:enum([none]), econf:host());
-mod_opt_type(rtbl_domains_node) ->
-    econf:non_empty(
-        econf:binary());
+mod_opt_type(rtbl_services) ->
+    econf:list(
+        econf:either(
+            econf:binary(),
+            econf:map(
+                econf:binary(),
+                econf:map(
+                    econf:enum([spam_source_domains_node]), econf:binary()))));
 mod_opt_type(spam_domains_file) ->
     econf:either(
         econf:enum([none]), econf:file());
@@ -159,12 +162,11 @@ mod_opt_type(whitelist_domains_file) ->
     econf:either(
         econf:enum([none]), econf:file()).
 
--spec mod_options(binary()) -> [{atom(), any()}].
+-spec mod_options(binary()) -> [{rtbl_services, [tuple()]} | {atom(), any()}].
 mod_options(_Host) ->
     [{access_spam, none},
      {cache_size, ?DEFAULT_CACHE_SIZE},
-     {rtbl_domains_node, ?DEFAULT_RTBL_DOMAINS_NODE},
-     {rtbl_host, none},
+     {rtbl_services, []},
      {spam_domains_file, none},
      {spam_dump_file, false},
      {spam_jids_file, none},
@@ -200,6 +202,21 @@ mod_doc() ->
                      "Note that separate caches are used for each virtual host, "
                      " and that the caches aren't distributed across cluster nodes. "
                      "The default value is '10000'.")}},
+           {rtbl_services,
+            #{value => ?T("[Service]"),
+              example =>
+                  ["rtbl_services:",
+                   "  - pubsub.server1.localhost:",
+                   "      spam_source_domains_node: actual_custom_pubsub_node"],
+              desc =>
+                  ?T("Query a RTBL service to get domains to block, as provided by "
+                     "https://xmppbl.org/[xmppbl.org]. "
+                     "Please note right now this option only supports one service in that list. "
+                     "For blocking spam and abuse on MUC channels, please use _`mod_muc_rtbl`_ for now. "
+                     "If only the host is provided, the default node names will be assumed. "
+                     "If the node name is different than 'spam_source_domains', "
+                     "you can setup the custom node name with the option 'spam_source_domains_node'. "
+                     "The default value is an empty list of services.")}},
            {spam_domains_file,
             #{value => ?T("none | Path"),
               desc =>
@@ -253,6 +270,8 @@ mod_doc() ->
       example =>
           ["modules:",
            "  mod_antispam:",
+           "    rtbl_services:",
+           "      - xmppbl.org",
            "    spam_jids_file: \"@CONFIG_PATH@/spam_jids.txt\"",
            "    spam_dump_file: \"@LOG_PATH@/spam/host-@HOST@.log\""]}.
 
@@ -274,8 +293,7 @@ init([Host, Opts]) ->
                        mod_antispam_rtbl,
                        pubsub_event_handler,
                        50),
-    RTBLHost = gen_mod:get_opt(rtbl_host, Opts),
-    RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, Opts),
+    [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}] = get_rtbl_services_option(Opts),
     mod_antispam_filter:init_filtering(Host),
     InitState =
         #state{host = Host,
@@ -384,8 +402,8 @@ handle_cast({reload, NewOpts, OldOpts},
         end,
     ok = mod_antispam_rtbl:unsubscribe(OldRTBLHost, OldRTBLDomainsNode, Host),
     {_Result, State3} = reload_files(State2#state{blocked_domains = #{}}),
-    RTBLHost = gen_mod:get_opt(rtbl_host, NewOpts),
-    RTBLDomainsNode = gen_mod:get_opt(rtbl_domains_node, NewOpts),
+    [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}] =
+        get_rtbl_services_option(NewOpts),
     ok = mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
     {noreply, State3#state{rtbl_host = RTBLHost, rtbl_domains_node = RTBLDomainsNode}};
 handle_cast({update_blocked_domains, NewItems},
@@ -564,6 +582,27 @@ read_files(Host) ->
           domains => gen_mod:get_module_opt(Host, ?MODULE, spam_domains_file),
           whitelist_domains => gen_mod:get_module_opt(Host, ?MODULE, whitelist_domains_file)},
     ejabberd_hooks:run_fold(antispam_get_lists, Host, AccInitial, [Files]).
+
+get_rtbl_services_option(Host) when is_binary(Host) ->
+    get_rtbl_services_option(gen_mod:get_module_opts(Host, ?MODULE));
+get_rtbl_services_option(Opts) when is_map(Opts) ->
+    Services = gen_mod:get_opt(rtbl_services, Opts),
+    case length(Services) =< 1 of
+        true ->
+            ok;
+        false ->
+            ?WARNING_MSG("Option rtbl_services only supports one service, but several "
+                         "were configured. Will use only first one",
+                         [])
+    end,
+    case Services of
+        [] ->
+            [#rtbl_service{}];
+        [Host | _] when is_binary(Host) ->
+            [#rtbl_service{host = Host, node = ?DEFAULT_RTBL_DOMAINS_NODE}];
+        [[{Host, [{spam_source_domains_node, Node}]}] | _] ->
+            [#rtbl_service{host = Host, node = Node}]
+    end.
 
 -spec get_proc_name(binary()) -> atom().
 get_proc_name(Host) ->
