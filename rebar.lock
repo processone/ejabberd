@@ -8,7 +8,7 @@
  {<<"ezlib">>,{pkg,<<"ezlib">>,<<"1.0.13">>},0},
  {<<"fast_tls">>,
   {git,"https://github.com/processone/fast_tls",
-       {ref,"f1e55d6d6bdf109ebc48dda880d028c95f349c3b"}},
+       {ref,"d6ed64546e4f0d92d6a334827ea36b0c38307878"}},
   0},
  {<<"fast_xml">>,
   {git,"https://github.com/processone/fast_xml",

@@ -120,7 +120,7 @@ defmodule Ejabberd.MixProject do
      {:dialyxir, "~> 1.2", only: [:test], runtime: false},
      {:eimp, "~> 1.0"},
      {:ex_doc, "~> 0.31", only: [:edoc], runtime: false},
-     {:fast_tls, git: "https://github.com/processone/fast_tls.git", ref: "f1e55d6d6bdf109ebc48dda880d028c95f349c3b", override: true},
+     {:fast_tls, git: "https://github.com/processone/fast_tls.git", ref: "d6ed64546e4f0d92d6a334827ea36b0c38307878", override: true},
      {:fast_xml, git: "https://github.com/processone/fast_xml", ref: "72e1c1b2eef84804399095704f2d729d5df8f02e", override: true},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
