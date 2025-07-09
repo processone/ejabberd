@@ -138,7 +138,7 @@ process_closed(#{server := LServer} = State, Reason) ->
 %%% xmpp_stream_in callbacks
 %%%===================================================================
 tls_options(#{tls_options := TLSOpts, lserver := LServer, server_host := ServerHost}) ->
-    ejabberd_s2s:tls_options(LServer, ServerHost, TLSOpts).
+    [override_cert_purpose | ejabberd_s2s:tls_options(LServer, ServerHost, TLSOpts)].
 
 tls_required(#{server_host := ServerHost}) ->
     ejabberd_s2s:tls_required(ServerHost).
