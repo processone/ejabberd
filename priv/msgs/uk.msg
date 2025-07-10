@@ -149,7 +149,7 @@
 {"Failed to process option '~s'","Не вдалося обробити параметр \"~s\""}.
 {"Family Name","Прізвище"}.
 {"FAQ Entry","Запис в ЧаПи"}.
-{"February","лютого"}.
+{"February","Лютого"}.
 {"File larger than ~w bytes","Файл більший, ніж ~w байт"}.
 {"Fill in the form to search for any matching XMPP User","Заповніть форму для пошуку будь-якого відповідного користувача XMPP"}.
 {"Friday","П'ятниця"}.
@@ -209,14 +209,14 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Не дозволяється надсилати приватні повідомлення типу \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Не дозволяється надсилати приватні повідомлення в конференцію"}.
 {"Jabber ID","Jabber ID"}.
-{"January","січня"}.
+{"January","Січня"}.
 {"JID normalization denied by service policy","Створювати конференцію заборонено політикою служби"}.
 {"JID normalization failed","Помилка нормалізації JID"}.
 {"Joined MIX channels of ~ts","Приєднався до каналів MIX ~ts"}.
 {"Joined MIX channels:","Приєднався до каналів MIX:"}.
 {"joins the room","увійшов(ла) в кімнату"}.
-{"July","липня"}.
-{"June","червня"}.
+{"July","Липня"}.
+{"June","Червня"}.
 {"Just created","Щойно створено"}.
 {"Last Activity","Останнє підключення"}.
 {"Last login","Останнє підключення"}.
@@ -313,12 +313,12 @@
 {"Node","Вузол"}.
 {"None","Немає"}.
 {"Not allowed","Не дозволяється"}.
-{"Not Found","не знайдено"}.
+{"Not Found","Не знайдено"}.
 {"Not subscribed","Не підписаний"}.
 {"Notify subscribers when items are removed from the node","Повідомляти абонентів про видалення публікацій із збірника"}.
 {"Notify subscribers when the node configuration changes","Повідомляти абонентів про зміни в конфігурації збірника"}.
 {"Notify subscribers when the node is deleted","Повідомляти абонентів про видалення збірника"}.
-{"November","листопада"}.
+{"November","Листопада"}.
 {"Number of answers required","Кількість необхідних відповідей"}.
 {"Number of occupants","Кількість присутніх"}.
 {"Number of Offline Messages","Кількість автономних повідомлень"}.
@@ -397,7 +397,7 @@
 {"Recipient is not in the conference room","Адресата немає в конференції"}.
 {"Register an XMPP account","Зареєструвати XMPP-запис"}.
 {"Register","Реєстрація"}.
-{"Remote copy","не зберігаеться локально"}.
+{"Remote copy","Віддалене копіювання"}.
 {"Remove a hat from a user","Зняти шапку з користувача"}.
 {"Remove User","Видалити користувача"}.
 {"Replaced by new connection","Замінено новим з'єднанням"}.
@@ -435,7 +435,7 @@
 {"Send announcement to all online users","Надіслати сповіщення всім підключеним користувачам"}.
 {"Send announcement to all users on all hosts","Надіслати сповіщення до усіх користувачів на усіх хостах"}.
 {"Send announcement to all users","Надіслати сповіщення всім користувачам"}.
-{"September","вересня"}.
+{"September","Вересня"}.
 {"Server:","Сервер:"}.
 {"Service list retrieval timed out","Час очікування отримання списку послуг минув"}.
 {"Session state copying timed out","Час очікування копіювання стану сеансу минув"}.
@@ -551,7 +551,7 @@
 {"Unexpected error condition: ~p","Умова несподіваної помилки: ~p"}.
 {"Uninstall","Видалити"}.
 {"Unregister an XMPP account","Видалити обліковий запис XMPP"}.
-{"Unregister","Видалити"}.
+{"Unregister","Скасувати реєстрацію"}.
 {"Unsupported <index/> element","Непідтримуваний елемент <index/>"}.
 {"Unsupported version","Непідтримувана версія"}.
 {"Update message of the day (don't send)","Оновити повідомлення дня (не надсилати)"}.
@@ -582,7 +582,7 @@
 {"Value 'set' of 'type' attribute is not allowed","Значення 'set' атрибута 'type' не допускається"}.
 {"vCard User Search","Пошук користувачів по vCard"}.
 {"View joined MIX channels","Перегляд приєднаних каналів MIX"}.
-{"Virtual Hosts","віртуальні хости"}.
+{"Virtual Hosts","Віртуальні хости"}.
 {"Visitors are not allowed to change their nicknames in this room","Відвідувачам не дозволяється змінювати псевдонім в цій кімнаті"}.
 {"Visitors are not allowed to send messages to all occupants","Відвідувачам не дозволяється надсилати повідомлення всім присутнім"}.
 {"Visitor","Відвідувач"}.
