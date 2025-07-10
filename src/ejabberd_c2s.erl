@@ -440,21 +440,32 @@ sasl_mechanisms(Mechs, #{lserver := LServer, stream_encrypted := Encrypted} = St
 	end,
     %% I re-created it from cyrsasl ets magic, but I think it's wrong
     %% TODO: need to check before 18.09 release
-    lists:filter(
-      fun(<<"ANONYMOUS">>) ->
-	      ejabberd_auth_anonymous:is_sasl_anonymous_enabled(LServer);
-	 (<<"DIGEST-MD5">>) -> Digest;
-	 (<<"SCRAM-SHA-1">>) -> ShaAv;
-	 (<<"SCRAM-SHA-1-PLUS">>) -> ShaAv andalso Encrypted;
-	 (<<"SCRAM-SHA-256">>) -> Sha256Av;
-	 (<<"SCRAM-SHA-256-PLUS">>) -> Sha256Av andalso Encrypted;
-	 (<<"SCRAM-SHA-512">>) -> Sha512Av;
-	 (<<"SCRAM-SHA-512-PLUS">>) -> Sha512Av andalso Encrypted;
-	 (<<"PLAIN">>) -> true;
-	 (<<"X-OAUTH2">>) -> [ejabberd_auth_anonymous] /= ejabberd_auth:auth_modules(LServer);
-	 (<<"EXTERNAL">>) -> maps:get(tls_verify, State, false);
-	 (_) -> false
-      end, Mechs -- Mechs1).
+    Mechs2 = lists:filter(
+	fun(<<"ANONYMOUS">>) ->
+	    ejabberd_auth_anonymous:is_sasl_anonymous_enabled(LServer);
+	   (<<"DIGEST-MD5">>) -> Digest;
+	   (<<"SCRAM-SHA-1">>) -> ShaAv;
+	   (<<"SCRAM-SHA-1-PLUS">>) -> ShaAv andalso Encrypted;
+	   (<<"SCRAM-SHA-256">>) -> Sha256Av;
+	   (<<"SCRAM-SHA-256-PLUS">>) -> Sha256Av andalso Encrypted;
+	   (<<"SCRAM-SHA-512">>) -> Sha512Av;
+	   (<<"SCRAM-SHA-512-PLUS">>) -> Sha512Av andalso Encrypted;
+	   (<<"PLAIN">>) -> true;
+	   (<<"X-OAUTH2">>) -> [ejabberd_auth_anonymous] /= ejabberd_auth:auth_modules(LServer);
+	   (<<"EXTERNAL">>) -> maps:get(tls_verify, State, false);
+	   (_) -> false
+	end, Mechs -- Mechs1),
+    case ejabberd_option:auth_password_types_hidden_in_scram1() of
+	[] -> Mechs2;
+	List ->
+	    Mechs3 = lists:foldl(
+		fun(plain, Acc) -> Acc -- [<<"PLAIN">>];
+		   (scram_sha1, Acc) -> Acc -- [<<"SCRAM-SHA-1">>, <<"SCRAM-SHA-1-PLUS">>];
+		   (scram_sha256, Acc) -> Acc -- [<<"SCRAM-SHA-256">>, <<"SCRAM-SHA-256-PLUS">>];
+		   (scram_sha512, Acc) -> Acc -- [<<"SCRAM-SHA-512">>, <<"SCRAM-SHA-512-PLUS">>]
+		end, Mechs2, List),
+	    {Mechs3, Mechs2}
+    end.
 
 sasl_options(#{lserver := LServer}) ->
     case ejabberd_option:disable_sasl_scram_downgrade_protection(LServer) of
