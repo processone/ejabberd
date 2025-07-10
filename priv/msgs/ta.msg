@@ -46,7 +46,9 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","அல்லது இரண்டின் இருப்பு சந்தா உள்ள எவரும் உருப்படிகளை குழுசேர் மற்றும் மீட்டெடுக்கலாம்"}.
 {"Anyone with Voice","குரல் உள்ள எவரும்"}.
 {"Anyone","யாரும்"}.
+{"API Commands","பநிஇ கட்டளைகள்"}.
 {"April","ப-சித்திரை"}.
+{"Arguments","வாதங்கள்"}.
 {"Attribute 'channel' is required for this request","இந்த கோரிக்கைக்கு 'சேனல்' என்ற பண்புக்கூறு தேவை"}.
 {"Attribute 'id' is mandatory for MIX messages","கலவை செய்திகளுக்கு 'ஐடி' கட்டாயமாகும்"}.
 {"Attribute 'jid' is not allowed here","'சிட்' என்ற பண்புக்கூறு இங்கே அனுமதிக்கப்படவில்லை"}.
@@ -86,6 +88,7 @@
 {"Choose whether to approve this entity's subscription.","இந்த நிறுவனத்தின் சந்தாவை அங்கீகரிக்க வேண்டுமா என்பதைத் தேர்வுசெய்க."}.
 {"City","நகரம்"}.
 {"Client acknowledged more stanzas than sent by server","சேவையகத்தால் அனுப்பப்பட்டதை விட கிளையன்ட் அதிக சரணத்தை ஒப்புக் கொண்டார்"}.
+{"Clustering","கிளச்டரிங்"}.
 {"Commands","கட்டளைகள்"}.
 {"Conference room does not exist","மாநாட்டு அறை இல்லை"}.
 {"Configuration of room ~s","அறையின் உள்ளமைவு ~s"}.
@@ -259,7 +262,7 @@
 {"Module failed to handle the query","தொகுதி வினவலைக் கையாளத் தவறிவிட்டது"}.
 {"Monday","திங்கள்"}.
 {"Multicast","மல்டிகாச்ட்"}.
-{"Multiple <item/> elements are not allowed by RFC6121","பல <உருப்படி/> கூறுகள் RFC6121 ஆல் அனுமதிக்கப்படாது"}.
+{"Multiple <item/> elements are not allowed by RFC6121","பல <item/> கூறுகள் RFC6121 ஆல் அனுமதிக்கப்படாது"}.
 {"Multi-User Chat","பல பயனர் அரட்டை"}.
 {"Name","பெயர்"}.
 {"Natural Language for Room Discussions","அறை விவாதங்களுக்கு இயற்கை மொழி"}.
@@ -281,7 +284,7 @@
 {"No data form found","தரவு படிவம் எதுவும் கிடைக்கவில்லை"}.
 {"No Data","தரவு இல்லை"}.
 {"No features available","நற்பொருத்தங்கள் எதுவும் கிடைக்கவில்லை"}.
-{"No <forwarded/> element found","இல்லை <முன்னோக்கி/> உறுப்பு காணப்பட்டது"}.
+{"No <forwarded/> element found","இல்லை <forwarded/> உறுப்பு காணப்பட்டது"}.
 {"No hook has processed this command","இந்த கட்டளையை எந்த ஊக்கும் செயலாக்கவில்லை"}.
 {"No info about last activity found","கடைசி செயல்பாட்டைப் பற்றிய எந்த தகவலும் கிடைக்கவில்லை"}.
 {"No 'item' element found","'உருப்படி' உறுப்பு இல்லை"}.
@@ -332,8 +335,8 @@
 {"Online","ஆன்லைனில்"}.
 {"Only collection node owners may associate leaf nodes with the collection","சேகரிப்பு முனை உரிமையாளர்கள் மட்டுமே இலை முனைகளை சேகரிப்புடன் தொடர்புபடுத்தலாம்"}.
 {"Only deliver notifications to available users","கிடைக்கக்கூடிய பயனர்களுக்கு மட்டுமே அறிவிப்புகளை வழங்கவும்"}.
-{"Only <enable/> or <disable/> tags are allowed","<anafice/> அல்லது <முடக்கு/> குறிச்சொற்கள் மட்டுமே அனுமதிக்கப்படுகின்றன"}.
-{"Only <list/> element is allowed in this query","இந்த வினவலில் <பட்டியல்/> உறுப்பு மட்டுமே அனுமதிக்கப்படுகிறது"}.
+{"Only <enable/> or <disable/> tags are allowed","<enable/>அல்லது <disable/> குறிச்சொற்கள் மட்டுமே அனுமதிக்கப்படுகின்றன"}.
+{"Only <list/> element is allowed in this query","இந்த வினவலில் <list/> உறுப்பு மட்டுமே அனுமதிக்கப்படுகிறது"}.
 {"Only members may query archives of this room","உறுப்பினர்கள் மட்டுமே இந்த அறையின் காப்பகங்களை வினவலாம்"}.
 {"Only moderators and participants are allowed to change the subject in this room","இந்த அறையில் உள்ள விசயத்தை மாற்ற மதிப்பீட்டாளர்கள் மற்றும் பங்கேற்பாளர்கள் மட்டுமே அனுமதிக்கப்படுகிறார்கள்"}.
 {"Only moderators are allowed to change the subject in this room","இந்த அறையில் உள்ள விசயத்தை மாற்ற மதிப்பீட்டாளர்கள் மட்டுமே அனுமதிக்கப்படுகிறார்கள்"}.
@@ -408,6 +411,7 @@
 {"Restore binary backup immediately:","பைனரி காப்புப்பிரதியை உடனடியாக மீட்டமைக்கவும்:"}.
 {"Restore plain text backup immediately:","எளிய உரை காப்புப்பிரதியை உடனடியாக மீட்டெடுக்கவும்:"}.
 {"Restore","மீட்டமை"}.
+{"Result","விளைவு"}.
 {"Roles and Affiliations that May Retrieve Member List","உறுப்பினர் பட்டியலை மீட்டெடுக்கக்கூடிய பாத்திரங்கள் மற்றும் இணைப்புகள்"}.
 {"Roles for which Presence is Broadcasted","இருப்பு ஒளிபரப்பப்படும் பாத்திரங்கள்"}.
 {"Roles that May Send Private Messages","தனிப்பட்ட செய்திகளை அனுப்பக்கூடிய பாத்திரங்கள்"}.
@@ -505,11 +509,11 @@
 {"The passwords are different","கடவுச்சொற்கள் வேறுபட்டவை"}.
 {"The presence states for which an entity wants to receive notifications","ஒரு நிறுவனம் அறிவிப்புகளைப் பெற விரும்பும் இருப்பு நிலைகள்"}.
 {"The query is only allowed from local users","வினவல் உள்ளக பயனர்களிடமிருந்து மட்டுமே அனுமதிக்கப்படுகிறது"}.
-{"The query must not contain <item/> elements","வினவலில் <பொருள்/> கூறுகள் இருக்கக்கூடாது"}.
+{"The query must not contain <item/> elements","வினவலில் <item/>கூறுகள் இருக்கக் கூடாது"}.
 {"The room subject can be modified by participants","அறை பொருள் பங்கேற்பாளர்களால் மாற்றப்படலாம்"}.
 {"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","முனையில் உள்ள தரவின் சொற்பொருள் வகை செய்தி, பொதுவாக பேலோடின் பெயர்வெளியால் குறிப்பிடப்படுகிறது (ஏதேனும் இருந்தால்)"}.
 {"The sender of the last received message","கடைசியாக பெறப்பட்ட செய்தியை அனுப்பு"}.
-{"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","ச்டான்சாவில் ஒரே <செயலில்/> உறுப்பு, ஒரு <இயல்புநிலை/> உறுப்பு அல்லது ஒரு <பட்டியல்/> உறுப்பு மட்டுமே இருக்க வேண்டும்"}.
+{"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","ச்டான்சாவில் ஒரே <active/> உறுப்பு, ஒரு <default/>உறுப்பு அல்லது ஒரு <list/>உறுப்பு மட்டுமே இருக்க வேண்டும்"}.
 {"The subscription identifier associated with the subscription request","சந்தா கோரிக்கையுடன் தொடர்புடைய சந்தா அடையாளங்காட்டி"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","பொருத்தமான செய்தி உடல் உறுப்பை உருவாக்குவதற்காக பேலோடுகளுக்கு பயன்படுத்தக்கூடிய எக்ச்எச்எல் மாற்றத்தின் முகவரி."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","செல்லுபடியாகும் தரவு படிவங்களை உருவாக்குவதற்காக பேலோட் வடிவத்தில் பயன்படுத்தக்கூடிய ஒரு எக்ச்எச்எல் உருமாற்றத்தின் முகவரி, கிளையன்ட் பொதுவான தரவு படிவங்கள் வழங்குதல் எஞ்சின் பயன்படுத்தி காண்பிக்க முடியும்"}.
@@ -530,8 +534,8 @@
 {"Too many active bytestreams","பல செயலில் உள்ள பைட்டிரீம்கள்"}.
 {"Too many CAPTCHA requests","பல கேப்ட்சா கோரிக்கைகள்"}.
 {"Too many child elements","பல குழந்தை கூறுகள்"}.
-{"Too many <item/> elements","பல <உருப்படி/> கூறுகள்"}.
-{"Too many <list/> elements","பல <பட்டியல்/> கூறுகள்"}.
+{"Too many <item/> elements","பல <item/> கூறுகள்"}.
+{"Too many <list/> elements","பல <list/> கூறுகள்"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","இந்த ஐபி முகவரியிலிருந்து (~p) பல (~s) தோல்வியுற்ற அங்கீகாரங்கள் ~s. முகவரி UTC இல் தடைசெய்யப்படும்"}.
 {"Too many receiver fields were specified","அதிகமான ரிசீவர் புலங்கள் குறிப்பிடப்பட்டன"}.
 {"Too many unacked stanzas","பல அறியப்படாத சரணங்கள்"}.
@@ -548,7 +552,7 @@
 {"Uninstall","நிறுவல் நீக்க"}.
 {"Unregister an XMPP account","ஒரு எக்ச்எம்பிபி கணக்கை பதிவு செய்யவும்"}.
 {"Unregister","பதிவு செய்யப்படாதது"}.
-{"Unsupported <index/> element","ஆதரிக்கப்படாத <குறியீட்டு/> உறுப்பு"}.
+{"Unsupported <index/> element","ஆதரிக்கப்படாத <index/> உறுப்பு"}.
 {"Unsupported version","ஆதரிக்கப்படாத பதிப்பு"}.
 {"Update message of the day (don't send)","அன்றைய செய்தியைப் புதுப்பிக்கவும் (அனுப்ப வேண்டாம்)"}.
 {"Update message of the day on all hosts (don't send)","எல்லா ஓச்ட்களிலும் அன்றைய செய்தியைப் புதுப்பிக்கவும் (அனுப்ப வேண்டாம்)"}.
@@ -584,6 +588,7 @@
 {"Visitor","பார்வையாளர்"}.
 {"Voice requests are disabled in this conference","இந்த மாநாட்டில் குரல் கோரிக்கைகள் முடக்கப்பட்டுள்ளன"}.
 {"Voice request","குரல் கோரிக்கை"}.
+{"Web client which allows to join the room anonymously","அநாமதேயமாக அறையில் சேர அனுமதிக்கும் வலை கிளையண்ட்"}.
 {"Wednesday","புதன்கிழமை"}.
 {"When a new subscription is processed and whenever a subscriber comes online","புதிய சந்தா செயலாக்கப்படும் போது, சந்தாதாரர் ஆன்லைனில் வரும்போதெல்லாம்"}.
 {"When a new subscription is processed","புதிய சந்தா செயலாக்கப்படும் போது"}.
