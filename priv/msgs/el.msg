@@ -12,9 +12,10 @@
 {"A Web Page","Μία ιστοσελίδα"}.
 {"Accept","Αποδοχή"}.
 {"Access denied by service policy","Άρνηση πρόσβασης, λόγω τακτικής παροχής υπηρεσιών"}.
-{"Access model","Καθορίστε το μοντέλο πρόσβασης"}.
+{"Access model","Μοντέλο πρόσβασης"}.
 {"Account doesn't exist","Ο λογαριασμός δεν υπάρχει"}.
 {"Action on user","Eνέργεια για το χρήστη"}.
+{"Add a hat to a user","Προσθέστε ένα καπέλο σε έναν χρήστη"}.
 {"Add User","Προσθήκη Χρήστη"}.
 {"Administration of ","Διαχείριση του "}.
 {"Administration","Διαχείριση"}.
@@ -45,7 +46,9 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Όποιος έχει συνδρομή παρουσίας και των δύο ή από μπορεί να εγγραφεί και να ανακτήσει στοιχεία"}.
 {"Anyone with Voice","Οποιοσδήποτε με Φωνή"}.
 {"Anyone","Οποιοσδήποτε"}.
+{"API Commands","Εντολές του API"}.
 {"April","Απρίλιος"}.
+{"Arguments","Επιχειρήματα"}.
 {"Attribute 'channel' is required for this request","Το δηλωτικό 'channel' απαιτείται για αυτό το Ερώτημα"}.
 {"Attribute 'id' is mandatory for MIX messages","Το δηλωτικό 'id' επιτακτικό για μηνύματα MIX"}.
 {"Attribute 'jid' is not allowed here","Το δηλωτικό 'jid' δεν επιτρέπεται εδώ"}.
@@ -71,6 +74,7 @@
 {"Changing role/affiliation is not allowed","Η αλλαγή ρόλου/ομάδας δεν επιτρέπεται"}.
 {"Channel already exists","Το κανάλι υπάρχει ήδη"}.
 {"Channel does not exist","Το κανάλι δεν υπάρχει"}.
+{"Channel JID","JID καναλιού"}.
 {"Channels","Κανάλια"}.
 {"Characters not allowed:","Χαρακτήρες που δεν επιτρέπονται:"}.
 {"Chatroom configuration modified","Η ρύθμιση παραμέτρων της αίθουσας σύνεδριασης τροποποιηθηκε"}.
@@ -84,6 +88,7 @@
 {"Choose whether to approve this entity's subscription.","Επιλέξτε αν θα εγκρίθεί η εγγραφή αυτής της οντότητας."}.
 {"City","Πόλη"}.
 {"Client acknowledged more stanzas than sent by server","Ο πελάτης γνωρίζει περισσότερα δωμάτια από αυτά που στάλθηκαν από τον εξυπηρετητή"}.
+{"Clustering","Συσταδοποίηση"}.
 {"Commands","Εντολές"}.
 {"Conference room does not exist","Η αίθουσα σύνεδριασης δεν υπάρχει"}.
 {"Configuration of room ~s","Διαμόρφωση δωματίου ~ s"}.
@@ -119,6 +124,7 @@
 {"ejabberd","ejabberd"}.
 {"Email Address","Ηλεκτρονική Διεύθυνση"}.
 {"Email","Ηλεκτρονικό ταχυδρομείο"}.
+{"Enable hats","Ενεργοποίηση καπέλων"}.
 {"Enable logging","Ενεργοποίηση καταγραφής"}.
 {"Enable message archiving","Ενεργοποιήστε την αρχειοθέτηση μηνυμάτων"}.
 {"Enabling push without 'node' attribute is not supported","Η ενεργοποίηση της ώθησης χωρίς το χαρακτηριστικό 'κόμβος' δεν υποστηρίζεται"}.
@@ -151,6 +157,8 @@
 {"Full List of Room Admins","Πλήρης Κατάλογος Διαχειριστών αιθουσών"}.
 {"Full List of Room Owners","Πλήρης Κατάλογος Ιδιοκτητών αιθουσών"}.
 {"Full Name","Ονοματεπώνυμο"}.
+{"Get List of Online Users","Λίστα online χρηστών"}.
+{"Get List of Registered Users","Λίστα εγγεγραμμένων χρηστών"}.
 {"Get Number of Online Users","Έκθεση αριθμού συνδεδεμένων χρηστών"}.
 {"Get Number of Registered Users","Έκθεση αριθμού εγγεγραμμένων χρηστών"}.
 {"Get Pending","Λήψη των εκκρεμοτήτων"}.
@@ -163,6 +171,10 @@
 {"has been kicked because of an affiliation change","έχει αποβληθεί λόγω αλλαγής υπαγωγής"}.
 {"has been kicked because the room has been changed to members-only","αποβλήθηκε επειδή η αίθουσα αλλάξε γιά μέλη μόνο"}.
 {"has been kicked","αποβλήθηκε"}.
+{"Hash of the vCard-temp avatar of this room","Hash του vCard-temp avatar αυτού του δωματίου"}.
+{"Hat title","Τίτλος καπέλου"}.
+{"Hat URI","Καπέλο URI"}.
+{"Hats limit exceeded","Υπέρβαση του ορίου καπέλων"}.
 {"Host unknown","Άγνωστος εξυπηρετητής"}.
 {"HTTP File Upload","Ανέβασμα αρχείου"}.
 {"Idle connection","Αδρανής σύνδεση"}.
@@ -183,6 +195,8 @@
 {"Incorrect value of 'action' attribute","Λανθασμένη τιμή του χαρακτηριστικού 'action'"}.
 {"Incorrect value of 'action' in data form","Λανθασμένη τιμή 'action' στη φόρμα δεδομένων"}.
 {"Incorrect value of 'path' in data form","Λανθασμένη τιμή 'path' στη φόρμα δεδομένων"}.
+{"Installed Modules:","Εγκατεστημένες ενότητες:"}.
+{"Install","Εγκατάσταση"}.
 {"Insufficient privilege","Ανεπαρκή προνόμια"}.
 {"Internal server error","Εσωτερικό σφάλμα"}.
 {"Invalid 'from' attribute in forwarded message","Μη έγκυρο χαρακτηριστικό 'από' στο προωθούμενο μήνυμα"}.
@@ -198,6 +212,8 @@
 {"January","Ιανουάριος"}.
 {"JID normalization denied by service policy","Απετράπη η κανονικοποίηση του JID, λόγω της τακτικής Παροχής Υπηρεσιών"}.
 {"JID normalization failed","Απετράπη η κανονικοποίηση του JID"}.
+{"Joined MIX channels of ~ts","Ενσωματωμένα κανάλια MIX του ~ts"}.
+{"Joined MIX channels:","Ενσωματωμένα κανάλια MIX:"}.
 {"joins the room","συνδέεται στην αίθουσα"}.
 {"July","Ιούλιος"}.
 {"June","Ιούνιος"}.
@@ -209,6 +225,9 @@
 {"Last year","Πέρυσι"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Τα ψηφία μικρότερης αξίας του αθροίσματος SHA-256 του κειμένου θα έπρεπε να ισούνται με την δεκαεξαδική ετικέτα"}.
 {"leaves the room","εγκαταλείπει την αίθουσα"}.
+{"List of users with hats","Λίστα των χρηστών με καπέλα"}.
+{"List users with hats","Λίστα χρηστών με καπέλα"}.
+{"Logged Out","Αποσυνδεδεμένος"}.
 {"Logging","Καταγραφή"}.
 {"Make participants list public","Κάντε δημόσιο τον κατάλογο συμμετεχόντων"}.
 {"Make room CAPTCHA protected","Κάντε την αίθουσα προστατεύομενη με CAPTCHA"}.
@@ -220,6 +239,7 @@
 {"Malformed username","Λανθασμένη μορφή ονόματος χρήστη"}.
 {"MAM preference modification denied by service policy","Άρνηση αλλαγής προτιμήσεων MAM, λόγω της τακτικής Παροχής Υπηρεσιών"}.
 {"March","Μάρτιος"}.
+{"Max # of items to persist, or `max` for no specific limit other than a server imposed maximum","Μέγιστος αριθμός στοιχείων που πρέπει να παραμείνουν, ή « Μέγιστο » για κανένα συγκεκριμένο όριο εκτός από το μέγιστο που επιβάλλει ο διακομιστής"}.
 {"Max payload size in bytes","Μέγιστο μέγεθος φορτίου σε bytes"}.
 {"Maximum file size","Μέγιστο μέγεθος αρχείου"}.
 {"Maximum Number of History Messages Returned by Room","Μέγιστος αριθμός μηνυμάτων Ιστορικού που επιστρέφονται από την Αίθουσα"}.
@@ -290,6 +310,7 @@
 {"Node ~p","Κόμβος ~p"}.
 {"Nodeprep has failed","Το Nodeprep απέτυχε"}.
 {"Nodes","Κόμβοι"}.
+{"Node","Κόμβος"}.
 {"None","Κανένα"}.
 {"Not allowed","Δεν επιτρέπεται"}.
 {"Not Found","Δε βρέθηκε"}.
@@ -303,7 +324,9 @@
 {"Number of Offline Messages","Πλήθος μηνυμάτων Χωρίς Σύνδεση"}.
 {"Number of online users","Αριθμός συνδεδεμένων χρηστών"}.
 {"Number of registered users","Αριθμός εγγεγραμμένων χρηστών"}.
+{"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Αριθμός δευτερολέπτων μετά από τα οποία θα καθαρίζονται αυτόματα τα στοιχεία, ή `max` για κανένα συγκεκριμένο όριο εκτός από το μέγιστο που επιβάλλει ο διακομιστής"}.
 {"Occupants are allowed to invite others","Οι συμμετέχοντες μπορούν να προσκαλέσουν και άλλους"}.
+{"Occupants are allowed to query others","Οι κάτοικοι επιτρέπεται να ρωτούν άλλους"}.
 {"Occupants May Change the Subject","Επιτρέψτε στους χρήστες να αλλάζουν το Θέμα"}.
 {"October","Οκτώβριος"}.
 {"OK","Εντάξει"}.
@@ -317,6 +340,7 @@
 {"Only members may query archives of this room","Μόνο μέλη μπορούν να δούνε τα αρχεία αυτής της αίθουσας"}.
 {"Only moderators and participants are allowed to change the subject in this room","Μόνο οι συντονιστές και οι συμμετέχοντες μπορούν να αλλάξουν το θέμα αυτής της αίθουσας"}.
 {"Only moderators are allowed to change the subject in this room","Μόνο οι συντονιστές μπορούν να αλλάξουν το θέμα αυτής της αίθουσας"}.
+{"Only moderators are allowed to retract messages","Μόνο οι συντονιστές επιτρέπεται να αποσύρουν μηνύματα"}.
 {"Only moderators can approve voice requests","Μόνο οι συντονιστές μπορούν να εγκρίνουν τις αιτήσεις φωνής"}.
 {"Only occupants are allowed to send messages to the conference","Μόνο οι συμμετέχοντες επιτρέπεται να στέλνουν μηνύματα στο συνέδριο"}.
 {"Only occupants are allowed to send queries to the conference","Μόνο οι συμμετέχοντες επιτρέπεται να στείλουν ερωτήματα στη διάσκεψη"}.
@@ -326,9 +350,11 @@
 {"Only those on a whitelist may subscribe and retrieve items","Μόνο όσοι βρίσκονται στη λίστα επιτρεπόμενων μπορούν να εγγραφούν και να ανακτήσουν αντικείμενα"}.
 {"Organization Name","Όνομα Οργανισμού"}.
 {"Organization Unit","Μονάδα Οργανισμού"}.
+{"Other Modules Available:","Διαθέσιμες άλλες ενότητες:"}.
 {"Outgoing s2s Connections","Εξερχόμενες S2S Συνδέσεις"}.
 {"Owner privileges required","Aπαιτούνται προνόμια ιδιοκτήτη"}.
 {"Packet relay is denied by service policy","Απαγορεύεται η αναμετάδοση πακέτων, λόγω της τακτικής Παροχής Υπηρεσιών"}.
+{"Participant ID","ID συμμετέχοντος"}.
 {"Participant","Συμμετέχων"}.
 {"Password Verification","Επαλήθευση κωδικού πρόσβασης"}.
 {"Password Verification:","Επαλήθευση κωδικού πρόσβασης:"}.
@@ -336,6 +362,7 @@
 {"Password:","Κωδικός πρόσβασης:"}.
 {"Path to Dir","Τοποθεσία κατάλογου αρχείων"}.
 {"Path to File","Τοποθεσία Αρχείου"}.
+{"Payload semantic type information","Πληροφορίες σημασιολογικού τύπου ωφέλιμου φορτίου"}.
 {"Period: ","Περίοδος: "}.
 {"Persist items to storage","Μόνιμη αποθήκευση στοιχείων"}.
 {"Persistent","Μόνιμη"}.
@@ -371,6 +398,7 @@
 {"Register an XMPP account","Καταχωρείστε έναν XMPP λογαριασμό χρήστη"}.
 {"Register","Καταχωρήστε"}.
 {"Remote copy","Εξ αποστάσεως αντίγραφο"}.
+{"Remove a hat from a user","Αφαίρεση ενός καπέλου από έναν χρήστη"}.
 {"Remove User","Αφαίρεση χρήστη"}.
 {"Replaced by new connection","Αντικαταστάθηκε από μια νέα σύνδεση"}.
 {"Request has timed out","Το αίτημα έληξε"}.
@@ -383,6 +411,7 @@
 {"Restore binary backup immediately:","Επαναφορά δυαδικού αντιγράφου ασφαλείας αμέσως:"}.
 {"Restore plain text backup immediately:","Επαναφορά αντιγράφου ασφαλείας από αρχείο κειμένου αμέσως:"}.
 {"Restore","Επαναφορά Αντιγράφου Ασφαλείας"}.
+{"Result","Αποτέλεσμα"}.
 {"Roles and Affiliations that May Retrieve Member List","Ρόλοι και δεσμοί που μπορούν να λάβουν την λίστα μελών"}.
 {"Roles for which Presence is Broadcasted","Ρόλοι των οποίων η παρουσία δηλώνεται δημόσια"}.
 {"Roles that May Send Private Messages","Ρόλοι που επιτρέπεται να αποστέλλουν ιδιωτικά μηνύματα"}.
@@ -414,13 +443,16 @@
 {"Set message of the day on all hosts and send to online users","Ορίστε μήνυμα ημέρας και άμεση αποστολή στους συνδεδεμένους χρήστες σε όλους τους κεντρικούς υπολογιστές"}.
 {"Shared Roster Groups","Κοινές Ομάδες Καταλόγων Επαφών"}.
 {"Show Integral Table","Δείτε Ολοκληρωτικό Πίνακα"}.
+{"Show Occupants Join/Leave","Εμφάνιση ενοίκων Join/Leave"}.
 {"Show Ordinary Table","Δείτε Κοινό Πίνακα"}.
 {"Shut Down Service","Τερματισμός Υπηρεσίας"}.
 {"SOCKS5 Bytestreams","Bytestreams του SOCKS5"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Ορισμένοι πελάτες XMPP μπορούν να αποθηκεύσουν τον κωδικό πρόσβασής σας στον υπολογιστή, αλλά θα πρέπει να το κάνετε μόνο στον προσωπικό σας υπολογιστή για λόγους ασφαλείας."}.
+{"Sources Specs:","Πηγές Προδιαγραφές:"}.
 {"Specify the access model","Καθορίστε το μοντέλο πρόσβασης"}.
 {"Specify the event message type","Καθορίστε τον τύπο μηνύματος συμβάντος"}.
 {"Specify the publisher model","Καθορίστε το μοντέλο εκδότη"}.
+{"Stanza id is not valid","Το Stanza id δεν είναι έγκυρο"}.
 {"Stanza ID","Ταυτότητα Δωματίου"}.
 {"Statically specify a replyto of the node owner(s)","Προσδιορίστε (στατικά) το Απάντηση Προς του ιδιοκτήτη-ων του κόμβου"}.
 {"Stopped Nodes","Σταματημένοι Κόμβοι"}.
@@ -457,7 +489,10 @@
 {"The JIDs of those to contact with questions","Το JID αυτών με τους οποίους θα επικοινωνήσετε με ερωτήσεις"}.
 {"The JIDs of those with an affiliation of owner","Το JID αυτών που σχετίζονται με τον ιδιοκτήτη"}.
 {"The JIDs of those with an affiliation of publisher","Το JID αυτών που σχετίζονται με τον εκδότη"}.
+{"The list of all online users","Ο κατάλογος όλων των online χρηστών"}.
+{"The list of all users","Ο κατάλογος όλων των χρηστών"}.
 {"The list of JIDs that may associate leaf nodes with a collection","Λίστα των JIDs που μπορούν να σχετίζουν leaf κόμβους με μια Συλλογή"}.
+{"The maximum number of child nodes that can be associated with a collection, or `max` for no specific limit other than a server imposed maximum","Ο μέγιστος αριθμός των παιδικών κόμβων που μπορούν να συσχετιστούν με μια συλλογή, ή `max` για κανένα συγκεκριμένο όριο εκτός από το μέγιστο που επιβάλλει ο διακομιστής"}.
 {"The minimum number of milliseconds between sending any two notification digests","Το ελάχιστο πλήθος χιλιοστών του δευτερολέπτου μεταξύ της αποστολής δύο συγχωνεύσεων ειδοποιήσεων"}.
 {"The name of the node","Το όνομα του κόμβου"}.
 {"The node is a collection node","Ο κόμβος είναι κόμβος Συλλογής"}.
@@ -476,6 +511,7 @@
 {"The query is only allowed from local users","Το ερώτημα επιτρέπεται μόνο από τοπικούς χρήστες"}.
 {"The query must not contain <item/> elements","Το ερώτημα δεν πρέπει να περιέχει στοιχείο <item/>"}.
 {"The room subject can be modified by participants","Το θέμα μπορεί να τροποποιηθεί από τους συμμετέχοντες"}.
+{"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","Οι πληροφορίες σημασιολογικού τύπου των δεδομένων στον κόμβο, που συνήθως καθορίζονται από το χώρο ονομάτων του ωφέλιμου φορτίου (εάν υπάρχει)"}.
 {"The sender of the last received message","Ο αποστολέας του τελευταίου εισερχομένου μηνύματος"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Η stanza ΠΡΕΠΕΙ να περιέχει μόνο ένα στοιχείο <active />, ένα στοιχείο <default /> ή ένα στοιχείο <list />"}.
 {"The subscription identifier associated with the subscription request","Το αναγνωριστικό συνδρομής συσχετίστηκε με το αίτημα συνδρομής"}.
@@ -505,6 +541,7 @@
 {"Too many unacked stanzas","Πάρα πολλές μη αναγνωρισμένες stanzas"}.
 {"Too many users in this conference","Πάρα πολλοί χρήστες σε αυτή τη διάσκεψη"}.
 {"Traffic rate limit is exceeded","Υπέρφορτωση"}.
+{"~ts's MAM Archive","Αρχείο MAM του ~ts"}.
 {"~ts's Offline Messages Queue","~ts's Χωρίς Σύνδεση Μηνύματα"}.
 {"Tuesday","Τρίτη"}.
 {"Unable to generate a CAPTCHA","Αδύνατη η δημιουργία CAPTCHA"}.
@@ -512,17 +549,23 @@
 {"Unauthorized","Χωρίς Εξουσιοδότηση"}.
 {"Unexpected action","Απροσδόκητη ενέργεια"}.
 {"Unexpected error condition: ~p","Απροσδόκητες συνθήκες σφάλματος: ~p"}.
+{"Uninstall","Απεγκατάσταση"}.
 {"Unregister an XMPP account","Καταργήση λογαριασμού XMPP"}.
 {"Unregister","Καταργήση εγγραφής"}.
 {"Unsupported <index/> element","Μη υποστηριζόμενο στοιχείο <index />"}.
 {"Unsupported version","Μη υποστηριζόμενη έκδοση"}.
 {"Update message of the day (don't send)","Ενημέρωση μηνύματος ημέρας (χωρίς άμεση αποστολή)"}.
 {"Update message of the day on all hosts (don't send)","Ενημέρωση μηνύματος ημέρας σε όλους τους κεντρικούς υπολογιστές (χωρίς άμεση αποστολή)"}.
+{"Update specs to get modules source, then install desired ones.","Ενημερώστε τις προδιαγραφές για να λάβετε την πηγή των ενοτήτων και, στη συνέχεια, εγκαταστήστε τις επιθυμητές."}.
+{"Update Specs","Προδιαγραφές ενημέρωσης"}.
+{"Updating the vCard is not supported by the vCard storage backend","Η ενημέρωση της vCard δεν υποστηρίζεται από το backend αποθήκευσης vCard"}.
+{"Upgrade","Αναβάθμιση"}.
 {"URL for Archived Discussion Logs","URL αρχειοθετημένων καταγραφών συζητήσεων"}.
 {"User already exists","Ο χρήστης υπάρχει ήδη"}.
 {"User JID","JID Χρήστη"}.
 {"User (jid)","Χρήστης (jid)"}.
 {"User Management","Διαχείριση χρηστών"}.
+{"User not allowed to perform an IQ set on another user's vCard.","Ο χρήστης δεν επιτρέπεται να εκτελέσει ένα σετ IQ στην vCard ενός άλλου χρήστη."}.
 {"User removed","Ο Χρήστης αφαιρέθηκε"}.
 {"User session not found","Η περίοδος σύνδεσης χρήστη δεν βρέθηκε"}.
 {"User session terminated","Η περίοδος σύνδεσης χρήστη τερματίστηκε"}.
@@ -538,12 +581,14 @@
 {"Value of '~s' should be integer","Η τιμή του '~s' θα πρέπει να είναι ακέραιος"}.
 {"Value 'set' of 'type' attribute is not allowed","Δεν επιτρέπεται η παράμετρος 'set' του 'type'"}.
 {"vCard User Search","vCard Αναζήτηση χρηστών"}.
+{"View joined MIX channels","Προβολή ενταγμένων καναλιών MIX"}.
 {"Virtual Hosts","Eικονικοί κεντρικοί υπολογιστές"}.
 {"Visitors are not allowed to change their nicknames in this room","Οι επισκέπτες δεν επιτρέπεται να αλλάξουν τα ψευδώνυμα τους σε αυτή την αίθουσα"}.
 {"Visitors are not allowed to send messages to all occupants","Οι επισκέπτες δεν επιτρέπεται να στείλουν μηνύματα σε όλους τους συμμετέχοντες"}.
 {"Visitor","Επισκέπτης"}.
 {"Voice requests are disabled in this conference","Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"}.
 {"Voice request","Αίτημα φωνής"}.
+{"Web client which allows to join the room anonymously","Web client που επιτρέπει την ανώνυμη είσοδο στην αίθουσα"}.
 {"Wednesday","Τετάρτη"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Όταν μία νέα συνδρομή βρίσκεται εν επεξεργασία και όποτε ένας συνδρομητής συνδεθεί"}.
 {"When a new subscription is processed","Όταν μία νέα συνδρομή βρίσκεται εν επεξεργασία"}.
@@ -556,6 +601,7 @@
 {"Whether to allow subscriptions","Εάν επιτρέπονται συνδρομές"}.
 {"Whether to make all subscriptions temporary, based on subscriber presence","Αν επιτρέπεται να γίνουν όλες οι συνδρομές προσωρινές, βασιζόμενοι στην παρουσία του συνδρομητή"}.
 {"Whether to notify owners about new subscribers and unsubscribes","Αν πρέπει να ειδοποιούνται οι ιδιοκτήτες για νέους συνδρομητές και αποχωρήσεις"}.
+{"Who can send private messages","Ποιος μπορεί να στείλει ιδιωτικά μηνύματα"}.
 {"Who may associate leaf nodes with a collection","Ποιός μπορεί να συσχετίζει leaf nodes με μία συλλογή"}.
 {"Wrong parameters in the web formulary","Εσφαλμένες παράμετροι στην διαμόρφωση τυπικότητας του δυκτίου"}.
 {"Wrong xmlns","Εσφαλμένο xmlns"}.
@@ -567,6 +613,7 @@
 {"XMPP Show Value of XA (Extended Away)","Δείξε τιμή XMPP Αξία του Λίαν Απομακρυσμένος"}.
 {"XMPP URI of Associated Publish-Subscribe Node","XMPP URI του συσχετισμένου κόμβου Δημοσίευσης-Εγγραφής"}.
 {"You are being removed from the room because of a system shutdown","Απαιτείται η απομάκρυνσή σας από την αίθουσα, λόγω τερματισμού συστήματος"}.
+{"You are not allowed to send private messages","Δεν επιτρέπεται η αποστολή ιδιωτικών μηνυμάτων"}.
 {"You are not joined to the channel","Δεν λαμβάνετε μέρος στο κανάλι"}.
 {"You can later change your password using an XMPP client.","Μπορείτε αργότερα να αλλάξετε τον κωδικό πρόσβασής σας χρησιμοποιώντας ένα πρόγραμμα-πελάτη XMPP."}.
 {"You have been banned from this room","Σας έχει απαγορευθεί η είσοδος σε αυτή την αίθουσα"}.
