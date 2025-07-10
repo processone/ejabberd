@@ -149,7 +149,7 @@ get_commands_spec() ->
                         tags = [modules],
                         desc = "Upgrade the running code of an installed module",
                         longdesc = "In practice, this uninstalls, cleans the compiled files, and installs the module",
-                        note = "improved in 25.xx",
+                        note = "improved in 25.07",
                         module = ?MODULE, function = upgrade,
                         args_desc = ["Module name"],
                         args_example = [<<"mod_rest">>],

@@ -182,7 +182,7 @@ mod_doc() ->
              "Traffic classified as spam is rejected with an error "
              "(and an '[info]' message is logged) unless the sender "
              "is subscribed to the recipient's presence."),
-      note => "added in 25.xx",
+      note => "added in 25.07",
       opts =>
           [{access_spam,
             #{value => ?T("Access"),

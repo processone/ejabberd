@@ -718,7 +718,7 @@ doc() ->
             ?T("Define aliases for existing vhosts managed by ejabberd. "
                "An alias may be a regexp expression. "
                "This option is only consulted by the 'ejabberd_http' listener."),
-        note => "added in 25.xx",
+        note => "added in 25.07",
         example =>
             ["hosts:",
              "  - domain.tld",
@@ -1213,18 +1213,22 @@ doc() ->
                "is 'closeold'.")}},
      {rest_proxy,
       #{value => "Host",
+        note => "added in 25.07",
         desc => ?T("Address of a HTTP Connect proxy used by modules issuing rest calls "
                    "(like ejabberd_oauth_rest)")}},
       {rest_proxy_port,
        #{value => "1..65535",
+        note => "added in 25.07",
          desc => ?T("Port of a HTTP Connect proxy used by modules issuing rest calls "
                     "(like ejabberd_oauth_rest)")}},
       {rest_proxy_username,
        #{value => "string()",
+        note => "added in 25.07",
          desc => ?T("Username used to authenticate to HTTP Connect proxy used by modules issuing rest calls "
                     "(like ejabberd_oauth_rest)")}},
       {rest_proxy_password,
        #{value => "string()",
+        note => "added in 25.07",
          desc => ?T("Password used to authenticate to HTTP Connect proxy used by modules issuing rest calls "
                     "(like ejabberd_oauth_rest)")}},
      {router_cache_life_time,

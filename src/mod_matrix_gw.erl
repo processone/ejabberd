@@ -993,7 +993,7 @@ mod_doc() ->
           [?T("https://matrix.org/[Matrix] gateway. "),
            ?T("Erlang/OTP 25 or higher is required to use this module."),
            ?T("This module is available since ejabberd 24.02.")],
-      note => "improved in 25.03",
+      note => "improved in 25.07",
       example =>
 	  ["listen:",
 	   "  -",

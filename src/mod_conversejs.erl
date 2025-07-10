@@ -327,9 +327,10 @@ mod_doc() ->
            ?T("Make sure either _`mod_bosh`_ or _`listen.md#ejabberd_http_ws|ejabberd_http_ws`_ "
               "are enabled in at least one 'request_handlers'."), "",
            ?T("When 'conversejs_css' and 'conversejs_script' are 'auto', "
-              "by default they point to the public Converse client.")
+              "by default they point to the public Converse client."), "",
+           ?T("This module is available since ejabberd 21.12.")
           ],
-      note => "added in 21.12 and improved in 22.05",
+      note => "improved in 25.07",
       example =>
           [{?T("Manually setup WebSocket url, and use the public Converse client:"),
             ["listen:",
