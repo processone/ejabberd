@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 04/16/2025
+.\"      Date: 07/11/2025
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "04/16/2025" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "07/11/2025" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/25\&.04/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/25\&.07/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 25\&.04\&. The options that changed in this version are marked with 🟤\&.
+This section describes top level options of ejabberd 25\&.07\&. The options that changed in this version are marked with 🟤\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLName|ACLDefinition}}\fR
 .RS 4
@@ -460,6 +460,12 @@ option\&.
 .RE
 .sp
 The default value is \fIplain\fR\&.
+.PP
+\fBauth_password_types_hidden_in_scram1 🟤\fR: \fI[plain | scram_sha1 | scram_sha256 | scram_sha512]\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.07\&. List of password types that should not be offered in SCRAM1 authenticatication\&. Because SCRAM1, unlike SCRAM2, can\(cqt have list of available mechanisms tailored to individual user, it\(cqs possible that offered mechanisms will not be compatible with stored password, especially if new password type was added recently\&. This option allows disabling offering some mechanisms in SASL1, to a time until new password type will be available for all users\&.
+.RE
 .PP
 \fBauth_scram_hash\fR: \fIsha | sha256 | sha512\fR
 .RS 4
@@ -951,6 +957,34 @@ List of one or more
 option\&.
 .RE
 .PP
+\fBhosts_alias 🟤\fR: \fI{Alias: Host}\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.07\&. Define aliases for existing vhosts managed by ejabberd\&. An alias may be a regexp expression\&. This option is only consulted by the
+\fIejabberd_http\fR
+listener\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+hosts:
+  \- domain\&.tld
+  \- example\&.org
+
+hosts_alias:
+  xmpp\&.domain\&.tld: domain\&.tld
+  jabber\&.domain\&.tld: domain\&.tld
+  mytest\&.net: example\&.org
+  "exa*": example\&.org
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 \fBinclude_config_file\fR: \fI[Filename, \&.\&.\&.] | {Filename: Options}\fR
 .RS 4
 Read and
@@ -1246,7 +1280,7 @@ This option can be used to tune tick time parameter of
 .RS 4
 Whether to use the
 \fIdatabase\&.md#default\-and\-new\-schemas|new SQL schema\fR\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/25\&.04/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/25\&.07/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema can handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1511,6 +1545,30 @@ NOTE: this option is deprecated and may be removed anytime in the future version
 XMPP Core: section 7\&.7\&.2\&.2\&. The default value is
 \fIcloseold\fR\&. If the client uses old Jabber Non\-SASL authentication (XEP\-0078), then this option is not respected, and the action performed is
 \fIcloseold\fR\&.
+.RE
+.PP
+\fBrest_proxy 🟤\fR: \fIHost\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.07\&. Address of a HTTP Connect proxy used by modules issuing rest calls (like ejabberd_oauth_rest)
+.RE
+.PP
+\fBrest_proxy_password 🟤\fR: \fIstring()\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.07\&. Password used to authenticate to HTTP Connect proxy used by modules issuing rest calls (like ejabberd_oauth_rest)
+.RE
+.PP
+\fBrest_proxy_port 🟤\fR: \fI1\&.\&.65535\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.07\&. Port of a HTTP Connect proxy used by modules issuing rest calls (like ejabberd_oauth_rest)
+.RE
+.PP
+\fBrest_proxy_username 🟤\fR: \fIstring()\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.07\&. Username used to authenticate to HTTP Connect proxy used by modules issuing rest calls (like ejabberd_oauth_rest)
 .RE
 .PP
 \fBrouter_cache_life_time\fR: \fItimeout()\fR
@@ -2043,8 +2101,12 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 25\&.04\&. The modules that changed in this version are marked with 🟤\&.
+This section describes modules options of ejabberd 25\&.07\&. The modules that changed in this version are marked with 🟤\&.
 .SS "mod_adhoc"
+.sp
+def:ad\-hoc command
+.sp
+: Command that can be executed by an XMPP client using XEP\-0050\&.
 .sp
 This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary module and is only needed by some of the other modules\&.
 .sp
@@ -2066,7 +2128,7 @@ Provide the Commands item in the Service Discovery\&. Default value:
 .sp
 \fINote\fR about this option: added in 25\&.03\&.
 .sp
-Execute API Commands in a XMPP client using XEP\-0050: Ad\-Hoc Commands\&. This module requires \fImod_adhoc\fR (to execute the commands), and recommends \fImod_disco\fR (to discover the commands)\&.
+Execute (def:API commands) in a XMPP client using XEP\-0050: Ad\-Hoc Commands\&. This module requires \fImod_adhoc\fR (to execute the commands), and recommends \fImod_disco\fR (to discover the commands)\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -2078,7 +2140,7 @@ Execute API Commands in a XMPP client using XEP\-0050: Ad\-Hoc Commands\&. This 
 .PP
 \fBdefault_version\fR: \fIinteger() | string()\fR
 .RS 4
-What API version to use\&. If setting an ejabberd version, it will use the latest API version that was available in that ejabberd version\&. For example, setting
+What API version to use\&. If setting an ejabberd version, it will use the latest API version that was available in that (def:c2s) ejabberd version\&. For example, setting
 \fI"24\&.06"\fR
 in this option implies
 \fI2\fR\&. The default value is the latest version\&.
@@ -2392,6 +2454,134 @@ Same as top\-level
 \fIuse_cache\fR
 option, but applied to this module only\&.
 .RE
+.RE
+.SS "mod_antispam 🟤"
+.sp
+\fINote\fR about this option: added in 25\&.07\&.
+.sp
+Filter spam messages and subscription requests received from remote servers based on Real\-Time Block Lists (RTBL), lists of known spammer JIDs and/or URLs mentioned in spam messages\&. Traffic classified as spam is rejected with an error (and an \fI[info]\fR message is logged) unless the sender is subscribed to the recipient\(cqs presence\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBaccess_spam\fR: \fIAccess\fR
+.RS 4
+Access rule that controls what accounts may receive spam messages\&. If the rule returns
+\fIallow\fR
+for a given recipient, spam messages aren\(cqt rejected for that recipient\&. The default value is
+\fInone\fR, which means that all recipients are subject to spam filtering verification\&.
+.RE
+.PP
+\fBcache_size\fR: \fIpos_integer()\fR
+.RS 4
+Maximum number of JIDs that will be cached due to sending spam URLs\&. If that limit is exceeded, the least recently used entries are removed from the cache\&. Setting this option to
+\fI0\fR
+disables the caching feature\&. Note that separate caches are used for each virtual host, and that the caches aren\(cqt distributed across cluster nodes\&. The default value is
+\fI10000\fR\&.
+.RE
+.PP
+\fBrtbl_services\fR: \fI[Service]\fR
+.RS 4
+Query a RTBL service to get domains to block, as provided by
+xmppbl\&.org\&. Please note right now this option only supports one service in that list\&. For blocking spam and abuse on MUC channels, please use
+\fImod_muc_rtbl\fR
+for now\&. If only the host is provided, the default node names will be assumed\&. If the node name is different than
+\fIspam_source_domains\fR, you can setup the custom node name with the option
+\fIspam_source_domains_node\fR\&. The default value is an empty list of services\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+rtbl_services:
+  \- pubsub\&.server1\&.localhost:
+      spam_source_domains_node: actual_custom_pubsub_node
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBspam_domains_file\fR: \fInone | Path\fR
+.RS 4
+Path to a plain text file containing a list of known spam domains, one domain per line\&. Messages and subscription requests sent from one of the listed domains are classified as spam if sender is not in recipient\(cqs roster\&. This list of domains gets merged with the one retrieved by an RTBL host if any given\&. Use an absolute path, or the
+\fI@CONFIG_PATH@\fR
+predefined keyword
+if the file is available in the configuration directory\&. The default value is
+\fInone\fR\&.
+.RE
+.PP
+\fBspam_dump_file\fR: \fIfalse | true | Path\fR
+.RS 4
+Path to the file to store blocked messages\&. Use an absolute path, or the
+\fI@LOG_PATH@\fR
+predefined keyword
+to store logs in the same place that the other ejabberd log files\&. If set to
+\fIfalse\fR, it doesn\(cqt dump stanzas, which is the default\&. If set to
+\fItrue\fR, it stores in
+\fI"@LOG_PATH@/spam_dump_@HOST@\&.log"\fR\&.
+.RE
+.PP
+\fBspam_jids_file\fR: \fInone | Path\fR
+.RS 4
+Path to a plain text file containing a list of known spammer JIDs, one JID per line\&. Messages and subscription requests sent from one of the listed JIDs are classified as spam\&. Messages containing at least one of the listed JIDsare classified as spam as well\&. Furthermore, the sender\(cqs JID will be cached, so that future traffic originating from that JID will also be classified as spam\&. Use an absolute path, or the
+\fI@CONFIG_PATH@\fR
+predefined keyword
+if the file is available in the configuration directory\&. The default value is
+\fInone\fR\&.
+.RE
+.PP
+\fBspam_urls_file\fR: \fInone | Path\fR
+.RS 4
+Path to a plain text file containing a list of URLs known to be mentioned in spam message bodies\&. Messages containing at least one of the listed URLs are classified as spam\&. Furthermore, the sender\(cqs JID will be cached, so that future traffic originating from that JID will be classified as spam as well\&. Use an absolute path, or the
+\fI@CONFIG_PATH@\fR
+predefined keyword
+if the file is available in the configuration directory\&. The default value is
+\fInone\fR\&.
+.RE
+.PP
+\fBwhitelist_domains_file\fR: \fInone | Path\fR
+.RS 4
+Path to a file containing a list of domains to whitelist from being blocked, one per line\&. If either it is in
+\fIspam_domains_file\fR
+or more realistically in a domain sent by a RTBL host (see option
+\fIrtbl_services\fR) then this domain will be ignored and stanzas from there won\(cqt be blocked\&. Use an absolute path, or the
+\fI@CONFIG_PATH@\fR
+predefined keyword
+if the file is available in the configuration directory\&. The default value is
+\fInone\fR\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_antispam:
+    rtbl_services:
+      \- xmppbl\&.org
+    spam_jids_file: "@CONFIG_PATH@/spam_jids\&.txt"
+    spam_dump_file: "@LOG_PATH@/spam/host\-@HOST@\&.log"
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .SS "mod_auth_fast"
 .sp
@@ -2844,9 +3034,9 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_conversejs"
+.SS "mod_conversejs 🟤"
 .sp
-\fINote\fR about this option: added in 21\&.12 and improved in 22\&.05\&.
+\fINote\fR about this option: improved in 25\&.07\&.
 .sp
 This module serves a simple page for the Converse XMPP web browser client\&.
 .sp
@@ -2855,6 +3045,8 @@ To use this module, in addition to adding it to the \fImodules\fR section, you m
 Make sure either \fImod_bosh\fR or \fIlisten\&.md#ejabberd_http_ws|ejabberd_http_ws\fR are enabled in at least one \fIrequest_handlers\fR\&.
 .sp
 When \fIconversejs_css\fR and \fIconversejs_script\fR are \fIauto\fR, by default they point to the public Converse client\&.
+.sp
+This module is available since ejabberd 21\&.12\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -3956,9 +4148,9 @@ When this option is disabled, for each individual subscriber a separate mucsub m
 \fIfalse\fR\&.
 .RE
 .RE
-.SS "mod_matrix_gw"
+.SS "mod_matrix_gw 🟤"
 .sp
-\fINote\fR about this option: improved in 25\&.03\&.
+\fINote\fR about this option: improved in 25\&.07\&.
 .sp
 Matrix gateway\&. Erlang/OTP 25 or higher is required to use this module\&. This module is available since ejabberd 24\&.02\&.
 .sp
@@ -6427,6 +6619,59 @@ modules:
 .RE
 .\}
 .RE
+.SS "mod_pubsub_serverinfo 🟤"
+.sp
+\fINote\fR about this option: added in 25\&.07\&.
+.sp
+This module adds support for XEP\-0485: PubSub Server Information to expose S2S information over the Pub/Sub service\&.
+.sp
+Active S2S connections are published to a local PubSub node\&. Currently the node name is hardcoded as \fI"serverinfo"\fR\&.
+.sp
+Connections that support this feature are exposed with their domain names, otherwise they are shown as anonymous nodes\&. At startup a list of well known public servers is fetched\&. Those are not shown as anonymous even if they don\(cqt support this feature\&.
+.sp
+Please note that the module only shows S2S connections established while the module is running\&. If you install the module at runtime, run \fIstop_s2s_connections\fR API or restart ejabberd to force S2S reconnections that the module will detect and publish\&.
+.sp
+This module depends on \fImod_pubsub\fR and \fImod_disco\fR\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBpubsub_host\fR: \fIundefined | string()\fR
+.RS 4
+Use this local PubSub host to advertise S2S connections\&. This must be a host local to this service handled by
+\fImod_pubsub\fR\&. This option is only needed if your configuration has more than one host in mod_pubsub\(cqs
+\fIhosts\fR
+option\&. The default value is the first host defined in mod_pubsub
+\fIhosts\fR
+option\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_pubsub_serverinfo:
+    pubsub_host: custom\&.pubsub\&.domain\&.local
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SS "mod_push"
 .sp
 This module implements the XMPP server\(cqs part of the push notification solution specified in XEP\-0357: Push Notifications\&. It does not generate, for example, APNS or FCM notifications directly\&. Instead, it\(cqs designed to work with so\-called "app servers" operated by third\-party vendors of mobile apps\&. Those app servers will usually trigger notification delivery to the user\(cqs mobile device using platform\-dependent backend services such as FCM or APNS\&.
@@ -8372,7 +8617,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 25\&.04\&.
+This section describes listeners options of ejabberd 25\&.07\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -8380,13 +8625,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 25\&.04\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 25\&.07\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/25\&.04/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/25\&.07/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
