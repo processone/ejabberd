@@ -226,6 +226,9 @@ mod_doc() ->
                      "are classified as spam if sender is not in recipient's roster. "
                      "This list of domains gets merged with the one retrieved "
                      "by an RTBL host if any given. "
+                     "Use an absolute path, or the '@CONFIG_PATH@' "
+                     "https://docs.ejabberd.im/admin/configuration/file-format/#predefined-keywords[predefined keyword] "
+                     "if the file is available in the configuration directory. "
                      "The default value is 'none'.")}},
            {spam_dump_file,
             #{value => ?T("false | true | Path"),
@@ -248,6 +251,9 @@ mod_doc() ->
                      "are classified as spam as well. "
                      "Furthermore, the sender's JID will be cached, "
                      "so that future traffic originating from that JID will also be classified as spam. "
+                     "Use an absolute path, or the '@CONFIG_PATH@' "
+                     "https://docs.ejabberd.im/admin/configuration/file-format/#predefined-keywords[predefined keyword] "
+                     "if the file is available in the configuration directory. "
                      "The default value is 'none'.")}},
            {spam_urls_file,
             #{value => ?T("none | Path"),
@@ -257,6 +263,9 @@ mod_doc() ->
                      "Messages containing at least one of the listed URLs are classified as spam. "
                      "Furthermore, the sender's JID will be cached, "
                      "so that future traffic originating from that JID will be classified as spam as well. "
+                     "Use an absolute path, or the '@CONFIG_PATH@' "
+                     "https://docs.ejabberd.im/admin/configuration/file-format/#predefined-keywords[predefined keyword] "
+                     "if the file is available in the configuration directory. "
                      "The default value is 'none'.")}},
            {whitelist_domains_file,
             #{value => ?T("none | Path"),
@@ -266,6 +275,9 @@ mod_doc() ->
                      "If either it is in 'spam_domains_file' or more realistically "
                      "in a domain sent by a RTBL host (see option 'rtbl_services') "
                      "then this domain will be ignored and stanzas from there won't be blocked. "
+                     "Use an absolute path, or the '@CONFIG_PATH@' "
+                     "https://docs.ejabberd.im/admin/configuration/file-format/#predefined-keywords[predefined keyword] "
+                     "if the file is available in the configuration directory. "
                      "The default value is 'none'.")}}],
       example =>
           ["modules:",
