@@ -1,3 +1,74 @@
+## Version 25.07
+
+#### Security fix
+
+- `ext_mod`: Add temporary workaround for zip including absolute path
+
+#### Compilation
+
+- Raise the minimum Elixir tested version to 1.14.0 ([#4281](https://github.com/processone/ejabberd/issues/4281))
+- Raise Erlang/OTP minimum requirement to 25.0 ([#4281](https://github.com/processone/ejabberd/issues/4281))
+- `configure.ac`: Allow to specify minimal erlang version using `--with-min-erlang`
+- `Makefile.in`: Add target `test-<group>`
+- `rebar3-format.sh`: Replace csplit with perl
+- Container: Bump Erlang/OTP 27.3.4.1, Elixir 1.18.4
+- Installers: Bump Erlang/OTP 27.3.4.1, Elixir 1.18.4, libexpat 2.7.1, OpenSSL 3.5.1
+
+#### Configuration and Tests
+
+- Add `rest_proxy*` options to configure proxy used by rest module
+- `ejabberd_c2s`: Add `auth_password_types_hidden_in_scram1` option
+- `ejabberd_http`: Remove unused `default_host` option and state element
+- `ejabberd_http`: New option `hosts_alias` and function `resolve_host_alias/1` ([#4400](https://github.com/processone/ejabberd/issues/4400))
+- New predefined keywords: `CONFIG_PATH` and `LOG_PATH`
+- Fix macro used in string options when defined in env var
+- Use auxiliary function to get `$HOME`, use Mnesia directory when not set ([#4402](https://github.com/processone/ejabberd/issues/4402))
+- `ejabberd_config`: Better `lists:uniq` substitute
+- Tests: update readme and compose to work with current sw versions
+- Update Elvis to 4.1.1, fix some warnings and enable their tests
+
+#### Erlang/OTP 28 support
+
+- Add workaround in `p1_acme` for Jose 1.11.10 not supporting OTP 28 `ecPrivkeyVer1` ([#4393](https://github.com/processone/ejabberd/issues/4393))
+- Bump `fast_xml` and `xmpp` for improved Erlang/OTP 28 support
+- Bump `xmpp` and `p1_acme` patched with Erlang/OTP 28 support
+- Fix `make options` in Erlang/OTP 28 ([#4352](https://github.com/processone/ejabberd/issues/4352))
+- Fix crash in `rebar3 cover` with Erlang/OTP 28 ([#4353](https://github.com/processone/ejabberd/issues/4353))
+- Rebar/Rebar3: Update binaries to work with Erlang/OTP 25-28 ([#4354](https://github.com/processone/ejabberd/issues/4354))
+- CI and Runtime: Add Erlang/OTP 28 to the versions matrix
+
+#### SQL
+
+- Fix mnesia to sql exporter after changes to auth tables
+- Update code for switching to new schema type to users table changes
+- Add mssql specific implementation of `delete_old_mam_messages`
+- Make `delete_old_mam_messages_batch` work with sqlite
+- `ejabberd_sm_sql`: Use misc:encode_pid/1
+- `mysql.sql`: Fix typo in commit 7862c6a when creating users table
+- `pg.sql`: Fix missing comma in postgres schema ([#4409](https://github.com/processone/ejabberd/issues/4409))
+
+#### Core and Modules
+
+- `ejabberd_s2s_in`: Allow S2S connections to accept client certificates that have only server purpose ([#4392](https://github.com/processone/ejabberd/issues/4392))
+- `ext_mod`: Recommend to write README.md instead txt (processone/ejabberd-contrib#363)
+- `ext_mod`: Support library path installed from Debian (processone/ejabberd-contrib#363)
+- `ext_mod`: When upgrading module, clean also the compiled directories
+- `gen_mod`: Add support to prepare module stopping before actually stopping any module
+- `mod_antispam`: Imported from ejabberd-contrib and improved ([#4373](https://github.com/processone/ejabberd/issues/4373))
+- `mod_auth_fast`: Clear tokens on kick, change pass and unregister ([#4397](https://github.com/processone/ejabberd/issues/4397))([#4398](https://github.com/processone/ejabberd/issues/4398))([#4399](https://github.com/processone/ejabberd/issues/4399))
+- `mod_conversejs`: Add link in WebAdmin to local Converse if configured
+- `mod_mam`: Present mam full text search in xep-431 compatible way
+- `mod_mam_mnesia`: Handle objects that don't need conversion in `transform/0`
+- `mod_matrix_gw`: Don't send empty messages in Matrix rooms ([#4385](https://github.com/processone/ejabberd/issues/4385))
+- `mod_matrix_gw`: Support older Matrix rooms versions starting from version 4
+- `mod_matrix_gw`: When encoding JSON, handle term that is key-value list ([#4379](https://github.com/processone/ejabberd/issues/4379))
+- `mod_matrix_gw_s2s`: Fix key validation in `check_signature`
+- `mod_mix` and `mod_muc_rtbl`: Support list of IDs in `pubsub-items-retract` (processone/xmpp#100)
+- `mod_pubsub_serverinfo`: Imported module from ejabberd-contrib ([#4408](https://github.com/processone/ejabberd/issues/4408))
+- `mod_register`: Normalize username when determining if user want to change pass
+- `mod_register`: Strip query data when returning errors
+- WebAdmin: New hooks `webadmin_menu_system` to add items to system menu
+
 ## Version 25.04
 
 #### Security fixes
