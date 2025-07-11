@@ -398,7 +398,7 @@ gen_doc(#ejabberd_commands{name=Name, tags=Tags, desc=Desc, longdesc=LongDesc,
         TagsText = ?RAW(string:join(["_`"++atom_to_list(Tag)++"`_" || Tag <- Tags], ", ")),
         IsDefinerMod = case Definer of
                          unknown -> false;
-                         _ -> lists:member(gen_mod, proplists:get_value(behaviour, Definer:module_info(attributes)))
+                         _ -> lists:member(gen_mod, lists:flatten(proplists:get_all_values(behaviour, Definer:module_info(attributes))))
                      end,
         ModuleText = case IsDefinerMod of
                        true ->
