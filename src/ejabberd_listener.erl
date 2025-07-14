@@ -341,7 +341,7 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 				       gen_tcp:close(Socket),
 				       none
 			       end,
-		    ?INFO_MSG("(~p) Accepted proxied connection ~ts -> ~ts",
+		    ?DEBUG("(~p) Accepted proxied connection ~ts -> ~ts",
 			      [Receiver,
 			       ejabberd_config:may_hide_data(
 				 format_endpoint({PPort, PAddr, tcp})),
