@@ -146,6 +146,9 @@ json_encode({[{_Key, _Value} | _]} = Term) ->
 			(Val, Encoder) ->
 			 json:encode_value(Val, Encoder)
 		     end));
+json_encode({[]}) ->
+    %% Jiffy was able to handle this case, but Json library does not
+    <<"{}">>;
 json_encode(Term) ->
     iolist_to_binary(json:encode(Term)).
 json_decode(Bin) ->
