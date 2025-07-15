@@ -237,6 +237,7 @@ check_password(User, AuthzId, Server, Password, Digest, DigestGen) ->
     case check_password_with_authmodule(
 	   User, AuthzId, Server, Password, Digest, DigestGen) of
 	{true, _AuthModule} -> true;
+	{false, _ErrorAtom, _Reason} -> false;
 	false -> false
     end.
 
