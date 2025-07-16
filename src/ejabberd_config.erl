@@ -631,22 +631,7 @@ callback_modules(external) ->
 	      end
       end, beams(external));
 callback_modules(all) ->
-    lists_uniq(callback_modules(local) ++ callback_modules(external)).
-
--ifdef(OTP_BELOW_25).
-lists_uniq(List) ->
-    {Res, _} = lists:foldr(
-	fun(El, {Result, Existing} = Acc) ->
-	    case maps:is_key(El, Existing) of
-		true -> Acc;
-		_ -> {[El | Result], Existing#{El => true}}
-	    end
-	end, {[], #{}}, List),
-    Res.
--else.
-lists_uniq(List) ->
-    lists:uniq(List).
--endif.
+    misc:lists_uniq(callback_modules(local) ++ callback_modules(external)).
 
 -spec validators(module(), [atom()], [any()]) -> econf:validators().
 validators(Mod, Disallowed, DK) ->

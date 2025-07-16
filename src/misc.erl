@@ -46,7 +46,8 @@
          json_encode/1, json_decode/1,
 	 set_proc_label/1,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
-	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1]).
+	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1,
+         lists_uniq/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -818,4 +819,22 @@ set_proc_label(_Label) ->
 -else.
 set_proc_label(Label) ->
     proc_lib:set_label(Label).
+-endif.
+
+-ifdef(OTP_BELOW_25).
+-spec lists_uniq([term()]) -> [term()].
+lists_uniq(List) ->
+    lists_uniq_int(List, #{}).
+
+lists_uniq_int([El | Rest], Existing) ->
+    case maps:is_key(El, Existing) of
+        true -> lists_uniq_int(Rest, Existing);
+        _ -> [El | lists_uniq_int(Rest, Existing#{El => true})]
+    end;
+lists_uniq_int([], _) ->
+    [].
+-else.
+-spec lists_uniq([term()]) -> [term()].
+lists_uniq(List) ->
+    lists:uniq(List).
 -endif.
