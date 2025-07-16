@@ -1158,6 +1158,7 @@ ban_account(User, Host, ReasonText) ->
     ok.
 
 kick_sessions(User, Server, Reason) ->
+    ejabberd_hooks:run(sm_kick_user, Server, [User, Server]),
     lists:map(
       fun(Resource) ->
 	      kick_this_session(User, Server, Resource, Reason)
