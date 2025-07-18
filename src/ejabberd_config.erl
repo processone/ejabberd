@@ -264,30 +264,31 @@ version() ->
 
 -spec default_db(binary() | global, module()) -> atom().
 default_db(Host, Module) ->
-    default_db(default_db, Host, Module, mnesia).
+    default_db(default_db, db_type, Host, Module, mnesia).
 
 -spec default_db(binary() | global, module(), atom()) -> atom().
 default_db(Host, Module, Default) ->
-    default_db(default_db, Host, Module, Default).
+    default_db(default_db, db_type, Host, Module, Default).
 
 -spec default_ram_db(binary() | global, module()) -> atom().
 default_ram_db(Host, Module) ->
-    default_db(default_ram_db, Host, Module, mnesia).
+    default_db(default_ram_db, ram_db_type, Host, Module, mnesia).
 
 -spec default_ram_db(binary() | global, module(), atom()) -> atom().
 default_ram_db(Host, Module, Default) ->
-    default_db(default_ram_db, Host, Module, Default).
+    default_db(default_ram_db, ram_db_type, Host, Module, Default).
 
--spec default_db(default_db | default_ram_db, binary() | global, module(), atom()) -> atom().
-default_db(Opt, Host, Mod, Default) ->
+-spec default_db(default_db | default_ram_db, db_type | ram_db_type, binary() | global, module(), atom()) -> atom().
+default_db(Opt, ModOpt, Host, Mod, Default) ->
     Type = get_option({Opt, Host}),
     DBMod = list_to_atom(atom_to_list(Mod) ++ "_" ++ atom_to_list(Type)),
     case code:ensure_loaded(DBMod) of
 	{module, _} -> Type;
 	{error, _} ->
 	    ?WARNING_MSG("Module ~ts doesn't support database '~ts' "
-			 "defined in option '~ts', using "
-			 "'~ts' as fallback", [Mod, Type, Opt, Default]),
+			 "defined in toplevel option '~ts': will use the value "
+                         "set in ~ts option '~ts', or '~ts' as fallback",
+                         [Mod, Type, Opt, Mod, ModOpt, Default]),
 	    Default
     end.
 
