@@ -109,14 +109,20 @@ doc() ->
         desc =>
             ?T("_`database.md#default-database|Default database`_ "
                "to store persistent data in ejabberd. "
-               "Modules and other components (e.g. authentication) "
-               "may have its own value. The default value is 'mnesia'.")}},
+               "Some components can be configured with specific toplevel options "
+               "like _`oauth_db_type`_. "
+               "Many modules can be configured with specific module options, "
+               "usually named `db_type`. "
+               "The default value is 'mnesia'.")}},
      {default_ram_db,
       #{value => "mnesia | redis | sql",
         desc =>
             ?T("Default volatile (in-memory) storage for ejabberd. "
-               "Modules and other components (e.g. session management) "
-               "may have its own value. The default value is 'mnesia'.")}},
+               "Some components can be configured with specific toplevel options "
+               "like _`router_db_type`_ and _`sm_db_type`_. "
+               "Some modules can be configured with specific module options, "
+               "usually named `ram_db_type`. "
+               "The default value is 'mnesia'.")}},
      {queue_type,
       #{value => "ram | file",
         desc =>
