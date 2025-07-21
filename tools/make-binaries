@@ -629,8 +629,8 @@ build_deps()
 	info "Building Linux-PAM $pam_vsn for $arch ..."
 	cd "$target_src_dir/$pam_dir"
 	$configure --prefix="$prefix" --includedir="$prefix/include/security" \
-	    --enable-static --disable-shared --disable-doc --disable-examples \
-	    --enable-db=no \
+	    --enable-static --disable-shared --disable-logind --disable-doc \
+	    --disable-examples --enable-db=no \
 	    CFLAGS="$CFLAGS -O3 -fPIC -Wno-error=implicit-function-declaration"
 	make
 	make install
