@@ -319,8 +319,10 @@ mod_doc() ->
               desc =>
                   ?T("This option specifies the initial part of the PUT URLs "
                      "used for file uploads. The keyword '@HOST@' is replaced "
-                     "with the virtual host name. NOTE: different virtual "
-                     "hosts cannot use the same PUT URL. "
+                     "with the virtual host name. "
+                     "And '@HOST_URL_ENCODE@' is replaced with the host name encoded for URL, "
+                     "useful when your virtual hosts contain non-latin characters. "
+                     "NOTE: different virtual hosts cannot use the same PUT URL. "
                      "The default value is '\"https://@HOST@:5443/upload\"'.")}},
            {get_url,
             #{value => ?T("URL"),

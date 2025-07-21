@@ -508,7 +508,7 @@ get_predefined_keywords(Host) ->
             global ->
                 [];
             _ ->
-                [{<<"HOST">>, Host}]
+                [{<<"HOST">>, Host}, {<<"HOST_URL_ENCODE">>, misc:url_encode(Host)}]
         end,
     Home = misc:get_home(),
     ConfigDirPath =
