@@ -3221,6 +3221,7 @@ process_item_change(Item, SD, UJID) ->
                             true ->
                                 send_kickban_presence(UJID, JID, Reason, 321, none, SD),
                                 maybe_send_affiliation(JID, none, SD),
+                                unsubscribe_from_room(JID, SD),
                                 SD1 = set_affiliation(JID, none, SD),
                                 set_role(JID, none, SD1);
                             _ ->
@@ -3237,6 +3238,7 @@ process_item_change(Item, SD, UJID) ->
 	    {JID, affiliation, outcast, Reason} ->
 		send_kickban_presence(UJID, JID, Reason, 301, outcast, SD),
 		maybe_send_affiliation(JID, outcast, SD),
+		unsubscribe_from_room(JID, SD),
                 {result, undefined, SD2} =
                     process_iq_mucsub(JID,
                                       #iq{type = set,
@@ -3278,6 +3280,26 @@ process_item_change(Item, SD, UJID) ->
 			misc:format_exception(2, E, R, StackTrace)]),
 	    {error, xmpp:err_internal_server_error()}
     end.
+
+-spec unsubscribe_from_room(jid(), state()) -> ok | error.
+unsubscribe_from_room(JID, SD) ->
+  case (SD#state.config)#config.members_only of
+    false ->
+      ok;
+    true ->
+      case mod_muc:unhibernate_room(SD#state.server_host, SD#state.host, SD#state.room) of
+        error -> error;
+        {ok, Pid} ->
+          _UnsubPid = spawn(fun() ->
+            case unsubscribe(Pid, JID) of
+              ok -> ok;
+              {error, Reason} ->
+                ?WARNING_MSG("Failed to automatically unsubscribe expelled member from room: ~ts", [Reason]),
+                error
+            end
+          end)
+      end
+  end.
 
 -spec find_changed_items(jid(), affiliation(), role(),
 			 [muc_item()], binary(), state(), [admin_action()]) ->
