@@ -119,7 +119,6 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 			     ExtraOpts2]),
           set_definitive_udsocket(Port, Opts)} of
 	{{ok, Socket}, ok} ->
-            set_definitive_udsocket(Port, Opts),
             misc:set_proc_label({?MODULE, udp, Port}),
 	    case inet:sockname(Socket) of
 		{ok, {Addr, Port1}} ->
@@ -144,10 +143,10 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 		    report_socket_error(Reason, EndPoint, Module),
 		    proc_lib:init_ack(Err)
 	    end;
-	{{error, Reason}, _} = Err ->
+	{{error, Reason} = Err, _} ->
 	    report_socket_error(Reason, EndPoint, Module),
 	    proc_lib:init_ack(Err);
-	{_, {error, Reason}} = Err ->
+	{_, {error, Reason} = Err} ->
 	    report_socket_error(Reason, EndPoint, Module),
 	    proc_lib:init_ack(Err)
     end;
@@ -240,7 +239,7 @@ get_definitive_udsocket_path(ProvisionalPath) ->
     {term, Path} = misc:base64_to_term(PathBase64),
     relative_socket_to_mnesia(Path).
 
--spec set_definitive_udsocket(binary(), opts()) -> ok | {error, file:posix() | badarg}.
+-spec set_definitive_udsocket(integer() | binary(), opts()) -> ok | {error, file:posix() | badarg}.
 
 set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
     Prov = get_provisional_udsocket_path(Path),
@@ -280,7 +279,7 @@ set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
             ok
     end,
     file:rename(Prov, FinalPath);
-set_definitive_udsocket(_Port, _Opts) ->
+set_definitive_udsocket(Port, _Opts) when is_integer(Port) ->
     ok.
 
 relative_socket_to_mnesia(Path1) ->
