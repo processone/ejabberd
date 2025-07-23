@@ -1289,6 +1289,8 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 		{error, _} ->
 		    throw({error, "Unable to start room"})
 	    end;
+	{db_failure, _Name, _Host} ->
+	    throw({error, "Database error"});
 	_ ->
 	    throw({error, "Room already exists"})
     end.
@@ -1307,6 +1309,8 @@ destroy_room(Name1, Service1) ->
     case get_room_pid_validate(Name1, Service1, <<"service">>) of
 	{room_not_found, _, _} ->
 	    throw({error, "Room doesn't exists"});
+	{db_failure, _Name, _Host} ->
+	    throw({error, "Database error"});
 	{Pid, _, _} ->
 	    mod_muc_room:destroy(Pid),
 	    ok
@@ -1698,6 +1702,8 @@ change_room_option(Name, Service, OptionString, ValueString) ->
     case get_room_pid_validate(Name, Service, <<"service">>) of
 	{room_not_found, _, _} ->
 	    throw({error, "Room not found"});
+	{db_failure, _Name, _Host} ->
+	    throw({error, "Database error"});
 	{Pid, _, _} ->
 	    {Option, Value} = format_room_option(OptionString, ValueString),
 	    change_room_option(Pid, Option, Value)
@@ -1823,25 +1829,29 @@ parse_nodes(_, _) ->
     throw({error, "Invalid 'subscribers' - unknown node name used"}).
 
 -spec get_room_pid_validate(binary(), binary(), binary()) ->
-    {pid() | room_not_found, binary(), binary()}.
+    {pid() | room_not_found | db_failure, binary(), binary()}.
 get_room_pid_validate(Name, Service, ServiceArg) ->
     Name2 = validate_room(Name),
     {ServerHost, Service2} = validate_muc2(Service, ServiceArg),
     case mod_muc:unhibernate_room(ServerHost, Service2, Name2) of
-	error ->
+	{error, notfound} ->
 	    {room_not_found, Name2, Service2};
+	{error, db_failure} ->
+	    {db_failure, Name2, Service2};
 	{ok, Pid} ->
 	    {Pid, Name2, Service2}
     end.
 
 %% @doc Get the Pid of an existing MUC room, or 'room_not_found'.
--spec get_room_pid(binary(), binary()) -> pid() | room_not_found | invalid_service | unknown_service.
+-spec get_room_pid(binary(), binary()) -> pid() | room_not_found | db_failure | invalid_service | unknown_service.
 get_room_pid(Name, Service) ->
     try get_room_serverhost(Service) of
 	ServerHost ->
 	    case mod_muc:unhibernate_room(ServerHost, Service, Name) of
-		error ->
+		{error, notfound} ->
 		    room_not_found;
+		{error, db_failure} ->
+		    db_failure;
 		{ok, Pid} ->
 		    Pid
 	    end
@@ -1954,6 +1964,8 @@ get_room_affiliations(Name, Service) ->
 		 ({{Uname, Domain, _Res}, Aff}) when is_atom(Aff)->
 		      {Uname, Domain, Aff, <<>>}
 	      end, Affiliations);
+	{db_failure, _Name, _Host} ->
+	    throw({error, "Database error"});
 	_ ->
 	    throw({error, "The room does not exist."})
     end.
@@ -1975,6 +1987,8 @@ get_room_affiliations_v3(Name, Service) ->
 		      Jid = makeencode(Uname, Domain),
 		      {Jid, Aff, <<>>}
 	      end, Affiliations);
+	{db_failure, _Name, _Host} ->
+	    throw({error, "Database error"});
 	_ ->
 	    throw({error, "The room does not exist."})
     end.
@@ -1993,6 +2007,8 @@ get_room_history(Name, Service) ->
 		_ ->
 		    throw({error, "Unable to fetch room state."})
 	    end;
+	{db_failure, _Name, _Host} ->
+	    throw({error, "Database error"});
 	_ ->
 	    throw({error, "The room does not exist."})
     end.
@@ -2012,6 +2028,8 @@ get_room_affiliation(Name, Service, JID) ->
 	    {ok, StateData} = mod_muc_room:get_state(Pid),
 	    UserJID = jid:decode(JID),
 	    mod_muc_room:get_affiliation(UserJID, StateData);
+	{db_failure, _Name, _Host} ->
+	    throw({error, "Database error"});
 	_ ->
 	    throw({error, "The room does not exist."})
     end.
@@ -2052,6 +2070,8 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
 		{error, _} ->
 		    throw({error, "Unable to perform change"})
 	    end;
+	{db_failure, _Name, _Host} ->
+	    throw({error, "Database error"});
 	_ ->
 	    throw({error, "Room doesn't exists"})
     end.
@@ -2084,6 +2104,8 @@ subscribe_room(User, Nick, Room, NodeList) ->
 				{error, Reason} ->
 				    throw({error, binary_to_list(Reason)})
 			    end;
+			{db_failure, _Name, _Host} ->
+			    throw({error, "Database error"});
 			_ ->
 			    throw({error, "The room does not exist"})
 		    end
@@ -2129,6 +2151,8 @@ unsubscribe_room(User, Room) ->
 				{error, Reason} ->
 				    throw({error, binary_to_list(Reason)})
 			    end;
+			{db_failure, _Name, _Host} ->
+			    throw({error, "Database error"});
 			_ ->
 			    throw({error, "The room does not exist"})
 		    end
@@ -2146,6 +2170,8 @@ get_subscribers(Name, Host) ->
 	{Pid, _, _} when is_pid(Pid) ->
 	    {ok, JIDList} = mod_muc_room:get_subscribers(Pid),
 	    [jid:encode(jid:remove_resource(J)) || J <- JIDList];
+	{db_failure, _Name, _Host} ->
+	    throw({error, "Database error"});
 	_ ->
 	    throw({error, "The room does not exist"})
     end.

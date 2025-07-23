@@ -97,7 +97,7 @@
 -callback import(binary(), binary(), [binary()]) -> ok.
 -callback store_room(binary(), binary(), binary(), list(), list()|undefined) -> {atomic, any()}.
 -callback store_changes(binary(), binary(), binary(), list()) -> {atomic, any()}.
--callback restore_room(binary(), binary(), binary()) -> muc_room_opts() | error.
+-callback restore_room(binary(), binary(), binary()) -> muc_room_opts() | error | {error, atom()}.
 -callback forget_room(binary(), binary(), binary()) -> {atomic, any()}.
 -callback can_use_nick(binary(), binary(), jid(), binary()) -> boolean().
 -callback get_rooms(binary(), binary()) -> [#muc_room{}].
@@ -591,20 +591,17 @@ extract_password(#iq{} = IQ) ->
             false
     end.
 
--spec unhibernate_room(binary(), binary(), binary()) -> {ok, pid()} | error.
+-spec unhibernate_room(binary(), binary(), binary()) -> {ok, pid()} | {error, notfound | db_failure | term()}.
 unhibernate_room(ServerHost, Host, Room) ->
     unhibernate_room(ServerHost, Host, Room, true).
 
--spec unhibernate_room(binary(), binary(), binary(), boolean()) -> {ok, pid()} | error.
+-spec unhibernate_room(binary(), binary(), binary(), boolean()) -> {ok, pid()} | {error, notfound | db_failure | term()}.
 unhibernate_room(ServerHost, Host, Room, ResetHibernationTime) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
 	    Proc = procname(ServerHost, {Room, Host}),
-	    case ?GEN_SERVER:call(Proc, {unhibernate, Room, Host, ResetHibernationTime}, 20000) of
-		{ok, _} = R -> R;
-		_ -> error
-	    end;
+	    ?GEN_SERVER:call(Proc, {unhibernate, Room, Host, ResetHibernationTime}, 20000);
 	{ok, _} = R2 -> R2
     end.
 
@@ -888,6 +885,8 @@ load_room(RMod, Host, ServerHost, Room, ResetHibernationTime) ->
     case restore_room(ServerHost, Host, Room) of
 	error ->
 	    {error, notfound};
+        {error, _} = Err ->
+            Err;
 	Opts0 ->
 	    Mod = gen_mod:db_mod(ServerHost, mod_muc),
 	    case proplists:get_bool(persistent, Opts0) of
