@@ -43,6 +43,7 @@
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
 	 crypto_hmac/3, crypto_hmac/4, uri_parse/1, uri_parse/2, uri_quote/1,
+	 uri_decode/1,
          json_encode/1, json_decode/1,
 	 set_proc_label/1,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
@@ -123,6 +124,26 @@ uri_quote(Data) ->
 -else.
 uri_quote(Data) ->
     uri_string:quote(Data).
+-endif.
+
+%% @doc Decode a part of the URL and return string()
+%% -spec url_decode(binary()) -> bitstring().
+
+-ifdef(OTP_BELOW_24).
+uri_decode(Path) -> uri_decode(Path, <<>>).
+
+uri_decode(<<$%, Hi, Lo, Tail/binary>>, Acc) ->
+    Hex = list_to_integer([Hi, Lo], 16),
+    if Hex == 0 -> exit(badurl);
+       true -> ok
+    end,
+    uri_decode(Tail, <<Acc/binary, Hex>>);
+uri_decode(<<H, T/binary>>, Acc) when H /= 0 ->
+    uri_decode(T, <<Acc/binary, H>>);
+uri_decode(<<>>, Acc) -> Acc.
+-else.
+uri_decode(Path) ->
+    uri_string:percent_decode(Path).
 -endif.
 
 -ifdef(USE_OLD_CRYPTO_HMAC).

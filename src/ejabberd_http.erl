@@ -718,7 +718,7 @@ file_format_error(Reason) ->
 url_decode_q_split_normalize(Path) ->
     {NPath, Query} = url_decode_q_split(Path),
     LPath = normalize_path([NPE
-		    || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
+		    || NPE <- str:tokens(misc:uri_decode(NPath), <<"/">>)]),
     {LPath, Query}.
 
 % Code below is taken (with some modifications) from the yaws webserver, which
@@ -745,19 +745,6 @@ url_decode_q_split(<<H, T/binary>>, Acc) when H /= 0 ->
     url_decode_q_split(T, <<H, Acc/binary>>);
 url_decode_q_split(<<>>, Ack) ->
     {path_norm_reverse(Ack), <<>>}.
-
-%% @doc Decode a part of the URL and return string()
-path_decode(Path) -> path_decode(Path, <<>>).
-
-path_decode(<<$%, Hi, Lo, Tail/binary>>, Acc) ->
-    Hex = list_to_integer([Hi, Lo], 16),
-    if Hex == 0 -> exit(badurl);
-       true -> ok
-    end,
-    path_decode(Tail, <<Acc/binary, Hex>>);
-path_decode(<<H, T/binary>>, Acc) when H /= 0 ->
-    path_decode(T, <<Acc/binary, H>>);
-path_decode(<<>>, Acc) -> Acc.
 
 path_norm_reverse(<<"/", T/binary>>) -> start_dir(0, <<"/">>, T);
 path_norm_reverse(T) -> start_dir(0, <<"">>, T).
