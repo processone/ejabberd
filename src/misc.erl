@@ -73,45 +73,11 @@
 -type distance_cache() :: #{{string(), string()} => non_neg_integer()}.
 
 -spec uri_parse(binary()|string()) -> {ok, string(), string(), string(), number(), string(), string()} | {error, term()}.
--ifdef(USE_OLD_HTTP_URI).
-uri_parse(URL) when is_binary(URL) ->
-    uri_parse(binary_to_list(URL));
 uri_parse(URL) ->
-    uri_parse(URL, []).
+    yconf:parse_uri(URL).
 
-uri_parse(URL, Protocols) when is_binary(URL) ->
-    uri_parse(binary_to_list(URL), Protocols);
 uri_parse(URL, Protocols) ->
-    case http_uri:parse(URL, [{scheme_defaults, Protocols}]) of
-	{ok, {Scheme, UserInfo, Host, Port, Path, Query}} ->
-	    {ok, atom_to_list(Scheme), UserInfo, Host, Port, Path, Query};
-	{error, _} = E ->
-	    E
-    end.
-
--else.
-uri_parse(URL) when is_binary(URL) ->
-    uri_parse(binary_to_list(URL));
-uri_parse(URL) ->
-    uri_parse(URL, [{http, 80}, {https, 443}]).
-
-uri_parse(URL, Protocols) when is_binary(URL) ->
-    uri_parse(binary_to_list(URL), Protocols);
-uri_parse(URL, Protocols) ->
-    case uri_string:parse(URL) of
-	#{scheme := Scheme, host := Host, port := Port, path := Path} = M1 ->
-	    {ok, Scheme, maps:get(userinfo, M1, ""), Host, Port, Path, maps:get(query, M1, "")};
-	#{scheme := Scheme, host := Host, path := Path} = M2 ->
-	    case lists:keyfind(list_to_atom(Scheme), 1, Protocols) of
-		{_, Port} ->
-		    {ok, Scheme, maps:get(userinfo, M2, ""), Host, Port, Path, maps:get(query, M2, "")};
-		_ ->
-		    {error, unknown_protocol}
-	    end;
-	{error, Atom, _} ->
-	    {error, Atom}
-    end.
--endif.
+    yconf:parse_uri(URL, Protocols).
 
 -ifdef(OTP_BELOW_25).
 -ifdef(OTP_BELOW_24).
