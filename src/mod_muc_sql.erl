@@ -220,7 +220,7 @@ restore_room(LServer, Host, Name) ->
 		    Opts2 = lists:keystore(subscribers, 1, OptsD, {subscribers, SubData}),
 		    mod_muc:opts_to_binary(Opts2);
 		_ ->
-        	    {error, db_failure}
+		    {error, db_failure}
 	    end;
 	{selected, _} ->
             error;

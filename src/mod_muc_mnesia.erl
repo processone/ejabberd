@@ -76,9 +76,11 @@ store_room(_LServer, Host, Name, Opts, _) ->
     mnesia:transaction(F).
 
 restore_room(_LServer, Host, Name) ->
-    case catch mnesia:dirty_read(muc_room, {Name, Host}) of
+    try mnesia:dirty_read(muc_room, {Name, Host}) of
 	[#muc_room{opts = Opts}] -> Opts;
 	_ -> error
+    catch
+	_:_ -> {error, db_failure}
     end.
 
 forget_room(_LServer, Host, Name) ->
