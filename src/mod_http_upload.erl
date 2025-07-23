@@ -533,7 +533,8 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 	   [Method, encode_addr(IP), Host]),
     http_response(404);
 process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
-			     length = Length} = Request) ->
+			     length = Length} = Request0) ->
+    Request = Request0#request{host = redecode_url(Host)},
     {Proc, Slot} = parse_http_request(Request),
     try gen_server:call(Proc, {use_slot, Slot, Length}, ?CALL_TIMEOUT) of
 	{ok, Path, FileMode, DirMode, GetPrefix, Thumbnail, CustomHeaders} ->
@@ -573,9 +574,10 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		       [encode_addr(IP), Host, Error]),
 	    http_response(500)
     end;
-process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
+process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request0)
     when Method == 'GET';
 	 Method == 'HEAD' ->
+    Request = Request0#request{host = redecode_url(Host)},
     {Proc, [_UserDir, _RandDir, FileName] = Slot} = parse_http_request(Request),
     try gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
 	{ok, DocRoot, CustomHeaders} ->
@@ -909,14 +911,26 @@ mk_slot(Slot, #state{put_url = PutPrefix, get_url = GetPrefix}, XMLNS, Query) ->
     GetURL = str:join([GetPrefix | Slot], <<$/>>),
     mk_slot(PutURL, GetURL, XMLNS, Query);
 mk_slot(PutURL, GetURL, XMLNS, Query) ->
-    PutURL1 = <<(misc:url_encode(PutURL))/binary, Query/binary>>,
-    GetURL1 = misc:url_encode(GetURL),
+    PutURL1 = <<(reencode_url(PutURL))/binary, Query/binary>>,
+    GetURL1 = reencode_url(GetURL),
     case XMLNS of
 	?NS_HTTP_UPLOAD_0 ->
 	    #upload_slot_0{get = GetURL1, put = PutURL1, xmlns = XMLNS};
 	_ ->
 	    #upload_slot{get = GetURL1, put = PutURL1, xmlns = XMLNS}
     end.
+
+reencode_url(UrlString) ->
+    {ok, _, _, Host, _, _, _} = yconf:parse_uri(UrlString),
+    HostDecoded = misc:uri_decode(Host),
+    HostIdna = idna:encode(HostDecoded),
+    re:replace(UrlString, Host, HostIdna, [{return, binary}]).
+
+redecode_url(UrlString) ->
+    {ok, _, _, HostIdna, _, _, _} = yconf:parse_uri(<<"http://", UrlString/binary>>),
+    HostDecoded = idna:decode(HostIdna),
+    Host = misc:uri_quote(HostDecoded),
+    re:replace(UrlString, HostIdna, Host, [{return, binary}]).
 
 -spec make_user_string(jid(), sha1 | node) -> binary().
 make_user_string(#jid{luser = U, lserver = S}, sha1) ->
