@@ -31,9 +31,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ['20', '25', '26', '27', '28']
+        otp: ['24', '25', '26', '27', '28']
         rebar: ['rebar', 'rebar3']
         exclude:
+        - otp: '24'
+          rebar: 'rebar'
         - otp: '27'
           rebar: 'rebar'
         - otp: '28'
