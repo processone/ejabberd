@@ -482,6 +482,8 @@ domain() ->
       non_empty(binary()),
       fun(Val) ->
 	      try jid:tolower(jid:decode(Val)) of
+		  {<<"">>, <<"xn--", _/binary>> = Domain, <<"">>} ->
+		      unicode:characters_to_binary(idna:decode(binary_to_list(Domain)), utf8);
 		  {<<"">>, Domain, <<"">>} -> Domain;
 		  _ -> fail({bad_domain, Val})
 	      catch _:{bad_jid, _} ->
