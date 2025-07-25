@@ -224,13 +224,26 @@ setup_provisional_udsocket_dir(DefinitivePath) ->
     ProvisionalPath = get_provisional_udsocket_path(DefinitivePath),
     ?INFO_MSG("Creating a Unix Domain Socket provisional file at ~ts for the definitive path ~s",
               [ProvisionalPath, DefinitivePath]),
-    ProvisionalPath.
+    ProvisionalPathAbsolute = relative_socket_to_mnesia(ProvisionalPath),
+    create_base_dir(ProvisionalPathAbsolute),
+    ProvisionalPathAbsolute.
 
 get_provisional_udsocket_path(Path) ->
     PathBase64 = misc:term_to_base64(Path),
     PathBuild = filename:join(misc:get_home(), PathBase64),
-    %% Shorthen the path, a long path produces a crash when opening the socket.
-    binary:part(PathBuild, {0, erlang:min(107, byte_size(PathBuild))}).
+    DestPath = filename:join(filename:dirname(Path), PathBase64),
+    case {byte_size(DestPath) > 107, byte_size(PathBuild) > 107} of
+        {false, _} ->
+            DestPath;
+        {true, false} ->
+            ?INFO_MSG("The provisional Unix Domain Socket path ~ts is longer than 107, let's use home directory instead which is ~p", [DestPath, byte_size(PathBuild)]),
+            PathBuild;
+        {true, true} ->
+            ?ERROR_MSG("The Unix Domain Socket path ~ts is too long, "
+                       "and I cannot create the provisional file safely. "
+                       "Please configure a shorter path and try again.", [Path]),
+            throw({error_socket_path_too_long, Path})
+    end.
 
 get_definitive_udsocket_path(<<"unix", _>> = Unix) ->
     Unix;
@@ -271,16 +284,19 @@ set_definitive_udsocket(<<"unix:", Path/binary>>, Opts) ->
             end
     end,
     FinalPath = relative_socket_to_mnesia(Path),
-    FinalPathDir = filename:dirname(FinalPath),
-    case file:make_dir(FinalPathDir) of
-        ok ->
-            file:change_mode(FinalPathDir, 8#00700);
-        _ ->
-            ok
-    end,
+    create_base_dir(FinalPath),
     file:rename(Prov, FinalPath);
 set_definitive_udsocket(Port, _Opts) when is_integer(Port) ->
     ok.
+
+create_base_dir(Path) ->
+    Dirname = filename:dirname(Path),
+    case file:make_dir(Dirname) of
+        ok ->
+            file:change_mode(Dirname, 8#00700);
+        _ ->
+            ok
+    end.
 
 relative_socket_to_mnesia(Path1) ->
     case filename:pathtype(Path1) of
