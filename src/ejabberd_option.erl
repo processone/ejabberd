@@ -18,7 +18,7 @@
 -export([auth_method/0, auth_method/1]).
 -export([auth_opts/0, auth_opts/1]).
 -export([auth_password_format/0, auth_password_format/1]).
--export([auth_password_types_hidden_in_scram1/0, auth_password_types_hidden_in_scram1/1]).
+-export([auth_password_types_hidden_in_sasl1/0, auth_password_types_hidden_in_sasl1/1]).
 -export([auth_scram_hash/0, auth_scram_hash/1]).
 -export([auth_stored_password_types/0, auth_stored_password_types/1]).
 -export([auth_use_cache/0, auth_use_cache/1]).
@@ -264,12 +264,12 @@ auth_password_format() ->
 auth_password_format(Host) ->
     ejabberd_config:get_option({auth_password_format, Host}).
 
--spec auth_password_types_hidden_in_scram1() -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
-auth_password_types_hidden_in_scram1() ->
-    auth_password_types_hidden_in_scram1(global).
--spec auth_password_types_hidden_in_scram1(global | binary()) -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
-auth_password_types_hidden_in_scram1(Host) ->
-    ejabberd_config:get_option({auth_password_types_hidden_in_scram1, Host}).
+-spec auth_password_types_hidden_in_sasl1() -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
+auth_password_types_hidden_in_sasl1() ->
+    auth_password_types_hidden_in_sasl1(global).
+-spec auth_password_types_hidden_in_sasl1(global | binary()) -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
+auth_password_types_hidden_in_sasl1(Host) ->
+    ejabberd_config:get_option({auth_password_types_hidden_in_sasl1, Host}).
 
 -spec auth_scram_hash() -> 'sha' | 'sha256' | 'sha512'.
 auth_scram_hash() ->

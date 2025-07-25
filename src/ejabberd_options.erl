@@ -79,7 +79,7 @@ opt_type(auth_opts) ->
     end;
 opt_type(auth_stored_password_types) ->
     econf:list(econf:enum([plain, scram_sha1, scram_sha256, scram_sha512]));
-opt_type(auth_password_types_hidden_in_scram1) ->
+opt_type(auth_password_types_hidden_in_sasl1) ->
     econf:list(econf:enum([plain, scram_sha1, scram_sha256, scram_sha512]));
 opt_type(auth_password_format) ->
     econf:enum([plain, scram]);
@@ -566,7 +566,7 @@ options() ->
      {auth_password_format, plain},
      {auth_scram_hash, sha},
      {auth_stored_password_types, []},
-     {auth_password_types_hidden_in_scram1, []},
+     {auth_password_types_hidden_in_sasl1, []},
      {auth_external_user_exists_check, true},
      {auth_use_cache,
       fun(Host) -> ejabberd_config:get_option({use_cache, Host}) end},

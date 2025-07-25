@@ -455,7 +455,7 @@ sasl_mechanisms(Mechs, #{lserver := LServer, stream_encrypted := Encrypted} = St
 	   (<<"EXTERNAL">>) -> maps:get(tls_verify, State, false);
 	   (_) -> false
 	end, Mechs -- Mechs1),
-    case ejabberd_option:auth_password_types_hidden_in_scram1() of
+    case ejabberd_option:auth_password_types_hidden_in_sasl1() of
 	[] -> Mechs2;
 	List ->
 	    Mechs3 = lists:foldl(

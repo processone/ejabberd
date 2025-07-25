@@ -399,12 +399,12 @@ doc() ->
                "depends on the _`auth_scram_hash`_ option."), "",
             ?T("The default value is 'plain'."), ""]}},
 
-     {auth_password_types_hidden_in_scram1,
+     {auth_password_types_hidden_in_sasl1,
       #{value => "[plain | scram_sha1 | scram_sha256 | scram_sha512]",
         note => "added in 25.07",
         desc =>
-        ?T("List of password types that should not be offered in SCRAM1 authenticatication. "
-           "Because SCRAM1, unlike SCRAM2, can't have list of available mechanisms tailored to "
+        ?T("List of password types that should not be offered in SASL1 authenticatication. "
+           "Because SASL1, unlike SASL2, can't have list of available mechanisms tailored to "
            "individual user, it's possible that offered mechanisms will not be compatible "
            "with stored password, especially if new password type was added recently. "
            "This option allows disabling offering some mechanisms in SASL1, to a time until new "

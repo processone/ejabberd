@@ -230,6 +230,8 @@ filter(_Host, captcha_host, _, _) ->
 filter(_Host, route_subdomains, _, _) ->
     warn_removed_option(route_subdomains, s2s_access),
     false;
+filter(_Host, auth_password_types_hidden_in_scram1, Val, _) ->
+    {true, {auth_password_types_hidden_in_sasl1, Val}};
 filter(Host, modules, ModOpts, State) ->
     NoDialbackHosts = maps:get(remove_s2s_dialback, State, []),
     ModOpts1 = lists:filter(
