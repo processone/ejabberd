@@ -457,9 +457,13 @@ delete_obsolete_data() ->
 get_commands_spec() ->
     [#ejabberd_commands{name = request_certificate, tags = [acme],
 			desc = "Requests certificates for all or some domains",
-			longdesc = "Domains can be `all`, or a list of domains separared with comma characters",
+			longdesc = "Domains is a list of domains separared with comma characters. "
+			           "If domains is `all`, it requests for all domains defined in "
+			           "toplevel option `hosts` and other routes served by ejabberd. "
+			           "If domains is `all_and_alias`, it also requests for domains "
+			           "defined in toplevel option `hosts_alias`.",
 			module = ?MODULE, function = request_certificate,
-			args_desc = ["Domains for which to acquire a certificate"],
+			args_desc = ["Domains for which to acquire a certificate, or `all`, or `all_and_alias`"],
 			args_example = ["example.com,domain.tld,conference.domain.tld"],
 			args = [{domains, string}],
 			result = {res, restuple}},
@@ -489,6 +493,13 @@ request_certificate(Arg) ->
 		      [] -> {error, no_auto_hosts};
 		      Domains ->
 			  gen_server:call(?MODULE, {request, Domains}, ?CALL_TIMEOUT)
+		  end;
+	      [<<"all_and_alias">>] ->
+		  case auto_domains() of
+		      [] -> {error, no_auto_hosts};
+		      Domains ->
+			  Alias = alias_domains(),
+			  gen_server:call(?MODULE, {request, Domains ++ Alias}, ?CALL_TIMEOUT)
 		  end;
 	      [_|_] = Domains ->
 		  case lists:dropwhile(
@@ -584,6 +595,15 @@ auto_domains() ->
       fun(Host) ->
 	      not is_ip_or_localhost(Host)
       end, all_domains()).
+
+alias_domains() ->
+    lists:filtermap(
+      fun({HostAlias, _}) ->
+            case check_idna([HostAlias]) of
+                {ok, _} -> {true, HostAlias};
+                {error, _} -> false
+            end
+      end, ejabberd_option:hosts_alias()).
 
 -spec directory_url() -> binary().
 directory_url() ->
