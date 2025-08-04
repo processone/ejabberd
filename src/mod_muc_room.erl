@@ -3288,7 +3288,7 @@ unsubscribe_from_room(JID, SD) ->
             ok;
         true ->
             case mod_muc:unhibernate_room(SD#state.server_host, SD#state.host, SD#state.room) of
-                {error, Reason0} ->
+                {error, _Reason0} ->
                     error;
                 {ok, Pid} ->
                     _UnsubPid =
