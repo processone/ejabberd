@@ -47,6 +47,8 @@
 
 -export_type([loglevel/0]).
 
+-include("logger.hrl").
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -383,18 +385,20 @@ console_template() ->
         false ->
             [time, " [", level, "] " | msg()]
     end.
+msg() ->
+    [{logger_formatter, [[logger_formatter, title], ":", io_lib:nl()], []},
+     msg, io_lib:nl()].
 -else.
 console_template() ->
-    [time, " [", level, "] " | msg()].
+    [time, " ", ?CLEAD, ?CDEFAULT, clevel, "[", level, "] ", ?CMID, ?CDEFAULT, ctext | msg()].
+msg() ->
+    [{logger_formatter, [[logger_formatter, title], ":", io_lib:nl()], []},
+     msg, ?CCLEAN, io_lib:nl()].
 -endif.
 
 file_template() ->
     [time, " [", level, "] ", pid,
      {mfa, ["@", mfa, {line, [":", line], []}], []}, " " | msg()].
-
-msg() ->
-    [{logger_formatter, [[logger_formatter, title], ":", io_lib:nl()], []},
-     msg, io_lib:nl()].
 
 -spec reopen_log() -> ok.
 reopen_log() ->
