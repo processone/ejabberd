@@ -27,7 +27,7 @@
 -export([start/2, stop/1, reload/3, depends/2, mod_options/1, mod_opt_type/1]).
 -export([mod_doc/0]).
 %% Hooks
--export([c2s_inline_features/2, c2s_handle_sasl2_inline/1,
+-export([c2s_inline_features/3, c2s_handle_sasl2_inline/1,
 	 c2s_handle_sasl2_task_next/4, c2s_handle_sasl2_task_data/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -76,11 +76,23 @@ mod_doc() ->
        "      - sha256",
        "      - sha512"]}.
 
-c2s_inline_features({Sasl, Bind, Extra}, Host) ->
-    Methods = lists:map(
-	fun(sha256) -> #sasl_upgrade{cdata = <<"UPGR-SCRAM-SHA-256">>};
-	   (sha512) -> #sasl_upgrade{cdata = <<"UPGR-SCRAM-SHA-512">>}
-	end, mod_scram_upgrade_opt:offered_upgrades(Host)),
+c2s_inline_features({Sasl, Bind, Extra}, Host, State) ->
+    KnowTypes = case State of
+	#{sasl2_password_fun := Fun} ->
+	    case Fun(<<>>) of
+		{Pass, _} -> lists:filtermap(
+		    fun(#scram{hash = sha256}) -> {true, sha256};
+		       (#scram{hash = sha512}) -> {true, sha512};
+		       (_) -> false
+		    end, Pass);
+		_ -> []
+	    end;
+	_ -> []
+    end,
+    Methods = lists:filtermap(
+	fun(sha256) -> {true, #sasl_upgrade{cdata = <<"UPGR-SCRAM-SHA-256">>}};
+	   (sha512) -> {true, #sasl_upgrade{cdata = <<"UPGR-SCRAM-SHA-512">>}}
+	end, mod_scram_upgrade_opt:offered_upgrades(Host) -- KnowTypes),
     {Sasl, Bind, Methods ++ Extra}.
 
 c2s_handle_sasl2_inline({State, Els, _Results} = Acc) ->

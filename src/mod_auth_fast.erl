@@ -29,7 +29,7 @@
 -export([start/2, stop/1, reload/3, depends/2, mod_options/1, mod_opt_type/1]).
 -export([mod_doc/0]).
 %% Hooks
--export([c2s_inline_features/2, c2s_handle_sasl2_inline/1,
+-export([c2s_inline_features/3, c2s_handle_sasl2_inline/1,
 	 get_tokens/3, get_mechanisms/1, remove_user_tokens/2]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -131,7 +131,7 @@ get_tokens(LServer, LUser, UA) ->
 	    {{Type, CreatedAt < ToRefresh}, Token}
 	end, Mod:get_tokens(LServer, LUser, ua_hash(UA))).
 
-c2s_inline_features({Sasl, Bind, Extra}, Host) ->
+c2s_inline_features({Sasl, Bind, Extra}, Host, _State) ->
     {Sasl ++ [#fast{mechs = get_mechanisms(Host)}], Bind, Extra}.
 
 gen_token(#{sasl2_ua_id := UA, server := Server, user := User}) ->

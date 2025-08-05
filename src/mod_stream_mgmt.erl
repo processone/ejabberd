@@ -33,7 +33,7 @@
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
 	 c2s_unbinded_packet/2, c2s_closed/2, c2s_terminated/2,
 	 c2s_handle_send/3, c2s_handle_info/2, c2s_handle_cast/2,
-	 c2s_handle_call/3, c2s_handle_recv/3, c2s_inline_features/2,
+	 c2s_handle_call/3, c2s_handle_recv/3, c2s_inline_features/3,
 	 c2s_handle_sasl2_inline/1, c2s_handle_sasl2_inline_post/3,
 	 c2s_handle_bind2_inline/1]).
 %% adjust pending session timeout / access queue
@@ -122,7 +122,7 @@ c2s_stream_features(Acc, Host) ->
 	    Acc
     end.
 
-c2s_inline_features({Sasl, Bind, Extra} = Acc, Host) ->
+c2s_inline_features({Sasl, Bind, Extra} = Acc, Host, _State) ->
     case gen_mod:is_loaded(Host, ?MODULE) of
 	true ->
 	    {[#feature_sm{xmlns = ?NS_STREAM_MGMT_3} | Sasl],
