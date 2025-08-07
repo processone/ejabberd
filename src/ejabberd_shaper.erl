@@ -21,6 +21,7 @@
 
 -export([start_link/0, new/1, update/2, match/3, get_max_rate/1]).
 -export([reload_from_config/0]).
+-export([read_shaper_rules/2]).
 -export([validator/1, shaper_rules_validator/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
