@@ -93,41 +93,46 @@ gen_decode(Dev, Data, VerId) ->
     io:format(Dev, "decode(<<$<, _/binary>> = Data, _J1, _J2) ->~n"
 		   "  fxml_stream:parse_element(Data);~n"
 		   "decode(<<~s, Rest/binary>>, J1, J2) ->~n"
-		   "  {El, _} = decode(Rest, <<\"jabber:client\">>, J1, J2),~n"
-		   "  El.~n~n", [VerId]),
+		   "  try decode(Rest, <<\"jabber:client\">>, J1, J2, false) of~n"
+		   "    {El, _} -> El~n"
+		   "  catch throw:loop_detected ->~n"
+		   "    {error, {loop_detected, <<\"Compressed data corrupted\">>}}~n"
+		   "  end.~n~n", [VerId]),
     io:format(Dev, "decode_string(Data) ->~n"
 		   "  case Data of~n"
 		   "    <<0:2, L:6, Str:L/binary, Rest/binary>> ->~n"
 		   "      {Str, Rest};~n"
 		   "    <<1:2, L1:6, 0:2, L2:6, Rest/binary>> ->~n"
 		   "      L = L2*64 + L1,~n"
-		   "    <<Str:L/binary, Rest2/binary>> = Rest,~n"
+		   "      <<Str:L/binary, Rest2/binary>> = Rest,~n"
 		   "      {Str, Rest2};~n"
 		   "    <<1:2, L1:6, 1:2, L2:6, L3:8, Rest/binary>> ->~n"
 		   "      L = (L3*64 + L2)*64 + L1,~n"
-		   "    <<Str:L/binary, Rest2/binary>> = Rest,~n"
+		   "      <<Str:L/binary, Rest2/binary>> = Rest,~n"
 		   "      {Str, Rest2}~n"
 		   "  end.~n~n", []),
-    io:format(Dev, "decode_child(<<1:8, Rest/binary>>, _PNs, _J1, _J2) ->~n"
+    io:format(Dev, "decode_child(<<1:8, Rest/binary>>, _PNs, _J1, _J2, _) ->~n"
 		   "  {Text, Rest2} = decode_string(Rest),~n"
 		   "  {{xmlcdata, Text}, Rest2};~n", []),
-    io:format(Dev, "decode_child(<<2:8, Rest/binary>>, PNs, J1, J2) ->~n"
+    io:format(Dev, "decode_child(<<2:8, Rest/binary>>, PNs, J1, J2, _) ->~n"
 		   "  {Name, Rest2} = decode_string(Rest),~n"
 		   "  {Attrs, Rest3} = decode_attrs(Rest2),~n"
 		   "  {Children, Rest4} = decode_children(Rest3, PNs, J1, J2),~n"
 		   "  {{xmlel, Name, Attrs, Children}, Rest4};~n", []),
-    io:format(Dev, "decode_child(<<3:8, Rest/binary>>, PNs, J1, J2) ->~n"
+    io:format(Dev, "decode_child(<<3:8, Rest/binary>>, PNs, J1, J2, _) ->~n"
 		   "  {Ns, Rest2} = decode_string(Rest),~n"
 		   "  {Name, Rest3} = decode_string(Rest2),~n"
 		   "  {Attrs, Rest4} = decode_attrs(Rest3),~n"
 		   "  {Children, Rest5} = decode_children(Rest4, Ns, J1, J2),~n"
 		   "  {{xmlel, Name, add_ns(PNs, Ns, Attrs), Children}, Rest5};~n", []),
-    io:format(Dev, "decode_child(<<4:8, Rest/binary>>, _PNs, _J1, _J2) ->~n"
+    io:format(Dev, "decode_child(<<4:8, Rest/binary>>, _PNs, _J1, _J2, _) ->~n"
 		   "  {stop, Rest};~n", []),
-    io:format(Dev, "decode_child(Other, PNs, J1, J2) ->~n"
-		   "  decode(Other, PNs, J1, J2).~n~n", []),
+    io:format(Dev, "decode_child(_Other, _PNs, _J1, _J2, true) ->~n"
+		   "  throw(loop_detected);~n", []),
+    io:format(Dev, "decode_child(Other, PNs, J1, J2, _) ->~n"
+		   "  decode(Other, PNs, J1, J2, true).~n~n", []),
     io:format(Dev, "decode_children(Data, PNs, J1, J2) ->~n"
-		   "  prefix_map(fun(Data2) -> decode(Data2, PNs, J1, J2) end, Data).~n~n", []),
+		   "  prefix_map(fun(Data2) -> decode(Data2, PNs, J1, J2, false) end, Data).~n~n", []),
     io:format(Dev, "decode_attr(<<1:8, Rest/binary>>) ->~n"
 		   "  {Name, Rest2} = decode_string(Rest),~n"
 		   "  {Val, Rest3} = decode_string(Rest2),~n"
@@ -153,7 +158,7 @@ gen_decode(Dev, Data, VerId) ->
 	fun({Ns, Els}) ->
 	    lists:foreach(
 		fun({Name, Id, Attrs, Text}) ->
-		    io:format(Dev, "decode(<<~s, Rest/binary>>, PNs, J1, J2) ->~n"
+		    io:format(Dev, "decode(<<~s, Rest/binary>>, PNs, J1, J2, _) ->~n"
 				   "  Ns = ~p,~n", [Id, Ns]),
 		    case Attrs of
 			[] ->
@@ -209,14 +214,14 @@ gen_decode(Dev, Data, VerId) ->
 				end, Text),
 
 			    io:format(Dev, "    (Other) ->~n"
-					   "      decode_child(Other, Ns, J1, J2)~n"
+					   "      decode_child(Other, Ns, J1, J2, false)~n"
 					   "  end, Rest2),~n", [])
 		    end,
 		    io:format(Dev, "  {{xmlel, ~p, add_ns(PNs, Ns, Attrs), Children}, Rest6};~n", [Name])
 		end, Els)
 	end, Data),
-    io:format(Dev, "decode(Other, PNs, J1, J2) ->~n"
-		   "  decode_child(Other, PNs, J1, J2).~n~n", []).
+    io:format(Dev, "decode(Other, PNs, J1, J2, Loop) ->~n"
+		   "  decode_child(Other, PNs, J1, J2, Loop).~n~n", []).
 
 
 gen_encode(Dev, Data, VerId) ->

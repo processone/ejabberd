@@ -480,8 +480,11 @@ encode(PNs, Ns, Name, Attrs, Children, J1, J2, J1L, J2L, Pfx) ->
 decode(<<$<, _/binary>> = Data, _J1, _J2) ->
   fxml_stream:parse_element(Data);
 decode(<<1:8, Rest/binary>>, J1, J2) ->
-  {El, _} = decode(Rest, <<"jabber:client">>, J1, J2),
-  El.
+  try decode(Rest, <<"jabber:client">>, J1, J2, false) of
+    {El, _} -> El
+  catch throw:loop_detected ->
+    {error, {loop_detected, <<"Compressed data corrupted">>}}
+  end.
 
 decode_string(Data) ->
   case Data of
@@ -489,35 +492,37 @@ decode_string(Data) ->
       {Str, Rest};
     <<1:2, L1:6, 0:2, L2:6, Rest/binary>> ->
       L = L2*64 + L1,
-    <<Str:L/binary, Rest2/binary>> = Rest,
+      <<Str:L/binary, Rest2/binary>> = Rest,
       {Str, Rest2};
     <<1:2, L1:6, 1:2, L2:6, L3:8, Rest/binary>> ->
       L = (L3*64 + L2)*64 + L1,
-    <<Str:L/binary, Rest2/binary>> = Rest,
+      <<Str:L/binary, Rest2/binary>> = Rest,
       {Str, Rest2}
   end.
 
-decode_child(<<1:8, Rest/binary>>, _PNs, _J1, _J2) ->
+decode_child(<<1:8, Rest/binary>>, _PNs, _J1, _J2, _) ->
   {Text, Rest2} = decode_string(Rest),
   {{xmlcdata, Text}, Rest2};
-decode_child(<<2:8, Rest/binary>>, PNs, J1, J2) ->
+decode_child(<<2:8, Rest/binary>>, PNs, J1, J2, _) ->
   {Name, Rest2} = decode_string(Rest),
   {Attrs, Rest3} = decode_attrs(Rest2),
   {Children, Rest4} = decode_children(Rest3, PNs, J1, J2),
   {{xmlel, Name, Attrs, Children}, Rest4};
-decode_child(<<3:8, Rest/binary>>, PNs, J1, J2) ->
+decode_child(<<3:8, Rest/binary>>, PNs, J1, J2, _) ->
   {Ns, Rest2} = decode_string(Rest),
   {Name, Rest3} = decode_string(Rest2),
   {Attrs, Rest4} = decode_attrs(Rest3),
   {Children, Rest5} = decode_children(Rest4, Ns, J1, J2),
   {{xmlel, Name, add_ns(PNs, Ns, Attrs), Children}, Rest5};
-decode_child(<<4:8, Rest/binary>>, _PNs, _J1, _J2) ->
+decode_child(<<4:8, Rest/binary>>, _PNs, _J1, _J2, _) ->
   {stop, Rest};
-decode_child(Other, PNs, J1, J2) ->
-  decode(Other, PNs, J1, J2).
+decode_child(_Other, _PNs, _J1, _J2, true) ->
+  throw(loop_detected);
+decode_child(Other, PNs, J1, J2, _) ->
+  decode(Other, PNs, J1, J2, true).
 
 decode_children(Data, PNs, J1, J2) ->
-  prefix_map(fun(Data2) -> decode(Data2, PNs, J1, J2) end, Data).
+  prefix_map(fun(Data2) -> decode(Data2, PNs, J1, J2, false) end, Data).
 
 decode_attr(<<1:8, Rest/binary>>) ->
   {Name, Rest2} = decode_string(Rest),
@@ -545,7 +550,7 @@ add_ns(Ns, Ns, Attrs) ->
 add_ns(_, Ns, Attrs) ->
   [{<<"xmlns">>, Ns} | Attrs].
 
-decode(<<5:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<5:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"eu.siacs.conversations.axolotl">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -563,12 +568,12 @@ decode(<<5:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"key">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<12:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<12:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"eu.siacs.conversations.axolotl">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"encrypted">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<13:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<13:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"eu.siacs.conversations.axolotl">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -581,17 +586,17 @@ decode(<<13:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"header">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<14:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<14:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"eu.siacs.conversations.axolotl">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"iv">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<15:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<15:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"eu.siacs.conversations.axolotl">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"payload">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<6:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<6:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"jabber:client">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -636,7 +641,7 @@ decode(<<6:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"message">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<8:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<8:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"jabber:client">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = prefix_map(fun    (<<9:8, Rest5/binary>>) ->
@@ -650,25 +655,25 @@ decode(<<8:8, Rest/binary>>, PNs, J1, J2) ->
                     32,104,116,116,112,115,58,47,47,99,111,110,118,101,114,115,
                     97,116,105,111,110,115,46,105,109,47,111,109,101,109,111>>}, Rest5};
     (Other) ->
-      decode_child(Other, Ns, J1, J2)
+      decode_child(Other, Ns, J1, J2, false)
   end, Rest2),
   {{xmlel, <<"body">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<31:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<31:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"jabber:client">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"subject">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<32:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<32:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"jabber:client">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"thread">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<7:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<7:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:hints">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"store">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<10:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<10:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:sid:0">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -681,7 +686,7 @@ decode(<<10:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"origin-id">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<22:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<22:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:sid:0">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -697,12 +702,12 @@ decode(<<22:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"stanza-id">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<11:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<11:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:chat-markers:0">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"markable">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<20:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<20:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:chat-markers:0">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -724,7 +729,7 @@ decode(<<20:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"displayed">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<24:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<24:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:chat-markers:0">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -737,7 +742,7 @@ decode(<<24:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"received">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<16:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<16:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:eme:0">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -757,7 +762,7 @@ decode(<<16:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"encryption">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<17:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<17:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:delay">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -775,7 +780,7 @@ decode(<<17:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"delay">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<18:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<18:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/address">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -796,12 +801,12 @@ decode(<<18:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"address">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<19:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<19:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/address">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"addresses">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<21:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<21:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:mam:tmp">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -817,12 +822,12 @@ decode(<<21:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"archived">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<23:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<23:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:receipts">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"request">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<25:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<25:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:receipts">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -835,17 +840,17 @@ decode(<<25:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"received">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<26:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<26:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/chatstates">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"active">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<39:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<39:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/chatstates">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"composing">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<27:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<27:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/muc#user">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -861,17 +866,17 @@ decode(<<27:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"invite">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<28:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<28:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/muc#user">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"reason">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<29:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<29:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/muc#user">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"x">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<30:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<30:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"jabber:x:conference">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -886,12 +891,12 @@ decode(<<30:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"x">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<33:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<33:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/pubsub#event">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"event">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<34:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<34:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/pubsub#event">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -904,7 +909,7 @@ decode(<<34:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"item">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<35:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<35:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"http://jabber.org/protocol/pubsub#event">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -919,7 +924,7 @@ decode(<<35:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"items">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<36:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<36:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"p1:push:custom">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -935,12 +940,12 @@ decode(<<36:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"x">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<37:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<37:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"p1:pushed">>,
   {Attrs, Rest2} = decode_attrs(Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"x">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(<<38:8, Rest/binary>>, PNs, J1, J2) ->
+decode(<<38:8, Rest/binary>>, PNs, J1, J2, _) ->
   Ns = <<"urn:xmpp:message-correct:0">>,
   {Attrs, Rest2} = prefix_map(fun
     (<<3:8, Rest3/binary>>) ->
@@ -953,6 +958,6 @@ decode(<<38:8, Rest/binary>>, PNs, J1, J2) ->
   end, Rest),
   {Children, Rest6} = decode_children(Rest2, Ns, J1, J2),
   {{xmlel, <<"replace">>, add_ns(PNs, Ns, Attrs), Children}, Rest6};
-decode(Other, PNs, J1, J2) ->
-  decode_child(Other, PNs, J1, J2).
+decode(Other, PNs, J1, J2, Loop) ->
+  decode_child(Other, PNs, J1, J2, Loop).
 
