@@ -51,7 +51,7 @@
 
 -record(wait,
         {timer_ref :: reference(),
-         last :: integer}).
+         last :: integer()}).
 
 -record(data,
         {host :: binary(),
@@ -242,7 +242,7 @@ init([Host, MatrixServer]) ->
        MatrixServer,
        #data{host = Host,
              matrix_server = MatrixServer,
-             state = #wait{timer_ref = undefined, last = 0}})}.
+             state = #wait{timer_ref = make_ref(), last = 0}})}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -586,12 +586,7 @@ request_keys(Via, Data) ->
             end,
             Data#data{state = St#pending{request_id = RequestID}};
         #wait{timer_ref = TimerRef} ->
-            case TimerRef of
-                undefined ->
-                    ok;
-                _ ->
-                    erlang:cancel_timer(TimerRef)
-            end,
+            erlang:cancel_timer(TimerRef),
             NotaryServers = mod_matrix_gw_opt:notary_servers(Data#data.host),
             Data#data{state = #pending{request_id = RequestID,
                                        servers = NotaryServers}}
