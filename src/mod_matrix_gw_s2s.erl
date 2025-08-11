@@ -44,12 +44,23 @@
         {to  :: binary(),
          pid :: pid()}).
 
+-record(pending,
+        {request_id :: any(),
+         servers :: [binary()],
+         key_queue = []}).
+
+-record(wait,
+        {timer_ref :: reference(),
+         last :: integer}).
+
 -record(data,
         {host :: binary(),
          matrix_server :: binary(),
          matrix_host_port :: {binary(), integer()} | undefined,
          keys = #{},
-         key_queue = #{}}).
+         state :: #pending{} | #wait{}}).
+
+-define(KEYS_REQUEST_TIMEOUT, 600000).
 
 %%%===================================================================
 %%% API
@@ -227,8 +238,11 @@ init([Host, MatrixServer]) ->
       #matrix_s2s{to = MatrixServer,
                   pid = self()}),
     {ok, state_name,
-     #data{host = Host,
-           matrix_server = MatrixServer}}.
+     request_keys(
+       MatrixServer,
+       #data{host = Host,
+             matrix_server = MatrixServer,
+             state = #wait{timer_ref = undefined, last = 0}})}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -246,7 +260,7 @@ init([Host, MatrixServer]) ->
 handle_event({call, From}, get_matrix_host_port, _State, Data) ->
     case Data#data.matrix_host_port of
         undefined ->
-            Result = do_get_matrix_host_port(Data),
+            Result = do_get_matrix_host_port(Data#data.matrix_server),
             Data2 = Data#data{matrix_host_port = Result},
             {keep_state, Data2, [{reply, From, Result}]};
         Result ->
@@ -254,104 +268,59 @@ handle_event({call, From}, get_matrix_host_port, _State, Data) ->
     end;
 handle_event({call, From}, {get_key, KeyID}, State, Data) ->
     case maps:find(KeyID, Data#data.keys) of
-        {ok, {ok, _, _} = Result} ->
-            {keep_state, Data, [{reply, From, Result}]};
-        {ok, error = Result} ->
-            {keep_state, Data, [{reply, From, Result}]};
-        {ok, pending} ->
-            KeyQueue = maps:update_with(
-                         KeyID,
-                         fun(Xs) ->
-                                 [From | Xs]
-                         end,
-                         [From],
-                         Data#data.key_queue),
-            {next_state, State,
-             Data#data{key_queue = KeyQueue}, []};
+        {ok, {Key, ValidUntil}} ->
+            {keep_state, Data, [{reply, From, {ok, Key, ValidUntil}}]};
         error ->
-            {MHost, MPort} = do_get_matrix_host_port(Data),
-            URL = <<"https://", MHost/binary,
-                    ":", (integer_to_binary(MPort))/binary,
-                    "/_matrix/key/v2/server/", KeyID/binary>>,
-            Self = self(),
-            httpc:request(get, {URL, []},
-                          [{timeout, 5000}],
-                          [{sync, false},
-                           {receiver,
-                            fun({_RequestId, Result}) ->
-                                    gen_statem:cast(
-                                      Self, {key_reply, KeyID, Result})
-                            end}]),
-            Keys = (Data#data.keys)#{KeyID => pending},
-            KeyQueue = maps:update_with(
-                         KeyID,
-                         fun(Xs) ->
-                                 [From | Xs]
-                         end,
-                         [From],
-                         Data#data.key_queue),
-            {next_state, State,
-             Data#data{keys = Keys,
-                       key_queue = KeyQueue},
-             []}
+            case Data#data.state of
+                #pending{key_queue = KeyQueue} = St ->
+                    KeyQueue2 = [{From, KeyID} | KeyQueue],
+                    {next_state, State,
+                     Data#data{state = St#pending{key_queue = KeyQueue2}}, []};
+                #wait{timer_ref = TimerRef, last = Last} ->
+                    TS = erlang:system_time(millisecond),
+                    if
+                        Last + ?KEYS_REQUEST_TIMEOUT =< TS ->
+                            Data2 = request_keys(Data#data.matrix_server, Data),
+                            #pending{key_queue = KeyQueue} = St = Data2#data.state,
+                            KeyQueue2 = [{From, KeyID} | KeyQueue],
+                            {next_state, State,
+                             Data2#data{state = St#pending{key_queue = KeyQueue2}}, []};
+                        true ->
+                            Timeout =
+                                case erlang:read_timer(TimerRef) of
+                                    false ->
+                                        Last + ?KEYS_REQUEST_TIMEOUT - TS;
+                                    Left ->
+                                        erlang:cancel_timer(TimerRef),
+                                        min(Left,
+                                            Last + ?KEYS_REQUEST_TIMEOUT - TS)
+                                end,
+                            TRef = erlang:start_timer(Timeout, self(), []),
+                            {next_state, State,
+                             Data#data{state = #wait{timer_ref = TRef,
+                                                     last = Last}},
+                             [{reply, From, error}]}
+                    end
+            end
     end;
-handle_event(cast, {query, AuthParams, _Query, _JSON, _Request} = Msg,
-             State, Data) ->
-    #{<<"key">> := KeyID} = AuthParams,
-    case maps:find(KeyID, Data#data.keys) of
-        {ok, {ok, VerifyKey, _ValidUntil}} ->
-            Data2 = process_unverified_query(
-                      KeyID, VerifyKey, Msg, Data),
-            {next_state, State, Data2, []};
-        {ok, error} ->
-            %TODO
-            {next_state, State, Data, []};
-        {ok, pending} ->
-            KeyQueue = maps:update_with(
-                         KeyID,
-                         fun(Xs) ->
-                                 [Msg | Xs]
-                         end,
-                         [Msg],
-                         Data#data.key_queue),
-            {next_state, State,
-             Data#data{key_queue = KeyQueue}, []};
-        error ->
-            {MHost, MPort} = do_get_matrix_host_port(Data),
-            URL = <<"https://", MHost/binary,
-                    ":", (integer_to_binary(MPort))/binary,
-                    "/_matrix/key/v2/server/", KeyID/binary>>,
-            Self = self(),
-            httpc:request(get, {URL, []},
-                          [{timeout, 5000}],
-                          [{sync, false},
-                           {receiver,
-                            fun({_RequestId, Result}) ->
-                                    gen_statem:cast(
-                                      Self, {key_reply, KeyID, Result})
-                            end}]),
-            Keys = (Data#data.keys)#{KeyID => pending},
-            KeyQueue = maps:update_with(
-                         KeyID,
-                         fun(Xs) ->
-                                 [Msg | Xs]
-                         end,
-                         [Msg],
-                         Data#data.key_queue),
-            {next_state, State,
-             Data#data{keys = Keys,
-                       key_queue = KeyQueue},
-             []}
-    end;
-handle_event(cast, {key_reply, KeyID, HTTPResult}, State, Data) ->
-    KeyVal =
+handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
+             #data{state = #pending{request_id = RequestID,
+                                    servers = Servers,
+                                    key_queue = KeyQueue} = St} = Data) ->
+    TS = erlang:system_time(millisecond),
+    Res =
         case HTTPResult of
             {{_, 200, _}, _, SJSON} ->
                 try
-                    JSON = misc:json_decode(SJSON),
-                    ?DEBUG("key ~p~n", [JSON]),
+                    JSON1 = misc:json_decode(SJSON),
+                    JSON =
+                        case JSON1 of
+                            #{<<"server_keys">> := [J]} -> J;
+                            _ -> JSON1
+                        end,
+                    ?DEBUG("keys ~p~n", [JSON]),
                     #{<<"verify_keys">> := VerifyKeys} = JSON,
-                    #{KeyID := KeyData} = VerifyKeys,
+                    {KeyID, KeyData, _} = maps:next(maps:iterator(VerifyKeys)),
                     #{<<"key">> := SKey} = KeyData,
                     VerifyKey = mod_matrix_gw:base64_decode(SKey),
                     ?DEBUG("key ~p~n", [VerifyKey]),
@@ -366,22 +335,77 @@ handle_event(cast, {key_reply, KeyID, HTTPResult}, State, Data) ->
                     ValidUntil2 =
                         min(ValidUntil,
                             erlang:system_time(millisecond) + timer:hours(24 * 7)),
-                    {ok, VerifyKey, ValidUntil2}
+                    OldKeysJSON =
+                        case JSON of
+                            #{<<"old_verify_keys">> := OldKeysJ}
+                              when is_map(OldKeysJ) ->
+                                OldKeysJ;
+                            _ ->
+                                #{}
+                        end,
+                    OldKeys =
+                        maps:filtermap(
+                          fun(_KID,
+                              #{<<"key">> := SK,
+                                <<"expired_ts">> := Exp})
+                                when is_integer(Exp),
+                                     is_binary(SK) ->
+                                  {true, {mod_matrix_gw:base64_decode(SK),
+                                          Exp}};
+                             (_, _) -> false
+                          end, OldKeysJSON),
+                    NewKeys =
+                        maps:filtermap(
+                          fun(_KID,
+                              #{<<"key">> := SK})
+                                when is_binary(SK) ->
+                                  {true, {mod_matrix_gw:base64_decode(SK),
+                                          ValidUntil2}};
+                             (_, _) -> false
+                          end, VerifyKeys),
+                    {ok, maps:merge(OldKeys, NewKeys), ValidUntil2}
                 catch
                     _:_ ->
-                        error
+                        {ok, Data#data.keys, TS + ?KEYS_REQUEST_TIMEOUT}
                 end;
             _ ->
-                error
+                case Servers of
+                    [] ->
+                        {ok, Data#data.keys, TS + ?KEYS_REQUEST_TIMEOUT};
+                    [S | Servers1] ->
+                        {error,
+                         request_keys(
+                           S,
+                           Data#data{state = St#pending{servers = Servers1}})}
+                end
         end,
-    Keys = (Data#data.keys)#{KeyID => KeyVal},
-    Froms = maps:get(KeyID, Data#data.key_queue, []),
-    KeyQueue = maps:remove(KeyID, Data#data.key_queue),
-    Data2 = Data#data{keys = Keys,
-                      key_queue = KeyQueue},
-    Replies = lists:map(fun(From) -> {reply, From, KeyVal} end, Froms),
-    ?DEBUG("KEYS ~p~n", [{Keys, Data2}]),
-    {next_state, State, Data2, Replies};
+    case Res of
+        {ok, Keys, ValidTS} ->
+            Replies =
+                lists:map(
+                  fun({From, KeyID}) ->
+                          case maps:find(KeyID, Keys) of
+                              {ok, {Key, KeyValidUntil}} ->
+                                  {reply, From, {ok, Key, KeyValidUntil}};
+                              error ->
+                                  {reply, From, error}
+                          end
+                  end,
+                  KeyQueue),
+            TimerRef = erlang:start_timer(max(ValidTS - TS, ?KEYS_REQUEST_TIMEOUT),
+                                          self(), []),
+            Data2 = Data#data{keys = Keys,
+                              state = #wait{timer_ref = TimerRef,
+                                            last = TS}},
+            ?DEBUG("KEYS ~p~n", [{Keys, Data2}]),
+            {next_state, State, Data2, Replies};
+        {error, Data2} ->
+            {next_state, State, Data2, []}
+    end;
+handle_event(info, {timeout, TimerRef, []}, State,
+             #data{state = #wait{timer_ref = TimerRef}} = Data) ->
+    Data2 = request_keys(Data#data.matrix_server, Data),
+    {next_state, State, Data2, []};
 handle_event(cast, Msg, State, Data) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {next_state, State, Data, []};
@@ -427,8 +451,7 @@ callback_mode() ->
 %%% Internal functions
 %%%===================================================================
 
-do_get_matrix_host_port(Data) ->
-    MatrixServer = Data#data.matrix_server,
+do_get_matrix_host_port(MatrixServer) ->
     case binary:split(MatrixServer, <<":">>) of
         [Addr] ->
             case inet:parse_address(binary_to_list(Addr)) of
@@ -530,47 +553,48 @@ check_signature(JSON, SignatureName, KeyID, VerifyKey) ->
             false
     end.
 
-%process_unverified_queries(KeyID, Data) ->
-%    case maps:find(KeyID, Data#data.keys) of
-%        {ok, {ok, VerifyKey, _ValidUntil}} ->
-%            Queue = maps:get(KeyID, Data#data.key_queue, []),
-%            KeyQueue = maps:remove(KeyID, Data#data.key_queue),
-%            Data2 = Data#data{key_queue = KeyQueue},
-%            lists:foldl(
-%              fun(Query, DataAcc) ->
-%                      process_unverified_query(KeyID, VerifyKey, Query, DataAcc)
-%              end, Data2, Queue);
-%        _ ->
-%            %% TODO
-%            Data
-%    end.
-
-process_unverified_query(
-  KeyID, VerifyKey, {query, AuthParams, _Query, Content, Request} = _Msg, Data) ->
-    Destination = mod_matrix_gw_opt:matrix_domain(Data#data.host),
-    #{<<"sig">> := Sig} = AuthParams,
-    JSON = #{<<"method">> => atom_to_binary(Request#request.method, latin1),
-             <<"uri">> => Request#request.raw_path,
-             <<"origin">> => Data#data.matrix_server,
-             <<"destination">> => Destination,
-             <<"signatures">> => #{
-               Data#data.matrix_server => #{KeyID => Sig}
-              }
-            },
-    JSON2 =
-        case Content of
-            none -> JSON;
-            _ ->
-                JSON#{<<"content">> => Content}
+request_keys(Via, Data) ->
+    {MHost, MPort} = do_get_matrix_host_port(Via),
+    URL =
+        case Data#data.matrix_server of
+            Via ->
+                <<"https://", MHost/binary,
+                  ":", (integer_to_binary(MPort))/binary,
+                  "/_matrix/key/v2/server">>;
+            MatrixServer ->
+                <<"https://", MHost/binary,
+                  ":", (integer_to_binary(MPort))/binary,
+                  "/_matrix/key/v2/query/", MatrixServer/binary>>
         end,
-    case check_signature(JSON2, Data#data.matrix_server, KeyID, VerifyKey) of
-        true ->
-            todo_remove_me;
-            %process_query(Msg, Data);
-        false ->
-            ?WARNING_MSG("Failed authentication: ~p", [JSON]),
-            %% TODO
-            Data
+    Self = self(),
+    {ok, RequestID} =
+        httpc:request(get, {URL, []},
+                      [{timeout, 5000}],
+                      [{sync, false},
+                       {receiver,
+                        fun({RequestId, Result}) ->
+                                gen_statem:cast(
+                                  Self, {key_reply, RequestId, Result})
+                        end}]),
+    case Data#data.state of
+        #pending{request_id = OldReqID} = St ->
+            case OldReqID of
+                undefined ->
+                    ok;
+                _ ->
+                    httpc:cancel_request(OldReqID)
+            end,
+            Data#data{state = St#pending{request_id = RequestID}};
+        #wait{timer_ref = TimerRef} ->
+            case TimerRef of
+                undefined ->
+                    ok;
+                _ ->
+                    erlang:cancel_timer(TimerRef)
+            end,
+            NotaryServers = mod_matrix_gw_opt:notary_servers(Data#data.host),
+            Data#data{state = #pending{request_id = RequestID,
+                                       servers = NotaryServers}}
     end.
 
 -endif.

@@ -611,22 +611,28 @@ parse_auth4(<<>>, Key, Val, Ts) ->
 
 prune_event(#{<<"type">> := Type, <<"content">> := Content} = Event,
             RoomVersion) ->
-    Event2 =
+    Keys =
         case RoomVersion#room_version.updated_redaction_rules of
             false ->
-                maps:with(
-                  [<<"event_id">>, <<"type">>, <<"room_id">>, <<"sender">>,
-                   <<"state_key">>, <<"content">>, <<"hashes">>,
-                   <<"signatures">>, <<"depth">>, <<"prev_events">>,
-                   <<"prev_state">>, <<"auth_events">>, <<"origin">>,
-                   <<"origin_server_ts">>, <<"membership">>], Event);
+                [<<"event_id">>, <<"type">>, <<"room_id">>, <<"sender">>,
+                 <<"state_key">>, <<"content">>, <<"hashes">>,
+                 <<"signatures">>, <<"depth">>, <<"prev_events">>,
+                 <<"prev_state">>, <<"auth_events">>, <<"origin">>,
+                 <<"origin_server_ts">>, <<"membership">>];
             true ->
-                maps:with(
-                  [<<"event_id">>, <<"type">>, <<"room_id">>, <<"sender">>,
-                   <<"state_key">>, <<"content">>, <<"hashes">>,
-                   <<"signatures">>, <<"depth">>, <<"prev_events">>,
-                   <<"auth_events">>, <<"origin_server_ts">>], Event)
+                [<<"event_id">>, <<"type">>, <<"room_id">>, <<"sender">>,
+                 <<"state_key">>, <<"content">>, <<"hashes">>,
+                 <<"signatures">>, <<"depth">>, <<"prev_events">>,
+                 <<"auth_events">>, <<"origin_server_ts">>]
         end,
+    Keys2 =
+        case {RoomVersion#room_version.hydra, Type} of
+            {true, <<"m.room.create">>} ->
+                lists:delete(<<"room_id">>, Keys);
+            _ ->
+                Keys
+        end,
+    Event2 = maps:with(Keys2, Event),
     Content2 =
         case Type of
             <<"m.room.member">> ->
@@ -976,7 +982,9 @@ mod_opt_type(key) ->
             crypto:generate_key(eddsa, ed25519, Key2)
     end;
 mod_opt_type(matrix_id_as_jid) ->
-    econf:bool().
+    econf:bool();
+mod_opt_type(notary_servers) ->
+    econf:list(econf:host()).
 
 -spec mod_options(binary()) -> [{key, {binary(), binary()}} |
                                 {atom(), any()}].
@@ -986,7 +994,8 @@ mod_options(Host) ->
      {host, <<"matrix.", Host/binary>>},
      {key_name, <<"">>},
      {key, {<<"">>, <<"">>}},
-     {matrix_id_as_jid, false}].
+     {matrix_id_as_jid, false},
+     {notary_servers, []}].
 
 mod_doc() ->
     #{desc =>
@@ -1042,7 +1051,11 @@ mod_doc() ->
 		     "Matrix user '@user:matrixdomain.tld', the client must send a message "
 		     "to the JID 'user%matrixdomain.tld@matrix.myxmppdomain.tld', where "
 		     "'matrix.myxmppdomain.tld' is the JID of the gateway service as set by the "
-		     "'host' option. The default is 'false'.")}}
+		     "'host' option. The default is 'false'.")}},
+	   {notary_servers,
+            #{value => "[Server, ...]",
+              desc =>
+                  ?T("A list of notary servers.")}}
           ]
      }.
 -endif.

@@ -31,5 +31,6 @@
          knock_restricted_join_rule :: boolean(),
          enforce_int_power_levels :: boolean(),
          implicit_room_creator :: boolean(),
-         updated_redaction_rules :: boolean()
+         updated_redaction_rules :: boolean(),
+         hydra :: boolean()
         }).

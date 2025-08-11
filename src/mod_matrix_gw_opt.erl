@@ -8,6 +8,7 @@
 -export([key_name/1]).
 -export([matrix_domain/1]).
 -export([matrix_id_as_jid/1]).
+-export([notary_servers/1]).
 
 -spec host(gen_mod:opts() | global | binary()) -> binary().
 host(Opts) when is_map(Opts) ->
@@ -38,4 +39,10 @@ matrix_id_as_jid(Opts) when is_map(Opts) ->
     gen_mod:get_opt(matrix_id_as_jid, Opts);
 matrix_id_as_jid(Host) ->
     gen_mod:get_module_opt(Host, mod_matrix_gw, matrix_id_as_jid).
+
+-spec notary_servers(gen_mod:opts() | global | binary()) -> [binary()].
+notary_servers(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(notary_servers, Opts);
+notary_servers(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, notary_servers).
 
