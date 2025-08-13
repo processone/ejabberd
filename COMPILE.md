@@ -65,6 +65,11 @@ To configure the compilation, features, install paths...
 
     ./configure --help
 
+The build tool automatically downloads and compiles the
+erlang libraries that [ejabberd depends on][docs-repo].
+
+[docs-repo]: https://docs.ejabberd.im/developer/repositories/
+
 
 Install in the System
 ---------------------
