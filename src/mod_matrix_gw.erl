@@ -1000,9 +1000,12 @@ mod_options(Host) ->
 mod_doc() ->
     #{desc =>
           [?T("https://matrix.org/[Matrix] gateway. "),
+           ?T("Supports room versions 9, 10 and 11 since ejabberd 25.03; "
+              "room versions 4 and higher since ejabberd 25.07; "
+              "room version 12 (hydra rooms) since ejabberd 25.xx. "),
            ?T("Erlang/OTP 25 or higher is required to use this module."),
            ?T("This module is available since ejabberd 24.02.")],
-      note => "improved in 25.07",
+      note => "improved in 25.xx",
       example =>
 	  ["listen:",
 	   "  -",
