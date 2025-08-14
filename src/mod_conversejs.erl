@@ -64,6 +64,7 @@ process([], #request{method = 'GET', host = Host, q = Query, raw_path = RawPath1
     CSS = get_file_url(Host, conversejs_css,
                        <<RawPath/binary, "/converse.min.css">>,
                        <<"https://cdn.conversejs.org/dist/converse.min.css">>),
+    PluginsHtml = get_plugins_html(Host, RawPath),
     Init = [{<<"discover_connection_methods">>, false},
             {<<"default_domain">>, Domain},
             {<<"domain_placeholder">>, Domain},
@@ -89,7 +90,8 @@ process([], #request{method = 'GET', host = Host, q = Query, raw_path = RawPath1
       <<"<meta charset='utf-8'>">>,
       <<"<link rel='stylesheet' type='text/css' media='screen' href='">>,
       fxml:crypt(CSS), <<"'>">>,
-      <<"<script src='">>, fxml:crypt(Script), <<"' charset='utf-8'></script>">>,
+      <<"<script src='">>, fxml:crypt(Script), <<"' charset='utf-8'></script>">>
+     ] ++ PluginsHtml ++ [
       <<"</head>">>,
       <<"<body>">>,
       <<"<script>">>,
@@ -115,6 +117,7 @@ is_served_file([<<"emojis.js">>]) -> true;
 is_served_file([<<"locales">>, _]) -> true;
 is_served_file([<<"locales">>, <<"dayjs">>, _]) -> true;
 is_served_file([<<"webfonts">>, _]) -> true;
+is_served_file([<<"plugins">>, _]) -> true;
 is_served_file(_) -> false.
 
 serve(Host, LocalPath) ->
@@ -224,6 +227,25 @@ get_auto_file_url(Host, Filename, Default) ->
         _ -> Filename
     end.
 
+get_plugins_html(Host, RawPath) ->
+    Resources = get_conversejs_resources(Host),
+    lists:map(fun(F) ->
+                 Plugin =
+                     case {F, Resources} of
+                         {<<"libsignal">>, undefined} ->
+                             <<"https://cdn.conversejs.org/3rdparty/libsignal-protocol.min.js">>;
+                         {<<"libsignal">>, Path} ->
+                             ?WARNING_MSG("~p is configured to use local Converse files "
+                                          "from path ~ts but the public plugin ~ts!",
+                                          [?MODULE, Path, F]),
+                             <<"https://cdn.conversejs.org/3rdparty/libsignal-protocol.min.js">>;
+                         _ ->
+                             fxml:crypt(<<RawPath/binary, "plugins/", F/binary>>)
+                     end,
+                 <<"<script src='", Plugin/binary, "' charset='utf-8'></script>">>
+              end,
+              gen_mod:get_module_opt(Host, ?MODULE, conversejs_plugins)).
+
 %%----------------------------------------------------------------------
 %% WebAdmin link and autologin
 %%----------------------------------------------------------------------
@@ -305,6 +327,8 @@ mod_opt_type(conversejs_script) ->
     econf:binary();
 mod_opt_type(conversejs_css) ->
     econf:binary();
+mod_opt_type(conversejs_plugins) ->
+    econf:list(econf:binary());
 mod_opt_type(default_domain) ->
     econf:host().
 
@@ -315,6 +339,7 @@ mod_options(Host) ->
      {conversejs_resources, undefined},
      {conversejs_options, []},
      {conversejs_script, auto},
+     {conversejs_plugins, []},
      {conversejs_css, auto}].
 
 mod_doc() ->
@@ -345,6 +370,7 @@ mod_doc() ->
              "modules:",
              "  mod_bosh: {}",
              "  mod_conversejs:",
+             "    conversejs_plugins: [\"libsignal\"]",
              "    websocket_url: \"ws://@HOST@:5280/websocket\""]},
            {?T("Host Converse locally and let auto detection of WebSocket and Converse URLs:"),
             ["listen:",
@@ -358,7 +384,9 @@ mod_doc() ->
              "",
              "modules:",
              "  mod_conversejs:",
-             "    conversejs_resources: \"/home/ejabberd/conversejs-9.0.0/package/dist\""]},
+             "    conversejs_resources: \"/home/ejabberd/conversejs-x.y.z/package/dist\"",
+             "    conversejs_plugins: [\"libsignal-protocol.min.js\"]",
+             "    # File path is: /home/ejabberd/conversejs-x.y.z/package/dist/plugins/libsignal-protocol.min.js"]},
            {?T("Configure some additional options for Converse"),
             ["modules:",
              "  mod_conversejs:",
@@ -410,6 +438,15 @@ mod_doc() ->
                      "See https://conversejs.org/docs/html/configuration.html[Converse configuration]. "
                      "Only boolean, integer and string values are supported; "
                      "lists are not supported.")}},
+           {conversejs_plugins,
+            #{value => ?T("[Filename]"),
+              desc =>
+                  ?T("List of additional local files to include as scripts in the homepage. "
+                     "Please make sure those files are available in the path specified in "
+                     "'conversejs_resources' option, in subdirectory 'plugins/'. "
+                     "If using the public Converse client, then '\"libsignal\"' "
+                     "gets replaced with the URL of the public library. "
+                     "The default value is '[]'.")}},
            {conversejs_script,
             #{value => ?T("auto | URL"),
               desc =>
