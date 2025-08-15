@@ -240,7 +240,7 @@ get_plugins_html(Host, RawPath) ->
                                           [?MODULE, Path, F]),
                              <<"https://cdn.conversejs.org/3rdparty/libsignal-protocol.min.js">>;
                          _ ->
-                             fxml:crypt(<<RawPath/binary, "plugins/", F/binary>>)
+                             fxml:crypt(<<RawPath/binary, "/plugins/", F/binary>>)
                      end,
                  <<"<script src='", Plugin/binary, "' charset='utf-8'></script>">>
               end,
