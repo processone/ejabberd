@@ -139,16 +139,13 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 			{error, _} ->
 			    ok
 		    end;
-		{error, Reason} = Err ->
-		    report_socket_error(Reason, EndPoint, Module),
-		    proc_lib:init_ack(Err)
+		{error, Reason} ->
+		    return_socket_error(Reason, EndPoint, Module)
 	    end;
-	{{error, Reason} = Err, _} ->
-	    report_socket_error(Reason, EndPoint, Module),
-	    proc_lib:init_ack(Err);
-	{_, {error, Reason} = Err} ->
-	    report_socket_error(Reason, EndPoint, Module),
-	    proc_lib:init_ack(Err)
+	{{error, Reason}, _} ->
+	    return_socket_error(Reason, EndPoint, Module);
+	{_, {error, Reason} } ->
+	    return_socket_error(Reason, EndPoint, Module)
     end;
 init({Port, _, tcp} = EndPoint, Module, Opts, SockOpts) ->
     case {listen_tcp(Port, SockOpts),
@@ -177,16 +174,13 @@ init({Port, _, tcp} = EndPoint, Module, Opts, SockOpts) ->
 			{error, _} ->
 			    ok
 		    end;
-		{error, Reason} = Err ->
-		    report_socket_error(Reason, EndPoint, Module),
-		    proc_lib:init_ack(Err)
+		{error, Reason} ->
+		    return_socket_error(Reason, EndPoint, Module)
 	    end;
-	{{error, Reason}, _} = Err ->
-	    report_socket_error(Reason, EndPoint, Module),
-	    proc_lib:init_ack(Err);
-	{_, {error, Reason}} = Err ->
-	    report_socket_error(Reason, EndPoint, Module),
-	    proc_lib:init_ack(Err)
+	{{error, Reason}, _} ->
+	    return_socket_error(Reason, EndPoint, Module);
+	{_, {error, Reason}} ->
+	    return_socket_error(Reason, EndPoint, Module)
     end.
 
 -spec listen_tcp(inet:port_number(), [gen_tcp:option()]) ->
@@ -608,10 +602,20 @@ config_reloaded() ->
 	      end
       end, New).
 
--spec report_socket_error(inet:posix(), endpoint(), module()) -> ok.
-report_socket_error(Reason, EndPoint, Module) ->
+
+-spec return_socket_error(inet:posix(), endpoint(), module()) -> ok.
+return_socket_error(Reason, EndPoint, Module) ->
     ?ERROR_MSG("Failed to open socket at ~ts for ~ts: ~ts",
-	       [format_endpoint(EndPoint), Module, format_error(Reason)]).
+               [format_endpoint(EndPoint), Module, format_error(Reason)]),
+    return_init_error(Reason).
+
+-ifdef(OTP_BELOW_26).
+return_init_error(Reason) ->
+    proc_lib:init_ack({error, Reason}).
+-else.
+return_init_error(Reason) ->
+    proc_lib:init_fail({error, Reason}, {exit, normal}).
+-endif.
 
 -spec format_error(inet:posix() | atom()) -> string().
 format_error(Reason) ->
