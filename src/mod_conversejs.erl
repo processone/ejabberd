@@ -69,7 +69,7 @@ process([], #request{method = 'GET', host = Host, q = Query, raw_path = RawPath1
             {<<"default_domain">>, Domain},
             {<<"domain_placeholder">>, Domain},
             {<<"registration_domain">>, Domain},
-            {<<"assets_path">>, RawPath},
+            {<<"assets_path">>, <<RawPath/binary, "/">>},
             {<<"view_mode">>, <<"fullscreen">>}
            | ExtraOptions],
     Init2 =
