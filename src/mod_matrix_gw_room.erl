@@ -265,105 +265,109 @@ route(#message{from = From, to = To, body = Body} = _Pkt) ->
     Host = ejabberd_config:get_myname(),
     case user_id_from_jid(To, Host) of
         {ok, ToMatrixID} ->
-            Key = {{From#jid.luser, From#jid.lserver}, ToMatrixID},
-            Text = xmpp:get_text(Body),
-            case mnesia:dirty_read(matrix_direct, Key) of
-                [#matrix_direct{room_id = RoomID}] ->
-                    ?DEBUG("msg ~p~n", [{RoomID, From, ToMatrixID, Text}]),
-                    case get_existing_room_pid(Host, RoomID) of
-                        {ok, Pid} ->
-                            MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
-                            FromMatrixID =
-                                <<$@, (From#jid.luser)/binary, $:, MatrixServer/binary>>,
-                            JSON =
-                                #{<<"content">> =>
-                                      #{<<"body">> => Text,
-                                        <<"msgtype">> => <<"m.text">>},
-                                  <<"sender">> => FromMatrixID,
-                                  <<"type">> => ?ROOM_MESSAGE},
-                            gen_statem:cast(Pid, {add_event, JSON}),
-                            ok;
-                        {error, _} ->
-                            %%TODO
-                            ok
-                    end;
-                _ ->
-                    RoomID = new_room_id(),
-                    ?DEBUG("new room id ~p~n", [RoomID]),
-                    case get_room_pid(Host, RoomID) of
-                        {ok, Pid} ->
-                            MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
-                            FromMatrixID =
-                                <<$@, (From#jid.luser)/binary, $:, MatrixServer/binary>>,
-                            gen_statem:cast(Pid, {create, MatrixServer, RoomID,
-                                                  FromMatrixID, ToMatrixID}),
-                            JSONs =
-                                [#{<<"content">> =>
-                                       #{<<"creator">> => FromMatrixID,
-                                         <<"room_version">> => <<"9">>},
-                                   <<"sender">> => FromMatrixID,
-                                   <<"state_key">> => <<"">>,
-                                   <<"type">> => ?ROOM_CREATE},
-                                 #{<<"content">> =>
-                                       #{<<"membership">> => <<"join">>},
-                                   <<"sender">> => FromMatrixID,
-                                   <<"state_key">> => FromMatrixID,
-                                   <<"type">> => ?ROOM_MEMBER},
-                                 #{<<"content">> =>
-                                       #{<<"ban">> => 50,
-                                         <<"events">> =>
-                                             #{<<"m.room.avatar">> => 50,
-                                               <<"m.room.canonical_alias">> => 50,
-                                               <<"m.room.encryption">> => 100,
-                                               <<"m.room.history_visibility">> => 100,
-                                               <<"m.room.name">> => 50,
-                                               <<"m.room.power_levels">> => 100,
-                                               <<"m.room.server_acl">> => 100,
-                                               <<"m.room.tombstone">> => 100},
-                                         <<"events_default">> => 0,
-                                         <<"historical">> => 100,
-                                         <<"invite">> => 0,
-                                         <<"kick">> => 50,
-                                         <<"redact">> => 50,
-                                         <<"state_default">> => 50,
-                                         <<"users">> =>
-                                             #{FromMatrixID => 100,
-                                               ToMatrixID => 100},
-                                         <<"users_default">> => 0},
-                                   <<"sender">> => FromMatrixID,
-                                   <<"state_key">> => <<"">>,
-                                   <<"type">> => ?ROOM_POWER_LEVELS},
-                                 #{<<"content">> => #{<<"join_rule">> => <<"invite">>},
-                                   <<"sender">> => FromMatrixID,
-                                   <<"state_key">> => <<"">>,
-                                   <<"type">> => ?ROOM_JOIN_RULES},
-                                 #{<<"content">> => #{<<"history_visibility">> => <<"shared">>},
-                                   <<"sender">> => FromMatrixID,
-                                   <<"state_key">> => <<"">>,
-                                   <<"type">> => ?ROOM_HISTORY_VISIBILITY},
-                                 #{<<"content">> => #{<<"guest_access">> => <<"can_join">>},
-                                   <<"sender">> => FromMatrixID,
-                                   <<"state_key">> => <<"">>,
-                                   <<"type">> => <<"m.room.guest_access">>},
-                                 #{<<"content">> =>
-                                       #{<<"is_direct">> => true,
-                                         <<"membership">> => <<"invite">>},
-                                   <<"sender">> => FromMatrixID,
-                                   <<"state_key">> => ToMatrixID,
-                                   <<"type">> => ?ROOM_MEMBER},
-                                 #{<<"content">> =>
-                                       #{<<"body">> => Text,
-                                         <<"msgtype">> => <<"m.text">>},
-                                   <<"sender">> => FromMatrixID,
-                                   <<"type">> => ?ROOM_MESSAGE}
-                                ],
-                            lists:foreach(fun(JSON) ->
-                                                  gen_statem:cast(Pid, {add_event, JSON})
-                                          end, JSONs),
-                            ok;
-                        {error, _} ->
-                            %%TODO
-                            ok
+            case xmpp:get_text(Body) of
+                <<"">> ->
+                    ok;
+                Text ->
+                    Key = {{From#jid.luser, From#jid.lserver}, ToMatrixID},
+                    case mnesia:dirty_read(matrix_direct, Key) of
+                        [#matrix_direct{room_id = RoomID}] ->
+                            ?DEBUG("msg ~p~n", [{RoomID, From, ToMatrixID, Text}]),
+                            case get_existing_room_pid(Host, RoomID) of
+                                {ok, Pid} ->
+                                    MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
+                                    FromMatrixID =
+                                        <<$@, (From#jid.luser)/binary, $:, MatrixServer/binary>>,
+                                    JSON =
+                                        #{<<"content">> =>
+                                              #{<<"body">> => Text,
+                                                <<"msgtype">> => <<"m.text">>},
+                                          <<"sender">> => FromMatrixID,
+                                          <<"type">> => ?ROOM_MESSAGE},
+                                    gen_statem:cast(Pid, {add_event, JSON}),
+                                    ok;
+                                {error, _} ->
+                                    %%TODO
+                                    ok
+                            end;
+                        _ ->
+                            RoomID = new_room_id(),
+                            ?DEBUG("new room id ~p~n", [RoomID]),
+                            case get_room_pid(Host, RoomID) of
+                                {ok, Pid} ->
+                                    MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
+                                    FromMatrixID =
+                                        <<$@, (From#jid.luser)/binary, $:, MatrixServer/binary>>,
+                                    gen_statem:cast(Pid, {create, MatrixServer, RoomID,
+                                                          FromMatrixID, ToMatrixID}),
+                                    JSONs =
+                                        [#{<<"content">> =>
+                                               #{<<"creator">> => FromMatrixID,
+                                                 <<"room_version">> => <<"9">>},
+                                           <<"sender">> => FromMatrixID,
+                                           <<"state_key">> => <<"">>,
+                                           <<"type">> => ?ROOM_CREATE},
+                                         #{<<"content">> =>
+                                               #{<<"membership">> => <<"join">>},
+                                           <<"sender">> => FromMatrixID,
+                                           <<"state_key">> => FromMatrixID,
+                                           <<"type">> => ?ROOM_MEMBER},
+                                         #{<<"content">> =>
+                                               #{<<"ban">> => 50,
+                                                 <<"events">> =>
+                                                     #{<<"m.room.avatar">> => 50,
+                                                       <<"m.room.canonical_alias">> => 50,
+                                                       <<"m.room.encryption">> => 100,
+                                                       <<"m.room.history_visibility">> => 100,
+                                                       <<"m.room.name">> => 50,
+                                                       <<"m.room.power_levels">> => 100,
+                                                       <<"m.room.server_acl">> => 100,
+                                                       <<"m.room.tombstone">> => 100},
+                                                 <<"events_default">> => 0,
+                                                 <<"historical">> => 100,
+                                                 <<"invite">> => 0,
+                                                 <<"kick">> => 50,
+                                                 <<"redact">> => 50,
+                                                 <<"state_default">> => 50,
+                                                 <<"users">> =>
+                                                     #{FromMatrixID => 100,
+                                                       ToMatrixID => 100},
+                                                 <<"users_default">> => 0},
+                                           <<"sender">> => FromMatrixID,
+                                           <<"state_key">> => <<"">>,
+                                           <<"type">> => ?ROOM_POWER_LEVELS},
+                                         #{<<"content">> => #{<<"join_rule">> => <<"invite">>},
+                                           <<"sender">> => FromMatrixID,
+                                           <<"state_key">> => <<"">>,
+                                           <<"type">> => ?ROOM_JOIN_RULES},
+                                         #{<<"content">> => #{<<"history_visibility">> => <<"shared">>},
+                                           <<"sender">> => FromMatrixID,
+                                           <<"state_key">> => <<"">>,
+                                           <<"type">> => ?ROOM_HISTORY_VISIBILITY},
+                                         #{<<"content">> => #{<<"guest_access">> => <<"can_join">>},
+                                           <<"sender">> => FromMatrixID,
+                                           <<"state_key">> => <<"">>,
+                                           <<"type">> => <<"m.room.guest_access">>},
+                                         #{<<"content">> =>
+                                               #{<<"is_direct">> => true,
+                                                 <<"membership">> => <<"invite">>},
+                                           <<"sender">> => FromMatrixID,
+                                           <<"state_key">> => ToMatrixID,
+                                           <<"type">> => ?ROOM_MEMBER},
+                                         #{<<"content">> =>
+                                               #{<<"body">> => Text,
+                                                 <<"msgtype">> => <<"m.text">>},
+                                           <<"sender">> => FromMatrixID,
+                                           <<"type">> => ?ROOM_MESSAGE}
+                                        ],
+                                    lists:foreach(fun(JSON) ->
+                                                          gen_statem:cast(Pid, {add_event, JSON})
+                                                  end, JSONs),
+                                    ok;
+                                {error, _} ->
+                                    %%TODO
+                                    ok
+                            end
                     end
             end;
         error ->
