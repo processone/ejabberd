@@ -223,7 +223,8 @@ setup_provisional_udsocket_dir(DefinitivePath) ->
     ProvisionalPathAbsolute.
 
 get_provisional_udsocket_path(Path) ->
-    PathBase64 = misc:term_to_base64(Path),
+    ReproducibleSecret = binary:part(crypto:hash(sha, misc:atom_to_binary(erlang:get_cookie())), 1, 8),
+    PathBase64 = misc:term_to_base64({ReproducibleSecret, Path}),
     PathBuild = filename:join(misc:get_home(), PathBase64),
     DestPath = filename:join(filename:dirname(Path), PathBase64),
     case {byte_size(DestPath) > 107, byte_size(PathBuild) > 107} of
@@ -243,7 +244,7 @@ get_definitive_udsocket_path(<<"unix", _>> = Unix) ->
     Unix;
 get_definitive_udsocket_path(ProvisionalPath) ->
     PathBase64 = filename:basename(ProvisionalPath),
-    {term, Path} = misc:base64_to_term(PathBase64),
+    {term, {_, Path}} = misc:base64_to_term(PathBase64),
     relative_socket_to_mnesia(Path).
 
 -spec set_definitive_udsocket(integer() | binary(), opts()) -> ok | {error, file:posix() | badarg}.
