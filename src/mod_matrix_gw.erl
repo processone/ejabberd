@@ -744,6 +744,8 @@ is_canonical_json(B) when is_binary(B) ->
     true;
 is_canonical_json(B) when is_boolean(B) ->
     true;
+is_canonical_json(null) ->
+    true;
 is_canonical_json(Map) when is_map(Map) ->
     maps:fold(
       fun(_K, V, true) ->
