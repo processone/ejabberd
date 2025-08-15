@@ -984,7 +984,9 @@ mod_opt_type(key) ->
 mod_opt_type(matrix_id_as_jid) ->
     econf:bool();
 mod_opt_type(notary_servers) ->
-    econf:list(econf:host()).
+    econf:list(econf:host());
+mod_opt_type(leave_timeout) ->
+    econf:non_neg_int().
 
 -spec mod_options(binary()) -> [{key, {binary(), binary()}} |
                                 {atom(), any()}].
@@ -995,7 +997,8 @@ mod_options(Host) ->
      {key_name, <<"">>},
      {key, {<<"">>, <<"">>}},
      {matrix_id_as_jid, false},
-     {notary_servers, []}].
+     {notary_servers, []},
+     {leave_timeout, 0}].
 
 mod_doc() ->
     #{desc =>
@@ -1058,7 +1061,11 @@ mod_doc() ->
 	   {notary_servers,
             #{value => "[Server, ...]",
               desc =>
-                  ?T("A list of notary servers.")}}
+                  ?T("A list of notary servers.")}},
+	   {leave_timeout,
+            #{value => "integer()",
+              desc =>
+                  ?T("Delay in seconds between a user leaving a MUC room and sending 'leave' Matrix event.")}}
           ]
      }.
 -endif.

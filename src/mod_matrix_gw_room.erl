@@ -81,7 +81,9 @@
          room_jid :: jid()}).
 
 -record(multi,
-        {users :: #{{binary(), binary()} => #{binary() => #multi_user{}}}}).
+        {users :: #{{binary(), binary()} =>
+                        ({online, #{binary() => #multi_user{}}} |
+                         {offline, reference()})}}).
 
 -record(data,
         {host :: binary(),
@@ -726,7 +728,7 @@ handle_event(cast, {join, UserJID, Packet, Via}, _State, Data) ->
     Host = Data#data.host,
     {LUser, LServer, LResource} = jid:tolower(UserJID),
     case Data#data.kind of
-        #multi{users = #{{LUser, LServer} := #{LResource := _}}} ->
+        #multi{users = #{{LUser, LServer} := {online, #{LResource := _}}}} ->
             {keep_state_and_data, []};
         #multi{} = Kind ->
             case user_id_from_jid(UserJID, Host) of
@@ -740,7 +742,10 @@ handle_event(cast, {join, UserJID, Packet, Via}, _State, Data) ->
                     Users = Kind#multi.users,
                     Resources =
                         case Users of
-                            #{{LUser, LServer} := Rs} -> Rs;
+                            #{{LUser, LServer} := {online, Rs}} -> Rs;
+                            #{{LUser, LServer} := {offline, TimerRef}} ->
+                                erlang:cancel_timer(TimerRef),
+                                #{};
                             _ -> #{}
                         end,
                     RoomJID = jid:remove_resource(xmpp:get_to(Packet)),
@@ -750,9 +755,10 @@ handle_event(cast, {join, UserJID, Packet, Via}, _State, Data) ->
                               Kind#multi{
                                 users =
                                     Users#{{LUser, LServer} =>
-                                               Resources#{LResource =>
-                                                              #multi_user{join_ts = JoinTS,
-                                                                          room_jid = RoomJID}}}}},
+                                               {online,
+                                                Resources#{LResource =>
+                                                               #multi_user{join_ts = JoinTS,
+                                                                           room_jid = RoomJID}}}}}},
                     {keep_state, Data2, [{next_event, cast, {add_event, JSON}}]};
                 error ->
                     ?INFO_MSG("bad join user id: ~p", [UserJID]),
@@ -821,8 +827,9 @@ handle_event(cast, {join, UserJID, Packet, Via}, _State, Data) ->
                                                         kind =
                                                             #multi{users =
                                                                        #{{LUser, LServer} =>
-                                                                             #{LResource => #multi_user{join_ts = JoinTS,
-                                                                                                        room_jid = RoomJID}}}},
+                                                                             {online,
+                                                                              #{LResource => #multi_user{join_ts = JoinTS,
+                                                                                                         room_jid = RoomJID}}}}},
                                                         room_version = RoomVersion})
                                             end;
                                         _JSON ->
@@ -871,22 +878,19 @@ handle_event(cast, {leave, UserJID}, _State, Data) ->
     Host = Data#data.host,
     {LUser, LServer, LResource} = jid:tolower(UserJID),
     case Data#data.kind of
-        #multi{users = #{{LUser, LServer} := #{LResource := _} = Resources} = Users} ->
+        #multi{users = #{{LUser, LServer} := {online, #{LResource := _} = Resources}} = Users} ->
             Resources2 = maps:remove(LResource, Resources),
             if
                 Resources2 == #{} ->
-                    Users2 = maps:remove({LUser, LServer}, Users),
+                    LeaveTimeout = mod_matrix_gw_opt:leave_timeout(Host) * 1000,
+                    TimerRef = erlang:start_timer(LeaveTimeout, self(),
+                                                  {leave, LUser, LServer}),
+                    Users2 = Users#{{LUser, LServer} => {offline, TimerRef}},
                     Kind = (Data#data.kind)#multi{users = Users2},
                     Data2 = Data#data{kind = Kind},
-                    {ok, UserID} = user_id_from_jid(UserJID, Host),
-                    JSON = #{<<"content">> =>
-                                 #{<<"membership">> => <<"leave">>},
-                             <<"sender">> => UserID,
-                             <<"state_key">> => UserID,
-                             <<"type">> => ?ROOM_MEMBER},
-                    {keep_state, Data2, [{next_event, cast, {add_event, JSON}}]};
+                    {keep_state, Data2, []};
                 true ->
-                    Users2 = Users#{{LUser, LServer} => Resources2},
+                    Users2 = Users#{{LUser, LServer} => {online, Resources2}},
                     Kind = (Data#data.kind)#multi{users = Users2},
                     Data2 = Data#data{kind = Kind},
                     {keep_state, Data2, []}
@@ -1006,6 +1010,23 @@ handle_event(info, {resend_txn, Server}, _State, Data) ->
             {keep_state, Data2, []};
         _ ->
             {keep_state, Data, []}
+    end;
+handle_event(info, {timeout, TimerRef, {leave, LUser, LServer}}, State, Data) ->
+    Host = Data#data.host,
+    case Data#data.kind of
+        #multi{users = #{{LUser, LServer} := {offline, TimerRef}} = Users} ->
+            Users2 = maps:remove({LUser, LServer}, Users),
+            Kind = (Data#data.kind)#multi{users = Users2},
+            Data2 = Data#data{kind = Kind},
+            {ok, UserID} = user_id_from_jid(jid:make(LUser, LServer), Host),
+            JSON = #{<<"content">> =>
+                         #{<<"membership">> => <<"leave">>},
+                     <<"sender">> => UserID,
+                     <<"state_key">> => UserID,
+                     <<"type">> => ?ROOM_MEMBER},
+            {keep_state, Data2, [{next_event, cast, {add_event, JSON}}]};
+        _ ->
+            {next_state, State, Data, []}
     end;
 handle_event(info, Info, State, Data) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
@@ -3109,7 +3130,7 @@ notify_event_xmpp(
         <<$@, SenderUser/binary>> ->
             ?DEBUG("notify xmpp ~p", [Users]),
             maps:fold(
-              fun({LUser, LServer}, Resources, ok) ->
+              fun({LUser, LServer}, {online, Resources}, ok) ->
                       maps:fold(
                         fun(LResource, #multi_user{join_ts = JoinTS,
                                                    room_jid = RoomJID}, ok)
@@ -3135,7 +3156,9 @@ notify_event_xmpp(
                                           Msg, Data#data.room_jid, TimeStamp),
                                 ejabberd_router:route(TSMsg);
                            (_, _, _) -> ok
-                        end, ok, Resources)
+                        end, ok, Resources);
+                 (_, _, ok) ->
+                      ok
               end, ok, Users),
             Data;
         _ ->
@@ -3150,7 +3173,7 @@ notify_event_xmpp(
         #jid{} = SenderJID ->
             <<$@, SenderUser/binary>> = Sender,
             maps:fold(
-              fun({LUser, LServer}, Resources, ok) ->
+              fun({LUser, LServer}, {online, Resources}, ok) ->
                       maps:fold(
                         fun(LResource, #multi_user{join_ts = JoinTS,
                                                    room_jid = RoomJID}, ok)
@@ -3206,7 +3229,9 @@ notify_event_xmpp(
                                     false -> ok
                                 end;
                            (_, _, _) -> ok
-                        end, ok, Resources)
+                        end, ok, Resources);
+                 (_, _, ok) ->
+                      ok
               end, ok, Users),
             Data;
         error ->
@@ -3223,7 +3248,7 @@ notify_event_xmpp(
     case StateKey of
         <<$@, RUser/binary>> ->
             maps:fold(
-              fun({LUser, LServer}, Resources, ok) ->
+              fun({LUser, LServer}, {online, Resources}, ok) ->
                       maps:fold(
                         fun(LResource, #multi_user{join_ts = JoinTS,
                                                    room_jid = RoomJID}, ok)
@@ -3239,13 +3264,15 @@ notify_event_xmpp(
                                                 },
                                 ejabberd_router:route(Pres);
                            (_, _, _) -> ok
-                        end, ok, Resources)
+                        end, ok, Resources);
+                 (_, _, ok) ->
+                      ok
               end, ok, Users),
             case user_id_to_jid(StateKey, Data) of
                 #jid{} = RJID ->
                     US = {RJID#jid.luser, RJID#jid.lserver},
                     case Users of
-                        #{US := Resources} ->
+                        #{US := {online, Resources}} ->
                             JoinTS =
                                 maps:fold(
                                   fun(_, #multi_user{join_ts = TS}, Acc) ->
