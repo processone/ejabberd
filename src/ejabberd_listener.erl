@@ -602,8 +602,7 @@ config_reloaded() ->
 	      end
       end, New).
 
-
--spec return_socket_error(inet:posix(), endpoint(), module()) -> ok.
+-spec return_socket_error(inet:posix(), endpoint(), module()) -> no_return().
 return_socket_error(Reason, EndPoint, Module) ->
     ?ERROR_MSG("Failed to open socket at ~ts for ~ts: ~ts",
                [format_endpoint(EndPoint), Module, format_error(Reason)]),
@@ -613,6 +612,7 @@ return_socket_error(Reason, EndPoint, Module) ->
 return_init_error(Reason) ->
     proc_lib:init_ack({error, Reason}).
 -else.
+-spec return_init_error(inet:posix()) -> no_return().
 return_init_error(Reason) ->
     proc_lib:init_fail({error, Reason}, {exit, normal}).
 -endif.
