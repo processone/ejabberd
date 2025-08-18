@@ -9,7 +9,7 @@ ARG VERSION='master'
 
 ################################################################################
 #' Compile ejabberdapi
-FROM docker.io/golang:1.24-alpine AS api
+FROM docker.io/golang:1.25-alpine AS api
 RUN go install -v \
     github.com/processone/ejabberd-api/cmd/ejabberd@master \
     && mv bin/ejabberd bin/ejabberdapi
