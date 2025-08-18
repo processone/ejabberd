@@ -41,7 +41,7 @@ jobs:
           gem install --no-document --user-install fpm
           echo $HOME/.local/share/gem/ruby/*/bin >> $GITHUB_PATH
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Build binary archives
