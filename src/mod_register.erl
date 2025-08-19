@@ -420,7 +420,7 @@ send_welcome_message(JID) ->
 		     to = JID,
 		     type = chat,
 		     subject = xmpp:mk_text(Subj),
-		     body = xmpp:mk_text(<<Subj/binary, "\n\n", Body/binary>>)})
+		     body = xmpp:mk_text(Body)})
     end.
 
 send_registration_notifications(Mod, UJID, Source) ->
