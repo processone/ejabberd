@@ -1155,7 +1155,7 @@ get_commands_spec() ->
 			"do not attempt to run this command when ejabberd is running. "
 			"This command is exclusive for the ejabberdctl command-line script, "
 			"don't attempt to execute it using any other API frontend.",
-			note = "added in 25.xx",
+			note = "added in 25.08",
 			args = [{old_node_name, string}],
 			args_desc = ["Old erlang node name"],
 			args_example = ["ejabberd@oldmachine"]},

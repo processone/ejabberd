@@ -275,7 +275,7 @@ get_commands_spec() ->
                         "and _`unban_account`_ API.",
 			module = ?MODULE, function = ban_account_v2,
 			version = 2,
-			note = "improved in 25.xx",
+			note = "improved in 25.08",
 			args = [{user, binary}, {host, binary}, {reason, binary}],
 			args_example = [<<"attacker">>, <<"myserver.com">>, <<"Spaming other users">>],
 			args_desc = ["User name to ban", "Server name",

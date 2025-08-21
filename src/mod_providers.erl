@@ -328,7 +328,7 @@ mod_doc() ->
               "_`listen-options.md#request_handlers|request_handlers`_. "
               "Notice you should set in _`listen.md#ejabberd_http|ejabberd_http`_ "
               "the option _`listen-options.md#tls|tls`_ enabled.")],
-      note => "added in 25.xx",
+      note => "added in 25.08",
       opts =>
           [{languages,
             #{value => "[string()]",
