@@ -358,7 +358,7 @@
 {"Too many child elements","Túl sok gyermekelem"}.
 {"Too many <item/> elements","Túl sok <item/> elem"}.
 {"Too many <list/> elements","Túl sok <list/> elem"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Túl sok (~p) sikertelen hitelesítés erről az IP-címről (~ts) A cím ~ts-kor lesz feloldva UTC szerint"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Túl sok (~p) sikertelen hitelesítés erről az IP-címről (~s) A cím ~s-kor lesz feloldva UTC szerint"}.
 {"Too many receiver fields were specified","Túl sok fogadómező lett meghatározva"}.
 {"Too many unacked stanzas","Túl sok nyugtázatlan stanza"}.
 {"Too many users in this conference","Túl sok felhasználó ebben a konferenciában"}.
