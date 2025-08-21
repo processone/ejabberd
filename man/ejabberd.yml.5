@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 07/11/2025
+.\"      Date: 08/22/2025
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "07/11/2025" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "08/22/2025" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/25\&.07/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/25\&.08/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 25\&.07\&. The options that changed in this version are marked with 🟤\&.
+This section describes top level options of ejabberd 25\&.08\&. The options that changed in this version are marked with 🟤\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLName|ACLDefinition}}\fR
 .RS 4
@@ -461,10 +461,10 @@ option\&.
 .sp
 The default value is \fIplain\fR\&.
 .PP
-\fBauth_password_types_hidden_in_scram1 🟤\fR: \fI[plain | scram_sha1 | scram_sha256 | scram_sha512]\fR
+\fBauth_password_types_hidden_in_sasl1\fR: \fI[plain | scram_sha1 | scram_sha256 | scram_sha512]\fR
 .RS 4
 \fINote\fR
-about this option: added in 25\&.07\&. List of password types that should not be offered in SCRAM1 authenticatication\&. Because SCRAM1, unlike SCRAM2, can\(cqt have list of available mechanisms tailored to individual user, it\(cqs possible that offered mechanisms will not be compatible with stored password, especially if new password type was added recently\&. This option allows disabling offering some mechanisms in SASL1, to a time until new password type will be available for all users\&.
+about this option: added in 25\&.07\&. List of password types that should not be offered in SASL1 authenticatication\&. Because SASL1, unlike SASL2, can\(cqt have list of available mechanisms tailored to individual user, it\(cqs possible that offered mechanisms will not be compatible with stored password, especially if new password type was added recently\&. This option allows disabling offering some mechanisms in SASL1, to a time until new password type will be available for all users\&.
 .RE
 .PP
 \fBauth_scram_hash\fR: \fIsha | sha256 | sha512\fR
@@ -703,13 +703,19 @@ A list of Erlang nodes to connect on ejabberd startup\&. This option is mostly i
 \fBdefault_db\fR: \fImnesia | sql\fR
 .RS 4
 \fIdatabase\&.md#default\-database|Default database\fR
-to store persistent data in ejabberd\&. Modules and other components (e\&.g\&. authentication) may have its own value\&. The default value is
+to store persistent data in ejabberd\&. Some components can be configured with specific toplevel options like
+\fIoauth_db_type\fR\&. Many modules can be configured with specific module options, usually named
+db_type\&. The default value is
 \fImnesia\fR\&.
 .RE
 .PP
 \fBdefault_ram_db\fR: \fImnesia | redis | sql\fR
 .RS 4
-Default volatile (in\-memory) storage for ejabberd\&. Modules and other components (e\&.g\&. session management) may have its own value\&. The default value is
+Default volatile (in\-memory) storage for ejabberd\&. Some components can be configured with specific toplevel options like
+\fIrouter_db_type\fR
+and
+\fIsm_db_type\fR\&. Some modules can be configured with specific module options, usually named
+ram_db_type\&. The default value is
 \fImnesia\fR\&.
 .RE
 .PP
@@ -957,7 +963,7 @@ List of one or more
 option\&.
 .RE
 .PP
-\fBhosts_alias 🟤\fR: \fI{Alias: Host}\fR
+\fBhosts_alias\fR: \fI{Alias: Host}\fR
 .RS 4
 \fINote\fR
 about this option: added in 25\&.07\&. Define aliases for existing vhosts managed by ejabberd\&. An alias may be a regexp expression\&. This option is only consulted by the
@@ -1280,7 +1286,7 @@ This option can be used to tune tick time parameter of
 .RS 4
 Whether to use the
 \fIdatabase\&.md#default\-and\-new\-schemas|new SQL schema\fR\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/25\&.07/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/25\&.08/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema can handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -1547,25 +1553,25 @@ XMPP Core: section 7\&.7\&.2\&.2\&. The default value is
 \fIcloseold\fR\&.
 .RE
 .PP
-\fBrest_proxy 🟤\fR: \fIHost\fR
+\fBrest_proxy\fR: \fIHost\fR
 .RS 4
 \fINote\fR
 about this option: added in 25\&.07\&. Address of a HTTP Connect proxy used by modules issuing rest calls (like ejabberd_oauth_rest)
 .RE
 .PP
-\fBrest_proxy_password 🟤\fR: \fIstring()\fR
+\fBrest_proxy_password\fR: \fIstring()\fR
 .RS 4
 \fINote\fR
 about this option: added in 25\&.07\&. Password used to authenticate to HTTP Connect proxy used by modules issuing rest calls (like ejabberd_oauth_rest)
 .RE
 .PP
-\fBrest_proxy_port 🟤\fR: \fI1\&.\&.65535\fR
+\fBrest_proxy_port\fR: \fI1\&.\&.65535\fR
 .RS 4
 \fINote\fR
 about this option: added in 25\&.07\&. Port of a HTTP Connect proxy used by modules issuing rest calls (like ejabberd_oauth_rest)
 .RE
 .PP
-\fBrest_proxy_username 🟤\fR: \fIstring()\fR
+\fBrest_proxy_username\fR: \fIstring()\fR
 .RS 4
 \fINote\fR
 about this option: added in 25\&.07\&. Username used to authenticate to HTTP Connect proxy used by modules issuing rest calls (like ejabberd_oauth_rest)
@@ -2101,7 +2107,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 25\&.07\&. The modules that changed in this version are marked with 🟤\&.
+This section describes modules options of ejabberd 25\&.08\&. The modules that changed in this version are marked with 🟤\&.
 .SS "mod_adhoc"
 .sp
 def:ad\-hoc command
@@ -2261,6 +2267,8 @@ ejabberdctl srg_create g1 example\&.org "\*(AqGroup number 1\*(Aq" this_is_g1 g1
 .if n \{\
 .RE
 .\}
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#accounts|accounts\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#erlang|erlang\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#last|last\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#private|private\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#purge|purge\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#roster|roster\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#session|session\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#shared_roster_group|shared_roster_group\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#stanza|stanza\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#statistics|statistics\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#vcard|vcard\fR
 .RE
 .SS "mod_admin_update_sql"
 .sp
@@ -2455,7 +2463,7 @@ Same as top\-level
 option, but applied to this module only\&.
 .RE
 .RE
-.SS "mod_antispam 🟤"
+.SS "mod_antispam"
 .sp
 \fINote\fR about this option: added in 25\&.07\&.
 .sp
@@ -3034,7 +3042,7 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_conversejs 🟤"
+.SS "mod_conversejs"
 .sp
 \fINote\fR about this option: improved in 25\&.07\&.
 .sp
@@ -3078,6 +3086,17 @@ is replaced with the hostname\&. The default value is
 \fINote\fR
 about this option: added in 22\&.05\&. Specify additional options to be passed to Converse\&. See
 Converse configuration\&. Only boolean, integer and string values are supported; lists are not supported\&.
+.RE
+.PP
+\fBconversejs_plugins\fR: \fI[Filename]\fR
+.RS 4
+List of additional local files to include as scripts in the homepage\&. Please make sure those files are available in the path specified in
+\fIconversejs_resources\fR
+option, in subdirectory
+\fIplugins/\fR\&. If using the public Converse client, then
+\fI"libsignal"\fR
+gets replaced with the URL of the public library\&. The default value is
+\fI[]\fR\&.
 .RE
 .PP
 \fBconversejs_resources\fR: \fIPath\fR
@@ -3138,6 +3157,7 @@ listen:
 modules:
   mod_bosh: {}
   mod_conversejs:
+    conversejs_plugins: ["libsignal"]
     websocket_url: "ws://@HOST@:5280/websocket"
 .fi
 .if n \{\
@@ -3161,7 +3181,9 @@ listen:
 
 modules:
   mod_conversejs:
-    conversejs_resources: "/home/ejabberd/conversejs\-9\&.0\&.0/package/dist"
+    conversejs_resources: "/home/ejabberd/conversejs\-x\&.y\&.z/package/dist"
+    conversejs_plugins: ["libsignal\-protocol\&.min\&.js"]
+    # File path is: /home/ejabberd/conversejs\-x\&.y\&.z/package/dist/plugins/libsignal\-protocol\&.min\&.js
 .fi
 .if n \{\
 .RE
@@ -3424,6 +3446,8 @@ hour\&.
 The number of C2S authentication failures to trigger the IP ban\&. The default value is
 \fI20\fR\&.
 .RE
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#accounts|accounts\fR
 .RE
 .SS "mod_host_meta"
 .sp
@@ -3784,7 +3808,9 @@ A name of the service in the Service Discovery\&. The default value is
 .RS 4
 This option specifies the initial part of the PUT URLs used for file uploads\&. The keyword
 \fI@HOST@\fR
-is replaced with the virtual host name\&. NOTE: different virtual hosts cannot use the same PUT URL\&. The default value is
+is replaced with the virtual host name\&. And
+\fI@HOST_URL_ENCODE@\fR
+is replaced with the host name encoded for URL, useful when your virtual hosts contain non\-latin characters\&. NOTE: different virtual hosts cannot use the same PUT URL\&. The default value is
 \fI"https://@HOST@:5443/upload"\fR\&.
 .RE
 .PP
@@ -4147,12 +4173,14 @@ option, but applied to this module only\&.
 When this option is disabled, for each individual subscriber a separate mucsub message is stored\&. With this option enabled, when a user fetches archive virtual mucsub, messages are generated from muc archives\&. The default value is
 \fIfalse\fR\&.
 .RE
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#mam|mam\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#purge|purge\fR
 .RE
 .SS "mod_matrix_gw 🟤"
 .sp
-\fINote\fR about this option: improved in 25\&.07\&.
+\fINote\fR about this option: improved in 25\&.08\&.
 .sp
-Matrix gateway\&. Erlang/OTP 25 or higher is required to use this module\&. This module is available since ejabberd 24\&.02\&.
+Matrix gateway\&. Supports room versions 9, 10 and 11 since ejabberd 25\&.03; room versions 4 and higher since ejabberd 25\&.07; room version 12 (hydra rooms) since ejabberd 25\&.08\&. Erlang/OTP 25 or higher is required to use this module\&. This module is available since ejabberd 24\&.02\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -4182,6 +4210,13 @@ Value of the matrix signing key, in base64\&.
 Name of the matrix signing key\&.
 .RE
 .PP
+\fBleave_timeout\fR: \fIinteger()\fR
+.RS 4
+Delay in seconds between a user leaving a MUC room and sending
+\fIleave\fR
+Matrix event\&.
+.RE
+.PP
 \fBmatrix_domain\fR: \fIDomain\fR
 .RS 4
 Specify a domain in the Matrix federation\&. The keyword
@@ -4205,6 +4240,11 @@ is the JID of the gateway service as set by the
 \fIhost\fR
 option\&. The default is
 \fIfalse\fR\&.
+.RE
+.PP
+\fBnotary_servers\fR: \fI[Server, \&.\&.\&.]\fR
+.RS 4
+A list of notary servers\&.
 .RE
 .RE
 .sp
@@ -5170,6 +5210,8 @@ about this option: added in 22\&.05\&. How many users can be subscribed to a roo
 API\&. The default value is
 \fI50\fR\&.
 .RE
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#muc|muc\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#muc_room|muc_room\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#muc_sub|muc_sub\fR
 .RE
 .SS "mod_muc_log"
 .sp
@@ -5747,6 +5789,8 @@ modules:
 .if n \{\
 .RE
 .\}
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#offline|offline\fR
 .RE
 .SS "mod_ping"
 .sp
@@ -5990,6 +6034,8 @@ Same as top\-level
 \fIuse_cache\fR
 option, but applied to this module only\&.
 .RE
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#private|private\fR
 .RE
 .SS "mod_privilege"
 .sp
@@ -6152,6 +6198,199 @@ modules:
       managed_entity: all
     message:
       outgoing: all
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.SS "mod_providers 🟤"
+.sp
+\fINote\fR about this option: added in 25\&.08\&.
+.sp
+This module serves JSON provider files API v2 as described by XMPP Providers\&.
+.sp
+It attempts to fill some properties gathering values automatically from your existing ejabberd configuration\&. Try enabling the module, check what values are displayed, and then customize using the options\&.
+.sp
+To use this module, in addition to adding it to the \fImodules\fR section, you must also enable it in \fIlisten\fR → \fIejabberd_http\fR → \fIlisten\-options\&.md#request_handlers|request_handlers\fR\&. Notice you should set in \fIlisten\&.md#ejabberd_http|ejabberd_http\fR the option \fIlisten\-options\&.md#tls|tls\fR enabled\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBalternativeJids\fR: \fI[string()]\fR
+.RS 4
+List of JIDs (XMPP server domains) a provider offers for registration other than its main JID\&. The default value is
+\fI[]\fR\&.
+.RE
+.PP
+\fBbusFactor\fR: \fIinteger()\fR
+.RS 4
+Bus factor of the XMPP service (i\&.e\&., the minimum number of team members that the service could not survive losing) or
+\fI\-1\fR
+for n/a\&. The default value is
+\fI\-1\fR\&.
+.RE
+.PP
+\fBfreeOfCharge\fR: \fItrue | false\fR
+.RS 4
+Whether the XMPP service can be used for free\&. The default value is
+\fIfalse\fR\&.
+.RE
+.PP
+\fBlanguages\fR: \fI[string()]\fR
+.RS 4
+List of language codes that your pages are available\&. Some options define URL where the keyword
+\fI@LANGUAGE_URL@\fR
+will be replaced with each of those language codes\&. The default value is a list with the language set in the option
+\fIlanguage\fR, for example:
+\fI[en]\fR\&.
+.RE
+.PP
+\fBlegalNotice\fR: \fIstring()\fR
+.RS 4
+Legal notice web page (per language)\&. The keyword
+\fI@LANGUAGE_URL@\fR
+is replaced with each language\&. The default value is
+\fI""\fR\&.
+.RE
+.PP
+\fBmaximumHttpFileUploadStorageTime\fR: \fIinteger()\fR
+.RS 4
+Maximum storage duration of each shared file (number in days,
+\fI0\fR
+for no limit or
+\fI\-1\fR
+for less than 1 day)\&. The default value is the same as option
+\fImax_days\fR
+from module
+\fImod_http_upload_quota\fR, or
+\fI0\fR
+otherwise\&.
+.RE
+.PP
+\fBmaximumHttpFileUploadTotalSize\fR: \fIinteger()\fR
+.RS 4
+Maximum size of all shared files in total per user (number in megabytes (MB),
+\fI0\fR
+for no limit or
+\fI\-1\fR
+for less than 1 MB)\&. Attention: MB is used instead of MiB (e\&.g\&., 104,857,600 bytes = 100 MiB H 104 MB)\&. This property is not about the maximum size of each shared file, which is already retrieved via XMPP\&. The default value is the value of the shaper value of option
+\fIaccess_hard_quota\fR
+from module
+\fImod_http_upload_quota\fR, or
+\fI0\fR
+otherwise\&.
+.RE
+.PP
+\fBmaximumMessageArchiveManagementStorageTime\fR: \fIinteger()\fR
+.RS 4
+Maximum storage duration of each exchanged message (number in days,
+\fI0\fR
+for no limit or
+\fI\-1\fR
+for less than 1 day)\&. The default value is
+\fI0\fR\&.
+.RE
+.PP
+\fBorganization\fR: \fIstring()\fR
+.RS 4
+Type of organization providing the XMPP service\&. Allowed values are:
+\fIcompany\fR,
+\fI"commercial person"\fR,
+\fI"private person"\fR,
+\fIgovernmental\fR,
+\fI"non\-governmental"\fR
+or
+\fI""\fR\&. The default value is
+\fI""\fR\&.
+.RE
+.PP
+\fBpasswordReset\fR: \fIstring()\fR
+.RS 4
+Password reset web page (per language) used for an automatic password reset (e\&.g\&., via email) or describing how to manually reset a password (e\&.g\&., by contacting the provider)\&. The keyword
+\fI@LANGUAGE_URL@\fR
+is replaced with each language\&. The default value is an URL built automatically if
+\fImod_register_web\fR
+is configured as a
+\fIrequest_handler\fR, or
+\fI""\fR
+otherwise\&.
+.RE
+.PP
+\fBprofessionalHosting\fR: \fItrue | false\fR
+.RS 4
+Whether the XMPP server is hosted with good internet connection speed, uninterruptible power supply, access protection and regular backups\&. The default value is
+\fIfalse\fR\&.
+.RE
+.PP
+\fBserverLocations\fR: \fI[string()]\fR
+.RS 4
+List of language codes of Server/Backup locations\&. The default value is an empty list:
+\fI[]\fR\&.
+.RE
+.PP
+\fBserverTesting\fR: \fItrue | false\fR
+.RS 4
+Whether tests against the provider\(cqs server are allowed (e\&.g\&., certificate checks and uptime monitoring)\&. The default value is
+\fIfalse\fR\&.
+.RE
+.PP
+\fBsince\fR: \fIstring()\fR
+.RS 4
+Date since the XMPP service is available\&. The default value is an empty string:
+\fI""\fR\&.
+.RE
+.PP
+\fBwebsite\fR: \fIstring()\fR
+.RS 4
+Provider website\&. The keyword
+\fI@LANGUAGE_URL@\fR
+is replaced with each language\&. The default value is
+\fI""\fR\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+listen:
+  \-
+    port: 443
+    module: ejabberd_http
+    tls: true
+    request_handlers:
+      /\&.well\-known/xmpp\-provider\-v2\&.json: mod_providers
+
+modules:
+  mod_providers:
+    alternativeJids: ["example1\&.com", "example2\&.com"]
+    busFactor: 1
+    freeOfCharge: true
+    languages: [ag, ao, bg, en]
+    legalNotice: "http://@HOST@/legal/@LANGUAGE_URL@/"
+    maximumHttpFileUploadStorageTime: 0
+    maximumHttpFileUploadTotalSize: 0
+    maximumMessageArchiveManagementStorageTime: 0
+    organization: "non\-governmental"
+    passwordReset: "http://@HOST@/reset/@LANGUAGE_URL@/"
+    professionalHosting: true
+    serverLocations: [ao, bg]
+    serverTesting: true
+    since: "2025\-12\-31"
+    website: "http://@HOST@/website/@LANGUAGE_URL@/"
 .fi
 .if n \{\
 .RE
@@ -6618,8 +6857,10 @@ modules:
 .if n \{\
 .RE
 .\}
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#purge|purge\fR
 .RE
-.SS "mod_pubsub_serverinfo 🟤"
+.SS "mod_pubsub_serverinfo"
 .sp
 \fINote\fR about this option: added in 25\&.07\&.
 .sp
@@ -6741,6 +6982,8 @@ Same as top\-level
 \fIuse_cache\fR
 option, but applied to this module only\&.
 .RE
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#purge|purge\fR
 .RE
 .SS "mod_push_keepalive"
 .sp
@@ -7090,6 +7333,8 @@ modules:
 .if n \{\
 .RE
 .\}
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#roster|roster\fR
 .RE
 .SS "mod_s2s_bidi"
 .sp
@@ -8617,7 +8862,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 25\&.07\&.
+This section describes listeners options of ejabberd 25\&.08\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -8625,13 +8870,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 25\&.07\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 25\&.08\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/25\&.07/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/25\&.08/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
