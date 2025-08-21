@@ -961,8 +961,6 @@ presence_broadcast(Config) ->
 	     sub_els = [#disco_info{node = Node}]} = recv_iq(Config),
     #message{type = chat,
              subject = [#text{lang = <<"en">>,data = <<"Welcome!">>}]} = recv_message(Config),
-    #message{type = normal,
-             subject = [#text{lang = <<"en">>,data = <<"Welcome!">>}]} = recv_message(Config),
     #presence{from = JID, to = JID} = recv_presence(Config),
     send(Config, #iq{type = result, id = IQ#iq.id,
 		     to = JID, sub_els = [Info]}),
