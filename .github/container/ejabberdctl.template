@@ -195,7 +195,9 @@ livewarning()
         echo "Please be extremely cautious with your actions,"
         echo "and exit immediately if you are not completely sure."
         echo ""
-        echo "To exit and detach this shell from ejabberd, press:"
+        echo "To stop ejabberd gracefully:"
+        echo "  ejabberd:stop()."
+        echo "To quit erlang immediately, press:"
         echo "  control+g and then q"
         echo ""
         echo "--------------------------------------------------------------------"
@@ -363,6 +365,13 @@ post_waiter_loop()
 # allow sync calls
 wait_status()
 {
+    wait_status_node "$ERLANG_NODE" $1 $2 $3
+}
+
+wait_status_node()
+{
+    CONNECT_NODE=$1
+    shift
     # args: status try delay
     # return: 0 OK, 1 KO
     timeout="$2"
@@ -374,9 +383,9 @@ wait_status()
             status="$1"
         else
             run_erl "$(uid ctl)" -hidden -noinput \
-                     -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
+                     -eval 'net_kernel:connect_node('"'$CONNECT_NODE'"')' \
                      -s ejabberd_ctl \
-                     -extra "$ERLANG_NODE" $NO_TIMEOUT status > /dev/null
+                     -extra "$CONNECT_NODE" $NO_TIMEOUT status > /dev/null
             status="$?"
         fi
     done
@@ -385,19 +394,26 @@ wait_status()
 
 exec_other_command()
 {
+    exec_other_command_node $ERLANG_NODE "$@"
+}
+
+exec_other_command_node()
+{
+    CONNECT_NODE=$1
+    shift
     if [ -z "$CTL_OVER_HTTP" ] || [ ! -S "$CTL_OVER_HTTP" ] \
         || [ ! -x "$(command -v curl)" ] || [ -z "$1" ] || [ "$1" = "help" ] \
         || [ "$1" = "mnesia_info_ctl" ]|| [ "$1" = "print_sql_schema" ] ; then
         run_erl "$(uid ctl)" -hidden -noinput \
-                 -eval 'net_kernel:connect_node('"'$ERLANG_NODE'"')' \
+                 -eval 'net_kernel:connect_node('"'$CONNECT_NODE'"')' \
                  -s ejabberd_ctl \
-                 -extra "$ERLANG_NODE" $NO_TIMEOUT "$@"
+                 -extra "$CONNECT_NODE" $NO_TIMEOUT "$@"
         result=$?
         case $result in
             3) help;;
             *) :;;
         esac
-        exit $result
+        return $result
     else
         exec_ctl_over_http_socket "$@"
     fi
@@ -437,6 +453,103 @@ exec_ctl_over_http_socket()
 cd "$SPOOL_DIR" || {
     echo "ERROR: can not access directory $SPOOL_DIR"
     exit 6
+}
+
+printe()
+{
+    printf "\n"
+    printf "\e[1;40;32m==> %s\e[0m\n" "$1"
+}
+
+## Function copied from tools/make-installers
+user_agrees()
+{
+    question="$*"
+
+    if [ -t 0 ]
+    then
+        printe "$question (y/n) [n]"
+        read -r response
+        case "$response" in
+        [Yy]|[Yy][Ee][Ss])
+            return 0
+            ;;
+        [Nn]|[Nn][Oo]|'')
+            return 1
+            ;;
+        *)
+            echo 'Please respond with "yes" or "no".'
+            user_agrees "$question"
+            ;;
+        esac
+    else # Assume 'yes' if not running interactively.
+        return 0
+    fi
+}
+
+mnesia_change()
+{
+    ERLANG_NODE_OLD="$1"
+    [ "$ERLANG_NODE_OLD" = "" ] \
+        && echo "Error: Please provide the old erlang node name, for example:" \
+        && echo "  ejabberdctl mnesia_change ejabberd@oldmachine" \
+        && exit 1
+
+    SPOOL_DIR_BACKUP=$SPOOL_DIR/$ERLANG_NODE_OLD-backup/
+    OLDFILE=$SPOOL_DIR_BACKUP/$ERLANG_NODE_OLD.backup
+    NEWFILE=$SPOOL_DIR_BACKUP/$ERLANG_NODE.backup
+
+    printe "This changes your mnesia database from node name '$ERLANG_NODE_OLD' to '$ERLANG_NODE'"
+
+    [ -d "$SPOOL_DIR_BACKUP" ] && printe "WARNING! A backup of old node already exists in $SPOOL_DIR_BACKUP"
+
+    if ! user_agrees "Do you want to proceed?"
+    then
+        echo 'Operation aborted.'
+        exit 1
+    fi
+
+    printe "Starting ejabberd with old node name $ERLANG_NODE_OLD ..."
+    exec_erl "$ERLANG_NODE_OLD" $EJABBERD_OPTS -detached
+    wait_status_node $ERLANG_NODE_OLD 0 30 2
+    result=$?
+    case $result in
+        1) echo "There was a problem starting ejabberd with the old erlang node name. " \
+            && echo "Check for log errors in $EJABBERD_LOG_PATH" \
+            && exit $result;;
+        *) :;;
+    esac
+    exec_other_command_node $ERLANG_NODE_OLD "status"
+
+    printe "Making backup of old database to file $OLDFILE ..."
+    mkdir $SPOOL_DIR_BACKUP
+    exec_other_command_node $ERLANG_NODE_OLD backup "$OLDFILE"
+
+    printe "Changing node name in new backup file $NEWFILE ..."
+    exec_other_command_node $ERLANG_NODE_OLD mnesia_change_nodename "$ERLANG_NODE_OLD" "$ERLANG_NODE" "$OLDFILE" "$NEWFILE"
+
+    printe "Stopping old ejabberd..."
+    exec_other_command_node $ERLANG_NODE_OLD "stop"
+    wait_status_node $ERLANG_NODE_OLD 3 30 2 && stop_epmd
+
+    printe "Moving old mnesia spool files to backup subdirectory $SPOOL_DIR_BACKUP ..."
+    mv $SPOOL_DIR/*.DAT $SPOOL_DIR_BACKUP
+    mv $SPOOL_DIR/*.DCD $SPOOL_DIR_BACKUP
+    mv $SPOOL_DIR/*.LOG $SPOOL_DIR_BACKUP
+
+    printe "Starting ejabberd with new node name $ERLANG_NODE ..."
+    exec_erl "$ERLANG_NODE" $EJABBERD_OPTS -detached
+    wait_status 0 30 2
+    exec_other_command "status"
+
+    printe "Installing fallback of new mnesia..."
+    exec_other_command install_fallback "$NEWFILE"
+
+    printe "Stopping new ejabberd..."
+    exec_other_command "stop"
+    wait_status 3 30 2 && stop_epmd
+
+    printe "Finished, now you can start ejabberd normally"
 }
 
 # main
@@ -500,6 +613,9 @@ case $1 in
     stopped)
         set_dist_client
         wait_status 3 30 2 && stop_epmd # wait 30x2s before timeout
+        ;;
+    mnesia_change)
+        mnesia_change $2
         ;;
     post_waiter)
         post_waiter_waiting

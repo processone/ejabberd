@@ -206,7 +206,7 @@ modules:
   mod_fail2ban: {}
   mod_http_api: {}
   mod_http_upload:
-    put_url: https://@HOST@:5443/upload
+    put_url: https://@HOST_URL_ENCODE@:5443/upload
     custom_headers:
       "Access-Control-Allow-Origin": "https://@HOST@"
       "Access-Control-Allow-Methods": "GET,HEAD,PUT,OPTIONS"
