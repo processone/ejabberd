@@ -1659,7 +1659,7 @@ check_event_power_level(Event, StateMap, Data) ->
 
 get_event_power_level(Type, StateKey, PL) ->
     case {StateKey, PL} of
-        {_, #{Type := Level}} ->
+        {_, #{<<"events">> := #{Type := Level}}} ->
             get_int(Level);
         {undefined, #{<<"events_default">> := Level}} ->
             get_int(Level);
