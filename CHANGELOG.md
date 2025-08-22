@@ -1,3 +1,55 @@
+## Version 25.08
+
+#### API Commands
+
+- `ban_account`: Run `sm_kick_user` event when kicking account ([#4415](https://github.com/processone/ejabberd/issues/4415))
+- `ban_account`: No need to change password ([#4415](https://github.com/processone/ejabberd/issues/4415))
+- `mnesia_change`: New command in `ejabberdctl` script that helps changing the mnesia node name
+
+#### Configuration
+
+- Rename `auth_password_types_hidden_in_scram1` option to `auth_password_types_hidden_in_sasl1`
+- `econf`: If a host in configuration is encoded IDNA, decode it ([#3519](https://github.com/processone/ejabberd/issues/3519))
+- `ejabberd_config`: New predefined keyword `HOST_URL_ENCODE`
+- `ejabberd.yml.example`: Use `HOST_URL_ENCODE` to handle case when vhost is non-latin1
+- `mod_conversejs`: Add option `conversejs_plugins` ([#4413](https://github.com/processone/ejabberd/issues/4413))
+- `mod_matrix_gw`: Add `leave_timeout` option ([#4386](https://github.com/processone/ejabberd/issues/4386))
+
+#### Documentation and Tests
+
+- `COMPILE.md`: Mention dependencies and add link to Docs ([#4431](https://github.com/processone/ejabberd/issues/4431))
+- `ejabberd_doc`: Document commands tags for modules
+- CI: bump XMPP-Interop-Testing/xmpp-interop-tests-action ([#4425](https://github.com/processone/ejabberd/issues/4425))
+- Runtime: Raise the minimum Erlang tested to Erlang/OTP 24
+
+#### Installers and Container
+
+- Bump Erlang/OTP version to 27.3.4.2
+- Bump OpenSSL version to 3.5.2
+- `make-binaries`: Disable Linux-PAM's `logind` support
+
+#### Core and Modules
+
+- Bump `p1_acme` to fix `'AttributePKCS-10'` and OTP 28 ([processone/p1_acme#4](https://github.com/processone/p1_acme/issues/4))
+- Prevent loops in `xml_compress:decode` with corrupted data
+- `ejabberd_auth_mnesia`: Fix issue with filtering duplicates in `get_users()`
+- `ejabberd_listener`: Add secret in temporary unix domain socket path ([#4422](https://github.com/processone/ejabberd/issues/4422))
+- `ejabberd_listener`: Log error when cannot set definitive unix socket ([#4422](https://github.com/processone/ejabberd/issues/4422))
+- `ejabberd_listener`: Try to create provisional socket in final directory ([#4422](https://github.com/processone/ejabberd/issues/4422))
+- `ejabberd_logger`: Print log lines colorized in console when using rebar3
+- `mod_conversejs`: Ensure assets_path ends in `/` as required by Converse ([#4414](https://github.com/processone/ejabberd/issues/4414))
+- `mod_conversejs`: Ensure plugins URL is separated with `/` ([#4413](https://github.com/processone/ejabberd/issues/4413))
+- `mod_http_upload`: Encode URLs into IDNA when showing to XMPP client ([#3519](https://github.com/processone/ejabberd/issues/3519))
+- `mod_matrix_gw`: Add support for null values in `is_canonical_json` ([#4421](https://github.com/processone/ejabberd/issues/4421))
+- `mod_matrix_gw`: Don't send empty direct Matrix messages ([#4420](https://github.com/processone/ejabberd/issues/4420))
+- `mod_matrix_gw`: Matrix gateway updates
+- `mod_muc`: Report db failures when restoring rooms
+- `mod_muc`: Unsubscribe users from members-only rooms when expelled ([#4412](https://github.com/processone/ejabberd/issues/4412))
+- `mod_providers`: New module to serve easily XMPP Providers files
+- `mod_register`: Don't duplicate welcome subject and message
+- `mod_scram_upgrade`: Fix format of passwords updates
+- `mod_scram_upgrade`: Only offer upgrades to methods that aren't already stored
+
 ## Version 25.07
 
 #### Security fix
