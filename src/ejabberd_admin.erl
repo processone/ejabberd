@@ -274,7 +274,9 @@ get_commands_spec() ->
 			`ejabberdctl` (or some `CTL_ON_` container
 			environment variables) to run more commands
 			afterwards, you may want to precede them with
-			the _`started`_ command to ensure the
+			the `started`
+			_`../../admin/guide/managing.md#ejabberdctl-commands|ejabberdctl command`_
+                        to ensure the
 			clustering process has completed before
 			proceeding. For example: `join_cluster
 			ejabberd@main` > `started` > `list_cluster`.",
