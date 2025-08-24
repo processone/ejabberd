@@ -437,7 +437,7 @@ run_a2x(Cwd, AsciiDocFile) ->
             {error, "a2x was not found: do you have 'asciidoc' installed?"};
         {true, Path} ->
             Cmd = lists:flatten(
-                    io_lib:format("~ts -f manpage ~ts -D ~ts",
+                    io_lib:format("~ts --no-xmllint -f manpage ~ts -D ~ts",
                                   [Path, AsciiDocFile, Cwd])),
             case os:cmd(Cmd) of
                 "" -> ok;
