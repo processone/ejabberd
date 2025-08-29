@@ -243,6 +243,7 @@ install(Package, Config) when is_binary(Package) ->
                 ok ->
                     code:add_pathsz([module_ebin_dir(Module)|module_deps_dirs(Module)]),
                     ejabberd_config_reload(Config),
+                    maybe_print_module_status(Module),
                     copy_commit_json(Package, Attrs),
                     ModuleRuntime = get_runtime_module_name(Module),
                     case erlang:function_exported(ModuleRuntime, post_install, 0) of
@@ -262,6 +263,14 @@ ejabberd_config_reload(Config) when is_list(Config) ->
     ok;
 ejabberd_config_reload(undefined) ->
     ejabberd_config:reload().
+
+maybe_print_module_status(Module) ->
+    case get_module_status_el(Module) of
+        [_, {xmlcdata, String}] ->
+            io:format("~ts~n", [String]);
+        _ ->
+            ok
+    end.
 
 uninstall(Module) when is_atom(Module) ->
     uninstall(misc:atom_to_binary(Module));
