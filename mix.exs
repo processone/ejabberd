@@ -131,7 +131,7 @@ defmodule Ejabberd.MixProject do
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
      {:xmpp, ">= 1.11.1"},
-     {:yconf, ">= 1.0.21"}]
+     {:yconf, git: "https://github.com/processone/yconf", ref: "95692795a8a8d950ba560e5b07e6b80660557259", override: true}]
     ++ cond_deps()
   end
 
