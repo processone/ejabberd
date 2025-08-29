@@ -1,0 +1,11 @@
+# .git-blame-ignore-revs
+
+# Use this file when viewing blame:
+#   git blame --ignore-revs-file .git-blame-ignore-revs
+# Or configure git to use always this file:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Accumulated patch to binarize and indent code
+9deb294328bb3f9eb6bd2c0e7cd500732e9b5830
+# Result of running "make format indent" for the first time
+6b7d15f0271686b6902a0edc82f407e529b35a90
