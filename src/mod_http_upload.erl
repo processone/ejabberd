@@ -921,7 +921,7 @@ mk_slot(PutURL, GetURL, XMLNS, Query) ->
     end.
 
 reencode_url(UrlString) ->
-    {ok, _, _, Host, _, _, _} = yconf:parse_uri(UrlString),
+    {ok, _, _, Host, _, _, _} = yconf:parse_uri(misc:url_encode(UrlString)),
     HostDecoded = misc:uri_decode(Host),
     HostIdna = idna:encode(HostDecoded),
     re:replace(UrlString, Host, HostIdna, [{return, binary}]).
