@@ -13,6 +13,7 @@ SED = @SED@
 ERL = @ERL@
 EPMD = @EPMD@
 IEX = @IEX@
+EMACS = @EMACS@
 
 INSTALLUSER=@INSTALLUSER@
 INSTALLGROUP=@INSTALLGROUP@
@@ -266,11 +267,15 @@ _build/edoc/logo.png: edoc_compile
 #' format / indent
 #
 
+.SILENT: format indent
+
+FORMAT_LOG=/tmp/ejabberd-format.log
+
 format:
-	tools/rebar3-format.sh $(REBAR3)
+	tools/rebar3-format.sh $(FORMAT_LOG) $(REBAR3)
 
 indent:
-	tools/emacs-indent.sh
+	tools/emacs-indent.sh $(FORMAT_LOG) $(EMACS)
 
 #.
 #' copy-files
@@ -714,7 +719,7 @@ help:
 	@echo "  translations   Extract translation files"
 	@echo "  TAGS           Generate tags file for text editors"
 	@echo ""
-	@echo "  format         Format source code using rebar3_format"
+	@echo "  format         Format source code using efmt [rebar3]"
 	@echo "  indent         Indent source code using erlang-mode [emacs]"
 	@echo ""
 	@echo "  dialyzer       Run Dialyzer static analyzer"
