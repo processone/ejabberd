@@ -145,12 +145,12 @@ process([Call | _], #request{method = 'POST', data = Data, ip = IPPort} = Req) -
         %% TODO We need to refactor to remove redundant error return formatting
         throw:{error, unknown_command} ->
             json_format({404, 44, <<"Command not found.">>});
-        _:{error,{_,invalid_json}} = _Err ->
-	    ?DEBUG("Bad Request: ~p", [_Err]),
+        _:{error,{_,invalid_json}} = Err ->
+	    ?DEBUG("Bad Request: ~p", [Err]),
 	    badrequest_response(<<"Invalid JSON input">>);
-	?EX_RULE(_Class, _Error, Stack) ->
+	?EX_RULE(_Class, Error, Stack) ->
 	    StackTrace = ?EX_STACK(Stack),
-            ?DEBUG("Bad Request: ~p ~p", [_Error, StackTrace]),
+            ?DEBUG("Bad Request: ~p ~p", [Error, StackTrace]),
             badrequest_response()
     end;
 process([Call | _], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
@@ -166,9 +166,9 @@ process([Call | _], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
         %% TODO We need to refactor to remove redundant error return formatting
         throw:{error, unknown_command} ->
             json_format({404, 44, <<"Command not found.">>});
-        ?EX_RULE(_, _Error, Stack) ->
+        ?EX_RULE(_, Error, Stack) ->
 	    StackTrace = ?EX_STACK(Stack),
-            ?DEBUG("Bad Request: ~p ~p", [_Error, StackTrace]),
+            ?DEBUG("Bad Request: ~p ~p", [Error, StackTrace]),
             badrequest_response()
     end;
 process([_Call], #request{method = 'OPTIONS', data = <<>>}) ->
