@@ -91,6 +91,10 @@
 -include("ejabberd_sql_pt.hrl").
 -include("ejabberd_stacktrace.hrl").
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(state,
 	{db_ref               :: undefined | db_ref_pid() | odbc_connection_reference(),
 	 db_type = odbc       :: pgsql | mysql | sqlite | odbc | mssql,
@@ -100,6 +104,10 @@
 	 pending_requests     :: p1_queue:queue(),
 	 overload_reported    :: undefined | integer(),
 	 timeout              :: pos_integer()}).
+
+%% @indent-end
+%% @efmt:on
+%%
 
 -define(STATE_KEY, ejabberd_sql_state).
 -define(NESTING_KEY, ejabberd_sql_nesting_level).

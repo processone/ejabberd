@@ -28,6 +28,10 @@
 -include("logger.hrl").
 -include("mqtt.hrl").
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(mqtt_pub, {topic_server            :: {binary(), binary()},
                    user                    :: binary(),
                    resource                :: binary(),
@@ -49,6 +53,10 @@
 -record(mqtt_session, {usr       :: jid:ljid() | {'_', '_', '$1'},
 		       pid       :: pid() | '_',
 		       timestamp :: erlang:timestamp() | '_'}).
+
+%% @indent-end
+%% @efmt:on
+%%
 
 %%%===================================================================
 %%% API

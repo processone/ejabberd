@@ -44,6 +44,9 @@
 
 -include("eldap.hrl").
 
+%%
+%% @efmt:off
+%% @indent-begin
 -record(state,
 	{host = <<"">>          :: binary(),
          eldap_id = <<"">>      :: binary(),
@@ -61,6 +64,10 @@
          deref_aliases = never  :: never | searching | finding | always,
          dn_filter              :: binary() | undefined,
          dn_filter_attrs = []   :: [binary()]}).
+%% @indent-end
+%% @efmt:on
+%%
+
 
 handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),

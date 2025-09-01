@@ -81,6 +81,10 @@
 
 -export_type([bosh_socket/0]).
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(state,
 	{host = <<"">>                            :: binary(),
          sid = <<"">>                             :: binary(),
@@ -108,6 +112,10 @@
          attrs = []           :: [{any(), any()}],
          els = []             :: [fxml_stream:xml_stream_el()],
          size = 0             :: non_neg_integer()}).
+
+%% @indent-end
+%% @efmt:on
+%%
 
 start(#body{attrs = Attrs} = Body, IP, SID) ->
     XMPPDomain = get_attr(to, Attrs),

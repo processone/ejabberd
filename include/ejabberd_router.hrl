@@ -1,3 +1,6 @@
+%% @efmt:off
+%% @indent-begin
+
 -define(ROUTES_CACHE, routes_cache).
 
 -type local_hint() :: integer() | {apply, atom(), atom()}.

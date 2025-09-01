@@ -56,11 +56,19 @@
 -define(NS_PIEFXIS, <<"http://www.xmpp.org/extensions/xep-0227.html#ns">>).
 -define(NS_XI, <<"http://www.w3.org/2001/XInclude">>).
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(state, {xml_stream_state :: fxml_stream:xml_stream_state() | undefined,
                 user = <<"">>    :: binary(),
                 server = <<"">>  :: binary(),
                 fd = self()      :: file:io_device(),
                 dir = <<"">>     :: binary()}).
+
+%% @indent-end
+%% @efmt:on
+%%
 
 -type state() :: #state{}.
 

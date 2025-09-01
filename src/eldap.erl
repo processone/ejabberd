@@ -122,6 +122,10 @@
 
 -type handle() :: pid() | atom() | binary().
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(eldap,
 	{version = ?LDAP_VERSION :: non_neg_integer(),
          hosts = []              :: [binary()],
@@ -141,6 +145,10 @@
          bind_timer = make_ref() :: reference(),
 	 dict = dict:new()       :: dict:dict(),
          req_q = queue:new()     :: queue:queue()}).
+
+%% @indent-end
+%% @efmt:on
+%%
 
 %%%----------------------------------------------------------------------
 %%% API

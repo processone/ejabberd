@@ -774,6 +774,10 @@ print_usage_tags(Tag, MaxC, ShCode, Version) ->
 %% Print usage of 'help' command
 %%-----------------------------
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 print_usage_help(MaxC, ShCode) ->
     LongDesc =
 	["This special ", ?C("help"), " command provides help of ejabberd commands.\n\n"
@@ -812,6 +816,9 @@ print_usage_help(MaxC, ShCode) ->
 	   result = {help, string}},
     print(get_usage_command2("help", C, MaxC, ShCode), []).
 
+%% @indent-end
+%% @efmt:on
+%%
 
 %%-----------------------------
 %% Print usage command

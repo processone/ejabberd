@@ -31,6 +31,10 @@
 -define(MAX_UINT32, 4294967295).
 -define(MAX_VARINT, 268435456).
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(codec_state, {version    :: undefined | mqtt_version(),
                       type       :: undefined | non_neg_integer(),
 		      flags      :: undefined | non_neg_integer(),
@@ -57,6 +61,10 @@
                         {unsupported_protocol_version, char(), iodata()} |
 			{{bad_flag, atom()}, char(), term()} |
 			{{bad_flags, atom()}, char(), char()}.
+
+%% @indent-end
+%% @efmt:on
+%%
 
 -opaque state() :: #codec_state{}.
 -export_type([state/0, error_reason/0]).

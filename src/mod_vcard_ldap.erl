@@ -45,6 +45,10 @@
 
 -define(PROCNAME, ejabberd_mod_vcard_ldap).
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(state,
 	{serverhost = <<"">>        :: binary(),
          myhosts = []               :: [binary()],
@@ -67,6 +71,10 @@
          search_reported_attrs = [] :: [binary()],
 	 deref_aliases = never      :: never | searching | finding | always,
          matches = 0                :: non_neg_integer()}).
+
+%% @indent-end
+%% @efmt:on
+%%
 
 %%%===================================================================
 %%% API

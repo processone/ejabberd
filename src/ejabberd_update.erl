@@ -155,6 +155,10 @@ build_script(Dir, UpdatedBeams) ->
     end,
     {Script, LowLevelScript, Check1}.
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 %% Copied from Erlang/OTP file: lib/sasl/src/systools.hrl
 -ifdef(SYSTOOLS_APP_DEF_WITHOUT_OPTIONAL).
 -record(application,
@@ -222,6 +226,9 @@ build_script(Dir, UpdatedBeams) ->
 	}).
 -endif.
 
+%% @indent-end
+%% @efmt:on
+%%
 
 make_script(UpdatedBeams) ->
     lists:map(

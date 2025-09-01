@@ -15,6 +15,9 @@
 %%% limitations under the License.
 %%%
 %%%-------------------------------------------------------------------
+%% @efmt:off
+%% @indent-begin
+
 -define(MQTT_VERSION_4, 4).
 -define(MQTT_VERSION_5, 5).
 

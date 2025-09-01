@@ -71,6 +71,10 @@
 
 -include_lib("xmpp/include/xmpp.hrl").
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(state,
 	{host = <<>>			:: binary(),
 	 dump_fd = undefined		:: file:io_device() | undefined,
@@ -85,6 +89,10 @@
 	 blocked_domains = #{}		:: #{binary() => any()},
 	 whitelist_domains = #{}	:: #{binary() => false}
 	}).
+
+%% @indent-end
+%% @efmt:on
+%%
 
 -type state() :: #state{}.
 

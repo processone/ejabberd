@@ -40,6 +40,10 @@
 
 -include("ejabberd_http.hrl").
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(state,
         {socket                       :: ws_socket(),
          ping_interval                :: non_neg_integer(),
@@ -52,7 +56,11 @@
 	 c2s_pid                      :: pid(),
          ws                           :: {#ws{}, pid()}}).
 
-%-define(DBGFSM, true).
+%% @indent-end
+%% @efmt:on
+%%
+
+%%%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 

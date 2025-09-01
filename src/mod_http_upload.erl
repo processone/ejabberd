@@ -91,6 +91,10 @@
 -include("logger.hrl").
 -include("translate.hrl").
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(state,
 	{server_host = <<>>     :: binary(),
 	 hosts = []             :: [binary()],
@@ -115,6 +119,10 @@
 	 type   :: atom(),
 	 height :: integer(),
 	 width  :: integer()}).
+
+%% @indent-end
+%% @efmt:on
+%%
 
 -type state() :: #state{}.
 -type slot() :: [binary(), ...].

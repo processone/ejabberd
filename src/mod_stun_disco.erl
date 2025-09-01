@@ -62,6 +62,10 @@
 -type host_or_hash() :: binary() | {hash, binary()}.
 -type service_type() :: stun | stuns | turn | turns | undefined.
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(request,
 	{host       :: binary() | inet:ip_address() | undefined,
 	 port       :: 0..65535 | undefined,
@@ -74,6 +78,10 @@
 	 services :: [service()],
 	 secret   :: binary(),
 	 ttl      :: non_neg_integer()}).
+
+%% @indent-end
+%% @efmt:on
+%%
 
 -type request() :: #request{}.
 -type state() :: #state{}.
