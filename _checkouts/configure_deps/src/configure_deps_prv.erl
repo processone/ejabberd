@@ -10,7 +10,8 @@
 %% ===================================================================
 -spec init(rebar_state:t()) -> {ok, rebar_state:t()}.
 init(State) ->
-    Provider = providers:create([
+    Provider = providers:create(
+                 [
 	        {namespace, default},
             {name, ?PROVIDER},            % The 'user friendly' name of the task
             {module, ?MODULE},            % The module implementation of the task

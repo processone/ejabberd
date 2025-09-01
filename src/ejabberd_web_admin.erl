@@ -445,7 +445,9 @@ process_admin(global, #request{path = [], lang = Lang} = Request, AJID) ->
               [?XA(<<"img">>, [{<<"src">>, <<"logo.png">>},
                                {<<"style">>, <<"border-radius:10px; background:#49cbc1; padding: 1.1em;">>}])
               ])
-         ] ++ Title ++ [
+         ] ++
+        Title ++
+        [
          ?XAE(<<"blockquote">>,
 	     [{<<"id">>, <<"welcome">>}],
              [?XC(<<"p">>, <<"Welcome to ejabberd's WebAdmin!">>),
