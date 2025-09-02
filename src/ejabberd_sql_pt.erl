@@ -40,7 +40,7 @@
                 res_pos = 0,
                 server_host_used = false,
                 used_vars = [],
-                use_new_schema,
+                use_multihost_schema,
                 need_timestamp_pass = false,
                 need_array_pass = false,
                 has_list = false}).
@@ -245,13 +245,13 @@ transform_insert(Form, TableArg, FieldsArg) ->
 parse(S, Loc, UseNewSchema) ->
     parse1(S, [],
            #state{loc = Loc,
-                  use_new_schema = UseNewSchema}).
+                  use_multihost_schema = UseNewSchema}).
 
 parse(S, ParamPos, Loc, UseNewSchema) ->
     parse1(S, [],
            #state{loc = Loc,
                   param_pos = ParamPos,
-                  use_new_schema = UseNewSchema}).
+                  use_multihost_schema = UseNewSchema}).
 
 parse1([], Acc, State) ->
     State1 = append_string(lists:reverse(Acc), State),
@@ -300,7 +300,7 @@ parse1([$%, $( | S], Acc, State) ->
                 State3 =
                     State2#state{server_host_used = {true, Name},
                                  used_vars = [Name | State2#state.used_vars]},
-                case State#state.use_new_schema of
+                case State#state.use_multihost_schema of
                     true ->
                         Convert =
                             erl_syntax:application(
@@ -469,7 +469,7 @@ make_sql_query(State) ->
     make_sql_query(State, unknown).
 
 make_sql_query(State, Type) ->
-    Hash = erlang:phash2(State#state{loc = undefined, use_new_schema = true}),
+    Hash = erlang:phash2(State#state{loc = undefined, use_multihost_schema = true}),
     SHash = <<"Q", (integer_to_binary(Hash))/binary>>,
     Query = pack_query(State#state.'query'),
     Flags = case State#state.has_list of true -> 1; _ -> 0 end,
@@ -938,7 +938,7 @@ make_schema_check(New, Old) ->
     erl_syntax:case_expr(
       erl_syntax:application(
         erl_syntax:atom(ejabberd_sql),
-        erl_syntax:atom(use_new_schema),
+        erl_syntax:atom(use_multihost_schema),
         []),
       [erl_syntax:clause(
          [erl_syntax:abstract(true)],

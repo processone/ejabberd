@@ -72,4 +72,4 @@
 -record(sql_schema_info,
         {db_type :: pgsql | mysql | sqlite,
          db_version :: any(),
-         new_schema = true :: boolean()}).
+         multihost_schema = true :: boolean()}).

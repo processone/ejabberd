@@ -332,7 +332,7 @@ make_matchspec(LServer, Data) ->
     filter_fields(Data, <<"">>, LServer).
 
 filter_fields([], Match, LServer) ->
-    case ejabberd_sql:use_new_schema() of
+    case ejabberd_sql:use_multihost_schema() of
         true ->
             SQLType = ejabberd_option:sql_type(LServer),
             SServer = ejabberd_sql:to_string_literal(SQLType, LServer),

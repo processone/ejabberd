@@ -196,7 +196,7 @@ check_sqlite_db(Host) ->
 
 create_sqlite_tables(DB) ->
     SqlDir = misc:sql_dir(),
-    Filename = case ejabberd_sql:use_new_schema() of
+    Filename = case ejabberd_sql:use_multihost_schema() of
         true -> "lite.new.sql";
         false -> "lite.sql"
     end,

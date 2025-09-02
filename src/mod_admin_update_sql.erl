@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------
 %%% File    : mod_admin_update_sql.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Convert SQL DB to the new format
+%%% Purpose : Convert the SQL database from singlehost to multihost
 %%% Created :  9 Aug 2017 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -65,7 +65,7 @@ depends(_Host, _Opts) ->
 
 get_commands_spec() ->
     [#ejabberd_commands{name = update_sql, tags = [sql],
-                        desc = "Convert MS SQL, MySQL or PostgreSQL DB to the new format",
+                        desc = "Convert SQL database from singlehost to multihost (MS SQL, MySQL, PostgreSQL)",
                         note = "improved in 23.04",
                         module = ?MODULE, function = update_sql,
                         args = [],
@@ -119,11 +119,11 @@ update_sql(Host) ->
     end.
 
 check_config() ->
-    case ejabberd_sql:use_new_schema() of
+    case ejabberd_sql:use_multihost_schema() of
         true -> ok;
         false ->
-            ejabberd_config:set_option(new_sql_schema, true),
-            io:format('~nNOTE: you must add "new_sql_schema: true" to ejabberd.yml before next restart~n~n', [])
+            ejabberd_config:set_option(sql_schema_multihost, true),
+            io:format('~nNOTE: you must add "sql_schema_multihost: true" to ejabberd.yml before next restart~n~n', [])
     end.
 
 update_tables(State) ->

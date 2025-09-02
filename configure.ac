@@ -192,12 +192,20 @@ AC_ARG_ENABLE(mysql,
 esac],[if test "x$mysql" = "x"; then mysql=false; fi])
 
 AC_ARG_ENABLE(new_sql_schema,
-[AS_HELP_STRING([--enable-new-sql-schema],[use new SQL schema by default (default: no)])],
+[AS_HELP_STRING([--enable-new-sql-schema],[obsolete, use --enable-multihost-sql-schema instead (default: no)])],
 [case "${enableval}" in
-  yes) new_sql_schema=true ;;
-  no)  new_sql_schema=false ;;
+  yes) multihost_sql_schema=true ;;
+  no)  multihost_sql_schema=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-new-sql-schema) ;;
-esac],[new_sql_schema=false])
+esac],[multihost_sql_schema=false])
+
+AC_ARG_ENABLE(multihost_sql_schema,
+[AS_HELP_STRING([--enable-multihost-sql-schema],[use multihost SQL schema by default (default: no)])],
+[case "${enableval}" in
+  yes) multihost_sql_schema=true ;;
+  no)  multihost_sql_schema=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-multihost-sql-schema) ;;
+esac],[multihost_sql_schema=false])
 
 AC_ARG_ENABLE(odbc,
 [AS_HELP_STRING([--enable-odbc],[enable pure ODBC support (default: no)])],
@@ -318,7 +326,7 @@ esac
 AC_MSG_RESULT([build tool to use (change using --with-rebar): $rebar])
 
 AC_SUBST(roster_gateway_workaround)
-AC_SUBST(new_sql_schema)
+AC_SUBST(multihost_sql_schema)
 AC_SUBST(full_xml)
 AC_SUBST(odbc)
 AC_SUBST(mssql)
