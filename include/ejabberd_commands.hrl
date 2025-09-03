@@ -106,4 +106,3 @@
                                                 args_example            :: none | [any()] | '_',
                                                 result_example          :: any()
                                                }.
-

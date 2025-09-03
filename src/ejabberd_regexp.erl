@@ -27,37 +27,44 @@
 
 -export([run/2, split/2, replace/3, greplace/3, sh_to_awk/1]).
 
+
 -spec run(binary(), binary()) -> match | nomatch | {error, any()}.
 
 run(String, Regexp) ->
     re:run(String, Regexp, [{capture, none}, unicode]).
+
 
 -spec split(binary(), binary()) -> [binary()].
 
 split(String, Regexp) ->
     re:split(String, Regexp, [{return, binary}]).
 
+
 -spec replace(binary(), binary(), binary()) -> binary().
 
 replace(String, Regexp, New) ->
     re:replace(String, Regexp, New, [{return, binary}]).
+
 
 -spec greplace(binary(), binary(), binary()) -> binary().
 
 greplace(String, Regexp, New) ->
     re:replace(String, Regexp, New, [global, {return, binary}]).
 
+
 %% This code was copied and adapted from xmerl_regexp.erl
+
 
 -spec sh_to_awk(binary()) -> binary().
 sh_to_awk(Sh) ->
-    iolist_to_binary([<<"^(">>, sh_to_awk_1(Sh)]).	%Fix the beginning
+    iolist_to_binary([<<"^(">>, sh_to_awk_1(Sh)]).  %Fix the beginning
 
-sh_to_awk_1(<<"*", Sh/binary>>) ->			%This matches any string
+
+sh_to_awk_1(<<"*", Sh/binary>>) ->  %This matches any string
     [<<".*">>, sh_to_awk_1(Sh)];
-sh_to_awk_1(<<"?", Sh/binary>>) ->			%This matches any character
+sh_to_awk_1(<<"?", Sh/binary>>) ->  %This matches any character
     [$., sh_to_awk_1(Sh)];
-sh_to_awk_1(<<"[^]", Sh/binary>>) ->			%This takes careful handling
+sh_to_awk_1(<<"[^]", Sh/binary>>) ->  %This takes careful handling
     [<<"\\^">>, sh_to_awk_1(Sh)];
 %% Must move '^' to end.
 sh_to_awk_1(<<"[^", Sh/binary>>) ->
@@ -66,29 +73,32 @@ sh_to_awk_1(<<"[!", Sh/binary>>) ->
     [<<"[^">>, sh_to_awk_2(Sh, false)];
 sh_to_awk_1(<<"[", Sh/binary>>) ->
     [$[, sh_to_awk_2(Sh, false)];
-sh_to_awk_1(<<C:8, Sh/binary>>) ->                     %% Unspecialise everything else which is not an escape character.
+sh_to_awk_1(<<C:8, Sh/binary>>) ->  %% Unspecialise everything else which is not an escape character.
     case sh_special_char(C) of
-        true -> [$\\,C|sh_to_awk_1(Sh)];
-        false -> [C|sh_to_awk_1(Sh)]
+        true -> [$\\, C | sh_to_awk_1(Sh)];
+        false -> [C | sh_to_awk_1(Sh)]
     end;
 sh_to_awk_1(<<>>) ->
-    <<")$">>.			                        %Fix the end
+    <<")$">>.  %Fix the end
+
 
 sh_to_awk_2(<<"]", Sh/binary>>, UpArrow) ->
-    [$]|sh_to_awk_3(Sh, UpArrow)];
+    [$] | sh_to_awk_3(Sh, UpArrow)];
 sh_to_awk_2(Sh, UpArrow) ->
     sh_to_awk_3(Sh, UpArrow).
+
 
 sh_to_awk_3(<<"]", Sh/binary>>, true) ->
     [<<"^]">>, sh_to_awk_1(Sh)];
 sh_to_awk_3(<<"]", Sh/binary>>, false) ->
-    [$]|sh_to_awk_1(Sh)];
+    [$] | sh_to_awk_1(Sh)];
 sh_to_awk_3(<<C:8, Sh/binary>>, UpArrow) ->
-    [C|sh_to_awk_3(Sh, UpArrow)];
+    [C | sh_to_awk_3(Sh, UpArrow)];
 sh_to_awk_3(<<>>, true) ->
-    [$^|sh_to_awk_1(<<>>)];
+    [$^ | sh_to_awk_1(<<>>)];
 sh_to_awk_3(<<>>, false) ->
     sh_to_awk_1(<<>>).
+
 
 %%  Test if a character is a special character.
 -spec sh_special_char(char()) -> boolean().

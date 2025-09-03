@@ -28,91 +28,109 @@
 
 -include("logger.hrl").
 
--define(IF_KEY, "\\hklm\\system\\CurrentControlSet\\Services\\TcpIp\\Parameters\\Interfaces").
+-define(IF_KEY,  "\\hklm\\system\\CurrentControlSet\\Services\\TcpIp\\Parameters\\Interfaces").
 -define(TOP_KEY, "\\hklm\\system\\CurrentControlSet\\Services\\TcpIp\\Parameters").
+
 
 get_nameservers() ->
     {_, Config} = pick_config(),
     IPTs = get_value(["NameServer"], Config),
     lists:filter(fun(IPTuple) -> is_good_ns(IPTuple) end, IPTs).
 
+
 is_good_ns(Addr) ->
     element(1,
-	    inet_res:nnslookup("a.root-servers.net", in, a, [{Addr,53}],
-			       timer:seconds(5)))
-	   =:= ok.
+            inet_res:nnslookup("a.root-servers.net",
+                               in,
+                               a,
+                               [{Addr, 53}],
+                               timer:seconds(5))) =:=
+    ok.
+
 
 reg() ->
     {ok, R} = win32reg:open([read]),
     R.
 
+
 interfaces(R) ->
     ok = win32reg:change_key(R, ?IF_KEY),
     {ok, I} = win32reg:sub_keys(R),
     I.
+
+
 config_keys(R, Key) ->
     ok = win32reg:change_key(R, Key),
     [ {K,
        case win32reg:value(R, K) of
            {ok, V} -> try_translate(K, V);
            _ -> undefined
-       end
-      } || K <- ["Domain", "DhcpDomain",
-                 "NameServer", "DhcpNameServer", "SearchList"]].
+       end} || K <- ["Domain", "DhcpDomain",
+                     "NameServer", "DhcpNameServer", "SearchList"] ].
+
 
 try_translate(K, V) ->
     try translate(K, V) of
-	Res ->
-	    Res
+        Res ->
+            Res
     catch
-	A:B ->
-	    ?ERROR_MSG("Error '~p' translating Win32 registry~n"
-		       "K: ~p~nV: ~p~nError: ~p", [A, K, V, B]),
-	    undefined
+        A:B ->
+            ?ERROR_MSG("Error '~p' translating Win32 registry~n"
+                       "K: ~p~nV: ~p~nError: ~p",
+                       [A, K, V, B]),
+            undefined
     end.
+
 
 translate(NS, V) when NS =:= "NameServer"; NS =:= "DhcpNameServer" ->
     %% The IPs may be separated by commas ',' or by spaces " "
     %% The parts of an IP are separated by dots '.'
-    IPsStrings = [string:tokens(IP, ".") || IP <- string:tokens(V, " ,")],
-    [ list_to_tuple([list_to_integer(String) || String <- IpStrings])
-      || IpStrings <- IPsStrings];
+    IPsStrings = [ string:tokens(IP, ".") || IP <- string:tokens(V, " ,") ],
+    [ list_to_tuple([ list_to_integer(String) || String <- IpStrings ])
+      || IpStrings <- IPsStrings ];
 translate(_, V) -> V.
 
+
 interface_configs(R) ->
-    [{If, config_keys(R, ?IF_KEY ++ "\\" ++ If)}
-     || If <- interfaces(R)].
+    [ {If, config_keys(R, ?IF_KEY ++ "\\" ++ If)}
+      || If <- interfaces(R) ].
+
 
 sort_configs(Configs) ->
-    lists:sort(fun ({_, A}, {_, B}) ->
+    lists:sort(fun({_, A}, {_, B}) ->
                        ANS = proplists:get_value("NameServer", A),
                        BNS = proplists:get_value("NameServer", B),
-                       if ANS =/= undefined, BNS =:= undefined -> false;
-                          true -> count_undef(A) < count_undef(B)
+                       if
+                           ANS =/= undefined, BNS =:= undefined -> false;
+                           true -> count_undef(A) < count_undef(B)
                        end
                end,
-	       Configs).
+               Configs).
+
 
 count_undef(L) when is_list(L) ->
-    lists:foldl(fun ({_K, undefined}, Acc) -> Acc +1;
-                    ({_K, []}, Acc) -> Acc +1;
-                    (_, Acc) -> Acc
-                end, 0, L).
+    lists:foldl(fun({_K, undefined}, Acc) -> Acc + 1;
+                   ({_K, []}, Acc) -> Acc + 1;
+                   (_, Acc) -> Acc
+                end,
+                0,
+                L).
+
 
 all_configs() ->
     R = reg(),
     TopConfig = config_keys(R, ?TOP_KEY),
-    Configs = [{top, TopConfig}
-               | interface_configs(R)],
+    Configs = [{top, TopConfig} | interface_configs(R)],
     win32reg:close(R),
     {TopConfig, Configs}.
 
+
 pick_config() ->
     {TopConfig, Configs} = all_configs(),
-    NSConfigs = [{If, C} || {If, C} <- Configs,
-			    get_value(["DhcpNameServer","NameServer"], C)
-				=/= undefined],
-    case get_value(["DhcpNameServer","NameServer"],
+    NSConfigs = [ {If, C} || {If, C} <- Configs,
+                             get_value(["DhcpNameServer", "NameServer"], C) =/=
+                             undefined ],
+    case get_value(["DhcpNameServer", "NameServer"],
                    TopConfig) of
         %% No top level nameserver to pick interface with
         undefined ->
@@ -121,14 +139,15 @@ pick_config() ->
         NS ->
             Cs = [ {If, C}
                    || {If, C} <- Configs,
-		      lists:member(NS,
-				   [get_value(["NameServer"], C),
-				    get_value(["DhcpNameServer"], C)])],
+                      lists:member(NS,
+                                   [get_value(["NameServer"], C),
+                                    get_value(["DhcpNameServer"], C)]) ],
             hd(sort_configs(Cs))
     end.
 
+
 get_value([], _Config) -> undefined;
-get_value([K|Keys], Config) ->
+get_value([K | Keys], Config) ->
     case proplists:get_value(K, Config) of
         undefined -> get_value(Keys, Config);
         V -> V

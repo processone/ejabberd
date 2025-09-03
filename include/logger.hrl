@@ -23,62 +23,87 @@
 -compile([{parse_transform, lager_transform}]).
 
 -define(DEBUG(Format, Args),
-	begin lager:debug(Format, Args), ok end).
+        begin lager:debug(Format, Args), ok end).
 
 -define(INFO_MSG(Format, Args),
-	begin lager:info(Format, Args), ok end).
+        begin lager:info(Format, Args), ok end).
 
 -define(WARNING_MSG(Format, Args),
-	begin lager:warning(Format, Args), ok end).
+        begin lager:warning(Format, Args), ok end).
 
 -define(ERROR_MSG(Format, Args),
-	begin lager:error(Format, Args), ok end).
+        begin lager:error(Format, Args), ok end).
 
 -define(CRITICAL_MSG(Format, Args),
-	begin lager:critical(Format, Args), ok end).
+        begin lager:critical(Format, Args), ok end).
 -else.
 -include_lib("kernel/include/logger.hrl").
 
--define(CLEAD,    "\e[1").    % bold
--define(CMID,     "\e[0").    % normal
--define(CCLEAN,   "\e[0m").   % clean
+-define(CLEAD,  "\e[1").  % bold
+-define(CMID,   "\e[0").  % normal
+-define(CCLEAN, "\e[0m").  % clean
 
--define(CDEFAULT, ";49;95m"). % light magenta
--define(CDEBUG,   ";49;90m"). % dark gray
--define(CINFO,    ";49;92m"). % green
--define(CWARNING, ";49;93m"). % light yellow
--define(CERROR,   ";49;91m"). % light magenta
--define(CCRITICAL,";49;31m"). % light red
+-define(CDEFAULT,  ";49;95m").  % light magenta
+-define(CDEBUG,    ";49;90m").  % dark gray
+-define(CINFO,     ";49;92m").  % green
+-define(CWARNING,  ";49;93m").  % light yellow
+-define(CERROR,    ";49;91m").  % light magenta
+-define(CCRITICAL, ";49;31m").  % light red
 
 -define(DEBUG(Format, Args),
-	begin ?LOG_DEBUG(Format, Args,
-                        #{clevel => ?CLEAD ++ ?CDEBUG,
-                          ctext => ?CMID ++ ?CDEBUG}),
-              ok end).
+        begin
+            ?LOG_DEBUG(Format,
+                       Args,
+                       #{
+                         clevel => ?CLEAD ++ ?CDEBUG,
+                         ctext => ?CMID ++ ?CDEBUG
+                        }),
+            ok
+        end).
 
 -define(INFO_MSG(Format, Args),
-	begin ?LOG_INFO(Format, Args,
-                        #{clevel => ?CLEAD ++ ?CINFO,
-                          ctext => ?CCLEAN}),
-              ok end).
+        begin
+            ?LOG_INFO(Format,
+                      Args,
+                      #{
+                        clevel => ?CLEAD ++ ?CINFO,
+                        ctext => ?CCLEAN
+                       }),
+            ok
+        end).
 
 -define(WARNING_MSG(Format, Args),
-	begin ?LOG_WARNING(Format, Args,
-                        #{clevel => ?CLEAD ++ ?CWARNING,
-                          ctext => ?CMID ++ ?CWARNING}),
-              ok end).
+        begin
+            ?LOG_WARNING(Format,
+                         Args,
+                         #{
+                           clevel => ?CLEAD ++ ?CWARNING,
+                           ctext => ?CMID ++ ?CWARNING
+                          }),
+            ok
+        end).
 
 -define(ERROR_MSG(Format, Args),
-	begin ?LOG_ERROR(Format, Args,
-                        #{clevel => ?CLEAD ++ ?CERROR,
-                          ctext => ?CMID ++ ?CERROR}),
-              ok end).
+        begin
+            ?LOG_ERROR(Format,
+                       Args,
+                       #{
+                         clevel => ?CLEAD ++ ?CERROR,
+                         ctext => ?CMID ++ ?CERROR
+                        }),
+            ok
+        end).
 
 -define(CRITICAL_MSG(Format, Args),
-	begin ?LOG_CRITICAL(Format, Args,
-                        #{clevel => ?CLEAD++ ?CCRITICAL,
-                          ctext => ?CMID ++ ?CCRITICAL}),
-              ok end).
+        begin
+            ?LOG_CRITICAL(Format,
+                          Args,
+                          #{
+                            clevel => ?CLEAD ++ ?CCRITICAL,
+                            ctext => ?CMID ++ ?CCRITICAL
+                           }),
+            ok
+        end).
 -endif.
 
 %% Use only when trying to troubleshoot test problem with ExUnit

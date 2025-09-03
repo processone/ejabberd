@@ -24,12 +24,21 @@
 
 %% API
 -compile(export_all).
--import(suite, [disconnect/1, is_feature_advertised/3, upload_jid/1,
-my_jid/1, wait_for_slave/1, wait_for_master/1,
-send_recv/2, put_event/2, get_event/1]).
+-import(suite,
+        [disconnect/1,
+         is_feature_advertised/3,
+         upload_jid/1,
+         my_jid/1,
+         wait_for_slave/1,
+         wait_for_master/1,
+         send_recv/2,
+         put_event/2,
+         get_event/1]).
 
 -include("suite.hrl").
+
 -include_lib("stdlib/include/assert.hrl").
+
 
 %%%===================================================================
 %%% API
@@ -39,78 +48,98 @@ send_recv/2, put_event/2, get_event/1]).
 %%%===================================================================
 single_cases() ->
     {webadmin_single, [sequence],
-     [single_test(login_page),
-      single_test(welcome_page),
-      single_test(user_page),
-      single_test(adduser),
-      single_test(changepassword),
-      single_test(removeuser)]}.
+                      [single_test(login_page),
+                       single_test(welcome_page),
+                       single_test(user_page),
+                       single_test(adduser),
+                       single_test(changepassword),
+                       single_test(removeuser)]}.
+
 
 login_page(Config) ->
     Headers = ?match({ok, {{"HTTP/1.1", 401, _}, Headers, _}},
-		     httpc:request(get, {page(Config, ""), []}, [],
-				   [{body_format, binary}]),
-		     Headers),
+                     httpc:request(get,
+                                   {page(Config, ""), []},
+                                   [],
+                                   [{body_format, binary}]),
+                     Headers),
     ?match("basic realm=\"ejabberd\"", proplists:get_value("www-authenticate", Headers, none)).
+
 
 welcome_page(Config) ->
     Body = ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
-		     httpc:request(get, {page(Config, ""), [basic_auth_header(Config)]}, [],
-				   [{body_format, binary}]),
-		     Body),
+                  httpc:request(get,
+                                {page(Config, ""), [basic_auth_header(Config)]},
+                                [],
+                                [{body_format, binary}]),
+                  Body),
     ?match({_, _}, binary:match(Body, <<"ejabberd Web Admin">>)).
+
 
 user_page(Config) ->
     Server = ?config(server, Config),
     URL = "server/" ++ binary_to_list(Server) ++ "/user/admin/",
     Body = ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
-		  httpc:request(get, {page(Config, URL), [basic_auth_header(Config)]}, [],
-				[{body_format, binary}]),
-		  Body),
+                  httpc:request(get,
+                                {page(Config, URL), [basic_auth_header(Config)]},
+                                [],
+                                [{body_format, binary}]),
+                  Body),
     ?match({_, _}, binary:match(Body, <<"<title>ejabberd Web Admin">>)).
+
 
 adduser(Config) ->
     User = <<"userwebadmin-", (?config(user, Config))/binary>>,
     Server = ?config(server, Config),
     Password = ?config(password, Config),
     Body = make_query(
-	     Config,
-	     "server/" ++ binary_to_list(Server) ++ "/users/",
-	     <<"register/user=", (mue(User))/binary, "&register/password=",
-	       (mue(Password))/binary, "&register=Register">>),
+             Config,
+             "server/" ++ binary_to_list(Server) ++ "/users/",
+             <<"register/user=",
+               (mue(User))/binary,
+               "&register/password=",
+               (mue(Password))/binary,
+               "&register=Register">>),
     Password = ejabberd_auth:get_password_s(User, Server),
-    ?match({_, _}, binary:match(Body, <<"User ", User/binary, "@", Server/binary,
-                                        " successfully registered">>)).
+    ?match({_, _},
+           binary:match(Body,
+                        <<"User ", User/binary, "@", Server/binary,
+                          " successfully registered">>)).
+
 
 changepassword(Config) ->
     User = <<"userwebadmin-", (?config(user, Config))/binary>>,
     Server = ?config(server, Config),
     Password = <<"newpassword-", (?config(password, Config))/binary>>,
     Body = make_query(
-	     Config,
-	     "server/" ++ binary_to_list(Server)
-	     ++ "/user/" ++ binary_to_list(mue(User)) ++ "/",
-	     <<"change_password/newpass=", (mue(Password))/binary,
-	       "&change_password=Change+Password">>),
+             Config,
+             "server/" ++ binary_to_list(Server) ++
+             "/user/" ++ binary_to_list(mue(User)) ++ "/",
+             <<"change_password/newpass=",
+               (mue(Password))/binary,
+               "&change_password=Change+Password">>),
     ?match(Password, ejabberd_auth:get_password_s(User, Server)),
     ?match({_, _}, binary:match(Body, <<"<div class='result'><code>ok</code></div>">>)).
+
 
 removeuser(Config) ->
     User = <<"userwebadmin-", (?config(user, Config))/binary>>,
     Server = ?config(server, Config),
     Body = make_query(
-	     Config,
-	     "server/" ++ binary_to_list(Server)
-	     ++ "/user/" ++ binary_to_list(mue(User)) ++ "/",
-	     <<"&unregister=Unregister">>),
+             Config,
+             "server/" ++ binary_to_list(Server) ++
+             "/user/" ++ binary_to_list(mue(User)) ++ "/",
+             <<"&unregister=Unregister">>),
     false = ejabberd_auth:user_exists(User, Server),
     ?match(nomatch, binary:match(Body, <<"<h3>Last Activity</h3>20">>)).
+
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 single_test(T) ->
     list_to_atom("webadmin_" ++ atom_to_list(T)).
+
 
 basic_auth_header(Config) ->
     User = <<"admin">>,
@@ -119,9 +148,11 @@ basic_auth_header(Config) ->
     ejabberd_auth:try_register(User, Server, Password),
     basic_auth_header(User, Server, Password).
 
+
 basic_auth_header(Username, Server, Password) ->
     JidBin = <<Username/binary, "@", Server/binary, ":", Password/binary>>,
     {"authorization", "Basic " ++ base64:encode_to_string(JidBin)}.
+
 
 page(Config, Tail) ->
     Server = ?config(server_host, Config),
@@ -129,20 +160,24 @@ page(Config, Tail) ->
     Url = "http://" ++ Server ++ ":" ++ integer_to_list(Port) ++ "/admin/" ++ Tail,
     %% This bypasses a bug introduced in Erlang OTP R21 and fixed in 23.2:
     case catch uri_string:normalize("/%2525") of
-	"/%25" ->
-	    string:replace(Url, "%25", "%2525", all);
-	_ ->
-	    Url
+        "/%25" ->
+            string:replace(Url, "%25", "%2525", all);
+        _ ->
+            Url
     end.
+
 
 mue(Binary) ->
     misc:url_encode(Binary).
 
+
 make_query(Config, URL, BodyQ) ->
     ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
-	   httpc:request(post, {page(Config, URL),
-				[basic_auth_header(Config)],
-				"application/x-www-form-urlencoded",
-				BodyQ}, [],
-			 [{body_format, binary}]),
-	   Body).
+           httpc:request(post,
+                         {page(Config, URL),
+                          [basic_auth_header(Config)],
+                          "application/x-www-form-urlencoded",
+                          BodyQ},
+                         [],
+                         [{body_format, binary}]),
+           Body).

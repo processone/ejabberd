@@ -31,23 +31,39 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process_local_iq/1,
-	 mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
+-export([start/2,
+         stop/1,
+         reload/3,
+         process_local_iq/1,
+         mod_opt_type/1,
+         mod_options/1,
+         depends/2,
+         mod_doc/0]).
 
 -include("logger.hrl").
+
 -include_lib("xmpp/include/xmpp.hrl").
+
 -include("translate.hrl").
 
+
 start(Host, _Opts) ->
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_VERSION, ?MODULE, process_local_iq).
+    gen_iq_handler:add_iq_handler(ejabberd_local,
+                                  Host,
+                                  ?NS_VERSION,
+                                  ?MODULE,
+                                  process_local_iq).
+
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
-				     ?NS_VERSION).
+    gen_iq_handler:remove_iq_handler(ejabberd_local,
+                                     Host,
+                                     ?NS_VERSION).
+
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
+
 
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
@@ -55,42 +71,54 @@ process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
 process_local_iq(#iq{type = get, to = To} = IQ) ->
     Host = To#jid.lserver,
     OS = case mod_version_opt:show_os(Host) of
-	     true -> get_os();
-	     false -> undefined
-	 end,
-    xmpp:make_iq_result(IQ, #version{name = <<"ejabberd">>,
-				     ver = ejabberd_option:version(),
-				     os = OS}).
+             true -> get_os();
+             false -> undefined
+         end,
+    xmpp:make_iq_result(IQ,
+                        #version{
+                          name = <<"ejabberd">>,
+                          ver = ejabberd_option:version(),
+                          os = OS
+                         }).
+
 
 get_os() ->
     {Osfamily, Osname} = os:type(),
     OSType = list_to_binary([atom_to_list(Osfamily), $/, atom_to_list(Osname)]),
     OSVersion = case os:version() of
-		  {Major, Minor, Release} ->
-		      (str:format("~w.~w.~w",
-						     [Major, Minor, Release]));
-		  VersionString -> VersionString
-		end,
+                    {Major, Minor, Release} ->
+                        (str:format("~w.~w.~w",
+                                    [Major, Minor, Release]));
+                    VersionString -> VersionString
+                end,
     <<OSType/binary, " ", OSVersion/binary>>.
+
 
 depends(_Host, _Opts) ->
     [].
 
+
 mod_opt_type(show_os) ->
     econf:bool().
+
 
 mod_options(_Host) ->
     [{show_os, true}].
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           ?T("This module implements "
              "https://xmpp.org/extensions/xep-0092.html"
              "[XEP-0092: Software Version]. Consequently, "
              "it answers ejabberd's version when queried."),
       opts =>
           [{show_os,
-            #{value => "true | false",
+            #{
+              value => "true | false",
               desc =>
                   ?T("Should the operating system be revealed or not. "
-                     "The default value is 'true'.")}}]}.
+                     "The default value is 'true'.")
+             }}]
+     }.

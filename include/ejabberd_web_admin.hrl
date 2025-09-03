@@ -19,35 +19,35 @@
 %%%----------------------------------------------------------------------
 
 -define(X(Name),
-	#xmlel{name = Name, attrs = [], children = []}).
+        #xmlel{name = Name, attrs = [], children = []}).
 
 -define(XA(Name, Attrs),
-	#xmlel{name = Name, attrs = Attrs, children = []}).
+        #xmlel{name = Name, attrs = Attrs, children = []}).
 
 -define(XE(Name, Els),
-	#xmlel{name = Name, attrs = [], children = Els}).
+        #xmlel{name = Name, attrs = [], children = Els}).
 
 -define(XAE(Name, Attrs, Els),
-	#xmlel{name = Name, attrs = Attrs, children = Els}).
+        #xmlel{name = Name, attrs = Attrs, children = Els}).
 
 -define(C(Text), {xmlcdata, Text}).
 
 -define(XC(Name, Text), ?XE(Name, [?C(Text)])).
 
 -define(XAC(Name, Attrs, Text),
-	?XAE(Name, Attrs, [?C(Text)])).
+        ?XAE(Name, Attrs, [?C(Text)])).
 
 -define(CT(Text), ?C((translate:translate(Lang, Text)))).
 
 -define(XCT(Name, Text), ?XC(Name, (translate:translate(Lang, Text)))).
 
 -define(XACT(Name, Attrs, Text),
-	?XAC(Name, Attrs, (translate:translate(Lang, Text)))).
+        ?XAC(Name, Attrs, (translate:translate(Lang, Text)))).
 
 -define(LI(Els), ?XE(<<"li">>, Els)).
 
 -define(A(URL, Els),
-	?XAE(<<"a">>, [{<<"href">>, URL}], Els)).
+        ?XAE(<<"a">>, [{<<"href">>, URL}], Els)).
 
 -define(AC(URL, Text), ?A(URL, [?C(Text)])).
 
@@ -58,69 +58,79 @@
 -define(BR, ?X(<<"br">>)).
 
 -define(INPUT(Type, Name, Value),
-	?XA(<<"input">>,
-	    [{<<"type">>, Type}, {<<"name">>, Name},
-	     {<<"value">>, Value}])).
+        ?XA(<<"input">>,
+            [{<<"type">>, Type},
+             {<<"name">>, Name},
+             {<<"value">>, Value}])).
 
 -define(INPUTPH(Type, Name, Value, PlaceHolder),
-	?XA(<<"input">>,
-	    [{<<"type">>, Type}, {<<"name">>, Name},
-	     {<<"value">>, Value}, {<<"placeholder">>, PlaceHolder}])).
+        ?XA(<<"input">>,
+            [{<<"type">>, Type},
+             {<<"name">>, Name},
+             {<<"value">>, Value},
+             {<<"placeholder">>, PlaceHolder}])).
 
 -define(INPUTT(Type, Name, Value),
-	?INPUT(Type, Name, (translate:translate(Lang, Value)))).
+        ?INPUT(Type, Name, (translate:translate(Lang, Value)))).
 
 -define(INPUTD(Type, Name, Value),
-	?XA(<<"input">>,
-	    [{<<"type">>, Type}, {<<"name">>, Name},
-             {<<"class">>, <<"btn-danger">>}, {<<"value">>, Value}])).
+        ?XA(<<"input">>,
+            [{<<"type">>, Type},
+             {<<"name">>, Name},
+             {<<"class">>, <<"btn-danger">>},
+             {<<"value">>, Value}])).
 
 -define(INPUTTD(Type, Name, Value),
-	?INPUTD(Type, Name, (translate:translate(Lang, Value)))).
+        ?INPUTD(Type, Name, (translate:translate(Lang, Value)))).
 
 -define(INPUTS(Type, Name, Value, Size),
-	?XA(<<"input">>,
-	    [{<<"type">>, Type}, {<<"name">>, Name},
-	     {<<"value">>, Value}, {<<"size">>, Size}])).
+        ?XA(<<"input">>,
+            [{<<"type">>, Type},
+             {<<"name">>, Name},
+             {<<"value">>, Value},
+             {<<"size">>, Size}])).
 
 -define(INPUTST(Type, Name, Value, Size),
-	?INPUT(Type, Name, (translate:translate(Lang, Value)), Size)).
+        ?INPUT(Type, Name, (translate:translate(Lang, Value)), Size)).
 
 -define(ACLINPUT(Text),
-	?XE(<<"td">>,
-	    [?INPUT(<<"text">>, <<"value", ID/binary>>, Text)])).
+        ?XE(<<"td">>,
+            [?INPUT(<<"text">>, <<"value", ID/binary>>, Text)])).
 
 -define(TEXTAREA(Name, Rows, Cols, Value),
-	?XAC(<<"textarea">>,
-	     [{<<"name">>, Name}, {<<"rows">>, Rows},
-	      {<<"cols">>, Cols}],
-	     Value)).
+        ?XAC(<<"textarea">>,
+             [{<<"name">>, Name},
+              {<<"rows">>, Rows},
+              {<<"cols">>, Cols}],
+             Value)).
 
 %% Build an xmlelement for result
 -define(XRES(Text),
-	?XAC(<<"p">>, [{<<"class">>, <<"result">>}], Text)).
+        ?XAC(<<"p">>, [{<<"class">>, <<"result">>}], Text)).
 
 -define(DIVRES(Elements),
-	?XAE(<<"div">>, [{<<"class">>, <<"result">>}], Elements)).
+        ?XAE(<<"div">>, [{<<"class">>, <<"result">>}], Elements)).
 
 %% Guide Link
 -define(XREST(Text), ?XRES((translate:translate(Lang, Text)))).
 
 -define(GL(Ref, Title),
-	?XAE(<<"div">>, [{<<"class">>, <<"guidelink">>}],
-	     [?XAE(<<"a">>,
-		   [{<<"href">>, <<"https://docs.ejabberd.im/", Ref/binary>>},
-		    {<<"target">>, <<"_blank">>}],
-		   [?C(<<"docs: ", Title/binary>>)])])).
+        ?XAE(<<"div">>,
+             [{<<"class">>, <<"guidelink">>}],
+             [?XAE(<<"a">>,
+                   [{<<"href">>, <<"https://docs.ejabberd.im/", Ref/binary>>},
+                    {<<"target">>, <<"_blank">>}],
+                   [?C(<<"docs: ", Title/binary>>)])])).
 
 %% h1 with a Guide Link
 -define(H1GLraw(Name, Ref, Title),
-	[?XC(<<"h1">>, Name), ?GL(Ref, Title), ?BR, ?BR]).
+        [?XC(<<"h1">>, Name), ?GL(Ref, Title), ?BR, ?BR]).
 -define(H1GL(Name, RefConf, Title),
-	?H1GLraw(Name, <<"admin/configuration/", RefConf/binary>>, Title)).
+        ?H1GLraw(Name, <<"admin/configuration/", RefConf/binary>>, Title)).
 
 -define(ANCHORL(Ref),
-	?XAE(<<"div">>, [{<<"class">>, <<"anchorlink">>}],
-	     [?XAE(<<"a">>,
-		   [{<<"href">>, <<"#", Ref/binary>>}],
-		   [?C(unicode:characters_to_binary("¶"))])])).
+        ?XAE(<<"div">>,
+             [{<<"class">>, <<"anchorlink">>}],
+             [?XAE(<<"a">>,
+                   [{<<"href">>, <<"#", Ref/binary>>}],
+                   [?C(unicode:characters_to_binary("¶"))])])).

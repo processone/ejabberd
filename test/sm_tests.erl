@@ -25,11 +25,20 @@
 
 %% API
 -compile(export_all).
--import(suite, [send/2, recv/1, close_socket/1, set_opt/3, my_jid/1,
-		recv_message/1, disconnect/1, send_recv/2,
-		put_event/2, get_event/1]).
+-import(suite,
+        [send/2,
+         recv/1,
+         close_socket/1,
+         set_opt/3,
+         my_jid/1,
+         recv_message/1,
+         disconnect/1,
+         send_recv/2,
+         put_event/2,
+         get_event/1]).
 
 -include("suite.hrl").
+
 
 %%%===================================================================
 %%% API
@@ -39,21 +48,26 @@
 %%%===================================================================
 single_cases() ->
     {sm_single, [sequence],
-     [single_test(feature_enabled),
-      single_test(enable),
-      single_test(resume),
-      single_test(resume_failed)]}.
+                [single_test(feature_enabled),
+                 single_test(enable),
+                 single_test(resume),
+                 single_test(resume_failed)]}.
+
 
 feature_enabled(Config) ->
     true = ?config(sm, Config),
     disconnect(Config).
 
+
 enable(Config) ->
     Server = ?config(server, Config),
     ServerJID = jid:make(<<"">>, Server, <<"">>),
     ct:comment("Send messages of type 'headline' so the server discards them silently"),
-    Msg = #message{to = ServerJID, type = headline,
-		   body = [#text{data = <<"body">>}]},
+    Msg = #message{
+            to = ServerJID,
+            type = headline,
+            body = [#text{data = <<"body">>}]
+           },
     ct:comment("Enable the session management with resumption enabled"),
     send(Config, #sm_enable{resume = true, xmlns = ?NS_STREAM_MGMT_3}),
     #sm_enabled{id = ID, resume = true} = recv(Config),
@@ -69,6 +83,7 @@ enable(Config) ->
     ct:comment("Closing socket"),
     close_socket(Config),
     {save_config, set_opt(sm_previd, ID, Config)}.
+
 
 resume(Config) ->
     {_, SMConfig} = ?config(saved_config, Config),
@@ -96,6 +111,7 @@ resume(Config) ->
     close_socket(Config),
     {save_config, set_opt(sm_previd, ID, Config)}.
 
+
 resume_failed(Config) ->
     {_, SMConfig} = ?config(saved_config, Config),
     ID = ?config(sm_previd, SMConfig),
@@ -106,13 +122,15 @@ resume_failed(Config) ->
     #sm_failed{reason = 'item-not-found', h = 4} = recv(Config),
     disconnect(Config).
 
+
 %%%===================================================================
 %%% Master-slave tests
 %%%===================================================================
 master_slave_cases() ->
     {sm_master_slave, [sequence],
-     [master_slave_test(queue_limit),
-      master_slave_test(queue_limit_detached)]}.
+                      [master_slave_test(queue_limit),
+                       master_slave_test(queue_limit_detached)]}.
+
 
 queue_limit_master(Config) ->
     ct:comment("Waiting for 'send' command from the peer"),
@@ -122,6 +140,7 @@ queue_limit_master(Config) ->
     peer_down = get_event(Config),
     disconnect(Config).
 
+
 queue_limit_slave(Config) ->
     ct:comment("Enable the session management without resumption"),
     send(Config, #sm_enable{xmlns = ?NS_STREAM_MGMT_3}),
@@ -130,10 +149,11 @@ queue_limit_slave(Config) ->
     ct:comment("Receiving all messages"),
     lists:foreach(
       fun(I) ->
-	      ID = integer_to_binary(I),
-	      Body = xmpp:mk_text(ID),
-	      #message{id = ID, body = Body} = recv_message(Config)
-      end, lists:seq(1, 11)),
+              ID = integer_to_binary(I),
+              Body = xmpp:mk_text(ID),
+              #message{id = ID, body = Body} = recv_message(Config)
+      end,
+      lists:seq(1, 11)),
     ct:comment("Receiving request ACK"),
     #sm_r{} = recv(Config),
     ct:comment("Receiving policy-violation stream error"),
@@ -142,11 +162,13 @@ queue_limit_slave(Config) ->
     ct:comment("Closing socket"),
     close_socket(Config).
 
+
 queue_limit_detached_master(Config) ->
     ct:comment("Waiting for the peer to disconnect"),
     peer_down = get_event(Config),
     send_recv_messages(Config),
     disconnect(Config).
+
 
 queue_limit_detached_slave(Config) ->
     #presence{} = send_recv(Config, #presence{}),
@@ -156,16 +178,20 @@ queue_limit_detached_slave(Config) ->
     ct:comment("Closing socket"),
     close_socket(Config).
 
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 single_test(T) ->
     list_to_atom("sm_" ++ atom_to_list(T)).
 
+
 master_slave_test(T) ->
-    {list_to_atom("sm_" ++ atom_to_list(T)), [parallel],
+    {list_to_atom("sm_" ++ atom_to_list(T)),
+     [parallel],
      [list_to_atom("sm_" ++ atom_to_list(T) ++ "_master"),
       list_to_atom("sm_" ++ atom_to_list(T) ++ "_slave")]}.
+
 
 send_recv_messages(Config) ->
     PeerJID = ?config(peer, Config),
@@ -173,13 +199,15 @@ send_recv_messages(Config) ->
     ct:comment("Sending messages to peer"),
     lists:foreach(
       fun(I) ->
-	      ID = integer_to_binary(I),
-	      send(Config, Msg#message{id = ID, body = xmpp:mk_text(ID)})
-      end, lists:seq(1, 11)),
+              ID = integer_to_binary(I),
+              send(Config, Msg#message{id = ID, body = xmpp:mk_text(ID)})
+      end,
+      lists:seq(1, 11)),
     ct:comment("Receiving bounced messages from the peer"),
     lists:foreach(
       fun(I) ->
-	      ID = integer_to_binary(I),
-	      Err = #message{id = ID, type = error} = recv_message(Config),
-	      #stanza_error{reason = 'service-unavailable'} = xmpp:get_error(Err)
-      end, lists:seq(1, 11)).
+              ID = integer_to_binary(I),
+              Err = #message{id = ID, type = error} = recv_message(Config),
+              #stanza_error{reason = 'service-unavailable'} = xmpp:get_error(Err)
+      end,
+      lists:seq(1, 11)).

@@ -41,219 +41,266 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 
 -include("pubsub.hrl").
+
 -include_lib("xmpp/include/xmpp.hrl").
+
 -include("translate.hrl").
 
--export([init/3, terminate/2, options/0, set_node/1,
-    get_node/3, get_node/2, get_node/1, get_nodes/2,
-    get_nodes/1, get_all_nodes/1,
-    get_parentnodes/3, get_parentnodes_tree/3,
-    get_subnodes/3, get_subnodes_tree/3, create_node/6,
-    delete_node/2]).
+-export([init/3,
+         terminate/2,
+         options/0,
+         set_node/1,
+         get_node/3, get_node/2, get_node/1,
+         get_nodes/2, get_nodes/1,
+         get_all_nodes/1,
+         get_parentnodes/3,
+         get_parentnodes_tree/3,
+         get_subnodes/3,
+         get_subnodes_tree/3,
+         create_node/6,
+         delete_node/2]).
+
 
 init(_Host, _ServerHost, _Options) ->
-    ejabberd_mnesia:create(?MODULE, pubsub_node,
-	[{disc_copies, [node()]},
-	    {attributes, record_info(fields, pubsub_node)},
-	    {index, [id]}]),
+    ejabberd_mnesia:create(?MODULE,
+                           pubsub_node,
+                           [{disc_copies, [node()]},
+                            {attributes, record_info(fields, pubsub_node)},
+                            {index, [id]}]),
     %% mnesia:transform_table(pubsub_state, ignore, StatesFields)
     ok.
+
 
 terminate(_Host, _ServerHost) ->
     ok.
 
+
 options() ->
     [{virtual_tree, false}].
+
 
 set_node(Node) when is_record(Node, pubsub_node) ->
     mnesia:write(Node).
 
+
 get_node(Host, Node, _From) ->
     get_node(Host, Node).
 
+
 get_node(Host, Node) ->
     case mnesia:read({pubsub_node, {Host, Node}}) of
-	[#pubsub_node{} = Record]  -> fixup_node(Record);
-	_ -> {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
+        [#pubsub_node{} = Record] -> fixup_node(Record);
+        _ -> {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
     end.
+
 
 get_node(Nidx) ->
     case mnesia:index_read(pubsub_node, Nidx, #pubsub_node.id) of
-	[#pubsub_node{} = Record] -> fixup_node(Record);
-	_ -> {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
+        [#pubsub_node{} = Record] -> fixup_node(Record);
+        _ -> {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
     end.
+
 
 get_nodes(Host) ->
     get_nodes(Host, infinity).
 
+
 get_nodes(Host, infinity) ->
     Nodes = mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}),
-    [fixup_node(N) || N <- Nodes];
+    [ fixup_node(N) || N <- Nodes ];
 get_nodes(Host, Limit) ->
     case mnesia:select(
-	   pubsub_node,
-	   ets:fun2ms(
-	     fun(#pubsub_node{nodeid = {H, _}} = Node) when H == Host ->
-		     Node
-	     end), Limit, read) of
-	'$end_of_table' -> [];
-	{Nodes, _} -> [fixup_node(N) || N <- Nodes]
+           pubsub_node,
+           ets:fun2ms(
+             fun(#pubsub_node{nodeid = {H, _}} = Node) when H == Host ->
+                     Node
+             end),
+           Limit,
+           read) of
+        '$end_of_table' -> [];
+        {Nodes, _} -> [ fixup_node(N) || N <- Nodes ]
     end.
+
 
 get_all_nodes({_U, _S, _R} = Owner) ->
     Host = jid:tolower(jid:remove_resource(Owner)),
     Nodes = mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}),
-    [fixup_node(N) || N <- Nodes];
+    [ fixup_node(N) || N <- Nodes ];
 get_all_nodes(Host) ->
-    Nodes = mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'})
-	++ mnesia:match_object(#pubsub_node{nodeid = {{'_', Host, '_'}, '_'},
-					    _ = '_'}),
-    [fixup_node(N) || N <- Nodes].
+    Nodes = mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}) ++
+        mnesia:match_object(#pubsub_node{
+                              nodeid = {{'_', Host, '_'}, '_'},
+                              _ = '_'
+                             }),
+    [ fixup_node(N) || N <- Nodes ].
+
 
 get_parentnodes(Host, Node, _From) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
-	[Record] when is_record(Record, pubsub_node) ->
-	    Record#pubsub_node.parents;
-	_ ->
-	    []
+        [Record] when is_record(Record, pubsub_node) ->
+            Record#pubsub_node.parents;
+        _ ->
+            []
     end.
+
 
 get_parentnodes_tree(Host, Node, _From) ->
     get_parentnodes_tree(Host, Node, 0, []).
+
+
 get_parentnodes_tree(Host, Node, Level, Acc) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
-	[#pubsub_node{} = Record0] ->
-	    Record = fixup_node(Record0),
-	    Tree = [{Level, [Record]}|Acc],
-	    case Record#pubsub_node.parents of
-		[Parent] -> get_parentnodes_tree(Host, Parent, Level+1, Tree);
-		_ -> Tree
-	    end;
-	_ ->
-	    Acc
+        [#pubsub_node{} = Record0] ->
+            Record = fixup_node(Record0),
+            Tree = [{Level, [Record]} | Acc],
+            case Record#pubsub_node.parents of
+                [Parent] -> get_parentnodes_tree(Host, Parent, Level + 1, Tree);
+                _ -> Tree
+            end;
+        _ ->
+            Acc
     end.
+
 
 get_subnodes(Host, <<>>, infinity) ->
     Nodes = mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, parents = [], _ = '_'}),
-    [fixup_node(N) || N <- Nodes];
+    [ fixup_node(N) || N <- Nodes ];
 get_subnodes(Host, <<>>, Limit) ->
     case mnesia:select(
-	   pubsub_node,
-	   ets:fun2ms(
-	     fun(#pubsub_node{nodeid = {H, _}, parents = []} = Node) when H == Host ->
-		     Node
-	     end), Limit, read) of
-	'$end_of_table' -> [];
-	{Nodes, _} -> [fixup_node(N) || N <- Nodes]
+           pubsub_node,
+           ets:fun2ms(
+             fun(#pubsub_node{nodeid = {H, _}, parents = []} = Node) when H == Host ->
+                     Node
+             end),
+           Limit,
+           read) of
+        '$end_of_table' -> [];
+        {Nodes, _} -> [ fixup_node(N) || N <- Nodes ]
     end;
 get_subnodes(Host, Node, infinity) ->
-    Q = qlc:q([fixup_node(N)
-		|| #pubsub_node{nodeid = {NHost, _},
-			parents = Parents} =
-		    N
-		    <- mnesia:table(pubsub_node),
-		    Host == NHost, lists:member(Node, Parents)]),
+    Q = qlc:q([ fixup_node(N)
+                || #pubsub_node{
+                     nodeid = {NHost, _},
+                     parents = Parents
+                    } =
+                       N <- mnesia:table(pubsub_node),
+                   Host == NHost,
+                   lists:member(Node, Parents) ]),
     qlc:e(Q);
 get_subnodes(Host, Node, Limit) ->
     case mnesia:select(
-	   pubsub_node,
-	   ets:fun2ms(
-	     fun(#pubsub_node{nodeid = {H, _}, parents = Ps} = N)
-		   when H == Host andalso Ps /= [] -> N
-	     end), Limit, read) of
-	'$end_of_table' -> [];
-	{Nodes, _} ->
-	    lists:filtermap(
-	      fun(#pubsub_node{parents = Parents} = N2) ->
-		      case lists:member(Node, Parents) of
-			  true -> {true, fixup_node(N2)};
-			  _ -> false
-		      end
-	      end, Nodes)
+           pubsub_node,
+           ets:fun2ms(
+             fun(#pubsub_node{nodeid = {H, _}, parents = Ps} = N)
+                   when H == Host andalso Ps /= [] -> N
+             end),
+           Limit,
+           read) of
+        '$end_of_table' -> [];
+        {Nodes, _} ->
+            lists:filtermap(
+              fun(#pubsub_node{parents = Parents} = N2) ->
+                      case lists:member(Node, Parents) of
+                          true -> {true, fixup_node(N2)};
+                          _ -> false
+                      end
+              end,
+              Nodes)
     end.
+
 
 get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
 
+
 get_subnodes_tree(Host, Node) ->
     case get_node(Host, Node) of
-	{error, _} ->
-	    [];
-	Rec ->
-	    BasePlugin = misc:binary_to_atom(<<"node_",
-			(Rec#pubsub_node.type)/binary>>),
-	    {result, BasePath} = BasePlugin:node_to_path(Node),
-	    mnesia:foldl(fun (#pubsub_node{nodeid = {H, N}} = R, Acc) ->
-			Plugin = misc:binary_to_atom(<<"node_",
-				    (R#pubsub_node.type)/binary>>),
-			{result, Path} = Plugin:node_to_path(N),
-			case lists:prefix(BasePath, Path) and (H == Host) of
-			    true -> [R | Acc];
-			    false -> Acc
-			end
-		end,
-		[], pubsub_node)
+        {error, _} ->
+            [];
+        Rec ->
+            BasePlugin = misc:binary_to_atom(<<"node_",
+                                               (Rec#pubsub_node.type)/binary>>),
+            {result, BasePath} = BasePlugin:node_to_path(Node),
+            mnesia:foldl(fun(#pubsub_node{nodeid = {H, N}} = R, Acc) ->
+                                 Plugin = misc:binary_to_atom(<<"node_",
+                                                                (R#pubsub_node.type)/binary>>),
+                                 {result, Path} = Plugin:node_to_path(N),
+                                 case lists:prefix(BasePath, Path) and (H == Host) of
+                                     true -> [R | Acc];
+                                     false -> Acc
+                                 end
+                         end,
+                         [],
+                         pubsub_node)
     end.
+
 
 create_node(Host, Node, Type, Owner, Options, Parents) ->
     BJID = jid:tolower(jid:remove_resource(Owner)),
     case mnesia:read({pubsub_node, {Host, Node}}) of
-	[] ->
-	    ParentExists = case Host of
-		{_U, _S, _R} ->
-		    %% This is special case for PEP handling
-		    %% PEP does not uses hierarchy
-		    true;
-		_ ->
-		    case Parents of
-			[] ->
-			    true;
-			[Parent | _] ->
-			    case catch mnesia:read({pubsub_node, {Host, Parent}}) of
-				[#pubsub_node{owners = [{<<>>, Host, <<>>}]}] ->
-				    true;
-				[#pubsub_node{owners = Owners}] ->
-				    lists:member(BJID, Owners);
-				_ ->
-				    false
-			    end;
-			_ ->
-			    false
-		    end
-	    end,
-	    case ParentExists of
-		true ->
-		    Nidx = pubsub_index:new(node),
-		    mnesia:write(#pubsub_node{nodeid = {Host, Node},
-			    id = Nidx, parents = Parents,
-			    type = Type, owners = [BJID],
-			    options = Options}),
-		    {ok, Nidx};
-		false ->
-		    {error, xmpp:err_forbidden()}
-	    end;
-	_ ->
-	    {error, xmpp:err_conflict(?T("Node already exists"), ejabberd_option:language())}
+        [] ->
+            ParentExists = case Host of
+                               {_U, _S, _R} ->
+                                   %% This is special case for PEP handling
+                                   %% PEP does not uses hierarchy
+                                   true;
+                               _ ->
+                                   case Parents of
+                                       [] ->
+                                           true;
+                                       [Parent | _] ->
+                                           case catch mnesia:read({pubsub_node, {Host, Parent}}) of
+                                               [#pubsub_node{owners = [{<<>>, Host, <<>>}]}] ->
+                                                   true;
+                                               [#pubsub_node{owners = Owners}] ->
+                                                   lists:member(BJID, Owners);
+                                               _ ->
+                                                   false
+                                           end;
+                                       _ ->
+                                           false
+                                   end
+                           end,
+            case ParentExists of
+                true ->
+                    Nidx = pubsub_index:new(node),
+                    mnesia:write(#pubsub_node{
+                                   nodeid = {Host, Node},
+                                   id = Nidx,
+                                   parents = Parents,
+                                   type = Type,
+                                   owners = [BJID],
+                                   options = Options
+                                  }),
+                    {ok, Nidx};
+                false ->
+                    {error, xmpp:err_forbidden()}
+            end;
+        _ ->
+            {error, xmpp:err_conflict(?T("Node already exists"), ejabberd_option:language())}
     end.
+
 
 delete_node(Host, Node) ->
     Removed = get_subnodes_tree(Host, Node),
-    lists:foreach(fun (#pubsub_node{nodeid = {_, SubNode}, id = SubNidx}) ->
-		pubsub_index:free(node, SubNidx),
-		mnesia:delete({pubsub_node, {Host, SubNode}})
-	end,
-	Removed),
+    lists:foreach(fun(#pubsub_node{nodeid = {_, SubNode}, id = SubNidx}) ->
+                          pubsub_index:free(node, SubNidx),
+                          mnesia:delete({pubsub_node, {Host, SubNode}})
+                  end,
+                  Removed),
     Removed.
+
 
 fixup_node(#pubsub_node{options = Options} = Node) ->
     Res = lists:splitwith(
-	fun({max_items, infinity}) -> false;
-	   (_) -> true
-	end, Options),
+            fun({max_items, infinity}) -> false;
+               (_) -> true
+            end,
+            Options),
     Options2 = case Res of
-		   {Before, [_ | After]} ->
-		       Before ++ [{max_items, max} | After];
-		   {Rest, []} ->
-		       Rest
-	       end,
+                   {Before, [_ | After]} ->
+                       Before ++ [{max_items, max} | After];
+                   {Rest, []} ->
+                       Rest
+               end,
     Node#pubsub_node{options = Options2}.

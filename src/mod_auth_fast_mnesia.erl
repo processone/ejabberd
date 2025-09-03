@@ -31,101 +31,120 @@
 -export([get_tokens/3, del_token/4, del_tokens/2, set_token/6, rotate_token/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
+
 -include("logger.hrl").
 
--record(mod_auth_fast, {key = {<<"">>, <<"">>, <<"">>} :: {binary(), binary(), binary() | '_'} | '$1',
-			token = <<>> :: binary() | '_',
-			created_at = 0 :: non_neg_integer() | '_',
-			expires_at = 0 :: non_neg_integer() | '_'}).
+-record(mod_auth_fast, {
+          key = {<<"">>, <<"">>, <<"">>} :: {binary(), binary(), binary() | '_'} | '$1',
+          token = <<>> :: binary() | '_',
+          created_at = 0 :: non_neg_integer() | '_',
+          expires_at = 0 :: non_neg_integer() | '_'
+         }).
+
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    ejabberd_mnesia:create(?MODULE, mod_auth_fast,
-			   [{disc_only_copies, [node()]},
-			    {attributes,
-			     record_info(fields, mod_auth_fast)}]).
+    ejabberd_mnesia:create(?MODULE,
+                           mod_auth_fast,
+                           [{disc_only_copies, [node()]},
+                            {attributes,
+                             record_info(fields, mod_auth_fast)}]).
+
 
 -spec get_tokens(binary(), binary(), binary()) ->
-    [{current | next, binary(), non_neg_integer()}].
+          [{current | next, binary(), non_neg_integer()}].
 get_tokens(LServer, LUser, UA) ->
     Now = erlang:system_time(second),
     case mnesia:dirty_read(mod_auth_fast, {LServer, LUser, token_id(UA, next)}) of
-	[#mod_auth_fast{token = Token, created_at = Created, expires_at = Expires}] when Expires > Now ->
-	    [{next, Token, Created}];
-	[#mod_auth_fast{}] ->
-	    del_token(LServer, LUser, UA, next),
-	    [];
-	_ ->
-	    []
+        [#mod_auth_fast{token = Token, created_at = Created, expires_at = Expires}] when Expires > Now ->
+            [{next, Token, Created}];
+        [#mod_auth_fast{}] ->
+            del_token(LServer, LUser, UA, next),
+            [];
+        _ ->
+            []
     end ++
-	case mnesia:dirty_read(mod_auth_fast, {LServer, LUser, token_id(UA, current)}) of
-	    [#mod_auth_fast{token = Token, created_at = Created, expires_at = Expires}] when Expires > Now ->
-		[{current, Token, Created}];
-	    [#mod_auth_fast{}] ->
-		del_token(LServer, LUser, UA, current),
-		[];
-	    _ ->
-		[]
-	end.
+    case mnesia:dirty_read(mod_auth_fast, {LServer, LUser, token_id(UA, current)}) of
+        [#mod_auth_fast{token = Token, created_at = Created, expires_at = Expires}] when Expires > Now ->
+            [{current, Token, Created}];
+        [#mod_auth_fast{}] ->
+            del_token(LServer, LUser, UA, current),
+            [];
+        _ ->
+            []
+    end.
+
 
 -spec rotate_token(binary(), binary(), binary()) ->
-    ok | {error, atom()}.
+          ok | {error, atom()}.
 rotate_token(LServer, LUser, UA) ->
     F = fun() ->
-	case mnesia:dirty_read(mod_auth_fast, {LServer, LUser, token_id(UA, next)}) of
-	    [#mod_auth_fast{token = Token, created_at = Created, expires_at = Expires}] ->
-		mnesia:write(#mod_auth_fast{key = {LServer, LUser, token_id(UA, current)},
-					    token = Token, created_at = Created,
-					    expires_at = Expires}),
-		mnesia:delete({mod_auth_fast, {LServer, LUser, token_id(UA, next)}});
-	    _ ->
-		ok
-	end
-	end,
+                case mnesia:dirty_read(mod_auth_fast, {LServer, LUser, token_id(UA, next)}) of
+                    [#mod_auth_fast{token = Token, created_at = Created, expires_at = Expires}] ->
+                        mnesia:write(#mod_auth_fast{
+                                       key = {LServer, LUser, token_id(UA, current)},
+                                       token = Token,
+                                       created_at = Created,
+                                       expires_at = Expires
+                                      }),
+                        mnesia:delete({mod_auth_fast, {LServer, LUser, token_id(UA, next)}});
+                    _ ->
+                        ok
+                end
+        end,
     transaction(F).
 
+
 -spec del_token(binary(), binary(), binary(), current | next) ->
-    ok | {error, atom()}.
+          ok | {error, atom()}.
 del_token(LServer, LUser, UA, Type) ->
     F = fun() ->
-	mnesia:delete({mod_auth_fast, {LServer, LUser, token_id(UA, Type)}})
-	end,
+                mnesia:delete({mod_auth_fast, {LServer, LUser, token_id(UA, Type)}})
+        end,
     transaction(F).
+
 
 -spec del_tokens(binary(), binary()) -> ok | {error, atom()}.
 del_tokens(LServer, LUser) ->
     F = fun() ->
-        Elements = mnesia:match_object(#mod_auth_fast{key = {LServer, LUser, '_'}, _ = '_'}),
-	[mnesia:delete_object(E) || E <- Elements]
-	end,
+                Elements = mnesia:match_object(#mod_auth_fast{key = {LServer, LUser, '_'}, _ = '_'}),
+                [ mnesia:delete_object(E) || E <- Elements ]
+        end,
     transaction(F).
 
+
 -spec set_token(binary(), binary(), binary(), current | next, binary(), non_neg_integer()) ->
-    ok | {error, atom()}.
+          ok | {error, atom()}.
 set_token(LServer, LUser, UA, Type, Token, Expires) ->
     F = fun() ->
-	mnesia:write(#mod_auth_fast{key = {LServer, LUser, token_id(UA, Type)},
-				    token = Token, created_at = erlang:system_time(second),
-				    expires_at = Expires})
-	end,
+                mnesia:write(#mod_auth_fast{
+                               key = {LServer, LUser, token_id(UA, Type)},
+                               token = Token,
+                               created_at = erlang:system_time(second),
+                               expires_at = Expires
+                              })
+        end,
     transaction(F).
+
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
 
 token_id(UA, current) ->
     <<"c:", UA/binary>>;
 token_id(UA, _) ->
     <<"n:", UA/binary>>.
 
+
 transaction(F) ->
     case mnesia:transaction(F) of
-	{atomic, Res} ->
-	    Res;
-	{aborted, Reason} ->
-	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
-	    {error, db_failure}
+        {atomic, Res} ->
+            Res;
+        {aborted, Reason} ->
+            ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
+            {error, db_failure}
     end.

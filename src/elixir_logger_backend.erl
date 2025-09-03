@@ -29,23 +29,29 @@
 
 -behaviour(gen_event).
 
--export([init/1, handle_call/2, handle_event/2, handle_info/2, terminate/2,
+-export([init/1,
+         handle_call/2,
+         handle_event/2,
+         handle_info/2,
+         terminate/2,
          code_change/3]).
 
 -record(state, {level = debug}).
+
 
 init(Opts) ->
     Level = proplists:get_value(level, Opts, debug),
     State = #state{level = Level},
     {ok, State}.
 
+
 %% @private
 handle_event({log, LagerMsg}, State) ->
-    #{mode := Mode, truncate := Truncate, level := MinLevel, utc_log := UTCLog} =  'Elixir.Logger.Config':'__data__'(),
+    #{mode := Mode, truncate := Truncate, level := MinLevel, utc_log := UTCLog} = 'Elixir.Logger.Config':'__data__'(),
     MsgLevel = severity_to_level(lager_msg:severity(LagerMsg)),
     case {lager_util:is_loggable(LagerMsg, lager_util:level_to_num(State#state.level), ?MODULE),
           'Elixir.Logger':compare_levels(MsgLevel, MinLevel)} of
-        {_, lt}->
+        {_, lt} ->
             {ok, State};
         {true, _} ->
             Metadata = normalize_pid(lager_msg:metadata(LagerMsg)),
@@ -64,6 +70,7 @@ handle_event({log, LagerMsg}, State) ->
 handle_event(_Msg, State) ->
     {ok, State}.
 
+
 %% @private
 %% TODO Handle loglevels
 handle_call(get_loglevel, State) ->
@@ -71,22 +78,27 @@ handle_call(get_loglevel, State) ->
 handle_call({set_loglevel, Config}, State) ->
     {ok, ok, State#state{level = Config}}.
 
+
 %% @private
 handle_info(_Msg, State) ->
     {ok, State}.
+
 
 %% @private
 terminate(_Reason, _State) ->
     ok.
 
+
 %% @private
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-notify(sync, Msg)  ->
+
+notify(sync, Msg) ->
     gen_event:sync_notify('Elixir.Logger', Msg);
 notify(async, Msg) ->
     gen_event:notify('Elixir.Logger', Msg).
+
 
 normalize_pid(Metadata) ->
     case proplists:get_value(pid, Metadata) of
@@ -97,18 +109,19 @@ normalize_pid(Metadata) ->
                 {'EXIT', _} ->
                     M1;
                 PidAsPid ->
-                    [{pid, PidAsPid}|M1]
+                    [{pid, PidAsPid} | M1]
             end;
         _ ->
             proplists:delete(pid, Metadata)
     end.
+
 
 %% Return timestamp with milliseconds
 timestamp(Time, UTCLog) ->
     {_, _, Micro} = erlang:timestamp(),
     {Date, {Hours, Minutes, Seconds}} =
         case UTCLog of
-            true  -> calendar:now_to_universal_time(Time);
+            true -> calendar:now_to_universal_time(Time);
             false -> calendar:now_to_local_time(Time)
         end,
     {Date, {Hours, Minutes, Seconds, Micro div 1000}}.
@@ -122,6 +135,7 @@ severity_to_level(error) -> error;
 severity_to_level(critical) -> error;
 severity_to_level(alert) -> error;
 severity_to_level(emergency) -> error.
+
 
 -endif.
 -endif.

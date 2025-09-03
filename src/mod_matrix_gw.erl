@@ -34,24 +34,43 @@
 -behaviour(?GEN_SERVER).
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process/2,
-	 start_link/1,
-	 procname/1,
-         init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3,
-         depends/2, mod_opt_type/1, mod_options/1, mod_doc/0]).
--export([parse_auth/1, encode_canonical_json/1,
+-export([start/2,
+         stop/1,
+         reload/3,
+         process/2,
+         start_link/1,
+         procname/1,
+         init/1,
+         handle_call/3,
+         handle_cast/2,
+         handle_info/2,
+         terminate/2,
+         code_change/3,
+         depends/2,
+         mod_opt_type/1,
+         mod_options/1,
+         mod_doc/0]).
+-export([parse_auth/1,
+         encode_canonical_json/1,
          is_canonical_json/1,
          get_id_domain_exn/1,
-         base64_decode/1, base64_encode/1,
-         prune_event/2, get_event_id/2, content_hash/1,
-         sign_event/3, sign_pruned_event/2, sign_json/2,
-         send_request/8, s2s_out_bounce_packet/2, user_receive_packet/1,
-	 process_disco_info/1,
-	 process_disco_items/1,
+         base64_decode/1,
+         base64_encode/1,
+         prune_event/2,
+         get_event_id/2,
+         content_hash/1,
+         sign_event/3,
+         sign_pruned_event/2,
+         sign_json/2,
+         send_request/8,
+         s2s_out_bounce_packet/2,
+         user_receive_packet/1,
+         process_disco_info/1,
+         process_disco_items/1,
          route/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
+
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include("translate.hrl").
@@ -65,6 +84,7 @@
          {<<"Access-Control-Allow-Methods">>, <<"GET, POST, PUT, DELETE, OPTIONS">>},
          {<<"Access-Control-Allow-Headers">>, <<"X-Requested-With, Content-Type, Authorization">>}]).
 
+
 process([<<"key">>, <<"v2">>, <<"server">> | _],
         #request{method = 'GET', host = _Host} = _Request) ->
     Host = ejabberd_config:get_myname(),
@@ -73,22 +93,30 @@ process([<<"key">>, <<"v2">>, <<"server">> | _],
     ServerName = mod_matrix_gw_opt:matrix_domain(Host),
     TS = erlang:system_time(millisecond) + timer:hours(24 * 7),
     {PubKey, _PrivKey} = mod_matrix_gw_opt:key(Host),
-    JSON = #{<<"old_verify_keys">> => #{},
+    JSON = #{
+             <<"old_verify_keys">> => #{},
              <<"server_name">> => ServerName,
              <<"valid_until_ts">> => TS,
              <<"verify_keys">> => #{
-               KeyID => #{
-                 <<"key">> => base64_encode(PubKey)
-                }
-              }},
+                                    KeyID => #{
+                                               <<"key">> => base64_encode(PubKey)
+                                              }
+                                   }
+            },
     SJSON = sign_json(Host, JSON),
-    {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+    {200,
+     [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
      misc:json_encode(SJSON)};
 process([<<"federation">>, <<"v1">>, <<"version">>],
         #request{method = 'GET', host = _Host} = _Request) ->
-    JSON = #{<<"server">> => #{<<"name">> => <<"ejabberd/mod_matrix_gw">>,
-                               <<"version">> => <<"0.1">>}},
-    {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+    JSON = #{
+             <<"server">> => #{
+                               <<"name">> => <<"ejabberd/mod_matrix_gw">>,
+                               <<"version">> => <<"0.1">>
+                              }
+            },
+    {200,
+     [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
      misc:json_encode(JSON)};
 process([<<"federation">>, <<"v1">>, <<"query">>, <<"profile">>],
         #request{method = 'GET', host = _Host} = Request) ->
@@ -119,11 +147,15 @@ process([<<"federation">>, <<"v1">>, <<"user">>, <<"devices">>, UserID],
         #request{method = 'GET', host = _Host} = Request) ->
     case preprocess_federation_request(Request) of
         {ok, _JSON, _Origin} ->
-            Res = #{<<"devices">> =>
-                        [#{<<"device_id">> => <<"ejabberd/mod_matrix_gw">>,
-                           <<"keys">> => []}],
+            Res = #{
+                    <<"devices">> =>
+                        [#{
+                           <<"device_id">> => <<"ejabberd/mod_matrix_gw">>,
+                           <<"keys">> => []
+                          }],
                     <<"stream_id">> => 1,
-                    <<"user_id">> => UserID},
+                    <<"user_id">> => UserID
+                   },
             {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], misc:json_encode(Res)};
         {result, HTTPResult} ->
             HTTPResult
@@ -134,7 +166,8 @@ process([<<"federation">>, <<"v1">>, <<"user">>, <<"keys">>, <<"query">>],
         {ok, #{<<"device_keys">> := DeviceKeys}, _Origin} ->
             DeviceKeys2 = maps:map(fun(_Key, _) -> #{} end, DeviceKeys),
             Res = #{<<"device_keys">> => DeviceKeys2},
-            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+            {200,
+             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
              misc:json_encode(Res)};
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
@@ -144,13 +177,16 @@ process([<<"federation">>, <<"v1">>, <<"user">>, <<"keys">>, <<"query">>],
 process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
         #request{method = 'PUT', host = _Host} = Request) ->
     case preprocess_federation_request(Request) of
-        {ok, #{<<"event">> := #{%<<"origin">> := Origin,
+        {ok, #{
+               <<"event">> := #{  %<<"origin">> := Origin,
                                 <<"content">> := Content,
                                 <<"room_id">> := RoomID,
                                 <<"sender">> := Sender,
-                                <<"state_key">> := UserID} = Event,
-               <<"room_version">> := RoomVer} = JSON,
-         Origin} ->
+                                <<"state_key">> := UserID
+                               } = Event,
+               <<"room_version">> := RoomVer
+              } = JSON,
+             Origin} ->
             case mod_matrix_gw_room:binary_to_room_version(RoomVer) of
                 #room_version{} = RoomVersion ->
                     %% TODO: check type and userid
@@ -193,9 +229,11 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
 process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
         #request{method = 'PUT', host = _Host} = Request) ->
     case preprocess_federation_request(Request, false) of
-        {ok, #{<<"origin">> := Origin,
-               <<"pdus">> := PDUs} = JSON,
-         Origin} ->
+        {ok, #{
+               <<"origin">> := Origin,
+               <<"pdus">> := PDUs
+              } = JSON,
+             Origin} ->
             ?DEBUG("send request ~p~n", [JSON]),
             Host = ejabberd_config:get_myname(),
             Res = lists:map(
@@ -206,9 +244,11 @@ process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
                                     {get_event_id(PDU, mod_matrix_gw_room:binary_to_room_version(<<"9">>)),
                                      #{<<"error">> => Error}}
                             end
-                    end, PDUs),
+                    end,
+                    PDUs),
             ?DEBUG("send res ~p~n", [Res]),
-            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+            {200,
+             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
              misc:json_encode(maps:from_list(Res))};
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
@@ -218,9 +258,11 @@ process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
 process([<<"federation">>, <<"v1">>, <<"get_missing_events">>, RoomID],
         #request{method = 'POST', host = _Host} = Request) ->
     case preprocess_federation_request(Request, false) of
-        {ok, #{<<"earliest_events">> := EarliestEvents,
-               <<"latest_events">> := LatestEvents} = JSON,
-         Origin} ->
+        {ok, #{
+               <<"earliest_events">> := EarliestEvents,
+               <<"latest_events">> := LatestEvents
+              } = JSON,
+             Origin} ->
             ?DEBUG("get_missing_events request ~p~n", [JSON]),
             Limit = maps:get(<<"limit">>, JSON, 10),
             MinDepth = maps:get(<<"min_depth">>, JSON, 0),
@@ -229,7 +271,8 @@ process([<<"federation">>, <<"v1">>, <<"get_missing_events">>, RoomID],
                      Host, Origin, RoomID, EarliestEvents, LatestEvents, Limit, MinDepth),
             ?DEBUG("get_missing_events res ~p~n", [PDUs]),
             Res = #{<<"events">> => PDUs},
-            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+            {200,
+             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
              misc:json_encode(Res)};
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
@@ -255,14 +298,18 @@ process([<<"federation">>, <<"v1">>, <<"backfill">>, RoomID],
                                           _ ->
                                               []
                                       end
-                              end, LatestEvents),
+                              end,
+                              LatestEvents),
                     PDUs = PDUs2 ++ PDUs1,
                     ?DEBUG("backfill res ~p~n", [PDUs]),
                     MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
-                    Res = #{<<"origin">> => MatrixServer,
+                    Res = #{
+                            <<"origin">> => MatrixServer,
                             <<"origin_server_ts">> => erlang:system_time(millisecond),
-                            <<"pdus">> => PDUs},
-                    {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                            <<"pdus">> => PDUs
+                           },
+                    {200,
+                     [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                      misc:json_encode(Res)};
                 {result, HTTPResult} ->
                     HTTPResult
@@ -279,10 +326,13 @@ process([<<"federation">>, <<"v1">>, <<"state_ids">>, RoomID],
                     Host = ejabberd_config:get_myname(),
                     case mod_matrix_gw_room:get_state_ids(Host, Origin, RoomID, EventID) of
                         {ok, AuthChain, PDUs} ->
-                            Res = #{<<"auth_chain_ids">> => AuthChain,
-                                    <<"pdu_ids">> => PDUs},
+                            Res = #{
+                                    <<"auth_chain_ids">> => AuthChain,
+                                    <<"pdu_ids">> => PDUs
+                                   },
                             ?DEBUG("get_state_ids res ~p~n", [Res]),
-                            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                            {200,
+                             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                              misc:json_encode(Res)};
                         {error, room_not_found} ->
                             {400, [], <<"400 Bad Request: room not found">>};
@@ -314,17 +364,22 @@ process([<<"federation">>, <<"v1">>, <<"event">>, EventID],
                           end;
                      (_, Acc) ->
                           Acc
-                  end, undefined, mod_matrix_gw_room:get_rooms_list()),
+                  end,
+                  undefined,
+                  mod_matrix_gw_room:get_rooms_list()),
             ?DEBUG("get_event res ~p~n", [PDU]),
             case PDU of
                 undefined ->
                     {400, [], <<"400 Bad Request: event not found">>};
                 _ ->
                     MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
-                    Res = #{<<"origin">> => MatrixServer,
+                    Res = #{
+                            <<"origin">> => MatrixServer,
                             <<"origin_server_ts">> => erlang:system_time(millisecond),
-                            <<"pdus">> => [PDU]},
-                    {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                            <<"pdus">> => [PDU]
+                           },
+                    {200,
+                     [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                      misc:json_encode(Res)}
             end;
         {result, HTTPResult} ->
@@ -339,29 +394,42 @@ process([<<"federation">>, <<"v1">>, <<"make_join">>, RoomID, UserID],
                 Origin ->
                     case mod_matrix_gw_room:make_join(Host, RoomID, UserID, Params) of
                         {error, room_not_found} ->
-                            Res = #{<<"errcode">> => <<"M_NOT_FOUND">>,
-                                    <<"error">> => <<"Unknown room">>},
-                            {404, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                            Res = #{
+                                    <<"errcode">> => <<"M_NOT_FOUND">>,
+                                    <<"error">> => <<"Unknown room">>
+                                   },
+                            {404,
+                             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                              misc:json_encode(Res)};
                         {error, not_invited} ->
-                            Res = #{<<"errcode">> => <<"M_FORBIDDEN">>,
-                                    <<"error">> => <<"You are not invited to this room">>},
-                            {403, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                            Res = #{
+                                    <<"errcode">> => <<"M_FORBIDDEN">>,
+                                    <<"error">> => <<"You are not invited to this room">>
+                                   },
+                            {403,
+                             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                              misc:json_encode(Res)};
                         {error, {incompatible_version, Ver}} ->
-                            Res = #{<<"errcode">> => <<"M_INCOMPATIBLE_ROOM_VERSION">>,
+                            Res = #{
+                                    <<"errcode">> => <<"M_INCOMPATIBLE_ROOM_VERSION">>,
                                     <<"error">> => <<"Your homeserver does not support the features required to join this room">>,
-                                    <<"room_version">> => Ver},
-                            {400, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                                    <<"room_version">> => Ver
+                                   },
+                            {400,
+                             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                              misc:json_encode(Res)};
                         {ok, Res} ->
-                            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                            {200,
+                             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                              misc:json_encode(Res)}
                     end;
                 _ ->
-                    Res = #{<<"errcode">> => <<"M_FORBIDDEN">>,
-                            <<"error">> => <<"User not from origin">>},
-                    {403, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                    Res = #{
+                            <<"errcode">> => <<"M_FORBIDDEN">>,
+                            <<"error">> => <<"User not from origin">>
+                           },
+                    {403,
+                     [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                      misc:json_encode(Res)}
             end;
         {result, HTTPResult} ->
@@ -370,36 +438,49 @@ process([<<"federation">>, <<"v1">>, <<"make_join">>, RoomID, UserID],
 process([<<"federation">>, <<"v2">>, <<"send_join">>, RoomID, EventID],
         #request{method = 'PUT', host = _Host} = Request) ->
     case preprocess_federation_request(Request) of
-        {ok, #{<<"content">> := #{<<"membership">> := <<"join">>},
+        {ok, #{
+               <<"content">> := #{<<"membership">> := <<"join">>},
                %<<"origin">> := Origin,
                <<"room_id">> := RoomID,
                <<"sender">> := Sender,
                <<"state_key">> := Sender,
-               <<"type">> := <<"m.room.member">>} = JSON, Origin} ->
+               <<"type">> := <<"m.room.member">>
+              } = JSON,
+             Origin} ->
             Host = ejabberd_config:get_myname(),
             case get_id_domain_exn(Sender) of
                 Origin ->
                     case mod_matrix_gw_room:send_join(Host, Origin, RoomID, EventID, JSON) of
                         {error, Error} when is_binary(Error) ->
-                            Res = #{<<"errcode">> => <<"M_BAD_REQUEST">>,
-                                    <<"error">> => Error},
-                            {403, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                            Res = #{
+                                    <<"errcode">> => <<"M_BAD_REQUEST">>,
+                                    <<"error">> => Error
+                                   },
+                            {403,
+                             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                              misc:json_encode(Res)};
                         {ok, Res} ->
                             ?DEBUG("send_join res: ~p~n", [Res]),
-                            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                            {200,
+                             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                              misc:json_encode(Res)}
                     end;
                 _ ->
-                    Res = #{<<"errcode">> => <<"M_FORBIDDEN">>,
-                            <<"error">> => <<"User not from origin">>},
-                    {403, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+                    Res = #{
+                            <<"errcode">> => <<"M_FORBIDDEN">>,
+                            <<"error">> => <<"User not from origin">>
+                           },
+                    {403,
+                     [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                      misc:json_encode(Res)}
             end;
         {ok, _JSON, _Origin} ->
-            Res = #{<<"errcode">> => <<"M_BAD_REQUEST">>,
-                    <<"error">> => <<"Invalid event format">>},
-            {400, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+            Res = #{
+                    <<"errcode">> => <<"M_BAD_REQUEST">>,
+                    <<"error">> => <<"Invalid event format">>
+                   },
+            {400,
+             [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
              misc:json_encode(Res)};
         {result, HTTPResult} ->
             HTTPResult
@@ -415,17 +496,21 @@ process(Path, Request) ->
     ?DEBUG("matrix 404: ~p~n~p~n", [Path, Request]),
     ejabberd_web:error(not_found).
 
+
 preprocess_federation_request(Request) ->
     preprocess_federation_request(Request, true).
+
 
 preprocess_federation_request(Request, DoSignCheck) ->
     ?DEBUG("matrix federation: ~p~n", [Request]),
     case proplists:get_value('Authorization', Request#request.headers) of
         Auth when is_binary(Auth) ->
             case parse_auth(Auth) of
-                #{<<"origin">> := MatrixServer,
+                #{
+                  <<"origin">> := MatrixServer,
                   <<"key">> := _,
-                  <<"sig">> := _} = AuthParams ->
+                  <<"sig">> := _
+                 } = AuthParams ->
                     ?DEBUG("auth ~p~n", [AuthParams]),
                     if
                         Request#request.length =< ?MAX_REQUEST_SIZE ->
@@ -451,8 +536,10 @@ preprocess_federation_request(Request, DoSignCheck) ->
                                 JSON ->
                                     Host = ejabberd_config:get_myname(),
                                     case mod_matrix_gw_s2s:check_auth(
-                                           Host, MatrixServer,
-                                           AuthParams, JSON,
+                                           Host,
+                                           MatrixServer,
+                                           AuthParams,
+                                           JSON,
                                            Request2) of
                                         true ->
                                             ?DEBUG("auth ok~n", []),
@@ -472,47 +559,61 @@ preprocess_federation_request(Request, DoSignCheck) ->
             {result, {400, [], <<"400 Bad Request: no 'Authorization' header">>}}
     end.
 
-recv_data(#request{length = Len, data = Trail,
-		   sockmod = SockMod, socket = Socket} = Request) ->
+
+recv_data(#request{
+            length = Len,
+            data = Trail,
+            sockmod = SockMod,
+            socket = Socket
+           } = Request) ->
     NewLen = Len - byte_size(Trail),
-    if NewLen > 0 ->
-	    case SockMod:recv(Socket, NewLen, 60000) of
-		{ok, Data} ->
+    if
+        NewLen > 0 ->
+            case SockMod:recv(Socket, NewLen, 60000) of
+                {ok, Data} ->
                     Request#request{data = <<Trail/binary, Data/binary>>};
-		{error, _} -> Request
-	    end;
-       true ->
-	    Request
+                {error, _} -> Request
+            end;
+        true ->
+            Request
     end.
 
 
--record(state,
-        {host :: binary(),
-         server_host :: binary()}).
+-record(state, {
+          host :: binary(),
+          server_host :: binary()
+         }).
 
 -type state() :: #state{}.
 
+
 start(Host, _Opts) ->
     case mod_matrix_gw_sup:start(Host) of
-	{ok, _} ->
+        {ok, _} ->
             {ok, [{hook, s2s_out_bounce_packet, s2s_out_bounce_packet, 50},
                   {hook, user_receive_packet, user_receive_packet, 50}]};
-	Err ->
-	    Err
+        Err ->
+            Err
     end.
+
 
 stop(Host) ->
     Proc = mod_matrix_gw_sup:procname(Host),
     supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
     supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
 
+
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
+
 start_link(Host) ->
     Proc = procname(Host),
-    ?GEN_SERVER:start_link({local, Proc}, ?MODULE, [Host],
-			   ejabberd_config:fsm_limit_opts([])).
+    ?GEN_SERVER:start_link({local, Proc},
+                           ?MODULE,
+                           [Host],
+                           ejabberd_config:fsm_limit_opts([])).
+
 
 -spec init(list()) -> {ok, state()}.
 init([Host]) ->
@@ -523,33 +624,44 @@ init([Host]) ->
     Opts = gen_mod:get_module_opts(Host, ?MODULE),
     MyHost = gen_mod:get_opt(host, Opts),
     register_routes(Host, [MyHost]),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
-                                  ?MODULE, process_disco_info),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS,
-                                  ?MODULE, process_disco_items),
+    gen_iq_handler:add_iq_handler(ejabberd_local,
+                                  MyHost,
+                                  ?NS_DISCO_INFO,
+                                  ?MODULE,
+                                  process_disco_info),
+    gen_iq_handler:add_iq_handler(ejabberd_local,
+                                  MyHost,
+                                  ?NS_DISCO_ITEMS,
+                                  ?MODULE,
+                                  process_disco_items),
     {ok, #state{server_host = Host, host = MyHost}}.
 
+
 -spec handle_call(term(), {pid(), term()}, state()) ->
-			 {reply, ok | {ok, pid()} | {error, any()}, state()} |
-			 {stop, normal, ok, state()}.
+          {reply, ok | {ok, pid()} | {error, any()}, state()} |
+          {stop, normal, ok, state()}.
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
+
 
 -spec handle_cast(term(), state()) -> {noreply, state()}.
 handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
+
 -spec handle_info(term(), state()) -> {noreply, state()}.
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
+
 
 -spec terminate(term(), state()) -> any().
 terminate(_Reason, #state{host = Host}) ->
     unregister_routes([Host]),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS).
+
 
 -spec code_change(term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
@@ -559,24 +671,30 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 register_routes(ServerHost, Hosts) ->
     lists:foreach(
       fun(Host) ->
-	      ejabberd_router:register_route(
-		Host, ServerHost, {apply, ?MODULE, route})
-      end, Hosts).
+              ejabberd_router:register_route(
+                Host, ServerHost, {apply, ?MODULE, route})
+      end,
+      Hosts).
+
 
 unregister_routes(Hosts) ->
     lists:foreach(
       fun(Host) ->
-	      ejabberd_router:unregister_route(Host)
-      end, Hosts).
+              ejabberd_router:unregister_route(Host)
+      end,
+      Hosts).
+
 
 procname(Host) ->
     binary_to_atom(
       <<(atom_to_binary(?MODULE, latin1))/binary, "_", Host/binary>>, utf8).
 
+
 parse_auth(<<"X-Matrix ", S/binary>>) ->
     parse_auth1(S, <<>>, []);
 parse_auth(_) ->
     error.
+
 
 parse_auth1(<<$=, Cs/binary>>, S, Ts) ->
     parse_auth2(Cs, S, <<>>, Ts);
@@ -586,11 +704,13 @@ parse_auth1(<<C, Cs/binary>>, S, Ts) -> parse_auth1(Cs, <<S/binary, C>>, Ts);
 parse_auth1(<<>>, <<>>, T) -> maps:from_list(T);
 parse_auth1(<<>>, _S, _T) -> error.
 
+
 parse_auth2(<<$", Cs/binary>>, Key, Val, Ts) ->
     parse_auth3(Cs, Key, Val, Ts);
 parse_auth2(<<C, Cs/binary>>, Key, Val, Ts) ->
     parse_auth4(Cs, Key, <<Val/binary, C>>, Ts);
 parse_auth2(<<>>, _, _, _) -> error.
+
 
 parse_auth3(<<$", Cs/binary>>, Key, Val, Ts) ->
     parse_auth4(Cs, Key, Val, Ts);
@@ -599,6 +719,7 @@ parse_auth3(<<$\\, C, Cs/binary>>, Key, Val, Ts) ->
 parse_auth3(<<C, Cs/binary>>, Key, Val, Ts) ->
     parse_auth3(Cs, Key, <<Val/binary, C>>, Ts);
 parse_auth3(<<>>, _, _, _) -> error.
+
 
 parse_auth4(<<$,, Cs/binary>>, Key, Val, Ts) ->
     parse_auth1(Cs, <<>>, [{Key, Val} | Ts]);
@@ -609,21 +730,40 @@ parse_auth4(<<C, Cs/binary>>, Key, Val, Ts) ->
 parse_auth4(<<>>, Key, Val, Ts) ->
     parse_auth1(<<>>, <<>>, [{Key, Val} | Ts]).
 
+
 prune_event(#{<<"type">> := Type, <<"content">> := Content} = Event,
             RoomVersion) ->
     Keys =
         case RoomVersion#room_version.updated_redaction_rules of
             false ->
-                [<<"event_id">>, <<"type">>, <<"room_id">>, <<"sender">>,
-                 <<"state_key">>, <<"content">>, <<"hashes">>,
-                 <<"signatures">>, <<"depth">>, <<"prev_events">>,
-                 <<"prev_state">>, <<"auth_events">>, <<"origin">>,
-                 <<"origin_server_ts">>, <<"membership">>];
+                [<<"event_id">>,
+                 <<"type">>,
+                 <<"room_id">>,
+                 <<"sender">>,
+                 <<"state_key">>,
+                 <<"content">>,
+                 <<"hashes">>,
+                 <<"signatures">>,
+                 <<"depth">>,
+                 <<"prev_events">>,
+                 <<"prev_state">>,
+                 <<"auth_events">>,
+                 <<"origin">>,
+                 <<"origin_server_ts">>,
+                 <<"membership">>];
             true ->
-                [<<"event_id">>, <<"type">>, <<"room_id">>, <<"sender">>,
-                 <<"state_key">>, <<"content">>, <<"hashes">>,
-                 <<"signatures">>, <<"depth">>, <<"prev_events">>,
-                 <<"auth_events">>, <<"origin_server_ts">>]
+                [<<"event_id">>,
+                 <<"type">>,
+                 <<"room_id">>,
+                 <<"sender">>,
+                 <<"state_key">>,
+                 <<"content">>,
+                 <<"hashes">>,
+                 <<"signatures">>,
+                 <<"depth">>,
+                 <<"prev_events">>,
+                 <<"auth_events">>,
+                 <<"origin_server_ts">>]
         end,
     Keys2 =
         case {RoomVersion#room_version.hydra, Type} of
@@ -650,10 +790,14 @@ prune_event(#{<<"type">> := Type, <<"content">> := Content} = Event,
                         C3;
                     true ->
                         case Content of
-                            #{<<"third_party_invite">> :=
-                                  #{<<"signed">> := InvSign}} ->
-                                C3#{<<"third_party_invite">> =>
-                                        #{<<"signed">> => InvSign}};
+                            #{
+                              <<"third_party_invite">> :=
+                                  #{<<"signed">> := InvSign}
+                             } ->
+                                C3#{
+                                  <<"third_party_invite">> =>
+                                      #{<<"signed">> => InvSign}
+                                 };
                             _ ->
                                 C3
                         end
@@ -676,15 +820,27 @@ prune_event(#{<<"type">> := Type, <<"content">> := Content} = Event,
                 case RoomVersion#room_version.updated_redaction_rules of
                     false ->
                         maps:with(
-                          [<<"ban">>, <<"events">>, <<"events_default">>,
-                           <<"kick">>, <<"redact">>, <<"state_default">>,
-                           <<"users">>, <<"users_default">>], Content);
+                          [<<"ban">>,
+                           <<"events">>,
+                           <<"events_default">>,
+                           <<"kick">>,
+                           <<"redact">>,
+                           <<"state_default">>,
+                           <<"users">>,
+                           <<"users_default">>],
+                          Content);
                     true ->
                         maps:with(
-                          [<<"ban">>, <<"events">>, <<"events_default">>,
+                          [<<"ban">>,
+                           <<"events">>,
+                           <<"events_default">>,
                            <<"invite">>,
-                           <<"kick">>, <<"redact">>, <<"state_default">>,
-                           <<"users">>, <<"users_default">>], Content)
+                           <<"kick">>,
+                           <<"redact">>,
+                           <<"state_default">>,
+                           <<"users">>,
+                           <<"users_default">>],
+                          Content)
                 end;
             <<"m.room.history_visibility">> ->
                 maps:with([<<"history_visibility">>], Content);
@@ -701,40 +857,52 @@ prune_event(#{<<"type">> := Type, <<"content">> := Content} = Event,
         end,
     Event2#{<<"content">> := Content2}.
 
+
 reference_hash(PrunedEvent) ->
     Event2 = maps:without([<<"signatures">>, <<"age_ts">>, <<"unsigned">>],
                           PrunedEvent),
     S = encode_canonical_json(Event2),
     crypto:hash(sha256, S).
 
+
 content_hash(Event) ->
-    Event2 = maps:without([<<"signatures">>, <<"age_ts">>, <<"unsigned">>,
-                           <<"hashes">>, <<"outlier">>, <<"destinations">>],
+    Event2 = maps:without([<<"signatures">>,
+                           <<"age_ts">>,
+                           <<"unsigned">>,
+                           <<"hashes">>,
+                           <<"outlier">>,
+                           <<"destinations">>],
                           Event),
     S = encode_canonical_json(Event2),
     crypto:hash(sha256, S).
+
 
 get_event_id(Event, RoomVersion) ->
     PrunedEvent = prune_event(Event, RoomVersion),
     get_pruned_event_id(PrunedEvent).
 
+
 get_pruned_event_id(PrunedEvent) ->
     B = base64url_encode(reference_hash(PrunedEvent)),
     <<$$, B/binary>>.
+
 
 encode_canonical_json(JSON) ->
     JSON2 = sort_json(JSON),
     misc:json_encode(JSON2).
 
+
 sort_json(#{} = Map) ->
     Map2 = maps:map(fun(_K, V) ->
                             sort_json(V)
-                    end, Map),
+                    end,
+                    Map),
     {lists:sort(maps:to_list(Map2))};
 sort_json(List) when is_list(List) ->
     lists:map(fun sort_json/1, List);
 sort_json(JSON) ->
     JSON.
+
 
 is_canonical_json(N) when is_integer(N),
                           -16#1FFFFFFFFFFFFF =< N,
@@ -752,7 +920,9 @@ is_canonical_json(Map) when is_map(Map) ->
               is_canonical_json(V);
          (_K, _V, false) ->
               false
-      end, true, Map);
+      end,
+      true,
+      Map);
 is_canonical_json(List) when is_list(List) ->
     lists:all(fun is_canonical_json/1, List);
 is_canonical_json(_) ->
@@ -769,15 +939,18 @@ base64_decode(B) ->
         end,
     base64:decode(Fixed).
 
+
 base64_encode(B) ->
     D = base64:encode(B),
     K = binary:longest_common_suffix([D, <<"==">>]),
     binary:part(D, 0, size(D) - K).
 
+
 base64url_encode(B) ->
     D = base64_encode(B),
     D1 = binary:replace(D, <<"+">>, <<"-">>, [global]),
     binary:replace(D1, <<"/">>, <<"_">>, [global]).
+
 
 sign_event(Host, Event, RoomVersion) ->
     PrunedEvent = prune_event(Event, RoomVersion),
@@ -786,9 +959,11 @@ sign_event(Host, Event, RoomVersion) ->
             Event#{<<"signatures">> => Signatures}
     end.
 
+
 sign_pruned_event(Host, PrunedEvent) ->
     Event2 = maps:without([<<"age_ts">>, <<"unsigned">>], PrunedEvent),
     sign_json(Host, Event2).
+
 
 sign_json(Host, JSON) ->
     Signatures = maps:get(<<"signatures">>, JSON, #{}),
@@ -803,18 +978,24 @@ sign_json(Host, JSON) ->
     Signatures2 = Signatures#{SignatureName => #{KeyID => Sig64}},
     JSON#{<<"signatures">> => Signatures2}.
 
--spec send_request(
-        binary(),
-        get | post | put,
-        binary(),
-        [binary()],
-        [{binary(), binary()}],
-        none | #{atom() | binary() => misc:json_value()},
-        [any()],
-        [any()]) -> {ok, any()} | {error, any()}.
 
-send_request(Host, Method, MatrixServer, Path, Query, JSON,
-             HTTPOptions, Options) ->
+-spec send_request(binary(),
+                   get | post | put,
+                   binary(),
+                   [binary()],
+                   [{binary(), binary()}],
+                   none | #{atom() | binary() => misc:json_value()},
+                   [any()],
+                   [any()]) -> {ok, any()} | {error, any()}.
+
+send_request(Host,
+             Method,
+             MatrixServer,
+             Path,
+             Query,
+             JSON,
+             HTTPOptions,
+             Options) ->
     URI1 = iolist_to_binary(
              lists:map(fun(P) -> [$/, misc:uri_quote(P)] end, Path)),
     URI =
@@ -825,14 +1006,19 @@ send_request(Host, Method, MatrixServer, Path, Query, JSON,
                          lists:map(
                            fun({K, V}) ->
                                    iolist_to_binary(
-                                     [misc:uri_quote(K), $=,
+                                     [misc:uri_quote(K),
+                                      $=,
                                       misc:uri_quote(V)])
-                           end, Query), $&),
+                           end,
+                           Query),
+                         $&),
                 <<URI1/binary, $?, URI2/binary>>
         end,
     {MHost, MPort} = mod_matrix_gw_s2s:get_matrix_host_port(Host, MatrixServer),
-    URL = <<"https://", MHost/binary,
-            ":", (integer_to_binary(MPort))/binary,
+    URL = <<"https://",
+            MHost/binary,
+            ":",
+            (integer_to_binary(MPort))/binary,
             URI/binary>>,
     SMethod =
         case Method of
@@ -863,9 +1049,11 @@ send_request(Host, Method, MatrixServer, Path, Query, JSON,
     ?DEBUG("httpc request res ~p", [HTTPRes]),
     HTTPRes.
 
+
 make_auth_header(Host, MatrixServer, Method, URI, Content) ->
     Origin = mod_matrix_gw_opt:matrix_domain(Host),
-    JSON = #{<<"method">> => Method,
+    JSON = #{
+             <<"method">> => Method,
              <<"uri">> => URI,
              <<"origin">> => Origin,
              <<"destination">> => MatrixServer
@@ -883,11 +1071,13 @@ make_auth_header(Host, MatrixServer, Method, URI, Content) ->
       "\",sig=\"", Sig/binary, "\",",
       "destination=\"", MatrixServer/binary, "\"">>.
 
+
 get_id_domain_exn(B) ->
     case binary:split(B, <<":">>) of
         [_, Tail] -> Tail;
         _ -> error({invalid_id, B})
     end.
+
 
 s2s_out_bounce_packet(S2SState, Pkt) ->
     #{server_host := Host} = S2SState,
@@ -903,6 +1093,7 @@ s2s_out_bounce_packet(S2SState, Pkt) ->
             ejabberd_router:route(xmpp:set_to(Pkt, NewTo)),
             {stop, ignore}
     end.
+
 
 user_receive_packet({Pkt, C2SState} = Acc) ->
     #{lserver := Host} = C2SState,
@@ -928,40 +1119,58 @@ user_receive_packet({Pkt, C2SState} = Acc) ->
             end
     end.
 
+
 -spec route(stanza()) -> ok.
 route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>}} = IQ) ->
     ejabberd_router:process_iq(IQ);
 route(Pkt) ->
     mod_matrix_gw_room:route(Pkt).
 
+
 -spec process_disco_info(iq()) -> iq().
 process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-process_disco_info(#iq{type = get,
-		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
+process_disco_info(#iq{
+                     type = get,
+                     sub_els = [#disco_info{node = <<"">>}]
+                    } = IQ) ->
     Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MUC],
-    Identity = #identity{category = <<"gateway">>,
-			 type = <<"matrix">>},
+    Identity = #identity{
+                 category = <<"gateway">>,
+                 type = <<"matrix">>
+                },
     xmpp:make_iq_result(
-      IQ, #disco_info{features = Features,
-		      identities = [Identity]});
-process_disco_info(#iq{type = get, lang = Lang,
-		       sub_els = [#disco_info{}]} = IQ) ->
+      IQ,
+      #disco_info{
+        features = Features,
+        identities = [Identity]
+       });
+process_disco_info(#iq{
+                     type = get,
+                     lang = Lang,
+                     sub_els = [#disco_info{}]
+                    } = IQ) ->
     xmpp:make_error(IQ, xmpp:err_item_not_found(?T("Node not found"), Lang));
 process_disco_info(#iq{lang = Lang} = IQ) ->
     Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
+
 -spec process_disco_items(iq()) -> iq().
 process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-process_disco_items(#iq{type = get,
-			sub_els = [#disco_items{node = <<>>}]} = IQ) ->
+process_disco_items(#iq{
+                      type = get,
+                      sub_els = [#disco_items{node = <<>>}]
+                     } = IQ) ->
     xmpp:make_iq_result(IQ, #disco_items{});
-process_disco_items(#iq{type = get, lang = Lang,
-                        sub_els = [#disco_items{}]} = IQ) ->
+process_disco_items(#iq{
+                      type = get,
+                      lang = Lang,
+                      sub_els = [#disco_items{}]
+                     } = IQ) ->
     xmpp:make_error(IQ, xmpp:err_item_not_found(?T("Node not found"), Lang));
 process_disco_items(#iq{lang = Lang} = IQ) ->
     Txt = ?T("No module is handling this query"),
@@ -971,6 +1180,7 @@ process_disco_items(#iq{lang = Lang} = IQ) ->
 depends(_Host, _Opts) ->
     [].
 
+
 mod_opt_type(host) ->
     econf:host();
 mod_opt_type(matrix_domain) ->
@@ -979,7 +1189,7 @@ mod_opt_type(key_name) ->
     econf:binary();
 mod_opt_type(key) ->
     fun(Key) ->
-	    Key1 = (yconf:binary())(Key),
+            Key1 = (yconf:binary())(Key),
             Key2 = base64_decode(Key1),
             crypto:generate_key(eddsa, ed25519, Key2)
     end;
@@ -989,6 +1199,7 @@ mod_opt_type(notary_servers) ->
     econf:list(econf:host());
 mod_opt_type(leave_timeout) ->
     econf:non_neg_int().
+
 
 -spec mod_options(binary()) -> [{key, {binary(), binary()}} |
                                 {atom(), any()}].
@@ -1002,8 +1213,10 @@ mod_options(Host) ->
      {notary_servers, []},
      {leave_timeout, 0}].
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           [?T("https://matrix.org/[Matrix] gateway. "),
            ?T("Supports room versions 9, 10 and 11 since ejabberd 25.03; "
               "room versions 4 and higher since ejabberd 25.07; "
@@ -1012,62 +1225,77 @@ mod_doc() ->
            ?T("This module is available since ejabberd 24.02.")],
       note => "improved in 25.08",
       example =>
-	  ["listen:",
-	   "  -",
-	   "    port: 8448",
-	   "    module: ejabberd_http",
-	   "    tls: true",
-	   "    request_handlers:",
-	   "      \"/_matrix\": mod_matrix_gw",
-	   "",
-	   "modules:",
-	   "  mod_matrix_gw:",
-	   "    key_name: \"key1\"",
-	   "    key: \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"",
-	   "    matrix_id_as_jid: true"],
+          ["listen:",
+           "  -",
+           "    port: 8448",
+           "    module: ejabberd_http",
+           "    tls: true",
+           "    request_handlers:",
+           "      \"/_matrix\": mod_matrix_gw",
+           "",
+           "modules:",
+           "  mod_matrix_gw:",
+           "    key_name: \"key1\"",
+           "    key: \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"",
+           "    matrix_id_as_jid: true"],
       opts =>
           [{matrix_domain,
-            #{value => ?T("Domain"),
+            #{
+              value => ?T("Domain"),
               desc =>
                   ?T("Specify a domain in the Matrix federation. "
                      "The keyword '@HOST@' is replaced with the hostname. "
-                     "The default value is '@HOST@'.")}},
-	   {host,
-            #{value => ?T("Host"),
+                     "The default value is '@HOST@'.")
+             }},
+           {host,
+            #{
+              value => ?T("Host"),
               desc =>
                   ?T("This option defines the Jabber IDs of the service. "
                      "If the 'host' option is not specified, the Jabber ID will be "
-		     "the hostname of the virtual host with the prefix '\"matrix.\"'. "
-                     "The keyword '@HOST@' is replaced with the real virtual host name.")}},
-	   {key_name,
-            #{value => "string()",
+                     "the hostname of the virtual host with the prefix '\"matrix.\"'. "
+                     "The keyword '@HOST@' is replaced with the real virtual host name.")
+             }},
+           {key_name,
+            #{
+              value => "string()",
               desc =>
-                  ?T("Name of the matrix signing key.")}},
-	   {key,
-            #{value => "string()",
+                  ?T("Name of the matrix signing key.")
+             }},
+           {key,
+            #{
+              value => "string()",
               desc =>
-                  ?T("Value of the matrix signing key, in base64.")}},
-	   {matrix_id_as_jid,
-            #{value => "true | false",
+                  ?T("Value of the matrix signing key, in base64.")
+             }},
+           {matrix_id_as_jid,
+            #{
+              value => "true | false",
               desc =>
                   ?T("If set to 'true', all packets failing to be delivered via an XMPP "
-		     "server-to-server connection will then be routed to the Matrix gateway "
-		     "by translating a Jabber ID 'user@matrixdomain.tld' to a Matrix user "
-		     "identifier '@user:matrixdomain.tld'. When set to 'false', messages "
-		     "must be explicitly sent to the matrix gateway service Jabber ID to be "
-		     "routed to a remote Matrix server. In this case, to send a message to "
-		     "Matrix user '@user:matrixdomain.tld', the client must send a message "
-		     "to the JID 'user%matrixdomain.tld@matrix.myxmppdomain.tld', where "
-		     "'matrix.myxmppdomain.tld' is the JID of the gateway service as set by the "
-		     "'host' option. The default is 'false'.")}},
-	   {notary_servers,
-            #{value => "[Server, ...]",
+                     "server-to-server connection will then be routed to the Matrix gateway "
+                     "by translating a Jabber ID 'user@matrixdomain.tld' to a Matrix user "
+                     "identifier '@user:matrixdomain.tld'. When set to 'false', messages "
+                     "must be explicitly sent to the matrix gateway service Jabber ID to be "
+                     "routed to a remote Matrix server. In this case, to send a message to "
+                     "Matrix user '@user:matrixdomain.tld', the client must send a message "
+                     "to the JID 'user%matrixdomain.tld@matrix.myxmppdomain.tld', where "
+                     "'matrix.myxmppdomain.tld' is the JID of the gateway service as set by the "
+                     "'host' option. The default is 'false'.")
+             }},
+           {notary_servers,
+            #{
+              value => "[Server, ...]",
               desc =>
-                  ?T("A list of notary servers.")}},
-	   {leave_timeout,
-            #{value => "integer()",
+                  ?T("A list of notary servers.")
+             }},
+           {leave_timeout,
+            #{
+              value => "integer()",
               desc =>
-                  ?T("Delay in seconds between a user leaving a MUC room and sending 'leave' Matrix event.")}}
-          ]
+                  ?T("Delay in seconds between a user leaving a MUC room and sending 'leave' Matrix event.")
+             }}]
      }.
+
+
 -endif.

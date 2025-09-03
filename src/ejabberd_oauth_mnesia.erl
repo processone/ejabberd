@@ -28,37 +28,44 @@
 -behaviour(ejabberd_oauth).
 
 -export([init/0,
-	 store/1,
-	 lookup/1,
-	 clean/1,
-	 lookup_client/1,
-	 store_client/1,
-	 remove_client/1,
-	 use_cache/0, revoke/1]).
+         store/1,
+         lookup/1,
+         clean/1,
+         lookup_client/1,
+         store_client/1,
+         remove_client/1,
+         use_cache/0,
+         revoke/1]).
 
 -include("ejabberd_oauth.hrl").
 
+
 init() ->
-    ejabberd_mnesia:create(?MODULE, oauth_token,
-                        [{disc_only_copies, [node()]},
-                         {attributes,
-                          record_info(fields, oauth_token)}]),
-    ejabberd_mnesia:create(?MODULE, oauth_client,
-                        [{disc_copies, [node()]},
-                         {attributes,
-                          record_info(fields, oauth_client)}]),
+    ejabberd_mnesia:create(?MODULE,
+                           oauth_token,
+                           [{disc_only_copies, [node()]},
+                            {attributes,
+                             record_info(fields, oauth_token)}]),
+    ejabberd_mnesia:create(?MODULE,
+                           oauth_client,
+                           [{disc_copies, [node()]},
+                            {attributes,
+                             record_info(fields, oauth_client)}]),
     ok.
+
 
 use_cache() ->
     case mnesia:table_info(oauth_token, storage_type) of
-	disc_only_copies ->
-	    ejabberd_option:oauth_use_cache();
-	_ ->
-	    false
+        disc_only_copies ->
+            ejabberd_option:oauth_use_cache();
+        _ ->
+            false
     end.
+
 
 store(R) ->
     mnesia:dirty_write(R).
+
 
 lookup(Token) ->
     case catch mnesia:dirty_read(oauth_token, Token) of
@@ -73,16 +80,18 @@ lookup(Token) ->
 revoke(Token) ->
     mnesia:dirty_delete(oauth_token, Token).
 
+
 clean(TS) ->
     F = fun() ->
-		Ts = mnesia:select(
-		       oauth_token,
-		       [{#oauth_token{expire = '$1', _ = '_'},
-			 [{'<', '$1', TS}],
-			 ['$_']}]),
-		lists:foreach(fun mnesia:delete_object/1, Ts)
+                Ts = mnesia:select(
+                       oauth_token,
+                       [{#oauth_token{expire = '$1', _ = '_'},
+                         [{'<', '$1', TS}],
+                         ['$_']}]),
+                lists:foreach(fun mnesia:delete_object/1, Ts)
         end,
     mnesia:async_dirty(F).
+
 
 lookup_client(ClientID) ->
     case catch mnesia:dirty_read(oauth_client, ClientID) of
@@ -92,8 +101,10 @@ lookup_client(ClientID) ->
             error
     end.
 
+
 remove_client(ClientID) ->
     mnesia:dirty_delete(oauth_client, ClientID).
+
 
 store_client(R) ->
     mnesia:dirty_write(R).

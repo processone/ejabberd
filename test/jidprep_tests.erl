@@ -25,10 +25,14 @@
 
 %% API
 -compile(export_all).
--import(suite, [send_recv/2, disconnect/1, is_feature_advertised/2,
-		server_jid/1]).
+-import(suite,
+        [send_recv/2,
+         disconnect/1,
+         is_feature_advertised/2,
+         server_jid/1]).
 
 -include("suite.hrl").
+
 
 %%%===================================================================
 %%% API
@@ -38,12 +42,14 @@
 %%%===================================================================
 single_cases() ->
     {jidprep_single, [sequence],
-     [single_test(feature_enabled),
-      single_test(normalize_jid)]}.
+                     [single_test(feature_enabled),
+                      single_test(normalize_jid)]}.
+
 
 feature_enabled(Config) ->
     true = is_feature_advertised(Config, ?NS_JIDPREP_0),
     disconnect(Config).
+
 
 normalize_jid(Config) ->
     ServerJID = server_jid(Config),
@@ -51,9 +57,14 @@ normalize_jid(Config) ->
     NormJID = jid:decode(<<"romeo@example.com/Orchard">>),
     Request = #jidprep{jid = OrigJID},
     #iq{type = result, sub_els = [#jidprep{jid = NormJID}]} =
-        send_recv(Config, #iq{type = get, to = ServerJID,
-			      sub_els = [Request]}),
+        send_recv(Config,
+                  #iq{
+                    type = get,
+                    to = ServerJID,
+                    sub_els = [Request]
+                   }),
     disconnect(Config).
+
 
 %%%===================================================================
 %%% Internal functions

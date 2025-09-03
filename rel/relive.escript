@@ -1,5 +1,6 @@
 #!/usr/bin/env escript
 
+
 main(_) ->
     Base = "_build/relive",
     prepare(Base, "", none),
@@ -8,6 +9,7 @@ main(_) ->
     prepare(Base, "logs", none),
     c:erlangrc([os:cmd("echo -n $HOME")]),
     ok.
+
 
 prepare(BaseDir, SuffixDir, MFA) ->
     Dir = filename:join(BaseDir, SuffixDir),

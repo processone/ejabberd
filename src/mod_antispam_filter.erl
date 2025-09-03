@@ -49,21 +49,25 @@
 %%--------------------------------------------------------------------
 %%| Exported
 
+
 init_filtering(Host) ->
     ejabberd_hooks:add(s2s_in_handle_info, Host, ?MODULE, s2s_in_handle_info, 90),
     ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE, s2s_receive_packet, 50),
     ejabberd_hooks:add(sm_receive_packet, Host, ?MODULE, sm_receive_packet, 50).
+
 
 terminate_filtering(Host) ->
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE, s2s_receive_packet, 50),
     ejabberd_hooks:delete(sm_receive_packet, Host, ?MODULE, sm_receive_packet, 50),
     ejabberd_hooks:delete(s2s_in_handle_info, Host, ?MODULE, s2s_in_handle_info, 90).
 
+
 %%--------------------------------------------------------------------
 %%| Hook callbacks
 
+
 -spec s2s_receive_packet({stanza() | drop, s2s_in_state()}) ->
-                            {stanza() | drop, s2s_in_state()} | {stop, {drop, s2s_in_state()}}.
+          {stanza() | drop, s2s_in_state()} | {stop, {drop, s2s_in_state()}}.
 s2s_receive_packet({A, State}) ->
     case sm_receive_packet(A) of
         {stop, drop} ->
@@ -72,25 +76,32 @@ s2s_receive_packet({A, State}) ->
             {Result, State}
     end.
 
+
 -spec sm_receive_packet(stanza() | drop) -> stanza() | drop | {stop, drop}.
 sm_receive_packet(drop = Acc) ->
     Acc;
-sm_receive_packet(#message{from = From,
-                           to = #jid{lserver = LServer} = To,
-                           type = Type} =
+sm_receive_packet(#message{
+                    from = From,
+                    to = #jid{lserver = LServer} = To,
+                    type = Type
+                   } =
                       Msg)
-    when Type /= groupchat, Type /= error ->
+  when Type /= groupchat, Type /= error ->
     do_check(From, To, LServer, Msg);
-sm_receive_packet(#presence{from = From,
-                            to = #jid{lserver = LServer} = To,
-                            type = subscribe} =
+sm_receive_packet(#presence{
+                    from = From,
+                    to = #jid{lserver = LServer} = To,
+                    type = subscribe
+                   } =
                       Presence) ->
     do_check(From, To, LServer, Presence);
 sm_receive_packet(Acc) ->
     Acc.
 
+
 %%--------------------------------------------------------------------
 %%| Filtering deciding
+
 
 do_check(From, To, LServer, Stanza) ->
     case needs_checking(From, To) of
@@ -112,18 +123,21 @@ do_check(From, To, LServer, Stanza) ->
             Stanza
     end.
 
+
 check_stanza(LServer, From, #message{body = Body}) ->
     check_body(LServer, From, xmpp:get_text(Body));
 check_stanza(_, _, _) ->
     ham.
 
+
 -spec s2s_in_handle_info(s2s_in_state(), any()) ->
-                            s2s_in_state() | {stop, s2s_in_state()}.
+          s2s_in_state() | {stop, s2s_in_state()}.
 s2s_in_handle_info(State, {_Ref, {spam_filter, _}}) ->
     ?DEBUG("Dropping expired spam filter result", []),
     {stop, State};
 s2s_in_handle_info(State, _) ->
     State.
+
 
 -spec needs_checking(jid(), jid()) -> boolean().
 needs_checking(#jid{lserver = FromHost} = From, #jid{lserver = LServer} = To) ->
@@ -136,16 +150,16 @@ needs_checking(#jid{lserver = FromHost} = From, #jid{lserver = LServer} = To) ->
                     false;
                 deny ->
                     ?DEBUG("Spam is filtered for ~s", [jid:encode(To)]),
-                    not mod_roster:is_subscribed(From, To)
-                    andalso not
-                                mod_roster:is_subscribed(
-                                    jid:make(<<>>, FromHost),
-                                    To) % likely a gateway
+                    not mod_roster:is_subscribed(From, To) andalso
+                    not mod_roster:is_subscribed(
+                      jid:make(<<>>, FromHost),
+                      To)  % likely a gateway
             end;
         false ->
             ?DEBUG("~s not loaded for ~s", [?MODULE_ANTISPAM, LServer]),
             false
     end.
+
 
 -spec check_from(binary(), jid()) -> ham | spam.
 check_from(Host, From) ->
@@ -153,7 +167,7 @@ check_from(Host, From) ->
     LFrom =
         {_, FromDomain, _} =
             jid:remove_resource(
-                jid:tolower(From)),
+              jid:tolower(From)),
     try
         case gen_server:call(Proc, {is_blocked_domain, FromDomain}) of
             true ->
@@ -173,6 +187,7 @@ check_from(Host, From) ->
             ham
     end.
 
+
 -spec check_body(binary(), jid(), binary()) -> ham | spam.
 check_body(Host, From, Body) ->
     case {extract_urls(Host, Body), extract_jids(Body)} of
@@ -183,7 +198,7 @@ check_body(Host, From, Body) ->
             Proc = get_proc_name(Host),
             LFrom =
                 jid:remove_resource(
-                    jid:tolower(From)),
+                  jid:tolower(From)),
             try gen_server:call(Proc, {check_body, URLs, JIDs, LFrom}) of
                 {spam_filter, Result} ->
                     Result
@@ -194,8 +209,10 @@ check_body(Host, From, Body) ->
             end
     end.
 
+
 %%--------------------------------------------------------------------
 %%| Auxiliary
+
 
 -spec extract_urls(binary(), binary()) -> {urls, [url()]} | none.
 extract_urls(Host, Body) ->
@@ -209,6 +226,7 @@ extract_urls(Host, Body) ->
             none
     end.
 
+
 -spec resolve_redirects(binary(), [url()]) -> [url()].
 resolve_redirects(_Host, URLs) ->
     try do_resolve_redirects(URLs, []) of
@@ -220,6 +238,7 @@ resolve_redirects(_Host, URLs) ->
             URLs
     end.
 
+
 -spec do_resolve_redirects([url()], [url()]) -> [url()].
 do_resolve_redirects([], Result) ->
     Result;
@@ -227,8 +246,7 @@ do_resolve_redirects([URL | Rest], Acc) ->
     case httpc:request(get,
                        {URL, [{"user-agent", "curl/8.7.1"}]},
                        [{autoredirect, false}, {timeout, ?HTTPC_TIMEOUT}],
-                       [])
-    of
+                       []) of
         {ok, {{_, StatusCode, _}, Headers, _Body}} when StatusCode >= 300, StatusCode < 400 ->
             Location = proplists:get_value("location", Headers),
             case Location == undefined orelse lists:member(Location, Acc) of
@@ -241,6 +259,7 @@ do_resolve_redirects([URL | Rest], Acc) ->
             do_resolve_redirects(Rest, [URL | Acc])
     end.
 
+
 -spec extract_jids(binary()) -> {jids, [ljid()]} | none.
 extract_jids(Body) ->
     RE = <<"\\S+@\\S+">>,
@@ -252,34 +271,40 @@ extract_jids(Body) ->
             none
     end.
 
+
 -spec try_decode_jid(binary()) -> {true, ljid()} | false.
 try_decode_jid(S) ->
     try jid:decode(S) of
         #jid{} = JID ->
             {true,
              jid:remove_resource(
-                 jid:tolower(JID))}
+               jid:tolower(JID))}
     catch
         _:{bad_jid, _} ->
             false
     end.
 
+
 -spec reject(stanza()) -> ok.
-reject(#message{from = From,
-                to = To,
-                type = Type,
-                lang = Lang} =
+reject(#message{
+         from = From,
+         to = To,
+         type = Type,
+         lang = Lang
+        } =
            Msg)
-    when Type /= groupchat, Type /= error ->
+  when Type /= groupchat, Type /= error ->
     ?INFO_MSG("Rejecting unsolicited message from ~s to ~s",
               [jid:encode(From), jid:encode(To)]),
     Txt = <<"Your message is unsolicited">>,
     Err = xmpp:err_policy_violation(Txt, Lang),
     ejabberd_hooks:run(spam_stanza_rejected, To#jid.lserver, [Msg]),
     ejabberd_router:route_error(Msg, Err);
-reject(#presence{from = From,
-                 to = To,
-                 lang = Lang} =
+reject(#presence{
+         from = From,
+         to = To,
+         lang = Lang
+        } =
            Presence) ->
     ?INFO_MSG("Rejecting unsolicited presence from ~s to ~s",
               [jid:encode(From), jid:encode(To)]),
@@ -288,6 +313,7 @@ reject(#presence{from = From,
     ejabberd_router:route_error(Presence, Err);
 reject(_) ->
     ok.
+
 
 -spec get_proc_name(binary()) -> atom().
 get_proc_name(Host) ->

@@ -28,48 +28,59 @@
 -behaviour(ejabberd_oauth).
 
 -export([init/0,
-	 store/1,
-	 lookup/1,
-	 clean/1,
-	 lookup_client/1,
-	 store_client/1,
-	 remove_client/1, revoke/1]).
+         store/1,
+         lookup/1,
+         clean/1,
+         lookup_client/1,
+         store_client/1,
+         remove_client/1,
+         revoke/1]).
 -export([sql_schemas/0]).
 
 -include("ejabberd_oauth.hrl").
 -include("ejabberd_sql_pt.hrl").
+
 -include_lib("xmpp/include/jid.hrl").
+
 -include("logger.hrl").
+
 
 init() ->
     ejabberd_sql_schema:update_schema(
       ejabberd_config:get_myname(), ?MODULE, sql_schemas()),
     ok.
 
+
 sql_schemas() ->
     [#sql_schema{
-        version = 1,
-        tables =
-            [#sql_table{
-                name = <<"oauth_token">>,
-                columns =
-                    [#sql_column{name = <<"token">>, type = text},
-                     #sql_column{name = <<"jid">>, type = text},
-                     #sql_column{name = <<"scope">>, type = text},
-                     #sql_column{name = <<"expire">>, type = bigint}],
-                indices = [#sql_index{
-                              columns = [<<"token">>],
-                              unique = true}]},
-             #sql_table{
-                name = <<"oauth_client">>,
-                columns =
-                    [#sql_column{name = <<"client_id">>, type = text},
-                     #sql_column{name = <<"client_name">>, type = text},
-                     #sql_column{name = <<"grant_type">>, type = text},
-                     #sql_column{name = <<"options">>, type = text}],
-                indices = [#sql_index{
-                              columns = [<<"client_id">>],
-                              unique = true}]}]}].
+       version = 1,
+       tables =
+           [#sql_table{
+              name = <<"oauth_token">>,
+              columns =
+                  [#sql_column{name = <<"token">>, type = text},
+                   #sql_column{name = <<"jid">>, type = text},
+                   #sql_column{name = <<"scope">>, type = text},
+                   #sql_column{name = <<"expire">>, type = bigint}],
+              indices = [#sql_index{
+                           columns = [<<"token">>],
+                           unique = true
+                          }]
+             },
+            #sql_table{
+              name = <<"oauth_client">>,
+              columns =
+                  [#sql_column{name = <<"client_id">>, type = text},
+                   #sql_column{name = <<"client_name">>, type = text},
+                   #sql_column{name = <<"grant_type">>, type = text},
+                   #sql_column{name = <<"options">>, type = text}],
+              indices = [#sql_index{
+                           columns = [<<"client_id">>],
+                           unique = true
+                          }]
+             }]
+      }].
+
 
 store(R) ->
     Token = R#oauth_token.token,
@@ -78,17 +89,18 @@ store(R) ->
     Scope = str:join(R#oauth_token.scope, <<" ">>),
     Expire = R#oauth_token.expire,
     case ?SQL_UPSERT(
-	    ejabberd_config:get_myname(),
-	    "oauth_token",
-	    ["!token=%(Token)s",
-	     "jid=%(SJID)s",
-	     "scope=%(Scope)s",
-	     "expire=%(Expire)d"]) of
-	ok ->
-	    ok;
-	_ ->
-	    {error, db_failure}
+           ejabberd_config:get_myname(),
+           "oauth_token",
+           ["!token=%(Token)s",
+            "jid=%(SJID)s",
+            "scope=%(Scope)s",
+            "expire=%(Expire)d"]) of
+        ok ->
+            ok;
+        _ ->
+            {error, db_failure}
     end.
+
 
 lookup(Token) ->
     case ejabberd_sql:sql_query(
@@ -98,28 +110,33 @@ lookup(Token) ->
         {selected, [{SJID, Scope, Expire}]} ->
             JID = jid:decode(SJID),
             US = {JID#jid.luser, JID#jid.lserver},
-            {ok, #oauth_token{token = Token,
-			      us = US,
-			      scope = str:tokens(Scope, <<" ">>),
-			      expire = Expire}};
+            {ok, #oauth_token{
+                   token = Token,
+                   us = US,
+                   scope = str:tokens(Scope, <<" ">>),
+                   expire = Expire
+                  }};
         _ ->
             error
     end.
 
+
 revoke(Token) ->
     case ejabberd_sql:sql_query(
-	ejabberd_config:get_myname(),
-	?SQL("delete from oauth_token where token=%(Token)s")) of
-	{error, _} ->
-	    {error, <<"db error">>};
-	_ ->
-	    ok
+           ejabberd_config:get_myname(),
+           ?SQL("delete from oauth_token where token=%(Token)s")) of
+        {error, _} ->
+            {error, <<"db error">>};
+        _ ->
+            ok
     end.
+
 
 clean(TS) ->
     ejabberd_sql:sql_query(
       ejabberd_config:get_myname(),
       ?SQL("delete from oauth_token where expire < %(TS)d")).
+
 
 lookup_client(ClientID) ->
     case ejabberd_sql:sql_query(
@@ -134,10 +151,12 @@ lookup_client(ClientID) ->
                 end,
             case misc:base64_to_term(SOptions) of
                 {term, Options} ->
-                    {ok, #oauth_client{client_id = ClientID,
-                                       client_name = ClientName,
-                                       grant_type = GrantType,
-                                       options = Options}};
+                    {ok, #oauth_client{
+                           client_id = ClientID,
+                           client_name = ClientName,
+                           grant_type = GrantType,
+                           options = Options
+                          }};
                 _ ->
                     error
             end;
@@ -145,10 +164,13 @@ lookup_client(ClientID) ->
             error
     end.
 
-store_client(#oauth_client{client_id = ClientID,
-                           client_name = ClientName,
-                           grant_type = GrantType,
-                           options = Options}) ->
+
+store_client(#oauth_client{
+               client_id = ClientID,
+               client_name = ClientName,
+               grant_type = GrantType,
+               options = Options
+              }) ->
     SGrantType =
         case GrantType of
             password -> <<"password">>;
@@ -156,17 +178,18 @@ store_client(#oauth_client{client_id = ClientID,
         end,
     SOptions = misc:term_to_base64(Options),
     case ?SQL_UPSERT(
-	    ejabberd_config:get_myname(),
-	    "oauth_client",
-	    ["!client_id=%(ClientID)s",
-	     "client_name=%(ClientName)s",
-	     "grant_type=%(SGrantType)s",
-	     "options=%(SOptions)s"]) of
-	ok ->
-	    ok;
-	_ ->
-	    {error, db_failure}
+           ejabberd_config:get_myname(),
+           "oauth_client",
+           ["!client_id=%(ClientID)s",
+            "client_name=%(ClientName)s",
+            "grant_type=%(SGrantType)s",
+            "options=%(SOptions)s"]) of
+        ok ->
+            ok;
+        _ ->
+            {error, db_failure}
     end.
+
 
 remove_client(Client) ->
     ejabberd_sql:sql_query(

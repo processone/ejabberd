@@ -32,15 +32,19 @@
          lookup/1,
          clean/1,
          lookup_client/1,
-         store_client/1, revoke/1]).
+         store_client/1,
+         revoke/1]).
 
 -include("ejabberd_oauth.hrl").
 -include("logger.hrl").
+
 -include_lib("xmpp/include/jid.hrl").
+
 
 init() ->
     rest:start(ejabberd_config:get_myname()),
     ok.
+
 
 store(R) ->
     Path = path(<<"store">>),
@@ -49,12 +53,17 @@ store(R) ->
     SJID = jid:encode({User, Server, <<"">>}),
     case rest:with_retry(
            post,
-           [ejabberd_config:get_myname(), Path, [],
-            #{<<"token">> => R#oauth_token.token,
+           [ejabberd_config:get_myname(),
+            Path,
+            [],
+            #{
+              <<"token">> => R#oauth_token.token,
               <<"user">> => SJID,
               <<"scope">> => R#oauth_token.scope,
               <<"expire">> => R#oauth_token.expire
-             }], 2, 500) of
+             }],
+           2,
+           500) of
         {ok, Code, _} when Code == 200 orelse Code == 201 ->
             ok;
         Err ->
@@ -62,11 +71,16 @@ store(R) ->
             {error, db_failure}
     end.
 
+
 lookup(Token) ->
     Path = path(<<"lookup">>),
-    case rest:with_retry(post, [ejabberd_config:get_myname(), Path, [],
-                                #{<<"token">> => Token}],
-                         2, 500) of
+    case rest:with_retry(post,
+                         [ejabberd_config:get_myname(),
+                          Path,
+                          [],
+                          #{<<"token">> => Token}],
+                         2,
+                         500) of
         {ok, 200, Data} ->
             SJID = case maps:find(<<"user">>, Data) of
                        {ok, U} -> U;
@@ -82,10 +96,12 @@ lookup(Token) ->
                          {ok, E} -> E;
                          error -> 0
                      end,
-            {ok, #oauth_token{token = Token,
-			      us = US,
-			      scope = Scope,
-			      expire = Expire}};
+            {ok, #oauth_token{
+                   token = Token,
+                   us = US,
+                   scope = Scope,
+                   expire = Expire
+                  }};
         {ok, 404, _Resp} ->
             error;
         Other ->
@@ -93,24 +109,30 @@ lookup(Token) ->
             case ejabberd_option:oauth_cache_rest_failure_life_time() of
                 infinity -> error;
                 Time -> {cache_with_timeout, error, Time}
-	    end
+            end
     end.
+
 
 -spec revoke(binary()) -> ok | {error, binary()}.
 revoke(_Token) ->
     {error, <<"not available">>}.
 
+
 clean(_TS) ->
     ok.
+
 
 path(Path) ->
     Base = ejabberd_option:ext_api_path_oauth(),
     <<Base/binary, "/", Path/binary>>.
 
-store_client(#oauth_client{client_id = ClientID,
-                           client_name = ClientName,
-                           grant_type = GrantType,
-                           options = Options} = R) ->
+
+store_client(#oauth_client{
+               client_id = ClientID,
+               client_name = ClientName,
+               grant_type = GrantType,
+               options = Options
+              } = R) ->
     Path = path(<<"store_client">>),
     SGrantType =
         case GrantType of
@@ -121,12 +143,17 @@ store_client(#oauth_client{client_id = ClientID,
     %% Retry 2 times, with a backoff of 500millisec
     case rest:with_retry(
            post,
-           [ejabberd_config:get_myname(), Path, [],
-            #{<<"client_id">> => ClientID,
+           [ejabberd_config:get_myname(),
+            Path,
+            [],
+            #{
+              <<"client_id">> => ClientID,
               <<"client_name">> => ClientName,
               <<"grant_type">> => SGrantType,
               <<"options">> => SOptions
-             }], 2, 500) of
+             }],
+           2,
+           500) of
         {ok, Code, _} when Code == 200 orelse Code == 201 ->
             ok;
         Err ->
@@ -134,11 +161,16 @@ store_client(#oauth_client{client_id = ClientID,
             {error, db_failure}
     end.
 
+
 lookup_client(ClientID) ->
     Path = path(<<"lookup_client">>),
-    case rest:with_retry(post, [ejabberd_config:get_myname(), Path, [],
-                                #{<<"client_id">> => ClientID}],
-                         2, 500) of
+    case rest:with_retry(post,
+                         [ejabberd_config:get_myname(),
+                          Path,
+                          [],
+                          #{<<"client_id">> => ClientID}],
+                         2,
+                         500) of
         {ok, 200, Data} ->
             ClientName = case maps:find(<<"client_name">>, Data) of
                              {ok, CN} -> CN;
@@ -159,10 +191,12 @@ lookup_client(ClientID) ->
                        end,
             case misc:base64_to_term(SOptions) of
                 {term, Options} ->
-                    {ok, #oauth_client{client_id = ClientID,
-                                       client_name = ClientName,
-                                       grant_type = GrantType,
-                                       options = Options}};
+                    {ok, #oauth_client{
+                           client_id = ClientID,
+                           client_name = ClientName,
+                           grant_type = GrantType,
+                           options = Options
+                          }};
                 _ ->
                     error
             end;
@@ -170,5 +204,5 @@ lookup_client(ClientID) ->
             error;
         Other ->
             ?ERROR_MSG("Unexpected response for oauth lookup: ~p", [Other]),
-	    error
+            error
     end.

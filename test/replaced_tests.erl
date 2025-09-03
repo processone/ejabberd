@@ -25,10 +25,16 @@
 
 %% API
 -compile(export_all).
--import(suite, [bind/1, wait_for_slave/1, wait_for_master/1, recv/1,
-		close_socket/1, disconnect/1]).
+-import(suite,
+        [bind/1,
+         wait_for_slave/1,
+         wait_for_master/1,
+         recv/1,
+         close_socket/1,
+         disconnect/1]).
 
 -include("suite.hrl").
+
 
 %%%===================================================================
 %%% API
@@ -39,12 +45,14 @@
 single_cases() ->
     {replaced_single, [sequence], []}.
 
+
 %%%===================================================================
 %%% Master-slave tests
 %%%===================================================================
 master_slave_cases() ->
     {replaced_master_slave, [sequence],
-     [master_slave_test(conflict)]}.
+                            [master_slave_test(conflict)]}.
+
 
 conflict_master(Config0) ->
     Config = bind(Config0),
@@ -53,10 +61,12 @@ conflict_master(Config0) ->
     {xmlstreamend, <<"stream:stream">>} = recv(Config),
     close_socket(Config).
 
+
 conflict_slave(Config0) ->
     wait_for_master(Config0),
     Config = bind(Config0),
     disconnect(Config).
+
 
 %%%===================================================================
 %%% Internal functions
@@ -64,7 +74,9 @@ conflict_slave(Config0) ->
 single_test(T) ->
     list_to_atom("replaced_" ++ atom_to_list(T)).
 
+
 master_slave_test(T) ->
-    {list_to_atom("replaced_" ++ atom_to_list(T)), [parallel],
+    {list_to_atom("replaced_" ++ atom_to_list(T)),
+     [parallel],
      [list_to_atom("replaced_" ++ atom_to_list(T) ++ "_master"),
       list_to_atom("replaced_" ++ atom_to_list(T) ++ "_slave")]}.

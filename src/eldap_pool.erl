@@ -28,18 +28,34 @@
 -author('xram@jabber.ru').
 
 %% API
--export([start_link/7, bind/3, search/2,
-	 modify_passwd/3]).
+-export([start_link/7,
+         bind/3,
+         search/2,
+         modify_passwd/3]).
 
 -include("logger.hrl").
 
 -ifdef(USE_OLD_PG2).
+
+
 pg_create(PoolName) -> pg2:create(PoolName).
+
+
 pg_join(PoolName, Pid) -> pg2:join(PoolName, Pid).
+
+
 pg_get_closest_pid(Name) -> pg2:get_closest_pid(Name).
+
+
 -else.
+
+
 pg_create(_) -> pg:start_link().
+
+
 pg_join(PoolName, Pid) -> pg:join(PoolName, Pid).
+
+
 pg_get_closest_pid(Group) ->
     case pg:get_local_members(Group) of
         [] ->
@@ -49,7 +65,10 @@ pg_get_closest_pid(Group) ->
             end;
         [Pid | _] -> Pid
     end.
+
+
 -endif.
+
 
 %%====================================================================
 %% API
@@ -57,47 +76,59 @@ pg_get_closest_pid(Group) ->
 bind(PoolName, DN, Passwd) ->
     do_request(PoolName, {bind, [DN, Passwd]}).
 
+
 search(PoolName, Opts) ->
     do_request(PoolName, {search, [Opts]}).
+
 
 modify_passwd(PoolName, DN, Passwd) ->
     do_request(PoolName, {modify_passwd, [DN, Passwd]}).
 
-start_link(Name, Hosts, Backups, Port, Rootdn, Passwd,
-	   Opts) ->
+
+start_link(Name,
+           Hosts,
+           Backups,
+           Port,
+           Rootdn,
+           Passwd,
+           Opts) ->
     PoolName = make_id(Name),
     pg_create(PoolName),
-    lists:foreach(fun (Host) ->
-			  ID = list_to_binary(erlang:ref_to_list(make_ref())),
-			  case catch eldap:start_link(ID, [Host | Backups],
-						      Port, Rootdn, Passwd,
-						      Opts)
-			      of
-			    {ok, Pid} -> pg_join(PoolName, Pid);
-			    Err ->
+    lists:foreach(fun(Host) ->
+                          ID = list_to_binary(erlang:ref_to_list(make_ref())),
+                          case catch eldap:start_link(ID,
+                                                      [Host | Backups],
+                                                      Port,
+                                                      Rootdn,
+                                                      Passwd,
+                                                      Opts) of
+                              {ok, Pid} -> pg_join(PoolName, Pid);
+                              Err ->
                                   ?ERROR_MSG("Err = ~p", [Err]),
                                   error
-			  end
-		  end,
-		  Hosts).
+                          end
+                  end,
+                  Hosts).
+
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 do_request(Name, {F, Args}) ->
     case pg_get_closest_pid(make_id(Name)) of
-      Pid when is_pid(Pid) ->
-	  case catch apply(eldap, F, [Pid | Args]) of
-	    {'EXIT', {timeout, _}} ->
-		?ERROR_MSG("LDAP request failed: timed out", []);
-	    {'EXIT', Reason} ->
-		?ERROR_MSG("LDAP request failed: eldap:~p(~p)~nReason: ~p",
-			   [F, Args, Reason]),
-		{error, Reason};
-	    Reply -> Reply
-	  end;
-      Err -> Err
+        Pid when is_pid(Pid) ->
+            case catch apply(eldap, F, [Pid | Args]) of
+                {'EXIT', {timeout, _}} ->
+                    ?ERROR_MSG("LDAP request failed: timed out", []);
+                {'EXIT', Reason} ->
+                    ?ERROR_MSG("LDAP request failed: eldap:~p(~p)~nReason: ~p",
+                               [F, Args, Reason]),
+                    {error, Reason};
+                Reply -> Reply
+            end;
+        Err -> Err
     end.
+
 
 make_id(Name) ->
     misc:binary_to_atom(<<"eldap_pool_", Name/binary>>).

@@ -29,22 +29,33 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, log_user_send/1, mod_options/1,
-	 log_user_receive/1, mod_opt_type/1, depends/2, mod_doc/0]).
+-export([start/2,
+         stop/1,
+         log_user_send/1,
+         mod_options/1,
+         log_user_receive/1,
+         mod_opt_type/1,
+         depends/2,
+         mod_doc/0]).
 
 -include("logger.hrl").
 -include("translate.hrl").
+
 -include_lib("xmpp/include/xmpp.hrl").
+
 
 start(_Host, _Opts) ->
     {ok, [{hook, user_send_packet, log_user_send, 50},
           {hook, user_receive_packet, log_user_receive, 50}]}.
 
+
 stop(_Host) ->
     ok.
 
+
 depends(_Host, _Opts) ->
     [].
+
 
 -spec log_user_send({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
 log_user_send({Packet, C2SState}) ->
@@ -52,32 +63,42 @@ log_user_send({Packet, C2SState}) ->
     log_packet(Packet, From#jid.lserver),
     {Packet, C2SState}.
 
+
 -spec log_user_receive({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
 log_user_receive({Packet, C2SState}) ->
     To = xmpp:get_to(Packet),
     log_packet(Packet, To#jid.lserver),
     {Packet, C2SState}.
 
+
 -spec log_packet(stanza(), binary()) -> ok.
 log_packet(Packet, Host) ->
     Loggers = mod_service_log_opt:loggers(Host),
-    ForwardedMsg = #message{from = jid:make(Host),
-			    id = p1_rand:get_string(),
-			    sub_els = [#forwarded{
-					  sub_els = [Packet]}]},
+    ForwardedMsg = #message{
+                     from = jid:make(Host),
+                     id = p1_rand:get_string(),
+                     sub_els = [#forwarded{
+                                  sub_els = [Packet]
+                                 }]
+                    },
     lists:foreach(
       fun(Logger) ->
-	      ejabberd_router:route(xmpp:set_to(ForwardedMsg, jid:make(Logger)))
-      end, Loggers).
+              ejabberd_router:route(xmpp:set_to(ForwardedMsg, jid:make(Logger)))
+      end,
+      Loggers).
+
 
 mod_opt_type(loggers) ->
     econf:list(econf:domain()).
 
+
 mod_options(_) ->
     [{loggers, []}].
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           ?T("This module forwards copies of all stanzas "
              "to remote XMPP servers or components. "
              "Every stanza is encapsulated into <forwarded/> "
@@ -86,13 +107,16 @@ mod_doc() ->
              "[XEP-0297: Stanza Forwarding]."),
       opts =>
           [{loggers,
-            #{value => "[Domain, ...]",
+            #{
+              value => "[Domain, ...]",
               desc =>
                   ?T("A list of servers or connected components "
-                     "to which stanzas will be forwarded.")}}],
+                     "to which stanzas will be forwarded.")
+             }}],
       example =>
           ["modules:",
            "  mod_service_log:",
            "    loggers:",
            "      - xmpp-server.tld",
-           "      - component.domain.tld"]}.
+           "      - component.domain.tld"]
+     }.

@@ -29,65 +29,79 @@
 
 -include("logger.hrl").
 
+
 %%%===================================================================
 %%% API functions
 %%%===================================================================
 start(Host) ->
     case extauth:prog_name(Host) of
-	undefined ->
-	    ?ERROR_MSG("Option 'extauth_program' is not set for '~ts'",
-		       [Host]),
-	    ignore;
-	Prog ->
-	    Pool = extauth:pool_name(Host),
-	    ChildSpec = {Pool, {?MODULE, start_link, [Host, Prog, Pool]},
-			 permanent, infinity, supervisor, [?MODULE]},
-	    supervisor:start_child(ejabberd_backend_sup, ChildSpec)
+        undefined ->
+            ?ERROR_MSG("Option 'extauth_program' is not set for '~ts'",
+                       [Host]),
+            ignore;
+        Prog ->
+            Pool = extauth:pool_name(Host),
+            ChildSpec = {Pool,
+                         {?MODULE, start_link, [Host, Prog, Pool]},
+                         permanent,
+                         infinity,
+                         supervisor,
+                         [?MODULE]},
+            supervisor:start_child(ejabberd_backend_sup, ChildSpec)
     end.
+
 
 stop(Host) ->
     Pool = extauth:pool_name(Host),
     supervisor:terminate_child(ejabberd_backend_sup, Pool),
     supervisor:delete_child(ejabberd_backend_sup, Pool).
 
+
 reload(Host) ->
     Pool = extauth:pool_name(Host),
     Prog = extauth:prog_name(Host),
     PoolSize = extauth:pool_size(Host),
     try process_info(whereis(Pool), dictionary) of
-	{dictionary, Dict} ->
-	    case proplists:get_value(extauth_program, Dict) of
-		Prog ->
-		    OldPoolSize = try supervisor:which_children(Pool) of
-				      Children -> length(Children)
-				  catch _:_ -> PoolSize
-				  end,
-		    if OldPoolSize > PoolSize ->
-			    lists:foreach(
-			      fun(I) ->
-				      Worker = extauth:worker_name(Pool, I),
-				      supervisor:terminate_child(Pool, Worker),
-				      supervisor:delete_child(Pool, Worker)
-			      end, lists:seq(PoolSize+1, OldPoolSize));
-		       OldPoolSize < PoolSize ->
-			    lists:foreach(
-			      fun(I) ->
-				      Spec = worker_spec(Pool, Prog, I),
-				      supervisor:start_child(Pool, Spec)
-			      end, lists:seq(OldPoolSize+1, PoolSize));
-		       OldPoolSize == PoolSize ->
-			    ok
-		    end;
-		_ ->
-		    stop(Host),
-		    start(Host)
-	    end
-    catch _:badarg ->
-	    ok
+        {dictionary, Dict} ->
+            case proplists:get_value(extauth_program, Dict) of
+                Prog ->
+                    OldPoolSize = try supervisor:which_children(Pool) of
+                                      Children -> length(Children)
+                                  catch
+                                      _:_ -> PoolSize
+                                  end,
+                    if
+                        OldPoolSize > PoolSize ->
+                            lists:foreach(
+                              fun(I) ->
+                                      Worker = extauth:worker_name(Pool, I),
+                                      supervisor:terminate_child(Pool, Worker),
+                                      supervisor:delete_child(Pool, Worker)
+                              end,
+                              lists:seq(PoolSize + 1, OldPoolSize));
+                        OldPoolSize < PoolSize ->
+                            lists:foreach(
+                              fun(I) ->
+                                      Spec = worker_spec(Pool, Prog, I),
+                                      supervisor:start_child(Pool, Spec)
+                              end,
+                              lists:seq(OldPoolSize + 1, PoolSize));
+                        OldPoolSize == PoolSize ->
+                            ok
+                    end;
+                _ ->
+                    stop(Host),
+                    start(Host)
+            end
+    catch
+        _:badarg ->
+            ok
     end.
+
 
 start_link(Host, Prog, Pool) ->
     supervisor:start_link({local, Pool}, ?MODULE, [Host, Prog, Pool]).
+
 
 %%%===================================================================
 %%% Supervisor callbacks
@@ -95,16 +109,22 @@ start_link(Host, Prog, Pool) ->
 init([Host, Prog, Pool]) ->
     PoolSize = extauth:pool_size(Host),
     Children = lists:map(
-		 fun(I) ->
-			 worker_spec(Pool, Prog, I)
-		 end, lists:seq(1, PoolSize)),
+                 fun(I) ->
+                         worker_spec(Pool, Prog, I)
+                 end,
+                 lists:seq(1, PoolSize)),
     put(extauth_program, Prog),
     {ok, {{one_for_one, PoolSize, 1}, Children}}.
+
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 worker_spec(Pool, Prog, I) ->
     Worker = extauth:worker_name(Pool, I),
-    {Worker, {extauth, start_link, [Worker, Prog]},
-     permanent, 5000, worker, [extauth]}.
+    {Worker,
+     {extauth, start_link, [Worker, Prog]},
+     permanent,
+     5000,
+     worker,
+     [extauth]}.

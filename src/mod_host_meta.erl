@@ -31,8 +31,13 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process/2,
-         mod_opt_type/1, mod_options/1, depends/2]).
+-export([start/2,
+         stop/1,
+         reload/3,
+         process/2,
+         mod_opt_type/1,
+         mod_options/1,
+         depends/2]).
 -export([mod_doc/0]).
 -export([get_url/4, get_auto_url/2]).
 
@@ -50,23 +55,29 @@
 %%% gen_mod callbacks
 %%%----------------------------------------------------------------------
 
+
 start(_Host, _Opts) ->
     report_hostmeta_listener(),
     ok.
 
+
 stop(_Host) ->
     ok.
+
 
 reload(_Host, _NewOpts, _OldOpts) ->
     report_hostmeta_listener(),
     ok.
 
+
 depends(_Host, _Opts) ->
     [{mod_bosh, soft}].
+
 
 %%%----------------------------------------------------------------------
 %%% HTTP handlers
 %%%----------------------------------------------------------------------
+
 
 process([], #request{method = 'GET', host = Host, path = Path}) ->
     case lists:last(Path) of
@@ -78,11 +89,13 @@ process([], #request{method = 'GET', host = Host, path = Path}) ->
 process(_Path, _Request) ->
     {404, [], "Not Found"}.
 
+
 %%%----------------------------------------------------------------------
 %%% Internal
 %%%----------------------------------------------------------------------
 
 %% When set to 'auto', it only takes the first valid listener options it finds
+
 
 file_xml(Host) ->
     BoshList = case get_url(?MODULE, bosh, true, Host) of
@@ -90,53 +103,62 @@ file_xml(Host) ->
                    BoshUrl ->
                        [?XA(<<"Link">>,
                             [{<<"rel">>, <<"urn:xmpp:alt-connections:xbosh">>},
-                             {<<"href">>, BoshUrl}]
-                           )]
+                             {<<"href">>, BoshUrl}])]
                end,
     WsList = case get_url(?MODULE, websocket, true, Host) of
                  undefined -> [];
                  WsUrl ->
                      [?XA(<<"Link">>,
                           [{<<"rel">>, <<"urn:xmpp:alt-connections:websocket">>},
-                           {<<"href">>, WsUrl}]
-                         )]
+                           {<<"href">>, WsUrl}])]
              end,
-    {200, [html,
-           {<<"Content-Type">>, <<"application/xrd+xml">>},
-           {<<"Access-Control-Allow-Origin">>, <<"*">>}],
+    {200,
+     [html,
+      {<<"Content-Type">>, <<"application/xrd+xml">>},
+      {<<"Access-Control-Allow-Origin">>, <<"*">>}],
      [<<"<?xml version='1.0' encoding='utf-8'?>\n">>,
       fxml:element_to_binary(
         ?XAE(<<"XRD">>,
-             [{<<"xmlns">>,<<"http://docs.oasis-open.org/ns/xri/xrd-1.0">>}],
-             BoshList ++ WsList)
-       )]}.
+             [{<<"xmlns">>, <<"http://docs.oasis-open.org/ns/xri/xrd-1.0">>}],
+             BoshList ++ WsList))]}.
+
 
 file_json(Host) ->
     BoshList = case get_url(?MODULE, bosh, true, Host) of
                    undefined -> [];
-                   BoshUrl -> [#{rel => <<"urn:xmpp:alt-connections:xbosh">>,
-                                 href => BoshUrl}]
+                   BoshUrl ->
+                       [#{
+                          rel => <<"urn:xmpp:alt-connections:xbosh">>,
+                          href => BoshUrl
+                         }]
                end,
     WsList = case get_url(?MODULE, websocket, true, Host) of
                  undefined -> [];
-                 WsUrl -> [#{rel => <<"urn:xmpp:alt-connections:websocket">>,
-                             href => WsUrl}]
+                 WsUrl ->
+                     [#{
+                        rel => <<"urn:xmpp:alt-connections:websocket">>,
+                        href => WsUrl
+                       }]
              end,
-    {200, [html,
-           {<<"Content-Type">>, <<"application/json">>},
-           {<<"Access-Control-Allow-Origin">>, <<"*">>}],
+    {200,
+     [html,
+      {<<"Content-Type">>, <<"application/json">>},
+      {<<"Access-Control-Allow-Origin">>, <<"*">>}],
      [misc:json_encode(#{links => BoshList ++ WsList})]}.
+
 
 get_url(M, bosh, Tls, Host) ->
     get_url(M, Tls, Host, bosh_service_url, mod_bosh);
 get_url(M, websocket, Tls, Host) ->
     get_url(M, Tls, Host, websocket_url, ejabberd_http_ws).
 
+
 get_url(M, Tls, Host, Option, Module) ->
     case get_url_preliminar(M, Tls, Host, Option, Module) of
         undefined -> undefined;
         Url -> misc:expand_keyword(<<"@HOST@">>, Url, Host)
     end.
+
 
 get_url_preliminar(M, Tls, Host, Option, Module) ->
     case gen_mod:get_module_opt(Host, M, Option) of
@@ -145,6 +167,7 @@ get_url_preliminar(M, Tls, Host, Option, Module) ->
         <<"auto">> -> get_auto_url(Tls, Module);
         U when is_binary(U) -> U
     end.
+
 
 get_auto_url(Tls, Module) ->
     case find_handler_port_path(Tls, Module) of
@@ -163,6 +186,7 @@ get_auto_url(Tls, Module) ->
               (str:join(Path, <<"/">>))/binary>>
     end.
 
+
 find_handler_port_path(Tls, Module) ->
     lists:filtermap(
       fun({{Port, _, _},
@@ -174,7 +198,9 @@ find_handler_port_path(Tls, Module) ->
                   {Path, Module} -> {true, {ThisTls, Port, Path}}
               end;
          (_) -> false
-      end, ets:tab2list(ejabberd_listener)).
+      end,
+      ets:tab2list(ejabberd_listener)).
+
 
 report_hostmeta_listener() ->
     case {find_handler_port_path(false, ?MODULE),
@@ -182,38 +208,46 @@ report_hostmeta_listener() ->
         {[], []} ->
             ?CRITICAL_MSG("It seems you enabled ~p in 'modules' but forgot to "
                           "add it as a request_handler in an ejabberd_http "
-                          "listener.", [?MODULE]);
-        {[_|_], _} ->
+                          "listener.",
+                          [?MODULE]);
+        {[_ | _], _} ->
             ?WARNING_MSG("Apparently ~p is enabled in a request_handler in a "
                          "non-encrypted ejabberd_http listener. This is "
                          "disallowed by XEP-0156. Please enable 'tls' in that "
                          "listener, or setup a proxy encryption mechanism.",
                          [?MODULE]);
-        {[], [_|_]} ->
+        {[], [_ | _]} ->
             ok
     end.
+
 
 %%%----------------------------------------------------------------------
 %%% Options and Doc
 %%%----------------------------------------------------------------------
+
 
 mod_opt_type(bosh_service_url) ->
     econf:either(undefined, econf:binary());
 mod_opt_type(websocket_url) ->
     econf:either(undefined, econf:binary()).
 
+
 mod_options(_) ->
     [{bosh_service_url, <<"auto">>},
      {websocket_url, <<"auto">>}].
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           [?T("This module serves small 'host-meta' files as described in "
               "https://xmpp.org/extensions/xep-0156.html[XEP-0156: Discovering "
-              "Alternative XMPP Connection Methods]."), "",
+              "Alternative XMPP Connection Methods]."),
+           "",
            ?T("To use this module, in addition to adding it to the 'modules' "
               "section, you must also enable it in 'listen' -> 'ejabberd_http' -> "
-              "_`listen-options.md#request_handlers|request_handlers`_."), "",
+              "_`listen-options.md#request_handlers|request_handlers`_."),
+           "",
            ?T("Notice it only works if _`listen.md#ejabberd_http|ejabberd_http`_ "
               "has _`listen-options.md#tls|tls`_ enabled.")],
       note => "added in 22.05",
@@ -237,21 +271,25 @@ mod_doc() ->
 
       opts =>
           [{websocket_url,
-            #{value => "undefined | auto | WebSocketURL",
+            #{
+              value => "undefined | auto | WebSocketURL",
               desc =>
                   ?T("WebSocket URL to announce. "
                      "The keyword '@HOST@' is replaced with the real virtual "
                      "host name. "
                      "If set to 'auto', it will build the URL of the first "
                      "configured WebSocket request handler. "
-                     "The default value is 'auto'.")}},
+                     "The default value is 'auto'.")
+             }},
            {bosh_service_url,
-            #{value => "undefined | auto | BoshURL",
+            #{
+              value => "undefined | auto | BoshURL",
               desc =>
                   ?T("BOSH service URL to announce. "
                      "The keyword '@HOST@' is replaced with the real "
                      "virtual host name. "
                      "If set to 'auto', it will build the URL of the first "
                      "configured BOSH request handler. "
-                     "The default value is 'auto'.")}}]
+                     "The default value is 'auto'.")
+             }}]
      }.

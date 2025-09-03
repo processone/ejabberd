@@ -27,8 +27,12 @@
 -behaviour(gen_statem).
 
 %% API
--export([start_link/2, supervisor/1, create_db/0,
-         get_connection/2, check_auth/5, check_signature/3,
+-export([start_link/2,
+         supervisor/1,
+         create_db/0,
+         get_connection/2,
+         check_auth/5,
+         check_signature/3,
          get_matrix_host_port/2]).
 
 %% gen_statem callbacks
@@ -37,34 +41,41 @@
 
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
+
 -include_lib("kernel/include/inet.hrl").
+
 -include("mod_matrix_gw.hrl").
 
--record(matrix_s2s,
-        {to  :: binary(),
-         pid :: pid()}).
+-record(matrix_s2s, {
+          to :: binary(),
+          pid :: pid()
+         }).
 
--record(pending,
-        {request_id :: any(),
-         servers :: [binary()],
-         key_queue = []}).
+-record(pending, {
+          request_id :: any(),
+          servers :: [binary()],
+          key_queue = []
+         }).
 
--record(wait,
-        {timer_ref :: reference(),
-         last :: integer()}).
+-record(wait, {
+          timer_ref :: reference(),
+          last :: integer()
+         }).
 
--record(data,
-        {host :: binary(),
-         matrix_server :: binary(),
-         matrix_host_port :: {binary(), integer()} | undefined,
-         keys = #{},
-         state :: #pending{} | #wait{}}).
+-record(data, {
+          host :: binary(),
+          matrix_server :: binary(),
+          matrix_host_port :: {binary(), integer()} | undefined,
+          keys = #{},
+          state :: #pending{} | #wait{}
+         }).
 
 -define(KEYS_REQUEST_TIMEOUT, 600000).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -75,36 +86,42 @@
 %% @end
 %%--------------------------------------------------------------------
 -spec start_link(binary(), binary()) ->
-                        {ok, Pid :: pid()} |
-                        ignore |
-                        {error, Error :: term()}.
+          {ok, Pid :: pid()} |
+          ignore |
+          {error, Error :: term()}.
 start_link(Host, MatrixServer) ->
-    gen_statem:start_link(?MODULE, [Host, MatrixServer],
+    gen_statem:start_link(?MODULE,
+                          [Host, MatrixServer],
                           ejabberd_config:fsm_limit_opts([])).
+
 
 -spec supervisor(binary()) -> atom().
 supervisor(Host) ->
     gen_mod:get_module_proc(Host, mod_matrix_gw_s2s_sup).
 
+
 create_db() ->
     ejabberd_mnesia:create(
-      ?MODULE, matrix_s2s,
+      ?MODULE,
+      matrix_s2s,
       [{ram_copies, [node()]},
        {type, set},
        {attributes, record_info(fields, matrix_s2s)}]),
     ok.
 
+
 get_connection(Host, MatrixServer) ->
     case mnesia:dirty_read(matrix_s2s, MatrixServer) of
-	[] ->
-	    case supervisor:start_child(supervisor(Host),
-					[Host, MatrixServer]) of
-		{ok, undefined} -> {error, ignored};
-		Res -> Res
-	    end;
+        [] ->
+            case supervisor:start_child(supervisor(Host),
+                                        [Host, MatrixServer]) of
+                {ok, undefined} -> {error, ignored};
+                Res -> Res
+            end;
         [#matrix_s2s{pid = Pid}] ->
             {ok, Pid}
     end.
+
 
 get_key(Host, MatrixServer, KeyID) ->
     case mod_matrix_gw_opt:matrix_domain(Host) of
@@ -119,6 +136,7 @@ get_key(Host, MatrixServer, KeyID) ->
                 Error -> Error
             end
     end.
+
 
 get_matrix_host_port(Host, MatrixServer) ->
     case mod_matrix_gw_opt:matrix_domain(Host) of
@@ -144,6 +162,7 @@ get_matrix_host_port(Host, MatrixServer) ->
 %            Error
 %    end.
 
+
 check_auth(Host, MatrixServer, AuthParams, Content, Request) ->
     case get_connection(Host, MatrixServer) of
         {ok, S2SPid} ->
@@ -153,13 +172,14 @@ check_auth(Host, MatrixServer, AuthParams, Content, Request) ->
                     %% TODO: check ValidUntil
                     Destination = mod_matrix_gw_opt:matrix_domain(Host),
                     #{<<"sig">> := Sig} = AuthParams,
-                    JSON = #{<<"method">> => atom_to_binary(Request#request.method, latin1),
+                    JSON = #{
+                             <<"method">> => atom_to_binary(Request#request.method, latin1),
                              <<"uri">> => Request#request.raw_path,
                              <<"origin">> => MatrixServer,
                              <<"destination">> => Destination,
                              <<"signatures">> => #{
-                                 MatrixServer => #{KeyID => Sig}
-                                }
+                                                   MatrixServer => #{KeyID => Sig}
+                                                  }
                             },
                     JSON2 =
                         case Content of
@@ -181,11 +201,14 @@ check_auth(Host, MatrixServer, AuthParams, Content, Request) ->
             false
     end.
 
+
 check_signature(Host, JSON, RoomVersion) ->
     case JSON of
-        #{<<"sender">> := Sender,
+        #{
+          <<"sender">> := Sender,
           <<"signatures">> := Sigs,
-          <<"origin_server_ts">> := OriginServerTS} ->
+          <<"origin_server_ts">> := OriginServerTS
+         } ->
             MatrixServer = mod_matrix_gw:get_id_domain_exn(Sender),
             case Sigs of
                 #{MatrixServer := #{} = KeySig} ->
@@ -224,6 +247,7 @@ check_signature(Host, JSON, RoomVersion) ->
 %%% gen_statem callbacks
 %%%===================================================================
 
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -235,14 +259,19 @@ check_signature(Host, JSON, RoomVersion) ->
 -spec init(Args :: term()) -> gen_statem:init_result(term()).
 init([Host, MatrixServer]) ->
     mnesia:dirty_write(
-      #matrix_s2s{to = MatrixServer,
-                  pid = self()}),
+      #matrix_s2s{
+        to = MatrixServer,
+        pid = self()
+       }),
     {ok, state_name,
-     request_keys(
-       MatrixServer,
-       #data{host = Host,
+         request_keys(
+           MatrixServer,
+           #data{
+             host = Host,
              matrix_server = MatrixServer,
-             state = #wait{timer_ref = make_ref(), last = 0}})}.
+             state = #wait{timer_ref = make_ref(), last = 0}
+            })}.
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -251,10 +280,11 @@ init([Host, MatrixServer]) ->
 %% this function is called for every event a gen_statem receives.
 %% @end
 %%--------------------------------------------------------------------
--spec handle_event(
-        gen_statem:event_type(), Msg :: term(),
-        State :: term(), Data :: term()) ->
-                          gen_statem:handle_event_result().
+-spec handle_event(gen_statem:event_type(),
+                   Msg :: term(),
+                   State :: term(),
+                   Data :: term()) ->
+          gen_statem:handle_event_result().
 %handle_event({call, From}, _Msg, State, Data) ->
 %    {next_state, State, Data, [{reply, From, ok}]}.
 handle_event({call, From}, get_matrix_host_port, _State, Data) ->
@@ -275,7 +305,8 @@ handle_event({call, From}, {get_key, KeyID}, State, Data) ->
                 #pending{key_queue = KeyQueue} = St ->
                     KeyQueue2 = [{From, KeyID} | KeyQueue],
                     {next_state, State,
-                     Data#data{state = St#pending{key_queue = KeyQueue2}}, []};
+                                 Data#data{state = St#pending{key_queue = KeyQueue2}},
+                                 []};
                 #wait{timer_ref = TimerRef, last = Last} ->
                     TS = erlang:system_time(millisecond),
                     if
@@ -284,7 +315,8 @@ handle_event({call, From}, {get_key, KeyID}, State, Data) ->
                             #pending{key_queue = KeyQueue} = St = Data2#data.state,
                             KeyQueue2 = [{From, KeyID} | KeyQueue],
                             {next_state, State,
-                             Data2#data{state = St#pending{key_queue = KeyQueue2}}, []};
+                                         Data2#data{state = St#pending{key_queue = KeyQueue2}},
+                                         []};
                         true ->
                             Timeout =
                                 case erlang:read_timer(TimerRef) of
@@ -297,16 +329,26 @@ handle_event({call, From}, {get_key, KeyID}, State, Data) ->
                                 end,
                             TRef = erlang:start_timer(Timeout, self(), []),
                             {next_state, State,
-                             Data#data{state = #wait{timer_ref = TRef,
-                                                     last = Last}},
-                             [{reply, From, error}]}
+                                         Data#data{
+                                           state = #wait{
+                                                     timer_ref = TRef,
+                                                     last = Last
+                                                    }
+                                          },
+                                         [{reply, From, error}]}
                     end
             end
     end;
-handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
-             #data{state = #pending{request_id = RequestID,
-                                    servers = Servers,
-                                    key_queue = KeyQueue} = St} = Data) ->
+handle_event(cast,
+             {key_reply, RequestID, HTTPResult},
+             State,
+             #data{
+               state = #pending{
+                         request_id = RequestID,
+                         servers = Servers,
+                         key_queue = KeyQueue
+                        } = St
+              } = Data) ->
     TS = erlang:system_time(millisecond),
     Res =
         case HTTPResult of
@@ -326,11 +368,15 @@ handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
                     ?DEBUG("key ~p~n", [VerifyKey]),
                     ?DEBUG("check ~p~n",
                            [catch check_signature(
-                                    JSON, Data#data.matrix_server,
-                                    KeyID, VerifyKey)]),
+                                    JSON,
+                                    Data#data.matrix_server,
+                                    KeyID,
+                                    VerifyKey)]),
                     true = check_signature(
-                             JSON, Data#data.matrix_server,
-                             KeyID, VerifyKey),
+                             JSON,
+                             Data#data.matrix_server,
+                             KeyID,
+                             VerifyKey),
                     #{<<"valid_until_ts">> := ValidUntil} = JSON,
                     ValidUntil2 =
                         min(ValidUntil,
@@ -346,14 +392,17 @@ handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
                     OldKeys =
                         maps:filtermap(
                           fun(_KID,
-                              #{<<"key">> := SK,
-                                <<"expired_ts">> := Exp})
+                              #{
+                                <<"key">> := SK,
+                                <<"expired_ts">> := Exp
+                               })
                                 when is_integer(Exp),
                                      is_binary(SK) ->
                                   {true, {mod_matrix_gw:base64_decode(SK),
                                           Exp}};
                              (_, _) -> false
-                          end, OldKeysJSON),
+                          end,
+                          OldKeysJSON),
                     NewKeys =
                         maps:filtermap(
                           fun(_KID,
@@ -362,7 +411,8 @@ handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
                                   {true, {mod_matrix_gw:base64_decode(SK),
                                           ValidUntil2}};
                              (_, _) -> false
-                          end, VerifyKeys),
+                          end,
+                          VerifyKeys),
                     {ok, maps:merge(OldKeys, NewKeys), ValidUntil2}
                 catch
                     _:_ ->
@@ -393,16 +443,23 @@ handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
                   end,
                   KeyQueue),
             TimerRef = erlang:start_timer(max(ValidTS - TS, ?KEYS_REQUEST_TIMEOUT),
-                                          self(), []),
-            Data2 = Data#data{keys = Keys,
-                              state = #wait{timer_ref = TimerRef,
-                                            last = TS}},
+                                          self(),
+                                          []),
+            Data2 = Data#data{
+                      keys = Keys,
+                      state = #wait{
+                                timer_ref = TimerRef,
+                                last = TS
+                               }
+                     },
             ?DEBUG("KEYS ~p~n", [{Keys, Data2}]),
             {next_state, State, Data2, Replies};
         {error, Data2} ->
             {next_state, State, Data2, []}
     end;
-handle_event(info, {timeout, TimerRef, []}, State,
+handle_event(info,
+             {timeout, TimerRef, []},
+             State,
              #data{state = #wait{timer_ref = TimerRef}} = Data) ->
     Data2 = request_keys(Data#data.matrix_server, Data),
     {next_state, State, Data2, []};
@@ -412,6 +469,7 @@ handle_event(cast, Msg, State, Data) ->
 handle_event(info, Info, State, Data) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {next_state, State, Data, []}.
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -423,13 +481,16 @@ handle_event(info, Info, State, Data) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec terminate(Reason :: term(), State :: term(), Data :: term()) ->
-                       any().
+          any().
 terminate(_Reason, _State, Data) ->
     mnesia:dirty_delete_object(
-      #matrix_s2s{to = Data#data.matrix_server,
-                  pid = self()}),
+      #matrix_s2s{
+        to = Data#data.matrix_server,
+        pid = self()
+       }),
     %% TODO: wait for messages
     ok.
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -437,19 +498,23 @@ terminate(_Reason, _State, Data) ->
 %% Convert process state when code is changed
 %% @end
 %%--------------------------------------------------------------------
--spec code_change(
-        OldVsn :: term() | {down,term()},
-        State :: term(), Data :: term(), Extra :: term()) ->
-                         {ok, NewState :: term(), NewData :: term()}.
+-spec code_change(OldVsn :: term() | {down, term()},
+                  State :: term(),
+                  Data :: term(),
+                  Extra :: term()) ->
+          {ok, NewState :: term(), NewData :: term()}.
 code_change(_OldVsn, State, Data, _Extra) ->
     {ok, State, Data}.
+
 
 callback_mode() ->
     handle_event_function.
 
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
 
 do_get_matrix_host_port(MatrixServer) ->
     case binary:split(MatrixServer, <<":">>) of
@@ -460,7 +525,8 @@ do_get_matrix_host_port(MatrixServer) ->
                 _ ->
                     URL = <<"https://", Addr/binary, "/.well-known/matrix/server">>,
                     HTTPRes =
-                        httpc:request(get, {URL, []},
+                        httpc:request(get,
+                                      {URL, []},
                                       [{timeout, 5000}],
                                       [{sync, true},
                                        {body_format, binary}]),
@@ -492,7 +558,7 @@ do_get_matrix_host_port(MatrixServer) ->
                             case inet_res:getbyname(SRVName, srv, 5000) of
                                 {ok, HostEntry} ->
                                     {hostent, _Name, _Aliases, _AddrType, _Len,
-                                     HAddrList} = HostEntry,
+                                              HAddrList} = HostEntry,
                                     case h_addr_list_to_host_ports(HAddrList) of
                                         {ok, [{Host, Port} | _]} ->
                                             {list_to_binary(Host), Port};
@@ -515,27 +581,31 @@ do_get_matrix_host_port(MatrixServer) ->
             end
     end.
 
+
 %% Copied from xmpp_stream_out.erl
 -type host_port() :: {inet:hostname(), inet:port_number()}.
 -type h_addr_list() :: [{integer(), integer(), inet:port_number(), string()}].
--spec h_addr_list_to_host_ports(h_addr_list()) -> {ok, [host_port(),...]} |
-						  {error, nxdomain}.
+
+
+-spec h_addr_list_to_host_ports(h_addr_list()) -> {ok, [host_port(), ...]} |
+                                                  {error, nxdomain}.
 h_addr_list_to_host_ports(AddrList) ->
     PrioHostPorts = lists:flatmap(
-		      fun({Priority, Weight, Port, Host}) ->
-			      N = case Weight of
-				      0 -> 0;
-				      _ -> (Weight + 1) * p1_rand:uniform()
-				  end,
-			      [{Priority * 65536 - N, Host, Port}];
-			 (_) ->
-			      []
-		      end, AddrList),
-    HostPorts = [{Host, Port}
-		 || {_Priority, Host, Port} <- lists:usort(PrioHostPorts)],
+                      fun({Priority, Weight, Port, Host}) ->
+                              N = case Weight of
+                                      0 -> 0;
+                                      _ -> (Weight + 1) * p1_rand:uniform()
+                                  end,
+                              [{Priority * 65536 - N, Host, Port}];
+                         (_) ->
+                              []
+                      end,
+                      AddrList),
+    HostPorts = [ {Host, Port}
+                  || {_Priority, Host, Port} <- lists:usort(PrioHostPorts) ],
     case HostPorts of
-	[] -> {error, nxdomain};
-	_ -> {ok, HostPorts}
+        [] -> {error, nxdomain};
+        _ -> {ok, HostPorts}
     end.
 
 
@@ -553,22 +623,29 @@ check_signature(JSON, SignatureName, KeyID, VerifyKey) ->
             false
     end.
 
+
 request_keys(Via, Data) ->
     {MHost, MPort} = do_get_matrix_host_port(Via),
     URL =
         case Data#data.matrix_server of
             Via ->
-                <<"https://", MHost/binary,
-                  ":", (integer_to_binary(MPort))/binary,
+                <<"https://",
+                  MHost/binary,
+                  ":",
+                  (integer_to_binary(MPort))/binary,
                   "/_matrix/key/v2/server">>;
             MatrixServer ->
-                <<"https://", MHost/binary,
-                  ":", (integer_to_binary(MPort))/binary,
-                  "/_matrix/key/v2/query/", MatrixServer/binary>>
+                <<"https://",
+                  MHost/binary,
+                  ":",
+                  (integer_to_binary(MPort))/binary,
+                  "/_matrix/key/v2/query/",
+                  MatrixServer/binary>>
         end,
     Self = self(),
     {ok, RequestID} =
-        httpc:request(get, {URL, []},
+        httpc:request(get,
+                      {URL, []},
                       [{timeout, 5000}],
                       [{sync, false},
                        {receiver,
@@ -588,8 +665,13 @@ request_keys(Via, Data) ->
         #wait{timer_ref = TimerRef} ->
             erlang:cancel_timer(TimerRef),
             NotaryServers = mod_matrix_gw_opt:notary_servers(Data#data.host),
-            Data#data{state = #pending{request_id = RequestID,
-                                       servers = NotaryServers}}
+            Data#data{
+              state = #pending{
+                        request_id = RequestID,
+                        servers = NotaryServers
+                       }
+             }
     end.
+
 
 -endif.

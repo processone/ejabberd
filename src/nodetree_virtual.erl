@@ -36,90 +36,127 @@
 
 -include("pubsub.hrl").
 
--export([init/3, terminate/2, options/0, set_node/1,
-    get_node/3, get_node/2, get_node/1, get_nodes/2,
-    get_nodes/1, get_all_nodes/1,
-    get_parentnodes/3, get_parentnodes_tree/3,
-    get_subnodes/3, get_subnodes_tree/3, create_node/6,
-    delete_node/2]).
+-export([init/3,
+         terminate/2,
+         options/0,
+         set_node/1,
+         get_node/3, get_node/2, get_node/1,
+         get_nodes/2, get_nodes/1,
+         get_all_nodes/1,
+         get_parentnodes/3,
+         get_parentnodes_tree/3,
+         get_subnodes/3,
+         get_subnodes_tree/3,
+         create_node/6,
+         delete_node/2]).
+
 
 init(_Host, _ServerHost, _Opts) ->
     ok.
 
+
 terminate(_Host, _ServerHost) ->
     ok.
+
 
 options() ->
     [{virtual_tree, true}].
 
+
 set_node(_Node) ->
     ok.
 
+
 get_node(Host, Node, _From) ->
     get_node(Host, Node).
+
 
 get_node(Host, Node) ->
     Nidx = nodeidx(Host, Node),
     node_record(Host, Node, Nidx).
 
+
 get_node(Nidx) ->
     {Host, Node} = nodeid(Nidx),
     node_record(Host, Node, Nidx).
 
+
 get_nodes(Host) ->
     get_nodes(Host, infinity).
+
 
 get_nodes(_Host, _Limit) ->
     [].
 
+
 get_all_nodes(_Host) ->
     [].
+
 
 get_parentnodes(_Host, _Node, _From) ->
     [].
 
+
 get_parentnodes_tree(Host, Node, From) ->
     [{0, [get_node(Host, Node, From)]}].
+
 
 get_subnodes(_Host, _Node, _From) ->
     [].
 
+
 get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
+
 
 get_subnodes_tree(_Host, _Node) ->
     [].
 
+
 create_node(Host, Node, _Type, _Owner, _Options, _Parents) ->
     {error, {virtual, nodeidx(Host, Node)}}.
+
 
 delete_node(Host, Node) ->
     [get_node(Host, Node)].
 
+
 %% internal helper
 
-node_record({U,S,R}, Node, Nidx) ->
+
+node_record({U, S, R}, Node, Nidx) ->
     Host = mod_pubsub:host(S),
     Type = <<"pep">>,
     Module = mod_pubsub:plugin(Host, Type),
-    #pubsub_node{nodeid = {{U,S,R},Node}, id = Nidx, type = Type,
-                 owners = [{U,S,R}],
-                 options = Module:options()};
+    #pubsub_node{
+      nodeid = {{U, S, R}, Node},
+      id = Nidx,
+      type = Type,
+      owners = [{U, S, R}],
+      options = Module:options()
+     };
 node_record(Host, Node, Nidx) ->
-    [Type|_] = mod_pubsub:plugins(Host),
+    [Type | _] = mod_pubsub:plugins(Host),
     Module = mod_pubsub:plugin(Host, Type),
-    #pubsub_node{nodeid = {Host, Node}, id = Nidx, type = Type,
-                 owners = [{<<"">>, Host, <<"">>}],
-                 options = Module:options()}.
+    #pubsub_node{
+      nodeid = {Host, Node},
+      id = Nidx,
+      type = Type,
+      owners = [{<<"">>, Host, <<"">>}],
+      options = Module:options()
+     }.
 
-nodeidx({U,S,R}, Node) ->
-    JID = jid:encode(jid:make(U,S,R)),
+
+nodeidx({U, S, R}, Node) ->
+    JID = jid:encode(jid:make(U, S, R)),
     <<JID/binary, ":", Node/binary>>;
 nodeidx(Host, Node) ->
     <<Host/binary, ":", Node/binary>>.
+
+
 nodeid(Nidx) ->
     [Head, Node] = binary:split(Nidx, <<":">>),
     case jid:decode(Head) of
-        {jid,<<>>,Host,<<>>,_,_,_} -> {Host, Node};
-        {jid,U,S,R,_,_,_} -> {{U,S,R}, Node}
+        {jid, <<>>, Host, <<>>, _, _, _} -> {Host, Node};
+        {jid, U, S, R, _, _, _} -> {{U, S, R}, Node}
     end.

@@ -29,6 +29,7 @@
 
 -include_lib("kernel/include/inet.hrl").
 
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -39,10 +40,12 @@ opt_type(acl) ->
     acl:validator(acl);
 opt_type(acme) ->
     econf:options(
-      #{ca_url => econf:url(),
-	contact => econf:list_or_single(econf:binary("^[a-zA-Z]+:[^:]+$")),
-	auto => econf:bool(),
-	cert_type => econf:enum([ec, rsa])},
+      #{
+        ca_url => econf:url(),
+        contact => econf:list_or_single(econf:binary("^[a-zA-Z]+:[^:]+$")),
+        auto => econf:bool(),
+        cert_type => econf:enum([ec, rsa])
+       },
       [unique, {return, map}]);
 opt_type(allow_contrib_modules) ->
     econf:bool();
@@ -75,7 +78,8 @@ opt_type(auth_opts) ->
                       {basic_auth, V};
                  ({path_prefix, V}) when is_binary(V) ->
                       {path_prefix, V}
-              end, L)
+              end,
+              L)
     end;
 opt_type(auth_stored_password_types) ->
     econf:list(econf:enum([plain, scram_sha1, scram_sha256, scram_sha512]));
@@ -144,16 +148,18 @@ opt_type(disable_sasl_scram_downgrade_protection) ->
 opt_type(disable_sasl_mechanisms) ->
     econf:list_or_single(
       econf:and_then(
-	econf:binary(),
-	fun str:to_upper/1));
+        econf:binary(),
+        fun str:to_upper/1));
 opt_type(domain_balancing) ->
     econf:map(
       econf:domain(),
       econf:options(
-	#{component_number => econf:int(2, 1000),
-	  type => econf:enum([random, source, destination,
-			      bare_source, bare_destination])},
-	[{return, map}, unique]),
+        #{
+          component_number => econf:int(2, 1000),
+          type => econf:enum([random, source, destination,
+                              bare_source, bare_destination])
+         },
+        [{return, map}, unique]),
       [{return, map}]);
 opt_type(ext_api_path_oauth) ->
     econf:binary();
@@ -179,7 +185,7 @@ opt_type(host_config) ->
         econf:map(econf:domain(), econf:list(econf:any())),
         fun econf:group_dups/1),
       econf:map(
-	econf:enum(ejabberd_config:get_option(hosts)),
+        econf:enum(ejabberd_config:get_option(hosts)),
         validator(),
         [unique]));
 opt_type(hosts) ->
@@ -206,9 +212,9 @@ opt_type(ldap_deref_aliases) ->
 opt_type(ldap_dn_filter) ->
     econf:and_then(
       econf:non_empty(
-	econf:map(
-	  econf:ldap_filter(),
-	  econf:list(econf:binary()))),
+        econf:map(
+          econf:ldap_filter(),
+          econf:list(econf:binary()))),
       fun hd/1);
 opt_type(ldap_encrypt) ->
     econf:enum([tls, starttls, none]);
@@ -233,9 +239,9 @@ opt_type(ldap_tls_verify) ->
 opt_type(ldap_uids) ->
     econf:either(
       econf:list(
-	econf:and_then(
-	  econf:binary(),
-	  fun(U) -> {U, <<"%u">>} end)),
+        econf:and_then(
+          econf:binary(),
+          fun(U) -> {U, <<"%u">>} end)),
       econf:map(econf:binary(), econf:binary(), [unique]));
 opt_type(listen) ->
     ejabberd_listener:validator();
@@ -251,12 +257,12 @@ opt_type(log_modules_fully) ->
     econf:list(econf:atom());
 opt_type(loglevel) ->
     fun(N) when is_integer(N) ->
-	    (econf:and_then(
-	       econf:int(0, 5),
-	       fun ejabberd_logger:convert_loglevel/1))(N);
+            (econf:and_then(
+               econf:int(0, 5),
+               fun ejabberd_logger:convert_loglevel/1))(N);
        (Level) ->
-	    (econf:enum([none, emergency, alert, critical,
-			 error, warning, notice, info, debug]))(Level)
+            (econf:enum([none, emergency, alert, critical,
+                         error, warning, notice, info, debug]))(Level)
     end;
 opt_type(max_fsm_queue) ->
     econf:pos_int();
@@ -299,12 +305,13 @@ opt_type(oom_watermark) ->
 opt_type(outgoing_s2s_families) ->
     econf:and_then(
       econf:non_empty(
-	econf:list(econf:enum([ipv4, ipv6]), [unique])),
+        econf:list(econf:enum([ipv4, ipv6]), [unique])),
       fun(L) ->
-	      lists:map(
-		fun(ipv4) -> inet;
-		   (ipv6) -> inet6
-		end, L)
+              lists:map(
+                fun(ipv4) -> inet;
+                   (ipv6) -> inet6
+                end,
+                L)
       end);
 opt_type(outgoing_s2s_ipv4_address) ->
     econf:ipv4();
@@ -392,9 +399,9 @@ opt_type(s2s_zlib) ->
     econf:and_then(
       econf:bool(),
       fun(false) -> false;
-	 (true) ->
-	      ejabberd:start_app(ezlib),
-	      true
+         (true) ->
+              ejabberd:start_app(ezlib),
+              true
       end);
 opt_type(shaper) ->
     ejabberd_shaper:validator(shaper);
@@ -459,10 +466,10 @@ opt_type(version) ->
 opt_type(websocket_origin) ->
     econf:list(
       econf:and_then(
-	econf:and_then(
-	  econf:binary_sep("\\s+"),
-	  econf:list(econf:url(), [unique])),
-	fun(L) -> str:join(L, <<" ">>) end),
+        econf:and_then(
+          econf:binary_sep("\\s+"),
+          econf:list(econf:url(), [unique])),
+        fun(L) -> str:join(L, <<" ">>) end),
       [unique]);
 opt_type(websocket_ping_interval) ->
     econf:timeout(second);
@@ -474,22 +481,23 @@ opt_type(jwt_key) ->
       fun(Path) ->
               case file:read_file(Path) of
                   {ok, Data} ->
-		      try jose_jwk:from_binary(Data) of
-			  {error, _} -> econf:fail({bad_jwt_key, Path});
-			  JWK ->
+                      try jose_jwk:from_binary(Data) of
+                          {error, _} -> econf:fail({bad_jwt_key, Path});
+                          JWK ->
                               case jose_jwk:to_map(JWK) of
                                   {_, #{<<"keys">> := [Key]}} ->
                                       jose_jwk:from_map(Key);
-                                  {_, #{<<"keys">> := [_|_]}} ->
+                                  {_, #{<<"keys">> := [_ | _]}} ->
                                       econf:fail({bad_jwt_key_set, Path});
-				  {_, #{<<"keys">> := _}} ->
-				      econf:fail({bad_jwt_key, Path});
+                                  {_, #{<<"keys">> := _}} ->
+                                      econf:fail({bad_jwt_key, Path});
                                   _ ->
                                       JWK
                               end
-		      catch _:_ ->
-			      econf:fail({bad_jwt_key, Path})
-		      end;
+                      catch
+                          _:_ ->
+                              econf:fail({bad_jwt_key, Path})
+                      end;
                   {error, Reason} ->
                       econf:fail({read_file, Reason, Path})
               end
@@ -499,36 +507,37 @@ opt_type(jwt_jid_field) ->
 opt_type(jwt_auth_only_rule) ->
     econf:atom().
 
+
 %% We only define the types of options that cannot be derived
 %% automatically by tools/opt_type.sh script
 -spec options() -> [{s2s_protocol_options, undefined | binary()} |
-		    {c2s_protocol_options, undefined | binary()} |
+                    {c2s_protocol_options, undefined | binary()} |
                     {s2s_ciphers, undefined | binary()} |
                     {c2s_ciphers, undefined | binary()} |
-		    {websocket_origin, [binary()]} |
-		    {disable_sasl_mechanisms, [binary()]} |
-		    {s2s_zlib, boolean()} |
-		    {loglevel, ejabberd_logger:loglevel()} |
-		    {auth_opts, [{any(), any()}]} |
-		    {listen, [ejabberd_listener:listener()]} |
-		    {modules, [{module(), gen_mod:opts(), integer()}]} |
-		    {ldap_uids, [{binary(), binary()}]} |
-		    {ldap_dn_filter, {binary(), [binary()]}} |
-		    {outgoing_s2s_families, [inet | inet6, ...]} |
-		    {acl, [{atom(), [acl:acl_rule()]}]} |
-		    {access_rules, [{atom(), acl:access()}]} |
-		    {shaper, #{atom() => ejabberd_shaper:shaper_rate()}} |
-		    {shaper_rules, [{atom(), [ejabberd_shaper:shaper_rule()]}]} |
-		    {api_permissions, [ejabberd_access_permissions:permission()]} |
-		    {jwt_key, jose_jwk:key() | undefined} |
-		    {append_host_config, [{binary(), any()}]} |
-		    {host_config, [{binary(), any()}]} |
-		    {define_keyword, any()} |
-		    {define_macro, any()} |
-		    {include_config_file, any()} |
-		    {atom(), any()}].
+                    {websocket_origin, [binary()]} |
+                    {disable_sasl_mechanisms, [binary()]} |
+                    {s2s_zlib, boolean()} |
+                    {loglevel, ejabberd_logger:loglevel()} |
+                    {auth_opts, [{any(), any()}]} |
+                    {listen, [ejabberd_listener:listener()]} |
+                    {modules, [{module(), gen_mod:opts(), integer()}]} |
+                    {ldap_uids, [{binary(), binary()}]} |
+                    {ldap_dn_filter, {binary(), [binary()]}} |
+                    {outgoing_s2s_families, [inet | inet6, ...]} |
+                    {acl, [{atom(), [acl:acl_rule()]}]} |
+                    {access_rules, [{atom(), acl:access()}]} |
+                    {shaper, #{atom() => ejabberd_shaper:shaper_rate()}} |
+                    {shaper_rules, [{atom(), [ejabberd_shaper:shaper_rule()]}]} |
+                    {api_permissions, [ejabberd_access_permissions:permission()]} |
+                    {jwt_key, jose_jwk:key() | undefined} |
+                    {append_host_config, [{binary(), any()}]} |
+                    {host_config, [{binary(), any()}]} |
+                    {define_keyword, any()} |
+                    {define_macro, any()} |
+                    {include_config_file, any()} |
+                    {atom(), any()}].
 options() ->
-    [%% Top-priority options
+    [  %% Top-priority options
      hosts,
      {loglevel, info},
      {cache_life_time, timer:seconds(3600)},
@@ -549,10 +558,10 @@ options() ->
      {anonymous_protocol, sasl_anon},
      {api_permissions,
       [{<<"admin access">>,
-	{[],
-	 [{acl, admin},
-	  {oauth, {[<<"ejabberd:admin">>], [{acl, admin}]}}],
-	 {all, [start, stop]}}}]},
+        {[],
+         [{acl, admin},
+          {oauth, {[<<"ejabberd:admin">>], [{acl, admin}]}}],
+         {all, [start, stop]}}}]},
      {append_host_config, []},
      {auth_cache_life_time,
       fun(Host) -> ejabberd_config:get_option({cache_life_time, Host}) end},
@@ -610,10 +619,10 @@ options() ->
      {ldap_password, <<"">>},
      {ldap_port,
       fun(Host) ->
-	      case ejabberd_config:get_option({ldap_encrypt, Host}) of
-		  tls -> 636;
-		  _ -> 389
-	      end
+              case ejabberd_config:get_option({ldap_encrypt, Host}) of
+                  tls -> 636;
+                  _ -> 389
+              end
       end},
      {ldap_rootdn, <<"">>},
      {ldap_servers, [<<"localhost">>]},
@@ -624,7 +633,7 @@ options() ->
      {ldap_uids, [{<<"uid">>, <<"%u">>}]},
      {listen, []},
      {log_rotate_count, 1},
-     {log_rotate_size, 10*1024*1024},
+     {log_rotate_size, 10 * 1024 * 1024},
      {log_burst_limit_window_time, timer:seconds(1)},
      {log_burst_limit_count, 500},
      {log_modules_fully, []},
@@ -717,22 +726,22 @@ options() ->
      {sql_database, undefined},
      {sql_keepalive_interval, undefined},
      {sql_password, <<"">>},
-     {sql_odbc_driver, <<"libtdsodbc.so">>}, % default is FreeTDS driver
+     {sql_odbc_driver, <<"libtdsodbc.so">>},  % default is FreeTDS driver
      {sql_pool_size,
       fun(Host) ->
-	      case ejabberd_config:get_option({sql_type, Host}) of
-		  sqlite -> 1;
-		  _ -> 10
-	      end
+              case ejabberd_config:get_option({sql_type, Host}) of
+                  sqlite -> 1;
+                  _ -> 10
+              end
       end},
      {sql_port,
       fun(Host) ->
-	      case ejabberd_config:get_option({sql_type, Host}) of
-		  mssql -> 1433;
-		  mysql -> 3306;
-		  pgsql -> 5432;
-		  _ -> undefined
-	      end
+              case ejabberd_config:get_option({sql_type, Host}) of
+                  mssql -> 1433;
+                  mysql -> 3306;
+                  pgsql -> 5432;
+                  _ -> undefined
+              end
       end},
      {sql_query_timeout, timer:seconds(60)},
      {sql_queue_type,
@@ -754,6 +763,7 @@ options() ->
      {jwt_key, undefined},
      {jwt_jid_field, <<"jid">>},
      {jwt_auth_only_rule, none}].
+
 
 -spec globals() -> [atom()].
 globals() ->
@@ -829,8 +839,10 @@ globals() ->
      websocket_ping_interval,
      websocket_timeout].
 
+
 doc() ->
     ejabberd_options_doc:doc().
+
 
 %%%===================================================================
 %%% Internal functions
@@ -845,20 +857,22 @@ validator() ->
         Validators,
         [{disallowed, Required ++ Disallowed}, unique])).
 
+
 -spec fqdn(global | binary()) -> [binary()].
 fqdn(global) ->
     {ok, Hostname} = inet:gethostname(),
     case inet:gethostbyname(Hostname) of
-	{ok, #hostent{h_name = FQDN}} ->
-	    case jid:nameprep(iolist_to_binary(FQDN)) of
-		error -> [];
-		Domain -> [Domain]
-	    end;
-	{error, _} ->
-	    []
+        {ok, #hostent{h_name = FQDN}} ->
+            case jid:nameprep(iolist_to_binary(FQDN)) of
+                error -> [];
+                Domain -> [Domain]
+            end;
+        {error, _} ->
+            []
     end;
 fqdn(_) ->
     ejabberd_config:get_option(fqdn).
+
 
 -spec concat_binary(char()) -> fun(([binary()]) -> binary()).
 concat_binary(C) ->

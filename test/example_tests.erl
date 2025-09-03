@@ -29,6 +29,7 @@
 
 -include("suite.hrl").
 
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -37,23 +38,28 @@
 %%%===================================================================
 single_cases() ->
     {example_single, [sequence],
-     [single_test(foo)]}.
+                     [single_test(foo)]}.
+
 
 foo(Config) ->
     Config.
+
 
 %%%===================================================================
 %%% Master-slave tests
 %%%===================================================================
 master_slave_cases() ->
     {example_master_slave, [sequence],
-     [master_slave_test(foo)]}.
+                           [master_slave_test(foo)]}.
+
 
 foo_master(Config) ->
     Config.
 
+
 foo_slave(Config) ->
     Config.
+
 
 %%%===================================================================
 %%% Internal functions
@@ -61,7 +67,9 @@ foo_slave(Config) ->
 single_test(T) ->
     list_to_atom("example_" ++ atom_to_list(T)).
 
+
 master_slave_test(T) ->
-    {list_to_atom("example_" ++ atom_to_list(T)), [parallel],
+    {list_to_atom("example_" ++ atom_to_list(T)),
+     [parallel],
      [list_to_atom("example_" ++ atom_to_list(T) ++ "_master"),
       list_to_atom("example_" ++ atom_to_list(T) ++ "_slave")]}.

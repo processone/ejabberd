@@ -27,25 +27,31 @@
 %% Supervisor callbacks
 -export([init/1]).
 
+
 %%%===================================================================
 %%% API functions
 %%%===================================================================
 start(Host) ->
-    Spec = #{id => procname(Host),
-	     start => {?MODULE, start_link, [Host]},
-	     restart => permanent,
-	     shutdown => infinity,
-	     type => supervisor,
-	     modules => [?MODULE]},
+    Spec = #{
+             id => procname(Host),
+             start => {?MODULE, start_link, [Host]},
+             restart => permanent,
+             shutdown => infinity,
+             type => supervisor,
+             modules => [?MODULE]
+            },
     supervisor:start_child(ejabberd_gen_mod_sup, Spec).
+
 
 start_link(Host) ->
     Proc = procname(Host),
     supervisor:start_link({local, Proc}, ?MODULE, [Host]).
 
+
 -spec procname(binary()) -> atom().
 procname(Host) ->
     gen_mod:get_module_proc(Host, ?MODULE).
+
 
 %%%===================================================================
 %%% Supervisor callbacks
@@ -53,15 +59,20 @@ procname(Host) ->
 init([Host]) ->
     Cores = misc:logical_processors(),
     Specs = lists:foldl(
-	      fun(I, Acc) ->
-		      [#{id => mod_muc:procname(Host, I),
-			 start => {mod_muc, start_link, [Host, I]},
-			 restart => permanent,
-			 shutdown => timer:minutes(1),
-			 type => worker,
-			 modules => [mod_muc]}|Acc]
-	      end, [room_sup_spec(Host)], lists:seq(1, Cores)),
-    {ok, {{one_for_one, 10*Cores, 1}, Specs}}.
+              fun(I, Acc) ->
+                      [#{
+                         id => mod_muc:procname(Host, I),
+                         start => {mod_muc, start_link, [Host, I]},
+                         restart => permanent,
+                         shutdown => timer:minutes(1),
+                         type => worker,
+                         modules => [mod_muc]
+                        } | Acc]
+              end,
+              [room_sup_spec(Host)],
+              lists:seq(1, Cores)),
+    {ok, {{one_for_one, 10 * Cores, 1}, Specs}}.
+
 
 %%%===================================================================
 %%% Internal functions
@@ -69,9 +80,11 @@ init([Host]) ->
 -spec room_sup_spec(binary()) -> supervisor:child_spec().
 room_sup_spec(Host) ->
     Name = mod_muc_room:supervisor(Host),
-    #{id => Name,
+    #{
+      id => Name,
       start => {ejabberd_tmp_sup, start_link, [Name, mod_muc_room]},
       restart => permanent,
       shutdown => infinity,
       type => supervisor,
-      modules => [ejabberd_tmp_sup]}.
+      modules => [ejabberd_tmp_sup]
+     }.

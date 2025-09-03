@@ -41,48 +41,58 @@
 %% and also create an ejabberd_web.hrl file holding the macros, so
 %% that third parties can use ejabberd_web as an "utility" library.
 
+
 make_xhtml(Els) -> make_xhtml([], Els).
 
+
 make_xhtml(HeadEls, Els) ->
-    #xmlel{name = <<"html">>,
-	   attrs =
-	       [{<<"xmlns">>, <<"http://www.w3.org/1999/xhtml">>},
-		{<<"xml:lang">>, <<"en">>}, {<<"lang">>, <<"en">>}],
-	   children =
-	       [#xmlel{name = <<"head">>, attrs = [],
-		       children =
-			   [#xmlel{name = <<"meta">>,
-				   attrs =
-				       [{<<"http-equiv">>, <<"Content-Type">>},
-					{<<"content">>,
-					 <<"text/html; charset=utf-8">>}],
-				   children = []}
-			    | HeadEls]},
-		#xmlel{name = <<"body">>, attrs = [], children = Els}]}.
+    #xmlel{
+      name = <<"html">>,
+      attrs =
+          [{<<"xmlns">>, <<"http://www.w3.org/1999/xhtml">>},
+           {<<"xml:lang">>, <<"en">>},
+           {<<"lang">>, <<"en">>}],
+      children =
+          [#xmlel{
+             name = <<"head">>,
+             attrs = [],
+             children =
+                 [#xmlel{
+                    name = <<"meta">>,
+                    attrs =
+                        [{<<"http-equiv">>, <<"Content-Type">>},
+                         {<<"content">>,
+                          <<"text/html; charset=utf-8">>}],
+                    children = []
+                   } | HeadEls]
+            },
+           #xmlel{name = <<"body">>, attrs = [], children = Els}]
+     }.
+
 
 -define(X(Name),
-	#xmlel{name = Name, attrs = [], children = []}).
+        #xmlel{name = Name, attrs = [], children = []}).
 
 -define(XA(Name, Attrs),
-	#xmlel{name = Name, attrs = Attrs, children = []}).
+        #xmlel{name = Name, attrs = Attrs, children = []}).
 
 -define(XE(Name, Els),
-	#xmlel{name = Name, attrs = [], children = Els}).
+        #xmlel{name = Name, attrs = [], children = Els}).
 
 -define(XAE(Name, Attrs, Els),
-	#xmlel{name = Name, attrs = Attrs, children = Els}).
+        #xmlel{name = Name, attrs = Attrs, children = Els}).
 
 -define(C(Text), {xmlcdata, Text}).
 
 -define(XC(Name, Text), ?XE(Name, [?C(Text)])).
 
 -define(XAC(Name, Attrs, Text),
-	?XAE(Name, Attrs, [?C(Text)])).
+        ?XAE(Name, Attrs, [?C(Text)])).
 
 -define(LI(Els), ?XE(<<"li">>, Els)).
 
 -define(A(URL, Els),
-	?XAE(<<"a">>, [{<<"href">>, URL}], Els)).
+        ?XAE(<<"a">>, [{<<"href">>, URL}], Els)).
 
 -define(AC(URL, Text), ?A(URL, [?C(Text)])).
 
@@ -91,13 +101,17 @@ make_xhtml(HeadEls, Els) ->
 -define(BR, ?X(<<"br">>)).
 
 -define(INPUT(Type, Name, Value),
-	?XA(<<"input">>,
-	    [{<<"type">>, Type}, {<<"name">>, Name},
-	     {<<"value">>, Value}])).
+        ?XA(<<"input">>,
+            [{<<"type">>, Type},
+             {<<"name">>, Name},
+             {<<"value">>, Value}])).
+
 
 error(not_found) ->
-    {404, [],
+    {404,
+     [],
      make_xhtml([?XC(<<"h1">>, <<"404 Not Found">>)])};
 error(not_allowed) ->
-    {401, [],
+    {401,
+     [],
      make_xhtml([?XC(<<"h1">>, <<"401 Unauthorized">>)])}.

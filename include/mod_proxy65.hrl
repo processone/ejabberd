@@ -68,6 +68,8 @@
 %% RFC 1928 defined timeout.
 -define(SOCKS5_REPLY_TIMEOUT, 10000).
 
--record(s5_request, {rsv = 0 :: integer(),
-                     cmd = connect :: connect | udp,
-                     sha1 = <<"">> :: binary()}).
+-record(s5_request, {
+          rsv = 0 :: integer(),
+          cmd = connect :: connect | udp,
+          sha1 = <<"">> :: binary()
+         }).

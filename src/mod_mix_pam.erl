@@ -29,14 +29,16 @@
 -export([mod_doc/0]).
 %% Hooks and handlers
 -export([bounce_sm_packet/1,
-	 disco_sm_features/5,
-	 remove_user/2,
-	 process_iq/1,
-	 get_mix_roster_items/2,
-	 webadmin_user/4,
-	 webadmin_menu_hostuser/4, webadmin_page_hostuser/4]).
+         disco_sm_features/5,
+         remove_user/2,
+         process_iq/1,
+         get_mix_roster_items/2,
+         webadmin_user/4,
+         webadmin_menu_hostuser/4,
+         webadmin_page_hostuser/4]).
 
 -include_lib("xmpp/include/xmpp.hrl").
+
 -include("logger.hrl").
 -include("mod_roster.hrl").
 -include("translate.hrl").
@@ -44,6 +46,7 @@
 -include("ejabberd_web_admin.hrl").
 
 -define(MIX_PAM_CACHE, mix_pam_cache).
+
 
 -callback init(binary(), gen_mod:opts()) -> ok | {error, db_failure}.
 -callback add_channel(jid(), jid(), binary()) -> ok | {error, db_failure}.
@@ -56,43 +59,49 @@
 
 -optional_callbacks([use_cache/1, cache_nodes/1]).
 
+
 %%%===================================================================
 %%% API
 %%%===================================================================
 start(Host, Opts) ->
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     case Mod:init(Host, Opts) of
-	ok ->
-	    init_cache(Mod, Host, Opts),
-	    {ok,
-	     [{hook, bounce_sm_packet, bounce_sm_packet, 50},
-	      {hook, disco_sm_features, disco_sm_features, 50},
-	      {hook, remove_user, remove_user, 50},
-	      {hook, roster_get, get_mix_roster_items, 50},
-	      {hook, webadmin_user, webadmin_user, 50},
-	      {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
-	      {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50},
-	      {iq_handler, ejabberd_sm, ?NS_MIX_PAM_0, process_iq},
-	      {iq_handler, ejabberd_sm, ?NS_MIX_PAM_2, process_iq}]};
-	Err ->
-	    Err
+        ok ->
+            init_cache(Mod, Host, Opts),
+            {ok,
+             [{hook, bounce_sm_packet, bounce_sm_packet, 50},
+              {hook, disco_sm_features, disco_sm_features, 50},
+              {hook, remove_user, remove_user, 50},
+              {hook, roster_get, get_mix_roster_items, 50},
+              {hook, webadmin_user, webadmin_user, 50},
+              {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
+              {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50},
+              {iq_handler, ejabberd_sm, ?NS_MIX_PAM_0, process_iq},
+              {iq_handler, ejabberd_sm, ?NS_MIX_PAM_2, process_iq}]};
+        Err ->
+            Err
     end.
+
 
 stop(_Host) ->
     ok.
 
+
 reload(Host, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
     OldMod = gen_mod:db_mod(OldOpts, ?MODULE),
-    if NewMod /= OldMod ->
+    if
+        NewMod /= OldMod ->
             NewMod:init(Host, NewOpts);
-       true ->
+        true ->
             ok
     end,
     init_cache(NewMod, Host, NewOpts).
 
+
 depends(_Host, _Opts) ->
     [].
+
 
 mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
@@ -105,6 +114,7 @@ mod_opt_type(cache_missed) ->
 mod_opt_type(cache_life_time) ->
     econf:timeout(second, infinity).
 
+
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_option:use_cache(Host)},
@@ -112,101 +122,131 @@ mod_options(Host) ->
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           [?T("This module implements "
               "https://xmpp.org/extensions/xep-0405.html"
               "[XEP-0405: Mediated Information eXchange (MIX): "
               "Participant Server Requirements]. "
               "The module is needed if MIX compatible clients "
               "on your server are going to join MIX channels "
-              "(either on your server or on any remote servers)."), "",
+              "(either on your server or on any remote servers)."),
+           "",
            ?T("NOTE: _`mod_mix`_ is not required for this module "
               "to work, however, without 'mod_mix_pam' the MIX "
               "functionality of your local XMPP clients will be impaired.")],
       opts =>
           [{db_type,
-            #{value => "mnesia | sql",
+            #{
+              value => "mnesia | sql",
               desc =>
-                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
+                  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")
+             }},
            {use_cache,
-            #{value => "true | false",
+            #{
+              value => "true | false",
               desc =>
-                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")}},
+                  ?T("Same as top-level _`use_cache`_ option, but applied to this module only.")
+             }},
            {cache_size,
-            #{value => "pos_integer() | infinity",
+            #{
+              value => "pos_integer() | infinity",
               desc =>
-                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_size`_ option, but applied to this module only.")
+             }},
            {cache_missed,
-            #{value => "true | false",
+            #{
+              value => "true | false",
               desc =>
-                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")}},
+                  ?T("Same as top-level _`cache_missed`_ option, but applied to this module only.")
+             }},
            {cache_life_time,
-            #{value => "timeout()",
+            #{
+              value => "timeout()",
               desc =>
-                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")
+             }}]
+     }.
+
 
 -spec bounce_sm_packet({term(), stanza()}) -> {term(), stanza()}.
-bounce_sm_packet({_, #message{to = #jid{lresource = <<>>} = To,
-			      from = From,
-			      type = groupchat} = Msg} = Acc) ->
+bounce_sm_packet({_,
+                  #message{
+                    to = #jid{lresource = <<>>} = To,
+                    from = From,
+                    type = groupchat
+                   } = Msg} = Acc) ->
     case xmpp:has_subtag(Msg, #mix{}) of
-	true ->
-	    {LUser, LServer, _} = jid:tolower(To),
-	    case get_channel(To, From) of
-		{ok, _} ->
-		    lists:foreach(
-		      fun(R) ->
-			      To1 = jid:replace_resource(To, R),
-			      ejabberd_router:route(xmpp:set_to(Msg, To1))
-		      end, ejabberd_sm:get_user_resources(LUser, LServer)),
-		    {pass, Msg};
-		_ ->
-		    Acc
-	    end;
-	false ->
-	    Acc
+        true ->
+            {LUser, LServer, _} = jid:tolower(To),
+            case get_channel(To, From) of
+                {ok, _} ->
+                    lists:foreach(
+                      fun(R) ->
+                              To1 = jid:replace_resource(To, R),
+                              ejabberd_router:route(xmpp:set_to(Msg, To1))
+                      end,
+                      ejabberd_sm:get_user_resources(LUser, LServer)),
+                    {pass, Msg};
+                _ ->
+                    Acc
+            end;
+        false ->
+            Acc
     end;
 bounce_sm_packet(Acc) ->
     Acc.
 
+
 -spec disco_sm_features({error, stanza_error()} | empty | {result, [binary()]},
-			jid(), jid(), binary(), binary()) ->
-			       {error, stanza_error()} | empty | {result, [binary()]}.
+                        jid(),
+                        jid(),
+                        binary(),
+                        binary()) ->
+          {error, stanza_error()} | empty | {result, [binary()]}.
 disco_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 disco_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_MIX_PAM_0, ?NS_MIX_PAM_2 |
-	      case Acc of
-		  {result, Features} -> Features;
-		  empty -> []
-	      end]};
+    {result, [?NS_MIX_PAM_0, ?NS_MIX_PAM_2 | case Acc of
+                                                 {result, Features} -> Features;
+                                                 empty -> []
+                                             end]};
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
+
 -spec process_iq(iq()) -> iq() | ignore.
-process_iq(#iq{from = #jid{luser = U1, lserver = S1},
-	       to = #jid{luser = U2, lserver = S2}} = IQ)
+process_iq(#iq{
+             from = #jid{luser = U1, lserver = S1},
+             to = #jid{luser = U2, lserver = S2}
+            } = IQ)
   when {U1, S1} /= {U2, S2} ->
     xmpp:make_error(IQ, forbidden_query_error(IQ));
-process_iq(#iq{type = set,
-	       sub_els = [#mix_client_join{} = Join]} = IQ) ->
+process_iq(#iq{
+             type = set,
+             sub_els = [#mix_client_join{} = Join]
+            } = IQ) ->
     case Join#mix_client_join.channel of
-	undefined ->
-	    xmpp:make_error(IQ, missing_channel_error(IQ));
-	_ ->
-	    process_join(IQ)
+        undefined ->
+            xmpp:make_error(IQ, missing_channel_error(IQ));
+        _ ->
+            process_join(IQ)
     end;
-process_iq(#iq{type = set,
-	       sub_els = [#mix_client_leave{} = Leave]} = IQ) ->
+process_iq(#iq{
+             type = set,
+             sub_els = [#mix_client_leave{} = Leave]
+            } = IQ) ->
     case Leave#mix_client_leave.channel of
-	undefined ->
-	    xmpp:make_error(IQ, missing_channel_error(IQ));
-	_ ->
-	    process_leave(IQ)
+        undefined ->
+            xmpp:make_error(IQ, missing_channel_error(IQ));
+        _ ->
+            process_leave(IQ)
     end;
 process_iq(IQ) ->
     xmpp:make_error(IQ, unsupported_query_error(IQ)).
+
 
 -spec get_mix_roster_items([#roster_item{}], {binary(), binary()}) -> [#roster_item{}].
 get_mix_roster_items(Acc, {LUser, LServer}) ->
@@ -214,145 +254,181 @@ get_mix_roster_items(Acc, {LUser, LServer}) ->
     case get_channels(JID) of
         {ok, Channels} ->
             lists:map(
-                fun({ItemJID, Id}) ->
-                    #roster_item{
+              fun({ItemJID, Id}) ->
+                      #roster_item{
                         jid = ItemJID,
                         name = <<>>,
                         subscription = both,
                         ask = undefined,
                         groups = [],
                         mix_channel = #mix_roster_channel{participant_id = Id}
-                    }
-                end, Channels);
+                       }
+              end,
+              Channels);
         _ ->
             []
     end ++ Acc.
+
 
 -spec remove_user(binary(), binary()) -> ok | {error, db_failure}.
 remove_user(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     JID = jid:make(LUser, LServer),
     Chans = case Mod:get_channels(JID) of
-		{ok, Channels} ->
-		    lists:map(
-		      fun({Channel, _}) ->
-			      ejabberd_router:route(
-				#iq{from = JID,
-				    to = Channel,
-				    id = p1_rand:get_string(),
-				    type = set,
-				    sub_els = [#mix_leave{}]}),
-			      Channel
-		      end, Channels);
-		_ ->
-		    []
-	    end,
+                {ok, Channels} ->
+                    lists:map(
+                      fun({Channel, _}) ->
+                              ejabberd_router:route(
+                                #iq{
+                                  from = JID,
+                                  to = Channel,
+                                  id = p1_rand:get_string(),
+                                  type = set,
+                                  sub_els = [#mix_leave{}]
+                                 }),
+                              Channel
+                      end,
+                      Channels);
+                _ ->
+                    []
+            end,
     Mod:del_channels(jid:make(LUser, LServer)),
     lists:foreach(
       fun(Chan) ->
-	      delete_cache(Mod, JID, Chan)
-      end, Chans).
+              delete_cache(Mod, JID, Chan)
+      end,
+      Chans).
+
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 -spec process_join(iq()) -> ignore.
-process_join(#iq{from = From, lang = Lang,
-		 sub_els = [#mix_client_join{channel = Channel,
-		                             join = Join}]} = IQ) ->
+process_join(#iq{
+               from = From,
+               lang = Lang,
+               sub_els = [#mix_client_join{
+                            channel = Channel,
+                            join = Join
+                           }]
+              } = IQ) ->
     ejabberd_router:route_iq(
-      #iq{from = jid:remove_resource(From),
-	  to = Channel, type = set, sub_els = [Join]},
+      #iq{
+        from = jid:remove_resource(From),
+        to = Channel,
+        type = set,
+        sub_els = [Join]
+       },
       fun(#iq{sub_els = [El]} = ResIQ) ->
-        try xmpp:decode(El) of
-            MixJoin ->
-                process_join_result(ResIQ#iq {
-                    sub_els = [MixJoin]
-                }, IQ)
-        catch
-            _:{xmpp_codec, Reason} ->
-                Txt = xmpp:io_format_error(Reason),
-                Err = xmpp:err_bad_request(Txt, Lang),
-                ejabberd_router:route_error(IQ, Err)
-        end
+              try xmpp:decode(El) of
+                  MixJoin ->
+                      process_join_result(ResIQ#iq{
+                                            sub_els = [MixJoin]
+                                           },
+                                          IQ)
+              catch
+                  _:{xmpp_codec, Reason} ->
+                      Txt = xmpp:io_format_error(Reason),
+                      Err = xmpp:err_bad_request(Txt, Lang),
+                      ejabberd_router:route_error(IQ, Err)
+              end
       end),
     ignore.
 
+
 -spec process_leave(iq()) -> iq() | error.
-process_leave(#iq{from = From,
-		  sub_els = [#mix_client_leave{channel = Channel,
-					       leave = Leave}]} = IQ) ->
+process_leave(#iq{
+                from = From,
+                sub_els = [#mix_client_leave{
+                             channel = Channel,
+                             leave = Leave
+                            }]
+               } = IQ) ->
     case del_channel(From, Channel) of
-	ok ->
-	    ejabberd_router:route_iq(
-	      #iq{from = jid:remove_resource(From),
-		  to = Channel, type = set, sub_els = [Leave]},
-	      fun(ResIQ) -> process_leave_result(ResIQ, IQ) end),
-	    ignore;
-	{error, db_failure} ->
-	    xmpp:make_error(IQ, db_error(IQ))
+        ok ->
+            ejabberd_router:route_iq(
+              #iq{
+                from = jid:remove_resource(From),
+                to = Channel,
+                type = set,
+                sub_els = [Leave]
+               },
+              fun(ResIQ) -> process_leave_result(ResIQ, IQ) end),
+            ignore;
+        {error, db_failure} ->
+            xmpp:make_error(IQ, db_error(IQ))
     end.
 
+
 -spec process_join_result(iq(), iq()) -> ok.
-process_join_result(#iq{from = #jid{} = Channel,
-			type = result, sub_els = [#mix_join{id = ID, xmlns = XmlNs} = Join]},
-		    #iq{to = To} = IQ) ->
+process_join_result(#iq{
+                      from = #jid{} = Channel,
+                      type = result,
+                      sub_els = [#mix_join{id = ID, xmlns = XmlNs} = Join]
+                     },
+                    #iq{to = To} = IQ) ->
     case add_channel(To, Channel, ID) of
-	ok ->
-	    % Do roster push
-	    mod_roster:push_item(To, #roster_item{jid = #jid{}}, #roster_item{
-		jid = Channel,
-		name = <<>>,
-		subscription = none,
-		ask = undefined,
-		groups = [],
-		mix_channel = #mix_roster_channel{participant_id = ID}
-	    }),
-	    % send IQ result
-	    ChanID = make_channel_id(Channel, ID),
-	    Join1 = Join#mix_join{id = <<"">>, jid = ChanID},
-	    ResIQ = xmpp:make_iq_result(IQ, #mix_client_join{join = Join1, xmlns = XmlNs}),
-	    ejabberd_router:route(ResIQ);
-	{error, db_failure} ->
-	    ejabberd_router:route_error(IQ, db_error(IQ))
+        ok ->
+            % Do roster push
+            mod_roster:push_item(To,
+                                 #roster_item{jid = #jid{}},
+                                 #roster_item{
+                                   jid = Channel,
+                                   name = <<>>,
+                                   subscription = none,
+                                   ask = undefined,
+                                   groups = [],
+                                   mix_channel = #mix_roster_channel{participant_id = ID}
+                                  }),
+            % send IQ result
+            ChanID = make_channel_id(Channel, ID),
+            Join1 = Join#mix_join{id = <<"">>, jid = ChanID},
+            ResIQ = xmpp:make_iq_result(IQ, #mix_client_join{join = Join1, xmlns = XmlNs}),
+            ejabberd_router:route(ResIQ);
+        {error, db_failure} ->
+            ejabberd_router:route_error(IQ, db_error(IQ))
     end;
 process_join_result(#iq{type = error} = Err, IQ) ->
     process_iq_error(Err, IQ).
 
+
 -spec process_leave_result(iq(), iq()) -> ok.
 process_leave_result(#iq{from = Channel, type = result, sub_els = [#mix_leave{xmlns = XmlNs} = Leave]},
-		     #iq{to = User} = IQ) ->
+                     #iq{to = User} = IQ) ->
     % Do roster push
     mod_roster:push_item(User,
-	#roster_item{jid = Channel, subscription = none},
-	#roster_item{jid = Channel, subscription = remove}),
+                         #roster_item{jid = Channel, subscription = none},
+                         #roster_item{jid = Channel, subscription = remove}),
     % send iq result
     ResIQ = xmpp:make_iq_result(IQ, #mix_client_leave{leave = Leave, xmlns = XmlNs}),
     ejabberd_router:route(ResIQ);
 process_leave_result(Err, IQ) ->
     process_iq_error(Err, IQ).
 
+
 -spec process_iq_error(iq(), iq()) -> ok.
 process_iq_error(#iq{type = error} = ErrIQ, #iq{sub_els = [El]} = IQ) ->
     case xmpp:get_error(ErrIQ) of
-	undefined ->
-	    %% Not sure if this stuff is correct because
-	    %% RFC6120 section 8.3.1 bullet 4 states that
-	    %% an error stanza MUST contain an <error/> child element
-	    IQ1 = xmpp:make_iq_result(IQ, El),
-	    ejabberd_router:route(IQ1#iq{type = error});
-	Err ->
-	    ejabberd_router:route_error(IQ, Err)
+        undefined ->
+            %% Not sure if this stuff is correct because
+            %% RFC6120 section 8.3.1 bullet 4 states that
+            %% an error stanza MUST contain an <error/> child element
+            IQ1 = xmpp:make_iq_result(IQ, El),
+            ejabberd_router:route(IQ1#iq{type = error});
+        Err ->
+            ejabberd_router:route_error(IQ, Err)
     end;
 process_iq_error(timeout, IQ) ->
     Txt = ?T("Request has timed out"),
     Err = xmpp:err_recipient_unavailable(Txt, IQ#iq.lang),
     ejabberd_router:route_error(IQ, Err).
 
+
 -spec make_channel_id(jid(), binary()) -> jid().
 make_channel_id(JID, ID) ->
     {U, S, R} = jid:split(JID),
     jid:make(<<ID/binary, $#, U/binary>>, S, R).
+
 
 %%%===================================================================
 %%% Error generators
@@ -362,20 +438,24 @@ missing_channel_error(Pkt) ->
     Txt = ?T("Attribute 'channel' is required for this request"),
     xmpp:err_bad_request(Txt, xmpp:get_lang(Pkt)).
 
+
 -spec forbidden_query_error(stanza()) -> stanza_error().
 forbidden_query_error(Pkt) ->
     Txt = ?T("Query to another users is forbidden"),
     xmpp:err_forbidden(Txt, xmpp:get_lang(Pkt)).
+
 
 -spec unsupported_query_error(stanza()) -> stanza_error().
 unsupported_query_error(Pkt) ->
     Txt = ?T("No module is handling this query"),
     xmpp:err_service_unavailable(Txt, xmpp:get_lang(Pkt)).
 
+
 -spec db_error(stanza()) -> stanza_error().
 db_error(Pkt) ->
     Txt = ?T("Database failure"),
     xmpp:err_internal_server_error(Txt, xmpp:get_lang(Pkt)).
+
 
 %%%===================================================================
 %%% Database queries
@@ -385,34 +465,39 @@ get_channel(JID, Channel) ->
     {Chan, Service, _} = jid:tolower(Channel),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case use_cache(Mod, LServer) of
-	false -> Mod:get_channel(JID, Channel);
-	true ->
-	    case ets_cache:lookup(
-		   ?MIX_PAM_CACHE, {LUser, LServer, Chan, Service},
-		   fun() -> Mod:get_channel(JID, Channel) end) of
-		error -> {error, notfound};
-		Ret -> Ret
-	    end
+        false -> Mod:get_channel(JID, Channel);
+        true ->
+            case ets_cache:lookup(
+                   ?MIX_PAM_CACHE,
+                   {LUser, LServer, Chan, Service},
+                   fun() -> Mod:get_channel(JID, Channel) end) of
+                error -> {error, notfound};
+                Ret -> Ret
+            end
     end.
+
 
 get_channels(JID) ->
     {_, LServer, _} = jid:tolower(JID),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:get_channels(JID).
 
+
 add_channel(JID, Channel, ID) ->
     Mod = gen_mod:db_mod(JID#jid.lserver, ?MODULE),
     case Mod:add_channel(JID, Channel, ID) of
-	ok -> delete_cache(Mod, JID, Channel);
-	Err -> Err
+        ok -> delete_cache(Mod, JID, Channel);
+        Err -> Err
     end.
+
 
 del_channel(JID, Channel) ->
     Mod = gen_mod:db_mod(JID#jid.lserver, ?MODULE),
     case Mod:del_channel(JID, Channel) of
-	ok -> delete_cache(Mod, JID, Channel);
-	Err -> Err
+        ok -> delete_cache(Mod, JID, Channel);
+        Err -> Err
     end.
+
 
 %%%===================================================================
 %%% Cache management
@@ -420,12 +505,13 @@ del_channel(JID, Channel) ->
 -spec init_cache(module(), binary(), gen_mod:opts()) -> ok.
 init_cache(Mod, Host, Opts) ->
     case use_cache(Mod, Host) of
-	true ->
-	    CacheOpts = cache_opts(Opts),
-	    ets_cache:new(?MIX_PAM_CACHE, CacheOpts);
-	false ->
-	    ets_cache:delete(?MIX_PAM_CACHE)
+        true ->
+            CacheOpts = cache_opts(Opts),
+            ets_cache:new(?MIX_PAM_CACHE, CacheOpts);
+        false ->
+            ets_cache:delete(?MIX_PAM_CACHE)
     end.
+
 
 -spec cache_opts(gen_mod:opts()) -> [proplists:property()].
 cache_opts(Opts) ->
@@ -434,82 +520,92 @@ cache_opts(Opts) ->
     LifeTime = mod_mix_pam_opt:cache_life_time(Opts),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
+
 -spec use_cache(module(), binary()) -> boolean().
 use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 1) of
-	true -> Mod:use_cache(Host);
-	false -> mod_mix_pam_opt:use_cache(Host)
+        true -> Mod:use_cache(Host);
+        false -> mod_mix_pam_opt:use_cache(Host)
     end.
+
 
 -spec cache_nodes(module(), binary()) -> [node()].
 cache_nodes(Mod, Host) ->
     case erlang:function_exported(Mod, cache_nodes, 1) of
-	true -> Mod:cache_nodes(Host);
-	false -> ejabberd_cluster:get_nodes()
+        true -> Mod:cache_nodes(Host);
+        false -> ejabberd_cluster:get_nodes()
     end.
+
 
 -spec delete_cache(module(), jid(), jid()) -> ok.
 delete_cache(Mod, JID, Channel) ->
     {LUser, LServer, _} = jid:tolower(JID),
     {Chan, Service, _} = jid:tolower(Channel),
     case use_cache(Mod, LServer) of
-	true ->
-	    ets_cache:delete(?MIX_PAM_CACHE,
-			     {LUser, LServer, Chan, Service},
-			     cache_nodes(Mod, LServer));
-	false ->
-	    ok
+        true ->
+            ets_cache:delete(?MIX_PAM_CACHE,
+                             {LUser, LServer, Chan, Service},
+                             cache_nodes(Mod, LServer));
+        false ->
+            ok
     end.
+
 
 %%%===================================================================
 %%% Webadmin interface
 %%%===================================================================
 webadmin_user(Acc, User, Server, #request{lang = Lang}) ->
     QueueLen = case get_channels({jid:nodeprep(User), jid:nameprep(Server), <<>>}) of
-	{ok, Channels} -> length(Channels);
-	error -> -1
-    end,
+                   {ok, Channels} -> length(Channels);
+                   error -> -1
+               end,
     FQueueLen = ?C(integer_to_binary(QueueLen)),
     FQueueView = ?AC(<<"mix_channels/">>, ?T("View joined MIX channels")),
     Acc ++
-        [?XCT(<<"h3">>, ?T("Joined MIX channels:")),
-         FQueueLen,
-         ?C(<<"  |   ">>),
-         FQueueView].
+    [?XCT(<<"h3">>, ?T("Joined MIX channels:")),
+     FQueueLen,
+     ?C(<<"  |   ">>),
+     FQueueView].
+
 
 webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
     Acc ++ [{<<"mix_channels">>, <<"MIX Channels">>}].
+
 
 webadmin_page_hostuser(_, Host, U, #request{path = [<<"mix_channels">>], lang = Lang}) ->
     Res = web_mix_channels(U, Host, Lang),
     {stop, Res};
 webadmin_page_hostuser(Acc, _, _, _) -> Acc.
 
+
 web_mix_channels(User, Server, Lang) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     US = {LUser, LServer},
     Items = case get_channels({jid:nodeprep(User), jid:nameprep(Server), <<>>}) of
-	{ok, Channels} -> Channels;
-	error -> []
-    end,
+                {ok, Channels} -> Channels;
+                error -> []
+            end,
     SItems = lists:sort(Items),
     FItems = case SItems of
-        [] -> [?CT(?T("None"))];
-        _ ->
-	    THead = ?XE(<<"thead">>, [?XE(<<"tr">>, [?XCT(<<"td">>, ?T("Channel JID")),
-						     ?XCT(<<"td">>, ?T("Participant ID"))])]),
-	    Entries = lists:map(fun ({JID, ID}) ->
-				    ?XE(<<"tr">>, [
-					?XAC(<<"td">>, [{<<"class">>, <<"valign">>}], jid:encode(JID)),
-					?XAC(<<"td">>, [{<<"class">>, <<"valign">>}], ID)
-				    ])
-				end, SItems),
-	    [?XE(<<"table">>, [THead, ?XE(<<"tbody">>, Entries)])]
-    end,
+                 [] -> [?CT(?T("None"))];
+                 _ ->
+                     THead = ?XE(<<"thead">>,
+                                 [?XE(<<"tr">>,
+                                      [?XCT(<<"td">>, ?T("Channel JID")),
+                                       ?XCT(<<"td">>, ?T("Participant ID"))])]),
+                     Entries = lists:map(fun({JID, ID}) ->
+                                                 ?XE(<<"tr">>,
+                                                     [?XAC(<<"td">>, [{<<"class">>, <<"valign">>}], jid:encode(JID)),
+                                                      ?XAC(<<"td">>, [{<<"class">>, <<"valign">>}], ID)])
+                                         end,
+                                         SItems),
+                     [?XE(<<"table">>, [THead, ?XE(<<"tbody">>, Entries)])]
+             end,
     PageTitle = str:translate_and_format(Lang, ?T("Joined MIX channels of ~ts"), [us_to_list(US)]),
-    (?H1GL(PageTitle, <<"modules/#mod_mix_pam">>, <<"mod_mix_pam">>))
-        ++ FItems.
+    (?H1GL(PageTitle, <<"modules/#mod_mix_pam">>, <<"mod_mix_pam">>)) ++
+    FItems.
+
 
 us_to_list({User, Server}) ->
     jid:encode({User, Server, <<"">>}).

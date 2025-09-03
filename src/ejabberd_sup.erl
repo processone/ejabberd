@@ -32,42 +32,45 @@
 
 -define(SHUTDOWN_TIMEOUT, timer:minutes(1)).
 
+
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
+
 init([]) ->
     {ok, {{one_for_one, 10, 1},
-	  [worker(ejabberd_systemd),
-	   worker(ejabberd_hooks),
-	   worker(ejabberd_cluster),
-	   worker(translate),
-	   worker(ejabberd_access_permissions),
-	   worker(ejabberd_commands),
-	   worker(ejabberd_ctl),
-	   worker(ejabberd_admin),
-	   supervisor(ejabberd_listener),
-	   worker(ejabberd_pkix),
-	   worker(acl),
-	   worker(ejabberd_shaper),
-	   supervisor(ejabberd_db_sup),
-	   supervisor(ejabberd_backend_sup),
-	   supervisor(ejabberd_sql_sup),
-	   worker(ejabberd_iq),
-	   worker(ejabberd_router),
-	   worker(ejabberd_router_multicast),
-	   worker(ejabberd_local),
-	   worker(ejabberd_sm),
-	   simple_supervisor(ejabberd_s2s_in),
-	   simple_supervisor(ejabberd_s2s_out),
-	   worker(ejabberd_s2s),
-	   simple_supervisor(ejabberd_service),
-	   worker(ext_mod),
-	   supervisor(ejabberd_gen_mod_sup, gen_mod),
-	   worker(ejabberd_captcha),
-	   worker(ejabberd_acme),
-	   worker(ejabberd_auth),
-	   worker(ejabberd_oauth),
-	   worker(ejabberd_batch)]}}.
+          [worker(ejabberd_systemd),
+           worker(ejabberd_hooks),
+           worker(ejabberd_cluster),
+           worker(translate),
+           worker(ejabberd_access_permissions),
+           worker(ejabberd_commands),
+           worker(ejabberd_ctl),
+           worker(ejabberd_admin),
+           supervisor(ejabberd_listener),
+           worker(ejabberd_pkix),
+           worker(acl),
+           worker(ejabberd_shaper),
+           supervisor(ejabberd_db_sup),
+           supervisor(ejabberd_backend_sup),
+           supervisor(ejabberd_sql_sup),
+           worker(ejabberd_iq),
+           worker(ejabberd_router),
+           worker(ejabberd_router_multicast),
+           worker(ejabberd_local),
+           worker(ejabberd_sm),
+           simple_supervisor(ejabberd_s2s_in),
+           simple_supervisor(ejabberd_s2s_out),
+           worker(ejabberd_s2s),
+           simple_supervisor(ejabberd_service),
+           worker(ext_mod),
+           supervisor(ejabberd_gen_mod_sup, gen_mod),
+           worker(ejabberd_captcha),
+           worker(ejabberd_acme),
+           worker(ejabberd_auth),
+           worker(ejabberd_oauth),
+           worker(ejabberd_batch)]}}.
+
 
 -spec stop_child(atom()) -> ok.
 stop_child(Name) ->
@@ -75,19 +78,27 @@ stop_child(Name) ->
     _ = supervisor:delete_child(?MODULE, Name),
     ok.
 
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 worker(Mod) ->
     {Mod, {Mod, start_link, []}, permanent, ?SHUTDOWN_TIMEOUT, worker, [Mod]}.
 
+
 supervisor(Mod) ->
     supervisor(Mod, Mod).
+
 
 supervisor(Name, Mod) ->
     {Name, {Mod, start_link, []}, permanent, infinity, supervisor, [Mod]}.
 
+
 simple_supervisor(Mod) ->
     Name = list_to_atom(atom_to_list(Mod) ++ "_sup"),
-    {Name, {ejabberd_tmp_sup, start_link, [Name, Mod]},
-     permanent, infinity, supervisor, [ejabberd_tmp_sup]}.
+    {Name,
+     {ejabberd_tmp_sup, start_link, [Name, Mod]},
+     permanent,
+     infinity,
+     supervisor,
+     [ejabberd_tmp_sup]}.

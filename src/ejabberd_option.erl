@@ -180,1025 +180,1412 @@
 -export([websocket_ping_interval/0]).
 -export([websocket_timeout/0]).
 
--spec access_rules() -> [{atom(),acl:access()}].
+
+-spec access_rules() -> [{atom(), acl:access()}].
 access_rules() ->
     access_rules(global).
--spec access_rules(global | binary()) -> [{atom(),acl:access()}].
+
+
+-spec access_rules(global | binary()) -> [{atom(), acl:access()}].
 access_rules(Host) ->
     ejabberd_config:get_option({access_rules, Host}).
 
--spec acl() -> [{atom(),[acl:acl_rule()]}].
+
+-spec acl() -> [{atom(), [acl:acl_rule()]}].
 acl() ->
     acl(global).
--spec acl(global | binary()) -> [{atom(),[acl:acl_rule()]}].
+
+
+-spec acl(global | binary()) -> [{atom(), [acl:acl_rule()]}].
 acl(Host) ->
     ejabberd_config:get_option({acl, Host}).
 
--spec acme() -> #{'auto'=>boolean(), 'ca_url'=>binary(), 'cert_type'=>'ec' | 'rsa', 'contact'=>[binary()]}.
+
+-spec acme() -> #{'auto' => boolean(), 'ca_url' => binary(), 'cert_type' => 'ec' | 'rsa', 'contact' => [binary()]}.
 acme() ->
     ejabberd_config:get_option({acme, global}).
+
 
 -spec allow_contrib_modules() -> boolean().
 allow_contrib_modules() ->
     ejabberd_config:get_option({allow_contrib_modules, global}).
 
+
 -spec allow_multiple_connections() -> boolean().
 allow_multiple_connections() ->
     allow_multiple_connections(global).
+
+
 -spec allow_multiple_connections(global | binary()) -> boolean().
 allow_multiple_connections(Host) ->
     ejabberd_config:get_option({allow_multiple_connections, Host}).
 
+
 -spec anonymous_protocol() -> 'both' | 'login_anon' | 'sasl_anon'.
 anonymous_protocol() ->
     anonymous_protocol(global).
+
+
 -spec anonymous_protocol(global | binary()) -> 'both' | 'login_anon' | 'sasl_anon'.
 anonymous_protocol(Host) ->
     ejabberd_config:get_option({anonymous_protocol, Host}).
+
 
 -spec api_permissions() -> [ejabberd_access_permissions:permission()].
 api_permissions() ->
     ejabberd_config:get_option({api_permissions, global}).
 
--spec append_host_config() -> [{binary(),any()}].
+
+-spec append_host_config() -> [{binary(), any()}].
 append_host_config() ->
     ejabberd_config:get_option({append_host_config, global}).
+
 
 -spec auth_cache_life_time() -> 'infinity' | pos_integer().
 auth_cache_life_time() ->
     ejabberd_config:get_option({auth_cache_life_time, global}).
 
+
 -spec auth_cache_missed() -> boolean().
 auth_cache_missed() ->
     ejabberd_config:get_option({auth_cache_missed, global}).
+
 
 -spec auth_cache_size() -> 'infinity' | pos_integer().
 auth_cache_size() ->
     ejabberd_config:get_option({auth_cache_size, global}).
 
+
 -spec auth_external_user_exists_check() -> boolean().
 auth_external_user_exists_check() ->
     auth_external_user_exists_check(global).
+
+
 -spec auth_external_user_exists_check(global | binary()) -> boolean().
 auth_external_user_exists_check(Host) ->
     ejabberd_config:get_option({auth_external_user_exists_check, Host}).
 
+
 -spec auth_method() -> [atom()].
 auth_method() ->
     auth_method(global).
+
+
 -spec auth_method(global | binary()) -> [atom()].
 auth_method(Host) ->
     ejabberd_config:get_option({auth_method, Host}).
 
--spec auth_opts() -> [{any(),any()}].
+
+-spec auth_opts() -> [{any(), any()}].
 auth_opts() ->
     auth_opts(global).
--spec auth_opts(global | binary()) -> [{any(),any()}].
+
+
+-spec auth_opts(global | binary()) -> [{any(), any()}].
 auth_opts(Host) ->
     ejabberd_config:get_option({auth_opts, Host}).
+
 
 -spec auth_password_format() -> 'plain' | 'scram'.
 auth_password_format() ->
     auth_password_format(global).
+
+
 -spec auth_password_format(global | binary()) -> 'plain' | 'scram'.
 auth_password_format(Host) ->
     ejabberd_config:get_option({auth_password_format, Host}).
 
+
 -spec auth_password_types_hidden_in_sasl1() -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
 auth_password_types_hidden_in_sasl1() ->
     auth_password_types_hidden_in_sasl1(global).
+
+
 -spec auth_password_types_hidden_in_sasl1(global | binary()) -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
 auth_password_types_hidden_in_sasl1(Host) ->
     ejabberd_config:get_option({auth_password_types_hidden_in_sasl1, Host}).
 
+
 -spec auth_scram_hash() -> 'sha' | 'sha256' | 'sha512'.
 auth_scram_hash() ->
     auth_scram_hash(global).
+
+
 -spec auth_scram_hash(global | binary()) -> 'sha' | 'sha256' | 'sha512'.
 auth_scram_hash(Host) ->
     ejabberd_config:get_option({auth_scram_hash, Host}).
 
+
 -spec auth_stored_password_types() -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
 auth_stored_password_types() ->
     auth_stored_password_types(global).
+
+
 -spec auth_stored_password_types(global | binary()) -> ['plain' | 'scram_sha1' | 'scram_sha256' | 'scram_sha512'].
 auth_stored_password_types(Host) ->
     ejabberd_config:get_option({auth_stored_password_types, Host}).
 
+
 -spec auth_use_cache() -> boolean().
 auth_use_cache() ->
     auth_use_cache(global).
+
+
 -spec auth_use_cache(global | binary()) -> boolean().
 auth_use_cache(Host) ->
     ejabberd_config:get_option({auth_use_cache, Host}).
 
+
 -spec c2s_cafile() -> 'undefined' | binary().
 c2s_cafile() ->
     c2s_cafile(global).
+
+
 -spec c2s_cafile(global | binary()) -> 'undefined' | binary().
 c2s_cafile(Host) ->
     ejabberd_config:get_option({c2s_cafile, Host}).
 
+
 -spec c2s_ciphers() -> 'undefined' | binary().
 c2s_ciphers() ->
     c2s_ciphers(global).
+
+
 -spec c2s_ciphers(global | binary()) -> 'undefined' | binary().
 c2s_ciphers(Host) ->
     ejabberd_config:get_option({c2s_ciphers, Host}).
 
+
 -spec c2s_dhfile() -> 'undefined' | binary().
 c2s_dhfile() ->
     c2s_dhfile(global).
+
+
 -spec c2s_dhfile(global | binary()) -> 'undefined' | binary().
 c2s_dhfile(Host) ->
     ejabberd_config:get_option({c2s_dhfile, Host}).
 
+
 -spec c2s_protocol_options() -> 'undefined' | binary().
 c2s_protocol_options() ->
     c2s_protocol_options(global).
+
+
 -spec c2s_protocol_options(global | binary()) -> 'undefined' | binary().
 c2s_protocol_options(Host) ->
     ejabberd_config:get_option({c2s_protocol_options, Host}).
 
+
 -spec c2s_tls_compression() -> 'false' | 'true' | 'undefined'.
 c2s_tls_compression() ->
     c2s_tls_compression(global).
+
+
 -spec c2s_tls_compression(global | binary()) -> 'false' | 'true' | 'undefined'.
 c2s_tls_compression(Host) ->
     ejabberd_config:get_option({c2s_tls_compression, Host}).
+
 
 -spec ca_file() -> binary().
 ca_file() ->
     ejabberd_config:get_option({ca_file, global}).
 
+
 -spec cache_life_time() -> 'infinity' | pos_integer().
 cache_life_time() ->
     cache_life_time(global).
+
+
 -spec cache_life_time(global | binary()) -> 'infinity' | pos_integer().
 cache_life_time(Host) ->
     ejabberd_config:get_option({cache_life_time, Host}).
 
+
 -spec cache_missed() -> boolean().
 cache_missed() ->
     cache_missed(global).
+
+
 -spec cache_missed(global | binary()) -> boolean().
 cache_missed(Host) ->
     ejabberd_config:get_option({cache_missed, Host}).
 
+
 -spec cache_size() -> 'infinity' | pos_integer().
 cache_size() ->
     cache_size(global).
+
+
 -spec cache_size(global | binary()) -> 'infinity' | pos_integer().
 cache_size(Host) ->
     ejabberd_config:get_option({cache_size, Host}).
+
 
 -spec captcha_cmd() -> 'undefined' | binary().
 captcha_cmd() ->
     ejabberd_config:get_option({captcha_cmd, global}).
 
+
 -spec captcha_host() -> binary().
 captcha_host() ->
     ejabberd_config:get_option({captcha_host, global}).
+
 
 -spec captcha_limit() -> 'infinity' | pos_integer().
 captcha_limit() ->
     ejabberd_config:get_option({captcha_limit, global}).
 
+
 -spec captcha_url() -> 'auto' | 'undefined' | binary().
 captcha_url() ->
     ejabberd_config:get_option({captcha_url, global}).
+
 
 -spec certfiles() -> 'undefined' | [binary()].
 certfiles() ->
     ejabberd_config:get_option({certfiles, global}).
 
+
 -spec cluster_backend() -> atom().
 cluster_backend() ->
     ejabberd_config:get_option({cluster_backend, global}).
+
 
 -spec cluster_nodes() -> [atom()].
 cluster_nodes() ->
     ejabberd_config:get_option({cluster_nodes, global}).
 
+
 -spec default_db() -> 'mnesia' | 'sql'.
 default_db() ->
     default_db(global).
+
+
 -spec default_db(global | binary()) -> 'mnesia' | 'sql'.
 default_db(Host) ->
     ejabberd_config:get_option({default_db, Host}).
 
+
 -spec default_ram_db() -> 'mnesia' | 'redis' | 'sql'.
 default_ram_db() ->
     default_ram_db(global).
+
+
 -spec default_ram_db(global | binary()) -> 'mnesia' | 'redis' | 'sql'.
 default_ram_db(Host) ->
     ejabberd_config:get_option({default_ram_db, Host}).
 
+
 -spec define_keyword() -> any().
 define_keyword() ->
     define_keyword(global).
+
+
 -spec define_keyword(global | binary()) -> any().
 define_keyword(Host) ->
     ejabberd_config:get_option({define_keyword, Host}).
+
 
 -spec define_macro() -> any().
 define_macro() ->
     ejabberd_config:get_option({define_macro, global}).
 
+
 -spec disable_sasl_mechanisms() -> [binary()].
 disable_sasl_mechanisms() ->
     disable_sasl_mechanisms(global).
+
+
 -spec disable_sasl_mechanisms(global | binary()) -> [binary()].
 disable_sasl_mechanisms(Host) ->
     ejabberd_config:get_option({disable_sasl_mechanisms, Host}).
 
+
 -spec disable_sasl_scram_downgrade_protection() -> boolean().
 disable_sasl_scram_downgrade_protection() ->
     disable_sasl_scram_downgrade_protection(global).
+
+
 -spec disable_sasl_scram_downgrade_protection(global | binary()) -> boolean().
 disable_sasl_scram_downgrade_protection(Host) ->
     ejabberd_config:get_option({disable_sasl_scram_downgrade_protection, Host}).
 
--spec domain_balancing() -> #{binary()=>#{'component_number'=>1..1114111, 'type'=>'bare_destination' | 'bare_source' | 'destination' | 'random' | 'source'}}.
+
+-spec domain_balancing() -> #{binary() => #{'component_number' => 1..1114111, 'type' => 'bare_destination' | 'bare_source' | 'destination' | 'random' | 'source'}}.
 domain_balancing() ->
     ejabberd_config:get_option({domain_balancing, global}).
+
 
 -spec ext_api_headers() -> binary().
 ext_api_headers() ->
     ext_api_headers(global).
+
+
 -spec ext_api_headers(global | binary()) -> binary().
 ext_api_headers(Host) ->
     ejabberd_config:get_option({ext_api_headers, Host}).
 
+
 -spec ext_api_http_pool_size() -> pos_integer().
 ext_api_http_pool_size() ->
     ext_api_http_pool_size(global).
+
+
 -spec ext_api_http_pool_size(global | binary()) -> pos_integer().
 ext_api_http_pool_size(Host) ->
     ejabberd_config:get_option({ext_api_http_pool_size, Host}).
+
 
 -spec ext_api_path_oauth() -> binary().
 ext_api_path_oauth() ->
     ejabberd_config:get_option({ext_api_path_oauth, global}).
 
+
 -spec ext_api_url() -> binary().
 ext_api_url() ->
     ext_api_url(global).
+
+
 -spec ext_api_url(global | binary()) -> binary().
 ext_api_url(Host) ->
     ejabberd_config:get_option({ext_api_url, Host}).
 
+
 -spec extauth_pool_name() -> 'undefined' | binary().
 extauth_pool_name() ->
     extauth_pool_name(global).
+
+
 -spec extauth_pool_name(global | binary()) -> 'undefined' | binary().
 extauth_pool_name(Host) ->
     ejabberd_config:get_option({extauth_pool_name, Host}).
 
+
 -spec extauth_pool_size() -> 'undefined' | pos_integer().
 extauth_pool_size() ->
     extauth_pool_size(global).
+
+
 -spec extauth_pool_size(global | binary()) -> 'undefined' | pos_integer().
 extauth_pool_size(Host) ->
     ejabberd_config:get_option({extauth_pool_size, Host}).
 
+
 -spec extauth_program() -> 'undefined' | string().
 extauth_program() ->
     extauth_program(global).
+
+
 -spec extauth_program(global | binary()) -> 'undefined' | string().
 extauth_program(Host) ->
     ejabberd_config:get_option({extauth_program, Host}).
+
 
 -spec fqdn() -> [binary()].
 fqdn() ->
     ejabberd_config:get_option({fqdn, global}).
 
+
 -spec hide_sensitive_log_data() -> boolean().
 hide_sensitive_log_data() ->
     hide_sensitive_log_data(global).
+
+
 -spec hide_sensitive_log_data(global | binary()) -> boolean().
 hide_sensitive_log_data(Host) ->
     ejabberd_config:get_option({hide_sensitive_log_data, Host}).
 
--spec host_config() -> [{binary(),any()}].
+
+-spec host_config() -> [{binary(), any()}].
 host_config() ->
     ejabberd_config:get_option({host_config, global}).
 
--spec hosts() -> [binary(),...].
+
+-spec hosts() -> [binary(), ...].
 hosts() ->
     ejabberd_config:get_option({hosts, global}).
 
--spec hosts_alias() -> [{binary(),binary()}].
+
+-spec hosts_alias() -> [{binary(), binary()}].
 hosts_alias() ->
     ejabberd_config:get_option({hosts_alias, global}).
+
 
 -spec include_config_file() -> any().
 include_config_file() ->
     include_config_file(global).
+
+
 -spec include_config_file(global | binary()) -> any().
 include_config_file(Host) ->
     ejabberd_config:get_option({include_config_file, Host}).
+
 
 -spec install_contrib_modules() -> [atom()].
 install_contrib_modules() ->
     ejabberd_config:get_option({install_contrib_modules, global}).
 
+
 -spec jwt_auth_only_rule() -> atom().
 jwt_auth_only_rule() ->
     jwt_auth_only_rule(global).
+
+
 -spec jwt_auth_only_rule(global | binary()) -> atom().
 jwt_auth_only_rule(Host) ->
     ejabberd_config:get_option({jwt_auth_only_rule, Host}).
 
+
 -spec jwt_jid_field() -> binary().
 jwt_jid_field() ->
     jwt_jid_field(global).
+
+
 -spec jwt_jid_field(global | binary()) -> binary().
 jwt_jid_field(Host) ->
     ejabberd_config:get_option({jwt_jid_field, Host}).
 
+
 -spec jwt_key() -> jose_jwk:key() | 'undefined'.
 jwt_key() ->
     jwt_key(global).
+
+
 -spec jwt_key(global | binary()) -> jose_jwk:key() | 'undefined'.
 jwt_key(Host) ->
     ejabberd_config:get_option({jwt_key, Host}).
 
+
 -spec language() -> binary().
 language() ->
     language(global).
+
+
 -spec language(global | binary()) -> binary().
 language(Host) ->
     ejabberd_config:get_option({language, Host}).
 
+
 -spec ldap_backups() -> [binary()].
 ldap_backups() ->
     ldap_backups(global).
+
+
 -spec ldap_backups(global | binary()) -> [binary()].
 ldap_backups(Host) ->
     ejabberd_config:get_option({ldap_backups, Host}).
 
+
 -spec ldap_base() -> binary().
 ldap_base() ->
     ldap_base(global).
+
+
 -spec ldap_base(global | binary()) -> binary().
 ldap_base(Host) ->
     ejabberd_config:get_option({ldap_base, Host}).
 
+
 -spec ldap_deref_aliases() -> 'always' | 'finding' | 'never' | 'searching'.
 ldap_deref_aliases() ->
     ldap_deref_aliases(global).
+
+
 -spec ldap_deref_aliases(global | binary()) -> 'always' | 'finding' | 'never' | 'searching'.
 ldap_deref_aliases(Host) ->
     ejabberd_config:get_option({ldap_deref_aliases, Host}).
 
--spec ldap_dn_filter() -> {binary(),[binary()]}.
+
+-spec ldap_dn_filter() -> {binary(), [binary()]}.
 ldap_dn_filter() ->
     ldap_dn_filter(global).
--spec ldap_dn_filter(global | binary()) -> {binary(),[binary()]}.
+
+
+-spec ldap_dn_filter(global | binary()) -> {binary(), [binary()]}.
 ldap_dn_filter(Host) ->
     ejabberd_config:get_option({ldap_dn_filter, Host}).
+
 
 -spec ldap_encrypt() -> 'none' | 'starttls' | 'tls'.
 ldap_encrypt() ->
     ldap_encrypt(global).
+
+
 -spec ldap_encrypt(global | binary()) -> 'none' | 'starttls' | 'tls'.
 ldap_encrypt(Host) ->
     ejabberd_config:get_option({ldap_encrypt, Host}).
 
+
 -spec ldap_filter() -> binary().
 ldap_filter() ->
     ldap_filter(global).
+
+
 -spec ldap_filter(global | binary()) -> binary().
 ldap_filter(Host) ->
     ejabberd_config:get_option({ldap_filter, Host}).
 
+
 -spec ldap_password() -> binary().
 ldap_password() ->
     ldap_password(global).
+
+
 -spec ldap_password(global | binary()) -> binary().
 ldap_password(Host) ->
     ejabberd_config:get_option({ldap_password, Host}).
 
+
 -spec ldap_port() -> 1..1114111.
 ldap_port() ->
     ldap_port(global).
+
+
 -spec ldap_port(global | binary()) -> 1..1114111.
 ldap_port(Host) ->
     ejabberd_config:get_option({ldap_port, Host}).
 
+
 -spec ldap_rootdn() -> binary().
 ldap_rootdn() ->
     ldap_rootdn(global).
+
+
 -spec ldap_rootdn(global | binary()) -> binary().
 ldap_rootdn(Host) ->
     ejabberd_config:get_option({ldap_rootdn, Host}).
 
+
 -spec ldap_servers() -> [binary()].
 ldap_servers() ->
     ldap_servers(global).
+
+
 -spec ldap_servers(global | binary()) -> [binary()].
 ldap_servers(Host) ->
     ejabberd_config:get_option({ldap_servers, Host}).
 
+
 -spec ldap_tls_cacertfile() -> 'undefined' | binary().
 ldap_tls_cacertfile() ->
     ldap_tls_cacertfile(global).
+
+
 -spec ldap_tls_cacertfile(global | binary()) -> 'undefined' | binary().
 ldap_tls_cacertfile(Host) ->
     ejabberd_config:get_option({ldap_tls_cacertfile, Host}).
 
+
 -spec ldap_tls_certfile() -> 'undefined' | binary().
 ldap_tls_certfile() ->
     ldap_tls_certfile(global).
+
+
 -spec ldap_tls_certfile(global | binary()) -> 'undefined' | binary().
 ldap_tls_certfile(Host) ->
     ejabberd_config:get_option({ldap_tls_certfile, Host}).
 
+
 -spec ldap_tls_depth() -> 'undefined' | non_neg_integer().
 ldap_tls_depth() ->
     ldap_tls_depth(global).
+
+
 -spec ldap_tls_depth(global | binary()) -> 'undefined' | non_neg_integer().
 ldap_tls_depth(Host) ->
     ejabberd_config:get_option({ldap_tls_depth, Host}).
 
+
 -spec ldap_tls_verify() -> 'false' | 'hard' | 'soft'.
 ldap_tls_verify() ->
     ldap_tls_verify(global).
+
+
 -spec ldap_tls_verify(global | binary()) -> 'false' | 'hard' | 'soft'.
 ldap_tls_verify(Host) ->
     ejabberd_config:get_option({ldap_tls_verify, Host}).
 
--spec ldap_uids() -> [{binary(),binary()}].
+
+-spec ldap_uids() -> [{binary(), binary()}].
 ldap_uids() ->
     ldap_uids(global).
--spec ldap_uids(global | binary()) -> [{binary(),binary()}].
+
+
+-spec ldap_uids(global | binary()) -> [{binary(), binary()}].
 ldap_uids(Host) ->
     ejabberd_config:get_option({ldap_uids, Host}).
+
 
 -spec listen() -> [ejabberd_listener:listener()].
 listen() ->
     ejabberd_config:get_option({listen, global}).
 
+
 -spec log_burst_limit_count() -> pos_integer().
 log_burst_limit_count() ->
     ejabberd_config:get_option({log_burst_limit_count, global}).
+
 
 -spec log_burst_limit_window_time() -> pos_integer().
 log_burst_limit_window_time() ->
     ejabberd_config:get_option({log_burst_limit_window_time, global}).
 
+
 -spec log_modules_fully() -> [atom()].
 log_modules_fully() ->
     ejabberd_config:get_option({log_modules_fully, global}).
+
 
 -spec log_rotate_count() -> non_neg_integer().
 log_rotate_count() ->
     ejabberd_config:get_option({log_rotate_count, global}).
 
+
 -spec log_rotate_size() -> 'infinity' | pos_integer().
 log_rotate_size() ->
     ejabberd_config:get_option({log_rotate_size, global}).
+
 
 -spec loglevel() -> ejabberd_logger:loglevel().
 loglevel() ->
     ejabberd_config:get_option({loglevel, global}).
 
+
 -spec max_fsm_queue() -> 'undefined' | pos_integer().
 max_fsm_queue() ->
     max_fsm_queue(global).
+
+
 -spec max_fsm_queue(global | binary()) -> 'undefined' | pos_integer().
 max_fsm_queue(Host) ->
     ejabberd_config:get_option({max_fsm_queue, Host}).
 
--spec modules() -> [{module(),gen_mod:opts(),integer()}].
+
+-spec modules() -> [{module(), gen_mod:opts(), integer()}].
 modules() ->
     modules(global).
--spec modules(global | binary()) -> [{module(),gen_mod:opts(),integer()}].
+
+
+-spec modules(global | binary()) -> [{module(), gen_mod:opts(), integer()}].
 modules(Host) ->
     ejabberd_config:get_option({modules, Host}).
+
 
 -spec negotiation_timeout() -> pos_integer().
 negotiation_timeout() ->
     ejabberd_config:get_option({negotiation_timeout, global}).
 
+
 -spec net_ticktime() -> pos_integer().
 net_ticktime() ->
     ejabberd_config:get_option({net_ticktime, global}).
+
 
 -spec new_sql_schema() -> boolean().
 new_sql_schema() ->
     ejabberd_config:get_option({new_sql_schema, global}).
 
+
 -spec oauth_access() -> 'none' | acl:acl().
 oauth_access() ->
     oauth_access(global).
+
+
 -spec oauth_access(global | binary()) -> 'none' | acl:acl().
 oauth_access(Host) ->
     ejabberd_config:get_option({oauth_access, Host}).
+
 
 -spec oauth_cache_life_time() -> 'infinity' | pos_integer().
 oauth_cache_life_time() ->
     ejabberd_config:get_option({oauth_cache_life_time, global}).
 
+
 -spec oauth_cache_missed() -> boolean().
 oauth_cache_missed() ->
     ejabberd_config:get_option({oauth_cache_missed, global}).
+
 
 -spec oauth_cache_rest_failure_life_time() -> 'infinity' | pos_integer().
 oauth_cache_rest_failure_life_time() ->
     ejabberd_config:get_option({oauth_cache_rest_failure_life_time, global}).
 
+
 -spec oauth_cache_size() -> 'infinity' | pos_integer().
 oauth_cache_size() ->
     ejabberd_config:get_option({oauth_cache_size, global}).
 
+
 -spec oauth_client_id_check() -> 'allow' | 'db' | 'deny'.
 oauth_client_id_check() ->
     oauth_client_id_check(global).
+
+
 -spec oauth_client_id_check(global | binary()) -> 'allow' | 'db' | 'deny'.
 oauth_client_id_check(Host) ->
     ejabberd_config:get_option({oauth_client_id_check, Host}).
+
 
 -spec oauth_db_type() -> atom().
 oauth_db_type() ->
     ejabberd_config:get_option({oauth_db_type, global}).
 
+
 -spec oauth_expire() -> pos_integer().
 oauth_expire() ->
     ejabberd_config:get_option({oauth_expire, global}).
+
 
 -spec oauth_use_cache() -> boolean().
 oauth_use_cache() ->
     ejabberd_config:get_option({oauth_use_cache, global}).
 
+
 -spec oom_killer() -> boolean().
 oom_killer() ->
     ejabberd_config:get_option({oom_killer, global}).
+
 
 -spec oom_queue() -> pos_integer().
 oom_queue() ->
     ejabberd_config:get_option({oom_queue, global}).
 
+
 -spec oom_watermark() -> 1..255.
 oom_watermark() ->
     ejabberd_config:get_option({oom_watermark, global}).
 
--spec outgoing_s2s_families() -> ['inet' | 'inet6',...].
+
+-spec outgoing_s2s_families() -> ['inet' | 'inet6', ...].
 outgoing_s2s_families() ->
     outgoing_s2s_families(global).
--spec outgoing_s2s_families(global | binary()) -> ['inet' | 'inet6',...].
+
+
+-spec outgoing_s2s_families(global | binary()) -> ['inet' | 'inet6', ...].
 outgoing_s2s_families(Host) ->
     ejabberd_config:get_option({outgoing_s2s_families, Host}).
+
 
 -spec outgoing_s2s_ipv4_address() -> 'undefined' | inet:ip4_address().
 outgoing_s2s_ipv4_address() ->
     outgoing_s2s_ipv4_address(global).
+
+
 -spec outgoing_s2s_ipv4_address(global | binary()) -> 'undefined' | inet:ip4_address().
 outgoing_s2s_ipv4_address(Host) ->
     ejabberd_config:get_option({outgoing_s2s_ipv4_address, Host}).
 
+
 -spec outgoing_s2s_ipv6_address() -> 'undefined' | inet:ip6_address().
 outgoing_s2s_ipv6_address() ->
     outgoing_s2s_ipv6_address(global).
+
+
 -spec outgoing_s2s_ipv6_address(global | binary()) -> 'undefined' | inet:ip6_address().
 outgoing_s2s_ipv6_address(Host) ->
     ejabberd_config:get_option({outgoing_s2s_ipv6_address, Host}).
 
+
 -spec outgoing_s2s_port() -> 1..1114111.
 outgoing_s2s_port() ->
     outgoing_s2s_port(global).
+
+
 -spec outgoing_s2s_port(global | binary()) -> 1..1114111.
 outgoing_s2s_port(Host) ->
     ejabberd_config:get_option({outgoing_s2s_port, Host}).
 
+
 -spec outgoing_s2s_timeout() -> 'infinity' | pos_integer().
 outgoing_s2s_timeout() ->
     outgoing_s2s_timeout(global).
+
+
 -spec outgoing_s2s_timeout(global | binary()) -> 'infinity' | pos_integer().
 outgoing_s2s_timeout(Host) ->
     ejabberd_config:get_option({outgoing_s2s_timeout, Host}).
 
+
 -spec pam_service() -> binary().
 pam_service() ->
     pam_service(global).
+
+
 -spec pam_service(global | binary()) -> binary().
 pam_service(Host) ->
     ejabberd_config:get_option({pam_service, Host}).
 
+
 -spec pam_userinfotype() -> 'jid' | 'username'.
 pam_userinfotype() ->
     pam_userinfotype(global).
+
+
 -spec pam_userinfotype(global | binary()) -> 'jid' | 'username'.
 pam_userinfotype(Host) ->
     ejabberd_config:get_option({pam_userinfotype, Host}).
 
+
 -spec pgsql_users_number_estimate() -> boolean().
 pgsql_users_number_estimate() ->
     pgsql_users_number_estimate(global).
+
+
 -spec pgsql_users_number_estimate(global | binary()) -> boolean().
 pgsql_users_number_estimate(Host) ->
     ejabberd_config:get_option({pgsql_users_number_estimate, Host}).
+
 
 -spec queue_dir() -> 'undefined' | binary().
 queue_dir() ->
     ejabberd_config:get_option({queue_dir, global}).
 
+
 -spec queue_type() -> 'file' | 'ram'.
 queue_type() ->
     queue_type(global).
+
+
 -spec queue_type(global | binary()) -> 'file' | 'ram'.
 queue_type(Host) ->
     ejabberd_config:get_option({queue_type, Host}).
+
 
 -spec redis_connect_timeout() -> pos_integer().
 redis_connect_timeout() ->
     ejabberd_config:get_option({redis_connect_timeout, global}).
 
+
 -spec redis_db() -> non_neg_integer().
 redis_db() ->
     ejabberd_config:get_option({redis_db, global}).
+
 
 -spec redis_password() -> string().
 redis_password() ->
     ejabberd_config:get_option({redis_password, global}).
 
+
 -spec redis_pool_size() -> pos_integer().
 redis_pool_size() ->
     ejabberd_config:get_option({redis_pool_size, global}).
+
 
 -spec redis_port() -> 1..1114111.
 redis_port() ->
     ejabberd_config:get_option({redis_port, global}).
 
+
 -spec redis_queue_type() -> 'file' | 'ram'.
 redis_queue_type() ->
     ejabberd_config:get_option({redis_queue_type, global}).
+
 
 -spec redis_server() -> string().
 redis_server() ->
     ejabberd_config:get_option({redis_server, global}).
 
+
 -spec registration_timeout() -> 'infinity' | pos_integer().
 registration_timeout() ->
     ejabberd_config:get_option({registration_timeout, global}).
 
+
 -spec resource_conflict() -> 'acceptnew' | 'closenew' | 'closeold' | 'setresource'.
 resource_conflict() ->
     resource_conflict(global).
+
+
 -spec resource_conflict(global | binary()) -> 'acceptnew' | 'closenew' | 'closeold' | 'setresource'.
 resource_conflict(Host) ->
     ejabberd_config:get_option({resource_conflict, Host}).
 
+
 -spec rest_proxy() -> binary().
 rest_proxy() ->
     rest_proxy(global).
+
+
 -spec rest_proxy(global | binary()) -> binary().
 rest_proxy(Host) ->
     ejabberd_config:get_option({rest_proxy, Host}).
 
+
 -spec rest_proxy_password() -> string().
 rest_proxy_password() ->
     rest_proxy_password(global).
+
+
 -spec rest_proxy_password(global | binary()) -> string().
 rest_proxy_password(Host) ->
     ejabberd_config:get_option({rest_proxy_password, Host}).
 
+
 -spec rest_proxy_port() -> char().
 rest_proxy_port() ->
     rest_proxy_port(global).
+
+
 -spec rest_proxy_port(global | binary()) -> char().
 rest_proxy_port(Host) ->
     ejabberd_config:get_option({rest_proxy_port, Host}).
 
+
 -spec rest_proxy_username() -> string().
 rest_proxy_username() ->
     rest_proxy_username(global).
+
+
 -spec rest_proxy_username(global | binary()) -> string().
 rest_proxy_username(Host) ->
     ejabberd_config:get_option({rest_proxy_username, Host}).
+
 
 -spec router_cache_life_time() -> 'infinity' | pos_integer().
 router_cache_life_time() ->
     ejabberd_config:get_option({router_cache_life_time, global}).
 
+
 -spec router_cache_missed() -> boolean().
 router_cache_missed() ->
     ejabberd_config:get_option({router_cache_missed, global}).
+
 
 -spec router_cache_size() -> 'infinity' | pos_integer().
 router_cache_size() ->
     ejabberd_config:get_option({router_cache_size, global}).
 
+
 -spec router_db_type() -> atom().
 router_db_type() ->
     ejabberd_config:get_option({router_db_type, global}).
+
 
 -spec router_use_cache() -> boolean().
 router_use_cache() ->
     ejabberd_config:get_option({router_use_cache, global}).
 
+
 -spec rpc_timeout() -> pos_integer().
 rpc_timeout() ->
     ejabberd_config:get_option({rpc_timeout, global}).
 
+
 -spec s2s_access() -> 'all' | acl:acl().
 s2s_access() ->
     s2s_access(global).
+
+
 -spec s2s_access(global | binary()) -> 'all' | acl:acl().
 s2s_access(Host) ->
     ejabberd_config:get_option({s2s_access, Host}).
 
+
 -spec s2s_cafile() -> 'undefined' | binary().
 s2s_cafile() ->
     s2s_cafile(global).
+
+
 -spec s2s_cafile(global | binary()) -> 'undefined' | binary().
 s2s_cafile(Host) ->
     ejabberd_config:get_option({s2s_cafile, Host}).
 
+
 -spec s2s_ciphers() -> 'undefined' | binary().
 s2s_ciphers() ->
     s2s_ciphers(global).
+
+
 -spec s2s_ciphers(global | binary()) -> 'undefined' | binary().
 s2s_ciphers(Host) ->
     ejabberd_config:get_option({s2s_ciphers, Host}).
 
+
 -spec s2s_dhfile() -> 'undefined' | binary().
 s2s_dhfile() ->
     s2s_dhfile(global).
+
+
 -spec s2s_dhfile(global | binary()) -> 'undefined' | binary().
 s2s_dhfile(Host) ->
     ejabberd_config:get_option({s2s_dhfile, Host}).
 
+
 -spec s2s_dns_retries() -> non_neg_integer().
 s2s_dns_retries() ->
     s2s_dns_retries(global).
+
+
 -spec s2s_dns_retries(global | binary()) -> non_neg_integer().
 s2s_dns_retries(Host) ->
     ejabberd_config:get_option({s2s_dns_retries, Host}).
 
+
 -spec s2s_dns_timeout() -> 'infinity' | pos_integer().
 s2s_dns_timeout() ->
     s2s_dns_timeout(global).
+
+
 -spec s2s_dns_timeout(global | binary()) -> 'infinity' | pos_integer().
 s2s_dns_timeout(Host) ->
     ejabberd_config:get_option({s2s_dns_timeout, Host}).
+
 
 -spec s2s_max_retry_delay() -> pos_integer().
 s2s_max_retry_delay() ->
     ejabberd_config:get_option({s2s_max_retry_delay, global}).
 
+
 -spec s2s_protocol_options() -> 'undefined' | binary().
 s2s_protocol_options() ->
     s2s_protocol_options(global).
+
+
 -spec s2s_protocol_options(global | binary()) -> 'undefined' | binary().
 s2s_protocol_options(Host) ->
     ejabberd_config:get_option({s2s_protocol_options, Host}).
 
+
 -spec s2s_queue_type() -> 'file' | 'ram'.
 s2s_queue_type() ->
     s2s_queue_type(global).
+
+
 -spec s2s_queue_type(global | binary()) -> 'file' | 'ram'.
 s2s_queue_type(Host) ->
     ejabberd_config:get_option({s2s_queue_type, Host}).
 
+
 -spec s2s_timeout() -> 'infinity' | pos_integer().
 s2s_timeout() ->
     s2s_timeout(global).
+
+
 -spec s2s_timeout(global | binary()) -> 'infinity' | pos_integer().
 s2s_timeout(Host) ->
     ejabberd_config:get_option({s2s_timeout, Host}).
 
+
 -spec s2s_tls_compression() -> 'false' | 'true' | 'undefined'.
 s2s_tls_compression() ->
     s2s_tls_compression(global).
+
+
 -spec s2s_tls_compression(global | binary()) -> 'false' | 'true' | 'undefined'.
 s2s_tls_compression(Host) ->
     ejabberd_config:get_option({s2s_tls_compression, Host}).
 
+
 -spec s2s_use_starttls() -> 'false' | 'optional' | 'required' | 'true'.
 s2s_use_starttls() ->
     s2s_use_starttls(global).
+
+
 -spec s2s_use_starttls(global | binary()) -> 'false' | 'optional' | 'required' | 'true'.
 s2s_use_starttls(Host) ->
     ejabberd_config:get_option({s2s_use_starttls, Host}).
 
+
 -spec s2s_zlib() -> boolean().
 s2s_zlib() ->
     s2s_zlib(global).
+
+
 -spec s2s_zlib(global | binary()) -> boolean().
 s2s_zlib(Host) ->
     ejabberd_config:get_option({s2s_zlib, Host}).
 
--spec shaper() -> #{atom()=>ejabberd_shaper:shaper_rate()}.
+
+-spec shaper() -> #{atom() => ejabberd_shaper:shaper_rate()}.
 shaper() ->
     ejabberd_config:get_option({shaper, global}).
 
--spec shaper_rules() -> [{atom(),[ejabberd_shaper:shaper_rule()]}].
+
+-spec shaper_rules() -> [{atom(), [ejabberd_shaper:shaper_rule()]}].
 shaper_rules() ->
     shaper_rules(global).
--spec shaper_rules(global | binary()) -> [{atom(),[ejabberd_shaper:shaper_rule()]}].
+
+
+-spec shaper_rules(global | binary()) -> [{atom(), [ejabberd_shaper:shaper_rule()]}].
 shaper_rules(Host) ->
     ejabberd_config:get_option({shaper_rules, Host}).
+
 
 -spec sm_cache_life_time() -> 'infinity' | pos_integer().
 sm_cache_life_time() ->
     ejabberd_config:get_option({sm_cache_life_time, global}).
 
+
 -spec sm_cache_missed() -> boolean().
 sm_cache_missed() ->
     ejabberd_config:get_option({sm_cache_missed, global}).
+
 
 -spec sm_cache_size() -> 'infinity' | pos_integer().
 sm_cache_size() ->
     ejabberd_config:get_option({sm_cache_size, global}).
 
+
 -spec sm_db_type() -> atom().
 sm_db_type() ->
     sm_db_type(global).
+
+
 -spec sm_db_type(global | binary()) -> atom().
 sm_db_type(Host) ->
     ejabberd_config:get_option({sm_db_type, Host}).
 
+
 -spec sm_use_cache() -> boolean().
 sm_use_cache() ->
     sm_use_cache(global).
+
+
 -spec sm_use_cache(global | binary()) -> boolean().
 sm_use_cache(Host) ->
     ejabberd_config:get_option({sm_use_cache, Host}).
 
+
 -spec sql_connect_timeout() -> pos_integer().
 sql_connect_timeout() ->
     sql_connect_timeout(global).
+
+
 -spec sql_connect_timeout(global | binary()) -> pos_integer().
 sql_connect_timeout(Host) ->
     ejabberd_config:get_option({sql_connect_timeout, Host}).
 
+
 -spec sql_database() -> 'undefined' | binary().
 sql_database() ->
     sql_database(global).
+
+
 -spec sql_database(global | binary()) -> 'undefined' | binary().
 sql_database(Host) ->
     ejabberd_config:get_option({sql_database, Host}).
 
+
 -spec sql_flags() -> ['mysql_alternative_upsert'].
 sql_flags() ->
     sql_flags(global).
+
+
 -spec sql_flags(global | binary()) -> ['mysql_alternative_upsert'].
 sql_flags(Host) ->
     ejabberd_config:get_option({sql_flags, Host}).
 
+
 -spec sql_keepalive_interval() -> 'undefined' | pos_integer().
 sql_keepalive_interval() ->
     sql_keepalive_interval(global).
+
+
 -spec sql_keepalive_interval(global | binary()) -> 'undefined' | pos_integer().
 sql_keepalive_interval(Host) ->
     ejabberd_config:get_option({sql_keepalive_interval, Host}).
 
+
 -spec sql_odbc_driver() -> binary().
 sql_odbc_driver() ->
     sql_odbc_driver(global).
+
+
 -spec sql_odbc_driver(global | binary()) -> binary().
 sql_odbc_driver(Host) ->
     ejabberd_config:get_option({sql_odbc_driver, Host}).
 
+
 -spec sql_password() -> binary().
 sql_password() ->
     sql_password(global).
+
+
 -spec sql_password(global | binary()) -> binary().
 sql_password(Host) ->
     ejabberd_config:get_option({sql_password, Host}).
 
+
 -spec sql_pool_size() -> pos_integer().
 sql_pool_size() ->
     sql_pool_size(global).
+
+
 -spec sql_pool_size(global | binary()) -> pos_integer().
 sql_pool_size(Host) ->
     ejabberd_config:get_option({sql_pool_size, Host}).
 
+
 -spec sql_port() -> 1..1114111.
 sql_port() ->
     sql_port(global).
+
+
 -spec sql_port(global | binary()) -> 1..1114111.
 sql_port(Host) ->
     ejabberd_config:get_option({sql_port, Host}).
 
+
 -spec sql_prepared_statements() -> boolean().
 sql_prepared_statements() ->
     sql_prepared_statements(global).
+
+
 -spec sql_prepared_statements(global | binary()) -> boolean().
 sql_prepared_statements(Host) ->
     ejabberd_config:get_option({sql_prepared_statements, Host}).
 
+
 -spec sql_query_timeout() -> pos_integer().
 sql_query_timeout() ->
     sql_query_timeout(global).
+
+
 -spec sql_query_timeout(global | binary()) -> pos_integer().
 sql_query_timeout(Host) ->
     ejabberd_config:get_option({sql_query_timeout, Host}).
 
+
 -spec sql_queue_type() -> 'file' | 'ram'.
 sql_queue_type() ->
     sql_queue_type(global).
+
+
 -spec sql_queue_type(global | binary()) -> 'file' | 'ram'.
 sql_queue_type(Host) ->
     ejabberd_config:get_option({sql_queue_type, Host}).
 
+
 -spec sql_server() -> binary().
 sql_server() ->
     sql_server(global).
+
+
 -spec sql_server(global | binary()) -> binary().
 sql_server(Host) ->
     ejabberd_config:get_option({sql_server, Host}).
 
+
 -spec sql_ssl() -> boolean().
 sql_ssl() ->
     sql_ssl(global).
+
+
 -spec sql_ssl(global | binary()) -> boolean().
 sql_ssl(Host) ->
     ejabberd_config:get_option({sql_ssl, Host}).
 
+
 -spec sql_ssl_cafile() -> 'undefined' | binary().
 sql_ssl_cafile() ->
     sql_ssl_cafile(global).
+
+
 -spec sql_ssl_cafile(global | binary()) -> 'undefined' | binary().
 sql_ssl_cafile(Host) ->
     ejabberd_config:get_option({sql_ssl_cafile, Host}).
 
+
 -spec sql_ssl_certfile() -> 'undefined' | binary().
 sql_ssl_certfile() ->
     sql_ssl_certfile(global).
+
+
 -spec sql_ssl_certfile(global | binary()) -> 'undefined' | binary().
 sql_ssl_certfile(Host) ->
     ejabberd_config:get_option({sql_ssl_certfile, Host}).
 
+
 -spec sql_ssl_verify() -> boolean().
 sql_ssl_verify() ->
     sql_ssl_verify(global).
+
+
 -spec sql_ssl_verify(global | binary()) -> boolean().
 sql_ssl_verify(Host) ->
     ejabberd_config:get_option({sql_ssl_verify, Host}).
 
+
 -spec sql_start_interval() -> pos_integer().
 sql_start_interval() ->
     sql_start_interval(global).
+
+
 -spec sql_start_interval(global | binary()) -> pos_integer().
 sql_start_interval(Host) ->
     ejabberd_config:get_option({sql_start_interval, Host}).
 
+
 -spec sql_type() -> 'mssql' | 'mysql' | 'odbc' | 'pgsql' | 'sqlite'.
 sql_type() ->
     sql_type(global).
+
+
 -spec sql_type(global | binary()) -> 'mssql' | 'mysql' | 'odbc' | 'pgsql' | 'sqlite'.
 sql_type(Host) ->
     ejabberd_config:get_option({sql_type, Host}).
 
+
 -spec sql_username() -> binary().
 sql_username() ->
     sql_username(global).
+
+
 -spec sql_username(global | binary()) -> binary().
 sql_username(Host) ->
     ejabberd_config:get_option({sql_username, Host}).
 
--spec trusted_proxies() -> 'all' | [{inet:ip4_address() | inet:ip6_address(),byte()}].
+
+-spec trusted_proxies() -> 'all' | [{inet:ip4_address() | inet:ip6_address(), byte()}].
 trusted_proxies() ->
     ejabberd_config:get_option({trusted_proxies, global}).
+
 
 -spec update_sql_schema() -> boolean().
 update_sql_schema() ->
     ejabberd_config:get_option({update_sql_schema, global}).
 
+
 -spec update_sql_schema_timeout() -> 'infinity' | pos_integer().
 update_sql_schema_timeout() ->
     update_sql_schema_timeout(global).
+
+
 -spec update_sql_schema_timeout(global | binary()) -> 'infinity' | pos_integer().
 update_sql_schema_timeout(Host) ->
     ejabberd_config:get_option({update_sql_schema_timeout, Host}).
 
+
 -spec use_cache() -> boolean().
 use_cache() ->
     use_cache(global).
+
+
 -spec use_cache(global | binary()) -> boolean().
 use_cache(Host) ->
     ejabberd_config:get_option({use_cache, Host}).
+
 
 -spec validate_stream() -> boolean().
 validate_stream() ->
     ejabberd_config:get_option({validate_stream, global}).
 
+
 -spec version() -> binary().
 version() ->
     ejabberd_config:get_option({version, global}).
+
 
 -spec websocket_origin() -> [binary()].
 websocket_origin() ->
     ejabberd_config:get_option({websocket_origin, global}).
 
+
 -spec websocket_ping_interval() -> pos_integer().
 websocket_ping_interval() ->
     ejabberd_config:get_option({websocket_ping_interval, global}).
 
+
 -spec websocket_timeout() -> pos_integer().
 websocket_timeout() ->
     ejabberd_config:get_option({websocket_timeout, global}).
-

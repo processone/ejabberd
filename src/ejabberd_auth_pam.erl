@@ -28,52 +28,65 @@
 
 -behaviour(ejabberd_auth).
 
--export([start/1, stop/1, check_password/4,
-	 user_exists/2, store_type/1, plain_password_required/1]).
+-export([start/1,
+         stop/1,
+         check_password/4,
+         user_exists/2,
+         store_type/1,
+         plain_password_required/1]).
+
 
 start(_Host) ->
     ejabberd:start_app(epam).
 
+
 stop(_Host) ->
     ok.
 
+
 check_password(User, AuthzId, Host, Password) ->
-    if AuthzId /= <<>> andalso AuthzId /= User ->
-	    false;
-       true ->
-	    Service = get_pam_service(Host),
-	    UserInfo = case get_pam_userinfotype(Host) of
-			   username -> User;
-			   jid -> <<User/binary, "@", Host/binary>>
-		       end,
-	    case catch epam:authenticate(Service, UserInfo, Password) of
-		true -> {cache, true};
-		false -> {cache, false};
-		_ -> {nocache, false}
-	    end
+    if
+        AuthzId /= <<>> andalso AuthzId /= User ->
+            false;
+        true ->
+            Service = get_pam_service(Host),
+            UserInfo = case get_pam_userinfotype(Host) of
+                           username -> User;
+                           jid -> <<User/binary, "@", Host/binary>>
+                       end,
+            case catch epam:authenticate(Service, UserInfo, Password) of
+                true -> {cache, true};
+                false -> {cache, false};
+                _ -> {nocache, false}
+            end
     end.
+
 
 user_exists(User, Host) ->
     Service = get_pam_service(Host),
     UserInfo = case get_pam_userinfotype(Host) of
-		 username -> User;
-		 jid -> <<User/binary, "@", Host/binary>>
-	       end,
+                   username -> User;
+                   jid -> <<User/binary, "@", Host/binary>>
+               end,
     case catch epam:acct_mgmt(Service, UserInfo) of
-	true -> {cache, true};
-	false -> {cache, false};
-	_Err -> {nocache, {error, db_failure}}
+        true -> {cache, true};
+        false -> {cache, false};
+        _Err -> {nocache, {error, db_failure}}
     end.
+
 
 plain_password_required(_) -> true.
 
+
 store_type(_) -> external.
+
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 get_pam_service(Host) ->
     ejabberd_option:pam_service(Host).
+
 
 get_pam_userinfotype(Host) ->
     ejabberd_option:pam_userinfotype(Host).

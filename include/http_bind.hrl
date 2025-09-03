@@ -19,31 +19,34 @@
 %%%----------------------------------------------------------------------
 
 -define(CT_XML,
-	{<<"Content-Type">>, <<"text/xml; charset=utf-8">>}).
+        {<<"Content-Type">>, <<"text/xml; charset=utf-8">>}).
 
 -define(CT_PLAIN,
-	{<<"Content-Type">>, <<"text/plain">>}).
+        {<<"Content-Type">>, <<"text/plain">>}).
 
 -define(AC_ALLOW_ORIGIN,
-	{<<"Access-Control-Allow-Origin">>, <<"*">>}).
+        {<<"Access-Control-Allow-Origin">>, <<"*">>}).
 
 -define(AC_ALLOW_METHODS,
-	{<<"Access-Control-Allow-Methods">>,
-	 <<"GET, POST, OPTIONS">>}).
+        {<<"Access-Control-Allow-Methods">>,
+         <<"GET, POST, OPTIONS">>}).
 
 -define(AC_ALLOW_HEADERS,
-	{<<"Access-Control-Allow-Headers">>,
-	 <<"Content-Type">>}).
+        {<<"Access-Control-Allow-Headers">>,
+         <<"Content-Type">>}).
 
 -define(AC_MAX_AGE,
-	{<<"Access-Control-Max-Age">>, <<"86400">>}).
+        {<<"Access-Control-Max-Age">>, <<"86400">>}).
 
 -define(NO_CACHE,
         {<<"Cache-Control">>, <<"max-age=0, no-cache, no-store">>}).
 
 -define(OPTIONS_HEADER,
-	[?CT_PLAIN, ?AC_ALLOW_ORIGIN, ?AC_ALLOW_METHODS,
-	 ?AC_ALLOW_HEADERS, ?AC_MAX_AGE]).
+        [?CT_PLAIN,
+         ?AC_ALLOW_ORIGIN,
+         ?AC_ALLOW_METHODS,
+         ?AC_ALLOW_HEADERS,
+         ?AC_MAX_AGE]).
 
 -define(HEADER,
-	[?CT_XML, ?AC_ALLOW_ORIGIN, ?AC_ALLOW_HEADERS, ?NO_CACHE]).
+        [?CT_XML, ?AC_ALLOW_ORIGIN, ?AC_ALLOW_HEADERS, ?NO_CACHE]).
