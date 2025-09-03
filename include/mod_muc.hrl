@@ -18,19 +18,25 @@
 %%%
 %%%----------------------------------------------------------------------
 
--record(muc_room, {name_host = {<<"">>, <<"">>} :: {binary(), binary()} |
-                                                   {'_', binary()},
-                   opts = [] :: list() | '_'}).
+-record(muc_room, {
+          name_host = {<<"">>, <<"">>} :: {binary(), binary()} |
+                                          {'_', binary()},
+          opts = [] :: list() | '_'
+         }).
 
--record(muc_registered,
-        {us_host = {{<<"">>, <<"">>}, <<"">>} :: {{binary(), binary()}, binary()} | '$1',
-         nick = <<"">> :: binary()}).
+-record(muc_registered, {
+          us_host = {{<<"">>, <<"">>}, <<"">>} :: {{binary(), binary()}, binary()} | '$1',
+          nick = <<"">> :: binary()
+         }).
 
--record(muc_online_room,
-        {name_host :: {binary(), binary()} | '$1' | {'_', binary()} | '_',
-         pid :: pid() | '$2' | '_' | '$1'}).
+-record(muc_online_room, {
+          name_host :: {binary(), binary()} | '$1' | {'_', binary()} | '_',
+          pid :: pid() | '$2' | '_' | '$1'
+         }).
 
--record(muc_online_users, {us :: {binary(), binary()},
-                           resource :: binary() | '_',
-                           room :: binary() | '_' | '$1',
-                           host :: binary() | '_' | '$2'}).
+-record(muc_online_users, {
+          us :: {binary(), binary()},
+          resource :: binary() | '_',
+          room :: binary() | '_' | '$1',
+          host :: binary() | '_' | '$2'
+         }).

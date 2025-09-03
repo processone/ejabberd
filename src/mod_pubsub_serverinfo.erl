@@ -42,11 +42,12 @@
 -export([in_auth_result/3, out_auth_result/2, get_info/5]).
 
 -define(NS_URN_SERVERINFO, <<"urn:xmpp:serverinfo:0">>).
--define(PUBLIC_HOSTS_URL, <<"https://data.xmpp.net/providers/v2/providers-Ds.json">>).
+-define(PUBLIC_HOSTS_URL,  <<"https://data.xmpp.net/providers/v2/providers-Ds.json">>).
 
 -record(state, {host, pubsub_host, node, monitors = #{}, timer = undefined, public_hosts = []}).
 
 %% @format-begin
+
 
 start(Host, Opts) ->
     case pubsub_host(Host, Opts) of
@@ -60,6 +61,7 @@ start(Host, Opts) ->
             gen_mod:start_child(?MODULE, Host, PubsubHost)
     end.
 
+
 stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 50),
     ejabberd_hooks:delete(disco_info, Host, ?MODULE, get_info, 50),
@@ -67,33 +69,40 @@ stop(Host) ->
     ejabberd_hooks:delete(s2s_in_auth_result, Host, ?MODULE, in_auth_result, 50),
     gen_mod:stop_child(?MODULE, Host).
 
+
 init([Host, PubsubHost]) ->
     TRef =
         timer:send_interval(
-            timer:minutes(5), self(), update_pubsub),
+          timer:minutes(5), self(), update_pubsub),
     Monitors = init_monitors(Host),
     PublicHosts = fetch_public_hosts(),
     State =
-        #state{host = Host,
-               pubsub_host = PubsubHost,
-               node = <<"serverinfo">>,
-               timer = TRef,
-               monitors = Monitors,
-               public_hosts = PublicHosts},
+        #state{
+          host = Host,
+          pubsub_host = PubsubHost,
+          node = <<"serverinfo">>,
+          timer = TRef,
+          monitors = Monitors,
+          public_hosts = PublicHosts
+         },
     self() ! update_pubsub,
     {ok, State}.
+
 
 -spec init_monitors(binary()) -> map().
 init_monitors(Host) ->
     lists:foldl(fun(Domain, Monitors) ->
-                   RefIn = make_ref(), % just dummies
-                   RefOut = make_ref(),
-                   maps:merge(#{RefIn => {incoming, {Host, Domain, true}},
-                                RefOut => {outgoing, {Host, Domain, true}}},
-                              Monitors)
+                        RefIn = make_ref(),  % just dummies
+                        RefOut = make_ref(),
+                        maps:merge(#{
+                                     RefIn => {incoming, {Host, Domain, true}},
+                                     RefOut => {outgoing, {Host, Domain, true}}
+                                    },
+                                   Monitors)
                 end,
                 #{},
                 ejabberd_option:hosts() -- [Host]).
+
 
 -spec fetch_public_hosts() -> list().
 fetch_public_hosts() ->
@@ -113,8 +122,9 @@ fetch_public_hosts() ->
             []
     end.
 
+
 handle_cast({Event, Domain, Pid}, #state{host = Host, monitors = Mons} = State)
-    when Event == register_in; Event == register_out ->
+  when Event == register_in; Event == register_out ->
     Ref = monitor(process, Pid),
     IsPublic = check_if_public(Domain, State),
     NewMons = maps:put(Ref, {event_to_dir(Event), {Host, Domain, IsPublic}}, Mons),
@@ -122,15 +132,18 @@ handle_cast({Event, Domain, Pid}, #state{host = Host, monitors = Mons} = State)
 handle_cast(_, State) ->
     {noreply, State}.
 
+
 event_to_dir(register_in) ->
     incoming;
 event_to_dir(register_out) ->
     outgoing.
 
+
 handle_call(pubsub_host, _From, #state{pubsub_host = PubsubHost} = State) ->
     {reply, {ok, PubsubHost}, State};
 handle_call(_Request, _From, State) ->
     {noreply, State}.
+
 
 handle_info({iq_reply, IQReply, {LServer, RServer}}, #state{monitors = Mons} = State) ->
     case IQReply of
@@ -140,12 +153,12 @@ handle_info({iq_reply, IQReply, {LServer, RServer}}, #state{monitors = Mons} = S
                     case lists:member(?NS_URN_SERVERINFO, Features) of
                         true ->
                             NewMons =
-                                maps:fold(fun (Ref, {Dir, {LServer0, RServer0, _}}, Acc)
-                                                  when LServer == LServer0, RServer == RServer0 ->
+                                maps:fold(fun(Ref, {Dir, {LServer0, RServer0, _}}, Acc)
+                                                when LServer == LServer0, RServer == RServer0 ->
                                                   maps:put(Ref,
                                                            {Dir, {LServer, RServer, true}},
                                                            Acc);
-                                              (Ref, Other, Acc) ->
+                                             (Ref, Other, Acc) ->
                                                   maps:put(Ref, Other, Acc)
                                           end,
                                           #{},
@@ -168,6 +181,7 @@ handle_info({'DOWN', Mon, process, _Pid, _Info}, #state{monitors = Mons} = State
 handle_info(_Request, State) ->
     {noreply, State}.
 
+
 terminate(_Reason, #state{monitors = Mons, timer = Timer}) ->
     case is_reference(Timer) of
         true ->
@@ -176,8 +190,9 @@ terminate(_Reason, #state{monitors = Mons, timer = Timer}) ->
                     receive
                         {timeout, Timer, _} ->
                             ok
-                    after 0 ->
-                        ok
+                    after
+                        0 ->
+                            ok
                     end;
                 _ ->
                     ok
@@ -187,17 +202,22 @@ terminate(_Reason, #state{monitors = Mons, timer = Timer}) ->
     end,
     maps:fold(fun(Mon, _, _) -> demonitor(Mon) end, ok, Mons).
 
+
 depends(_Host, _Opts) ->
     [{mod_pubsub, hard}].
+
 
 mod_options(_Host) ->
     [{pubsub_host, undefined}].
 
+
 mod_opt_type(pubsub_host) ->
     econf:either(undefined, econf:host()).
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           [?T("This module adds support for "
               "https://xmpp.org/extensions/xep-0485.html[XEP-0485: PubSub Server Information] "
               "to expose S2S information over the Pub/Sub service."),
@@ -218,94 +238,110 @@ mod_doc() ->
       note => "added in 25.07",
       opts =>
           [{pubsub_host,
-            #{value => "undefined | string()",
+            #{
+              value => "undefined | string()",
               desc =>
                   ?T("Use this local PubSub host to advertise S2S connections. "
                      "This must be a host local to this service handled by _`mod_pubsub`_. "
                      "This option is only needed if your configuration has more than one host in mod_pubsub's 'hosts' option. "
-                     "The default value is the first host defined in mod_pubsub 'hosts' option.")}}],
+                     "The default value is the first host defined in mod_pubsub 'hosts' option.")
+             }}],
       example =>
-          ["modules:", "  mod_pubsub_serverinfo:", "    pubsub_host: custom.pubsub.domain.local"]}.
+          ["modules:", "  mod_pubsub_serverinfo:", "    pubsub_host: custom.pubsub.domain.local"]
+     }.
+
 
 in_auth_result(#{server_host := Host, remote_server := RServer} = State, true, _Server) ->
     gen_server:cast(
-        gen_mod:get_module_proc(Host, ?MODULE), {register_in, RServer, self()}),
+      gen_mod:get_module_proc(Host, ?MODULE), {register_in, RServer, self()}),
     State;
 in_auth_result(State, _, _) ->
     State.
 
+
 out_auth_result(#{server_host := Host, remote_server := RServer} = State, true) ->
     gen_server:cast(
-        gen_mod:get_module_proc(Host, ?MODULE), {register_out, RServer, self()}),
+      gen_mod:get_module_proc(Host, ?MODULE), {register_out, RServer, self()}),
     State;
 out_auth_result(State, _) ->
     State.
+
 
 check_if_public(Domain, State) ->
     maybe_send_disco_info(is_public(Domain, State) orelse is_monitored(Domain, State),
                           Domain,
                           State).
 
+
 is_public(Domain, #state{public_hosts = PublicHosts}) ->
     lists:member(Domain, PublicHosts).
 
+
 is_monitored(Domain, #state{host = Host, monitors = Mons}) ->
     maps:size(
-        maps:filter(fun (_Ref, {_Dir, {LServer, RServer, IsPublic}})
-                            when LServer == Host, RServer == Domain ->
-                            IsPublic;
-                        (_Ref, _Other) ->
-                            false
-                    end,
-                    Mons))
-    =/= 0.
+      maps:filter(fun(_Ref, {_Dir, {LServer, RServer, IsPublic}})
+                        when LServer == Host, RServer == Domain ->
+                          IsPublic;
+                     (_Ref, _Other) ->
+                          false
+                  end,
+                  Mons)) =/=
+    0.
+
 
 maybe_send_disco_info(true, _Domain, _State) ->
     true;
 maybe_send_disco_info(false, Domain, #state{host = Host}) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    IQ = #iq{type = get,
-             from = jid:make(Host),
-             to = jid:make(Domain),
-             sub_els = [#disco_info{}]},
+    IQ = #iq{
+           type = get,
+           from = jid:make(Host),
+           to = jid:make(Domain),
+           sub_els = [#disco_info{}]
+          },
     ejabberd_router:route_iq(IQ, {Host, Domain}, Proc),
     false.
 
-update_pubsub(#state{host = Host,
-                     pubsub_host = PubsubHost,
-                     node = Node,
-                     monitors = Mons}) ->
+
+update_pubsub(#state{
+                host = Host,
+                pubsub_host = PubsubHost,
+                node = Node,
+                monitors = Mons
+               }) ->
     Map = maps:fold(fun(_, {Dir, {MyDomain, Target, IsPublic}}, Acc) ->
-                       maps:update_with(MyDomain,
-                                        fun(Acc2) ->
-                                           maps:update_with(Target,
-                                                            fun({Types, _}) ->
-                                                               {Types#{Dir => true}, IsPublic}
-                                                            end,
-                                                            {#{Dir => true}, IsPublic},
-                                                            Acc2)
-                                        end,
-                                        #{Target => {#{Dir => true}, IsPublic}},
-                                        Acc)
+                            maps:update_with(MyDomain,
+                                             fun(Acc2) ->
+                                                     maps:update_with(Target,
+                                                                      fun({Types, _}) ->
+                                                                              {Types#{Dir => true}, IsPublic}
+                                                                      end,
+                                                                      {#{Dir => true}, IsPublic},
+                                                                      Acc2)
+                                             end,
+                                             #{Target => {#{Dir => true}, IsPublic}},
+                                             Acc)
                     end,
                     #{},
                     Mons),
     Domains =
         maps:fold(fun(MyDomain, Targets, Acc) ->
-                     Remote =
-                         maps:fold(fun (Remote, {Types, true}, Acc2) ->
-                                           [#pubsub_serverinfo_remote_domain{name = Remote,
-                                                                             type =
-                                                                                 maps:keys(Types)}
-                                            | Acc2];
-                                       (_HiddenRemote, {Types, false}, Acc2) ->
-                                           [#pubsub_serverinfo_remote_domain{type =
-                                                                                 maps:keys(Types)}
-                                            | Acc2]
-                                   end,
-                                   [],
-                                   Targets),
-                     [#pubsub_serverinfo_domain{name = MyDomain, remote_domain = Remote} | Acc]
+                          Remote =
+                              maps:fold(fun(Remote, {Types, true}, Acc2) ->
+                                                [#pubsub_serverinfo_remote_domain{
+                                                   name = Remote,
+                                                   type =
+                                                       maps:keys(Types)
+                                                  } | Acc2];
+                                           (_HiddenRemote, {Types, false}, Acc2) ->
+                                                [#pubsub_serverinfo_remote_domain{
+                                                   type =
+                                                       maps:keys(Types)
+                                                  } | Acc2]
+                                        end,
+                                        [],
+                                        Targets),
+                          [#pubsub_serverinfo_domain{name = MyDomain, remote_domain = Remote} | Acc]
                   end,
                   [],
                   Map),
@@ -321,6 +357,7 @@ update_pubsub(#state{host = Host,
                             PubOpts,
                             all).
 
+
 get_local_features({error, _} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 get_local_features(Acc, _From, _To, Node, _Lang) when Node == <<>> ->
@@ -333,36 +370,46 @@ get_local_features(Acc, _From, _To, Node, _Lang) when Node == <<>> ->
 get_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
+
 get_info(Acc, Host, Mod, Node, Lang)
-    when Mod == undefined orelse Mod == mod_disco, Node == <<"">> ->
+  when Mod == undefined orelse Mod == mod_disco, Node == <<"">> ->
     case mod_disco:get_info(Acc, Host, Mod, Node, Lang) of
         [#xdata{fields = Fields} = XD | Rest] ->
             PubsubHost = pubsub_host(Host),
             NodeField =
-                #xdata_field{var = <<"serverinfo-pubsub-node">>,
-                             values = [<<"xmpp:", PubsubHost/binary, "?;node=serverinfo">>]},
+                #xdata_field{
+                  var = <<"serverinfo-pubsub-node">>,
+                  values = [<<"xmpp:", PubsubHost/binary, "?;node=serverinfo">>]
+                 },
             {stop, [XD#xdata{fields = Fields ++ [NodeField]} | Rest]};
         _ ->
             Acc
     end;
 get_info(Acc, Host, Mod, Node, _Lang) when Node == <<"">>, is_atom(Mod) ->
     PubsubHost = pubsub_host(Host),
-    [#xdata{type = result,
-            fields =
-                [#xdata_field{type = hidden,
-                              var = <<"FORM_TYPE">>,
-                              values = [?NS_SERVERINFO]},
-                 #xdata_field{var = <<"serverinfo-pubsub-node">>,
-                              values = [<<"xmpp:", PubsubHost/binary, "?;node=serverinfo">>]}]}
-     | Acc];
+    [#xdata{
+       type = result,
+       fields =
+           [#xdata_field{
+              type = hidden,
+              var = <<"FORM_TYPE">>,
+              values = [?NS_SERVERINFO]
+             },
+            #xdata_field{
+              var = <<"serverinfo-pubsub-node">>,
+              values = [<<"xmpp:", PubsubHost/binary, "?;node=serverinfo">>]
+             }]
+      } | Acc];
 get_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
+
 
 pubsub_host(Host) ->
     {ok, PubsubHost} =
         gen_server:call(
-            gen_mod:get_module_proc(Host, ?MODULE), pubsub_host),
+          gen_mod:get_module_proc(Host, ?MODULE), pubsub_host),
     PubsubHost.
+
 
 pubsub_host(Host, Opts) ->
     case gen_mod:get_opt(pubsub_host, Opts) of
@@ -379,8 +426,10 @@ pubsub_host(Host, Opts) ->
             end
     end.
 
+
 check_pubsub_host_exists(Host, PubsubHost) ->
     lists:member(PubsubHost, get_mod_pubsub_hosts(Host)).
+
 
 get_mod_pubsub_hosts(Host) ->
     case gen_mod:get_module_opt(Host, mod_pubsub, hosts) of

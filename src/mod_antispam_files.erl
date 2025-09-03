@@ -46,42 +46,54 @@
 
 -type files_map() :: #{atom() => filename()}.
 -type lists_map() ::
-    #{jid => jid_set(),
-      url => url_set(),
-      atom() => sets:set(binary())}.
+        #{
+          jid => jid_set(),
+          url => url_set(),
+          atom() => sets:set(binary())
+         }.
 
--define(COMMAND_TIMEOUT, timer:seconds(30)).
+-define(COMMAND_TIMEOUT,    timer:seconds(30)).
 -define(DEFAULT_CACHE_SIZE, 10000).
--define(HTTPC_TIMEOUT, timer:seconds(3)).
+-define(HTTPC_TIMEOUT,      timer:seconds(3)).
 
 %%--------------------------------------------------------------------
 %%| Exported
 
+
 init_files(Host) ->
     ejabberd_hooks:add(antispam_get_lists, Host, ?MODULE, get_files_lists, 50).
+
 
 terminate_files(Host) ->
     ejabberd_hooks:delete(antispam_get_lists, Host, ?MODULE, get_files_lists, 50).
 
+
 %%--------------------------------------------------------------------
 %%| Hooks
 
+
 -spec get_files_lists(lists_map(), files_map()) -> lists_map().
-get_files_lists(#{jid := AccJids,
+get_files_lists(#{
+                  jid := AccJids,
                   url := AccUrls,
                   domains := AccDomains,
-                  whitelist_domains := AccWhitelist} =
+                  whitelist_domains := AccWhitelist
+                 } =
                     Acc,
                 Files) ->
     try read_files(Files) of
-        #{jid := JIDsSet,
+        #{
+          jid := JIDsSet,
           url := URLsSet,
           domains := SpamDomainsSet,
-          whitelist_domains := WhitelistDomains} ->
-            Acc#{jid => sets:union(AccJids, JIDsSet),
-                 url => sets:union(AccUrls, URLsSet),
-                 domains => sets:union(AccDomains, SpamDomainsSet),
-                 whitelist_domains => sets:union(AccWhitelist, WhitelistDomains)}
+          whitelist_domains := WhitelistDomains
+         } ->
+            Acc#{
+              jid => sets:union(AccJids, JIDsSet),
+              url => sets:union(AccUrls, URLsSet),
+              domains => sets:union(AccDomains, SpamDomainsSet),
+              whitelist_domains => sets:union(AccWhitelist, WhitelistDomains)
+             }
     catch
         {Op, File, Reason} when Op == open; Op == read ->
             ErrorText = format("Error trying to ~s file ~s: ~s", [Op, File, format_error(Reason)]),
@@ -89,12 +101,15 @@ get_files_lists(#{jid := AccJids,
             {stop, {config_error, ErrorText}}
     end.
 
+
 %%--------------------------------------------------------------------
 %%| read_files
+
 
 -spec read_files(files_map()) -> lists_map().
 read_files(Files) ->
     maps:map(fun(Type, Filename) -> read_file(Filename, line_parser(Type)) end, Files).
+
 
 -spec line_parser(Type :: atom()) -> fun((binary()) -> binary()).
 line_parser(jid) ->
@@ -103,6 +118,7 @@ line_parser(url) ->
     fun parse_url/1;
 line_parser(_) ->
     fun trim/1.
+
 
 -spec read_file(filename(), fun((binary()) -> ljid() | url())) -> jid_set() | url_set().
 read_file(none, _ParseLine) ->
@@ -122,10 +138,11 @@ read_file(File, ParseLine) ->
             throw({open, File, Reason})
     end.
 
+
 -spec read_line(file:io_device(),
                 fun((binary()) -> ljid() | url()),
                 jid_set() | url_set()) ->
-                   jid_set() | url_set().
+          jid_set() | url_set().
 read_line(Fd, ParseLine, Set) ->
     case file:read_line(Fd) of
         {ok, Line} ->
@@ -136,16 +153,18 @@ read_line(Fd, ParseLine, Set) ->
             Set
     end.
 
+
 -spec parse_jid(binary()) -> ljid().
 parse_jid(S) ->
     try jid:decode(trim(S)) of
         #jid{} = JID ->
             jid:remove_resource(
-                jid:tolower(JID))
+              jid:tolower(JID))
     catch
         _:{bad_jid, _} ->
             throw({bad_jid, S})
     end.
+
 
 -spec parse_url(binary()) -> url().
 parse_url(S) ->
@@ -159,14 +178,17 @@ parse_url(S) ->
             throw({bad_url, S})
     end.
 
+
 -spec trim(binary()) -> binary().
 trim(S) ->
     re:replace(S, <<"\\s+$">>, <<>>, [{return, binary}]).
+
 
 %% Function copied from mod_antispam.erl
 -spec format(io:format(), [term()]) -> binary().
 format(Format, Data) ->
     iolist_to_binary(io_lib:format(Format, Data)).
+
 
 -spec format_error(atom() | tuple()) -> binary().
 format_error({bad_jid, JID}) ->

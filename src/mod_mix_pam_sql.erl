@@ -24,12 +24,17 @@
 -behaviour(mod_mix_pam).
 
 %% API
--export([init/2, add_channel/3, get_channel/2,
-	 get_channels/1, del_channel/2, del_channels/1]).
+-export([init/2,
+         add_channel/3,
+         get_channel/2,
+         get_channels/1,
+         del_channel/2,
+         del_channels/1]).
 -export([sql_schemas/0]).
 
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+
 
 %%%===================================================================
 %%% API
@@ -38,92 +43,109 @@ init(Host, _Opts) ->
     ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
+
 sql_schemas() ->
     [#sql_schema{
-        version = 1,
-        tables =
-            [#sql_table{
-                name = <<"mix_pam">>,
-                columns =
-                    [#sql_column{name = <<"username">>, type = text},
-                     #sql_column{name = <<"server_host">>, type = text},
-                     #sql_column{name = <<"channel">>, type = text},
-                     #sql_column{name = <<"service">>, type = text},
-                     #sql_column{name = <<"id">>, type = text},
-                     #sql_column{name = <<"created_at">>, type = timestamp,
-                                 default = true}],
-                indices = [#sql_index{
-                              columns = [<<"username">>, <<"server_host">>,
-                                         <<"channel">>, <<"service">>],
-                              unique = true}]}]}].
+       version = 1,
+       tables =
+           [#sql_table{
+              name = <<"mix_pam">>,
+              columns =
+                  [#sql_column{name = <<"username">>, type = text},
+                   #sql_column{name = <<"server_host">>, type = text},
+                   #sql_column{name = <<"channel">>, type = text},
+                   #sql_column{name = <<"service">>, type = text},
+                   #sql_column{name = <<"id">>, type = text},
+                   #sql_column{
+                     name = <<"created_at">>,
+                     type = timestamp,
+                     default = true
+                    }],
+              indices = [#sql_index{
+                           columns = [<<"username">>,
+                                      <<"server_host">>,
+                                      <<"channel">>,
+                                      <<"service">>],
+                           unique = true
+                          }]
+             }]
+      }].
+
 
 add_channel(User, Channel, ID) ->
     {LUser, LServer, _} = jid:tolower(User),
     {Chan, Service, _} = jid:tolower(Channel),
-    case ?SQL_UPSERT(LServer, "mix_pam",
-		     ["!channel=%(Chan)s",
-		      "!service=%(Service)s",
-		      "!username=%(LUser)s",
-		      "!server_host=%(LServer)s",
-		      "id=%(ID)s"]) of
-	ok -> ok;
-	_Err -> {error, db_failure}
+    case ?SQL_UPSERT(LServer,
+                     "mix_pam",
+                     ["!channel=%(Chan)s",
+                      "!service=%(Service)s",
+                      "!username=%(LUser)s",
+                      "!server_host=%(LServer)s",
+                      "id=%(ID)s"]) of
+        ok -> ok;
+        _Err -> {error, db_failure}
     end.
+
 
 get_channel(User, Channel) ->
     {LUser, LServer, _} = jid:tolower(User),
     {Chan, Service, _} = jid:tolower(Channel),
     case ejabberd_sql:sql_query(
-	   LServer,
-	   ?SQL("select @(id)s from mix_pam where "
-		"channel=%(Chan)s and service=%(Service)s "
-		"and username=%(LUser)s and %(LServer)H")) of
-	{selected, [{ID}]} -> {ok, ID};
-	{selected, []} -> {error, notfound};
-	_Err -> {error, db_failure}
+           LServer,
+           ?SQL("select @(id)s from mix_pam where "
+                "channel=%(Chan)s and service=%(Service)s "
+                "and username=%(LUser)s and %(LServer)H")) of
+        {selected, [{ID}]} -> {ok, ID};
+        {selected, []} -> {error, notfound};
+        _Err -> {error, db_failure}
     end.
+
 
 get_channels(User) ->
     {LUser, LServer, _} = jid:tolower(User),
     SQL = ?SQL("select @(channel)s, @(service)s, @(id)s from mix_pam "
-	       "where username=%(LUser)s and %(LServer)H"),
+               "where username=%(LUser)s and %(LServer)H"),
     case ejabberd_sql:sql_query(LServer, SQL) of
-	{selected, Ret} ->
-	    {ok, lists:filtermap(
-		   fun({Chan, Service, ID}) ->
-			   case jid:make(Chan, Service) of
-			       error ->
-				   report_corrupted(SQL),
-				   false;
-			       JID ->
-				   {true, {JID, ID}}
-			   end
-		   end, Ret)};
-	_Err ->
-	    {error, db_failure}
+        {selected, Ret} ->
+            {ok, lists:filtermap(
+                   fun({Chan, Service, ID}) ->
+                           case jid:make(Chan, Service) of
+                               error ->
+                                   report_corrupted(SQL),
+                                   false;
+                               JID ->
+                                   {true, {JID, ID}}
+                           end
+                   end,
+                   Ret)};
+        _Err ->
+            {error, db_failure}
     end.
+
 
 del_channel(User, Channel) ->
     {LUser, LServer, _} = jid:tolower(User),
     {Chan, Service, _} = jid:tolower(Channel),
     case ejabberd_sql:sql_query(
-	   LServer,
-	   ?SQL("delete from mix_pam where "
-		"channel=%(Chan)s and service=%(Service)s "
-		"and username=%(LUser)s and %(LServer)H")) of
-	{updated, _} -> ok;
-	_Err -> {error, db_failure}
+           LServer,
+           ?SQL("delete from mix_pam where "
+                "channel=%(Chan)s and service=%(Service)s "
+                "and username=%(LUser)s and %(LServer)H")) of
+        {updated, _} -> ok;
+        _Err -> {error, db_failure}
     end.
+
 
 del_channels(User) ->
     {LUser, LServer, _} = jid:tolower(User),
     case ejabberd_sql:sql_query(
-	   LServer,
-	   ?SQL("delete from mix_pam where "
-		"username=%(LUser)s and %(LServer)H")) of
-	{updated, _} -> ok;
-	_Err -> {error, db_failure}
+           LServer,
+           ?SQL("delete from mix_pam where "
+                "username=%(LUser)s and %(LServer)H")) of
+        {updated, _} -> ok;
+        _Err -> {error, db_failure}
     end.
+
 
 %%%===================================================================
 %%% Internal functions
@@ -131,4 +153,4 @@ del_channels(User) ->
 -spec report_corrupted(#sql_query{}) -> ok.
 report_corrupted(SQL) ->
     ?ERROR_MSG("Corrupted values returned by SQL request: ~ts",
-	       [SQL#sql_query.hash]).
+               [SQL#sql_query.hash]).

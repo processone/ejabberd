@@ -88,6 +88,8 @@ AC_PATH_PROG([ESCRIPT], [escript], [], [$ERLANG_ROOT_DIR/bin])
 #locating make
 AC_CHECK_PROG([MAKE], [make], [make], [])
 
+AC_PATH_TOOL(EMACS, emacs, , [${extra_erl_path}$PATH])
+
 if test "x$ESCRIPT" = "x"; then
    AC_MSG_ERROR(['escript' was not found])
 fi

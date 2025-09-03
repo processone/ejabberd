@@ -33,32 +33,36 @@
 
 -export([init/3, new/1, free/2]).
 
+
 init(_Host, _ServerHost, _Opts) ->
-    ejabberd_mnesia:create(?MODULE, pubsub_index,
-	[{disc_copies, [node()]},
-	    {attributes, record_info(fields, pubsub_index)}]).
+    ejabberd_mnesia:create(?MODULE,
+                           pubsub_index,
+                           [{disc_copies, [node()]},
+                            {attributes, record_info(fields, pubsub_index)}]).
+
 
 new(Index) ->
     case mnesia:read({pubsub_index, Index}) of
-	[I] ->
-	    case I#pubsub_index.free of
-		[] ->
-		    Id = I#pubsub_index.last + 1,
-		    mnesia:write(I#pubsub_index{last = Id}),
-		    Id;
-		[Id | Free] ->
-		    mnesia:write(I#pubsub_index{free = Free}), Id
-	    end;
-	_ ->
-	    mnesia:write(#pubsub_index{index = Index, last = 1, free = []}),
-	    1
+        [I] ->
+            case I#pubsub_index.free of
+                [] ->
+                    Id = I#pubsub_index.last + 1,
+                    mnesia:write(I#pubsub_index{last = Id}),
+                    Id;
+                [Id | Free] ->
+                    mnesia:write(I#pubsub_index{free = Free}), Id
+            end;
+        _ ->
+            mnesia:write(#pubsub_index{index = Index, last = 1, free = []}),
+            1
     end.
+
 
 free(Index, Id) ->
     case mnesia:read({pubsub_index, Index}) of
-	[I] ->
-	    Free = I#pubsub_index.free,
-	    mnesia:write(I#pubsub_index{free = [Id | Free]});
-	_ ->
-	    ok
+        [I] ->
+            Free = I#pubsub_index.free,
+            mnesia:write(I#pubsub_index{free = [Id | Free]});
+        _ ->
+            ok
     end.

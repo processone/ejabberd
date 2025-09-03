@@ -65,52 +65,62 @@
 -export_type([validator/0, validator/1, validators/0]).
 -export_type([error_reason/0, error_return/0]).
 
+
 %%%===================================================================
 %%% API
 %%%===================================================================
 parse(File, Validators, Options) ->
-    try yconf:parse(File, Validators, Options)
-    catch _:{?MODULE, Reason, Ctx} ->
-	    {error, Reason, Ctx}
+    try
+        yconf:parse(File, Validators, Options)
+    catch
+        _:{?MODULE, Reason, Ctx} ->
+            {error, Reason, Ctx}
     end.
 
+
 validate(Validator, Y) ->
-    try yconf:validate(Validator, Y)
-    catch _:{?MODULE, Reason, Ctx} ->
-	    {error, Reason, Ctx}
+    try
+        yconf:validate(Validator, Y)
+    catch
+        _:{?MODULE, Reason, Ctx} ->
+            {error, Reason, Ctx}
     end.
+
 
 replace_macros(Y) ->
     yconf:replace_macros(Y).
 
+
 -spec fail(error_reason()) -> no_return().
 fail(Reason) ->
     yconf:fail(?MODULE, Reason).
+
 
 format_error({bad_module, Mod}, Ctx)
   when Ctx == [listen, module];
        Ctx == [listen, request_handlers] ->
     Mods = ejabberd_config:beams(all),
     format("~ts: unknown ~ts: ~ts. Did you mean ~ts?",
-	   [yconf:format_ctx(Ctx),
-	    format_module_type(Ctx),
-	    format_module(Mod),
-	    format_module(misc:best_match(Mod, Mods))]);
+           [yconf:format_ctx(Ctx),
+            format_module_type(Ctx),
+            format_module(Mod),
+            format_module(misc:best_match(Mod, Mods))]);
 format_error({bad_module, Mod}, Ctx)
   when Ctx == [modules] ->
     Mods = lists:filter(
-	     fun(M) ->
-		     case atom_to_list(M) of
-			 "mod_" ++ _ -> true;
-			 "Elixir.Mod" ++ _ -> true;
-			 _ -> false
-		     end
-	     end, ejabberd_config:beams(all)),
+             fun(M) ->
+                     case atom_to_list(M) of
+                         "mod_" ++ _ -> true;
+                         "Elixir.Mod" ++ _ -> true;
+                         _ -> false
+                     end
+             end,
+             ejabberd_config:beams(all)),
     format("~ts: unknown ~ts: ~ts. Did you mean ~ts?",
-	   [yconf:format_ctx(Ctx),
-	    format_module_type(Ctx),
-	    format_module(Mod),
-	    format_module(misc:best_match(Mod, Mods))]);
+           [yconf:format_ctx(Ctx),
+            format_module_type(Ctx),
+            format_module(Mod),
+            format_module(misc:best_match(Mod, Mods))]);
 format_error({bad_export, {F, A}, Mod}, Ctx)
   when Ctx == [listen, module];
        Ctx == [listen, request_handlers];
@@ -118,38 +128,39 @@ format_error({bad_export, {F, A}, Mod}, Ctx)
     Type = format_module_type(Ctx),
     Slogan = yconf:format_ctx(Ctx),
     case lists:member(Mod, ejabberd_config:beams(local)) of
-	true ->
-	    format("~ts: '~ts' is not a ~ts",
-		   [Slogan, format_module(Mod), Type]);
-	false ->
-	    case lists:member(Mod, ejabberd_config:beams(external)) of
-		true ->
-		    format("~ts: third-party ~ts '~ts' doesn't export "
-			   "function ~ts/~B. If it's really a ~ts, "
-			   "consider to upgrade it",
-			   [Slogan, Type, format_module(Mod),F, A, Type]);
-		false ->
-		    format("~ts: '~ts' doesn't match any known ~ts",
-			   [Slogan, format_module(Mod), Type])
-	    end
+        true ->
+            format("~ts: '~ts' is not a ~ts",
+                   [Slogan, format_module(Mod), Type]);
+        false ->
+            case lists:member(Mod, ejabberd_config:beams(external)) of
+                true ->
+                    format("~ts: third-party ~ts '~ts' doesn't export "
+                           "function ~ts/~B. If it's really a ~ts, "
+                           "consider to upgrade it",
+                           [Slogan, Type, format_module(Mod), F, A, Type]);
+                false ->
+                    format("~ts: '~ts' doesn't match any known ~ts",
+                           [Slogan, format_module(Mod), Type])
+            end
     end;
 format_error({unknown_option, [], _} = Why, Ctx) ->
     format("~ts. There are no available options",
-	   [yconf:format_error(Why, Ctx)]);
+           [yconf:format_error(Why, Ctx)]);
 format_error({unknown_option, Known, Opt} = Why, Ctx) ->
     format("~ts. Did you mean ~ts? ~ts",
-	   [yconf:format_error(Why, Ctx),
-	    misc:best_match(Opt, Known),
-	    format_known("Available options", Known)]);
+           [yconf:format_error(Why, Ctx),
+            misc:best_match(Opt, Known),
+            format_known("Available options", Known)]);
 format_error({bad_enum, Known, Bad} = Why, Ctx) ->
     format("~ts. Did you mean ~ts? ~ts",
-	   [yconf:format_error(Why, Ctx),
-	    misc:best_match(Bad, Known),
-	    format_known("Possible values", Known)]);
+           [yconf:format_error(Why, Ctx),
+            misc:best_match(Bad, Known),
+            format_known("Possible values", Known)]);
 format_error({bad_yaml, _, _} = Why, _) ->
     format_error(Why);
 format_error(Reason, Ctx) ->
     yconf:format_ctx(Ctx) ++ ": " ++ format_error(Reason).
+
 
 format_error({bad_db_type, _, Atom}) ->
     format("unsupported database: ~ts", [Atom]);
@@ -157,7 +168,7 @@ format_error({bad_lang, Lang}) ->
     format("Invalid language tag: ~ts", [Lang]);
 format_error({bad_pem, Why, Path}) ->
     format("Failed to read PEM file '~ts': ~ts",
-	   [Path, pkix:format_error(Why)]);
+           [Path, pkix:format_error(Why)]);
 format_error({bad_cert, Why, Path}) ->
     format_error({bad_pem, Why, Path});
 format_error({bad_jwt_key, Path}) ->
@@ -178,41 +189,45 @@ format_error({bad_sip_uri, Bad}) ->
     format("Invalid SIP URI: ~ts", [Bad]);
 format_error({route_conflict, R}) ->
     format("Failed to reuse route '~ts' because it's "
-	   "already registered on a virtual host",
-	   [R]);
+           "already registered on a virtual host",
+           [R]);
 format_error({listener_dup, AddrPort}) ->
     format("Overlapping listeners found at ~ts",
-	   [format_addr_port(AddrPort)]);
+           [format_addr_port(AddrPort)]);
 format_error({listener_conflict, AddrPort1, AddrPort2}) ->
     format("Overlapping listeners found at ~ts and ~ts",
-	   [format_addr_port(AddrPort1),
-	    format_addr_port(AddrPort2)]);
+           [format_addr_port(AddrPort1),
+            format_addr_port(AddrPort2)]);
 format_error({invalid_syntax, Reason}) ->
     format("~ts", [Reason]);
 format_error({missing_module_dep, Mod, DepMod}) ->
     format("module ~ts depends on module ~ts, "
-	   "which is not found in the config",
-	   [Mod, DepMod]);
+           "which is not found in the config",
+           [Mod, DepMod]);
 format_error(eimp_error) ->
     format("ejabberd is built without image converter support", []);
 format_error({mqtt_codec, Reason}) ->
     mqtt_codec:format_error(Reason);
 format_error({external_module_error, Module, Error}) ->
-    try Module:format_error(Error)
-    catch _:_ ->
-	format("Invalid value", [])
+    try
+        Module:format_error(Error)
+    catch
+        _:_ ->
+            format("Invalid value", [])
     end;
 format_error(Reason) ->
     yconf:format_error(Reason).
+
 
 -spec format_module(atom() | string()) -> string().
 format_module(Mod) when is_atom(Mod) ->
     format_module(atom_to_list(Mod));
 format_module(Mod) ->
     case Mod of
-	"Elixir." ++ M -> M;
-	M -> M
+        "Elixir." ++ M -> M;
+        M -> M
     end.
+
 
 format_module_type([listen, module]) ->
     "listening module";
@@ -221,17 +236,20 @@ format_module_type([listen, request_handlers]) ->
 format_module_type([modules]) ->
     "ejabberd module".
 
+
 format_known(_, Known) when length(Known) > 20 ->
     "";
 format_known(Prefix, Known) ->
     [Prefix, " are: ", format_join(Known)].
 
+
 format_join([]) ->
     "(empty)";
-format_join([H|_] = L) when is_atom(H) ->
-    format_join([atom_to_binary(A, utf8) || A <- L]);
+format_join([H | _] = L) when is_atom(H) ->
+    format_join([ atom_to_binary(A, utf8) || A <- L ]);
 format_join(L) ->
     str:join(lists:sort(L), <<", ">>).
+
 
 %% All duplicated options having list-values are grouped
 %% into a single option with all list-values being concatenated
@@ -244,11 +262,14 @@ group_dups(Y1) ->
                     {Option, Vals} when is_list(Vals) ->
                         lists:keyreplace(Option, 1, Acc, {Option, Vals ++ Values});
                     _ ->
-                        [{Option, Values}|Acc]
+                        [{Option, Values} | Acc]
                 end;
            (Other, Acc) ->
-                [Other|Acc]
-        end, [], Y1)).
+                [Other | Acc]
+        end,
+        [],
+        Y1)).
+
 
 %%%===================================================================
 %%% Validators from yconf
@@ -256,149 +277,198 @@ group_dups(Y1) ->
 pos_int() ->
     yconf:pos_int().
 
+
 pos_int(Inf) ->
     yconf:pos_int(Inf).
+
 
 non_neg_int() ->
     yconf:non_neg_int().
 
+
 non_neg_int(Inf) ->
     yconf:non_neg_int(Inf).
+
 
 int() ->
     yconf:int().
 
+
 int(Min, Max) ->
     yconf:int(Min, Max).
+
 
 number(Min) ->
     yconf:number(Min).
 
+
 octal() ->
     yconf:octal().
+
 
 binary() ->
     yconf:binary().
 
+
 binary(Re) ->
     yconf:binary(Re).
+
 
 binary(Re, Opts) ->
     yconf:binary(Re, Opts).
 
+
 enum(L) ->
     yconf:enum(L).
+
 
 bool() ->
     yconf:bool().
 
+
 atom() ->
     yconf:atom().
+
 
 string() ->
     yconf:string().
 
+
 string(Re) ->
     yconf:string(Re).
+
 
 string(Re, Opts) ->
     yconf:string(Re, Opts).
 
+
 any() ->
     yconf:any().
+
 
 url() ->
     yconf:url().
 
+
 url(Schemes) ->
     yconf:url(Schemes).
+
 
 file() ->
     yconf:file().
 
+
 file(Type) ->
     yconf:file(Type).
+
 
 directory() ->
     yconf:directory().
 
+
 directory(Type) ->
     yconf:directory(Type).
+
 
 ip() ->
     yconf:ip().
 
+
 ipv4() ->
     yconf:ipv4().
+
 
 ipv6() ->
     yconf:ipv6().
 
+
 ip_mask() ->
     yconf:ip_mask().
+
 
 port() ->
     yconf:port().
 
+
 re() ->
     yconf:re().
+
 
 re(Opts) ->
     yconf:re(Opts).
 
+
 glob() ->
     yconf:glob().
+
 
 glob(Opts) ->
     yconf:glob(Opts).
 
+
 path() ->
     yconf:path().
+
 
 binary_sep(Sep) ->
     yconf:binary_sep(Sep).
 
+
 timeout(Units) ->
     yconf:timeout(Units).
+
 
 timeout(Units, Inf) ->
     yconf:timeout(Units, Inf).
 
+
 base64() ->
     yconf:base64().
+
 
 non_empty(F) ->
     yconf:non_empty(F).
 
+
 list(F) ->
     yconf:list(F).
+
 
 list(F, Opts) ->
     yconf:list(F, Opts).
 
+
 list_or_single(F) ->
     yconf:list_or_single(F).
+
 
 list_or_single(F, Opts) ->
     yconf:list_or_single(F, Opts).
 
+
 map(F1, F2) ->
     yconf:map(F1, F2).
+
 
 map(F1, F2, Opts) ->
     yconf:map(F1, F2, Opts).
 
+
 either(F1, F2) ->
     yconf:either(F1, F2).
+
 
 and_then(F1, F2) ->
     yconf:and_then(F1, F2).
 
+
 options(V) ->
     yconf:options(V).
 
+
 options(V, O) ->
     yconf:options(V, O).
+
 
 %%%===================================================================
 %%% Custom validators
@@ -406,26 +476,30 @@ options(V, O) ->
 beam() ->
     beam([]).
 
+
 beam(Exports) ->
     and_then(
       non_empty(binary()),
       fun(<<"Elixir.", _/binary>> = Val) ->
-	      (yconf:beam(Exports))(Val);
-	 (<<C, _/binary>> = Val) when C >= $A, C =< $Z ->
-	      (yconf:beam(Exports))(<<"Elixir.", Val/binary>>);
-	 (Val) ->
-	      (yconf:beam(Exports))(Val)
+              (yconf:beam(Exports))(Val);
+         (<<C, _/binary>> = Val) when C >= $A, C =< $Z ->
+              (yconf:beam(Exports))(<<"Elixir.", Val/binary>>);
+         (Val) ->
+              (yconf:beam(Exports))(Val)
       end).
+
 
 acl() ->
     either(
       atom(),
       acl:access_rules_validator()).
 
+
 shaper() ->
     either(
       atom(),
       ejabberd_shaper:shaper_rules_validator()).
+
 
 -spec url_or_file() -> yconf:validator({file | url, binary()}).
 url_or_file() ->
@@ -433,194 +507,222 @@ url_or_file() ->
       and_then(url(), fun(URL) -> {url, URL} end),
       and_then(file(), fun(File) -> {file, File} end)).
 
+
 -spec lang() -> yconf:validator(binary()).
 lang() ->
     and_then(
       binary(),
       fun(Lang) ->
-	      try xmpp_lang:check(Lang)
-	      catch _:_ -> fail({bad_lang, Lang})
-	      end
+              try
+                  xmpp_lang:check(Lang)
+              catch
+                  _:_ -> fail({bad_lang, Lang})
+              end
       end).
+
 
 -spec pem() -> yconf:validator(binary()).
 pem() ->
     and_then(
       path(),
       fun(Path) ->
-	      case pkix:is_pem_file(Path) of
-		  true -> Path;
-		  {false, Reason} ->
-		      fail({bad_pem, Reason, Path})
-	      end
+              case pkix:is_pem_file(Path) of
+                  true -> Path;
+                  {false, Reason} ->
+                      fail({bad_pem, Reason, Path})
+              end
       end).
+
 
 -spec jid() -> yconf:validator(jid:jid()).
 jid() ->
     and_then(
       binary(),
       fun(Val) ->
-	      try jid:decode(Val)
-	      catch _:{bad_jid, _} = Reason -> fail(Reason)
-	      end
+              try
+                  jid:decode(Val)
+              catch
+                  _:{bad_jid, _} = Reason -> fail(Reason)
+              end
       end).
+
 
 -spec user() -> yconf:validator(binary()).
 user() ->
     and_then(
       binary(),
       fun(Val) ->
-	      case jid:nodeprep(Val) of
-		  error -> fail({bad_user, Val});
-		  U -> U
-	      end
+              case jid:nodeprep(Val) of
+                  error -> fail({bad_user, Val});
+                  U -> U
+              end
       end).
+
 
 -spec domain() -> yconf:validator(binary()).
 domain() ->
     and_then(
       non_empty(binary()),
       fun(Val) ->
-	      try jid:tolower(jid:decode(Val)) of
-		  {<<"">>, <<"xn--", _/binary>> = Domain, <<"">>} ->
-		      unicode:characters_to_binary(idna:decode(binary_to_list(Domain)), utf8);
-		  {<<"">>, Domain, <<"">>} -> Domain;
-		  _ -> fail({bad_domain, Val})
-	      catch _:{bad_jid, _} ->
-		      fail({bad_domain, Val})
-	      end
+              try jid:tolower(jid:decode(Val)) of
+                  {<<"">>, <<"xn--", _/binary>> = Domain, <<"">>} ->
+                      unicode:characters_to_binary(idna:decode(binary_to_list(Domain)), utf8);
+                  {<<"">>, Domain, <<"">>} -> Domain;
+                  _ -> fail({bad_domain, Val})
+              catch
+                  _:{bad_jid, _} ->
+                      fail({bad_domain, Val})
+              end
       end).
+
 
 -spec resource() -> yconf:validator(binary()).
 resource() ->
     and_then(
       binary(),
       fun(Val) ->
-	      case jid:resourceprep(Val) of
-		  error -> fail({bad_resource, Val});
-		  R -> R
-	      end
+              case jid:resourceprep(Val) of
+                  error -> fail({bad_resource, Val});
+                  R -> R
+              end
       end).
+
 
 -spec db_type(module()) -> yconf:validator(atom()).
 db_type(M) ->
     and_then(
       atom(),
       fun(T) ->
-        case code:ensure_loaded(db_module(M, T)) of
-          {module, _} -> T;
-          {error, _} ->
-            ElixirModule = "Elixir." ++ atom_to_list(T),
-            case code:ensure_loaded(list_to_atom(ElixirModule)) of
-              {module, _} -> list_to_atom(ElixirModule);
-              {error, _} -> fail({bad_db_type, M, T})
-            end
-          end
+              case code:ensure_loaded(db_module(M, T)) of
+                  {module, _} -> T;
+                  {error, _} ->
+                      ElixirModule = "Elixir." ++ atom_to_list(T),
+                      case code:ensure_loaded(list_to_atom(ElixirModule)) of
+                          {module, _} -> list_to_atom(ElixirModule);
+                          {error, _} -> fail({bad_db_type, M, T})
+                      end
+              end
       end).
+
 
 -spec queue_type() -> yconf:validator(ram | file).
 queue_type() ->
     enum([ram, file]).
+
 
 -spec ldap_filter() -> yconf:validator(binary()).
 ldap_filter() ->
     and_then(
       binary(),
       fun(Val) ->
-	      case eldap_filter:parse(Val) of
-		  {ok, _} -> Val;
-		  _ -> fail({bad_ldap_filter, Val})
-	      end
+              case eldap_filter:parse(Val) of
+                  {ok, _} -> Val;
+                  _ -> fail({bad_ldap_filter, Val})
+              end
       end).
 
+
 -ifdef(SIP).
+
+
 sip_uri() ->
     and_then(
       binary(),
       fun(Val) ->
-	      case esip:decode_uri(Val) of
-		  error -> fail({bad_sip_uri, Val});
-		  URI -> URI
-	      end
+              case esip:decode_uri(Val) of
+                  error -> fail({bad_sip_uri, Val});
+                  URI -> URI
+              end
       end).
+
+
 -endif.
+
 
 -spec host() -> yconf:validator(binary()).
 host() ->
     fun(Domain) ->
-	    Hosts = ejabberd_config:get_option(hosts),
-	    Domain3 = (domain())(Domain),
-	    case lists:member(Domain3, Hosts) of
-		true -> fail({route_conflict, Domain});
-		false -> Domain3
-	    end
+            Hosts = ejabberd_config:get_option(hosts),
+            Domain3 = (domain())(Domain),
+            case lists:member(Domain3, Hosts) of
+                true -> fail({route_conflict, Domain});
+                false -> Domain3
+            end
     end.
+
 
 -spec hosts() -> yconf:validator([binary()]).
 hosts() ->
     list(host(), [unique]).
 
+
 -spec vcard_temp() -> yconf:validator().
 vcard_temp() ->
     and_then(
-	vcard_validator(
-	    vcard_temp, undefined,
-	    [{version, undefined, binary()},
-	     {fn, undefined, binary()},
-	     {n, undefined, vcard_name()},
-	     {nickname, undefined, binary()},
-	     {photo, undefined, vcard_photo()},
-	     {bday, undefined, binary()},
-	     {adr, [], list(vcard_adr())},
-	     {label, [], list(vcard_label())},
-	     {tel, [], list(vcard_tel())},
-	     {email, [], list(vcard_email())},
-	     {jabberid, undefined, binary()},
-	     {mailer, undefined, binary()},
-	     {tz, undefined, binary()},
-	     {geo, undefined, vcard_geo()},
-	     {title, undefined, binary()},
-	     {role, undefined, binary()},
-	     {logo, undefined, vcard_logo()},
-	     {org, undefined, vcard_org()},
-	     {categories, [], list(binary())},
-	     {note, undefined, binary()},
-	     {prodid, undefined, binary()},
-	     {rev, undefined, binary()},
-	     {sort_string, undefined, binary()},
-	     {sound, undefined, vcard_sound()},
-	     {uid, undefined, binary()},
-	     {url, undefined, binary()},
-	     {class, undefined, enum([confidential, private, public])},
-	     {key, undefined, vcard_key()},
-	     {desc, undefined, binary()}]),
-	fun(Tuple) ->
-	    list_to_tuple(tuple_to_list(Tuple) ++ [[]])
-	end).
+      vcard_validator(
+        vcard_temp,
+        undefined,
+        [{version, undefined, binary()},
+         {fn, undefined, binary()},
+         {n, undefined, vcard_name()},
+         {nickname, undefined, binary()},
+         {photo, undefined, vcard_photo()},
+         {bday, undefined, binary()},
+         {adr, [], list(vcard_adr())},
+         {label, [], list(vcard_label())},
+         {tel, [], list(vcard_tel())},
+         {email, [], list(vcard_email())},
+         {jabberid, undefined, binary()},
+         {mailer, undefined, binary()},
+         {tz, undefined, binary()},
+         {geo, undefined, vcard_geo()},
+         {title, undefined, binary()},
+         {role, undefined, binary()},
+         {logo, undefined, vcard_logo()},
+         {org, undefined, vcard_org()},
+         {categories, [], list(binary())},
+         {note, undefined, binary()},
+         {prodid, undefined, binary()},
+         {rev, undefined, binary()},
+         {sort_string, undefined, binary()},
+         {sound, undefined, vcard_sound()},
+         {uid, undefined, binary()},
+         {url, undefined, binary()},
+         {class, undefined, enum([confidential, private, public])},
+         {key, undefined, vcard_key()},
+         {desc, undefined, binary()}]),
+      fun(Tuple) ->
+              list_to_tuple(tuple_to_list(Tuple) ++ [[]])
+      end).
 
 
 -spec vcard_name() -> yconf:validator().
 vcard_name() ->
     vcard_validator(
-      vcard_name, undefined,
+      vcard_name,
+      undefined,
       [{family, undefined, binary()},
        {given, undefined, binary()},
        {middle, undefined, binary()},
        {prefix, undefined, binary()},
        {suffix, undefined, binary()}]).
 
+
 -spec vcard_photo() -> yconf:validator().
 vcard_photo() ->
     vcard_validator(
-      vcard_photo, undefined,
+      vcard_photo,
+      undefined,
       [{type, undefined, binary()},
        {binval, undefined, base64()},
        {extval, undefined, binary()}]).
 
+
 -spec vcard_adr() -> yconf:validator().
 vcard_adr() ->
     vcard_validator(
-      vcard_adr, [],
+      vcard_adr,
+      [],
       [{home, false, bool()},
        {work, false, bool()},
        {postal, false, bool()},
@@ -636,10 +738,12 @@ vcard_adr() ->
        {pcode, undefined, binary()},
        {ctry, undefined, binary()}]).
 
+
 -spec vcard_label() -> yconf:validator().
 vcard_label() ->
     vcard_validator(
-      vcard_label, [],
+      vcard_label,
+      [],
       [{home, false, bool()},
        {work, false, bool()},
        {postal, false, bool()},
@@ -649,10 +753,12 @@ vcard_label() ->
        {pref, false, bool()},
        {line, [], list(binary())}]).
 
+
 -spec vcard_tel() -> yconf:validator().
 vcard_tel() ->
     vcard_validator(
-      vcard_tel, [],
+      vcard_tel,
+      [],
       [{home, false, bool()},
        {work, false, bool()},
        {voice, false, bool()},
@@ -668,10 +774,12 @@ vcard_tel() ->
        {pref, false, bool()},
        {number, undefined, binary()}]).
 
+
 -spec vcard_email() -> yconf:validator().
 vcard_email() ->
     vcard_validator(
-      vcard_email, [],
+      vcard_email,
+      [],
       [{home, false, bool()},
        {work, false, bool()},
        {internet, false, bool()},
@@ -679,77 +787,94 @@ vcard_email() ->
        {x400, false, bool()},
        {userid, undefined, binary()}]).
 
+
 -spec vcard_geo() -> yconf:validator().
 vcard_geo() ->
     vcard_validator(
-      vcard_geo, undefined,
+      vcard_geo,
+      undefined,
       [{lat, undefined, binary()},
        {lon, undefined, binary()}]).
+
 
 -spec vcard_logo() -> yconf:validator().
 vcard_logo() ->
     vcard_validator(
-      vcard_logo, undefined,
+      vcard_logo,
+      undefined,
       [{type, undefined, binary()},
        {binval, undefined, base64()},
        {extval, undefined, binary()}]).
+
 
 -spec vcard_org() -> yconf:validator().
 vcard_org() ->
     vcard_validator(
-      vcard_org, undefined,
+      vcard_org,
+      undefined,
       [{name, undefined, binary()},
        {units, [], list(binary())}]).
+
 
 -spec vcard_sound() -> yconf:validator().
 vcard_sound() ->
     vcard_validator(
-      vcard_sound, undefined,
+      vcard_sound,
+      undefined,
       [{phonetic, undefined, binary()},
        {binval, undefined, base64()},
        {extval, undefined, binary()}]).
 
+
 -spec vcard_key() -> yconf:validator().
 vcard_key() ->
     vcard_validator(
-      vcard_key, undefined,
+      vcard_key,
+      undefined,
       [{type, undefined, binary()},
        {cred, undefined, binary()}]).
+
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 -spec db_module(module(), atom()) -> module().
 db_module(M, Type) ->
-    try list_to_atom(atom_to_list(M) ++ "_" ++ atom_to_list(Type))
-    catch _:system_limit ->
-	    fail({bad_length, 255})
+    try
+        list_to_atom(atom_to_list(M) ++ "_" ++ atom_to_list(Type))
+    catch
+        _:system_limit ->
+            fail({bad_length, 255})
     end.
+
 
 format_addr_port({IP, Port}) ->
     IPStr = case tuple_size(IP) of
-		4 -> inet:ntoa(IP);
-		8 -> "[" ++ inet:ntoa(IP) ++ "]"
-	    end,
+                4 -> inet:ntoa(IP);
+                8 -> "[" ++ inet:ntoa(IP) ++ "]"
+            end,
     IPStr ++ ":" ++ integer_to_list(Port).
+
 
 -spec format(iolist(), list()) -> string().
 format(Fmt, Args) ->
     lists:flatten(io_lib:format(Fmt, Args)).
 
+
 -spec vcard_validator(atom(), term(), [{atom(), term(), validator()}]) -> validator().
 vcard_validator(Name, Default, Schema) ->
-    Defaults = [{Key, Val} || {Key, Val, _} <- Schema],
+    Defaults = [ {Key, Val} || {Key, Val, _} <- Schema ],
     and_then(
       options(
-	maps:from_list([{Key, Fun} || {Key, _, Fun} <- Schema]),
-	[{return, map}, {unique, true}]),
+        maps:from_list([ {Key, Fun} || {Key, _, Fun} <- Schema ]),
+        [{return, map}, {unique, true}]),
       fun(Options) ->
-	      merge(Defaults, Options, Name, Default)
+              merge(Defaults, Options, Name, Default)
       end).
+
 
 -spec merge([{atom(), term()}], #{atom() => term()}, atom(), T) -> tuple() | T.
 merge(_, Options, _, Default) when Options == #{} ->
     Default;
 merge(Defaults, Options, Name, _) ->
-    list_to_tuple([Name|[maps:get(Key, Options, Val) || {Key, Val} <- Defaults]]).
+    list_to_tuple([Name | [ maps:get(Key, Options, Val) || {Key, Val} <- Defaults ]]).

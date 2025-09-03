@@ -28,6 +28,10 @@
 -include("logger.hrl").
 -include("mqtt.hrl").
 
+%%
+%% @efmt:off
+%% @indent-begin
+
 -record(mqtt_pub, {topic_server            :: {binary(), binary()},
                    user                    :: binary(),
                    resource                :: binary(),
@@ -41,21 +45,26 @@
                    user_properties = []    :: [{binary(), binary()}]}).
 
 -record(mqtt_sub, {topic     :: {binary(), binary(), binary(), binary()},
-		   options   :: sub_opts(),
-		   id        :: non_neg_integer(),
-		   pid       :: pid(),
-		   timestamp :: erlang:timestamp()}).
+                   options   :: sub_opts(),
+                   id        :: non_neg_integer(),
+                   pid       :: pid(),
+                   timestamp :: erlang:timestamp()}).
 
 -record(mqtt_session, {usr       :: jid:ljid() | {'_', '_', '$1'},
-		       pid       :: pid() | '_',
-		       timestamp :: erlang:timestamp() | '_'}).
+                       pid       :: pid() | '_',
+                       timestamp :: erlang:timestamp() | '_'}).
+
+%% @indent-end
+%% @efmt:on
+           %%
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
     case ejabberd_mnesia:create(
-           ?MODULE, mqtt_pub,
+           ?MODULE,
+           mqtt_pub,
            [{disc_only_copies, [node()]},
             {attributes, record_info(fields, mqtt_pub)}]) of
         {atomic, _} ->
@@ -63,6 +72,7 @@ init(_Host, _Opts) ->
         Err ->
             {error, Err}
     end.
+
 
 use_cache(Host) ->
     case mnesia:table_info(mqtt_pub, storage_type) of
@@ -72,49 +82,60 @@ use_cache(Host) ->
             false
     end.
 
+
 publish({U, LServer, R}, Topic, Payload, QoS, Props, ExpiryTime) ->
     PayloadFormat = maps:get(payload_format_indicator, Props, binary),
     ResponseTopic = maps:get(response_topic, Props, <<"">>),
     CorrelationData = maps:get(correlation_data, Props, <<"">>),
     ContentType = maps:get(content_type, Props, <<"">>),
     UserProps = maps:get(user_property, Props, []),
-    mnesia:dirty_write(#mqtt_pub{topic_server = {Topic, LServer},
-                                 user = U,
-                                 resource = R,
-                                 qos = QoS,
-                                 payload = Payload,
-                                 expiry = ExpiryTime,
-                                 payload_format = PayloadFormat,
-                                 response_topic = ResponseTopic,
-                                 correlation_data = CorrelationData,
-                                 content_type = ContentType,
-                                 user_properties = UserProps}).
+    mnesia:dirty_write(#mqtt_pub{
+                         topic_server = {Topic, LServer},
+                         user = U,
+                         resource = R,
+                         qos = QoS,
+                         payload = Payload,
+                         expiry = ExpiryTime,
+                         payload_format = PayloadFormat,
+                         response_topic = ResponseTopic,
+                         correlation_data = CorrelationData,
+                         content_type = ContentType,
+                         user_properties = UserProps
+                        }).
+
 
 delete_published({_, S, _}, Topic) ->
     mnesia:dirty_delete(mqtt_pub, {Topic, S}).
 
+
 lookup_published({_, S, _}, Topic) ->
     case mnesia:dirty_read(mqtt_pub, {Topic, S}) of
-        [#mqtt_pub{qos = QoS,
-                   payload = Payload,
-                   expiry = ExpiryTime,
-                   payload_format = PayloadFormat,
-                   response_topic = ResponseTopic,
-                   correlation_data = CorrelationData,
-                   content_type = ContentType,
-                   user_properties = UserProps}] ->
-            Props = #{payload_format_indicator => PayloadFormat,
+        [#mqtt_pub{
+           qos = QoS,
+           payload = Payload,
+           expiry = ExpiryTime,
+           payload_format = PayloadFormat,
+           response_topic = ResponseTopic,
+           correlation_data = CorrelationData,
+           content_type = ContentType,
+           user_properties = UserProps
+          }] ->
+            Props = #{
+                      payload_format_indicator => PayloadFormat,
                       response_topic => ResponseTopic,
                       correlation_data => CorrelationData,
                       content_type => ContentType,
-                      user_property => UserProps},
+                      user_property => UserProps
+                     },
             {ok, {Payload, QoS, Props, ExpiryTime}};
         [] ->
             {error, notfound}
     end.
 
+
 list_topics(S) ->
-    {ok, [Topic || {Topic, S1} <- mnesia:dirty_all_keys(mqtt_pub), S1 == S]}.
+    {ok, [ Topic || {Topic, S1} <- mnesia:dirty_all_keys(mqtt_pub), S1 == S ]}.
+
 
 init() ->
     case mqtree:whereis(mqtt_sub_index) of
@@ -122,144 +143,168 @@ init() ->
             T = mqtree:new(),
             mqtree:register(mqtt_sub_index, T);
         _ ->
-	    ok
+            ok
     end,
     try
-	{atomic, ok} = ejabberd_mnesia:create(
-			 ?MODULE,
-			 mqtt_session,
-			 [{ram_copies, [node()]},
-			  {attributes, record_info(fields, mqtt_session)}]),
-	{atomic, ok} = ejabberd_mnesia:create(
-			 ?MODULE,
-			 mqtt_sub,
-			 [{ram_copies, [node()]},
-			  {type, ordered_set},
-			  {attributes, record_info(fields, mqtt_sub)}]),
-	ok
-    catch _:{badmatch, Err} ->
-	    {error, Err}
+        {atomic, ok} = ejabberd_mnesia:create(
+                         ?MODULE,
+                         mqtt_session,
+                         [{ram_copies, [node()]},
+                          {attributes, record_info(fields, mqtt_session)}]),
+        {atomic, ok} = ejabberd_mnesia:create(
+                         ?MODULE,
+                         mqtt_sub,
+                         [{ram_copies, [node()]},
+                          {type, ordered_set},
+                          {attributes, record_info(fields, mqtt_sub)}]),
+        ok
+    catch
+        _:{badmatch, Err} ->
+            {error, Err}
     end.
+
 
 open_session(USR) ->
     TS1 = misc:unique_timestamp(),
     P1 = self(),
     F = fun() ->
-		case mnesia:read(mqtt_session, USR) of
-		    [#mqtt_session{pid = P2, timestamp = TS2}] ->
-			if TS1 >= TS2 ->
-				mod_mqtt_session:route(P2, {replaced, P1}),
-				mnesia:write(
-				  #mqtt_session{usr = USR,
-						pid = P1,
-						timestamp = TS1});
-			   true ->
-				case is_process_dead(P2) of
-				    true ->
-					mnesia:write(
-					  #mqtt_session{usr = USR,
-							pid = P1,
-							timestamp = TS1});
-				    false ->
-					mod_mqtt_session:route(P1, {replaced, P2})
-				end
-			end;
-		    [] ->
-			mnesia:write(
-			  #mqtt_session{usr = USR,
-					pid = P1,
-					timestamp = TS1})
-		end
-	end,
+                case mnesia:read(mqtt_session, USR) of
+                    [#mqtt_session{pid = P2, timestamp = TS2}] ->
+                        if
+                            TS1 >= TS2 ->
+                                mod_mqtt_session:route(P2, {replaced, P1}),
+                                mnesia:write(
+                                  #mqtt_session{
+                                    usr = USR,
+                                    pid = P1,
+                                    timestamp = TS1
+                                   });
+                            true ->
+                                case is_process_dead(P2) of
+                                    true ->
+                                        mnesia:write(
+                                          #mqtt_session{
+                                            usr = USR,
+                                            pid = P1,
+                                            timestamp = TS1
+                                           });
+                                    false ->
+                                        mod_mqtt_session:route(P1, {replaced, P2})
+                                end
+                        end;
+                    [] ->
+                        mnesia:write(
+                          #mqtt_session{
+                            usr = USR,
+                            pid = P1,
+                            timestamp = TS1
+                           })
+                end
+        end,
     case mnesia:transaction(F) of
-	{atomic, _} -> ok;
-	{aborted, Reason} ->
-	    db_fail("Failed to register MQTT session for ~ts",
-		    Reason, [jid:encode(USR)])
+        {atomic, _} -> ok;
+        {aborted, Reason} ->
+            db_fail("Failed to register MQTT session for ~ts",
+                    Reason,
+                    [jid:encode(USR)])
     end.
+
 
 close_session(USR) ->
     close_session(USR, self()).
 
+
 lookup_session(USR) ->
     case mnesia:dirty_read(mqtt_session, USR) of
-	[#mqtt_session{pid = Pid}] ->
-	    case is_process_dead(Pid) of
-		true ->
-		    %% Read-Repair
-		    close_session(USR, Pid),
-		    {error, notfound};
-		false ->
-		    {ok, Pid}
-	    end;
-	[] ->
-	    {error, notfound}
+        [#mqtt_session{pid = Pid}] ->
+            case is_process_dead(Pid) of
+                true ->
+                    %% Read-Repair
+                    close_session(USR, Pid),
+                    {error, notfound};
+                false ->
+                    {ok, Pid}
+            end;
+        [] ->
+            {error, notfound}
     end.
+
 
 get_sessions(U, S) ->
     Resources = mnesia:dirty_select(mqtt_session,
-                                    [{#mqtt_session{usr = {U, S, '$1'},
-                                                    _ = '_'},
+                                    [{#mqtt_session{
+                                        usr = {U, S, '$1'},
+                                        _ = '_'
+                                       },
                                       [],
                                       ['$1']}]),
-    [{U, S, Resource} || Resource <- Resources].
+    [ {U, S, Resource} || Resource <- Resources ].
+
 
 subscribe({U, S, R} = USR, TopicFilter, SubOpts, ID) ->
     T1 = misc:unique_timestamp(),
     P1 = self(),
     Key = {TopicFilter, S, U, R},
     F = fun() ->
-		case mnesia:read(mqtt_sub, Key) of
-		    [#mqtt_sub{timestamp = T2}] when T1 < T2 ->
-			ok;
-		    _ ->
-			Tree = mqtree:whereis(mqtt_sub_index),
-			mqtree:insert(Tree, TopicFilter),
-			mnesia:write(
-			  #mqtt_sub{topic = {TopicFilter, S, U, R},
-				    options = SubOpts,
-				    id = ID,
-				    pid = P1,
-				    timestamp = T1})
-		end
-	end,
+                case mnesia:read(mqtt_sub, Key) of
+                    [#mqtt_sub{timestamp = T2}] when T1 < T2 ->
+                        ok;
+                    _ ->
+                        Tree = mqtree:whereis(mqtt_sub_index),
+                        mqtree:insert(Tree, TopicFilter),
+                        mnesia:write(
+                          #mqtt_sub{
+                            topic = {TopicFilter, S, U, R},
+                            options = SubOpts,
+                            id = ID,
+                            pid = P1,
+                            timestamp = T1
+                           })
+                end
+        end,
     case mnesia:transaction(F) of
-	{atomic, _} -> ok;
-	{aborted, Reason} ->
-	    db_fail("Failed to subscribe ~ts to ~ts",
-		    Reason, [jid:encode(USR), TopicFilter])
+        {atomic, _} -> ok;
+        {aborted, Reason} ->
+            db_fail("Failed to subscribe ~ts to ~ts",
+                    Reason,
+                    [jid:encode(USR), TopicFilter])
     end.
+
 
 unsubscribe({U, S, R} = USR, Topic) ->
     Pid = self(),
     F = fun() ->
-		Tree = mqtree:whereis(mqtt_sub_index),
-		mqtree:delete(Tree, Topic),
-		case mnesia:read(mqtt_sub, {Topic, S, U, R}) of
-		    [#mqtt_sub{pid = Pid} = Obj] ->
-			mnesia:delete_object(Obj);
-		    _ ->
-			ok
-		end
-	end,
+                Tree = mqtree:whereis(mqtt_sub_index),
+                mqtree:delete(Tree, Topic),
+                case mnesia:read(mqtt_sub, {Topic, S, U, R}) of
+                    [#mqtt_sub{pid = Pid} = Obj] ->
+                        mnesia:delete_object(Obj);
+                    _ ->
+                        ok
+                end
+        end,
     case mnesia:transaction(F) of
-	{atomic, _} -> ok;
-	{aborted, Reason} ->
-	    db_fail("Failed to unsubscribe ~ts from ~ts",
-		    Reason, [jid:encode(USR), Topic])
+        {atomic, _} -> ok;
+        {aborted, Reason} ->
+            db_fail("Failed to unsubscribe ~ts from ~ts",
+                    Reason,
+                    [jid:encode(USR), Topic])
     end.
+
 
 mqtree_match(Topic) ->
     Tree = mqtree:whereis(mqtt_sub_index),
     mqtree:match(Tree, Topic).
 
+
 mqtree_multi_match(Topic) ->
     {Res, []} = ejabberd_cluster:multicall(?MODULE, mqtree_match, [Topic]),
     lists:umerge(Res).
 
+
 find_subscriber(S, Topic) when is_binary(Topic) ->
     case mqtree_multi_match(Topic) of
-        [Filter|Filters] ->
+        [Filter | Filters] ->
             find_subscriber(S, {Filters, {Filter, S, '_', '_'}});
         [] ->
             {error, notfound}
@@ -268,13 +313,13 @@ find_subscriber(S, {Filters, {Filter, S, _, _} = Prev}) ->
     case mnesia:dirty_next(mqtt_sub, Prev) of
         {Filter, S, _, _} = Next ->
             case mnesia:dirty_read(mqtt_sub, Next) of
-		[#mqtt_sub{options = SubOpts, id = ID, pid = Pid}] ->
-		    case is_process_dead(Pid) of
-			true ->
-			    find_subscriber(S, {Filters, Next});
-			false ->
+                [#mqtt_sub{options = SubOpts, id = ID, pid = Pid}] ->
+                    case is_process_dead(Pid) of
+                        true ->
+                            find_subscriber(S, {Filters, Next});
+                        false ->
                             {ok, {Pid, SubOpts, ID}, {Filters, Next}}
-		    end;
+                    end;
                 [] ->
                     find_subscriber(S, {Filters, Next})
             end;
@@ -282,32 +327,36 @@ find_subscriber(S, {Filters, {Filter, S, _, _} = Prev}) ->
             case Filters of
                 [] ->
                     {error, notfound};
-                [Filter1|Filters1] ->
+                [Filter1 | Filters1] ->
                     find_subscriber(S, {Filters1, {Filter1, S, '_', '_'}})
             end
     end.
+
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 close_session(USR, Pid) ->
     F = fun() ->
-		case mnesia:read(mqtt_session, USR) of
-		    [#mqtt_session{pid = Pid} = Obj] ->
-			mnesia:delete_object(Obj);
-		    _ ->
-			ok
-		end
-	end,
+                case mnesia:read(mqtt_session, USR) of
+                    [#mqtt_session{pid = Pid} = Obj] ->
+                        mnesia:delete_object(Obj);
+                    _ ->
+                        ok
+                end
+        end,
     case mnesia:transaction(F) of
-	{atomic, _} -> ok;
-	{aborted, Reason} ->
-	    db_fail("Failed to unregister MQTT session for ~ts",
-		    Reason, [jid:encode(USR)])
+        {atomic, _} -> ok;
+        {aborted, Reason} ->
+            db_fail("Failed to unregister MQTT session for ~ts",
+                    Reason,
+                    [jid:encode(USR)])
     end.
+
 
 is_process_dead(Pid) ->
     node(Pid) == node() andalso not is_process_alive(Pid).
+
 
 db_fail(Format, Reason, Args) ->
     ?ERROR_MSG(Format ++ ": ~p", Args ++ [Reason]),

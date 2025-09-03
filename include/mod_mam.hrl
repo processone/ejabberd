@@ -17,6 +17,8 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
+%% @efmt:off
+%% @indent-begin
 
 -record(archive_msg,
 	{us = {<<"">>, <<"">>}                :: {binary(), binary()},

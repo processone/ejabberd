@@ -32,21 +32,32 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process_local_iq/1,
-	 mod_options/1, depends/2, mod_doc/0]).
+-export([start/2,
+         stop/1,
+         reload/3,
+         process_local_iq/1,
+         mod_options/1,
+         depends/2,
+         mod_doc/0]).
 
 -include("logger.hrl").
+
 -include_lib("xmpp/include/xmpp.hrl").
+
 -include("translate.hrl").
+
 
 start(_Host, _Opts) ->
     {ok, [{iq_handler, ejabberd_local, ?NS_TIME, process_local_iq}]}.
 
+
 stop(_Host) ->
     ok.
 
+
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
+
 
 -spec process_local_iq(iq()) -> iq().
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
@@ -57,20 +68,25 @@ process_local_iq(#iq{type = get} = IQ) ->
     Now_universal = calendar:now_to_universal_time(Now),
     Now_local = calendar:universal_time_to_local_time(Now_universal),
     Seconds_diff =
-	calendar:datetime_to_gregorian_seconds(Now_local) -
-	calendar:datetime_to_gregorian_seconds(Now_universal),
+        calendar:datetime_to_gregorian_seconds(Now_local) -
+        calendar:datetime_to_gregorian_seconds(Now_universal),
     {Hd, Md, _} = calendar:seconds_to_time(abs(Seconds_diff)),
     xmpp:make_iq_result(IQ, #time{tzo = {Hd, Md}, utc = Now}).
+
 
 depends(_Host, _Opts) ->
     [].
 
+
 mod_options(_Host) ->
     [].
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           ?T("This module adds support for "
              "https://xmpp.org/extensions/xep-0202.html"
              "[XEP-0202: Entity Time]. In other words, "
-             "the module reports server's system time.")}.
+             "the module reports server's system time.")
+     }.

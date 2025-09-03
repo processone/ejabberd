@@ -16,6 +16,9 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
+%% @efmt:off
+%% @indent-begin
+
 -record(push_session,
         {us = {<<"">>, <<"">>}                  :: {binary(), binary()},
          timestamp = erlang:timestamp()         :: erlang:timestamp(),

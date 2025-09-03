@@ -33,24 +33,31 @@
 -include("mod_caps.hrl").
 -include("logger.hrl").
 
+
 %%%===================================================================
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    ejabberd_mnesia:create(?MODULE, caps_features,
-			   [{disc_only_copies, [node()]},
-			    {local_content, true},
-			    {attributes, record_info(fields, caps_features)}]).
+    ejabberd_mnesia:create(?MODULE,
+                           caps_features,
+                           [{disc_only_copies, [node()]},
+                            {local_content, true},
+                            {attributes, record_info(fields, caps_features)}]).
+
 
 caps_read(_LServer, Node) ->
     case mnesia:dirty_read({caps_features, Node}) of
-	[#caps_features{features = Features}] -> {ok, Features};
-	_ -> error
+        [#caps_features{features = Features}] -> {ok, Features};
+        _ -> error
     end.
 
+
 caps_write(_LServer, Node, Features) ->
-    mnesia:dirty_write(#caps_features{node_pair = Node,
-				      features = Features}).
+    mnesia:dirty_write(#caps_features{
+                         node_pair = Node,
+                         features = Features
+                        }).
+
 
 import(_LServer, NodePair, [I]) when is_integer(I) ->
     mnesia:dirty_write(
@@ -59,25 +66,31 @@ import(_LServer, NodePair, Features) ->
     mnesia:dirty_write(
       #caps_features{node_pair = NodePair, features = Features}).
 
+
 need_transform(#caps_features{node_pair = {N, P}, features = Fs}) ->
     case is_list(N) orelse is_list(P) orelse
-	(is_list(Fs) andalso lists:any(fun is_list/1, Fs)) of
-	true ->
-	    ?INFO_MSG("Mnesia table 'caps_features' will be "
-		      "converted to binary", []),
-	    true;
-	false ->
-	    false
+         (is_list(Fs) andalso lists:any(fun is_list/1, Fs)) of
+        true ->
+            ?INFO_MSG("Mnesia table 'caps_features' will be "
+                      "converted to binary",
+                      []),
+            true;
+        false ->
+            false
     end.
 
+
 transform(#caps_features{node_pair = {N, P}, features = Fs} = R) ->
-    NewFs = if is_integer(Fs) ->
-		    Fs;
-	       true ->
-		    [iolist_to_binary(F) || F <- Fs]
-	    end,
-    R#caps_features{node_pair = {iolist_to_binary(N), iolist_to_binary(P)},
-		    features = NewFs}.
+    NewFs = if
+                is_integer(Fs) ->
+                    Fs;
+                true ->
+                    [ iolist_to_binary(F) || F <- Fs ]
+            end,
+    R#caps_features{
+      node_pair = {iolist_to_binary(N), iolist_to_binary(P)},
+      features = NewFs
+     }.
 
 %%%===================================================================
 %%% Internal functions

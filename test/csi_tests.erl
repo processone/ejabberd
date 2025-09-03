@@ -25,11 +25,18 @@
 
 %% API
 -compile(export_all).
--import(suite, [disconnect/1, wait_for_slave/1, wait_for_master/1,
-		send/2, send_recv/2, recv_presence/1, recv_message/1,
-		server_jid/1]).
+-import(suite,
+        [disconnect/1,
+         wait_for_slave/1,
+         wait_for_master/1,
+         send/2,
+         send_recv/2,
+         recv_presence/1,
+         recv_message/1,
+         server_jid/1]).
 
 -include("suite.hrl").
+
 
 %%%===================================================================
 %%% API
@@ -39,48 +46,62 @@
 %%%===================================================================
 single_cases() ->
     {csi_single, [sequence],
-     [single_test(feature_enabled)]}.
+                 [single_test(feature_enabled)]}.
+
 
 feature_enabled(Config) ->
     true = ?config(csi, Config),
     disconnect(Config).
+
 
 %%%===================================================================
 %%% Master-slave tests
 %%%===================================================================
 master_slave_cases() ->
     {csi_master_slave, [sequence],
-     [master_slave_test(all)]}.
+                       [master_slave_test(all)]}.
+
 
 all_master(Config) ->
     Peer = ?config(peer, Config),
     Presence = #presence{to = Peer},
-    ChatState = #message{to = Peer, thread = #message_thread{data = <<"1">>},
-			 sub_els = [#chatstate{type = active}]},
+    ChatState = #message{
+                  to = Peer,
+                  thread = #message_thread{data = <<"1">>},
+                  sub_els = [#chatstate{type = active}]
+                 },
     Message = ChatState#message{body = [#text{data = <<"body">>}]},
     PepPayload = xmpp:encode(#presence{}),
     PepOne = #message{
-		to = Peer,
-		sub_els =
-		    [#ps_event{
-			items =
-			    #ps_items{
-			       node = <<"foo-1">>,
-			       items =
-				   [#ps_item{
-				       id = <<"pep-1">>,
-				       sub_els = [PepPayload]}]}}]},
+               to = Peer,
+               sub_els =
+                   [#ps_event{
+                      items =
+                          #ps_items{
+                            node = <<"foo-1">>,
+                            items =
+                                [#ps_item{
+                                   id = <<"pep-1">>,
+                                   sub_els = [PepPayload]
+                                  }]
+                           }
+                     }]
+              },
     PepTwo = #message{
-		to = Peer,
-		sub_els =
-		    [#ps_event{
-			items =
-			    #ps_items{
-			       node = <<"foo-2">>,
-			       items =
-				   [#ps_item{
-				       id = <<"pep-2">>,
-				       sub_els = [PepPayload]}]}}]},
+               to = Peer,
+               sub_els =
+                   [#ps_event{
+                      items =
+                          #ps_items{
+                            node = <<"foo-2">>,
+                            items =
+                                [#ps_item{
+                                   id = <<"pep-2">>,
+                                   sub_els = [PepPayload]
+                                  }]
+                           }
+                     }]
+              },
     %% Wait for the slave to become inactive.
     wait_for_slave(Config),
     %% Should be queued (but see below):
@@ -105,45 +126,64 @@ all_master(Config) ->
     send(Config, ChatState),
     disconnect(Config).
 
+
 all_slave(Config) ->
     Peer = ?config(peer, Config),
     change_client_state(Config, inactive),
     wait_for_master(Config),
     #presence{from = Peer, type = unavailable, sub_els = [#delay{}]} =
-	recv_presence(Config),
+        recv_presence(Config),
     #message{
-       from = Peer,
-       sub_els =
-	   [#ps_event{
-	       items =
-		   #ps_items{
-		      node = <<"foo-1">>,
-		      items =
-			  [#ps_item{
-			      id = <<"pep-1">>}]}},
-	    #delay{}]} = recv_message(Config),
+      from = Peer,
+      sub_els =
+          [#ps_event{
+             items =
+                 #ps_items{
+                   node = <<"foo-1">>,
+                   items =
+                       [#ps_item{
+                          id = <<"pep-1">>
+                         }]
+                  }
+            },
+           #delay{}]
+     } = recv_message(Config),
     #message{
-       from = Peer,
-       sub_els =
-	   [#ps_event{
-	       items =
-		   #ps_items{
-		      node = <<"foo-2">>,
-		      items =
-			  [#ps_item{
-			      id = <<"pep-2">>}]}},
-	    #delay{}]} = recv_message(Config),
-    #message{from = Peer, thread = #message_thread{data = <<"1">>},
-	     sub_els = [#chatstate{type = composing},
-			#delay{}]} = recv_message(Config),
-    #message{from = Peer, thread = #message_thread{data = <<"1">>},
-	     body = [#text{data = <<"body">>}],
-	     sub_els = [#chatstate{type = active}]} = recv_message(Config),
+      from = Peer,
+      sub_els =
+          [#ps_event{
+             items =
+                 #ps_items{
+                   node = <<"foo-2">>,
+                   items =
+                       [#ps_item{
+                          id = <<"pep-2">>
+                         }]
+                  }
+            },
+           #delay{}]
+     } = recv_message(Config),
+    #message{
+      from = Peer,
+      thread = #message_thread{data = <<"1">>},
+      sub_els = [#chatstate{type = composing},
+                 #delay{}]
+     } = recv_message(Config),
+    #message{
+      from = Peer,
+      thread = #message_thread{data = <<"1">>},
+      body = [#text{data = <<"body">>}],
+      sub_els = [#chatstate{type = active}]
+     } = recv_message(Config),
     change_client_state(Config, active),
     wait_for_master(Config),
-    #message{from = Peer, thread = #message_thread{data = <<"1">>},
-	     sub_els = [#chatstate{type = active}]} = recv_message(Config),
+    #message{
+      from = Peer,
+      thread = #message_thread{data = <<"1">>},
+      sub_els = [#chatstate{type = active}]
+     } = recv_message(Config),
     disconnect(Config).
+
 
 %%%===================================================================
 %%% Internal functions
@@ -151,12 +191,19 @@ all_slave(Config) ->
 single_test(T) ->
     list_to_atom("csi_" ++ atom_to_list(T)).
 
+
 master_slave_test(T) ->
-    {list_to_atom("csi_" ++ atom_to_list(T)), [parallel],
+    {list_to_atom("csi_" ++ atom_to_list(T)),
+     [parallel],
      [list_to_atom("csi_" ++ atom_to_list(T) ++ "_master"),
       list_to_atom("csi_" ++ atom_to_list(T) ++ "_slave")]}.
 
+
 change_client_state(Config, NewState) ->
     send(Config, #csi{type = NewState}),
-    send_recv(Config, #iq{type = get, to = server_jid(Config),
-			  sub_els = [#ping{}]}).
+    send_recv(Config,
+              #iq{
+                type = get,
+                to = server_jid(Config),
+                sub_els = [#ping{}]
+               }).

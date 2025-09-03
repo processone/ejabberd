@@ -17,6 +17,8 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
+%% @efmt:off
+%% @indent-begin
 
 -record(caps_features,
 	{node_pair = {<<"">>, <<"">>} :: {binary(), binary()},

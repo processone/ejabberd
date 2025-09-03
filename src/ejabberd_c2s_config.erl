@@ -30,23 +30,27 @@
 
 -export([get_c2s_limits/0]).
 
+
 %% Get first c2s configuration limitations to apply it to other c2s
 %% connectors.
 get_c2s_limits() ->
     C2SFirstListen = ejabberd_option:listen(),
     case lists:keysearch(ejabberd_c2s, 2, C2SFirstListen) of
-	false -> [];
-	{value, {_Port, ejabberd_c2s, Opts}} ->
-	    select_opts_values(Opts)
+        false -> [];
+        {value, {_Port, ejabberd_c2s, Opts}} ->
+            select_opts_values(Opts)
     end.
+
 
 %% Only get access, shaper and max_stanza_size values
 select_opts_values(Opts) ->
     maps:fold(
       fun(Opt, Val, Acc) when Opt == access;
-			      Opt == shaper;
-			      Opt == max_stanza_size ->
-	      [{Opt, Val}|Acc];
-	 (_, _, Acc) ->
-	      Acc
-      end, [], Opts).
+                              Opt == shaper;
+                              Opt == max_stanza_size ->
+              [{Opt, Val} | Acc];
+         (_, _, Acc) ->
+              Acc
+      end,
+      [],
+      Opts).

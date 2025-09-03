@@ -17,6 +17,8 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
+%% @efmt:off
+%% @indent-begin
 
 -type aterm() :: {atom(), atype()}.
 -type atype() :: integer | string | binary | any | atom |
@@ -104,4 +106,3 @@
                                                 args_example            :: none | [any()] | '_',
                                                 result_example          :: any()
                                                }.
-

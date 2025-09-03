@@ -34,10 +34,13 @@
 
 -ifdef(OTP_BELOW_24).
 
+
 single_cases() ->
     {commands_single, [sequence], []}.
 
+
 -else.
+
 
 single_cases() ->
     {commands_single,
@@ -70,12 +73,15 @@ single_cases() ->
       %%single_test(adhoc_all),
       single_test(clean)]}.
 
+
 -endif.
 
 %% @format-begin
 
+
 single_test(T) ->
     list_to_atom("commands_" ++ atom_to_list(T)).
+
 
 setup(_Config) ->
     M = <<"mod_example">>,
@@ -90,14 +96,17 @@ setup(_Config) ->
     Installed = execute(modules_installed, []),
     ?match(true, lists:keymember(mod_example, 1, Installed)).
 
+
 clean(_Config) ->
     M = <<"mod_example">>,
     execute(module_uninstall, [M]),
     Installed = execute(modules_installed, []),
     ?match(false, lists:keymember(mod_example, 1, Installed)).
 
+
 %%%==================================
 %%%% ejabberdctl
+
 
 %% TODO: find a way to read and check the output printed in the command line
 ejabberdctl(_Config) ->
@@ -107,15 +116,19 @@ ejabberdctl(_Config) ->
     Installed = execute(modules_installed, []),
     ?match(true, lists:keymember(mod_example, 1, Installed)).
 
+
 execute(Name, Args) ->
     ejabberd_commands:execute_command2(Name, Args, #{caller_module => ejabberd_ctl}, 1000000).
+
 
 %%%==================================
 %%%% mod_http_api
 
+
 http_integer(Config) ->
     Integer = 123456789,
     ?match(Integer, query(Config, "command_test_integer", #{arg_integer => Integer})).
+
 
 http_string(Config) ->
     S = "This is a string.",
@@ -123,9 +136,11 @@ http_string(Config) ->
     ?match(B, query(Config, "command_test_string", #{arg_string => S})),
     ?match(B, query(Config, "command_test_string", #{arg_string => B})).
 
+
 http_binary(Config) ->
     B = <<"This is a binary.">>,
     ?match(B, query(Config, "command_test_binary", #{arg_binary => B})).
+
 
 %% mod_http_api doesn't handle 'atom' result format
 %% and formats the result as a binary by default
@@ -135,11 +150,13 @@ http_atom(Config) ->
     ?match(B, query(Config, "command_test_atom", #{arg_string => S})),
     ?match(B, query(Config, "command_test_atom", #{arg_string => B})).
 
+
 http_rescode(Config) ->
     ?match(0, query(Config, "command_test_rescode", #{code => "true"})),
     ?match(0, query(Config, "command_test_rescode", #{code => "ok"})),
     ?match(1, query(Config, "command_test_rescode", #{code => "problem"})),
     ?match(1, query(Config, "command_test_rescode", #{code => "error"})).
+
 
 http_restuple(Config) ->
     ?match(<<"Deleted 0 users: []">>, query(Config, "delete_old_users", #{days => 99})),
@@ -148,23 +165,30 @@ http_restuple(Config) ->
     ?match(<<"OK!!">>,
            query(Config, "command_test_restuple", #{code => "ok", text => "OK!!"})).
 
+
 http_list(Config) ->
     ListS = ["one", "first", "primary"],
     ListB = lists:sort([<<"one">>, <<"first">>, <<"primary">>]),
     ?match(ListB, query(Config, "command_test_list", #{arg_list => ListS})),
     ?match(ListB, query(Config, "command_test_list", #{arg_list => ListB})).
 
+
 http_tuple(Config) ->
     MapA =
-        #{element1 => "one",
+        #{
+          element1 => "one",
           element2 => "first",
-          element3 => "primary"},
+          element3 => "primary"
+         },
     MapB =
-        #{<<"element1">> => <<"one">>,
+        #{
+          <<"element1">> => <<"one">>,
           <<"element2">> => <<"first">>,
-          <<"element3">> => <<"primary">>},
+          <<"element3">> => <<"primary">>
+         },
     ?match(MapB, query(Config, "command_test_tuple", #{arg_tuple => MapA})),
     ?match(MapB, query(Config, "command_test_tuple", #{arg_tuple => MapB})).
+
 
 http_list_tuple(Config) ->
     LTA = [#{element1 => "one", element2 => "uno"},
@@ -176,21 +200,27 @@ http_list_tuple(Config) ->
     ?match(LTB, query(Config, "command_test_list_tuple", #{arg_list => LTA})),
     ?match(LTB, query(Config, "command_test_list_tuple", #{arg_list => LTB})).
 
+
 http_list_tuple_map(Config) ->
-    LTA = #{<<"one">> => <<"uno">>,
+    LTA = #{
+            <<"one">> => <<"uno">>,
             <<"two">> => <<"dos">>,
-            <<"three">> => <<"tres">>},
+            <<"three">> => <<"tres">>
+           },
     LTB = lists:sort([#{<<"element1">> => <<"one">>, <<"element2">> => <<"uno">>},
                       #{<<"element1">> => <<"two">>, <<"element2">> => <<"dos">>},
                       #{<<"element1">> => <<"three">>, <<"element2">> => <<"tres">>}]),
     ?match(LTB, lists:sort(query(Config, "command_test_list_tuple", #{arg_list => LTA}))).
 
+
 %%% internal functions
+
 
 query(Config, Tail, Map) ->
     BodyQ = misc:json_encode(Map),
     Body = make_query(Config, Tail, BodyQ),
     misc:json_decode(Body).
+
 
 make_query(Config, Tail, BodyQ) ->
     ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
@@ -200,15 +230,18 @@ make_query(Config, Tail, BodyQ) ->
                          [{body_format, binary}]),
            Body).
 
+
 page(Config, Tail) ->
     Server = ?config(server_host, Config),
     Port = ct:get_config(web_port, 5280),
     "http://" ++ Server ++ ":" ++ integer_to_list(Port) ++ "/api/" ++ Tail.
 
+
 %%%==================================
 %%%% ad-hoc
 
 %%% list commands
+
 
 adhoc_list_commands(Config) ->
     {ok, Result} = get_items(Config, <<"api-commands">>),
@@ -216,12 +249,14 @@ adhoc_list_commands(Config) ->
         lists:keysearch(<<"command_test_binary">>, #disco_item.name, Result),
     suite:disconnect(Config).
 
+
 get_items(Config, Node) ->
     case suite:send_recv(Config,
-                         #iq{type = get,
-                             to = server_jid(Config),
-                             sub_els = [#disco_items{node = Node}]})
-    of
+                         #iq{
+                           type = get,
+                           to = server_jid(Config),
+                           sub_els = [#disco_items{node = Node}]
+                          }) of
         #iq{type = result, sub_els = [#disco_items{node = Node, items = Items}]} ->
             {ok, Items};
         #iq{type = result, sub_els = []} ->
@@ -230,7 +265,9 @@ get_items(Config, Node) ->
             xmpp:get_error(Err)
     end.
 
+
 %%% apiversion
+
 
 adhoc_apiversion(Config) ->
     Node = <<"api-commands/command_test_apiversion">>,
@@ -240,7 +277,9 @@ adhoc_apiversion(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% apizero
+
 
 adhoc_apizero(Config) ->
     Node = <<"api-commands/command_test_apizero">>,
@@ -250,7 +289,9 @@ adhoc_apizero(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% apione
+
 
 adhoc_apione(Config) ->
     Node = <<"api-commands/command_test_apione">>,
@@ -260,7 +301,9 @@ adhoc_apione(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% integer
+
 
 adhoc_integer(Config) ->
     Node = <<"api-commands/command_test_integer">>,
@@ -270,7 +313,9 @@ adhoc_integer(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% string
+
 
 adhoc_string(Config) ->
     Node = <<"api-commands/command_test_string">>,
@@ -280,7 +325,9 @@ adhoc_string(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% binary
+
 
 adhoc_binary(Config) ->
     Node = <<"api-commands/command_test_binary">>,
@@ -290,7 +337,9 @@ adhoc_binary(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% tuple
+
 
 adhoc_tuple(Config) ->
     Node = <<"api-commands/command_test_tuple">>,
@@ -309,7 +358,9 @@ adhoc_tuple(Config) ->
            set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% list
+
 
 adhoc_list(Config) ->
     Node = <<"api-commands/command_test_list">>,
@@ -320,7 +371,9 @@ adhoc_list(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% list_tuple
+
 
 adhoc_list_tuple(Config) ->
     Node = <<"api-commands/command_test_list_tuple">>,
@@ -333,7 +386,9 @@ adhoc_list_tuple(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% atom
+
 
 adhoc_atom(Config) ->
     Node = <<"api-commands/command_test_atom">>,
@@ -343,7 +398,9 @@ adhoc_atom(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% rescode
+
 
 adhoc_rescode(Config) ->
     Node = <<"api-commands/command_test_rescode">>,
@@ -353,7 +410,9 @@ adhoc_rescode(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% restuple
+
 
 adhoc_restuple(Config) ->
     Node = <<"api-commands/command_test_restuple">>,
@@ -364,79 +423,105 @@ adhoc_restuple(Config) ->
     ?match({ok, ResFields}, set_form(Config, Node, Sid, ArgFields)),
     suite:disconnect(Config).
 
+
 %%% internal functions
+
 
 server_jid(Config) ->
     jid:make(<<>>, ?config(server, Config), <<>>).
 
+
 make_fields_args(Fields) ->
-    lists:map(fun ({Var, Values}) when is_list(Values) ->
-                      #xdata_field{label = Var,
-                                   var = Var,
-                                   required = true,
-                                   type = 'text-multi',
-                                   values = Values};
-                  ({Var, Value}) ->
-                      #xdata_field{label = Var,
-                                   var = Var,
-                                   required = true,
-                                   type = 'text-single',
-                                   values = [Value]}
+    lists:map(fun({Var, Values}) when is_list(Values) ->
+                      #xdata_field{
+                        label = Var,
+                        var = Var,
+                        required = true,
+                        type = 'text-multi',
+                        values = Values
+                       };
+                 ({Var, Value}) ->
+                      #xdata_field{
+                        label = Var,
+                        var = Var,
+                        required = true,
+                        type = 'text-single',
+                        values = [Value]
+                       }
               end,
               Fields).
 
+
 make_fields_res(Fields) ->
-    lists:map(fun ({Var, Values}) when is_list(Values) ->
-                      #xdata_field{label = Var,
-                                   var = Var,
-                                   type = 'text-multi',
-                                   values = Values};
-                  ({Var, Value}) ->
-                      #xdata_field{label = Var,
-                                   var = Var,
-                                   type = 'text-single',
-                                   values = [Value]}
+    lists:map(fun({Var, Values}) when is_list(Values) ->
+                      #xdata_field{
+                        label = Var,
+                        var = Var,
+                        type = 'text-multi',
+                        values = Values
+                       };
+                 ({Var, Value}) ->
+                      #xdata_field{
+                        label = Var,
+                        var = Var,
+                        type = 'text-single',
+                        values = [Value]
+                       }
               end,
               Fields).
+
 
 get_form(Config, Node) ->
     case suite:send_recv(Config,
-                         #iq{type = set,
-                             to = server_jid(Config),
-                             sub_els = [#adhoc_command{node = Node}]})
-    of
-        #iq{type = result,
-            sub_els =
-                [#adhoc_command{node = Node,
-                                action = execute,
-                                status = executing,
-                                sid = Sid,
-                                actions = #adhoc_actions{execute = complete, complete = true},
-                                xdata = #xdata{fields = Fields}}]} ->
-            {ok, Sid, [F || F <- Fields, F#xdata_field.type /= fixed]};
+                         #iq{
+                           type = set,
+                           to = server_jid(Config),
+                           sub_els = [#adhoc_command{node = Node}]
+                          }) of
+        #iq{
+          type = result,
+          sub_els =
+              [#adhoc_command{
+                 node = Node,
+                 action = execute,
+                 status = executing,
+                 sid = Sid,
+                 actions = #adhoc_actions{execute = complete, complete = true},
+                 xdata = #xdata{fields = Fields}
+                }]
+         } ->
+            {ok, Sid, [ F || F <- Fields, F#xdata_field.type /= fixed ]};
         #iq{type = error} = Err ->
             xmpp:get_error(Err)
     end.
 
+
 set_form(Config, Node, Sid, ArgFields) ->
     Xdata = #xdata{type = submit, fields = ArgFields},
     case suite:send_recv(Config,
-                         #iq{type = set,
-                             to = server_jid(Config),
-                             sub_els =
-                                 [#adhoc_command{node = Node,
-                                                 action = complete,
-                                                 sid = Sid,
-                                                 xdata = Xdata}]})
-    of
-        #iq{type = result,
-            sub_els =
-                [#adhoc_command{node = Node,
-                                action = execute,
-                                status = completed,
-                                sid = Sid,
-                                xdata = #xdata{fields = ResFields}}]} ->
-            ResFields2 = [F || F <- ResFields, F#xdata_field.type /= fixed],
+                         #iq{
+                           type = set,
+                           to = server_jid(Config),
+                           sub_els =
+                               [#adhoc_command{
+                                  node = Node,
+                                  action = complete,
+                                  sid = Sid,
+                                  xdata = Xdata
+                                 }]
+                          }) of
+        #iq{
+          type = result,
+          sub_els =
+              [#adhoc_command{
+                 node = Node,
+                 action = execute,
+                 status = completed,
+                 sid = Sid,
+                 xdata = #xdata{fields = ResFields}
+                }]
+         } ->
+            ResFields2 = [ F || F <- ResFields, F#xdata_field.type /= fixed ],
             {ok, ResFields2 -- ArgFields};
         #iq{type = error} = Err ->
             xmpp:get_error(Err)

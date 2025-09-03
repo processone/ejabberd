@@ -29,11 +29,16 @@
 
 -export([start_link/2, init/1]).
 
+
 start_link(Name, Module) ->
     supervisor:start_link({local, Name}, ?MODULE, Module).
+
 
 init(Module) ->
     {ok,
      {{simple_one_for_one, 10, 1},
-      [{undefined, {Module, start_link, []}, temporary,
-	5000, worker, [Module]}]}}.
+      [{undefined, {Module, start_link, []},
+                   temporary,
+                   5000,
+                   worker,
+                   [Module]}]}}.

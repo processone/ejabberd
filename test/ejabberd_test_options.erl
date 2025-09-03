@@ -21,6 +21,7 @@
 
 -export([opt_type/1, options/0, globals/0, doc/0]).
 
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -83,6 +84,7 @@ opt_type(tgp) ->
 opt_type(tlp) ->
     econf:binary().
 
+
 options() ->
     [{macro_over_keyword, undefined},
      {keyword_inside_macro, undefined},
@@ -102,13 +104,13 @@ options() ->
      {ktls, undefined},
      {ktlsi, undefined},
      {tgp, undefined},
-     {tlp, undefined}
-    ].
+     {tlp, undefined}].
+
 
 -spec globals() -> [atom()].
 globals() ->
     [].
 
+
 doc() ->
     ejabberd_options_doc:doc().
-

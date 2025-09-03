@@ -45,53 +45,67 @@
 
 -include("translate.hrl").
 
+
 -callback init() -> any().
 -callback register_stream(binary(), pid()) -> ok | {error, any()}.
 -callback unregister_stream(binary()) -> ok | {error, any()}.
 -callback activate_stream(binary(), binary(), pos_integer() | infinity, node()) ->
-    ok | {error, limit | conflict | notfound | term()}.
+              ok | {error, limit | conflict | notfound | term()}.
 
 start(Host, Opts) ->
     case mod_proxy65_service:add_listener(Host, Opts) of
-	{error, _} = Err ->
-	    Err;
-	_ ->
-	    Mod = gen_mod:ram_db_mod(global, ?MODULE),
-	    Mod:init(),
-	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-	    ChildSpec = {Proc, {?MODULE, start_link, [Host]},
-			 transient, infinity, supervisor, [?MODULE]},
-	    supervisor:start_child(ejabberd_gen_mod_sup, ChildSpec)
+        {error, _} = Err ->
+            Err;
+        _ ->
+            Mod = gen_mod:ram_db_mod(global, ?MODULE),
+            Mod:init(),
+            Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+            ChildSpec = {Proc,
+                         {?MODULE, start_link, [Host]},
+                         transient,
+                         infinity,
+                         supervisor,
+                         [?MODULE]},
+            supervisor:start_child(ejabberd_gen_mod_sup, ChildSpec)
     end.
+
 
 stop(Host) ->
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-	false ->
-	    mod_proxy65_service:delete_listener(Host);
-	true ->
-	    ok
+        false ->
+            mod_proxy65_service:delete_listener(Host);
+        true ->
+            ok
     end,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
     supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
+
 
 reload(Host, NewOpts, OldOpts) ->
     Mod = gen_mod:ram_db_mod(global, ?MODULE),
     Mod:init(),
     mod_proxy65_service:reload(Host, NewOpts, OldOpts).
 
+
 start_link(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     supervisor:start_link({local, Proc}, ?MODULE, [Host]).
 
+
 init([Host]) ->
     Service = {mod_proxy65_service,
-	       {mod_proxy65_service, start_link, [Host]},
-	       transient, 5000, worker, [mod_proxy65_service]},
+               {mod_proxy65_service, start_link, [Host]},
+               transient,
+               5000,
+               worker,
+               [mod_proxy65_service]},
     {ok, {{one_for_one, 10, 1}, [Service]}}.
+
 
 depends(_Host, _Opts) ->
     [].
+
 
 mod_opt_type(access) ->
     econf:acl();
@@ -124,6 +138,7 @@ mod_opt_type(sndbuf) ->
 mod_opt_type(vcard) ->
     econf:vcard_temp().
 
+
 mod_options(Host) ->
     [{ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
      {access, all},
@@ -140,8 +155,10 @@ mod_options(Host) ->
      {sndbuf, 65536},
      {shaper, none}].
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           ?T("This module implements "
              "https://xmpp.org/extensions/xep-0065.html"
              "[XEP-0065: SOCKS5 Bytestreams]. It allows ejabberd "
@@ -150,94 +167,120 @@ mod_doc() ->
           [{host,
             #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
            {hosts,
-            #{value => ?T("[Host, ...]"),
+            #{
+              value => ?T("[Host, ...]"),
               desc =>
                   ?T("This option defines the Jabber IDs of the service. "
                      "If the 'hosts' option is not specified, the only Jabber ID will "
                      "be the hostname of the virtual host with the prefix \"proxy.\". "
-                     "The keyword '@HOST@' is replaced with the real virtual host name.")}},
+                     "The keyword '@HOST@' is replaced with the real virtual host name.")
+             }},
            {name,
-            #{value => ?T("Name"),
+            #{
+              value => ?T("Name"),
               desc =>
                   ?T("The value of the service name. This name is only visible in some "
                      "clients that support https://xmpp.org/extensions/xep-0030.html"
-                     "[XEP-0030: Service Discovery]. The default is \"SOCKS5 Bytestreams\".")}},
+                     "[XEP-0030: Service Discovery]. The default is \"SOCKS5 Bytestreams\".")
+             }},
            {access,
-            #{value => ?T("AccessName"),
+            #{
+              value => ?T("AccessName"),
               desc =>
                   ?T("Defines an access rule for file transfer initiators. "
                      "The default value is 'all'. You may want to restrict "
                      "access to the users of your server only, in order to "
                      "avoid abusing your proxy by the users of remote "
-                     "servers.")}},
+                     "servers.")
+             }},
            {ram_db_type,
-            #{value => "mnesia | redis | sql",
+            #{
+              value => "mnesia | redis | sql",
               desc =>
                   ?T("Same as top-level _`default_ram_db`_ option, "
-                     "but applied to this module only.")}},
+                     "but applied to this module only.")
+             }},
            {ip,
-            #{value => ?T("IPAddress"),
+            #{
+              value => ?T("IPAddress"),
               desc =>
                   ?T("This option specifies which network interface to listen "
                      "for. The default value is an IP address of the service's "
-                     "DNS name, or, if fails, '127.0.0.1'.")}},
+                     "DNS name, or, if fails, '127.0.0.1'.")
+             }},
            {hostname,
-            #{value => ?T("Host"),
+            #{
+              value => ?T("Host"),
               desc =>
                   ?T("Defines a hostname offered by the proxy when "
                      "establishing a session with clients. This is useful "
                      "when you run the proxy behind a NAT. The keyword "
                      "'@HOST@' is replaced with the virtual host name. "
                      "The default is to use the value of 'ip' option. "
-                     "Examples: 'proxy.mydomain.org', '200.150.100.50'.")}},
+                     "Examples: 'proxy.mydomain.org', '200.150.100.50'.")
+             }},
            {port,
-            #{value => "1..65535",
+            #{
+              value => "1..65535",
               desc =>
                   ?T("A port number to listen for incoming connections. "
-                     "The default value is '7777'.")}},
+                     "The default value is '7777'.")
+             }},
            {auth_type,
-            #{value => "anonymous | plain",
+            #{
+              value => "anonymous | plain",
               desc =>
                   ?T("SOCKS5 authentication type. "
                      "The default value is 'anonymous'. "
                      "If set to 'plain', ejabberd will use "
                      "authentication backend as it would "
-                     "for SASL PLAIN.")}},
+                     "for SASL PLAIN.")
+             }},
            {max_connections,
-            #{value => "pos_integer() | infinity",
+            #{
+              value => "pos_integer() | infinity",
               desc =>
                   ?T("Maximum number of active connections per file transfer "
-                     "initiator. The default value is 'infinity'.")}},
+                     "initiator. The default value is 'infinity'.")
+             }},
            {shaper,
-            #{value => ?T("Shaper"),
+            #{
+              value => ?T("Shaper"),
               desc =>
                   ?T("This option defines a shaper for the file transfer peers. "
                      "A shaper with the maximum bandwidth will be selected. "
-                     "The default is 'none', i.e. no shaper.")}},
+                     "The default is 'none', i.e. no shaper.")
+             }},
            {recbuf,
-            #{value => ?T("Size"),
+            #{
+              value => ?T("Size"),
               desc =>
                   ?T("A size of the buffer for incoming packets. "
                      "If you define a shaper, set the value of this "
                      "option to the size of the shaper in order "
                      "to avoid traffic spikes in file transfers. "
-                     "The default value is '65536' bytes.")}},
+                     "The default value is '65536' bytes.")
+             }},
            {sndbuf,
-            #{value => ?T("Size"),
+            #{
+              value => ?T("Size"),
               desc =>
                   ?T("A size of the buffer for outgoing packets. "
                      "If you define a shaper, set the value of this "
                      "option to the size of the shaper in order "
                      "to avoid traffic spikes in file transfers. "
-                     "The default value is '65536' bytes.")}},
+                     "The default value is '65536' bytes.")
+             }},
            {vcard,
-            #{value => ?T("vCard"),
+            #{
+              value => ?T("vCard"),
               desc =>
                   ?T("A custom vCard of the service that will be displayed "
                      "by some XMPP clients in Service Discovery. The value of "
                      "'vCard' is a YAML map constructed from an XML representation "
                      "of vCard. Since the representation has no attributes, "
-                     "the mapping is straightforward.")}}],
+                     "the mapping is straightforward.")
+             }}],
       example =>
           ["acl:",
            "  admin:",
@@ -267,4 +310,5 @@ mod_doc() ->
            "    access: proxy65_access",
            "    shaper: proxy65_shaper",
            "    recbuf: 10240",
-           "    sndbuf: 10240"]}.
+           "    sndbuf: 10240"]
+     }.

@@ -25,19 +25,36 @@
 
 %% API
 -compile(export_all).
--import(suite, [close_socket/1, connect/1, disconnect/1, get_event/1,
-		get_features/2, make_iq_result/1, my_jid/1, put_event/2, recv/1,
-		recv_iq/1, recv_message/1, self_presence/2, send/2, send_recv/2,
-		server_jid/1]).
+-import(suite,
+        [close_socket/1,
+         connect/1,
+         disconnect/1,
+         get_event/1,
+         get_features/2,
+         make_iq_result/1,
+         my_jid/1,
+         put_event/2,
+         recv/1,
+         recv_iq/1,
+         recv_message/1,
+         self_presence/2,
+         send/2,
+         send_recv/2,
+         server_jid/1]).
 
 -include("suite.hrl").
 
--define(PUSH_NODE, <<"d3v1c3">>).
+-define(PUSH_NODE,         <<"d3v1c3">>).
 -define(PUSH_XDATA_FIELDS,
-	[#xdata_field{var = <<"FORM_TYPE">>,
-		      values = [?NS_PUBSUB_PUBLISH_OPTIONS]},
-	 #xdata_field{var = <<"secret">>,
-		      values = [<<"c0nf1d3nt14l">>]}]).
+        [#xdata_field{
+           var = <<"FORM_TYPE">>,
+           values = [?NS_PUBSUB_PUBLISH_OPTIONS]
+          },
+         #xdata_field{
+           var = <<"secret">>,
+           values = [<<"c0nf1d3nt14l">>]
+          }]).
+
 
 %%%===================================================================
 %%% API
@@ -47,8 +64,9 @@
 %%%===================================================================
 single_cases() ->
     {push_single, [sequence],
-     [single_test(feature_enabled),
-      single_test(unsupported_iq)]}.
+                  [single_test(feature_enabled),
+                   single_test(unsupported_iq)]}.
+
 
 feature_enabled(Config) ->
     BareMyJID = jid:remove_resource(my_jid(Config)),
@@ -56,29 +74,33 @@ feature_enabled(Config) ->
     true = lists:member(?NS_PUSH_0, Features),
     disconnect(Config).
 
+
 unsupported_iq(Config) ->
     PushJID = my_jid(Config),
     lists:foreach(
       fun(SubEl) ->
-	      #iq{type = error} =
-		  send_recv(Config, #iq{type = get, sub_els = [SubEl]})
-      end, [#push_enable{jid = PushJID}, #push_disable{jid = PushJID}]),
+              #iq{type = error} =
+                  send_recv(Config, #iq{type = get, sub_els = [SubEl]})
+      end,
+      [#push_enable{jid = PushJID}, #push_disable{jid = PushJID}]),
     disconnect(Config).
+
 
 %%%===================================================================
 %%% Master-slave tests
 %%%===================================================================
 master_slave_cases() ->
     {push_master_slave, [sequence],
-     [master_slave_test(sm),
-      master_slave_test(offline),
-      master_slave_test(mam)]}.
+                        [master_slave_test(sm),
+                         master_slave_test(offline),
+                         master_slave_test(mam)]}.
+
 
 sm_master(Config) ->
     ct:comment("Waiting for the slave to close the socket"),
     peer_down = get_event(Config),
     ct:comment("Waiting a bit in order to test the keepalive feature"),
-    ct:sleep(5000), % Without mod_push_keepalive, the session would time out.
+    ct:sleep(5000),  % Without mod_push_keepalive, the session would time out.
     ct:comment("Sending message to the slave"),
     send_test_message(Config),
     ct:comment("Handling push notification"),
@@ -88,6 +110,7 @@ sm_master(Config) ->
     ct:comment("Closing the connection"),
     disconnect(Config).
 
+
 sm_slave(Config) ->
     ct:comment("Enabling push notifications"),
     ok = enable_push(Config),
@@ -96,11 +119,12 @@ sm_slave(Config) ->
     ct:comment("Closing the socket"),
     close_socket(Config).
 
+
 offline_master(Config) ->
     ct:comment("Waiting for the slave to be ready"),
     ready = get_event(Config),
     ct:comment("Sending message to the slave"),
-    send_test_message(Config), % No push notification, slave is online.
+    send_test_message(Config),  % No push notification, slave is online.
     ct:comment("Waiting for the slave to disconnect"),
     peer_down = get_event(Config),
     ct:comment("Sending message to offline storage"),
@@ -109,6 +133,7 @@ offline_master(Config) ->
     handle_notification(Config),
     ct:comment("Closing the connection"),
     disconnect(Config).
+
 
 offline_slave(Config) ->
     ct:comment("Re-enabling push notifications"),
@@ -120,6 +145,7 @@ offline_slave(Config) ->
     ct:comment("Closing the connection"),
     disconnect(Config).
 
+
 mam_master(Config) ->
     ct:comment("Waiting for the slave to be ready"),
     ready = get_event(Config),
@@ -129,6 +155,7 @@ mam_master(Config) ->
     handle_notification(Config),
     ct:comment("Closing the connection"),
     disconnect(Config).
+
 
 mam_slave(Config) ->
     self_presence(Config, available),
@@ -149,35 +176,47 @@ mam_slave(Config) ->
     ct:comment("Closing the connection and cleaning up"),
     clean(disconnect(Config)).
 
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 single_test(T) ->
     list_to_atom("push_" ++ atom_to_list(T)).
 
+
 master_slave_test(T) ->
-    {list_to_atom("push_" ++ atom_to_list(T)), [parallel],
+    {list_to_atom("push_" ++ atom_to_list(T)),
+     [parallel],
      [list_to_atom("push_" ++ atom_to_list(T) ++ "_master"),
       list_to_atom("push_" ++ atom_to_list(T) ++ "_slave")]}.
+
 
 enable_sm(Config) ->
     send(Config, #sm_enable{xmlns = ?NS_STREAM_MGMT_3, resume = true}),
     case recv(Config) of
-	#sm_enabled{resume = true} ->
-	    ok;
-	#sm_failed{reason = Reason} ->
-	    Reason
+        #sm_enabled{resume = true} ->
+            ok;
+        #sm_failed{reason = Reason} ->
+            Reason
     end.
+
 
 enable_mam(Config) ->
     case send_recv(
-	   Config, #iq{type = set, sub_els = [#mam_prefs{xmlns = ?NS_MAM_1,
-							 default = always}]}) of
-	#iq{type = result} ->
-	    ok;
-	#iq{type = error} = Err ->
-	    xmpp:get_error(Err)
+           Config,
+           #iq{
+             type = set,
+             sub_els = [#mam_prefs{
+                          xmlns = ?NS_MAM_1,
+                          default = always
+                         }]
+            }) of
+        #iq{type = result} ->
+            ok;
+        #iq{type = error} = Err ->
+            xmpp:get_error(Err)
     end.
+
 
 enable_push(Config) ->
     %% Usually, the push JID would be a server JID (such as push.example.com).
@@ -186,37 +225,53 @@ enable_push(Config) ->
     PushJID = ?config(peer, Config),
     XData = #xdata{type = submit, fields = ?PUSH_XDATA_FIELDS},
     case send_recv(
-	   Config, #iq{type = set,
-		       sub_els = [#push_enable{jid = PushJID,
-					       node = ?PUSH_NODE,
-					       xdata = XData}]}) of
-	#iq{type = result, sub_els = []} ->
-	    ok;
-	#iq{type = error} = Err ->
-	    xmpp:get_error(Err)
+           Config,
+           #iq{
+             type = set,
+             sub_els = [#push_enable{
+                          jid = PushJID,
+                          node = ?PUSH_NODE,
+                          xdata = XData
+                         }]
+            }) of
+        #iq{type = result, sub_els = []} ->
+            ok;
+        #iq{type = error} = Err ->
+            xmpp:get_error(Err)
     end.
+
 
 disable_push(Config) ->
     PushJID = ?config(peer, Config),
     case send_recv(
-	   Config, #iq{type = set,
-		       sub_els = [#push_disable{jid = PushJID,
-						node = ?PUSH_NODE}]}) of
-	#iq{type = result, sub_els = []} ->
-	    ok;
-	#iq{type = error} = Err ->
-	    xmpp:get_error(Err)
+           Config,
+           #iq{
+             type = set,
+             sub_els = [#push_disable{
+                          jid = PushJID,
+                          node = ?PUSH_NODE
+                         }]
+            }) of
+        #iq{type = result, sub_els = []} ->
+            ok;
+        #iq{type = error} = Err ->
+            xmpp:get_error(Err)
     end.
+
 
 send_test_message(Config) ->
     Peer = ?config(peer, Config),
     Msg = #message{to = Peer, body = [#text{data = <<"test">>}]},
     send(Config, Msg).
 
+
 recv_test_message(Config) ->
     Peer = ?config(peer, Config),
-    #message{from = Peer,
-	     body = [#text{data = <<"test">>}]} = recv_message(Config).
+    #message{
+      from = Peer,
+      body = [#text{data = <<"test">>}]
+     } = recv_message(Config).
+
 
 handle_notification(Config) ->
     From = server_jid(Config),
@@ -226,6 +281,7 @@ handle_notification(Config) ->
     PubSub = #pubsub{publish = Publish, publish_options = XData},
     IQ = #iq{type = set, from = From, sub_els = [PubSub]} = recv_iq(Config),
     send(Config, make_iq_result(IQ)).
+
 
 clean(Config) ->
     {U, S, _} = jid:tolower(my_jid(Config)),

@@ -32,7 +32,6 @@
 
 -export([export/2, export/3, import/3, import/4, delete/1, import_info/1]).
 
-
 -define(MAX_RECORDS_PER_TRANSACTION, 100).
 
 -record(sql_dump, {fd, type}).
@@ -46,6 +45,7 @@
 %%% - Server is the server domain you want to convert
 %%% - Output can be either sql to export to the configured relational
 %%%   database or "Filename" to export to text file.
+
 
 modules() ->
     [ejabberd_auth,
@@ -63,6 +63,7 @@ modules() ->
      mod_shared_roster,
      mod_vcard].
 
+
 export(Server, Output) ->
     LServer = jid:nameprep(iolist_to_binary(Server)),
     Modules = modules(),
@@ -70,20 +71,23 @@ export(Server, Output) ->
     lists:foreach(
       fun(Module) ->
               export(LServer, IO, Module)
-      end, Modules),
+      end,
+      Modules),
     close_output(Output, IO).
+
 
 export(Server, Output, mod_mam = M1) ->
     MucServices = case gen_mod:is_loaded(Server, mod_muc) of
-        true -> gen_mod:get_module_opt_hosts(Server, mod_muc);
-        false -> []
-    end,
-    [export2(MucService, Output, M1, M1) || MucService <- MucServices],
+                      true -> gen_mod:get_module_opt_hosts(Server, mod_muc);
+                      false -> []
+                  end,
+    [ export2(MucService, Output, M1, M1) || MucService <- MucServices ],
     export2(Server, Output, M1, M1);
 export(Server, Output, mod_pubsub = M1) ->
     export2(Server, Output, M1, pubsub_db);
 export(Server, Output, M1) ->
     export2(Server, Output, M1, M1).
+
 
 export2(Server, Output, Module1, Module) ->
     SQLMod = gen_mod:db_mod(sql, Module),
@@ -93,55 +97,71 @@ export2(Server, Output, Module1, Module) ->
       fun({Table, ConvertFun}) ->
               case export(LServer, Table, IO, ConvertFun) of
                   {atomic, ok} -> ok;
-		  {aborted, {no_exists, _}} ->
-		      ?WARNING_MSG("Ignoring export for module ~ts: "
-				   "Mnesia table ~ts doesn't exist (most likely "
-				   "because the module is unused)",
-				   [Module1, Table]);
+                  {aborted, {no_exists, _}} ->
+                      ?WARNING_MSG("Ignoring export for module ~ts: "
+                                   "Mnesia table ~ts doesn't exist (most likely "
+                                   "because the module is unused)",
+                                   [Module1, Table]);
                   {aborted, Reason} ->
                       ?ERROR_MSG("Failed export for module ~p and table ~p: ~p",
                                  [Module, Table, Reason])
               end
-      end, SQLMod:export(Server)),
+      end,
+      SQLMod:export(Server)),
     close_output(Output, IO).
+
 
 delete(Server) ->
     Modules = modules(),
     lists:foreach(
       fun(Module) ->
               delete(Server, Module)
-      end, Modules).
+      end,
+      Modules).
+
 
 delete(Server, Module1) ->
     LServer = jid:nameprep(iolist_to_binary(Server)),
     Module = case Module1 of
-		 mod_pubsub -> pubsub_db;
-		 _ -> Module1
-	     end,
+                 mod_pubsub -> pubsub_db;
+                 _ -> Module1
+             end,
     SQLMod = gen_mod:db_mod(sql, Module),
     lists:foreach(
       fun({Table, ConvertFun}) ->
               delete(LServer, Table, ConvertFun)
-      end, SQLMod:export(Server)).
+      end,
+      SQLMod:export(Server)).
+
 
 import(Server, Dir, ToType) ->
     lists:foreach(
       fun(Mod) ->
               ?INFO_MSG("Importing ~p...", [Mod]),
               import(Mod, Server, Dir, ToType)
-      end, modules()).
+      end,
+      modules()).
+
 
 import(Mod, Server, Dir, ToType) ->
     LServer = jid:nameprep(iolist_to_binary(Server)),
-    try Mod:import_start(LServer, ToType)
-    catch error:undef -> ok end,
+    try
+        Mod:import_start(LServer, ToType)
+    catch
+        error:undef -> ok
+    end,
     lists:foreach(
       fun({File, Tab, _Mod, FieldsNumber}) ->
               FileName = filename:join([Dir, File]),
               case open_sql_dump(FileName) of
                   {ok, #sql_dump{type = FromType} = Dump} ->
-                      import_rows(LServer, {sql, FromType}, ToType,
-                                  Tab, Mod, Dump, FieldsNumber),
+                      import_rows(LServer,
+                                  {sql, FromType},
+                                  ToType,
+                                  Tab,
+                                  Mod,
+                                  Dump,
+                                  FieldsNumber),
                       close_sql_dump(Dump);
                   {error, enoent} ->
                       ok;
@@ -151,9 +171,14 @@ import(Mod, Server, Dir, ToType) ->
                       ?ERROR_MSG("Failed to open SQL dump ~ts: ~ts",
                                  [FileName, format_error(Err)])
               end
-      end, import_info(Mod)),
-    try Mod:import_stop(LServer, ToType)
-    catch error:undef -> ok end.
+      end,
+      import_info(Mod)),
+    try
+        Mod:import_stop(LServer, ToType)
+    catch
+        error:undef -> ok
+    end.
+
 
 import_info(Mod) ->
     Info = Mod:import_info(),
@@ -161,7 +186,9 @@ import_info(Mod) ->
       fun({Tab, FieldsNum}) ->
               FileName = <<Tab/binary, ".txt">>,
               {FileName, Tab, Mod, FieldsNum}
-      end, Info).
+      end,
+      Info).
+
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
@@ -174,7 +201,7 @@ export(LServer, Table, IO, ConvertFun) ->
                          _ ->
                              LServer
                      end,
-    F = fun () ->
+    F = fun() ->
                 mnesia:read_lock_table(Table),
                 {_N, SQLs} =
                     mnesia:foldl(
@@ -184,20 +211,24 @@ export(LServer, Table, IO, ConvertFun) ->
                                       Acc;
                                   SQL1 ->
                                       SQL = format_queries(DbType, SQL1),
-                                      if N < (?MAX_RECORDS_PER_TRANSACTION) - 1 ->
+                                      if
+                                          N < (?MAX_RECORDS_PER_TRANSACTION) - 1 ->
                                               {N + 1, [SQL | SQLs]};
-                                         true ->
+                                          true ->
                                               output(LServer,
-                                                     Table, IO,
+                                                     Table,
+                                                     IO,
                                                      flatten([SQL | SQLs])),
                                               {0, []}
                                       end
                               end
                       end,
-                      {0, []}, Table),
+                      {0, []},
+                      Table),
                 output(LServer, Table, IO, flatten(SQLs))
         end,
     mnesia:transaction(F).
+
 
 output(_LServer, _Table, _IO, []) ->
     ok;
@@ -205,11 +236,15 @@ output(LServer, _Table, sql, SQLs) ->
     {atomic, ok} = ejabberd_sql:sql_transaction(LServer, SQLs),
     ok;
 output(_LServer, Table, Fd, SQLs) ->
-    file:write(Fd, ["-- \n-- Mnesia table: ", atom_to_list(Table),
-                    "\n--\n", SQLs]).
+    file:write(Fd,
+               ["-- \n-- Mnesia table: ",
+                atom_to_list(Table),
+                "\n--\n",
+                SQLs]).
+
 
 delete(LServer, Table, ConvertFun) ->
-    F = fun () ->
+    F = fun() ->
                 mnesia:write_lock_table(Table),
                 {_N, _SQLs} =
                     mnesia:foldl(
@@ -218,16 +253,19 @@ delete(LServer, Table, ConvertFun) ->
                                   [] ->
                                       Acc;
                                   _SQL ->
-				      mnesia:delete_object(R),
+                                      mnesia:delete_object(R),
                                       Acc
                               end
                       end,
-                      {0, []}, Table)
+                      {0, []},
+                      Table)
         end,
     mnesia:transaction(F).
 
+
 prepare_output(FileName) ->
     prepare_output(FileName, normal).
+
 
 prepare_output(FileName, Type) when is_binary(FileName) ->
     prepare_output(binary_to_list(FileName), Type);
@@ -245,24 +283,29 @@ prepare_output(FileName, normal) when is_list(FileName) ->
 prepare_output(Output, _Type) ->
     Output.
 
+
 close_output(FileName, Fd) when FileName /= Fd ->
     file:close(Fd),
     ok;
 close_output(_, _) ->
     ok.
 
+
 flatten(SQLs) ->
     flatten(SQLs, []).
 
-flatten([L|Ls], Acc) ->
+
+flatten([L | Ls], Acc) ->
     flatten(Ls, flatten1(lists:reverse(L), Acc));
 flatten([], Acc) ->
     Acc.
 
-flatten1([H|T], Acc) ->
-    flatten1(T, [[H, $\n]|Acc]);
+
+flatten1([H | T], Acc) ->
+    flatten1(T, [[H, $\n] | Acc]);
 flatten1([], Acc) ->
     Acc.
+
 
 import_rows(LServer, FromType, ToType, Tab, Mod, Dump, FieldsNumber) ->
     case read_row_from_sql_dump(Dump, FieldsNumber) of
@@ -274,14 +317,20 @@ import_rows(LServer, FromType, ToType, Tab, Mod, Dump, FieldsNumber) ->
                     ?ERROR_MSG("Failed to import fields ~p for tab ~p: ~p",
                                [Fields, Tab, Err])
             end,
-            import_rows(LServer, FromType, ToType,
-                        Tab, Mod, Dump, FieldsNumber);
+            import_rows(LServer,
+                        FromType,
+                        ToType,
+                        Tab,
+                        Mod,
+                        Dump,
+                        FieldsNumber);
         eof ->
             ok;
         Err ->
             ?ERROR_MSG("Failed to read row from SQL dump: ~ts",
                        [format_error(Err)])
     end.
+
 
 open_sql_dump(FileName) ->
     case file:open(FileName, [raw, read, binary, read_ahead]) of
@@ -304,8 +353,10 @@ open_sql_dump(FileName) ->
             Err
     end.
 
+
 close_sql_dump(#sql_dump{fd = Fd}) ->
     file:close(Fd).
+
 
 read_row_from_sql_dump(#sql_dump{fd = Fd, type = pgsql}, _) ->
     case file:read(Fd, 2) of
@@ -323,27 +374,30 @@ read_row_from_sql_dump(#sql_dump{fd = Fd, type = pgsql}, _) ->
 read_row_from_sql_dump(#sql_dump{fd = Fd, type = mysql}, FieldsNum) ->
     read_lines(Fd, FieldsNum, <<"">>, []).
 
+
 skip_pgcopy_header(Fd) ->
     try
         {ok, <<_:4/binary, ExtSize:32>>} = file:read(Fd, 8),
         {ok, <<_:ExtSize/binary>>} = file:read(Fd, ExtSize),
         ok
-    catch error:{badmatch, {error, _} = Err} ->
+    catch
+        error:{badmatch, {error, _} = Err} ->
             Err;
-          error:{badmatch, _} ->
+        error:{badmatch, _} ->
             {error, eof}
     end.
+
 
 read_fields(_Fd, 0, Acc) ->
     {ok, lists:reverse(Acc)};
 read_fields(Fd, N, Acc) ->
     case file:read(Fd, 4) of
         {ok, <<(-1):32/signed>>} ->
-            read_fields(Fd, N-1, [null|Acc]);
+            read_fields(Fd, N - 1, [null | Acc]);
         {ok, <<ValSize:32>>} ->
             case file:read(Fd, ValSize) of
                 {ok, <<Val:ValSize/binary>>} ->
-                    read_fields(Fd, N-1, [Val|Acc]);
+                    read_fields(Fd, N - 1, [Val | Acc]);
                 {ok, _} ->
                     {error, eof};
                 Err ->
@@ -357,6 +411,7 @@ read_fields(Fd, N, Acc) ->
             Err
     end.
 
+
 read_lines(_Fd, 0, <<"">>, Acc) ->
     {ok, lists:reverse(Acc)};
 read_lines(Fd, N, Buf, Acc) ->
@@ -366,7 +421,7 @@ read_lines(Fd, N, Buf, Acc) ->
             case Data of
                 <<Val:Size/binary, 0, $\n>> ->
                     NewBuf = <<Buf/binary, Val/binary>>,
-                    read_lines(Fd, N-1, <<"">>, [NewBuf|Acc]);
+                    read_lines(Fd, N - 1, <<"">>, [NewBuf | Acc]);
                 _ ->
                     NewBuf = <<Buf/binary, Data/binary>>,
                     read_lines(Fd, N, NewBuf, Acc)
@@ -382,10 +437,12 @@ read_lines(Fd, N, Buf, Acc) ->
             Err
     end.
 
+
 format_error({error, eof}) ->
     "unexpected end of file";
 format_error({error, Posix}) ->
     file:format_error(Posix).
+
 
 format_queries(DbType, SQLs) ->
     lists:map(
@@ -393,4 +450,5 @@ format_queries(DbType, SQLs) ->
               ejabberd_sql:sql_query_to_iolist(DbType, SQL);
          (SQL) ->
               SQL
-      end, SQLs).
+      end,
+      SQLs).

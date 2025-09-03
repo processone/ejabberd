@@ -32,7 +32,10 @@
 -author('holger@zedat.fu-berlin.de').
 -author('stefan@strigler.de').
 
--export([init_dumping/1, terminate_dumping/2, reload_dumping/4, reopen_dump_file/2,
+-export([init_dumping/1,
+         terminate_dumping/2,
+         reload_dumping/4,
+         reopen_dump_file/2,
          write_stanza_dump/2]).
 %% ejabberd_hooks callbacks
 -export([dump_spam_stanza/1, reopen_log/0]).
@@ -45,6 +48,7 @@
 
 %%--------------------------------------------------------------------
 %%| Exported
+
 
 init_dumping(Host) ->
     case get_path_option(Host) of
@@ -62,6 +66,7 @@ init_dumping(Host) ->
             end
     end.
 
+
 terminate_dumping(_Host, false) ->
     ok;
 terminate_dumping(Host, Fd) ->
@@ -75,6 +80,7 @@ terminate_dumping(Host, Fd) ->
             ok
     end.
 
+
 reload_dumping(Host, Fd, OldOpts, NewOpts) ->
     case {get_path_option(Host, OldOpts), get_path_option(Host, NewOpts)} of
         {Old, Old} ->
@@ -83,13 +89,16 @@ reload_dumping(Host, Fd, OldOpts, NewOpts) ->
             reopen_dump_file(Fd, Old, New)
     end.
 
+
 -spec reopen_dump_file(binary(), file:io_device()) -> file:io_device().
 reopen_dump_file(Host, Fd) ->
     DumpFile1 = get_path_option(Host),
     reopen_dump_file(Fd, DumpFile1, DumpFile1).
 
+
 %%--------------------------------------------------------------------
 %%| Hook callbacks
+
 
 -spec dump_spam_stanza(message()) -> ok.
 dump_spam_stanza(#message{to = #jid{lserver = LServer}} = Msg) ->
@@ -98,19 +107,22 @@ dump_spam_stanza(#message{to = #jid{lserver = LServer}} = Msg) ->
     Time = erlang:timestamp(),
     Msg1 = misc:add_delay_info(Msg, By, Time),
     XML = fxml:element_to_binary(
-              xmpp:encode(Msg1)),
+            xmpp:encode(Msg1)),
     gen_server:cast(Proc, {dump_stanza, XML}).
+
 
 -spec reopen_log() -> ok.
 reopen_log() ->
     lists:foreach(fun(Host) ->
-                     Proc = get_proc_name(Host),
-                     gen_server:cast(Proc, reopen_log)
+                          Proc = get_proc_name(Host),
+                          gen_server:cast(Proc, reopen_log)
                   end,
                   get_spam_filter_hosts()).
 
+
 %%--------------------------------------------------------------------
 %%| File management
+
 
 -spec open_dump_file(filename()) -> undefined | file:io_device().
 open_dump_file(false) ->
@@ -126,6 +138,7 @@ open_dump_file(Name) ->
             undefined
     end.
 
+
 -spec close_dump_file(undefined | file:io_device(), filename()) -> ok.
 close_dump_file(undefined, false) ->
     ok;
@@ -137,10 +150,12 @@ close_dump_file(Fd, Name) ->
             ?ERROR_MSG("Cannot close ~s: ~s", [Name, file:format_error(Reason)])
     end.
 
+
 -spec reopen_dump_file(file:io_device(), binary(), binary()) -> file:io_device().
 reopen_dump_file(Fd, OldDumpFile, NewDumpFile) ->
     close_dump_file(Fd, OldDumpFile),
     open_dump_file(NewDumpFile).
+
 
 write_stanza_dump(Fd, XML) ->
     case file:write(Fd, [XML, <<$\n>>]) of
@@ -150,12 +165,15 @@ write_stanza_dump(Fd, XML) ->
             ?ERROR_MSG("Cannot write spam to dump file: ~s", [file:format_error(Reason)])
     end.
 
+
 %%--------------------------------------------------------------------
 %%| Auxiliary
+
 
 get_path_option(Host) ->
     Opts = gen_mod:get_module_opts(Host, ?MODULE_ANTISPAM),
     get_path_option(Host, Opts).
+
 
 get_path_option(Host, Opts) ->
     case gen_mod:get_opt(spam_dump_file, Opts) of
@@ -164,22 +182,25 @@ get_path_option(Host, Opts) ->
         true ->
             LogDirPath =
                 iolist_to_binary(filename:dirname(
-                                     ejabberd_logger:get_log_path())),
+                                   ejabberd_logger:get_log_path())),
             filename:join([LogDirPath, <<"spam_dump_", Host/binary, ".log">>]);
         B when is_binary(B) ->
             B
     end.
 
+
 %%--------------------------------------------------------------------
 %%| Copied from mod_antispam.erl
+
 
 -spec get_proc_name(binary()) -> atom().
 get_proc_name(Host) ->
     gen_mod:get_module_proc(Host, ?MODULE_ANTISPAM).
 
+
 -spec get_spam_filter_hosts() -> [binary()].
 get_spam_filter_hosts() ->
-    [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, ?MODULE_ANTISPAM)].
+    [ H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, ?MODULE_ANTISPAM) ].
 
 %%--------------------------------------------------------------------
 

@@ -4,22 +4,33 @@
 %% ex: ft=erlang ts=4 sw=4 et
 
 -define(TIMEOUT, 60000).
--define(INFO(Fmt,Args), io:format(Fmt,Args)).
+-define(INFO(Fmt, Args), io:format(Fmt, Args)).
+
 
 main([NodeName, Cookie, ReleasePackage]) ->
     TargetNode = start_distribution(NodeName, Cookie),
-    {ok, Vsn} = rpc:call(TargetNode, release_handler, unpack_release,
-                         [ReleasePackage], ?TIMEOUT),
+    {ok, Vsn} = rpc:call(TargetNode,
+                         release_handler,
+                         unpack_release,
+                         [ReleasePackage],
+                         ?TIMEOUT),
     ?INFO("Unpacked Release ~p~n", [Vsn]),
-    {ok, OtherVsn, Desc} = rpc:call(TargetNode, release_handler,
-                                    check_install_release, [Vsn], ?TIMEOUT),
-    {ok, OtherVsn, Desc} = rpc:call(TargetNode, release_handler,
-                                    install_release, [Vsn], ?TIMEOUT),
+    {ok, OtherVsn, Desc} = rpc:call(TargetNode,
+                                    release_handler,
+                                    check_install_release,
+                                    [Vsn],
+                                    ?TIMEOUT),
+    {ok, OtherVsn, Desc} = rpc:call(TargetNode,
+                                    release_handler,
+                                    install_release,
+                                    [Vsn],
+                                    ?TIMEOUT),
     ?INFO("Installed Release ~p~n", [Vsn]),
     ok = rpc:call(TargetNode, release_handler, make_permanent, [Vsn], ?TIMEOUT),
     ?INFO("Made Release ~p Permanent~n", [Vsn]);
 main(_) ->
     init:stop(1).
+
 
 start_distribution(NodeName, Cookie) ->
     MyNode = make_script_node(NodeName),
@@ -36,9 +47,11 @@ start_distribution(NodeName, Cookie) ->
     end,
     TargetNode.
 
+
 make_target_node(Node) ->
     [_, Host] = string:tokens(atom_to_list(node()), "@"),
     list_to_atom(lists:concat([Node, "@", Host])).
+
 
 make_script_node(Node) ->
     list_to_atom(lists:concat([Node, "_upgrader_", os:getpid()])).

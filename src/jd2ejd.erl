@@ -31,142 +31,156 @@
 -export([import_file/1, import_dir/1]).
 
 -include("logger.hrl").
+
 -include_lib("xmpp/include/xmpp.hrl").
 
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
 
+
 import_file(File) ->
     User = filename:rootname(filename:basename(File)),
     Server = filename:basename(filename:dirname(File)),
     case jid:nodeprep(User) /= error andalso
-	   jid:nameprep(Server) /= error
-	of
-      true ->
-	  case file:read_file(File) of
-	    {ok, Text} ->
-		case fxml_stream:parse_element(Text) of
-		  El when is_record(El, xmlel) ->
-		      case catch process_xdb(User, Server, El) of
-			{'EXIT', Reason} ->
-			    ?ERROR_MSG("Error while processing file \"~ts\": "
-				       "~p~n",
-				       [File, Reason]),
-			    {error, Reason};
-			_ -> ok
-		      end;
-		  {error, Reason} ->
-		      ?ERROR_MSG("Can't parse file \"~ts\": ~p~n",
-				 [File, Reason]),
-		      {error, Reason}
-		end;
-	    {error, Reason} ->
-		?ERROR_MSG("Can't read file \"~ts\": ~p~n",
-			   [File, Reason]),
-		{error, Reason}
-	  end;
-      false ->
-	  ?ERROR_MSG("Illegal user/server name in file \"~ts\"~n",
-		     [File]),
-	  {error, <<"illegal user/server">>}
+         jid:nameprep(Server) /= error of
+        true ->
+            case file:read_file(File) of
+                {ok, Text} ->
+                    case fxml_stream:parse_element(Text) of
+                        El when is_record(El, xmlel) ->
+                            case catch process_xdb(User, Server, El) of
+                                {'EXIT', Reason} ->
+                                    ?ERROR_MSG("Error while processing file \"~ts\": "
+                                               "~p~n",
+                                               [File, Reason]),
+                                    {error, Reason};
+                                _ -> ok
+                            end;
+                        {error, Reason} ->
+                            ?ERROR_MSG("Can't parse file \"~ts\": ~p~n",
+                                       [File, Reason]),
+                            {error, Reason}
+                    end;
+                {error, Reason} ->
+                    ?ERROR_MSG("Can't read file \"~ts\": ~p~n",
+                               [File, Reason]),
+                    {error, Reason}
+            end;
+        false ->
+            ?ERROR_MSG("Illegal user/server name in file \"~ts\"~n",
+                       [File]),
+            {error, <<"illegal user/server">>}
     end.
+
 
 import_dir(Dir) ->
     {ok, Files} = file:list_dir(Dir),
-    MsgFiles = lists:filter(fun (FN) ->
-				    case length(FN) > 4 of
-				      true ->
-					  string:substr(FN, length(FN) - 3) ==
-					    ".xml";
-				      _ -> false
-				    end
-			    end,
-			    Files),
-    lists:foldl(fun (FN, A) ->
-			Res = import_file(filename:join([Dir, FN])),
-			case {A, Res} of
-			  {ok, ok} -> ok;
-			  {ok, _} ->
-			      {error, <<"see ejabberd log for details">>};
-			  _ -> A
-			end
-		end,
-		ok, MsgFiles).
+    MsgFiles = lists:filter(fun(FN) ->
+                                    case length(FN) > 4 of
+                                        true ->
+                                            string:substr(FN, length(FN) - 3) ==
+                                            ".xml";
+                                        _ -> false
+                                    end
+                            end,
+                            Files),
+    lists:foldl(fun(FN, A) ->
+                        Res = import_file(filename:join([Dir, FN])),
+                        case {A, Res} of
+                            {ok, ok} -> ok;
+                            {ok, _} ->
+                                {error, <<"see ejabberd log for details">>};
+                            _ -> A
+                        end
+                end,
+                ok,
+                MsgFiles).
+
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-process_xdb(User, Server,
-	    #xmlel{name = Name, children = Els}) ->
+
+process_xdb(User,
+            Server,
+            #xmlel{name = Name, children = Els}) ->
     case Name of
-      <<"xdb">> ->
-	  lists:foreach(fun (El) -> xdb_data(User, Server, El)
-			end,
-			Els);
-      _ -> ok
+        <<"xdb">> ->
+            lists:foreach(fun(El) -> xdb_data(User, Server, El)
+                          end,
+                          Els);
+        _ -> ok
     end.
+
 
 xdb_data(_User, _Server, {xmlcdata, _CData}) -> ok;
 xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
     From = jid:make(User, Server),
     LServer = From#jid.lserver,
     case fxml:get_attr_s(<<"xmlns">>, Attrs) of
-      ?NS_AUTH ->
-	  Password = fxml:get_tag_cdata(El),
-	  ejabberd_auth:set_password(User, Server, Password),
-	  ok;
-      ?NS_ROSTER ->
-	  catch mod_roster:set_items(User, Server, xmpp:decode(El)),
-	  ok;
-      ?NS_LAST ->
-	  TimeStamp = fxml:get_attr_s(<<"last">>, Attrs),
-	  Status = fxml:get_tag_cdata(El),
-	  catch mod_last:store_last_info(User, Server,
-					 binary_to_integer(TimeStamp),
-					 Status),
-	  ok;
-      ?NS_VCARD ->
-	  catch mod_vcard:set_vcard(User, LServer, El),
-	  ok;
-      <<"jabber:x:offline">> ->
-	  process_offline(Server, From, El), ok;
-      XMLNS ->
-	  case fxml:get_attr_s(<<"j_private_flag">>, Attrs) of
-	    <<"1">> ->
-		NewAttrs = lists:filter(
-			     fun({<<"j_private_flag">>, _}) -> false;
-				({<<"xdbns">>, _}) -> false;
-				(_) -> true
-			     end, Attrs),
-		catch mod_private:set_data(
-			From,
-			[{XMLNS, El#xmlel{attrs = NewAttrs}}]);
-	    _ ->
-		?DEBUG("Unknown namespace \"~ts\"~n", [XMLNS])
-	  end,
-	  ok
+        ?NS_AUTH ->
+            Password = fxml:get_tag_cdata(El),
+            ejabberd_auth:set_password(User, Server, Password),
+            ok;
+        ?NS_ROSTER ->
+            catch mod_roster:set_items(User, Server, xmpp:decode(El)),
+            ok;
+        ?NS_LAST ->
+            TimeStamp = fxml:get_attr_s(<<"last">>, Attrs),
+            Status = fxml:get_tag_cdata(El),
+            catch mod_last:store_last_info(User,
+                                           Server,
+                                           binary_to_integer(TimeStamp),
+                                           Status),
+            ok;
+        ?NS_VCARD ->
+            catch mod_vcard:set_vcard(User, LServer, El),
+            ok;
+        <<"jabber:x:offline">> ->
+            process_offline(Server, From, El), ok;
+        XMLNS ->
+            case fxml:get_attr_s(<<"j_private_flag">>, Attrs) of
+                <<"1">> ->
+                    NewAttrs = lists:filter(
+                                 fun({<<"j_private_flag">>, _}) -> false;
+                                    ({<<"xdbns">>, _}) -> false;
+                                    (_) -> true
+                                 end,
+                                 Attrs),
+                    catch mod_private:set_data(
+                            From,
+                            [{XMLNS, El#xmlel{attrs = NewAttrs}}]);
+                _ ->
+                    ?DEBUG("Unknown namespace \"~ts\"~n", [XMLNS])
+            end,
+            ok
     end.
+
 
 process_offline(Server, To, #xmlel{children = Els}) ->
     LServer = jid:nameprep(Server),
     lists:foreach(
       fun(#xmlel{} = El) ->
-	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
-		  #message{from = JID} = Msg ->
-		      From = case JID of
-				 undefined -> jid:make(Server);
-				 _ -> JID
-			     end,
-		      ejabberd_hooks:run_fold(
-			offline_message_hook,
-			LServer, {pass, xmpp:set_from_to(Msg, From, To)}, []);
-		  _ ->
-		      ok
-	      catch _:{xmpp_codec, Why} ->
-		      Txt = xmpp:format_error(Why),
-		      ?ERROR_MSG("Failed to decode XML '~ts': ~ts",
-				 [fxml:element_to_binary(El), Txt])
-	      end
-      end, Els).
+              try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+                  #message{from = JID} = Msg ->
+                      From = case JID of
+                                 undefined -> jid:make(Server);
+                                 _ -> JID
+                             end,
+                      ejabberd_hooks:run_fold(
+                        offline_message_hook,
+                        LServer,
+                        {pass, xmpp:set_from_to(Msg, From, To)},
+                        []);
+                  _ ->
+                      ok
+              catch
+                  _:{xmpp_codec, Why} ->
+                      Txt = xmpp:format_error(Why),
+                      ?ERROR_MSG("Failed to decode XML '~ts': ~ts",
+                                 [fxml:element_to_binary(El), Txt])
+              end
+      end,
+      Els).

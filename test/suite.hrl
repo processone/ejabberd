@@ -3,6 +3,7 @@
 -include_lib("xmpp/include/jid.hrl").
 -include_lib("xmpp/include/ns.hrl").
 -include_lib("xmpp/include/xmpp_codec.hrl").
+
 -include("mod_proxy65.hrl").
 
 -define(STREAM_TRAILER, <<"</stream:stream>">>).
@@ -67,7 +68,7 @@
          end)()).
 
 -define(match(Pattern, Result),
-    (fun() ->
+        (fun() ->
 	case Result of
 	    Pattern ->
 		ok;
@@ -77,7 +78,7 @@
     end)()).
 
 -define(match(Pattern, Result, PatternRes),
-    (fun() ->
+        (fun() ->
         case Result of
             Pattern ->
                 PatternRes;
@@ -87,25 +88,26 @@
      end)()).
 
 -define(send_recv(Send, Recv),
-    ?match(Recv, suite:send_recv(Config, Send))).
+        ?match(Recv, suite:send_recv(Config, Send))).
 
 -define(retry(TIMEOUT, N, FUN), suite:retry(TIMEOUT, N, fun() -> FUN end)).
 
--define(COMMON_VHOST, <<"localhost">>).
--define(MNESIA_VHOST, <<"mnesia.localhost">>).
--define(REDIS_VHOST, <<"redis.localhost">>).
--define(MYSQL_VHOST, <<"mysql.localhost">>).
--define(MSSQL_VHOST, <<"mssql.localhost">>).
--define(PGSQL_VHOST, <<"pgsql.localhost">>).
--define(SQLITE_VHOST, <<"sqlite.localhost">>).
--define(LDAP_VHOST, <<"ldap.localhost">>).
+-define(COMMON_VHOST,  <<"localhost">>).
+-define(MNESIA_VHOST,  <<"mnesia.localhost">>).
+-define(REDIS_VHOST,   <<"redis.localhost">>).
+-define(MYSQL_VHOST,   <<"mysql.localhost">>).
+-define(MSSQL_VHOST,   <<"mssql.localhost">>).
+-define(PGSQL_VHOST,   <<"pgsql.localhost">>).
+-define(SQLITE_VHOST,  <<"sqlite.localhost">>).
+-define(LDAP_VHOST,    <<"ldap.localhost">>).
 -define(EXTAUTH_VHOST, <<"extauth.localhost">>).
--define(S2S_VHOST, <<"s2s.localhost">>).
--define(UPLOAD_VHOST, <<"upload.localhost">>).
+-define(S2S_VHOST,     <<"s2s.localhost">>).
+-define(UPLOAD_VHOST,  <<"upload.localhost">>).
 
 -define(BACKENDS, [mnesia, redis, mysql, mssql, odbc, pgsql, sqlite, ldap, extauth]).
 
+
 insert(Val, N, Tuple) ->
     L = tuple_to_list(Tuple),
-    {H, T} = lists:split(N-1, L),
-    list_to_tuple(H ++ [Val|T]).
+    {H, T} = lists:split(N - 1, L),
+    list_to_tuple(H ++ [Val | T]).

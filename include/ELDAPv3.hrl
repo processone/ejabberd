@@ -3,79 +3,101 @@
 %% SEQUENCE and SET, and macro definitions for each value
 %% definition,in module ELDAPv3
 
+-record('LDAPMessage', {
+          messageID, protocolOp, controls = asn1_NOVALUE
+         }).
 
+-record('AttributeValueAssertion', {
+          attributeDesc, assertionValue
+         }).
 
--record('LDAPMessage',{
-messageID, protocolOp, controls = asn1_NOVALUE}).
+-record('Attribute', {
+          type, vals
+         }).
 
--record('AttributeValueAssertion',{
-attributeDesc, assertionValue}).
+-record('LDAPResult', {
+          resultCode, matchedDN, errorMessage, referral = asn1_NOVALUE
+         }).
 
--record('Attribute',{
-type, vals}).
+-record('Control', {
+          controlType, criticality = asn1_DEFAULT, controlValue = asn1_NOVALUE
+         }).
 
--record('LDAPResult',{
-resultCode, matchedDN, errorMessage, referral = asn1_NOVALUE}).
+-record('BindRequest', {
+          version, name, authentication
+         }).
 
--record('Control',{
-controlType, criticality = asn1_DEFAULT, controlValue = asn1_NOVALUE}).
+-record('SaslCredentials', {
+          mechanism, credentials = asn1_NOVALUE
+         }).
 
--record('BindRequest',{
-version, name, authentication}).
+-record('BindResponse', {
+          resultCode, matchedDN, errorMessage, referral = asn1_NOVALUE, serverSaslCreds = asn1_NOVALUE
+         }).
 
--record('SaslCredentials',{
-mechanism, credentials = asn1_NOVALUE}).
+-record('SearchRequest', {
+          baseObject, scope, derefAliases, sizeLimit, timeLimit, typesOnly, filter, attributes
+         }).
 
--record('BindResponse',{
-resultCode, matchedDN, errorMessage, referral = asn1_NOVALUE, serverSaslCreds = asn1_NOVALUE}).
+-record('SubstringFilter', {
+          type, substrings
+         }).
 
--record('SearchRequest',{
-baseObject, scope, derefAliases, sizeLimit, timeLimit, typesOnly, filter, attributes}).
+-record('MatchingRuleAssertion', {
+          matchingRule = asn1_NOVALUE, type = asn1_NOVALUE, matchValue, dnAttributes = asn1_DEFAULT
+         }).
 
--record('SubstringFilter',{
-type, substrings}).
+-record('SearchResultEntry', {
+          objectName, attributes
+         }).
 
--record('MatchingRuleAssertion',{
-matchingRule = asn1_NOVALUE, type = asn1_NOVALUE, matchValue, dnAttributes = asn1_DEFAULT}).
+-record('PartialAttributeList_SEQOF', {
+          type, vals
+         }).
 
--record('SearchResultEntry',{
-objectName, attributes}).
+-record('ModifyRequest', {
+          object, modification
+         }).
 
--record('PartialAttributeList_SEQOF',{
-type, vals}).
+-record('ModifyRequest_modification_SEQOF', {
+          operation, modification
+         }).
 
--record('ModifyRequest',{
-object, modification}).
+-record('AttributeTypeAndValues', {
+          type, vals
+         }).
 
--record('ModifyRequest_modification_SEQOF',{
-operation, modification}).
+-record('AddRequest', {
+          entry, attributes
+         }).
 
--record('AttributeTypeAndValues',{
-type, vals}).
+-record('AttributeList_SEQOF', {
+          type, vals
+         }).
 
--record('AddRequest',{
-entry, attributes}).
+-record('ModifyDNRequest', {
+          entry, newrdn, deleteoldrdn, newSuperior = asn1_NOVALUE
+         }).
 
--record('AttributeList_SEQOF',{
-type, vals}).
+-record('CompareRequest', {
+          entry, ava
+         }).
 
--record('ModifyDNRequest',{
-entry, newrdn, deleteoldrdn, newSuperior = asn1_NOVALUE}).
+-record('ExtendedRequest', {
+          requestName, requestValue = asn1_NOVALUE
+         }).
 
--record('CompareRequest',{
-entry, ava}).
+-record('ExtendedResponse', {
+          resultCode, matchedDN, errorMessage, referral = asn1_NOVALUE, responseName = asn1_NOVALUE, response = asn1_NOVALUE
+         }).
 
--record('ExtendedRequest',{
-requestName, requestValue = asn1_NOVALUE}).
+-record('PasswdModifyRequestValue', {
+          userIdentity = asn1_NOVALUE, oldPasswd = asn1_NOVALUE, newPasswd = asn1_NOVALUE
+         }).
 
--record('ExtendedResponse',{
-resultCode, matchedDN, errorMessage, referral = asn1_NOVALUE, responseName = asn1_NOVALUE, response = asn1_NOVALUE}).
+-record('PasswdModifyResponseValue', {
+          genPasswd = asn1_NOVALUE
+         }).
 
--record('PasswdModifyRequestValue',{
-userIdentity = asn1_NOVALUE, oldPasswd = asn1_NOVALUE, newPasswd = asn1_NOVALUE}).
-
--record('PasswdModifyResponseValue',{
-genPasswd = asn1_NOVALUE}).
-
--define('maxInt', 2147483647).
--define('passwdModifyOID', [49,46,51,46,54,46,49,46,52,46,49,46,52,50,48,51,46,49,46,49,49,46,49]).
+-define('maxInt',          2147483647).
+-define('passwdModifyOID', [49, 46, 51, 46, 54, 46, 49, 46, 52, 46, 49, 46, 52, 50, 48, 51, 46, 49, 46, 49, 49, 46, 49]).

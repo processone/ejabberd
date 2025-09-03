@@ -18,5 +18,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--record(passwd, {us = {<<"">>, <<"">>} :: {binary(), binary()} | {binary(), binary(), atom()} | '$1',
-                 password = <<"">> :: binary() | scram() | '_'}).
+-record(passwd, {
+          us = {<<"">>, <<"">>} :: {binary(), binary()} | {binary(), binary(), atom()} | '$1',
+          password = <<"">> :: binary() | scram() | '_'
+         }).

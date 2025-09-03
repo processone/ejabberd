@@ -26,7 +26,6 @@
 
 -behaviour(mod_caps).
 
-
 %% API
 -export([init/2, caps_read/2, caps_write/3, export/1, import/3]).
 -export([sql_schemas/0]).
@@ -35,6 +34,7 @@
 -include("ejabberd_sql_pt.hrl").
 -include("logger.hrl").
 
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -42,70 +42,84 @@ init(Host, _Opts) ->
     ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
+
 sql_schemas() ->
     [#sql_schema{
-        version = 1,
-        tables =
-            [#sql_table{
-                name = <<"caps_features">>,
-                columns =
-                    [#sql_column{name = <<"node">>, type = text},
-                     #sql_column{name = <<"subnode">>, type = text},
-                     #sql_column{name = <<"feature">>, type = text},
-                     #sql_column{name = <<"created_at">>, type = timestamp,
-                                 default = true}],
-                indices = [#sql_index{
-                              columns = [<<"node">>, <<"subnode">>]}]}]}].
+       version = 1,
+       tables =
+           [#sql_table{
+              name = <<"caps_features">>,
+              columns =
+                  [#sql_column{name = <<"node">>, type = text},
+                   #sql_column{name = <<"subnode">>, type = text},
+                   #sql_column{name = <<"feature">>, type = text},
+                   #sql_column{
+                     name = <<"created_at">>,
+                     type = timestamp,
+                     default = true
+                    }],
+              indices = [#sql_index{
+                           columns = [<<"node">>, <<"subnode">>]
+                          }]
+             }]
+      }].
+
 
 caps_read(LServer, {Node, SubNode}) ->
     case ejabberd_sql:sql_query(
            LServer,
            ?SQL("select @(feature)s from caps_features where"
                 " node=%(Node)s and subnode=%(SubNode)s")) of
-        {selected, [{H}|_] = Fs} ->
+        {selected, [{H} | _] = Fs} ->
             case catch binary_to_integer(H) of
-                Int when is_integer(Int), Int>=0 ->
+                Int when is_integer(Int), Int >= 0 ->
                     {ok, Int};
                 _ ->
-                    {ok, [F || {F} <- Fs]}
+                    {ok, [ F || {F} <- Fs ]}
             end;
         _ ->
             error
     end.
 
+
 caps_write(LServer, NodePair, Features) ->
     case ejabberd_sql:sql_transaction(
-	   LServer,
-	   sql_write_features_t(NodePair, Features)) of
-	{atomic, _} ->
-	    ok;
-	{aborted, _Reason} ->
-	    {error, db_failure}
+           LServer,
+           sql_write_features_t(NodePair, Features)) of
+        {atomic, _} ->
+            ok;
+        {aborted, _Reason} ->
+            {error, db_failure}
     end.
+
 
 export(_Server) ->
     [{caps_features,
-      fun(_Host, #caps_features{node_pair = NodePair,
-                                features = Features}) ->
+      fun(_Host,
+          #caps_features{
+            node_pair = NodePair,
+            features = Features
+           }) ->
               sql_write_features_t(NodePair, Features);
          (_Host, _R) ->
               []
       end}].
 
+
 import(_, _, _) ->
     ok.
+
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 sql_write_features_t({Node, SubNode}, Features) ->
-    NewFeatures = if is_integer(Features) ->
+    NewFeatures = if
+                      is_integer(Features) ->
                           [integer_to_binary(Features)];
-                     true ->
+                      true ->
                           Features
                   end,
     [?SQL("delete from caps_features where node=%(Node)s"
-          " and subnode=%(SubNode)s;") |
-     [?SQL("insert into caps_features(node, subnode, feature)"
-           " values (%(Node)s, %(SubNode)s, %(F)s);") || F <- NewFeatures]].
-
+          " and subnode=%(SubNode)s;") | [ ?SQL("insert into caps_features(node, subnode, feature)"
+                                                " values (%(Node)s, %(SubNode)s, %(F)s);") || F <- NewFeatures ]].

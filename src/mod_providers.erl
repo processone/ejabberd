@@ -50,27 +50,35 @@
 %%--------------------------------------------------------------------
 %%| gen_mod callbacks
 
+
 start(_Host, _Opts) ->
     report_hostmeta_listener(),
     ok.
 
+
 stop(_Host) ->
     ok.
+
 
 reload(_Host, _NewOpts, _OldOpts) ->
     report_hostmeta_listener(),
     ok.
 
+
 depends(_Host, _Opts) ->
     [].
+
 
 %%--------------------------------------------------------------------
 %%| HTTP handlers
 
+
 process([],
-        #request{method = 'GET',
-                 host = Host,
-                 path = Path}) ->
+        #request{
+          method = 'GET',
+          host = Host,
+          path = Path
+         }) ->
     case lists:last(Path) of
         <<"xmpp-provider-v2.json">> ->
             file_json(Host)
@@ -78,12 +86,15 @@ process([],
 process(_Path, _Request) ->
     {404, [], "Not Found"}.
 
+
 %%--------------------------------------------------------------------
 %%| JSON
 
+
 file_json(Host) ->
     Content =
-        #{website => build_urls(Host, website),
+        #{
+          website => build_urls(Host, website),
           alternativeJids => gen_mod:get_module_opt(Host, ?MODULE, alternativeJids),
           busFactor => gen_mod:get_module_opt(Host, ?MODULE, busFactor),
           organization => gen_mod:get_module_opt(Host, ?MODULE, organization),
@@ -97,15 +108,18 @@ file_json(Host) ->
           freeOfCharge => gen_mod:get_module_opt(Host, ?MODULE, freeOfCharge),
           legalNotice => build_urls(Host, legalNotice),
           serverLocations => gen_mod:get_module_opt(Host, ?MODULE, serverLocations),
-          since => gen_mod:get_module_opt(Host, ?MODULE, since)},
+          since => gen_mod:get_module_opt(Host, ?MODULE, since)
+         },
     {200,
      [html,
       {<<"Content-Type">>, <<"application/json">>},
       {<<"Access-Control-Allow-Origin">>, <<"*">>}],
      [misc:json_encode(Content)]}.
 
+
 %%--------------------------------------------------------------------
 %%| Upload Size
+
 
 get_upload_size(Host) ->
     case gen_mod:get_module_opt(Host, ?MODULE, maximumHttpFileUploadTotalSize) of
@@ -114,6 +128,7 @@ get_upload_size(Host) ->
         I when is_integer(I) ->
             I
     end.
+
 
 get_upload_size_mhuq(Host) ->
     case gen_mod:is_loaded(Host, mod_http_upload_quota) of
@@ -125,6 +140,7 @@ get_upload_size_mhuq(Host) ->
             0
     end.
 
+
 get_upload_size_rules(Rules) ->
     case lists:keysearch([{acl, all}], 2, Rules) of
         {value, {Size, _}} ->
@@ -133,8 +149,10 @@ get_upload_size_rules(Rules) ->
             0
     end.
 
+
 %%--------------------------------------------------------------------
 %%| Upload Time
+
 
 get_upload_time(Host) ->
     case gen_mod:get_module_opt(Host, ?MODULE, maximumHttpFileUploadStorageTime) of
@@ -143,6 +161,7 @@ get_upload_time(Host) ->
         I when is_integer(I) ->
             I
     end.
+
 
 get_upload_time_mhuq(Host) ->
     case gen_mod:is_loaded(Host, mod_http_upload_quota) of
@@ -157,11 +176,14 @@ get_upload_time_mhuq(Host) ->
             0
     end.
 
+
 %%--------------------------------------------------------------------
 %%| Password URL
 
+
 get_password_url(Host) ->
     build_urls(Host, get_password_url2(Host)).
+
 
 get_password_url2(Host) ->
     case gen_mod:get_module_opt(Host, ?MODULE, passwordReset) of
@@ -170,6 +192,7 @@ get_password_url2(Host) ->
         U when is_binary(U) ->
             U
     end.
+
 
 get_password_url3(Host) ->
     case find_handler_port_path2(any, mod_register_web) of
@@ -193,25 +216,28 @@ get_password_url3(Host) ->
               "/">>
     end.
 
+
 %% TODO Ya hay otra funciona como esta
 find_handler_port_path2(Tls, Module) ->
-    lists:filtermap(fun ({{Port, _, _},
-                          ejabberd_http,
-                          #{tls := ThisTls, request_handlers := Handlers}})
-                            when (Tls == any) or (Tls == ThisTls) ->
+    lists:filtermap(fun({{Port, _, _},
+                         ejabberd_http,
+                         #{tls := ThisTls, request_handlers := Handlers}})
+                          when (Tls == any) or (Tls == ThisTls) ->
                             case lists:keyfind(Module, 2, Handlers) of
                                 false ->
                                     false;
                                 {Path, Module} ->
                                     {true, {ThisTls, Port, Path}}
                             end;
-                        (_) ->
+                       (_) ->
                             false
                     end,
                     ets:tab2list(ejabberd_listener)).
 
+
 %%--------------------------------------------------------------------
 %%| Build URLs
+
 
 build_urls(Host, Option) when is_atom(Option) ->
     build_urls(Host, gen_mod:get_module_opt(Host, ?MODULE, Option));
@@ -219,24 +245,26 @@ build_urls(_Host, <<"">>) ->
     #{};
 build_urls(Host, Url) when not is_atom(Url) ->
     Languages = gen_mod:get_module_opt(Host, ?MODULE, languages),
-    maps:from_list([{L, misc:expand_keyword(<<"@LANGUAGE_URL@">>, Url, L)}
-                    || L <- Languages]).
+    maps:from_list([ {L, misc:expand_keyword(<<"@LANGUAGE_URL@">>, Url, L)}
+                     || L <- Languages ]).
+
 
 find_handler_port_path(Tls, Module) ->
-    lists:filtermap(fun ({{Port, _, _},
-                          ejabberd_http,
-                          #{tls := ThisTls, request_handlers := Handlers}})
-                            when is_integer(Port) and ((Tls == any) or (Tls == ThisTls)) ->
+    lists:filtermap(fun({{Port, _, _},
+                         ejabberd_http,
+                         #{tls := ThisTls, request_handlers := Handlers}})
+                          when is_integer(Port) and ((Tls == any) or (Tls == ThisTls)) ->
                             case lists:keyfind(Module, 2, Handlers) of
                                 false ->
                                     false;
                                 {Path, Module} ->
                                     {true, {ThisTls, Port, Path}}
                             end;
-                        (_) ->
+                       (_) ->
                             false
                     end,
                     ets:tab2list(ejabberd_listener)).
+
 
 report_hostmeta_listener() ->
     case {find_handler_port_path(false, ?MODULE), find_handler_port_path(true, ?MODULE)} of
@@ -255,17 +283,19 @@ report_hostmeta_listener() ->
             ok
     end.
 
+
 %%--------------------------------------------------------------------
 %%| Options
 
+
 mod_opt_type(languages) ->
     econf:list(
-        econf:binary());
+      econf:binary());
 mod_opt_type(website) ->
     econf:binary();
 mod_opt_type(alternativeJids) ->
     econf:list(
-        econf:domain(), [unique]);
+      econf:domain(), [unique]);
 mod_opt_type(busFactor) ->
     econf:int();
 mod_opt_type(organization) ->
@@ -292,9 +322,10 @@ mod_opt_type(legalNotice) ->
     econf:binary();
 mod_opt_type(serverLocations) ->
     econf:list(
-        econf:binary());
+      econf:binary());
 mod_opt_type(since) ->
     econf:binary().
+
 
 mod_options(Host) ->
     [{languages, [ejabberd_option:language(Host)]},
@@ -313,11 +344,14 @@ mod_options(Host) ->
      {serverLocations, []},
      {since, <<"">>}].
 
+
 %%--------------------------------------------------------------------
 %%| Doc
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           [?T("This module serves JSON provider files API v2 as described by "
               "https://providers.xmpp.net/provider-file-generator/[XMPP Providers]."),
            "",
@@ -331,40 +365,51 @@ mod_doc() ->
       note => "added in 25.08",
       opts =>
           [{languages,
-            #{value => "[string()]",
+            #{
+              value => "[string()]",
               desc =>
                   ?T("List of language codes that your pages are available. "
                      "Some options define URL where the keyword '@LANGUAGE_URL@' "
                      "will be replaced with each of those language codes. "
                      "The default value is a list with the language set in the "
-                     "option _`language`_, for example: '[en]'.")}},
+                     "option _`language`_, for example: '[en]'.")
+             }},
            {website,
-            #{value => "string()",
+            #{
+              value => "string()",
               desc =>
                   ?T("Provider website. "
                      "The keyword '@LANGUAGE_URL@' is replaced with each language. "
-                     "The default value is '\"\"'.")}},
+                     "The default value is '\"\"'.")
+             }},
            {alternativeJids,
-            #{value => "[string()]",
+            #{
+              value => "[string()]",
               desc =>
                   ?T("List of JIDs (XMPP server domains) a provider offers for "
                      "registration other than its main JID. "
-                     "The default value is '[]'.")}},
+                     "The default value is '[]'.")
+             }},
            {busFactor,
-            #{value => "integer()",
+            #{
+              value => "integer()",
               desc =>
                   ?T("Bus factor of the XMPP service (i.e., the minimum number of "
                      "team members that the service could not survive losing) or '-1' for n/a. "
-                     "The default value is '-1'.")}},
+                     "The default value is '-1'.")
+             }},
            {organization,
-            #{value => "string()",
+            #{
+              value => "string()",
               desc =>
                   ?T("Type of organization providing the XMPP service. "
                      "Allowed values are: 'company', '\"commercial person\"', '\"private person\"', "
                      "'governmental', '\"non-governmental\"' or '\"\"'. "
-                     "The default value is '\"\"'.")}},
+                     "The default value is '\"\"'.")
+             }},
            {passwordReset,
-            #{value => "string()",
+            #{
+              value => "string()",
               desc =>
                   ?T("Password reset web page (per language) used for an automatic password reset "
                      "(e.g., via email) or describing how to manually reset a password "
@@ -372,15 +417,19 @@ mod_doc() ->
                      "The keyword '@LANGUAGE_URL@' is replaced with each language. "
                      "The default value is an URL built automatically "
                      "if _`mod_register_web`_ is configured as a 'request_handler', "
-                     "or '\"\"' otherwise.")}},
+                     "or '\"\"' otherwise.")
+             }},
            {serverTesting,
-            #{value => "true | false",
+            #{
+              value => "true | false",
               desc =>
                   ?T("Whether tests against the provider's server are allowed "
                      "(e.g., certificate checks and uptime monitoring). "
-                     "The default value is 'false'.")}},
+                     "The default value is 'false'.")
+             }},
            {maximumHttpFileUploadTotalSize,
-            #{value => "integer()",
+            #{
+              value => "integer()",
               desc =>
                   ?T("Maximum size of all shared files in total per user (number in megabytes (MB), "
                      "'0' for no limit or '-1' for less than 1 MB). "
@@ -389,47 +438,62 @@ mod_doc() ->
                      "which is already retrieved via XMPP. "
                      "The default value is the value of the shaper value "
                      "of option 'access_hard_quota' "
-                     "from module _`mod_http_upload_quota`_, or '0' otherwise.")}},
+                     "from module _`mod_http_upload_quota`_, or '0' otherwise.")
+             }},
            {maximumHttpFileUploadStorageTime,
-            #{value => "integer()",
+            #{
+              value => "integer()",
               desc =>
                   ?T("Maximum storage duration of each shared file "
                      "(number in days, '0' for no limit or '-1' for less than 1 day). "
                      "The default value is the same as option 'max_days' "
-                     "from module _`mod_http_upload_quota`_, or '0' otherwise.")}},
+                     "from module _`mod_http_upload_quota`_, or '0' otherwise.")
+             }},
            {maximumMessageArchiveManagementStorageTime,
-            #{value => "integer()",
+            #{
+              value => "integer()",
               desc =>
                   ?T("Maximum storage duration of each exchanged message "
                      "(number in days, '0' for no limit or '-1' for less than 1 day). "
-                     "The default value is '0'.")}},
+                     "The default value is '0'.")
+             }},
            {professionalHosting,
-            #{value => "true | false",
+            #{
+              value => "true | false",
               desc =>
                   ?T("Whether the XMPP server is hosted with good internet connection speed, "
                      "uninterruptible power supply, access protection and regular backups. "
-                     "The default value is 'false'.")}},
+                     "The default value is 'false'.")
+             }},
            {freeOfCharge,
-            #{value => "true | false",
+            #{
+              value => "true | false",
               desc =>
                   ?T("Whether the XMPP service can be used for free. "
-                     "The default value is 'false'.")}},
+                     "The default value is 'false'.")
+             }},
            {legalNotice,
-            #{value => "string()",
+            #{
+              value => "string()",
               desc =>
                   ?T("Legal notice web page (per language). "
                      "The keyword '@LANGUAGE_URL@' is replaced with each language. "
-                     "The default value is '\"\"'.")}},
+                     "The default value is '\"\"'.")
+             }},
            {serverLocations,
-            #{value => "[string()]",
+            #{
+              value => "[string()]",
               desc =>
                   ?T("List of language codes of Server/Backup locations. "
-                     "The default value is an empty list: '[]'.")}},
+                     "The default value is an empty list: '[]'.")
+             }},
            {since,
-            #{value => "string()",
+            #{
+              value => "string()",
               desc =>
                   ?T("Date since the XMPP service is available. "
-                     "The default value is an empty string: '\"\"'.")}}],
+                     "The default value is an empty string: '\"\"'.")
+             }}],
       example =>
           ["listen:",
            "  -",
@@ -455,7 +519,8 @@ mod_doc() ->
            "    serverLocations: [ao, bg]",
            "    serverTesting: true",
            "    since: \"2025-12-31\"",
-           "    website: \"http://@HOST@/website/@LANGUAGE_URL@/\""]}.
+           "    website: \"http://@HOST@/website/@LANGUAGE_URL@/\""]
+     }.
 
 %%--------------------------------------------------------------------
 

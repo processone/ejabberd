@@ -25,29 +25,32 @@
 
 -module(pubsub_db_sql).
 
-
 -author("pablo.polvorin@process-one.net").
 
 -include("pubsub.hrl").
 -include("ejabberd_sql_pt.hrl").
 
--export([add_subscription/1, read_subscription/1,
-    delete_subscription/1, update_subscription/1]).
+-export([add_subscription/1,
+         read_subscription/1,
+         delete_subscription/1,
+         update_subscription/1]).
 -export([export/1]).
 
--spec read_subscription(SubID :: mod_pubsub:subId()) -> {ok, #pubsub_subscription{}} |  notfound.
+
+-spec read_subscription(SubID :: mod_pubsub:subId()) -> {ok, #pubsub_subscription{}} | notfound.
 read_subscription(SubID) ->
-    case
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(opt_name)s, @(opt_value)s from pubsub_subscription_opt where subid = %(SubID)s"))
-    of
-	{selected, []} ->
-	    notfound;
-	{selected, Options} ->
-	    {ok,
-		#pubsub_subscription{subid = SubID,
-		    options = lists:map(fun subscription_opt_from_sql/1, Options)}}
+    case ejabberd_sql:sql_query_t(
+           ?SQL("select @(opt_name)s, @(opt_value)s from pubsub_subscription_opt where subid = %(SubID)s")) of
+        {selected, []} ->
+            notfound;
+        {selected, Options} ->
+            {ok,
+             #pubsub_subscription{
+               subid = SubID,
+               options = lists:map(fun subscription_opt_from_sql/1, Options)
+              }}
     end.
+
 
 -spec delete_subscription(SubID :: mod_pubsub:subId()) -> ok.
 delete_subscription(SubID) ->
@@ -56,9 +59,11 @@ delete_subscription(SubID) ->
            "where subid = %(SubID)s")),
     ok.
 
+
 -spec update_subscription(#pubsub_subscription{}) -> ok.
 update_subscription(#pubsub_subscription{subid = SubId} = Sub) ->
     delete_subscription(SubId), add_subscription(Sub).
+
 
 -spec add_subscription(#pubsub_subscription{}) -> ok.
 add_subscription(#pubsub_subscription{subid = SubId, options = Opts}) ->
@@ -72,6 +77,7 @@ add_subscription(#pubsub_subscription{subid = SubId, options = Opts}) ->
       end,
       Opts),
     ok.
+
 
 subscription_opt_from_sql({<<"DELIVER">>, Value}) ->
     {deliver, sql_to_boolean(Value)};
@@ -89,16 +95,17 @@ subscription_opt_from_sql({<<"SHOW_VALUES">>, Value}) ->
     {show_values, Value};
 subscription_opt_from_sql({<<"SUBSCRIPTION_TYPE">>, Value}) ->
     {subscription_type,
-	case Value of
-	    <<"items">> -> items;
-	    <<"nodes">> -> nodes
-	end};
+     case Value of
+         <<"items">> -> items;
+         <<"nodes">> -> nodes
+     end};
 subscription_opt_from_sql({<<"SUBSCRIPTION_DEPTH">>, Value}) ->
     {subscription_depth,
-	case Value of
-	    <<"all">> -> all;
-	    N -> sql_to_integer(N)
-	end}.
+     case Value of
+         <<"all">> -> all;
+         N -> sql_to_integer(N)
+     end}.
+
 
 subscription_opt_to_sql({deliver, Bool}) ->
     {<<"DELIVER">>, boolean_to_sql(Bool)};
@@ -114,85 +121,107 @@ subscription_opt_to_sql({show_values, Values}) ->
     {<<"SHOW_VALUES">>, Values};
 subscription_opt_to_sql({subscription_type, Type}) ->
     {<<"SUBSCRIPTION_TYPE">>,
-	case Type of
-	    items -> <<"items">>;
-	    nodes -> <<"nodes">>
-	end};
+     case Type of
+         items -> <<"items">>;
+         nodes -> <<"nodes">>
+     end};
 subscription_opt_to_sql({subscription_depth, Depth}) ->
     {<<"SUBSCRIPTION_DEPTH">>,
-	case Depth of
-	    all -> <<"all">>;
-	    N -> integer_to_sql(N)
-	end}.
+     case Depth of
+         all -> <<"all">>;
+         N -> integer_to_sql(N)
+     end}.
+
 
 integer_to_sql(N) -> integer_to_binary(N).
+
 
 boolean_to_sql(true) -> <<"1">>;
 boolean_to_sql(false) -> <<"0">>.
 
+
 timestamp_to_sql(T) -> xmpp_util:encode_timestamp(T).
+
 
 sql_to_integer(N) -> binary_to_integer(N).
 
+
 sql_to_boolean(B) -> B == <<"1">>.
+
 
 sql_to_timestamp(T) -> xmpp_util:decode_timestamp(T).
 
+
 export(_Server) ->
-      [{pubsub_node,
-        fun(_Host, #pubsub_node{nodeid = {Host, Node}, id = Nidx,
-                                parents = Parents, type = Type,
-                                options = Options}) ->
-            H = node_flat_sql:encode_host(Host),
-            Parent = case Parents of
-                       [] -> <<>>;
-                       [First | _] -> First
-                     end,
-            [?SQL("delete from pubsub_node where nodeid=%(Nidx)d;"),
-             ?SQL("delete from pubsub_node_option where nodeid=%(Nidx)d;"),
-             ?SQL("delete from pubsub_node_owner where nodeid=%(Nidx)d;"),
-             ?SQL("delete from pubsub_state where nodeid=%(Nidx)d;"),
-             ?SQL("delete from pubsub_item where nodeid=%(Nidx)d;"),
-             ?SQL("insert into pubsub_node(host,node,nodeid,parent,plugin)"
-                  " values (%(H)s, %(Node)s, %(Nidx)d, %(Parent)s, %(Type)s);")]
-            ++ lists:map(
-                 fun ({Key, Value}) ->
-                     SKey = iolist_to_binary(atom_to_list(Key)),
-                     SValue = misc:term_to_expr(Value),
-                     ?SQL("insert into pubsub_node_option(nodeid,name,val)"
-                          " values (%(Nidx)d, %(SKey)s, %(SValue)s);")
-                 end, Options);
-           (_Host, _R) ->
-            []
-        end},
-       {pubsub_state,
-        fun(_Host, #pubsub_state{stateid = {JID, Nidx},
-                                 affiliation = Affiliation,
-                                 subscriptions = Subscriptions}) ->
-            J = jid:encode(JID),
-            S = node_flat_sql:encode_subscriptions(Subscriptions),
-            A = node_flat_sql:encode_affiliation(Affiliation),
-            [?SQL("insert into pubsub_state(nodeid,jid,affiliation,subscriptions)"
-                  " values (%(Nidx)d, %(J)s, %(A)s, %(S)s);")];
-           (_Host, _R) ->
-            []
-        end},
-       {pubsub_item,
-        fun(_Host, #pubsub_item{itemid = {ItemId, Nidx},
-                                creation = {C, _},
-                                modification = {M, JID},
-                                payload = Payload}) ->
-            P = jid:encode(JID),
-            XML = str:join([fxml:element_to_binary(X) || X<-Payload], <<>>),
-            SM = encode_now(M),
-            SC = encode_now(C),
-            [?SQL("insert into pubsub_item(itemid,nodeid,creation,modification,publisher,payload)"
-                  " values (%(ItemId)s, %(Nidx)d, %(SC)s, %(SM)s, %(P)s, %(XML)s);")];
-           (_Host, _R) ->
-            []
-        end}].
+    [{pubsub_node,
+      fun(_Host,
+          #pubsub_node{
+            nodeid = {Host, Node},
+            id = Nidx,
+            parents = Parents,
+            type = Type,
+            options = Options
+           }) ->
+              H = node_flat_sql:encode_host(Host),
+              Parent = case Parents of
+                           [] -> <<>>;
+                           [First | _] -> First
+                       end,
+              [?SQL("delete from pubsub_node where nodeid=%(Nidx)d;"),
+               ?SQL("delete from pubsub_node_option where nodeid=%(Nidx)d;"),
+               ?SQL("delete from pubsub_node_owner where nodeid=%(Nidx)d;"),
+               ?SQL("delete from pubsub_state where nodeid=%(Nidx)d;"),
+               ?SQL("delete from pubsub_item where nodeid=%(Nidx)d;"),
+               ?SQL("insert into pubsub_node(host,node,nodeid,parent,plugin)"
+                    " values (%(H)s, %(Node)s, %(Nidx)d, %(Parent)s, %(Type)s);")] ++
+              lists:map(
+                fun({Key, Value}) ->
+                        SKey = iolist_to_binary(atom_to_list(Key)),
+                        SValue = misc:term_to_expr(Value),
+                        ?SQL("insert into pubsub_node_option(nodeid,name,val)"
+                             " values (%(Nidx)d, %(SKey)s, %(SValue)s);")
+                end,
+                Options);
+         (_Host, _R) ->
+              []
+      end},
+     {pubsub_state,
+      fun(_Host,
+          #pubsub_state{
+            stateid = {JID, Nidx},
+            affiliation = Affiliation,
+            subscriptions = Subscriptions
+           }) ->
+              J = jid:encode(JID),
+              S = node_flat_sql:encode_subscriptions(Subscriptions),
+              A = node_flat_sql:encode_affiliation(Affiliation),
+              [?SQL("insert into pubsub_state(nodeid,jid,affiliation,subscriptions)"
+                    " values (%(Nidx)d, %(J)s, %(A)s, %(S)s);")];
+         (_Host, _R) ->
+              []
+      end},
+     {pubsub_item,
+      fun(_Host,
+          #pubsub_item{
+            itemid = {ItemId, Nidx},
+            creation = {C, _},
+            modification = {M, JID},
+            payload = Payload
+           }) ->
+              P = jid:encode(JID),
+              XML = str:join([ fxml:element_to_binary(X) || X <- Payload ], <<>>),
+              SM = encode_now(M),
+              SC = encode_now(C),
+              [?SQL("insert into pubsub_item(itemid,nodeid,creation,modification,publisher,payload)"
+                    " values (%(ItemId)s, %(Nidx)d, %(SC)s, %(SM)s, %(P)s, %(XML)s);")];
+         (_Host, _R) ->
+              []
+      end}].
+
 
 encode_now({T1, T2, T3}) ->
-    <<(misc:i2l(T1, 6))/binary, ":",
-      (misc:i2l(T2, 6))/binary, ":",
+    <<(misc:i2l(T1, 6))/binary,
+      ":",
+      (misc:i2l(T2, 6))/binary,
+      ":",
       (misc:i2l(T3, 6))/binary>>.

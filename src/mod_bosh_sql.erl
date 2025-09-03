@@ -26,13 +26,13 @@
 -module(mod_bosh_sql).
 -behaviour(mod_bosh).
 
-
 %% API
 -export([init/0, open_session/2, close_session/1, find_session/1]).
 -export([sql_schemas/0]).
 
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+
 
 %%%===================================================================
 %%% API
@@ -43,62 +43,72 @@ init() ->
     Node = erlang:atom_to_binary(node(), latin1),
     ?DEBUG("Cleaning SQL 'bosh' table...", []),
     case ejabberd_sql:sql_query(
-	   ejabberd_config:get_myname(), ?SQL("delete from bosh where node=%(Node)s")) of
-	{updated, _} ->
-	    ok;
-	Err ->
-	    ?ERROR_MSG("Failed to clean 'route' table: ~p", [Err]),
-	    Err
+           ejabberd_config:get_myname(), ?SQL("delete from bosh where node=%(Node)s")) of
+        {updated, _} ->
+            ok;
+        Err ->
+            ?ERROR_MSG("Failed to clean 'route' table: ~p", [Err]),
+            Err
     end.
+
 
 sql_schemas() ->
     [#sql_schema{
-        version = 1,
-        tables =
-            [#sql_table{
-                name = <<"bosh">>,
-                columns =
-                    [#sql_column{name = <<"sid">>, type = text},
-                     #sql_column{name = <<"node">>, type = text},
-                     #sql_column{name = <<"pid">>, type = text}],
-                indices = [#sql_index{
-                              columns = [<<"sid">>],
-                              unique = true}]}]}].
+       version = 1,
+       tables =
+           [#sql_table{
+              name = <<"bosh">>,
+              columns =
+                  [#sql_column{name = <<"sid">>, type = text},
+                   #sql_column{name = <<"node">>, type = text},
+                   #sql_column{name = <<"pid">>, type = text}],
+              indices = [#sql_index{
+                           columns = [<<"sid">>],
+                           unique = true
+                          }]
+             }]
+      }].
+
 
 open_session(SID, Pid) ->
     PidS = misc:encode_pid(Pid),
     Node = erlang:atom_to_binary(node(Pid), latin1),
-    case ?SQL_UPSERT(ejabberd_config:get_myname(), "bosh",
-		     ["!sid=%(SID)s",
-		      "node=%(Node)s",
-		      "pid=%(PidS)s"]) of
-	ok ->
-	    ok;
-	_Err ->
-	    {error, db_failure}
+    case ?SQL_UPSERT(ejabberd_config:get_myname(),
+                     "bosh",
+                     ["!sid=%(SID)s",
+                      "node=%(Node)s",
+                      "pid=%(PidS)s"]) of
+        ok ->
+            ok;
+        _Err ->
+            {error, db_failure}
     end.
+
 
 close_session(SID) ->
     case ejabberd_sql:sql_query(
-	   ejabberd_config:get_myname(), ?SQL("delete from bosh where sid=%(SID)s")) of
-	{updated, _} ->
-	    ok;
-	_Err ->
-	    {error, db_failure}
+           ejabberd_config:get_myname(), ?SQL("delete from bosh where sid=%(SID)s")) of
+        {updated, _} ->
+            ok;
+        _Err ->
+            {error, db_failure}
     end.
+
 
 find_session(SID) ->
     case ejabberd_sql:sql_query(
-	   ejabberd_config:get_myname(),
-	   ?SQL("select @(pid)s, @(node)s from bosh where sid=%(SID)s")) of
-	{selected, [{Pid, Node}]} ->
-	    try	{ok, misc:decode_pid(Pid, Node)}
-	    catch _:{bad_node, _} -> {error, notfound}
-	    end;
-	{selected, []} ->
-	    {error, notfound};
-	_Err ->
-	    {error, db_failure}
+           ejabberd_config:get_myname(),
+           ?SQL("select @(pid)s, @(node)s from bosh where sid=%(SID)s")) of
+        {selected, [{Pid, Node}]} ->
+            try
+                {ok, misc:decode_pid(Pid, Node)}
+            catch
+                _:{bad_node, _} -> {error, notfound}
+            end;
+        {selected, []} ->
+            {error, notfound};
+        _Err ->
+            {error, db_failure}
     end.
 
 %%%===================================================================

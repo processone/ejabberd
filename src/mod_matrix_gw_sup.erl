@@ -28,25 +28,31 @@
 %% Supervisor callbacks
 -export([init/1]).
 
+
 %%%===================================================================
 %%% API functions
 %%%===================================================================
 start(Host) ->
-    Spec = #{id => procname(Host),
-	     start => {?MODULE, start_link, [Host]},
-	     restart => permanent,
-	     shutdown => infinity,
-	     type => supervisor,
-	     modules => [?MODULE]},
+    Spec = #{
+             id => procname(Host),
+             start => {?MODULE, start_link, [Host]},
+             restart => permanent,
+             shutdown => infinity,
+             type => supervisor,
+             modules => [?MODULE]
+            },
     supervisor:start_child(ejabberd_gen_mod_sup, Spec).
+
 
 start_link(Host) ->
     Proc = procname(Host),
     supervisor:start_link({local, Proc}, ?MODULE, [Host]).
 
+
 -spec procname(binary()) -> atom().
 procname(Host) ->
     gen_mod:get_module_proc(Host, ?MODULE).
+
 
 %%%===================================================================
 %%% Supervisor callbacks
@@ -55,23 +61,31 @@ init([Host]) ->
     S2SName = mod_matrix_gw_s2s:supervisor(Host),
     RoomName = mod_matrix_gw_room:supervisor(Host),
     Specs =
-        [#{id => S2SName,
+        [#{
+           id => S2SName,
            start => {ejabberd_tmp_sup, start_link, [S2SName, mod_matrix_gw_s2s]},
            restart => permanent,
            shutdown => infinity,
            type => supervisor,
-           modules => [ejabberd_tmp_sup]},
-         #{id => RoomName,
+           modules => [ejabberd_tmp_sup]
+          },
+         #{
+           id => RoomName,
            start => {ejabberd_tmp_sup, start_link, [RoomName, mod_matrix_gw_room]},
            restart => permanent,
            shutdown => infinity,
            type => supervisor,
-           modules => [ejabberd_tmp_sup]},
-         #{id => mod_matrix_gw:procname(Host),
+           modules => [ejabberd_tmp_sup]
+          },
+         #{
+           id => mod_matrix_gw:procname(Host),
            start => {mod_matrix_gw, start_link, [Host]},
            restart => permanent,
            shutdown => timer:minutes(1),
            type => worker,
-           modules => [mod_matrix_gw]}],
+           modules => [mod_matrix_gw]
+          }],
     {ok, {{one_for_one, 10, 1}, Specs}}.
+
+
 -endif.

@@ -28,8 +28,13 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, mod_options/1,
-         get_commands_spec/0, depends/2, mod_doc/0]).
+-export([start/2,
+         stop/1,
+         reload/3,
+         mod_options/1,
+         get_commands_spec/0,
+         depends/2,
+         mod_doc/0]).
 
 % Commands API
 -export([update_sql/0]).
@@ -39,7 +44,9 @@
 
 -include("logger.hrl").
 -include("ejabberd_commands.hrl").
+
 -include_lib("xmpp/include/xmpp.hrl").
+
 -include("ejabberd_sql_pt.hrl").
 -include("translate.hrl").
 
@@ -47,33 +54,43 @@
 %%% gen_mod
 %%%
 
+
 start(_Host, _Opts) ->
     {ok, [{commands, get_commands_spec()}]}.
+
 
 stop(_Host) ->
     ok.
 
+
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
+
 depends(_Host, _Opts) ->
     [].
+
 
 %%%
 %%% Register commands
 %%%
 
+
 get_commands_spec() ->
-    [#ejabberd_commands{name = update_sql, tags = [sql],
-                        desc = "Convert MS SQL, MySQL or PostgreSQL DB to the new format",
-                        note = "improved in 23.04",
-                        module = ?MODULE, function = update_sql,
-                        args = [],
-                        args_example = [],
-                        args_desc = [],
-                        result = {res, rescode},
-                        result_example = ok}
-    ].
+    [#ejabberd_commands{
+       name = update_sql,
+       tags = [sql],
+       desc = "Convert MS SQL, MySQL or PostgreSQL DB to the new format",
+       note = "improved in 23.04",
+       module = ?MODULE,
+       function = update_sql,
+       args = [],
+       args_example = [],
+       args_desc = [],
+       result = {res, rescode},
+       result_example = ok
+      }].
+
 
 update_sql() ->
     lists:foreach(
@@ -84,11 +101,16 @@ update_sql() ->
                   true ->
                       update_sql(Host)
               end
-      end, ejabberd_option:hosts()).
+      end,
+      ejabberd_option:hosts()).
 
--record(state, {host :: binary(),
-                dbtype :: mysql | pgsql | sqlite | mssql | odbc,
-                escape}).
+
+-record(state, {
+          host :: binary(),
+          dbtype :: mysql | pgsql | sqlite | mssql | odbc,
+          escape
+         }).
+
 
 update_sql(Host) ->
     LHost = jid:nameprep(Host),
@@ -111,12 +133,15 @@ update_sql(Host) ->
                     sqlite -> fun ejabberd_sql:standard_escape/1;
                     _ -> fun ejabberd_sql:escape/1
                 end,
-            State = #state{host = LHost,
-                           dbtype = DBType,
-                           escape = Escape},
+            State = #state{
+                      host = LHost,
+                      dbtype = DBType,
+                      escape = Escape
+                     },
             update_tables(State),
             check_config()
     end.
+
 
 check_config() ->
     case ejabberd_sql:use_new_schema() of
@@ -125,6 +150,7 @@ check_config() ->
             ejabberd_config:set_option(new_sql_schema, true),
             io:format('~nNOTE: you must add "new_sql_schema: true" to ejabberd.yml before next restart~n~n', [])
     end.
+
 
 update_tables(State) ->
     case add_sh_column(State, "users") of
@@ -247,17 +273,17 @@ update_tables(State) ->
             drop_index(State, "vcard_search", "i_vcard_search_lorgname"),
             drop_index(State, "vcard_search", "i_vcard_search_lorgunit"),
             add_pkey(State, "vcard_search", ["server_host", "lusername"]),
-            create_index(State, "vcard_search", "i_vcard_search_sh_lfn",       ["server_host", "lfn"]),
-            create_index(State, "vcard_search", "i_vcard_search_sh_lfamily",   ["server_host", "lfamily"]),
-            create_index(State, "vcard_search", "i_vcard_search_sh_lgiven",    ["server_host", "lgiven"]),
-            create_index(State, "vcard_search", "i_vcard_search_sh_lmiddle",   ["server_host", "lmiddle"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lfn", ["server_host", "lfn"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lfamily", ["server_host", "lfamily"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lgiven", ["server_host", "lgiven"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lmiddle", ["server_host", "lmiddle"]),
             create_index(State, "vcard_search", "i_vcard_search_sh_lnickname", ["server_host", "lnickname"]),
-            create_index(State, "vcard_search", "i_vcard_search_sh_lbday",     ["server_host", "lbday"]),
-            create_index(State, "vcard_search", "i_vcard_search_sh_lctry",     ["server_host", "lctry"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lbday", ["server_host", "lbday"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lctry", ["server_host", "lctry"]),
             create_index(State, "vcard_search", "i_vcard_search_sh_llocality", ["server_host", "llocality"]),
-            create_index(State, "vcard_search", "i_vcard_search_sh_lemail",    ["server_host", "lemail"]),
-            create_index(State, "vcard_search", "i_vcard_search_sh_lorgname",  ["server_host", "lorgname"]),
-            create_index(State, "vcard_search", "i_vcard_search_sh_lorgunit",  ["server_host", "lorgunit"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lemail", ["server_host", "lemail"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lorgname", ["server_host", "lorgname"]),
+            create_index(State, "vcard_search", "i_vcard_search_sh_lorgunit", ["server_host", "lorgunit"]),
             drop_sh_default(State, "vcard_search");
         false ->
             ok
@@ -384,22 +410,34 @@ update_tables(State) ->
 
     ok.
 
+
 check_sh_column(#state{dbtype = mysql} = State, Table) ->
     DB = ejabberd_option:sql_database(State#state.host),
     sql_query(
       State#state.host,
       ["SELECT 1 FROM information_schema.columns ",
-       "WHERE table_name = '", Table, "' AND column_name = 'server_host' ",
-       "AND table_schema = '", (State#state.escape)(DB), "' ",
-       "GROUP BY table_name, column_name;"], false);
+       "WHERE table_name = '",
+       Table,
+       "' AND column_name = 'server_host' ",
+       "AND table_schema = '",
+       (State#state.escape)(DB),
+       "' ",
+       "GROUP BY table_name, column_name;"],
+      false);
 check_sh_column(State, Table) ->
     DB = ejabberd_option:sql_database(State#state.host),
     sql_query(
       State#state.host,
       ["SELECT 1 FROM information_schema.columns ",
-       "WHERE table_name = '", Table, "' AND column_name = 'server_host' ",
-       "AND table_catalog = '", (State#state.escape)(DB), "' ",
-       "GROUP BY table_name, column_name;"], false).
+       "WHERE table_name = '",
+       Table,
+       "' AND column_name = 'server_host' ",
+       "AND table_catalog = '",
+       (State#state.escape)(DB),
+       "' ",
+       "GROUP BY table_name, column_name;"],
+      false).
+
 
 add_sh_column(State, Table) ->
     case check_sh_column(State, Table) of
@@ -409,25 +447,33 @@ add_sh_column(State, Table) ->
             true
     end.
 
+
 do_add_sh_column(#state{dbtype = pgsql} = State, Table) ->
     sql_query(
       State#state.host,
-      ["ALTER TABLE ", Table, " ADD COLUMN server_host text NOT NULL DEFAULT '",
+      ["ALTER TABLE ",
+       Table,
+       " ADD COLUMN server_host text NOT NULL DEFAULT '",
        (State#state.escape)(State#state.host),
        "';"]);
 do_add_sh_column(#state{dbtype = mssql} = State, Table) ->
     sql_query(
       State#state.host,
-      ["ALTER TABLE [", Table, "] ADD [server_host] varchar (250) NOT NULL ",
+      ["ALTER TABLE [",
+       Table,
+       "] ADD [server_host] varchar (250) NOT NULL ",
        "CONSTRAINT [server_host_default] DEFAULT '",
        (State#state.escape)(State#state.host),
        "';"]);
 do_add_sh_column(#state{dbtype = mysql} = State, Table) ->
     sql_query(
       State#state.host,
-      ["ALTER TABLE ", Table, " ADD COLUMN server_host varchar(191) NOT NULL DEFAULT '",
+      ["ALTER TABLE ",
+       Table,
+       " ADD COLUMN server_host varchar(191) NOT NULL DEFAULT '",
        (State#state.escape)(State#state.host),
        "';"]).
+
 
 drop_pkey(#state{dbtype = pgsql} = State, Table) ->
     sql_query(
@@ -441,6 +487,7 @@ drop_pkey(#state{dbtype = mysql} = State, Table) ->
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " DROP PRIMARY KEY;"]).
+
 
 add_pkey(#state{dbtype = pgsql} = State, Table, Cols) ->
     Cols2 = lists:map(fun("type") -> "\"type\""; (V) -> V end, Cols),
@@ -456,11 +503,12 @@ add_pkey(#state{dbtype = mssql} = State, Table, Cols) ->
        "WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ",
        "ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY];"]);
 add_pkey(#state{dbtype = mysql} = State, Table, Cols) ->
-    Cols2 = [C ++ mysql_keylen(Table, C) || C <- Cols],
+    Cols2 = [ C ++ mysql_keylen(Table, C) || C <- Cols ],
     SCols = string:join(Cols2, ", "),
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ADD PRIMARY KEY (", SCols, ");"]).
+
 
 drop_sh_default(#state{dbtype = pgsql} = State, Table) ->
     sql_query(
@@ -475,11 +523,13 @@ drop_sh_default(#state{dbtype = mysql} = State, Table) ->
       State#state.host,
       ["ALTER TABLE ", Table, " ALTER COLUMN server_host DROP DEFAULT;"]).
 
+
 check_index(#state{dbtype = pgsql} = State, Table, Index) ->
     sql_query(
       State#state.host,
       ["SELECT 1 FROM pg_indexes WHERE tablename = '", Table,
-       "' AND indexname = '", Index, "';"], false);
+       "' AND indexname = '", Index, "';"],
+      false);
 check_index(#state{dbtype = mssql} = State, Table, Index) ->
     sql_query(
       State#state.host,
@@ -487,15 +537,24 @@ check_index(#state{dbtype = mssql} = State, Table, Index) ->
        "INNER JOIN sys.indexes i ON i.object_id = t.object_id ",
        "WHERE i.index_id > 0 ",
        "AND i.name = '", Index, "' ",
-       "AND t.name = '", Table, "';"], false);
+       "AND t.name = '", Table, "';"],
+      false);
 check_index(#state{dbtype = mysql} = State, Table, Index) ->
     DB = ejabberd_option:sql_database(State#state.host),
     sql_query(
       State#state.host,
       ["SELECT 1 FROM information_schema.statistics ",
-       "WHERE table_name = '", Table, "' AND index_name = '", Index, "' ",
-       "AND table_schema = '", (State#state.escape)(DB), "' ",
-       "GROUP BY table_name, index_name;"], false).
+       "WHERE table_name = '",
+       Table,
+       "' AND index_name = '",
+       Index,
+       "' ",
+       "AND table_schema = '",
+       (State#state.escape)(DB),
+       "' ",
+       "GROUP BY table_name, index_name;"],
+      false).
+
 
 drop_index(State, Table, Index) ->
     OldIndex = old_index_name(State#state.dbtype, Index),
@@ -503,6 +562,7 @@ drop_index(State, Table, Index) ->
         true -> do_drop_index(State, Table, OldIndex);
         false -> ok
     end.
+
 
 do_drop_index(#state{dbtype = pgsql} = State, _Table, Index) ->
     sql_query(
@@ -517,6 +577,7 @@ do_drop_index(#state{dbtype = mysql} = State, Table, Index) ->
       State#state.host,
       ["ALTER TABLE ", Table, " DROP INDEX ", Index, ";"]).
 
+
 create_unique_index(#state{dbtype = pgsql} = State, Table, Index, Cols) ->
     SCols = string:join(Cols, ", "),
     sql_query(
@@ -529,16 +590,25 @@ create_unique_index(#state{dbtype = mssql} = State, Table, Index, Cols) ->
     SCols = string:join(Cols, ", "),
     sql_query(
       State#state.host,
-      ["CREATE UNIQUE ", mssql_clustered(Index), "INDEX [", new_index_name(State#state.dbtype, Index), "] ",
-       "ON [", Table, "] (", SCols, ") ",
+      ["CREATE UNIQUE ",
+       mssql_clustered(Index),
+       "INDEX [",
+       new_index_name(State#state.dbtype, Index),
+       "] ",
+       "ON [",
+       Table,
+       "] (",
+       SCols,
+       ") ",
        "WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);"]);
 create_unique_index(#state{dbtype = mysql} = State, Table, Index, Cols) ->
-    Cols2 = [C ++ mysql_keylen(Index, C) || C <- Cols],
+    Cols2 = [ C ++ mysql_keylen(Index, C) || C <- Cols ],
     SCols = string:join(Cols2, ", "),
     sql_query(
       State#state.host,
       ["CREATE UNIQUE INDEX ", Index, " ON ", Table, "(",
        SCols, ");"]).
+
 
 create_index(#state{dbtype = pgsql} = State, Table, Index, Cols) ->
     NewIndex = new_index_name(State#state.dbtype, Index),
@@ -556,12 +626,13 @@ create_index(#state{dbtype = mssql} = State, Table, Index, Cols) ->
        "WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);"]);
 create_index(#state{dbtype = mysql} = State, Table, Index, Cols) ->
     NewIndex = new_index_name(State#state.dbtype, Index),
-    Cols2 = [C ++ mysql_keylen(NewIndex, C) || C <- Cols],
+    Cols2 = [ C ++ mysql_keylen(NewIndex, C) || C <- Cols ],
     SCols = string:join(Cols2, ", "),
     sql_query(
       State#state.host,
       ["CREATE INDEX ", NewIndex, " ON ", Table, "(",
        SCols, ");"]).
+
 
 old_index_name(mssql, "i_bare_peer") -> "archive_bare_peer";
 old_index_name(mssql, "i_peer") -> "archive_peer";
@@ -581,6 +652,7 @@ old_index_name(mssql, "i_sr_user_jid_grp") -> "sr_user_jid_group";
 old_index_name(mssql, Index) -> string:substr(Index, 3);
 old_index_name(_Type, Index) -> Index.
 
+
 new_index_name(mssql, "i_rosterg_sh_user_jid") -> "rostergroups_sh_username_jid";
 new_index_name(mssql, "i_rosteru_sh_jid") -> "rosterusers_sh_jid";
 new_index_name(mssql, "i_rosteru_sh_user_jid") -> "rosterusers_sh_username_jid";
@@ -588,14 +660,16 @@ new_index_name(mssql, "i_sr_user_sh_jid_grp") -> "sr_user_sh_jid_group";
 new_index_name(mssql, Index) -> string:substr(Index, 3);
 new_index_name(_Type, Index) -> Index.
 
+
 mssql_clustered("i_mix_pam") -> "";
 mssql_clustered("i_push_session_susn") -> "";
 mssql_clustered(_) -> "CLUSTERED ".
 
+
 mysql_keylen(_, "bare_peer") -> "(191)";
 mysql_keylen(_, "channel") -> "(191)";
 mysql_keylen(_, "domain") -> "(75)";
-mysql_keylen(_, "grp") -> "(191)"; %% in mysql*.sql this is text, not varchar(191)
+mysql_keylen(_, "grp") -> "(191)";  %% in mysql*.sql this is text, not varchar(191)
 mysql_keylen(_, "jid") -> "(75)";
 mysql_keylen(_, "lbday") -> "(191)";
 mysql_keylen(_, "lctry") -> "(191)";
@@ -623,8 +697,10 @@ mysql_keylen("i_rosteru_sh_user_jid", "username") -> "(75)";
 mysql_keylen(_, "username") -> "(191)";
 mysql_keylen(_, _) -> "".
 
+
 sql_query(Host, Query) ->
     sql_query(Host, Query, true).
+
 
 sql_query(Host, Query, Log) ->
     case Log of
@@ -643,12 +719,16 @@ sql_query(Host, Query, Log) ->
             ok
     end.
 
+
 mod_options(_) -> [].
 
+
 mod_doc() ->
-    #{desc =>
+    #{
+      desc =>
           ?T("This module can be used to update existing SQL database "
              "from the default to the new schema. Check the section "
              "_`database.md#default-and-new-schemas|Default and New Schemas`_ for details. "
              "Please note that only MS SQL, MySQL, and PostgreSQL are supported. "
-             "When the module is loaded use _`update_sql`_ API.")}.
+             "When the module is loaded use _`update_sql`_ API.")
+     }.

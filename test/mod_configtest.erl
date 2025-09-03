@@ -3,17 +3,22 @@
 
 -export([start/2, stop/1, reload/3, mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
+
 start(_Host, _Opts) ->
     ok.
+
 
 stop(_Host) ->
     ok.
 
+
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
+
 depends(_Host, _Opts) ->
     [].
+
 
 mod_opt_type(mma) ->
     econf:atom();
@@ -32,6 +37,7 @@ mod_opt_type(kmsi) ->
 mod_opt_type(predefined_keywords) ->
     econf:binary().
 
+
 mod_options(_) ->
     [{mma, undefined},
      {mms, undefined},
@@ -40,6 +46,7 @@ mod_options(_) ->
      {kms, undefined},
      {kmsi, undefined},
      {predefined_keywords, undefined}].
+
 
 mod_doc() ->
     #{}.

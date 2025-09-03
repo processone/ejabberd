@@ -26,15 +26,19 @@
 
 -behaviour(mod_last).
 
-
 %% API
--export([init/2, get_last/2, store_last_info/4, remove_user/2,
-	 import/2, export/1]).
+-export([init/2,
+         get_last/2,
+         store_last_info/4,
+         remove_user/2,
+         import/2,
+         export/1]).
 -export([sql_schemas/0]).
 
 -include("mod_last.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+
 
 %%%===================================================================
 %%% API
@@ -43,56 +47,69 @@ init(Host, _Opts) ->
     ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
 
+
 sql_schemas() ->
     [#sql_schema{
-        version = 1,
-        tables =
-            [#sql_table{
-                name = <<"last">>,
-                columns =
-                    [#sql_column{name = <<"username">>, type = text},
-                     #sql_column{name = <<"server_host">>, type = text},
-                     #sql_column{name = <<"seconds">>, type = text},
-                     #sql_column{name = <<"state">>, type = text}],
-                indices = [#sql_index{
-                              columns = [<<"server_host">>, <<"username">>],
-                              unique = true}]}]}].
+       version = 1,
+       tables =
+           [#sql_table{
+              name = <<"last">>,
+              columns =
+                  [#sql_column{name = <<"username">>, type = text},
+                   #sql_column{name = <<"server_host">>, type = text},
+                   #sql_column{name = <<"seconds">>, type = text},
+                   #sql_column{name = <<"state">>, type = text}],
+              indices = [#sql_index{
+                           columns = [<<"server_host">>, <<"username">>],
+                           unique = true
+                          }]
+             }]
+      }].
+
 
 get_last(LUser, LServer) ->
     case ejabberd_sql:sql_query(
-	   LServer,
-	   ?SQL("select @(seconds)d, @(state)s from last"
-		" where username=%(LUser)s and %(LServer)H")) of
+           LServer,
+           ?SQL("select @(seconds)d, @(state)s from last"
+                " where username=%(LUser)s and %(LServer)H")) of
         {selected, []} ->
-	    error;
+            error;
         {selected, [{TimeStamp, Status}]} ->
             {ok, {TimeStamp, Status}};
         _Reason ->
-	    {error, db_failure}
+            {error, db_failure}
     end.
+
 
 store_last_info(LUser, LServer, TimeStamp, Status) ->
     TS = integer_to_binary(TimeStamp),
-    case ?SQL_UPSERT(LServer, "last",
-		     ["!username=%(LUser)s",
+    case ?SQL_UPSERT(LServer,
+                     "last",
+                     ["!username=%(LUser)s",
                       "!server_host=%(LServer)s",
-		      "seconds=%(TS)s",
-		      "state=%(Status)s"]) of
-	ok ->
-	    ok;
-	_Err ->
-	    {error, db_failure}
+                      "seconds=%(TS)s",
+                      "state=%(Status)s"]) of
+        ok ->
+            ok;
+        _Err ->
+            {error, db_failure}
     end.
+
 
 remove_user(LUser, LServer) ->
     ejabberd_sql:sql_query(
       LServer,
       ?SQL("delete from last where username=%(LUser)s and %(LServer)H")).
 
+
 export(_Server) ->
     [{last_activity,
-      fun(Host, #last_activity{us = {LUser, LServer},
-                               timestamp = TimeStamp, status = Status})
+      fun(Host,
+          #last_activity{
+            us = {LUser, LServer},
+            timestamp = TimeStamp,
+            status = Status
+           })
             when LServer == Host ->
               TS = integer_to_binary(TimeStamp),
               [?SQL("delete from last where username=%(LUser)s and %(LServer)H;"),
@@ -104,6 +121,7 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
 
 import(_LServer, _LA) ->
     pass.
