@@ -27,7 +27,7 @@
 
 -author('alexey@process-one.net').
 
--protocol({xep, 317, '0.2.0', '21.12', "complete", "0.2.0 since 25.03"}).
+-protocol({xep, 317, '0.3.1', '21.12', "complete", "0.3.1 since 25.xx"}).
 -protocol({xep, 410, '1.1.0', '18.12', "complete", ""}).
 
 -behaviour(p1_fsm).
@@ -79,9 +79,14 @@
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
 
--define(MUC_HAT_ADD_CMD, <<"urn:xmpp:hats:commands:don">>).
--define(MUC_HAT_REMOVE_CMD, <<"urn:xmpp:hats:commands:doff">>).
--define(MUC_HAT_LIST_CMD, <<"urn:xmpp:hats:commands:dlist">>).
+-define(MUC_HAT_CREATE_CMD,   <<"urn:xmpp:hats:commands:create">>).
+-define(MUC_HAT_DESTROY_CMD,  <<"urn:xmpp:hats:commands:destroy">>).
+-define(MUC_HAT_LISTHATS_CMD, <<"urn:xmpp:hats:commands:list">>).
+
+-define(MUC_HAT_ASSIGN_CMD,   <<"urn:xmpp:hats:commands:assign">>).
+-define(MUC_HAT_UNASSIGN_CMD, <<"urn:xmpp:hats:commands:unassign">>).
+-define(MUC_HAT_LISTUSERS_CMD,<<"urn:xmpp:hats:commands:list-assigned">>).
+
 -define(MAX_HATS_USERS, 100).
 -define(MAX_HATS_PER_USER, 10).
 -define(CLEAN_ROOM_TIMEOUT, 30000).
@@ -4258,11 +4263,10 @@ set_opts2([{Opt, Val} | Opts], StateData) ->
                   StateData#state{subject_author = Val};
 	    subject_author when is_binary(Val) -> % ejabberd 23.04 or older
                   StateData#state{subject_author = {Val, #jid{}}};
+            hats_defs ->
+                  StateData#state{hats_defs = maps:from_list(Val)};
             hats_users ->
-                  Hats = maps:from_list(
-                           lists:map(fun({U, H}) -> {U, maps:from_list(H)} end,
-                                     Val)),
-                  StateData#state{hats_users = Hats};
+                  StateData#state{hats_users = maps:from_list(Val)};
 	    hibernation_time -> StateData;
 	    Other ->
                   ?INFO_MSG("Unknown MUC room option, will be discarded: ~p", [Other]),
@@ -4343,9 +4347,8 @@ make_opts(StateData, Hibernation) ->
      {roles, maps:to_list(StateData#state.roles)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author},
-     {hats_users,
-      lists:map(fun({U, H}) -> {U, maps:to_list(H)} end,
-                maps:to_list(StateData#state.hats_users))},
+     {hats_defs, maps:to_list(StateData#state.hats_defs)},
+     {hats_users, maps:to_list(StateData#state.hats_users)},
      {hibernation_time, if Hibernation -> erlang:system_time(microsecond); true -> undefined end},
      {subscribers, Subscribers}].
 
@@ -4461,6 +4464,10 @@ make_disco_info(From, StateData) ->
 	       true -> [?NS_MUCSUB];
 	       false -> []
 	   end
+	++ case Config#config.enable_hats of
+	       true -> [?NS_HATS];
+	       false -> []
+	   end
 	++ case gen_mod:is_loaded(StateData#state.server_host, mod_muc_occupantid) of
 	       true ->
 		   [?NS_OCCUPANT_ID];
@@ -4490,6 +4497,7 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
     DiscoInfo = make_disco_info(From, StateData),
     Extras = iq_disco_info_extras(Lang, StateData, false),
     {result, DiscoInfo#disco_info{xdata = [Extras]}};
+
 process_iq_disco_info(From, #iq{type = get, lang = Lang,
 				sub_els = [#disco_info{node = ?NS_COMMANDS}]},
 		      StateData) ->
@@ -4507,9 +4515,25 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
             Txt = ?T("Node not found"),
             {error, xmpp:err_item_not_found(Txt, Lang)}
     end;
+
 process_iq_disco_info(From, #iq{type = get, lang = Lang,
-				sub_els = [#disco_info{node = ?MUC_HAT_ADD_CMD}]},
-		      StateData) ->
+				sub_els = [#disco_info{node = Node}]},
+		      StateData)
+  when Node == ?MUC_HAT_CREATE_CMD;
+       Node == ?MUC_HAT_DESTROY_CMD;
+       Node == ?MUC_HAT_LISTHATS_CMD;
+       Node == ?MUC_HAT_ASSIGN_CMD;
+       Node == ?MUC_HAT_UNASSIGN_CMD;
+       Node == ?MUC_HAT_LISTUSERS_CMD ->
+    NodeName = case Node of
+               ?MUC_HAT_CREATE_CMD -> ?T("Create a Hat");
+               ?MUC_HAT_DESTROY_CMD -> ?T("Destroy a Hat");
+               ?MUC_HAT_LISTHATS_CMD -> ?T("List Hats");
+               ?MUC_HAT_ASSIGN_CMD -> ?T("Assign a Hat to a User");
+               ?MUC_HAT_UNASSIGN_CMD -> ?T("Remove a Hat from a User");
+               ?MUC_HAT_LISTUSERS_CMD -> ?T("List Users and their Hats")
+               end,
+
     case (StateData#state.config)#config.enable_hats andalso
         is_admin(From, StateData)
     of
@@ -4519,48 +4543,13 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
                 identities = [#identity{category = <<"automation">>,
                                         type = <<"command-node">>,
                                         name = translate:translate(
-                                              Lang, ?T("Add a hat to a user"))}],
+                                              Lang, NodeName)}],
                 features = [?NS_COMMANDS]}};
         false ->
             Txt = ?T("Node not found"),
             {error, xmpp:err_item_not_found(Txt, Lang)}
     end;
-process_iq_disco_info(From, #iq{type = get, lang = Lang,
-				sub_els = [#disco_info{node = ?MUC_HAT_REMOVE_CMD}]},
-		      StateData) ->
-    case (StateData#state.config)#config.enable_hats andalso
-        is_admin(From, StateData)
-    of
-        true ->
-            {result,
-             #disco_info{
-                identities = [#identity{category = <<"automation">>,
-                                        type = <<"command-node">>,
-                                        name = translate:translate(
-                                              Lang, ?T("Remove a hat from a user"))}],
-                features = [?NS_COMMANDS]}};
-        false ->
-            Txt = ?T("Node not found"),
-            {error, xmpp:err_item_not_found(Txt, Lang)}
-    end;
-process_iq_disco_info(From, #iq{type = get, lang = Lang,
-				sub_els = [#disco_info{node = ?MUC_HAT_LIST_CMD}]},
-		      StateData) ->
-    case (StateData#state.config)#config.enable_hats andalso
-        is_admin(From, StateData)
-    of
-        true ->
-            {result,
-             #disco_info{
-                identities = [#identity{category = <<"automation">>,
-                                        type = <<"command-node">>,
-                                        name = translate:translate(
-                                              Lang, ?T("List users with hats"))}],
-                features = [?NS_COMMANDS]}};
-        false ->
-            Txt = ?T("Node not found"),
-            {error, xmpp:err_item_not_found(Txt, Lang)}
-    end;
+
 process_iq_disco_info(From, #iq{type = get, lang = Lang,
 				sub_els = [#disco_info{node = Node}]},
 		      StateData) ->
@@ -4623,8 +4612,15 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 				   StateData#state.server_host,
 				   Fs5,
 				   [StateData]),
+    Fs7 = case (StateData#state.config)#config.enable_hats of
+	      true ->
+                  HatsHash = get_hats_hash(StateData),
+		  [{'hats#hash', [HatsHash]} | Fs6];
+	      false ->
+		  Fs6
+	  end,
     #xdata{type = result,
-	   fields = muc_roominfo:encode(Fs6, Lang)}.
+	   fields = muc_roominfo:encode(Fs7, Lang)}.
 
 -spec process_iq_disco_items(jid(), iq(), state()) ->
 				    {error, stanza_error()} | {result, disco_items()}.
@@ -4657,15 +4653,27 @@ process_iq_disco_items(From, #iq{type = get, lang = Lang,
             {result,
              #disco_items{
                 items = [#disco_item{jid = StateData#state.jid,
-                                     node = ?MUC_HAT_ADD_CMD,
+                                     node = ?MUC_HAT_CREATE_CMD,
                                      name = translate:translate(
-                                              Lang, ?T("Add a hat to a user"))},
+                                              Lang, ?T("Create a hat"))},
                          #disco_item{jid = StateData#state.jid,
-                                     node = ?MUC_HAT_REMOVE_CMD,
+                                     node = ?MUC_HAT_DESTROY_CMD,
+                                     name = translate:translate(
+                                              Lang, ?T("Destroy a hat"))},
+                         #disco_item{jid = StateData#state.jid,
+                                     node = ?MUC_HAT_LISTHATS_CMD,
+                                     name = translate:translate(
+                                              Lang, ?T("List hats"))},
+                         #disco_item{jid = StateData#state.jid,
+                                     node = ?MUC_HAT_ASSIGN_CMD,
+                                     name = translate:translate(
+                                              Lang, ?T("Assign a hat to a user"))},
+                         #disco_item{jid = StateData#state.jid,
+                                     node = ?MUC_HAT_UNASSIGN_CMD,
                                      name = translate:translate(
                                               Lang, ?T("Remove a hat from a user"))},
                          #disco_item{jid = StateData#state.jid,
-                                     node = ?MUC_HAT_LIST_CMD,
+                                     node = ?MUC_HAT_LISTUSERS_CMD,
                                      name = translate:translate(
                                               Lang, ?T("List users with hats"))}]}};
         false ->
@@ -4675,9 +4683,12 @@ process_iq_disco_items(From, #iq{type = get, lang = Lang,
 process_iq_disco_items(From, #iq{type = get, lang = Lang,
                                  sub_els = [#disco_items{node = Node}]},
 		       StateData)
-  when Node == ?MUC_HAT_ADD_CMD;
-       Node == ?MUC_HAT_REMOVE_CMD;
-       Node == ?MUC_HAT_LIST_CMD ->
+  when Node == ?MUC_HAT_CREATE_CMD;
+       Node == ?MUC_HAT_DESTROY_CMD;
+       Node == ?MUC_HAT_LISTHATS_CMD;
+       Node == ?MUC_HAT_ASSIGN_CMD;
+       Node == ?MUC_HAT_UNASSIGN_CMD;
+       Node == ?MUC_HAT_LISTUSERS_CMD ->
     case (StateData#state.config)#config.enable_hats andalso
         is_admin(From, StateData)
     of
@@ -4944,270 +4955,436 @@ get_mucroom_disco_items(StateData) ->
 	       end, [], StateData#state.nicks),
     #disco_items{items = Items}.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Hats
+
+%% @format-begin
+
 -spec process_iq_adhoc(jid(), iq(), state()) ->
-			      {result, adhoc_command()} |
-			      {result, adhoc_command(), state()} |
-			      {error, stanza_error()}.
+                          {result, adhoc_command()} |
+                          {result, adhoc_command(), state()} |
+                          {error, stanza_error()}.
 process_iq_adhoc(_From, #iq{type = get}, _StateData) ->
     {error, xmpp:err_bad_request()};
-process_iq_adhoc(From, #iq{type = set, lang = Lang1,
-                           sub_els = [#adhoc_command{} = Request]},
-		 StateData) ->
+process_iq_adhoc(From,
+                 #iq{type = set,
+                     lang = Lang1,
+                     sub_els = [#adhoc_command{} = Request]},
+                 StateData) ->
     % Ad-Hoc Commands are used only for Hats here
-    case (StateData#state.config)#config.enable_hats andalso
-        is_admin(From, StateData)
-    of
+    case StateData#state.config#config.enable_hats andalso is_admin(From, StateData) of
         true ->
-            #adhoc_command{lang = Lang2, node = Node,
-                           action = Action, xdata = XData} = Request,
-            Lang = case Lang2 of
-                       <<"">> -> Lang1;
-                       _ -> Lang2
-                   end,
+            #adhoc_command{lang = Lang2,
+                           node = Node,
+                           action = Action,
+                           xdata = XData} =
+                Request,
+            Lang =
+                case Lang2 of
+                    <<"">> ->
+                        Lang1;
+                    _ ->
+                        Lang2
+                end,
             case {Node, Action} of
                 {_, cancel} ->
                     {result,
-                     xmpp_util:make_adhoc_response(
-                       Request,
-                       #adhoc_command{status = canceled, lang = Lang,
-                                      node = Node})};
-                {?MUC_HAT_ADD_CMD, execute} ->
-                    Form =
-                        #xdata{
-                           title = translate:translate(
-                                     Lang, ?T("Add a hat to a user")),
-                           type = form,
-                           fields =
-                               [#xdata_field{
-                                   type = 'jid-single',
-                                   label = translate:translate(Lang, ?T("Jabber ID")),
-                                   required = true,
-                                   var = <<"jid">>},
-                                #xdata_field{
-                                   type = 'text-single',
-                                   label = translate:translate(Lang, ?T("Hat title")),
-                                   var = <<"hat_title">>},
-                                #xdata_field{
-                                   type = 'text-single',
-                                   label = translate:translate(Lang, ?T("Hat URI")),
-                                   required = true,
-                                   var = <<"hat_uri">>}
-                               ]},
+                     xmpp_util:make_adhoc_response(Request,
+                                                   #adhoc_command{status = canceled,
+                                                                  lang = Lang,
+                                                                  node = Node})};
+                {Node, execute}
+                    when Node == ?MUC_HAT_CREATE_CMD;
+                         Node == ?MUC_HAT_DESTROY_CMD;
+                         Node == ?MUC_HAT_LISTHATS_CMD;
+                         Node == ?MUC_HAT_ASSIGN_CMD;
+                         Node == ?MUC_HAT_UNASSIGN_CMD;
+                         Node == ?MUC_HAT_LISTUSERS_CMD ->
+                    {Status, Form} = process_iq_adhoc_hats(Node, StateData, Lang),
                     {result,
-                     xmpp_util:make_adhoc_response(
-                       Request,
-                       #adhoc_command{
-                          status = executing,
-                          xdata = Form})};
-                {?MUC_HAT_ADD_CMD, complete} when XData /= undefined ->
-                    JID = try
-                              jid:decode(hd(xmpp_util:get_xdata_values(
-                                              <<"jid">>, XData)))
-                          catch _:_ -> error
-                          end,
-                    URI = try
-                              hd(xmpp_util:get_xdata_values(
-                                   <<"hat_uri">>, XData))
-                          catch _:_ -> error
-                          end,
-                    Title = case xmpp_util:get_xdata_values(
-                                   <<"hat_title">>, XData) of
-                                [] -> <<"">>;
-                                [T] -> T
-                            end,
-                    if
-                        (JID /= error) and (URI /= error) ->
-                            case add_hat(JID, URI, Title, StateData) of
-                                {ok, NewStateData} ->
-                                    store_room(NewStateData),
-                                    send_update_presence(
-                                      JID, NewStateData, StateData),
-                                    {result,
-                                     xmpp_util:make_adhoc_response(
-                                       Request,
-                                       #adhoc_command{status = completed}),
-                                     NewStateData};
-                                {error, size_limit} ->
-                                    Txt = ?T("Hats limit exceeded"),
-                                    {error, xmpp:err_not_allowed(Txt, Lang)}
-                            end;
-                        true ->
-                            {error, xmpp:err_bad_request()}
-                    end;
-                {?MUC_HAT_ADD_CMD, complete} ->
-                    {error, xmpp:err_bad_request()};
-                {?MUC_HAT_ADD_CMD, _} ->
-                    Txt = ?T("Incorrect value of 'action' attribute"),
-                    {error, xmpp:err_bad_request(Txt, Lang)};
-                {?MUC_HAT_REMOVE_CMD, execute} ->
-                    Form =
-                        #xdata{
-                           title = translate:translate(
-                                     Lang, ?T("Remove a hat from a user")),
-                           type = form,
-                           fields =
-                               [#xdata_field{
-                                   type = 'jid-single',
-                                   label = translate:translate(Lang, ?T("Jabber ID")),
-                                   required = true,
-                                   var = <<"jid">>},
-                                #xdata_field{
-                                   type = 'text-single',
-                                   label = translate:translate(Lang, ?T("Hat URI")),
-                                   required = true,
-                                   var = <<"hat_uri">>}
-                               ]},
-                    {result,
-                     xmpp_util:make_adhoc_response(
-                       Request,
-                       #adhoc_command{
-                          status = executing,
-                          xdata = Form})};
-                {?MUC_HAT_REMOVE_CMD, complete} when XData /= undefined ->
-                    JID = try
-                              jid:decode(hd(xmpp_util:get_xdata_values(
-                                              <<"jid">>, XData)))
-                          catch _:_ -> error
-                          end,
-                    URI = try
-                              hd(xmpp_util:get_xdata_values(
-                                   <<"hat_uri">>, XData))
-                          catch _:_ -> error
-                          end,
-                    if
-                        (JID /= error) and (URI /= error) ->
-                            NewStateData = del_hat(JID, URI, StateData),
-                            store_room(NewStateData),
-                            send_update_presence(
-                              JID, NewStateData, StateData),
+                     xmpp_util:make_adhoc_response(Request,
+                                                   #adhoc_command{status = Status, xdata = Form})};
+                {Node, complete}
+                    when XData /= undefined andalso Node == ?MUC_HAT_CREATE_CMD;
+                         Node == ?MUC_HAT_DESTROY_CMD;
+                         Node == ?MUC_HAT_ASSIGN_CMD;
+                         Node == ?MUC_HAT_UNASSIGN_CMD ->
+                    case process_iq_adhoc_hats_complete(Node, XData, StateData, Lang) of
+                        {ok, NewStateData} ->
                             {result,
-                             xmpp_util:make_adhoc_response(
-                               Request,
-                               #adhoc_command{status = completed}),
+                             xmpp_util:make_adhoc_response(Request,
+                                                           #adhoc_command{status = completed}),
                              NewStateData};
-                        true ->
+                        {error, XmlElement} ->
+                            {error, XmlElement};
+                        error ->
                             {error, xmpp:err_bad_request()}
                     end;
-                {?MUC_HAT_REMOVE_CMD, complete} ->
+                {Node, complete}
+                    when Node == ?MUC_HAT_CREATE_CMD;
+                         Node == ?MUC_HAT_DESTROY_CMD;
+                         Node == ?MUC_HAT_ASSIGN_CMD;
+                         Node == ?MUC_HAT_UNASSIGN_CMD ->
                     {error, xmpp:err_bad_request()};
-                {?MUC_HAT_REMOVE_CMD, _} ->
-                    Txt = ?T("Incorrect value of 'action' attribute"),
-                    {error, xmpp:err_bad_request(Txt, Lang)};
-                {?MUC_HAT_LIST_CMD, execute} ->
-                    Hats = get_all_hats(StateData),
-                    Items =
-                        lists:map(
-                          fun({JID, URI, Title}) ->
-                                  [#xdata_field{
-                                      var = <<"jid">>,
-                                      values = [jid:encode(JID)]},
-                                   #xdata_field{
-                                      var = <<"hat_title">>,
-                                      values = [URI]},
-                                   #xdata_field{
-                                      var = <<"hat_uri">>,
-                                      values = [Title]}]
-                          end, Hats),
-                    Form =
-                        #xdata{
-                           title = translate:translate(
-                                     Lang, ?T("List of users with hats")),
-                           type = result,
-                           reported =
-                               [#xdata_field{
-                                   label = translate:translate(Lang, ?T("Jabber ID")),
-                                   var = <<"jid">>},
-                                #xdata_field{
-                                   label = translate:translate(Lang, ?T("Hat title")),
-                                   var = <<"hat_title">>},
-                                #xdata_field{
-                                   label = translate:translate(Lang, ?T("Hat URI")),
-                                   var = <<"hat_uri">>}],
-                           items = Items},
-                    {result,
-                     xmpp_util:make_adhoc_response(
-                       Request,
-                       #adhoc_command{
-                          status = completed,
-                          xdata = Form})};
-                {?MUC_HAT_LIST_CMD, _} ->
+                {Node, _}
+                    when Node == ?MUC_HAT_CREATE_CMD;
+                         Node == ?MUC_HAT_DESTROY_CMD;
+                         Node == ?MUC_HAT_LISTHATS_CMD;
+                         Node == ?MUC_HAT_ASSIGN_CMD;
+                         Node == ?MUC_HAT_UNASSIGN_CMD;
+                         Node == ?MUC_HAT_LISTUSERS_CMD ->
                     Txt = ?T("Incorrect value of 'action' attribute"),
                     {error, xmpp:err_bad_request(Txt, Lang)};
                 _ ->
                     {error, xmpp:err_item_not_found()}
             end;
-	_ ->
-	    {error, xmpp:err_forbidden()}
+        _ ->
+            {error, xmpp:err_forbidden()}
     end.
 
--spec add_hat(jid(), binary(), binary(), state()) ->
-                     {ok, state()} | {error, size_limit}.
-add_hat(JID, URI, Title, StateData) ->
-    Hats = StateData#state.hats_users,
-    LJID = jid:remove_resource(jid:tolower(JID)),
-    UserHats = maps:get(LJID, Hats, #{}),
-    UserHats2 = maps:put(URI, Title, UserHats),
-    USize = maps:size(UserHats2),
-    if
-        USize =< ?MAX_HATS_PER_USER ->
-            Hats2 = maps:put(LJID, UserHats2, Hats),
-            Size = maps:size(Hats2),
-            if
-                Size =< ?MAX_HATS_USERS ->
-                    {ok, StateData#state{hats_users = Hats2}};
-                true ->
-                    {error, size_limit}
-            end;
-        true ->
-            {error, size_limit}
-    end.
+process_iq_adhoc_hats(?MUC_HAT_LISTHATS_CMD, StateData, Lang) ->
+    Hats = get_defined_hats(StateData),
+    Items =
+        lists:map(fun({URI, Title, Hue}) ->
+                     [#xdata_field{var = <<"hats#uri">>, values = [URI]},
+                      #xdata_field{var = <<"hats#title">>, values = [Title]},
+                      #xdata_field{var = <<"hats#hue">>, values = [Hue]}]
+                  end,
+                  Hats),
+    Form =
+        #xdata{title = translate:translate(Lang, ?T("Hats List")),
+               type = result,
+               reported =
+                   [#xdata_field{label = translate:translate(Lang, ?T("Hat URI")),
+                                 var = <<"hats#uri">>},
+                    #xdata_field{label = translate:translate(Lang, ?T("Hat Title")),
+                                 var = <<"hats#title">>},
+                    #xdata_field{label = translate:translate(Lang, ?T("Hat Hue")),
+                                 var = <<"hats#hue">>}],
+               items = Items},
+    {completed, Form};
+process_iq_adhoc_hats(?MUC_HAT_CREATE_CMD, _StateData, Lang) ->
+    Form =
+        #xdata{title = translate:translate(Lang, ?T("Create a hat")),
+               type = form,
+               fields =
+                   [#xdata_field{type = 'text-single',
+                                 label = translate:translate(Lang, ?T("Hat URI")),
+                                 required = true,
+                                 var = <<"hats#uri">>},
+                    #xdata_field{type = 'text-single',
+                                 label = translate:translate(Lang, ?T("Hat Title")),
+                                 required = true,
+                                 var = <<"hats#title">>},
+                    #xdata_field{type = 'text-single',
+                                 label = translate:translate(Lang, ?T("Hat Hue")),
+                                 var = <<"hats#hue">>}]},
+    {executing, Form};
+process_iq_adhoc_hats(?MUC_HAT_DESTROY_CMD, _StateData, Lang) ->
+    Form =
+        #xdata{title = translate:translate(Lang, ?T("Destroy a hat")),
+               type = form,
+               fields =
+                   [#xdata_field{type = 'text-single',
+                                 label = translate:translate(Lang, ?T("Hat URI")),
+                                 required = true,
+                                 var = <<"hat">>}]},
+    {executing, Form};
+process_iq_adhoc_hats(?MUC_HAT_ASSIGN_CMD, StateData, Lang) ->
+    Hats = get_defined_hats(StateData),
+    Options =
+        [#xdata_option{label = Title, value = Uri}
+         || {Uri, Title, _Hue} <- lists:keysort(2, Hats)],
+    Form =
+        #xdata{title = translate:translate(Lang, ?T("Assign a hat to a user")),
+               type = form,
+               fields =
+                   [#xdata_field{type = 'jid-single',
+                                 label = translate:translate(Lang, ?T("Jabber ID")),
+                                 required = true,
+                                 var = <<"hats#jid">>},
+                    #xdata_field{type = 'list-single',
+                                 label = translate:translate(Lang, ?T("The role")),
+                                 var = <<"hat">>,
+                                 options = Options}]},
+    {executing, Form};
+process_iq_adhoc_hats(?MUC_HAT_UNASSIGN_CMD, StateData, Lang) ->
+    Hats = get_defined_hats(StateData),
+    Options =
+        [#xdata_option{label = Title, value = Uri}
+         || {Uri, Title, _Hue} <- lists:keysort(2, Hats)],
+    Form =
+        #xdata{title = translate:translate(Lang, ?T("Remove a hat from a user")),
+               type = form,
+               fields =
+                   [#xdata_field{type = 'jid-single',
+                                 label = translate:translate(Lang, ?T("Jabber ID")),
+                                 required = true,
+                                 var = <<"hats#jid">>},
+                    #xdata_field{type = 'list-single',
+                                 label = translate:translate(Lang, ?T("The role")),
+                                 var = <<"hat">>,
+                                 options = Options}]},
+    {executing, Form};
+process_iq_adhoc_hats(?MUC_HAT_LISTUSERS_CMD, StateData, Lang) ->
+    Hats = get_assigned_hats(StateData),
+    Items =
+        lists:map(fun({JID, URI}) ->
+                     {URI, Title, Hue} = get_hat_details(URI, StateData),
+                     [#xdata_field{var = <<"hats#jid">>, values = [jid:encode(JID)]},
+                      #xdata_field{var = <<"hats#uri">>, values = [URI]},
+                      #xdata_field{var = <<"hats#title">>, values = [Title]},
+                      #xdata_field{var = <<"hats#hue">>, values = [Hue]}]
+                  end,
+                  Hats),
+    Form =
+        #xdata{title = translate:translate(Lang, ?T("List of users with hats")),
+               type = result,
+               reported =
+                   [#xdata_field{label = translate:translate(Lang, ?T("Jabber ID")),
+                                 var = <<"hats#jid">>},
+                    #xdata_field{label = translate:translate(Lang, ?T("Hat URI")),
+                                 var = <<"hats#uri">>},
+                    #xdata_field{label = translate:translate(Lang, ?T("Hat Title")),
+                                 var = <<"hats#title">>},
+                    #xdata_field{label = translate:translate(Lang, ?T("Hat Hue")),
+                                 var = <<"hats#hue">>}],
+               items = Items},
+    {completed, Form};
+process_iq_adhoc_hats(_, _, _) ->
+    {executing, aaa}.
 
--spec del_hat(jid(), binary(), state()) -> state().
-del_hat(JID, URI, StateData) ->
-    Hats = StateData#state.hats_users,
-    LJID = jid:remove_resource(jid:tolower(JID)),
-    UserHats = maps:get(LJID, Hats, #{}),
-    UserHats2 = maps:remove(URI, UserHats),
-    Hats2 =
-        case maps:size(UserHats2) of
-            0 ->
-                maps:remove(LJID, Hats);
-            _ ->
-                maps:put(LJID, UserHats2, Hats)
+process_iq_adhoc_hats_complete(?MUC_HAT_CREATE_CMD, XData, StateData, _Lang) ->
+    URI = try
+              hd(xmpp_util:get_xdata_values(<<"hats#uri">>, XData))
+          catch
+              _:_ ->
+                  error
+          end,
+    Title =
+        case xmpp_util:get_xdata_values(<<"hats#title">>, XData) of
+            [] ->
+                <<"">>;
+            [T] ->
+                T
         end,
-    StateData#state{hats_users = Hats2}.
+    Hue = try
+              hd(xmpp_util:get_xdata_values(<<"hats#hue">>, XData))
+          catch
+              _:_ ->
+                  error
+          end,
+    if (Title /= error) and (URI /= error) ->
+           {ok, AffectedJids, NewStateData} = create_hat(URI, Title, Hue, StateData),
+           store_room(NewStateData),
+           broadcast_hats_change(NewStateData),
+           [send_update_presence(AJid, NewStateData, StateData) || AJid <- AffectedJids],
+           {ok, NewStateData};
+       true ->
+           error
+    end;
+process_iq_adhoc_hats_complete(?MUC_HAT_DESTROY_CMD, XData, StateData, _Lang) ->
+    URI = try
+              hd(xmpp_util:get_xdata_values(<<"hat">>, XData))
+          catch
+              _:_ ->
+                  error
+          end,
+    if URI /= error ->
+           {ok, AffectedJids, NewStateData} = destroy_hat(URI, StateData),
+           store_room(NewStateData),
+           broadcast_hats_change(NewStateData),
+           [send_update_presence(AJid, NewStateData, StateData) || AJid <- AffectedJids],
+           {ok, NewStateData};
+       true ->
+           error
+    end;
+process_iq_adhoc_hats_complete(?MUC_HAT_ASSIGN_CMD, XData, StateData, Lang) ->
+    JID = try
+              jid:decode(hd(xmpp_util:get_xdata_values(<<"hats#jid">>, XData)))
+          catch
+              _:_ ->
+                  error
+          end,
+    URI = try
+              hd(xmpp_util:get_xdata_values(<<"hat">>, XData))
+          catch
+              _:_ ->
+                  error
+          end,
+    if (JID /= error) and (URI /= error) ->
+           case assign_hat(JID, URI, StateData) of
+               {ok, NewStateData} ->
+                   store_room(NewStateData),
+                   send_update_presence(JID, NewStateData, StateData),
+                   {ok, NewStateData};
+               {error, size_limit} ->
+                   Txt = ?T("Hats limit exceeded"),
+                   {error, xmpp:err_not_allowed(Txt, Lang)}
+           end;
+       true ->
+           error
+    end;
+process_iq_adhoc_hats_complete(?MUC_HAT_UNASSIGN_CMD, XData, StateData, _Lang) ->
+    JID = try
+              jid:decode(hd(xmpp_util:get_xdata_values(<<"hats#jid">>, XData)))
+          catch
+              _:_ ->
+                  error
+          end,
+    URI = try
+              hd(xmpp_util:get_xdata_values(<<"hat">>, XData))
+          catch
+              _:_ ->
+                  error
+          end,
+    if (JID /= error) and (URI /= error) ->
+           {ok, NewStateData} = unassign_hat(JID, URI, StateData),
+           store_room(NewStateData),
+           send_update_presence(JID, NewStateData, StateData),
+           {ok, NewStateData};
+       true ->
+           error
+    end.
 
--spec get_all_hats(state()) -> list({jid(), binary(), binary()}).
-get_all_hats(StateData) ->
-    lists:flatmap(
-      fun({LJID, H}) ->
-              JID = jid:make(LJID),
-              lists:map(fun({URI, Title}) -> {JID, URI, Title} end,
-                        maps:to_list(H))
-      end,
-      maps:to_list(StateData#state.hats_users)).
+%% TODO +++ clean
+create_hat(URI, Title, Hue, #state{hats_defs = Hats, hats_users = Users} = StateData) ->
+    Hats2 = maps:put(URI, {Title, Hue}, Hats),
+
+    IsUpdate =
+        case maps:find(URI, Hats) of
+            {ok, {OldTitle, OldHue}} ->
+                (OldTitle /= Title) or (OldHue /= Hue);
+            error ->
+                false
+        end,
+
+    AffectedJids =
+        case IsUpdate of
+            true ->
+                maps:fold(fun(Jid, AssignedHatsUris, ChangedAcc) ->
+                             case lists:member(URI, AssignedHatsUris) of
+                                 false ->
+                                     ChangedAcc;
+                                 true ->
+                                     [Jid | ChangedAcc]
+                             end
+                          end,
+                          [],
+                          Users);
+            false ->
+                []
+        end,
+    {ok, AffectedJids, StateData#state{hats_defs = Hats2}}.
+
+destroy_hat(URI, #state{hats_defs = Hats, hats_users = Users} = StateData) ->
+    Hats2 = maps:remove(URI, Hats),
+    {AffectedJids, Users2} =
+        maps:fold(fun(Jid, AssignedHatsUris, {ChangedAcc, UsersAcc}) ->
+                     case AssignedHatsUris -- [URI] of
+                         [] ->
+                             {ChangedAcc, UsersAcc};
+                         AssignedHatsUris2 ->
+                             {[Jid | ChangedAcc], maps:put(Jid, AssignedHatsUris2, UsersAcc)}
+                     end
+                  end,
+                  {[], maps:new()},
+                  Users),
+    {ok, AffectedJids, StateData#state{hats_defs = Hats2, hats_users = Users2}}.
+
+broadcast_hats_change(StateData) ->
+    Codes = [104],
+    Message =
+        #message{type = groupchat,
+                 id = p1_rand:get_string(),
+                 sub_els = [#muc_user{status_codes = Codes}]},
+    send_wrapped_multiple(StateData#state.jid,
+                          get_users_and_subscribers_with_node(?NS_MUCSUB_NODES_CONFIG, StateData),
+                          Message,
+                          ?NS_MUCSUB_NODES_CONFIG,
+                          StateData).
+
+-spec assign_hat(jid(), binary(), state()) -> {ok, state()} | {error, size_limit}.
+assign_hat(JID, URI, StateData) ->
+    Hats = StateData#state.hats_users,
+    LJID =
+        jid:remove_resource(
+            jid:tolower(JID)),
+    UserHats = maps:get(LJID, Hats, []),
+    UserHats2 = lists:umerge([URI], UserHats),
+    USize = length(UserHats2),
+    if USize =< ?MAX_HATS_PER_USER ->
+           Hats2 = maps:put(LJID, UserHats2, Hats),
+           Size = maps:size(Hats2),
+           if Size =< ?MAX_HATS_USERS ->
+                  {ok, StateData#state{hats_users = Hats2}};
+              true ->
+                  {error, size_limit}
+           end;
+       true ->
+           {error, size_limit}
+    end.
+
+-spec unassign_hat(jid(), binary(), state()) -> {ok, state()} | {error, size_limit}.
+unassign_hat(JID, URI, StateData) ->
+    Hats = StateData#state.hats_users,
+    LJID =
+        jid:remove_resource(
+            jid:tolower(JID)),
+    UserHats = maps:get(LJID, Hats, []),
+    UserHats2 = lists:delete(URI, UserHats),
+    Hats2 = maps:put(LJID, UserHats2, Hats),
+    {ok, StateData#state{hats_users = Hats2}}.
+
+-spec get_defined_hats(state()) -> [{binary(), binary(), binary()}].
+get_defined_hats(StateData) ->
+    lists:map(fun({Uri, {Title, Hue}}) -> {Uri, Title, Hue} end,
+              maps:to_list(StateData#state.hats_defs)).
+
+-spec get_assigned_hats(state()) -> [{jid(), binary()}].
+get_assigned_hats(StateData) ->
+    lists:flatmap(fun({LJID, H}) ->
+                     JID = jid:make(LJID),
+                     lists:map(fun(URI) -> {JID, URI} end, H)
+                  end,
+                  maps:to_list(StateData#state.hats_users)).
+
+get_hats_hash(StateData) ->
+    str:sha(
+        misc:term_to_base64(get_assigned_hats(StateData))).
+
+get_hat_details(Uri, StateData) ->
+    lists:keyfind(Uri, 1, get_defined_hats(StateData)).
 
 -spec add_presence_hats(jid(), #presence{}, state()) -> #presence{}.
 add_presence_hats(JID, Pres, StateData) ->
-    case (StateData#state.config)#config.enable_hats of
+    case StateData#state.config#config.enable_hats of
         true ->
             Hats = StateData#state.hats_users,
-            LJID = jid:remove_resource(jid:tolower(JID)),
-            UserHats = maps:get(LJID, Hats, #{}),
-            case maps:size(UserHats) of
-                0 -> Pres;
+            LJID =
+                jid:remove_resource(
+                    jid:tolower(JID)),
+            UserHats = maps:get(LJID, Hats, []),
+            case length(UserHats) of
+                0 ->
+                    Pres;
                 _ ->
                     Items =
-                        lists:map(fun({URI, Title}) ->
-                                          #muc_hat{uri = URI, title = Title}
+                        lists:map(fun(URI) ->
+                                     {URI, Title, Hue} = get_hat_details(URI, StateData),
+                                     #muc_hat{uri = URI,
+                                              title = Title,
+                                              hue = Hue}
                                   end,
-                                  maps:to_list(UserHats)),
-                    xmpp:set_subtag(Pres,
-                                    #muc_hats{hats = Items})
+                                  UserHats),
+                    xmpp:set_subtag(Pres, #muc_hats{hats = Items})
             end;
         false ->
             Pres
     end.
+%% @format-end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -spec process_iq_moderate(jid(), iq(), binary(), binary() | undefined, state()) ->
     {result, undefined, state()} |

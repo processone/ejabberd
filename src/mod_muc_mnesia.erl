@@ -429,11 +429,15 @@ need_transform({muc_room, {N, H}, _})
     ?INFO_MSG("Mnesia table 'muc_room' will be converted to binary", []),
     true;
 need_transform({muc_room, {_N, _H}, Opts}) ->
-    case lists:keymember(allow_private_messages, 1, Opts) of
-        true ->
+    case {lists:keymember(allow_private_messages, 1, Opts),
+          lists:keymember(hats_defs, 1, Opts)} of
+        {true, _} ->
             ?INFO_MSG("Mnesia table 'muc_room' will be converted to allowpm", []),
             true;
-        false ->
+        {false, false} ->
+            ?INFO_MSG("Mnesia table 'muc_room' will be converted to Hats 0.3.0", []),
+            true;
+        {false, true} ->
             false
     end;
 
@@ -459,7 +463,33 @@ transform(#muc_room{opts = Opts} = R) ->
         _ ->
             Opts
     end,
-    R#muc_room{opts = Opts2};
+    Opts4 =
+        case lists:keyfind(hats_defs, 1, Opts2) of
+            false ->
+                {hats_users, HatsUsers} = lists:keyfind(hats_users, 1, Opts2),
+                {HatsDefs, HatsUsers2} =
+                    lists:foldl(fun({Jid, UriTitleList}, {Defs, Assigns}) ->
+                                   Defs2 =
+                                       lists:foldl(fun({Uri, Title}, AccDef) ->
+                                                      maps:put(Uri, {Title, <<"">>}, AccDef)
+                                                   end,
+                                                   Defs,
+                                                   UriTitleList),
+                                   Assigns2 =
+                                       maps:put(Jid,
+                                                [Uri || {Uri, _Title} <- UriTitleList],
+                                                Assigns),
+                                   {Defs2, Assigns2}
+                                end,
+                                {maps:new(), maps:new()},
+                                HatsUsers),
+                Opts3 =
+                    lists:keyreplace(hats_users, 1, Opts2, {hats_users, maps:to_list(HatsUsers2)}),
+                [{hats_defs, maps:to_list(HatsDefs)} | Opts3];
+            {_, _} ->
+                Opts2
+        end,
+    R#muc_room{opts = Opts4};
 transform(#muc_registered{us_host = {{U, S}, H}, nick = Nick} = R) ->
     R#muc_registered{us_host = {{iolist_to_binary(U), iolist_to_binary(S)},
 				iolist_to_binary(H)},

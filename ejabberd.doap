@@ -578,10 +578,10 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0317.html"/>
-        <xmpp:version>0.2.0</xmpp:version>
+        <xmpp:version>0.3.1</xmpp:version>
         <xmpp:since>21.12</xmpp:since>
         <xmpp:status>complete</xmpp:status>
-        <xmpp:note>mod_muc_room, 0.2.0 since 25.03</xmpp:note>
+        <xmpp:note>mod_muc_room, 0.3.1 since 25.xx</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
