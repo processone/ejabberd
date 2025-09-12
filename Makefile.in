@@ -2,8 +2,11 @@
 #' definitions
 #
 
+# Only required for Erlang/OTP 25
+MAYBE=ERL_FLAGS="-enable-feature maybe_expr"
+
 ESCRIPT = @ESCRIPT@
-REBAR = @rebar@ # rebar|rebar3|mix binary (or path to binary)
+REBAR = $(MAYBE) @rebar@ # rebar|rebar3|mix binary (or path to binary)
 REBAR3 = @REBAR3@ # path to rebar3 binary
 MIX = @rebar@
 AWK = @AWK@
@@ -123,7 +126,7 @@ REBAR_VER_318:=$(shell $(REBAR) --version | $(AWK) -F '[ .]' '/rebar / {print ($
 endif
 
 ifeq "$(REBAR_VER)" "6"
-  REBAR=$(MIX)
+  REBAR=$(MAYBE) $(MIX)
   SKIPDEPS=
   LISTDEPS=deps.tree
   UPDATEDEPS=deps.update
@@ -141,7 +144,7 @@ ifeq "$(REBAR_VER)" "6"
   ELIXIR_LIBDIR=":$(ELIXIR_LIBDIR_RAW)"
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
-  RELIVECMD=$(ESCRIPT) rel/relive.escript && MIX_ENV=dev RELIVE=true $(IEX) --name ejabberd@localhost -S mix run
+  RELIVECMD=$(ESCRIPT) rel/relive.escript && MIX_ENV=dev RELIVE=true $(MAYBE) $(IEX) --name ejabberd@localhost -S mix run
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
   GET_DEPS_TRANSLATIONS=MIX_ENV=translations $(REBAR) $(GET_DEPS)
