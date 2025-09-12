@@ -678,7 +678,8 @@ maybe_define_lager_macro() ->
     end.
 
 compile_options() ->
-    [verbose, report_errors, report_warnings, debug_info, ?ALL_DEFS]
+    [verbose, report_errors, report_warnings, debug_info, ?ALL_DEFS,
+     {feature, maybe_expr, enable}]
     ++ maybe_define_lager_macro()
     ++ [{i, filename:join(app_dir(App), "include")}
         || App <- [fast_xml, xmpp, p1_utils, ejabberd]]
