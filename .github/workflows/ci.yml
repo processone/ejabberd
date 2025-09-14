@@ -164,16 +164,7 @@ jobs:
 
     - name: Run tests
       id: ct
-      run: |
-        (cd priv && ln -sf ../sql)
-        sed -i -e 's/ct:pal/ct:log/' test/suite.erl
-        COMMIT=`echo $GITHUB_SHA | cut -c 1-7`
-        DATE=`date +%s`
-        REF_NAME=`echo $GITHUB_REF_NAME | tr "/" "_"`
-        NODENAME=$DATE@$GITHUB_RUN_NUMBER-$GITHUB_ACTOR-$REF_NAME-$COMMIT
-        LABEL=`git show -s --format=%s | cut -c 1-30`
-        ./rebar3 ct --name $NODENAME --label "$LABEL"
-        ./rebar3 cover
+      run: make test
 
     - name: Check results
       if: always() && (steps.ct.outcome != 'skipped')
