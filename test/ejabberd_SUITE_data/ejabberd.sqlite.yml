@@ -14,6 +14,9 @@ define_macro:
       mod_blocking: []
       mod_caps:
         db_type: sql
+      mod_invites:
+        db_type: sql
+        landing_page: auto
       mod_last:
         db_type: sql
       mod_muc:

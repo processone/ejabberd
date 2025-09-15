@@ -1,0 +1,162 @@
+[
+    {
+        "download": {
+            "buttons": [
+                {
+                    "image": "{{ static }}/logos/google_ps.png",
+                    "url": "https://play.google.com/store/apps/details?id=eu.siacs.conversations",
+                    "magic_link_format": "https://play.google.com/store/apps/details?id=eu.siacs.conversations&referrer={{ uri }}"
+                },
+                {
+                    "image": "{{ static }}/logos/fdroid.png",
+                    "url": "https://f-droid.org/en/packages/eu.siacs.conversations/",
+                    "magic_link_format": "https://f-droid.org/packages/eu.siacs.conversations/"
+                }
+            ]
+        },
+        "image": "logos/conversations.svg",
+        "link": "https://play.google.com/store/apps/details?id=eu.siacs.conversations",
+        "magic_link_format": "https://play.google.com/store/apps/details?id=eu.siacs.conversations&referrer={{ uri }}",
+        "name": "Conversations",
+        "platforms": [
+            "Android"
+        ],
+        "supports_preauth_uri": true,
+        "text": "{% trans "Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience." %}"
+    },
+    {
+        "download": {
+            "buttons": [
+                {
+                    "image": "{{ static }}/logos/apple_as.svg",
+                    "target": "_blank",
+                    "url": "https://apps.apple.com/app/id317711500"
+                }
+            ]
+        },
+        "image": "logos/monal-tmp.svg",
+        "link": "https://monal-im.org/",
+        "name": "Monal",
+        "platforms": [
+            "iOS", "iPadOS"
+        ],
+        "supports_preauth_uri": true,
+        "text": "{% trans "A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface." %}"
+    },
+    {
+        "download": {
+            "buttons": [
+                {
+                    "image": "{{ static }}/logos/apple_as.svg",
+                    "target": "_blank",
+                    "url": "https://apps.apple.com/app/id1637078500"
+                }
+            ]
+        },
+        "image": "logos/monal-tmp.svg",
+        "link": "https://monal-im.org/",
+        "name": "Monal (macOS)",
+        "platforms": [
+            "macOS"
+        ],
+        "supports_preauth_uri": true,
+        "text": "{% trans "A modern open-source chat client for Mac. It is easy to use and has a clean user interface." %}"
+    },
+    {
+        "download": {
+            "buttons": [
+                {
+                    "image": "{{ static }}/logos/apple_as.svg",
+                    "target": "_blank",
+                    "url": "https://apps.apple.com/us/app/siskin-im/id1153516838"
+                }
+            ]
+        },
+        "image": "logos/siskin-im.svg",
+        "link": "https://apps.apple.com/us/app/siskin-im/id1153516838",
+        "name": "Siskin IM",
+        "platforms": [
+            "iOS", "iPadOS"
+        ],
+        "supports_preauth_uri": true,
+        "text": "{% trans "A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends." %}"
+    },
+    {
+        "download": {
+            "buttons": [
+                {
+                    "target": "_blank",
+                    "text": "{% trans "Download from Mac App Store" %}",
+                    "url": "https://apps.apple.com/us/app/beagle-im/id1445349494"
+                }
+            ]
+        },
+        "image": "logos/beagle-im.svg",
+        "link": "https://apps.apple.com/us/app/beagle-im/id1445349494",
+        "name": "Beagle IM",
+        "platforms": [
+            "macOS"
+        ],
+        "setup": {
+            "text": "{% trans "Launch Beagle IM, and select 'Yes' to add a new account. Click the '+' button under the empty account list and then enter your credentials." %}"
+        },
+        "text": "{% trans "Beagle IM by Tigase, Inc. is a lightweight and powerful XMPP client for macOS." %}"
+    },
+    {
+        "download": {
+            "buttons": [
+                {
+                    "target": "_blank",
+                    "text": "{% trans "Download Dino for Linux" %}",
+                    "url": "https://dino.im/#download"
+                }
+            ],
+            "text": "{% trans "Click the button to open the Dino website where you can download and install it on your PC." %}"
+        },
+        "image": "logos/dino.svg",
+        "link": "https://dino.im/",
+        "name": "Dino",
+        "platforms": [
+            "Linux"
+        ],
+        "text": "{% trans "A modern open-source chat client for the desktop. It focuses on providing a clean and reliable Jabber/XMPP experience while having your privacy in mind." %}"
+    },
+    {
+        "download": {
+            "buttons": [
+                {
+                    "target": "_blank",
+                    "text": "{% trans "Download Gajim" %}",
+                    "url": "https://gajim.org/download/"
+                }
+            ]
+        },
+        "image": "logos/gajim.svg",
+        "link": "https://gajim.org/",
+        "name": "Gajim",
+        "platforms": [
+            "Windows",
+            "Linux",
+            "macOS"
+        ],
+        "text": "{% trans "A fully-featured desktop chat client for Windows and Linux." %}"
+    },
+    {
+        "download": {
+            "buttons": [
+                {
+                    "target": "_blank",
+                    "text": "{% trans "Download Renga for Haiku" %}",
+                    "url": "https://depot.haiku-os.org/#!/pkg/renga?bcguid=bc233-PQIA"
+                }
+            ]
+        },
+        "image": "logos/renga.svg",
+        "link": "https://pulkomandy.tk/projects/renga",
+        "name": "Renga",
+        "platforms": [
+            "Haiku"
+        ],
+        "text": "{% trans "XMPP client for Haiku" %}"
+    }
+]

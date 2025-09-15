@@ -1,0 +1,64 @@
+{% extends "base_min.html" %}
+
+{% block title %}{% blocktrans %}Register on {{ site_name }}{% endblocktrans %}{% endblock %}
+{% block h1 %}{% blocktrans %}Register on {{ site_name }}{% endblocktrans %}{% endblock %}
+
+{% block form_class %}container col-md-8 col-md-offset-2 col-sm-8 cold-sm-offset-2 col-lg-6 col-lg-offset-3 mt-2 mt-md-5{% endblock %}
+
+{% block content %}
+				<p>{% if app %}{% blocktrans with app_name=app.name %}<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting using <strong>{{ app_name }}</strong> you need to first register an account.{% endblocktrans %}{% else %}{% blocktrans %}<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting you need to first register an account.{% endblocktrans %}{% endif %}</p>
+
+				<p>{%if invite.inviter %}{% blocktrans with inviter=invite.inviter|user %}Creating an account will allow to communicate with <strong>{{ inviter }}</strong> and other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.{% endblocktrans %}{% else %}{% blocktrans %}Creating an account will allow to communicate with other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.{% endblocktrans %}{% endif %}</p>
+
+				{% if app %}{% if app.supports_preauth_uri %}
+				<div class="alert alert-info">
+					<p>{% blocktrans with app_name=app.name %}If you already have {{ app_name }} installed, we recommend that you continue the account creation process using the app by clicking on the button below:{% endblocktrans %}</p>
+
+					<h6 class="text-center">{% blocktrans with app_name=app.name %}{{ app_name }} already installed?{% endblocktrans %}</h6>
+
+					<div class="text-center">
+						<a href="{{ uri }}"><button class="btn btn-secondary btn-sm">{% trans "Open the app" %}</button></a><br/>
+						<small class="text-muted">{% trans "This button works only if you have the app installed already!" %}</small>
+					</div>
+					<br/>
+				</div>
+				{% endif %}{% endif %}
+
+				<h5 class="card-title">{% trans "Create an account" %}</h5>
+
+				{%if message %}<div class="alert {%if message.class %}{{ message.class }}{% else %}alert-info{% endif %}" role="alert">
+				  {{ message.text }}
+				</div>{% endif %}
+
+				<form method="post">
+					<div class="form-group form-row">
+						<label for="user" class="col-md-4 col-lg-12 col-form-label">{% trans "Username" %}:</label>
+						<div class="col-md-8 col-lg-12">
+							<div class="input-group">
+								<input
+								       type="text" name="user" class="form-control" aria-describedby="usernameHelp"
+								       required autofocus minlength="1" maxlength="30" length="30"{% if username %} value="{{ username }}"{% endif %}
+								>
+								<div class="input-group-append">
+									<span class="input-group-text">@{{ domain }}</span>
+								</div>
+							</div>
+							<small id="usernameHelp" class="d-block form-text text-muted">{% trans "Choose a username, this will become the first part of your new chat address." %}</small>
+						</div>
+					</div>
+					<div class="form-group form-row">
+						<label for="password" class="col-md-4 col-lg-12 col-form-label">{% trans "Password" %}:</label>
+						<div class="col-md-8 col-lg-12">
+							<input type="password" name="password" class="form-control" aria-describedby="passwordHelp"
+							       autocomplete="new-password" required minlength="{{ password_policy.length }}"
+							>
+							<small id="passwordHelp" class="form-text text-muted">{% trans "Enter a secure password that you do not use anywhere else." %}</small>
+						</div>
+					</div>
+					<div class="form-group form-row">
+						<input type="hidden" name="token" value="{{ token }}">
+						{% if app %}<input type="hidden" name="app_id" value="{{ app.id }}">{% endif %}
+						<button type="submit" class="btn btn-primary btn-lg">{% trans "Submit" %}</button>
+					</div>
+				</form>
+{% endblock %}

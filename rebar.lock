@@ -4,6 +4,10 @@
  {<<"eimp">>,{pkg,<<"eimp">>,<<"1.0.26">>},0},
  {<<"epam">>,{pkg,<<"epam">>,<<"1.0.14">>},0},
  {<<"eredis">>,{pkg,<<"eredis">>,<<"1.7.1">>},0},
+ {<<"erlydtl">>,
+  {git,"https://github.com/erlydtl/erlydtl.git",
+       {ref,"aae414692b6052e96d890e03bbeeeca0f4dc01c2"}},
+  0},
  {<<"esip">>,{pkg,<<"esip">>,<<"1.0.59">>},0},
  {<<"ezlib">>,{pkg,<<"ezlib">>,<<"1.0.15">>},0},
  {<<"fast_tls">>,{pkg,<<"fast_tls">>,<<"1.1.25">>},0},
@@ -29,7 +33,7 @@
  {<<"unicode_util_compat">>,{pkg,<<"unicode_util_compat">>,<<"0.7.1">>},1},
  {<<"xmpp">>,
   {git,"https://github.com/processone/xmpp",
-       {ref,"7285aa7802bfa90bcefafdad3a342fbb93ce7eea"}},
+       {ref,"f96c9adde9841bdeb184740857bddd60d3f51ab7"}},
   0},
  {<<"yconf">>,{pkg,<<"yconf">>,<<"1.0.22">>},0}]}.
 [

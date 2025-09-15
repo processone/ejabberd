@@ -791,6 +791,10 @@ is_feature_advertised(Config, Feature, To) ->
 set_opt(Opt, Val, Config) ->
     [{Opt, Val}|lists:keydelete(Opt, 1, Config)].
 
+set_opts([], Config) -> Config;
+set_opts([{Opt, Val} | Opts], Config) ->
+    set_opts(Opts, set_opt(Opt, Val, Config)).
+
 wait_for_master(Config) ->
     put_event(Config, peer_ready),
     case get_event(Config) of
