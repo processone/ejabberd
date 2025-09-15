@@ -18,6 +18,9 @@ define_macro:
       mod_blocking: []
       mod_caps:
         db_type: internal
+      mod_invites:
+        db_type: internal
+        landing_page: auto
       mod_last:
         db_type: internal
       mod_muc:
