@@ -1210,28 +1210,28 @@ remove_user(User, Server) ->
     ok.
 
 opts_to_binary(Opts) ->
-    lists:map(
+    lists:flatmap(
       fun({title, Title}) ->
-              {title, iolist_to_binary(Title)};
+              [{title, iolist_to_binary(Title)}];
          ({description, Desc}) ->
-              {description, iolist_to_binary(Desc)};
+              [{description, iolist_to_binary(Desc)}];
          ({password, Pass}) ->
-              {password, iolist_to_binary(Pass)};
+              [{password, iolist_to_binary(Pass)}];
          ({subject, [C|_] = Subj}) when is_integer(C), C >= 0, C =< 255 ->
-              {subject, iolist_to_binary(Subj)};
+              [{subject, iolist_to_binary(Subj)}];
          ({subject_author, {AuthorNick, AuthorJID}}) ->
-              {subject_author, {iolist_to_binary(AuthorNick), AuthorJID}};
+              [{subject_author, {iolist_to_binary(AuthorNick), AuthorJID}}];
          ({subject_author, AuthorNick}) -> % ejabberd 23.04 or older
-              {subject_author, {iolist_to_binary(AuthorNick), #jid{}}};
+              [{subject_author, {iolist_to_binary(AuthorNick), #jid{}}}];
          ({allow_private_messages, Value}) -> % ejabberd 23.04 or older
               Value2 = case Value of
                            true -> anyone;
                            false -> none;
                            _ -> Value
                        end,
-              {allowpm, Value2};
+              [{allowpm, Value2}];
          ({AffOrRole, Affs}) when (AffOrRole == affiliation) or (AffOrRole == role) ->
-              {affiliations, lists:map(
+              [{affiliations, lists:map(
                                fun({{U, S, R}, Aff}) ->
                                        NewAff =
                                            case Aff of
@@ -1244,16 +1244,38 @@ opts_to_binary(Opts) ->
                                          iolist_to_binary(S),
                                          iolist_to_binary(R)},
                                         NewAff}
-                               end, Affs)};
+                               end, Affs)}];
          ({captcha_whitelist, CWList}) ->
-              {captcha_whitelist, lists:map(
+              [{captcha_whitelist, lists:map(
                                     fun({U, S, R}) ->
                                             {iolist_to_binary(U),
                                              iolist_to_binary(S),
                                              iolist_to_binary(R)}
-                                    end, CWList)};
+                                    end, CWList)}];
+         ({hats_users, HatsUsers}) ->  % Update hats definitions
+              case lists:keymember(hats_defs, 1, Opts) of
+                  true ->
+                      [{hats_users, HatsUsers}];
+                  _ ->
+                      {HatsDefs, HatsUsers2} =
+                          lists:foldl(fun({Jid, UriTitleList}, {Defs, Assigns}) ->
+                                              Defs2 =
+                                                  lists:foldl(fun({Uri, Title}, AccDef) ->
+                                                                      AccDef#{Uri => {Title, <<"">>}}
+                                                              end,
+                                                              Defs,
+                                                              UriTitleList),
+                                              Assigns2 =
+                                                  Assigns#{Jid => [ Uri || {Uri, _Title} <- UriTitleList ]},
+                                              {Defs2, Assigns2}
+                                      end,
+                                      {maps:new(), maps:new()},
+                                      HatsUsers),
+                      [{hats_users, maps:to_list(HatsUsers2)},
+                       {hats_defs, maps:to_list(HatsDefs)}]
+              end;
          (Opt) ->
-              Opt
+              [Opt]
       end, Opts).
 
 export(LServer) ->
