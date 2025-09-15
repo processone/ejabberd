@@ -68,6 +68,8 @@ access_rules:
     allow: local
   register:
     allow: all
+  account_invite:
+    allow: all
 
 acl:
   local:
