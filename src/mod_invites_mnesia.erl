@@ -1,0 +1,119 @@
+%%%----------------------------------------------------------------------
+%%% File    : mod_invites_mnesia.erl
+%%% Author  : Stefan Strigler <stefan@strigler.de>
+%%% Created : Mon Sep 15 2025 by Stefan Strigler <stefan@strigler.de>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2025 ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
+%%%----------------------------------------------------------------------
+-module(mod_invites_mnesia).
+
+-author('stefan@strigler.de').
+
+-behaviour(mod_invites).
+
+-export([cleanup_expired/1, create_invite/1, expire_tokens/2, get_invite/2, init/2,
+         is_token_valid/3, num_account_invites/2, remove_user/2, set_invitee/3]).
+
+-include("mod_invites.hrl").
+
+%% @format-begin
+
+%%--------------------------------------------------------------------
+%%| mod_invite callbacks
+
+cleanup_expired(_Host) ->
+    Ts = erlang:timestamp(),
+    lists:foldl(fun(Token, Count) ->
+                   [Invite] = mnesia:dirty_read(invite_token, Token),
+                   case is_expired(Invite, Ts) of
+                       true ->
+                           ok = mnesia:dirty_delete(invite_token, Token),
+                           Count + 1;
+                       false ->
+                           Count
+                   end
+                end,
+                0,
+                mnesia:dirty_all_keys(invite_token)).
+
+create_invite(Invite) ->
+    ok = mnesia:dirty_write(Invite),
+    Invite.
+
+expire_tokens(User, Server) ->
+    Ts = erlang:timestamp(),
+    length([mnesia:dirty_write(I#invite_token{expires = {{1970, 1, 1}, {0, 0, 1}}})
+            || I <- mnesia:dirty_index_read(invite_token, {User, Server}, #invite_token.inviter),
+               not is_expired(I, Ts),
+               I#invite_token.type /= roster_only]).
+
+get_invite(_Host, Token) ->
+    case mnesia:dirty_read(invite_token, Token) of
+        [Invite] ->
+            Invite;
+        [] ->
+            {error, not_found}
+    end.
+
+init(_Host, _Opts) ->
+    ejabberd_mnesia:create(?MODULE,
+                           invite_token,
+                           [{disc_copies, [node()]},
+                            {attributes, record_info(fields, invite_token)},
+                            {index, [#invite_token.inviter]}]).
+
+is_token_valid(_Host, Token, Inviter) ->
+    case mnesia:dirty_read(invite_token, Token) of
+        [Invite = #invite_token{invitee = <<>>, inviter = Inviter}] ->
+            not is_expired(Invite, erlang:timestamp());
+        [#invite_token{inviter = _WrongOwner}] ->
+            false;
+        [] ->
+            false
+    end.
+
+num_account_invites(User, Server) ->
+    length([I
+            || I = #invite_token{type = Type}
+                   <- mnesia:dirty_index_read(invite_token, {User, Server}, #invite_token.inviter),
+               Type =/= roster_only]).
+
+remove_user(User, Server) ->
+    Inviter = {User, Server},
+    [ok = mnesia:dirty_delete(invite_token, Token)
+     || #invite_token{token = Token}
+            <- mnesia:dirty_index_read(invite_token, Inviter, #invite_token.inviter)],
+    ok.
+
+set_invitee(_Host, Token, Invitee) ->
+    Transaction =
+        fun() ->
+           [Invite] = mnesia:read(invite_token, Token),
+           mnesia:write(Invite#invite_token{invitee = Invitee})
+        end,
+    {atomic, ok} = mnesia:transaction(Transaction),
+    ok.
+
+%%--------------------------------------------------------------------
+%%| helpers
+
+is_expired(#invite_token{expires = Expires}, Now) ->
+    calendar:datetime_to_gregorian_seconds(Expires)
+    < calendar:datetime_to_gregorian_seconds(
+          calendar:now_to_universal_time(Now)).
