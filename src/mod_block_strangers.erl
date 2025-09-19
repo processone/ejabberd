@@ -281,9 +281,9 @@ mod_doc() ->
             #{value => ?T("AccessName"),
               desc =>
                   ?T("The option is supposed to be used when 'allow_local_users' "
-                     "and 'allow_transports' are not enough. It's an ACL where "
-                     "'deny' means the message will be rejected (or a CAPTCHA "
-                     "would be generated for a presence, if configured), and "
+                     "and 'allow_transports' are not enough. It's an Access Rule where "
+                     "'deny' means the stanza will be rejected; there's an exception "
+                     "if option 'captcha' is configured. And "
                      "'allow' means the sender is whitelisted and the stanza "
                      "will pass through. The default value is 'none', which "
                      "means nothing is whitelisted.")}},
@@ -314,8 +314,8 @@ mod_doc() ->
            {captcha,
             #{value => "true | false",
               desc =>
-                  ?T("Whether to generate CAPTCHA or not in response to "
-                     "messages from strangers. See also section "
-                     "_`basic.md#captcha|CAPTCHA`_"
+                  ?T("Whether to generate CAPTCHA challenges in response to "
+                     "incoming presence subscription requests from strangers. "
+                     "See also section _`basic.md#captcha|CAPTCHA`_"
                      " of the Configuration Guide. "
                      "The default value is 'false'.")}}]}.
