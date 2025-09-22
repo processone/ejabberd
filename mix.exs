@@ -85,7 +85,6 @@ defmodule Ejabberd.MixProject do
     result = [{:d, :ELIXIR_ENABLED}] ++
              cond_options() ++
              Enum.map(includes, fn (path) -> {:i, path} end) ++
-             if_version_above(~c"20", [{:d, :DEPRECATED_GET_STACKTRACE}]) ++
              if_version_above(~c"20", [{:d, :HAVE_URI_STRING}]) ++
              if_version_above(~c"20", [{:d, :HAVE_ERL_ERROR}]) ++
              if_version_below(~c"21", [{:d, :USE_OLD_HTTP_URI}]) ++

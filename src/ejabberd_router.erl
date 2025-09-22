@@ -70,7 +70,8 @@
 -include("logger.hrl").
 -include("ejabberd_router.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
--include("ejabberd_stacktrace.hrl").
+
+
 
 -callback init() -> any().
 -callback register_route(binary(), binary(), local_hint(),
@@ -90,11 +91,11 @@ start_link() ->
 -spec route(stanza()) -> ok.
 route(Packet) ->
     try do_route(Packet)
-    catch ?EX_RULE(Class, Reason, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
-		       [xmpp:pp(Packet),
-			misc:format_exception(2, Class, Reason, StackTrace)])
+    catch
+        Class:Reason:StackTrace ->
+            ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
+                       [xmpp:pp(Packet),
+                        misc:format_exception(2, Class, Reason, StackTrace)])
     end.
 
 -spec route(jid(), jid(), xmlel() | stanza()) -> ok.

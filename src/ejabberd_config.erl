@@ -52,7 +52,7 @@
 	     {get_lang, 1}]).
 
 -include("logger.hrl").
--include("ejabberd_stacktrace.hrl").
+
 
 -type option() :: atom() | {atom(), global | binary()}.
 -type error_reason() :: {merge_conflict, atom(), binary()} |
@@ -169,14 +169,14 @@ get_option({O, Host} = Opt) ->
 	      T -> T
 	  end,
     try ets:lookup_element(Tab, Opt, 2)
-    catch ?EX_RULE(error, badarg, St) when Host /= global ->
-	    StackTrace = ?EX_STACK(St),
-	    Val = get_option({O, global}),
-	    ?DEBUG("Option '~ts' is not defined for virtual host '~ts'. "
-		   "This is a bug, please report it with the following "
-		   "stacktrace included:~n** ~ts",
-		   [O, Host, misc:format_exception(2, error, badarg, StackTrace)]),
-	    Val
+    catch
+        error:badarg:StackTrace when Host /= global ->
+            Val = get_option({O, global}),
+            ?DEBUG("Option '~ts' is not defined for virtual host '~ts'. "
+                   "This is a bug, please report it with the following "
+                   "stacktrace included:~n** ~ts",
+                   [O, Host, misc:format_exception(2, error, badarg, StackTrace)]),
+            Val
     end.
 
 -spec set_option(option(), term()) -> ok.
@@ -802,8 +802,9 @@ load_file(File) ->
 	    Err ->
 		abort(Err)
 	end
-    catch ?EX_RULE(Class, Reason, St) ->
-	    {error, {exception, Class, Reason, ?EX_STACK(St)}}
+    catch
+        Class:Reason:Stack ->
+            {error, {exception, Class, Reason, Stack}}
     end.
 
 -spec commit() -> ok.

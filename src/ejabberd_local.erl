@@ -48,7 +48,7 @@
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
--include("ejabberd_stacktrace.hrl").
+
 -include("translate.hrl").
 
 -record(state, {}).

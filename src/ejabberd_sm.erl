@@ -92,7 +92,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
 -include("ejabberd_sm.hrl").
--include("ejabberd_stacktrace.hrl").
+
 -include("translate.hrl").
 
 -callback init() -> ok | {error, any()}.
@@ -131,13 +131,14 @@ stop() ->
 %% @doc route arbitrary term to c2s process(es)
 route(To, Term) ->
     try do_route(To, Term), ok
-    catch ?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route term to ~ts:~n"
-		       "** Term = ~p~n"
-		       "** ~ts",
-		       [jid:encode(To), Term,
-			misc:format_exception(2, E, R, StackTrace)])
+    catch
+        E:R:StackTrace ->
+            ?ERROR_MSG("Failed to route term to ~ts:~n"
+                       "** Term = ~p~n"
+                       "** ~ts",
+                       [jid:encode(To),
+                        Term,
+                        misc:format_exception(2, E, R, StackTrace)])
     end.
 
 -spec route(stanza()) -> ok.

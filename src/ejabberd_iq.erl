@@ -36,7 +36,7 @@
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
--include("ejabberd_stacktrace.hrl").
+
 
 -record(state, {expire = infinity :: timeout()}).
 -type state() :: #state{}.
@@ -174,11 +174,11 @@ calc_checksum(Data) ->
 -spec callback(atom() | pid(), #iq{} | timeout, term()) -> any().
 callback(undefined, IQRes, Fun) ->
     try Fun(IQRes)
-    catch ?EX_RULE(Class, Reason, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to process iq response:~n~ts~n** ~ts",
-		       [xmpp:pp(IQRes),
-			misc:format_exception(2, Class, Reason, StackTrace)])
+    catch
+        Class:Reason:StackTrace ->
+            ?ERROR_MSG("Failed to process iq response:~n~ts~n** ~ts",
+                       [xmpp:pp(IQRes),
+                        misc:format_exception(2, Class, Reason, StackTrace)])
     end;
 callback(Proc, IQRes, Ctx) ->
     try

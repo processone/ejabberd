@@ -39,7 +39,7 @@
 -include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
 -include("logger.hrl").
--include("ejabberd_stacktrace.hrl").
+
 
 -define(DEFAULT_VERSION, 1000000).
 
@@ -331,11 +331,10 @@ try_call_command(Args, Auth, AccessCommands, Version) ->
 	     ?STATUS_ERROR};
 	throw:Error ->
 	    {io_lib:format("~p", [Error]), ?STATUS_ERROR};
-	?EX_RULE(A, Why, Stack) ->
-	    StackTrace = ?EX_STACK(Stack),
-	    {io_lib:format("Unhandled exception occurred executing the command:~n** ~ts",
-			   [misc:format_exception(2, A, Why, StackTrace)]),
-	     ?STATUS_ERROR}
+        A:Why:StackTrace ->
+            {io_lib:format("Unhandled exception occurred executing the command:~n** ~ts",
+                           [misc:format_exception(2, A, Why, StackTrace)]),
+             ?STATUS_ERROR}
     end.
 
 -spec call_command(Args::[string()],

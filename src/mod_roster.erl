@@ -61,7 +61,7 @@
 -include("mod_roster.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
--include("ejabberd_stacktrace.hrl").
+
 -include("translate.hrl").
 
 -define(ROSTER_CACHE, roster_cache).

@@ -44,7 +44,7 @@
 
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
--include("ejabberd_stacktrace.hrl").
+
 -include("ejabberd_commands.hrl").
 
 -record(ejabberd_module,
@@ -187,16 +187,20 @@ start_module(Host, Module, Opts, Order) ->
 		ets:delete(ejabberd_modules, {Module, Host}),
 		erlang:error({bad_return, Module, Err})
 	end
-    catch ?EX_RULE(Class, Reason, Stack) ->
-	    StackTrace = ?EX_STACK(Stack),
-	    ets:delete(ejabberd_modules, {Module, Host}),
-	    ErrorText = format_module_error(
-			  Module, start, 2,
-			  Opts, Class, Reason,
-			  StackTrace),
-	    ?CRITICAL_MSG(ErrorText, []),
-	    maybe_halt_ejabberd(),
-	    erlang:raise(Class, Reason, StackTrace)
+    catch
+        Class:Reason:StackTrace ->
+            ets:delete(ejabberd_modules, {Module, Host}),
+            ErrorText = format_module_error(
+                          Module,
+                          start,
+                          2,
+                          Opts,
+                          Class,
+                          Reason,
+                          StackTrace),
+            ?CRITICAL_MSG(ErrorText, []),
+            maybe_halt_ejabberd(),
+            erlang:raise(Class, Reason, StackTrace)
     end.
 
 -spec reload_modules(binary()) -> ok.
@@ -246,14 +250,18 @@ reload_module(Host, Module, NewOpts, OldOpts, Order) ->
 		    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
 		    Err -> erlang:error({bad_return, Module, Err})
 		end
-	    catch ?EX_RULE(Class, Reason, Stack) ->
-		    StackTrace = ?EX_STACK(Stack),
-		    ErrorText = format_module_error(
-                                  Module, reload, 3,
-                                  NewOpts, Class, Reason,
-				  StackTrace),
+            catch
+                Class:Reason:StackTrace ->
+                    ErrorText = format_module_error(
+                                  Module,
+                                  reload,
+                                  3,
+                                  NewOpts,
+                                  Class,
+                                  Reason,
+                                  StackTrace),
                     ?CRITICAL_MSG(ErrorText, []),
-		    erlang:raise(Class, Reason, StackTrace)
+                    erlang:raise(Class, Reason, StackTrace)
 	    end;
 	false ->
 	    ?WARNING_MSG("Module ~ts doesn't support reloading "
@@ -346,14 +354,15 @@ prep_stop_module_keep_config(Host, Module) ->
     try Module:prep_stop(Host) of
 	_ ->
 	    ok
-    catch ?EX_RULE(error, undef, _St) ->
-	    ok;
-          ?EX_RULE(Class, Reason, St) ->
-            StackTrace = ?EX_STACK(St),
+    catch
+        error:undef:_St ->
+            ok;
+        Class:Reason:StackTrace ->
             ?ERROR_MSG("Failed to prepare stop module ~ts at ~ts:~n** ~ts",
-                       [Module, Host,
+                       [Module,
+                        Host,
                         misc:format_exception(2, Class, Reason, StackTrace)]),
-	    error
+            error
     end.
 
 -spec stop_module_keep_config(binary(), atom()) -> error | ok.
@@ -371,12 +380,13 @@ stop_module_keep_config(Host, Module) ->
 	_ ->
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok
-    catch ?EX_RULE(Class, Reason, St) ->
-            StackTrace = ?EX_STACK(St),
+    catch
+        Class:Reason:StackTrace ->
             ?ERROR_MSG("Failed to stop module ~ts at ~ts:~n** ~ts",
-                       [Module, Host,
+                       [Module,
+                        Host,
                         misc:format_exception(2, Class, Reason, StackTrace)]),
-	    error
+            error
     end.
 
 -spec add_registrations(binary(), module(), [registration()]) -> ok.

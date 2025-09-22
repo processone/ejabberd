@@ -74,7 +74,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 -include("mod_muc_room.hrl").
--include("ejabberd_stacktrace.hrl").
+
 
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
@@ -1027,10 +1027,10 @@ terminate(Reason, _StateName,
 			ok
 		end
 	end
-    catch ?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Got exception on room termination:~n** ~ts",
-		       [misc:format_exception(2, E, R, StackTrace)])
+    catch
+        E:R:StackTrace ->
+            ?ERROR_MSG("Got exception on room termination:~n** ~ts",
+                       [misc:format_exception(2, E, R, StackTrace)])
     end.
 
 %%%----------------------------------------------------------------------
@@ -3266,19 +3266,20 @@ process_item_change(Item, SD, UJID) ->
 		maybe_send_affiliation(JID, A, SD1),
 		SD1
 	end
-    catch ?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    FromSuffix = case UJID of
-			     #jid{} ->
-				 JidString = jid:encode(UJID),
-				 <<" from ", JidString/binary>>;
-			     undefined ->
-				 <<"">>
-			 end,
-	    ?ERROR_MSG("Failed to set item ~p~ts:~n** ~ts",
-		       [Item, FromSuffix,
-			misc:format_exception(2, E, R, StackTrace)]),
-	    {error, xmpp:err_internal_server_error()}
+    catch
+        E:R:StackTrace ->
+            FromSuffix = case UJID of
+                             #jid{} ->
+                                 JidString = jid:encode(UJID),
+                                 <<" from ", JidString/binary>>;
+                             undefined ->
+                                 <<"">>
+                         end,
+            ?ERROR_MSG("Failed to set item ~p~ts:~n** ~ts",
+                       [Item,
+                        FromSuffix,
+                        misc:format_exception(2, E, R, StackTrace)]),
+            {error, xmpp:err_internal_server_error()}
     end.
 
 -spec unsubscribe_from_room(jid(), state()) -> ok | error.

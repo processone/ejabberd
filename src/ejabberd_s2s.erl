@@ -53,7 +53,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
--include("ejabberd_stacktrace.hrl").
+
 -include("translate.hrl").
 
 -define(DEFAULT_MAX_S2S_CONNECTIONS_NUMBER, 1).
@@ -249,11 +249,11 @@ handle_info({mnesia_system_event, {mnesia_up, Node}}, State) ->
     {noreply, State};
 handle_info({route, Packet}, State) ->
     try route(Packet)
-    catch ?EX_RULE(Class, Reason, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
-		       [xmpp:pp(Packet),
-			misc:format_exception(2, Class, Reason, StackTrace)])
+    catch
+        Class:Reason:StackTrace ->
+            ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
+                       [xmpp:pp(Packet),
+                        misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, State) ->

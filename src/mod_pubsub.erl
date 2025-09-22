@@ -46,7 +46,7 @@
 -include("pubsub.hrl").
 -include("mod_roster.hrl").
 -include("translate.hrl").
--include("ejabberd_stacktrace.hrl").
+
 -include("ejabberd_commands.hrl").
 
 -define(STDTREE, <<"tree">>).
@@ -748,11 +748,11 @@ handle_cast(Msg, State) ->
 
 handle_info({route, Packet}, State) ->
     try route(Packet)
-    catch ?EX_RULE(Class, Reason, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
-		       [xmpp:pp(Packet),
-			misc:format_exception(2, Class, Reason, StackTrace)])
+    catch
+        Class:Reason:StackTrace ->
+            ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
+                       [xmpp:pp(Packet),
+                        misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_info(Info, State) ->
@@ -3819,9 +3819,9 @@ tree_action(Host, Function, Args) ->
     DBType = mod_pubsub_opt:db_type(ServerHost),
     Fun = fun () ->
 		  try tree_call(Host, Function, Args)
-		  catch ?EX_RULE(Class, Reason, St) when DBType == sql ->
-			  StackTrace = ?EX_STACK(St),
-			  ejabberd_sql:abort({exception, Class, Reason, StackTrace})
+                  catch
+                      Class:Reason:StackTrace when DBType == sql ->
+                          ejabberd_sql:abort({exception, Class, Reason, StackTrace})
 		  end
 	  end,
     Ret = case DBType of
@@ -3919,15 +3919,15 @@ transaction(Host, Fun, Trans) ->
 do_transaction(ServerHost, Fun, Trans, DBType) ->
     F = fun() ->
 		try Fun()
-		catch ?EX_RULE(Class, Reason, St) when (DBType == mnesia andalso
-							Trans == transaction) orelse
-						       DBType == sql ->
-			StackTrace = ?EX_STACK(St),
-			Ex = {exception, Class, Reason, StackTrace},
-			case DBType of
-			    mnesia -> mnesia:abort(Ex);
-			    sql -> ejabberd_sql:abort(Ex)
-			end
+                catch
+                    Class:Reason:StackTrace when (DBType == mnesia andalso
+                                                  Trans == transaction) orelse
+                                                 DBType == sql ->
+                        Ex = {exception, Class, Reason, StackTrace},
+                        case DBType of
+                            mnesia -> mnesia:abort(Ex);
+                            sql -> ejabberd_sql:abort(Ex)
+                        end
 		end
 	end,
     Res = case DBType of

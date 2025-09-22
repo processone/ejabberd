@@ -60,7 +60,7 @@
 ).
 
 -include("logger.hrl").
--include("ejabberd_stacktrace.hrl").
+
 
 -record(state, {}).
 -type subscriber() :: {Module :: atom(), Function :: atom(), InitArg :: any()}.
@@ -455,17 +455,19 @@ safe_apply(Hook, Module, Function, Args) ->
        true ->
 		apply(Module, Function, Args)
 	end
-    catch ?EX_RULE(E, R, St) when E /= exit; R /= normal ->
-	    Stack = ?EX_STACK(St),
-	    ?ERROR_MSG("Hook ~p crashed when running ~p:~p/~p:~n" ++
-			   string:join(
-			     ["** ~ts"|
-			      ["** Arg " ++ integer_to_list(I) ++ " = ~p"
-			       || I <- lists:seq(1, length(Args))]],
-			     "~n"),
-		       [Hook, Module, Function, length(Args),
-			misc:format_exception(2, E, R, Stack)|Args]),
-	    'EXIT'
+    catch
+        E:R:Stack when E /= exit; R /= normal ->
+            ?ERROR_MSG("Hook ~p crashed when running ~p:~p/~p:~n" ++
+                       string:join(
+                         ["** ~ts" | [ "** Arg " ++ integer_to_list(I) ++ " = ~p"
+                                       || I <- lists:seq(1, length(Args)) ]],
+                         "~n"),
+                       [Hook,
+                        Module,
+                        Function,
+                        length(Args),
+                        misc:format_exception(2, E, R, Stack) | Args]),
+            'EXIT'
     end.
 
 -spec call_subscriber_list([subscriber()], binary() | global, atom(), {atom(), atom(), integer(), list()} | list(), subscriber_event(), [subscriber()]) -> any().
@@ -480,18 +482,20 @@ call_subscriber_list([{Mod, Func, InitArg} | SubscriberList], Host, Hook, Callba
     try apply(Mod, Func, SubscriberArgs) of
         State ->
             call_subscriber_list(SubscriberList, Host, Hook, CallbackOrArgs, Event, [{Mod, Func, State} | Result])
-    catch ?EX_RULE(E, R, St) when E /= exit; R /= normal ->
-        Stack = ?EX_STACK(St),
-        ?ERROR_MSG("Hook subscriber ~p crashed when running ~p:~p/~p:~n" ++
-        string:join(
-            ["** ~ts"|
-                ["** Arg " ++ integer_to_list(I) ++ " = ~p"
-                    || I <- lists:seq(1, length(SubscriberArgs))]],
-            "~n"),
-            [Hook, Mod, Func, length(SubscriberArgs),
-                misc:format_exception(2, E, R, Stack)|SubscriberArgs]),
-        %% Do not append subscriber for next calls:
-        call_subscriber_list(SubscriberList, Host, Hook, CallbackOrArgs, Event, Result)
+    catch
+        E:R:Stack when E /= exit; R /= normal ->
+            ?ERROR_MSG("Hook subscriber ~p crashed when running ~p:~p/~p:~n" ++
+                       string:join(
+                         ["** ~ts" | [ "** Arg " ++ integer_to_list(I) ++ " = ~p"
+                                       || I <- lists:seq(1, length(SubscriberArgs)) ]],
+                         "~n"),
+                       [Hook,
+                        Mod,
+                        Func,
+                        length(SubscriberArgs),
+                        misc:format_exception(2, E, R, Stack) | SubscriberArgs]),
+            %% Do not append subscriber for next calls:
+            call_subscriber_list(SubscriberList, Host, Hook, CallbackOrArgs, Event, Result)
     end.
 
 %%%----------------------------------------------------------------------
@@ -709,13 +713,11 @@ run_event_handlers(TracingOpts, Hook, Host, Event, EventArgs, RunType) ->
                         _ ->
                             ok
                     catch
-                        ?EX_RULE(E, R, St) ->
-                            Stack = ?EX_STACK(St),
-                            ?ERROR_MSG(
+                          E:R:Stack ->
+                              ?ERROR_MSG(
                                 "(~0p|~ts|~0p) Tracing event '~0p' handler exception(~0p): ~0p: ~0p",
-                                [Hook, Host, erlang:self(), EventHandler, E, R, Stack]
-                            ),
-                            ok
+                                [Hook, Host, erlang:self(), EventHandler, E, R, Stack]),
+                              ok
                     end
                 end,
                 EventHandlerList
@@ -885,8 +887,7 @@ tracing_output(#{output_function := OutputF}, Text, Args) ->
         _ ->
             ok
     catch
-        ?EX_RULE(E, R, St) ->
-            Stack = ?EX_STACK(St),
+        E:R:Stack ->
             ?ERROR_MSG("Tracing output function exception(~0p): ~0p: ~0p", [E, R, Stack]),
             ok
     end;

@@ -89,7 +89,7 @@
 
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
--include("ejabberd_stacktrace.hrl").
+
 
 -record(state,
 	{db_ref               :: undefined | db_ref_pid() | odbc_connection_reference(),
@@ -616,19 +616,20 @@ outer_transaction(F, NRestarts, _Reason) ->
 			    {atomic, Res}
 		    end
 	    catch
-		?EX_RULE(throw, {aborted, Reason}, _) when NRestarts > 0 ->
-		    maybe_restart_transaction(F, NRestarts, Reason, true);
-		?EX_RULE(throw, {aborted, Reason}, Stack) when NRestarts =:= 0 ->
-		    StackTrace = ?EX_STACK(Stack),
-		    ?ERROR_MSG("SQL transaction restarts exceeded~n** "
-			       "Restarts: ~p~n** Last abort reason: "
-			       "~p~n** Stacktrace: ~p~n** When State "
-			       "== ~p",
-			       [?MAX_TRANSACTION_RESTARTS, Reason,
-				StackTrace, get(?STATE_KEY)]),
-		    maybe_restart_transaction(F, NRestarts, Reason, true);
-		?EX_RULE(_, Reason, _) ->
-		    maybe_restart_transaction(F, 0, Reason, true)
+                throw:{aborted, Reason}:_ when NRestarts > 0 ->
+                    maybe_restart_transaction(F, NRestarts, Reason, true);
+                throw:{aborted, Reason}:StackTrace when NRestarts =:= 0 ->
+                    ?ERROR_MSG("SQL transaction restarts exceeded~n** "
+                               "Restarts: ~p~n** Last abort reason: "
+                               "~p~n** Stacktrace: ~p~n** When State "
+                               "== ~p",
+                               [?MAX_TRANSACTION_RESTARTS,
+                                Reason,
+                                StackTrace,
+                                get(?STATE_KEY)]),
+                    maybe_restart_transaction(F, NRestarts, Reason, true);
+                _:Reason:_ ->
+                    maybe_restart_transaction(F, 0, Reason, true)
 	    end
     end.
 
@@ -742,10 +743,9 @@ sql_query_internal(#sql_query{} = Query) ->
 		{error, <<"terminated unexpectedly">>};
 	      exit:{shutdown, _} ->
 		{error, <<"shutdown">>};
-	      ?EX_RULE(Class, Reason, Stack) ->
-		StackTrace = ?EX_STACK(Stack),
+            Class:Reason:StackTrace ->
                 ?ERROR_MSG("Internal error while processing SQL query:~n** ~ts",
-			   [misc:format_exception(2, Class, Reason, StackTrace)]),
+                           [misc:format_exception(2, Class, Reason, StackTrace)]),
                 {error, <<"internal error">>}
         end,
     check_error(Res, Query);
@@ -935,12 +935,11 @@ sql_query_format_res({selected, _, Rows}, SQLQuery) ->
                   try
                       [(SQLQuery#sql_query.format_res)(Row)]
                   catch
-		      ?EX_RULE(Class, Reason, Stack) ->
-			  StackTrace = ?EX_STACK(Stack),
+                      Class:Reason:StackTrace ->
                           ?ERROR_MSG("Error while processing SQL query result:~n"
                                      "** Row: ~p~n** ~ts",
                                      [Row,
-				      misc:format_exception(2, Class, Reason, StackTrace)]),
+                                      misc:format_exception(2, Class, Reason, StackTrace)]),
                           []
                   end
           end, Rows),

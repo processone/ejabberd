@@ -44,7 +44,8 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
--include("ejabberd_stacktrace.hrl").
+
+
 
 -callback init(binary(), gen_mod:opts()) -> ok | {error, db_failure}.
 -callback set_channel(binary(), binary(), binary(),
@@ -319,11 +320,11 @@ handle_cast(Request, State) ->
 
 handle_info({route, Packet}, State) ->
     try route(Packet)
-    catch ?EX_RULE(Class, Reason, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
-		       [xmpp:pp(Packet),
-			misc:format_exception(2, Class, Reason, StackTrace)])
+    catch
+        Class:Reason:StackTrace ->
+            ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
+                       [xmpp:pp(Packet),
+                        misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_info(Info, State) ->

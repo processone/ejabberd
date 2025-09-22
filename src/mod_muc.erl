@@ -85,7 +85,7 @@
 -include("mod_muc.hrl").
 -include("mod_muc_room.hrl").
 -include("translate.hrl").
--include("ejabberd_stacktrace.hrl").
+
 
 -type state() :: #{hosts := [binary()],
 		   server_host := binary(),
@@ -454,11 +454,11 @@ handle_call({create, Room, Host, From, Nick, Opts}, _From,
 -spec handle_cast(term(), state()) -> {noreply, state()}.
 handle_cast({route_to_room, Packet}, #{server_host := ServerHost} = State) ->
     try route_to_room(Packet, ServerHost)
-    catch ?EX_RULE(Class, Reason, St) ->
-            StackTrace = ?EX_STACK(St),
+    catch
+        Class:Reason:StackTrace ->
             ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
-		       [xmpp:pp(Packet),
-			misc:format_exception(2, Class, Reason, StackTrace)])
+                       [xmpp:pp(Packet),
+                        misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_cast({room_destroyed, {Room, Host}, Pid},
@@ -483,11 +483,11 @@ handle_info({route, Packet}, #{server_host := ServerHost} = State) ->
     %% where mod_muc is not loaded. Such configuration
     %% is *highly* discouraged
     try route(Packet, ServerHost)
-    catch ?EX_RULE(Class, Reason, St) ->
-            StackTrace = ?EX_STACK(St),
+    catch
+        Class:Reason:StackTrace ->
             ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
-		       [xmpp:pp(Packet),
-			misc:format_exception(2, Class, Reason, StackTrace)])
+                       [xmpp:pp(Packet),
+                        misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_info({room_destroyed, {Room, Host}, Pid}, State) ->

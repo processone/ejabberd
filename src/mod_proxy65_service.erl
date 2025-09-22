@@ -40,7 +40,7 @@
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
--include("ejabberd_stacktrace.hrl").
+
 
 -define(PROCNAME, ejabberd_mod_proxy65_service).
 
@@ -86,8 +86,8 @@ terminate(_Reason, #state{myhosts = MyHosts}) ->
 
 handle_info({route, Packet}, State) ->
     try route(Packet)
-    catch ?EX_RULE(Class, Reason, St) ->
-            StackTrace = ?EX_STACK(St),
+    catch
+        Class:Reason:StackTrace ->
             ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
                        [xmpp:pp(Packet),
                         misc:format_exception(2, Class, Reason, StackTrace)])

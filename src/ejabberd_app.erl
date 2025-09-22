@@ -32,7 +32,7 @@
 -export([start/2, prep_stop/1, stop/1]).
 
 -include("logger.hrl").
--include("ejabberd_stacktrace.hrl").
+
 
 %%%
 %%% Application API

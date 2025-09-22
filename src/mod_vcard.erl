@@ -51,7 +51,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("translate.hrl").
--include("ejabberd_stacktrace.hrl").
+
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 
@@ -151,11 +151,11 @@ handle_cast(Cast, State) ->
 
 handle_info({route, Packet}, State) ->
     try route(Packet)
-    catch ?EX_RULE(Class, Reason, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
-		       [xmpp:pp(Packet),
-			misc:format_exception(2, Class, Reason, StackTrace)])
+    catch
+        Class:Reason:StackTrace ->
+            ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
+                       [xmpp:pp(Packet),
+                        misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_info(Info, State) ->

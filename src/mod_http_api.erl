@@ -36,7 +36,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
--include("ejabberd_stacktrace.hrl").
+
 -include("translate.hrl").
 
 -define(DEFAULT_API_VERSION, 1000000).
@@ -148,8 +148,7 @@ process([Call | _], #request{method = 'POST', data = Data, ip = IPPort} = Req) -
         _:{error,{_,invalid_json}} = Err ->
 	    ?DEBUG("Bad Request: ~p", [Err]),
 	    badrequest_response(<<"Invalid JSON input">>);
-	?EX_RULE(_Class, Error, Stack) ->
-	    StackTrace = ?EX_STACK(Stack),
+        _Class:Error:StackTrace ->
             ?DEBUG("Bad Request: ~p ~p", [Error, StackTrace]),
             badrequest_response()
     end;
@@ -166,8 +165,7 @@ process([Call | _], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
         %% TODO We need to refactor to remove redundant error return formatting
         throw:{error, unknown_command} ->
             json_format({404, 44, <<"Command not found.">>});
-        ?EX_RULE(_, Error, Stack) ->
-	    StackTrace = ?EX_STACK(Stack),
+        _:Error:StackTrace ->
             ?DEBUG("Bad Request: ~p ~p", [Error, StackTrace]),
             badrequest_response()
     end;
@@ -257,13 +255,15 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 	    {400, misc:atom_to_binary(Error)};
 	  throw:Msg when is_list(Msg); is_binary(Msg) ->
 	    {400, iolist_to_binary(Msg)};
-	  ?EX_RULE(Class, Error, Stack) ->
-	    StackTrace = ?EX_STACK(Stack),
-	    ?ERROR_MSG("REST API Error: "
-		       "~ts(~p) -> ~p:~p ~p",
-		       [Call, hide_sensitive_args(Args),
-			Class, Error, StackTrace]),
-	    {500, <<"internal_error">>}
+        Class:Error:StackTrace ->
+            ?ERROR_MSG("REST API Error: "
+                       "~ts(~p) -> ~p:~p ~p",
+                       [Call,
+                        hide_sensitive_args(Args),
+                        Class,
+                        Error,
+                        StackTrace]),
+            {500, <<"internal_error">>}
     end.
 
 handle2(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->

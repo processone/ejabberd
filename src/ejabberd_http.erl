@@ -39,7 +39,7 @@
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_http.hrl").
--include("ejabberd_stacktrace.hrl").
+
 -include_lib("kernel/include/file.hrl").
 
 -record(state, {sockmod,
@@ -372,11 +372,11 @@ process(Handlers, Request) ->
                         try
                             HandlerModule:process(LocalPath, Request)
                         catch
-                            ?EX_RULE(Class, Reason, Stack) ->
+                            Class:Reason:Stack ->
                                 ?ERROR_MSG(
-                                   "HTTP handler crashed: ~s",
-                                   [misc:format_exception(2, Class, Reason, ?EX_STACK(Stack))]),
-                                erlang:raise(Class, Reason, ?EX_STACK(Stack))
+                                  "HTTP handler crashed: ~s",
+                                  [misc:format_exception(2, Class, Reason, Stack)]),
+                                erlang:raise(Class, Reason, Stack)
                         end
 		end,
             ejabberd_hooks:run(http_request_debug, [{LocalPath, Request}]),
