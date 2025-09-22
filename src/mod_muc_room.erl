@@ -2468,6 +2468,10 @@ check_password(owner, _Affiliation, _Packet, _From,
 	       _StateData) ->
     %% Don't check pass if user is owner in MUC service (access_admin option)
     true;
+check_password(_ServiceAffiliation, owner, _Packet, _From,
+	       _StateData) ->
+    %% Don't check pass if user is owner in this room
+    true;
 check_password(_ServiceAffiliation, Affiliation, Packet,
 	       From, StateData) ->
     case (StateData#state.config)#config.password_protected
