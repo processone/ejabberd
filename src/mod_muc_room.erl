@@ -5588,29 +5588,34 @@ wrap(From, To, Packet, Node, Id) ->
 
 -spec send_wrapped_multiple(jid(), users(), stanza(), binary(), state()) -> ok.
 send_wrapped_multiple(From, Users, Packet, Node, State) ->
-    {Dir, Wra} =
-    maps:fold(
-	fun(_, #user{jid = To, last_presence = LP}, {Direct, Wrapped} = Res) ->
-	    IsOffline = LP == undefined,
-	    if IsOffline ->
-		LBareTo = jid:tolower(jid:remove_resource(To)),
-		case muc_subscribers_find(LBareTo, State#state.muc_subscribers) of
-		    {ok, #subscriber{nodes = Nodes}} ->
-			case lists:member(Node, Nodes) of
-			    true ->
-				{Direct, [To | Wrapped]};
-			    _ ->
-                                %% TODO: check that this branch is never called
-				Res
-			end;
-		    _ ->
-			Res
-		end;
-		true ->
-		    {[To | Direct], Wrapped}
-	    end
-	end, {[],[]}, Users),
-    case Dir of
+    {Dir, DirSub, Wra} =
+        maps:fold(
+          fun(_, #user{jid = To, last_presence = LP}, {Direct, DirectSub, Wrapped} = Res) ->
+                  IsOffline = LP == undefined,
+                  LBareTo = jid:tolower(jid:remove_resource(To)),
+                  IsSub = case muc_subscribers_find(LBareTo, State#state.muc_subscribers) of
+                              {ok, #subscriber{nodes = Nodes}} ->
+                                  lists:member(Node, Nodes);
+                              _ -> false
+                          end,
+                  if
+                      IsOffline ->
+                          if
+                              IsSub ->
+                                  {Direct, DirectSub, [To | Wrapped]};
+                              true ->
+                                  Res
+                          end;
+                      IsSub ->
+                          {Direct, [To | DirectSub], Wrapped};
+                      true ->
+                          {[To | Direct], DirectSub, Wrapped}
+                  end
+          end,
+          {[], [], []},
+          Users),
+    DirAll = Dir ++ DirSub,
+    case DirAll of
 	[] -> ok;
 	_ ->
 	    case Packet of
@@ -5623,7 +5628,9 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 				  not lists:member(303, Codes)) of
 				true ->
 				    ejabberd_router_multicast:route_multicast(
-					From, State#state.server_host, Dir,
+                                      From,
+                                      State#state.server_host,
+                                      DirAll,
 					#presence{id = p1_rand:get_string(),
 						  type = unavailable}, false);
 				false ->
@@ -5635,8 +5642,27 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 		_ ->
 		    ok
 	    end,
-	    ejabberd_router_multicast:route_multicast(From, State#state.server_host,
-						      Dir, Packet, false)
+            if
+                Dir /= [] ->
+                    ejabberd_router_multicast:route_multicast(From,
+                                                              State#state.server_host,
+                                                              Dir,
+                                                              Packet,
+                                                              false);
+                true ->
+                    ok
+            end,
+            if
+                DirSub /= [] ->
+                    PacketSub = xmpp:put_meta(Packet, is_muc_subscriber, true),
+                    ejabberd_router_multicast:route_multicast(From,
+                                                              State#state.server_host,
+                                                              DirSub,
+                                                              PacketSub,
+                                                              false);
+                true ->
+                    ok
+            end
     end,
     case Wra of
 	[] -> ok;

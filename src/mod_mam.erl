@@ -914,6 +914,13 @@ process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
 -spec should_archive(message(), binary()) -> boolean().
 should_archive(#message{type = error}, _LServer) ->
     false;
+should_archive(#message{type = groupchat, meta = #{is_muc_subscriber := true}} = Msg, LServer) ->
+	case mod_mam_opt:archive_muc_as_mucsub(LServer) of
+		true ->
+		    should_archive(Msg#message{type = chat}, LServer);
+		false ->
+			false
+	end;
 should_archive(#message{type = groupchat}, _LServer) ->
     false;
 should_archive(#message{meta = #{from_offline := true}}, _LServer) ->
@@ -1101,6 +1108,31 @@ may_enter_room(From, MUCState) ->
 
 -spec store_msg(message(), binary(), binary(), jid(), send | recv)
       -> ok | pass | any().
+store_msg(#message{type = groupchat, from = From, to = To, meta = #{is_muc_subscriber := true}} = Pkt, LUser, LServer, _Peer, Dir) ->
+	BarePeer = jid:remove_resource(From),
+	StanzaId = xmpp:get_subtag(Pkt, #stanza_id{by = #jid{}}),
+    Id = case StanzaId of
+             #stanza_id{id = Id2} ->
+                 Id2;
+             _ ->
+                 p1_rand:get_string()
+         end,
+    Pkt2 = #message{
+             to = To,
+             from = BarePeer,
+             id = Id,
+             sub_els = [#ps_event{
+                          items = #ps_items{
+                                    node = ?NS_MUCSUB_NODES_MESSAGES,
+                                    items = [#ps_item{
+                                               id = Id,
+                                               sub_els = [Pkt]
+                                              }]
+                                   }
+                         }]
+            },
+	Pkt3 = xmpp:put_meta(Pkt2, stanza_id, binary_to_integer(Id)),
+	store_msg(Pkt3, LUser, LServer, BarePeer, Dir);
 store_msg(Pkt, LUser, LServer, Peer, Dir) ->
     case get_prefs(LUser, LServer) of
 	{ok, Prefs} ->
@@ -1738,6 +1770,8 @@ mod_opt_type(clear_archive_on_room_destroy) ->
     econf:bool();
 mod_opt_type(user_mucsub_from_muc_archive) ->
     econf:bool();
+mod_opt_type(archive_muc_as_mucsub) ->
+    econf:bool();
 mod_opt_type(access_preferences) ->
     econf:acl();
 mod_opt_type(db_type) ->
@@ -1759,6 +1793,7 @@ mod_options(Host) ->
      {clear_archive_on_room_destroy, true},
      {access_preferences, all},
      {user_mucsub_from_muc_archive, false},
+     {archive_muc_as_mucsub, false},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_option:use_cache(Host)},
      {cache_size, ejabberd_option:cache_size(Host)},
@@ -1856,4 +1891,16 @@ mod_doc() ->
 		     "subscriber a separate mucsub message is stored. With this "
 		     "option enabled, when a user fetches archive virtual "
 		     "mucsub, messages are generated from muc archives. "
-		     "The default value is 'false'.")}}]}.
+                     "The default value is 'false'.")
+             }},
+           {archive_muc_as_mucsub,
+            #{
+              value => "true | false",
+              desc =>
+                  ?T("When this option is enabled incoming groupchat messages "
+                     "for users that have mucsub subscription to a room from which "
+                     "message originated will have those messages archived after being "
+                     "converted to mucsub event messages."
+                     "The default value is 'false'.")
+             }}]
+     }.

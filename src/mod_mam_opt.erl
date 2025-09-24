@@ -4,6 +4,7 @@
 -module(mod_mam_opt).
 
 -export([access_preferences/1]).
+-export([archive_muc_as_mucsub/1]).
 -export([assume_mam_usage/1]).
 -export([cache_life_time/1]).
 -export([cache_missed/1]).
@@ -21,6 +22,12 @@ access_preferences(Opts) when is_map(Opts) ->
     gen_mod:get_opt(access_preferences, Opts);
 access_preferences(Host) ->
     gen_mod:get_module_opt(Host, mod_mam, access_preferences).
+
+-spec archive_muc_as_mucsub(gen_mod:opts() | global | binary()) -> boolean().
+archive_muc_as_mucsub(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(archive_muc_as_mucsub, Opts);
+archive_muc_as_mucsub(Host) ->
+    gen_mod:get_module_opt(Host, mod_mam, archive_muc_as_mucsub).
 
 -spec assume_mam_usage(gen_mod:opts() | global | binary()) -> boolean().
 assume_mam_usage(Opts) when is_map(Opts) ->
