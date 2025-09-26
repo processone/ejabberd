@@ -323,6 +323,8 @@ split_opts(Transport, Opts) ->
 		      {ModOpts, [{Opt, Val} | SockOpts]};
 		  {backlog, _} ->
 		      {ModOpts, SockOpts};
+          {send_timeout, _} ->
+		      {ModOpts, [{Opt, Val} | SockOpts]};
 		  _ ->
 		      {ModOpts#{Opt => Val}, SockOpts}
 	      end
