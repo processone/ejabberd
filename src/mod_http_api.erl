@@ -372,8 +372,8 @@ format_arg({[{Name, Value}]},
 format_arg(Elements,
 	   {tuple, ElementsDef})
   when is_map(Elements) ->
-    list_to_tuple([element(2, maps:find(atom_to_binary(Name, latin1), Elements))
-                   || {Name, _Format} <- ElementsDef]);
+    list_to_tuple([format_arg(element(2, maps:find(atom_to_binary(Name, latin1), Elements)), Format)
+                   || {Name, Format} <- ElementsDef]);
 
 format_arg({Elements},
 	   {tuple, ElementsDef})
