@@ -126,18 +126,16 @@ json_encode(Term) ->
 json_decode(Bin) ->
     jiffy:decode(Bin, [return_maps]).
 -else.
-json_encode({[{_Key, _Value} | _]} = Term) ->
+json_encode({[]}) ->
+    %% Jiffy was able to handle this case, but Json library does not
+    <<"{}">>;
+json_encode(Term) ->
     iolist_to_binary(json:encode(Term,
 		     fun({Val}, Encoder) when is_list(Val) ->
 			 json:encode_key_value_list(Val, Encoder);
 			(Val, Encoder) ->
 			 json:encode_value(Val, Encoder)
-		     end));
-json_encode({[]}) ->
-    %% Jiffy was able to handle this case, but Json library does not
-    <<"{}">>;
-json_encode(Term) ->
-    iolist_to_binary(json:encode(Term)).
+		     end)).
 json_decode(Bin) ->
     json:decode(Bin).
 -endif.
