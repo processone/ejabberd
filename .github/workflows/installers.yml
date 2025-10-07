@@ -20,14 +20,25 @@ on:
 
 jobs:
   binaries:
-    name: Binaries
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04${{ matrix.suffix }}
+    strategy:
+      matrix:
+        platform: [amd64, arm64]
+        include:
+          - platform: amd64
+            suffix:
+          - platform: arm64
+            suffix: -arm
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Cache build directory
         uses: actions/cache@v4
         with:
           path: ~/build/
-          key: ${{runner.os}}-ct-ng-1.27.0
+          key: installers-ubuntu-22.04-${{runner.arch}}-${{hashFiles('tools/make-binaries')}}
       - name: Install prerequisites
         run: |
           sudo apt-get -qq update
@@ -40,16 +51,32 @@ jobs:
         run: |
           gem install --no-document --user-install fpm
           echo $HOME/.local/share/gem/ruby/*/bin >> $GITHUB_PATH
-      - name: Check out repository code
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
       - name: Build binary archives
         run: CHECK_DEPS=false tools/make-binaries
       - name: Build DEB and RPM packages
         run: tools/make-packages
       - name: Build installers
         run: tools/make-installers
+
+      - run: echo "rel_name_vsn=$(ls *.run | sed 's/-1-linux.*//g')" >> $GITHUB_OUTPUT
+        id: vsn
+      - name: Test RUN
+        uses: ./.github/actions/manage-ejabberd
+        with:
+          for: run
+          do: deploy, no_acme, start, register, stop, logs, check
+          username: user1
+          host: $(hostname --fqdn)
+          rel_name_vsn: ${{ steps.vsn.outputs.rel_name_vsn }}
+      - name: Test DEB
+        uses: ./.github/actions/manage-ejabberd
+        with:
+          for: deb
+          do: deploy, register, stop, logs
+          username: user1
+          host: $(hostname --fqdn)
+          rel_name_vsn: ${{ steps.vsn.outputs.rel_name_vsn }}
+
       - name: Collect packages
         run: |
           mkdir ejabberd-packages
@@ -57,7 +84,7 @@ jobs:
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
-          name: ejabberd-packages
+          name: ejabberd-packages-${{ matrix.platform }}
           #
           # Appending the wildcard character ("*") is a trick to make
           # "ejabberd-packages" the root directory of the uploaded ZIP file:
@@ -75,8 +102,6 @@ jobs:
     steps:
       - name: Download packages
         uses: actions/download-artifact@v5
-        with:
-          name: ejabberd-packages
       - name: Draft Release
         uses: softprops/action-gh-release@v2
         with:
