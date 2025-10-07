@@ -389,6 +389,8 @@ format_arg(Arg, integer) ->
     format_arg2(Arg, "~d");
 format_arg(Arg, binary) ->
     unicode:characters_to_binary(Arg, utf8);
+format_arg(Arg, binary_or_list) ->
+    [unicode:characters_to_binary(Arg, utf8)];
 format_arg("", string) ->
     "";
 format_arg(Arg, string) ->
@@ -999,12 +1001,12 @@ format_usage_ctype1({Name, Type, Description}, Indentation, ShCode) ->
 
 format_usage_ctype(Type, _Indentation)
   when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary)
-       or (Type==rescode) or (Type==restuple) ->
+       or (Type==rescode) or (Type==restuple) or (Type==binary_or_list) ->
     io_lib:format("~p", [Type]);
 
 format_usage_ctype({Name, Type}, _Indentation)
   when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary)
-       or (Type==rescode) or (Type==restuple)
+       or (Type==rescode) or (Type==restuple) or (Type==binary_or_list)
        or (Type==any) ->
     io_lib:format("~p::~p", [Name, Type]);
 

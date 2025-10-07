@@ -401,9 +401,15 @@ format_arg(Arg, integer) when is_integer(Arg) -> Arg;
 format_arg(Arg, integer) when is_binary(Arg) -> binary_to_integer(Arg);
 format_arg(Arg, binary) when is_list(Arg) -> process_unicode_codepoints(Arg);
 format_arg(Arg, binary) when is_binary(Arg) -> Arg;
+format_arg([], binary_or_list) -> [];
+format_arg([First | _] = Arg, binary_or_list) when is_binary(First) -> Arg;
+format_arg([First | _] = Arg, binary_or_list) when is_integer(First) ->
+    [process_unicode_codepoints(Arg)];
+format_arg(Arg, binary_or_list) when is_binary(Arg) -> [Arg];
 format_arg(Arg, string) when is_list(Arg) -> Arg;
 format_arg(Arg, string) when is_binary(Arg) -> binary_to_list(Arg);
 format_arg(undefined, binary) -> <<>>;
+format_arg(undefined, binary_or_list) -> [];
 format_arg(undefined, string) -> "";
 format_arg(Arg, Format) ->
     ?ERROR_MSG("Don't know how to format Arg ~p for format ~p", [Arg, Format]),
