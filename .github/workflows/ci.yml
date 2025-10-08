@@ -151,7 +151,7 @@ jobs:
         domain: 'localhost'
         adminAccountUsername: 'admin'
         adminAccountPassword: 'admin'
-        disabledSpecifications: RFC6121,XEP-0030,XEP-0045,XEP-0054,XEP-0060,XEP-0080,XEP-0115,XEP-0118,XEP-0215,XEP-0347,XEP-0363,XEP-0384
+        disabledSpecifications: RFC6121,XEP-0030,XEP-0045,XEP-0054,XEP-0060,XEP-0080,XEP-0115,XEP-0118,XEP-0215,XEP-0347,XEP-0363,XEP-0384,XEP-0421
 
     - name: Stop Development Release
       if: always()
