@@ -27,8 +27,8 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite/1, expire_tokens/2, get_invite/2, init/2,
-         is_token_valid/3, num_account_invites/2, remove_user/2, set_invitee/3]).
+-export([cleanup_expired/1, create_invite/1, expire_tokens/2, get_invite/2, init/2, is_reserved/3,
+         is_token_valid/3, list_invites/1, num_account_invites/2, remove_user/2, set_invitee/3]).
 
 -include("mod_invites.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -131,12 +131,41 @@ get_invite(Host, Token) ->
             {error, not_found}
     end.
 
+is_reserved(Host, Token, User) ->
+    {selected, [{Count}]} =
+        ejabberd_sql:sql_query(Host,
+                               ?SQL("SELECT @(COUNT(*))d from invite_token WHERE %(Host)H AND token != %(Token)s AND "
+                                    "account_name = %(User)s AND invitee = '' AND expires > NOW()")),
+    Count > 0.
+
 is_token_valid(Host, Token, {User, Host}) ->
     {selected, Rows} =
         ejabberd_sql:sql_query(Host,
-                               ?SQL("select @(token)s from invite_token where token = %(Token)s and username = %(User)s "
-                                    "and %(Host)H and invitee = '' and expires > now()")),
-    length(Rows) /= 0.
+                               ?SQL("SELECT @(token)s FROM invite_token WHERE %(Host)H AND token = %(Token)s AND "
+                                    "invitee = '' AND expires > now() AND (%(User)s = '' OR username = %(User)s)")),
+    Rows /= [].
+
+list_invites(Host) ->
+    {selected, Rows} =
+        ejabberd_sql:sql_query(Host,
+                               ?SQL("SELECT @(token)s, @(username)s, @(type)s, @(account_name)s, "
+                                    "@(expires)s, @(created_at)s FROM invite_token WHERE %(Host)H")),
+    lists:map(
+      fun({Token, User, Type, AccountName0, Expires, CreatedAt}) ->
+              AccountName =
+                  case AccountName0 of
+                      <<>> ->
+                          undefined;
+                      _ ->
+                          AccountName0
+                  end,
+              #invite_token{token = Token,
+                            inviter = {User, Host},
+                            type = binary_to_existing_atom(Type),
+                            account_name = AccountName,
+                            expires = Expires,
+                            created_at = CreatedAt}
+      end, Rows).
 
 num_account_invites(User, Server) ->
     {selected, [{Count}]} =
