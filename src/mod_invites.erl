@@ -26,17 +26,20 @@
 
 -author('stefan@strigler.de').
 
+-xep({xep, 379, ''}).
 -xep({xep, 401, '0.5.0'}). % [TODO]
+-xep({xep, 445, ''}).
 
 -behaviour(gen_mod).
 
 -export([depends/2, mod_doc/0, mod_options/1, mod_opt_type/1, reload/3, start/2, stop/1]).
--export([adhoc_commands/4, adhoc_items/4, cleanup_expired/0, expire_tokens/2,
-         gen_invite/1, gen_invite/2, remove_user/2, s2s_receive_packet/1, sm_receive_packet/1]).
+-export([adhoc_commands/4, adhoc_items/4, c2s_unauthenticated_packet/2, cleanup_expired/0,
+         expire_tokens/2, gen_invite/1, gen_invite/2, list_invites/1, remove_user/2,
+         s2s_receive_packet/1, sm_receive_packet/1, stream_feature_register/2]).
 
 -ifdef(TEST).
--export([create_roster_invite/2, create_account_invite/4, get_invite/2, is_token_valid/3, is_token_valid/2,
-         num_account_invites/2]).
+-export([create_roster_invite/2, create_account_invite/4, get_invite/2, is_reserved/3,
+         is_token_valid/3, is_token_valid/2, num_account_invites/2, set_invitee/3]).
 -endif.
 
 -include("logger.hrl").
@@ -55,10 +58,26 @@
 -callback get_invite(Host :: binary(), Token :: binary()) ->
                         invite_token() | {error, not_found}.
 -callback init(Host :: binary(), gen_mod:opts()) -> any().
+-callback is_reserved(Host :: binary(), Token :: binary(), User :: binary()) -> boolean().
 -callback is_token_valid(Host :: binary(), binary(), {binary(), binary()}) -> boolean().
+-callback list_invites(Host :: binary()) -> [tuple()].
 -callback num_account_invites(User :: binary(), Server :: binary()) -> non_neg_integer().
 -callback remove_user(User :: binary(), Server :: binary()) -> any().
 -callback set_invitee(Host :: binary(), Token :: binary(), Invitee :: binary()) -> ok.
+
+-define(try_subtag(IQ, SUBTAG, F, Else),
+    try xmpp:try_subtag(IQ, SUBTAG) of
+        false ->
+            Else();
+        SubTag ->
+            F(SubTag)
+    catch _:{xmpp_codec, Why} ->
+            Txt = xmpp:io_format_error(Why),
+            Lang = maps:get(lang, State),
+            Err = make_stripped_error(IQ, SUBTAG, xmpp:err_bad_request(Txt, Lang)),
+            {stop, ejabberd_c2s:send(State, Err)}
+    end).
+-define(try_subtag(IQ, SUBTAG, F), ?try_subtag(IQ, SUBTAG, F, fun() -> State end)).
 
 %% @format-begin
 
@@ -66,7 +85,7 @@
 %%| gen_mod callbacks
 
 depends(_Host, _Opts) ->
-    [{mod_adhoc, hard}].
+    [{mod_adhoc, soft}, {mod_register, soft}, {mod_roster, soft}].
 
 mod_doc() ->
     #{desc =>
@@ -147,6 +166,11 @@ start(Host, Opts) ->
       {hook, adhoc_local_commands, adhoc_commands, 50},
       {hook, s2s_receive_packet, s2s_receive_packet, 50},
       {hook, sm_receive_packet, sm_receive_packet, 50},
+      {hook, c2s_pre_auth_features, stream_feature_register, 50},
+      {hook,
+       c2s_unauthenticated_packet,
+       c2s_unauthenticated_packet,
+       10}, % note that the sequence is important here
       {commands, get_commands_spec()}]}.
 
 stop(_Host) ->
@@ -208,7 +232,20 @@ get_commands_spec() ->
                         args_example = [<<"juliet">>, <<"example.com">>],
                         result_example =
                             <<"xmpp:juliet@example.com?register;preauth=CJAi3TvpzuBJpmuf">>,
-                        result = {invite_uri, string}}].
+                        result = {invite_uri, string}},
+     #ejabberd_commands{name = list_invites,
+                        tags = [accounts],
+                        desc = "List invite tokens",
+                        module = ?MODULE,
+                        function = list_invites,
+                        args = [{host, binary}],
+                        args_desc = ["Hostname tokens are valid for"],
+                        args_example = [<<"example.com">>],
+                        %result_example = [{invite_token, invite}],
+                        result =
+                            {invites,
+                            {list, {invite, {tuple, [{token, string}, {token_uri, string}, {inviter, string}, {invitee, string}, {account_name, string}, {created_at, string}, {expires, string}, {type, atom}, {valid, atom}]}}}}
+                       }].
 
 cleanup_expired() ->
     lists:foldl(fun(Host, Count) ->
@@ -230,7 +267,7 @@ expire_tokens(User0, Server0) ->
 
 -spec gen_invite(binary()) -> binary() | {error, any()}.
 gen_invite(Host) ->
-    gen_invite(undefined, Host).
+    gen_invite(<<>>, Host).
 
 -spec gen_invite(binary(), binary()) -> binary() | {error, any()}.
 gen_invite(Username, Host0) ->
@@ -243,6 +280,21 @@ gen_invite(Username, Host0) ->
         Invite ->
             token_uri(Invite)
     end.
+
+list_invites(Host) ->
+    Invites = db_call(Host, list_invites, [Host]),
+    Format = fun(#invite_token{token = TO, inviter = {IU, IS}, invitee = IE, created_at = CA, expires = Exp, type = TY, account_name = AN} = Invite) ->
+                     {TO,
+                      token_uri(Invite),
+                      jid:encode(jid:make(IU, IS)),
+                      IE,
+                      AN,
+                      encode_datetime(CA),
+                      encode_datetime(Exp),
+                      TY,
+                      is_token_valid(Host, TO)}
+             end,
+    [Format(Invite) || Invite <- Invites].
 
 %%--------------------------------------------------------------------
 %%| hooks and callbacks
@@ -327,7 +379,7 @@ adhoc_commands(_Acc,
     check(fun create_account_allowed/2,
           [LServer, From],
           fun() ->
-             AccountName = xdata_field(<<"username">>, Fields, undefined),
+             AccountName = xdata_field(<<"username">>, Fields, <<>>),
              Invite =
                  create_account_invite(LServer,
                                        {LUser, LServer},
@@ -382,7 +434,7 @@ adhoc_commands(_Acc,
              Result =
                  #adhoc_command{status = executing,
                                 node = Node,
-                                sid = SID,
+                                sid = maybe_gen_sid(SID),
                                 actions = Actions,
                                 xdata = XData},
              {stop, Result}
@@ -419,28 +471,18 @@ sm_receive_packet(Other) ->
 
 handle_pre_auth_token([], _To, _From) ->
     false;
-handle_pre_auth_token([El | Els], #jid{luser = LUser, lserver = LServer} = To, FromFullJid) ->
+handle_pre_auth_token([El | Els],
+                      #jid{luser = LUser, lserver = LServer} = To,
+                      FromFullJid) ->
     From = jid:remove_resource(FromFullJid),
     try xmpp:decode(El) of
         #preauth{token = Token} = PreAuth ->
             ?DEBUG("got preauth token: ~p", [PreAuth]),
             case is_token_valid(LServer, Token, {LUser, LServer}) of
                 true ->
-                    RosterItem =
-                        #roster_item{jid = From,
-                                     subscription = from,
-                                     ask = subscribe},
-                    mod_roster:set_item_and_notify_clients(To, RosterItem, true),
-                    Subscribed =
-                        #presence{from = To,
-                                  to = From,
-                                  type = subscribed},
-                    ejabberd_router:route(To, From, Subscribed),
-                    Subscribe =
-                        #presence{from = To,
-                                  to = From,
-                                  type = subscribe},
-                    ejabberd_router:route(To, From, Subscribe),
+                    roster_add(To, From),
+                    send_presence(To, From, subscribed),
+                    send_presence(To, From, subscribe),
                     set_invitee(LServer, Token, From),
                     true;
                 false ->
@@ -454,18 +496,108 @@ handle_pre_auth_token([El | Els], #jid{luser = LUser, lserver = LServer} = To, F
             handle_pre_auth_token(Els, To, From)
     end.
 
-%%--------------------------------------------------------------------
-%%| test API
--ifdef(TEST).
-get_invite(Host, Token) ->
-    db_call(Host, get_invite, [Host, Token]).
+-spec stream_feature_register([xmpp_element()], binary()) -> [xmpp_element()].
+stream_feature_register(Acc, Host) ->
+    case mod_invites_opt:access_create_account(Host) of
+        none ->
+            Acc;
+        _ ->
+            [#feature_register_ibr_token{} | Acc]
+    end.
 
-is_token_valid(Host, Token) ->
-    is_token_valid(Host, Token, {<<>>, Host}).
--endif.
+c2s_unauthenticated_packet(#{invite := Invite} = State,
+                           #iq{type = get, sub_els = [_]} = IQ) ->
+    %% User requests registration form after processing token
+    ?try_subtag(IQ,
+                #register{},
+                fun(Register) ->
+                   #{server := Server} = State,
+                   IQ1 = xmpp:set_els(IQ, [Register]),
+                   User = Invite#invite_token.account_name,
+                   IQ2 = xmpp:set_from_to(IQ1, jid:make(User, Server), jid:make(Server)),
+                   ResIQ = mod_register:process_iq(IQ2),
+                   ResIQ1 = xmpp:set_from_to(ResIQ, jid:make(Server), undefined),
+                   {stop, ejabberd_c2s:send(State, ResIQ1)}
+                end);
+c2s_unauthenticated_packet(#{invite := Invite, server := Server} = State,
+                           #iq{type = set, sub_els = [_]} = IQ) ->
+    %% Process registration request after processing token
+    ?try_subtag(IQ,
+                #register{},
+                fun (Register) ->
+                        case check_captcha(mod_register_opt:captcha_protected(Server), Register, IQ) of
+                            {ok, {Username, Password}} ->
+                                Token = Invite#invite_token.token,
+                                #{ip := IP} = State,
+                                {Address, _} = IP,
+                                case try_register(Token,
+                                                  Username,
+                                                  Server,
+                                                  Password,
+                                                  IQ,
+                                                  Address)
+                                of
+                                    #iq{type = result} = ResIQ ->
+                                        set_invitee(Server,
+                                                    Invite#invite_token.token,
+                                                    jid:make(Username, Server)),
+                                        NewInvite = get_invite(Server, Invite#invite_token.token),
+                                        ResState = State#{invite => NewInvite},
+                                        maybe_create_mutual_subscription(NewInvite),
+                                        {stop, ejabberd_c2s:send(ResState, ResIQ)};
+                                    #iq{type = error} = ResIQ ->
+                                        {stop, ejabberd_c2s:send(State, ResIQ)}
+                                end;
+                            {error, ResIQ} ->
+                        {stop, ejabberd_c2s:send(State, ResIQ)}
+end
+                end);
+c2s_unauthenticated_packet(State, #iq{type = set, sub_els = [_]} = IQ) ->
+    %% Check for preauth token and process it
+    ?try_subtag(IQ,
+                #preauth{},
+                fun(#preauth{token = Token}) ->
+                   #{server := Server} = State,
+                   IQ1 = xmpp:set_from_to(IQ, jid:make(<<>>), jid:make(Server)),
+                   {ResState, ResIQ} = process_token(State, Token, IQ1),
+                   ResIQ1 = xmpp:set_from_to(ResIQ, jid:make(Server), undefined),
+                   {stop, ejabberd_c2s:send(ResState, ResIQ1)}
+                end,
+                fun() ->
+                   ?try_subtag(IQ,
+                               #register{},
+                               fun (#register{username = User, password = Password})
+                                       when is_binary(User), is_binary(Password) ->
+                                       #{server := Server} = State,
+                                       case is_reserved(Server, <<>>, User) of
+                                           true ->
+                                               ResIQ =
+                                                   make_stripped_error(IQ,
+                                                                       #register{},
+                                                                       xmpp:err_not_allowed()),
+                                               {stop, ejabberd_c2s:send(State, ResIQ)};
+                                           false ->
+                                               State
+                                       end;
+                                   (_) ->
+                                       State
+                               end)
+                end);
+c2s_unauthenticated_packet(State, _) ->
+    State.
 
 %%--------------------------------------------------------------------
 %%| helpers
+get_invite(Host, Token) ->
+    db_call(Host, get_invite, [Host, Token]).
+
+is_reserved(Host, Token, User) ->
+    db_call(Host, is_reserved, [Host, Token, User]).
+
+-spec is_token_valid(binary(), binary()) -> boolean().
+is_token_valid(Host, Token) ->
+    is_token_valid(Host, Token, {<<>>, Host}).
+
 -spec is_token_valid(binary(), binary(), {binary(), binary()}) -> boolean().
 is_token_valid(Host, Token, Inviter) ->
     db_call(Host, is_token_valid, [Host, Token, Inviter]).
@@ -476,11 +608,11 @@ set_invitee(Host, Token, InviteeJid) ->
             set_invitee,
             [Host,
              Token,
-             jid:to_string(
+             jid:encode(
                  jid:remove_resource(InviteeJid))]).
 
 create_roster_invite(Host, Inviter) ->
-    create_roster_invite(Host, Inviter, undefined).
+    create_roster_invite(Host, Inviter, <<>>).
 
 create_roster_invite(Host, Inviter, AccountName) ->
     create_invite(roster_only, Host, Inviter, AccountName).
@@ -502,6 +634,8 @@ create_invite(Type, Host, Inviter, AccountName) ->
             {error, Error}
     end.
 
+check_account_name(<<>>, _) ->
+    <<>>;
 check_account_name(error, _) ->
     {error, account_name_invalid};
 check_account_name(_, error) ->
@@ -551,13 +685,7 @@ invite_token(Type, Host, Inviter, AccountName0) ->
     maybe_throw(check_max_invites(Type, Host, Inviter)),
     Token = p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT),
     AccountName =
-        case AccountName0 of
-            undefined ->
-                undefined;
-            _ ->
-                AccountName1 = jid:nodeprep(AccountName0),
-                maybe_throw(check_account_name(AccountName1, Host))
-        end,
+        maybe_throw(check_account_name(jid:nodeprep(AccountName0), Host)),
     set_token_expires(#invite_token{token = Token,
                                     inviter = Inviter,
                                     type = Type,
@@ -570,7 +698,7 @@ token_uri(#invite_token{type = account_only,
                         inviter = {_User, Host}}) ->
     Invitee =
         case AccountName of
-            undefined ->
+            <<>> ->
                 Host;
             _ ->
                 <<AccountName/binary, "@", Host/binary>>
@@ -579,16 +707,12 @@ token_uri(#invite_token{type = account_only,
 token_uri(#invite_token{type = account_subscription,
                         token = Token,
                         inviter = {User, Host}}) ->
-    Inviter =
-        jid:to_string(
-            jid:make(User, Host)),
+    Inviter = jid:to_string(jid:make(User, Host)),
     <<"xmpp:", Inviter/binary, "?roster;preauth=", Token/binary, ";ibr=y">>;
 token_uri(#invite_token{type = roster_only,
                         token = Token,
                         inviter = {User, Host}}) ->
-    Inviter =
-        jid:to_string(
-            jid:make(User, Host)),
+    Inviter = jid:to_string(jid:make(User, Host)),
     <<"xmpp:", Inviter/binary, "?roster;preauth=", Token/binary>>.
 
 db_call(Host, Fun, Args) ->
@@ -662,3 +786,109 @@ reason_to_text(user_exists) ->
     "User already exists";
 reason_to_text(num_invites_exceeded) ->
     "Maximum number of invites reached".
+
+make_stripped_error(IQ, SubTag, Err) ->
+    xmpp:make_error(
+        xmpp:remove_subtag(IQ, SubTag), Err).
+
+maybe_gen_sid(<<>>) ->
+    p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT);
+maybe_gen_sid(SID) ->
+    SID.
+
+roster_add(UserJID, RosterItemJID) ->
+    RosterItem =
+        #roster_item{jid = RosterItemJID,
+                     subscription = from,
+                     ask = subscribe},
+    mod_roster:set_item_and_notify_clients(UserJID, RosterItem, true).
+
+send_presence(From, To, Type) ->
+    Presence = #presence{from = From,
+                         to = To,
+                         type = Type},
+    ejabberd_router:route(From, To, Presence).
+
+maybe_create_mutual_subscription(#invite_token{inviter = {User, _Server}, type = Type})
+  when User == <<>>; % server token
+       Type /= account_subscription ->
+    noop;
+maybe_create_mutual_subscription(#invite_token{inviter = {User, Server}, invitee = Invitee}) ->
+    InviterJID = jid:make(User, Server),
+    InviteeJID = jid:decode(Invitee),
+    roster_add(InviterJID, InviteeJID),
+    roster_add(InviteeJID, InviterJID),
+    send_presence(InviteeJID, InviterJID, subscribe),
+    send_presence(InviterJID, InviteeJID, subscribed),
+    send_presence(InviterJID, InviteeJID, subscribe),
+    send_presence(InviteeJID, InviterJID, subscribed),
+    ok.
+
+process_token(#{server := Host} = State, Token, #iq{lang = Lang} = IQ) ->
+    ?DEBUG("checking token (~s): ~s", [Host, Token]),
+    case is_token_valid(Host, Token) of
+        true ->
+            Invite = get_invite(Host, Token),
+            NewState = State#{invite => Invite},
+            {NewState, xmpp:make_iq_result(IQ)};
+        false ->
+            Text = ?T("The token provided is either invalid or expired."),
+            {State, make_stripped_error(IQ, #preauth{}, xmpp:err_item_not_found(Text, Lang))}
+    end.
+
+try_register(Token,
+             User,
+             Server,
+             Password,
+             #iq{lang = Lang} = IQ,
+             Source) ->
+    case {jid:nodeprep(User), not is_reserved(Server, Token, User)} of
+        {error, _} ->
+            Err = xmpp:err_jid_malformed(
+                      mod_register:format_error(invalid_jid), Lang),
+            make_stripped_error(IQ, #register{}, Err);
+        {_, true} ->
+            case mod_register:try_register(User, Server, Password, Source, ?MODULE, Lang) of
+                ok ->
+                    xmpp:make_iq_result(IQ);
+                {error, Error} ->
+                    make_stripped_error(IQ, #register{}, Error)
+            end
+    end.
+
+check_captcha(true, #register{xdata =  X}, #iq{lang = Lang} = IQ) ->
+    XdataC = xmpp_util:set_xdata_field(
+               #xdata_field{
+                  var = <<"FORM_TYPE">>,
+                  type = hidden, values = [?NS_CAPTCHA]},
+               X),
+    case ejabberd_captcha:process_reply(XdataC) of
+        ok ->
+            case process_xdata_submit(X) of
+                {ok, _} = Result ->
+                    Result;
+                _ ->
+                    Txt = ?T("Incorrect data form"),
+                    make_stripped_error(IQ, #register{}, xmpp:err_bad_request(Txt, Lang))
+            end;
+        {error, malformed} ->
+            Txt = ?T("Incorrect CAPTCHA submit"),
+            make_stripped_error(IQ, #register{}, xmpp:err_bad_request(Txt, Lang));
+        _ ->
+            ErrText = ?T("The CAPTCHA verification has failed"),
+            make_stripped_error(IQ, #register{}, xmpp:err_not_allowed(ErrText, Lang))
+    end;
+check_captcha(false, #register{username = Username, password = Password}, _IQ)
+  when is_binary(Username), is_binary(Password) ->
+    {ok, {Username, Password}};
+check_captcha(_IsCaptchaEnabled, _Register, IQ) ->
+    ResIQ = make_stripped_error(IQ, #register{}, xmpp:err_bad_request()),
+    {error, ResIQ}.
+
+process_xdata_submit(X) ->
+    case {xdata_field(<<"username">>, X, undefined), xdata_field(<<"password">>, X, undefined)} of
+        {UndefU, UndefP} when UndefU == undefined; UndefP == undefined ->
+            error;
+        {Username, Password} ->
+            {ok, {Username, Password}}
+    end.
