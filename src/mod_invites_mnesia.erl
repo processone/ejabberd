@@ -28,7 +28,8 @@
 -behaviour(mod_invites).
 
 -export([cleanup_expired/1, create_invite/1, expire_tokens/2, get_invite/2, init/2,
-         is_token_valid/3, num_account_invites/2, remove_user/2, set_invitee/3]).
+         is_reserved/3, is_token_valid/3, list_invites/1, num_account_invites/2,
+         remove_user/2, set_invitee/3]).
 
 -include("mod_invites.hrl").
 
@@ -78,15 +79,30 @@ init(_Host, _Opts) ->
                             {attributes, record_info(fields, invite_token)},
                             {index, [#invite_token.inviter]}]).
 
-is_token_valid(_Host, Token, Inviter) ->
+is_reserved(_Host, Token, User) ->
+    Ts = erlang:timestamp(),
+    [T
+     || T <- mnesia:dirty_all_keys(invite_token),
+        not is_expired(I = hd(mnesia:dirty_read(invite_token, T)), Ts),
+        I#invite_token.token /= Token,
+        I#invite_token.invitee == <<>>,
+        I#invite_token.account_name == User]
+    =/= [].
+
+is_token_valid(Host, Token, Scope) ->
     case mnesia:dirty_read(invite_token, Token) of
-        [Invite = #invite_token{invitee = <<>>, inviter = Inviter}] ->
+        [Invite = #invite_token{invitee = <<>>, inviter = {_, Host} = Inviter}]
+            when Scope == Inviter; Scope == {<<>>, Host} ->
             not is_expired(Invite, erlang:timestamp());
-        [#invite_token{inviter = _WrongOwner}] ->
+        [#invite_token{}] ->
             false;
         [] ->
             false
     end.
+
+list_invites(Host) ->
+    [Invite || Token <- mnesia:dirty_all_keys(invite_token),
+               element(2,(Invite = hd(mnesia:dirty_read(invite_token, Token)))#invite_token.inviter) == Host].
 
 num_account_invites(User, Server) ->
     length([I
