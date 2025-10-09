@@ -121,6 +121,9 @@ export CONTRIB_MODULES_CONF_DIR
 export ERL_LIBS
 export SCRIPT_DIR
 
+# Only required for Erlang/OTP 25:
+export ERL_FLAGS="$ERL_FLAGS -enable-feature maybe_expr"
+
 set_dist_client()
 {
     [ -n "$ERL_DIST_PORT" ] && ERLANG_OPTS="$ERLANG_OPTS -dist_listen false"
