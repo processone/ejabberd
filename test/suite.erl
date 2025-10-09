@@ -214,7 +214,7 @@ setup_ejabberd_lib_path(Config) ->
 	    ok
     end.
 
-%% Read environment variable CT_DB=mysql to limit the backends to test.
+%% Read environment variable CT_BACKENDS=mysql to limit the backends to test.
 %% You can thus limit the backend you want to test with:
 %%  CT_BACKENDS=mysql rebar ct suites=ejabberd
 get_config_backends() ->
@@ -229,7 +229,7 @@ get_config_backends() ->
 		  end,
     application:load(ejabberd),
     EnabledBackends = application:get_env(ejabberd, enabled_backends, EnvBackends),
-    misc:intersection(EnvBackends, [mnesia, ldap, extauth|EnabledBackends]).
+    misc:intersection(EnvBackends, [agnostic, mnesia, ldap, extauth|EnabledBackends]).
 
 process_config_tpl(Content, []) ->
     Content;

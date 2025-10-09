@@ -71,7 +71,13 @@ end_per_suite(_Config) ->
     application:stop(ejabberd).
 
 init_per_group(Group, Config) ->
-    case lists:member(Group, ?BACKENDS) of
+    BackendOfGroup = case Group of
+                         component -> agnostic;
+                         no_db -> agnostic;
+                         s2s -> agnostic;
+                         _ -> Group
+                     end,
+    case lists:member(BackendOfGroup, ?BACKENDS) of
         false ->
             %% Not a backend related group, do default init:
             do_init_per_group(Group, Config);
@@ -82,7 +88,7 @@ init_per_group(Group, Config) ->
                     do_init_per_group(Group, Config);
                 Backends ->
                     %% Skipped backends that were not explicitly enabled
-		    case lists:member(Group, Backends) of
+		    case lists:member(BackendOfGroup, Backends) of
 			true ->
 			    do_init_per_group(Group, Config);
 			false ->

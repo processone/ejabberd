@@ -23,8 +23,20 @@ set -e
 set -u
 
 myself=${0##*/}
-architectures='x64 arm64'
 iteration=1
+platform=$(gcc -dumpmachine)
+case $platform in
+x86_64*)
+        architectures='x64'
+        ;;
+aarch64*)
+        architectures='arm64'
+        ;;
+*)
+        error "Unsupported architecture: $platform"
+        exit 1
+        ;;
+esac
 
 usage()
 {

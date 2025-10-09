@@ -1,0 +1,153 @@
+name: 'Manage Database'
+
+inputs:
+  for:
+    default: ""
+    description: 'One or more databases to manage:
+                  mysql, pgsql, redis, mssql'
+
+  do:
+    default: ""
+    description: 'One or more tasks to do:
+                  install, start, user, create, drop, dump'
+
+  dump-suffix:
+    default: ""
+    description: 'Suffix to append to the dump file name'
+
+  mssql-schema:
+    default: ""
+    description: 'SQL schema for the MSSQL database:
+                  singlehost or multihost'
+
+runs:
+  using: "composite"
+  steps:
+
+    ############################################################# Install #####
+
+    - if: contains(inputs.for, 'pgsql') && contains(inputs.do, 'install')
+      shell: sh
+      run: |
+        sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
+        sudo rm -f /var/lib/man-db/auto-update || echo ok
+        sudo apt-get -q -y install postgresql
+
+    - if: contains(inputs.for, 'redis') && contains(inputs.do, 'install')
+      shell: sh
+      run: |
+        sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
+        sudo rm -f /var/lib/man-db/auto-update || echo ok
+        sudo apt-get -q -y install redis-server
+
+    - if: contains(inputs.for, 'mssql') && contains(inputs.do, 'install')
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: tdsodbc
+
+    - if: contains(inputs.for, 'mssql') && contains(inputs.do, 'install')
+      shell: sh
+      run: |
+        docker run -d -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=ejabberd_Test1" \
+                   -v $(pwd)/test/docker/db/mssql/initdb/initdb_mssql.sql:/initdb_mssql.sql:ro \
+                   -v $(pwd)/sql/mssql.sql:/mssql.sql:ro \
+                   -v $(pwd)/sql/mssql.new.sql:/mssql.new.sql:ro \
+                   -p 1433:1433 --name ejabberd-mssql \
+                   "mcr.microsoft.com/mssql/server:2019-latest"
+        sleep 10
+        docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd \
+               -C -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
+
+    - if: contains(inputs.for, 'mssql') && contains(inputs.do, 'install')
+          && inputs.mssql-schema == 'singlehost'
+      shell: sh
+      run: |
+        docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd \
+               -C -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test \
+               -i /mssql.sql
+
+    - if: contains(inputs.for, 'mssql') && contains(inputs.do, 'install')
+          && inputs.mssql-schema == 'multihost'
+      shell: sh
+      run: |
+        docker exec ejabberd-mssql /opt/mssql-tools18/bin/sqlcmd \
+               -C -U SA -P ejabberd_Test1 -S localhost -d ejabberd_test \
+               -i /mssql.new.sql
+
+    ############################################################### Start #####
+
+    - if: contains(inputs.for, 'mysql') && contains(inputs.do, 'start')
+      shell: sh
+      run: |
+        sudo systemctl start mysql.service
+
+    - if: contains(inputs.for, 'pgsql') && contains(inputs.do, 'start')
+      shell: sh
+      run: |
+        sudo systemctl start postgresql.service
+        pg_isready
+
+    ################################################################ User #####
+
+    - if: contains(inputs.for, 'mysql') && contains(inputs.do, 'user')
+      shell: sh
+      run: |
+        mysql -u root -proot -e "CREATE USER 'ejabberd_test'@'localhost'
+                                 IDENTIFIED BY 'ejabberd_test';"
+
+    - if: contains(inputs.for, 'pgsql') && contains(inputs.do, 'user')
+      shell: sh
+      run: |
+        sudo -u postgres psql -c "CREATE USER ejabberd_test
+                                  WITH PASSWORD 'ejabberd_test';"
+
+    ################################################################ Dump #####
+
+    - if: contains(inputs.for, 'mysql') && contains(inputs.do, 'dump')
+      shell: sh
+      run: |
+        sudo mysqldump -u root -proot ejabberd_test \
+             > mysql-${{ inputs.dump-suffix }}.sql
+
+    - if: contains(inputs.for, 'pgsql') && contains(inputs.do, 'dump')
+      shell: sh
+      run: |
+        sudo -u postgres pg_dump ejabberd_test \
+             > pgsql-${{ inputs.dump-suffix }}.sql
+
+    ################################################################ Drop #####
+
+    - if: contains(inputs.for, 'mysql') && contains(inputs.do, 'drop')
+      shell: sh
+      run: |
+        mysql -u root -proot -e "DROP DATABASE ejabberd_test;"
+
+    - if: contains(inputs.for, 'pgsql') && contains(inputs.do, 'drop')
+      shell: sh
+      run: |
+        sudo -u postgres psql -c "DROP DATABASE ejabberd_test;"
+
+    ############################################################## Create #####
+
+    - if: contains(inputs.for, 'mysql') && contains(inputs.do, 'create')
+      shell: sh
+      run: |
+        mysql -u root -proot -e "CREATE DATABASE ejabberd_test;"
+        mysql -u root -proot -e "GRANT ALL ON ejabberd_test.*
+                                 TO 'ejabberd_test'@'localhost';"
+
+    - if: contains(inputs.for, 'pgsql') && contains(inputs.do, 'create')
+      shell: sh
+      run: |
+        sudo -u postgres psql -c "CREATE DATABASE ejabberd_test;"
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES
+                                  ON DATABASE ejabberd_test TO ejabberd_test;"
+        sudo -u postgres psql -c "GRANT ALL ON SCHEMA public TO ejabberd_test;"
+        sudo -u postgres psql -c "ALTER DATABASE ejabberd_test
+                                  OWNER TO ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
+                                                TABLES IN SCHEMA public
+                                                TO ejabberd_test;"
+        sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
+                                                SEQUENCES IN SCHEMA public
+                                                TO ejabberd_test;"

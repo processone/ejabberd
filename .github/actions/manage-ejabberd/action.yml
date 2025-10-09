@@ -1,0 +1,178 @@
+name: 'Manage ejabberd'
+
+inputs:
+  for:
+    default: ""
+    description: 'Release method, one of:
+                  prod, dev, install, run, deb'
+  do:
+    default: ""
+    description: 'One or more tasks to perform:
+                  deploy, no_acme, no_tls,
+                  start, register, update_sql, stop,
+                  logs, check'
+  username:
+    default: "user1"
+    description: 'Username part of the account JID'
+  host:
+    default: "localhost"
+    description: 'Host part of the account JID'
+  tool:
+    default: "rebar3"
+    description: 'Build tool to use:
+                  rebar or rebar3 (only relevant to make rebar2)'
+  rel_name_vsn:
+    default: ""
+    description: 'Base name of installer files'
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Path Definitions
+      id: path
+      shell: bash
+      run: |
+        case ${{ inputs.for }} in
+          'prod')
+             BASE="_build/prod/rel/ejabberd"
+             echo "conf=$BASE/conf" >> $GITHUB_OUTPUT
+             echo "logs=$BASE/logs" >> $GITHUB_OUTPUT
+             echo "ectl=$BASE/bin/ejabberdctl" >> $GITHUB_OUTPUT
+             ;;
+          'dev')
+             BASE="_build/dev/rel/ejabberd"
+             echo "conf=$BASE/conf" >> $GITHUB_OUTPUT
+             echo "logs=$BASE/logs" >> $GITHUB_OUTPUT
+             echo "ectl=$BASE/bin/ejabberdctl" >> $GITHUB_OUTPUT
+             ;;
+          'install')
+             BASE="/tmp/ejabberd"
+             echo "conf=$BASE/etc/ejabberd" >> $GITHUB_OUTPUT
+             echo "logs=$BASE/var/log/ejabberd" >> $GITHUB_OUTPUT
+             echo "ectl=$BASE/sbin/ejabberdctl" >> $GITHUB_OUTPUT
+             ;;
+          'deb')
+             BASE="/opt/ejabberd"
+             echo "base=$BASE" >> $GITHUB_OUTPUT
+             echo "conf=$BASE/conf" >> $GITHUB_OUTPUT
+             echo "logs=$BASE/logs" >> $GITHUB_OUTPUT
+             echo "ectl=sudo /opt/${{ inputs.rel_name_vsn }}/bin/ejabberdctl" >> $GITHUB_OUTPUT
+             ;;
+          'run')
+             BASE="$HOME/opt/ejabberd"
+             echo "base=$BASE" >> $GITHUB_OUTPUT
+             echo "conf=$BASE/conf" >> $GITHUB_OUTPUT
+             echo "logs=$BASE/logs" >> $GITHUB_OUTPUT
+             echo "ectl=$HOME/opt/${{ inputs.rel_name_vsn }}/bin/ejabberdctl" >> $GITHUB_OUTPUT
+             ;;
+        esac
+
+    ############################################################## Deploy #####
+
+    - if: contains(inputs.do, 'deploy') &&
+          inputs.for == 'prod' && inputs.tool == 'rebar'
+      shell: sh
+      run: |
+        mkdir -p _build/prod && ln -s `pwd`/rel/ _build/prod/rel
+
+    - if: contains(inputs.do, 'deploy') &&
+          inputs.for == 'dev' && inputs.tool == 'rebar'
+      shell: sh
+      run: |
+        mkdir -p _build/dev && ln -s `pwd`/rel/ _build/dev/rel
+
+    - if: contains(inputs.do, 'deploy') &&
+          (inputs.for == 'prod' ||
+           inputs.for == 'dev' ||
+           inputs.for == 'install')
+      shell: sh
+      run: |
+        make ${{ inputs.for }}
+
+    - if: contains(inputs.do, 'deploy') &&
+          inputs.for == 'deb'
+      shell: sh
+      run: |
+        sudo dpkg -i $(ls -1 *.deb)
+
+    - if: contains(inputs.do, 'deploy') &&
+          inputs.for == 'run'
+      shell: sh
+      run: |
+        ./$(ls -1 *.run)
+
+    ################################################################ ACME #####
+
+    - if: contains(inputs.do, 'no_acme')
+      shell: sh
+      run: |
+        sed -i 's/loglevel/acme:\n  auto: false\nloglevel/g' \
+            ${{ steps.path.outputs.conf }}/ejabberd.yml
+
+    ################################################################# TLS #####
+
+    - if: contains(inputs.do, 'no_tls') &&
+          inputs.for == 'dev'
+      shell: sh
+      run: |
+        sed -i 's/starttls_required: true/starttls_required: false/g' \
+            ${{ steps.path.outputs.conf }}/ejabberd.yml
+
+    ############################################################### Start #####
+
+    - if: contains(inputs.do, 'start')
+      shell: sh
+      run: |
+        ${{ steps.path.outputs.ectl }} start
+        ${{ steps.path.outputs.ectl }} started
+
+    ############################################################ Register #####
+
+    - if: contains(inputs.do, 'register')
+      shell: sh
+      run: |
+        ${{ steps.path.outputs.ectl }} \
+            register ${{ inputs.username }} ${{ inputs.host }} s0mePass
+        ${{ steps.path.outputs.ectl }} \
+            registered_users ${{ inputs.host }} >> registered.log
+        grep -q '${{ inputs.username }}' registered.log
+
+    ########################################################### UpdateSQL #####
+
+    - if: contains(inputs.do, 'update_sql')
+      shell: sh
+      run: |
+        ${{ steps.path.outputs.ectl }} \
+            update_sql
+
+    ################################################################ Stop #####
+
+    - if: contains(inputs.do, 'stop')
+      shell: sh
+      run: |
+        ${{ steps.path.outputs.ectl }} stop
+        ${{ steps.path.outputs.ectl }} stopped
+
+    ################################################################ Logs #####
+
+    - if: contains(inputs.do, 'logs')
+      shell: sh
+      run: |
+        SUDO=sudo
+        [ "${{ inputs.for }}" = "deb" ] || SUDO=""
+        echo "::group::View ejabberd.log"
+        $SUDO cat ${{ steps.path.outputs.logs }}/ejabberd.log
+        echo "::endgroup::"
+        echo "::group::View error.log"
+        $SUDO cat ${{ steps.path.outputs.logs }}/error.log
+        echo "::endgroup::"
+
+    ############################################################### Check #####
+
+    - if: contains(inputs.do, 'check')
+      shell: sh
+      run: |
+        grep -q 'is started' ${{ steps.path.outputs.logs }}/ejabberd.log
+        grep -q 'is stopped' ${{ steps.path.outputs.logs }}/ejabberd.log
+        test $(find ${{ steps.path.outputs.logs }}/ -empty -name error.log)

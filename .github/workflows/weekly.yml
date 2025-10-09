@@ -1,0 +1,195 @@
+name: Weekly
+
+on:
+  schedule:
+    - cron: '30 9 * * 0'
+
+jobs:
+
+  ############################################################### Compile #####
+
+  test:
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        otp: ['25', '26', '27', '28']
+
+    steps:
+
+    - uses: actions/checkout@v5
+
+    - uses: erlef/setup-beam@v1
+      with:
+        otp-version: ${{ matrix.otp }}
+        hexpm-mirrors: |
+          https://cdn.jsdelivr.net/hex
+          https://builds.hex.pm
+
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: libexpat1-dev libgd-dev libpam0g-dev
+                  libsqlite3-dev libwebp-dev libyaml-dev
+
+    - name: Compile
+      run: |
+        ./autogen.sh
+        ./configure --with-rebar=./rebar3 \
+                    --prefix=/tmp/ejabberd \
+                    --enable-all \
+                    --disable-elixir \
+                    --disable-mssql \
+                    --disable-odbc
+        sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
+        make
+
+  ########################################################## Static Tests #####
+
+    - name: Test shell scripts
+      run: |
+        shellcheck ejabberd.init.template
+        shellcheck -x ejabberdctl.template
+        shellcheck .vscode/relive.sh
+        shellcheck rel/setup-dev.sh
+        shellcheck rel/setup-relive.sh
+        shellcheck test/ejabberd_SUITE_data/gencerts.sh
+        shellcheck tools/captcha.sh
+        shellcheck tools/emacs-indent.sh
+        shellcheck tools/generate-doap.sh
+        shellcheck tools/prepare-tr.sh
+        shellcheck tools/rebar3-format.sh
+
+    - run: make hooks
+    - run: make options
+    - run: make xref
+    - run: make dialyzer
+    - run: make test-eunit
+    - run: make elvis
+      if: matrix.otp > '25'
+
+    - run: make install -s
+
+  ######################################################### Dynamic Tests #####
+
+    - name: Check production release
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: deploy, start, stop, check
+
+    - name: Start development release
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: dev
+        do: deploy, no_tls, start, register
+        username: user123
+
+    - name: Run XMPP Interoperability Tests against CI server
+      if: matrix.otp == '27'
+      continue-on-error: true
+      uses: XMPP-Interop-Testing/xmpp-interop-tests-action@v1.6.1
+      with:
+        domain: 'localhost'
+        adminAccountUsername: 'user123'
+        adminAccountPassword: 's0mePass'
+        disabledSpecifications: RFC6121,XEP-0030,XEP-0045,XEP-0054,XEP-0060,
+                                XEP-0080,XEP-0115,XEP-0118,XEP-0215,XEP-0347,
+                                XEP-0363,XEP-0384
+
+    - name: Stop development release
+      if: always()
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: dev
+        do: stop, check
+
+    - name: View production logs
+      if: always()
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: logs
+
+    - name: View development logs
+      if: always()
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: dev
+        do: logs
+
+  ##################################################### Common Test Suite #####
+
+    - name: Prepare database
+      uses: ./.github/actions/manage-database
+      with:
+        for: mysql, pgsql, redis
+        do: install, start, user, create
+
+    - name: Setup multihost SQL schema
+      run: |
+        sed -i 's|new_schema, false|new_schema, true|g' test/suite.erl
+
+    - name: Run tests
+      id: ct
+      run: make test
+
+    - name: Send to coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        DIAGNOSTIC=1 ./rebar3 as test coveralls send
+
+    - name: Check results
+      if: always() && (steps.ct.outcome != 'skipped')
+      id: ctresults
+      run: |
+        [[ -d _build ]] && ln -s _build/test/logs/last/ logs || true
+        ln `find logs/ -name suite.log` logs/suite.log
+        grep 'TEST COMPLETE' logs/suite.log
+        grep -q 'TEST COMPLETE,.* 0 failed' logs/suite.log
+        test $(find logs/ -empty -name error.log)
+
+    - name: View logs
+      if: always()
+      run: |
+        echo "::group::ejabberd.log"
+        find logs/ -name ejabberd.log -exec cat '{}' ';'
+        echo "::endgroup::"
+        echo "::group::error.log"
+        find logs/ -name error.log -exec cat '{}' ';'
+        echo "::endgroup::"
+        echo "::group::exunit.log"
+        find logs/ -name exunit.log -exec cat '{}' ';'
+        echo "::endgroup::"
+        echo "::group::suite.log (only failures)"
+        cat logs/suite.log | awk \
+          'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
+        echo "::endgroup::"
+        echo "::group::suite.log (complete)"
+        cat logs/suite.log
+        echo "::endgroup::"
+
+    - name: Upload CT logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ct-logs-${{ matrix.otp }}
+        path: _build/test/logs
+        retention-days: 14
+
+  ############################################################# Coveralls #####
+
+  cover:
+    needs: test
+    if: always()
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - name: Finish parallel upload to coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        curl -v -k https://coveralls.io/webhook \
+             --header "Content-Type: application/json" \
+             --data '{"repo_name":"$GITHUB_REPOSITORY",
+                      "repo_token":"$GITHUB_TOKEN",
+                      "payload":{"build_num":$GITHUB_RUN_ID,
+                                 "status":"done"}}'
