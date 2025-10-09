@@ -266,7 +266,7 @@ jobs:
         sudo -u postgres psql ejabberd_test -c "GRANT ALL PRIVILEGES ON ALL
                                                 SEQUENCES IN SCHEMA public
                                                 TO ejabberd_test;"
-        sed -i 's|new_schema, false|new_schema, true|g' test/suite.erl
+        sed -i 's|multihost_schema, false|multihost_schema, true|g' test/suite.erl
     - name: Run DB tests on new schema (mssql, mysql, pgsql)
       run: CT_BACKENDS=mssql,mysql,pgsql make test
       id: ctnewschema

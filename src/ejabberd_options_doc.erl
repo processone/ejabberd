@@ -992,23 +992,30 @@ doc() ->
                "bugs. Usually leaving default value of this is option is best, "
                "tweak it only if you know what you are doing. "
                "The default value is '1 minute'.")}},
-     {new_sql_schema,
+     {sql_schema_multihost,
       #{value => "true | false",
+        note => "renamed in 25.xx",
         desc =>
             {?T("Whether to use the "
-                "_`database.md#default-and-new-schemas|new SQL schema`_. "
+                "_`database.md#default-and-new-schemas|multihost SQL schema`_. "
                 "All schemas are located "
                 "at <https://github.com/processone/ejabberd/tree/~s/sql>. "
-                "There are two schemas available. The default legacy schema "
+                "There are two schemas available. The legacy 'singlehost' schema "
                 "stores one XMPP domain into one ejabberd database. "
-                "The 'new' schema can handle several XMPP domains in a "
-                "single ejabberd database. Using this 'new' schema is best when "
+                "The 'multihost' schema can handle several XMPP domains in a "
+                "single ejabberd database. The 'multihost' schema is preferable when "
                 "serving several XMPP domains and/or changing domains from "
                 "time to time. This avoid need to manage several databases and "
                 "handle complex configuration changes. The default depends on "
-                "configuration flag '--enable-new-sql-schema' which is set "
+                "configuration flag '--enable-sql-schema-multihost' which is set "
                 "at compile time."),
              [binary:part(ejabberd_config:version(), {0,5})]}}},
+     {new_sql_schema,
+      #{value => "true | false",
+        note => "obsoleted in 25.xx",
+        desc =>
+            {?T("This option was renamed to _`sql_schema_multihost`_ in ejabberd 25.xx. "
+                "Please update your configuration to use the new option name")}}},
      {update_sql_schema,
       #{value => "true | false",
         note => "updated in 24.06",

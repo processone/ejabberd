@@ -109,7 +109,7 @@ defmodule Ejabberd.MixProject do
                             {config(:debug), :debug_info},
                             {not config(:debug), {:debug_info, false}},
                             {config(:roster_gateway_workaround), {:d, :ROSTER_GATEWAY_WORKAROUND}},
-                            {config(:new_sql_schema), {:d, :NEW_SQL_SCHEMA}}
+                            {config(:multihost_sql_schema), {:d, :MULTIHOST_SQL_SCHEMA}}
                            ], do:
     option
   end

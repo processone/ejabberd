@@ -63,7 +63,7 @@ init_config(Config) ->
 		      MacrosContentTpl,
 		      [{c2s_port, 5222},
 		       {loglevel, 4},
-		       {new_schema, false},
+		       {multihost_schema, false},
 		       {update_sql_schema, true},
 		       {s2s_port, 5269},
 		       {stun_port, 3478},

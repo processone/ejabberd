@@ -656,7 +656,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     SUser = ToString(User),
     SServer = ToString(LServer),
 
-    HostMatch = case ejabberd_sql:use_new_schema() of
+    HostMatch = case ejabberd_sql:use_multihost_schema() of
 		    true ->
 			[<<" and server_host=", SServer/binary>>];
 		    _ ->

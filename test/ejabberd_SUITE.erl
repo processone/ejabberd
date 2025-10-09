@@ -1089,7 +1089,7 @@ update_sql(Host, Config) ->
     end.
 
 schema_suffix(Config) ->
-    case ejabberd_sql:use_new_schema() of
+    case ejabberd_sql:use_multihost_schema() of
         true ->
             case ?config(update_sql, Config) of
                 true ->  ".sql";

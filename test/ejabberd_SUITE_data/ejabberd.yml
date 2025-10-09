@@ -165,7 +165,7 @@ shaper:
 certfiles:
   - CERTFILE
 
-new_sql_schema: NEW_SCHEMA
+sql_schema_multihost: MULTIHOST_SCHEMA
 
 update_sql_schema: UPDATE_SQL_SCHEMA
 

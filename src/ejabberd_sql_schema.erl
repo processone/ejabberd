@@ -49,7 +49,7 @@ start(Host) ->
                                   #sql_schema_info{
                                      db_type = DBType,
                                      db_version = DBVersion,
-                                     new_schema = ejabberd_sql:use_new_schema()}
+                                     multihost_schema = ejabberd_sql:use_multihost_schema()}
                           end),
                     Table = filter_table_sh(SchemaInfo, schema_table()),
                     Res = create_table(Host, SchemaInfo, Table),
@@ -268,7 +268,7 @@ table_exists(Host, Table) ->
       end).
 
 filter_table_sh(SchemaInfo, Table) ->
-    case {SchemaInfo#sql_schema_info.new_schema, Table#sql_table.name} of
+    case {SchemaInfo#sql_schema_info.multihost_schema, Table#sql_table.name} of
         {true, _} ->
             Table;
         {_, <<"route">>} ->
@@ -407,7 +407,7 @@ get_current_version(Host, Module, Schemas) ->
 
 sqlite_table_copy_t(SchemaInfo, Table) ->
     TableName = Table#sql_table.name,
-    NewTableName = <<"new_", TableName/binary>>,
+    NewTableName = <<"multihost_", TableName/binary>>,
     NewTable = Table#sql_table{name = NewTableName},
     create_table_t(SchemaInfo, NewTable),
     Columns = lists:join(<<",">>,
@@ -777,7 +777,7 @@ should_update_schema(Host) ->
         end,
     case ejabberd_option:update_sql_schema() andalso SupportedDB of
         true ->
-            case ejabberd_sql:use_new_schema() of
+            case ejabberd_sql:use_multihost_schema() of
                 true ->
                     lists:member(sql, ejabberd_option:auth_method(Host));
                 false ->
@@ -850,7 +850,7 @@ update_schema(Host, Module, RawSchemas) ->
                           #sql_schema_info{
                              db_type = DBType,
                              db_version = DBVersion,
-                             new_schema = ejabberd_sql:use_new_schema()}
+                             multihost_schema = ejabberd_sql:use_multihost_schema()}
                   end),
             Schemas = preprocess_schemas(SchemaInfo, RawSchemas),
             Version = get_current_version(Host, Module, Schemas),
@@ -954,7 +954,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                    end;
                ({create_index, TableName, Columns1}) ->
                    Columns =
-                       case ejabberd_sql:use_new_schema() of
+                       case ejabberd_sql:use_multihost_schema() of
                            true ->
                                Columns1;
                            false ->
@@ -1005,7 +1005,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                    end;
                ({update_primary_key, TableName, Columns1}) ->
                    Columns =
-                       case ejabberd_sql:use_new_schema() of
+                       case ejabberd_sql:use_multihost_schema() of
                            true ->
                                Columns1;
                            false ->
@@ -1071,7 +1071,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                    end;
                ({drop_index, TableName, Columns1}) ->
                    Columns =
-                       case ejabberd_sql:use_new_schema() of
+                       case ejabberd_sql:use_multihost_schema() of
                            true ->
                                Columns1;
                            false ->
@@ -1160,7 +1160,7 @@ print_schema(SDBType, SDBVersion, SNewSchema) ->
             "false" -> false;
             "true" -> true;
             _ ->
-                io:format("new_schema must be one of the following: "
+                io:format("multihost_schema must be one of the following: "
                           "'0', '1', 'false', 'true'~n"),
                 error
         end,
@@ -1172,7 +1172,7 @@ print_schema(SDBType, SDBVersion, SNewSchema) ->
                 #sql_schema_info{
                    db_type = DBType,
                    db_version = DBVersion,
-                   new_schema = NewSchema},
+                   multihost_schema = NewSchema},
             Mods = ejabberd_config:beams(all),
             lists:foreach(
               fun(Mod) ->

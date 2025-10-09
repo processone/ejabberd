@@ -41,6 +41,7 @@
 	 abort/1,
 	 restart/1,
 	 use_new_schema/0,
+	 use_multihost_schema/0,
 	 sql_query_to_iolist/1,
 	 sql_query_to_iolist/2,
 	 escape/1,
@@ -69,6 +70,8 @@
 
 -export([connecting/2, connecting/3,
 	 session_established/2, session_established/3]).
+
+-deprecated({use_new_schema, 0}).
 
 -ifdef(OTP_BELOW_28).
 -ifdef(OTP_BELOW_26).
@@ -353,8 +356,11 @@ sqlite_file(Host) ->
 	    binary_to_list(File)
     end.
 
+use_multihost_schema() ->
+    ejabberd_option:sql_schema_multihost().
+
 use_new_schema() ->
-    ejabberd_option:new_sql_schema().
+    use_multihost_schema().
 
 -spec get_worker(binary()) -> atom().
 get_worker(Host) ->

@@ -1170,9 +1170,9 @@ get_commands_spec() ->
 			longdesc = "This command is exclusive for the ejabberdctl command-line script, "
 			"don't attempt to execute it using any other API frontend.",
 			note = "added in 24.02",
-			args = [{db_type, string}, {db_version, string}, {new_schema, string}],
+			args = [{db_type, string}, {db_version, string}, {multihost_schema, string}],
                         args_desc = ["Database type: pgsql | mysql | sqlite",
                                      "Your database version: 16.1, 8.2.0...",
-                                     "Use new schema: 0, false, 1 or true"],
+                                     "Use multihost schema: 0, false, 1 or true"],
                         args_example = ["pgsql", "16.1", "true"]}
     ].

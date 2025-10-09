@@ -162,6 +162,7 @@
 -export([sql_prepared_statements/0, sql_prepared_statements/1]).
 -export([sql_query_timeout/0, sql_query_timeout/1]).
 -export([sql_queue_type/0, sql_queue_type/1]).
+-export([sql_schema_multihost/0]).
 -export([sql_server/0, sql_server/1]).
 -export([sql_ssl/0, sql_ssl/1]).
 -export([sql_ssl_cafile/0, sql_ssl_cafile/1]).
@@ -1103,6 +1104,10 @@ sql_queue_type() ->
 -spec sql_queue_type(global | binary()) -> 'file' | 'ram'.
 sql_queue_type(Host) ->
     ejabberd_config:get_option({sql_queue_type, Host}).
+
+-spec sql_schema_multihost() -> boolean().
+sql_schema_multihost() ->
+    ejabberd_config:get_option({sql_schema_multihost, global}).
 
 -spec sql_server() -> binary().
 sql_server() ->

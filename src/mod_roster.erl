@@ -1192,7 +1192,7 @@ import_stop(_LServer, _DBType) ->
     ok.
 
 row_length() ->
-    case ejabberd_sql:use_new_schema() of
+    case ejabberd_sql:use_multihost_schema() of
         true -> 10;
         false -> 9
     end.
