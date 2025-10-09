@@ -26,10 +26,11 @@ on:
 
 jobs:
 
+  ################################################################ Rebars #####
+
   rebars:
-    name: Rebars
+    runs-on: ubuntu-24.04-arm
     strategy:
-      fail-fast: false
       matrix:
         otp: ['25', '26', '27', '28']
         rebar: ['rebar', 'rebar3']
@@ -38,7 +39,6 @@ jobs:
           rebar: 'rebar'
         - otp: '28'
           rebar: 'rebar'
-    runs-on: ubuntu-24.04
     container:
       image: public.ecr.aws/docker/library/erlang:${{ matrix.otp }}
 
@@ -46,18 +46,8 @@ jobs:
 
     - uses: actions/checkout@v5
 
-    - name: Get old compatible Rebar binaries
-      if: matrix.otp < 24
-      run: |
-        rm rebar
-        rm rebar3
-        wget https://github.com/processone/ejabberd/raw/21.12/rebar
-        wget https://github.com/processone/ejabberd/raw/21.12/rebar3
-        chmod +x rebar
-        chmod +x rebar3
-
     - name: Get recent compatible Rebar binaries
-      if: matrix.otp > 23 && matrix.otp < 25
+      if: matrix.otp < 25
       run: |
         rm rebar
         rm rebar3
@@ -69,20 +59,17 @@ jobs:
     - name: Prepare libraries
       run: |
         apt-get -qq update
-        apt-get purge -y libgd3 nginx
-        apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
-                            libsqlite3-dev libwebp-dev libyaml-dev
+        apt-get -q -y install libexpat1-dev libgd-dev libpam0g-dev \
+                              libsqlite3-dev libwebp-dev libyaml-dev
 
-    - name: Cache Hex.pm
+    - name: Cache rebar3
+      if: matrix.rebar == 'rebar3'
       uses: actions/cache@v4
       with:
         path: |
           ~/.cache/rebar3/
-        key: ${{matrix.otp}}-${{hashFiles('rebar.config')}}
-
-    - name: Unlock eredis dependency
-      if: matrix.rebar == 'rebar3' && matrix.otp < 21
-      run: rebar3 unlock eredis
+          _build/default/lib/
+        key: runtime-${{ matrix.otp }}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
 
     - name: Compile
       run: |
@@ -91,94 +78,47 @@ jobs:
                     --prefix=/tmp/ejabberd \
                     --with-min-erlang=9.0.5 \
                     --enable-all \
-                    --disable-elixir \
-                    --disable-tools \
-                    --disable-odbc
+                    --disable-elixir
         make
 
+    - run: make hooks
+    - run: make options
     - run: make xref
-
     - run: make dialyzer
+    - run: make elvis
+      if: matrix.otp > '25' && matrix.rebar == 'rebar3'
 
-    - name: Prepare rel (rebar2)
-      if: matrix.rebar == 'rebar'
-      run: |
-        mkdir -p _build/prod && ln -s `pwd`/rel/ _build/prod/rel
-        mkdir -p _build/dev  && ln -s `pwd`/rel/ _build/dev/rel
+    - name: Production
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: deploy, start, register, stop, logs, check
+        tool: ${{ matrix.rebar }}
+        username: user1
 
-    - name: Run rel
-      run: |
-        make rel
-        _build/prod/rel/ejabberd/bin/ejabberdctl start \
-          && _build/prod/rel/ejabberd/bin/ejabberdctl started
-        _build/prod/rel/ejabberd/bin/ejabberdctl register user1 localhost s0mePass
-        _build/prod/rel/ejabberd/bin/ejabberdctl registered_users localhost > registered.log
-        _build/prod/rel/ejabberd/bin/ejabberdctl stop \
-          && _build/prod/rel/ejabberd/bin/ejabberdctl stopped
+    - name: Development
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: dev
+        do: deploy, start, register, stop, logs, check
+        tool: ${{ matrix.rebar }}
+        username: user2
 
-    - name: Run dev
-      run: |
-        make dev
-        _build/dev/rel/ejabberd/bin/ejabberdctl start \
-          && _build/dev/rel/ejabberd/bin/ejabberdctl started
-        _build/dev/rel/ejabberd/bin/ejabberdctl register user2 localhost s0mePass
-        _build/dev/rel/ejabberd/bin/ejabberdctl registered_users localhost >> registered.log
-        _build/dev/rel/ejabberd/bin/ejabberdctl stop \
-          && _build/dev/rel/ejabberd/bin/ejabberdctl stopped
+    - name: Installed
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: install
+        do: deploy, start, register, stop, logs, check
+        tool: ${{ matrix.rebar }}
+        username: user3
 
-    - name: Run install
-      run: |
-        make install
-        /tmp/ejabberd/sbin/ejabberdctl start \
-          && /tmp/ejabberd/sbin/ejabberdctl started
-        /tmp/ejabberd/sbin/ejabberdctl register user3 localhost s0mePass
-        /tmp/ejabberd/sbin/ejabberdctl registered_users localhost >> registered.log
-        /tmp/ejabberd/sbin/ejabberdctl stop \
-          && /tmp/ejabberd/sbin/ejabberdctl stopped
-
-    - name: View logs
-      run: |
-        echo "===> Registered:"
-        cat registered.log
-        echo "===> Prod:"
-        cat _build/prod/rel/ejabberd/logs/*
-        echo "===> Dev:"
-        cat _build/dev/rel/ejabberd/logs/*
-        echo "===> Install:"
-        cat /tmp/ejabberd/var/log/ejabberd/*
-
-    - name: Check logs
-      run: |
-        grep -q '^user1$' registered.log
-        grep -q '^user2$' registered.log
-        grep -q '^user3$' registered.log
-        grep -q 'is started' _build/prod/rel/ejabberd/logs/ejabberd.log
-        grep -q 'is stopped' _build/prod/rel/ejabberd/logs/ejabberd.log
-        test $(find _build/prod/rel/ -empty -name error.log)
-        grep -q 'is started' _build/dev/rel/ejabberd/logs/ejabberd.log
-        grep -q 'is stopped' _build/dev/rel/ejabberd/logs/ejabberd.log
-        test $(find _build/dev/rel/ -empty -name error.log)
-        grep -q 'is started' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        grep -q 'is stopped' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        test $(find /tmp/ejabberd/var/log/ejabberd/ -empty -name error.log)
-
-    - name: View logs failures
-      if: always()
-      run: |
-        cat _build/prod/rel/ejabberd/logs/ejabberd.log
-        cat _build/prod/rel/ejabberd/logs/error.log
-        cat _build/dev/rel/ejabberd/logs/ejabberd.log
-        cat _build/dev/rel/ejabberd/logs/error.log
-        cat /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        cat /tmp/ejabberd/var/log/ejabberd/error.log
+  ####################################################### Rebar3 + Elixir #####
 
   rebar3-elixir:
-    name: Rebar3+Elixir
+    runs-on: ubuntu-24.04-arm
     strategy:
-      fail-fast: false
       matrix:
-        elixir: ['1.14', '1.15', '1.16', '1.17', '1.18']
-    runs-on: ubuntu-24.04
+        elixir: ['1.14', '1.18']
     container:
       image: public.ecr.aws/docker/library/elixir:${{ matrix.elixir }}
 
@@ -189,26 +129,26 @@ jobs:
     - name: Prepare libraries
       run: |
         apt-get -qq update
-        apt-get -y purge libgd3 nginx
-        apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
-                            libsqlite3-dev libwebp-dev libyaml-dev
+        apt-get -q -y install libexpat1-dev libgd-dev libpam0g-dev \
+                              libsqlite3-dev libwebp-dev libyaml-dev
 
     - name: Enable Module.Example and an Elixir dependency
       run: |
-        sed -i "s|^modules:|modules:\n  'Ejabberd.Module.Example': {}|g" ejabberd.yml.example
+        sed -i "s|^modules:|modules:\n  'Ejabberd.Module.Example': {}|g" \
+                ejabberd.yml.example
         cat ejabberd.yml.example
         sed -i 's|^{deps, \[\(.*\)|{deps, [{decimal, ".*", {git, "https://github.com/ericmj/decimal", {branch, "main"}}},\n \1|g' rebar.config
         cat rebar.config
 
-    - name: Cache Hex.pm
+    - name: Cache hex.pm
       uses: actions/cache@v4
       with:
         path: |
           ~/.cache/rebar3/
-        key: ${{matrix.elixir}}-${{hashFiles('rebar.config')}}
+        key: runtime-${{matrix.elixir}}-${{hashFiles('rebar.config')}}
 
     - name: Install Hex and Rebar3 manually on older Elixir
-      if: matrix.elixir <= '1.14'
+      if: matrix.elixir < '1.15'
       run: |
         mix local.hex --force
         mix local.rebar --force
@@ -218,90 +158,45 @@ jobs:
         ./autogen.sh
         ./configure --with-rebar=./rebar3 \
                     --prefix=/tmp/ejabberd \
-                    --enable-all \
-                    --disable-odbc
-        make
+                    --enable-all
+        make scripts deps
+        ./rebar3 eunit --verbose
 
+    - run: make hooks
+    - run: make options
     - run: make xref
+    #- run: make dialyzer
+    - run: make elvis
+      if: matrix.otp > '25'
 
-    - name: Run rel
-      run: |
-        make rel
-        _build/prod/rel/ejabberd/bin/ejabberdctl start \
-          && _build/prod/rel/ejabberd/bin/ejabberdctl started
-        _build/prod/rel/ejabberd/bin/ejabberdctl register user1 localhost s0mePass
-        _build/prod/rel/ejabberd/bin/ejabberdctl registered_users localhost > registered.log
-        _build/prod/rel/ejabberd/bin/ejabberdctl stop \
-          && _build/prod/rel/ejabberd/bin/ejabberdctl stopped
+    - name: Production
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: deploy, start, register, stop, logs, check
+        username: user1
 
-    - name: Run dev
-      run: |
-        make dev
-        _build/dev/rel/ejabberd/bin/ejabberdctl start \
-          && _build/dev/rel/ejabberd/bin/ejabberdctl started
-        _build/dev/rel/ejabberd/bin/ejabberdctl register user2 localhost s0mePass
-        _build/dev/rel/ejabberd/bin/ejabberdctl registered_users localhost >> registered.log
-        _build/dev/rel/ejabberd/bin/ejabberdctl stop \
-          && _build/dev/rel/ejabberd/bin/ejabberdctl stopped
+    - name: Release
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: dev
+        do: deploy, start, register, stop, logs, check
+        username: user2
 
-    - name: Run install
-      run: |
-        make install
-        /tmp/ejabberd/sbin/ejabberdctl start \
-          && /tmp/ejabberd/sbin/ejabberdctl started
-        /tmp/ejabberd/sbin/ejabberdctl register user3 localhost s0mePass
-        /tmp/ejabberd/sbin/ejabberdctl registered_users localhost >> registered.log
-        /tmp/ejabberd/sbin/ejabberdctl stop \
-          && /tmp/ejabberd/sbin/ejabberdctl stopped
+    - name: Installed
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: install
+        do: deploy, start, register, stop, logs, check
+        username: user3
 
-    - name: View logs
-      if: always()
-      run: |
-        echo "===> Registered:"
-        cat registered.log
-        echo "===> Prod:"
-        cat _build/prod/rel/ejabberd/logs/*
-        echo "===> Dev:"
-        cat _build/dev/rel/ejabberd/logs/*
-        echo "===> Install:"
-        cat /tmp/ejabberd/var/log/ejabberd/*
-
-    - name: Check logs
-      if: always()
-      run: |
-        grep -q '^user1$' registered.log
-        grep -q '^user2$' registered.log
-        grep -q '^user3$' registered.log
-        grep -q 'is started' _build/prod/rel/ejabberd/logs/ejabberd.log
-        grep -q 'is stopped' _build/prod/rel/ejabberd/logs/ejabberd.log
-        grep -q 'Stopping Ejabberd.Module.Example' _build/prod/rel/ejabberd/logs/ejabberd.log
-        test $(find _build/prod/ -empty -name error.log)
-        grep -q 'is started' _build/dev/rel/ejabberd/logs/ejabberd.log
-        grep -q 'is stopped' _build/dev/rel/ejabberd/logs/ejabberd.log
-        grep -q 'Stopping Ejabberd.Module.Example' _build/dev/rel/ejabberd/logs/ejabberd.log
-        test $(find _build/dev/ -empty -name error.log)
-        grep -q 'is started' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        grep -q 'is stopped' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        grep -q 'Stopping Ejabberd.Module.Example' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        test $(find /tmp/ejabberd/var/log/ejabberd/ -empty -name error.log)
-
-    - name: View logs failures
-      if: failure()
-      run: |
-        cat _build/prod/rel/ejabberd/logs/ejabberd.log
-        cat _build/prod/rel/ejabberd/logs/error.log
-        cat _build/dev/rel/ejabberd/logs/ejabberd.log
-        cat _build/dev/rel/ejabberd/logs/error.log
-        cat /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        cat /tmp/ejabberd/var/log/ejabberd/error.log
+  ################################################################### Mix #####
 
   mix:
-    name: Mix
+    runs-on: ubuntu-24.04-arm
     strategy:
-      fail-fast: false
       matrix:
-        elixir: ['1.14', '1.15', '1.16', '1.17', '1.18']
-    runs-on: ubuntu-24.04
+        elixir: ['1.14', '1.18']
     container:
       image: public.ecr.aws/docker/library/elixir:${{ matrix.elixir }}
 
@@ -312,11 +207,10 @@ jobs:
     - name: Prepare libraries
       run: |
         apt-get -qq update
-        apt-get -y purge libgd3 nginx
-        apt-get -qq install libexpat1-dev libgd-dev libpam0g-dev \
-                            libsqlite3-dev libwebp-dev libyaml-dev
+        apt-get -q -y install libexpat1-dev libgd-dev libpam0g-dev \
+                              libsqlite3-dev libwebp-dev libyaml-dev
 
-    - name: Remove Elixir Matchers
+    - name: Remove Elixir matchers
       run: |
         echo "::remove-matcher owner=elixir-mixCompileWarning::"
         echo "::remove-matcher owner=elixir-credoOutputDefault::"
@@ -326,20 +220,21 @@ jobs:
 
     - name: Enable Module.Example and an Elixir dependency
       run: |
-        sed -i "s|^modules:|modules:\n  'Ejabberd.Module.Example': {}|g" ejabberd.yml.example
+        sed -i "s|^modules:|modules:\n  'Ejabberd.Module.Example': {}|g" \
+                ejabberd.yml.example
         cat ejabberd.yml.example
         sed -i 's|^{deps, \(.*\)|{deps, \1\n  {decimal, ".*", {git, "https://github.com/ericmj/decimal", {branch, "main"}}}, |g' rebar.config
         cat rebar.config
 
-    - name: Cache Hex.pm
+    - name: Cache hex.pm
       uses: actions/cache@v4
       with:
         path: |
           ~/.hex/
-        key: ${{matrix.elixir}}-${{hashFiles('mix.exs')}}
+        key: runtime-${{matrix.elixir}}-${{hashFiles('mix.exs')}}
 
     - name: Install Hex and Rebar3 manually on older Elixir
-      if: matrix.elixir <= '1.14'
+      if: matrix.elixir < '1.15'
       run: |
         mix local.hex --force
         mix local.rebar --force
@@ -352,79 +247,32 @@ jobs:
                     --enable-all
         make
 
+    - run: make hooks
+    - run: make options
     - run: make xref
-
     - run: make dialyzer
+    - run: make elvis
+      if: matrix.otp > '25'
 
     - run: make edoc
 
-    - name: Run rel
-      run: |
-        make rel
-        _build/prod/rel/ejabberd/bin/ejabberdctl start \
-          && _build/prod/rel/ejabberd/bin/ejabberdctl started
-        _build/prod/rel/ejabberd/bin/ejabberdctl register user1 localhost s0mePass
-        _build/prod/rel/ejabberd/bin/ejabberdctl registered_users localhost > registered.log
-        _build/prod/rel/ejabberd/bin/ejabberdctl stop \
-          && _build/prod/rel/ejabberd/bin/ejabberdctl stopped
+    - name: Production
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: deploy, start, register, stop, logs, check
+        username: user1
 
-    - name: Run dev
-      run: |
-        make dev
-        _build/dev/rel/ejabberd/bin/ejabberdctl start \
-          && _build/dev/rel/ejabberd/bin/ejabberdctl started
-        _build/dev/rel/ejabberd/bin/ejabberdctl register user2 localhost s0mePass
-        _build/dev/rel/ejabberd/bin/ejabberdctl registered_users localhost >> registered.log
-        _build/dev/rel/ejabberd/bin/ejabberdctl stop \
-          && _build/dev/rel/ejabberd/bin/ejabberdctl stopped
+    - name: Development
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: dev
+        do: deploy, start, register, stop, logs, check
+        username: user2
 
-    - name: Run install
-      run: |
-        make install
-        /tmp/ejabberd/sbin/ejabberdctl start \
-          && /tmp/ejabberd/sbin/ejabberdctl started
-        /tmp/ejabberd/sbin/ejabberdctl register user3 localhost s0mePass
-        /tmp/ejabberd/sbin/ejabberdctl registered_users localhost >> registered.log
-        /tmp/ejabberd/sbin/ejabberdctl stop \
-          && /tmp/ejabberd/sbin/ejabberdctl stopped
-
-    - name: View logs
-      if: always()
-      run: |
-        echo "===> Registered:"
-        cat registered.log
-        echo "===> Prod:"
-        cat _build/prod/rel/ejabberd/logs/*
-        echo "===> Dev:"
-        cat _build/dev/rel/ejabberd/logs/*
-        echo "===> Install:"
-        cat /tmp/ejabberd/var/log/ejabberd/*
-
-    - name: Check logs
-      if: always()
-      run: |
-        grep -q '^user1$' registered.log
-        grep -q '^user2$' registered.log
-        grep -q '^user3$' registered.log
-        grep -q 'is started' _build/prod/rel/ejabberd/logs/ejabberd.log
-        grep -q 'is stopped' _build/prod/rel/ejabberd/logs/ejabberd.log
-        grep -q 'Stopping Ejabberd.Module.Example' _build/prod/rel/ejabberd/logs/ejabberd.log
-        test $(find _build/prod/ -empty -name error.log)
-        grep -q 'is started' _build/dev/rel/ejabberd/logs/ejabberd.log
-        grep -q 'is stopped' _build/dev/rel/ejabberd/logs/ejabberd.log
-        grep -q 'Stopping Ejabberd.Module.Example' _build/dev/rel/ejabberd/logs/ejabberd.log
-        test $(find _build/dev/ -empty -name error.log)
-        grep -q 'is started' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        grep -q 'is stopped' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        grep -q 'Stopping Ejabberd.Module.Example' /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        test $(find /tmp/ejabberd/var/log/ejabberd/ -empty -name error.log)
-
-    - name: View logs failures
-      if: failure()
-      run: |
-        cat _build/prod/rel/ejabberd/logs/ejabberd.log
-        cat _build/prod/rel/ejabberd/logs/error.log
-        cat _build/dev/rel/ejabberd/logs/ejabberd.log
-        cat _build/dev/rel/ejabberd/logs/error.log
-        cat /tmp/ejabberd/var/log/ejabberd/ejabberd.log
-        cat /tmp/ejabberd/var/log/ejabberd/error.log
+    - name: Installed
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: install
+        do: deploy, start, register, stop, logs, check
+        username: user3
