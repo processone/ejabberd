@@ -650,7 +650,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0363.html"/>
-        <xmpp:version>0.3.0</xmpp:version>
+        <xmpp:version>1.2.0</xmpp:version>
         <xmpp:since>15.10</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_http_upload</xmpp:note>
