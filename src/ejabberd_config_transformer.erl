@@ -232,6 +232,9 @@ filter(_Host, route_subdomains, _, _) ->
     false;
 filter(_Host, auth_password_types_hidden_in_scram1, Val, _) ->
     {true, {auth_password_types_hidden_in_sasl1, Val}};
+filter(_Host, new_sql_schema, Val, _) ->
+    warn_replaced_option(new_sql_schema, sql_schema_multihost),
+    {true, {sql_schema_multihost, Val}};
 filter(Host, modules, ModOpts, State) ->
     NoDialbackHosts = maps:get(remove_s2s_dialback, State, []),
     ModOpts1 = lists:filter(

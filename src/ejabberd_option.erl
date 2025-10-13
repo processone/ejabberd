@@ -89,7 +89,6 @@
 -export([modules/0, modules/1]).
 -export([negotiation_timeout/0]).
 -export([net_ticktime/0]).
--export([new_sql_schema/0]).
 -export([oauth_access/0, oauth_access/1]).
 -export([oauth_cache_life_time/0]).
 -export([oauth_cache_missed/0]).
@@ -686,10 +685,6 @@ negotiation_timeout() ->
 -spec net_ticktime() -> pos_integer().
 net_ticktime() ->
     ejabberd_config:get_option({net_ticktime, global}).
-
--spec new_sql_schema() -> boolean().
-new_sql_schema() ->
-    ejabberd_config:get_option({new_sql_schema, global}).
 
 -spec oauth_access() -> 'none' | acl:acl().
 oauth_access() ->

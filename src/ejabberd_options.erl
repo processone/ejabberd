@@ -266,8 +266,6 @@ opt_type(negotiation_timeout) ->
     econf:timeout(second);
 opt_type(net_ticktime) ->
     econf:timeout(second);
-opt_type(new_sql_schema) ->
-    econf:bool();
 opt_type(sql_schema_multihost) ->
     econf:bool();
 opt_type(update_sql_schema) ->
@@ -634,7 +632,6 @@ options() ->
      {modules, []},
      {negotiation_timeout, timer:seconds(120)},
      {net_ticktime, timer:seconds(60)},
-     {new_sql_schema, ?USE_MULTIHOST_SQL_SCHEMA_DEFAULT},
      {sql_schema_multihost, ?USE_MULTIHOST_SQL_SCHEMA_DEFAULT},
      {update_sql_schema, true},
      {update_sql_schema_timeout, timer:minutes(5)},
@@ -792,7 +789,6 @@ globals() ->
      log_modules_fully,
      negotiation_timeout,
      net_ticktime,
-     new_sql_schema,
      update_sql_schema,
      node_start,
      oauth_cache_life_time,
