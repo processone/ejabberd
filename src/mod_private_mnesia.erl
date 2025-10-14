@@ -28,7 +28,8 @@
 
 %% API
 -export([init/2, set_data/3, get_data/3, get_all_data/2, del_data/2,
-	 use_cache/1, import/3]).
+	del_data/3, get_users_with_data/2, count_users_with_data/2,
+	use_cache/1, import/3]).
 -export([need_transform/1, transform/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -100,6 +101,33 @@ del_data(LUser, LServer) ->
 			      Namespaces)
 	end,
     transaction(F).
+	
+-spec del_data(binary(), binary(), binary()) -> ok | {error, any()}.
+del_data(LUser, LServer, NS) ->
+    F = fun () ->
+		mnesia:delete({private_storage, {LUser, LServer, NS}})
+	end,
+    transaction(F).
+
+-spec get_users_with_data(binary(), binary()) -> {ok, [binary()]} | {error, any()}.
+get_users_with_data(LServer, NS) ->
+	case mnesia:dirty_select(private_storage,
+				   [{#private_storage{usns =
+							  {'$1',
+							   LServer,
+							   NS},
+						      _ = '_'},
+				     [], ['$1']}]) of
+		Val when is_list(Val) -> {ok, Val};
+		_ -> {error, db_failure}
+	end.
+		
+-spec count_users_with_data(binary(), binary()) -> {ok, integer()} | {error, any()}.
+count_users_with_data(LServer, NS) ->
+	case get_users_with_data(LServer, NS) of
+		{ok, Val} -> {ok, length(Val)};
+		Err -> Err
+	end.
 
 import(LServer, <<"private_storage">>,
        [LUser, XMLNS, XML, _TimeStamp]) ->

@@ -37,7 +37,8 @@
 	 remove_user/2, get_data/2, get_data/3, export/1, mod_doc/0,
 	 import/5, import_start/2, mod_opt_type/1, set_data/2,
 	 mod_options/1, depends/2, get_sm_features/5, pubsub_publish_item/6,
-	 pubsub_delete_item/5, pubsub_tree_call/4]).
+	 pubsub_delete_item/5, pubsub_tree_call/4,
+	 del_data/3, get_users_with_data/2, count_users_with_data/2]).
 
 -export([get_commands_spec/0, bookmarks_to_pep/2]).
 
@@ -64,6 +65,9 @@
 -callback del_data(binary(), binary()) -> ok | {error, any()}.
 -callback use_cache(binary()) -> boolean().
 -callback cache_nodes(binary()) -> [node()].
+-callback del_data(binary(), binary(), binary()) -> ok | {error, any()}.
+-callback get_users_with_data(binary(), binary()) -> {ok, [binary()]} | {error, any()}.
+-callback count_users_with_data(binary(), binary()) -> {ok, integer()} | {error, any()}.
 
 -optional_callbacks([use_cache/1, cache_nodes/1]).
 
@@ -272,6 +276,37 @@ get_data(LUser, LServer) ->
 	error -> [];
 	{error, _} = Err -> Err
     end.
+
+-spec del_data(binary(), binary(), binary()) -> ok | {error, _}.
+del_data(LUser, LServer, NS) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+	case Mod:del_data(LUser, LServer, NS) of
+		ok ->
+			case use_cache(Mod, LServer) of
+				true ->
+					delete_cache(Mod, LUser, LServer, {NS, #xmlel{}});
+				_ ->
+					ok
+			end;
+		Err -> Err
+	end.
+
+-spec get_users_with_data(binary(), binary()) -> [jid()] | {error, any()}.
+get_users_with_data(LServer, NS) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+	case Mod:get_users_with_data(LServer, NS) of
+		{ok, Users} ->
+			[jid:make(User, LServer) || User <- Users];
+		Err -> Err
+	end.
+	
+-spec count_users_with_data(binary(), binary()) -> integer() | {error, any()}.
+count_users_with_data(LServer, NS) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+	case Mod:count_users_with_data(LServer, NS) of
+		{ok, Num} -> Num;
+		Err -> Err
+	end.
 
 -spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
