@@ -111,23 +111,19 @@ del_data(LUser, LServer, NS) ->
 
 -spec get_users_with_data(binary(), binary()) -> {ok, [binary()]} | {error, any()}.
 get_users_with_data(LServer, NS) ->
-	case mnesia:dirty_select(private_storage,
+	Val = mnesia:dirty_select(private_storage,
 				   [{#private_storage{usns =
 							  {'$1',
 							   LServer,
 							   NS},
 						      _ = '_'},
-				     [], ['$1']}]) of
-		Val when is_list(Val) -> {ok, Val};
-		_ -> {error, db_failure}
-	end.
+				     [], ['$1']}]),
+	{ok, Val}.
 		
 -spec count_users_with_data(binary(), binary()) -> {ok, integer()} | {error, any()}.
 count_users_with_data(LServer, NS) ->
-	case get_users_with_data(LServer, NS) of
-		{ok, Val} -> {ok, length(Val)};
-		Err -> Err
-	end.
+	{ok, Val} = get_users_with_data(LServer, NS),
+	{ok, length(Val)}.
 
 import(LServer, <<"private_storage">>,
        [LUser, XMLNS, XML, _TimeStamp]) ->
