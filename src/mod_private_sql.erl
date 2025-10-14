@@ -148,7 +148,7 @@ get_users_with_data(LServer, NS) ->
         _ ->
             {error, db_failure}
     end.
-    
+
 -spec count_users_with_data(binary(), binary()) -> {ok, integer()} | {error, any()}.
 count_users_with_data(LServer, NS) ->
     case ejabberd_sql:sql_query(

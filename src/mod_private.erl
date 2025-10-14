@@ -299,7 +299,7 @@ get_users_with_data(LServer, NS) ->
 			[jid:make(User, LServer) || User <- Users];
 		Err -> Err
 	end.
-	
+
 -spec count_users_with_data(binary(), binary()) -> integer() | {error, any()}.
 count_users_with_data(LServer, NS) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),

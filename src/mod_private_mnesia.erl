@@ -101,7 +101,7 @@ del_data(LUser, LServer) ->
 			      Namespaces)
 	end,
     transaction(F).
-	
+
 -spec del_data(binary(), binary(), binary()) -> ok | {error, any()}.
 del_data(LUser, LServer, NS) ->
     F = fun () ->
@@ -119,7 +119,7 @@ get_users_with_data(LServer, NS) ->
 						      _ = '_'},
 				     [], ['$1']}]),
 	{ok, Val}.
-		
+
 -spec count_users_with_data(binary(), binary()) -> {ok, integer()} | {error, any()}.
 count_users_with_data(LServer, NS) ->
 	{ok, Val} = get_users_with_data(LServer, NS),
