@@ -27,7 +27,7 @@
                  rescode | restuple.
 
 %% The 'any' and 'atom' argument types and 'any' result type
-%% should only be used %% by commands with tag 'internal',
+%% should only be used by commands with tag 'internal',
 %% which are meant to be used only internally in ejabberd,
 %% and not called using external frontends.
 
