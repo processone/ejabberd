@@ -290,7 +290,7 @@ get_commands_spec() ->
 			note = "added in 24.06",
 			args = [{user, binary}, {host, binary}],
 			args_example = [<<"attacker">>, <<"myserver.com">>],
-			args_desc = ["User name to unban", "Server name"],
+			args_desc = ["Name of a user to check ban information", "Server name"],
 			result = {ban_details, {list,
 					  {detail, {tuple, [{name, string},
                                                             {value, string}
@@ -1288,11 +1288,8 @@ unban_account(User, Host) ->
     end.
 
 unban_account2(User, Host) ->
-    UnBanPrivateXml = build_unban_xmlel(),
-    private_set2(User, Host, UnBanPrivateXml).
-
-build_unban_xmlel() ->
-    #xmlel{name = <<"banned">>, attrs = [{<<"xmlns">>, <<"jabber:ejabberd:banned">>}]}.
+    mod_private:del_data(jid:nodeprep(User), jid:nameprep(Host), <<"jabber:ejabberd:banned">>),
+	ok.
 
 %%%
 %%% Sessions

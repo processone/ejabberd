@@ -284,7 +284,7 @@ del_data(LUser, LServer, NS) ->
 		ok ->
 			case use_cache(Mod, LServer) of
 				true ->
-					delete_cache(Mod, LUser, LServer, {NS, #xmlel{}});
+					delete_cache(Mod, LUser, LServer, [{NS, #xmlel{}}]);
 				_ ->
 					ok
 			end;
