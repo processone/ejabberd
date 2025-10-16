@@ -51,6 +51,7 @@
 	 % Accounts
 	 set_password/3, check_password_hash/4, delete_old_users/1,
 	 delete_old_users_vhost/2, check_password/3,
+         list_banned/1, count_banned/1,
 	 ban_account/3, ban_account_v2/3, get_ban_details/2, unban_account/2,
 
 	 % vCard
@@ -255,6 +256,28 @@ get_commands_spec() ->
 			result = {res, rescode},
 			result_example = ok},
 
+     #ejabberd_commands{name = list_banned, tags = [accounts],
+			desc = "List banned accounts",
+			longdesc = "The HOST argument can be `all` to query all vhosts.",
+			note = "added in 25.xx",
+			module = ?MODULE, function = list_banned,
+			args = [{host, binary}],
+			args_example = [<<"myserver.com">>],
+			args_desc = ["Server name"],
+			result = {banned, {list, {jid, string}}},
+     	                result_desc = "The list of accounts that are banned",
+		        result_example = ["attacker@example.com", "user3@example.com"]},
+     #ejabberd_commands{name = count_banned, tags = [accounts],
+			desc = "Count number of banned accounts",
+			longdesc = "The HOST argument can be `all` to query all vhosts.",
+			note = "added in 25.xx",
+			module = ?MODULE, function = count_banned,
+			args = [{host, binary}],
+			args_example = [<<"myserver.com">>],
+			args_desc = ["Server name"],
+                        result_example = 6,
+                        result_desc = "Number of banned accounts",
+                        result = {banned, integer}},
      #ejabberd_commands{name = ban_account, tags = [accounts],
 			desc = "Ban an account: kick sessions and set random password",
 			longdesc = "This simply sets a random password.",
@@ -1153,6 +1176,18 @@ delete_or_not(LUser, LServer, TimeStamp_oldest) ->
 %%
 %% Ban account v0
 
+-define(NS_BANNED, <<"jabber:ejabberd:banned">>).
+
+list_banned(<<"all">>) ->
+    lists:flatten([list_banned(Host) || Host <- ejabberd_option:hosts()]);
+list_banned(Host) ->
+    [jid:encode(Jid) || Jid <- mod_private:get_users_with_data(Host, ?NS_BANNED)].
+
+count_banned(<<"all">>) ->
+    lists:sum([count_banned(Host) || Host <- ejabberd_option:hosts()]);
+count_banned(Host) ->
+    mod_private:count_users_with_data(Host, ?NS_BANNED).
+
 ban_account(User, Host, ReasonText) ->
     Reason = prepare_reason(ReasonText),
     kick_sessions(User, Host, Reason),
@@ -1224,7 +1259,7 @@ get_hash_value(User, Host) ->
 
 build_ban_xmlel(Reason, {LastDate, LastReason}, BanDate, Hash) ->
     #xmlel{name = <<"banned">>,
-           attrs = [{<<"xmlns">>, <<"jabber:ejabberd:banned">>}],
+           attrs = [{<<"xmlns">>, ?NS_BANNED}],
            children = [#xmlel{name = <<"reason">>, attrs = [], children = [{xmlcdata, Reason}]},
                        #xmlel{name = <<"lastdate">>, attrs = [], children = [{xmlcdata, LastDate}]},
                        #xmlel{name = <<"lastreason">>, attrs = [], children = [{xmlcdata, LastReason}]},
@@ -1236,7 +1271,7 @@ build_ban_xmlel(Reason, {LastDate, LastReason}, BanDate, Hash) ->
 %% Get ban details
 
 get_ban_details(User, Host) ->
-    case private_get2(User, Host, <<"banned">>, <<"jabber:ejabberd:banned">>) of
+    case private_get2(User, Host, <<"banned">>, ?NS_BANNED) of
         [El] ->
             get_ban_details(User, Host, El);
         [] ->
@@ -1288,7 +1323,7 @@ unban_account(User, Host) ->
     end.
 
 unban_account2(User, Host) ->
-    mod_private:del_data(jid:nodeprep(User), jid:nameprep(Host), <<"jabber:ejabberd:banned">>),
+    mod_private:del_data(jid:nodeprep(User), jid:nameprep(Host), ?NS_BANNED),
 	ok.
 
 %%%
