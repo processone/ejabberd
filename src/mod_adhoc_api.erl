@@ -618,15 +618,22 @@ build_fields(NameTypes, Descs, Examples, Policy, Replacements, Required) ->
         end,
     build_fields2(NameTypes2, Descs2, Examples2, Replacements, Required).
 
-build_fields2([{_ArgName, {list, _ArgNameType}}] = NameTypes,
+build_fields2([{_ArgName, {list, ArgNameType}}] = NameTypes,
               Descs,
               Examples,
               _Replacements,
               Required) ->
+    ArgNameType2 =
+        case ArgNameType of
+            {jid, _} ->
+                'jid-multi';
+            {_, _} ->
+                'text-multi'
+        end,
     Args = lists_zip3_pad(NameTypes, Descs, Examples),
     lists:map(fun({{AName, AType}, ADesc, AExample}) ->
                  ANameBin = list_to_binary(atom_to_list(AName)),
-                 #xdata_field{type = 'text-multi',
+                 #xdata_field{type = ArgNameType2,
                               label = ANameBin,
                               desc = list_to_binary(ADesc),
                               values = encode(AExample, AType),
