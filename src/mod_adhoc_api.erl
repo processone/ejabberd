@@ -484,13 +484,14 @@ set_form_api_command(From, Host, CommandNameBin, XData, _Lang) ->
     Arguments = api_extract_fields(FieldsArgs, Def#ejabberd_commands.args),
     ApiVersion = mod_adhoc_api_opt:default_version(Host),
     CallResult =
-        ejabberd_cluster:call(Node,
-                              mod_http_api,
-                              handle,
-                              [binary_to_existing_atom(CommandNameBin, latin1),
-                               get_caller_info(From),
-                               Arguments,
-                               ApiVersion]),
+        execute(Def,
+                [Node,
+                 mod_http_api,
+                 handle,
+                 [binary_to_existing_atom(CommandNameBin, latin1),
+                  get_caller_info(From),
+                  Arguments,
+                  ApiVersion]]),
 
     %% Command result
     FieldsResult2 =
@@ -524,6 +525,15 @@ set_form_api_command(From, Host, CommandNameBin, XData, _Lang) ->
             type = result,
             instructions = Instructions,
             fields = FieldsArgsWithHeads ++ FieldsResultWithHeads}}.
+
+execute(Def, Arguments) ->
+    case lists:member(async, Def#ejabberd_commands.tags) of
+        true ->
+            spawn(ejabberd_cluster, call, Arguments),
+            {200, 0};
+        false ->
+            apply(ejabberd_cluster, call, Arguments)
+    end.
 
 api_extract_fields(Fields, ArgsDef) ->
     lists:map(fun(#xdata_field{values = Values, var = ANameBin}) ->

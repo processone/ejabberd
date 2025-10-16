@@ -31,6 +31,10 @@
 %% which are meant to be used only internally in ejabberd,
 %% and not called using external frontends.
 
+%% When a command with tag 'async' is called by mod_adhoc_api,
+%% it is spawned in a new process for the command execution,
+%% and the command immediately returns success.
+
 %% The purpose of a command can either be:
 %% - informative: its purpose is to obtain information
 %% - modifier: its purpose is to produce some change in the server
