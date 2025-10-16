@@ -1355,6 +1355,8 @@ get_status_list(Host, Status_required) ->
     Fstatus = case Status_required of
 		  <<"all">> ->
 		      fun(_, _) -> true end;
+		  StatusList when is_list(StatusList) ->
+		      fun(A, B) -> lists:member(A, B) end;
 		  _ ->
 		      fun(A, B) -> A == B end
 	      end,
