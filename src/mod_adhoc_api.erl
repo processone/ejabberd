@@ -452,7 +452,17 @@ set_form_api_command(From, Host, CommandNameBin, XData, _Lang) ->
     Instructions = get_instructions(Def),
 
     %% Arguments
-    FieldsArgs1 = [Field || Field <- XData#xdata.fields, Field#xdata_field.type /= fixed],
+    FieldsArgs0 = [Field || Field <- XData#xdata.fields, Field#xdata_field.type /= fixed],
+    FieldsArgs1 =
+        lists:map(fun(Arg) ->
+                     case Arg#xdata_field.values of
+                         [_] ->
+                             Arg;
+                         _ ->
+                             Arg#xdata_field{type = 'text-multi'}
+                     end
+                  end,
+                  FieldsArgs0),
 
     {Node, FieldsArgs} =
         case lists:keytake(<<"mod_adhoc_api_target_node">>, #xdata_field.var, FieldsArgs1) of
