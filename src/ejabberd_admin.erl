@@ -34,6 +34,7 @@
 	 reopen_log/0, rotate_log/0,
 	 set_loglevel/1,
 	 evacuate_kindly/2,
+         restart_kindly/2,
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 registered_vhosts/0,
 	 reload_config/0,
@@ -181,7 +182,20 @@ get_commands_spec() ->
 			args_example = [60, <<"Server will stop now.">>],
 			args = [{delay, integer}, {announcement, string}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = stop_kindly, tags = [server],
+     #ejabberd_commands{name = restart_kindly, tags = [server, async],
+			desc = "Restart kindly the server",
+			longdesc = "Inform users and rooms, wait, and restart the server.\n"
+                        "Provide the delay in seconds, and the "
+			"announcement quoted, for example: \n"
+			"`ejabberdctl restart_kindly 60 "
+			"\\\"The server will stop in one minute.\\\"`",
+			note = "added in 25.xx",
+			module = ?MODULE, function = restart_kindly,
+			args_desc = ["Seconds to wait", "Announcement to send, with quotes"],
+			args_example = [60, <<"Server will restart now.">>],
+			args = [{delay, integer}, {announcement, string}],
+			result = {res, rescode}},
+     #ejabberd_commands{name = stop_kindly, tags = [server, async],
 			desc = "Stop kindly the server (informing users)",
 			longdesc = "Inform users and rooms, wait, and stop the server.\n"
                         "Provide the delay in seconds, and the "
@@ -706,6 +720,9 @@ set_loglevel(LogLevel) ->
 evacuate_kindly(DelaySeconds, AnnouncementTextString) ->
     perform_kindly(DelaySeconds, AnnouncementTextString, evacuate).
 
+restart_kindly(DelaySeconds, AnnouncementTextString) ->
+    perform_kindly(DelaySeconds, AnnouncementTextString, restart).
+
 stop_kindly(DelaySeconds, AnnouncementTextString) ->
     perform_kindly(DelaySeconds, AnnouncementTextString, stop).
 
@@ -723,15 +740,19 @@ perform_kindly(DelaySeconds, AnnouncementTextString, Action) ->
           ejabberd_admin,
           send_service_message_all_mucs,
           [Subject, AnnouncementText]},
-         {WaitingDesc, timer, sleep, [DelaySeconds * 1000]},
-         {"Stopping ejabberd", application, stop, [ejabberd]}],
+         {WaitingDesc, timer, sleep, [DelaySeconds * 1000]}
+        ],
     SpecificSteps =
         case Action of
             evacuate ->
-                [{"Starting ejabberd", application, start, [ejabberd]},
+                [{"Stopping ejabberd", application, stop, [ejabberd]},
+                 {"Starting ejabberd", application, start, [ejabberd]},
                  {"Stopping ejabberd port listeners", ejabberd_listener, stop_listeners, []}];
+            restart ->
+                [{"Restarting Erlang node", init, restart, []}];
             stop ->
-                [{"Stopping Mnesia", mnesia, stop, []}, {"Stopping Erlang node", init, stop, []}]
+                [
+                 {"Stopping Erlang node", init, stop, []}]
         end,
     Steps = PreSteps ++ SpecificSteps,
     NumberLast = length(Steps),
@@ -739,7 +760,9 @@ perform_kindly(DelaySeconds, AnnouncementTextString, Action) ->
     lists:foldl(fun({Desc, Mod, Func, Args}, NumberThis) ->
                    SecondsDiff =
                        calendar:datetime_to_gregorian_seconds({date(), time()}) - TimestampStart,
-                   io:format("[~p/~p ~ps] ~ts... ", [NumberThis, NumberLast, SecondsDiff, Desc]),
+                   io:format("~s[~p/~p ~ps]~s ~ts...~s ",
+                             [?CLEAD ++ ?CINFO, NumberThis, NumberLast, SecondsDiff,
+                              ?CMID ++ ?CINFO, Desc, ?CCLEAN]),
                    Result = (catch apply(Mod, Func, Args)),
                    io:format("~p~n", [Result]),
                    NumberThis + 1
