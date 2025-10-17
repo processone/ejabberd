@@ -526,12 +526,19 @@ notify(LServer, PushLJID, Node, XData, Pkt0, Dir, HandleResponse) ->
 	    Item = #ps_item{sub_els = [#push_notification{xdata = Summary}]},
 	    PubSub = #pubsub{publish = #ps_publish{node = Node, items = [Item]},
 			     publish_options = XData},
-	    IQ = #iq{type = set,
-		     from = From,
-		     to = jid:make(PushLJID),
-		     id = p1_rand:get_string(),
-		     sub_els = [PubSub]},
-	    ejabberd_router:route_iq(IQ, HandleResponse)
+	    IQ0 = #iq{type = set,
+	          from = From,
+	          to = jid:make(PushLJID),
+	          id = p1_rand:get_string(),
+	          sub_els = [PubSub]},
+	    case ejabberd_hooks:run_fold(push_send_notification, LServer, IQ0, [Pkt]) of
+	      drop ->
+	            ?DEBUG("No push notification will be sent: some hook dropped it", []),
+	            ok;
+	        IQ ->
+	            ?DEBUG("Push notification hooks built the definitive IQ to route: ~n~ts", [xmpp:pp(IQ)]),
+	            ejabberd_router:route_iq(IQ, HandleResponse)
+	    end
     end.
 
 %%--------------------------------------------------------------------
