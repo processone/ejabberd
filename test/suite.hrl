@@ -103,7 +103,7 @@
 -define(S2S_VHOST, <<"s2s.localhost">>).
 -define(UPLOAD_VHOST, <<"upload.localhost">>).
 
--define(BACKENDS, [mnesia, redis, mysql, mssql, odbc, pgsql, sqlite, ldap, extauth]).
+-define(BACKENDS, [agnostic, mnesia, redis, mysql, mssql, pgsql, sqlite, ldap, extauth]).
 
 insert(Val, N, Tuple) ->
     L = tuple_to_list(Tuple),

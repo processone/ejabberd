@@ -193,9 +193,10 @@ else
   XREFOPTIONS=
   CLEANARG=
   REBARREL=$(REBAR) generate
-  REBARDEV=
+  REBARDEV=@echo "Rebar2 detected... dev not supported.\
+	   \nTry: make prod, or: ./configure --with-rebar=rebar3 ; make dev"
   RELIVECMD=@echo "Rebar2 detected... relive not supported.\
-	 \nTry: ./configure --with-rebar=rebar3 ; make relive"
+	   \nTry: ./configure --with-rebar=rebar3 ; make relive"
   REL_LIB_DIR = rel/ejabberd/lib
   COPY_REL_TARGET = rel
 endif
