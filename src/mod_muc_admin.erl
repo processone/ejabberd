@@ -827,9 +827,22 @@ webadmin_muc_host(_Host,
     Title = ?H1GL(PageTitle, <<"modules/#mod_muc">>, <<"mod_muc">>),
     Breadcrumb =
         make_breadcrumb({service_section, Level, Service, <<"Nick Register">>, RPath}),
-    Set = [make_command(muc_register_nick, R, [{<<"service">>, Service}], []),
-           make_command(muc_unregister_nick, R, [{<<"service">>, Service}], [])],
-    Title ++ Breadcrumb ++ Set;
+
+    Set = [make_command(muc_register_nick, R, [{<<"service">>, Service}], [])],
+    %% Execute twice: first to perform the action, the second to get new roster
+    _ = make_webadmin_roster_table(Service, R, RPath),
+    RV2 = make_webadmin_roster_table(Service, R, RPath),
+    Get = [make_command(muc_get_registered_nicks,
+                        R,
+                        [{<<"service">>, Service}],
+                        [{only, presentation}]),
+           ?XE(<<"blockquote">>,
+               [make_command(muc_unregister_nick,
+                             R,
+                             [{<<"service">>, Service}],
+                             [{only, presentation}])]),
+           RV2],
+    Title ++ Breadcrumb ++ Set ++ Get;
 webadmin_muc_host(_Host,
                   Service,
                   [<<"rooms-empty">> | RPath],
@@ -1299,6 +1312,45 @@ web_page_hostuser(_, Host, User, #request{path = [<<"muc-register">>]} = R) ->
 web_page_hostuser(Acc, _, _, _) ->
     Acc.
 %% @format-end
+
+%%--------------------
+%% Web Admin Nick Register
+
+%% @format-begin
+make_webadmin_roster_table(Service, R, RPath) ->
+    Nicks =
+        case make_command_raw_value(muc_get_registered_nicks, R, [{<<"service">>, Service}]) of
+            Ns when is_list(Ns) ->
+                Ns;
+            _ ->
+                []
+        end,
+    Level = 4 + length(RPath),
+    Columns = [<<"user@host">>, <<"nick">>, <<"">>],
+    Rows =
+        lists:map(fun({User, Host, Nick}) ->
+                     {make_command(echo,
+                                   R,
+                                   [{<<"sentence">>,
+                                     jid:encode(
+                                         jid:make(User, Host))}],
+                                   [{only, raw_and_value},
+                                    {result_links, [{sentence, user, Level, <<"">>}]}]),
+                      ?C(Nick),
+                      make_command(muc_unregister_nick,
+                                   R,
+                                   [{<<"user">>, User},
+                                    {<<"host">>, Host},
+                                    {<<"service">>, Service}],
+                                   [{only, button},
+                                    {style, danger},
+                                    {input_name_append, [User, Host, Service]}])}
+                  end,
+                  lists:keysort(1, Nicks)),
+    Table = make_table(20, RPath, Columns, Rows),
+    ?XE(<<"blockquote">>, [Table]).
+%% @format-end
+
 
 %%----------------------------
 %% Create/Delete Room
