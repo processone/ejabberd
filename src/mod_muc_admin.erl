@@ -32,6 +32,8 @@
 	 muc_online_rooms/1, muc_online_rooms_by_regex/2,
 	 muc_register_nick/3, muc_register_nick/4,
 	 muc_unregister_nick/2, muc_unregister_nick/3,
+         muc_get_registered_nick/3,
+         muc_get_registered_nicks/1,
 	 create_room_with_opts/4, create_room/3, destroy_room/2,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
@@ -159,6 +161,30 @@ get_commands_spec() ->
 		       args = [{user, binary}, {host, binary}, {service, binary}],
 		       args_rename = [{host, service}],
 		       result = {res, rescode}},
+     #ejabberd_commands{name = muc_get_registered_nick, tags = [muc],
+		       desc = "Get nick registered for that account in the MUC service",
+		       module = ?MODULE, function = muc_get_registered_nick,
+		       note = "added in 25.xx",
+		       args_desc = ["user name", "user host", "MUC service"],
+		       args_example = [<<"tim">>, <<"example.org">>, <<"conference.example.org">>],
+		       args = [{user, binary}, {host, binary}, {service, binary}],
+		       result_desc = "nick registered",
+		       result_example = ["Tim"],
+		       result = {nick, string}},
+     #ejabberd_commands{name = muc_get_registered_nicks, tags = [muc],
+		       desc = "List all nicks registered in the MUC service",
+		       module = ?MODULE, function = muc_get_registered_nicks,
+		       note = "added in 25.xx",
+		       args_desc = ["MUC service"],
+		       args_example = [<<"conference.example.org">>],
+		       args = [{service, binary}],
+		       result_example = [{"Tim", "timexa", "example.com"},
+					 {"Laia", "laia001", "example2.org"}],
+		       result = {registrations, {list, {registration, {tuple,
+							  [{user, string},
+							   {host, string},
+                                                           {nick, string}
+							  ]}}}}},
 
      #ejabberd_commands{name = create_room, tags = [muc_room],
 		       desc = "Create a MUC room name@service in host",
@@ -695,6 +721,17 @@ muc_unregister_nick(User, Host, Service) ->
 
 muc_unregister_nick(FromBinary, Service) ->
     muc_register_nick(<<"">>, FromBinary, Service).
+
+muc_get_registered_nick(User, Host, Service) ->
+    MucServerHost = get_room_serverhost(Service),
+    case mod_muc:get_register_nick(MucServerHost, Service, jid:make(User, Host)) of
+        error -> <<"">>;
+        N -> N
+    end.
+
+muc_get_registered_nicks(Service) ->
+    MucServerHost = get_room_serverhost(Service),
+    mod_muc:get_register_nicks(MucServerHost, Service).
 
 get_user_rooms(User, Server) ->
     lists:flatmap(
