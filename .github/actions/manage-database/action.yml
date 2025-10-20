@@ -31,6 +31,7 @@ runs:
       run: |
         sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
         sudo rm -f /var/lib/man-db/auto-update || echo ok
+        sudo apt-get -q update
         sudo apt-get -q -y install postgresql
 
     - if: contains(inputs.for, 'redis') && contains(inputs.do, 'install')
@@ -38,6 +39,7 @@ runs:
       run: |
         sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
         sudo rm -f /var/lib/man-db/auto-update || echo ok
+        sudo apt-get -q update
         sudo apt-get -q -y install redis-server
 
     - if: contains(inputs.for, 'mssql') && contains(inputs.do, 'install')
