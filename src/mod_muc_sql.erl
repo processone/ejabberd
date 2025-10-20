@@ -31,7 +31,7 @@
 %% API
 -export([init/2, store_room/5, store_changes/4,
          restore_room/3, forget_room/3,
-	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4,
+	 can_use_nick/4, get_rooms/2, get_nick/3, get_nicks/2, set_nick/4,
 	 import/3, export/1]).
 -export([register_online_room/4, unregister_online_room/4, find_online_room/3,
 	 get_online_rooms/3, count_online_rooms/2, rsm_supported/0,
@@ -342,6 +342,23 @@ get_nick(LServer, Host, From) ->
                       " jid=%(SJID)s and host=%(Host)s")) of
 	{selected, [{Nick}]} -> Nick;
 	_ -> error
+    end.
+
+get_nicks(LServer, Host) ->
+    case catch ejabberd_sql:sql_query(LServer,
+                                      ?SQL("select @(jid)s, @(nick)s from muc_registered where"
+                                           " host=%(Host)s"))
+    of
+        {selected, Results} ->
+            lists:map(fun({JidBin, Nick}) ->
+                         {User, Server, _Resource} =
+                             jid:tolower(
+                                 jid:decode(JidBin)),
+                         {User, Server, Nick}
+                      end,
+                      Results);
+        _ ->
+            error
     end.
 
 set_nick(LServer, ServiceOrRoom, From, Nick) ->

@@ -23,8 +23,9 @@
                    opts = [] :: list() | '_'}).
 
 -record(muc_registered,
-        {us_host = {{<<"">>, <<"">>}, <<"">>} :: {{binary(), binary()}, binary()} | '$1',
-         nick = <<"">> :: binary()}).
+        {us_host = {{<<"">>, <<"">>}, <<"">>} :: {{binary() | '$1', binary() | '$2'},
+                                                  binary() | '_'} | '$1',
+         nick = <<"">> :: binary() | '$3'}).
 
 -record(muc_online_room,
         {name_host :: {binary(), binary()} | '$1' | {'_', binary()} | '_',

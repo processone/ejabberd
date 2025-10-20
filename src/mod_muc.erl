@@ -67,6 +67,8 @@
 	 count_online_rooms/1,
 	 register_online_user/4,
 	 unregister_online_user/4,
+	 get_register_nick/3,
+	 get_register_nicks/2,
 	 iq_set_register_info/5,
 	 count_online_rooms_by_user/3,
 	 get_online_rooms_by_user/3,
@@ -102,6 +104,7 @@
 -callback can_use_nick(binary(), binary(), jid(), binary()) -> boolean().
 -callback get_rooms(binary(), binary()) -> [#muc_room{}].
 -callback get_nick(binary(), binary(), jid()) -> binary() | error.
+-callback get_nicks(binary(), binary()) -> [{binary(), binary(), binary()}] | error.
 -callback set_nick(binary(), binary(), jid(), binary()) -> {atomic, ok | false}.
 -callback register_online_room(binary(), binary(), binary(), pid()) -> any().
 -callback unregister_online_room(binary(), binary(), binary(), pid()) -> any().
@@ -1106,6 +1109,16 @@ get_nick(ServerHost, Host, From) ->
     LServer = jid:nameprep(ServerHost),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:get_nick(LServer, Host, From).
+
+-spec get_register_nick(binary(), binary(), jid()) -> binary() | error.
+get_register_nick(ServerHost, Host, From) ->
+    get_nick(ServerHost, Host, From).
+
+-spec get_register_nicks(binary(), binary()) -> [{binary(), binary(), binary()}].
+get_register_nicks(ServerHost, Host) ->
+    LServer = jid:nameprep(ServerHost),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:get_nicks(LServer, Host).
 
 iq_get_register_info(ServerHost, Host, From, Lang) ->
     {Nick, Registered} = case get_nick(ServerHost, Host, From) of

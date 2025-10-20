@@ -29,7 +29,7 @@
 
 %% API
 -export([init/2, import/3, store_room/5, restore_room/3, forget_room/3,
-	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4]).
+	 can_use_nick/4, get_rooms/2, get_nick/3, get_nicks/2, set_nick/4]).
 -export([register_online_room/4, unregister_online_room/4, find_online_room/3,
 	 get_online_rooms/3, count_online_rooms/2, rsm_supported/0,
 	 register_online_user/4, unregister_online_user/4,
@@ -121,6 +121,14 @@ get_nick(_LServer, Host, From) ->
 	[] -> error;
 	[#muc_registered{nick = Nick}] -> Nick
     end.
+
+get_nicks(_LServer, Host) ->
+    mnesia:dirty_select(muc_registered,
+                        [{#muc_registered{us_host = {{'$1', '$2'}, Host},
+                                          nick = '$3', _ = '_'},
+                          [],
+                          [{{'$1', '$2', '$3'}}]
+                         }]).
 
 set_nick(_LServer, ServiceOrRoom, From, Nick) ->
     {LUser, LServer, _} = jid:tolower(From),
