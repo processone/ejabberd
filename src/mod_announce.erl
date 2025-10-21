@@ -23,6 +23,8 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%; definitions
+
 %%% Implements a small subset of XEP-0133: Service Administration
 %%% Version 1.1 (2005-08-19)
 
@@ -77,8 +79,8 @@
 tokenize(Node) -> str:tokens(Node, <<"/#">>).
 
 %%====================================================================
-%% gen_mod callbacks
-%%====================================================================
+%%; gen_mod callbacks
+
 start(Host, Opts) ->
     gen_mod:start_child(?MODULE, Host, Opts).
 
@@ -99,8 +101,8 @@ depends(_Host, _Opts) ->
     [{mod_adhoc, hard}].
 
 %%====================================================================
-%% gen_server callbacks
-%%====================================================================
+%%; gen_server callbacks
+
 init([Host|_]) ->
     process_flag(trap_exit, true),
     Opts = gen_mod:get_module_opts(Host, ?MODULE),
@@ -165,7 +167,9 @@ terminate(_Reason, #state{host = Host}) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-%% Announcing via messages to a custom resource
+%%====================================================================
+%%; Announcing via messages to a custom resource
+
 -spec announce(stanza()) -> ok | stop.
 announce(#message{to = #jid{luser = <<>>} = To} = Packet) ->
     Proc = gen_mod:get_module_proc(To#jid.lserver, ?MODULE),
@@ -200,8 +204,12 @@ announce(#message{to = #jid{luser = <<>>} = To} = Packet) ->
 announce(_Packet) ->
     ok.
 
-%%-------------------------------------------------------------------------
-%% Announcing via ad-hoc commands
+%%====================================================================
+%%; Announcing via ad-hoc commands
+
+%%====================================================================
+%%; -- disco identity
+
 -define(INFO_COMMAND(Lang, Node),
 	[#identity{category = <<"automation">>,
 		   type = <<"command-node">>,
@@ -234,7 +242,8 @@ disco_identity(Acc, _From, _To, Node, Lang) ->
 	    Acc
     end.
 
-%%-------------------------------------------------------------------------
+%%====================================================================
+%%; -- disco features
 
 -define(INFO_RESULT(Allow, Feats, Lang),
 	case Allow of
@@ -296,7 +305,9 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To, Node, Lang) ->
 	    end
     end.
 
-%%-------------------------------------------------------------------------
+%%====================================================================
+%%; -- disco items
+
 -define(NODE_TO_ITEM(Lang, Server, Node),
 	#disco_item{jid = jid:make(Server),
 		    node = Node,
@@ -374,7 +385,9 @@ disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, Lang) ->
 	    end
     end.
 
-%%-------------------------------------------------------------------------
+%%====================================================================
+%%; -- announce items
+
 -spec announce_items(empty | {error, stanza_error()} | {result, [disco_item()]},
 			jid(), jid(), binary()) -> {error, stanza_error()} |
 						   {result, [disco_item()]} |
@@ -413,7 +426,8 @@ announce_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, Lang) 
 	    {result, Items ++ Nodes1 ++ Nodes2}
     end.
 
-%%-------------------------------------------------------------------------
+%%====================================================================
+%%; -- commands
 
 commands_result(Allow, From, To, Request) ->
     case Allow of
@@ -499,6 +513,9 @@ vvaluel(Val) ->
         <<>> -> [];
         _ -> [Val]
     end.
+
+%%====================================================================
+%%; -- adhoc form
 
 generate_adhoc_form(Lang, Node, ServerHost) ->
     LNode = tokenize(Node),
@@ -623,7 +640,8 @@ get_title(Lang, ?NS_ADMIN_DELETE_MOTD) ->
 get_title(Lang, ?NS_ADMIN_DELETE_MOTD_ALLHOSTS) ->
     translate:translate(Lang, ?T("Delete message of the day on all hosts")).
 
-%%-------------------------------------------------------------------------
+%%====================================================================
+%%; -- ad-hoc commands implementation
 
 announce_all(#message{to = To} = Packet) ->
     Local = jid:make(To#jid.server),
@@ -878,7 +896,10 @@ clean_cache(LServer) ->
       ?MOTD_CACHE,
       fun({_, S}, _) -> S /= LServer end).
 
-%%-------------------------------------------------------------------------
+
+%%====================================================================
+%%; ejd2sql callbacks
+
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
@@ -893,6 +914,9 @@ import_start(LServer, DBType) ->
 import(LServer, {sql, _}, DBType, Tab, List) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
     Mod:import(LServer, Tab, List).
+
+%%====================================================================
+%%; Options and Documentation
 
 mod_opt_type(access) ->
     econf:acl();
@@ -984,3 +1008,5 @@ mod_doc() ->
             #{value => "timeout()",
               desc =>
                   ?T("Same as top-level _`cache_life_time`_ option, but applied to this module only.")}}]}.
+
+%%% vim: set foldmethod=marker foldmarker=%%;,%%=:
