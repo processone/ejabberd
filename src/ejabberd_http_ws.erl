@@ -117,7 +117,7 @@ socket_handoff(LocalPath, Request, Opts) ->
 
 %%% Internal
 
-init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
+init([{#ws{ip = IP, http_opts = HOpts, headers = Headers}, _} = WS]) ->
     SOpts = lists:filtermap(fun({stream_management, _}) -> true;
                                ({max_ack_queue, _}) -> true;
                                ({ack_timeout, _}) -> true;
@@ -128,7 +128,7 @@ init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
                                ({access, _}) -> true;
                                (_) -> false
                             end, HOpts),
-    Opts = ejabberd_c2s_config:get_c2s_limits() ++ SOpts,
+    Opts = ejabberd_c2s_config:get_c2s_limits() ++ [{http, [{headers, Headers}]}] ++ SOpts,
     PingInterval = ejabberd_option:websocket_ping_interval(),
     WSTimeout = ejabberd_option:websocket_timeout(),
     Socket = {http_ws, self(), IP},
