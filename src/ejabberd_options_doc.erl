@@ -1014,8 +1014,8 @@ doc() ->
       #{value => "true | false",
         note => "obsoleted in 25.xx",
         desc =>
-            {?T("This option was renamed to _`sql_schema_multihost`_ in ejabberd 25.xx. "
-                "Please update your configuration to use the new option name")}}},
+            ?T("This option was renamed to _`sql_schema_multihost`_ in ejabberd 25.xx. "
+                "Please update your configuration to use the new option name")}},
      {update_sql_schema,
       #{value => "true | false",
         note => "updated in 24.06",
