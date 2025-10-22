@@ -2197,7 +2197,10 @@ make_command_result_element(_ArgumentsUsed,
                    || {ElementName, _ElementFormat} <- TupleElements])]),
          ?XE(<<"tbody">>,
              [?XE(<<"tr">>,
-                  [?XC(<<"td">>, format_result(V, {ElementName, ElementFormat}))
+                  [?XE(<<"td">>,
+                       [?XAC(<<"span">>,
+                             [{<<"style">>, <<"white-space: pre-wrap;">>}],
+                             format_result(V, {ElementName, ElementFormat}))])
                    || {V, {ElementName, ElementFormat}}
                           <- lists:zip(tuple_to_list(Values), TupleElements)])])]);
 make_command_result_element(ArgumentsUsed,
