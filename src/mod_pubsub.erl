@@ -3920,6 +3920,8 @@ do_transaction(ServerHost, Fun, Trans, DBType) ->
     F = fun() ->
 		try Fun()
                 catch
+					exit:{aborted, _} = Err when DBType == mnesia ->
+						exit(Err);
                     Class:Reason:StackTrace when (DBType == mnesia andalso
                                                   Trans == transaction) orelse
                                                  DBType == sql ->
