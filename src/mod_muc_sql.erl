@@ -73,6 +73,8 @@ sql_schemas() ->
                      #sql_column{name = <<"server_host">>, type = text},
                      #sql_column{name = <<"opts">>, type = {text, big}},
                      #sql_column{name = <<"created_at">>, type = timestamp,
+                                 default = true},
+                     #sql_column{name = <<"updated_at">>, type = timestamp,
                                  default = true}],
                 indices = [#sql_index{
                               columns = [<<"name">>, <<"host">>],
@@ -143,19 +145,32 @@ store_room(LServer, Host, Name, Opts, ChangesHints) ->
 			_ -> {[], Opts}
 		    end,
     SOpts = misc:term_to_expr(Opts2),
-    Timestamp = case lists:keyfind(hibernation_time, 1, Opts) of
-		    false -> <<"1970-01-02 00:00:00">>;
-		    {_, undefined} -> <<"1970-01-02 00:00:00">>;
-		    {_, Time} -> usec_to_sql_timestamp(Time)
-		end,
+    CurrentTime = usec_to_sql_timestamp(erlang:system_time(microsecond)),
     F = fun () ->
-		?SQL_UPSERT_T(
-                   "muc_room",
-                   ["!name=%(Name)s",
-                    "!host=%(Host)s",
-                    "server_host=%(LServer)s",
-                    "opts=%(SOpts)s",
-		    "created_at=%(Timestamp)t"]),
+		case ejabberd_sql:sql_query_t(
+		    ?SQL("select @(created_at)t from muc_room where "
+			 "name=%(Name)s and host=%(Host)s")) of
+		    {selected, [{CreatedAt}]} ->
+			%% Room exists, preserve created_at and update updated_at
+			?SQL_UPSERT_T(
+			   "muc_room",
+			   ["!name=%(Name)s",
+			    "!host=%(Host)s",
+			    "server_host=%(LServer)s",
+			    "opts=%(SOpts)s",
+			    "created_at=%(CreatedAt)t",
+			    "updated_at=%(CurrentTime)t"]);
+		    _ ->
+			%% New room, set both created_at and updated_at
+			?SQL_UPSERT_T(
+			   "muc_room",
+			   ["!name=%(Name)s",
+			    "!host=%(Host)s",
+			    "server_host=%(LServer)s",
+			    "opts=%(SOpts)s",
+			    "created_at=%(CurrentTime)t",
+			    "updated_at=%(CurrentTime)t"])
+		end,
                 case ChangesHints of
                     Changes when is_list(Changes) ->
                         [change_room(Host, Name, Change) || Change <- Changes];
@@ -277,7 +292,7 @@ get_hibernated_rooms_older_than(LServer, Host, Timestamp) ->
     case catch ejabberd_sql:sql_query(
 	LServer,
 	?SQL("select @(name)s, @(opts)s from muc_room"
-	     " where host=%(Host)s and created_at < %(TimestampS)t and created_at > '1970-01-02 00:00:00'")) of
+	     " where host=%(Host)s and created_at < %(TimestampS)t")) of
 	{selected, RoomOpts} ->
 	    lists:map(
 		fun({Room, Opts}) ->
