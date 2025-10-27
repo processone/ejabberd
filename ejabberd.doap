@@ -299,7 +299,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0133.html"/>
-        <xmpp:version>1.3.0</xmpp:version>
+        <xmpp:version>1.3.1</xmpp:version>
         <xmpp:since>13.10</xmpp:since>
         <xmpp:status>partial</xmpp:status>
         <xmpp:note>mod_configure</xmpp:note>
@@ -581,7 +581,7 @@
         <xmpp:version>0.3.1</xmpp:version>
         <xmpp:since>21.12</xmpp:since>
         <xmpp:status>complete</xmpp:status>
-        <xmpp:note>mod_muc_room, 0.3.1 since 25.xx</xmpp:note>
+        <xmpp:note>mod_muc_room, 0.3.1 since 25.10</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
