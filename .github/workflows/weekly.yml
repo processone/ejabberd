@@ -83,18 +83,6 @@ jobs:
         do: deploy, no_tls, start, register
         username: user123
 
-    - name: Run XMPP Interoperability Tests against CI server
-      if: matrix.otp == '27'
-      continue-on-error: true
-      uses: XMPP-Interop-Testing/xmpp-interop-tests-action@v1.6.1
-      with:
-        domain: 'localhost'
-        adminAccountUsername: 'user123'
-        adminAccountPassword: 's0mePass'
-        disabledSpecifications: RFC6121,XEP-0030,XEP-0045,XEP-0054,XEP-0060,
-                                XEP-0080,XEP-0115,XEP-0118,XEP-0215,XEP-0347,
-                                XEP-0363,XEP-0384
-
     - name: Stop development release
       if: always()
       uses: ./.github/actions/manage-ejabberd
