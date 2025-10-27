@@ -170,7 +170,7 @@ jobs:
 
     - name: Upload CT logs
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ct-logs-${{ matrix.otp }}
         path: _build/test/logs
