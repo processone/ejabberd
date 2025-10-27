@@ -15,7 +15,6 @@
 {"Access model","Model d'Accés"}.
 {"Account doesn't exist","El compte no existeix"}.
 {"Action on user","Acció en l'usuari"}.
-{"Add a hat to a user","Afegir un barret a un usuari"}.
 {"Add User","Afegir usuari"}.
 {"Administration of ","Administració de "}.
 {"Administration","Administració"}.
@@ -49,6 +48,7 @@
 {"API Commands","Comandaments API"}.
 {"April","Abril"}.
 {"Arguments","Arguments"}.
+{"Assign a hat to a user","Asignar un barret a un usuari"}.
 {"Attribute 'channel' is required for this request","L'atribut 'channel' és necessari per a aquesta petició"}.
 {"Attribute 'id' is mandatory for MIX messages","L'atribut 'id' es necessari per a missatges MIX"}.
 {"Attribute 'jid' is not allowed here","L'atribut 'jid' no està permès ací"}.
@@ -94,7 +94,9 @@
 {"Configuration of room ~s","Configuració de la sala ~s"}.
 {"Configuration","Configuració"}.
 {"Contact Addresses (normally, room owner or owners)","Adreces de contacte (normalment, propietaris de la sala)"}.
+{"Contacts","Contactes"}.
 {"Country","Pais"}.
+{"Create a Hat","Crear un barret"}.
 {"Current Discussion Topic","Assumpte de discussió actual"}.
 {"Database failure","Error a la base de dades"}.
 {"Database Tables Configuration at ","Configuració de la base de dades en "}.
@@ -106,6 +108,8 @@
 {"Delete User","Eliminar Usuari"}.
 {"Deliver event notifications","Entrega de notificacions d'events"}.
 {"Deliver payloads with event notifications","Enviar payloads junt a les notificacions d'events"}.
+{"Destroy a Hat","Destruir un barret"}.
+{"Disable User","Deshabilitar un Usuari"}.
 {"Disc only copy","Còpia sols en disc"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","No li donis la teva contrasenya a ningú, ni tan sols als administradors del servidor XMPP."}.
 {"Dump Backup to Text File at ","Exporta còpia de seguretat a fitxer de text en "}.
@@ -157,12 +161,19 @@
 {"Full List of Room Admins","Llista completa de administradors de la sala"}.
 {"Full List of Room Owners","Llista completa de propietaris de la sala"}.
 {"Full Name","Nom complet"}.
+{"Get List of Active Users","Obté la llista d'usuaris actius"}.
+{"Get List of Disabled Users","Obté la llista d'usuaris deshabilitats"}.
+{"Get List of Idle Users","Obté la llista d'usuaris inactius"}.
 {"Get List of Online Users","Obté la llista d'usuaris en línia"}.
 {"Get List of Registered Users","Obté la llista d'usuaris registrats"}.
+{"Get Number of Active Users","Obtenir Número d'Usuaris Actius"}.
+{"Get Number of Disabled Users","Obtenir Número d'Usuaris Deshabilitats"}.
+{"Get Number of Idle Users","Obtenir Número d'Usuaris Inactius"}.
 {"Get Number of Online Users","Obtenir Número d'Usuaris Connectats"}.
 {"Get Number of Registered Users","Obtenir Número d'Usuaris Registrats"}.
 {"Get Pending","Obtenir Pendents"}.
 {"Get User Last Login Time","Obtenir la última connexió d'Usuari"}.
+{"Get User Roster","Obtenir llista de contactes de l'usuari"}.
 {"Get User Statistics","Obtenir Estadístiques d'Usuari"}.
 {"Given Name","Nom propi"}.
 {"Grant voice to this person?","Concedir veu a aquesta persona?"}.
@@ -171,7 +182,9 @@
 {"has been kicked because of an affiliation change","ha sigut expulsat a causa d'un canvi d'afiliació"}.
 {"has been kicked because the room has been changed to members-only","ha sigut expulsat perquè la sala ara és només per a membres"}.
 {"has been kicked","ha sigut expulsat"}.
+{"Hash computed from the list of hats available in a room","Hash computat de la llista de barrets disponibles a una sala"}.
 {"Hash of the vCard-temp avatar of this room","Hash del avatar a vCard-temp d'esta sala"}.
+{"Hat hue","To de color del barret"}.
 {"Hat title","Títol del barret"}.
 {"Hat URI","URI del barret"}.
 {"Hats limit exceeded","El límit de tràfic ha sigut sobrepassat"}.
@@ -225,7 +238,7 @@
 {"Last year","Últim any"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Els bits menys significants del hash SHA-256 del text deurien ser iguals a l'etiqueta hexadecimal"}.
 {"leaves the room","surt de la sala"}.
-{"List of users with hats","Llista d'usuaris amb barrets"}.
+{"List of Hats","Llista de barrets"}.
 {"List users with hats","Llista d'usuaris amb barrets"}.
 {"Logged Out","Desconectat"}.
 {"Logging","Registre"}.
@@ -319,7 +332,10 @@
 {"Notify subscribers when the node configuration changes","Notificar subscriptors quan canvia la configuració del node"}.
 {"Notify subscribers when the node is deleted","Notificar subscriptors quan el node és eliminat"}.
 {"November","Novembre"}.
+{"Number of active users","Número d'usuaris actius"}.
 {"Number of answers required","Número de respostes requerides"}.
+{"Number of disabled users","Número d'Usuaris Deshabilitats"}.
+{"Number of idle users","Número d'usuaris inactius"}.
 {"Number of occupants","Número d'ocupants"}.
 {"Number of Offline Messages","Número de missatges offline"}.
 {"Number of online users","Número d'usuaris connectats"}.
@@ -395,6 +411,7 @@
 {"Receive notification of new items only","Rebre notificació només de nous elements"}.
 {"Receive notification of new nodes only","Rebre notificació només de nous nodes"}.
 {"Recipient is not in the conference room","El receptor no està en la sala de conferència"}.
+{"Re-Enable User","Rehabilitar usuari"}.
 {"Register an XMPP account","Registrar un compte XMPP"}.
 {"Register","Registrar"}.
 {"Remote copy","Còpia remota"}.
@@ -489,6 +506,9 @@
 {"The JIDs of those to contact with questions","Els JIDs a qui contactar amb preguntes"}.
 {"The JIDs of those with an affiliation of owner","Els JIDs de qui tenen una afiliació de propietaris"}.
 {"The JIDs of those with an affiliation of publisher","Els JIDs de qui tenen una afiliació de publicadors"}.
+{"The list of all active users","La llista de tots els usuaris actius"}.
+{"The list of all disabled users","La llista de tots els usuaris deshabilitats"}.
+{"The list of all idle users","La llista de tots els usuaris inactius"}.
 {"The list of all online users","La llista de tots els usuaris en línia"}.
 {"The list of all users","La llista de tots els usuaris"}.
 {"The list of JIDs that may associate leaf nodes with a collection","La llista de JIDs que poden associar nodes fulla amb una col·lecció"}.
@@ -510,6 +530,7 @@
 {"The presence states for which an entity wants to receive notifications","El estats de presencia per als quals una entitat vol rebre notificacions"}.
 {"The query is only allowed from local users","La petició està permesa només d'usuaris locals"}.
 {"The query must not contain <item/> elements","La petició no pot contenir elements <item/>"}.
+{"The role","El rol"}.
 {"The room subject can be modified by participants","El tema de la sala pot modificar-lo els participants"}.
 {"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","La informació semàntica de les dades al node, usualment especificat pel espai de noms de la càrrega util (si n'hi ha)"}.
 {"The sender of the last received message","Qui ha enviat l'ultim missatge rebut"}.
