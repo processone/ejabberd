@@ -54,7 +54,7 @@ jobs:
         id: meta
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          flavor: suffix=--${{ matrix.platform }},latest=false
+          flavor: suffix=--${{ matrix.platform }}
           labels: |
             org.opencontainers.image.revision=${{ steps.gitdescribe.outputs.ver }}
             org.opencontainers.image.licenses=GPL-2.0
@@ -83,21 +83,33 @@ jobs:
     steps:
       - uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: docker/metadata-action@v5
-        id: metadata
+        id: meta-amd
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: suffix=--amd64
+      - uses: docker/metadata-action@v5
+        id: meta-arm
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: suffix=--arm64
+      - uses: docker/metadata-action@v5
+        id: meta-result
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
       - uses: int128/docker-manifest-create-action@v2
         id: merge
         with:
           index-annotations: ${{ steps.metadata.outputs.labels }}
-          tags: ${{ steps.metadata.outputs.tags }}
+          tags: ${{ steps.meta-result.outputs.tags }}
           sources: |
-            ${{ steps.metadata.outputs.tags }}--amd64
-            ${{ steps.metadata.outputs.tags }}--arm64
+            ${{ steps.meta-amd.outputs.tags }}
+            ${{ steps.meta-arm.outputs.tags }}
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           dry-run: true
