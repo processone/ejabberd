@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 08/22/2025
+.\"      Date: 10/28/2025
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "08/22/2025" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "10/28/2025" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/25\&.08/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/25\&.10/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 25\&.08\&. The options that changed in this version are marked with 🟤\&.
+This section describes top level options of ejabberd 25\&.10\&. The options that changed in this version are marked with 🟤\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLName|ACLDefinition}}\fR
 .RS 4
@@ -1282,17 +1282,12 @@ This option can be used to tune tick time parameter of
 \fI1 minute\fR\&.
 .RE
 .PP
-\fBnew_sql_schema\fR: \fItrue | false\fR
+\fBnew_sql_schema 🟤\fR: \fItrue | false\fR
 .RS 4
-Whether to use the
-\fIdatabase\&.md#default\-and\-new\-schemas|new SQL schema\fR\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/25\&.08/sql\&. There are two schemas available\&. The default legacy schema stores one XMPP domain into one ejabberd database\&. The
-\fInew\fR
-schema can handle several XMPP domains in a single ejabberd database\&. Using this
-\fInew\fR
-schema is best when serving several XMPP domains and/or changing domains from time to time\&. This avoid need to manage several databases and handle complex configuration changes\&. The default depends on configuration flag
-\fI\-\-enable\-new\-sql\-schema\fR
-which is set at compile time\&.
+\fINote\fR
+about this option: obsoleted in 25\&.10\&. This option was renamed to
+\fIsql_schema_multihost\fR
+in ejabberd 25\&.10\&. Please update your configuration to use the new option name
 .RE
 .PP
 \fBoauth_access\fR: \fIAccessName\fR
@@ -1958,6 +1953,22 @@ or
 if the latter is not set\&.
 .RE
 .PP
+\fBsql_schema_multihost 🟤\fR: \fItrue | false\fR
+.RS 4
+\fINote\fR
+about this option: renamed in 25\&.10\&. Whether to use the
+\fIdatabase\&.md#default\-and\-new\-schemas|multihost SQL schema\fR\&. All schemas are located at
+https://github\&.com/processone/ejabberd/tree/25\&.10/sql\&. There are two schemas available\&. The legacy
+\fIsinglehost\fR
+schema stores one XMPP domain into one ejabberd database\&. The
+\fImultihost\fR
+schema can handle several XMPP domains in a single ejabberd database\&. The
+\fImultihost\fR
+schema is preferable when serving several XMPP domains and/or changing domains from time to time\&. This avoid need to manage several databases and handle complex configuration changes\&. The default depends on configuration flag
+\fI\-\-enable\-sql\-schema\-multihost\fR
+which is set at compile time\&.
+.RE
+.PP
 \fBsql_server\fR: \fIHost | IP Address | ODBC Connection String | Unix Socket Path\fR
 .RS 4
 \fINote\fR
@@ -2107,7 +2118,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 25\&.08\&. The modules that changed in this version are marked with 🟤\&.
+This section describes modules options of ejabberd 25\&.10\&. The modules that changed in this version are marked with 🟤\&.
 .SS "mod_adhoc"
 .sp
 def:ad\-hoc command
@@ -2277,7 +2288,7 @@ This module can be used to update existing SQL database from the default to the 
 The module has no options\&.
 .SS "mod_announce"
 .sp
-This module enables configured users to broadcast announcements and to set the message of the day (MOTD)\&. Configured users can perform these actions with an XMPP client either using Ad\-Hoc Commands or sending messages to specific JIDs\&.
+This module enables configured users to broadcast announcements and to set the message of the day (MOTD)\&. Configured users can perform these actions with an XMPP client either using Ad\-Hoc Commands or sending messages to specific JIDs\&. Equivalent API commands are also available\&.
 .if n \{\
 .sp
 .\}
@@ -2462,6 +2473,8 @@ Same as top\-level
 \fIuse_cache\fR
 option, but applied to this module only\&.
 .RE
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#announce|announce\fR
 .RE
 .SS "mod_antispam"
 .sp
@@ -2590,6 +2603,8 @@ modules:
 .if n \{\
 .RE
 .\}
+.sp
+\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#spam|spam\fR
 .RE
 .SS "mod_auth_fast"
 .sp
@@ -2708,9 +2723,11 @@ The option is supposed to be used when
 \fIallow_local_users\fR
 and
 \fIallow_transports\fR
-are not enough\&. It\(cqs an ACL where
+are not enough\&. It\(cqs an Access Rule where
 \fIdeny\fR
-means the message will be rejected (or a CAPTCHA would be generated for a presence, if configured), and
+means the stanza will be rejected; there\(cqs an exception if option
+\fIcaptcha\fR
+is configured\&. And
 \fIallow\fR
 means the sender is whitelisted and the stanza will pass through\&. The default value is
 \fInone\fR, which means nothing is whitelisted\&.
@@ -2732,7 +2749,7 @@ and some server\(cqs JID is in user\(cqs roster, then messages from any user of 
 .PP
 \fBcaptcha\fR: \fItrue | false\fR
 .RS 4
-Whether to generate CAPTCHA or not in response to messages from strangers\&. See also section
+Whether to generate CAPTCHA challenges in response to incoming presence subscription requests from strangers\&. See also section
 \fIbasic\&.md#captcha|CAPTCHA\fR
 of the Configuration Guide\&. The default value is
 \fIfalse\fR\&.
@@ -2956,7 +2973,9 @@ While a client is inactive, queue presence stanzas that indicate (un)availabilit
 \fItrue\fR\&.
 .RE
 .RE
-.SS "mod_configure"
+.SS "mod_configure 🟤"
+.sp
+\fINote\fR about this option: improved in 25\&.10\&.
 .sp
 The module provides server configuration functionalities using XEP\-0030: Service Discovery and XEP\-0050: Ad\-Hoc Commands:
 .sp
@@ -2992,6 +3011,100 @@ XEP\-0133: Service Administration
 .IP \(bu 2.3
 .\}
 Additional custom ad\-hoc commands specific to ejabberd
+.RE
+.sp
+Ad\-hoc commands from XEP\-0133 that behave differently to the XEP:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+get\-user\-roster: returns standard fields instead of roster items that client cannot display
+.RE
+.sp
+Those ad\-hoc commands from XEP\-0133 do not include in the response the client that executed the command:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+get\-active\-users\-num
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+get\-idle\-users\-num
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+get\-active\-users
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+get\-idle\-users
+.RE
+.sp
+Those ad\-hoc commands from XEP\-0133 are not implemented:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+edit\-blacklist
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+edit\-whitelist
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+edit\-admin
 .RE
 .sp
 This module requires \fImod_adhoc\fR (to execute the commands), and recommends \fImod_disco\fR (to discover the commands)\&.
@@ -4091,6 +4204,13 @@ This access rule defines who is allowed to modify the MAM preferences\&. The def
 \fIall\fR\&.
 .RE
 .PP
+\fBarchive_muc_as_mucsub 🟤\fR: \fItrue | false\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.10\&. When this option is enabled incoming groupchat messages for users that have mucsub subscription to a room from which message originated will have those messages archived after being converted to mucsub event messages\&.The default value is
+\fIfalse\fR\&.
+.RE
+.PP
 \fBassume_mam_usage\fR: \fItrue | false\fR
 .RS 4
 This option determines how ejabberd\(cqs stream management code (see
@@ -4176,7 +4296,7 @@ When this option is disabled, for each individual subscriber a separate mucsub m
 .sp
 \fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#mam|mam\fR, \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#purge|purge\fR
 .RE
-.SS "mod_matrix_gw 🟤"
+.SS "mod_matrix_gw"
 .sp
 \fINote\fR about this option: improved in 25\&.08\&.
 .sp
@@ -4861,10 +4981,10 @@ in order to accept their join in the room\&. The default value is
 Short description of the room\&. The default value is an empty string\&.
 .RE
 .PP
-\fBenable_hats\fR: \fItrue | false\fR
+\fBenable_hats 🟤\fR: \fItrue | false\fR
 .RS 4
 \fINote\fR
-about this option: improved in 25\&.03\&. Allow extended roles as defined in XEP\-0317 Hats\&. Check the
+about this option: improved in 25\&.10\&. Allow extended roles as defined in XEP\-0317 Hats\&. Check the
 \fI\&.\&./\&.\&./tutorials/muc\-hats\&.md|MUC Hats\fR
 tutorial\&. The default value is
 \fIfalse\fR\&.
@@ -6203,7 +6323,7 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_providers 🟤"
+.SS "mod_providers"
 .sp
 \fINote\fR about this option: added in 25\&.08\&.
 .sp
@@ -8862,7 +8982,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 25\&.08\&.
+This section describes listeners options of ejabberd 25\&.10\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -8870,13 +8990,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 25\&.08\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 25\&.10\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/25\&.08/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/25\&.10/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
