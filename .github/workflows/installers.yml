@@ -106,4 +106,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          files: ejabberd-packages/*
+          files: ejabberd-packages-amd64/*
+          files: ejabberd-packages-arm64/*
