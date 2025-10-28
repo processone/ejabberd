@@ -1895,7 +1895,7 @@ mod_doc() ->
              }},
            {archive_muc_as_mucsub,
             #{value => "true | false",
-              note => "added in 25.xx",
+              note => "added in 25.10",
               desc =>
                   ?T("When this option is enabled incoming groupchat messages "
                      "for users that have mucsub subscription to a room from which "

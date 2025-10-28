@@ -994,7 +994,7 @@ doc() ->
                "The default value is '1 minute'.")}},
      {sql_schema_multihost,
       #{value => "true | false",
-        note => "renamed in 25.xx",
+        note => "renamed in 25.10",
         desc =>
             {?T("Whether to use the "
                 "_`database.md#default-and-new-schemas|multihost SQL schema`_. "
@@ -1012,9 +1012,9 @@ doc() ->
              [binary:part(ejabberd_config:version(), {0,5})]}}},
      {new_sql_schema,
       #{value => "true | false",
-        note => "obsoleted in 25.xx",
+        note => "obsoleted in 25.10",
         desc =>
-            ?T("This option was renamed to _`sql_schema_multihost`_ in ejabberd 25.xx. "
+            ?T("This option was renamed to _`sql_schema_multihost`_ in ejabberd 25.10. "
                 "Please update your configuration to use the new option name")}},
      {update_sql_schema,
       #{value => "true | false",

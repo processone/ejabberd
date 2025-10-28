@@ -1880,7 +1880,7 @@ mod_doc() ->
               "have an equivalent "
               "https://docs.ejabberd.im/developer/ejabberd-api/[API Command] "
               "that you can execute using _`mod_adhoc_api`_ or any other API frontend.")],
-      note => "improved in 25.xx",
+      note => "improved in 25.10",
       opts =>
           [{access,
             #{value => ?T("AccessName"),
