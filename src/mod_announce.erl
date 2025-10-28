@@ -898,10 +898,12 @@ route_forbidden_error(Packet) ->
 
 -spec get_commands_spec() -> [ejabberd_commands()].
 get_commands_spec() ->
+    HostAll = "If HOST is `all`, send to all hosts. ",
+    BodyNew = "You can use ' \\n ' in the message body to write a newline.",
     [#ejabberd_commands{name = announce_send_all,
                         tags = [announce],
                         desc = "Send announcement to all users",
-                        longdesc = "If HOST is `all`, send to all hosts.",
+                        longdesc = HostAll ++ BodyNew,
                         module = ?MODULE,
                         function = announce_send_all,
                         note = "added in 25.xx",
@@ -910,7 +912,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = announce_send_online,
                         tags = [announce],
                         desc = "Send announcement to online users",
-                        longdesc = "If HOST is `all`, send to all hosts.",
+                        longdesc = HostAll ++ BodyNew,
                         module = ?MODULE,
                         function = announce_send_online,
                         note = "added in 25.xx",
@@ -919,6 +921,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = announce_motd_get,
                         tags = [announce],
                         desc = "Get Message Of The Day",
+                        longdesc = BodyNew,
                         module = ?MODULE,
                         function = get_stored_motd,
                         note = "added in 25.xx",
@@ -927,7 +930,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = announce_motd_set_online,
                         tags = [announce],
                         desc = "Set Message Of The Day and send to online users",
-                        longdesc = "If HOST is `all`, send to all hosts.",
+                        longdesc = HostAll ++ BodyNew,
                         module = ?MODULE,
                         function = announce_motd_set_online,
                         note = "added in 25.xx",
@@ -936,7 +939,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = announce_motd_update,
                         tags = [announce],
                         desc = "Update Message Of The Day",
-                        longdesc = "If HOST is `all`, send to all hosts.",
+                        longdesc = HostAll ++ BodyNew,
                         module = ?MODULE,
                         function = announce_motd_update,
                         note = "added in 25.xx",
@@ -945,7 +948,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = announce_motd_delete,
                         tags = [announce],
                         desc = "Delete Message Of The Day",
-                        longdesc = "If HOST is `all`, send to all hosts.",
+                        longdesc = HostAll,
                         module = ?MODULE,
                         function = announce_motd_delete_api,
                         note = "added in 25.xx",
@@ -1118,9 +1121,7 @@ mod_doc() ->
               "announcements and to set the message of the day (MOTD). "
               "Configured users can perform these actions with an XMPP "
               "client either using Ad-Hoc Commands or sending messages "
-              "to specific JIDs."), "",
-           ?T("Equivalent API commands are also available. "
-              "You can use ' \\n ' in the message body to write a newline."), "",
+              "to specific JIDs. Equivalent API commands are also available."), "",
 	   ?T("NOTE: This module can be resource intensive on large "
 	      "deployments as it may broadcast a lot of messages. This module "
 	      "should be disabled for instances of ejabberd with hundreds of "
