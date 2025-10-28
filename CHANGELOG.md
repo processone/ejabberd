@@ -1,3 +1,78 @@
+## Version 25.10
+
+#### Ad-hoc Commands
+
+- `mod_configure`: New ad-hoc commands that were missing from XEP-0133
+- `mod_adhoc_api`: Add support for asynchronous command calling
+- `mod_adhoc_api`: If argument is a list of jids, type is `jid-multi`
+- `mod_adhoc_api`: If field has several values, type is `text-multi`
+
+#### API Commands
+
+- Add commands argument type `binary_or_list`
+- `mod_http_api`: Format sub elements for tuples from maps
+- `mod_admin_extra`: Improve roster API commands documentation
+- `mod_announce`: New API commands, reusing existing ad-hoc functions
+- `ejabberd_admin`: New API command `restart_kindly`, improve `stop_kindly`
+- `mod_admin_extra`: New API commands `list_banned` and `count_banned`
+- `mod_admin_extra`: Improve API command `status_list`: support for status to be a list
+- `mod_muc_admin`: New API commands `muc_get_registered_nick` and nicks ([#4468](https://github.com/processone/ejabberd/issues/4468))
+- Use `mod_private:del_data` in `unban_account` API command
+
+#### Configuration
+
+- Rename `New` SQL schema to `Multihost`, and `Default` to `Singlehost` ([#4456](https://github.com/processone/ejabberd/issues/4456))
+- Add config transformer from `use_new_schema` -> `sql_multihost_schema`
+- `mod_sip`: Fix problem parsing `via` in `yconf` library ([#4444](https://github.com/processone/ejabberd/issues/4444))
+
+#### Erlang/OTP support
+
+- Enable feature `maybe_expr` in the compiler for Erlang/OTP 26 ([#4459](https://github.com/processone/ejabberd/issues/4459))
+- Enable feature `maybe_expr` also in the runtime for Erlang/OTP 25
+- Runtime: Remove Erlang 24 which won't work anymore with `maybe_expr`
+- Remove `EX_RULE` and `EX_STACK` macros only used with ancient erlang
+
+#### GitHub Workflows
+
+- CI: Bump XMPP-Interop-Testing/xmpp-interop-tests-action ([#4469](https://github.com/processone/ejabberd/issues/4469))
+- CI: Don't care to include commit details in the CT logs HTML page
+- CI and Runtime: Reorganize steps to run in parallel, and ARM runner ([#4460](https://github.com/processone/ejabberd/issues/4460))
+- Add local composite actions to manage ejabberd and databases
+- Container: Build ARM in native runner instead of QEMU, merge and clean
+- Installers: Generate ARM installers in native runner
+- Tests: Run agnostic-database tests only once, not for every backend
+- Tests: The odbc backend is not actually used in Commont Tests
+- Weekly: New workflow that condenses CI, test all erlang without caching
+
+#### Installers and Container
+
+- Bump Erlang/OTP version to 27.3.4.3 in installers and container
+- Bump Expat 2.7.3, OpenSSL 3.5.4, unixODBC 2.3.14 in installers
+
+#### MUC
+
+- `mod_mam`: New option `archive_muc_as_mucsub`
+- `mod_muc`: Check if room is hibernated before calling mod_muc process
+- `mod_muc`: Update implementation of XEP-0317 Hats to version 0.3.1 ([#4380](https://github.com/processone/ejabberd/issues/4380))
+- `mod_muc`: Make mod_muc_sql properly handle new hats data ([#4380](https://github.com/processone/ejabberd/issues/4380))
+- `mod_muc_room`: Don't require password if user is owner of room
+- `mod_muc_admin`: Use in WebAdmin the new API commands that get nick registers
+
+#### Core and Modules
+
+- `ejabberd_http_ws`: Pass HTTP headers from WS to C2S connection ([#4471](https://github.com/processone/ejabberd/issues/4471))
+- `ejabberd_listener`: Properly pass `send_timeout` option to listener sockets
+- `ejabberdctl`: When ping returns pang, return also status code 1 ([#4327](https://github.com/processone/ejabberd/issues/4327))
+- `ext_mod`: Print module status message after installation
+- `misc`: json_encode should always call json with our filter
+- `mod_admin_update_sql`: Use same index name than when creating database
+- `mod_block_strangers`: Clarify `access` and `captcha` documentation ([#4221](https://github.com/processone/ejabberd/issues/4221))
+- `mod_http_upload`: Encode URL before parsing, as done before `bba1a1e3c` ([#4450](https://github.com/processone/ejabberd/issues/4450))
+- `mod_private`: Add `del_data/3`, `get_users_with_data/2`, `count_users_with_data/2`
+- `mod_pubsub`: Don't catch `exit:{aborted, _}` inside mnesia transactions
+- `mod_push`: Run new hook `push_send_notification` ([#4383](https://github.com/processone/ejabberd/issues/4383))
+- WebAdmin: Respect newline and whitespace characters in results
+
 ## Version 25.08
 
 #### API Commands
