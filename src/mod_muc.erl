@@ -603,7 +603,8 @@ unhibernate_room(ServerHost, Host, Room, ResetHibernationTime) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
         error ->
-            case RMod:restore_room(ServerHost, Host, Room) of
+            Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+            case Mod:restore_room(ServerHost, Host, Room) of
             	error ->
             	    {error, notfound};
                 {error, _} = Err ->
