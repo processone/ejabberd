@@ -285,8 +285,12 @@ terminate(Reason, #{auth_domains := AuthDomains,
 		    socket := Socket} = State) ->
     case maps:get(stop_reason, State, undefined) of
 	{tls, _} = Err ->
-	    ?WARNING_MSG("(~ts) Failed to secure inbound s2s connection: ~ts",
-			 [xmpp_socket:pp(Socket), xmpp_stream_in:format_error(Err)]);
+            RServer = case State of
+                         #{remote_server := RS} -> RS;
+                         _ -> <<"unknown">>
+                     end,
+	    ?WARNING_MSG("(~ts) Failed to secure inbound s2s connection to ~ts: ~ts",
+			 [xmpp_socket:pp(Socket), RServer, xmpp_stream_in:format_error(Err)]);
 	_ ->
 	    ok
     end,
