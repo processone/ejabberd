@@ -65,23 +65,24 @@ single_cases() ->
       single_test(stream_feature),
       single_test(ibr),
       single_test(ibr_reserved),
-      single_test(ibr_subscription)]}.
+      single_test(ibr_subscription),
+      single_test(http)]}.
 
 %%%===================================================================
 
 gen_invite(Config) ->
     Server = ?config(server, Config),
     User = ?config(user, Config),
-    Res = mod_invites:gen_invite(<<"foo">>, Server),
-    ?match(<<"xmpp:", _/binary>>, Res),
-    Token = token_from_uri(Res),
+    {TokenURI, _LandingPage} = mod_invites:gen_invite(<<"foo">>, Server),
+    ?match(<<"xmpp:foo@", Server:(size(Server))/binary, "?register;preauth=", _/binary>>, TokenURI),
+    Token = token_from_uri(TokenURI),
     #invite_token{inviter = {<<>>, Server},
                   type = account_only,
                   account_name = <<"foo">>} =
         mod_invites:get_invite(Server, Token),
-    Res2 = mod_invites:gen_invite(Server),
-    ?match(<<"xmpp:", _/binary>>, Res),
-    Token2 = token_from_uri(Res2),
+    {TokenURI2, _LP2} = mod_invites:gen_invite(Server),
+    ?match(<<"xmpp:", _/binary>>, TokenURI2),
+    Token2 = token_from_uri(TokenURI2),
     #invite_token{inviter = {<<>>, Server},
                   type = account_only,
                   account_name = <<>>} =
@@ -98,7 +99,7 @@ cleanup_expired(Config) ->
     Server = ?config(server, Config),
     create_account_invite(Server, {<<"foo">>, Server}),
     mod_invites:expire_tokens(<<"foo">>, Server),
-    Token = token_from_uri(mod_invites:gen_invite(<<"foobar">>, Server)),
+    Token = token_from_uri(element(1, mod_invites:gen_invite(<<"foobar">>, Server))),
     ?match(1, mod_invites:cleanup_expired()),
     ?match(#invite_token{}, mod_invites:get_invite(Server, Token)),
     ?match(0, mod_invites:cleanup_expired()),
@@ -209,8 +210,8 @@ adhoc_command_create_account(Config) ->
 token_valid(Config) ->
     Server = ?config(server, Config),
     User = ?config(user, Config),
-    Res = mod_invites:gen_invite(<<"foobar">>, Server),
-    Token = token_from_uri(Res),
+    {TokenURI, _LandingPage} = mod_invites:gen_invite(<<"foobar">>, Server),
+    Token = token_from_uri(TokenURI),
     ?match(true, mod_invites:is_token_valid(Server, Token)),
     Inviter = {<<"foo">>, Server},
     #invite_token{token = AccountToken} =
@@ -329,6 +330,10 @@ ibr(Config0) ->
     ?match(#iq{type = error}, send_iq_register(Config1, AccountName)),
 
     ?match(#iq{type = error}, send_pars(Config1, <<"bad_token">>)),
+
+    #invite_token{token = RosterToken} =
+        mod_invites:create_roster_invite(Server, {<<"inviter">>, Server}),
+    ?match(#iq{type = error}, send_pars(Config1, RosterToken)),
 
     #invite_token{token = Token} =
         mod_invites:create_account_invite(Server, {<<>>, Server}, AccountName, false),
@@ -453,6 +458,52 @@ receive_subscription_stanzas(Count, Elements, ServerJID, UserFullJID, NewAccount
         end,
     receive_subscription_stanzas(Count - 1, Res, ServerJID, UserFullJID, NewAccountFullJID).
 
+http(Config) ->
+    Server = ?config(server, Config),
+    User = ?config(user, Config),
+    {TokenURI, LandingPage} = mod_invites:gen_invite(Server),
+    Token = token_from_uri(TokenURI),
+    {ok, {{_, 200, _}, _Headers, Body}} = httpc:request(LandingPage),
+    {match, RegistrationURLs} = re:run(Body, <<"href=\"", Token/binary, "([a-zA-Z0-9\/\-]+)\"">>, [global, {capture, [1], binary}]),
+    Apps = mod_invites_http:apps_json(Server, <<"en">>, []),
+    ?match(true, length(RegistrationURLs) == length(Apps) + 1),
+    BaseURL = mod_invites_http:landing_page(Server, mod_invites:get_invite(Server, Token)),
+    lists:foreach(
+      fun([URL]) ->
+              FullURL = <<BaseURL/binary, "/", URL/binary>>,
+              ct:pal("Checking url ~p", [FullURL]),
+              ?match({ok, {{_, 200, _}, _, _}},
+                     httpc:request(FullURL)
+                    )
+      end, RegistrationURLs),
+
+    {ok, {{_, 404, _}, _, _}} = httpc:request(<<BaseURL/binary, "/UnkonwnApp">>),
+    {ok, {{_, 404, _}, _, _}} = httpc:request(<<BaseURL/binary, "/UnkonwnApp/registration">>),
+    {ok, {{_, 404, _}, _, _}} = httpc:request(<<BaseURL/binary, "/Dino/unknownpath">>),
+
+    [Last] = hd(lists:reverse(RegistrationURLs)),
+    RegURL = <<BaseURL/binary, Last/binary>>,
+    {ok, {{_, 400, _}, _, _}} = post(RegURL, <<"badtoken">>, <<"foo">>, <<"bar">>),
+    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, User, <<"bar">>),
+    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, <<"@invalidUser">>, <<"bar">>),
+    {ok, {{_, 200, _}, _, _}} = post(RegURL, Token, <<"foo">>, <<"bar">>),
+    {ok, {{_, 404, _}, _, _}} = post(RegURL, Token, <<"foo">>, <<"bar">>),
+    {ok, {{_, 404, _}, _, _}} = httpc:request(LandingPage),
+    lists:foreach(
+      fun([URL]) ->
+              FullURL = <<BaseURL/binary, "/", URL/binary>>,
+              ct:pal("Checking url ~p", [FullURL]),
+              ?match({ok, {{_, 404, _}, _, _}},
+                     httpc:request(FullURL)
+                    )
+      end, RegistrationURLs),
+    RosterInvite = #invite_token{token = RosterToken} = mod_invites:create_roster_invite(Server, {<<"inviter">>, Server}),
+    RosterURL = mod_invites_http:landing_page(Server, RosterInvite),
+    {ok, {{_, 200, _}, _, _}} = httpc:request(RosterURL),
+    FakeRegURL = <<RosterURL/binary, "/registration">>,
+    {ok, {{_, 404, _}, _, _}} = post(FakeRegURL, RosterToken, <<"baz">>, <<"bar">>),
+    ok.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -569,3 +620,7 @@ send_pars(Config, Token) ->
               #iq{type = set,
                   to = ServerJID,
                   sub_els = [#preauth{token = Token}]}).
+
+post(URL, Token, User, Password) ->
+    Data = <<"token=", Token/binary, "&user=", User/binary, "&password=", Password/binary>>,
+    httpc:request(post, {URL, [], "application/x-www-form-urlencoded", Data}, [], []).

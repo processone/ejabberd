@@ -98,6 +98,7 @@ listen:
       "/api": mod_http_api
       "/upload": mod_http_upload
       "/captcha": ejabberd_captcha
+      "/invites": mod_invites
   -
     port: STUN_PORT
     module: ejabberd_stun

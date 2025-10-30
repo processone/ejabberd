@@ -77,7 +77,7 @@ init(_Host, _Opts) ->
                            invite_token,
                            [{disc_copies, [node()]},
                             {attributes, record_info(fields, invite_token)},
-                            {index, [#invite_token.inviter]}]).
+                            {index, [inviter]}]).
 
 is_reserved(_Host, Token, User) ->
     Ts = erlang:timestamp(),
