@@ -8,7 +8,7 @@
                       }).
 
 -define(INVITE_TOKEN_EXPIRE_SECONDS_DEFAULT, 5*86400).
--define(INVITE_TOKEN_LENGTH_DEFAULT, 16).
+-define(INVITE_TOKEN_LENGTH_DEFAULT, 24).
 
 -define(NS_INVITE_INVITE, <<"urn:xmpp:invite#invite">>).
 -define(NS_INVITE_CREATE_ACCOUNT, <<"urn:xmpp:invite#create-account">>).
