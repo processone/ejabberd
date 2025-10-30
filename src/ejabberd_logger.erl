@@ -390,10 +390,11 @@ msg() ->
      msg, io_lib:nl()].
 -else.
 console_template() ->
-    [time, " ", ?CLEAD, ?CDEFAULT, clevel, "[", level, "] ", ?CMID, ?CDEFAULT, ctext | msg()].
+    [time, " ", ?CLEAD, ?CDEFAULT, clevel, "[", level, "] ", ?CMID, ?CDEFAULT,
+     ctext | msg()] ++ [?CCLEAN].
 msg() ->
     [{logger_formatter, [[logger_formatter, title], ":", io_lib:nl()], []},
-     msg, ?CCLEAN, io_lib:nl()].
+     msg, io_lib:nl()].
 -endif.
 
 file_template() ->
