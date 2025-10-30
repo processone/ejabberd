@@ -19,6 +19,7 @@ define_macro:
         db_type: internal
       mod_invites:
         db_type: internal
+        landing_page: "http://@HOST@:5280/invites/{{ invite.token }}" # fixme
       mod_last:
         db_type: internal
       mod_muc:

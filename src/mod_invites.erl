@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_invites.erl
 %%% Author  : Stefan Strigler <stefan@strigler.de>
-%%% Purpose : Ad-hoc Account Invitation
+%%% Purpose : Account and Roster Invitation (aka Great Invitations)
 %%% Created : Mon Sep 15 2025 by Stefan Strigler <stefan@strigler.de>
 %%%
 %%%
@@ -34,12 +34,15 @@
 
 -export([depends/2, mod_doc/0, mod_options/1, mod_opt_type/1, reload/3, start/2, stop/1]).
 -export([adhoc_commands/4, adhoc_items/4, c2s_unauthenticated_packet/2, cleanup_expired/0,
-         expire_tokens/2, gen_invite/1, gen_invite/2, list_invites/1, remove_user/2,
-         s2s_receive_packet/1, sm_receive_packet/1, stream_feature_register/2]).
+         expire_tokens/2, gen_invite/1, gen_invite/2, get_invite/2, is_reserved/3,
+         is_token_valid/2, list_invites/1, remove_user/2, roster_add/2,
+         s2s_receive_packet/1, send_presence/3, set_invitee/3, sm_receive_packet/1,
+         stream_feature_register/2, token_uri/1, xdata_field/3]).
+
+-export([process/2]).
 
 -ifdef(TEST).
--export([create_roster_invite/2, create_account_invite/4, get_invite/2, is_reserved/3,
-         is_token_valid/3, is_token_valid/2, num_account_invites/2, set_invitee/3]).
+-export([create_roster_invite/2, create_account_invite/4, is_token_valid/3, num_account_invites/2]).
 -endif.
 
 -include("logger.hrl").
@@ -64,20 +67,6 @@
 -callback num_account_invites(User :: binary(), Server :: binary()) -> non_neg_integer().
 -callback remove_user(User :: binary(), Server :: binary()) -> any().
 -callback set_invitee(Host :: binary(), Token :: binary(), Invitee :: binary()) -> ok.
-
--define(try_subtag(IQ, SUBTAG, F, Else),
-    try xmpp:try_subtag(IQ, SUBTAG) of
-        false ->
-            Else();
-        SubTag ->
-            F(SubTag)
-    catch _:{xmpp_codec, Why} ->
-            Txt = xmpp:io_format_error(Why),
-            Lang = maps:get(lang, State),
-            Err = make_stripped_error(IQ, SUBTAG, xmpp:err_bad_request(Txt, Lang)),
-            {stop, ejabberd_c2s:send(State, Err)}
-    end).
--define(try_subtag(IQ, SUBTAG, F), ?try_subtag(IQ, SUBTAG, F, fun() -> State end)).
 
 %% @format-begin
 
@@ -104,12 +93,23 @@ mod_doc() ->
               desc =>
                   ?T("Same as top-level _`default_db`_ option, but applied to this "
                      "module only.")}},
+           {landing_page,
+            #{value => "none | binary()",
+             desc => ?T("Web address of service handling invite links. This is either a local address handled by `mod_invites` configured as a handler at `ejabberd_http` or an external service like 'easy-xmpp-invitation'. The address must be given as a template pattern with fields from the `invite` that will then get replaced accordingly. Eg.: 'https://{{ host }}:5281/invites/{{ invite.token }}' or as an external service like 'http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}'. This is the landing page that is being communicated when creating an invite using one of the ad-hoc commands.")}
+           },
            {max_invites,
             #{value => "pos_integer() | infinity",
               desc =>
                   ?T("Maximum number of 'create account' invites that can be created "
                      "by an individual user. Users that match the 'admin' acl are "
                      "exempt from this limitation.")}},
+           {site_name,
+            #{value => ?T("Site Name"),
+             desc => ?T("A human readable name for your site. E.g. 'My Beautiful Laundrette'")}
+           },
+           {templates_dir,
+            #{value => ?T("binary()"),
+              desc => ?T("The directory containing templates and static files used for landing page and web registration form. Only needs to be set if you want to ship your own set of templates or list of recommended apps.")}},
            {token_expire_seconds,
             #{value => "pos_integer()",
               desc => ?T("Number of seconds until token expires (e.g.: '7 * 86400')")}}],
@@ -140,12 +140,17 @@ mod_doc() ->
              "  mod_invites:",
              "    access_create_account: create_account_invite"]},
            ?T("Note that the names of the access rules are just examples and "
-              "you're free to change them.")]}.
+              "you're free to change them.")
+           %% TODO add example for invite page
+          ]}.
 
 mod_options(Host) ->
     [{access_create_account, none},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
+     {landing_page, none},
      {max_invites, infinity},
+     {site_name, Host},
+     {templates_dir, filename:join([code:priv_dir(ejabberd), ?MODULE, <<>>])},
      {token_expire_seconds, ?INVITE_TOKEN_EXPIRE_SECONDS_DEFAULT}].
 
 reload(ServerHost, NewOpts, OldOpts) ->
@@ -167,10 +172,8 @@ start(Host, Opts) ->
       {hook, s2s_receive_packet, s2s_receive_packet, 50},
       {hook, sm_receive_packet, sm_receive_packet, 50},
       {hook, c2s_pre_auth_features, stream_feature_register, 50},
-      {hook,
-       c2s_unauthenticated_packet,
-       c2s_unauthenticated_packet,
-       10}, % note that the sequence is important here
+      %% note the sequence below is important
+      {hook, c2s_unauthenticated_packet, c2s_unauthenticated_packet, 10},
       {commands, get_commands_spec()}]}.
 
 stop(_Host) ->
@@ -180,8 +183,14 @@ mod_opt_type(access_create_account) ->
     econf:acl();
 mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
+mod_opt_type(landing_page) ->
+    econf:either(none, econf:binary("^http[s]?://"));
 mod_opt_type(max_invites) ->
     econf:pos_int(infinity);
+mod_opt_type(site_name) ->
+    econf:binary();
+mod_opt_type(templates_dir) ->
+    econf:directory();
 mod_opt_type(token_expire_seconds) ->
     econf:pos_int().
 
@@ -217,7 +226,7 @@ get_commands_spec() ->
                         args_desc = ["Hostname to generate 'create account' invite for."],
                         args_example = [<<"example.com">>],
                         result_example = <<"xmpp:example.com?register;preauth=CJAi3TvpzuBJpmuf">>,
-                        result = {invite_uri, string}},
+                        result = {invite, {tuple, [{invite_uri, string}, {landing_page, string}]}}},
      #ejabberd_commands{name = generate_invite_with_username,
                         tags = [accounts],
                         desc =
@@ -232,7 +241,7 @@ get_commands_spec() ->
                         args_example = [<<"juliet">>, <<"example.com">>],
                         result_example =
                             <<"xmpp:juliet@example.com?register;preauth=CJAi3TvpzuBJpmuf">>,
-                        result = {invite_uri, string}},
+                        result = {invite, {tuple, [{invite_uri, string}, {landing_page, string}]}}},
      #ejabberd_commands{name = list_invites,
                         tags = [accounts],
                         desc = "List invite tokens",
@@ -244,7 +253,17 @@ get_commands_spec() ->
                         %result_example = [{invite_token, invite}],
                         result =
                             {invites,
-                            {list, {invite, {tuple, [{token, string}, {token_uri, string}, {inviter, string}, {invitee, string}, {account_name, string}, {created_at, string}, {expires, string}, {type, atom}, {valid, atom}]}}}}
+                            {list, {invite, {tuple, [{token, string},
+                                                     {valid, atom},
+                                                     {created_at, string},
+                                                     {expires, string},
+                                                     {type, atom},
+                                                     {inviter, string},
+                                                     {invitee, string},
+                                                     {account_name, string},
+                                                     {token_uri, string},
+                                                     {landing_page, string}
+                                                    ]}}}}
                        }].
 
 cleanup_expired() ->
@@ -278,21 +297,23 @@ gen_invite(Username, Host0) ->
         {error, _Reason} = Error ->
             Error;
         Invite ->
-            token_uri(Invite)
+            {token_uri(Invite), landing_page(Host, Invite)}
     end.
 
 list_invites(Host) ->
     Invites = db_call(Host, list_invites, [Host]),
     Format = fun(#invite_token{token = TO, inviter = {IU, IS}, invitee = IE, created_at = CA, expires = Exp, type = TY, account_name = AN} = Invite) ->
                      {TO,
-                      token_uri(Invite),
-                      jid:encode(jid:make(IU, IS)),
-                      IE,
-                      AN,
+                      is_token_valid(Host, TO),
                       encode_datetime(CA),
                       encode_datetime(Exp),
                       TY,
-                      is_token_valid(Host, TO)}
+                      jid:encode(jid:make(IU, IS)),
+                      IE,
+                      AN,
+                      token_uri(Invite),
+                      landing_page(Host, Invite)
+                     }
              end,
     [Format(Invite) || Invite <- Invites].
 
@@ -355,14 +376,18 @@ adhoc_commands(_Acc,
         #xdata{type = result,
                title = trans(Lang, <<"New Invite Token Created">>),
                fields =
-                   [#xdata_field{var = <<"uri">>,
-                                 label = trans(Lang, <<"Invite URI">>),
-                                 type = 'text-single',
-                                 values = [token_uri(Invite)]},
-                    #xdata_field{var = <<"expire">>,
-                                 label = trans(Lang, <<"Invite token valid until">>),
-                                 type = 'text-single',
-                                 values = [encode_datetime(Invite#invite_token.expires)]}]},
+                   maybe_add_landing_url(
+                     LServer,
+                     Invite,
+                     Lang,
+                     [#xdata_field{var = <<"uri">>,
+                                   label = trans(Lang, <<"Invite URI">>),
+                                   type = 'text-single',
+                                   values = [token_uri(Invite)]},
+                      #xdata_field{var = <<"expire">>,
+                                   label = trans(Lang, <<"Invite token valid until">>),
+                                   type = 'text-single',
+                                   values = [encode_datetime(Invite#invite_token.expires)]}])},
     Result =
         #adhoc_command{status = completed,
                        node = Node,
@@ -392,14 +417,18 @@ adhoc_commands(_Acc,
                      {stop, {error, to_stanza_error(Lang, Reason)}};
                  _Invite ->
                      ResultFields =
-                         [#xdata_field{var = <<"uri">>,
-                                       label = trans(Lang, <<"Invite URI">>),
-                                       type = 'text-single',
-                                       values = [token_uri(Invite)]},
-                          #xdata_field{var = <<"expire">>,
-                                       label = trans(Lang, <<"Invite token valid until">>),
-                                       type = 'text-single',
-                                       values = [encode_datetime(Invite#invite_token.expires)]}],
+                         maybe_add_landing_url(
+                           LServer,
+                           Invite,
+                           Lang,
+                           [#xdata_field{var = <<"uri">>,
+                                         label = trans(Lang, <<"Invite URI">>),
+                                         type = 'text-single',
+                                         values = [token_uri(Invite)]},
+                            #xdata_field{var = <<"expire">>,
+                                         label = trans(Lang, <<"Invite token valid until">>),
+                                         type = 'text-single',
+                                         values = [encode_datetime(Invite#invite_token.expires)]}]),
                      ResultXData = #xdata{type = result, fields = ResultFields},
                      Result =
                          #adhoc_command{status = completed,
@@ -496,95 +525,23 @@ handle_pre_auth_token([El | Els],
             handle_pre_auth_token(Els, To, From)
     end.
 
--spec stream_feature_register([xmpp_element()], binary()) -> [xmpp_element()].
+%%--------------------------------------------------------------------
+%%| ibr hooks
 stream_feature_register(Acc, Host) ->
-    case mod_invites_opt:access_create_account(Host) of
-        none ->
-            Acc;
-        _ ->
-            [#feature_register_ibr_token{} | Acc]
+    case gen_mod:is_loaded(Host, ?MODULE) of
+        true ->
+            mod_invites_register:stream_feature_register(Acc, Host);
+        false ->
+            Acc
     end.
 
-c2s_unauthenticated_packet(#{invite := Invite} = State,
-                           #iq{type = get, sub_els = [_]} = IQ) ->
-    %% User requests registration form after processing token
-    ?try_subtag(IQ,
-                #register{},
-                fun(Register) ->
-                   #{server := Server} = State,
-                   IQ1 = xmpp:set_els(IQ, [Register]),
-                   User = Invite#invite_token.account_name,
-                   IQ2 = xmpp:set_from_to(IQ1, jid:make(User, Server), jid:make(Server)),
-                   ResIQ = mod_register:process_iq(IQ2),
-                   ResIQ1 = xmpp:set_from_to(ResIQ, jid:make(Server), undefined),
-                   {stop, ejabberd_c2s:send(State, ResIQ1)}
-                end);
-c2s_unauthenticated_packet(#{invite := Invite, server := Server} = State,
-                           #iq{type = set, sub_els = [_]} = IQ) ->
-    %% Process registration request after processing token
-    ?try_subtag(IQ,
-                #register{},
-                fun (Register) ->
-                        case check_captcha(mod_register_opt:captcha_protected(Server), Register, IQ) of
-                            {ok, {Username, Password}} ->
-                                Token = Invite#invite_token.token,
-                                #{ip := IP} = State,
-                                {Address, _} = IP,
-                                case try_register(Token,
-                                                  Username,
-                                                  Server,
-                                                  Password,
-                                                  IQ,
-                                                  Address)
-                                of
-                                    #iq{type = result} = ResIQ ->
-                                        set_invitee(Server,
-                                                    Invite#invite_token.token,
-                                                    jid:make(Username, Server)),
-                                        NewInvite = get_invite(Server, Invite#invite_token.token),
-                                        ResState = State#{invite => NewInvite},
-                                        maybe_create_mutual_subscription(NewInvite),
-                                        {stop, ejabberd_c2s:send(ResState, ResIQ)};
-                                    #iq{type = error} = ResIQ ->
-                                        {stop, ejabberd_c2s:send(State, ResIQ)}
-                                end;
-                            {error, ResIQ} ->
-                        {stop, ejabberd_c2s:send(State, ResIQ)}
-end
-                end);
-c2s_unauthenticated_packet(State, #iq{type = set, sub_els = [_]} = IQ) ->
-    %% Check for preauth token and process it
-    ?try_subtag(IQ,
-                #preauth{},
-                fun(#preauth{token = Token}) ->
-                   #{server := Server} = State,
-                   IQ1 = xmpp:set_from_to(IQ, jid:make(<<>>), jid:make(Server)),
-                   {ResState, ResIQ} = process_token(State, Token, IQ1),
-                   ResIQ1 = xmpp:set_from_to(ResIQ, jid:make(Server), undefined),
-                   {stop, ejabberd_c2s:send(ResState, ResIQ1)}
-                end,
-                fun() ->
-                   ?try_subtag(IQ,
-                               #register{},
-                               fun (#register{username = User, password = Password})
-                                       when is_binary(User), is_binary(Password) ->
-                                       #{server := Server} = State,
-                                       case is_reserved(Server, <<>>, User) of
-                                           true ->
-                                               ResIQ =
-                                                   make_stripped_error(IQ,
-                                                                       #register{},
-                                                                       xmpp:err_not_allowed()),
-                                               {stop, ejabberd_c2s:send(State, ResIQ)};
-                                           false ->
-                                               State
-                                       end;
-                                   (_) ->
-                                       State
-                               end)
-                end);
-c2s_unauthenticated_packet(State, _) ->
-    State.
+c2s_unauthenticated_packet(State, IQ) ->
+    mod_invites_register:c2s_unauthenticated_packet(State, IQ).
+
+%%--------------------------------------------------------------------
+%%| ejabberd_http
+process(LocalPath, Request) ->
+    mod_invites_http:process(LocalPath, Request).
 
 %%--------------------------------------------------------------------
 %%| helpers
@@ -715,6 +672,9 @@ token_uri(#invite_token{type = roster_only,
     Inviter = jid:to_string(jid:make(User, Host)),
     <<"xmpp:", Inviter/binary, "?roster;preauth=", Token/binary>>.
 
+landing_page(Host, Invite) ->
+    mod_invites_http:landing_page(Host, Invite).
+
 db_call(Host, Fun, Args) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
     apply(Mod, Fun, Args).
@@ -740,6 +700,18 @@ xdata_field(Field, [#xdata_field{var = Field, values = [Result | _]} | _], _Defa
     Result;
 xdata_field(Field, [_NoMatch | Fields], Default) ->
     xdata_field(Field, Fields, Default).
+
+maybe_add_landing_url(Host, Invite, Lang, XData) ->
+    case landing_page(Host, Invite) of
+        <<>> ->
+            XData;
+        LandingPage ->
+            [#xdata_field{var = <<"landing-url">>,
+                          values = [LandingPage],
+                          label = trans(Lang, <<"Invite Landing Page URL">>),
+                          type = 'text-single'
+                         } | XData]
+    end.
 
 check(Check, Args, Fun, Else) ->
     case erlang:apply(Check, Args) of
@@ -787,10 +759,6 @@ reason_to_text(user_exists) ->
 reason_to_text(num_invites_exceeded) ->
     "Maximum number of invites reached".
 
-make_stripped_error(IQ, SubTag, Err) ->
-    xmpp:make_error(
-        xmpp:remove_subtag(IQ, SubTag), Err).
-
 maybe_gen_sid(<<>>) ->
     p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT);
 maybe_gen_sid(SID) ->
@@ -808,87 +776,3 @@ send_presence(From, To, Type) ->
                          to = To,
                          type = Type},
     ejabberd_router:route(From, To, Presence).
-
-maybe_create_mutual_subscription(#invite_token{inviter = {User, _Server}, type = Type})
-  when User == <<>>; % server token
-       Type /= account_subscription ->
-    noop;
-maybe_create_mutual_subscription(#invite_token{inviter = {User, Server}, invitee = Invitee}) ->
-    InviterJID = jid:make(User, Server),
-    InviteeJID = jid:decode(Invitee),
-    roster_add(InviterJID, InviteeJID),
-    roster_add(InviteeJID, InviterJID),
-    send_presence(InviteeJID, InviterJID, subscribe),
-    send_presence(InviterJID, InviteeJID, subscribed),
-    send_presence(InviterJID, InviteeJID, subscribe),
-    send_presence(InviteeJID, InviterJID, subscribed),
-    ok.
-
-process_token(#{server := Host} = State, Token, #iq{lang = Lang} = IQ) ->
-    ?DEBUG("checking token (~s): ~s", [Host, Token]),
-    case is_token_valid(Host, Token) of
-        true ->
-            Invite = get_invite(Host, Token),
-            NewState = State#{invite => Invite},
-            {NewState, xmpp:make_iq_result(IQ)};
-        false ->
-            Text = ?T("The token provided is either invalid or expired."),
-            {State, make_stripped_error(IQ, #preauth{}, xmpp:err_item_not_found(Text, Lang))}
-    end.
-
-try_register(Token,
-             User,
-             Server,
-             Password,
-             #iq{lang = Lang} = IQ,
-             Source) ->
-    case {jid:nodeprep(User), not is_reserved(Server, Token, User)} of
-        {error, _} ->
-            Err = xmpp:err_jid_malformed(
-                      mod_register:format_error(invalid_jid), Lang),
-            make_stripped_error(IQ, #register{}, Err);
-        {_, true} ->
-            case mod_register:try_register(User, Server, Password, Source, ?MODULE, Lang) of
-                ok ->
-                    xmpp:make_iq_result(IQ);
-                {error, Error} ->
-                    make_stripped_error(IQ, #register{}, Error)
-            end
-    end.
-
-check_captcha(true, #register{xdata =  X}, #iq{lang = Lang} = IQ) ->
-    XdataC = xmpp_util:set_xdata_field(
-               #xdata_field{
-                  var = <<"FORM_TYPE">>,
-                  type = hidden, values = [?NS_CAPTCHA]},
-               X),
-    case ejabberd_captcha:process_reply(XdataC) of
-        ok ->
-            case process_xdata_submit(X) of
-                {ok, _} = Result ->
-                    Result;
-                _ ->
-                    Txt = ?T("Incorrect data form"),
-                    make_stripped_error(IQ, #register{}, xmpp:err_bad_request(Txt, Lang))
-            end;
-        {error, malformed} ->
-            Txt = ?T("Incorrect CAPTCHA submit"),
-            make_stripped_error(IQ, #register{}, xmpp:err_bad_request(Txt, Lang));
-        _ ->
-            ErrText = ?T("The CAPTCHA verification has failed"),
-            make_stripped_error(IQ, #register{}, xmpp:err_not_allowed(ErrText, Lang))
-    end;
-check_captcha(false, #register{username = Username, password = Password}, _IQ)
-  when is_binary(Username), is_binary(Password) ->
-    {ok, {Username, Password}};
-check_captcha(_IsCaptchaEnabled, _Register, IQ) ->
-    ResIQ = make_stripped_error(IQ, #register{}, xmpp:err_bad_request()),
-    {error, ResIQ}.
-
-process_xdata_submit(X) ->
-    case {xdata_field(<<"username">>, X, undefined), xdata_field(<<"password">>, X, undefined)} of
-        {UndefU, UndefP} when UndefU == undefined; UndefP == undefined ->
-            error;
-        {Username, Password} ->
-            {ok, {Username, Password}}
-    end.

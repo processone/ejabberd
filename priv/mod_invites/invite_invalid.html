@@ -1,0 +1,9 @@
+{% extends "base_min.html" %}
+{% block form_class %}container col-md-8 col-md-offset-2 col-sm-8 cold-sm-offset-2 col-lg-6 col-lg-offset-3 mt-2 mt-md-5{% endblock %}
+{% block content %}
+        <h5 class="card-title">{% trans "Invite expired" %}</h5>
+
+				<p>{% trans "Sorry, it looks like this invite code has expired!" %}</p>
+
+				<img class="w-100" alt="{% trans "Sad person holding empty box" %}" src="{{ static }}/illus-empty.svg">
+{% endblock %}
