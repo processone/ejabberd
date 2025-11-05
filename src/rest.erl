@@ -37,6 +37,8 @@
 
 start(Host) ->
     application:start(inets),
+    Profile = profile(Host),
+    inets:start(httpc, [{profile, Profile}]),
     Size = ejabberd_option:ext_api_http_pool_size(Host),
     Proxy = case {ejabberd_option:rest_proxy(Host),
                   ejabberd_option:rest_proxy_port(Host)} of
@@ -45,7 +47,7 @@ start(Host) ->
                 {Host, Port} ->
                     [{proxy, {{binary_to_list(Host), Port}, []}}]
             end,
-    httpc:set_options([{max_sessions, Size}] ++ Proxy).
+    httpc:set_options([{max_sessions, Size}] ++ Proxy, Profile).
 
 stop(_Host) ->
     ok.
@@ -115,7 +117,7 @@ request(Server, Method, Path, Params, Mime, Data) ->
           end,
     Begin = os:timestamp(),
     ejabberd_hooks:run(backend_api_call, Server, [Server, Method, Path]),
-    Result = try httpc:request(Method, Req, HttpOpts, [{body_format, binary}]) of
+    Result = try httpc:request(Method, Req, HttpOpts, [{body_format, binary}], profile(Server)) of
         {ok, {{_, Code, _}, RetHdrs, Body}} ->
             try decode_json(Body) of
                 JSon ->
@@ -154,6 +156,9 @@ request(Server, Method, Path, Params, Mime, Data) ->
 %%%----------------------------------------------------------------------
 %%% HTTP helpers
 %%%----------------------------------------------------------------------
+
+profile(Host) ->
+binary_to_atom(<<"rest_", Host/binary>>, latin1).
 
 to_list(V) when is_binary(V) ->
     binary_to_list(V);
