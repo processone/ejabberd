@@ -1141,14 +1141,37 @@ iq_get_register_info(ServerHost, Host, From, Lang) ->
 	      xdata = X}.
 
 set_nick(ServerHost, Host, From, Nick) ->
-    LServer = jid:nameprep(ServerHost),
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:set_nick(LServer, Host, From, Nick).
+    case ejabberd_hooks:run_fold(registering_nickmuc,
+                                 ServerHost,
+                                 true,
+                                 [ServerHost, Host, From, Nick]) of
+        false ->
+            {atomic, false};
+        true ->
+            LServer = jid:nameprep(ServerHost),
+            Mod = gen_mod:db_mod(LServer, ?MODULE),
+            Mod:set_nick(LServer, Host, From, Nick)
+    end.
+
+set_nick(ServerHost, From, Nick) ->
+    lists:foreach(
+      fun(MucHost) ->
+              set_nick(ServerHost, MucHost, From, Nick)
+      end,
+      gen_mod:get_module_opt_hosts(ServerHost, mod_muc)).
 
 iq_set_register_info(ServerHost, Host, From, Nick,
 		     Lang) ->
+    OldNick = case mod_muc:get_register_nick(ServerHost, Host, From) of
+        error -> <<"">>;
+        ON when is_binary(ON) -> ON
+    end,
     case set_nick(ServerHost, Host, From, Nick) of
-      {atomic, ok} -> {result, undefined};
+      {atomic, ok} ->
+            ejabberd_hooks:run(registered_nickmuc,
+                                 ServerHost,
+                                 [ServerHost, Host, From, Nick, OldNick]),
+            {result, undefined};
       {atomic, false} ->
 	  ErrText = ?T("That nickname is registered by another person"),
 	  {error, xmpp:err_conflict(ErrText, Lang)};
