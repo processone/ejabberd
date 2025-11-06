@@ -313,7 +313,7 @@ doc() ->
       #{value => "true | false",
         desc =>
             ?T("Whether to allow installation of third-party modules or not. "
-               "See _`../../admin/guide/modules.md#ejabberd-contrib|ejabberd-contrib`_ "
+               "See _`../../admin/guide/modules.md#ejabberd-modules|ejabberd-modules`_ "
                "documentation section. "
                "The default value is 'true'.")}},
      {allow_multiple_connections,
@@ -771,10 +771,16 @@ doc() ->
       #{value => "[Module, ...]",
         note => "added in 23.10",
         desc =>
-            ?T("Modules to install from "
-               "_`../../admin/guide/modules.md#ejabberd-contrib|ejabberd-contrib`_ "
-               "at start time. "
-               "The default value is an empty list of modules: '[]'.")}},
+            ?T("Modules from "
+               "_`../../admin/guide/modules.md#ejabberd-modules|ejabberd-modules`_ "
+               "to install automatically at start time. "
+               "The default value is an empty list of modules: '[]'."),
+        example =>
+            ["install_contrib_modules:",
+             "  - mod_tombstones",
+             "",
+             "modules:",
+             "  mod_tombstones: {}"]}},
      {jwt_auth_only_rule,
       #{value => ?T("AccessName"),
         desc =>

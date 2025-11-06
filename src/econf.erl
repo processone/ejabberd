@@ -106,7 +106,9 @@ format_error({bad_module, Mod}, Ctx)
 			 _ -> false
 		     end
 	     end, ejabberd_config:beams(all)),
-    format("~ts: unknown ~ts: ~ts. Did you mean ~ts?",
+    format("~ts: unknown ~ts: ~ts. Did you mean ~ts? "
+           "If it's an external module that should get installed, "
+           "use toplevel option: install_contrib_modules",
 	   [yconf:format_ctx(Ctx),
 	    format_module_type(Ctx),
 	    format_module(Mod),
