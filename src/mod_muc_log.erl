@@ -144,7 +144,7 @@ handle_cast(Msg, State) ->
 
 handle_info(_Info, State) -> {noreply, State}.
 
-terminate(_Reason, #state{host = Host}) ->
+terminate(_Reason, #logstate{host = Host}) ->
     ejabberd_hooks:delete(muc_log_add, Host, ?MODULE, add_to_log, 100),
     ejabberd_hooks:delete(muc_log_check_access_log, Host, ?MODULE, check_access_log, 100),
     ejabberd_hooks:delete(muc_log_get_url, Host, ?MODULE, get_url, 100),
