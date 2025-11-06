@@ -19,6 +19,11 @@ RUN go install -v \
 FROM docker.io/erlang:${OTP_VSN}-alpine AS ejabberd
 
 RUN apk -U add --no-cache \
+        python3 \
+        py3-pip \
+        build-base \
+        postgresql-dev \
+        python3-dev \
         autoconf \
         automake \
         bash \
@@ -36,6 +41,9 @@ RUN apk -U add --no-cache \
         sqlite-dev \
         yaml-dev \
         zlib-dev
+
+# Install Python packages globally
+RUN pip3 install --no-cache-dir --break-system-packages bcrypt psycopg2
 
 ARG ELIXIR_VSN
 RUN wget -O - https://github.com/elixir-lang/elixir/archive/v$ELIXIR_VSN.tar.gz \
@@ -170,6 +178,15 @@ RUN apk -U upgrade --available --no-cache \
         tini \
     && rm /tmp/runDeps \
     && ln -fs /usr/lib/libtdsodbc.so.0 /usr/lib/libtdsodbc.so
+
+RUN apk -U add --no-cache \
+        python3 \
+        py3-pip \
+        build-base \
+        postgresql-dev \
+        python3-dev
+# Install Python packages globally
+RUN pip3 install --no-cache-dir --break-system-packages bcrypt psycopg2
 
 ARG USER
 ARG UID
