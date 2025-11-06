@@ -139,9 +139,19 @@ run_cmd()
 }
 exec_cmd()
 {
-    case $EXEC_CMD in
-        as_current_user) exec "$@" ;;
-        as_install_user) su -s /bin/sh -c 'exec "$0" "$@"' "$INSTALLUSER" -- "$@" ;;
+    case $EXEC_CMD,$(uname -s) in
+        as_install_user,OpenBSD)
+            su -s /bin/sh "$INSTALLUSER" -c 'exec "$0" "$@"' "$@"
+            ;;
+        as_install_user,NetBSD)
+            su "$INSTALLUSER" -c 'exec "$0" "$@"' -- "$@"
+            ;;
+        as_install_user,*)
+            su -s /bin/sh -c 'exec "$0" "$@"' "$INSTALLUSER" -- "$@"
+            ;;
+        as_current_user,*)
+            "$@"
+            ;;
     esac
 }
 run_erl()
