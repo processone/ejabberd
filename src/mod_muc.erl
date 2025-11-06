@@ -24,7 +24,7 @@
 %%%----------------------------------------------------------------------
 -module(mod_muc).
 -author('alexey@process-one.net').
--protocol({xep, 45, '1.25', '0.5.0', "complete", ""}).
+-protocol({xep, 45, '1.35.2', '0.5.0', "complete", ""}).
 -protocol({xep, 249, '1.2', '0.5.0', "complete", ""}).
 -protocol({xep, 486, '0.1.0', '24.07', "complete", ""}).
 -ifndef(GEN_SERVER).
@@ -742,7 +742,8 @@ process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
 			   deny -> []
 		       end,
     Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
-		?NS_MUC, ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE
+		?NS_MUC, ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE,
+		?NS_MUC_STABLE_ID
 		| RegisterFeatures ++ RSMFeatures ++ MAMFeatures ++ OccupantIdFeatures],
     Name = mod_muc_opt:name(ServerHost),
     Identity = #identity{category = <<"conference">>,
