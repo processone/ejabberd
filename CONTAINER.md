@@ -721,11 +721,10 @@ docker buildx build \
 
 #### Podman build
 
-To build the image using Podman, please notice:
+Some minor remarks:
 
-- `EXPOSE 4369-4399` port range is not supported, remove that in Dockerfile
-- It mentions that `healthcheck` is not supported by the Open Container Initiative image format
-- to start with command `live`, you may want to add environment variable `EJABBERD_BYPASS_WARNINGS=true`
+- When building, it mentions that `healthcheck` is not supported by the Open Container Initiative image format
+- To start with command `live`, you may want to add environment variable `EJABBERD_BYPASS_WARNINGS=true`
 
 ```bash
 podman build \
