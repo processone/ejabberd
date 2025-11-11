@@ -6,7 +6,7 @@ defmodule Ejabberd.MixProject do
      source_url: "https://github.com/processone/ejabberd",
      version: version(),
      description: description(),
-     elixir: elixir_required_version(),
+     elixir: "~> 1.14",
      elixirc_paths: ["lib"],
      compile_path: ".",
      compilers: [:asn1, :yecc] ++ Mix.compilers(),
@@ -226,35 +226,6 @@ defmodule Ejabberd.MixProject do
     end
   end
 
-  defp elixir_required_version do
-    case {Map.get(System.get_env(), "RELIVE", "false"),
-          MapSet.member?(MapSet.new(System.argv()), "release")}
-      do
-      {"true", _} ->
-        case Version.match?(System.version(), "~> 1.11") do
-          false ->
-            IO.puts("ERROR: To use 'make relive', Elixir 1.11.0 or higher is required.")
-          _ -> :ok
-        end
-        "~> 1.11"
-      {_, true} ->
-        case Version.match?(System.version(), "~> 1.10") do
-          false ->
-            IO.puts("ERROR: To build releases, Elixir 1.10.0 or higher is required.")
-          _ -> :ok
-        end
-        case Version.match?(System.version(), "< 1.11.4")
-          and :erlang.system_info(:otp_release) > ~c"23" do
-          true ->
-            IO.puts("ERROR: To build releases with Elixir lower than 1.11.4, Erlang/OTP lower than 24 is required.")
-          _ -> :ok
-        end
-        "~> 1.10"
-      _ ->
-        "~> 1.4"
-    end
-  end
-
   defp releases do
     maybe_tar = case Mix.env() do
       :prod -> [:tar]
@@ -293,22 +264,8 @@ defmodule Ejabberd.MixProject do
     ro = "rel/overlays"
     File.rm_rf(ro)
 
-    # Elixir lower than 1.12.0 don't have System.shell
     execute = fn(command) ->
-      case function_exported?(System, :shell, 1) do
-        true ->
-          System.shell(command, into: IO.stream())
-        false ->
-          :os.cmd(to_charlist(command))
-      end
-    end
-
-    # Mix/Elixir lower than 1.11.0 use config/releases.exs instead of runtime.exs
-    case Version.match?(System.version(), "~> 1.11") do
-      true ->
-        :ok
-      false ->
-        execute.("cp config/runtime.exs config/releases.exs")
+      System.shell(command, into: IO.stream())
     end
 
     execute.("sed -e 's|{{\\(\[_a-z\]*\\)}}|<%= @\\1 %>|g' ejabberdctl.template > ejabberdctl.example1")

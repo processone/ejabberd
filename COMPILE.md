@@ -28,7 +28,7 @@ Other optional libraries are:
 - PAM library, for Pluggable Authentication Modules (PAM)
 - ImageMagick's Convert program and Ghostscript fonts, for CAPTCHA
   challenges
-- Elixir ≥ 1.10.3, for Elixir support. It is recommended Elixir 1.14.0 or higher
+- Elixir ≥ 1.14.0, for Elixir support
 
 If your system splits packages in libraries and development headers,
 install the development packages too.
