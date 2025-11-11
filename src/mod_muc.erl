@@ -1245,7 +1245,7 @@ remove_user(User, Server) ->
     JID = jid:make(User, Server),
     lists:foreach(
       fun(HostI) ->
-              set_nick(HostI, JID, <<"">>)
+              catch set_nick(HostI, JID, <<"">>)
       end,
       ejabberd_option:hosts()),
     lists:foreach(
