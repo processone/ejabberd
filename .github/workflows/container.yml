@@ -4,7 +4,6 @@ on:
   push:
     paths-ignore:
     - '.devcontainer/**'
-    - 'examples/**'
     - 'lib/**'
     - 'man/**'
     - 'priv/**'
