@@ -24,6 +24,8 @@ define_macro:
   PORT_HTTP: 5280
   PORT_BROWSER: 1880
   PORT_STUN: 5478
+  PORT_TURN_MIN: 50000
+  PORT_TURN_MAX: 50099
   PORT_MQTT: 1883
   PORT_PROXY65: 7777
 
@@ -102,6 +104,8 @@ listen:
     transport: udp
     module: ejabberd_stun
     use_turn: true
+    turn_min_port: PORT_TURN_MIN
+    turn_max_port: PORT_TURN_MAX
     ## The server's public IPv4 address:
     # turn_ipv4_address: "203.0.113.3"
     ## The server's public IPv6 address:
