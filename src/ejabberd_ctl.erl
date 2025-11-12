@@ -50,7 +50,7 @@
 %%-----------------------------
 
 start() ->
-    disable_logging(),
+    logger:set_primary_config(level, none),
     [SNode, Timeout, Args] = case init:get_plain_arguments() of
                                  [SNode2, "--no-timeout" | Args2] ->
                                      [SNode2, infinity, Args2];
@@ -1034,14 +1034,6 @@ format_usage_tuple([ElementDef | ElementsDef], Indentation) ->
 
 print(Format, Args) ->
     io:format(lists:flatten(Format), Args).
-
--ifdef(LAGER).
-disable_logging() ->
-    ok.
--else.
-disable_logging() ->
-    logger:set_primary_config(level, none).
--endif.
 
 %%-----------------------------
 %% Format Example Help

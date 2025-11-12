@@ -49,10 +49,8 @@ start_link(_, _, _) ->
 	 get_password/2]).
 
 -include("logger.hrl").
--ifndef(LAGER).
 -export([stun_filter/2]).
 -define(STUN_MAX_LOG_LEVEL, notice). % Drop STUN/TURN info/debug messages.
--endif.
 
 %%%===================================================================
 %%% API
@@ -196,10 +194,6 @@ listen_options() ->
      {server_name, <<"ejabberd">>}].
 
 -spec init_logger() -> ok.
--ifdef(LAGER).
-init_logger() ->
-    ok.
--else.
 init_logger() ->
     case logger:add_primary_filter(ejabberd_stun, {fun ?MODULE:stun_filter/2,
 						   ?STUN_MAX_LOG_LEVEL}) of
@@ -220,6 +214,5 @@ stun_filter(#{meta := #{domain := [stun | _]}, level := Level}, MaxLevel) ->
     end;
 stun_filter(Event, _Extra) ->
     Event.
--endif.
 
 -endif.
