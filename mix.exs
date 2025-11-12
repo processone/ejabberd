@@ -77,7 +77,6 @@ defmodule Ejabberd.MixProject do
     result = [{:d, :ELIXIR_ENABLED}] ++
              cond_options() ++
              Enum.map(includes, fn (path) -> {:i, path} end) ++
-             if_version_below(~c"21", [{:d, :USE_OLD_HTTP_URI}]) ++
              if_version_below(~c"22", [{:d, :LAGER}]) ++
              if_version_below(~c"21", [{:d, :NO_CUSTOMIZE_HOSTNAME_CHECK}]) ++
              if_version_below(~c"23", [{:d, :USE_OLD_CRYPTO_HMAC}]) ++

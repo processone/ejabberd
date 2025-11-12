@@ -69,14 +69,6 @@
 
 -export_type([error_reason/0]).
 
--ifdef(USE_OLD_HTTP_URI). % Erlang/OTP lower than 21
--dialyzer([{no_return, do_connect/6},
-           {no_unused, flush_queue/1},
-           {no_match, flush_queue/1},
-           {no_unused, re_subscribe/2},
-           {no_match, handle_info/2}]).
--endif.
-
 %%%===================================================================
 %%% API
 %%%===================================================================
