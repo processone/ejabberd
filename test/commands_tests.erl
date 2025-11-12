@@ -32,13 +32,6 @@
 %%%==================================
 %%%% setup
 
--ifdef(OTP_BELOW_24).
-
-single_cases() ->
-    {commands_single, [sequence], []}.
-
--else.
-
 single_cases() ->
     {commands_single,
      [sequence],
@@ -69,8 +62,6 @@ single_cases() ->
       single_test(adhoc_restuple),
       %%single_test(adhoc_all),
       single_test(clean)]}.
-
--endif.
 
 %% @format-begin
 

@@ -87,8 +87,8 @@ convert_dir(Path, Host, Type) ->
 			      case eval_file(FilePath) of
 				  {ok, Data} ->
 				      Name = iolist_to_binary(filename:rootname(File)),
-				      convert_data(misc:uri_decode(Host), Type,
-						   misc:uri_decode(Name), Data);
+				      convert_data(uri_string:percent_decode(Host), Type,
+						   uri_string:percent_decode(Name), Data);
 				  Err ->
 				      Err
 			      end

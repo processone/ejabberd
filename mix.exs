@@ -77,7 +77,6 @@ defmodule Ejabberd.MixProject do
     result = [{:d, :ELIXIR_ENABLED}] ++
              cond_options() ++
              Enum.map(includes, fn (path) -> {:i, path} end) ++
-             if_version_below(~c"24", [{:d, :OTP_BELOW_24}]) ++
              if_version_below(~c"25", [{:d, :OTP_BELOW_25}]) ++
              if_version_below(~c"26", [{:d, :OTP_BELOW_26}]) ++
              if_version_below(~c"27", [{:d, :OTP_BELOW_27}]) ++

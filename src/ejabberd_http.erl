@@ -718,7 +718,7 @@ file_format_error(Reason) ->
 url_decode_q_split_normalize(Path) ->
     {NPath, Query} = url_decode_q_split(Path),
     LPath = normalize_path([NPE
-		    || NPE <- str:tokens(misc:uri_decode(NPath), <<"/">>)]),
+		    || NPE <- str:tokens(uri_string:percent_decode(NPath), <<"/">>)]),
     {LPath, Query}.
 
 % Code below is taken (with some modifications) from the yaws webserver, which

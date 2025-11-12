@@ -922,14 +922,14 @@ mk_slot(PutURL, GetURL, XMLNS, Query) ->
 
 reencode_url(UrlString) ->
     {ok, _, _, Host, _, _, _} = yconf:parse_uri(misc:url_encode(UrlString)),
-    HostDecoded = misc:uri_decode(Host),
+    HostDecoded = uri_string:percent_decode(Host),
     HostIdna = idna:encode(HostDecoded),
     re:replace(UrlString, Host, HostIdna, [{return, binary}]).
 
 redecode_url(UrlString) ->
     {ok, _, _, HostIdna, _, _, _} = yconf:parse_uri(<<"http://", UrlString/binary>>),
     HostDecoded = idna:decode(HostIdna),
-    Host = misc:uri_quote(HostDecoded),
+    Host = uri_string:quote(HostDecoded),
     re:replace(UrlString, HostIdna, Host, [{return, binary}]).
 
 -spec make_user_string(jid(), sha1 | node) -> binary().
