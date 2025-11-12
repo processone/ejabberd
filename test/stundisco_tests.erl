@@ -182,7 +182,7 @@ single_test(T) ->
 
 check_password(Username, Password) ->
     Secret = <<"cryptic">>,
-    Password == base64:encode(misc:crypto_hmac(sha, Secret, Username)).
+    Password == base64:encode(crypto:mac(hmac, sha, Secret, Username)).
 
 check_expires({_, _, _} = Expires) ->
     Now = {MegaSecs, Secs, MicroSecs} = erlang:timestamp(),

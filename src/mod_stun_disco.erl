@@ -558,7 +558,7 @@ make_username(ExpireAt, Hash) ->
 
 -spec make_password(binary(), binary()) -> binary().
 make_password(Username, Secret) ->
-    base64:encode(misc:crypto_hmac(sha, Secret, Username)).
+    base64:encode(crypto:mac(hmac, sha, Secret, Username)).
 
 -spec get_password(binary(), binary()) -> binary().
 get_password(Username, HostHash) ->

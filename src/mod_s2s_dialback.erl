@@ -275,7 +275,7 @@ s2s_out_tls_verify(_, #{server_host := ServerHost, remote_server := RServer}) ->
 make_key(From, To, StreamID) ->
     Secret = ejabberd_config:get_shared_key(),
     str:to_hexlist(
-      misc:crypto_hmac(sha256, str:to_hexlist(crypto:hash(sha256, Secret)),
+      crypto:mac(hmac, sha256, str:to_hexlist(crypto:hash(sha256, Secret)),
 		  [To, " ", From, " ", StreamID])).
 
 -spec send_verify_request(ejabberd_s2s_out:state()) -> ejabberd_s2s_out:state().

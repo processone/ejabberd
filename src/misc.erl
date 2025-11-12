@@ -42,7 +42,7 @@
 	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0,
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
-	 crypto_hmac/3, crypto_hmac/4, uri_parse/1, uri_parse/2, uri_quote/1,
+	 uri_parse/1, uri_parse/2, uri_quote/1,
 	 uri_decode/1,
          json_encode/1, json_decode/1,
 	 set_proc_label/1,
@@ -110,14 +110,6 @@ uri_decode(<<>>, Acc) -> Acc.
 -else.
 uri_decode(Path) ->
     uri_string:percent_decode(Path).
--endif.
-
--ifdef(USE_OLD_CRYPTO_HMAC).
-crypto_hmac(Type, Key, Data) -> crypto:hmac(Type, Key, Data).
-crypto_hmac(Type, Key, Data, MacL) -> crypto:hmac(Type, Key, Data, MacL).
--else.
-crypto_hmac(Type, Key, Data) -> crypto:mac(hmac, Type, Key, Data).
-crypto_hmac(Type, Key, Data, MacL) -> crypto:macN(hmac, Type, Key, Data, MacL).
 -endif.
 
 -ifdef(OTP_BELOW_27).

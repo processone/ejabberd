@@ -638,7 +638,7 @@ notify_participant_left(Mod, LServer, To, ID) ->
 -spec make_id(jid(), binary()) -> binary().
 make_id(JID, Key) ->
     Data = jid:encode(jid:tolower(jid:remove_resource(JID))),
-    xmpp_util:hex(misc:crypto_hmac(sha256, Data, Key, 10)).
+    xmpp_util:hex(crypto:macN(hmac, sha256, Data, Key, 10)).
 
 -spec make_channel_id(jid(), binary()) -> jid().
 make_channel_id(JID, ID) ->
