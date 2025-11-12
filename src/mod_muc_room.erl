@@ -672,8 +672,11 @@ normal_state({route, ToNick,
 normal_state({route, ToNick,
 	      #iq{from = From, lang = Lang} = Packet},
 	     #state{config = #config{allow_query_users = AllowQuery}} = StateData) ->
+    DirectIqType = direct_iq_type(Packet),
     try maps:get(jid:tolower(From), StateData#state.users) of
-	#user{nick = FromNick} when AllowQuery orelse ToNick == FromNick ->
+	#user{nick = FromNick} when AllowQuery
+                                    orelse DirectIqType == vcard
+                                    orelse ToNick == FromNick ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
 		    ErrText = ?T("Recipient is not in the conference room"),
@@ -681,7 +684,7 @@ normal_state({route, ToNick,
 		    ejabberd_router:route_error(Packet, Err);
 		To ->
 		    FromJID = jid:replace_resource(StateData#state.jid, FromNick),
-		    case direct_iq_type(Packet) of
+		    case DirectIqType of
 			vcard ->
 			    ejabberd_router:route_iq(
 			      xmpp:set_from_to(Packet, FromJID, jid:remove_resource(To)),
