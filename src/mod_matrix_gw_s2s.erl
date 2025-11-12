@@ -23,7 +23,6 @@
 %%%
 %%%-------------------------------------------------------------------
 -module(mod_matrix_gw_s2s).
--ifndef(OTP_BELOW_25).
 -behaviour(gen_statem).
 
 %% API
@@ -591,5 +590,3 @@ request_keys(Via, Data) ->
             Data#data{state = #pending{request_id = RequestID,
                                        servers = NotaryServers}}
     end.
-
--endif.

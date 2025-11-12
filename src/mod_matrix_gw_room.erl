@@ -24,7 +24,6 @@
 %%%-------------------------------------------------------------------
 -module(mod_matrix_gw_room).
 
--ifndef(OTP_BELOW_25).
 -behaviour(gen_statem).
 
 %% API
@@ -3878,5 +3877,3 @@ unescape(<<"\\3e", S/binary>>, Res) -> unescape(S, <<Res/binary, $>>>);
 unescape(<<"\\40", S/binary>>, Res) -> unescape(S, <<Res/binary, $@>>);
 unescape(<<"\\5c", S/binary>>, Res) -> unescape(S, <<Res/binary, $\\>>);
 unescape(<<C, S/binary>>, Res) -> unescape(S, <<Res/binary, C>>).
-
--endif.

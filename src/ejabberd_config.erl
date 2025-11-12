@@ -632,7 +632,7 @@ callback_modules(external) ->
 	      end
       end, beams(external));
 callback_modules(all) ->
-    misc:lists_uniq(callback_modules(local) ++ callback_modules(external)).
+    lists:uniq(callback_modules(local) ++ callback_modules(external)).
 
 -spec validators(module(), [atom()], [any()]) -> econf:validators().
 validators(Mod, Disallowed, DK) ->

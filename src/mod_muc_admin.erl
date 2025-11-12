@@ -1473,19 +1473,11 @@ muc_create_room(HostsDetails, {_, Host, _} = RoomTuple) ->
     muc_create_room(ServerHost, RoomTuple, DefRoomOpts).
 
 get_hosts_details(Rooms) ->
-    Hosts = lists_uniq([Host || {_, Host, _} <- Rooms]),
+    Hosts = lists:uniq([Host || {_, Host, _} <- Rooms]),
     lists:map(fun(H) ->
                       SH = get_room_serverhost(H),
                       {H, SH, mod_muc_opt:default_room_options(SH)}
               end, Hosts).
-
--ifdef(OTP_BELOW_25).
-lists_uniq(List) ->
-    lists:usort(List).
--else.
-lists_uniq(List) ->
-    lists:uniq(List).
--endif.
 
 get_host_details(Host, ServerHostsDetails) ->
     lists:keyfind(Host, 1, ServerHostsDetails).

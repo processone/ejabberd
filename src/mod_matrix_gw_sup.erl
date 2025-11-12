@@ -20,7 +20,6 @@
 %%%
 %%%----------------------------------------------------------------------
 -module(mod_matrix_gw_sup).
--ifndef(OTP_BELOW_25).
 -behaviour(supervisor).
 
 %% API
@@ -74,4 +73,3 @@ init([Host]) ->
            type => worker,
            modules => [mod_matrix_gw]}],
     {ok, {{one_for_one, 10, 1}, Specs}}.
--endif.

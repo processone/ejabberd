@@ -24,7 +24,6 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_matrix_gw).
--ifndef(OTP_BELOW_25).
 
 -author('alexey@process-one.net').
 
@@ -1070,4 +1069,3 @@ mod_doc() ->
                   ?T("Delay in seconds between a user leaving a MUC room and sending 'leave' Matrix event.")}}
           ]
      }.
--endif.

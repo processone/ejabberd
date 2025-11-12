@@ -199,7 +199,7 @@ get_module_apitags(M) ->
     Tags = [C#ejabberd_commands.tags || C <- AllCommands, C#ejabberd_commands.module == M],
     TagsClean =
         lists:sort(
-            misc:lists_uniq(
+            lists:uniq(
                 lists:flatten(Tags))),
     TagsStrings = [atom_to_list(C) || C <- TagsClean],
     TagFiltering =
