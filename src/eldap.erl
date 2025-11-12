@@ -1036,20 +1036,12 @@ polish([H | T], Res,
     polish(T, Res, [H | Ref]);
 polish([], Res, Ref) -> {Res, Ref}.
 
-
--ifdef(NO_CUSTOMIZE_HOSTNAME_CHECK).
-check_hostname_opt(TLSOpts) ->
-    TLSOpts.
--else.
-check_hostname_opt(TLSOpts) ->
-    MatchFun = public_key:pkix_verify_hostname_match_fun(https),
-    [{customize_hostname_check, [{match_fun, MatchFun}]} | TLSOpts].
--endif.
-
 host_tls_options(Host, TLSOpts) ->
     case proplists:get_value(verify, TLSOpts) of
         verify_peer ->
-            check_hostname_opt([{server_name_indication, Host} | TLSOpts]);
+            TLSOpts2 = [{server_name_indication, Host} | TLSOpts],
+            MatchFun = public_key:pkix_verify_hostname_match_fun(https),
+            [{customize_hostname_check, [{match_fun, MatchFun}]} | TLSOpts2];
          _ ->
             TLSOpts
     end.
