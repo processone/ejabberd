@@ -893,7 +893,7 @@ maybe_write_commit_json(Url, RepDir) ->
     end.
 
 write_commit_json(Url, RepDir) ->
-    Url2 = string_replace(Url, "https://github.com", "https://api.github.com/repos"),
+    Url2 = string:replace(Url, "https://github.com", "https://api.github.com/repos"),
     BranchUrl = lists:flatten(Url2 ++ "/branches/master"),
     case geturl(BranchUrl) of
         {ok, _Headers, Body} ->
@@ -906,8 +906,8 @@ write_commit_json(Url, RepDir) ->
 
 find_commit_json(Attrs) ->
     FromPath = get_module_path(Attrs),
-    case {find_commit_json_path(FromPath),
-          find_commit_json_path(filename:join(FromPath, ".."))}
+    case {filelib:find_file("COMMIT.json", FromPath),
+          filelib:find_file("COMMIT.json", filename:join(FromPath, ".."))}
     of
         {{ok, FromFile}, _} ->
             FromFile;
@@ -916,28 +916,6 @@ find_commit_json(Attrs) ->
         _ ->
             not_found
     end.
-
--ifdef(HAVE_URI_STRING). %% Erlang/OTP 20 or higher can use this:
-string_replace(Subject, Pattern, Replacement) ->
-    string:replace(Subject, Pattern, Replacement).
-
-find_commit_json_path(Path) ->
-    filelib:find_file("COMMIT.json", Path).
--else. % Workaround for Erlang/OTP older than 20:
-string_replace(Subject, Pattern, Replacement) ->
-    B = binary:replace(list_to_binary(Subject),
-                       list_to_binary(Pattern),
-                       list_to_binary(Replacement)),
-    binary_to_list(B).
-
-find_commit_json_path(Path) ->
-    case filelib:wildcard("COMMIT.json", Path) of
-        [] ->
-            {error, commit_json_not_found};
-        ["COMMIT.json"] = File ->
-            {ok, filename:join(Path, File)}
-    end.
--endif.
 
 copy_commit_json(Package, Attrs) ->
     DestPath = module_lib_dir(Package),
@@ -1186,7 +1164,7 @@ get_installed_module_el({ModAtom, Attrs}, Lang) ->
     Summary = list_to_binary(get_module_summary(Attrs)),
     Author = list_to_binary(get_module_author(Attrs)),
     FromPath = get_module_path(Attrs),
-    FromFile = case find_commit_json_path(FromPath) of
+    FromFile = case filelib:find_file("COMMIT.json", FromPath) of
                    {ok, FF} -> FF;
                    {error, _} -> "dummypath"
                end,
@@ -1287,18 +1265,10 @@ elixir_module_name(ModAtom) ->
 elixir_module_name([], Res) ->
     lists:reverse(Res);
 elixir_module_name([$_, Char | Remaining], Res) ->
-    [Upper] = uppercase([Char]),
+    [Upper] = string:uppercase([Char]),
     elixir_module_name(Remaining, [Upper | Res]);
 elixir_module_name([Char | Remaining], Res) ->
     elixir_module_name(Remaining, [Char | Res]).
-
--ifdef(HAVE_URI_STRING).
-uppercase(String) ->
-    string:uppercase(String). % OTP 20 or higher
--else.
-uppercase(String) ->
-    string:to_upper(String). % OTP older than 20
--endif.
 
 get_available_module_el({ModAtom, Attrs}) ->
     Installed = installed(),
