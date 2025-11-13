@@ -54,7 +54,7 @@
 
 -define(STATIC, <<"static">>).
 -define(REGISTRATION, <<"registration">>).
--define(STATIC_CTX, {static, ["/", Base, "/", ?STATIC]}).
+-define(STATIC_CTX, {static, <<"/", Base/binary, "/", ?STATIC/binary>>}).
 -define(SITE_NAME_CTX(Name), {site_name, Name}).
 
 %% @format-begin
@@ -227,7 +227,7 @@ ctx(Invite, #request{host = Host} = Request) ->
 
 apps_json(Host, Lang, Ctx) ->
     AppsBins = render(Host, Lang, <<"apps.json">>, Ctx),
-    AppsBin = lists:foldr(fun([], B) -> B; (A, B) -> <<A/binary, B/binary>> end, <<>>, AppsBins),
+    AppsBin = binary_join(AppsBins, <<>>),
     misc:json_decode(AppsBin).
 
 app_id(App = #{<<"id">> := _ID}) ->
