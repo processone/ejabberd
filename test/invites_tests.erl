@@ -189,19 +189,21 @@ adhoc_command_create_account(Config) ->
            re:run(xdata_field(<<"uri">>, ResultXDataFields2),
                   <<"xmpp:foobar@", Server/binary, "\\?register;preauth=(.+)">>)),
     ResultXDataFields3 = test_create_account(Config, <<>>, <<"1">>),
-    Inviter = ?config(user, Config),
-    ?match({match, [Inviter, _]},
+    ?match({match, _},
            re:run(xdata_field(<<"uri">>, ResultXDataFields3),
-                  <<"xmpp:(.+)", "@", Server/binary, "\\?roster;preauth=([a-zA-Z0-9]+);ibr=y">>,
+                  <<"xmpp:", Server/binary, "\\?register;preauth=([a-zA-Z0-9]+)">>,
                   [{capture, all_but_first, binary}])),
-    Token = token_from_uri(xdata_field(<<"uri">>, ResultXDataFields3, <<>>)),
+    Token3 = token_from_uri(xdata_field(<<"uri">>, ResultXDataFields3, <<>>)),
     #invite_token{account_name = <<>>, type = account_subscription} =
-        mod_invites:get_invite(Server, Token),
+        mod_invites:get_invite(Server, Token3),
     ResultXDataFields4 = test_create_account(Config, <<"foobar">>, <<"1">>),
-    ?match({match, [Inviter, _]},
+    ?match({match, _},
            re:run(xdata_field(<<"uri">>, ResultXDataFields4),
-                  <<"xmpp:(.+)", "@", Server/binary, "\\?roster;preauth=([a-zA-Z0-9]+);ibr=y">>,
+                  <<"xmpp:foobar@", Server/binary, "\\?register;preauth=([a-zA-Z0-9]+)">>,
                   [{capture, all_but_first, binary}])),
+    Token4 = token_from_uri(xdata_field(<<"uri">>, ResultXDataFields4, <<>>)),
+    #invite_token{account_name = <<"foobar">>, type = account_subscription} =
+        mod_invites:get_invite(Server, Token4),
     update_module_opts(Server, mod_invites, OldOpts),
     User = jid:nodeprep(?config(user, Config)),
     mod_invites:remove_user(User, Server),
@@ -217,7 +219,12 @@ token_valid(Config) ->
     #invite_token{token = AccountToken} =
         create_account_invite(Server, Inviter),
     ?match(true, mod_invites:is_token_valid(Server, AccountToken, Inviter)),
-    ?match(false, mod_invites:is_token_valid(Server, <<"madeUptoken">>)),
+    try mod_invites:is_token_valid(Server, <<"madeUptoken">>) of
+        break -> broken
+    catch
+        _:E ->
+            ?match(not_found, E)
+    end,
     ?match(false,
            mod_invites:is_token_valid(Server, AccountToken, {<<"someoneElse">>, Server})),
     mod_invites:expire_tokens(<<"foo">>, Server),
@@ -386,15 +393,19 @@ ibr_subscription(Config0) ->
     NewAccount = <<"new_friend">>,
     NewAccountJID = jid:make(NewAccount, Server),
     gen_mod:stop_module_keep_config(Server, mod_vcard_xupdate),
+    OldOpts = gen_mod:get_module_opts(Server, mod_invites),
+    NewOpts = gen_mod:set_opt(access_create_account, account_invite, OldOpts),
+    update_module_opts(Server, mod_invites, NewOpts),
+
     self_presence(Config0, available),
 
     #invite_token{token = Token} =
         mod_invites:create_account_invite(Server, {User, Server}, NewAccount, true),
 
     Config1 = set_opts([{user, NewAccount},
-                       {password, <<"mySecret">>},
-                       {resource, <<"invite_tests">>},
-                       {receiver, undefined}], Config0),
+                        {password, <<"mySecret">>},
+                        {resource, <<"invite_tests">>},
+                        {receiver, undefined}], Config0),
     Config = connect(Config1),
 
     ?match(#iq{type = result}, send_pars(Config, Token)),
@@ -429,6 +440,7 @@ ibr_subscription(Config0) ->
     mod_roster:del_roster(User, Server, jid:tolower(NewAccountJID)),
     mod_roster:del_roster(NewAccount, Server, jid:tolower(UserJID)),
 
+    update_module_opts(Server, mod_invites, OldOpts),
     disconnect(Config0),
     disconnect(Config).
 

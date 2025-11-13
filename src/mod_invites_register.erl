@@ -161,20 +161,32 @@ maybe_create_mutual_subscription(#invite_token{inviter = {User, Server}, invitee
 
 process_token(#{server := Host} = State, Token, #iq{lang = Lang} = IQ) ->
     ?DEBUG("checking token (~s): ~s", [Host, Token]),
-    case mod_invites:is_token_valid(Host, Token) of
+    try mod_invites:is_token_valid(Host, Token) of
         true ->
-            case mod_invites:get_invite(Host, Token) of
-                #invite_token{type = 'roster_only'} ->
-                    Text = ?T("The token provided is either invalid or expired."),
-                    {State, make_stripped_error(IQ, #preauth{}, xmpp:err_item_not_found(Text, Lang))};
-                Invite ->
+            Invite = #invite_token{inviter = {User, Host}} =
+                mod_invites:get_invite(Host, Token),
+            case create_account_allowed(User, Host) of
+                ok ->
                     NewState = State#{invite => Invite},
-                    {NewState, xmpp:make_iq_result(IQ)}
+                    {NewState, xmpp:make_iq_result(IQ)};
+                {error, not_allowed} ->
+                    {State, preauth_invalid(IQ, Lang)}
                 end;
         false ->
-            Text = ?T("The token provided is either invalid or expired."),
-            {State, make_stripped_error(IQ, #preauth{}, xmpp:err_item_not_found(Text, Lang))}
+            {State, preauth_invalid(IQ, Lang)}
+    catch
+        _:not_found ->
+            {State, preauth_invalid(IQ, Lang)}
     end.
+
+create_account_allowed(<<>>, _Host) ->
+    ok;
+create_account_allowed(User, Host) ->
+    mod_invites:create_account_allowed(Host, jid:make(User, Host)).
+
+preauth_invalid(IQ, Lang) ->
+    Text = ?T("The token provided is either invalid or expired."),
+    make_stripped_error(IQ, #preauth{}, xmpp:err_item_not_found(Text, Lang)).
 
 try_register(Token,
              User,

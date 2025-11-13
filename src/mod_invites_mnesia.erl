@@ -97,7 +97,7 @@ is_token_valid(Host, Token, Scope) ->
         [#invite_token{}] ->
             false;
         [] ->
-            false
+            throw(not_found)
     end.
 
 list_invites(Host) ->
