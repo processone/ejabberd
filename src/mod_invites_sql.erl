@@ -143,7 +143,17 @@ is_token_valid(Host, Token, {User, Host}) ->
         ejabberd_sql:sql_query(Host,
                                ?SQL("SELECT @(token)s FROM invite_token WHERE %(Host)H AND token = %(Token)s AND "
                                     "invitee = '' AND expires > now() AND (%(User)s = '' OR username = %(User)s)")),
-    Rows /= [].
+    case Rows /= [] of
+        true ->
+            true;
+        false ->
+            case get_invite(Host, Token) of
+                {error, not_found} ->
+                    throw(not_found);
+                _ ->
+                    false
+            end
+    end.
 
 list_invites(Host) ->
     {selected, Rows} =

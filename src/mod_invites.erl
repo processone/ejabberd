@@ -34,8 +34,8 @@
 
 -export([depends/2, mod_doc/0, mod_options/1, mod_opt_type/1, reload/3, start/2, stop/1]).
 -export([adhoc_commands/4, adhoc_items/4, c2s_unauthenticated_packet/2, cleanup_expired/0,
-         expire_tokens/2, gen_invite/1, gen_invite/2, get_invite/2, is_reserved/3,
-         is_token_valid/2, list_invites/1, remove_user/2, roster_add/2,
+         create_account_allowed/2, expire_tokens/2, gen_invite/1, gen_invite/2, get_invite/2,
+         is_reserved/3, is_token_valid/2, list_invites/1, remove_user/2, roster_add/2,
          s2s_receive_packet/1, send_presence/3, set_invitee/3, sm_receive_packet/1,
          stream_feature_register/2, token_uri/1, xdata_field/3]).
 
@@ -649,10 +649,12 @@ invite_token(Type, Host, Inviter, AccountName0) ->
                                     account_name = AccountName},
                       mod_invites_opt:token_expire_seconds(Host)).
 
-token_uri(#invite_token{type = account_only,
+token_uri(#invite_token{type = Type,
                         token = Token,
                         account_name = AccountName,
-                        inviter = {_User, Host}}) ->
+                        inviter = {_User, Host}})
+  when Type =:= account_only;
+       Type =:= account_subscription ->
     Invitee =
         case AccountName of
             <<>> ->
@@ -661,16 +663,20 @@ token_uri(#invite_token{type = account_only,
                 <<AccountName/binary, "@", Host/binary>>
         end,
     <<"xmpp:", Invitee/binary, "?register;preauth=", Token/binary>>;
-token_uri(#invite_token{type = account_subscription,
-                        token = Token,
-                        inviter = {User, Host}}) ->
-    Inviter = jid:to_string(jid:make(User, Host)),
-    <<"xmpp:", Inviter/binary, "?roster;preauth=", Token/binary, ";ibr=y">>;
 token_uri(#invite_token{type = roster_only,
                         token = Token,
                         inviter = {User, Host}}) ->
+    IBR = maybe_add_ibr_allowed(User, Host),
     Inviter = jid:to_string(jid:make(User, Host)),
-    <<"xmpp:", Inviter/binary, "?roster;preauth=", Token/binary>>.
+    <<"xmpp:", Inviter/binary, "?roster;preauth=", Token/binary, IBR/binary>>.
+
+maybe_add_ibr_allowed(User, Host) ->
+    case create_account_allowed(Host, jid:make(User, Host)) of
+        ok ->
+            <<";ibr=y">>;
+        {error, not_allowed} ->
+            <<>>
+    end.
 
 landing_page(Host, Invite) ->
     mod_invites_http:landing_page(Host, Invite).
