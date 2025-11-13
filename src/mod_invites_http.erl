@@ -83,7 +83,7 @@ process([?STATIC | StaticFile], #request{host = Host} = Request) ->
     end;
 process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) ->
     ?DEBUG("Requested:~n~p", [Request]),
-    case mod_invites:is_token_valid(Host, Token) of
+    try mod_invites:is_token_valid(Host, Token) of
         true ->
             case mod_invites:get_invite(Host, Token) of
                 #invite_token{type = 'roster_only'} = Invite ->
@@ -93,6 +93,9 @@ process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) -
                 end;
         false ->
             ?NOT_FOUND(render(Host, Lang, <<"invite_invalid.html">>, ctx(Request)))
+    catch
+        _:not_found ->
+            ?NOT_FOUND
     end;
 process([], _Request) ->
     ?NOT_FOUND.
