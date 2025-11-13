@@ -3,9 +3,14 @@
         "download": {
             "buttons": [
                 {
-                    "image": "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png",
+                    "image": "{{ static }}/logos/google_ps.png",
                     "url": "https://play.google.com/store/apps/details?id=eu.siacs.conversations",
                     "magic_link_format": "https://play.google.com/store/apps/details?id=eu.siacs.conversations&referrer={{ uri }}"
+                },
+                {
+                    "image": "{{ static }}/logos/fdroid.png",
+                    "url": "https://f-droid.org/en/packages/eu.siacs.conversations/",
+                    "magic_link_format": "https://f-droid.org/packages/eu.siacs.conversations/"
                 }
             ]
         },
@@ -23,7 +28,7 @@
         "download": {
             "buttons": [
                 {
-                    "image": "https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1245024000",
+                    "image": "{{ static }}/logos/apple_as.svg",
                     "target": "_blank",
                     "url": "https://apps.apple.com/app/id317711500"
                 }
@@ -42,7 +47,7 @@
         "download": {
             "buttons": [
                 {
-                    "image": "https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1245024000",
+                    "image": "{{ static }}/logos/apple_as.svg",
                     "target": "_blank",
                     "url": "https://apps.apple.com/app/id1637078500"
                 }
@@ -61,27 +66,7 @@
         "download": {
             "buttons": [
                 {
-                    "image": "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png",
-                    "url": "https://play.google.com/store/apps/details?id=org.yaxim.androidclient",
-                    "magic_link_format": "https://play.google.com/store/apps/details?id=org.yaxim.androidclient&referrer={{ invite.uri }}"
-                }
-            ]
-        },
-        "image": "logos/yaxim.svg",
-        "link": "https://play.google.com/store/apps/details?id=org.yaxim.androidclient",
-        "magic_link_format": "https://play.google.com/store/apps/details?id=org.yaxim.androidclient&referrer={{ invite.uri }}",
-        "name": "yaxim",
-        "platforms": [
-            "Android"
-        ],
-        "supports_preauth_uri": true,
-        "text": "{% trans "A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0." %}"
-    },
-    {
-        "download": {
-            "buttons": [
-                {
-                    "image": "https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1245024000",
+                    "image": "{{ static }}/logos/apple_as.svg",
                     "target": "_blank",
                     "url": "https://apps.apple.com/us/app/siskin-im/id1153516838"
                 }
