@@ -34,7 +34,6 @@
 -export([start/2, stop/1, reload/3, process/2,
          mod_opt_type/1, mod_options/1, depends/2]).
 -export([mod_doc/0]).
--export([get_url/4, get_auto_url/2]).
 
 -include("logger.hrl").
 
@@ -85,7 +84,7 @@ process(_Path, _Request) ->
 %% When set to 'auto', it only takes the first valid listener options it finds
 
 file_xml(Host) ->
-    BoshList = case get_url(?MODULE, bosh, true, Host) of
+    BoshList = case ejabberd_http:get_url(?MODULE, bosh, true, Host) of
                    undefined -> [];
                    BoshUrl ->
                        [?XA(<<"Link">>,
@@ -93,7 +92,7 @@ file_xml(Host) ->
                              {<<"href">>, BoshUrl}]
                            )]
                end,
-    WsList = case get_url(?MODULE, websocket, true, Host) of
+    WsList = case ejabberd_http:get_url(?MODULE, websocket, true, Host) of
                  undefined -> [];
                  WsUrl ->
                      [?XA(<<"Link">>,
@@ -112,12 +111,12 @@ file_xml(Host) ->
        )]}.
 
 file_json(Host) ->
-    BoshList = case get_url(?MODULE, bosh, true, Host) of
+    BoshList = case ejabberd_http:get_url(?MODULE, bosh, true, Host) of
                    undefined -> [];
                    BoshUrl -> [#{rel => <<"urn:xmpp:alt-connections:xbosh">>,
                                  href => BoshUrl}]
                end,
-    WsList = case get_url(?MODULE, websocket, true, Host) of
+    WsList = case ejabberd_http:get_url(?MODULE, websocket, true, Host) of
                  undefined -> [];
                  WsUrl -> [#{rel => <<"urn:xmpp:alt-connections:websocket">>,
                              href => WsUrl}]
@@ -127,60 +126,9 @@ file_json(Host) ->
            {<<"Access-Control-Allow-Origin">>, <<"*">>}],
      [misc:json_encode(#{links => BoshList ++ WsList})]}.
 
-get_url(M, bosh, Tls, Host) ->
-    get_url(M, Tls, Host, bosh_service_url, mod_bosh);
-get_url(M, websocket, Tls, Host) ->
-    get_url(M, Tls, Host, websocket_url, ejabberd_http_ws);
-get_url(M, Option, Tls, Host) ->
-    get_url(M, Tls, Host, Option, M).
-
-get_url(M, Tls, Host, Option, Handler) ->
-    case get_url_preliminar(M, Tls, Host, Option, Handler) of
-        undefined -> undefined;
-        Url -> misc:expand_keyword(<<"@HOST@">>, Url, Host)
-    end.
-
-get_url_preliminar(M, Tls, Host, Option, Handler) ->
-    case gen_mod:get_module_opt(Host, M, Option) of
-        undefined -> undefined;
-        auto -> get_auto_url(Tls, Handler);
-        <<"auto">> -> get_auto_url(Tls, Handler);
-        U when is_binary(U) -> U
-    end.
-
-get_auto_url(Tls, Handler) ->
-    case find_handler_port_path(Tls, Handler) of
-        [] -> undefined;
-        [{ThisTls, Port, Path} | _] ->
-            Protocol = case {ThisTls, Handler} of
-                           {false, ejabberd_http_ws} -> <<"ws">>;
-                           {true, ejabberd_http_ws} -> <<"wss">>;
-                           {false, _} -> <<"http">>;
-                           {true, _} -> <<"https">>
-                       end,
-            <<Protocol/binary,
-              "://@HOST@:",
-              (integer_to_binary(Port))/binary,
-              "/",
-              (str:join(Path, <<"/">>))/binary>>
-    end.
-
-find_handler_port_path(Tls, Handler) ->
-    lists:filtermap(
-      fun({{Port, _, _},
-           ejabberd_http,
-           #{tls := ThisTls, request_handlers := Handlers}})
-            when is_integer(Port) and ((Tls == any) or (Tls == ThisTls)) ->
-              case lists:keyfind(Handler, 2, Handlers) of
-                  false -> false;
-                  {Path, Handler} -> {true, {ThisTls, Port, Path}}
-              end;
-         (_) -> false
-      end, ets:tab2list(ejabberd_listener)).
-
 report_hostmeta_listener() ->
-    case {find_handler_port_path(false, ?MODULE),
-          find_handler_port_path(true, ?MODULE)} of
+    case {ejabberd_http:find_handler_port_path(false, ?MODULE),
+          ejabberd_http:find_handler_port_path(true, ?MODULE)} of
         {[], []} ->
             ?CRITICAL_MSG("It seems you enabled ~p in 'modules' but forgot to "
                           "add it as a request_handler in an ejabberd_http "

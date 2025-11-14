@@ -73,12 +73,12 @@ process([], #request{method = 'GET', host = Host, q = Query, raw_path = RawPath1
             {<<"view_mode">>, <<"fullscreen">>}
            | ExtraOptions],
     Init2 =
-        case mod_host_meta:get_url(?MODULE, websocket, any, Host) of
+        case ejabberd_http:get_url(?MODULE, websocket, any, Host) of
             undefined -> Init;
             WSURL -> [{<<"websocket_url">>, WSURL} | Init]
         end,
     Init3 =
-        case mod_host_meta:get_url(?MODULE, bosh, any, Host) of
+        case ejabberd_http:get_url(?MODULE, bosh, any, Host) of
             undefined -> Init2;
             BoshURL -> [{<<"bosh_service_url">>, BoshURL} | Init2]
         end,
@@ -256,7 +256,7 @@ web_menu_system(Result,
                 #request{host = Host,
                          auth = Auth,
                          tp = Protocol}) ->
-    AutoUrl = mod_host_meta:get_auto_url(any, ?MODULE),
+    AutoUrl = ejabberd_http:get_auto_url(any, ?MODULE),
     ConverseUrl = misc:expand_keyword(<<"@HOST@">>, AutoUrl, Host),
     AutologinQuery =
         case {Protocol, Auth} of

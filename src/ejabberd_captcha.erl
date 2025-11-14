@@ -482,7 +482,7 @@ get_url(Str) ->
     end.
 
 get_url() ->
-    case mod_host_meta:get_auto_url(any, ?MODULE) of
+    case ejabberd_http:get_auto_url(any, ?MODULE) of
         undefined ->
             undefined;
         Url ->
