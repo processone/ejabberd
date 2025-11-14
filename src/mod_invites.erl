@@ -667,7 +667,7 @@ token_uri(#invite_token{type = roster_only,
                         token = Token,
                         inviter = {User, Host}}) ->
     IBR = maybe_add_ibr_allowed(User, Host),
-    Inviter = jid:to_string(jid:make(User, Host)),
+    Inviter = jid:encode(jid:make(User, Host)),
     <<"xmpp:", Inviter/binary, "?roster;preauth=", Token/binary, IBR/binary>>.
 
 maybe_add_ibr_allowed(User, Host) ->
@@ -781,4 +781,4 @@ send_presence(From, To, Type) ->
     Presence = #presence{from = From,
                          to = To,
                          type = Type},
-    ejabberd_router:route(From, To, Presence).
+    ejabberd_router:route(Presence).
