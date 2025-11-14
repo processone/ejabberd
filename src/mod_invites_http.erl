@@ -63,10 +63,23 @@ landing_page(Host, Invite) ->
     case mod_invites_opt:landing_page(Host) of
         none ->
             <<>>;
+        <<"auto">> ->
+            try ejabberd_http:get_auto_url(any, mod_invites) of
+                AutoURL0 ->
+                    AutoURL = misc:expand_keyword(<<"@HOST@">>, AutoURL0, Host),
+                    render_landing_page_url(<<AutoURL/binary, "/{{ invite.token }}">>, Host, Invite)
+            catch
+                _:_ ->
+                    ?WARNING_MSG("'auto' URL configured for mod_invites but no request_handler found in your ~s listeners configuration.", [Host]),
+                    <<>>
+            end;
         Tmpl ->
-            Ctx = [{invite, invite_to_proplist(Invite)}, {host, Host}],
-            render_url(Tmpl, Ctx)
+            render_landing_page_url(Tmpl, Host, Invite)
     end.
+
+render_landing_page_url(Tmpl, Host, Invite) ->
+    Ctx = [{invite, invite_to_proplist(Invite)}, {host, Host}],
+    render_url(Tmpl, Ctx).
 
 -spec process(LocalPath::[binary()], #request{}) ->
     {HTTPCode::integer(), [{binary(), binary()}], Page::string()}.
