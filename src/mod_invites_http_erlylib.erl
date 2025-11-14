@@ -40,7 +40,7 @@ inventory(filters) ->
     [{jid, jid}, {user, user}, {token_uri, {mod_invites, token_uri}}, {strip_protocol, strip_protocol}].
 
 jid({User, Server}) ->
-    jid:to_string(jid:make(User, Server)).
+    jid:encode(jid:make(User, Server)).
 
 strip_protocol(Uri) ->
     re:replace(Uri, <<"xmpp:">>, <<>>, [{return, binary}]).
