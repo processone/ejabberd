@@ -130,7 +130,9 @@ file_json(Host) ->
 get_url(M, bosh, Tls, Host) ->
     get_url(M, Tls, Host, bosh_service_url, mod_bosh);
 get_url(M, websocket, Tls, Host) ->
-    get_url(M, Tls, Host, websocket_url, ejabberd_http_ws).
+    get_url(M, Tls, Host, websocket_url, ejabberd_http_ws);
+get_url(M, Option, Tls, Host) ->
+    get_url(M, Tls, Host, Option, M).
 
 get_url(M, Tls, Host, Option, Handler) ->
     case get_url_preliminar(M, Tls, Host, Option, Handler) of
