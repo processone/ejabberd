@@ -56,7 +56,7 @@
 -type invite_token() :: #invite_token{}.
 
 -callback cleanup_expired(Host :: binary()) -> non_neg_integer().
--callback create_invite(Invitee :: binary()) -> invite_token().
+-callback create_invite(Invite :: invite_token()) -> invite_token().
 -callback expire_tokens(User :: binary(), Server :: binary()) -> non_neg_integer().
 -callback get_invite(Host :: binary(), Token :: binary()) ->
                         invite_token() | {error, not_found}.
