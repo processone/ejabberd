@@ -94,8 +94,8 @@ mod_doc() ->
                   ?T("Same as top-level _`default_db`_ option, but applied to this "
                      "module only.")}},
            {landing_page,
-            #{value => "none | binary()",
-             desc => ?T("Web address of service handling invite links. This is either a local address handled by `mod_invites` configured as a handler at `ejabberd_http` or an external service like 'easy-xmpp-invitation'. The address must be given as a template pattern with fields from the `invite` that will then get replaced accordingly. Eg.: 'https://{{ host }}:5281/invites/{{ invite.token }}' or as an external service like 'http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}'. This is the landing page that is being communicated when creating an invite using one of the ad-hoc commands.")}
+            #{value => "none | auto | LandingPageURLTemplate",
+             desc => ?T("This is the landing page that is being communicated when creating an invite using one of the ad-hoc commands, the web address of service handling invite links. This is either a local address handled by `mod_invites` configured as a handler at `ejabberd_http` or an external service like 'easy-xmpp-invitation'. The address must be given as a template pattern with fields from the `invite` that will then get replaced accordingly. Eg.: 'https://{{ host }}:5281/invites/{{ invite.token }}' or as an external service like 'http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}'. For convenience you can choose 'auto' here and the ejabberd_http handler will be used.")}
            },
            {max_invites,
             #{value => "pos_integer() | infinity",
@@ -126,9 +126,12 @@ mod_doc() ->
              "",
              "modules:",
              "  mod_invites:",
-             "    access_create_account: register"]},
+             "    access_create_account: register"
+             "    landing_page: auto"
+			]},
            {?T("If you want all your users to be able to send 'create account' "
-               "invites, you would configure your server like this instead:"),
+               "invites and have a proxy in front of `ejabberd_http` to not expose its port "
+               "directly, you would configure your server like this instead:"),
             ["acl:",
              "  local:",
              "    user_regexp: \"\"",
@@ -138,7 +141,8 @@ mod_doc() ->
              "",
              "modules:",
              "  mod_invites:",
-             "    access_create_account: create_account_invite"]},
+             "    access_create_account: create_account_invite"
+             "    landing_page: https://yourhost/invites/{{ invite.token }}"]},
            ?T("Note that the names of the access rules are just examples and "
               "you're free to change them.")
            %% TODO add example for invite page
@@ -184,7 +188,7 @@ mod_opt_type(access_create_account) ->
 mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
 mod_opt_type(landing_page) ->
-    econf:either(none, econf:binary("^http[s]?://"));
+    econf:either(none, econf:binary());
 mod_opt_type(max_invites) ->
     econf:pos_int(infinity);
 mod_opt_type(site_name) ->
