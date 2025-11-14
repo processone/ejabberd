@@ -132,25 +132,25 @@ get_url(M, bosh, Tls, Host) ->
 get_url(M, websocket, Tls, Host) ->
     get_url(M, Tls, Host, websocket_url, ejabberd_http_ws).
 
-get_url(M, Tls, Host, Option, Module) ->
-    case get_url_preliminar(M, Tls, Host, Option, Module) of
+get_url(M, Tls, Host, Option, Handler) ->
+    case get_url_preliminar(M, Tls, Host, Option, Handler) of
         undefined -> undefined;
         Url -> misc:expand_keyword(<<"@HOST@">>, Url, Host)
     end.
 
-get_url_preliminar(M, Tls, Host, Option, Module) ->
+get_url_preliminar(M, Tls, Host, Option, Handler) ->
     case gen_mod:get_module_opt(Host, M, Option) of
         undefined -> undefined;
-        auto -> get_auto_url(Tls, Module);
-        <<"auto">> -> get_auto_url(Tls, Module);
+        auto -> get_auto_url(Tls, Handler);
+        <<"auto">> -> get_auto_url(Tls, Handler);
         U when is_binary(U) -> U
     end.
 
-get_auto_url(Tls, Module) ->
-    case find_handler_port_path(Tls, Module) of
+get_auto_url(Tls, Handler) ->
+    case find_handler_port_path(Tls, Handler) of
         [] -> undefined;
         [{ThisTls, Port, Path} | _] ->
-            Protocol = case {ThisTls, Module} of
+            Protocol = case {ThisTls, Handler} of
                            {false, ejabberd_http_ws} -> <<"ws">>;
                            {true, ejabberd_http_ws} -> <<"wss">>;
                            {false, _} -> <<"http">>;
@@ -163,15 +163,15 @@ get_auto_url(Tls, Module) ->
               (str:join(Path, <<"/">>))/binary>>
     end.
 
-find_handler_port_path(Tls, Module) ->
+find_handler_port_path(Tls, Handler) ->
     lists:filtermap(
       fun({{Port, _, _},
            ejabberd_http,
            #{tls := ThisTls, request_handlers := Handlers}})
             when is_integer(Port) and ((Tls == any) or (Tls == ThisTls)) ->
-              case lists:keyfind(Module, 2, Handlers) of
+              case lists:keyfind(Handler, 2, Handlers) of
                   false -> false;
-                  {Path, Module} -> {true, {ThisTls, Port, Path}}
+                  {Path, Handler} -> {true, {ThisTls, Port, Path}}
               end;
          (_) -> false
       end, ets:tab2list(ejabberd_listener)).
