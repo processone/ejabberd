@@ -453,8 +453,7 @@ get_prog_name() ->
     end.
 
 maybe_warning_norequesthandler() ->
-    Host = hd(ejabberd_option:hosts()),
-    AutoURL = get_auto_url(any, ?MODULE, Host),
+    AutoURL = get_url(),
     ManualURL = ejabberd_option:captcha_url(),
     case (AutoURL == undefined) and not is_binary(ManualURL) of
         true ->
@@ -473,14 +472,22 @@ maybe_warning_norequesthandler() ->
 get_url(Str) ->
     case ejabberd_option:captcha_url() of
 	auto ->
-            Host =  ejabberd_config:get_myname(),
-            URL = get_auto_url(any, ?MODULE, Host),
+            URL = get_url(),
             <<URL/binary, $/, Str/binary>>;
 	undefined ->
 	    URL = parse_captcha_host(),
 	    <<URL/binary, "/captcha/", Str/binary>>;
 	URL ->
 	    <<URL/binary, $/, Str/binary>>
+    end.
+
+get_url() ->
+    case mod_host_meta:get_auto_url(any, ?MODULE) of
+        undefined ->
+            undefined;
+        Url ->
+            Host = ejabberd_config:get_myname(),
+            misc:expand_keyword(<<"@HOST@">>, Url, Host)
     end.
 
 -spec parse_captcha_host() -> binary().
@@ -499,40 +506,6 @@ parse_captcha_host() ->
       _ ->
 	    <<"http://", (ejabberd_config:get_myname())/binary>>
     end.
-
-get_auto_url(Tls, Module, Host) ->
-    case find_handler_port_path(Tls, Module) of
-        [] -> undefined;
-        TPPs ->
-            {ThisTls, Port, Path} = case lists:keyfind(true, 1, TPPs) of
-                                        false ->
-                                            lists:keyfind(false, 1, TPPs);
-                                        TPP ->
-                                            TPP
-                                    end,
-            Protocol = case ThisTls of
-                           false -> <<"http">>;
-                           true -> <<"https">>
-                       end,
-            <<Protocol/binary,
-              "://", Host/binary, ":",
-              (integer_to_binary(Port))/binary,
-              "/",
-              (str:join(Path, <<"/">>))/binary>>
-    end.
-
-find_handler_port_path(Tls, Module) ->
-    lists:filtermap(
-      fun({{Port, _, _},
-           ejabberd_http,
-           #{tls := ThisTls, request_handlers := Handlers}})
-            when is_integer(Port) and ((Tls == any) or (Tls == ThisTls)) ->
-              case lists:keyfind(Module, 2, Handlers) of
-                  false -> false;
-                  {Path, Module} -> {true, {ThisTls, Port, Path}}
-              end;
-         (_) -> false
-      end, ets:tab2list(ejabberd_listener)).
 
 get_transfer_protocol(PortString) ->
     PortNumber = binary_to_integer(PortString),
