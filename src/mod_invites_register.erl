@@ -237,8 +237,8 @@ check_captcha(_IsCaptchaEnabled, _Register, IQ) ->
     ResIQ = make_stripped_error(IQ, #register{}, xmpp:err_bad_request()),
     {error, ResIQ}.
 
-process_xdata_submit(X) ->
-    case {mod_invites:xdata_field(<<"username">>, X, undefined), mod_invites:xdata_field(<<"password">>, X, undefined)} of
+process_xdata_submit(#xdata{fields = Fields}) ->
+    case {mod_invites:xdata_field(<<"username">>, Fields, undefined), mod_invites:xdata_field(<<"password">>, Fields, undefined)} of
         {UndefU, UndefP} when UndefU == undefined; UndefP == undefined ->
             error;
         {Username, Password} ->
