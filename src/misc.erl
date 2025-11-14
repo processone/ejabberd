@@ -49,9 +49,17 @@
 	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1]).
 
 %% Deprecated functions
--export([decode_base64/1, encode_base64/1]).
+-export([decode_base64/1, encode_base64/1,
+        crypto_hmac/3, crypto_hmac/4,
+        uri_quote/1, uri_decode/1,
+        lists_uniq/1]).
 -deprecated([{decode_base64, 1},
-	     {encode_base64, 1}]).
+	     {encode_base64, 1},
+	     {crypto_hmac, 3},
+	     {crypto_hmac, 4},
+	     {uri_quote, 1},
+	     {uri_decode, 1},
+	     {lists_uniq, 1}]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -226,6 +234,15 @@ decode_base64(S) ->
 -spec encode_base64(binary()) -> binary().
 encode_base64(Data) ->
     base64:encode(Data).
+
+crypto_hmac(Type, Key, Data) -> crypto:mac(hmac, Type, Key, Data).
+crypto_hmac(Type, Key, Data, MacL) -> crypto:macN(hmac, Type, Key, Data, MacL).
+uri_quote(Data) ->
+    uri_string:quote(Data).
+uri_decode(Path) ->
+    uri_string:percent_decode(Path).
+lists_uniq(List) ->
+    lists:uniq(List).
 
 -spec ip_to_list(inet:ip_address() | undefined |
                  {inet:ip_address(), inet:port_number()}) -> binary().
