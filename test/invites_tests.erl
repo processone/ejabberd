@@ -477,7 +477,7 @@ http(Config) ->
     Token = token_from_uri(TokenURI),
     {ok, {{_, 200, _}, _Headers, Body}} = httpc:request(LandingPage),
     {match, RegistrationURLs} = re:run(Body, <<"href=\"", Token/binary, "([a-zA-Z0-9\/\-]+)\"">>, [global, {capture, [1], binary}]),
-    Apps = mod_invites_http:apps_json(Server, <<"en">>, []),
+    Apps = mod_invites_http:apps_json(Server, <<"en">>, [{static, <<"/static">>}, {uri, <<>>}]),
     ?match(true, length(RegistrationURLs) == length(Apps) + 1),
     BaseURL = mod_invites_http:landing_page(Server, mod_invites:get_invite(Server, Token)),
     lists:foreach(
