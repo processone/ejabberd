@@ -70,19 +70,12 @@ cleanup_expired(Host) ->
 create_invite(Invite) ->
     #invite_token{inviter = {User, Host},
                   token = Token,
-                  account_name = AccountName0,
+                  account_name = AccountName,
                   created_at = CreatedAt0,
                   expires = Expires0,
                   type = Type} =
         Invite,
     TypeBin = atom_to_binary(Type),
-    AccountName =
-        case AccountName0 of
-            undefined ->
-                <<>>;
-            _ ->
-                AccountName0
-        end,
     CreatedAt = datetime_to_sql_timestamp(CreatedAt0),
     Expires = datetime_to_sql_timestamp(Expires0),
 
