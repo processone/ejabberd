@@ -681,6 +681,7 @@ maybe_add_ibr_allowed(User, Host) ->
 landing_page(Host, Invite) ->
     mod_invites_http:landing_page(Host, Invite).
 
+-spec db_call(binary(), atom(), list()) -> any().
 db_call(Host, Fun, Args) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
     apply(Mod, Fun, Args).
