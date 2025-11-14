@@ -11,6 +11,9 @@
 extract_lang_src2pot ()
 {
 	./tools/extract-tr.sh src $DEPS_DIR/xmpp/src > $PO_DIR/ejabberd.pot
+  ./tools/extract-erlydtl-templates.sh "priv/mod_invites/*.*" $PO_DIR/templates.pot
+  msgcat $PO_DIR/ejabberd.pot $PO_DIR/templates.pot > $PO_DIR/temp.pot
+  mv $PO_DIR/temp.pot $PO_DIR/ejabberd.pot
 }
 
 extract_lang_popot2po ()
@@ -55,7 +58,7 @@ extract_lang_po2msg ()
 	    echo "%%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/"
 	    echo ""
 	} >>$MSGS_PATH
-	paste $MSGID_PATH $MSGSTR_PATH --delimiter=, | awk '{print "{" $0 "}."}' | sort -g >>$MSGS_PATH
+	paste -d , $MSGID_PATH $MSGSTR_PATH | awk '{print "{" $0 "}."}' | sort -g >>$MSGS_PATH
 
 	rm $MS_PATH
 	rm $MSGID_PATH
