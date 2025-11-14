@@ -339,11 +339,11 @@ adhoc_items(Acc,
     InviteUser =
         #disco_item{jid = jid:make(Server),
                     node = ?NS_INVITE_INVITE,
-                    name = translate:translate(Lang, "Invite User")},
+                    name = translate:translate(Lang, ?T("Invite User"))},
     CreateAccount =
         #disco_item{jid = jid:make(Server),
                     node = ?NS_INVITE_CREATE_ACCOUNT,
-                    name = translate:translate(Lang, "Create Account")},
+                    name = translate:translate(Lang, ?T("Create Account"))},
     MyItems =
         case create_account_allowed(LServer, From) of
             ok ->
@@ -755,15 +755,15 @@ to_stanza_error(Lang, Reason) ->
     xmpp:err_bad_request(Text, Lang).
 
 reason_to_text(host_unknown) ->
-    "Host unknown";
+    ?T("Host unknown");
 reason_to_text(hostname_invalid) ->
-    "Hostname invalid";
+    ?T("Hostname invalid");
 reason_to_text(account_name_invalid) ->
-    "Username invalid";
+    ?T("Username invalid");
 reason_to_text(user_exists) ->
-    "User already exists";
+    ?T("User already exists");
 reason_to_text(num_invites_exceeded) ->
-    "Maximum number of invites reached".
+    ?T("Maximum number of invites reached").
 
 maybe_gen_sid(<<>>) ->
     p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT);
