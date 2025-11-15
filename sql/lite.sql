@@ -260,7 +260,8 @@ CREATE TABLE muc_room (
     name text NOT NULL,
     host text NOT NULL,
     opts text NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE UNIQUE INDEX i_muc_room_name_host ON muc_room (name, host);
