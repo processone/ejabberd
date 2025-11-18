@@ -126,7 +126,10 @@ init(SockMod, Socket, Opts) ->
 			     true -> {SockMod, Socket}
 			  end,
     SockPeer =  proplists:get_value(sock_peer_name, Opts, none),
-    RequestHandlers = proplists:get_value(request_handlers, Opts, []),
+    RequestHandlers0 = proplists:get_value(request_handlers, Opts, []),
+    RequestHandlers = ejabberd_hooks:run_fold(http_request_handlers_init,
+                                              RequestHandlers0,
+                                              [Opts]),
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
     {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?$">>),
