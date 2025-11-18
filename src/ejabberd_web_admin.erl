@@ -1661,7 +1661,7 @@ make_login_items(#request{us = {Username, Host}} = R, Level) ->
                 UserEl
         end,
     MenuPost =
-        case ejabberd_hooks:run_fold(webadmin_menu_system_post, [], [R]) of
+        case ejabberd_hooks:run_fold(webadmin_menu_system_post, [], [R, Level]) of
             [] ->
                 [];
             PostElements ->
@@ -1684,7 +1684,7 @@ make_login_items(#request{us = {Username, Host}} = R, Level) ->
                                 [{<<"sentence">>, misc:atom_to_binary(node())}],
                                 [{only, value},
                                  {result_links, [{sentence, node, Level, <<"">>}]}])])]
-             ++ ejabberd_hooks:run_fold(webadmin_menu_system_inside, [], [R])
+             ++ ejabberd_hooks:run_fold(webadmin_menu_system_inside, [], [R, Level])
              ++ [?LI([?C(unicode:characters_to_binary("📤")),
                       ?AC(<<(binary:copy(<<"../">>, Level))/binary, "logout/">>,
                           <<"Logout">>)])])]}]
