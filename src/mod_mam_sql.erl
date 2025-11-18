@@ -26,6 +26,7 @@
 
 
 -behaviour(mod_mam).
+-behaviour(ejabberd_db_serialize).
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
@@ -33,6 +34,7 @@
 	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6,
 	 delete_old_messages_batch/4, count_messages_to_delete/3]).
 -export([sql_schemas/0]).
+-export([serialize/3, deserialize_start/1, deserialize/2]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -40,6 +42,7 @@
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("mod_muc_room.hrl").
+-include("ejabberd_db_serialize.hrl").
 
 %%%===================================================================
 %%% API
@@ -771,3 +774,126 @@ make_archive_el(User, TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchi
 		       [XML, jid:encode(JidArchive), Reason]),
 	    {error, invalid_xml}
     end.
+
+serialize(LServer, BatchSize, undefined) ->
+    serialize(LServer, BatchSize, {prefs, 0});
+serialize(LServer, BatchSize, {prefs, Offset}) ->
+    case ejabberd_sql:sql_query(
+           LServer,
+           ?SQL("select @(username)s, @(def)s, @(always)s, @(never)s from archive_prefs"
+                " where %(LServer)H "
+                "order by username "
+                "limit %(BatchSize)d offset %(Offset)d")) of
+        {selected, Rows} ->
+            Data = lists:foldl(
+                     fun(_,
+                         {error, _} =
+                             Err) ->
+                             Err;
+                        ({Username, SDefault, SAlways, SNever}, Acc) ->
+                             try {erlang:binary_to_existing_atom(SDefault, utf8),
+                                  ejabberd_sql:decode_term(SAlways),
+                                  ejabberd_sql:decode_term(SNever)} of
+                                 {Default, Always, Never} ->
+                                     [#serialize_mam_prefs_v1{
+                                        serverhost = LServer,
+                                        username = Username,
+                                        default = Default,
+                                        always = Always,
+                                        never = Never
+                                       } | Acc]
+                             catch
+                                 _:_ ->
+                                     {error, io_lib:format(
+                                               "Error when decoding mam prefs for user ~s@~s",
+                                               [Username, LServer])}
+                             end
+                     end,
+                     [],
+                     Rows),
+            case length(Rows) of
+                Val when Val < BatchSize ->
+                    case serialize(LServer, BatchSize - Val, {mam, 0}) of
+                        {ok, Data2, Next} ->
+                            {ok, Data ++ Data2, Next};
+                        Err -> Err
+                    end;
+                Val ->
+                    {ok, Data, {prefs, Offset + Val}}
+            end;
+        _ ->
+            {error, io_lib:format("Error when retrieving list of mam users preferences", [])}
+    end;
+serialize(LServer, BatchSize, {mam, Offset}) ->
+    case ejabberd_sql:sql_query(
+           LServer,
+           ?SQL("select @(username)s, @(timestamp)d, @(peer)s, @(xml)s, @(kind)s, @(nick)s, @(origin_id)s from archive"
+                " where %(LServer)H "
+                "order by username, timestamp "
+                "limit %(BatchSize)d offset %(Offset)d")) of
+        {selected, Rows} ->
+            Data = lists:map(
+                     fun({Username, Timestamp, Peer, Xml, Kind, Nick, OriginId}) ->
+                             #serialize_mam_v1{
+                               serverhost = LServer,
+                               username = Username,
+                               timestamp = Timestamp,
+                               peer = Peer,
+                               type = erlang:binary_to_existing_atom(Kind, utf8),
+                               nick = Nick,
+                               origin_id = OriginId,
+                               packet = Xml
+                              }
+                     end,
+                     Rows),
+            {ok, Data, {mam, Offset + length(Rows)}};
+        _ ->
+            {error, io_lib:format("Error when retrieving list of mam users entries", [])}
+    end.
+
+deserialize_start(LServer) ->
+    ejabberd_sql:sql_query(
+	LServer,
+	?SQL("delete from archive where %(LServer)H")),
+    ejabberd_sql:sql_query(
+	LServer,
+	?SQL("delete from archive_prefs where %(LServer)H")).
+
+deserialize(LServer, Batch) ->
+    F = fun() ->
+	lists:foreach(
+	    fun(#serialize_mam_prefs_v1{username = Username, default = Default, always = Always, never = Never}) ->
+		SDefault = erlang:atom_to_binary(Default, utf8),
+		SAlways = misc:term_to_expr(Always),
+		SNever = misc:term_to_expr(Never),
+		ejabberd_sql:sql_query_t(?SQL_INSERT(
+		    "archive_prefs",
+		    ["username=%(Username)s",
+		     "server_host=%(LServer)s",
+		     "def=%(SDefault)s",
+		     "always=%(SAlways)s",
+		     "never=%(SNever)s"]));
+	       (#serialize_mam_v1{username = Username, timestamp = TS, peer = Peer, packet = XML, nick = Nick, type = Type, origin_id = OriginID}) ->
+		   BarePeer = jid:encode(jid:remove_resource(jid:decode(Peer))),
+		   Pkt = fxml_stream:parse_element(XML),
+		   Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
+		   SType = atom_to_binary(Type),
+		   ejabberd_sql:sql_query_t(
+		       ?SQL_INSERT(
+			   "archive",
+			   ["username=%(Username)s",
+			    "server_host=%(LServer)s",
+			    "timestamp=%(TS)d",
+			    "peer=%(Peer)s",
+			    "bare_peer=%(BarePeer)s",
+			    "xml=%(XML)s",
+			    "txt=%(Body)s",
+			    "kind=%(SType)s",
+			    "nick=%(Nick)s",
+			    "origin_id=%(OriginID)s"]))
+	    end, Batch)
+	end,
+	case ejabberd_sql:sql_transaction(LServer, F) of
+	    {atomic, _} -> ok;
+	    _ -> {error, io_lib:format("Error when writing archive data", [])}
+	end.

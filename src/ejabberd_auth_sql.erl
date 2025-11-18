@@ -29,17 +29,20 @@
 -author('alexey@process-one.net').
 
 -behaviour(ejabberd_auth).
+-behaviour(ejabberd_db_serialize).
 
 -export([start/1, stop/1, set_password_multiple/3, try_register_multiple/3,
 	 get_users/2, count_users/2, get_password/2,
 	 remove_user/2, store_type/1, plain_password_required/1,
 	 export/1, which_users_exists/2, drop_password_type/2, set_password_instance/3]).
 -export([sql_schemas/0]).
+-export([serialize/3, deserialize_start/1, deserialize/2]).
 
 -include_lib("xmpp/include/scram.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("ejabberd_auth.hrl").
+-include("ejabberd_db_serialize.hrl").
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -444,3 +447,102 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+
+serialize(LServer, BatchSize, Last) ->
+    Offset = case Last of
+                 undefined -> 0;
+                 _ -> Last
+             end,
+    case ejabberd_sql:sql_query(
+           LServer,
+           ?SQL("select @(username)s, @(type)d, @(password)s, @(serverkey)s, @(salt)s, @(iterationcount)d  from users "
+                "where %(LServer)H "
+                "order by username, type "
+                "limit %(BatchSize)d offset %(Offset)d")) of
+        {selected, Rows} ->
+            ?DEBUG("GOT rows ~p", [Rows]),
+            Data = lists:map(
+                     fun({Username, _, Password, <<>>, <<>>, 0}) ->
+                             #serialize_auth_v1{serverhost = LServer, username = Username, passwords = [Password]};
+                        ({Username, 1, Password, _, _, _}) ->
+                             #serialize_auth_v1{serverhost = LServer, username = Username, passwords = [Password]};
+                        ({Username, 0, Password, ServerKey, Salt, IterationCount}) ->
+                             {Hash, SK} = case Password of
+                                              <<"sha256:", Rest/binary>> ->
+                                                  {sha256, Rest};
+                                              <<"sha512:", Rest/binary>> ->
+                                                  {sha512, Rest};
+                                              Other ->
+                                                  {sha, Other}
+                                          end,
+                             #serialize_auth_v1{
+                               serverhost = LServer,
+                               username = Username,
+                               passwords = [{Hash, SK, ServerKey, Salt, IterationCount}]
+                              };
+                        ({Username, Type, StoredKey, ServerKey, Salt, IterationCount}) ->
+                             #serialize_auth_v1{
+                               serverhost = LServer,
+                               username = Username,
+                               passwords = [{num_to_hash(Type),
+                                             StoredKey,
+                                             ServerKey,
+                                             Salt,
+                                             IterationCount}]
+                              }
+                     end,
+                     Rows),
+            Data2 = case length(Rows) < BatchSize of
+                        true -> Data ++ [#serialize_auth_v1{}];
+                        _ -> Data
+                    end,
+            {_, Data3, _, RC2} = lists:foldl(
+                                   fun(Next, {undefined, Res, _, _}) ->
+                                           {Next, Res, 1, 0};
+                                      (#serialize_auth_v1{username = U1, passwords = [P1]},
+                                       {#serialize_auth_v1{username = U2, passwords = P2} = Next, Res, NC, RC})
+                                         when U1 == U2 ->
+                                           {Next#serialize_auth_v1{passwords = [P1 | P2]}, Res, NC + 1, RC};
+                                      (Current, {Next, Acc, NC, RC}) ->
+                                           {Current, [Next | Acc], 1, RC + NC}
+                                   end,
+                                   {undefined, [], 0, 0},
+                                   Data2),
+            {ok, Data3, Offset + RC2};
+        _ ->
+            {error, io_lib:format("Error when retrieving passwords data from database", [])}
+    end.
+
+
+deserialize_start(LServer) ->
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("delete from users where %(LServer)H")).
+
+
+deserialize(LServer, Batch) ->
+    case ejabberd_sql:sql_transaction(LServer,
+				      fun() ->
+					  lists:foreach(
+					      fun(#serialize_auth_v1{username = Username, passwords = Passwords}) ->
+						  lists:foreach(
+						      fun({Hash, StoredKey, ServerKey, Salt, IterationCount}) ->
+							  set_password_scram_t(Username,
+									       LServer,
+									       Hash,
+									       StoredKey,
+									       ServerKey,
+									       Salt,
+									       IterationCount);
+							 (Password) ->
+							     set_password_t(Username, LServer, Password)
+						      end,
+						      Passwords)
+					      end,
+					      Batch)
+				      end) of
+	{atomic, _} -> ok;
+	_ ->
+	    {error, io_lib:format("Error when storing passwords in database", [])}
+    end.
