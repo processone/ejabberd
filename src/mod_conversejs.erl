@@ -31,7 +31,7 @@
 
 -export([start/2, stop/1, reload/3, process/2, depends/2,
          mod_opt_type/1, mod_options/1, mod_doc/0]).
--export([web_menu_system/2]).
+-export([http_handlers_init/2, web_menu_system/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -39,8 +39,11 @@
 -include("translate.hrl").
 -include("ejabberd_web_admin.hrl").
 
+-define(AUTOLOGIN_PATH, <<"conversejs-autologin">>).
+
 start(_Host, _Opts) ->
-    {ok, [{hook, webadmin_menu_system_post, web_menu_system, 50, global}]}.
+    {ok, [{hook, http_request_handlers_init, http_handlers_init, 50, global},
+          {hook, webadmin_menu_system_post, web_menu_system, 50, global}]}.
 
 stop(_Host) ->
     ok.
@@ -51,10 +54,19 @@ reload(_Host, _NewOpts, _OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
-process([], #request{method = 'GET', host = Host, q = Query, raw_path = RawPath1}) ->
+process(LocalPath, #request{auth = Auth, path = Path} = Request) ->
+    AutologinPath = lists:member(?AUTOLOGIN_PATH, Path),
+    case {AutologinPath, Auth} of
+        {true, undefined} ->
+            ejabberd_web:error(not_found);
+        _ ->
+            process2(LocalPath, Request)
+    end.
+
+process2([], #request{method = 'GET', host = Host, auth = Auth, raw_path = RawPath1}) ->
     [RawPath | _] = string:split(RawPath1, "?"),
     ExtraOptions = get_auth_options(Host)
-        ++ get_autologin_options(Query)
+        ++ get_autologin_options(Auth)
         ++ get_register_options(Host)
         ++ get_extra_options(Host),
     Domain = mod_conversejs_opt:default_domain(Host),
@@ -99,7 +111,7 @@ process([], #request{method = 'GET', host = Host, q = Query, raw_path = RawPath1
       <<"</script>">>,
       <<"</body>">>,
       <<"</html>">>]};
-process(LocalPath, #request{host = Host}) ->
+process2(LocalPath, #request{host = Host}) ->
     case is_served_file(LocalPath) of
         true -> serve(Host, LocalPath);
         false -> ejabberd_web:error(not_found)
@@ -181,6 +193,11 @@ get_auth_options(Domain) ->
              {<<"jid">>, Domain}]
     end.
 
+get_autologin_options({Jid, Password}) ->
+    [{<<"auto_login">>, <<"true">>}, {<<"jid">>, Jid}, {<<"password">>, Password}];
+get_autologin_options(undefined) ->
+    [].
+
 get_register_options(Server) ->
     AuthSupportsRegister =
         lists:any(
@@ -252,63 +269,27 @@ get_plugins_html(Host, RawPath) ->
 
 %% @format-begin
 
-web_menu_system(Result,
-                #request{host = Host,
-                         auth = Auth,
-                         tp = Protocol}) ->
-    AutoUrl = ejabberd_http:get_auto_url(any, ?MODULE),
-    ConverseUrl = misc:expand_keyword(<<"@HOST@">>, AutoUrl, Host),
-    AutologinQuery =
-        case {Protocol, Auth} of
-            {http, {Jid, _Password}} ->
-                <<"/?autologinjid=", Jid/binary>>;
-            {https, {Jid, Password}} ->
-                AuthToken = build_token(Jid, Password),
-                <<"/?autologinjid=", Jid/binary, "&autologintoken=", AuthToken/binary>>;
-            _ ->
-                <<"">>
-        end,
+http_handlers_init(Handlers, _Opts) ->
+    Handlers2 =
+        lists:foldl(fun ({Path, ejabberd_web_admin} = Handler, Acc) ->
+                            [Handler, {lists:append(Path, [?AUTOLOGIN_PATH]), mod_conversejs}
+                             | Acc];
+                        (Handler, Acc) ->
+                            [Handler | Acc]
+                    end,
+                    [],
+                    Handlers),
+    lists:reverse(Handlers2).
+
+web_menu_system(Result, _Request, Level) ->
+    Base = iolist_to_binary(lists:duplicate(Level, "../")),
     ConverseEl =
         ?LI([?C(unicode:characters_to_binary("☯️")),
              ?XAE(<<"a">>,
-                  [{<<"href">>, <<ConverseUrl/binary, AutologinQuery/binary>>},
+                  [{<<"href">>, <<Base/binary, ?AUTOLOGIN_PATH/binary>>},
                    {<<"target">>, <<"_blank">>}],
                   [?C(unicode:characters_to_binary("Converse"))])]),
     [ConverseEl | Result].
-
-get_autologin_options(Query) ->
-    case {proplists:get_value(<<"autologinjid">>, Query),
-          proplists:get_value(<<"autologintoken">>, Query)}
-    of
-        {undefined, _} ->
-            [];
-        {Jid, Token} ->
-            [{<<"auto_login">>, <<"true">>},
-             {<<"jid">>, <<"admin@localhost">>},
-             {<<"password">>, check_token_get_password(Jid, Token)}]
-    end.
-
-build_token(Jid, Password) ->
-    Minutes =
-        integer_to_binary(calendar:datetime_to_gregorian_seconds(
-                              calendar:universal_time())
-                          div 60),
-    Cookie =
-        misc:atom_to_binary(
-            erlang:get_cookie()),
-    str:sha(<<Jid/binary, Password/binary, Minutes/binary, Cookie/binary>>).
-
-check_token_get_password(_, undefined) ->
-    <<"">>;
-check_token_get_password(JidString, TokenProvided) ->
-    Jid = jid:decode(JidString),
-    Password = ejabberd_auth:get_password_s(Jid#jid.luser, Jid#jid.lserver),
-    case build_token(JidString, Password) of
-        TokenProvided ->
-            Password;
-        _ ->
-            <<"">>
-    end.
 %% @format-end
 
 %%----------------------------------------------------------------------
