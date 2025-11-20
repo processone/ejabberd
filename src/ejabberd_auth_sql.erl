@@ -494,7 +494,7 @@ serialize(LServer, BatchSize, Last) ->
                      end,
                      Rows),
             Data2 = case length(Rows) < BatchSize of
-                        true -> Data ++ [#serialize_auth_v1{}];
+                        true -> Data ++ [#serialize_auth_v1{serverhost = <<>>, username = <<>>, passwords = []}];
                         _ -> Data
                     end,
             {_, Data3, _, RC2} = lists:foldl(
