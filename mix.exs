@@ -120,7 +120,7 @@ defmodule Ejabberd.MixProject do
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
-     {:xmpp, git: "https://github.com/sstrigler/xmpp", branch: "great_invitations", override: true},
+     {:xmpp, git: "https://github.com/processone/xmpp", tag: "1.11.3", override: true},
      {:yconf, ">= 1.0.22"}]
     ++ cond_deps()
   end
