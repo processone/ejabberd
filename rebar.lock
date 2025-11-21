@@ -30,8 +30,8 @@
  {<<"stun">>,{pkg,<<"stun">>,<<"1.2.21">>},0},
  {<<"unicode_util_compat">>,{pkg,<<"unicode_util_compat">>,<<"0.7.1">>},1},
  {<<"xmpp">>,
-  {git,"https://github.com/sstrigler/xmpp",
-       {ref,"03bce052c2c1509ded3a4acdf653985d68cfd8ed"}},
+  {git,"https://github.com/processone/xmpp",
+       {ref,"9f323f01122766f806363b0a5e640a17ee1a41be"}},
   0},
  {<<"yconf">>,{pkg,<<"yconf">>,<<"1.0.22">>},0}]}.
 [
