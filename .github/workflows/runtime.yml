@@ -44,7 +44,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Get recent compatible Rebar binaries
       if: matrix.otp < 25
@@ -124,7 +124,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Prepare libraries
       run: |
@@ -202,7 +202,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Prepare libraries
       run: |
