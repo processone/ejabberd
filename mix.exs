@@ -63,6 +63,14 @@ defmodule Ejabberd.MixProject do
     ]
   end
 
+  defp if_version_above(ver, okResult) do
+    if :erlang.system_info(:otp_release) > ver do
+      okResult
+    else
+      []
+    end
+  end
+
   defp if_version_below(ver, okResult) do
     if :erlang.system_info(:otp_release) < ver do
       okResult
@@ -105,7 +113,6 @@ defmodule Ejabberd.MixProject do
      {:fast_xml, "~> 1.1.56"},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 6.0"},
-     {:jose, "~> 1.11.10"},
      {:mqtree, "~> 1.0"},
      {:p1_acme, ">= 1.0.28"},
      {:p1_oauth2, "~> 0.6"},
@@ -138,6 +145,8 @@ defmodule Ejabberd.MixProject do
                          {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {if_version_below(~c"27", true), {:jiffy, "~> 1.1.1"}},
+                         {if_version_below(~c"26", true), {:jose, "1.11.10", override: true}},
+                         {if_version_above(~c"25", true), {:jose, "~> 1.11.12"}},
                          {config(:lua), {:luerl, "~> 1.2.0"}},
                          {config(:mysql), {:p1_mysql, ">= 1.0.24"}},
                          {config(:pgsql), {:p1_pgsql, ">= 1.1.32"}},
