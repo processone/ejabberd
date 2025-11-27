@@ -41,7 +41,7 @@
 -define(SERVER, ?MODULE).
 
 -record(state, {tasks = #{}}).
--record(task, {state = not_started, pid, steps, done_steps}).
+-record(task, {state = not_started, pid, steps, done_steps, last_message}).
 
 %%%===================================================================
 %%% API
@@ -99,14 +99,14 @@ handle_call({task_status, Type}, _From, #state{tasks = Tasks} = State) ->
 	    {reply, not_started, State};
 	#task{state = not_started} ->
 	    {reply, not_started, State};
-	#task{state = failed, done_steps = Steps, pid = Error} ->
+	#task{state = failed, done_steps = Steps, last_message = Error} ->
 	    {reply, {failed, Steps, Error}, State};
-	#task{state = aborted, done_steps = Steps} ->
-	    {reply, {aborted, Steps}, State};
-	#task{state = working, done_steps = Steps} ->
-	    {reply, {working, Steps}, State};
-	#task{state = completed, done_steps = Steps} ->
-	    {reply, {completed, Steps}, State}
+	#task{state = aborted, done_steps = Steps, last_message = Msg} ->
+	    {reply, {aborted, Steps, Msg}, State};
+	#task{state = working, done_steps = Steps, last_message = Msg} ->
+	    {reply, {working, Steps, Msg}, State};
+	#task{state = completed, done_steps = Steps, last_message = Msg} ->
+	    {reply, {completed, Steps, Msg}, State}
     end;
 handle_call({abort_task, Type}, _From, #state{tasks = Tasks} = State) ->
     case maps:get(Type, Tasks, none) of
@@ -126,18 +126,18 @@ handle_call(_Request, _From, State = #state{}) ->
     {noreply, NewState :: #state{}} |
     {noreply, NewState :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term(), NewState :: #state{}}).
-handle_cast({task_finished, Type, Pid}, #state{tasks = Tasks} = State) ->
+handle_cast({task_finished, Type, Pid, Msg}, #state{tasks = Tasks} = State) ->
     case maps:get(Type, Tasks, none) of
 	#task{state = working, pid = Pid2} = T when Pid == Pid2  ->
-	    Tasks2 = maps:put(Type, T#task{state = completed, pid = none}, Tasks),
+	    Tasks2 = maps:put(Type, T#task{state = completed, pid = none, last_message = Msg}, Tasks),
 	    {noreply, State#state{tasks = Tasks2}};
 	_ ->
 	    {noreply, State}
     end;
-handle_cast({task_progress, Type, Pid, Count}, #state{tasks = Tasks} = State) ->
+handle_cast({task_progress, Type, Pid, Count, Msg}, #state{tasks = Tasks} = State) ->
     case maps:get(Type, Tasks, none) of
 	#task{state = working, pid = Pid2, done_steps = Steps} = T when Pid == Pid2  ->
-	    Tasks2 = maps:put(Type, T#task{done_steps = Steps + Count}, Tasks),
+	    Tasks2 = maps:put(Type, T#task{done_steps = Steps + Count, last_message = Msg}, Tasks),
 	    {noreply, State#state{tasks = Tasks2}};
 	_ ->
 	    {noreply, State}
@@ -145,7 +145,7 @@ handle_cast({task_progress, Type, Pid, Count}, #state{tasks = Tasks} = State) ->
 handle_cast({task_error, Type, Pid, Error}, #state{tasks = Tasks} = State) ->
     case maps:get(Type, Tasks, none) of
 	#task{state = working, pid = Pid2} = T when Pid == Pid2  ->
-	    Tasks2 = maps:put(Type, T#task{state = failed, pid = Error}, Tasks),
+	    Tasks2 = maps:put(Type, T#task{state = failed, last_message = Error}, Tasks),
 	    {noreply, State#state{tasks = Tasks2}};
 	_ ->
 	    {noreply, State}
@@ -186,13 +186,17 @@ code_change(_OldVsn, State = #state{}, _Extra) ->
 
 work_loop(Task, JobState, JobFun, Rate, StartDate, CurrentProgress) ->
     try JobFun(JobState) of
-	{ok, _NewState, 0} ->
-	    gen_server:cast(?MODULE, {task_finished, Task, self()});
-	{ok, NewState, Count} ->
-	    gen_server:cast(?MODULE, {task_progress, Task, self(), Count}),
+	{ok, _NewState, 0, Msg} ->
+	    gen_server:cast(?MODULE, {task_finished, Task, self(), Msg});
+	{ok, NewState, Count, Msg} ->
+	    gen_server:cast(?MODULE, {task_progress, Task, self(), Count, Msg}),
 	    NewProgress = CurrentProgress + Count,
-	    TimeSpent = erlang:monotonic_time(second) - StartDate,
-	    SleepTime = max(0, NewProgress/Rate*60 - TimeSpent),
+	    SleepTime = case Rate of
+			    infinity -> 0;
+			    _ ->
+				TimeSpent = erlang:monotonic_time(second) - StartDate,
+				max(0, NewProgress/Rate*60 - TimeSpent)
+			end,
 	    receive
 		abort -> ok
 	    after round(SleepTime*1000) ->
@@ -200,6 +204,6 @@ work_loop(Task, JobState, JobFun, Rate, StartDate, CurrentProgress) ->
 	    end;
 	{error, Error} ->
 	    gen_server:cast(?MODULE, {task_error, Task, self(), Error})
-    catch _:_ ->
-	gen_server:cast(?MODULE, {task_error, Task, self(), internal_error})
+    catch T:E:S ->
+	gen_server:cast(?MODULE, {task_error, Task, self(), {internal_error, T, E, S}})
     end.

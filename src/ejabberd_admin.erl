@@ -457,6 +457,70 @@ get_commands_spec() ->
 			result_desc = "Status text",
 			result_example = "Operation aborted"},
 
+     #ejabberd_commands{name = export_db, tags = [db],
+			desc = "Export database records for host to files",
+			note = "added in 25.XX",
+			module = ejabberd_db_serialize, function = export,
+			args_desc = ["Name of host that should be exported",
+				     "Directory name where exported files should be created"],
+			args_example = [<<"localhost">>, <<"/home/ejabberd/export">>],
+			args = [{host, binary}, {dir, binary}],
+			result = {res, restuple},
+			result_desc = "Result tuple",
+			result_example = {ok, <<"Export started">>}},
+     #ejabberd_commands{name = export_db_status, tags = [db],
+			desc = "Return current status of export operation",
+			note = "added in 22.XX",
+			module = ejabberd_db_serialize, function = export_status,
+			args_desc = ["Name of host where export is performed"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, binary},
+			result_desc = "Current operation status",
+			result_example = "Operation in progress: 'Exporting mod_mam', exported 5000 records so far"},
+     #ejabberd_commands{name = export_db_abort, tags = [db],
+			desc = "Abort currently running export peration",
+			note = "added in 22.XX",
+			module = ejabberd_db_serialize, function = export_abort,
+			args_desc = ["Name of host where export is performed"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, binary},
+			result_desc = "Operation status",
+			result_example = "Operation aborted"},
+
+     #ejabberd_commands{name = import_db, tags = [db],
+			desc = "Import database records for host to files",
+			note = "added in 25.XX",
+			module = ejabberd_db_serialize, function = import,
+			args_desc = ["Name of host that should be imported",
+				     "Directory name where imported files should be created"],
+			args_example = [<<"localhost">>, <<"/home/ejabberd/export">>],
+			args = [{host, binary}, {dir, binary}],
+			result = {res, restuple},
+			result_desc = "Result tuple",
+			result_example = {ok, <<"Import started">>}},
+     #ejabberd_commands{name = import_db_status, tags = [db],
+			desc = "Return current status of import operation",
+			note = "added in 22.XX",
+			module = ejabberd_db_serialize, function = import_status,
+			args_desc = ["Name of host where import is performed"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, binary},
+			result_desc = "Current operation status",
+			result_example = "Operation in progress: 'Importing mod_mam', imported 5000 records so far"},
+     #ejabberd_commands{name = import_db_abort, tags = [db],
+			desc = "Abort currently running import peration",
+			note = "added in 22.XX",
+			module = ejabberd_db_serialize, function = import_abort,
+			args_desc = ["Name of host where import is performed"],
+			args_example = [<<"localhost">>],
+			args = [{host, binary}],
+			result = {status, binary},
+			result_desc = "Operation status",
+			result_example = "Operation aborted"},
+
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL file",
 			longdesc = "Configure the modules to use SQL, then call this command. "
@@ -1027,13 +1091,13 @@ delete_old_messages_batch(Server, Days, BatchSize, Rate) ->
 					      {true, _} ->
 						  case Mod:remove_old_messages_batch(L, Da, B) of
 						      {ok, Count} ->
-							  {ok, S, Count};
+							  {ok, S, Count, undefined};
 						      {error, _} = E ->
 							  E
 						  end;
 					      {_, true} ->
 						  case Mod:remove_old_messages_batch(L, Da, B, IS) of
-						      {ok, IS2, Count} ->
+						      {ok, IS2, Count, undefined} ->
 							  {ok, {L, Da, B, IS2}, Count};
 						      {error, _} = E ->
 							  E
@@ -1056,13 +1120,13 @@ delete_old_messages_status(Server) ->
 	      {failed, Steps, Error} ->
 		  io_lib:format("Operation failed after deleting ~p messages with error ~p",
 				[Steps, misc:format_val(Error)]);
-	      {aborted, Steps} ->
+	      {aborted, Steps, _} ->
 		  io_lib:format("Operation was aborted after deleting ~p messages",
 				[Steps]);
-	      {working, Steps} ->
+	      {working, Steps, _} ->
 		  io_lib:format("Operation in progress, deleted ~p messages",
 				[Steps]);
-	      {completed, Steps} ->
+	      {completed, Steps, _} ->
 		  io_lib:format("Operation was completed after deleting ~p messages",
 				[Steps])
 	  end,

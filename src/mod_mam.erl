@@ -724,14 +724,14 @@ delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"c
 					      {true, _} ->
 						  case Mod:delete_old_messages_batch(L, St, T, B) of
 						      {ok, Count} ->
-							  {ok, S, Count};
+							  {ok, S, Count, undefined};
 						      {error, _} = E ->
 							  E
 						  end;
 					      {_, true} ->
 						  case Mod:delete_old_messages_batch(L, St, T, B, IS) of
 						      {ok, IS2, Count} ->
-							  {ok, {L, St, T, B, IS2}, Count};
+							  {ok, {L, St, T, B, IS2}, Count, undefined};
 						      {error, _} = E ->
 							  E
 						  end;
@@ -752,15 +752,15 @@ delete_old_messages_status(Server) ->
 	{failed, Steps, Error} ->
 	    io_lib:format("Operation failed after deleting ~p messages with error ~p",
 			  [Steps, misc:format_val(Error)]);
-	{aborted, Steps} ->
+	{aborted, Steps, _} ->
 	    io_lib:format("Operation was aborted after deleting ~p messages",
-					[Steps]);
-	      {working, Steps} ->
-		  io_lib:format("Operation in progress, deleted ~p messages",
-				[Steps]);
-	{completed, Steps} ->
+			  [Steps]);
+        {working, Steps, _} ->
+	    io_lib:format("Operation in progress, deleted ~p messages",
+			  [Steps]);
+	{completed, Steps, _} ->
 	    io_lib:format("Operation was completed after deleting ~p messages",
-					[Steps])
+			  [Steps])
     end,
     lists:flatten(Msg).
 
