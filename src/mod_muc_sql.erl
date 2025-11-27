@@ -27,6 +27,7 @@
 
 -behaviour(mod_muc).
 -behaviour(mod_muc_room).
+-behaviour(ejabberd_db_serialize).
 
 %% API
 -export([init/2, store_room/5, store_changes/4,
@@ -43,11 +44,13 @@
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 -export([sql_schemas/0]).
+-export([serialize/3, deserialize_start/1, deserialize/2]).
 
 -include_lib("xmpp/include/jid.hrl").
 -include("mod_muc.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("ejabberd_db_serialize.hrl").
 
 %%%===================================================================
 %%% API
@@ -607,6 +610,102 @@ export(_Server) ->
 
 import(_, _, _) ->
     ok.
+
+serialize(LServer, BatchSize, undefined) ->
+    serialize(LServer, BatchSize, {rooms, 0});
+serialize(LServer, BatchSize, {rooms, Offset}) ->
+    Records =
+    case ejabberd_sql:sql_query(
+	LServer,
+	?SQL("select @(name)s, @(host)s, @(opts)s from muc_room "
+	     "where %(LServer)H "
+	     "order by host, name "
+	     "limit %(BatchSize)d offset %(Offset)d")) of
+	{selected, Data} ->
+	    lists:foldl(
+		fun(_, {error, _} = Err) -> Err;
+		   ({Name, Host, Opts}, Acc) ->
+		       case ejabberd_sql:sql_query(
+			   LServer,
+			   ?SQL("select @(jid)s, @(nick)s, @(nodes)s from muc_room_subscribers where room=%(Name)s"
+				" and host=%(Host)s and %(LServer)H")) of
+			   {selected, Subs} ->
+			       SubData = lists:map(
+				   fun({Jid, Nick, Nodes}) ->
+				       {jid:decode(Jid), Nick, ejabberd_sql:decode_term(Nodes)}
+				   end, Subs),
+			       OptsD = ejabberd_sql:decode_term(Opts),
+			       Opts2 = lists:keystore(subscribers, 1, OptsD, {subscribers, SubData}),
+			       [#serialize_muc_room_v1{serverhost = LServer, host = Host, name = Name,
+						       options = mod_muc:opts_to_binary(Opts2)} | Acc];
+			   _ ->
+			       {error, io_lib:format("Error when retrieving list of muc subscribers for room ~s@~s",
+						     [Name, Host])}
+		       end
+		end, [], Data);
+	_ ->
+	    {error, io_lib:format("Error when retrieving list of muc rooms",
+				  [])}
+    end,
+    case length(Records) of
+	Val when Val < BatchSize ->
+	    case serialize(LServer, BatchSize - Val, {registrations, 0}) of
+		{ok, Records2, Next} ->
+		    {ok, Records ++ Records2, Next};
+		Err -> Err
+	    end;
+	Val ->
+	    {ok, Records, {rooms, Offset + Val}}
+    end;
+serialize(LServer, BatchSize, {registrations, Offset}) ->
+    Records =
+	case ejabberd_sql:sql_query(
+	    LServer,
+	    ?SQL("select @(jid)s, @(host)s, @(nick)s from muc_registered "
+		 "where %(LServer)H "
+		 "order by host, jid "
+		 "limit %(BatchSize)d offset %(Offset)d")) of
+	    {selected, Data} ->
+		lists:map(
+		    fun({Jid, Host, Nick}) ->
+			#serialize_muc_registrations_v1{serverhost = LServer, host = Host, jid = Jid, nick = Nick}
+		    end, Data);
+	    _ ->
+		{error, io_lib:format("Error when retrieving list of muc registered nicks",
+				      [])}
+	end,
+    {ok, Records, {registrations, Offset + length(Records)}}.
+
+deserialize_start(LServer) ->
+    ejabberd_sql:sql_query(
+	LServer,
+	?SQL("delete from muc_room where %(LServer)H")),
+    ejabberd_sql:sql_query(
+	LServer,
+	?SQL("delete from muc_registered where %(LServer)H")).
+
+deserialize(LServer, Batch) ->
+    lists:foldl(
+	fun(_, {error, _} = Err) ->
+	    Err;
+	   (#serialize_muc_room_v1{name = Name, host = Host, options = Opts}, _) ->
+	       case store_room(LServer, Host, Name, Opts, undefined) of
+		   {atomic, _} ->
+		       ok;
+		   _ -> {error, io_lib:format("Error when writing muc room data", [])}
+	       end;
+	   (#serialize_muc_registrations_v1{host = Host, jid = Jid, nick = Nick}, _) ->
+	       case ejabberd_sql:sql_query(LServer,
+					   ?SQL_INSERT(
+					       "muc_registered",
+					       ["jid=%(Jid)s",
+						"host=%(Host)s",
+						"server_host=%(LServer)s",
+						"nick=%(Nick)s"])) of
+		   {updated, _} -> ok;
+		   _ -> {error, io_lib:format("Error when writing muc registration data", [])}
+	       end
+	end, ok, Batch).
 
 get_subscribed_rooms(LServer, Host, Jid) ->
     JidS = jid:encode(Jid),

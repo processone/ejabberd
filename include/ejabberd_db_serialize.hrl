@@ -53,3 +53,17 @@
     username :: binary(),
     passwords :: [binary() | {atom(), binary(), binary(), binary(), integer()}]
 }).
+
+-record(serialize_muc_room_v1, {
+    serverhost :: binary(),
+    name :: binary(),
+    host :: binary(),
+    options:: [{atom(), term()}]
+}).
+
+-record(serialize_muc_registrations_v1, {
+    serverhost :: binary(),
+    host :: binary(),
+    jid :: binary(),
+    nick :: binary()
+}).

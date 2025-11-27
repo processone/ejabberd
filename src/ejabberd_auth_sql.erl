@@ -461,7 +461,6 @@ serialize(LServer, BatchSize, Last) ->
                 "order by username, type "
                 "limit %(BatchSize)d offset %(Offset)d")) of
         {selected, Rows} ->
-            ?DEBUG("GOT rows ~p", [Rows]),
             Data = lists:map(
                      fun({Username, _, Password, <<>>, <<>>, 0}) ->
                              #serialize_auth_v1{serverhost = LServer, username = Username, passwords = [Password]};
