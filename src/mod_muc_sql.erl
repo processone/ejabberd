@@ -647,15 +647,19 @@ serialize(LServer, BatchSize, {rooms, Offset}) ->
 	    {error, io_lib:format("Error when retrieving list of muc rooms",
 				  [])}
     end,
-    case length(Records) of
-	Val when Val < BatchSize ->
-	    case serialize(LServer, BatchSize - Val, {registrations, 0}) of
-		{ok, Records2, Next} ->
-		    {ok, Records ++ Records2, Next};
-		Err -> Err
-	    end;
-	Val ->
-	    {ok, Records, {rooms, Offset + Val}}
+    case Records of
+	{error, _} = Err -> Err;
+	_ ->
+	    case length(Records) of
+		Val when Val < BatchSize ->
+		    case serialize(LServer, BatchSize - Val, {registrations, 0}) of
+			{ok, Records2, Next} ->
+			    {ok, Records ++ Records2, Next};
+			Err -> Err
+		    end;
+		Val ->
+		    {ok, Records, {rooms, Offset + Val}}
+	    end
     end;
 serialize(LServer, BatchSize, {registrations, Offset}) ->
     Records =
