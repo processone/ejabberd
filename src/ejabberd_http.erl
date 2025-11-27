@@ -33,8 +33,10 @@
 	 accept/1, receive_headers/1, recv_file/2,
 	 listen_opt_type/1, listen_options/0,
 	 apply_custom_headers/2]).
--export([get_url/4, get_auto_url/2, find_handler_port_path/2]).
+-export([get_url/4, get_auto_url/2, get_auto_urls/2, find_handler_port_path/2]).
 -export([init/3]).
+
+-deprecate({get_auto_url, 2}).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -896,21 +898,29 @@ get_url_preliminar(M, Tls, Host, Option, Handler) ->
     end.
 
 get_auto_url(Tls, Handler) ->
-    case find_handler_port_path(Tls, Handler) of
-        [] -> undefined;
-        [{ThisTls, Port, Path} | _] ->
+    [{_ThisTls, Url} | _] = get_auto_urls(Tls, Handler),
+    Url.
+
+-spec get_auto_urls(boolean() | any, atom()) -> [{boolean(), binary()}].
+
+get_auto_urls(Tls, Handler) ->
+    Paths = find_handler_port_path(Tls, Handler),
+    [prepare_url(Path, Handler) || Path <- Paths].
+
+prepare_url({ThisTls, Port, Path}, Handler) ->
             Protocol = case {ThisTls, Handler} of
                            {false, ejabberd_http_ws} -> <<"ws">>;
                            {true, ejabberd_http_ws} -> <<"wss">>;
                            {false, _} -> <<"http">>;
                            {true, _} -> <<"https">>
                        end,
-            <<Protocol/binary,
+            {ThisTls,
+             <<Protocol/binary,
               "://@HOST@:",
               (integer_to_binary(Port))/binary,
               "/",
-              (str:join(Path, <<"/">>))/binary>>
-    end.
+              (str:join(Path, <<"/">>))/binary,
+              "/">>}.
 
 find_handler_port_path(Tls, Handler) ->
     lists:filtermap(
