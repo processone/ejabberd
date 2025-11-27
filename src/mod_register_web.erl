@@ -31,6 +31,7 @@
 
 -export([start/2, stop/1, reload/3, process/2, mod_options/1, depends/2]).
 -export([mod_doc/0]).
+-export([web_menu_system/3]).
 
 -include("logger.hrl").
 
@@ -48,7 +49,7 @@
 
 start(_Host, _Opts) ->
     %% case mod_register_web_opt:docroot(Opts, fun(A) -> A end, undefined) of
-    ok.
+    {ok, [{hook, webadmin_menu_system_post, web_menu_system, 1000-$r, global}]}.
 
 stop(_Host) -> ok.
 
@@ -605,6 +606,18 @@ get_error_text({error, wrong_parameters}) ->
     ?T("Wrong parameters in the web formulary");
 get_error_text({error, Why}) ->
     mod_register:format_error(Why).
+
+%%----------------------------------------------------------------------
+%% WebAdmin
+%%----------------------------------------------------------------------
+
+web_menu_system(Result, _Request, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "🪪", "Register Web", ""),
+    Els ++ Result.
+
+%%----------------------------------------------------------------------
+%%
+%%----------------------------------------------------------------------
 
 mod_options(_) ->
     [].

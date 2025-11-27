@@ -43,7 +43,7 @@
 
 start(_Host, _Opts) ->
     {ok, [{hook, http_request_handlers_init, http_handlers_init, 50, global},
-          {hook, webadmin_menu_system_post, web_menu_system, 50, global}]}.
+          {hook, webadmin_menu_system_post, web_menu_system, 1000-$c, global}]}.
 
 stop(_Host) ->
     ok.
@@ -281,15 +281,22 @@ http_handlers_init(Handlers, _Opts) ->
                     Handlers),
     lists:reverse(Handlers2).
 
-web_menu_system(Result, _Request, Level) ->
+web_menu_system(Result, #request{tp = Protocol}, Level) ->
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "☯️", "Converse", ""),
     Base = iolist_to_binary(lists:duplicate(Level, "../")),
-    ConverseEl =
-        ?LI([?C(unicode:characters_to_binary("☯️")),
-             ?XAE(<<"a">>,
-                  [{<<"href">>, <<Base/binary, ?AUTOLOGIN_PATH/binary>>},
-                   {<<"target">>, <<"_blank">>}],
-                  [?C(unicode:characters_to_binary("Converse"))])]),
-    [ConverseEl | Result].
+    ThisTls =
+        case Protocol of
+            http ->
+                false;
+            https ->
+                true
+        end,
+    ConverseEl2 =
+        ejabberd_web_admin:make_menu_system_el("☯️",
+                                               "Converse (autologin)",
+                                               binary_to_list(?AUTOLOGIN_PATH),
+                                               {ThisTls, Base}),
+    lists:flatten([ConverseEl2, Els, Result]).
 %% @format-end
 
 %%----------------------------------------------------------------------

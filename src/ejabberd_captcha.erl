@@ -482,10 +482,10 @@ get_url(Str) ->
     end.
 
 get_url() ->
-    case ejabberd_http:get_auto_url(any, ?MODULE) of
-        undefined ->
+    case ejabberd_http:get_auto_urls(any, ?MODULE) of
+        [] ->
             undefined;
-        Url ->
+        [{_ThisTls, Url} | _] ->
             Host = ejabberd_config:get_myname(),
             misc:expand_keyword(<<"@HOST@">>, Url, Host)
     end.

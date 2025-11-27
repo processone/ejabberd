@@ -55,6 +55,7 @@
          oauth_remove_client/1]).
 
 -export([web_menu_main/2, web_page_main/2]).
+-export([web_menu_system/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -234,6 +235,7 @@ init([]) ->
     ejabberd_commands:register_commands(get_commands_spec()),
     ejabberd_hooks:add(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:add(webadmin_page_main, ?MODULE, web_page_main, 50),
+    ejabberd_hooks:add(webadmin_menu_system_post, ?MODULE, web_menu_system, 889),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     erlang:send_after(expire(), self(), clean),
     {ok, ok}.
@@ -261,6 +263,7 @@ handle_info(Info, State) ->
 terminate(_Reason, _State) ->
     ejabberd_hooks:delete(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
+    ejabberd_hooks:delete(webadmin_menu_system_post, ?MODULE, web_menu_system, 889),
     ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50).
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
@@ -842,3 +845,7 @@ web_page_main(_, #request{path = [<<"oauth">>]} = R) ->
     {stop, Head ++ Set};
 web_page_main(Acc, _) ->
     Acc.
+
+web_menu_system(Result, _Request, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "⚫", "OAuth", "authorization_token"),
+    Els ++ Result.

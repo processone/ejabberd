@@ -45,8 +45,12 @@
 
 -export([reopen_log/0, mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
+-export([web_menu_system/3]).
+
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 -include_lib("kernel/include/file.hrl").
 -include("translate.hrl").
 
@@ -89,9 +93,11 @@
 %%====================================================================
 
 start(Host, Opts) ->
+    ejabberd_hooks:add(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 896),
     gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
+    ejabberd_hooks:delete(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 896),
     gen_mod:stop_child(?MODULE, Host).
 
 reload(Host, NewOpts, OldOpts) ->
@@ -472,6 +478,16 @@ ip_to_string(Address) when size(Address) == 4 ->
 ip_to_string(Address) when size(Address) == 8 ->
     Parts = lists:map(fun (Int) -> io_lib:format("~.16B", [Int]) end, tuple_to_list(Address)),
     string:to_lower(lists:flatten(join(Parts, ":"))).
+
+%%----------------------------------------------------------------------
+%% WebAdmin
+%%----------------------------------------------------------------------
+
+web_menu_system(Result, _Request, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "📁", "HTTP Fileserver", ""),
+    Els ++ Result.
+
+%%----------------------------------------------------------------------
 
 mod_opt_type(accesslog) ->
     econf:file(write);
