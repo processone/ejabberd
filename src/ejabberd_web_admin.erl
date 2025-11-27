@@ -32,6 +32,7 @@
 -export([process/2, pretty_print_xml/1,
          make_command/2, make_command/4, make_command_raw_value/3,
          make_table/2, make_table/4,
+         make_menu_system/4, make_menu_system_el/4,
          term_to_id/1, id_to_term/1]).
 
 %% Internal commands
@@ -1689,6 +1690,33 @@ make_login_items(#request{us = {Username, Host}} = R, Level) ->
                       ?AC(<<(binary:copy(<<"../">>, Level))/binary, "logout/">>,
                           <<"Logout">>)])])]}]
       ++ MenuPost}].
+
+%%%==================================
+%%%% menu_system
+
+-spec make_menu_system(atom(), string(), string(), string()) -> [xmlel()].
+make_menu_system(Module, Icon, Text, Append) ->
+    [make_menu_system_el(Icon, Text, Append, UrlTuple) || UrlTuple <- get_urls(Module)].
+
+get_urls(Module) ->
+    Urls = ejabberd_http:get_auto_urls(any, Module),
+    Host = ejabberd_config:get_myname(),
+    [{Tls, misc:expand_keyword(<<"@HOST@">>, Url, Host)} || {Tls, Url} <- Urls].
+
+-spec make_menu_system_el(string(), string(), string(), {boolean(), binary()}) -> xmlel().
+make_menu_system_el(Icon, Text, Append, {ThisTls, Url}) ->
+    LockBinary =
+        case ThisTls of
+            true ->
+                unicode:characters_to_binary("🔒");
+            false ->
+                unicode:characters_to_binary("❗")
+        end,
+    AppendBin = iolist_to_binary(Append),
+    ?LI([?C(<<(unicode:characters_to_binary(Icon))/binary, LockBinary/binary>>),
+         ?XAE(<<"a">>,
+              [{<<"href">>, <<Url/binary, AppendBin/binary>>}, {<<"target">>, <<"_blank">>}],
+              [?C(unicode:characters_to_binary(Text))])]).
 
 %%%==================================
 
