@@ -109,8 +109,8 @@ c2s_handle_sasl2_task_next({_, State}, Task, _Els, _InlineEls) ->
 	       <<"UPGR-SCRAM-SHA-512">> -> sha512
 	   end,
     Salt = p1_rand:bytes(16),
-    {task_data, [#scram_upgrade_salt{cdata = Salt, iterations = 4096}],
-     State#{scram_upgrade => {Algo, Salt, 4096}}}.
+    {task_data, [#scram_upgrade_salt{cdata = Salt, iterations = ?SCRAM_DEFAULT_ITERATION_COUNT}],
+     State#{scram_upgrade => {Algo, Salt, ?SCRAM_DEFAULT_ITERATION_COUNT}}}.
 
 c2s_handle_sasl2_task_data({_, #{user := User, server := Server,
 				 scram_upgrade := {Algo, Salt, Iter}} = State},
