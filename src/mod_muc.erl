@@ -1843,9 +1843,11 @@ mod_doc() ->
               #{value => "true | false",
                 note => "improved in 25.10",
                 desc =>
-                    ?T("Allow extended roles as defined in XEP-0317 Hats. "
-                       "Check the _`../../tutorials/muc-hats.md|MUC Hats`_ tutorial. "
-                       "The default value is 'false'.")}},
+                    ?T("Allow extended roles as defined in "
+                       "https://xmpp.org/extensions/xep-0317.html[XEP-0317: Hats]. "
+                       "For ejabberd older than 25.10 see the "
+                       "_`../../tutorials/muc-hats.md|MUC Hats`_ page. "
+                       "The default value is 'true'.")}},
              {lang,
               #{value => ?T("Language"),
                 desc =>

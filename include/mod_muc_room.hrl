@@ -65,7 +65,7 @@
     captcha_whitelist                    = (?SETS):empty() :: gb_sets:set(),
     mam                                  = false :: boolean(),
     pubsub                               = <<"">> :: binary(),
-    enable_hats                          = false :: boolean(),
+    enable_hats                          = true :: boolean(),
     lang                                 = ejabberd_option:language() :: binary()
 }).
 
