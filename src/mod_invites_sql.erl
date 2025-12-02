@@ -55,7 +55,7 @@ sql_schemas() ->
                                                   type = timestamp,
                                                   default = true},
                                       #sql_column{name = <<"expires">>, type = timestamp},
-                                      #sql_column{name = <<"type">>, type = text},
+                                      #sql_column{name = <<"type">>, type = {char, 1}},
                                       #sql_column{name = <<"account_name">>, type = text}],
                                  indices =
                                      [#sql_index{columns = [<<"token">>], unique = true},
@@ -63,8 +63,9 @@ sql_schemas() ->
                                                      [<<"username">>, <<"server_host">>]}]}]}].
 
 cleanup_expired(Host) ->
+    NOW = sql_now(),
     {updated, Count} =
-        ejabberd_sql:sql_query(Host, "DELETE FROM invite_token WHERE expires < NOW()"),
+        ejabberd_sql:sql_query(Host, ?SQL("DELETE FROM invite_token WHERE expires < %(NOW)s")),
     Count.
 
 create_invite(Invite) ->
@@ -73,9 +74,9 @@ create_invite(Invite) ->
                   account_name = AccountName,
                   created_at = CreatedAt0,
                   expires = Expires0,
-                  type = Type} =
+                  type = Type0} =
         Invite,
-    TypeBin = atom_to_binary(Type),
+    Type = enc_type(Type0),
     CreatedAt = datetime_to_sql_timestamp(CreatedAt0),
     Expires = datetime_to_sql_timestamp(Expires0),
 
@@ -84,7 +85,7 @@ create_invite(Invite) ->
                     ["token=%(Token)s",
                      "username=%(User)s",
                      "server_host=%(Host)s",
-                     "type=%(TypeBin)s",
+                     "type=%(Type)s",
                      "created_at=%(CreatedAt)s",
                      "expires=%(Expires)s",
                      "account_name=%(AccountName)s"]),
@@ -92,11 +93,12 @@ create_invite(Invite) ->
     Invite.
 
 expire_tokens(User, Server) ->
+    NOW = sql_now(),
     {updated, Count} =
         ejabberd_sql:sql_query(Server,
                                ?SQL("UPDATE invite_token SET expires = '1970-01-01 00:00:01' WHERE "
-                                    "username = %(User)s AND %(Server)H AND expires > NOW() AND "
-                                    "type != 'roster_only'")),
+                                    "username = %(User)s AND %(Server)H AND expires > %(NOW)s AND "
+                                    "type != 'R'")),
     Count.
 
 get_invite(Host, Token) ->
@@ -109,7 +111,7 @@ get_invite(Host, Token) ->
             #invite_token{token = Token,
                           inviter = {User, Host},
                           invitee = Invitee,
-                          type = binary_to_existing_atom(Type),
+                          type = dec_type(Type),
                           account_name = AccountName,
                           expires = Expires,
                           created_at = CreatedAt};
@@ -118,17 +120,19 @@ get_invite(Host, Token) ->
     end.
 
 is_reserved(Host, Token, User) ->
+    NOW = sql_now(),
     {selected, [{Count}]} =
         ejabberd_sql:sql_query(Host,
                                ?SQL("SELECT @(COUNT(*))d FROM invite_token WHERE %(Host)H AND token != %(Token)s AND "
-                                    "account_name = %(User)s AND invitee = '' AND expires > NOW()")),
+                                    "account_name = %(User)s AND invitee = '' AND expires > %(NOW)s")),
     Count > 0.
 
 is_token_valid(Host, Token, {User, Host}) ->
+    NOW = sql_now(),
     {selected, Rows} =
         ejabberd_sql:sql_query(Host,
                                ?SQL("SELECT @(token)s FROM invite_token WHERE %(Host)H AND token = %(Token)s AND "
-                                    "invitee = '' AND expires > NOW() AND (%(User)s = '' OR username = %(User)s)")),
+                                    "invitee = '' AND expires > %(NOW)s AND (%(User)s = '' OR username = %(User)s)")),
     case Rows /= [] of
         true ->
             true;
@@ -150,7 +154,7 @@ list_invites(Host) ->
       fun({Token, User, Type, AccountName, Expires, CreatedAt}) ->
               #invite_token{token = Token,
                             inviter = {User, Host},
-                            type = binary_to_existing_atom(Type),
+                            type = dec_type(Type),
                             account_name = AccountName,
                             expires = Expires,
                             created_at = CreatedAt}
@@ -160,7 +164,7 @@ num_account_invites(User, Server) ->
     {selected, [{Count}]} =
         ejabberd_sql:sql_query(Server,
                                ?SQL("SELECT @(COUNT(*))d FROM invite_token WHERE username=%(User)s "
-                                    "AND %(Server)H AND type != 'roster_only'")),
+                                    "AND %(Server)H AND type != 'R'")),
     Count.
 
 remove_user(User, Server) ->
@@ -179,3 +183,14 @@ set_invitee(Host, Token, Invitee) ->
 datetime_to_sql_timestamp({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B ~2..0B:~2..0B:~2..0B",
                                  [Year, Month, Day, Hour, Minute, Second])).
+
+sql_now() ->
+    datetime_to_sql_timestamp(calendar:local_time()).
+
+enc_type(roster_only) -> <<"R">>;
+enc_type(account_subscription) -> <<"S">>;
+enc_type(account_only) -> <<"A">>.
+
+dec_type(<<"R">>) -> roster_only;
+dec_type(<<"S">>) -> account_subscription;
+dec_type(<<"A">>) -> account_only.
