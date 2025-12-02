@@ -2702,21 +2702,26 @@ sub_option_can_deliver(_, _, _) -> true.
 presence_can_deliver(_, false) ->
     true;
 presence_can_deliver({User, Server, Resource}, true) ->
-    case ejabberd_sm:get_user_present_resources(User, Server) of
-	[] ->
-	    false;
-	Ss ->
-	    lists:foldl(fun
-		    (_, true) ->
-			true;
-		    ({_, R}, _Acc) ->
-		    	case Resource of
-			    <<>> -> true;
-			    R -> true;
-			    _ -> false
-			end
-		end,
-		false, Ss)
+    case ejabberd_router:is_my_route(Server) of
+	% We don't know presence of users on remote server, so always deliver
+	false -> true;
+	_ ->
+	    case ejabberd_sm:get_user_present_resources(User, Server) of
+		[] ->
+		    false;
+		Ss ->
+		    lists:foldl(fun
+				    (_, true) ->
+					true;
+				    ({_, R}, _Acc) ->
+					case Resource of
+					    <<>> -> true;
+					    R -> true;
+					    _ -> false
+					end
+				end,
+				false, Ss)
+	    end
     end.
 
 -spec state_can_deliver(ljid(), subOptions()) -> [ljid()].
