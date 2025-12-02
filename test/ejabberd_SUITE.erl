@@ -363,8 +363,15 @@ init_per_testcase(TestCase, OrigConfig) ->
             open_session(bind(auth(connect(Config))))
     end.
 
-end_per_testcase(_TestCase, _Config) ->
-    ok.
+end_per_testcase(TestCase, Config) ->
+    case atom_to_list(TestCase) of
+        "invites_" ++ _ ->
+            User = ?config(user, Config),
+            Server = ?config(server, Config),
+            mod_offline:remove_user(User, Server);
+        _ ->
+            ok
+    end.
 
 legacy_auth_tests() ->
     {legacy_auth, [parallel],
@@ -440,7 +447,6 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        presence_broadcast,
        last,
        antispam_tests:single_cases(),
-       invites_tests:single_cases(),
        webadmin_tests:single_cases(),
        roster_tests:single_cases(),
        private_tests:single_cases(),
@@ -449,6 +455,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        pubsub_tests:single_cases(),
        muc_tests:single_cases(),
        offline_tests:single_cases(),
+       invites_tests:single_cases(),
        mam_tests:single_cases(),
        csi_tests:single_cases(),
        push_tests:single_cases(),

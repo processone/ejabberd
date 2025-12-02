@@ -93,7 +93,7 @@ gen_invite(Config) ->
     ?match({error, host_unknown}, mod_invites:gen_invite(<<"foo">>, <<"non.existant.host">>)),
     %% TooLongHostname = list_to_binary([$a || _ <- lists:seq(1, 1024)]),
     %% ?match({error, hostname_invalid}, mod_invites:gen_invite(<<"foo">>, TooLongHostname)),
-    ok.
+    disconnect(Config).
 
 cleanup_expired(Config) ->
     Server = ?config(server, Config),
@@ -103,7 +103,7 @@ cleanup_expired(Config) ->
     ?match(1, mod_invites:cleanup_expired()),
     ?match(#invite_token{}, mod_invites:get_invite(Server, Token)),
     ?match(0, mod_invites:cleanup_expired()),
-    ok.
+    disconnect(Config).
 
 adhoc_items(Config) ->
     Server = ?config(server, Config),
@@ -231,7 +231,7 @@ token_valid(Config) ->
     ?match(false, mod_invites:is_token_valid(Server, AccountToken, Inviter)),
     mod_invites:cleanup_expired(),
     mod_invites:remove_user(User, Server),
-    ok.
+    disconnect(Config).
 
 remove_user(Config) ->
     Server = ?config(server, Config),
@@ -241,7 +241,7 @@ remove_user(Config) ->
     ?match(1, mod_invites:num_account_invites(User, Server)),
     mod_invites:remove_user(User, Server),
     ?match(0, mod_invites:num_account_invites(User, Server)),
-    ok.
+    disconnect(Config).
 
 expire_tokens(Config) ->
     Server = ?config(server, Config),
@@ -255,7 +255,8 @@ expire_tokens(Config) ->
     ?match(true, mod_invites:is_token_valid(Server, RosterToken, Inviter)),
     ?match(false, mod_invites:is_token_valid(Server, AccountToken, Inviter)),
     ?match(0, mod_invites:expire_tokens(User, Server)),
-    mod_invites:cleanup_expired().
+    mod_invites:cleanup_expired(),
+    disconnect(Config).
 
 max_invites(Config) ->
     Server = ?config(server, Config),
@@ -271,7 +272,7 @@ max_invites(Config) ->
            create_account_invite(Server, Inviter)),
     update_module_opts(Server, mod_invites, OldOpts),
     #invite_token{} = create_account_invite(Server, Inviter),
-    ok.
+    disconnect(Config).
 
 presence_with_preauth_token(Config) ->
     Server = ?config(server, Config),
@@ -308,7 +309,7 @@ is_reserved(Config) ->
     mod_invites:set_invitee(Server, Token, jid:make(<<"some_other_username">>, Server)),
     ?match(false,
            mod_invites:is_reserved(Server, <<"some_other_token">>, <<"reserved_user">>)),
-    ok.
+    disconnect(Config).
 
 stream_feature(Config0) ->
     Server = ?config(server, Config0),
@@ -369,6 +370,9 @@ ibr(Config0) ->
            send_get_iq_register(Config3)),
     ?match(#iq{type = result}, send_iq_register(Config3, <<"some_self_chosen_name">>)),
 
+    ejabberd_auth:remove_user(AccountName, Server),
+    ejabberd_auth:remove_user(<<"some_self_chosen_name">>, Server),
+    ejabberd_auth:remove_user(<<"some_much_better_name">>, Server),
     update_module_opts(Server, mod_register, OldRegisterOpts),
     disconnect(Config3).
 
@@ -383,6 +387,7 @@ ibr_reserved(Config0) ->
     Config2 = reconnect(Config1),
     ?match(#iq{type = error}, send_iq_register(Config2, <<"reserved">>)),
     ?match(#iq{type = result}, send_pars(Config2, OtherToken)),
+    ejabberd_auth:remove_user(<<"check_registration_works">>, Server),
     disconnect(Config2).
 
 ibr_subscription(Config0) ->
@@ -442,7 +447,9 @@ ibr_subscription(Config0) ->
 
     update_module_opts(Server, mod_invites, OldOpts),
     disconnect(Config0),
-    disconnect(Config).
+    disconnect(Config),
+    ejabberd_auth:remove_user(NewAccount, Server),
+    ok.
 
 receive_subscription_stanzas(ServerJID, UserFullJID, NewAccountFullJID) ->
     Stanzas = [pres1, pres2, pres3, msg],
@@ -514,7 +521,8 @@ http(Config) ->
     {ok, {{_, 200, _}, _, _}} = httpc:request(RosterURL),
     FakeRegURL = <<RosterURL/binary, "/registration">>,
     {ok, {{_, 404, _}, _, _}} = post(FakeRegURL, RosterToken, <<"baz">>, <<"bar">>),
-    ok.
+    ejabberd_auth:remove_user(<<"foo">>, Server),
+    disconnect(Config).
 
 %%%===================================================================
 %%% Internal functions
