@@ -145,6 +145,7 @@ ifeq "$(REBAR_VER)" "6"
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
   RELIVECMD=$(ESCRIPT) rel/relive.escript && MIX_ENV=dev RELIVE=true $(MAYBE) $(IEX) --name ejabberd@localhost -S mix run
+  RELIVECTLCMD=$(ESCRIPT) rel/relive.escript && _build/relive/ejabberdctl live
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
   GET_DEPS_TRANSLATIONS=MIX_ENV=translations $(REBAR) $(GET_DEPS)
@@ -176,6 +177,7 @@ endif
   REBARREL=$(REBAR) as prod tar
   REBARDEV=$(REBAR) as dev release
   RELIVECMD=$(REBAR) as dev relive
+  RELIVECTLCMD=$(ESCRIPT) rel/relive.escript && _build/relive/ejabberdctl live
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
   GET_DEPS_TRANSLATIONS=$(REBAR) as translations $(GET_DEPS)
@@ -197,6 +199,8 @@ else
 	   \nTry: make prod, or: ./configure --with-rebar=rebar3 ; make dev"
   RELIVECMD=@echo "Rebar2 detected... relive not supported.\
 	   \nTry: ./configure --with-rebar=rebar3 ; make relive"
+  RELIVECTLCMD=@echo "Rebar2 detected... relivectl not supported.\
+	   \nTry: ./configure --with-rebar=rebar3 ; make relivectl"
   REL_LIB_DIR = rel/ejabberd/lib
   COPY_REL_TARGET = rel
 endif
@@ -395,6 +399,10 @@ uninstall-librel:
 relive:
 	$(EXPLICIT_ELIXIR_COMPILE_DEV)
 	$(RELIVECMD)
+
+relivectl:
+	$(EXPLICIT_ELIXIR_COMPILE_DEV)
+	$(RELIVECTLCMD)
 
 relivelibdir=$(shell pwd)/$(DEPSDIR)
 relivedir=$(shell pwd)/_build/relive
@@ -710,7 +718,8 @@ help:
 	@echo ""
 	@echo "  prod           Build a production release"
 	@echo "  dev            Build a development release"
-	@echo "  relive         Start a live ejabberd in _build/relive/"
+	@echo "  relive         Start live using rebar3/mix tools"
+	@echo "  relivectl      Start live using ejabberdctl script"
 	@echo ""
 	@echo "  doap           Generate DOAP file"
 	@echo "  edoc           Generate EDoc documentation [mix]"
