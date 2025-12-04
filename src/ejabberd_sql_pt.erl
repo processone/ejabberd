@@ -234,13 +234,28 @@ transform_insert(Form, TableArg, FieldsArg) ->
     end,
     ParseResOld =
         filter_upsert_sh(Table, ParseRes),
-    set_pos(
-      make_schema_check(
-        make_sql_insert(Table, ParseRes),
-        make_sql_insert(Table, ParseResOld)
-       ),
-      Pos).
-
+    NeedTimestampPass = lists:any(
+	fun({_, _, State}) -> State#state.need_timestamp_pass
+	end, ParseRes),
+    case NeedTimestampPass of
+	true ->
+	    PR = make_sql_upsert_insert(Table, ParseRes),
+	    PRO = make_sql_upsert_insert(Table, ParseResOld),
+	    set_pos(
+		make_schema_check(
+		    erl_syntax:list([erl_syntax:tuple([erl_syntax:atom(pgsql), make_sql_query(PR, pgsql)]),
+				     erl_syntax:tuple([erl_syntax:atom(any), make_sql_query(PR)])]),
+		    erl_syntax:list([erl_syntax:tuple([erl_syntax:atom(pgsql), make_sql_query(PRO, pgsql)]),
+				     erl_syntax:tuple([erl_syntax:atom(any), make_sql_query(PRO)])])),
+		Pos);
+	_ ->
+	    set_pos(
+		make_schema_check(
+		    make_sql_insert(Table, ParseRes),
+		    make_sql_insert(Table, ParseResOld)
+		),
+		Pos)
+    end.
 
 parse(S, Loc, UseNewSchema) ->
     parse1(S, [],
