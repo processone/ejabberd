@@ -156,8 +156,8 @@ list_invites(Host) ->
                             inviter = {User, Host},
                             type = dec_type(Type),
                             account_name = AccountName,
-                            expires = Expires,
-                            created_at = CreatedAt}
+                            expires = to_datetime(Expires),
+                            created_at = to_datetime(CreatedAt)}
       end, Rows).
 
 num_account_invites(User, Server) ->
@@ -186,6 +186,11 @@ datetime_to_sql_timestamp({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 
 sql_now() ->
     datetime_to_sql_timestamp(calendar:local_time()).
+
+to_datetime({Date, {H, M, S, _}}) ->
+    {Date, {H, M, S}};
+to_datetime(DateTime) ->
+    DateTime.
 
 enc_type(roster_only) -> <<"R">>;
 enc_type(account_subscription) -> <<"S">>;
