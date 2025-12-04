@@ -65,7 +65,7 @@ sql_schemas() ->
 cleanup_expired(Host) ->
     NOW = sql_now(),
     {updated, Count} =
-        ejabberd_sql:sql_query(Host, ?SQL("DELETE FROM invite_token WHERE expires < %(NOW)s")),
+        ejabberd_sql:sql_query(Host, ?SQL("DELETE FROM invite_token WHERE expires < %(NOW)t")),
     Count.
 
 create_invite(Invite) ->
@@ -86,8 +86,8 @@ create_invite(Invite) ->
                      "username=%(User)s",
                      "server_host=%(Host)s",
                      "type=%(Type)s",
-                     "created_at=%(CreatedAt)s",
-                     "expires=%(Expires)s",
+                     "created_at=%(CreatedAt)t",
+                     "expires=%(Expires)t",
                      "account_name=%(AccountName)s"]),
     {updated, 1} = ejabberd_sql:sql_query(Host, Query),
     Invite.
@@ -97,7 +97,7 @@ expire_tokens(User, Server) ->
     {updated, Count} =
         ejabberd_sql:sql_query(Server,
                                ?SQL("UPDATE invite_token SET expires = '1970-01-01 00:00:01' WHERE "
-                                    "username = %(User)s AND %(Server)H AND expires > %(NOW)s AND "
+                                    "username = %(User)s AND %(Server)H AND expires > %(NOW)t AND "
                                     "type != 'R'")),
     Count.
 
@@ -124,7 +124,7 @@ is_reserved(Host, Token, User) ->
     {selected, [{Count}]} =
         ejabberd_sql:sql_query(Host,
                                ?SQL("SELECT @(COUNT(*))d FROM invite_token WHERE %(Host)H AND token != %(Token)s AND "
-                                    "account_name = %(User)s AND invitee = '' AND expires > %(NOW)s")),
+                                    "account_name = %(User)s AND invitee = '' AND expires > %(NOW)t")),
     Count > 0.
 
 is_token_valid(Host, Token, {User, Host}) ->
@@ -132,7 +132,7 @@ is_token_valid(Host, Token, {User, Host}) ->
     {selected, Rows} =
         ejabberd_sql:sql_query(Host,
                                ?SQL("SELECT @(token)s FROM invite_token WHERE %(Host)H AND token = %(Token)s AND "
-                                    "invitee = '' AND expires > %(NOW)s AND (%(User)s = '' OR username = %(User)s)")),
+                                    "invitee = '' AND expires > %(NOW)t AND (%(User)s = '' OR username = %(User)s)")),
     case Rows /= [] of
         true ->
             true;
