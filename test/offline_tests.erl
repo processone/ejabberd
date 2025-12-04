@@ -402,6 +402,7 @@ get_nodes(Config) ->
 					    node = ?NS_FLEX_OFFLINE}]}),
     ct:comment("Checking if headers are correct"),
     lists:sort(
+      fun(A, B) -> binary_to_integer(A) =< binary_to_integer(B) end,
       lists:map(
 	fun(#disco_item{jid = J, name = P, node = N})
 	      when (J == MyBareJID) and (P == Peer_s) ->
