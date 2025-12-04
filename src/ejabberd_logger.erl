@@ -222,17 +222,18 @@ console_template() ->
         false ->
             [time, " [", level, "] " | msg()]
     end.
-msg() ->
-    [{logger_formatter, [[logger_formatter, title], ":", io_lib:nl()], []},
-     msg, io_lib:nl()].
 -else.
 console_template() ->
     [time, " ", ?CLEAD, ?CDEFAULT, clevel, "[", level, "] ", ?CMID, ?CDEFAULT,
-     ctext | msg()] ++ [?CCLEAN].
+     ctext | msg_console()].
+msg_console() ->
+    [{logger_formatter, [[logger_formatter, title], ":", io_lib:nl()], []},
+     msg, ?CCLEAN, io_lib:nl()].
+-endif.
+
 msg() ->
     [{logger_formatter, [[logger_formatter, title], ":", io_lib:nl()], []},
      msg, io_lib:nl()].
--endif.
 
 file_template() ->
     [time, " [", level, "] ", pid,
