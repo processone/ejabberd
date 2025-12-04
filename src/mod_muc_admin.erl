@@ -1812,6 +1812,7 @@ format_room_option(OptionString, ValueString) ->
 		subject_author ->ValueString;
 		max_users -> try_convert_integer(Option, ValueString);
 		voice_request_min_interval -> try_convert_integer(Option, ValueString);
+		hibernation_time -> try_convert_integer(Option, ValueString);
 		vcard -> ValueString;
 		vcard_xupdate when ValueString /= <<"undefined">>,
 				   ValueString /= <<"external">> ->

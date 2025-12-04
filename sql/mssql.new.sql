@@ -122,7 +122,8 @@ CREATE TABLE [dbo].[muc_room] (
         [host] [varchar] (250) NOT NULL,
         [server_host] [varchar] (250) NOT NULL,
         [opts] [text] NOT NULL,
-        [created_at] [datetime] NOT NULL DEFAULT GETDATE()
+        [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
+        [updated_at] [datetime] NOT NULL DEFAULT GETDATE()
 ) TEXTIMAGE_ON [PRIMARY];
 
 CREATE UNIQUE CLUSTERED INDEX [muc_room_name_host] ON [muc_room] (name, host)
