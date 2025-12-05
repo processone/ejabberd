@@ -18,7 +18,6 @@
 {"A description of the node","Eine Beschreibung des Knotens"}.
 {"A friendly name for the node","Ein benutzerfreundlicher Name für den Knoten"}.
 {"A fully-featured desktop chat client for Windows and Linux.","Ein funktionsreicher Desktop-Client für Windows und Linux."}.
-{"A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.","Ein schlanker Jabber/XMPP-Client für Android mit Fokus Benutzerfreundlichkeit und Sicherheit. Er funktioniert auch mit langsameren Android-Geräten mit Android 4.0 oder neuer."}.
 {"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","Ein schlanker aber funktionsreicher XMPP-Client für iPhone und iPad. Ein einfacher Weg um mit Deinen Freunden zu kommunizieren und Erinnerungen zu teilen."}.
 {"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","Ein moderner open-source Chatclient für iPhone und iPad mit einfacher und übersichtlicher Benutzeroberfläche."}.
 {"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","Ein moderner open-source Chatclient für Mac mit einfacher und übersichtlicher Benutzeroberfläche."}.
@@ -120,6 +119,7 @@
 {"Contact Addresses (normally, room owner or owners)","Kontaktadresse (normalerweise Raumbesitzer)"}.
 {"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations ist ein Jabber/XMPP-Client für Android 6.0+, der für mobile Endgeräte optimiert wurde."}.
 {"Country","Land"}.
+{"Create Account","Konto anlegen"}.
 {"Create an account","Konto anlegen"}.
 {"Creating an account will allow to communicate with <strong>{{ inviter }}</strong> and other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Ein Konto erlaubt es dir mit <strong>{{ inviter }}</strong> und anderen Leuten auf <strong>{{ site_name }}</strong> und anderen Diensten des XMPP-Netwerkes zu kommunizieren."}.
 {"Creating an account will allow to communicate with other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Ein Konto erlaubt es dir mit anderen Leuten auf <strong>{{ site_name }}</strong> und anderen Diensten des XMPP-Netwerkes zu kommunizieren."}.
@@ -212,6 +212,7 @@
 {"Hats limit exceeded","Funktionslimit wurde überschritten"}.
 {"Hide","Verbergen"}.
 {"Host unknown","Host unbekannt"}.
+{"Hostname invalid","Hostname unbekannt"}.
 {"HTTP File Upload","HTTP-Dateiupload"}.
 {"Idle connection","Inaktive Verbindung"}.
 {"If you already have {{ app_name }} installed, we recommend that you continue the account creation process using the app by clicking on the button below:","Solltest du {{ app_name }} bereits installiert haben, empfehlen wir dir die Einrichtung des Kontos mittels dieser App durchzuführen indem du auf den Button unten klickst:"}.
@@ -244,6 +245,7 @@
 {"Invitations are not allowed in this conference","Einladungen sind in dieser Konferenz nicht erlaubt"}.
 {"Invite expired","Die Einladung ist abgelaufen"}.
 {"Invite to {{ site_name }}","Einladung für {{ site_name }}"}.
+{"Invite User","Person einladen"}.
 {"IP addresses","IP-Adressen"}.
 {"is now known as","ist nun bekannt als"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Es ist nicht erlaubt Fehlermeldungen an den Raum zu senden. Der Teilnehmer (~s) hat eine Fehlermeldung (~s) gesendet und wurde aus dem Raum geworfen"}.
@@ -265,7 +267,7 @@
 {"Last message","Letzte Nachricht"}.
 {"Last month","Letzter Monat"}.
 {"Last year","Letztes Jahr"}.
-{"Launch {{ app_name }} and sign in using your account credentials.","Starte {{ app_name }} und logge dich deinen Anmeldedaten ein."}.
+{"Launch {{ app_name }} and sign in using your account credentials.","Starte {{ app_name }} und logge dich mit deinen Anmeldedaten ein."}.
 {"Launch Beagle IM, and select 'Yes' to add a new account. Click the '+' button under the empty account list and then enter your credentials.","Starte Beagle IM und wähle 'Yes' um ein neues Konto hinzuzufügen. Drücke auf das '+' unter der leeren Account-Liste und gib dann deine Anmeldedaten ein!"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Niederwertigstes Bit des SHA-256-Hashes des Textes sollte hexadezimalem Label gleichen"}.
 {"leaves the room","verlässt den Raum"}.
@@ -287,6 +289,7 @@
 {"Max payload size in bytes","Maximale Nutzdatengröße in Bytes"}.
 {"Maximum file size","Maximale Dateigröße"}.
 {"Maximum Number of History Messages Returned by Room","Maximale Anzahl der vom Raum zurückgegebenen History-Nachrichten"}.
+{"Maximum number of invites reached","Maximale Anzahl all Einladungen erreicht"}.
 {"Maximum number of items to persist","Maximale Anzahl persistenter Items"}.
 {"Maximum Number of Occupants","Maximale Anzahl der Teilnehmer"}.
 {"May","Mai"}.
@@ -574,6 +577,7 @@
 {"The sender of the last received message","Der Absender der letzten erhaltenen Nachricht"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Das Stanza darf nur ein <active/>-Element, ein <default/>-Element oder ein <list/>-Element enthalten"}.
 {"The subscription identifier associated with the subscription request","Die mit der Abonnement-Anforderung verknüpfte Abonnement-Bezeichnung"}.
+{"The token provided is either invalid or expired.","Der Einladungscode ist entweder ungültig oder abgelaufen"}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","Die URL einer XSL-Transformation welche auf Nutzdaten angewendet werden kann, um ein geeignetes Nachrichtenkörper-Element zu generieren."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","Die URL einer XSL-Transformation welche auf das Nutzdaten-Format angewendet werden kann, um ein gültiges Data Forms-Ergebnis zu generieren das der Client mit Hilfe einer generischen Data Forms-Rendering-Engine anzeigen könnte"}.
 {"There was an error changing the password: ","Es trat ein Fehler beim Ändern des Passwortes auf: "}.
@@ -632,6 +636,8 @@
 {"User session not found","Benutzersitzung nicht gefunden"}.
 {"User session terminated","Benutzersitzung beendet"}.
 {"User","Benutzer"}.
+{"Username invalid","Benutzername ungültig"}.
+{"Username is reserved","Benutzername ist reserviert"}.
 {"Username:","Benutzername:"}.
 {"Username","Benutzername"}.
 {"Users are not allowed to register accounts so quickly","Benutzer dürfen Konten nicht so schnell registrieren"}.
