@@ -305,7 +305,7 @@ make_xhtml(Els, Host, Node, Request, JID, Level) ->
 make_xhtml(Els, Host, Node, Username, #request{lang = Lang} = R, JID, Level) ->
     Base = get_base_path_sum(0, 0, Level),
     MenuItems = make_navigation(Host, Node, Username, Lang, JID, Level)
-    ++ make_login_items(R, Level),
+    ++ make_login_items(R, Level, JID),
     {200, [html],
      #xmlel{name = <<"html">>,
 	    attrs =
@@ -1645,7 +1645,7 @@ any_rules_allowed(Host, Access, Entity) ->
 
 %%% @format-begin
 
-make_login_items(#request{us = {Username, Host}} = R, Level) ->
+make_login_items(#request{us = {Username, Host}} = R, Level, JID) ->
     UserBin =
         jid:encode(
             jid:make(Username, Host, <<"">>)),
@@ -1661,7 +1661,7 @@ make_login_items(#request{us = {Username, Host}} = R, Level) ->
             _ ->
                 UserEl
         end,
-    MenuPost =
+    MenuPost1 =
         case ejabberd_hooks:run_fold(webadmin_menu_system_post, [], [R, Level]) of
             [] ->
                 [];
@@ -1670,6 +1670,14 @@ make_login_items(#request{us = {Username, Host}} = R, Level) ->
                   <<"div">>,
                   [{<<"id">>, <<"navitemlogin">>}],
                   [?XE(<<"ul">>, PostElements)]}]
+        end,
+    MenuInside1 = ejabberd_hooks:run_fold(webadmin_menu_system_inside, [], [R, Level]),
+    {MenuInside, MenuPost} =
+        case list_vhosts_allowed(JID) of
+            [] ->
+                {[], []};
+            [_ | _] ->
+                {MenuInside1, MenuPost1}
         end,
     [{xmlel,
       <<"li">>,
@@ -1685,7 +1693,7 @@ make_login_items(#request{us = {Username, Host}} = R, Level) ->
                                 [{<<"sentence">>, misc:atom_to_binary(node())}],
                                 [{only, value},
                                  {result_links, [{sentence, node, Level, <<"">>}]}])])]
-             ++ ejabberd_hooks:run_fold(webadmin_menu_system_inside, [], [R, Level])
+             ++ MenuInside
              ++ [?LI([?C(unicode:characters_to_binary("📤")),
                       ?AC(<<(binary:copy(<<"../">>, Level))/binary, "logout/">>,
                           <<"Logout">>)])])]}]
