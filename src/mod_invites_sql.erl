@@ -30,6 +30,8 @@
 -export([cleanup_expired/1, create_invite/1, expire_tokens/2, get_invite/2, init/2, is_reserved/3,
          is_token_valid/3, list_invites/1, num_account_invites/2, remove_user/2, set_invitee/3]).
 
+-export([sql_schemas/0]).
+
 -include("mod_invites.hrl").
 -include("ejabberd_sql_pt.hrl").
 
