@@ -36,11 +36,14 @@
 		    flags :: non_neg_integer(),
 		    loc :: {module(), {pos_integer(), pos_integer()}}}).
 
--record(sql_escape, {string :: fun((binary()) -> binary()),
-		     integer :: fun((integer()) -> binary()),
-		     boolean :: fun((boolean()) -> binary()),
-		     in_array_string :: fun((binary()) -> binary()),
-		     like_escape :: fun(() -> binary())}).
+-record(sql_escape, {
+          string :: fun((binary()) -> binary() | atom()),
+          integer :: fun((integer()) -> binary() | atom()),
+          boolean :: fun((boolean()) -> binary() | atom()),
+          timestamp :: fun((calendar:datetime()) -> binary() | atom()),
+          in_array_string :: fun((binary()) -> binary() | atom()),
+          like_escape :: fun(() -> binary() | atom())
+         }).
 
 
 -record(sql_index, {columns,

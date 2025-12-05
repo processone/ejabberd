@@ -147,8 +147,8 @@ store_room(LServer, Host, Name, Opts, ChangesHints) ->
 		    end,
     SOpts = misc:term_to_expr(Opts2),
     Timestamp = case lists:keyfind(hibernation_time, 1, Opts) of
-		    false -> <<"1970-01-02 00:00:00">>;
-		    {_, undefined} -> <<"1970-01-02 00:00:00">>;
+                    false -> {{1970, 1, 2}, {0, 0, 0}};
+                    {_, undefined} -> {{1970, 1, 2}, {0, 0, 0}};
 		    {_, Time} -> usec_to_sql_timestamp(Time)
 		end,
     F = fun () ->
@@ -759,9 +759,4 @@ clean_tables(ServerHost) ->
 
 usec_to_sql_timestamp(Timestamp) ->
     TS = misc:usec_to_now(Timestamp),
-    case calendar:now_to_universal_time(TS) of
-	{{Year, Month, Day}, {Hour, Minute, Second}} ->
-	    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B "
-					 "~2..0B:~2..0B:~2..0B",
-					 [Year, Month, Day, Hour, Minute, Second]))
-    end.
+    calendar:now_to_universal_time(TS).

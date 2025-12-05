@@ -293,7 +293,10 @@ parse1([$@, $( | S], Acc, State) ->
             string ->
                 EVar;
             timestamp ->
-                EVar;
+                erl_syntax:application(
+                  erl_syntax:atom(ejabberd_sql),
+                  erl_syntax:atom(to_timestamp),
+                  [EVar, erl_syntax:variable("__DbType")]);
             boolean ->
                 erl_syntax:application(
                   erl_syntax:atom(ejabberd_sql),
@@ -364,19 +367,16 @@ parse1([$%, $( | S], Acc, State) ->
                              param_pos = State2#state.param_pos + 1,
                              used_vars = [Name | State2#state.used_vars]};
             _ ->
-                {TS, Type2} = case Type of
-                            timestamp -> {true, string};
-                            Other -> {State2#state.need_timestamp_pass, Other}
-                        end,
                 Convert =
                     erl_syntax:application(
                       erl_syntax:record_access(
                         erl_syntax:variable(?ESCAPE_VAR),
                         erl_syntax:atom(?ESCAPE_RECORD),
-                        erl_syntax:atom(Type2)),
+                        erl_syntax:atom(Type)),
                       [erl_syntax:variable(Name)]),
-                State2#state{'query' = [{var, Var, Type} | State2#state.'query'],
-                             need_timestamp_pass = TS,
+                State2#state{
+                  'query' = [{var, Var, Type} | State2#state.'query'],
+                  need_timestamp_pass = Type == timestamp orelse State2#state.need_timestamp_pass,
                              args = [Convert | State2#state.args],
                              params = [Var | State2#state.params],
                              param_pos = State2#state.param_pos + 1,
@@ -532,7 +532,7 @@ make_sql_query(State, Type) ->
        erl_syntax:atom(format_res),
         erl_syntax:fun_expr(
           [erl_syntax:clause(
-             [erl_syntax:list(State#state.res_vars)],
+              [erl_syntax:list(State#state.res_vars), erl_syntax:variable("__DbType")],
              none,
              [erl_syntax:tuple(State#state.res)]
             )])),

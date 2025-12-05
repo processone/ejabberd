@@ -52,6 +52,7 @@
          to_string_literal/2,
          to_string_literal_t/1,
 	 to_bool/1,
+         to_timestamp/2,
 	 sqlite_db/1,
 	 sqlite_file/1,
 	 encode_term/1,
@@ -285,6 +286,23 @@ to_bool(<<"1">>) -> true;
 to_bool(true) -> true;
 to_bool(1) -> true;
 to_bool(_) -> false.
+
+escape_timestamp({{Y, Mo, D}, {H, Mi, S}}) ->
+    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B "
+                                 "~2..0B:~2..0B:~2..0B",
+                                 [Y, Mo, D, H, Mi, S])).
+
+
+to_timestamp({Y, {H, M, S, _}}, mysql_prepared) -> {Y, {H, M, S}};
+to_timestamp(<<TS:64/signed-big-integer>>, pgsql_prepared) ->
+    calendar:gregorian_seconds_to_datetime(
+      calendar:datetime_to_gregorian_seconds({{2000, 1, 1}, {0, 0, 0}}) + TS div 1_000_000);
+to_timestamp(<<Y:4/binary, $-, Mo:2/binary, $-, D:2/binary, " ",
+               H:2/binary, $:, Mi:2/binary, $:, S:2/binary>>,
+             _) ->
+    {{binary_to_integer(Y), binary_to_integer(Mo), binary_to_integer(D)},
+     {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}}.
+
 
 to_list(EscapeFun, Val) ->
     Escaped = lists:join(<<",">>, lists:map(EscapeFun, Val)),
@@ -813,7 +831,8 @@ select_sql_query([{_, _} | Rest], Type, Version, Query) ->
 generic_sql_query(SQLQuery) ->
     sql_query_format_res(
       sql_query_internal(generic_sql_query_format(SQLQuery)),
-      SQLQuery).
+      SQLQuery,
+      generic).
 
 generic_sql_query_format(SQLQuery) ->
     Args = (SQLQuery#sql_query.args)(generic_escape()),
@@ -825,6 +844,7 @@ generic_escape() ->
 		boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
                           end,
+      timestamp = fun(X) -> <<"'", (escape_timestamp(X))/binary, "'">> end,
 		in_array_string = fun(X) -> <<"'", (escape(X))/binary, "'">> end,
                 like_escape = fun() -> <<"">> end
                }.
@@ -832,7 +852,8 @@ generic_escape() ->
 pgsql_sql_query(SQLQuery) ->
     sql_query_format_res(
       sql_query_internal(pgsql_sql_query_format(SQLQuery)),
-      SQLQuery).
+      SQLQuery,
+      pgsql).
 
 pgsql_sql_query_format(SQLQuery) ->
     Args = (SQLQuery#sql_query.args)(pgsql_escape()),
@@ -844,6 +865,7 @@ pgsql_escape() ->
 		boolean = fun(true) -> <<"'t'">>;
                              (false) -> <<"'f'">>
                           end,
+      timestamp = fun(X) -> <<"E'", (escape_timestamp(X))/binary, "'">> end,
 		in_array_string = fun(X) -> <<"E'", (escape(X))/binary, "'">> end,
                 like_escape = fun() -> <<"ESCAPE E'\\\\'">> end
                }.
@@ -851,7 +873,8 @@ pgsql_escape() ->
 sqlite_sql_query(SQLQuery) ->
     sql_query_format_res(
       sql_query_internal(sqlite_sql_query_format(SQLQuery)),
-      SQLQuery).
+      SQLQuery,
+      sqlite).
 
 sqlite_sql_query_format(SQLQuery) ->
     Args = (SQLQuery#sql_query.args)(sqlite_escape()),
@@ -863,6 +886,7 @@ sqlite_escape() ->
 		boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
                           end,
+      timestamp = fun(X) -> <<"'", (escape_timestamp(X))/binary, "'">> end,
 		in_array_string = fun(X) -> <<"'", (standard_escape(X))/binary, "'">> end,
                 like_escape = fun() -> <<"ESCAPE '\\'">> end
                }.
@@ -894,12 +918,15 @@ pgsql_prepare(SQLQuery, State) ->
     Query = (SQLQuery#sql_query.format_query)(Args),
     pgsql:prepare(State#state.db_ref, SQLQuery#sql_query.hash, Query).
 
+
 pgsql_execute_escape() ->
-    #sql_escape{string = fun(X) -> X end,
-		integer = fun(X) -> [misc:i2l(X)] end,
-		boolean = fun(true) -> "1";
-                             (false) -> "0"
-                          end,
+    #sql_escape{
+      string = fun(X) -> X end,
+      integer = fun(X) -> misc:i2l(X) end,
+      boolean = fun(true) -> <<"1">>;
+                   (false) -> <<"0">>
+                end,
+      timestamp = fun escape_timestamp/1,
 		in_array_string = fun(X) -> <<"\"", (escape(X))/binary, "\"">> end,
                 like_escape = fun() -> ignore end
                }.
@@ -913,33 +940,46 @@ pgsql_execute_sql_query(SQLQuery, State) ->
 %        timer:tc(pgsql, execute, [State#state.db_ref, SQLQuery#sql_query.hash, Args]),
 %    io:format("T ~ts ~p~n", [SQLQuery#sql_query.hash, T]),
     Res = pgsql_execute_to_odbc(ExecuteRes),
-    sql_query_format_res(Res, SQLQuery).
+    sql_query_format_res(Res, SQLQuery, pgsql_prepared).
+
 
 mysql_prepared_execute(#sql_query{hash = Hash} = Query, State) ->
-    ValEsc = #sql_escape{like_escape = fun() -> ignore end, _ = fun(X) -> X end},
-    TypesEsc = #sql_escape{string = fun(_) -> string end,
-			   integer = fun(_) -> integer end,
-			   boolean = fun(_) -> bool end,
+    ValEsc = #sql_escape{
+               like_escape = fun() -> ignore end,
+               timestamp = fun escape_timestamp/1,
+               _ = fun(X) -> X end
+              },
+    TypesEsc = #sql_escape{
+                 string = fun(_) -> string end,
+                 integer = fun(_) -> integer end,
+                 boolean = fun(_) -> bool end,
+                 timestamp = fun(_) -> string end,
 			   in_array_string = fun(_) -> string end,
 			   like_escape = fun() -> ignore end},
     Val = [X || X <- (Query#sql_query.args)(ValEsc), X /= ignore],
     Types = [X || X <- (Query#sql_query.args)(TypesEsc), X /= ignore],
     QueryFn = fun() ->
-	PrepEsc = #sql_escape{like_escape = fun() -> <<>> end, _ = fun(_) -> <<"?">> end},
-	(Query#sql_query.format_query)((Query#sql_query.args)(PrepEsc))
-	end,
+                      PrepEsc = #sql_escape{like_escape = fun() -> <<>> end, _ = fun(_) -> <<"?">> end},
+                      (Query#sql_query.format_query)((Query#sql_query.args)(PrepEsc))
+              end,
     QueryTimeout = query_timeout(State#state.host),
-    Res = p1_mysql_conn:prepared_query(State#state.db_ref, QueryFn, Hash, Val, Types,
-				       self(), [{timeout, QueryTimeout - 1000}]),
+    Res = p1_mysql_conn:prepared_query(State#state.db_ref,
+                                       QueryFn,
+                                       Hash,
+                                       Val,
+                                       Types,
+                                       self(),
+                                       [{timeout, QueryTimeout - 1000}]),
     Res2 = mysql_to_odbc(Res),
-    sql_query_format_res(Res2, Query).
+    sql_query_format_res(Res2, Query, mysql_prepared).
 
-sql_query_format_res({selected, _, Rows}, SQLQuery) ->
+
+sql_query_format_res({selected, _, Rows}, SQLQuery, DbType) ->
     Res =
         lists:flatmap(
           fun(Row) ->
                   try
-                      [(SQLQuery#sql_query.format_res)(Row)]
+                      [(SQLQuery#sql_query.format_res)(Row, DbType)]
                   catch
                       Class:Reason:StackTrace ->
                           ?ERROR_MSG("Error while processing SQL query result:~n"
@@ -950,7 +990,7 @@ sql_query_format_res({selected, _, Rows}, SQLQuery) ->
                   end
           end, Rows),
     {selected, Res};
-sql_query_format_res(Res, _SQLQuery) ->
+sql_query_format_res(Res, _SQLQuery, _DbType) ->
     Res.
 
 sql_query_to_iolist(SQLQuery) ->
