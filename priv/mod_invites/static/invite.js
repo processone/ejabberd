@@ -1,7 +1,11 @@
 (function () {
 	// If QR lib loaded ok, show QR button on desktop devices
 	if(window.QRCode) {
-		new QRCode(document.getElementById("qr-invite-page"), document.location.href);
+      const qrcode_opts = {
+          text : document.location.href,
+          addQuietZone: true
+      };
+		new QRCode(document.getElementById("qr-invite-page"), qrcode_opts);
 		document.getElementById('qr-button-container').classList.add("d-md-block");
 	}
 
