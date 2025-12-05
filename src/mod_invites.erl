@@ -611,7 +611,12 @@ check_account_name(AccountName, Host) ->
                 true ->
                     {error, user_exists};
                 false ->
-                    AccountName
+                    case is_reserved(Host, <<>>, AccountName) of
+                        true ->
+                            {error, reserved};
+                        false ->
+                            AccountName
+                    end
             end
     end.
 
@@ -759,16 +764,18 @@ to_stanza_error(Lang, Reason) ->
     Text = trans(Lang, reason_to_text(Reason)),
     xmpp:err_bad_request(Text, Lang).
 
+reason_to_text(account_name_invalid) ->
+    ?T("Username invalid");
 reason_to_text(host_unknown) ->
     ?T("Host unknown");
 reason_to_text(hostname_invalid) ->
     ?T("Hostname invalid");
-reason_to_text(account_name_invalid) ->
-    ?T("Username invalid");
-reason_to_text(user_exists) ->
-    ?T("User already exists");
 reason_to_text(num_invites_exceeded) ->
-    ?T("Maximum number of invites reached").
+    ?T("Maximum number of invites reached");
+reason_to_text(reserved) ->
+    ?T("Username is reserved");
+reason_to_text(user_exists) ->
+    ?T("User already exists").
 
 maybe_gen_sid(<<>>) ->
     p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT);

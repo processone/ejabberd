@@ -90,7 +90,7 @@ gen_invite(Config) ->
     ?match({error, user_exists}, mod_invites:gen_invite(User, Server)),
     ?match({error, account_name_invalid},
            mod_invites:gen_invite(<<"@bad_acccount_name">>, Server)),
-    ?match({error, host_unknown}, mod_invites:gen_invite(<<"foo">>, <<"non.existant.host">>)),
+    ?match({error, host_unknown}, mod_invites:gen_invite(<<"bar">>, <<"non.existant.host">>)),
     %% TooLongHostname = list_to_binary([$a || _ <- lists:seq(1, 1024)]),
     %% ?match({error, hostname_invalid}, mod_invites:gen_invite(<<"foo">>, TooLongHostname)),
     mod_invites:expire_tokens(<<>>, Server),
@@ -200,13 +200,13 @@ adhoc_command_create_account(Config) ->
     Token3 = token_from_uri(xdata_field(<<"uri">>, ResultXDataFields3, <<>>)),
     #invite_token{account_name = <<>>, type = account_subscription} =
         mod_invites:get_invite(Server, Token3),
-    ResultXDataFields4 = test_create_account(Config, <<"foobar">>, <<"1">>),
+    ResultXDataFields4 = test_create_account(Config, <<"foobar_with_sub">>, <<"1">>),
     ?match({match, _},
            re:run(xdata_field(<<"uri">>, ResultXDataFields4),
-                  <<"xmpp:foobar@", Server/binary, "\\?register;preauth=([a-zA-Z0-9]+)">>,
+                  <<"xmpp:foobar_with_sub@", Server/binary, "\\?register;preauth=([a-zA-Z0-9]+)">>,
                   [{capture, all_but_first, binary}])),
     Token4 = token_from_uri(xdata_field(<<"uri">>, ResultXDataFields4, <<>>)),
-    #invite_token{account_name = <<"foobar">>, type = account_subscription} =
+    #invite_token{account_name = <<"foobar_with_sub">>, type = account_subscription} =
         mod_invites:get_invite(Server, Token4),
     update_module_opts(Server, mod_invites, OldOpts),
     User = jid:nodeprep(?config(user, Config)),
@@ -310,6 +310,9 @@ is_reserved(Config) ->
     mod_invites:cleanup_expired(),
     #invite_token{token = Token} =
         mod_invites:create_account_invite(Server, Inviter, <<"reserved_user">>, false),
+    ?match(
+       {error, reserved},
+       mod_invites:create_account_invite(Server, Inviter, <<"reserved_user">>, false)),
     ?match(false, mod_invites:is_reserved(Server, Token, <<"some_other_username">>)),
     ?match(false, mod_invites:is_reserved(Server, Token, <<"reserved_user">>)),
     ?match(true,
@@ -318,6 +321,10 @@ is_reserved(Config) ->
     mod_invites:set_invitee(Server, Token, jid:make(<<"some_other_username">>, Server)),
     ?match(false,
            mod_invites:is_reserved(Server, <<"some_other_token">>, <<"reserved_user">>)),
+    #invite_token{token = OtherToken} =
+        mod_invites:create_account_invite(Server, Inviter, <<"reserved_user">>, false),
+    ?match(true, OtherToken /= Token),
+    mod_invites:remove_user(<<"inviter">>, Server),
     disconnect(Config).
 
 stream_feature(Config0) ->
