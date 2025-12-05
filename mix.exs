@@ -148,7 +148,7 @@ defmodule Ejabberd.MixProject do
                          {if_version_below(~c"26", true), {:jose, "1.11.10", override: true}},
                          {if_version_above(~c"25", true), {:jose, "~> 1.11.12"}},
                          {config(:lua), {:luerl, "~> 1.2.0"}},
-                         {config(:mysql), {:p1_mysql, ">= 1.0.24"}},
+                         {config(:mysql), {:p1_mysql, git: "https://github.com/processone/p1_mysql", ref: "ddd19938519c5f0319e0e0fe18ae98f856d64041"}},
                          {config(:pgsql), {:p1_pgsql, ">= 1.1.32"}},
                          {config(:sqlite), {:sqlite3, "~> 1.1"}},
                          {config(:stun), {:stun, "~> 1.0"}}], do:
