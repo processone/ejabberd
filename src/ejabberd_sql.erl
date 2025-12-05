@@ -922,9 +922,9 @@ pgsql_prepare(SQLQuery, State) ->
 pgsql_execute_escape() ->
     #sql_escape{
       string = fun(X) -> X end,
-      integer = fun(X) -> misc:i2l(X) end,
-      boolean = fun(true) -> <<"1">>;
-                   (false) -> <<"0">>
+      integer = fun(X) -> [misc:i2l(X)] end,
+      boolean = fun(true) -> "1";
+                   (false) -> "0"
                 end,
       timestamp = fun escape_timestamp/1,
 		in_array_string = fun(X) -> <<"\"", (escape(X))/binary, "\"">> end,
