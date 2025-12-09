@@ -25,7 +25,7 @@
 
 -module(mod_muc_log).
 
--protocol({xep, 334, '0.2', '15.09', "complete", ""}).
+-protocol({xep, 334, '1.0.0', '15.09', "complete", ""}).
 
 -author('badlop@process-one.net').
 

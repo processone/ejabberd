@@ -29,19 +29,19 @@
 
 -protocol({rfc, 6122}).
 -protocol({rfc, 7590}).
--protocol({xep, 4, '2.9', '0.5.0', "complete", ""}).
+-protocol({xep, 4, '2.13.2', '0.5.0', "complete", ""}).
 -protocol({xep, 59, '1.0', '2.1.0', "complete", ""}).
 -protocol({xep, 82, '1.1.1', '2.1.0', "complete", ""}).
 -protocol({xep, 86, '1.0', '0.5.0', "complete", ""}).
--protocol({xep, 106, '1.1', '0.5.0', "complete", ""}).
+-protocol({xep, 106, '1.1.1', '0.5.0', "complete", ""}).
 -protocol({xep, 170, '1.0', '17.12', "complete", ""}).
--protocol({xep, 178, '1.1', '17.03', "complete", ""}).
--protocol({xep, 205, '1.0', '1.1.2', "complete", ""}).
+-protocol({xep, 178, '1.2', '17.03', "complete", ""}).
+-protocol({xep, 205, '1.0.2', '1.1.2', "complete", ""}).
 -protocol({xep, 368, '1.1.0', '17.09', "complete", ""}).
 -protocol({xep, 386, '0.3.0', '24.02', "complete", ""}).
 -protocol({xep, 388, '0.4.0', '24.02', "complete", ""}).
--protocol({xep, 440, '0.4.0', '24.02', "complete", ""}).
--protocol({xep, 474, '0.4.0', '24.02', "complete", "0.4.0 since 25.03"}).
+-protocol({xep, 440, '1.0.0', '24.02', "complete", ""}).
+-protocol({xep, 474, '0.5.0', '24.02', "complete", "0.4.0 since 25.03"}).
 
 -export([start/0, stop/0, halt/0, start_app/1, start_app/2,
 	 get_pid_file/0, check_apps/0, module_name/1, is_loaded/0]).

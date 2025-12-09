@@ -27,7 +27,7 @@
 
 -author('bjc@kublai.com').
 
--protocol({xep, 199, '2.0', '2.1.0', "complete", ""}).
+-protocol({xep, 199, '2.0.1', '2.1.0', "complete", ""}).
 
 -behaviour(gen_mod).
 

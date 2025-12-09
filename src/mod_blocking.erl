@@ -27,7 +27,7 @@
 
 -behaviour(gen_mod).
 
--protocol({xep, 191, '1.2', '2.1.7', "complete", ""}).
+-protocol({xep, 191, '1.3', '2.1.7', "complete", ""}).
 
 -export([start/2, stop/1, reload/3, process_iq/1, depends/2,
 	 disco_features/5, mod_options/1, mod_doc/0]).

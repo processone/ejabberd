@@ -25,7 +25,7 @@
 
 -module(mod_push).
 -author('holger@zedat.fu-berlin.de').
--protocol({xep, 357, '0.2', '17.08', "complete", ""}).
+-protocol({xep, 357, '0.4.1', '17.08', "complete", ""}).
 
 -behaviour(gen_mod).
 
