@@ -227,12 +227,18 @@ maybe_print_elixir_version() -> ok.
 -endif.
 
 print_distribution_listening() ->
-    {links, Links} = erlang:process_info(erlang:whereis(net_kernel), links),
+    Links = case erlang:whereis(net_kernel) of
+        undefined ->
+            [];
+        P ->
+            {links, L} = erlang:process_info(P, links),
+            L
+    end,
     {Addr, Port} = lists:foldl(
           fun(Link, Acc) ->
                   case catch inet:sockname(Link) of
                       {ok, {A1, P1}} -> {misc:ip_to_list(A1), P1};
                       _ -> Acc
                   end
-          end, "", Links),
+          end, {"UnknownAddress", "UnknownPort"}, Links),
     ?INFO_MSG("Start accepting TCP connections at ~ts:~p for erlang node distribution", [Addr, Port]).
