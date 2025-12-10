@@ -5336,8 +5336,13 @@ unassign_hat(JID, URI, StateData) ->
         jid:remove_resource(
             jid:tolower(JID)),
     UserHats = maps:get(LJID, Hats, []),
-    UserHats2 = lists:delete(URI, UserHats),
-    Hats2 = maps:put(LJID, UserHats2, Hats),
+    Hats2 =
+        case lists:delete(URI, UserHats) of
+            [] ->
+                maps:remove(LJID, Hats);
+            UserHats2 ->
+                maps:put(LJID, UserHats2, Hats)
+        end,
     {ok, StateData#state{hats_users = Hats2}}.
 
 -spec get_defined_hats(state()) -> [{binary(), binary(), binary()}].
