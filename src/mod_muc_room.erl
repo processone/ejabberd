@@ -5165,27 +5165,21 @@ process_iq_adhoc_hats(?MUC_HAT_LISTUSERS_CMD, StateData, Lang) ->
 process_iq_adhoc_hats(_, _, _) ->
     {executing, aaa}.
 
+get_xdata_nonempty(Var, XData) ->
+    maybe
+        [Value] ?= xmpp_util:get_xdata_values(Var, XData),
+        true ?= Value /= <<>>,
+        Value
+    else
+        _ ->
+            []
+    end.
+
 process_iq_adhoc_hats_complete(?MUC_HAT_CREATE_CMD, XData, StateData, _Lang) ->
-    URI = try
-              hd(xmpp_util:get_xdata_values(<<"hats#uri">>, XData))
-          catch
-              _:_ ->
-                  error
-          end,
-    Title =
-        case xmpp_util:get_xdata_values(<<"hats#title">>, XData) of
-            [] ->
-                <<"">>;
-            [T] ->
-                T
-        end,
-    Hue = try
-              hd(xmpp_util:get_xdata_values(<<"hats#hue">>, XData))
-          catch
-              _:_ ->
-                  error
-          end,
-    if (Title /= error) and (URI /= error) ->
+    URI = get_xdata_nonempty(<<"hats#uri">>, XData),
+    Title = get_xdata_nonempty(<<"hats#title">>, XData),
+    Hue = get_xdata_nonempty(<<"hats#hue">>, XData),
+    if is_binary(Title) and is_binary(URI) ->
            {ok, AffectedJids, NewStateData} = create_hat(URI, Title, Hue, StateData),
            store_room(NewStateData),
            broadcast_hats_change(NewStateData),
@@ -5195,13 +5189,8 @@ process_iq_adhoc_hats_complete(?MUC_HAT_CREATE_CMD, XData, StateData, _Lang) ->
            error
     end;
 process_iq_adhoc_hats_complete(?MUC_HAT_DESTROY_CMD, XData, StateData, _Lang) ->
-    URI = try
-              hd(xmpp_util:get_xdata_values(<<"hat">>, XData))
-          catch
-              _:_ ->
-                  error
-          end,
-    if URI /= error ->
+    URI = get_xdata_nonempty(<<"hat">>, XData),
+    if is_binary(URI) ->
            {ok, AffectedJids, NewStateData} = destroy_hat(URI, StateData),
            store_room(NewStateData),
            broadcast_hats_change(NewStateData),
@@ -5212,18 +5201,13 @@ process_iq_adhoc_hats_complete(?MUC_HAT_DESTROY_CMD, XData, StateData, _Lang) ->
     end;
 process_iq_adhoc_hats_complete(?MUC_HAT_ASSIGN_CMD, XData, StateData, Lang) ->
     JID = try
-              jid:decode(hd(xmpp_util:get_xdata_values(<<"hats#jid">>, XData)))
+              jid:decode(get_xdata_nonempty(<<"hats#jid">>, XData))
           catch
               _:_ ->
                   error
           end,
-    URI = try
-              hd(xmpp_util:get_xdata_values(<<"hat">>, XData))
-          catch
-              _:_ ->
-                  error
-          end,
-    if (JID /= error) and (URI /= error) ->
+    URI = get_xdata_nonempty(<<"hat">>, XData),
+    if (JID /= error) and is_binary(URI) ->
            case assign_hat(JID, URI, StateData) of
                {ok, NewStateData} ->
                    store_room(NewStateData),
@@ -5238,18 +5222,13 @@ process_iq_adhoc_hats_complete(?MUC_HAT_ASSIGN_CMD, XData, StateData, Lang) ->
     end;
 process_iq_adhoc_hats_complete(?MUC_HAT_UNASSIGN_CMD, XData, StateData, _Lang) ->
     JID = try
-              jid:decode(hd(xmpp_util:get_xdata_values(<<"hats#jid">>, XData)))
+              jid:decode(get_xdata_nonempty(<<"hats#jid">>, XData))
           catch
               _:_ ->
                   error
           end,
-    URI = try
-              hd(xmpp_util:get_xdata_values(<<"hat">>, XData))
-          catch
-              _:_ ->
-                  error
-          end,
-    if (JID /= error) and (URI /= error) ->
+    URI = get_xdata_nonempty(<<"hat">>, XData),
+    if (JID /= error) and is_binary(URI) ->
            {ok, NewStateData} = unassign_hat(JID, URI, StateData),
            store_room(NewStateData),
            send_update_presence(JID, NewStateData, StateData),
@@ -5258,7 +5237,6 @@ process_iq_adhoc_hats_complete(?MUC_HAT_UNASSIGN_CMD, XData, StateData, _Lang) -
            error
     end.
 
-%% TODO +++ clean
 create_hat(URI, Title, Hue, #state{hats_defs = Hats, hats_users = Users} = StateData) ->
     Hats2 = maps:put(URI, {Title, Hue}, Hats),
 
