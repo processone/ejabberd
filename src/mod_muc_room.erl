@@ -5133,14 +5133,21 @@ process_iq_adhoc_hats(?MUC_HAT_UNASSIGN_CMD, StateData, Lang) ->
 process_iq_adhoc_hats(?MUC_HAT_LISTUSERS_CMD, StateData, Lang) ->
     Hats = get_assigned_hats(StateData),
     Items =
-        lists:map(fun({JID, URI}) ->
-                     {URI, Title, Hue} = get_hat_details(URI, StateData),
-                     [#xdata_field{var = <<"hats#jid">>, values = [jid:encode(JID)]},
-                      #xdata_field{var = <<"hats#uri">>, values = [URI]},
-                      #xdata_field{var = <<"hats#title">>, values = [Title]},
-                      #xdata_field{var = <<"hats#hue">>, values = [Hue]}]
-                  end,
-                  Hats),
+        lists:filtermap(fun({JID, URI}) ->
+                           case get_hat_details(URI, StateData) of
+                               false ->
+                                   false;
+                               {URI, Title, Hue} ->
+                                   Fields =
+                                       [#xdata_field{var = <<"hats#jid">>,
+                                                     values = [jid:encode(JID)]},
+                                        #xdata_field{var = <<"hats#uri">>, values = [URI]},
+                                        #xdata_field{var = <<"hats#title">>, values = [Title]},
+                                        #xdata_field{var = <<"hats#hue">>, values = [Hue]}],
+                                   {true, Fields}
+                           end
+                        end,
+                        Hats),
     Form =
         #xdata{title = translate:translate(Lang, ?T("List users with hats")),
                type = result,
@@ -5362,6 +5369,7 @@ get_hats_hash(StateData) ->
     str:sha(
         misc:term_to_base64(get_assigned_hats(StateData))).
 
+-spec get_hat_details(binary(), state()) -> {binary(), binary(), binary()} | false.
 get_hat_details(Uri, StateData) ->
     lists:keyfind(Uri, 1, get_defined_hats(StateData)).
 
@@ -5379,13 +5387,17 @@ add_presence_hats(JID, Pres, StateData) ->
                     Pres;
                 _ ->
                     Items =
-                        lists:map(fun(URI) ->
-                                     {URI, Title, Hue} = get_hat_details(URI, StateData),
-                                     #muc_hat{uri = URI,
-                                              title = Title,
-                                              hue = Hue}
-                                  end,
-                                  UserHats),
+                        lists:filtermap(fun(URI) ->
+                                           case get_hat_details(URI, StateData) of
+                                               false ->
+                                                   false;
+                                               {URI, Title, Hue} ->
+                                                   #muc_hat{uri = URI,
+                                                            title = Title,
+                                                            hue = Hue}
+                                           end
+                                        end,
+                                        UserHats),
                     xmpp:set_subtag(Pres, #muc_hats{hats = Items})
             end;
         false ->
