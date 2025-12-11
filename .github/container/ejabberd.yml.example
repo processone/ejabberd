@@ -28,6 +28,7 @@ define_macro:
   PORT_TURN_MAX: 50099
   PORT_MQTT: 1883
   PORT_PROXY65: 7777
+  STARTTLS_REQUIRED: true
 
 hosts:
   - HOST
@@ -51,7 +52,7 @@ listen:
     max_stanza_size: 262144
     shaper: c2s_shaper
     access: c2s
-    starttls_required: true
+    starttls_required: STARTTLS_REQUIRED
   -
     port: PORT_C2S_TLS
     ip: "::"
