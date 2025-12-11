@@ -47,7 +47,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0004.html"/>
-        <xmpp:version>2.9</xmpp:version>
+        <xmpp:version>2.13.2</xmpp:version>
         <xmpp:since>0.5.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note></xmpp:note>
@@ -65,7 +65,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0013.html"/>
-        <xmpp:version>1.2</xmpp:version>
+        <xmpp:version>1.3</xmpp:version>
         <xmpp:since>16.02</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_offline</xmpp:note>
@@ -74,7 +74,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0016.html"/>
-        <xmpp:version>1.6</xmpp:version>
+        <xmpp:version>1.7</xmpp:version>
         <xmpp:since>0.5.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_privacy</xmpp:note>
@@ -101,7 +101,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0030.html"/>
-        <xmpp:version>2.4</xmpp:version>
+        <xmpp:version>2.5.0</xmpp:version>
         <xmpp:since>0.1.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_disco</xmpp:note>
@@ -128,7 +128,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0045.html"/>
-        <xmpp:version>1.25</xmpp:version>
+        <xmpp:version>1.35.3</xmpp:version>
         <xmpp:since>0.5.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_muc</xmpp:note>
@@ -155,7 +155,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0050.html"/>
-        <xmpp:version>1.2</xmpp:version>
+        <xmpp:version>1.3.0</xmpp:version>
         <xmpp:since>1.1.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_adhoc</xmpp:note>
@@ -164,7 +164,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0054.html"/>
-        <xmpp:version>1.2</xmpp:version>
+        <xmpp:version>1.3.0</xmpp:version>
         <xmpp:since>0.1.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_vcard</xmpp:note>
@@ -200,7 +200,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0065.html"/>
-        <xmpp:version>1.8</xmpp:version>
+        <xmpp:version>1.8.2</xmpp:version>
         <xmpp:since>2.0.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_proxy65</xmpp:note>
@@ -263,7 +263,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0106.html"/>
-        <xmpp:version>1.1</xmpp:version>
+        <xmpp:version>1.1.1</xmpp:version>
         <xmpp:since>0.5.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note></xmpp:note>
@@ -281,7 +281,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0115.html"/>
-        <xmpp:version>1.5</xmpp:version>
+        <xmpp:version>1.6.0</xmpp:version>
         <xmpp:since>2.1.4</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_caps</xmpp:note>
@@ -290,7 +290,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0124.html"/>
-        <xmpp:version>1.11</xmpp:version>
+        <xmpp:version>1.11.2</xmpp:version>
         <xmpp:since>16.12</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>ejabberd_bosh</xmpp:note>
@@ -317,7 +317,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0153.html"/>
-        <xmpp:version>1.1</xmpp:version>
+        <xmpp:version>1.1.1</xmpp:version>
         <xmpp:since>17.09</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_vcard</xmpp:note>
@@ -335,7 +335,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0157.html"/>
-        <xmpp:version>1.0</xmpp:version>
+        <xmpp:version>1.1.1</xmpp:version>
         <xmpp:since>2.1.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_disco</xmpp:note>
@@ -344,7 +344,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0158.html"/>
-        <xmpp:version>1.0</xmpp:version>
+        <xmpp:version>1.0.1</xmpp:version>
         <xmpp:since>2.1.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>ejabberd_captcha</xmpp:note>
@@ -353,7 +353,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0160.html"/>
-        <xmpp:version>1.0</xmpp:version>
+        <xmpp:version>1.0.1</xmpp:version>
         <xmpp:since>16.01</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_offline</xmpp:note>
@@ -362,7 +362,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0163.html"/>
-        <xmpp:version>1.2</xmpp:version>
+        <xmpp:version>1.2.2</xmpp:version>
         <xmpp:since>2.0.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_pubsub</xmpp:note>
@@ -389,7 +389,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0178.html"/>
-        <xmpp:version>1.1</xmpp:version>
+        <xmpp:version>1.2</xmpp:version>
         <xmpp:since>17.03</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note></xmpp:note>
@@ -407,7 +407,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0191.html"/>
-        <xmpp:version>1.2</xmpp:version>
+        <xmpp:version>1.3</xmpp:version>
         <xmpp:since>2.1.7</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_blocking</xmpp:note>
@@ -425,7 +425,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0199.html"/>
-        <xmpp:version>2.0</xmpp:version>
+        <xmpp:version>2.0.1</xmpp:version>
         <xmpp:since>2.1.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_ping</xmpp:note>
@@ -452,7 +452,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0205.html"/>
-        <xmpp:version>1.0</xmpp:version>
+        <xmpp:version>1.0.2</xmpp:version>
         <xmpp:since>1.1.2</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note></xmpp:note>
@@ -470,7 +470,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0215.html"/>
-        <xmpp:version>0.7</xmpp:version>
+        <xmpp:version>1.0.0</xmpp:version>
         <xmpp:since>20.04</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_stun_disco</xmpp:note>
@@ -506,7 +506,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0231.html"/>
-        <xmpp:version>1.0</xmpp:version>
+        <xmpp:version>1.1</xmpp:version>
         <xmpp:since>2.1.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>ejabberd_captcha</xmpp:note>
@@ -596,7 +596,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0334.html"/>
-        <xmpp:version>0.2</xmpp:version>
+        <xmpp:version>1.0.0</xmpp:version>
         <xmpp:since>16.01</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_mam, mod_muc_log, mod_offline</xmpp:note>
@@ -632,7 +632,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0357.html"/>
-        <xmpp:version>0.2</xmpp:version>
+        <xmpp:version>0.4.1</xmpp:version>
         <xmpp:since>17.08</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_push</xmpp:note>
@@ -785,7 +785,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0440.html"/>
-        <xmpp:version>0.4.0</xmpp:version>
+        <xmpp:version>1.0.0</xmpp:version>
         <xmpp:since>24.02</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note></xmpp:note>
@@ -803,7 +803,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0474.html"/>
-        <xmpp:version>0.4.0</xmpp:version>
+        <xmpp:version>0.5.0</xmpp:version>
         <xmpp:since>24.02</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>, 0.4.0 since 25.03</xmpp:note>
@@ -830,7 +830,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0485.html"/>
-        <xmpp:version>0.1.1</xmpp:version>
+        <xmpp:version>1.0.0</xmpp:version>
         <xmpp:since>25.07</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_pubsub_serverinfo</xmpp:note>
