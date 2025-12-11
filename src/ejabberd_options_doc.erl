@@ -1003,7 +1003,7 @@ doc() ->
         note => "renamed in 25.10",
         desc =>
             {?T("Whether to use the "
-                "_`database.md#default-and-new-schemas|multihost SQL schema`_. "
+                "_`database.md#singlehost-or-multihost|multihost SQL schema`_. "
                 "All schemas are located "
                 "at <https://github.com/processone/ejabberd/tree/~s/sql>. "
                 "There are two schemas available. The legacy 'singlehost' schema "
@@ -1013,7 +1013,8 @@ doc() ->
                 "serving several XMPP domains and/or changing domains from "
                 "time to time. This avoid need to manage several databases and "
                 "handle complex configuration changes. The default depends on "
-                "configuration flag '--enable-sql-schema-multihost' which is set "
+                "_`../install/source.md#configure|./configure`_ "
+                "flag '--enable-sql-schema-multihost' which is set "
                 "at compile time."),
              [binary:part(ejabberd_config:version(), {0,5})]}}},
      {new_sql_schema,

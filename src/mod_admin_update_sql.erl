@@ -647,8 +647,8 @@ mod_options(_) -> [].
 
 mod_doc() ->
     #{desc =>
-          ?T("This module can be used to update existing SQL database "
-             "from the default to the new schema. Check the section "
-             "_`database.md#default-and-new-schemas|Default and New Schemas`_ for details. "
+          ?T("This module can be used to convert your existing SQL database "
+             "from the singlehost to the multihost schema. Check the section "
+             "_`database.md#singlehost-or-multihost|Singlehost or Multihost`_ for details. "
              "Please note that only MS SQL, MySQL, and PostgreSQL are supported. "
              "When the module is loaded use _`update_sql`_ API.")}.
