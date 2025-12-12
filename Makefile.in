@@ -145,7 +145,7 @@ ifeq "$(REBAR_VER)" "6"
   REBARREL=MIX_ENV=prod $(REBAR) release --overwrite
   REBARDEV=MIX_ENV=dev $(REBAR) release --overwrite
   RELIVECMD=$(ESCRIPT) rel/relive.escript && MIX_ENV=dev RELIVE=true $(MAYBE) $(IEX) --name ejabberd@localhost -S mix run
-  RELIVECTLCMD=$(ESCRIPT) rel/relive.escript && _build/relive/ejabberdctl live
+  RELIVECTLCMD=$(ESCRIPT) rel/relive.escript ctl && _build/relivectl/ejabberdctl live
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
   GET_DEPS_TRANSLATIONS=MIX_ENV=translations $(REBAR) $(GET_DEPS)
@@ -177,7 +177,7 @@ endif
   REBARREL=$(REBAR) as prod tar
   REBARDEV=$(REBAR) as dev release
   RELIVECMD=$(REBAR) as dev relive
-  RELIVECTLCMD=$(ESCRIPT) rel/relive.escript && _build/relive/ejabberdctl live
+  RELIVECTLCMD=$(ESCRIPT) rel/relive.escript ctl && _build/relivectl/ejabberdctl live
   REL_LIB_DIR = _build/dev/rel/ejabberd/lib
   COPY_REL_TARGET = dev
   GET_DEPS_TRANSLATIONS=$(REBAR) as translations $(GET_DEPS)
@@ -405,27 +405,25 @@ relivectl:
 	$(RELIVECTLCMD)
 
 relivelibdir=$(shell pwd)/$(DEPSDIR)
-relivedir=$(shell pwd)/_build/relive
-CONFIG_DIR = ${relivedir}/conf
-SPOOL_DIR = ${relivedir}/database
-LOGS_DIR = ${relivedir}/logs
+relivebase=$(shell pwd)/$(DEPSBASE)
 
 #.
 #' scripts
 #
 
-ejabberdctl.relive:
+# Used for ejabberdctl.relive and ejabberdctl.relivectl
+ejabberdctl.re%:
 	$(SED)  -e "s*{{installuser}}*${INSTALLUSER}*g" \
-		-e "s*{{config_dir}}*${CONFIG_DIR}*g" \
-		-e "s*{{logs_dir}}*${LOGS_DIR}*g" \
-		-e "s*{{spool_dir}}*${SPOOL_DIR}*g" \
+		-e "s*{{config_dir}}*${relivebase}/re${*}/conf*g" \
+		-e "s*{{logs_dir}}*${relivebase}/re${*}/logs*g" \
+		-e "s*{{spool_dir}}*${relivebase}/re${*}/database*g" \
 		-e "s*{{bindir}}*${BINDIR}*g" \
 		-e "s*{{libdir}}*${relivelibdir}${ELIXIR_LIBDIR}*g" \
 		-e "s*ERTS_VSN*# ERTS_VSN*g" \
 		-e "s*{{iexpath}}*${IEX}*g" \
 		-e "s*{{erl}}*${ERL}*g" \
 		-e "s*{{epmd}}*${EPMD}*g" ejabberdctl.template \
-		> ejabberdctl.relive
+		> ejabberdctl.re${*}
 
 ejabberd.init:
 	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \

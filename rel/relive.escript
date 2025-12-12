@@ -1,9 +1,13 @@
 #!/usr/bin/env escript
 
-main(_) ->
-    Base = "_build/relive",
+main(Args) ->
+    Target = case Args of
+        ["ctl"] -> "relivectl";
+        _ -> "relive"
+    end,
+    Base = "_build/" ++ Target,
     prepare(Base, "", none),
-    prepare(Base, "conf", {os, cmd, "rel/setup-relive.sh"}),
+    prepare(Base, "conf", {os, cmd, "rel/setup-relive.sh " ++ Target}),
     prepare(Base, "database", none),
     prepare(Base, "logs", none),
     c:erlangrc([os:cmd("echo -n $HOME")]),

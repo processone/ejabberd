@@ -1,16 +1,33 @@
+#!/bin/sh
+
 PWD_DIR=$(pwd)
-REL_DIR=$PWD_DIR/_build/relive/
+TARGET=$1
+REL_DIR=$PWD_DIR/_build/$TARGET/
 CON_DIR=$REL_DIR/conf/
 
 [ -z "$REL_DIR_TEMP" ] && REL_DIR_TEMP=$REL_DIR
 CON_DIR_TEMP=$REL_DIR_TEMP/conf/
 
-make ejabberdctl.relive
-chmod +x ejabberdctl.relive
-mv ejabberdctl.relive $REL_DIR/ejabberdctl
+copy_ctl_cfg ()
+{
+    cp ejabberdctl.cfg.example $CON_DIR/ejabberdctl.cfg.example
+}
+
+prepare_ctl_cfg ()
+{
+    sed -i "s|#' POLL|EJABBERD_BYPASS_WARNINGS=true\n\n#' POLL|g" ejabberdctl.cfg.example
+    [ ! -f "$CON_DIR/ejabberdctl.cfg" ] \
+        && printf "ejabberdctl.cfg " \
+        && mv ejabberdctl.cfg.example ejabberdctl.cfg \
+        || printf
+}
+
+make ejabberdctl.$TARGET
+chmod +x ejabberdctl.$TARGET
+mv ejabberdctl.$TARGET $REL_DIR/ejabberdctl
 
 cp inetrc $CON_DIR/
-cp ejabberdctl.cfg.example $CON_DIR/ejabberdctl.cfg.example
+[ "$TARGET" = "relivectl" ] && copy_ctl_cfg
 cp ejabberd.yml.example $CON_DIR/ejabberd.yml.example
 cp test/ejabberd_SUITE_data/ca.pem $CON_DIR
 cp test/ejabberd_SUITE_data/cert.pem $CON_DIR
@@ -24,8 +41,4 @@ sed -i 's|^acl:$|acl:\n  admin: [user: admin]|g' ejabberd.yml.example
     && printf "ejabberd.yml " \
     && mv ejabberd.yml.example ejabberd.yml
 
-sed -i "s|#' POLL|EJABBERD_BYPASS_WARNINGS=true\n\n#' POLL|g" ejabberdctl.cfg.example
-[ ! -f "$CON_DIR/ejabberdctl.cfg" ] \
-    && printf "ejabberdctl.cfg " \
-    && mv ejabberdctl.cfg.example ejabberdctl.cfg \
-    || printf
+[ "$TARGET" = "relivectl" ] && prepare_ctl_cfg
