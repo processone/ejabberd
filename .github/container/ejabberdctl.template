@@ -327,7 +327,17 @@ check_start()
 {
     ECSIMAGE_DBPATH=$HOME/database/$ERLANG_NODE
     [ ! -d "$ECSIMAGE_DBPATH" ] && ln -s $HOME/database $HOME/database/$ERLANG_NODE
-    [ -n "$ERL_DIST_PORT" ] && return
+    [ -n "$ERL_DIST_PORT" ] && {
+        netstat -nl | grep ":5210" >/dev/null && {
+            echo "Error: The file ejabberdctl.cfg has configured ERL_DIST_PORT=$ERL_DIST_PORT"
+            echo "       but the port 5210 is already in use."
+            echo "       Stop that program or configure a different ERL_DIST_PORT"
+            echo ""
+            netstat -nlp | grep ":5210"
+            echo ""
+        }
+        return
+    }
     "$EPMD" -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
         pgrep -f "$ERLANG_NODE" >/dev/null && {
             echo "ERROR: The ejabberd node '$ERLANG_NODE' is already running."
