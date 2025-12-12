@@ -27,7 +27,7 @@
 
 -author('badlop@process-one.net').
 
--protocol({xep, 421, '0.1.0', '23.10', "complete", ""}).
+-protocol({xep, 421, '1.0.1', '23.10', "complete", ""}).
 
 -behaviour(gen_mod).
 
@@ -60,8 +60,8 @@ stop(_Host) ->
 filter_packet(Packet, State, _Nick) ->
     add_occupantid_packet(Packet, State#state.jid).
 
-remove_room(_LServer, Name, Host) ->
-    delete_salt(jid:make(Name, Host)).
+remove_room(_LServer, _Name, Host) ->
+    delete_salt(Host).
 
 %%%
 %%% XEP-0421 Occupant-id
@@ -74,14 +74,14 @@ add_occupantid_packet(Packet, RoomJid) ->
     xmpp:append_subtags(xmpp:remove_subtag(Packet, OccupantElement), [OccupantElement]).
 
 calculate_occupantid(From, RoomJid) ->
-    Term = {jid:remove_resource(From), get_salt(RoomJid)},
+    Term = {get_salt(RoomJid#jid.lserver), RoomJid, jid:remove_resource(From)},
     misc:term_to_base64(crypto:hash(sha256, io_lib:format("~p", [Term]))).
 
 %%%
 %%% Table storing rooms' salt
 %%%
 
--record(muc_occupant_id, {room_jid, salt}).
+-record(muc_occupant_id, {service_jid, salt}).
 
 create_table() ->
     ejabberd_mnesia:create(?MODULE, muc_occupant_id,
@@ -91,21 +91,21 @@ create_table() ->
 			    {type, set}]).
 
 
-get_salt(RoomJid) ->
-    case mnesia:dirty_read(muc_occupant_id, RoomJid) of
+get_salt(ServiceJid) ->
+    case mnesia:dirty_read(muc_occupant_id, ServiceJid) of
         [] ->
             Salt = p1_rand:get_string(),
-            ok = write_salt(RoomJid, Salt),
+            ok = write_salt(ServiceJid, Salt),
             Salt;
         [#muc_occupant_id{salt = Salt}] ->
             Salt
     end.
 
-write_salt(RoomJid, Salt) ->
-    mnesia:dirty_write(#muc_occupant_id{room_jid = RoomJid, salt = Salt}).
+write_salt(ServiceJid, Salt) ->
+    mnesia:dirty_write(#muc_occupant_id{service_jid = ServiceJid, salt = Salt}).
 
-delete_salt(RoomJid) ->
-    mnesia:dirty_delete(muc_occupant_id, RoomJid).
+delete_salt(ServiceJid) ->
+    mnesia:dirty_delete(muc_occupant_id, ServiceJid).
 
 %%%
 %%% Doc
