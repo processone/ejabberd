@@ -39,7 +39,7 @@
 -protocol({xep, 205, '1.0.2', '1.1.2', "complete", ""}).
 -protocol({xep, 368, '1.1.0', '17.09', "complete", ""}).
 -protocol({xep, 386, '0.3.0', '24.02', "complete", ""}).
--protocol({xep, 388, '0.4.0', '24.02', "complete", ""}).
+-protocol({xep, 388, '1.0.4', '24.02', "complete", ""}).
 -protocol({xep, 440, '1.0.0', '24.02', "complete", ""}).
 -protocol({xep, 474, '0.5.0', '24.02', "complete", "0.4.0 since 25.03"}).
 

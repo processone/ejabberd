@@ -30,7 +30,7 @@
 -behaviour(gen_pubsub_node).
 -author('christophe.romain@process-one.net').
 
--protocol({xep, 384, '0.8.3', '21.12', "complete", ""}).
+-protocol({xep, 384, '0.9.0', '21.12', "complete", ""}).
 
 -include("pubsub.hrl").
 
