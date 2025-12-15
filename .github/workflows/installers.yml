@@ -99,7 +99,7 @@ jobs:
     if: github.ref_type == 'tag'
     steps:
       - name: Download packages
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           merge-multiple: true
       - name: Draft Release
