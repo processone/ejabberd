@@ -80,7 +80,7 @@ jobs:
           mkdir ejabberd-packages
           mv ejabberd_*.deb ejabberd-*.rpm ejabberd-*.run ejabberd-packages
       - name: Upload packages
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ejabberd-packages-${{ matrix.platform }}
           #

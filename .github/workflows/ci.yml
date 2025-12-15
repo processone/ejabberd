@@ -64,7 +64,7 @@ jobs:
         make
         tar -cvf /tmp/compiled.tar .
 
-    - uses: actions/upload-artifact@v5
+    - uses: actions/upload-artifact@v6
       with:
         name: compiled-${{ matrix.otp }}
         path: /tmp/compiled.tar
@@ -282,7 +282,7 @@ jobs:
 
     - name: Upload CT logs
       if: failure()
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: ct-logs-${{ matrix.otp }}-${{ matrix.backend }}-${{ matrix.schema }}
         path: _build/test/logs
