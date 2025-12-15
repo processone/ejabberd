@@ -64,7 +64,7 @@ jobs:
 
     - name: Cache rebar3
       if: matrix.rebar == 'rebar3'
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cache/rebar3/
@@ -141,7 +141,7 @@ jobs:
         cat rebar.config
 
     - name: Cache hex.pm
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cache/rebar3/
@@ -227,7 +227,7 @@ jobs:
         cat rebar.config
 
     - name: Cache hex.pm
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.hex/

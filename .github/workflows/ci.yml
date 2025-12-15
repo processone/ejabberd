@@ -46,7 +46,7 @@ jobs:
                   libsqlite3-dev libwebp-dev libyaml-dev
 
     - name: Cache rebar3
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cache/rebar3/
