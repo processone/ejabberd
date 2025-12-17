@@ -1519,13 +1519,19 @@ web_menu_node(Acc, _Node, _Lang) ->
         {<<"logs">>, <<"Logs">>},
         {<<"stop">>, <<"Stop Node">>}].
 
+get_nodes_hint() ->
+    maybe
+        {ok, Names} ?= net_adm:names(),
+        NodeNames = lists:join(", ", [Name || {Name, _Port} <- Names]),
+        io_lib:format("Hint: Erlang nodes found in this machine that may be running ejabberd: ~s", [NodeNames])
+    else
+        {error, address} ->
+            io_lib:format("Hint: When EPMD is running, I can show here the Erlang nodes running in this machine.", [])
+    end.
+
 web_page_node(_, Node, #request{path = [<<"cluster">>]} = R) ->
-    {ok, Names} = net_adm:names(),
-    NodeNames = lists:join(", ", [Name || {Name, _Port} <- Names]),
-    Hint =
-        list_to_binary(io_lib:format("Hint: Erlang nodes found in this machine that may be running ejabberd: ~s",
-                                     [NodeNames])),
     Head = ?H1GLraw(<<"Clustering">>, <<"admin/guide/clustering/">>, <<"Clustering">>),
+    Hint = list_to_binary(get_nodes_hint()),
     Set1 =
         [ejabberd_cluster:call(Node,
                                ejabberd_web_admin,
