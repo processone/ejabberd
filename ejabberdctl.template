@@ -313,12 +313,15 @@ stop_epmd()
 check_start()
 {
     [ -n "$ERL_DIST_PORT" ] && {
-        netstat -nl | grep ":5210" >/dev/null && {
-            echo "Error: The file ejabberdctl.cfg has configured ERL_DIST_PORT=$ERL_DIST_PORT"
-            echo "       but the port 5210 is already in use."
-            echo "       Stop that program or configure a different ERL_DIST_PORT"
+        netstat -nl | grep ":$ERL_DIST_PORT" >/dev/null && {
             echo ""
-            netstat -nlp | grep ":5210"
+            echo "NOTE:  The file ejabberdctl.cfg has configured ERL_DIST_PORT=$ERL_DIST_PORT"
+            echo "       and the port 5210 is already in use."
+            echo "       If ejabberd fails to start with listen error eaddrinsuse,"
+            echo "       try configuring in ejabberdctl.cfg a different"
+            echo "       INET_DIST_INTERFACE, or different ERL_DIST_PORT"
+            echo ""
+            netstat -nlp 2>/dev/null | grep ":5210"
             echo ""
         }
         return
