@@ -241,4 +241,4 @@ print_distribution_listening() ->
                       _ -> Acc
                   end
           end, {"UnknownAddress", "UnknownPort"}, Links),
-    ?INFO_MSG("Start accepting TCP connections at ~ts:~p for erlang node distribution", [Addr, Port]).
+    ?INFO_MSG("Start accepting TCP connections at ~ts:~p for erlang distribution", [Addr, Port]).
