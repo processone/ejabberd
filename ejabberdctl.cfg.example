@@ -25,18 +25,6 @@
 #ERL_MAX_PORTS=65536
 
 #.
-#' FIREWALL_WINDOW: Range of allowed ports to pass through a firewall
-#
-# If ejabberd is configured to run in cluster, and a firewall is blocking ports,
-# it's possible to make Erlang use a defined range of port (instead of dynamic
-# ports) for node communication.
-#
-# Default: not defined
-# Example: 4200-4210
-#
-#FIREWALL_WINDOW=
-
-#.
 #' INET_DIST_INTERFACE: IP address where this Erlang node listens other nodes
 #
 # This communication is used by ejabberdctl command line tool,
@@ -63,6 +51,18 @@
 # Default: not defined
 #
 #ERL_DIST_PORT=5210
+
+#.
+#' FIREWALL_WINDOW: Range of allowed ports to pass through a firewall
+#
+# If ejabberd is configured to run in cluster, and a firewall is blocking ports,
+# it's possible to make Erlang use a defined range of port (instead of dynamic
+# ports) for node communication.
+#
+# Default: not defined
+# Example: 4200-4210
+#
+#FIREWALL_WINDOW=
 
 #.
 #' ERL_EPMD_ADDRESS: IP addresses where EPMD listens for connections
