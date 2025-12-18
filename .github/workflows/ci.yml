@@ -353,7 +353,7 @@ jobs:
       uses: ./.github/actions/manage-ejabberd
       with:
         for: dev
-        do: start, update_sql, stop, logs, check
+        do: start, update_sql, stop, check, logs
         username: user2
 
     - name: Dump multihost databases
@@ -379,7 +379,7 @@ jobs:
       uses: ./.github/actions/manage-ejabberd
       with:
         for: dev
-        do: start, stop, logs, check
+        do: start, stop, check, logs
         username: user2
 
     - name: Dump multihost databases

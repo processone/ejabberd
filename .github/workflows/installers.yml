@@ -62,7 +62,7 @@ jobs:
         uses: ./.github/actions/manage-ejabberd
         with:
           for: run
-          do: deploy, no_acme, start, register, stop, logs, check
+          do: deploy, no_acme, start, register, stop, check, logs
           username: user1
           host: $(hostname --fqdn)
           rel_name_vsn: ${{ steps.vsn.outputs.rel_name_vsn }}

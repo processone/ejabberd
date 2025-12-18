@@ -10,7 +10,7 @@ inputs:
     description: 'One or more tasks to perform:
                   deploy, no_acme, no_tls,
                   start, register, update_sql, stop,
-                  logs, check'
+                  check, logs'
   username:
     default: "user1"
     description: 'Username part of the account JID'
@@ -154,9 +154,18 @@ runs:
         ${{ steps.path.outputs.ectl }} stop
         ${{ steps.path.outputs.ectl }} stopped
 
+    ############################################################### Check #####
+
+    - if: contains(inputs.do, 'check')
+      shell: sh
+      run: |
+        grep -q 'is started' ${{ steps.path.outputs.logs }}/ejabberd.log
+        grep -q 'is stopped' ${{ steps.path.outputs.logs }}/ejabberd.log
+        test $(find ${{ steps.path.outputs.logs }}/ -empty -name error.log)
+
     ################################################################ Logs #####
 
-    - if: contains(inputs.do, 'logs')
+    - if: contains(inputs.do, 'logs') || failure()
       shell: sh
       run: |
         SUDO=sudo
@@ -167,12 +176,3 @@ runs:
         echo "::group::View error.log"
         $SUDO cat ${{ steps.path.outputs.logs }}/error.log
         echo "::endgroup::"
-
-    ############################################################### Check #####
-
-    - if: contains(inputs.do, 'check')
-      shell: sh
-      run: |
-        grep -q 'is started' ${{ steps.path.outputs.logs }}/ejabberd.log
-        grep -q 'is stopped' ${{ steps.path.outputs.logs }}/ejabberd.log
-        test $(find ${{ steps.path.outputs.logs }}/ -empty -name error.log)
