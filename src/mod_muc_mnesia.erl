@@ -24,8 +24,10 @@
 
 -module(mod_muc_mnesia).
 
+
 -behaviour(mod_muc).
 -behaviour(mod_muc_room).
+-behaviour(ejabberd_db_serialize).
 
 %% API
 -export([init/2, import/3, store_room/5, restore_room/3, forget_room/3,
@@ -41,11 +43,15 @@
 -export([start_link/2, init/1, handle_cast/2, handle_call/3, handle_info/2,
 	 terminate/2, code_change/3]).
 -export([need_transform/1, transform/1]).
+-export([serialize/3, deserialize_start/1, deserialize/2]).
 
 -include("mod_muc.hrl").
 -include("logger.hrl").
+
 -include_lib("xmpp/include/xmpp.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
+
+-include("ejabberd_db_serialize.hrl").
 
 -record(state, {}).
 
@@ -502,3 +508,98 @@ transform(#muc_registered{us_host = {{U, S}, H}, nick = Nick} = R) ->
     R#muc_registered{us_host = {{iolist_to_binary(U), iolist_to_binary(S)},
 				iolist_to_binary(H)},
 		     nick = iolist_to_binary(Nick)}.
+
+
+serialize(LServer, BatchSize, undefined) ->
+    Hosts = gen_mod:get_module_opt_hosts(LServer, mod_muc),
+    MucRoomConv =
+        fun([]) -> skip;
+           ([#muc_room{name_host = {Name, Host}, opts = Opts}]) ->
+                case lists:member(Host, Hosts) of
+                    true ->
+                        {ok, #serialize_muc_room_v1{
+                               serverhost = LServer,
+                               host = Host,
+                               name = Name,
+                               options = mod_muc:opts_to_binary(
+                                           Opts)
+                              }};
+                    _ -> skip
+                end;
+           (_) -> skip
+        end,
+    RegistrationsConv =
+        fun([]) -> skip;
+           ([#muc_registered{us_host = {{U, S}, Host}, nick = Nick}]) ->
+                case lists:member(Host, Hosts) of
+                    true ->
+                        {ok, #serialize_muc_registrations_v1{
+                               serverhost = LServer,
+                               host = Host,
+                               jid = jid:encode({U, S, <<>>}),
+                               nick = Nick
+                              }};
+                    _ -> skip
+                end;
+           (_) -> skip
+        end,
+    ejabberd_db_serialize:iter_records([ejabberd_db_serialize:mnesia_iter(muc_room, MucRoomConv),
+                                        ejabberd_db_serialize:mnesia_iter(muc_registered, RegistrationsConv)],
+                                       [],
+                                       BatchSize);
+serialize(_LServer, BatchSize, Key) ->
+    ejabberd_db_serialize:iter_records(Key, [], BatchSize).
+
+
+is_subdomain(Domain, SubDomain) ->
+    LenDiff = byte_size(SubDomain) - byte_size(Domain) - 1,
+    case SubDomain of
+        _ when SubDomain == Domain -> true;
+        _ when LenDiff =< 0 -> false;
+        <<_:LenDiff/binary, ".", SPart/binary>> when SPart == Domain -> true;
+        _ -> false
+    end.
+
+
+deserialize_start(LServer) ->
+    mnesia:transaction(fun() ->
+                               RoomKeys = lists:filter(fun({_, Service}) ->
+                                                               is_subdomain(LServer, Service)
+                                                       end,
+                                                       mnesia:all_keys(muc_room)),
+                               NickKeys = lists:filter(fun({_, Service}) ->
+                                                               is_subdomain(LServer, Service)
+                                                       end,
+                                                       mnesia:all_keys(muc_registered)),
+                               lists:foreach(fun(Key) -> mnesia:delete(muc_room, Key, write) end, RoomKeys),
+                               lists:foreach(fun(Key) -> mnesia:delete(muc_registered, Key, write) end, NickKeys)
+		       end),
+    ok.
+
+
+deserialize(LServer, Batch) ->
+    lists:foldl(
+      fun(_, {error, _} = Err) ->
+              Err;
+         (#serialize_muc_room_v1{name = Name, host = Host, options = Opts}, _) ->
+              case store_room(LServer, Host, Name, Opts, undefined) of
+                  {atomic, _} ->
+                      ok;
+                  _ -> {error, io_lib:format("Error when writing muc room data", [])}
+              end;
+         (#serialize_muc_registrations_v1{host = Host, jid = Jid, nick = Nick}, _) ->
+              #jid{luser = L, lserver = S} = jid:decode(Jid),
+              case mnesia:transaction(
+                     fun() ->
+                             mnesia:write(#muc_registered{
+                                            us_host = {{L, S}, Host},
+                                            nick = Nick
+                                           })
+                     end) of
+                  {atomic, _} ->
+                      ok;
+                  _ -> {error, io_lib:format("Error when writing muc registration data", [])}
+              end
+      end,
+      ok,
+      Batch).

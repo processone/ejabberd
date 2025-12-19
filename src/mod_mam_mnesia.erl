@@ -25,6 +25,7 @@
 -module(mod_mam_mnesia).
 
 -behaviour(mod_mam).
+-behaviour(ejabberd_db_serialize).
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
@@ -32,11 +33,14 @@
          remove_from_archive/3,
 	 is_empty_for_user/2, is_empty_for_room/3, delete_old_messages_batch/5,
          transform/1]).
+-export([serialize/3, deserialize_start/1, deserialize/2]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
+
 -include("logger.hrl").
 -include("mod_mam.hrl").
+-include("ejabberd_db_serialize.hrl").
 
 -define(BIN_GREATER_THAN(A, B),
 	((A > B andalso byte_size(A) == byte_size(B))
@@ -368,3 +372,104 @@ transform({archive_msg, US, ID, Timestamp, Peer, BarePeer,
        origin_id = <<"">>};
 transform(Other) ->
     Other.
+
+
+serialize(LServer, BatchSize, undefined) ->
+    ArchiveConv =
+        fun([]) -> skip;
+           ([#archive_msg{us = {U, S}, timestamp = TS, peer = Peer, packet = Xml, nick = Nick, type = Type, origin_id = OriginId}])
+              when S == LServer ->
+                {ok, #serialize_mam_v1{
+                       serverhost = LServer,
+                       username = U,
+                       timestamp = misc:now_to_usec(TS),
+                       peer = jid:encode(Peer),
+                       type = Type,
+                       nick = Nick,
+                       origin_id = OriginId,
+                       packet = fxml:element_to_binary(Xml)
+                      }};
+           (_) -> skip
+        end,
+    PrefsConv =
+        fun([]) -> skip;
+           ([#archive_prefs{us = {U, S}, default = Default, always = Always, never = Never}]) when S == LServer ->
+                {ok, #serialize_mam_prefs_v1{
+                       serverhost = LServer,
+                       username = U,
+                       default = Default,
+                       always = Always,
+                       never = Never
+                      }};
+           (_) -> skip
+        end,
+    ejabberd_db_serialize:iter_records([ejabberd_db_serialize:mnesia_iter(archive_msg, ArchiveConv),
+                                        ejabberd_db_serialize:mnesia_iter(archive_prefs, PrefsConv)],
+                                       [],
+                                       BatchSize);
+serialize(_LServer, BatchSize, Key) ->
+    ejabberd_db_serialize:iter_records(Key, [], BatchSize).
+
+
+deserialize_start(LServer) ->
+    mnesia:transaction(
+	fun() ->
+	    ArchiveKeys = mnesia:select(archive_msg,
+					ets:fun2ms(
+					    fun(#archive_msg{us = US}) when element(2, US) == LServer -> US end)),
+	    PrefsKeys = mnesia:select(archive_prefs,
+				      ets:fun2ms(
+					  fun(#archive_prefs{us = US}) when element(2, US) == LServer -> US end)),
+	    lists:foreach(fun(Key) -> mnesia:delete(archive_msg, Key, write) end, ArchiveKeys),
+	    lists:foreach(fun(Key) -> mnesia:delete(archive_prefs, Key, write) end, PrefsKeys)
+	end),
+    ok.
+
+
+deserialize(LServer, Batch) ->
+    F = fun() ->
+	lists:foldl(
+	    fun(_, {error, _} = Err) ->
+		Err;
+	       (  #serialize_mam_v1{
+		   username = LUser,
+		   timestamp = TS,
+		   peer = Peer,
+		   type = Type,
+		   nick = Nick,
+		   origin_id = OriginId,
+		   packet = Xml
+	       }, _) ->
+		   {PUser, PServer, _} = PeerJ = jid:tolower(jid:decode(Peer)),
+		   mnesia:write(
+		       #archive_msg{
+			   us = {LUser, LServer},
+			   id = integer_to_binary(
+			       TS),
+			   timestamp = misc:usec_to_now(
+			       TS),
+			   peer = PeerJ,
+			   bare_peer = {PUser, PServer, <<>>},
+			   type = Type,
+			   nick = Nick,
+			   packet = fxml_stream:parse_element(Xml),
+			   origin_id = OriginId
+		       });
+	       (#serialize_mam_prefs_v1{
+		   username = U,
+		   default = Default,
+		   always = Always,
+		   never = Never
+	       },
+		_) ->
+		   mnesia:write(
+		       #archive_prefs{us = {U, LServer}, default = Default, always = Always, never = Never})
+	    end,
+	    ok,
+	    Batch)
+	end,
+    case mnesia:transaction(F) of
+	{atomic, _} -> ok;
+	{aborted, Reason} ->
+	    {error, iolist_to_binary(io_lib:format("Error when writing archive data: ~p", [Reason]))}
+    end.

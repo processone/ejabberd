@@ -51,7 +51,7 @@
 -record(serialize_auth_v1, {
     serverhost :: binary(),
     username :: binary(),
-    passwords :: [binary() | {atom(), binary(), binary(), binary(), integer()}]
+    passwords :: [binary() | {sha | sha256 | sha512, binary(), binary(), binary(), integer()}]
 }).
 
 -record(serialize_muc_room_v1, {
