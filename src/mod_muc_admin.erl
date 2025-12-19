@@ -53,7 +53,7 @@
          webadmin_muc/2,
 	 mod_opt_type/1, mod_options/1,
 	 get_commands_spec/0, find_hosts/1, room_diagnostics/2,
-	 get_room_pid/2, get_room_history/2]).
+	 get_room_pid/2, get_room_history/2, muc_online_rooms_count/1]).
 
 -import(ejabberd_web_admin, [make_command/4, make_command_raw_value/3, make_table/4]).
 
@@ -107,6 +107,18 @@ get_commands_spec() ->
 		       args = [{service, binary}],
 		       args_rename = [{host, service}],
 		       result = {rooms, {list, {room, string}}}},
+     #ejabberd_commands{name = muc_online_rooms_count, tags = [muc],
+		       desc = "Return number of online rooms",
+		       longdesc = "Ask for a specific host, or `global` to use all vhosts.",
+                       policy = admin,
+		       module = ?MODULE, function = muc_online_rooms_count,
+		       args_desc = ["MUC service, or `global` for all"],
+		       args_example = ["conference.example.com"],
+		       result_desc = "Number of active rooms",
+		       result_example = 2137,
+		       args = [{service, binary}],
+		       args_rename = [{host, service}],
+		       result = {count, integer}},
 	#ejabberd_commands{name = muc_online_rooms_by_regex, tags = [muc],
 		       desc = "List existing rooms filtered by regexp",
 		       longdesc = "Ask for a specific host, or `global` to use all vhosts.",
@@ -664,6 +676,13 @@ muc_online_rooms(ServiceArg) ->
 	      [<<Name/binary, "@", Host/binary>>
 	       || {Name, _, _} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
+	
+muc_online_rooms_count(ServiceArg) ->
+    Hosts = find_services_validate(ServiceArg, <<"serverhost">>),
+    lists:foldl(
+		fun(Host, Acc) ->
+			Acc+mod_muc:count_online_rooms(Host)
+		end, 0, Hosts).
 
 muc_online_rooms_by_regex(ServiceArg, Regex) ->
     {_, P} = re:compile(Regex),
