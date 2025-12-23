@@ -172,12 +172,17 @@ oauth_issue_token(Jid, TTLSeconds, Scopes) ->
     end.
 
 oauth_list_tokens() ->
+    oauth_list_tokens(get_db_backend()).
+
+oauth_list_tokens(ejabberd_auth_mnesia) ->
     Tokens = mnesia:dirty_match_object(#oauth_token{_ = '_'}),
     {MegaSecs, Secs, _MiniSecs} = os:timestamp(),
     TS = 1000000 * MegaSecs + Secs,
     [{Token, jid:encode(jid:make(U,S)), Scope, integer_to_list(Expires - TS) ++ " seconds"} ||
-        #oauth_token{token=Token, scope=Scope, us= {U,S},expire=Expires} <- Tokens].
-
+        #oauth_token{token=Token, scope=Scope, us= {U,S},expire=Expires} <- Tokens];
+oauth_list_tokens(DBMod) ->
+    ?ERROR_MSG("Command oauth_list_tokens not implemented for database backend ~p", [DBMod]),
+    [].
 
 oauth_revoke_token(Token) ->
     DBMod = get_db_backend(),
