@@ -321,7 +321,17 @@ do_execute_command(Command, Arguments) ->
     Function = Command#ejabberd_commands.function,
     ?DEBUG("Executing command ~p:~p with Args=~p", [Module, Function, Arguments]),
     ejabberd_hooks:run(api_call, [Module, Function, Arguments]),
-    apply(Module, Function, Arguments).
+    try apply(Module, Function, Arguments)
+    catch
+        throw:Term ->
+            ?ERROR_MSG("A problem appears when executing command ~p with arguments ~p:~n  ~p:~p",
+                           [Command#ejabberd_commands.name, Arguments, throw, Term]),
+            throw(Term);
+        exit:Reason ->
+            ?ERROR_MSG("A problem appears when executing command ~p with arguments ~p:~n  ~p:~p",
+                           [Command#ejabberd_commands.name, Arguments, exit, Reason]),
+            error(Reason)
+    end.
 
 -spec get_tags_commands() -> [{string(), [string()]}].
 
