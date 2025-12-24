@@ -1523,10 +1523,12 @@ get_nodes_hint() ->
     maybe
         {ok, Names} ?= net_adm:names(),
         NodeNames = lists:join(", ", [Name || {Name, _Port} <- Names]),
-        io_lib:format("Hint: Erlang nodes found in this machine that may be running ejabberd: ~s", [NodeNames])
+        io_lib:format("Hint: Erlang nodes found in this machine that may be running ejabberd: ~s",
+                      [NodeNames])
     else
         {error, address} ->
-            io_lib:format("Hint: When EPMD is running, I can show here the Erlang nodes running in this machine.", [])
+            io_lib:format("Hint: When EPMD is running, I can show here the Erlang nodes running in this machine.",
+                          [])
     end.
 
 web_page_node(_, Node, #request{path = [<<"cluster">>]} = R) ->
