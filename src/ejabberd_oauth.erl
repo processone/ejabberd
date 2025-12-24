@@ -174,7 +174,7 @@ oauth_issue_token(Jid, TTLSeconds, Scopes) ->
 oauth_list_tokens() ->
     oauth_list_tokens(get_db_backend()).
 
-oauth_list_tokens(ejabberd_auth_mnesia) ->
+oauth_list_tokens(ejabberd_oauth_mnesia) ->
     Tokens = mnesia:dirty_match_object(#oauth_token{_ = '_'}),
     {MegaSecs, Secs, _MiniSecs} = os:timestamp(),
     TS = 1000000 * MegaSecs + Secs,
