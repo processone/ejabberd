@@ -898,8 +898,10 @@ get_url_preliminar(M, Tls, Host, Option, Handler) ->
     end.
 
 get_auto_url(Tls, Handler) ->
-    [{_ThisTls, Url} | _] = get_auto_urls(Tls, Handler),
-    Url.
+    case get_auto_urls(Tls, Handler) of
+        [] -> undefined;
+        [{_ThisTls, Url} | _] -> Url
+    end.
 
 -spec get_auto_urls(boolean() | any, atom()) -> [{boolean(), binary()}].
 
