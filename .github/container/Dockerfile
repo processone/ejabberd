@@ -57,7 +57,7 @@ RUN mv .github/container/ejabberdctl.template . \
     && ./autogen.sh \
     && ./configure --with-rebar=mix --enable-all \
     && make deps \
-    && make rel
+    && make prod
 
 WORKDIR /rootfs
 ARG VERSION
