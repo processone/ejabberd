@@ -41,7 +41,7 @@ directory_indices(Opts) when is_map(Opts) ->
 directory_indices(Host) ->
     gen_mod:get_module_opt(Host, mod_http_fileserver, directory_indices).
 
--spec docroot(gen_mod:opts() | global | binary()) -> binary().
+-spec docroot(gen_mod:opts() | global | binary()) -> binary() | [{binary(),binary()}].
 docroot(Opts) when is_map(Opts) ->
     gen_mod:get_opt(docroot, Opts);
 docroot(Host) ->

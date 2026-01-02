@@ -196,14 +196,15 @@ try_open_log(FN, _Host) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({serve, LocalPath, Auth, RHeaders}, _From, State) ->
+handle_call({serve, RawPath, LocalPath, Auth, RHeaders}, _From, State) ->
     IfModifiedSince = case find_header('If-Modified-Since', RHeaders, bad_date) of
 			  bad_date ->
 			      bad_date;
 			  Val ->
 			      httpd_util:convert_request_date(binary_to_list(Val))
 		      end,
-    Reply = serve(LocalPath, Auth, State#state.docroot, State#state.directory_indices,
+    DocRootBased = pick_docroot_based(RawPath, State#state.docroot),
+    Reply = serve(LocalPath, Auth, DocRootBased, State#state.directory_indices,
 		  State#state.custom_headers,
 		  State#state.default_content_type, State#state.content_types,
 		  State#state.user_access, IfModifiedSince),
@@ -211,6 +212,15 @@ handle_call({serve, LocalPath, Auth, RHeaders}, _From, State) ->
 handle_call(Request, From, State) ->
     ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
+
+pick_docroot_based(RawPath, DocRootList) when is_list(DocRootList) ->
+    [{_, PathDir} | _] = lists:dropwhile(fun({Dr, _PathDir}) ->
+                                     nomatch == binary:match(RawPath, Dr)
+                             end,
+                             DocRootList),
+    PathDir;
+pick_docroot_based(_RawPath, DocRoot) ->
+    DocRoot.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -278,13 +288,13 @@ code_change(_OldVsn, State, _Extra) ->
 %% @doc Handle an HTTP request.
 %% LocalPath is the part of the requested URL path that is "local to the module".
 %% Returns the page to be sent back to the client and/or HTTP status code.
-process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders} = Request) ->
+process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders, raw_path = RawPath} = Request) ->
     ?DEBUG("Requested ~p", [LocalPath]),
     try
 	VHost = ejabberd_router:host_of_route(Host),
 	{FileSize, Code, Headers, Contents} =
 	    gen_server:call(get_proc_name(VHost),
-			    {serve, LocalPath, Auth, RHeaders}),
+			    {serve, RawPath, LocalPath, Auth, RHeaders}),
 	add_to_log(FileSize, Code, Request#request{host = VHost}),
 	{Code, Headers, Contents}
     catch _:{Why, _} when Why == noproc; Why == invalid_domain; Why == unregistered_route ->
@@ -500,7 +510,10 @@ mod_opt_type(default_content_type) ->
 mod_opt_type(directory_indices) ->
     econf:list(econf:binary());
 mod_opt_type(docroot) ->
-    econf:directory(write);
+    econf:either(
+      econf:directory(write),
+      econf:map(econf:binary(), econf:binary())
+    );
 mod_opt_type(must_authenticate_with) ->
     econf:list(
       econf:and_then(
@@ -524,6 +537,7 @@ mod_options(_) ->
 mod_doc() ->
     #{desc =>
           ?T("This simple module serves files from the local disk over HTTP."),
+      note => "improved 'docroot' in 26.xx",
       opts =>
           [{accesslog,
             #{value => ?T("Path"),
@@ -531,10 +545,29 @@ mod_doc() ->
                   ?T("File to log accesses using an Apache-like format. "
                      "No log will be recorded if this option is not specified.")}},
            {docroot,
-            #{value => ?T("Path"),
+            #{value => ?T("PathDir | {PathURL, PathDir}"),
+              note => "improved in 26.xx",
               desc =>
-                  ?T("Directory to serve the files from. "
-                     "This is a mandatory option.")}},
+                  ?T("Directory to serve the files from, "
+                     "or a map with several URL path "
+                     "(as specified in _`listen-options.md#request_handlers|request_handlers`_) "
+                     "and their corresponding directory. "
+                     "This is a mandatory option."),
+              example =>
+                   ["listen:",
+                   "  -",
+                   "    port: 5280",
+                   "    module: ejabberd_http",
+                   "    request_handlers:",
+                   "      /pub/content: mod_http_fileserver",
+                   "      /share: mod_http_fileserver",
+                   "      /: mod_http_fileserver",
+                   "modules:",
+                   "  mod_http_fileserver:",
+                   "    docroot:",
+                   "      /pub/content: /var/service/www",
+                   "      /share: /usr/share/javascript",
+                   "      /: /var/www"]}},
            {content_types,
             #{value => "{Extension: Type}",
               desc =>
