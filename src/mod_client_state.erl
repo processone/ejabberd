@@ -5,7 +5,7 @@
 %%% Created : 11 Sep 2014 by Holger Weiss <holger@zedat.fu-berlin.de>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2014-2025   ProcessOne
+%%% ejabberd, Copyright (C) 2014-2026   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as

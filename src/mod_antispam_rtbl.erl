@@ -5,7 +5,7 @@
 %%% Created : 20 Mar 2025 by Stefan Strigler <stefan@strigler.de>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2025 ProcessOne
+%%% ejabberd, Copyright (C) 2026 ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
