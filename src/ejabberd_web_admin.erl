@@ -1721,10 +1721,12 @@ make_menu_system_el(Icon, Text, Append, {ThisTls, Url}) ->
                 unicode:characters_to_binary("❗")
         end,
     AppendBin = iolist_to_binary(Append),
+    {ok, _Scheme, _UserInfo, _Host, _Port, Path, _Query} = misc:uri_parse(Url),
+    TextParsed = string:replace(Text, "{URLPATH}", Path),
     ?LI([?C(<<(unicode:characters_to_binary(Icon))/binary, LockBinary/binary>>),
          ?XAE(<<"a">>,
               [{<<"href">>, <<Url/binary, AppendBin/binary>>}, {<<"target">>, <<"_blank">>}],
-              [?C(unicode:characters_to_binary(Text))])]).
+              [?C(unicode:characters_to_binary(TextParsed))])]).
 
 %%%==================================
 

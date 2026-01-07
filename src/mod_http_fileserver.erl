@@ -494,7 +494,7 @@ ip_to_string(Address) when size(Address) == 8 ->
 %%----------------------------------------------------------------------
 
 web_menu_system(Result, _Request, _Level) ->
-    Els = ejabberd_web_admin:make_menu_system(?MODULE, "📁", "HTTP Fileserver", ""),
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "📁", "HTTP Fileserver: {URLPATH}", ""),
     Els ++ Result.
 
 %%----------------------------------------------------------------------
