@@ -925,18 +925,23 @@ prepare_url({ThisTls, Port, Path}, Handler) ->
               "/">>}.
 
 find_handler_port_path(Tls, Handler) ->
-    lists:filtermap(
+    Paths = lists:map(
       fun({{Port, _, _},
            ejabberd_http,
            #{tls := ThisTls, request_handlers := Handlers}})
             when is_integer(Port) and ((Tls == any) or (Tls == ThisTls)) ->
-              case lists:keyfind(Handler, 2, Handlers) of
-                  false -> false;
-                  {Path, Handler} -> {true, {ThisTls, Port, Path}}
-              end;
-         (_) -> false
-      end, ets:tab2list(ejabberd_listener)).
+              find_handler_port_path_option(ThisTls, Port, Handler, Handlers);
+         (_) ->
+              []
+      end, ets:tab2list(ejabberd_listener)),
+    lists:flatten(Paths).
 
+find_handler_port_path_option(ThisTls, Port, Handler, Handlers) ->
+    lists:filtermap(fun({Path, H}) when H == Handler ->
+                            {true, {ThisTls, Port, Path}};
+                        ({_Path, _Handler}) ->
+                            false
+                    end, Handlers).
 
 %%%--------------------------------
 
