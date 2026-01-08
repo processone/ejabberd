@@ -934,7 +934,7 @@ find_handler_port_path(Tls, Handler) ->
          (_) ->
               []
       end, ets:tab2list(ejabberd_listener)),
-    lists:flatten(Paths).
+    lists:append(Paths).
 
 find_handler_port_path_option(ThisTls, Port, Handler, Handlers) ->
     lists:filtermap(fun({Path, H}) when H == Handler ->

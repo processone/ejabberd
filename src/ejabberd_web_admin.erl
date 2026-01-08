@@ -2017,7 +2017,7 @@ nice_this(This) when is_atom(This) ->
 nice_this(This) when is_binary(This) ->
     nice_this(binary_to_list(This));
 nice_this(This) when is_list(This) ->
-    list_to_binary(lists:flatten([string:titlecase(Word)
+    list_to_binary(lists:append([string:titlecase(Word)
                                   || Word <- string:replace(This, "_", " ", all)])).
 
 -spec long_this(These :: [This :: atom()]) -> Long :: binary().
