@@ -193,6 +193,8 @@ make_package()
 	    --provides 'xmpp-server' \
 	    --no-depends \
 	    --no-auto-depends \
+      --deb-recommends 'libjs-jquery' \
+      --deb-recommends 'libjs-bootstrap4' \
 	    --deb-maintainerscripts-force-errorchecks \
 	    --deb-systemd-enable \
 	    --deb-systemd-auto-start \

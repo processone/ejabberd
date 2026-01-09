@@ -33,7 +33,7 @@
 
 -export([start/2, stop/1, reload/3, stream_feature_register/2,
 	 c2s_unauthenticated_packet/2, try_register/4, try_register/5,
-	 process_iq/1, send_registration_notifications/3,
+	 try_register/6, process_iq/1, send_registration_notifications/3,
 	 mod_opt_type/1, mod_options/1, depends/2,
 	 format_error/1, mod_doc/0]).
 

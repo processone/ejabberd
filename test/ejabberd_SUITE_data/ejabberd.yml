@@ -68,6 +68,8 @@ access_rules:
     allow: local
   register:
     allow: all
+  account_invite:
+    allow: all
 
 acl:
   local:
@@ -96,6 +98,7 @@ listen:
       "/api": mod_http_api
       "/upload": mod_http_upload
       "/captcha": ejabberd_captcha
+      "/random/test/prefix/invites": mod_invites
   -
     port: STUN_PORT
     module: ejabberd_stun
