@@ -203,8 +203,7 @@ page(Config, Tail) ->
 
 adhoc_list_commands(Config) ->
     {ok, Result} = get_items(Config, <<"api-commands">>),
-    {value, #disco_item{name = <<"command_test_binary">>}} =
-        lists:keysearch(<<"command_test_binary">>, #disco_item.name, Result),
+    true = lists:keymember(<<"api-commands/command_test_binary">>, #disco_item.node, Result),
     suite:disconnect(Config).
 
 get_items(Config, Node) ->
