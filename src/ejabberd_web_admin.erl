@@ -2011,7 +2011,7 @@ nice_this(This, integer) ->
 nice_this(This, _Format) ->
     nice_this(This).
 
--spec nice_this(This :: atom() | string() | [byte()]) -> NiceThis :: binary().
+-spec nice_this(This :: atom() | string() | binary()) -> NiceThis :: binary().
 nice_this(This) when is_atom(This) ->
     nice_this(atom_to_list(This));
 nice_this(This) when is_binary(This) ->
