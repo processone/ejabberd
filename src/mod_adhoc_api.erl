@@ -292,7 +292,8 @@ get_api_commands(From, Server, Lang) ->
     ApiVersion = mod_adhoc_api_opt:default_version(Server),
     lists:map(fun({Name, _Args, _Desc}) ->
                  NameBin = list_to_binary(atom_to_list(Name)),
-                 ?NODE(NameBin, <<"api-commands/", NameBin/binary>>)
+                 NiceNameBin = ejabberd_web_admin:nice_this(NameBin),
+                 ?NODE(NiceNameBin, <<"api-commands/", NameBin/binary>>)
               end,
               ejabberd_commands:list_commands(ApiVersion, get_caller_info(From))).
 
@@ -395,7 +396,7 @@ get_ip_address(#jid{user = User,
 
 get_form_api_command(NameBin, Host, _Lang) ->
     Def = get_api_command(NameBin, Host),
-    Title = list_to_binary(atom_to_list(Def#ejabberd_commands.name)),
+    Title = ejabberd_web_admin:nice_this(Def#ejabberd_commands.name),
     Instructions = get_instructions(Def),
     FieldsArgs =
         build_fields(Def#ejabberd_commands.args,
@@ -448,7 +449,7 @@ build_node_fields(AtomNodes) ->
 set_form_api_command(From, Host, CommandNameBin, XData, _Lang) ->
     %% Description
     Def = get_api_command(CommandNameBin, Host),
-    Title = list_to_binary(atom_to_list(Def#ejabberd_commands.name)),
+    Title = ejabberd_web_admin:nice_this(Def#ejabberd_commands.name),
     Instructions = get_instructions(Def),
 
     %% Arguments
