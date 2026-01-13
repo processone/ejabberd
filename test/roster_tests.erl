@@ -35,7 +35,8 @@
 -record(state, {subscription = none :: none | from | to | both,
 		peer_available = false,
 		pending_in = false :: boolean(),
-		pending_out = false :: boolean()}).
+		pending_out = false :: boolean(),
+		approved = false :: boolean()}).
 
 %%%===================================================================
 %%% API
@@ -51,7 +52,7 @@ stop(_TestCase, Config) ->
 %%%===================================================================
 single_cases() ->
     {roster_single, [sequence],
-     [single_test(feature_enabled),
+     [single_test(features_enabled),
       single_test(iq_set_many_items),
       single_test(iq_set_duplicated_groups),
       single_test(iq_get_item),
@@ -60,9 +61,10 @@ single_cases() ->
       single_test(set_item),
       single_test(version)]}.
 
-feature_enabled(Config) ->
-    ct:comment("Checking if roster versioning stream feature is set"),
+features_enabled(Config) ->
+    ct:comment("Checking if roster stream feature (versioning and pre-approval) is set"),
     true = ?config(rosterver, Config),
+    true = ?config(pre_approval, Config),
     disconnect(Config).
 
 set_item(Config) ->
@@ -160,6 +162,7 @@ subscribe_slave(Config) ->
 
 process_subscriptions_master(Config, Actions) ->
     EnumeratedActions = lists:zip(lists:seq(1, length(Actions)), Actions),
+    ct:pal("actions: ~p", [EnumeratedActions]),
     self_presence(Config, available),
     Peer = ?config(peer, Config),
     lists:foldl(
@@ -265,10 +268,14 @@ recv_push(Config) ->
     {Ver, PushItem}.
 
 recv_push(Config, Subscription, Ask) ->
+    recv_push(Config, Subscription, Ask, false).
+
+recv_push(Config, Subscription, Ask, Approved) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
     Match = #roster_item{jid = PeerBareJID,
 			 subscription = Subscription,
+			 approved = Approved,
 			 ask = Ask,
 			 groups = [],
 			 name = <<"">>},
@@ -316,11 +323,12 @@ check_roster([], _Config, _State) ->
     ok;
 check_roster([Roster], _Config, State) ->
     case {Roster#roster.subscription == State#state.subscription,
+	  Roster#roster.approved == State#state.approved,
 	  Roster#roster.ask, State#state.pending_in, State#state.pending_out} of
-	{true, both, true, true} -> ok;
-	{true, in, true, false} -> ok;
-	{true, out, false, true} -> ok;
-	{true, none, false, false} -> ok;
+	{true, true, both, true, true} -> ok;
+	{true, true, in, true, false} -> ok;
+	{true, true, out, false, true} -> ok;
+	{true, true, none, false, false} -> ok;
 	_ ->
 	    ct:fail({roster_mismatch, State, Roster})
     end.
@@ -340,43 +348,50 @@ check_roster_item(Config, State) ->
 
 %% RFC6121, A.2.1
 transition(Id, Config, out, subscribe,
-	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
+	   #state{subscription = Sub, pending_in = In, pending_out = Out, approved = Approved} = State) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
+    {is_approved, PeerApproved} = get_event(Config),
     send(Config, #presence{id = Id, to = PeerBareJID, type = subscribe}),
-    case {Sub, Out, In} of
-	{none, false, _} ->
-	    recv_push(Config, none, subscribe),
+    case {Sub, Out, In, PeerApproved} of
+	{none, false, _, true} ->
+	    recv_push(Config, none, subscribe, Approved),
+	    recv_push(Config, to, undefined, Approved),
+	    recv_subscription(Config, subscribed),
+	    recv_presence(Config, available),
+	    State#state{subscription = to};
+	{none, false, _, false} ->
+	    recv_push(Config, none, subscribe, Approved),
 	    State#state{pending_out = true};
-	{none, true, false} ->
+	{none, true, false, false} ->
 	    %% BUG: we should not receive roster push here
-	    recv_push(Config, none, subscribe),
+	    recv_push(Config, none, subscribe, Approved),
 	    State;
-	{from, false, false} ->
-	    recv_push(Config, from, subscribe),
+	{from, false, false, false} ->
+	    recv_push(Config, from, subscribe, Approved),
 	    State#state{pending_out = true};
 	_ ->
 	    State
     end;
 %% RFC6121, A.2.2
 transition(Id, Config, out, unsubscribe,
-	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
+	   #state{subscription = Sub, pending_in = In, pending_out = Out, approved = Approved} = State) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
     send(Config, #presence{id = Id, to = PeerBareJID, type = unsubscribe}),
     case {Sub, Out, In} of
 	{none, true, _} ->
-	    recv_push(Config, none, undefined),
+	    recv_push(Config, none, undefined, Approved),
 	    State#state{pending_out = false};
 	{to, false, _} ->
-	    recv_push(Config, none, undefined),
+	    recv_push(Config, none, undefined, Approved),
 	    recv_presence(Config, unavailable),
 	    State#state{subscription = none, peer_available = false};
 	{from, true, false} ->
-	    recv_push(Config, from, undefined),
+	    recv_push(Config, from, undefined, Approved),
 	    State#state{pending_out = false};
 	{both, false, false} ->
-	    recv_push(Config, from, undefined),
+	    recv_push(Config, from, undefined, Approved),
 	    recv_presence(Config, unavailable),
 	    State#state{subscription = from, peer_available = false};
 	_ ->
@@ -390,59 +405,94 @@ transition(Id, Config, out, subscribed,
     send(Config, #presence{id = Id, to = PeerBareJID, type = subscribed}),
     case {Sub, Out, In} of
 	{none, false, true} ->
+	    put_event(Config, {is_approved, false}),
 	    recv_push(Config, from, undefined),
 	    State#state{subscription = from, pending_in = false};
 	{none, true, true} ->
+	    put_event(Config, {is_approved, false}),
 	    recv_push(Config, from, subscribe),
 	    State#state{subscription = from, pending_in = false};
 	{to, false, true} ->
-	    recv_push(Config, both, undefined),
-	    State#state{subscription = both, pending_in = false};
-	{to, false, _} ->
+	    put_event(Config, {is_approved, false}),
 	    %% BUG: we should not transition to 'both' state
 	    recv_push(Config, both, undefined),
-	    State#state{subscription = both};
+	    State#state{subscription = both, pending_in = false};
+	{to, false, false} ->
+	    put_event(Config, {is_approved, true}),
+	    recv_push(Config, to, undefined, true),
+	    State#state{approved = true};
+	{none, true, false} ->
+	    put_event(Config, {is_approved, true}),
+	    recv_push(Config, none, subscribe, true),
+	    State#state{approved = true};
+	{none, false, false} ->
+	    put_event(Config, {is_approved, true}),
+	    recv_push(Config, none, undefined, true),
+	    State#state{approved = true};
 	_ ->
+	    put_event(Config, {is_approved, false}),
 	    State
     end;
 %% RFC6121, A.2.4
 transition(Id, Config, out, unsubscribed,
-	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
+	   #state{subscription = Sub, pending_in = In, pending_out = Out, approved = Approved} = State) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
     send(Config, #presence{id = Id, to = PeerBareJID, type = unsubscribed}),
-    case {Sub, Out, In} of
-	{none, false, true} ->
-	    State#state{subscription = none, pending_in = false};
-	{none, true, true} ->
-	    recv_push(Config, none, subscribe),
-	    State#state{subscription = none, pending_in = false};
-	{to, _, true} ->
-	    State#state{pending_in = false};
-	{from, false, _} ->
+    case {Sub, Out, In, Approved} of
+	{none, false, true, true} ->
 	    recv_push(Config, none, undefined),
-	    State#state{subscription = none};
-	{from, true, _} ->
+	    State#state{subscription = none, pending_in = false, approved = false};
+	{none, false, true, false} ->
+	    State#state{subscription = none, pending_in = false, approved = false};
+	{none, true, true, _} ->
 	    recv_push(Config, none, subscribe),
-	    State#state{subscription = none};
-	{both, _, _} ->
+	    State#state{subscription = none, pending_in = false, approved = false};
+	{to, _, true, true} ->
 	    recv_push(Config, to, undefined),
-	    State#state{subscription = to};
+	    State#state{pending_in = false, approved = false};
+	{to, _, true, false} ->
+	    State#state{pending_in = false, approved = false};
+	{from, false, _, _} ->
+	    recv_push(Config, none, undefined),
+	    State#state{subscription = none, approved = false};
+	{from, true, _, _} ->
+	    recv_push(Config, none, subscribe),
+	    State#state{subscription = none, approved = false};
+	{both, _, _, _} ->
+	    recv_push(Config, to, undefined),
+	    State#state{subscription = to, approved = false};
+	{_, true, _, true} ->
+	    recv_push(Config, Sub, subscribe),
+	    State#state{approved = false};
+	{_, false, _, true} ->
+	    recv_push(Config, Sub, undefined),
+	    State#state{approved = false};
 	_ ->
-	    State
+	    State#state{approved = false}
     end;
 %% RFC6121, A.3.1
 transition(_, Config, in, subscribe = Type,
-	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
-    case {Sub, Out, In} of
-	{none, false, false} ->
+           #state{subscription = Sub, pending_in = In, pending_out = Out, approved = Approved} = State) ->
+    put_event(Config, {is_approved, Approved}),
+    case {Sub, Out, In, Approved} of
+	{to, false, false, true} ->
+	    recv_push(Config, both, undefined, true),
+	    State#state{subscription = both};
+	{none, true, false, true} ->
+	    recv_push(Config, from, subscribe, true),
+	    State#state{subscription = from};
+	{none, false, false, true} ->
+	    recv_push(Config, from, undefined, true),
+	    State#state{subscription = from};
+	{none, false, false, false} ->
 	    recv_subscription(Config, Type),
 	    State#state{pending_in = true};
-	{none, true, false} ->
+	{none, true, false, false} ->
 	    recv_push(Config, none, subscribe),
 	    recv_subscription(Config, Type),
 	    State#state{pending_in = true};
-	{to, false, false} ->
+	{to, false, false, false} ->
 	    %% BUG: we should not receive roster push in this state!
 	    recv_push(Config, to, undefined),
 	    recv_subscription(Config, Type),
@@ -452,24 +502,24 @@ transition(_, Config, in, subscribe = Type,
     end;
 %% RFC6121, A.3.2
 transition(_, Config, in, unsubscribe = Type,
-	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
+	   #state{subscription = Sub, pending_in = In, pending_out = Out, approved = Approved} = State) ->
     case {Sub, Out, In} of
 	{none, _, true} ->
 	    State#state{pending_in = false};
 	{to, _, true} ->
-	    recv_push(Config, to, undefined),
+	    recv_push(Config, to, undefined, Approved),
 	    recv_subscription(Config, Type),
 	    State#state{pending_in = false};
 	{from, false, _} ->
-	    recv_push(Config, none, undefined),
+	    recv_push(Config, none, undefined, Approved),
 	    recv_subscription(Config, Type),
 	    State#state{subscription = none};
 	{from, true, _} ->
-	    recv_push(Config, none, subscribe),
+	    recv_push(Config, none, subscribe, Approved),
 	    recv_subscription(Config, Type),
 	    State#state{subscription = none};
 	{both, _, _} ->
-	    recv_push(Config, to, undefined),
+	    recv_push(Config, to, undefined, Approved),
 	    recv_subscription(Config, Type),
 	    State#state{subscription = to};
 	_ ->
@@ -477,52 +527,58 @@ transition(_, Config, in, unsubscribe = Type,
     end;
 %% RFC6121, A.3.3
 transition(_, Config, in, subscribed = Type,
-	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
+	   #state{subscription = Sub, pending_in = In, pending_out = Out, approved = Approve} = State) ->
+    {is_approved, PeerApproved} = get_event(Config),
     case {Sub, Out, In} of
 	{none, true, _} ->
-	    recv_push(Config, to, undefined),
+	    recv_push(Config, to, undefined, Approve),
 	    recv_subscription(Config, Type),
 	    recv_presence(Config, available),
 	    State#state{subscription = to, pending_out = false, peer_available = true};
 	{from, true, _} ->
-	    recv_push(Config, both, undefined),
+	    recv_push(Config, both, undefined, Approve),
 	    recv_subscription(Config, Type),
 	    recv_presence(Config, available),
 	    State#state{subscription = both, pending_out = false, peer_available = true};
 	{from, false, _} ->
-	    %% BUG: we should not transition to 'both' in this state
-	    recv_push(Config, both, undefined),
-	    recv_subscription(Config, Type),
-	    recv_presence(Config, available),
-	    State#state{subscription = both, pending_out = false, peer_available = true};
+	    case PeerApproved of
+		false ->
+		    %% BUG: we should not transition to 'both' in this state
+		    recv_push(Config, both, undefined, Approve),
+		    recv_subscription(Config, Type),
+		    recv_presence(Config, available),
+		    State#state{subscription = both, pending_out = false, peer_available = true};
+		true ->
+		    State
+	    end;
 	_ ->
 	    State
     end;
 %% RFC6121, A.3.4
 transition(_, Config, in, unsubscribed = Type,
-	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
+	   #state{subscription = Sub, pending_in = In, pending_out = Out, approved = Approved} = State) ->
     case {Sub, Out, In} of
 	{none, true, true} ->
 	    %% BUG: we should receive roster push in this state!
 	    recv_subscription(Config, Type),
 	    State#state{subscription = none, pending_out = false};
 	{none, true, false} ->
-	    recv_push(Config, none, undefined),
+	    recv_push(Config, none, undefined, Approved),
 	    recv_subscription(Config, Type),
 	    State#state{subscription = none, pending_out = false};
 	{none, false, false} ->
 	    State;
 	{to, false, _} ->
-	    recv_push(Config, none, undefined),
+	    recv_push(Config, none, undefined, Approved),
 	    recv_presence(Config, unavailable),
 	    recv_subscription(Config, Type),
 	    State#state{subscription = none, peer_available = false};
 	{from, true, false} ->
-	    recv_push(Config, from, undefined),
+	    recv_push(Config, from, undefined, Approved),
 	    recv_subscription(Config, Type),
 	    State#state{subscription = from, pending_out = false};
 	{both, _, _} ->
-	    recv_push(Config, from, undefined),
+	    recv_push(Config, from, undefined, Approved),
 	    recv_presence(Config, unavailable),
 	    recv_subscription(Config, Type),
 	    State#state{subscription = from, peer_available = false};
@@ -550,15 +606,15 @@ transition(Id, Config, out, remove,
     #state{};
 %% Incoming roster remove
 transition(_, Config, in, remove,
-	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
+	   #state{subscription = Sub, pending_in = In, pending_out = Out, approved = Approved} = State) ->
     case {Sub, Out, In} of
 	{none, true, _} ->
 	    ok;
 	{from, false, _} ->
-	    recv_push(Config, none, undefined),
+	    recv_push(Config, none, undefined, Approved),
 	    recv_subscription(Config, unsubscribe);
 	{from, true, _} ->
-	    recv_push(Config, none, subscribe),
+	    recv_push(Config, none, subscribe, Approved),
 	    recv_subscription(Config, unsubscribe);
 	{to, false, _} ->
 	    %% BUG: we should receive push here
@@ -567,9 +623,9 @@ transition(_, Config, in, remove,
 	    recv_subscription(Config, unsubscribed);
 	{both, _, _} ->
 	    recv_presence(Config, unavailable),
-	    recv_push(Config, to, undefined),
+	    recv_push(Config, to, undefined, Approved),
 	    recv_subscription(Config, unsubscribe),
-	    recv_push(Config, none, undefined),
+	    recv_push(Config, none, undefined, Approved),
 	    recv_subscription(Config, unsubscribed);
 	_ ->
 	    ok
