@@ -676,7 +676,7 @@ muc_online_rooms(ServiceArg) ->
 	      [<<Name/binary, "@", Host/binary>>
 	       || {Name, _, _} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
-	
+
 muc_online_rooms_count(ServiceArg) ->
     Hosts = find_services_validate(ServiceArg, <<"serverhost">>),
     lists:foldl(
