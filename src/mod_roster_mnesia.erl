@@ -133,6 +133,18 @@ need_transform({roster_version, {U, S}, Ver})
 need_transform(_) ->
     false.
 
+transform({roster, USJ, US, Jid, Name, Sub, Ask, Groups, AskMsg, XS}) ->
+    %% 'approved' missing - defaults to false.
+    #roster{
+       us = US,
+       usj = USJ,
+       jid = Jid,
+       name = Name,
+       subscription = Sub,
+       ask = Ask,
+       groups = Groups,
+       askmessage = AskMsg,
+       xs = XS};
 transform(#roster{usj = {U, S, {LU, LS, LR}},
 		  us = {U1, S1},
 		  jid = {U2, S2, R2},

@@ -324,6 +324,7 @@ CREATE TABLE [dbo].[rosterusers] (
         [jid] [varchar] (250) NOT NULL,
         [nick] [text] NOT NULL,
         [subscription] [char] (1) NOT NULL,
+        [approved] [smallint] NOT NULL,
         [ask] [char] (1) NOT NULL,
         [askmessage] [text] NOT NULL,
         [server] [char] (1) NOT NULL,

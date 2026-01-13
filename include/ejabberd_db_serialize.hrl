@@ -44,6 +44,7 @@
 		 binary(),
 		 [binary()],
 		 both | from | to | none,
+		 boolean(),
 		 subscribe | unsubscribe | both | in | out | none,
 		 binary()}]
 }).
