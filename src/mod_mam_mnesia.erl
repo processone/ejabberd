@@ -431,7 +431,7 @@ deserialize(LServer, Batch) ->
 	lists:foldl(
 	    fun(_, {error, _} = Err) ->
 		Err;
-	       (  #serialize_mam_v1{
+	       (#serialize_mam_v1{
 		   username = LUser,
 		   timestamp = TS,
 		   peer = Peer,
