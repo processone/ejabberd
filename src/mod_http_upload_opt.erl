@@ -4,6 +4,7 @@
 -module(mod_http_upload_opt).
 
 -export([access/1]).
+-export([content_types/1]).
 -export([custom_headers/1]).
 -export([dir_mode/1]).
 -export([docroot/1]).
@@ -27,6 +28,12 @@ access(Opts) when is_map(Opts) ->
     gen_mod:get_opt(access, Opts);
 access(Host) ->
     gen_mod:get_module_opt(Host, mod_http_upload, access).
+
+-spec content_types(gen_mod:opts() | global | binary()) -> [{binary(),binary()}].
+content_types(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(content_types, Opts);
+content_types(Host) ->
+    gen_mod:get_module_opt(Host, mod_http_upload, content_types).
 
 -spec custom_headers(gen_mod:opts() | global | binary()) -> [{binary(),binary()}].
 custom_headers(Opts) when is_map(Opts) ->

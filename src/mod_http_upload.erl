@@ -33,30 +33,6 @@
 -define(CALL_TIMEOUT, 60000). % 1 minute.
 -define(SLOT_TIMEOUT, timer:hours(5)).
 -define(DEFAULT_CONTENT_TYPE, <<"application/octet-stream">>).
--define(CONTENT_TYPES,
-	[{<<".avi">>, <<"video/avi">>},
-	 {<<".bmp">>, <<"image/bmp">>},
-	 {<<".bz2">>, <<"application/x-bzip2">>},
-	 {<<".gif">>, <<"image/gif">>},
-	 {<<".gz">>, <<"application/x-gzip">>},
-	 {<<".jpeg">>, <<"image/jpeg">>},
-	 {<<".jpg">>, <<"image/jpeg">>},
-	 {<<".m4a">>, <<"audio/mp4">>},
-	 {<<".mp3">>, <<"audio/mpeg">>},
-	 {<<".mp4">>, <<"video/mp4">>},
-	 {<<".mpeg">>, <<"video/mpeg">>},
-	 {<<".mpg">>, <<"video/mpeg">>},
-	 {<<".ogg">>, <<"application/ogg">>},
-	 {<<".pdf">>, <<"application/pdf">>},
-	 {<<".png">>, <<"image/png">>},
-	 {<<".rtf">>, <<"application/rtf">>},
-	 {<<".svg">>, <<"image/svg+xml">>},
-	 {<<".tiff">>, <<"image/tiff">>},
-	 {<<".txt">>, <<"text/plain">>},
-	 {<<".wav">>, <<"audio/wav">>},
-	 {<<".webp">>, <<"image/webp">>},
-	 {<<".xz">>, <<"application/x-xz">>},
-	 {<<".zip">>, <<"application/zip">>}]).
 
 %% gen_mod/supervisor callbacks.
 -export([start/2,
@@ -178,6 +154,8 @@ mod_opt_type(get_url) ->
     econf:url();
 mod_opt_type(service_url) ->
     econf:url();
+mod_opt_type(content_types) ->
+    econf:map(econf:binary(), econf:binary());
 mod_opt_type(custom_headers) ->
     econf:map(econf:binary(), econf:binary());
 mod_opt_type(rm_on_unregister) ->
@@ -220,6 +198,7 @@ mod_options(Host) ->
      {get_url, undefined},
      {service_url, undefined},
      {external_secret, <<"">>},
+     {content_types, []},
      {custom_headers, []},
      {rm_on_unregister, true},
      {thumbnail, false}].
@@ -235,6 +214,7 @@ mod_doc() ->
            ?T("In order to use this module, it must be enabled "
               "in 'listen' -> 'ejabberd_http' -> "
               "_`listen-options.md#request_handlers|request_handlers`_.")],
+      note => "added 'content_types' in 26.xx",
       opts =>
           [{host,
             #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
@@ -338,6 +318,12 @@ mod_doc() ->
                      "is used to serve the uploaded files.")}},
            {service_url,
             #{desc => ?T("Deprecated.")}},
+           {content_types,
+            #{value => "{Extension: Type}",
+              note => "added in 26.xx",
+              desc =>
+                  ?T("Specify mappings of extension to content type, similarly to "
+                     "the option `content_types` of _`mod_http_fileserver`_.")}},
            {custom_headers,
             #{value => "{Name: Value}",
               desc =>
@@ -586,7 +572,7 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request0)
 		{ok, Fd} ->
 		    file:close(Fd),
 		    ?INFO_MSG("Serving ~ts to ~ts", [Path, encode_addr(IP)]),
-		    ContentType = guess_content_type(FileName),
+		    ContentType = get_content_type(Host, FileName),
 		    Headers1 = case ContentType of
 				 <<"image/", _SubType/binary>> -> [];
 				 <<"text/", _SubType/binary>> -> [];
@@ -1064,11 +1050,13 @@ do_store_file(Path, Request, FileMode, DirMode) ->
 	    {error, Error}
     end.
 
--spec guess_content_type(binary()) -> binary().
-guess_content_type(FileName) ->
+-spec get_content_type(binary(), binary()) -> binary().
+get_content_type(Host, FileName) ->
+    OptionCTs = mod_http_upload_opt:content_types(Host),
+    ContentTypes = mod_http_fileserver:build_list_content_types(OptionCTs),
     mod_http_fileserver:content_type(FileName,
 				     ?DEFAULT_CONTENT_TYPE,
-				     ?CONTENT_TYPES).
+				     ContentTypes).
 
 -spec http_response(100..599)
       -> {pos_integer(), [{binary(), binary()}], binary()}.
