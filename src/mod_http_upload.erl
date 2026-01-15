@@ -434,8 +434,9 @@ handle_call({use_slot, Slot, Size}, _From,
     end;
 handle_call(get_conf, _From,
 	    #state{docroot = DocRoot,
+	           server_host = ServerHost,
 	           custom_headers = CustomHeaders} = State) ->
-    {reply, {ok, DocRoot, CustomHeaders}, State};
+    {reply, {ok, DocRoot, ServerHost, CustomHeaders}, State};
 handle_call(Request, From, State) ->
     ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
@@ -566,13 +567,13 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request0)
     Request = Request0#request{host = redecode_url(Host)},
     {Proc, [_UserDir, _RandDir, FileName] = Slot} = parse_http_request(Request),
     try gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
-	{ok, DocRoot, CustomHeaders} ->
+	{ok, DocRoot, ServerHost, CustomHeaders} ->
 	    Path = str:join([DocRoot | Slot], <<$/>>),
 	    case file:open(Path, [read]) of
 		{ok, Fd} ->
 		    file:close(Fd),
 		    ?INFO_MSG("Serving ~ts to ~ts", [Path, encode_addr(IP)]),
-		    ContentType = get_content_type(Host, FileName),
+		    ContentType = get_content_type(ServerHost, FileName),
 		    Headers1 = case ContentType of
 				 <<"image/", _SubType/binary>> -> [];
 				 <<"text/", _SubType/binary>> -> [];
@@ -618,7 +619,7 @@ process(_LocalPath, #request{method = 'OPTIONS', host = Host,
 	   [encode_addr(IP), Host]),
     {Proc, _Slot} = parse_http_request(Request),
     try gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
-	{ok, _DocRoot, CustomHeaders} ->
+	{ok, _DocRoot, _ServerHost, CustomHeaders} ->
 	    AllowHeader = {<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>},
 	    http_response(200, ejabberd_http:apply_custom_headers([AllowHeader], CustomHeaders))
     catch
