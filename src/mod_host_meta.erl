@@ -175,7 +175,7 @@ mod_doc() ->
            "    tls: true",
            "    request_handlers:",
            "      /bosh: mod_bosh",
-           "      /ws: ejabberd_http_ws",
+           "      /websocket: ejabberd_http_ws",
            "      /.well-known/host-meta: mod_host_meta",
            "      /.well-known/host-meta.json: mod_host_meta",
            "",
@@ -183,7 +183,7 @@ mod_doc() ->
            "  mod_bosh: {}",
            "  mod_host_meta:",
            "    bosh_service_url: \"https://@HOST@:5443/bosh\"",
-           "    websocket_url: \"wss://@HOST@:5443/ws\""],
+           "    websocket_url: \"wss://@HOST@:5443/websocket\""],
 
       opts =>
           [{websocket_url,

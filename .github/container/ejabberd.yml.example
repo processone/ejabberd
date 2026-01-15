@@ -78,7 +78,7 @@ listen:
       /bosh: mod_bosh
       /captcha: ejabberd_captcha
       /upload: mod_http_upload
-      /ws: ejabberd_http_ws
+      /websocket: ejabberd_http_ws
   -
     port: PORT_HTTP
     ip: "::"
