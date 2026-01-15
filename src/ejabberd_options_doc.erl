@@ -1242,6 +1242,13 @@ doc() ->
                "uses old Jabber Non-SASL authentication (XEP-0078), "
                "then this option is not respected, and the action performed "
                "is 'closeold'.")}},
+     {replaced_connection_timeout,
+      #{value => "timeout()",
+        note => "added in 26.01",
+        desc => ?T("Maximum time that new session will wait for termination of "
+                   "session that it's replacing. This allows old session to "
+                   "properly sends its unavailable presences, and helps with "
+                   "potetnial race conditions between old and new sessions presences.")}},
      {rest_proxy,
       #{value => "Host",
         note => "added in 25.07",

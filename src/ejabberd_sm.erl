@@ -476,12 +476,15 @@ c2s_handle_info(#{lang := Lang} = State, replaced) ->
     Err = xmpp:serr_conflict(?T("Replaced by new connection"), Lang),
     {stop, ejabberd_c2s:send(State1, Err)};
 c2s_handle_info(#{lang := Lang, bind2_session_id := {Tag, _}} = State,
-		{replaced_with_bind_tag, Bind2Tag}) when Tag == Bind2Tag ->
+		{replaced_with_bind_tag, Bind2Tag, _From}) when Tag == Bind2Tag ->
     State1 = State#{replaced => true},
     Err = xmpp:serr_conflict(?T("Replaced by new connection"), Lang),
     {stop, ejabberd_c2s:send(State1, Err)};
-c2s_handle_info(State, {replaced_with_bind_tag, _}) ->
-    State;
+c2s_handle_info(State, {replaced_with_bind_tag, _, From}) ->
+    From ! {not_replaced_with_bind_tag, self()},
+    {stop, State};
+c2s_handle_info(State, {not_replaced_with_bind_tag, _}) ->
+    {stop, State};
 c2s_handle_info(#{lang := Lang, jid := JID} = State, kick) ->
     Err = xmpp:serr_policy_violation(?T("has been kicked"), Lang),
     ejabberd_hooks:run(sm_kick_user, JID#jid.lserver,
@@ -872,29 +875,79 @@ check_for_sessions_to_replace(User, Server, Resource, Bind2Tag) ->
 check_existing_resources(LUser, LServer, LResource, undefined) ->
     Mod = get_sm_backend(LServer),
     Ss = get_sessions(Mod, LUser, LServer, LResource),
+    ReplaceTimeout = ejabberd_option:replaced_connection_timeout(LServer),
     if Ss == [] -> ok;
-       true ->
-	   SIDs = [SID || #session{sid = SID} <- Ss],
-	   MaxSID = lists:max(SIDs),
-	   lists:foreach(fun ({_, Pid} = S) when S /= MaxSID ->
-				 ejabberd_c2s:route(Pid, replaced);
-			     (_) -> ok
-			 end,
-			 SIDs)
+	true ->
+	    SIDs = [SID || #session{sid = SID} <- Ss],
+	    MaxSID = lists:max(SIDs),
+	    List = lists:filtermap(
+		fun({_, Pid} = S) when S /= MaxSID ->
+		    case ReplaceTimeout > 0 of
+			true ->
+			    Monitor = monitor(process, Pid),
+			    ejabberd_c2s:route(Pid, replaced),
+			    {true, {Pid, Monitor}};
+			false ->
+			    ejabberd_c2s:route(Pid, replaced),
+			    false
+		    end;
+		   (_) -> false
+		end, SIDs),
+	    wait_for_replaced_termination(List, os:system_time(millisecond) + ReplaceTimeout)
     end;
 check_existing_resources(LUser, LServer, LResource, {Tag, Hash}) ->
     Mod = get_sm_backend(LServer),
     Ss = get_sessions(Mod, LUser, LServer),
-    lists:foreach(
+    ReplaceTimeout = ejabberd_option:replaced_connection_timeout(LServer),
+    List = lists:filtermap(
 	fun(#session{sid = {_, Pid}, usr = {_, _, Res}})
 	       when Pid /= self(), Res == LResource ->
-	       ejabberd_c2s:route(Pid, replaced);
+	    case ReplaceTimeout > 0 of
+		true ->
+		    Monitor = monitor(process, Pid),
+		    ejabberd_c2s:route(Pid, replaced),
+		    {true, {Pid, Monitor}};
+		false ->
+		    ejabberd_c2s:route(Pid, replaced),
+		    false
+	    end;
 	   (#session{sid = {_, Pid}, usr = {_, _, Res}})
 	       when Pid /= self(), binary_part(Res, size(Res), -size(Hash)) == Hash ->
-	       ejabberd_c2s:route(Pid, {replaced_with_bind_tag, Tag});
+	       case ReplaceTimeout > 0 of
+		   true ->
+		       Monitor = monitor(process, Pid),
+		       ejabberd_c2s:route(Pid, {replaced_with_bind_tag, Tag, self()}),
+		       {true, {Pid, Monitor}};
+		   false ->
+		       ejabberd_c2s:route(Pid, {replaced_with_bind_tag, Tag, self()}),
+		       false
+	       end;
 	   (_) ->
-	       ok
-	end, Ss).
+	       false
+	end, Ss),
+    wait_for_replaced_termination(List, os:system_time(millisecond) + ReplaceTimeout).
+
+wait_for_replaced_termination([], _) ->
+    ok;
+wait_for_replaced_termination(Processes, Deadline) ->
+    Timeout = max(0, Deadline - os:system_time(millisecond)),
+    receive
+	{not_replaced_with_bind_tag, Pid} ->
+	    case lists:keytake(Pid, 1, Processes) of
+		{value, {_, Monitor}, Rest} ->
+		    demonitor(Monitor),
+		    wait_for_replaced_termination(Rest, Deadline);
+		false ->
+		    wait_for_replaced_termination(Processes, Deadline)
+	    end;
+	{'DOWN', _Monitor, process, Pid, _Info} ->
+	    wait_for_replaced_termination(lists:keydelete(Pid, 1, Processes), Deadline)
+    after Timeout ->
+	lists:foreach(
+	    fun({_, Monitor}) ->
+		demonitor(Monitor)
+	    end, Processes)
+    end.
 
 -spec is_existing_resource(binary(), binary(), binary()) -> boolean().
 

@@ -119,6 +119,7 @@
 -export([redis_queue_type/0]).
 -export([redis_server/0]).
 -export([registration_timeout/0]).
+-export([replaced_connection_timeout/0, replaced_connection_timeout/1]).
 -export([resource_conflict/0, resource_conflict/1]).
 -export([rest_proxy/0, rest_proxy/1]).
 -export([rest_proxy_password/0, rest_proxy_password/1]).
@@ -838,6 +839,13 @@ redis_server() ->
 -spec registration_timeout() -> 'infinity' | pos_integer().
 registration_timeout() ->
     ejabberd_config:get_option({registration_timeout, global}).
+
+-spec replaced_connection_timeout() -> 'infinity' | pos_integer().
+replaced_connection_timeout() ->
+    replaced_connection_timeout(global).
+-spec replaced_connection_timeout(global | binary()) -> 'infinity' | pos_integer().
+replaced_connection_timeout(Host) ->
+    ejabberd_config:get_option({replaced_connection_timeout, Host}).
 
 -spec resource_conflict() -> 'acceptnew' | 'closenew' | 'closeold' | 'setresource'.
 resource_conflict() ->
