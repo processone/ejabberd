@@ -110,11 +110,11 @@
 %%====================================================================
 
 start(Host, Opts) ->
-    ejabberd_hooks:add(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 896),
+    ejabberd_hooks:add(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 1000-$f),
     gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    ejabberd_hooks:delete(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 896),
+    ejabberd_hooks:delete(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 1000-$f),
     gen_mod:stop_child(?MODULE, Host).
 
 reload(Host, NewOpts, OldOpts) ->
@@ -513,7 +513,7 @@ ip_to_string(Address) when size(Address) == 8 ->
 %%----------------------------------------------------------------------
 
 web_menu_system(Result, _Request, _Level) ->
-    Els = ejabberd_web_admin:make_menu_system(?MODULE, "📁", "HTTP Fileserver: {URLPATH}", ""),
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "📁", "Fileserver: {URLPATH}", ""),
     Els ++ Result.
 
 %%----------------------------------------------------------------------
