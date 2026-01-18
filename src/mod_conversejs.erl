@@ -126,10 +126,13 @@ is_served_file([<<"converse.min.css">>]) -> true;
 is_served_file([<<"converse.min.js.map">>]) -> true;
 is_served_file([<<"converse.min.css.map">>]) -> true;
 is_served_file([<<"emojis.js">>]) -> true;
+is_served_file([<<"emoji.json">>]) -> true;
 is_served_file([<<"locales">>, _]) -> true;
 is_served_file([<<"locales">>, <<"dayjs">>, _]) -> true;
 is_served_file([<<"webfonts">>, _]) -> true;
 is_served_file([<<"plugins">>, _]) -> true;
+is_served_file([<<"sounds">>, _]) -> true;
+is_served_file([<<"images">>| _]) -> true;
 is_served_file(_) -> false.
 
 serve(Host, LocalPath) ->
@@ -174,7 +177,13 @@ content_type(Filename) ->
         ".map"  -> "application/json";
         ".ttf"  -> "font/ttf";
         ".woff"  -> "font/woff";
-        ".woff2"  -> "font/woff2"
+        ".woff2" -> "font/woff2";
+        ".mp3"   -> "audio/mpeg";
+        ".ogg"   -> "audio/ogg";
+        ".png"   -> "image/png";
+        ".svg"   -> "image/svg+xml";
+        ".ico"   -> "image/vnd.microsoft.icon";
+        ".json"  -> "application/json"
     end.
 
 %%----------------------------------------------------------------------
