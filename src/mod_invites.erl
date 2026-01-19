@@ -26,9 +26,9 @@
 
 -author('stefan@strigler.de').
 
--xep({xep, 379, '0.3.3'}).
--xep({xep, 401, '0.5.0'}).
--xep({xep, 445, '0.2.0'}).
+-protocol({xep, 379, '0.3.3', '26.01', "complete", ""}).
+-protocol({xep, 401, '0.5.0', '26.01', "complete", ""}).
+-protocol({xep, 445, '0.2.0', '26.01', "complete", ""}).
 
 -behaviour(gen_mod).
 
