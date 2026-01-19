@@ -99,23 +99,50 @@ mod_doc() ->
           [?T("Allow User Invitation and Account Creation to create out-of-band "
              "links to onboard others onto the XMPP network and establish "
              "a mutual subscription."), "",
-           ?T("These invitations are created as XMPP URIs either via ejabberdctl or in-band via ad-hoc commands, are then meant to be sent out-of-band and require a client to be installed on the receiving end that supports those. Since this has proven to be a common obstacle for easy adoption, this module comes with an optional landing page parameter, that can either be some external service like an installation of https://github.com/modernxmpp/easy-xmpp-invitation[easy-xmpp-invitation], a third-party service like https://invite.joinjabber.org[JoinJabber] or for convenience a built-in service. This landing page will then guide the recipient with setting up a client and creating an account if required."), "",
+           ?T("These invitations are created as XMPP URIs either via ad-hoc "
+              "commands or via API commands (like _`generate_invite`_ API and "
+              " _`generate_invite_with_username`_ API), are then meant to be "
+              "sent out-of-band."), "",
+           ?T("The receiving user should have installed a client that supports "
+              "those invitations. Since this has proven to be a common obstacle "
+              "for easy adoption, this module comes with an optional landing "
+              "page parameter, that can either be some external service like an "
+              "installation of "
+              "https://github.com/modernxmpp/easy-xmpp-invitation[easy-xmpp-invitation], "
+              "a third-party service like "
+              "https://invite.joinjabber.org[JoinJabber] "
+              "or for convenience a built-in service. This landing page will "
+              "then guide the recipient with setting up a client "
+              "and creating an account if required."), "",
            ?T("In order to use the included landing page feature, you have to"), "",
-           ?T(" * have a copy of https://jquery.com[jQuery] and https://getbootstrap.com/docs/4.6/getting-started/introduction/[Bootstrap4] in a shared directory on your system. If you're using Debian or derivatives this is easiest accomplished by installing both `libjs-jquery` and `libjs-bootstrap4` which will put them under `/usr/share/javascript/{jquery,bootstrap4}`,"),
-           ?T(" * in `ejabberd.yml` configure a listener for module `ejabberd_http` with a request handler for `/share: mod_http_fileserver`,"),
-           ?T(" * in the `modules` section configure `mod_http_fileserver` so that `docroot` points to the shared directory from above (e.g. `docroot: /usr/share/javascript`),"),
-           ?T(" * configure `mod_invites` and set `landing_page` to either `auto` or an URL template like `https://{{ host }}/invites/{{ invite.token }}` if your server setup includes a so called reverse proxy."), "",
-           "If you'd rather want to use an external service set `landing_page` to something like `http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}` or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`."
+           ?T(" * have a copy of https://jquery.com[jQuery] and "
+              "   https://getbootstrap.com/docs/4.6/getting-started/introduction/[Bootstrap4] "
+              "   in a shared directory on your system. If you're using Debian or "
+              "   derivatives this is easiest accomplished by installing both "
+              "   `libjs-jquery` and `libjs-bootstrap4` which will put them under "
+              "   `/usr/share/javascript/{jquery,bootstrap4}`"),
+           ?T(" * in `ejabberd.yml` configure a listener for module `ejabberd_http` "
+              "   with a request handler for `/share: mod_http_fileserver`"),
+           ?T(" * in the `modules` section configure `mod_http_fileserver` so that "
+              "   `docroot` points to the shared directory from above "
+              "   (e.g. `docroot: /usr/share/javascript`)"),
+           ?T(" * configure `mod_invites` and set `landing_page` to either `auto` "
+              "   or an URL template like `https://{{ host }}/invites/{{ invite.token }}` "
+              "   if your server setup includes a so called reverse proxy"), "",
+           "If you'd rather want to use an external service, set `landing_page` "
+           "to something like "
+           "`http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}` "
+           "or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`."
           ],
       opts =>
           [{access_create_account,
             #{value => ?T("Access Rule Name"),
               desc =>
                   ?T("This is the name of an access rule that specifies who is allowed to create "
-                     "`create account` invites. The default value is `none`, i.e. nobody is able to"
+                     "invites of `create account`. The default value is `none`, i.e. nobody is able to"
                      " create such invites. Furthermore it applies to 'roster invites' and allows "
-                     "to do in-band registration (ibr) if the sending user is allowed by this rule. "
-                     "Users from the `admin` ACL are always allowed to create account invites."),
+                     "to do in-band registration (IBR) if the sending user is allowed by this rule. "
+                     "Users from the `admin` ACL are always allowed to create those invites."),
               example => ["mod_invites:", "  access_create_account: local"]}},
            {db_type,
             #{value => "mnesia | sql",
@@ -125,27 +152,41 @@ mod_doc() ->
            {landing_page,
             #{value => "none | auto | LandingPageURLTemplate",
               desc =>
-                  ?T("Whether or not to use a landing page for the invites that are being created. If using a template URL this can be either be external or internal. Template variables include `host`, `invite.token` and `invite.uri`, there are also filters defined, most notably `strip_protocol`. Here's an example: `http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}`. For convenience you can choose `auto` here and the `ejabberd_http` handler for `mod_invites` will  be used to create the landing page URL. Default is `none`.")}},
+                  ?T("Whether or not to use a landing page for the invites that "
+                     "are being created. If using a template URL this can be "
+                     "either be external or internal. Template variables include "
+                     "`host`, `invite.token` and `invite.uri`, there are also "
+                     "filters defined, most notably `strip_protocol`. Here's an example: "
+                     "`http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}`. "
+                     "For convenience you can choose `auto` here and the "
+                     "`ejabberd_http` handler for `mod_invites` will  be used to "
+                     "construct the landing page URL. Default is `none`.")}},
            {max_invites,
             #{value => "pos_integer() | infinity",
               desc =>
                   ?T("Maximum number of 'create account' invites that can be created "
-                     "by an individual user. Users that match the `admin` acl are "
+                     "by an individual user. Users that match the `admin` ACL are "
                      "exempt from this limitation. Furthermore it restricts the use of "
-                     "`roster invites` for account creation. Default is `infinity`")}},
+                     "`roster invites` for account creation. Default is `infinity`.")}},
            {site_name,
             #{value => ?T("Site Name"),
               desc =>
-                  ?T("A human readable name for your site. E.g. \"My Beautiful Laundrette\". Used in landing page templates.")}},
+                  ?T("A human readable name for your site. E.g. `\"My Beautiful Laundrette\"`. "
+                     "Used in landing page templates.")}},
            {templates_dir,
             #{value => ?T("binary()"),
               desc =>
-                  ?T("The directory containing templates and static files used for landing page and web registration form. Only needs to be set if you want to ship your own set of templates or list of recommended apps.")}},
+                  ?T("The directory containing templates and static files used "
+                     "for landing page and web registration form. Only needs to "
+                     "be set if you want to ship your own set of templates or "
+                     "list of recommended apps.")}},
            {token_expire_seconds,
             #{value => "pos_integer()",
-              desc => ?T("Number of seconds until token expires (e.g.: `5 * 86400` [default])")}}],
+              desc => ?T("Number of seconds until token expires. Default value "
+                         "is `432000` (that is five days: `5 * 24 * 60 * 60`)")}}],
       example =>
-          [{?T("Basic configuration with landing page but without creating accounts, just roster invites:"),
+          [{?T("Basic configuration with landing page but without creating "
+               "accounts, just roster invites:"),
             ["listen: ",
              "  -",
              "    port: 5281",
@@ -156,10 +197,11 @@ mod_doc() ->
              "# [...]",
              "modules:",
              "  mod_http_fileserver:",
-             "      docroot: /usr/share/javascript",
+             "    docroot: /usr/share/javascript",
              "  mod_invites:",
-             "      landing_page: auto"]},
-           {?T("To allow only admin users to create 'create account' invites and disable regular in-band registration, you would have a config like this:"),
+             "    landing_page: auto"]},
+           {?T("To allow only admin users to create invites of 'create account' and "
+               "disable regular in-band registration, you would have a config like this:"),
             ["acl:",
              "  admin:",
              "    - user: \"my_admin_user@example.com\"",
