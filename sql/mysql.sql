@@ -477,9 +477,9 @@ CREATE TABLE mqtt_pub (
 CREATE TABLE invite_token (
     token text NOT NULL,
     username text NOT NULL,
-    invitee text NOT NULL DEFAULT (''),
+    invitee varchar(191) NOT NULL DEFAULT '',
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expires timestamp NOT NULL,
+    expires timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     type character(1) NOT NULL,
     account_name text NOT NULL,
     PRIMARY KEY (token(191))

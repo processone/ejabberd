@@ -463,7 +463,7 @@ CREATE TABLE invite_token (
     username text NOT NULL,
     invitee text NOT NULL DEFAULT '',
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expires timestamp NOT NULL,
+    expires timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     type character(1) NOT NULL,
     account_name text NOT NULL,
     PRIMARY KEY (token)
