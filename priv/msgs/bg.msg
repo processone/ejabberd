@@ -15,7 +15,6 @@
 {"Access model","Модел на достъп"}.
 {"Account doesn't exist","Профилът не съществува"}.
 {"Action on user","Действие върху потребител"}.
-{"Add a hat to a user","Добави шапка към потребител"}.
 {"Add User","Добави потребител"}.
 {"Administration of ","Администриране на "}.
 {"Administration","Администриране"}.
@@ -46,8 +45,11 @@
 {"Anyone with a presence subscription of both or from may subscribe and retrieve items","Всеки, който има абонамент за присъствие на двете или от: може да се абонира и да извлича елементи"}.
 {"Anyone with Voice","Всеки, с възможност за гласово обаждане"}.
 {"Anyone","Всеки"}.
+{"API Commands","API Команди"}.
 {"April","Април"}.
-{"Attribute 'channel' is required for this request","Атрибутът 'канал' е задължителен за тази заявка"}.
+{"Arguments","Аргументи"}.
+{"Assign a hat to a user","Присвои шапка към потребител"}.
+{"Attribute 'channel' is required for this request","Изисква се атрибут 'канал' за тази заявка"}.
 {"Attribute 'id' is mandatory for MIX messages","Атрибутът 'id' е задължителен за MIX съобщения"}.
 {"Attribute 'jid' is not allowed here","Атрибутът 'jid' не е разрешен тук"}.
 {"Attribute 'node' is not allowed here","Атрибутът 'нод' не е разрешен тук"}.
@@ -86,12 +88,15 @@
 {"Choose whether to approve this entity's subscription.","Изберете дали да одобрите абонамента на този субект."}.
 {"City","Град"}.
 {"Client acknowledged more stanzas than sent by server","Клиентът потвърди повече строфи от изпратените от сървъра"}.
+{"Clustering","Клъстеризация"}.
 {"Commands","Команди"}.
 {"Conference room does not exist","Конферентната стая не съществува"}.
 {"Configuration of room ~s","Конфигурация на стая ~s"}.
 {"Configuration","Конфигурация"}.
 {"Contact Addresses (normally, room owner or owners)","Адреси за контакт (обикновено собственик или собственици на стая)"}.
+{"Contacts","Контакти"}.
 {"Country","Държава"}.
+{"Create a Hat","Създай Шапка"}.
 {"Current Discussion Topic","Текуща тема на дискусита"}.
 {"Database failure","Грешка в базата данни"}.
 {"Database Tables Configuration at ","Конфигурация на таблиците в базата данни при "}.
@@ -103,6 +108,8 @@
 {"Delete User","Изтрий потребителя"}.
 {"Deliver event notifications","Достави известията за събития"}.
 {"Deliver payloads with event notifications","Достави прикачените обекти с известията за събития"}.
+{"Destroy a Hat","Разруши Шапка"}.
+{"Disable User","Деактивирай потребителя"}.
 {"Disc only copy","Копие само на диска"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","Не казвайте паролата си на никого, дори на администраторите на XMPP сървъра."}.
 {"Dump Backup to Text File at ","Архивиране в текстов файл при "}.
@@ -154,12 +161,19 @@
 {"Full List of Room Admins","Пълен списък на администраторите на стаята"}.
 {"Full List of Room Owners","Пълен списък на собствениците на стаята"}.
 {"Full Name","Пълно име"}.
-{"Get List of Online Users","Списък на онлайн потребителите"}.
+{"Get List of Active Users","Списък с активни потребители"}.
+{"Get List of Disabled Users","Списък на деактивираните потребители"}.
+{"Get List of Idle Users","Списък на неактивните потребители"}.
+{"Get List of Online Users","Списък на онлайн потребители"}.
 {"Get List of Registered Users","Списък на регистрираните потребители"}.
+{"Get Number of Active Users","Брой на активните потребители"}.
+{"Get Number of Disabled Users","Брой на деактивираните потребители"}.
+{"Get Number of Idle Users","Брой на неактивните потребители"}.
 {"Get Number of Online Users","Брой на онлайн потребителите"}.
 {"Get Number of Registered Users","Брой на регистрираните потребители"}.
 {"Get Pending","Виж чакащи"}.
 {"Get User Last Login Time","Покажи времето, когато потребителят е влязъл за последно"}.
+{"Get User Roster","Списък с потребители"}.
 {"Get User Statistics","Покажи статистика за потребителя"}.
 {"Given Name","Наименование"}.
 {"Grant voice to this person?","Предоставяне на глас за потребителя?"}.
@@ -168,7 +182,9 @@
 {"has been kicked because of an affiliation change","е отстранен поради промяна на принадлежността"}.
 {"has been kicked because the room has been changed to members-only","е изгонен, защото стаята е променена и е само за членове"}.
 {"has been kicked","е отстранен"}.
+{"Hash computed from the list of hats available in a room","Хеш стойност на листа от шапки налични в стаята"}.
 {"Hash of the vCard-temp avatar of this room","Хеш на временния vCard аватар на тази стая"}.
+{"Hat hue","Цвят на шапката"}.
 {"Hat title","Заглавие на шапката"}.
 {"Hat URI","URI адрес за шапка"}.
 {"Hats limit exceeded","Превишен е лимитът за шапка"}.
@@ -222,7 +238,7 @@
 {"Last year","Миналата година"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Най-малко значимите битове SHA-256 хеш на текст трябва да са равни на шестнайсетичния етикет"}.
 {"leaves the room","напуска стаята"}.
-{"List of users with hats","Списък на потребителите с шапки"}.
+{"List of Hats","Списък с шапки"}.
 {"List users with hats","Избройте потребителите с шапки"}.
 {"Logged Out","Излязъл"}.
 {"Logging","Регистриране на събития"}.
@@ -316,13 +332,15 @@
 {"Notify subscribers when the node configuration changes","Уведоми абонатите, когато конфигурацията на нода се промени"}.
 {"Notify subscribers when the node is deleted","Уведоми абонатите, когато нодът бъде изтрит"}.
 {"November","Ноември"}.
+{"Number of active users","Брой активни потребители"}.
 {"Number of answers required","Брой на необходимите отговори"}.
+{"Number of disabled users","Брой деактивирани потребители"}.
+{"Number of idle users","Брой неактивни потребители"}.
 {"Number of occupants","Брой участници"}.
 {"Number of Offline Messages","Брой офлайн съобщения"}.
 {"Number of online users","Брой онлайн потребители"}.
 {"Number of registered users","Брой регистрирани потребители"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Брой секунди, след които автоматично да се изчистят елементите, или `max` за липса на конкретно ограничение, различно от наложения от сървъра максимум"}.
-{"Occupants are allowed to invite others","На участниците е позволено да канят други"}.
 {"Occupants are allowed to query others","Участниците могат да отправят заявки към други лица"}.
 {"Occupants May Change the Subject","Участниците могат да променят темата"}.
 {"October","Октомври"}.
@@ -392,6 +410,7 @@
 {"Receive notification of new items only","Получаване на известия само за нови елементи"}.
 {"Receive notification of new nodes only","Получаване на известия само за нови нодове"}.
 {"Recipient is not in the conference room","Получателят не е в конферентната стая"}.
+{"Re-Enable User","Активиране на потребител"}.
 {"Register an XMPP account","Регистрирай XMPP акаунт"}.
 {"Register","Регистрирай"}.
 {"Remote copy","Отдалечено копие"}.
@@ -408,6 +427,7 @@
 {"Restore binary backup immediately:","Възстанови незабавно двоично копие:"}.
 {"Restore plain text backup immediately:","Възстановете незабавно копие от обикновен текст:"}.
 {"Restore","Възстанови"}.
+{"Result","Резултат"}.
 {"Roles and Affiliations that May Retrieve Member List","Роли и принадлежности, които могат да извличат списък с членове"}.
 {"Roles for which Presence is Broadcasted","Роли, за които се излъчва присъствие"}.
 {"Roles that May Send Private Messages","Роли, които могат да изпращат лични съобщения"}.
@@ -458,6 +478,7 @@
 {"Stream management is not enabled","Управлението на потока не е активирано"}.
 {"Subject","Тема"}.
 {"Submitted","Изпратено"}.
+{"Submit","Изпрати"}.
 {"Subscriber Address","Адрес на абоната"}.
 {"Subscribers may publish","Абонатите могат да публикуват"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","Заявките за абонамент трябва да бъдат одобрени и само абонатите могат да извличат елементи"}.
@@ -485,6 +506,9 @@
 {"The JIDs of those to contact with questions","JID на лицата, с които да се свържете при въпроси"}.
 {"The JIDs of those with an affiliation of owner","JID на лицата с принадлежност на собственик"}.
 {"The JIDs of those with an affiliation of publisher","JID-та на лица с принадлежност към публикуващи"}.
+{"The list of all active users","Списъкът на всички активни потребители"}.
+{"The list of all disabled users","Списък на всички деактвирани потребители"}.
+{"The list of all idle users","Списък на всички неактивни потребители"}.
 {"The list of all online users","Списък на всички онлайн потребители"}.
 {"The list of all users","Списък на всички потребители"}.
 {"The list of JIDs that may associate leaf nodes with a collection","Списъкът с JID, които могат да асоциират листови нодове с колекция"}.
@@ -506,6 +530,7 @@
 {"The presence states for which an entity wants to receive notifications","Състояния на присъствие, за които даден субект желае да получава известия"}.
 {"The query is only allowed from local users","Заявката е разрешена само за локални потребители"}.
 {"The query must not contain <item/> elements","Заявката не може да съдържа елементи <item/>"}.
+{"The role","Ролята"}.
 {"The room subject can be modified by participants","Темата на стаята може да бъде променяна от участниците"}.
 {"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","Информацията за семантичния тип данни на нода, обикновено зададена от пространството на имената на прикачените данни (ако има такива)"}.
 {"The sender of the last received message","Подателят на последното получено съобщение"}.
@@ -584,6 +609,7 @@
 {"Visitor","Посетител"}.
 {"Voice requests are disabled in this conference","Гласовите обаждания са деактивирани в тази конференция"}.
 {"Voice request","Заявка за гласово обаждане"}.
+{"Web client which allows to join the room anonymously","Уеб клиентът, който позволява анонимно свързване със стаята"}.
 {"Wednesday","Сряда"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Когато се обработва нов абонамент и всеки път, когато абонат се появи онлайн"}.
 {"When a new subscription is processed","Когато се обработва нов абонамент"}.
