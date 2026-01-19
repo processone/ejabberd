@@ -67,6 +67,7 @@
 {"April","April"}.
 {"Arguments","Argumente"}.
 {"As a final reminder, your account details are shown below:","Zur Erinnerung hier nochmal deine Kontodetails:"}.
+{"Assign a hat to a user","Hut zu einem Benutzer hinzufügen"}.
 {"Attribute 'channel' is required for this request","Attribut 'channel' ist für diese Anforderung erforderlich"}.
 {"Attribute 'id' is mandatory for MIX messages","Attribut 'id' ist verpflichtend für MIX-Nachrichten"}.
 {"Attribute 'jid' is not allowed here","Attribut 'jid' ist hier nicht erlaubt"}.
@@ -118,11 +119,13 @@
 {"Congratulations!","Gratuliere!"}.
 {"Contact Addresses (normally, room owner or owners)","Kontaktadresse (normalerweise Raumbesitzer)"}.
 {"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations ist ein Jabber/XMPP-Client für Android 6.0+, der für mobile Endgeräte optimiert wurde."}.
+{"Contacts","Kontakte"}.
 {"Country","Land"}.
 {"Create Account","Konto anlegen"}.
 {"Create an account","Konto anlegen"}.
 {"Creating an account will allow to communicate with <strong>{{ inviter }}</strong> and other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Ein Konto erlaubt es dir mit <strong>{{ inviter }}</strong> und anderen Leuten auf <strong>{{ site_name }}</strong> und anderen Diensten des XMPP-Netwerkes zu kommunizieren."}.
 {"Creating an account will allow to communicate with other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Ein Konto erlaubt es dir mit anderen Leuten auf <strong>{{ site_name }}</strong> und anderen Diensten des XMPP-Netwerkes zu kommunizieren."}.
+{"Create a Hat","Einen Hut erstellen"}.
 {"Current Discussion Topic","Aktuelles Diskussionsthema"}.
 {"Database failure","Datenbankfehler"}.
 {"Database Tables Configuration at ","Datenbanktabellen-Konfiguration bei "}.
@@ -134,6 +137,7 @@
 {"Delete User","Benutzer löschen"}.
 {"Deliver event notifications","Ereignisbenachrichtigungen zustellen"}.
 {"Deliver payloads with event notifications","Nutzdaten mit Ereignisbenachrichtigungen zustellen"}.
+{"Destroy a Hat","Einen Hut zerstören"}.
 {"Disc only copy","Nur auf Festplatte"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","Geben Sie niemandem Ihr Passwort, auch nicht den Administratoren des XMPP-Servers."}.
 {"Download and install {{ app_name }} below:","Herunterladen und Installieren von {{ app_name }}:"}.
@@ -157,7 +161,7 @@
 {"ejabberd","ejabberd"}.
 {"Email Address","E-Mail-Adresse"}.
 {"Email","E-Mail"}.
-{"Enable hats","Funktion einschalten"}.
+{"Enable hats","Hüte Funktion einschalten"}.
 {"Enable logging","Protokollierung aktivieren"}.
 {"Enable message archiving","Nachrichtenarchivierung aktivieren"}.
 {"Enabling push without 'node' attribute is not supported","push ohne 'node'-Attribut zu aktivieren wird nicht unterstützt"}.
@@ -206,11 +210,12 @@
 {"has been kicked because of an affiliation change","wurde wegen einer Änderung der Zugehörigkeit hinausgeworfen"}.
 {"has been kicked because the room has been changed to members-only","wurde hinausgeworfen weil der Raum zu Nur-Mitglieder geändert wurde"}.
 {"has been kicked","wurde hinausgeworfen"}.
+{"Hash computed from the list of hats available in a room","Hash wurde von der Liste der Hüte im Raum berechnet"}.
 {"Hash of the vCard-temp avatar of this room","Hash des vCard-temp Avatars dieses Raums"}.
-{"Hat title","Funktionstitel"}.
-{"Hat URI","Funktions-URI"}.
-{"Hats limit exceeded","Funktionslimit wurde überschritten"}.
-{"Hide","Verbergen"}.
+{"Hat hue","Hutfarbe"}.
+{"Hat title","Huttitle"}.
+{"Hat URI","Hüte Funktions-URI"}.
+{"Hats limit exceeded","Hütelimit wurde überschritten"}.
 {"Host unknown","Host unbekannt"}.
 {"Hostname invalid","Hostname unbekannt"}.
 {"HTTP File Upload","HTTP-Dateiupload"}.
