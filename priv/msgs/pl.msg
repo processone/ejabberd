@@ -10,7 +10,6 @@
 {"Accept","Zaakceptuj"}.
 {"Access denied by service policy","Dostęp zabroniony zgodnie z zasadami usługi"}.
 {"Action on user","Wykonaj na użytkowniku"}.
-{"Add a hat to a user","Dodaj kapelusz do użytkownika"}.
 {"Add User","Dodaj użytkownika"}.
 {"Administration of ","Zarządzanie "}.
 {"Administration","Administracja"}.
@@ -314,6 +313,7 @@
 {"Store plain text backup:","Zachowaj kopię w postaci tekstowej:"}.
 {"Subject","Temat"}.
 {"Submitted","Wprowadzone"}.
+{"Submit","Wyślij"}.
 {"Subscriber Address","Adres subskrybenta"}.
 {"Subscriptions are not allowed","Subskrypcje nie są dozwolone"}.
 {"Sunday","Niedziela"}.

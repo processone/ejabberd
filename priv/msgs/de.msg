@@ -4,17 +4,10 @@
 %%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 
 {" (Add * to the end of field to match substring)"," (Fügen Sie * am Ende des Feldes hinzu um nach Teilzeichenketten zu suchen)"}.
-{" has set the subject to: "," hat das Thema geändert auf: "}.
 {"{{ app_name }} already installed?","{{ app_name }} bereits installiert?"}.
+{" has set the subject to: "," hat das Thema geändert auf: "}.
 {"{{ inviter }} has invited you to connect!","{{ inviter }} will sich mit dir verbinden!"}.
 {"# participants","# Teilnehmer"}.
-{"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting using <strong>{{ app_name }}</strong> you need to first register an account.","<strong>{{ site_name }}</strong> ist Teil von XMPP, ein sicheres und dezentrales Sofortnachrichten-Netzwerk. Um mittels <strong>{{ app_name }}</strong> chatten zu können musst du zunächst ein Konto anlegen."}.
-{"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting you need to first register an account.","<strong>{{ site_name }}</strong> is Teil von XMPP, ein sicheres und dezentrales Sofortnachrichten-Netzwerk. Um chatten zu können musst du zunächst ein Konto anlegen."}.
-{"<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!","<strong>Du hast keine passende Software zur Hand im Moment?</strong> Du kannst dich auch mit unserem online Webchat anmelden!"}.
-{"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>Tipp:</strong> du kannst diese Einladung auf deinem mobilen Endgerät öffnen indem du einen Barcode mit deiner Kamera scannst."}.
-{"~s invites you to the room ~s","~s lädt Sie in den Raum ~s ein"}.
-{"~ts's MAM Archive","~ts's MAM Archiv"}.
-{"~ts's Offline Messages Queue","Offline-Nachrichten-Warteschlange von ~ts"}.
 {"A description of the node","Eine Beschreibung des Knotens"}.
 {"A friendly name for the node","Ein benutzerfreundlicher Name für den Knoten"}.
 {"A fully-featured desktop chat client for Windows and Linux.","Ein funktionsreicher Desktop-Client für Windows und Linux."}.
@@ -119,14 +112,14 @@
 {"Configuration","Konfiguration"}.
 {"Congratulations!","Gratuliere!"}.
 {"Contact Addresses (normally, room owner or owners)","Kontaktadresse (normalerweise Raumbesitzer)"}.
-{"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations ist ein Jabber/XMPP-Client für Android 6.0+, der für mobile Endgeräte optimiert wurde."}.
 {"Contacts","Kontakte"}.
+{"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations ist ein Jabber/XMPP-Client für Android 6.0+, der für mobile Endgeräte optimiert wurde."}.
 {"Country","Land"}.
+{"Create a Hat","Einen Hut erstellen"}.
 {"Create Account","Konto anlegen"}.
 {"Create an account","Konto anlegen"}.
-{"Creating an account will allow to communicate with <strong>{{ inviter }}</strong> and other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Ein Konto erlaubt es dir mit <strong>{{ inviter }}</strong> und anderen Leuten auf <strong>{{ site_name }}</strong> und anderen Diensten des XMPP-Netwerkes zu kommunizieren."}.
 {"Creating an account will allow to communicate with other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Ein Konto erlaubt es dir mit anderen Leuten auf <strong>{{ site_name }}</strong> und anderen Diensten des XMPP-Netwerkes zu kommunizieren."}.
-{"Create a Hat","Einen Hut erstellen"}.
+{"Creating an account will allow to communicate with <strong>{{ inviter }}</strong> and other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Ein Konto erlaubt es dir mit <strong>{{ inviter }}</strong> und anderen Leuten auf <strong>{{ site_name }}</strong> und anderen Diensten des XMPP-Netwerkes zu kommunizieren."}.
 {"Current Discussion Topic","Aktuelles Diskussionsthema"}.
 {"Database failure","Datenbankfehler"}.
 {"Database Tables Configuration at ","Datenbanktabellen-Konfiguration bei "}.
@@ -225,6 +218,7 @@
 {"Hat title","Huttitle"}.
 {"Hat URI","Hüte Funktions-URI"}.
 {"Hats limit exceeded","Hütelimit wurde überschritten"}.
+{"Hide","Verbergen"}.
 {"Host unknown","Host unbekannt"}.
 {"Hostname invalid","Hostname unbekannt"}.
 {"HTTP File Upload","HTTP-Dateiupload"}.
@@ -248,14 +242,14 @@
 {"Incorrect value of 'action' attribute","Falscher Wert des 'action'-Attributs"}.
 {"Incorrect value of 'action' in data form","Falscher Wert von 'action' in Datenformular"}.
 {"Incorrect value of 'path' in data form","Falscher Wert von 'path' in Datenformular"}.
-{"Install","Installieren"}.
 {"Installed Modules:","Installierte Module:"}.
 {"Installed ok? Great! <strong>Click or tap the button below</strong> to accept your invite and continue with your account setup:","Fertig mit der Installation? Prima! <strong>Drück auf den Button unten</strong> um deine Einaldung anzunehmen und mit der Einrichtung deines Kontos fortzufahren:"}.
+{"Install","Installieren"}.
 {"Insufficient privilege","Unzureichende Privilegien"}.
 {"Internal server error","Interner Serverfehler"}.
 {"Invalid 'from' attribute in forwarded message","Ungültiges 'from'-Attribut in weitergeleiteter Nachricht"}.
-{"Invalid 'previd' value","Ungültiger 'previd'-Wert"}.
 {"Invalid node name","Ungültiger Knotenname"}.
+{"Invalid 'previd' value","Ungültiger 'previd'-Wert"}.
 {"Invitations are not allowed in this conference","Einladungen sind in dieser Konferenz nicht erlaubt"}.
 {"Invite expired","Die Einladung ist abgelaufen"}.
 {"Invite to {{ site_name }}","Einladung für {{ site_name }}"}.
@@ -324,9 +318,9 @@
 {"Moderators Only","nur Moderatoren"}.
 {"Module failed to handle the query","Modul konnte die Anfrage nicht verarbeiten"}.
 {"Monday","Montag"}.
-{"Multi-User Chat","Mehrbenutzer-Chat (MUC)"}.
 {"Multicast","Multicast"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Mehrere <item/>-Elemente sind laut RFC6121 nicht erlaubt"}.
+{"Multi-User Chat","Mehrbenutzer-Chat (MUC)"}.
 {"Name","Vorname"}.
 {"Natural Language for Room Discussions","Natürliche Sprache für Raumdiskussionen"}.
 {"Natural-Language Room Name","Raumname in natürlicher Sprache"}.
@@ -334,43 +328,43 @@
 {"Neither 'role' nor 'affiliation' attribute found","Weder 'role'- noch 'affiliation'-Attribut gefunden"}.
 {"Never","Nie"}.
 {"New Password:","Neues Passwort:"}.
-{"Nickname ~s does not exist in the room","Der Spitzname ~s existiert nicht im Raum"}.
 {"Nickname can't be empty","Spitzname darf nicht leer sein"}.
 {"Nickname Registration at ","Registrieren des Spitznamens auf "}.
+{"Nickname ~s does not exist in the room","Der Spitzname ~s existiert nicht im Raum"}.
 {"Nickname","Spitzname"}.
-{"No 'affiliation' attribute found","Kein 'affiliation'-Attribut gefunden"}.
-{"No 'item' element found","Kein 'item'-Element gefunden"}.
-{"No 'password' found in data form","Kein 'password' im Datenformular gefunden"}.
-{"No 'password' found in this query","Kein 'password' in dieser Anfrage gefunden"}.
-{"No 'path' found in data form","Kein 'path' im Datenformular gefunden"}.
-{"No 'to' attribute found in the invitation","Kein 'to'-Attribut in der Einladung gefunden"}.
-{"No <forwarded/> element found","Kein <forwarded/>-Element gefunden"}.
 {"No address elements found","Keine 'address'-Elemente gefunden"}.
 {"No addresses element found","Kein 'addresses'-Element gefunden"}.
+{"No 'affiliation' attribute found","Kein 'affiliation'-Attribut gefunden"}.
 {"No available resource found","Keine verfügbare Ressource gefunden"}.
 {"No body provided for announce message","Kein Text für die Ankündigungsnachricht angegeben"}.
 {"No child elements found","Keine 'child'-Elemente gefunden"}.
 {"No data form found","Kein Datenformular gefunden"}.
 {"No Data","Keine Daten"}.
 {"No features available","Keine Eigenschaften verfügbar"}.
+{"No <forwarded/> element found","Kein <forwarded/>-Element gefunden"}.
 {"No hook has processed this command","Kein Hook hat diesen Befehl verarbeitet"}.
 {"No info about last activity found","Keine Informationen über letzte Aktivität gefunden"}.
+{"No 'item' element found","Kein 'item'-Element gefunden"}.
 {"No items found in this query","Keine Items in dieser Anfrage gefunden"}.
 {"No limit","Keine Begrenzung"}.
 {"No module is handling this query","Kein Modul verarbeitet diese Anfrage"}.
 {"No node specified","Kein Knoten angegeben"}.
+{"No 'password' found in data form","Kein 'password' im Datenformular gefunden"}.
+{"No 'password' found in this query","Kein 'password' in dieser Anfrage gefunden"}.
+{"No 'path' found in data form","Kein 'path' im Datenformular gefunden"}.
 {"No pending subscriptions found","Keine ausstehenden Abonnements gefunden"}.
 {"No privacy list with this name found","Keine Privacy-Liste mit diesem Namen gefunden"}.
 {"No private data found in this query","Keine privaten Daten in dieser Anfrage gefunden"}.
 {"No running node found","Kein laufender Knoten gefunden"}.
 {"No services available","Keine Dienste verfügbar"}.
 {"No statistics found for this item","Keine Statistiken für dieses Item gefunden"}.
+{"No 'to' attribute found in the invitation","Kein 'to'-Attribut in der Einladung gefunden"}.
 {"Nobody","Niemand"}.
-{"Node ~p","Knoten ~p"}.
 {"Node already exists","Knoten existiert bereits"}.
 {"Node ID","Knoten-ID"}.
 {"Node index not found","Knotenindex nicht gefunden"}.
 {"Node not found","Knoten nicht gefunden"}.
+{"Node ~p","Knoten ~p"}.
 {"Node","Knoten"}.
 {"Nodeprep has failed","Nodeprep fehlgeschlagen"}.
 {"Nodes","Knoten"}.
@@ -392,7 +386,6 @@
 {"Number of online users","Anzahl der angemeldeten Benutzer"}.
 {"Number of registered users","Anzahl der registrierten Benutzer"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Anzahl der Sekunden, nach denen Elemente automatisch gelöscht werden sollen, oder `max`, wenn es keine spezifische Grenze gibt, außer einer vom Server festgelegten Höchstgrenze"}.
-{"Occupants are allowed to invite others","Teilnehmer dürfen andere einladen"}.
 {"Occupants are allowed to query others","Teilnehmer dürfen andere abfragen"}.
 {"Occupants May Change the Subject","Teilnehmer dürfen das Thema ändern"}.
 {"October","Oktober"}.
@@ -400,10 +393,10 @@
 {"Old Password:","Altes Passwort:"}.
 {"Online Users","Angemeldete Benutzer"}.
 {"Online","Angemeldet"}.
-{"Only <enable/> or <disable/> tags are allowed","Nur <enable/>- oder <disable/>-Tags sind erlaubt"}.
-{"Only <list/> element is allowed in this query","Nur <list/>-Elemente sind in dieser Anfrage erlaubt"}.
 {"Only collection node owners may associate leaf nodes with the collection","Nur Sammlungsknoten-Besitzer dürfen Blattknoten mit der Sammlung verknüpfen"}.
 {"Only deliver notifications to available users","Benachrichtigungen nur an verfügbare Benutzer schicken"}.
+{"Only <enable/> or <disable/> tags are allowed","Nur <enable/>- oder <disable/>-Tags sind erlaubt"}.
+{"Only <list/> element is allowed in this query","Nur <list/>-Elemente sind in dieser Anfrage erlaubt"}.
 {"Only members may query archives of this room","Nur Mitglieder dürfen den Verlauf dieses Raumes abrufen"}.
 {"Only moderators and participants are allowed to change the subject in this room","Nur Moderatoren und Teilnehmer dürfen das Thema in diesem Raum ändern"}.
 {"Only moderators are allowed to change the subject in this room","Nur Moderatoren dürfen das Thema in diesem Raum ändern"}.
@@ -425,10 +418,10 @@
 {"Packet relay is denied by service policy","Paket-Relay aufgrund der Dienstrichtlinien verweigert"}.
 {"Participant ID","Teilnehmer-ID"}.
 {"Participant","Teilnehmer"}.
-{"Password Verification:","Passwort bestätigen:"}.
 {"Password Verification","Passwort bestätigen"}.
-{"Password:","Passwort:"}.
+{"Password Verification:","Passwort bestätigen:"}.
 {"Password","Passwort"}.
+{"Password:","Passwort:"}.
 {"Path to Dir","Pfad zum Verzeichnis"}.
 {"Path to File","Pfad zur Datei"}.
 {"Payload semantic type information","Semantische Typinformation des Payloads"}.
@@ -497,6 +490,7 @@
 {"Roster groups allowed to subscribe","Kontaktlistengruppen die abonnieren dürfen"}.
 {"Roster size","Kontaktlistengröße"}.
 {"Running Nodes","Laufende Knoten"}.
+{"~s invites you to the room ~s","~s lädt Sie in den Raum ~s ein"}.
 {"Sad person holding empty box","Eine traurige Person mit einer leeren Schachtel"}.
 {"Saturday","Samstag"}.
 {"Scan invite code","Einladungscode einscannen"}.
@@ -545,6 +539,10 @@
 {"Store plain text backup:","Speichere Klartext-Backup:"}.
 {"Stream management is already enabled","Stream-Verwaltung ist bereits aktiviert"}.
 {"Stream management is not enabled","Stream-Verwaltung ist nicht aktiviert"}.
+{"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting using <strong>{{ app_name }}</strong> you need to first register an account.","<strong>{{ site_name }}</strong> ist Teil von XMPP, ein sicheres und dezentrales Sofortnachrichten-Netzwerk. Um mittels <strong>{{ app_name }}</strong> chatten zu können musst du zunächst ein Konto anlegen."}.
+{"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting you need to first register an account.","<strong>{{ site_name }}</strong> is Teil von XMPP, ein sicheres und dezentrales Sofortnachrichten-Netzwerk. Um chatten zu können musst du zunächst ein Konto anlegen."}.
+{"<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!","<strong>Du hast keine passende Software zur Hand im Moment?</strong> Du kannst dich auch mit unserem online Webchat anmelden!"}.
+{"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>Tipp:</strong> du kannst diese Einladung auf deinem mobilen Endgerät öffnen indem du einen Barcode mit deiner Kamera scannst."}.
 {"Subject","Betreff"}.
 {"Submit","Senden"}.
 {"Submitted","Gesendet"}.
@@ -621,21 +619,23 @@
 {"Thursday","Donnerstag"}.
 {"Time delay","Zeitverzögerung"}.
 {"Timed out waiting for stream resumption","Zeitüberschreitung beim Warten auf Streamfortsetzung"}.
-{"To ~ts","An ~ts"}.
 {"To get started, you need to install an app for your platform:","Um loszulegen musst du eine App für deine Platform installieren:"}.
 {"To register, visit ~s","Um sich zu registrieren, besuchen Sie ~s"}.
 {"To start chatting, you need to enter your new account credentials into your chosen XMPP software.","Um mit dem Chatten zu beginnen, musst du deine neuen Anmeldedaten in der XMPP Software deiner Wahl eintragen."}.
+{"To ~ts","An ~ts"}.
 {"Token TTL","Token-TTL"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Zu viele (~p) fehlgeschlagene Authentifizierungen von dieser IP-Adresse (~s). Die Adresse wird an ~s UTC entsperrt"}.
-{"Too many <item/> elements","Zu viele <item/>-Elemente"}.
-{"Too many <list/> elements","Zu viele <list/>-Elemente"}.
 {"Too many active bytestreams","Zu viele aktive Bytestreams"}.
 {"Too many CAPTCHA requests","Zu viele CAPTCHA-Anforderungen"}.
 {"Too many child elements","Zu viele 'child'-Elemente"}.
+{"Too many <item/> elements","Zu viele <item/>-Elemente"}.
+{"Too many <list/> elements","Zu viele <list/>-Elemente"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Zu viele (~p) fehlgeschlagene Authentifizierungen von dieser IP-Adresse (~s). Die Adresse wird an ~s UTC entsperrt"}.
 {"Too many receiver fields were specified","Zu viele Empfängerfelder wurden angegeben"}.
 {"Too many unacked stanzas","Zu viele unbestätigte Stanzas"}.
 {"Too many users in this conference","Zu viele Benutzer in dieser Konferenz"}.
 {"Traffic rate limit is exceeded","Datenratenlimit wurde überschritten"}.
+{"~ts's MAM Archive","~ts's MAM Archiv"}.
+{"~ts's Offline Messages Queue","Offline-Nachrichten-Warteschlange von ~ts"}.
 {"Tuesday","Dienstag"}.
 {"Unable to generate a CAPTCHA","Konnte kein CAPTCHA erstellen"}.
 {"Unable to register route on existing local domain","Konnte Route auf existierender lokaler Domäne nicht registrieren"}.
@@ -655,36 +655,36 @@
 {"Upgrade","Upgrade"}.
 {"URL for Archived Discussion Logs","URL für archivierte Diskussionsprotokolle"}.
 {"Use a <em>QR code</em> scanner on your mobile device to scan the code below:","Benutze einen <em>QR-Code</em> Scanner auf deinem mobilen Endgerät um den Code hier unten zu scannen:"}.
-{"User (jid)","Benutzer (JID)"}.
-{"User ~ts","Benutzer ~ts"}.
 {"User already exists","Benutzer existiert bereits"}.
+{"User (jid)","Benutzer (JID)"}.
 {"User JID","Benutzer-JID"}.
 {"User Management","Benutzerverwaltung"}.
 {"User not allowed to perform an IQ set on another user's vCard.","Benutzer darf kein IQ-set auf die vCard eines anderen ausführen."}.
 {"User removed","Benutzer entfernt"}.
 {"User session not found","Benutzersitzung nicht gefunden"}.
 {"User session terminated","Benutzersitzung beendet"}.
+{"User ~ts","Benutzer ~ts"}.
 {"User","Benutzer"}.
 {"Username invalid","Benutzername ungültig"}.
 {"Username is reserved","Benutzername ist reserviert"}.
-{"Username:","Benutzername:"}.
 {"Username","Benutzername"}.
+{"Username:","Benutzername:"}.
 {"Users are not allowed to register accounts so quickly","Benutzer dürfen Konten nicht so schnell registrieren"}.
 {"Users Last Activity","Letzte Benutzeraktivität"}.
 {"Users","Benutzer"}.
 {"Value 'get' of 'type' attribute is not allowed","Wert 'get' des 'type'-Attributs ist nicht erlaubt"}.
-{"Value 'set' of 'type' attribute is not allowed","Wert 'set' des 'type'-Attributs ist nicht erlaubt"}.
 {"Value of '~s' should be boolean","Wert von '~s' sollte boolesch sein"}.
 {"Value of '~s' should be datetime string","Wert von '~s' sollte DateTime-Zeichenkette sein"}.
 {"Value of '~s' should be integer","Wert von '~s' sollte eine Ganzzahl sein"}.
+{"Value 'set' of 'type' attribute is not allowed","Wert 'set' des 'type'-Attributs ist nicht erlaubt"}.
 {"vCard User Search","vCard-Benutzer-Suche"}.
 {"View joined MIX channels","Beitretene MIX-Channel ansehen"}.
 {"Virtual Hosts","Virtuelle Hosts"}.
 {"Visitor","Besucher"}.
 {"Visitors are not allowed to change their nicknames in this room","Besucher dürfen in diesem Raum ihren Spitznamen nicht ändern"}.
 {"Visitors are not allowed to send messages to all occupants","Besucher dürfen nicht an alle Teilnehmer Nachrichten versenden"}.
-{"Voice request","Sprachrecht-Anforderung"}.
 {"Voice requests are disabled in this conference","Sprachrecht-Anforderungen sind in diesem Raum deaktiviert"}.
+{"Voice request","Sprachrecht-Anforderung"}.
 {"Web client which allows to join the room anonymously","Web-Client, der es ermöglicht, dem Raum anonym beizutreten"}.
 {"Wednesday","Mittwoch"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Sobald ein neues Abonnement verarbeitet wird und wann immer ein Abonnent sich anmeldet"}.
@@ -729,10 +729,10 @@
 {"You need a client that supports x:data and CAPTCHA to register","Sie benötigen einen Client der x:data und CAPTCHA unterstützt, um sich zu registrieren"}.
 {"You need a client that supports x:data to register the nickname","Sie benötigen einen Client der x:data unterstützt, um Ihren Spitznamen zu registrieren"}.
 {"You need an x:data capable client to search","Sie benötigen einen Client der x:data unterstützt, um zu suchen"}.
-{"You're not allowed to create nodes","Sie dürfen keine Knoten erstellen"}.
 {"Your active privacy list has denied the routing of this stanza.","Ihre aktive Privacy-Liste hat das Routing dieses Stanzas verweigert."}.
 {"Your contact offline message queue is full. The message has been discarded.","Die Offline-Nachrichten-Warteschlange Ihres Kontaktes ist voll. Die Nachricht wurde verworfen."}.
 {"Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone.","Dein Passwort wird verschlüsselt auf dem Server gespeichert und wird nicht mehr im Klartext verfügbar sein nachdem du diese Seite geschlossen hast. Verwahre es an einem sicheren Ort und teile es mit niemandem!"}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Ihre Abonnement-Anforderung und/oder Nachrichten an ~s wurden blockiert. Um Ihre Abonnement-Anforderungen freizugeben, besuchen Sie ~s"}.
 {"Your XMPP account was successfully registered.","Ihr XMPP-Konto wurde erfolgreich registriert."}.
 {"Your XMPP account was successfully unregistered.","Ihr XMPP-Konto wurde erfolgreich entfernt."}.
+{"You're not allowed to create nodes","Sie dürfen keine Knoten erstellen"}.

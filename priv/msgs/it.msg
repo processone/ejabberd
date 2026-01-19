@@ -15,7 +15,6 @@
 {"Access model","Modello di accesso"}.
 {"Account doesn't exist","L'account non esiste"}.
 {"Action on user","Azione sull'utente"}.
-{"Add a hat to a user","Aggiungere un cappello a un utente"}.
 {"Add User","Aggiungere un utente"}.
 {"Administration of ","Amministrazione di "}.
 {"Administration","Amministrazione"}.
@@ -169,7 +168,6 @@
 {"has been kicked because the room has been changed to members-only","è stato espulso per la limitazione della stanza ai soli membri"}.
 {"has been kicked","è stata/o espulsa/o"}.
 {"Hash of the vCard-temp avatar of this room","Hash dell'avatar vCard-temp di questa stanza"}.
-{"Hat title","Titolo del Cappello"}.
 {"Hat URI","URI Cappello"}.
 {"Hats limit exceeded","Limite di cappelli superato"}.
 {"Host unknown","Host sconosciuto"}.
@@ -222,7 +220,6 @@
 {"Last year","Ultimo anno"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","I bit meno significativi dell'hash di testo SHA-256 devono corrispondere all'etichetta esadecimale"}.
 {"leaves the room","esce dalla stanza"}.
-{"List of users with hats","Elenco degli utenti con cappelli"}.
 {"List users with hats","Elenca gli utenti con cappelli"}.
 {"Logged Out","Disconnesso"}.
 {"Logging","Registrazione"}.
@@ -322,7 +319,6 @@
 {"Number of online users","Numero di utenti online"}.
 {"Number of registered users","Numero di utenti registrati"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Numero di secondi dopo i quali eliminare automaticamente gli elementi o `max` per nessun limite specifico diverso da quello massimo imposto dal server"}.
-{"Occupants are allowed to invite others","Gli occupanti possono invitare altri"}.
 {"Occupants are allowed to query others","Gli occupanti possono interrogare gli altri"}.
 {"Occupants May Change the Subject","Gli Occupanti Possono Cambiare il Soggetto"}.
 {"October","Ottobre"}.
@@ -457,6 +453,7 @@
 {"Stream management is already enabled","La gestione del flusso è già abilitata"}.
 {"Stream management is not enabled","La gestione del flusso non è abilitata"}.
 {"Subject","Oggetto"}.
+{"Submit","Inviare"}.
 {"Submitted","Inviato"}.
 {"Subscriber Address","Indirizzo dell'iscritta/o"}.
 {"Subscribers may publish","I sottoscrittori possono pubblicare"}.

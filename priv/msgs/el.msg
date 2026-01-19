@@ -15,7 +15,6 @@
 {"Access model","Μοντέλο πρόσβασης"}.
 {"Account doesn't exist","Ο λογαριασμός δεν υπάρχει"}.
 {"Action on user","Eνέργεια για το χρήστη"}.
-{"Add a hat to a user","Προσθέστε ένα καπέλο σε έναν χρήστη"}.
 {"Add User","Προσθήκη Χρήστη"}.
 {"Administration of ","Διαχείριση του "}.
 {"Administration","Διαχείριση"}.
@@ -225,7 +224,6 @@
 {"Last year","Πέρυσι"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Τα ψηφία μικρότερης αξίας του αθροίσματος SHA-256 του κειμένου θα έπρεπε να ισούνται με την δεκαεξαδική ετικέτα"}.
 {"leaves the room","εγκαταλείπει την αίθουσα"}.
-{"List of users with hats","Λίστα των χρηστών με καπέλα"}.
 {"List users with hats","Λίστα χρηστών με καπέλα"}.
 {"Logged Out","Αποσυνδεδεμένος"}.
 {"Logging","Καταγραφή"}.
@@ -325,7 +323,6 @@
 {"Number of online users","Αριθμός συνδεδεμένων χρηστών"}.
 {"Number of registered users","Αριθμός εγγεγραμμένων χρηστών"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Αριθμός δευτερολέπτων μετά από τα οποία θα καθαρίζονται αυτόματα τα στοιχεία, ή `max` για κανένα συγκεκριμένο όριο εκτός από το μέγιστο που επιβάλλει ο διακομιστής"}.
-{"Occupants are allowed to invite others","Οι συμμετέχοντες μπορούν να προσκαλέσουν και άλλους"}.
 {"Occupants are allowed to query others","Οι κάτοικοι επιτρέπεται να ρωτούν άλλους"}.
 {"Occupants May Change the Subject","Επιτρέψτε στους χρήστες να αλλάζουν το Θέμα"}.
 {"October","Οκτώβριος"}.
@@ -462,6 +459,7 @@
 {"Stream management is not enabled","Η διαχείριση Ροών δεν είναι ενεργοποιημένη"}.
 {"Subject","Θέμα"}.
 {"Submitted","Υποβλήθηκε"}.
+{"Submit","Υποβολή"}.
 {"Subscriber Address","Διεύθυνση Συνδρομητή"}.
 {"Subscribers may publish","Οι συνδρομητές μπορούν να δημοσιεύσουν"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","Τα αιτήματα για συνδρομή πρέπει να εγκριθούν και μόνο οι συνδρομητές μπορούν να λάβουν αντικείμενα"}.

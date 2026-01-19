@@ -212,6 +212,7 @@
 {"Store binary backup:","Lagra den binära backupen"}.
 {"Store plain text backup:","Lagra textbackup"}.
 {"Subject","Ämne"}.
+{"Submit","Skicka"}.
 {"Submitted","Skicka in"}.
 {"Subscriber Address","Prenumerationsadress"}.
 {"Sunday","Söndag"}.

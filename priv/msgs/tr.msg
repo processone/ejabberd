@@ -238,6 +238,7 @@
 {"Store binary backup:","İkili yedeği sakla:"}.
 {"Store plain text backup:","Düz metin yedeği sakla:"}.
 {"Subject","Konu"}.
+{"Submit","Gönder"}.
 {"Submitted","Gönderilenler"}.
 {"Subscriber Address","Üye Olanın Adresi"}.
 {"Sunday","Pazar"}.

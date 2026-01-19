@@ -237,6 +237,7 @@
 {"Store binary backup:","Uložiť binárnu zálohu:"}.
 {"Store plain text backup:","Uložiť zálohu do textového súboru:"}.
 {"Subject","Predmet"}.
+{"Submit","Odoslať"}.
 {"Submitted","Odoslané"}.
 {"Subscriber Address","Adresa odberateľa"}.
 {"Sunday","Nedeľa"}.

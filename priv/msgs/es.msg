@@ -387,7 +387,6 @@
 {"Number of online users","Número de usuarios conectados"}.
 {"Number of registered users","Número de usuarios registrados"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Número de segundos después de los cuales se purgarán elementos automáticamente, o `max` para no especificar un límite, más que el máximo impuesto por el servidor"}.
-{"Occupants are allowed to invite others","Los ocupantes pueden invitar a otras personas"}.
 {"Occupants are allowed to query others","Los ocupantes pueden enviar peticiones a otros"}.
 {"Occupants May Change the Subject","Los ocupantes pueden cambiar el Asunto"}.
 {"October","Octubre"}.
@@ -546,6 +545,7 @@
 {"<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!","<strong>¿No tienes instalada ninguna aplicación ahora mismo?</strong> También puedes entrar en tu cuenta ¡usando el chat web en linea!"}.
 {"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>Truco:</strong> Puedes abrir esta invitación en tu móvil escaneando el código QR con la cámara de fotos."}.
 {"Subject","Asunto"}.
+{"Submit","Enviar"}.
 {"Submitted","Enviado"}.
 {"Subscriber Address","Dirección del subscriptor"}.
 {"Subscribers may publish","Los suscriptores pueden publicar"}.

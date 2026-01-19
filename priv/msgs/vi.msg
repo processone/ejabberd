@@ -189,6 +189,7 @@
 {"Store binary backup:","Lưu dữ liệu sao lưu dạng nhị phân:"}.
 {"Store plain text backup:","Khôi phục bản sao lưu dự phòng thuần văn bản"}.
 {"Subject","Tiêu đề"}.
+{"Submit","Gửi"}.
 {"Submitted","Đã gửi"}.
 {"Subscriber Address","Địa Chỉ Người Đăng Ký"}.
 {"Sunday","Chủ Nhật"}.

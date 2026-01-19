@@ -260,6 +260,7 @@
 {"Store binary backup:","Lagre binær sikkerhetskopi:"}.
 {"Store plain text backup:","Lagre klartekst-sikkerhetskopi:"}.
 {"Subject","Emne"}.
+{"Submit","Send"}.
 {"Submitted","Innsendt"}.
 {"Subscriber Address","Abonnementsadresse"}.
 {"Subscribers may publish","Abonnenter kan publisere"}.

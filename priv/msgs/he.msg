@@ -286,6 +286,7 @@
 {"Store plain text backup:","אחסן גיבוי טקסט גלוי (plain text):"}.
 {"Subject","נושא"}.
 {"Submitted","נשלח"}.
+{"Submit","שלח"}.
 {"Subscriber Address","כתובת מנוי"}.
 {"Subscriptions are not allowed","הרשמות אינן מורשות"}.
 {"Sunday","יום ראשון"}.

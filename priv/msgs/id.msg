@@ -338,6 +338,7 @@
 {"Stream management is already enabled","Manajemen stream sudah diaktifkan"}.
 {"Stream management is not enabled","Manajemen stream tidak diaktifkan"}.
 {"Subject","Subyek"}.
+{"Submit","Serahkan"}.
 {"Submitted","Ulangi masukan"}.
 {"Subscriber Address","Alamat Pertemanan"}.
 {"Subscribers may publish","Pelanggan dapat mempublikasikan"}.

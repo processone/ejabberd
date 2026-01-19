@@ -341,7 +341,6 @@
 {"Number of online users","Número d'usuaris connectats"}.
 {"Number of registered users","Número d'Usuaris Registrats"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Número de segons després dels quals es purgaran automàticament elements, o `max` per a no tindre altre límit més que el màxim imposat pel servidor"}.
-{"Occupants are allowed to invite others","Els ocupants poden invitar a altres"}.
 {"Occupants are allowed to query others","Els ocupants poden enviar peticions a altres"}.
 {"Occupants May Change the Subject","Els ocupants poden canviar el Tema"}.
 {"October","Octubre"}.
@@ -478,6 +477,7 @@
 {"Stream management is already enabled","L'administració de la connexió (stream management) ja està activada"}.
 {"Stream management is not enabled","L'administració de la conexió (stream management) no està activada"}.
 {"Subject","Tema"}.
+{"Submit","Enviar"}.
 {"Submitted","Enviat"}.
 {"Subscriber Address","Adreça del Subscriptor"}.
 {"Subscribers may publish","Els subscriptors poden publicar"}.

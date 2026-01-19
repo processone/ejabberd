@@ -247,6 +247,7 @@
 {"Store plain text backup:","Backup naar een tekstbestand schrijven:"}.
 {"Subject","Onderwerp"}.
 {"Submitted","Verzonden"}.
+{"Submit","Verzenden"}.
 {"Subscriber Address","Abonnee Adres"}.
 {"Sunday","Zondag"}.
 {"That nickname is already in use by another occupant","Deze bijnaam is al in gebruik door een andere aanwezige"}.

@@ -189,6 +189,7 @@
 {"Store plain text backup:","จัดเก็บข้อมูลสำรองที่เป็นข้อความธรรมดา:"}.
 {"Subject","หัวเรื่อง"}.
 {"Submitted","ส่งแล้ว"}.
+{"Submit","ส่ง"}.
 {"Subscriber Address","ที่อยู่ของผู้สมัคร"}.
 {"Sunday","วันอาทิตย์"}.
 {"the password is","รหัสผ่านคือ"}.

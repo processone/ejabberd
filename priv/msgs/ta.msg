@@ -15,7 +15,6 @@
 {"Access model","அணுகல் மாதிரி"}.
 {"Account doesn't exist","கணக்கு இல்லை"}.
 {"Action on user","பயனரின் செயல்"}.
-{"Add a hat to a user","ஒரு பயனருக்கு ஒரு தொப்பியைச் சேர்க்கவும்"}.
 {"Add User","பயனரைச் சேர்க்கவும்"}.
 {"Administration of ","நிர்வாகம் "}.
 {"Administration","நிர்வாகம்"}.
@@ -172,7 +171,6 @@
 {"has been kicked because the room has been changed to members-only","அறை உறுப்பினர்களுக்கு மட்டுமே மாற்றப்பட்டதால் உதைக்கப்பட்டுள்ளது"}.
 {"has been kicked","உதைக்கப்பட்டுள்ளது"}.
 {"Hash of the vCard-temp avatar of this room","இந்த அறையின் vcard-temp அவதாரத்தின் ஆச்"}.
-{"Hat title","தொப்பி தலைப்பு"}.
 {"Hat URI","தொப்பி யூரி"}.
 {"Hats limit exceeded","தொப்பிகள் வரம்பு மீறியது"}.
 {"Host unknown","புரவலன் தெரியவில்லை"}.
@@ -225,7 +223,6 @@
 {"Last year","கடந்த ஆண்டு"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","உரையின் SHA-256 ஆசின் குறைந்த குறிப்பிடத்தக்க பிட்கள் எக்சாடெசிமல் சிட்டை சமமாக இருக்க வேண்டும்"}.
 {"leaves the room","அறையை விட்டு வெளியேறுகிறது"}.
-{"List of users with hats","தொப்பிகளைக் கொண்ட பயனர்களின் பட்டியல்"}.
 {"List users with hats","தொப்பிகளுடன் பயனர்களை பட்டியலிடுங்கள்"}.
 {"Logged Out","வெளியேறியது"}.
 {"Logging","பதிவு"}.
@@ -325,7 +322,6 @@
 {"Number of online users","நிகழ்நிலை பயனர்களின் எண்ணிக்கை"}.
 {"Number of registered users","பதிவுசெய்யப்பட்ட பயனர்களின் எண்ணிக்கை"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","உருப்படிகளை தானாக தூய்மைப்படுத்துவதற்கான விநாடிகளின் எண்ணிக்கை, அல்லது அதிகபட்சம் விதிக்கப்பட்ட சேவையகத்தைத் தவிர வேறு எந்த குறிப்பிட்ட வரம்பையும் `அதிகபட்சம்`"}.
-{"Occupants are allowed to invite others","குடியிருப்பாளர்கள் மற்றவர்களை அழைக்க அனுமதிக்கப்படுகிறார்கள்"}.
 {"Occupants are allowed to query others","குடியிருப்பாளர்கள் மற்றவர்களை வினவ அனுமதிக்கப்படுகிறார்கள்"}.
 {"Occupants May Change the Subject","குடியிருப்பாளர்கள் இந்த விசயத்தை மாற்றலாம்"}.
 {"October","பு-ஐப்பசி"}.

@@ -251,6 +251,7 @@
 {"Store binary backup:","Copeye di såvrité binaire:"}.
 {"Store plain text backup:","Copeye di såvrité tecse:"}.
 {"Subject","Sudjet"}.
+{"Submit","Evoyî"}.
 {"Submitted","Candjmints evoyîs"}.
 {"Subscriber Address","Adresse di l' abouné"}.
 {"Sunday","dimegne"}.

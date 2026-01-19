@@ -311,6 +311,7 @@
 {"Store binary backup:","Gardar copia de seguridade binaria:"}.
 {"Store plain text backup:","Gardar copia de seguridade en texto plano:"}.
 {"Subject","Asunto"}.
+{"Submit","Enviar"}.
 {"Submitted","Enviado"}.
 {"Subscriber Address","Dirección do subscriptor"}.
 {"Subscriptions are not allowed","Non se permiten subscricións"}.

@@ -233,7 +233,6 @@
 {"Number of Offline Messages","オフラインメッセージ数"}.
 {"Number of online users","オンラインユーザー数"}.
 {"Number of registered users","登録ユーザー数"}.
-{"Occupants are allowed to invite others","在室者は誰かを招待することができます"}.
 {"Occupants May Change the Subject","ユーザーによる件名の変更を許可"}.
 {"October","10月"}.
 {"OK","OK"}.
@@ -331,6 +330,7 @@
 {"Store plain text backup:","プレーンテキストバックアップを保存:"}.
 {"Subject","件名"}.
 {"Submitted","送信完了"}.
+{"Submit","送信"}.
 {"Subscriber Address","購読者のアドレス"}.
 {"Sunday","日曜日"}.
 {"That nickname is already in use by another occupant","そのニックネームは既にほかの在室者によって使用されています"}.

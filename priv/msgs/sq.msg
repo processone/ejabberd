@@ -111,7 +111,6 @@
 {"Grant voice to this person?","T’i akordohet zë këtij personi?"}.
 {"has been banned","është dëbuar"}.
 {"has been kicked","është përzënë"}.
-{"Hat title","Titull kapeleje"}.
 {"Host unknown","Strehë e panjohur"}.
 {"HTTP File Upload","Ngarkim Kartelash HTTP"}.
 {"Idle connection","Lidhje e plogësht"}.
@@ -209,7 +208,6 @@
 {"Number of Offline Messages","Numër Mesazhesh Jo Në Linjë"}.
 {"Number of online users","Numër përdoruesish në linjë"}.
 {"Number of registered users","Numër përdoruesish të regjistruar"}.
-{"Occupants are allowed to invite others","Të pranishmëve u është lejuar të ftojnë të tjerë"}.
 {"Occupants are allowed to query others","Të pranishmëve u është lejuar t’u bëjnë kërkim të tjerëve"}.
 {"Occupants May Change the Subject","Të pranishmit Mund të Ndryshojnë Subjektin"}.
 {"October","Tetor"}.
@@ -279,6 +277,7 @@
 {"Stanza id is not valid","ID Stanza s’është i vlefshëm"}.
 {"Stopped Nodes","Nyja të Ndalura"}.
 {"Subject","Subjekti"}.
+{"Submit","Parashtrojeni"}.
 {"Submitted","Parashtruar"}.
 {"Subscriber Address","Adresë e Pajtimtarit"}.
 {"Sunday","E diel"}.

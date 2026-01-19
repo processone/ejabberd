@@ -295,6 +295,7 @@
 {"Store binary backup:","Konservu duuman sekurkopion:"}.
 {"Store plain text backup:","Skribu sekurkopion en plata tekstdosiero"}.
 {"Subject","Temo"}.
+{"Submit","Sendu"}.
 {"Submitted","Sendita"}.
 {"Subscriber Address","Abonanta adreso"}.
 {"Subscribers may publish","Abonantoj rajtas publici"}.

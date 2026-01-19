@@ -15,7 +15,6 @@
 {"Access model","Права доступу"}.
 {"Account doesn't exist","Обліковий запис не існує"}.
 {"Action on user","Дія над користувачем"}.
-{"Add a hat to a user","Додати капелюх користувачу"}.
 {"Add User","Додати користувача"}.
 {"Administration of ","Адміністрування "}.
 {"Administration","Адміністрування"}.
@@ -172,7 +171,6 @@
 {"has been kicked because the room has been changed to members-only","вигнано з кімнати тому, що вона стала тільки для учасників"}.
 {"has been kicked","вигнали з кімнати"}.
 {"Hash of the vCard-temp avatar of this room","Хеш тимчасового аватара vCard цієї кімнати"}.
-{"Hat title","Назва кімнати"}.
 {"Hat URI","Назва URI"}.
 {"Hats limit exceeded","Перевищено швидкість передачі інформації"}.
 {"Host unknown","Невідоме ім'я сервера"}.
@@ -225,7 +223,6 @@
 {"Last year","За останній рік"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Найменш значущі біти хеш-функції SHA-256 від тексту мають відповідати шістнадцятковій мітці."}.
 {"leaves the room","вийшов(ла) з кімнати"}.
-{"List of users with hats","Список користувачів із капелюхами"}.
 {"List users with hats","Список користувачів із капелюхами"}.
 {"Logged Out","Вийшов із системи"}.
 {"Logging","Журналювання"}.
@@ -325,7 +322,6 @@
 {"Number of online users","Кількість підключених користувачів"}.
 {"Number of registered users","Кількість зареєстрованих користувачів"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Кількість секунд, після яких автоматично видаляти елементи, або `max` для встановлення невизначеного ліміту, окрім максимального, накладеного сервером."}.
-{"Occupants are allowed to invite others","Учасникам дозволено запрошувати інших"}.
 {"Occupants are allowed to query others","Учасникам дозволено ставити запитання іншим"}.
 {"Occupants May Change the Subject","Учасникам дозволено змінювати тему"}.
 {"October","грудня"}.
@@ -462,6 +458,7 @@
 {"Stream management is not enabled","Керування потоком не ввімкнено"}.
 {"Subject","Тема"}.
 {"Submitted","Відправлено"}.
+{"Submit","Надіслати"}.
 {"Subscriber Address","Адреса абонента"}.
 {"Subscribers may publish","Підписники можуть публікувати"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","Запити на підписку мають бути схвалені, і лише передплатники можуть отримувати елементи"}.

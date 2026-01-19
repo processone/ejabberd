@@ -325,6 +325,7 @@
 {"Stream management is already enabled","A folyamkezelés már engedélyezve van"}.
 {"Stream management is not enabled","A folyamkezelés nincs engedélyezve"}.
 {"Subject","Tárgy"}.
+{"Submit","Elküldés"}.
 {"Submitted","Elküldve"}.
 {"Subscriptions are not allowed","Feliratkozások nem engedélyezettek"}.
 {"Sunday","vasárnap"}.

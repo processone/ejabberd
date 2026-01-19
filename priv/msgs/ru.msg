@@ -322,7 +322,6 @@
 {"Number of online users","Количество подключённых пользователей"}.
 {"Number of registered users","Количество зарегистрированных пользователей"}.
 {"Number of seconds after which to automatically purge items, or `max` for no specific limit other than a server imposed maximum","Количество секунд, по истечении которых элементы автоматически удаляются, или `max` для отсутствия ограничений, кроме установленных сервером ограничений"}.
-{"Occupants are allowed to invite others","Участникам разрешается приглашать других"}.
 {"Occupants are allowed to query others","Участникам разрешено видеть друг друга"}.
 {"Occupants May Change the Subject","Разрешить участникам изменять тему"}.
 {"October","октября"}.
@@ -459,6 +458,7 @@
 {"Stream management is not enabled","Управление потоком не активировано"}.
 {"Subject","Тема"}.
 {"Submitted","Отправлено"}.
+{"Submit","Отправить"}.
 {"Subscriber Address","Адрес подписчика"}.
 {"Subscribers may publish","Подписчики могут публиковать"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","Запросы на подписку должны быть одобрены, и только подписчики могут получать элементы"}.

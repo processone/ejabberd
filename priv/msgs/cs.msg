@@ -315,6 +315,7 @@
 {"Store binary backup:","Uložit binární zálohu:"}.
 {"Store plain text backup:","Uložit zálohu do textového souboru:"}.
 {"Subject","Předmět"}.
+{"Submit","Odeslat"}.
 {"Submitted","Odeslané"}.
 {"Subscriber Address","Adresa odběratele"}.
 {"Subscriptions are not allowed","Předplatné není povoleno"}.
