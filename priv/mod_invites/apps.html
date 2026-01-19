@@ -1,0 +1,26 @@
+				<div class="container">
+					<div class="row">
+					{% for item in apps %}
+						<div class="card m-3 client-card {% for platform in item.platforms %}app-platform-{{ platform|lower }} {% endfor %} flex-wrap col-sm-12 col-md-8 col-lg-5">
+							<div class="row no-gutters h-100">
+								<div class="col-md-4">
+									<img src="{{ static }}/{{ item.image }}" class="p-2 img-fluid" alt="{{ item.imagetext }}">
+								</div>
+								<div class="col-md-8">
+									<div class="card-body d-flex flex-column h-100">
+										<h5 class="card-title text-nowrap mb-1">{{ item.name }}</h5>
+										<div>
+                        {% for platform in item.platforms %}<span class="badge badge-info client-platform-badge client-platform-badge-{{ platform|lower }} mr-1 mb-3">{{ platform }}</span>{% endfor %}
+										</div>
+										<p class="card-text">{{ item.text }}</p>
+										<a href="{{ item.proceed_url }}" class="btn btn-primary mt-md-auto">{% if item.select_text %}{{ item.select_text }}{% else %}{% trans "Select" %}{% endif %}</a>
+									</div>
+								</div>
+							</div>
+						</div>
+          {% endfor %}
+					</div>
+				</div>
+				<div id="show-all-clients-button-container" class="d-none alert alert-info">
+					  {% trans "Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>" %}
+				</div>

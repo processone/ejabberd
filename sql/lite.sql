@@ -457,3 +457,15 @@ CREATE TABLE mqtt_pub (
 );
 
 CREATE UNIQUE INDEX i_mqtt_topic ON mqtt_pub (topic);
+
+CREATE TABLE invite_token (
+    token text NOT NULL,
+    username text NOT NULL,
+    invitee text NOT NULL DEFAULT '',
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires timestamp NOT NULL,
+    type character(1) NOT NULL,
+    account_name text NOT NULL,
+    PRIMARY KEY (token)
+);
+CREATE INDEX i_invite_token_username ON invite_token(username);
