@@ -131,10 +131,12 @@ adhoc_items(Config) ->
                       to = ServerJID,
                       sub_els = [DiscoCommands]}),
     ?match(true, [I || I = #disco_item{node = ?NS_INVITE_INVITE} <- Items] /= []),
-    #iq{type = result, sub_els = [#disco_info{node = ?NS_INVITE_INVITE,
-                                              identities = [#identity{category = <<"automation">>,
-                                                                      type = <<"command-node">>}],
-                                              features = [?NS_COMMANDS]}]} =
+    #iq{type = result,
+        sub_els =
+            [#disco_info{node = ?NS_INVITE_INVITE,
+                         identities =
+                             [#identity{category = <<"automation">>, type = <<"command-node">>}],
+                         features = [?NS_COMMANDS]}]} =
         send_recv(Config,
                   #iq{type = get,
                       to = ServerJID,
@@ -160,18 +162,22 @@ adhoc_items(Config) ->
     ?match(true, [I || I = #disco_item{node = ?NS_INVITE_INVITE} <- NewItems] /= []),
     ?match(true, [I || I = #disco_item{node = ?NS_INVITE_CREATE_ACCOUNT} <- NewItems] /= []),
 
-    #iq{type = result, sub_els = [#disco_info{node = ?NS_INVITE_INVITE,
-                                              identities = [#identity{category = <<"automation">>,
-                                                                      type = <<"command-node">>}],
-                                              features = [?NS_COMMANDS]}]} =
+    #iq{type = result,
+        sub_els =
+            [#disco_info{node = ?NS_INVITE_INVITE,
+                         identities =
+                             [#identity{category = <<"automation">>, type = <<"command-node">>}],
+                         features = [?NS_COMMANDS]}]} =
         send_recv(Config,
                   #iq{type = get,
                       to = ServerJID,
                       sub_els = [#disco_info{node = ?NS_INVITE_INVITE}]}),
-    #iq{type = result, sub_els = [#disco_info{node = ?NS_INVITE_CREATE_ACCOUNT,
-                                              identities = [#identity{category = <<"automation">>,
-                                                                      type = <<"command-node">>}],
-                                              features = [?NS_COMMANDS]}]} =
+    #iq{type = result,
+        sub_els =
+            [#disco_info{node = ?NS_INVITE_CREATE_ACCOUNT,
+                         identities =
+                             [#identity{category = <<"automation">>, type = <<"command-node">>}],
+                         features = [?NS_COMMANDS]}]} =
         send_recv(Config,
                   #iq{type = get,
                       to = ServerJID,

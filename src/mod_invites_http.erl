@@ -138,7 +138,9 @@ process_valid_token([_Token, AppID] = LocalPath,
         _:not_found ->
             ?NOT_FOUND
     end;
-process_valid_token([_Token] = LocalPath, #request{host = Host, lang = Lang} = Request, Invite) ->
+process_valid_token([_Token] = LocalPath,
+                    #request{host = Host, lang = Lang} = Request,
+                    Invite) ->
     Ctx0 = ctx(Invite, Request, LocalPath),
     Apps =
         lists:map(fun(App0) ->
@@ -151,7 +153,10 @@ process_valid_token([_Token] = LocalPath, #request{host = Host, lang = Lang} = R
 process_valid_token(_, _, _) ->
     ?NOT_FOUND.
 
-process_register_form(Invite, AppID, #request{host = Host, lang = Lang} = Request, LocalPath) ->
+process_register_form(Invite,
+                      AppID,
+                      #request{host = Host, lang = Lang} = Request,
+                      LocalPath) ->
     try app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)) of
         AppCtx ->
             Body = render_register_form(Request, AppCtx, maybe_add_username(Invite)),
@@ -171,7 +176,7 @@ process_register_post(Invite,
                                lang = Lang,
                                ip = {Source, _}} =
                           Request,
-                     LocalPath) ->
+                      LocalPath) ->
     ?DEBUG("got query: ~p", [Q]),
     Username = proplists:get_value(<<"user">>, Q),
     Password = proplists:get_value(<<"password">>, Q),
@@ -211,7 +216,9 @@ process_register_post(Invite,
             ?BAD_REQUEST
     end.
 
-process_roster_token([_Token] = LocalPath, #request{host = Host, lang = Lang} = Request, Invite) ->
+process_roster_token([_Token] = LocalPath,
+                     #request{host = Host, lang = Lang} = Request,
+                     Invite) ->
     Ctx0 = ctx(Invite, Request, LocalPath),
     Apps =
         lists:map(fun(App = #{<<"download">> := #{<<"buttons">> := [Button | _]}}) ->
@@ -249,7 +256,9 @@ app_ctx(Host, AppID, Lang, Ctx) ->
     end.
 
 ctx(#request{host = Host, path = Path}, LocalPath) ->
-    Base = iolist_to_binary(uri_string:normalize(lists:join(<<"/">>, Path -- LocalPath))),
+    Base =
+        iolist_to_binary(uri_string:normalize(
+                             lists:join(<<"/">>, Path -- LocalPath))),
     SiteName = mod_invites_opt:site_name(Host),
     [?STATIC_CTX, ?SITE_NAME_CTX(SiteName)].
 

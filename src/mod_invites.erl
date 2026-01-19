@@ -97,12 +97,14 @@ depends(_Host, _Opts) ->
 mod_doc() ->
     #{desc =>
           [?T("Allow User Invitation and Account Creation to create out-of-band "
-             "links to onboard others onto the XMPP network and establish "
-             "a mutual subscription."), "",
+              "links to onboard others onto the XMPP network and establish "
+              "a mutual subscription."),
+           "",
            ?T("These invitations are created as XMPP URIs either via ad-hoc "
               "commands or via API commands (like _`generate_invite`_ API and "
               " _`generate_invite_with_username`_ API), are then meant to be "
-              "sent out-of-band."), "",
+              "sent out-of-band."),
+           "",
            ?T("The receiving user should have installed a client that supports "
               "those invitations. Since this has proven to be a common obstacle "
               "for easy adoption, this module comes with an optional landing "
@@ -113,8 +115,10 @@ mod_doc() ->
               "https://invite.joinjabber.org[JoinJabber] "
               "or for convenience a built-in service. This landing page will "
               "then guide the recipient with setting up a client "
-              "and creating an account if required."), "",
-           ?T("In order to use the included landing page feature, you have to"), "",
+              "and creating an account if required."),
+           "",
+           ?T("In order to use the included landing page feature, you have to"),
+           "",
            ?T(" * have a copy of https://jquery.com[jQuery] and "
               "   https://getbootstrap.com/docs/4.6/getting-started/introduction/[Bootstrap4] "
               "   in a shared directory on your system. If you're using Debian or "
@@ -128,12 +132,12 @@ mod_doc() ->
               "   (e.g. `docroot: /usr/share/javascript`)"),
            ?T(" * configure `mod_invites` and set `landing_page` to either `auto` "
               "   or an URL template like `https://{{ host }}/invites/{{ invite.token }}` "
-              "   if your server setup includes a so called reverse proxy"), "",
+              "   if your server setup includes a so called reverse proxy"),
+           "",
            "If you'd rather want to use an external service, set `landing_page` "
            "to something like "
            "`http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}` "
-           "or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`."
-          ],
+           "or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`."],
       opts =>
           [{access_create_account,
             #{value => ?T("Access Rule Name"),
@@ -182,8 +186,9 @@ mod_doc() ->
                      "list of recommended apps.")}},
            {token_expire_seconds,
             #{value => "pos_integer()",
-              desc => ?T("Number of seconds until token expires. Default value "
-                         "is `432000` (that is five days: `5 * 24 * 60 * 60`)")}}],
+              desc =>
+                  ?T("Number of seconds until token expires. Default value "
+                     "is `432000` (that is five days: `5 * 24 * 60 * 60`)")}}],
       example =>
           [{?T("Basic configuration with landing page but without creating "
                "accounts, just roster invites:"),
@@ -233,8 +238,7 @@ mod_doc() ->
              "    landing_page: auto",
              "  mod_register:",
              "    allow_modules:",
-             "      - mod_invites"]}
-          ]}.
+             "      - mod_invites"]}]}.
 
 mod_options(Host) ->
     [{access_create_account, none},
@@ -319,7 +323,9 @@ get_commands_spec() ->
                         args = [{host, binary}],
                         args_desc = ["Hostname to generate 'create account' invite for."],
                         args_example = [<<"example.com">>],
-                        result_example = {<<"xmpp:example.com?register;preauth=4bsdpwVrRDQYnF9aQQKXGbF7">>, <<"https://example.com/invites/4bsdpwVrRDQYnF9aQQKXGbF7">>},
+                        result_example =
+                            {<<"xmpp:example.com?register;preauth=4bsdpwVrRDQYnF9aQQKXGbF7">>,
+                             <<"https://example.com/invites/4bsdpwVrRDQYnF9aQQKXGbF7">>},
                         result = {invite, {tuple, [{invite_uri, string}, {landing_page, string}]}}},
      #ejabberd_commands{name = generate_invite_with_username,
                         tags = [accounts],
@@ -334,7 +340,8 @@ get_commands_spec() ->
                              "hostname  to generate 'create account' invite for."],
                         args_example = [<<"juliet">>, <<"example.com">>],
                         result_example =
-                            {<<"xmpp:juliet@example.com?register;preauth=4bsdpwVrRDQYnF9aQQKXGbF7">>, <<"https://example.com/invites/4bsdpwVrRDQYnF9aQQKXGbF7">>},
+                            {<<"xmpp:juliet@example.com?register;preauth=4bsdpwVrRDQYnF9aQQKXGbF7">>,
+                             <<"https://example.com/invites/4bsdpwVrRDQYnF9aQQKXGbF7">>},
                         result = {invite, {tuple, [{invite_uri, string}, {landing_page, string}]}}},
      #ejabberd_commands{name = list_invites,
                         tags = [accounts],
@@ -636,8 +643,9 @@ handle_pre_auth_token([El | Els],
 %%| Service Disco
 
 -define(INFO_IDENTITY(Category, Type, Name, Lang),
-        [#identity{category = Category, type = Type, name = trans(Lang, Name)}]).
-
+        [#identity{category = Category,
+                   type = Type,
+                   name = trans(Lang, Name)}]).
 -define(INFO_COMMAND(Name, Lang),
         ?INFO_IDENTITY(<<"automation">>, <<"command-node">>, Name, Lang)).
 
@@ -649,19 +657,20 @@ get_local_identity(_Acc, _From, _To, ?NS_INVITE_INVITE, Lang) ->
 get_local_identity(Acc, _From, _To, _NS, _Lang) ->
     Acc.
 
--spec get_local_features(mod_disco:features_acc(), jid(), jid(),
-			 binary(), binary()) -> mod_disco:features_acc().
+-spec get_local_features(mod_disco:features_acc(), jid(), jid(), binary(), binary()) ->
+                            mod_disco:features_acc().
 get_local_features(Acc, From, #jid{lserver = LServer} = _To, Ns, Lang) ->
     maybe
-        allow ?= case Ns of
-                     ?NS_INVITE_CREATE_ACCOUNT ->
-                         Access = mod_invites_opt:access_create_account(LServer),
-                         acl:match_rule(LServer, Access, From);
-                     ?NS_INVITE_INVITE ->
-                         allow;
-                     _ ->
-                         false
-                 end,
+        allow ?=
+            case Ns of
+                ?NS_INVITE_CREATE_ACCOUNT ->
+                    Access = mod_invites_opt:access_create_account(LServer),
+                    acl:match_rule(LServer, Access, From);
+                ?NS_INVITE_INVITE ->
+                    allow;
+                _ ->
+                    false
+            end,
         {result, [?NS_COMMANDS]}
     else
         false ->
