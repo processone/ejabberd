@@ -1850,10 +1850,8 @@ format_room_option(OptionString, ValueString) ->
                       (ValueString == <<"participants">>) or
                       (ValueString == <<"moderators">>) or
                       (ValueString == <<"none">>) -> binary_to_existing_atom(ValueString, utf8);
-		presence_broadcast when
-                      (ValueString == <<"participant">>) or
-                      (ValueString == <<"moderator">>) or
-                      (ValueString == <<"visitor">>) -> binary_to_existing_atom(ValueString, utf8);
+		presence_broadcast ->
+		    [parse_presence_broadcast(Opt) || Opt <- str:tokens(ValueString, <<";,">>)];
 		_ when ValueString == <<"true">> -> true;
 		_ when ValueString == <<"false">> -> false;
                 _ -> throw_error(Option, ValueString)
@@ -1927,6 +1925,15 @@ parse_nodes([<<"subscribers">> | Rest], Acc) ->
     parse_nodes(Rest, [?NS_MUCSUB_NODES_SUBSCRIBERS | Acc]);
 parse_nodes(_, _) ->
     throw({error, "Invalid 'subscribers' - unknown node name used"}).
+
+parse_presence_broadcast(<<"participant">>) ->
+    participant;
+parse_presence_broadcast(<<"moderator">>) ->
+    moderator;
+parse_presence_broadcast(<<"visitor">>) ->
+    visitor;
+parse_presence_broadcast(Value) ->
+    throw_error(presence_broadcast, Value).
 
 -spec get_room_pid_validate(binary(), binary(), binary()) ->
     {pid() | room_not_found | db_failure, binary(), binary()}.
