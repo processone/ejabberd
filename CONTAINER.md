@@ -105,7 +105,7 @@ Next steps
 
 ### Register admin account
 
-#### [![ejabberd Container](https://img.shields.io/badge/ejabberd-grey?logo=opencontainersinitiative&logoColor=2094f3)](https://github.com/processone/ejabberd/pkgs/container/ejabberd) [:orange_circle:](#images-comparison)
+#### [![ejabberd Container](https://img.shields.io/badge/ejabberd-grey?logo=opencontainersinitiative&logoColor=2094f3)](https://github.com/processone/ejabberd/pkgs/container/ejabberd) [🔅](#images-comparison)
 
 If you set the `REGISTER_ADMIN_PASSWORD` environment variable,
 an account is automatically registered with that password,
@@ -118,10 +118,19 @@ The account created depends on what variables you have set:
 
 The account registration is shown in the container log:
 
+```bash
+$ podman run -it \
+  --env EJABBERD_MACRO_HOST=example.org \
+  --env EJABBERD_MACRO_ADMIN=juliet@example.org \
+  --env REGISTER_ADMIN_PASSWORD=somePassw0rd \
+  ghcr.io/processone/ejabberd
+
+:> ejabberdctl register juliet example.org somePassw0rd
+User juliet@example.org successfully registered
 ```
-:> ejabberdctl register admin example.org somePassw0rd
-User admin@example.org successfully registered
-```
+
+This is implemented internally by using
+[Commands on start](#commands-on-start).
 
 Alternatively, you can register the account manually yourself
 and edit `conf/ejabberd.yml` and add the ACL as explained in
@@ -207,20 +216,21 @@ documentation section.
 Advanced
 --------
 
-### Ports
-
+### Ports 🟠
 The container image exposes several ports
 (check also [Docs: Firewall Settings](https://docs.ejabberd.im/admin/guide/security/#firewall-settings)):
 
 - `5222`: The default port for XMPP clients.
 - `5269`: For XMPP federation. Only needed if you want to communicate with users on other servers.
 - `5280`: For admin interface (URL is `admin/`).
-- `1880`: For admin interface (URL is `/`, useful for [podman-desktop](https://podman-desktop.io/) and [docker-desktop](https://www.docker.com/products/docker-desktop/)) [:orange_circle:](#images-comparison)
 - `5443`: With encryption, used for admin interface, API, CAPTCHA, OAuth, Websockets and XMPP BOSH.
+- `1880`: For admin interface (URL is `/`, useful for [podman-desktop](https://podman-desktop.io/) and [docker-desktop](https://www.docker.com/products/docker-desktop/)) [🔅](#images-comparison)
 - `1883`: Used for MQTT
+- `5478` UDP: STUN service 🟠
+- `50000-50099` UDP: TURN service 🟠
+- `7777`: SOCKS5 file transfer proxy 🟠
+- `5210`: Erlang connectivity when `ERL_DIST_PORT` is set, alternative to EPMD [🔅](#images-comparison)
 - `4369-4399`: EPMD and Erlang connectivity, used for `ejabberdctl` and clustering
-- `5210`: Erlang connectivity when `ERL_DIST_PORT` is set, alternative to EPMD [:orange_circle:](#images-comparison)
-
 
 ### Volumes
 
@@ -270,7 +280,10 @@ If any of those commands returns a failure, the container starting gets aborted.
 If there is a command with a result that can be ignored,
 prefix that command with `!`
 
-This example, registers an `admin@localhost` account when the container is first created.
+All this works when starting ejabberd with the default method `foreground`,
+not when using `live`, `iexlive`, ...
+
+This example registers an `admin@localhost` account when the container is first created.
 Everytime the container starts, it shows the list of registered accounts,
 checks that the admin account exists and password is valid,
 changes the password of an account if it exists (ignoring any failure),
@@ -284,8 +297,37 @@ and shows the ejabberd starts (check also the [full example](#customized-example
                      status
 ```
 
+Same example using Podman:
+```bash
+$ podman run -it \
+  --env CTL_ON_CREATE="register admin localhost asd" \
+  --env CTL_ON_START="stats registeredusers ; \
+                      check_password admin localhost asd ; \
+                      ! change_password bot123 localhost qqq ; \
+                      status" \
+  ghcr.io/processone/ejabberd
 
-### Macros in environment [:high_brightness:](#images-comparison)
+...
+
+:> ejabberdctl register admin localhost asd
+User admin@localhost successfully registered
+
+:> ejabberdctl stats registeredusers
+1
+
+:> ejabberdctl check_password admin localhost asd
+
+:> ejabberdctl change_password bot123 localhost qqq
+{not_found,"unknown_user"}
+:> FAILURE in command 'change_password bot123 localhost qqq' !!! Ignoring result
+
+:> ejabberdctl status
+The node ejabberd@localhost is started. Status: started
+ejabberd 25.10.0 is running in that node
+```
+
+
+### Macros in environment
 
 ejabberd reads `EJABBERD_MACRO_*` environment variables
 and uses them to define the corresponding
@@ -1060,10 +1102,10 @@ Images Comparison
 
 Let's summarize the differences between both container images. Legend:
 
-- :sparkle: is the recommended alternative
-- :orange_circle: added in the latest release (ejabberd 25.03)
-- :high_brightness: added in the previous release (ejabberd 24.12)
-- :low_brightness: added in the pre-previous release (ejabberd 24.10)
+- ❇️:  is the recommended alternative
+- 🟠: changed in ejabberd 26.01
+- 🔆: changed in ...
+- 🔅: changed in ejabberd 25.03
 
 |                       | [![ejabberd Container](https://img.shields.io/badge/ejabberd-grey?logo=opencontainersinitiative&logoColor=2094f3)](https://github.com/processone/ejabberd/pkgs/container/ejabberd) | [![ecs Container](https://img.shields.io/badge/ecs-grey?logo=docker&logoColor=2094f3)](https://hub.docker.com/r/ejabberd/ecs/) |
 |:----------------------|:------------------|:-----------------------|
@@ -1071,24 +1113,24 @@ Let's summarize the differences between both container images. Legend:
 | Generated by          | [container.yml](https://github.com/processone/ejabberd/blob/master/.github/workflows/container.yml) | [tests.yml](https://github.com/processone/docker-ejabberd/blob/master/.github/workflows/tests.yml) |
 | Built for             | stable releases <br /> `master` branch | stable releases <br /> [`master` branch zip](https://github.com/processone/docker-ejabberd/actions/workflows/tests.yml) |
 | Architectures         | `linux/amd64` <br /> `linux/arm64` | `linux/amd64` |
-| Software              | Erlang/OTP 28.3.1.0-alpine <br /> Elixir 1.19.5 | Alpine 3.22 <br /> Erlang/OTP 26.2 <br /> Elixir 1.18.3 |
+| Software              | Erlang/OTP 28.3.1.0-alpine 🟠 <br /> Elixir 1.19.5 🟠 | Alpine 3.22 <br /> Erlang/OTP 26.2 <br /> Elixir 1.18.3 |
 | Published in          | [ghcr.io/processone/ejabberd](https://github.com/processone/ejabberd/pkgs/container/ejabberd) | [docker.io/ejabberd/ecs](https://hub.docker.com/r/ejabberd/ecs/) <br /> [ghcr.io/processone/ecs](https://github.com/processone/docker-ejabberd/pkgs/container/ecs) |
 | :black_square_button: **Additional content** |
 | [ejabberd-contrib](#ejabberd-contrib) | included | not included |
-| [ejabberdapi](#ejabberdapi) | included :orange_circle: | included |
+| [ejabberdapi](#ejabberdapi) | included 🔅 | included |
 | :black_square_button: **Ports** |
-| [1880](#ports) for WebAdmin     | yes :orange_circle: | yes :orange_circle: |
-| [5210](#ports) for `ERL_DIST_PORT` | supported | supported :orange_circle: |
+| [1880](#ports) for WebAdmin     | yes 🔅 | yes 🔅 |
+| [5210](#ports) for `ERL_DIST_PORT` | supported | supported 🔅 |
 | :black_square_button: **Paths** |
 | `$HOME`               | `/opt/ejabberd/` | `/home/ejabberd/` |
-| User data             | `$HOME` :sparkle: <br /> `/home/ejabberd/` :orange_circle: | `$HOME` <br /> `/opt/ejabberd/` :sparkle: :low_brightness: |
-| `ejabberdctl`         | `ejabberdctl` :sparkle: <br /> `bin/ejabberdctl` :orange_circle:  | `bin/ejabberdctl` <br /> `ejabberdctl` :sparkle: :low_brightness: |
-| [`captcha.sh`](#captcha)         | `$HOME/bin/captcha.sh` :orange_circle:  | `$HOME/bin/captcha.sh` :orange_circle: |
-| `*.sql` files | `$HOME/sql/*.sql` :sparkle: :orange_circle: <br />  `$HOME/database/*.sql` :orange_circle: | `$HOME/database/*.sql` <br /> `$HOME/sql/*.sql` :sparkle: :orange_circle: |
-| Mnesia spool files | `$HOME/database/` :sparkle: <br /> `$HOME/database/NODENAME/` :orange_circle:  | `$HOME/database/NODENAME/` <br /> `$HOME/database/` :sparkle: :orange_circle: |
+| User data             | `$HOME` ❇️  <br /> `/home/ejabberd/` 🔅 | `$HOME` <br /> `/opt/ejabberd/` ❇️  |
+| `ejabberdctl`         | `ejabberdctl` ❇️  <br /> `bin/ejabberdctl` 🔅  | `bin/ejabberdctl` <br /> `ejabberdctl` ❇️  |
+| [`captcha.sh`](#captcha)         | `$HOME/bin/captcha.sh` 🔅  | `$HOME/bin/captcha.sh` 🔅 |
+| `*.sql` files | `$HOME/sql/*.sql` ❇️  🔅 <br />  `$HOME/database/*.sql` 🔅 | `$HOME/database/*.sql` <br /> `$HOME/sql/*.sql` ❇️  🔅 |
+| Mnesia spool files | `$HOME/database/` ❇️  <br /> `$HOME/database/NODENAME/` 🔅  | `$HOME/database/NODENAME/` <br /> `$HOME/database/` ❇️  🔅 |
 | :black_square_button: **Variables** |
-| [`EJABBERD_MACRO_*`](#macros-in-environment)      | supported :high_brightness: | supported :high_brightness: |
-| Macros used in `ejabberd.yml` | yes :orange_circle: | yes :orange_circle: |
-| [`EJABBERD_MACRO_ADMIN`](#register-admin-account) | Grant admin rights :orange_circle: <br /> (default `admin@localhost`) <br /> | Hardcoded `admin@localhost` |
-| [`REGISTER_ADMIN_PASSWORD`](#register-admin-account) | Register admin account :orange_circle: | unsupported |
-| `CTL_OVER_HTTP`       | enabled :orange_circle: | unsupported |
+| [`EJABBERD_MACRO_*`](#macros-in-environment)      | supported | supported |
+| Macros used in `ejabberd.yml` | yes 🔅 | yes 🔅 |
+| [`EJABBERD_MACRO_ADMIN`](#register-admin-account) | Grant admin rights 🔅 <br /> (default `admin@localhost`) <br /> | Hardcoded `admin@localhost` |
+| [`REGISTER_ADMIN_PASSWORD`](#register-admin-account) | Register admin account 🔅 | unsupported |
+| `CTL_OVER_HTTP`       | enabled 🔅 | unsupported |
