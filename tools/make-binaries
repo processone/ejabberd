@@ -466,7 +466,7 @@ strip_files()
 	    -perm '-u+x' \
 	    -exec "$strip_cmd" -s '{}' '+' 2>'/dev/null' || :
 	erl -noinput -eval \
-	    "{ok, _} = beam_lib:strip_release('$code_dir'), halt()"
+	    "{ok, _} = beam_lib:strip_release('$code_dir',[\"Attr\"]), halt()"
 }
 #.
 
