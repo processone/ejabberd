@@ -5,6 +5,8 @@
 
 {" has set the subject to: "," har satt ämnet till: "}.
 {"A friendly name for the node","Ett vänligt namn for noden"}.
+{"A Web Page","En nätsida"}.
+{"Accept","Acceptera"}.
 {"Access denied by service policy","Åtkomst nekad enligt lokal policy"}.
 {"Action on user","Handling mot användare"}.
 {"Add User","Lägg till användare"}.
@@ -14,6 +16,7 @@
 {"All activity","All aktivitet"}.
 {"All Users","Alla användare"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Tillåt denna Jabber ID att prenumerera på denna pubsub node"}.
+{"Allow this person to register with the room?","Tillåt registrera sig med rummet?"}.
 {"Allow users to change the subject","Tillåt användare att byta ämne"}.
 {"Allow users to query other users","Tillåt användare att söka efter andra användare"}.
 {"Allow users to send invites","Tillåt användare att skicka inbjudningar"}.
