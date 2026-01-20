@@ -65,7 +65,6 @@ ARG HOME
 RUN mkdir -p $HOME $HOME-$VERSION \
     && cp -r $BUILD_DIR/_build/prod/rel/ejabberd/* $HOME-$VERSION \
     && mv $HOME-$VERSION/conf $HOME/conf
-RUN $BUILD_DIR/tools/dl_invites_page_deps.sh /rootfs/usr/share/javascript
 
 RUN cp -p $BUILD_DIR/tools/captcha*.sh $HOME-$VERSION/lib
 
