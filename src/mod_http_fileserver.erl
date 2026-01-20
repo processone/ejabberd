@@ -562,7 +562,7 @@ mod_options(_) ->
 mod_doc() ->
     #{desc =>
           ?T("This simple module serves files from the local disk over HTTP."),
-      note => "improved 'docroot' in 26.xx",
+      note => "improved 'docroot' in 26.01",
       opts =>
           [{accesslog,
             #{value => ?T("Path"),
@@ -571,7 +571,7 @@ mod_doc() ->
                      "No log will be recorded if this option is not specified.")}},
            {docroot,
             #{value => ?T("PathDir | {PathURL, PathDir}"),
-              note => "improved in 26.xx",
+              note => "improved in 26.01",
               desc =>
                   ?T("Directory to serve the files from, "
                      "or a map with several URL path "

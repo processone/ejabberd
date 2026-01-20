@@ -112,6 +112,7 @@ get_commands_spec() ->
 		       longdesc = "Ask for a specific host, or `global` to use all vhosts.",
                        policy = admin,
 		       module = ?MODULE, function = muc_online_rooms_count,
+		       note = "added in 26.01",
 		       args_desc = ["MUC service, or `global` for all"],
 		       args_example = ["conference.example.com"],
 		       result_desc = "Number of active rooms",

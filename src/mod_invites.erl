@@ -145,6 +145,7 @@ mod_doc() ->
            "to something like "
            "`http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}` "
            "or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`."],
+      note => "added in 26.01",
       opts =>
           [{access_create_account,
             #{value => ?T("Access Rule Name"),
@@ -309,6 +310,7 @@ get_commands_spec() ->
                         desc = "Delete invite tokens that have expired",
                         module = ?MODULE,
                         function = cleanup_expired,
+                        note = "added in 26.01",
                         args = [],
                         result_example = 42,
                         result = {num_deleted, integer}},
@@ -319,6 +321,7 @@ get_commands_spec() ->
                             "to user",
                         module = ?MODULE,
                         function = expire_tokens,
+                        note = "added in 26.01",
                         args = [{username, binary}, {host, binary}],
                         result_example = 42,
                         result = {num_deleted, integer}},
@@ -327,6 +330,7 @@ get_commands_spec() ->
                         desc = "Create a new 'create account' invite",
                         module = ?MODULE,
                         function = gen_invite,
+                        note = "added in 26.01",
                         args = [{host, binary}],
                         args_desc = ["Hostname to generate 'create account' invite for."],
                         args_example = [<<"example.com">>],
@@ -341,6 +345,7 @@ get_commands_spec() ->
                             "username",
                         module = ?MODULE,
                         function = gen_invite,
+                        note = "added in 26.01",
                         args = [{username, binary}, {host, binary}],
                         args_desc =
                             ["Preselected Username",
@@ -355,6 +360,7 @@ get_commands_spec() ->
                         desc = "List invite tokens",
                         module = ?MODULE,
                         function = list_invites,
+                        note = "added in 26.01",
                         args = [{host, binary}],
                         args_desc = ["Hostname tokens are valid for"],
                         args_example = [<<"example.com">>],

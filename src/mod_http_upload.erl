@@ -214,7 +214,7 @@ mod_doc() ->
            ?T("In order to use this module, it must be enabled "
               "in 'listen' -> 'ejabberd_http' -> "
               "_`listen-options.md#request_handlers|request_handlers`_.")],
-      note => "added 'content_types' in 26.xx",
+      note => "added 'content_types' in 26.01",
       opts =>
           [{host,
             #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
@@ -320,7 +320,7 @@ mod_doc() ->
             #{desc => ?T("Deprecated.")}},
            {content_types,
             #{value => "{Extension: Type}",
-              note => "added in 26.xx",
+              note => "added in 26.01",
               desc =>
                   ?T("Specify mappings of extension to content type, similarly to "
                      "the option `content_types` of _`mod_http_fileserver`_.")}},
