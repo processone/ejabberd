@@ -99,6 +99,13 @@ mod_doc() ->
           [?T("Allow User Invitation and Account Creation to create out-of-band "
               "links to onboard others onto the XMPP network and establish "
               "a mutual subscription."),
+           ?T("This implements "
+              "https://xmpp.org/extensions/xep-0379.html"
+              "[XEP-0379: Pre-Authenticated Roster Subscription], "
+              "https://xmpp.org/extensions/xep-0401.html"
+              "[XEP-0401: Ad-hoc Account Invitation Generation], and "
+              "https://xmpp.org/extensions/xep-0445.html"
+              "[XEP-0445: Pre-Authenticated In-Band Registration]."),
            "",
            ?T("These invitations are created as XMPP URIs either via ad-hoc "
               "commands or via API commands (like _`generate_invite`_ API and "
