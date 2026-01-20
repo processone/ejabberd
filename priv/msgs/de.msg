@@ -80,6 +80,7 @@
 {"Backup to File at ","Backup in Datei bei "}.
 {"Backup","Backup"}.
 {"Bad format","Ungültiges Format"}.
+{"BAD REQUEST","UNGÜLTIGE ANFRAGE"}.
 {"Beagle IM by Tigase, Inc. is a lightweight and powerful XMPP client for macOS.","Beagle IM von Tigase Inc. ist eine schlanker aber funktionsreicher XMPP-Client für macOS."}.
 {"Birthday","Geburtsdatum"}.
 {"Both the username and the resource are required","Sowohl der Benutzername als auch die Ressource sind erforderlich"}.
@@ -138,6 +139,7 @@
 {"Deliver event notifications","Ereignisbenachrichtigungen zustellen"}.
 {"Deliver payloads with event notifications","Nutzdaten mit Ereignisbenachrichtigungen zustellen"}.
 {"Destroy a Hat","Einen Hut zerstören"}.
+{"Disable User","Benutzer deaktivieren"}.
 {"Disc only copy","Nur auf Festplatte"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","Geben Sie niemandem Ihr Passwort, auch nicht den Administratoren des XMPP-Servers."}.
 {"Download and install {{ app_name }} below:","Herunterladen und Installieren von {{ app_name }}:"}.
@@ -195,13 +197,20 @@
 {"Full List of Room Admins","Vollständige Liste der Raumadmins"}.
 {"Full List of Room Owners","Vollständige Liste der Raumbesitzer"}.
 {"Full Name","Vollständiger Name"}.
+{"Get List of Active Users","Liste der aktiven Benutzer abrufen"}.
+{"Get List of Disabled Users","Liste der deaktivierten Benutzer abrufen"}.
+{"Get List of Idle Users","Liste der inaktiven Benutzer abrufen"}.
 {"Get List of Online Users","Liste der angemeldeten Benutzer abrufen"}.
 {"Get List of Registered Users","Liste der registrierten Benutzer abrufen"}.
+{"Get Number of Active Users","Anzahl der aktiven Benutzer abrufen"}.
+{"Get Number of Disabled Users","Anzahl der deaktivierten Benutzer abrufen"}.
+{"Get Number of Idle Users","Anzahl der inaktiven Benutzer abrufen"}.
 {"Get Number of Online Users","Anzahl der angemeldeten Benutzer abrufen"}.
 {"Get Number of Registered Users","Anzahl der registrierten Benutzer abrufen"}.
 {"Get Pending","Ausstehende abrufen"}.
 {"Get started","Leg los!"}.
 {"Get User Last Login Time","letzte Anmeldezeit des Benutzers abrufen"}.
+{"Get User Roster","Kontaktliste abrufen"}.
 {"Get User Statistics","Benutzerstatistiken abrufen"}.
 {"Given Name","Vorname"}.
 {"Grant voice to this person?","Dieser Person Sprachrechte erteilen?"}.
@@ -276,6 +285,7 @@
 {"Launch Beagle IM, and select 'Yes' to add a new account. Click the '+' button under the empty account list and then enter your credentials.","Starte Beagle IM und wähle 'Yes' um ein neues Konto hinzuzufügen. Drücke auf das '+' unter der leeren Account-Liste und gib dann deine Anmeldedaten ein!"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Niederwertigstes Bit des SHA-256-Hashes des Textes sollte hexadezimalem Label gleichen"}.
 {"leaves the room","verlässt den Raum"}.
+{"List of Hats","Liste aller Hüte"}.
 {"List users with hats","Benutzer mit Funktionen auflisten"}.
 {"Log in via web","Via Web anmelden"}.
 {"Logged Out","Abgemeldet"}.
@@ -298,6 +308,7 @@
 {"Maximum number of items to persist","Maximale Anzahl persistenter Items"}.
 {"Maximum Number of Occupants","Maximale Anzahl der Teilnehmer"}.
 {"May","Mai"}.
+{"Members are allowed to invite others","Mitglieder dürfen andere einladen"}.
 {"Membership is required to enter this room","Mitgliedschaft ist erforderlich um diesen Raum zu betreten"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Merken Sie sich Ihr Passwort, oder schreiben Sie es auf einen Zettel den Sie sicher verwahren. Bei XMPP gibt es keine automatische Möglichkeit, das Passwort wiederherzustellen falls Sie es vergessen."}.
 {"Mere Availability in XMPP (No Show Value)","Bloße Verfügbarkeit in XMPP (kein Anzeigewert)"}.
@@ -366,12 +377,16 @@
 {"None","Keine"}.
 {"Not allowed","Nicht erlaubt"}.
 {"Not Found","Nicht gefunden"}.
+{"NOT FOUND","NICHT GEFUNDEN"}.
 {"Not subscribed","Nicht abonniert"}.
 {"Notify subscribers when items are removed from the node","Abonnenten benachrichtigen, wenn Items vom Knoten entfernt werden"}.
 {"Notify subscribers when the node configuration changes","Abonnenten benachrichtigen, wenn sich die Knotenkonfiguration ändert"}.
 {"Notify subscribers when the node is deleted","Abonnenten benachrichtigen, wenn der Knoten gelöscht wird"}.
 {"November","November"}.
+{"Number of active users","Anzahl der aktiven Benutzer"}.
 {"Number of answers required","Anzahl der erforderlichen Antworten"}.
+{"Number of disabled users","Anzahl der deaktivierten Benutzer"}.
+{"Number of idle users","Anzahl der inaktiven Benutzer"}.
 {"Number of occupants","Anzahl der Teilnehmer"}.
 {"Number of Offline Messages","Anzahl der Offline-Nachrichten"}.
 {"Number of online users","Anzahl der angemeldeten Benutzer"}.
@@ -416,6 +431,7 @@
 {"Password","Passwort"}.
 {"Path to Dir","Pfad zum Verzeichnis"}.
 {"Path to File","Pfad zur Datei"}.
+{"Payload semantic type information","Semantische Typinformation des Payloads"}.
 {"Period: ","Zeitraum: "}.
 {"Persist items to storage","Items dauerhaft speichern"}.
 {"Persistent","Persistent"}.
@@ -449,6 +465,7 @@
 {"Receive notification of new items only","Benachrichtigung nur von neuen Items erhalten"}.
 {"Receive notification of new nodes only","Benachrichtigung nur von neuen Knoten erhalten"}.
 {"Recipient is not in the conference room","Empfänger ist nicht im Konferenzraum"}.
+{"Re-Enable User","Benutzer wieder aktivieren"}.
 {"Register an XMPP account","Ein XMPP-Konto registrieren"}.
 {"Register on {{ site_name }}","Registriere dich auf {{ site_name }}"}.
 {"Register","Anmelden"}.
@@ -503,6 +520,7 @@
 {"Set message of the day on all hosts and send to online users","Nachricht des Tages auf allen Hosts setzen und an alle angemeldeten Benutzer senden"}.
 {"Shared Roster Groups","Gruppen der gemeinsamen Kontaktliste"}.
 {"Show Integral Table","Integral-Tabelle anzeigen"}.
+{"Show Occupants Join/Leave","Betreten und Verlassen von Teilnehmern anzeigen"}.
 {"Show Ordinary Table","Gewöhnliche Tabelle anzeigen"}.
 {"Show","Anzeigen"}.
 {"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>","Wir zeigen dir nur Apps für <span class=\"platform-name\">deine aktuelle Platform</span> an. Du kannst dir gerne auch <a href=\"#\" id=\"show-all-clients-button\">sämtliche Apps anzeigen lassen</a>."}.
@@ -557,6 +575,9 @@
 {"The JIDs of those to contact with questions","Die JIDs jener, die bei Fragen zu kontaktieren sind"}.
 {"The JIDs of those with an affiliation of owner","Die JIDs jener mit einer Zugehörigkeit von Besitzer"}.
 {"The JIDs of those with an affiliation of publisher","Die JIDs jener mit einer Zugehörigkeit von Veröffentlicher"}.
+{"The list of all active users","Die Liste aller aktiven Benutzer"}.
+{"The list of all disabled users","Die Liste aller deaktivierten Benutzer"}.
+{"The list of all idle users","Die Liste aller inaktiven Benutzer"}.
 {"The list of all online users","Die Liste aller angemeldeter Benutzer"}.
 {"The list of all users","Die Liste aller Benutzer"}.
 {"The list of JIDs that may associate leaf nodes with a collection","Die Liste der JIDs die Blattknoten mit einer Sammlung verknüpfen dürfen"}.
@@ -578,7 +599,9 @@
 {"The presence states for which an entity wants to receive notifications","Die Präsenzzustände für welche eine Entität Benachrichtigungen erhalten will"}.
 {"The query is only allowed from local users","Die Anfrage ist nur von lokalen Benutzern erlaubt"}.
 {"The query must not contain <item/> elements","Die Anfrage darf keine <item/>-Elemente enthalten"}.
+{"The role","Die Rolle"}.
 {"The room subject can be modified by participants","Das Raum-Thema kann von Teilnehmern geändert werden"}.
+{"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","Die Art der Knotendaten, üblicherweise durch den Namespace der Nutzdaten angegeben (falls vorhanden)"}.
 {"The sender of the last received message","Der Absender der letzten erhaltenen Nachricht"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Das Stanza darf nur ein <active/>-Element, ein <default/>-Element oder ein <list/>-Element enthalten"}.
 {"The subscription identifier associated with the subscription request","Die mit der Abonnement-Anforderung verknüpfte Abonnement-Bezeichnung"}.
@@ -637,6 +660,7 @@
 {"User already exists","Benutzer existiert bereits"}.
 {"User JID","Benutzer-JID"}.
 {"User Management","Benutzerverwaltung"}.
+{"User not allowed to perform an IQ set on another user's vCard.","Benutzer darf kein IQ-set auf die vCard eines anderen ausführen."}.
 {"User removed","Benutzer entfernt"}.
 {"User session not found","Benutzersitzung nicht gefunden"}.
 {"User session terminated","Benutzersitzung beendet"}.
