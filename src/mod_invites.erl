@@ -126,8 +126,8 @@ mod_doc() ->
            "",
            ?T("In order to use the included landing page feature, you have to"),
            "",
-           ?T(" * have a copy of https://jquery.com[jQuery] and "
-              "   https://getbootstrap.com/docs/4.6/getting-started/introduction/[Bootstrap4] "
+           ?T(" * have a copy of https://jquery.com[jQuery 3] and "
+              "   https://getbootstrap.com/docs/4.6/getting-started/introduction/[Bootstrap 4] "
               "   in a shared directory on your system. If you're using Debian or "
               "   derivatives this is easiest accomplished by installing both "
               "   `libjs-jquery` and `libjs-bootstrap4` which will put them under "
