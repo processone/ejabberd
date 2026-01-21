@@ -55,7 +55,7 @@ COPY / $BUILD_DIR/
 WORKDIR $BUILD_DIR
 
 RUN npm init -y \
-    && npm install --silent jquery@3.6.4 bootstrap@4.6.2 \
+    && npm install --silent jquery@3.7.1 bootstrap@4.6.2 \
     && mkdir -p /rootfs/usr/share/javascript/bootstrap4/css \
     && mkdir -p /rootfs/usr/share/javascript/bootstrap4/js \
     && mkdir -p /rootfs/usr/share/javascript/jquery/ \
