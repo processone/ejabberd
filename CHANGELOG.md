@@ -4,7 +4,7 @@
 
 - Remove dependencies, macros and code for Erlang/OTP older than 25
 - Require Elixir 1.14 or higher, that's the lowest we can test automatically
-- `ejabberdctl`: Support NetBSD `su` and OpenBSD `su` (#4320)
+- `ejabberdctl`: Support NetBSD and OpenBSD `su` ([#4320](https://github.com/processone/ejabberd/issues/4320))
 - `ejabberdctl.template`: Show meaningful error when `ERL_DIST_PORT` is in use
 - `ejabberd_app`: Print address and port where listens for erlang node connections
 - `Makefile.in`: Add `make relivectl` similar to `relive` but using `ejabberdctl`
@@ -33,15 +33,15 @@
 
 - Add `muc_online_rooms_count` API command
 - Set `enable_hats` room option `true` by default
-- Allow vcard queries even when IQ queries are disabled (#4489)
+- Allow vcard queries even when IQ queries are disabled ([#4489](https://github.com/processone/ejabberd/issues/4489))
 - Announce `stable-id` feature from XEP-0045 1.31, supported since long ago
-- Fix `preload_rooms` in case of SQL database (#4476)
-- Run new hooks: `registering_nickmuc` and `registered_nickmuc` (#4478)
-- When deleting account, unregister account's nicks in all MUC hosts (#4478)
-- `mod_muc_log`: Crash in `terminate/2` when stopping module (#4486)
+- Fix `preload_rooms` in case of SQL database ([#4476](https://github.com/processone/ejabberd/issues/4476))
+- Run new hooks: `registering_nickmuc` and `registered_nickmuc` ([#4478](https://github.com/processone/ejabberd/issues/4478))
+- When deleting account, unregister account's nicks in all MUC hosts ([#4478](https://github.com/processone/ejabberd/issues/4478))
+- `mod_muc_log`: Crash in `terminate/2` when stopping module ([#4486](https://github.com/processone/ejabberd/issues/4486))
 - `mod_muc_occupantid`: Keep salt per MUC service, not individual rooms
 - `mod_muc_room`: Rewrite hats code that gets xdata values
-- `mod_muc_room`: Handle hats without definition (#4503)
+- `mod_muc_room`: Handle hats without definition ([#4503](https://github.com/processone/ejabberd/issues/4503))
 - `mod_muc_room`: When user has no hats, don't store in hats_users
 
 #### WebAdmin
@@ -51,10 +51,10 @@
 - `ejabberd_web_admin`: Add helper functions `make_menu_system`
 - `ejabberd_web_admin`: Show menu system only when can view vhosts
 - `ejabberd_web_admin`: Pass Level in `webadmin_menu_system_post` and `inside` hooks
-- `mod_conversejs`: Improve link to conversejs in WebAdmin (#4495)
+- `mod_conversejs`: Improve link to conversejs in WebAdmin ([#4495](https://github.com/processone/ejabberd/issues/4495))
 - When epmd isn't running show explanation in Clustering WebAdmin page
 - Use improved WebAdmin menu system in more modules
-- When building WebAdmin menu system, {URLPATH} in link text is substituted
+- When building WebAdmin menu system, `{URLPATH}` in link text is substituted
 
 #### Web Services
 
@@ -65,27 +65,27 @@
 - `mod_host_meta`: Move `get_url` functions from `mod_host_meta` to `ejabberd_http`
 - `mod_host_meta`: Allow calling `get_url/2` for other modules, not only WebSocket
 - `mod_host_meta`: Cosmetic rename Module to Handler
-- `mod_http_upload`: New `content_type` option similar to `mod_http_fileserver` (#4488)
+- `mod_http_upload`: New `content_type` option similar to `mod_http_fileserver` ([#4488](https://github.com/processone/ejabberd/issues/4488))
 - `mod_http_upload`: Pass ServerHost, not Host which may be `"upload.HOST"`
-- `mod_http_upload`: Amend the fix for #4450 to support IDNA correctly (#3519)
+- `mod_http_upload`: Amend the fix for #4450 to support IDNA correctly ([#3519](https://github.com/processone/ejabberd/issues/3519))
 - `mod_http_fileserver`: Support map of paths in `docroot` option
-- `mod_conversejs`: Add new Conversejs Paths and ContentTypes (#4511)
-- `mod_conversejs`: Use ContentType functions from `mod_http_fileserver` (#4511)
+- `mod_conversejs`: Add new Conversejs Paths and ContentTypes ([#4511](https://github.com/processone/ejabberd/issues/4511))
+- `mod_conversejs`: Use ContentType functions from `mod_http_fileserver` ([#4511](https://github.com/processone/ejabberd/issues/4511))
 - Use `/websocket` URL in default configuration like `mod_conversejs`, it's more meaningful
 
 #### Core and Modules
 
 - Add `replaced_connection_timeout` toplevel option
-- Fix nasty SSL warnings (#4475)
-- `ejabberd_commands`: Show meaningul error message when problem executing command (#4506)
+- Fix nasty SSL warnings ([#4475](https://github.com/processon4475e/ejabberd/issues/))
+- `ejabberd_commands`: Show meaningul error message when problem executing command ([#4506](https://github.com/processone/ejabberd/issues/4506))
 - `ejabberd_logger`: Append "color clean" only in console template, not file
-- `ejabberd_oauth`: Log error if `oauth_list_tokens` executed with unsupported DB (#4506)
+- `ejabberd_oauth`: Log error if `oauth_list_tokens` executed with unsupported DB ([#4506](https://github.com/processone/ejabberd/issues/4506))
 - `misc`: Get back functions and mark them as deprecated
 - `mod_adhoc_api`: Show nice command name, as WebAdmin already does
 - `mod_pubsub`: Deliver pubsub notifications to remote servers for nodes with presence based delivery
 - `mod_scram_update`: Don't hard-code iteration count
 - Bump many XEPs versions that are already supported
-- Improve documentation of `install_contrib_modules` (#4487)
+- Improve documentation of `install_contrib_modules` ([#4487](https://github.com/processone/ejabberd/issues/4487))
 
 ## Version 25.10
 
