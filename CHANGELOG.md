@@ -1,3 +1,92 @@
+## Version 26.01
+
+#### Compile and Start
+
+- Remove dependencies, macros and code for Erlang/OTP older than 25
+- Require Elixir 1.14 or higher, that's the lowest we can test automatically
+- `ejabberdctl`: Support NetBSD `su` and OpenBSD `su` (#4320)
+- `ejabberdctl.template`: Show meaningful error when `ERL_DIST_PORT` is in use
+- `ejabberd_app`: Print address and port where listens for erlang node connections
+- `Makefile.in`: Add `make relivectl` similar to `relive` but using `ejabberdctl`
+
+#### Databases
+
+- Add db_serialize support in mnesia modules
+- Add db serialization to `mod_muc_sql`
+- New database export/import infrastructure
+- Add commands for new database export/import
+- Apply timestamp pass in `?SQL_INSERT` queries
+- Update p1_mysql to bring fix for timestamp decoding
+- Extend timestamp type handling in sql macros
+- Revert changes to conversion of pgsql `int` types
+
+#### Installer and Container
+
+- `make-binaries`: Bump Erlang/OTP 28.3.1 and Elixir 1.19.5
+- `Dockerfile`: Bump Erlang/OTP 28.3.1 and Elixir 1.19.5
+- `Dockerfile`: Expose also port 7777 for SOCKS5
+- `Dockerfile`: Configure TURN ports and expose 5478 50000-50099
+- `Dockerfile`: Try to fix error with recent `freetds` Alpine package
+- Container: Setup new macro `STARTTLS_REQUIRED` to allow easy disabling
+
+#### MUC
+
+- Add `muc_online_rooms_count` API command
+- Set `enable_hats` room option `true` by default
+- Allow vcard queries even when IQ queries are disabled (#4489)
+- Announce `stable-id` feature from XEP-0045 1.31, supported since long ago
+- Fix `preload_rooms` in case of SQL database (#4476)
+- Run new hooks: `registering_nickmuc` and `registered_nickmuc` (#4478)
+- When deleting account, unregister account's nicks in all MUC hosts (#4478)
+- `mod_muc_log`: Crash in `terminate/2` when stopping module (#4486)
+- `mod_muc_occupantid`: Keep salt per MUC service, not individual rooms
+- `mod_muc_room`: Rewrite hats code that gets xdata values
+- `mod_muc_room`: Handle hats without definition (#4503)
+- `mod_muc_room`: When user has no hats, don't store in hats_users
+
+#### WebAdmin
+
+- `ejabberd_http`: Run new `http_request_handlers_init` fold hook
+- `ejabberd_http`: Add helper `get_auto_urls/2` that returns all URLs and TLS
+- `ejabberd_web_admin`: Add helper functions `make_menu_system`
+- `ejabberd_web_admin`: Show menu system only when can view vhosts
+- `ejabberd_web_admin`: Pass Level in `webadmin_menu_system_post` and `inside` hooks
+- `mod_conversejs`: Improve link to conversejs in WebAdmin (#4495)
+- When epmd isn't running show explanation in Clustering WebAdmin page
+- Use improved WebAdmin menu system in more modules
+- When building WebAdmin menu system, {URLPATH} in link text is substituted
+
+#### Web Services
+
+- `rest`: Use separate `httpc` profile
+- `ejabberd_captcha`: Use `mod_host_meta:get_auto_url/2`
+- `ejabberd_http`: Support repeated module in request_handlers
+- `ejabberd_http`: Get back handling when BOSH or WS are disabled
+- `mod_host_meta`: Move `get_url` functions from `mod_host_meta` to `ejabberd_http`
+- `mod_host_meta`: Allow calling `get_url/2` for other modules, not only WebSocket
+- `mod_host_meta`: Cosmetic rename Module to Handler
+- `mod_http_upload`: New `content_type` option similar to `mod_http_fileserver` (#4488)
+- `mod_http_upload`: Pass ServerHost, not Host which may be `"upload.HOST"`
+- `mod_http_upload`: Amend the fix for #4450 to support IDNA correctly (#3519)
+- `mod_http_fileserver`: Support map of paths in `docroot` option
+- `mod_conversejs`: Add new Conversejs Paths and ContentTypes (#4511)
+- `mod_conversejs`: Use ContentType functions from `mod_http_fileserver` (#4511)
+- Use `/websocket` URL in default configuration like `mod_conversejs`, it's more meaningful
+
+#### Core and Modules
+
+- Add `replaced_connection_timeout` toplevel option
+- Fix nasty SSL warnings (#4475)
+- `ejabberd_commands`: Show meaningul error message when problem executing command (#4506)
+- `ejabberd_logger`: Append "color clean" only in console template, not file
+- `ejabberd_oauth`: Log error if `oauth_list_tokens` executed with unsupported DB (#4506)
+- `misc`: Get back functions and mark them as deprecated
+- `mod_adhoc_api`: Show nice command name, as WebAdmin already does
+- `mod_pubsub`: Deliver pubsub notifications to remote servers for nodes with presence based delivery
+- `mod_scram_update`: Don't hard-code iteration count
+- Bump many XEPs versions that are already supported
+- Improve documentation of `install_contrib_modules` (#4487)
+
 ## Version 25.10
 
 #### Ad-hoc Commands
