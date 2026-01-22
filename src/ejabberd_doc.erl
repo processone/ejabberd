@@ -80,7 +80,7 @@ man(Lang) ->
         ["TOP LEVEL OPTIONS",
          "-----------------",
          "This section describes top level options of ejabberd " ++ Version ++ ".",
-         "The options that changed in this version are marked with 🟤.",
+         "The options that changed in this version are marked with 🟠.",
          io_lib:nl()] ++
         lists:flatmap(
           fun(Opt) ->
@@ -101,7 +101,7 @@ man(Lang) ->
          "-------",
          "[[modules]]",
          "This section describes modules options of ejabberd " ++ Version ++ ".",
-         "The modules that changed in this version are marked with 🟤.",
+         "The modules that changed in this version are marked with 🟠.",
          io_lib:nl()] ++
         lists:flatmap(
           fun({M, Descr, DocOpts, Backends, Example}) ->
@@ -176,7 +176,7 @@ get_version_mark(#{note := Note}) ->
     XXYY = string:join([XX, YY], "."),
     case string:find(Note, XXYY) of
         nomatch -> "";
-        _ -> " 🟤"
+        _ -> " 🟠"
     end;
 get_version_mark(_) ->
     "".
