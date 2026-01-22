@@ -594,6 +594,8 @@ is_behaviour(AbsCode, Mod) ->
 		      true;
 		  {attribute, {behaviour, Mod}} ->
 		      true;
+		  {attribute, {behavior, Mod}} ->
+		      true;
 		  _ ->
 		      false
 	      end
