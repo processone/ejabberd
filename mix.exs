@@ -84,6 +84,7 @@ defmodule Ejabberd.MixProject do
     includes = ["include", deps_include()]
     result = [{:d, :ELIXIR_ENABLED}] ++
              cond_options() ++
+             if Mix.env == :test do [{:d, :TEST}] else [] end ++
              Enum.map(includes, fn (path) -> {:i, path} end) ++
              if_version_below(~c"26", [{:d, :OTP_BELOW_26}]) ++
              if_version_below(~c"27", [{:d, :OTP_BELOW_27}]) ++
