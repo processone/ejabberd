@@ -517,7 +517,7 @@ CREATE TABLE invite_token (
     expires timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     type character(1) NOT NULL,
     account_name text NOT NULL,
-    PRIMARY KEY (token(191)),
+    PRIMARY KEY (token(191))
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX i_invite_token_username USING BTREE ON invite_token(username(191), server_host(191));
