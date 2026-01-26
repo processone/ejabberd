@@ -66,7 +66,7 @@ process(LocalPath, #request{auth = Auth, path = Path} = Request) ->
 process2([], #request{method = 'GET', host = Host, auth = Auth, raw_path = RawPath1}) ->
     [RawPath | _] = string:split(RawPath1, "?"),
     ExtraOptions = get_auth_options(Host)
-        ++ get_autologin_options(Auth)
+        ++ get_autologin_options(Auth, Host)
         ++ get_register_options(Host)
         ++ get_extra_options(Host),
     Domain = mod_conversejs_opt:default_domain(Host),
@@ -196,9 +196,15 @@ get_auth_options(Domain) ->
              {<<"jid">>, Domain}]
     end.
 
-get_autologin_options({Jid, Password}) ->
+get_autologin_options({Jid1, Password}, Host) ->
+    Jid = case jid:decode(Jid1) of
+              #jid{luser = <<>>} ->
+                  jid:encode(jid:make(Jid1, Host));
+              _ ->
+                  Jid1
+          end,
     [{<<"auto_login">>, <<"true">>}, {<<"jid">>, Jid}, {<<"password">>, Password}];
-get_autologin_options(undefined) ->
+get_autologin_options(undefined, _) ->
     [].
 
 get_register_options(Server) ->
