@@ -54,11 +54,14 @@ reload(_Host, _NewOpts, _OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
-process(LocalPath, #request{auth = Auth, path = Path} = Request) ->
+process(LocalPath, #request{auth = Auth, path = Path, opts = Opts} = Request) ->
     AutologinPath = lists:member(?AUTOLOGIN_PATH, Path),
-    case {AutologinPath, Auth} of
-        {true, undefined} ->
+    HasWebsocket = has_websocket(Opts),
+    case {AutologinPath, Auth, HasWebsocket} of
+        {true, undefined, _} ->
             ejabberd_web:error(not_found);
+        {true, _, false} ->
+            process_websocket();
         _ ->
             process2(LocalPath, Request)
     end.
@@ -116,6 +119,29 @@ process2(LocalPath, #request{host = Host}) ->
         true -> serve(Host, LocalPath);
         false -> ejabberd_web:error(not_found)
     end.
+
+%%----------------------------------------------------------------------
+%% WebSocket
+%%----------------------------------------------------------------------
+
+has_websocket(Opts) ->
+    maybe
+        {_, Handlers} ?= lists:keyfind(request_handlers, 1, Opts),
+        true ?= lists:keymember(ejabberd_web_admin, 2, Handlers),
+        true ?= lists:keymember(ejabberd_http_ws, 2, Handlers)
+    else
+        _ -> false
+    end.
+
+process_websocket() ->
+    {200, [html],
+     [<<"<!DOCTYPE html>">>,
+      <<"<html><body>">>,
+      <<"<p>To use Conversejs, please enable WebSocket as a request_handler in this port, like:</p>">>,
+      <<"<pre>    request_handlers:</pre>">>,
+      <<"<pre>      /admin: ejabberd_web_admin</pre>">>,
+      <<"<pre>      /websocket: ejabberd_http_ws</pre>">>,
+      <<"</body></html>">>]}.
 
 %%----------------------------------------------------------------------
 %% File server
@@ -350,6 +376,9 @@ mod_doc() ->
               "are enabled in at least one 'request_handlers'."), "",
            ?T("When 'conversejs_css' and 'conversejs_script' are 'auto', "
               "by default they point to the public Converse client."), "",
+           ?T("When this module is enabled in 'modules', "
+              "it adds automatically a requesthandler and link in WebAdmin. "
+              "."), "",
            ?T("This module is available since ejabberd 21.12.")
           ],
       note => "improved in 25.07",
