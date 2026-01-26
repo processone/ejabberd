@@ -102,6 +102,7 @@
 	 {<<".ttf">>, <<"font/ttf">>},
 	 {<<".txt">>, <<"text/plain">>},
 	 {<<".wav">>, <<"audio/wav">>},
+	 {<<".wasm">>, <<"application/wasm">>},
 	 {<<".webp">>, <<"image/webp">>},
 	 {<<".woff">>, <<"font/woff">>},
 	 {<<".woff2">>, <<"font/woff2">>},

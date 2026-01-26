@@ -73,6 +73,9 @@ process2([], #request{method = 'GET', host = Host, auth = Auth, raw_path = RawPa
         ++ get_register_options(Host)
         ++ get_extra_options(Host),
     Domain = mod_conversejs_opt:default_domain(Host),
+    Favicon = get_file_url(Host, conversejs_script,
+                          <<RawPath/binary, "/images/favicon.ico">>,
+                          <<"https://cdn.conversejs.org/dist/images/favicon.ico">>),
     Script = get_file_url(Host, conversejs_script,
                           <<RawPath/binary, "/converse.min.js">>,
                           <<"https://cdn.conversejs.org/dist/converse.min.js">>),
@@ -98,18 +101,26 @@ process2([], #request{method = 'GET', host = Host, auth = Auth, raw_path = RawPa
             BoshURL -> [{<<"bosh_service_url">>, BoshURL} | Init2]
         end,
     Init4 = maps:from_list(Init3),
+    Title = case Auth of
+                {JidBinary, _Password} ->
+                    <<"Converse: ", JidBinary/binary>>;
+                undefined ->
+                    <<"Converse">>
+            end,
     {200, [html],
      [<<"<!DOCTYPE html>">>,
       <<"<html>">>,
       <<"<head>">>,
-      <<"<meta charset='utf-8'>">>,
+      <<"<meta charset='utf-8'/>">>,
+      <<"<title>", Title/binary, "</title>">>,
+      <<"<link rel='shortcut icon' type='image/x-icon' href='", Favicon/binary, "'>">>,
       <<"<link rel='stylesheet' type='text/css' media='screen' href='">>,
-      fxml:crypt(CSS), <<"'>">>,
-      <<"<script src='">>, fxml:crypt(Script), <<"' charset='utf-8'></script>">>
+      fxml:crypt(CSS), <<"'/>">>,
+      <<"<script type='module' src='">>, fxml:crypt(Script), <<"'></script>">>
      ] ++ PluginsHtml ++ [
       <<"</head>">>,
       <<"<body>">>,
-      <<"<script>">>,
+      <<"<script type='module'>">>,
       <<"converse.initialize(">>, misc:json_encode(Init4), <<");">>,
       <<"</script>">>,
       <<"</body>">>,
@@ -154,6 +165,8 @@ is_served_file([<<"converse.min.js.map">>]) -> true;
 is_served_file([<<"emoji.json">>]) -> true;
 is_served_file([<<"emojis.js">>]) -> true;
 is_served_file([<<"images">>, _]) -> true;
+is_served_file([<<"curve25519_compiled.wasm">>]) -> true;
+is_served_file([<<"libomemo.esm.min.js">>]) -> true;
 is_served_file([<<"locales">>, <<"dayjs">>, _]) -> true;
 is_served_file([<<"locales">>, _]) -> true;
 is_served_file([<<"plugins">>, _]) -> true;
@@ -374,7 +387,7 @@ mod_doc() ->
            ?T("When 'conversejs_css' and 'conversejs_script' are 'auto', "
               "by default they point to the public Converse client."), "",
            ?T("When this module is enabled in 'modules', "
-              "it adds automatically a requesthandler and link in WebAdmin. "
+              "it adds automatically a request handler and link in WebAdmin. "
               "."), "",
            ?T("This module is available since ejabberd 21.12.")
           ],
@@ -393,7 +406,6 @@ mod_doc() ->
              "modules:",
              "  mod_bosh: {}",
              "  mod_conversejs:",
-             "    conversejs_plugins: [\"libsignal\"]",
              "    websocket_url: \"ws://@HOST@:5280/websocket\""]},
            {?T("Host Converse locally and let auto detection of WebSocket and Converse URLs:"),
             ["listen:",
@@ -467,6 +479,8 @@ mod_doc() ->
                   ?T("List of additional local files to include as scripts in the homepage. "
                      "Please make sure those files are available in the path specified in "
                      "'conversejs_resources' option, in subdirectory 'plugins/'. "
+                     "Notice that 'libsignal' is only required for OMEMO encryption in "
+                     "Converse 13 or lower; Converse 14 uses and includes 'libomemo'. "
                      "If using the public Converse client, then '\"libsignal\"' "
                      "gets replaced with the URL of the public library. "
                      "The default value is '[]'.")}},
