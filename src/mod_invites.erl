@@ -131,7 +131,8 @@ mod_doc() ->
               "   in a shared directory on your system. If you're using Debian or "
               "   derivatives this is easiest accomplished by installing both "
               "   `libjs-jquery` and `libjs-bootstrap4` which will put them under "
-              "   `/usr/share/javascript/{jquery,bootstrap4}`"),
+              "   `/usr/share/javascript/{jquery,bootstrap4}`. Alternatively you can use "
+              "   `tools/dl_invites_page_deps.sh <outdir>`."),
            ?T(" * in `ejabberd.yml` configure a listener for module `ejabberd_http` "
               "   with a request handler for `/share: mod_http_fileserver`"),
            ?T(" * in the `modules` section configure `mod_http_fileserver` so that "
