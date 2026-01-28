@@ -126,12 +126,13 @@ mod_doc() ->
            "",
            ?T("In order to use the included landing page feature, you have to"),
            "",
-           ?T(" * have a copy of https://jquery.com[jQuery 3] and "
-              "   https://getbootstrap.com/docs/4.6/getting-started/introduction/[Bootstrap 4] "
+           ?T(" * have a copy of https://code.jquery.com/jquery-3.7.1.min.js[jQuery 3] and "
+              "   https://github.com/twbs/bootstrap/releases/download/v4.6.2/bootstrap-4.6.2-dist.zip[Bootstrap 4] "
               "   in a shared directory on your system. If you're using Debian or "
               "   derivatives this is easiest accomplished by installing both "
               "   `libjs-jquery` and `libjs-bootstrap4` which will put them under "
-              "   `/usr/share/javascript/{jquery,bootstrap4}`"),
+              "   `/usr/share/javascript/{jquery,bootstrap4}`. Alternatively you can use "
+              "   `tools/dl_invites_page_deps.sh <outdir>`."),
            ?T(" * in `ejabberd.yml` configure a listener for module `ejabberd_http` "
               "   with a request handler for `/share: mod_http_fileserver`"),
            ?T(" * in the `modules` section configure `mod_http_fileserver` so that "
@@ -186,7 +187,7 @@ mod_doc() ->
                   ?T("A human readable name for your site. E.g. `\"My Beautiful Laundrette\"`. "
                      "Used in landing page templates.")}},
            {templates_dir,
-            #{value => ?T("binary()"),
+            #{value => ?T("Path"),
               desc =>
                   ?T("The directory containing templates and static files used "
                      "for landing page and web registration form. Only needs to "
