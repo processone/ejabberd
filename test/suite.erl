@@ -130,6 +130,7 @@ init_config(Config) ->
      {db_xmlns, <<"">>},
      {mechs, []},
      {rosterver, false},
+     {pre_approval, false},
      {lang, <<"en">>},
      {base_dir, BaseDir},
      {receiver, undefined},
@@ -531,6 +532,8 @@ wait_auth_SASL_result(Config, ShouldFail) ->
 			      set_opt(csi, true, ConfigAcc);
 			 (#rosterver_feature{}, ConfigAcc) ->
 			      set_opt(rosterver, true, ConfigAcc);
+			 (#feature_pre_approval{}, ConfigAcc) ->
+			      set_opt(pre_approval, true, ConfigAcc);
 			 (#compression{methods = Ms}, ConfigAcc) ->
 			      set_opt(compression, Ms, ConfigAcc);
 			 (_, ConfigAcc) ->
