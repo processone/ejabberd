@@ -187,7 +187,7 @@ mod_doc() ->
                   ?T("A human readable name for your site. E.g. `\"My Beautiful Laundrette\"`. "
                      "Used in landing page templates.")}},
            {templates_dir,
-            #{value => ?T("binary()"),
+            #{value => ?T("Path"),
               desc =>
                   ?T("The directory containing templates and static files used "
                      "for landing page and web registration form. Only needs to "
