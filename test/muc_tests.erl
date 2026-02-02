@@ -153,7 +153,7 @@ service_features(Config) ->
     RequiredFeatures = sets:from_list(
 			 [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
 			  ?NS_REGISTER, ?NS_MUC,
-			  ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE
+			  ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE, ?NS_OCCUPANT_ID
 			  | MAMFeatures]),
     ct:comment("Checking if all needed disco features are set"),
     true = sets:is_subset(RequiredFeatures, Features),
@@ -382,6 +382,7 @@ duplicate_occupantid_master(Config) ->
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
     ok = join_new(Config),
+	?match(true, lists:member(?NS_OCCUPANT_ID, get_features(Config, Room))),
     wait_for_slave(Config),
     Pres = ?match(#presence{from = PeerNickJID, type = available} = Pres,
 		  recv_presence(Config), Pres),
