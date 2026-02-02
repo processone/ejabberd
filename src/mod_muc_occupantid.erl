@@ -38,17 +38,17 @@
 
 -export([start/2, stop/1,
 	 mod_options/1, mod_doc/0, depends/2]).
--export([filter_packet/3, remove_room/3]).
+-export([filter_packet/3, clean_obsolete_salts/0]).
 
 %%%
 %%% gen_mod
 %%%
 
 start(_Host, _Opts) ->
-    create_table(),
+    prepare_table(),
     {ok, [{hook, muc_filter_presence, filter_packet, 10},
           {hook, muc_filter_message, filter_packet, 10},
-          {hook, remove_room, remove_room, 50}]}.
+          {hook, config_reloaded, clean_obsolete_salts, 90, global}]}.
 
 stop(_Host) ->
     ok.
@@ -59,9 +59,6 @@ stop(_Host) ->
 
 filter_packet(Packet, State, _Nick) ->
     add_occupantid_packet(Packet, State#state.jid).
-
-remove_room(_LServer, _Name, Host) ->
-    delete_salt(Host).
 
 %%%
 %%% XEP-0421 Occupant-id
@@ -83,6 +80,17 @@ calculate_occupantid(From, RoomJid) ->
 
 -record(muc_occupant_id, {service_jid, salt}).
 
+prepare_table() ->
+    try
+        mnesia:table_info(muc_occupant_id, attributes),
+        %% Wait some time to ensure mod_muc is started in all hosts
+        timer:apply_after(60000, ?MODULE, clean_obsolete_salts, [])
+    catch
+        exit:{aborted, {no_exists, _, _}} ->
+            create_table()
+    end.
+
+
 create_table() ->
     ejabberd_mnesia:create(?MODULE, muc_occupant_id,
 			   [{disc_copies, [node()]},
@@ -103,8 +111,35 @@ get_salt(ServiceJid) ->
 write_salt(ServiceJid, Salt) ->
     mnesia:dirty_write(#muc_occupant_id{service_jid = ServiceJid, salt = Salt}).
 
-delete_salt(ServiceJid) ->
-    mnesia:dirty_delete(muc_occupant_id, ServiceJid).
+%% @format-begin
+clean_obsolete_salts() ->
+    Hosts = ejabberd_option:hosts(),
+    MucHosts =
+        lists:foldl(fun(Host, Acc) -> gen_mod:get_module_opt_hosts(Host, mod_muc) ++ Acc end,
+                    [],
+                    Hosts),
+
+    F = fun() ->
+           mnesia:write_lock_table(muc_occupant_id),
+           Ft = fun(#muc_occupant_id{service_jid = Service, salt = _Salt} = Rec, Acc) ->
+                   case lists:member(Service, MucHosts) of
+                       true ->
+                           Acc;
+                       false ->
+                           mnesia:delete_object(Rec),
+                           [Service | Acc]
+                   end
+                end,
+           mnesia:foldl(Ft, [], muc_occupant_id)
+        end,
+    case mnesia:transaction(F) of
+        {atomic, Res} ->
+            ?DEBUG("Deleted Salts for occupant-id of MUC services: ~p", [Res]),
+            ok;
+        _ ->
+            ok
+    end.
+%% @format-end
 
 %%%
 %%% Doc
