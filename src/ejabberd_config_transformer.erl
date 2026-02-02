@@ -73,7 +73,7 @@ transform(Host, Y, Acc) ->
 
 transform(Host, modules, ModOpts, Acc) ->
     {ModOpts1, Acc2} =
-	lists:mapfoldr(
+	filtermapfoldr(
 	  fun({Mod, Opts}, Acc1) ->
 		  Opts1 = transform_module_options(Opts),
 		  transform_module(Host, Mod, Opts1, Acc1)
@@ -446,7 +446,7 @@ transform_module(_Host, mod_blocking, Opts, Acc) ->
 		 (_) ->
 		      true
 	      end, Opts),
-    {{mod_blocking, Opts1}, Acc};
+    {{true, {mod_blocking, Opts1}}, Acc};
 transform_module(_Host, mod_carboncopy, Opts, Acc) ->
     Opts1 = lists:filter(
 	      fun({Opt, _}) when Opt == ram_db_type;
@@ -459,7 +459,7 @@ transform_module(_Host, mod_carboncopy, Opts, Acc) ->
 		 (_) ->
 		      true
 	      end, Opts),
-    {{mod_carboncopy, Opts1}, Acc};
+    {{true, {mod_carboncopy, Opts1}}, Acc};
 transform_module(_Host, mod_http_api, Opts, Acc) ->
     Opts1 = lists:filter(
 	      fun({admin_ip_access, _}) ->
@@ -468,7 +468,7 @@ transform_module(_Host, mod_http_api, Opts, Acc) ->
 		 (_) ->
 		      true
 	      end, Opts),
-    {{mod_http_api, Opts1}, Acc};
+    {{true, {mod_http_api, Opts1}}, Acc};
 transform_module(_Host, mod_http_upload, Opts, Acc) ->
     Opts1 = lists:filter(
 	      fun({service_url, _}) ->
@@ -477,7 +477,7 @@ transform_module(_Host, mod_http_upload, Opts, Acc) ->
 		 (_) ->
 		      true
 	      end, Opts),
-    {{mod_http_upload, Opts1}, Acc};
+    {{true, {mod_http_upload, Opts1}}, Acc};
 transform_module(_Host, mod_pubsub, Opts, Acc) ->
     Opts1 = lists:map(
 	      fun({plugins, Plugins}) ->
@@ -505,9 +505,11 @@ transform_module(_Host, mod_pubsub, Opts, Acc) ->
 		 (Opt) ->
 		      Opt
 	      end, Opts),
-    {{mod_pubsub, Opts1}, Acc};
+    {{true, {mod_pubsub, Opts1}}, Acc};
+transform_module(_Host, mod_muc_occupantid, _Opts, Acc) ->
+    {false, Acc};
 transform_module(_Host, Mod, Opts, Acc) ->
-    {{Mod, Opts}, Acc}.
+    {{true, {Mod, Opts}}, Acc}.
 
 strip_odbc_suffix(M) ->
     [_|T] = lists:reverse(string:tokens(atom_to_list(M), "_")),

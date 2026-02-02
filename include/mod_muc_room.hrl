@@ -81,7 +81,8 @@
     role :: role(),
     %%is_subscriber = false :: boolean(),
     %%subscriptions = [] :: [binary()],
-    last_presence :: presence() | undefined
+    last_presence :: presence() | undefined,
+    occupant_id :: binary()
 }).
 
 -record(subscriber, {jid :: jid(),
@@ -132,7 +133,8 @@
     activity                = treap:empty() :: treap:treap(),
     room_shaper             = none :: ejabberd_shaper:shaper(),
     room_queue              :: p1_queue:queue({message | presence, jid()}) | undefined,
-    hibernate_timer         = none :: reference() | none | hibernating
+    hibernate_timer         = none :: reference() | none | hibernating,
+    salt                    = <<>> :: binary()
 }).
 
 -type users() :: #{ljid() => #user{}}.

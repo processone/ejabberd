@@ -310,6 +310,7 @@ init([Host, ServerHost, Access, Room, HistorySize,
 			    history = lqueue_new(HistorySize, QueueType),
 			    jid = jid:make(Room, Host),
 			    just_created = true,
+			    salt = p1_rand:get_string(),
 			    room_queue = RoomQueue,
 			    room_shaper = Shaper}),
     State1 = set_affiliation(Creator, owner, State),
@@ -334,6 +335,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType])
 				  room = Room,
 				  history = lqueue_new(HistorySize, QueueType),
 				  jid = Jid,
+				  salt = p1_rand:get_string(),
 				  room_queue = RoomQueue,
 				  room_shaper = Shaper}),
     add_to_log(room_existence, started, State),
@@ -638,11 +640,9 @@ normal_state({route, ToNick,
 							     FromNick),
 				    X = #muc_user{},
                                     Packet2 = xmpp:set_subtag(Packet, X),
-                                    case ejabberd_hooks:run_fold(muc_filter_message,
-                                                                 StateData#state.server_host,
-								 xmpp:put_meta(Packet2, mam_ignore, true),
-                                                                 [StateData, FromNick]) of
-                                        drop ->
+				    case filter_message_hook(StateData, FromNick,
+							     xmpp:put_meta(Packet2, mam_ignore, true)) of
+					drop ->
                                             ok;
                                         Packet3 ->
                                             PrivMsg = xmpp:set_from(xmpp:del_meta(Packet3, mam_ignore), FromNickJID),
@@ -1092,12 +1092,8 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 	      end,
 	      case IsAllowed of
 		   true ->
-		       case
-			 ejabberd_hooks:run_fold(muc_filter_message,
-						 StateData#state.server_host,
-						 Packet,
-						 [StateData, FromNick])
-			   of
+		       case filter_message_hook(StateData, FromNick,
+						Packet) of
 			 drop ->
 			     {next_state, normal_state, StateData};
 			 NewPacket1 ->
@@ -1401,10 +1397,7 @@ process_presence(Nick, #presence{from = From, type = Type0} = Packet0, StateData
     IsOnline = is_user_online(From, StateData),
     if Type0 == available;
        IsOnline and ((Type0 == unavailable) or (Type0 == error)) ->
-	   case ejabberd_hooks:run_fold(muc_filter_presence,
-					StateData#state.server_host,
-					Packet0,
-					[StateData, Nick]) of
+	   case filter_presence_hook(StateData, Nick, Packet0) of
 	     drop ->
 		 {next_state, normal_state, StateData};
 	     #presence{} = Packet ->
@@ -1561,7 +1554,8 @@ get_users_and_subscribers_aux(Subscribers, StateData) ->
 				#user{jid = jid:make(LBareJID),
 				      nick = Nick,
 				      role = none,
-				      last_presence = undefined},
+				      last_presence = undefined,
+				      occupant_id = <<>>},
 				Acc);
 		   true ->
 		       Acc
@@ -2130,10 +2124,44 @@ set_subscriber(JID, Nick, Nodes,
     end,
     NewStateData.
 
+-spec calculate_occupant_id(jid(), state()) -> binary().
+calculate_occupant_id(Jid, #state{salt = Salt, jid = RoomJid}) ->
+    JidS = jid:encode(jid:remove_resource(Jid)),
+    RoomJidS = jid:encode(RoomJid),
+    Term = <<Salt/binary, ":", RoomJidS/binary, ":", JidS/binary>>,
+    misc:term_to_base64(crypto:hash(sha256, Term)).
+
+-spec filter_message_hook(state(), binary(), #message{}) -> drop | #message{}.
+filter_message_hook(#state{users = Users} = StateData, Nick, #message{from = From} = Message) ->
+    OccupantId = case maps:find(jid:tolower(From), Users) of
+		     {ok, #user{occupant_id = Id}} -> Id;
+		     _ -> calculate_occupant_id(From, StateData)
+		 end,
+    Message2 = xmpp:append_subtags(xmpp:remove_subtag(Message, #occupant_id{}),
+				   [#occupant_id{id = OccupantId}]),
+    ejabberd_hooks:run_fold(muc_filter_message,
+			    StateData#state.server_host,
+			    Message2,
+			    [StateData, Nick]).
+
+-spec filter_presence_hook(state(), binary(), #presence{}) -> drop | #presence{}.
+filter_presence_hook(#state{users = Users} = StateData, Nick, #presence{from = From} = Pres) ->
+    OccupantId = case maps:find(jid:tolower(From), Users) of
+		     {ok, #user{occupant_id = Id}} -> Id;
+		     _ -> calculate_occupant_id(From, StateData)
+		 end,
+    Pres2 = xmpp:append_subtags(xmpp:remove_subtag(Pres, #occupant_id{}),
+				[#occupant_id{id = OccupantId}]),
+    ejabberd_hooks:run_fold(muc_filter_message,
+			    StateData#state.server_host,
+			    Pres2,
+			    [StateData, Nick]).
+
+
 -spec add_online_user(jid(), binary(), role(), state()) -> state().
 add_online_user(JID, Nick, Role, StateData) ->
     tab_add_online_user(JID, StateData),
-    User = #user{jid = JID, nick = Nick, role = Role},
+    User = #user{jid = JID, nick = Nick, role = Role, occupant_id = calculate_occupant_id(JID, StateData)},
     reset_hibernate_timer(update_online_user(JID, User, StateData)).
 
 -spec remove_online_user(jid(), state()) -> state().
@@ -3043,10 +3071,8 @@ send_subject(JID, #state{subject_author = {Nick, AuthorJID}} = StateData) ->
 	      end,
     Packet = #message{from = AuthorJID,
 		      to = JID, type = groupchat, subject = Subject},
-    case ejabberd_hooks:run_fold(muc_filter_message,
-                                 StateData#state.server_host,
-                                 xmpp:put_meta(Packet, mam_ignore, true),
-                                 [StateData, Nick]) of
+    case filter_message_hook(StateData, Nick,
+			     xmpp:put_meta(Packet, mam_ignore, true)) of
         drop ->
             ok;
         NewPacket1 ->
@@ -4271,6 +4297,8 @@ set_opts2([{Opt, Val} | Opts], StateData) ->
             hats_users ->
                   StateData#state{hats_users = maps:from_list(Val)};
 	    hibernation_time -> StateData;
+	    salt ->
+		  StateData#state{salt = Val};
 	    Other ->
                   ?INFO_MSG("Unknown MUC room option, will be discarded: ~p", [Other]),
                   StateData
@@ -4353,6 +4381,7 @@ make_opts(StateData, Hibernation) ->
      {hats_defs, maps:to_list(StateData#state.hats_defs)},
      {hats_users, maps:to_list(StateData#state.hats_users)},
      {hibernation_time, if Hibernation -> erlang:system_time(microsecond); true -> undefined end},
+     {salt, StateData#state.salt},
      {subscribers, Subscribers}].
 
 expand_opts(CompactOpts) ->
@@ -4377,14 +4406,16 @@ expand_opts(CompactOpts) ->
     Subject = proplists:get_value(subject, CompactOpts, <<"">>),
     Subscribers = proplists:get_value(subscribers, CompactOpts, []),
     HibernationTime = proplists:get_value(hibernation_time, CompactOpts, 0),
+    Salt = proplists:get_value(hibernation_time, CompactOpts, <<>>),
     [{subject, Subject},
      {subject_author, SubjectAuthor},
      {subscribers, Subscribers},
-     {hibernation_time, HibernationTime}
+     {hibernation_time, HibernationTime},
+     {salt, Salt}
      | lists:reverse(Opts1)].
 
 config_fields() ->
-    [subject, subject_author, subscribers, hibernate_time | record_info(fields, config)].
+    [subject, subject_author, subscribers, hibernate_time, salt | record_info(fields, config)].
 
 -spec destroy_room(muc_destroy(), state()) -> {result, undefined, stop}.
 destroy_room(DEl, StateData) ->
@@ -4447,7 +4478,7 @@ make_disco_info(From, StateData) ->
              ?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
              ?NS_COMMANDS,
              ?NS_MESSAGE_MODERATE_0, ?NS_MESSAGE_MODERATE_1,
-             ?NS_MESSAGE_RETRACT,
+             ?NS_MESSAGE_RETRACT, ?NS_OCCUPANT_ID,
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.public),
 				    <<"muc_public">>, <<"muc_hidden">>),
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.persistent),
@@ -4471,12 +4502,6 @@ make_disco_info(From, StateData) ->
 	++ case Config#config.enable_hats of
 	       true -> [?NS_HATS];
 	       false -> []
-	   end
-	++ case gen_mod:is_loaded(StateData#state.server_host, mod_muc_occupantid) of
-	       true ->
-		   [?NS_OCCUPANT_ID];
-	       _ ->
-		   []
 	   end
 	++ case {gen_mod:is_loaded(StateData#state.server_host, mod_mam),
 		 Config#config.mam} of
@@ -5423,10 +5448,8 @@ process_iq_moderate(From, #iq{type = set, lang = Lang}, Id, Reason,
                                        from = From,
                                        sub_els = SubEl},
 	            {FromNick, _Role} = get_participant_data(From, StateData),
-                    Packet = ejabberd_hooks:run_fold(muc_filter_message,
-						     StateData#state.server_host,
-						     xmpp:put_meta(Packet0, mam_ignore, true),
-						     [StateData, FromNick]),
+		    Packet = filter_message_hook(StateData, FromNick,
+						 xmpp:put_meta(Packet0, mam_ignore, true)),
 		    send_wrapped_multiple(JID,
 					  get_users_and_subscribers_with_node(?NS_MUCSUB_NODES_MESSAGES, StateData),
 					  Packet, ?NS_MUCSUB_NODES_MESSAGES, StateData),
