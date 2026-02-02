@@ -367,7 +367,7 @@ prep_stop_module_keep_config(Host, Module) ->
 
 -spec stop_module_keep_config(binary(), atom()) -> error | ok.
 stop_module_keep_config(Host, Module) ->
-    ?DEBUG("Stopping ~ts at ~ts", [Module, Host]),
+    ?INFO_MSG("Stopping ~ts at ~ts", [Module, Host]),
     Registrations =
         case ets:lookup(ejabberd_modules, {Module, Host}) of
             [M] ->
@@ -421,6 +421,11 @@ del_registrations(Host, Module, Registrations) ->
     lists:foreach(
       fun({hook, Hook, Function, Seq}) ->
               ejabberd_hooks:delete(Hook, Host, Module, Function, Seq);
+         ({hook, Hook, Function, Seq, global}) when is_integer(Seq) ->
+              case gen_mod:is_loaded_elsewhere(<<"global">>, Module) of
+                  false -> ejabberd_hooks:delete(Hook, global, Module, Function, Seq);
+                  true -> ok
+              end;
          ({hook, Hook, Function, Seq, Host1}) when is_integer(Seq) ->
               ejabberd_hooks:delete(Hook, Host1, Module, Function, Seq);
          ({hook, Hook, Module1, Function, Seq}) when is_integer(Seq) ->
