@@ -85,8 +85,7 @@ calculate_occupantid(From, RoomJid) ->
 
 create_table() ->
     ejabberd_mnesia:create(?MODULE, muc_occupant_id,
-			   [{ram_copies, [node()]},
-			    {local_content, true},
+			   [{disc_copies, [node()]},
 			    {attributes, record_info(fields, muc_occupant_id)},
 			    {type, set}]).
 
