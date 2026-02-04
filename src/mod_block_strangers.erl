@@ -107,8 +107,8 @@ filter_subscription(Acc, #presence{from = From, to = To, lang = Lang,
     case mod_block_strangers_opt:drop(LServer) andalso
 	 mod_block_strangers_opt:captcha(LServer) andalso
 	 need_check(Pres) of
-	true ->
-	    case check_subscription(From, To) of
+	{true, Origin} ->
+	    case check_subscription(Origin, To) of
 		false ->
 		    BFrom = jid:remove_resource(From),
 		    BTo = jid:remove_resource(To),
@@ -164,18 +164,24 @@ handle_captcha_result(captcha_failed, #presence{lang = Lang} = Pres) ->
 check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
     LServer = To#jid.lserver,
     case need_check(Msg) of
-	true ->
-	    case check_subscription(From, To) of
+	{true, Origin} ->
+	    case check_subscription(Origin, To) of
 		false ->
 		    Drop = mod_block_strangers_opt:drop(LServer),
 		    Log = mod_block_strangers_opt:log(LServer),
 		    if
-			Log ->
+			Log andalso Origin == From ->
 			    ?INFO_MSG("~ts message from stranger ~ts to ~ts",
 				      [if Drop -> "Rejecting";
 					  true -> "Allow"
 				       end,
 				       jid:encode(From), jid:encode(To)]);
+			Log ->
+			    ?INFO_MSG("~ts message from stranger ~ts to ~ts (via ~ts)",
+				      [if Drop -> "Rejecting";
+					   true -> "Allow"
+				       end,
+				       jid:encode(Origin), jid:encode(To), jid:encode(From)]);
 			true ->
 			    ok
 		    end,
@@ -218,10 +224,29 @@ need_check(Pkt) ->
     IsError = (error == xmpp:get_type(Pkt)),
     AllowLocalUsers = mod_block_strangers_opt:allow_local_users(LServer),
     Access = mod_block_strangers_opt:access(LServer),
-    not (IsSelf orelse IsEmpty orelse IsError
-	 orelse acl:match_rule(LServer, Access, From) == allow
-	 orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>)
-		 andalso ejabberd_router:is_my_host(From#jid.lserver))).
+    NeedCheck = not (IsSelf orelse IsEmpty orelse IsError
+		     orelse acl:match_rule(LServer, Access, From) == allow
+		     orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>)
+			     andalso ejabberd_router:is_my_host(From#jid.lserver))),
+    case {NeedCheck, Pkt} of
+	{false, _} ->
+	    false;
+	{_, #message{}} ->
+	    case xmpp:get_subtag(Pkt, #muc_user{}) of
+		#muc_user{invites = [#muc_invite{from = #jid{} = InvFrom}]}->
+		    case acl:match_rule(LServer, Access, InvFrom) == allow orelse
+			 (AllowLocalUsers andalso ejabberd_router:is_my_host(InvFrom#jid.lserver)) of
+			true ->
+			    false;
+			_ ->
+			    {true, InvFrom}
+		    end;
+		_ ->
+		    {true, From}
+	    end;
+	_ ->
+	    {true, From}
+    end.
 
 -spec check_subscription(jid(), jid()) -> boolean().
 check_subscription(From, To) ->
