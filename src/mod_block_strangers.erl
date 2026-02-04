@@ -208,7 +208,7 @@ maybe_adjust_from(#message{type = groupchat, from = From} = Msg) ->
 maybe_adjust_from(#message{} = Msg) ->
     Msg.
 
--spec need_check(presence() | message()) -> boolean().
+-spec need_check(presence() | message()) -> {true, #jid{}} | false.
 need_check(Pkt) ->
     To = xmpp:get_to(Pkt),
     From = xmpp:get_from(Pkt),
