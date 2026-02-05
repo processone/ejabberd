@@ -50,6 +50,7 @@ start(normal, _Args) ->
 	case ejabberd_config:load() of
 	    ok ->
 		ejabberd_mnesia:start(),
+		delete_unused_tables(),
 		file_queue_init(),
 		maybe_add_nameservers(),
 		case ejabberd_sup:start_link() of
@@ -165,6 +166,9 @@ delete_pid_file() ->
 	PidFilename ->
 	    file:delete(PidFilename)
     end.
+
+delete_unused_tables() ->
+    mnesia:delete_table(muc_occupant_id).
 
 file_queue_init() ->
     QueueDir = case ejabberd_option:queue_dir() of
