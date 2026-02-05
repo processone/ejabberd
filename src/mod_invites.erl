@@ -43,7 +43,7 @@
 -export([get_local_identity/5, get_local_features/5]).
 
 %% commands
--export([cleanup_expired/0, expire_tokens/2, gen_invite/1, gen_invite/2, list_invites/1]).
+-export([cleanup_expired/0, expire_tokens/2, generate_invite/1, generate_invite/2, list_invites/1]).
 
 %% helpers
 -export([create_account_allowed/2, get_invite/2, get_invites/2, get_max_invites/2, is_create_allowed/2,
@@ -54,7 +54,7 @@
 -export([process/2]).
 
 -ifdef(TEST).
--export([create_roster_invite/2, create_account_invite/4, is_token_valid/3]).
+-export([create_roster_invite/2, create_account_invite/4, gen_invite/1, gen_invite/2, is_token_valid/3]).
 -endif.
 
 -include("logger.hrl").
@@ -126,12 +126,13 @@ mod_doc() ->
            "",
            ?T("In order to use the included landing page feature, you have to"),
            "",
-           ?T(" * have a copy of https://jquery.com[jQuery 3] and "
-              "   https://getbootstrap.com/docs/4.6/getting-started/introduction/[Bootstrap 4] "
+           ?T(" * have a copy of https://code.jquery.com/jquery-3.7.1.min.js[jQuery 3] and "
+              "   https://github.com/twbs/bootstrap/releases/download/v4.6.2/bootstrap-4.6.2-dist.zip[Bootstrap 4] "
               "   in a shared directory on your system. If you're using Debian or "
               "   derivatives this is easiest accomplished by installing both "
               "   `libjs-jquery` and `libjs-bootstrap4` which will put them under "
-              "   `/usr/share/javascript/{jquery,bootstrap4}`"),
+              "   `/usr/share/javascript/{jquery,bootstrap4}`. Alternatively you can use "
+              "   `tools/dl_invites_page_deps.sh <outdir>`."),
            ?T(" * in `ejabberd.yml` configure a listener for module `ejabberd_http` "
               "   with a request handler for `/share: mod_http_fileserver`"),
            ?T(" * in the `modules` section configure `mod_http_fileserver` so that "
@@ -186,7 +187,7 @@ mod_doc() ->
                   ?T("A human readable name for your site. E.g. `\"My Beautiful Laundrette\"`. "
                      "Used in landing page templates.")}},
            {templates_dir,
-            #{value => ?T("binary()"),
+            #{value => ?T("Path"),
               desc =>
                   ?T("The directory containing templates and static files used "
                      "for landing page and web registration form. Only needs to "
@@ -329,7 +330,7 @@ get_commands_spec() ->
                         tags = [accounts],
                         desc = "Create a new 'create account' invite",
                         module = ?MODULE,
-                        function = gen_invite,
+                        function = generate_invite,
                         note = "added in 26.01",
                         args = [{host, binary}],
                         args_desc = ["Hostname to generate 'create account' invite for."],
@@ -344,7 +345,7 @@ get_commands_spec() ->
                             "Create a new 'create account' invite token with a preselected "
                             "username",
                         module = ?MODULE,
-                        function = gen_invite,
+                        function = generate_invite,
                         note = "added in 26.01",
                         args = [{username, binary}, {host, binary}],
                         args_desc =
@@ -397,11 +398,22 @@ cleanup_expired() ->
 expire_tokens(User0, Server0) ->
     User = jid:nodeprep(User0),
     Server = jid:nameprep(Server0),
-    db_call(Server, expire_tokens, [User, Server]).
+    pretty_format_command_result(
+      try_db_call(Server, expire_tokens, [User, Server])).
 
+-spec generate_invite(binary()) -> binary() | {error, any()}.
+generate_invite(Host) ->
+    generate_invite(<<>>, Host).
+
+-spec generate_invite(binary(), binary()) -> binary() | {error, any()}.
+generate_invite(AccountName, Host) ->
+    pretty_format_command_result(gen_invite(AccountName, Host)).
+
+-ifdef(TEST).
 -spec gen_invite(binary()) -> binary() | {error, any()}.
 gen_invite(Host) ->
     gen_invite(<<>>, Host).
+-endif.
 
 -spec gen_invite(binary(), binary()) -> binary() | {error, any()}.
 gen_invite(AccountName, Host0) ->
@@ -416,29 +428,31 @@ gen_invite(AccountName, Host0) ->
     end.
 
 list_invites(Host) ->
-    Invites = db_call(Host, list_invites, [Host]),
-    Format =
-        fun(#invite_token{token = TO,
-                          inviter = {IU, IS},
-                          invitee = IE,
-                          created_at = CA,
-                          expires = Exp,
-                          type = TY,
-                          account_name = AN} =
-                Invite) ->
-           {TO,
-            is_token_valid(Host, TO),
-            encode_datetime(CA),
-            encode_datetime(Exp),
-            TY,
-            jid:encode(
-                jid:make(IU, IS)),
-            IE,
-            AN,
-            token_uri(Invite),
-            landing_page(Host, Invite)}
+    Res =
+        maybe
+            {ok, Invites} ?= try_db_call(Host, list_invites, [Host]),
+            [format_invite(Host, Invite) || Invite <- Invites]
         end,
-    [Format(Invite) || Invite <- Invites].
+    pretty_format_command_result(Res).
+
+format_invite(Host, #invite_token{token = TO,
+                            inviter = {IU, IS},
+                            invitee = IE,
+                            created_at = CA,
+                            expires = Exp,
+                            type = TY,
+                            account_name = AN} = Invite) ->
+    {TO,
+     is_token_valid(Host, TO),
+     encode_datetime(CA),
+     encode_datetime(Exp),
+     TY,
+     jid:encode(
+       jid:make(IU, IS)),
+     IE,
+     AN,
+     token_uri(Invite),
+     landing_page(Host, Invite)}.
 
 %%--------------------------------------------------------------------
 %%| hooks and callbacks
@@ -902,10 +916,25 @@ maybe_add_ibr_allowed(User, Host) ->
 landing_page(Host, Invite) ->
     mod_invites_http:landing_page(Host, Invite).
 
--spec db_call(binary(), atom(), list()) -> any().
+-spec db_call(binary(), atom(), list(any())) -> any().
 db_call(Host, Fun, Args) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
     apply(Mod, Fun, Args).
+
+%% father forgive me
+lift({error, _R} = E) -> E;
+lift({ok, _V} = R) -> R;
+lift(Res) -> {ok, Res}.
+
+-spec try_db_call(Host :: binary(), Fun :: atom(), Args :: list(any())) -> {ok, any()} | {error, any()}.
+try_db_call(Host, Fun, Args) ->
+    try lift(db_call(Host, Fun, Args))
+    catch
+        error:{error, _Reason} = Error->
+            Error;
+        error:Error ->
+            {error, Error}
+    end.
 
 -spec trans(binary(), binary()) -> binary().
 trans(Lang, Msg) ->
@@ -1008,3 +1037,14 @@ send_presence(From, To, Type) ->
                   to = To,
                   type = Type},
     ejabberd_router:route(Presence).
+
+pretty_format_command_result({error, {module_not_loaded, ?MODULE, Host}}) ->
+    {error, lists:flatten(io_lib:format("Virtual host not known: ~s", [binary_to_list(Host)]))};
+pretty_format_command_result({error, host_unknown}) ->
+    {error, "Virtual host not known"};
+pretty_format_command_result({error, user_exists}) ->
+    {error, "Username already taken"};
+pretty_format_command_result({ok, Result}) ->
+    Result;
+pretty_format_command_result(Result) ->
+    Result.

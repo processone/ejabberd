@@ -311,8 +311,8 @@ BINARIES=$(DEPSDIR)/epam/priv/bin/epam $(DEPSDIR)/eimp/priv/bin/eimp $(DEPSDIR)/
 DEPS_FILES_FILTERED=$(filter-out $(BINARIES) $(DEPSDIR)/elixir/ebin/elixir.app,$(DEPS_FILES))
 DEPS_DIRS=$(sort $(DEPSDIR)/ $(foreach DEP,$(DEPS),$(DEPSDIR)/$(DEP)/) $(dir $(DEPS_FILES)))
 
-MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,$(EBINDIR)/*.beam $(EBINDIR)/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* include/*.hrl COPYING))
-MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql priv/lua)
+MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,$(EBINDIR)/*.beam $(EBINDIR)/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* priv/mod_invites/* priv/mod_invites/static/* priv/mod_invites/static/logos/* include/*.hrl COPYING))
+MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql priv/lua priv/mod_invites)
 
 define DEP_VERSION_template
 DEP_$(1)_VERSION:=$(shell $(SED) -e '/vsn/!d;s/.*, *"/$(1)-/;s/".*//' $(2) 2>/dev/null)
