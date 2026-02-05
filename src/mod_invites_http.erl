@@ -65,7 +65,7 @@ landing_page(Host, Invite) ->
     case mod_invites_opt:landing_page(Host) of
         none ->
             <<>>;
-        <<"auto">> ->
+        auto ->
             try ejabberd_http:get_auto_url(any, mod_invites) of
                 AutoURL0 ->
                     AutoURL = misc:expand_keyword(<<"@HOST@">>, AutoURL0, Host),

@@ -291,7 +291,7 @@ mod_opt_type(access_create_account) ->
 mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
 mod_opt_type(landing_page) ->
-    econf:either(none, econf:binary());
+    econf:either(econf:enum([none, auto]), econf:binary());
 mod_opt_type(max_invites) ->
     econf:pos_int(infinity);
 mod_opt_type(site_name) ->
