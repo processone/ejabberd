@@ -291,7 +291,8 @@ mod_opt_type(access_create_account) ->
 mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
 mod_opt_type(landing_page) ->
-    econf:either(econf:enum([none, auto]), econf:binary());
+    econf:either(
+        econf:enum([none, auto]), econf:binary());
 mod_opt_type(max_invites) ->
     econf:pos_int(infinity);
 mod_opt_type(site_name) ->
@@ -398,8 +399,7 @@ cleanup_expired() ->
 expire_tokens(User0, Server0) ->
     User = jid:nodeprep(User0),
     Server = jid:nameprep(Server0),
-    pretty_format_command_result(
-      try_db_call(Server, expire_tokens, [User, Server])).
+    pretty_format_command_result(try_db_call(Server, expire_tokens, [User, Server])).
 
 -spec generate_invite(binary()) -> binary() | {error, any()}.
 generate_invite(Host) ->
@@ -410,9 +410,11 @@ generate_invite(AccountName, Host) ->
     pretty_format_command_result(gen_invite(AccountName, Host)).
 
 -ifdef(TEST).
+
 -spec gen_invite(binary()) -> binary() | {error, any()}.
 gen_invite(Host) ->
     gen_invite(<<>>, Host).
+
 -endif.
 
 -spec gen_invite(binary(), binary()) -> binary() | {error, any()}.
@@ -428,27 +430,28 @@ gen_invite(AccountName, Host0) ->
     end.
 
 list_invites(Host) ->
-    Res =
-        maybe
-            {ok, Invites} ?= try_db_call(Host, list_invites, [Host]),
-            [format_invite(Host, Invite) || Invite <- Invites]
-        end,
+    Res = maybe
+              {ok, Invites} ?= try_db_call(Host, list_invites, [Host]),
+              [format_invite(Host, Invite) || Invite <- Invites]
+          end,
     pretty_format_command_result(Res).
 
-format_invite(Host, #invite_token{token = TO,
+format_invite(Host,
+              #invite_token{token = TO,
                             inviter = {IU, IS},
                             invitee = IE,
                             created_at = CA,
                             expires = Exp,
                             type = TY,
-                            account_name = AN} = Invite) ->
+                            account_name = AN} =
+                  Invite) ->
     {TO,
      is_token_valid(Host, TO),
      encode_datetime(CA),
      encode_datetime(Exp),
      TY,
      jid:encode(
-       jid:make(IU, IS)),
+         jid:make(IU, IS)),
      IE,
      AN,
      token_uri(Invite),
@@ -916,21 +919,26 @@ maybe_add_ibr_allowed(User, Host) ->
 landing_page(Host, Invite) ->
     mod_invites_http:landing_page(Host, Invite).
 
--spec db_call(binary(), atom(), list(any())) -> any().
+-spec db_call(binary(), atom(), [any()]) -> any().
 db_call(Host, Fun, Args) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
     apply(Mod, Fun, Args).
 
 %% father forgive me
-lift({error, _R} = E) -> E;
-lift({ok, _V} = R) -> R;
-lift(Res) -> {ok, Res}.
+lift({error, _R} = E) ->
+    E;
+lift({ok, _V} = R) ->
+    R;
+lift(Res) ->
+    {ok, Res}.
 
--spec try_db_call(Host :: binary(), Fun :: atom(), Args :: list(any())) -> {ok, any()} | {error, any()}.
+-spec try_db_call(Host :: binary(), Fun :: atom(), Args :: [any()]) ->
+                     {ok, any()} | {error, any()}.
 try_db_call(Host, Fun, Args) ->
-    try lift(db_call(Host, Fun, Args))
+    try
+        lift(db_call(Host, Fun, Args))
     catch
-        error:{error, _Reason} = Error->
+        error:({error, _Reason} = Error) ->
             Error;
         error:Error ->
             {error, Error}
@@ -1039,7 +1047,9 @@ send_presence(From, To, Type) ->
     ejabberd_router:route(Presence).
 
 pretty_format_command_result({error, {module_not_loaded, ?MODULE, Host}}) ->
-    {error, lists:flatten(io_lib:format("Virtual host not known: ~s", [binary_to_list(Host)]))};
+    {error,
+     lists:flatten(
+         io_lib:format("Virtual host not known: ~s", [binary_to_list(Host)]))};
 pretty_format_command_result({error, host_unknown}) ->
     {error, "Virtual host not known"};
 pretty_format_command_result({error, user_exists}) ->

@@ -770,7 +770,7 @@
         <xmpp:version>1.0.1</xmpp:version>
         <xmpp:since>23.10</xmpp:since>
         <xmpp:status>complete</xmpp:status>
-        <xmpp:note>mod_muc_occupantid</xmpp:note>
+        <xmpp:note>mod_muc</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>

@@ -5395,9 +5395,10 @@ add_presence_hats(JID, Pres, StateData) ->
                                                false ->
                                                    false;
                                                {URI, Title, Hue} ->
-                                                   {true, #muc_hat{uri = URI,
-                                                            title = Title,
-                                                            hue = Hue}}
+                                                   {true,
+                                                    #muc_hat{uri = URI,
+                                                             title = Title,
+                                                             hue = Hue}}
                                            end
                                         end,
                                         UserHats),
