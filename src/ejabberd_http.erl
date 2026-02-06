@@ -395,16 +395,15 @@ extract_path_query(#state{request_method = Method,
     when Method =:= 'GET' orelse
 	   Method =:= 'HEAD' orelse
 	     Method =:= 'DELETE' orelse Method =:= 'OPTIONS' ->
-    case catch url_decode_q_split_normalize(Path) of
-	{'EXIT', Error} ->
-	    ?DEBUG("Error decoding URL '~p': ~p", [Path, Error]),
-	    {State, false};
+    try url_decode_q_split_normalize(Path) of
 	{LPath, Query} ->
-	    LQuery = case catch parse_urlencoded(Query) of
-			 {'EXIT', _Reason} -> [];
-			 LQ -> LQ
+	    LQuery = try parse_urlencoded(Query)
+		     catch _:_ -> []
 		     end,
 	    {State, {LPath, LQuery, <<"">>, Path}}
+    catch _:Error ->
+	?DEBUG("Error decoding URL '~p': ~p", [Path, Error]),
+	{State, false}
     end;
 extract_path_query(#state{request_method = Method,
 			  request_path = {abs_path, Path},
@@ -413,10 +412,7 @@ extract_path_query(#state{request_method = Method,
 			  sockmod = _SockMod,
 			  socket = _Socket} = State)
   when (Method =:= 'POST' orelse Method =:= 'PUT') andalso Len>0 ->
-    case catch url_decode_q_split_normalize(Path) of
-	{'EXIT', Error} ->
-	    ?DEBUG("Error decoding URL '~p': ~p", [Path, Error]),
-	    {State, false};
+    try url_decode_q_split_normalize(Path) of
         {LPath, _Query} ->
 	    case Method of
 		'PUT' ->
@@ -424,15 +420,17 @@ extract_path_query(#state{request_method = Method,
 		'POST' ->
 		    case recv_data(State) of
 			{ok, Data} ->
-			    LQuery = case catch parse_urlencoded(Data) of
-					 {'EXIT', _Reason} -> [];
-					 LQ -> LQ
+			    LQuery = try parse_urlencoded(Data)
+				     catch _:_ -> []
 				     end,
 			    {State, {LPath, LQuery, Data, Path}};
 			error ->
 			    {State, false}
 		    end
 	    end
+    catch _:Error ->
+	?DEBUG("Error decoding URL '~p': ~p", [Path, Error]),
+	{State, false}
     end;
 extract_path_query(State) ->
     {State, false}.
