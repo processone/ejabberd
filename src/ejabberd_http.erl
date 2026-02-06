@@ -859,8 +859,7 @@ parse_urlencoded(<<$=, Tail/binary>>, _Last, Cur, key) ->
 parse_urlencoded(<<H, Tail/binary>>, Last, Cur, State) ->
     parse_urlencoded(Tail, Last, <<Cur/binary, H>>, State);
 parse_urlencoded(<<>>, Last, Cur, _State) ->
-    [{Last, Cur}];
-parse_urlencoded(undefined, _, _, _) -> [].
+    [{Last, Cur}].
 
 apply_custom_headers(Headers, CustomHeaders) ->
     {Doctype, Headers2} = case Headers -- [html] of
