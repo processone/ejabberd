@@ -135,7 +135,7 @@ handle_call(_Request, _From, State) ->
 handle_info({iq_reply, IQReply, {LServer, RServer}}, #state{monitors = Mons} = State) ->
     case IQReply of
         #iq{type = result, sub_els = [El]} ->
-            case xmpp:decode(El) of
+            try xmpp:decode(El) of
                 #disco_info{features = Features} ->
                     case lists:member(?NS_URN_SERVERINFO, Features) of
                         true ->
@@ -156,6 +156,8 @@ handle_info({iq_reply, IQReply, {LServer, RServer}}, #state{monitors = Mons} = S
                     end;
                 _ ->
                     {noreply, State}
+            catch _:{xmpp_codec, Reason} ->
+                {noreply, State}
             end;
         _ ->
             {noreply, State}
