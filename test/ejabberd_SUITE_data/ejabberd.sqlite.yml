@@ -23,7 +23,6 @@ define_macro:
         db_type: sql
         ram_db_type: sql
         vcard: VCARD
-      mod_muc_occupantid: []
       mod_offline:
         db_type: sql
       mod_privacy:
