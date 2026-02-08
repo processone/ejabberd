@@ -156,8 +156,9 @@ handle_info({iq_reply, IQReply, {LServer, RServer}}, #state{monitors = Mons} = S
                     end;
                 _ ->
                     {noreply, State}
-            catch _:{xmpp_codec, Reason} ->
-                {noreply, State}
+            catch
+                _:{xmpp_codec, _Reason} ->
+                    {noreply, State}
             end;
         _ ->
             {noreply, State}
