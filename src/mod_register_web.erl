@@ -638,8 +638,9 @@ mod_doc() ->
 	      "important to include the last / character in the URL, "
 	      "otherwise the subpages URL will be incorrect."), "",
            ?T("This module is enabled in 'listen' -> 'ejabberd_http' -> "
-              "_`listen-options.md#request_handlers|request_handlers`_, "
-              "no need to enable in 'modules'."),
+              "_`listen-options.md#request_handlers|request_handlers`_."), "",
+           ?T("There is no need to enable this module in 'modules', "
+              "but it adds a link to the register page in WebAdmin menu."),
            ?T("The module depends on _`mod_register`_ where all the "
               "configuration is performed.")],
      example =>
