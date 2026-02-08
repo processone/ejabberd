@@ -114,7 +114,7 @@ jobs:
 
     - name: Run tests
       id: ct
-      run: make test
+      run: CT_BACKENDS=agnostic,mnesia,redis,mysql,pgsql,sqlite,ldap,extauth make test
 
     - name: Send to coveralls
       env:
