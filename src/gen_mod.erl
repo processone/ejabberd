@@ -422,7 +422,7 @@ del_registrations(Host, Module, Registrations) ->
       fun({hook, Hook, Function, Seq}) ->
               ejabberd_hooks:delete(Hook, Host, Module, Function, Seq);
          ({hook, Hook, Function, Seq, global}) when is_integer(Seq) ->
-              case gen_mod:is_loaded_elsewhere(<<"global">>, Module) of
+              case is_loaded_elsewhere(Host, Module) of
                   false -> ejabberd_hooks:delete(Hook, global, Module, Function, Seq);
                   true -> ok
               end;
