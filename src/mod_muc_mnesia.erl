@@ -478,9 +478,11 @@ transform(#muc_room{opts = Opts} = R) ->
             Opts
     end,
     Opts4 =
-        case lists:keyfind(hats_defs, 1, Opts2) of
-            false ->
-                {hats_users, HatsUsers} = lists:keyfind(hats_users, 1, Opts2),
+        case {lists:keyfind(hats_defs, 1, Opts2),
+              lists:keyfind(hats_users, 1, Opts2)} of
+            {false, false} ->
+                [{hats_defs, []}, {hats_users, []} | Opts2];
+            {false, {hats_users, HatsUsers}} ->
                 {HatsDefs, HatsUsers2} =
                     lists:foldl(fun({Jid, UriTitleList}, {Defs, Assigns}) ->
                                    Defs2 =
@@ -500,7 +502,7 @@ transform(#muc_room{opts = Opts} = R) ->
                 Opts3 =
                     lists:keyreplace(hats_users, 1, Opts2, {hats_users, maps:to_list(HatsUsers2)}),
                 [{hats_defs, maps:to_list(HatsDefs)} | Opts3];
-            {_, _} ->
+            {{hats_defs, _}, {hats_users, _}} ->
                 Opts2
         end,
     R#muc_room{opts = Opts4};
