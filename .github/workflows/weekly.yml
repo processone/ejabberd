@@ -14,6 +14,7 @@ jobs:
       matrix:
         otp: ['25', '26', '27', '28']
 
+
     steps:
 
     - uses: actions/checkout@v6
@@ -31,16 +32,11 @@ jobs:
                   libsqlite3-dev libwebp-dev libyaml-dev
 
     - name: Compile
-      run: |
-        ./autogen.sh
-        ./configure --with-rebar=./rebar3 \
-                    --prefix=/tmp/ejabberd \
-                    --enable-all \
-                    --disable-elixir \
-                    --disable-mssql \
-                    --disable-odbc
-        sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
-        make
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: compile
+        tool: rebar3
 
   ########################################################## Static Tests #####
 

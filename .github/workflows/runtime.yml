@@ -72,14 +72,11 @@ jobs:
         key: runtime-${{ matrix.otp }}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
 
     - name: Compile
-      run: |
-        ./autogen.sh
-        ./configure --with-rebar=./${{ matrix.rebar }} \
-                    --prefix=/tmp/ejabberd \
-                    --with-min-erlang=9.0.5 \
-                    --enable-all \
-                    --disable-elixir
-        make
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: compile
+        tool: ${{ matrix.rebar }}
 
     - run: make hooks
     - run: make options
@@ -154,11 +151,14 @@ jobs:
         mix local.rebar --force
 
     - name: Compile
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: compile
+        tool: ./rebar3
+
+    - name: Test scripts, deps, eunit
       run: |
-        ./autogen.sh
-        ./configure --with-rebar=./rebar3 \
-                    --prefix=/tmp/ejabberd \
-                    --enable-all
         make scripts deps
         ./rebar3 eunit --verbose
 
@@ -240,12 +240,11 @@ jobs:
         mix local.rebar --force
 
     - name: Compile
-      run: |
-        ./autogen.sh
-        ./configure --with-rebar=mix \
-                    --prefix=/tmp/ejabberd \
-                    --enable-all
-        make
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: compile
+        tool: mix
 
     - run: make hooks
     - run: make options

@@ -54,14 +54,14 @@ jobs:
         key: ci-${{ matrix.otp }}-${{hashFiles('rebar.config')}}
 
     - name: Compile
+      uses: ./.github/actions/manage-ejabberd
+      with:
+        for: prod
+        do: compile
+        tool: rebar3
+
+    - name: Compress compiled.tar
       run: |
-        ./autogen.sh
-        ./configure --with-rebar=./rebar3 \
-                    --prefix=/tmp/ejabberd \
-                    --enable-all \
-                    --disable-elixir
-        sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
-        make
         tar -cvf /tmp/compiled.tar .
 
     - uses: actions/upload-artifact@v6

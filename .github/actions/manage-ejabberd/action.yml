@@ -68,6 +68,33 @@ runs:
              ;;
         esac
 
+    ############################################################# Compile #####
+
+    - if: contains(inputs.do, 'compile') &&
+          (inputs.tool == 'rebar' ||
+           inputs.tool == 'rebar3')
+      shell: sh
+      run: |
+        ./autogen.sh
+        ./configure --with-rebar=./${{ inputs.tool }} \
+                    --prefix=/tmp/ejabberd \
+                    --enable-all \
+                    --disable-elixir
+        sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
+        make
+
+    - if: contains(inputs.do, 'compile') &&
+          (inputs.tool == './rebar3' ||
+           inputs.tool == 'mix')
+      shell: sh
+      run: |
+        ./autogen.sh
+        ./configure --with-rebar=${{ inputs.tool }} \
+                    --prefix=/tmp/ejabberd \
+                    --enable-all
+        sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
+        make
+
     ############################################################## Deploy #####
 
     - if: contains(inputs.do, 'deploy') &&
