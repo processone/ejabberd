@@ -1,70 +1,76 @@
 {% extends "base.html" %}
 
-{% block h1 %}
-  {% blocktrans with app_name=app.name %}Join {{ site_name }} with {{ app_name }}{% endblocktrans %}
-{% endblock %}
+{% block h1 %}{% blocktrans with app_name=app.name %}Join {{ site_name }} with {{ app_name }}{% endblocktrans %}{% endblock %}
 
 {% block content %}
-				<p>{% if invite.inviter|user %}
+        <p>{% if invite.inviter|user %}
             {% blocktrans with inviter=invite.inviter|user %}You have been invited to chat with <strong>{{ inviter }}</strong> on {{ site_name }}, part of the XMPP secure and decentralized messaging network.{% endblocktrans %}
-            {% else %}
+        {% else %}
             {% blocktrans %}You have been invited to chat on {{ site_name }}, part of the XMPP secure and decentralized messaging network.{% endblocktrans %}
+        {% endif %}</p>
+
+        <h2 class="h5">{% blocktrans with app_name=app.name %}You can start chatting right away with {{ app_name }}. Let's get started!{% endblocktrans %}</h2>
+
+        <div class="card m-3 client-card {% for item in app.platforms %}app-platform-{{ item|lower }} {% endfor %} flex-wrap col-sm-12 col-md-8 col-lg-5">
+            <div class="row no-gutters h-100">
+                <div class="col-md-4">
+                    <img src="{{ static }}/{{ app.image }}" class="p-2 img-fluid" alt="{{ app.alttext }}">
+                </div>
+                <div class="col-md-8 h-100">
+                    <div class="card-body d-flex flex-column h-100">
+                        <h3 class="card-title text-nowrap mb-1 h5">{{ app.name }}</h3>
+                        <div>
+                            {% for item in app.platforms %}<span class="badge badge-info client-platform-badge client-platform-badge-{{ item|lower }} mr-1 mb-3">{{ item }}</span> {% endfor %}
+                        </div>
+                        <p class="card-text">{{ app.text }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 style="clear:both" class="h3">{% blocktrans with app_name=app.name %}Step 1: Install {{ app_name }}{% endblocktrans %}</h2>
+
+        <p>{% if app.download.text %}{{ app.download.text }}{% else %}{% blocktrans with app_name=app.name %}Download and install {{ app_name }} below:{% endblocktrans %}{% endif %}</p>
+
+        <div class="ml-5">
+            {% for button in app.download.buttons %}
+            {% if button.image %}
+            <a href="{% if button.magic_link %}{{ button.magic_link }}{% else %}{{ button.url }}{% endif %}" {% if button.target %}target="{{ button.target }}"{% endif %} rel="noopener">
+                <img src="{{ button.image }}" {% if button.alttext %}alt="{{ button.alttext }}"{% endif %} style="max-width: 160px;">
+            </a>
             {% endif %}
-        </p>
+            {% if button.text %}
+            <a href="{{ button.url }}" {% if button.target %}target="{{ button.target }}"{% endif %} class="btn btn-primary" rel="noopener">
+                {{ button.text }}
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
 
-				<p>{% blocktrans with app_name=app.name %}You can start chatting right away with {{ app_name }}. Let's get started!{% endblocktrans %}</p>
+        <p class="mt-3">{% blocktrans with app_name=app.name %}After successfully installing {{ app_name }}, come back to this page and <strong>continue with Step 2</strong>.{% endblocktrans %}</p>
 
-				<div class="card m-3 client-card {% for item in app.platforms %}app-platform-{{ item|lower }} {% endfor %} flex-wrap col-sm-12 col-md-8 col-lg-5">
-					<div class="row no-gutters h-100">
-						<div class="col-md-4">
-							<img src="{{ static }}/{{ app.image }}" class="p-2 img-fluid" alt="{{ app.imagetext }}">
-						</div>
-						<div class="col-md-8 h-100">
-							<div class="card-body d-flex flex-column h-100">
-								<h5 class="card-title text-nowrap mb-1">{{ app.name }}</h5>
-								<div>
-									{% for item in app.platforms %}<span class="badge badge-info client-platform-badge client-platform-badge-{{ item|lower }} mr-1 mb-3">{{ item }}</span> {% endfor %}
-								</div>
-								<p class="card-text">{{ app.text }}</p>
-							</div>
-						</div>
-					</div>
-				</div>
+        <h2 class="h3">{% trans "Step 2: Activate your account" %}</h2>
 
-				<h3 style="clear:both">{% blocktrans with app_name=app.name %}Step 1: Install {{ app_name }}{% endblocktrans %}</h3>
+        <p>{% trans "Installed ok? Great! <strong>Click or tap the button below</strong> to accept your invite and continue with your account setup:" %}</p>
 
-				<p>{% if app.download.text %}{{ app.download.text }}{% else %}{% blocktrans with app_name=app.name %}Download and install {{ app_name }} below:{% endblocktrans %}{% endif %}</p>
+        <div>
+            <a href="{{ uri }}" id="uri-cta" class="btn btn-primary ml-5 mt-1 mb-3">{% blocktrans with app_name=app.name %}Accept invite using {{ app_name }}{% endblocktrans %}</a><br/>
+        </div>
 
-				<div class="ml-5">
-					{% for button in app.download.buttons %}
-						{% if button.image %}
-							<a href="{% if button.magic_link %}{{ button.magic_link }}{% else %}{{ button.url }}{% endif %}" {% if button.target %}target="{{ button.target }}"{% endif %} rel="noopener">
-								<img src="{{ button.image }}" {% if button.alttext %}alt="{{ button.alttext }}"{% endif %} style="max-width: 160px;">
-							</a>
-						{% endif %}
-						{% if button.text %}
-							<a href="{{ button.url }}" {% if button.target %}target="{{ button.target }}"{% endif %} class="btn btn-primary" rel="noopener">
-								{{ button.text }}
-							</a>
-						{% endif %}
-					{% endfor %}
-				</div>
+        <p>{% blocktrans with app_name=app.name %}After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.{% endblocktrans %}</p>
+        <nav aria-label="{% trans 'Page navigation' %}">
+            <ul class="pagination">
+                <li class="page-item"><a tabindex="4" class="page-link" href="/{{ base }}/{{ token }}" aria-label="{% trans 'Previous' %}">
+                    <span aria-hidden="true">&laquo;</span>
+                    <span>{% trans "Previous" %}</span>
+                </a></li>
+            </ul>
+        </nav>
 
-				<p class="mt-3">{% blocktrans with app_name=app.name %}After successfully installing {{ app_name }}, come back to this page and <strong>continue with Step 2</strong>.{% endblocktrans %}</p>
-
-				<h3>{% trans "Step 2: Activate your account" %}</h3>
-
-				<p>{% trans "Installed ok? Great! <strong>Click or tap the button below</strong> to accept your invite and continue with your account setup:" %}</p>
-
-				<div>
-					<a href="{{ uri }}" id="uri-cta" class="btn btn-primary ml-5 mt-1 mb-3">{% blocktrans with app_name=app.name %}Accept invite using {{ app_name }}{% endblocktrans %}</a><br/>
-				</div>
-
-				<p>{% blocktrans with app_name=app.name %}After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.{% endblocktrans %}</p>
 {% endblock %}
 
 {% block extra_scripts %}
-	<script src="{{ static }}/qrcode.min.js"></script>
-	<script src="{{ static }}/platform.min.js"></script>
-	<script src="{{ static }}/invite.js"></script>
+<script src="{{ static }}/qrcode.min.js"></script>
+<script src="{{ static }}/platform.min.js"></script>
+<script src="{{ static }}/invite.js"></script>
 {% endblock %}

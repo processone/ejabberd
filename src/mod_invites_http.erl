@@ -58,6 +58,7 @@
 -define(REGISTRATION, <<"registration">>).
 -define(STATIC_CTX, {static, <<"/", Base/binary, "/", ?STATIC/binary>>}).
 -define(SITE_NAME_CTX(Name), {site_name, Name}).
+-define(LANG(Lang), {lang, Lang}).
 
 %% @format-begin
 
@@ -167,7 +168,11 @@ process_register_form(Invite,
     end.
 
 render_register_form(#request{host = Host, lang = Lang}, Ctx, AdditionalCtx) ->
-    render(Host, Lang, <<"register.html">>, Ctx ++ AdditionalCtx).
+    MinLength = case mod_register_opt:password_strength(Host) of
+                    0 -> 0;
+                    _ -> 6
+                end,
+    render(Host, Lang, <<"register.html">>, [{password_min_length, MinLength} | Ctx] ++ AdditionalCtx).
 
 process_register_post(Invite,
                       AppID,
@@ -190,7 +195,7 @@ process_register_post(Invite,
                 {ok, _UpdatedInvite} ->
                     Ctx = [{username, Username}, {password, Password} | AppCtx],
                     render_ok(Host, Lang, <<"register_success.html">>, Ctx);
-                {error, #stanza_error{text = Text, type = Type} = Error} ->
+                {error, #stanza_error{text = Text, type = Type, reason = Reason} = Error} ->
                     ?DEBUG("registration failed with error: ~p", [Error]),
                     Msg = xmpp:get_text(Text, xmpp:prep_lang(Lang)),
                     case Type of
@@ -199,9 +204,9 @@ process_register_post(Invite,
                                 render_register_form(Request,
                                                      AppCtx,
                                                      [{username, Username},
-                                                      {message,
+                                                      {error,
                                                        [{text, Msg},
-                                                        {class, <<"alert-warning">>}]}]),
+                                                        {class, error_class(Reason)}]}]),
                             ?BAD_REQUEST(Body);
                         _ ->
                             render_bad_request(Host,
@@ -215,6 +220,12 @@ process_register_post(Invite,
         _:no_match ->
             ?BAD_REQUEST
     end.
+
+error_class('jid-malformed') -> username;
+error_class('not-allowed') -> username;
+error_class('conflict') -> username;
+error_class('not-acceptable') -> password;
+error_class(_) -> undefined.
 
 process_roster_token([_Token] = LocalPath,
                      #request{host = Host, lang = Lang} = Request,
@@ -255,12 +266,12 @@ app_ctx(Host, AppID, Lang, Ctx) ->
             throw(not_found)
     end.
 
-ctx(#request{host = Host, path = Path}, LocalPath) ->
+ctx(#request{host = Host, path = Path, lang = Lang}, LocalPath) ->
     Base =
         iolist_to_binary(uri_string:normalize(
                              lists:join(<<"/">>, Path -- LocalPath))),
     SiteName = mod_invites_opt:site_name(Host),
-    [?STATIC_CTX, ?SITE_NAME_CTX(SiteName)].
+    [{base, Base}, ?STATIC_CTX, ?SITE_NAME_CTX(SiteName), ?LANG(Lang)].
 
 ctx(Invite, #request{host = Host} = Request, LocalPath) ->
     [{invite, invite_to_proplist(Invite)},

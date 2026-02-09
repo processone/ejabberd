@@ -1,35 +1,55 @@
 <!DOCTYPE html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>{% block title %}{% blocktrans %}Invite to {{ site_name }}{% endblocktrans %}{% endblock %}</title>
-  {% block rel_alternate %}{% endblock %}
-	<link rel="stylesheet" href="/share/bootstrap4/css/bootstrap.min.css">
-	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-	<link rel="manifest" href="/site.webmanifest">
-	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
-	<meta name="msapplication-TileColor" content="#fbd308">
-	<meta name="theme-color" content="#fbd308">
-</head>
-<body>
-	<div id="background" class="fixed-top overflow-hidden"></div>
-	<div id="form" class="{% block form_class %}container col-md-10 col-md-offset-1 col-sm-8 col-sm-offset-2 col-lg-10 col-lg-offset-1 mt-2 mt-md-5{% endblock %}">
-		<div class="card rounded-lg shadow">
-  	  <h1 class="card-header rounded-lg rounded-lg">
-				    {%block h1 %}{% blocktrans %}Invite to {{ site_name }}{% endblocktrans %}{% endblock %}<br/>
-		  </h1>
-      <div class="card-body">
-        {% block qr_button %}{% endblock %}
-        {% block content %}{% endblock %}
-			</div>
-		</div>
-	</div>
-  {% block qr_code %}{% endblock %}
-  {% block extra_scripts %}{% endblock %}
-  <script src="/share/jquery/jquery.min.js"></script>
-	<script src="/share/bootstrap4/js/bootstrap.min.js"></script>
-</body>
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% blocktrans %}Invite to {{ site_name }}{% endblocktrans %}{% endblock %}</title>
+    {% block rel_alternate %}{% endblock %}
+    <link rel="stylesheet" href="/share/bootstrap4/css/bootstrap.min.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#fbd308">
+    <meta name="theme-color" content="#fbd308">
+    <style>
+        #other-software a {
+            text-decoration: underline;
+            color: #0072ed;
+        }
+        a#show-all-clients-button {
+            text-decoration: underline;
+        }
+        .btn-primary {
+            background-color: #0072ed;
+        }
+        .badge-success {
+            background-color: #0a8927;
+        }
+        .alert-info, .alert-info a, .btn-info {
+            background-color: #008297;
+            color: white;
+        }
+        .border-info {
+            border-color: #008297 !important;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="background" class="fixed-top overflow-hidden"></div>
+    <div id="form" class="{% block form_class %}container col-md-10 col-md-offset-1 col-sm-8 col-sm-offset-2 col-lg-10 col-lg-offset-1 mt-2 mt-md-5{% endblock %}">
+      <div class="card rounded-lg shadow">
+        <h1 class="card-header rounded-lg rounded-lg">{%block h1 %}{% blocktrans %}Invite to {{ site_name }}{% endblocktrans %}{% endblock %}</h1>
+        <div class="card-body">
+          {% block qr_button %}{% endblock %}
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+    {% block qr_code %}{% endblock %}
+    {% block extra_scripts %}{% endblock %}
+    <script src="/share/jquery/jquery.min.js"></script>
+    <script src="/share/bootstrap4/js/bootstrap.min.js"></script>
+  </body>
 </html>

@@ -1,10 +1,10 @@
 (function () {
 	// If QR lib loaded ok, show QR button on desktop devices
 	if(window.QRCode) {
-      const qrcode_opts = {
-          text : document.location.href,
-          addQuietZone: true
-      };
+		const qrcode_opts = {
+			text : document.location.href,
+			addQuietZone: true
+		};
 		new QRCode(document.getElementById("qr-invite-page"), qrcode_opts);
 		document.getElementById('qr-button-container').classList.add("d-md-block");
 	}
@@ -34,16 +34,16 @@
 			platform_friendly = "Windows Phone";
 			platform_classname = "windows-phone";
 			break;
-    case "OS X":
+		case "OS X":
 			if (navigator.maxTouchPoints > 1) {
-        // looks like iPad to me!
-        platform_friendly = "iPadOS";
+				// looks like iPad to me!
+				platform_friendly = "iPadOS";
 				platform_classname = "ipados";
-      } else {
+			} else {
 				platform_friendly = "macOS";
 				platform_classname = "macos";
-      }
-      break;
+			}
+			break;
 		default:
 			if(platform.os.family.startsWith("Windows")) {
 				platform_friendly = "Windows";

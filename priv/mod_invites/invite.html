@@ -1,18 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-				<p>{% if invite.inviter|user %}
+        <p>{% if invite.inviter|user %}
             {% blocktrans with inviter=invite.inviter|user %}You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.{% endblocktrans %}
-            {% else %}
+        {% else %}
             {% blocktrans %}You have been invited to chat on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.{% endblocktrans %}
-            {% endif %}</p>
+        {% endif %}</p>
+        <h2 class="card-title h5" style="clear:both">{% trans "Get started" %}</h2>
+        <p>{% trans "To get started, you need to install an app for your platform:" %}</p>
 
-				<h5 class="card-title" style="clear:both">{% trans "Get started" %}</h5>
+{% include "apps.html" %}
 
-				<p>{% trans "To get started, you need to install an app for your platform:" %}</p>
-
-        {% include "apps.html" %}
-
-				<h5>{% trans "Other software" %}</h5>
-				<p>{% blocktrans %}You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href="{{ registration_url }}">register an account manually</a>.{% endblocktrans %}</p>
+        <h2 class="h5">{% trans "Other software" %}</h2>
+        <p id="other-software">{% blocktrans %}You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href="{{ registration_url }}">register an account manually</a>.{% endblocktrans %}</p>
 {% endblock %}

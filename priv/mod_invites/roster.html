@@ -1,17 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}{% blocktrans with inviter=invite.inviter|jid %}{{ inviter }} has invited you to connect!{% endblocktrans %}{% endblock %}
+{% block title %}{% trans "Add Contact" %}{% endblock %}
 {% block h1 %}{% blocktrans with inviter=invite.inviter|user %}{{ inviter }} has invited you to connect!{% endblocktrans %}{% endblock %}
 
 {% block content %}
-<div class="col-md-8">
-    {% blocktrans with inviter=invite.inviter|jid %}This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!{% endblocktrans %}
-    <div class="col-md-4">
-        <a href="{{ invite.uri }}" class="btn btn-primary my-3 mb-3">{% blocktrans with inviter=invite.inviter|user %}Add {{ inviter }} to your contact list{% endblocktrans %}</a><br/>
-<!-- {{ invite.uri }} -->
-    </div>
-</div>
-<p>{% trans "If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform." %}</p>
+        <div class="col-md-8">
+            {% blocktrans with inviter=invite.inviter|jid %}This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!{% endblocktrans %}
+            <div class="col-md-4">
+                <a href="{{ invite.uri }}" class="btn btn-primary my-3 mb-3">{% blocktrans with inviter=invite.inviter|user %}Add {{ inviter }} to your contact list{% endblocktrans %}</a><br/>
+            </div>
+        </div>
+        <h2 class="h6">{% trans "If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform." %}</h2>
 
 {% include "apps.html" %}
 
