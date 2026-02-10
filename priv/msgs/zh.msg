@@ -24,11 +24,12 @@
 {"Account doesn't exist","账号不存在"}.
 {"Action on user","对用户的操作"}.
 {"Add {{ inviter }} to your contact list","将 {{ inviter }} 添加到您的联系人列表"}.
+{"Add Contact","添加联系人"}.
 {"Add User","添加用户"}.
 {"Administration of ","管理 "}.
 {"Administration","管理"}.
 {"Administrator privileges required","需要管理员权限"}.
-{"After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.","点击按钮将跳转到 {{ app_name }}， 完成新 {{ site_name }} 账号的设置。"}.
+{"After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.","点击按钮将跳转到 {{ app_name }}，完成新 {{ site_name }} 账号的设置。"}.
 {"After successfully installing {{ app_name }}, come back to this page and <strong>continue with Step 2</strong>.","成功安装 {{ app_name }} 后，请返回此页面并<strong>继续执行步骤 2</strong>。"}.
 {"All activity","所有活动"}.
 {"All Users","所有用户"}.
@@ -41,7 +42,7 @@
 {"Allow users to send private messages","允许用户发送私信"}.
 {"Allow visitors to change nickname","允许参观者更改昵称"}.
 {"Allow visitors to send private messages to","允许参观者发送私信至"}.
-{"Allow visitors to send status text in presence updates","允许参观者在在线状态更新中发送状态文字"}.
+{"Allow visitors to send status text in presence updates","允许参观者在在线状态更新中发送状态文本"}.
 {"Allow visitors to send voice requests","允许参观者发送发言权请求"}.
 {"An associated LDAP group that defines room membership; this should be an LDAP Distinguished Name according to an implementation-specific or deployment-specific definition of a group.","与定义房间成员资格相关联的 LDAP 组；根据组的特定实现或特定部署的定义，使用 LDAP 专有名称。"}.
 {"Announcements","公告"}.
@@ -57,6 +58,7 @@
 {"Anyone with Voice","任何有发言权的人"}.
 {"Anyone","任何人"}.
 {"API Commands","API 命令"}.
+{"Apple Store Logo","Apple Store 徽标"}.
 {"April","四月"}.
 {"Arguments","参数"}.
 {"As a final reminder, your account details are shown below:","最终提醒，您的账号详情如下所示："}.
@@ -75,6 +77,7 @@
 {"Bad format","格式错误"}.
 {"BAD REQUEST","错误请求"}.
 {"Beagle IM by Tigase, Inc. is a lightweight and powerful XMPP client for macOS.","Beagle IM 由 Tigase, Inc. 开发，是适用于 macOS 的轻量高效 XMPP 客户端。"}.
+{"Beagle IM Logo","Beagle IM 徽标"}.
 {"Birthday","生日"}.
 {"Both the username and the resource are required","用户名和资源均为必填项"}.
 {"Bytestream already activated","字节流已激活"}.
@@ -115,6 +118,7 @@
 {"Contact Addresses (normally, room owner or owners)","联系地址（通常为房间所有者）"}.
 {"Contacts","联系人"}.
 {"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations 是专为 Android 6.0 及更高版本智能手机优化的 Jabber/XMPP 客户端，提供独特的移动端体验。"}.
+{"Conversations Logo","Conversations 徽标"}.
 {"Country","国家/地区"}.
 {"Create a Hat","创建头衔"}.
 {"Create Account","创建账号"}.
@@ -133,6 +137,7 @@
 {"Deliver event notifications","传递事件通知"}.
 {"Deliver payloads with event notifications","用事件通知传递有效负载"}.
 {"Destroy a Hat","删除头衔"}.
+{"Dino Logo","Dino 徽标"}.
 {"Disable User","禁用用户"}.
 {"Disc only copy","仅磁盘副本"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","不要将您的密码告诉任何人，甚至是 XMPP 服务器的管理员。"}.
@@ -168,7 +173,7 @@
 {"Enter path to jabberd14 spool dir","请输入 jabberd14 spool 目录路径"}.
 {"Enter path to jabberd14 spool file","请输入 jabberd14 spool 文件路径"}.
 {"Enter path to text file","请输入文本文件路径"}.
-{"Enter the text you see","请输入您看到的文字"}.
+{"Enter the text you see","请输入您看到的文本"}.
 {"Erlang XMPP Server","Erlang XMPP 服务器"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","从验证码挑战中排除的 Jabber ID"}.
 {"Export all tables as SQL queries to a file:","将所有表以 SQL 查询导出到文件："}.
@@ -183,6 +188,7 @@
 {"Failed to process option '~s'","无法处理选项“~s”"}.
 {"Family Name","姓氏"}.
 {"FAQ Entry","常见问题条目"}.
+{"F-Droid Store Logo","F-Droid Store 徽标"}.
 {"February","二月"}.
 {"File larger than ~w bytes","文件大于 ~w 字节"}.
 {"Fill in the form to search for any matching XMPP User","填写表单以搜索任何匹配的 XMPP 用户"}.
@@ -191,6 +197,7 @@
 {"Full List of Room Admins","房间管理员的完整列表"}.
 {"Full List of Room Owners","房间所有者的完整列表"}.
 {"Full Name","全名"}.
+{"Gajim Logo","Gajim 徽标"}.
 {"Get List of Active Users","获取活跃用户列表"}.
 {"Get List of Disabled Users","获取禁用用户列表"}.
 {"Get List of Idle Users","获取闲置用户列表"}.
@@ -207,6 +214,7 @@
 {"Get User Roster","获取用户名册"}.
 {"Get User Statistics","获取用户统计数据"}.
 {"Given Name","名字"}.
+{"Google Play Store Logo","Google Play 商店徽标"}.
 {"Grant voice to this person?","是否授予此用户发言权？"}.
 {"has been banned","已被封禁"}.
 {"has been kicked because of a system shutdown","因系统关闭被踢出"}.
@@ -277,7 +285,7 @@
 {"Last month","上个月"}.
 {"Last year","去年"}.
 {"Launch {{ app_name }} and sign in using your account credentials.","启动 {{ app_name }} 并使用您的账号凭据登录。"}.
-{"Launch Beagle IM, and select 'Yes' to add a new account. Click the '+' button under the empty account list and then enter your credentials.","启动 Beagle IM，然后选择“是”添加新账号。点击空白账号列表下方的“+”按钮，然后输入您的凭据。"}.
+{"Launch Beagle IM, and select \\'Yes\\' to add a new account. Click the \\'+\\' button under the empty account list and then enter your credentials.","启动 Beagle IM，然后选择“是”添加新账号。点击空白账号列表下方的“+”按钮，然后输入您的凭据。"}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","文本的 SHA-256 散列的最低有效位应等于十六进制标签"}.
 {"leaves the room","离开房间"}.
 {"List of Hats","头衔列表"}.
@@ -318,6 +326,7 @@
 {"Moderators Only","仅主持人"}.
 {"Moderator","主持人"}.
 {"Module failed to handle the query","模块无法处理查询"}.
+{"Monal Logo","Monal 徽标"}.
 {"Monday","周一"}.
 {"Multicast","多播"}.
 {"Multiple <item/> elements are not allowed by RFC6121","按照 RFC6121，多个 <item/> 元素是不允许的"}.
@@ -417,6 +426,7 @@
 {"Outgoing s2s Connections","传出 s2s 连接"}.
 {"Owner privileges required","需要所有者权限"}.
 {"Packet relay is denied by service policy","服务策略拒绝数据包中继"}.
+{"Page navigation","页面导航"}.
 {"Participant ID","参与者 ID"}.
 {"Participant","参与者"}.
 {"Password Verification","密码验证"}.
@@ -432,6 +442,8 @@
 {"Ping query is incorrect","Ping 查询不正确"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","注意：这些选项只会备份内置的 Mnesia 数据库。如果使用 ODBC 模块，还需要单独备份 SQL 数据库。"}.
+{"Please provide a password! Minimum length: {{ password_min_length }}","请提供密码！最小长度：{{ password_min_length }}"}.
+{"Please provide a valid username!","请提供有效的用户名！"}.
 {"Please, wait for a while before sending new voice request","请稍候再发送新的发言权请求"}.
 {"Pong","Pong"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","按照 RFC6121， 不允许有“ask”属性"}.
@@ -441,6 +453,7 @@
 {"Previous session PID has exited","上一个会话 PID 已退出"}.
 {"Previous session PID is dead","上一个会话 PID 已失效"}.
 {"Previous session timed out","上一个会话超时"}.
+{"Previous","上一页"}.
 {"private, ","私人， "}.
 {"Public","公开"}.
 {"Publish model","发布模型"}.
@@ -448,7 +461,6 @@
 {"PubSub subscriber request","PubSub 订阅者请求"}.
 {"Purge all items when the relevant publisher goes offline","相关发布者离线后清除所有项目"}.
 {"Push record not found","未找到推送记录"}.
-{"QR code icon","二维码图标"}.
 {"Queries to the conference members are not allowed in this room","此房间不允许向会议成员查询"}.
 {"Query to another users is forbidden","禁止查询其他用户"}.
 {"RAM and disc copy","RAM 和磁盘副本"}.
@@ -464,9 +476,11 @@
 {"Register on {{ site_name }}","在 {{ site_name }} 注册"}.
 {"Register","注册"}.
 {"Registration error","注册错误"}.
+{"Registration Error","注册错误"}.
 {"Remote copy","远程副本"}.
 {"Remove a hat from a user","移除用户头衔"}.
 {"Remove User","移除用户"}.
+{"Renga Logo","Renga 徽标"}.
 {"Replaced by new connection","替换为新连接"}.
 {"Request has timed out","请求已超时"}.
 {"Request is ignored","请求被忽略"}.
@@ -498,7 +512,7 @@
 {"Scan with mobile device","使用移动设备扫描"}.
 {"Search from the date","从日期搜索"}.
 {"Search Results for ","搜索结果 "}.
-{"Search the text","搜索文字"}.
+{"Search the text","搜索文本"}.
 {"Search until the date","搜索截至日期"}.
 {"Search users in ","在以下位置搜索用户 "}.
 {"Select","选择"}.
@@ -520,6 +534,7 @@
 {"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>","仅显示适用于<span class='platform-name'>您当前平台</span>的应用。您也可以<a href='#' id='show-all-clients-button'>查看所有应用。</a>"}.
 {"Show","显示"}.
 {"Shut Down Service","关闭服务"}.
+{"Siskin IM Logo","Siskin IM 徽标"}.
 {"SOCKS5 Bytestreams","SOCKS5 字节流"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","部分 XMPP 客户端可以将您的密码存储在计算机中，但出于安全考虑，您应该仅在个人计算机中存储密码。"}.
 {"Sorry, it looks like this invite code has expired!","抱歉，此邀请码似乎已过期！"}.
@@ -552,10 +567,10 @@
 {"Subscription requests must be approved and only subscribers may retrieve items","订阅请求必须得到批准，只有订阅者才能检索项目"}.
 {"Subscriptions are not allowed","不允许订阅"}.
 {"Sunday","周日"}.
-{"Text associated with a picture","与图片相关的文字"}.
-{"Text associated with a sound","与声音相关的文字"}.
-{"Text associated with a video","与视频相关的文字"}.
-{"Text associated with speech","与语音相关的文字"}.
+{"Text associated with a picture","与图片相关的文本"}.
+{"Text associated with a sound","与声音相关的文本"}.
+{"Text associated with a video","与视频相关的文本"}.
+{"Text associated with speech","与语音相关的文本"}.
 {"That nickname is already in use by another occupant","该昵称已被其他使用者使用"}.
 {"That nickname is registered by another person","该昵称已被其他用户注册"}.
 {"The account already exists","此账号已存在"}.
