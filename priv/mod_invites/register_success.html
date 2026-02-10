@@ -3,99 +3,99 @@
 {% block title %}{{site_name}}{% endblock %}
 {% block h1 %}{{site_name}}{% endblock %}
 {% block extra_scripts %}
-	<script>
-		function toggle_password(e) {
-			var button = e.target;
-			var input = button.parentNode.parentNode.querySelector("input");
-			switch(input.attributes.type.value) {
-			case "password":
-				input.attributes.type.value = "text";
-				button.innerText = "{% trans "Hide" %}";
-				break;
-			case "text":
-				input.attributes.type.value = "password";
-				button.innerText = "{% trans "Show" %}";
-				break;
-			}
-		  }
-	</script>
+    <script>
+    function toggle_password(e) {
+      var button = e.target;
+      var input = button.parentNode.parentNode.querySelector("input");
+      switch(input.attributes.type.value) {
+        case "password":
+          input.attributes.type.value = "text";
+          button.innerText = "{% trans "Hide" %}";
+          break;
+        case "text":
+          input.attributes.type.value = "password";
+          button.innerText = "{% trans "Show" %}";
+          break;
+      }
+    }
+    </script>
 {% endblock %}
 {% block content %}
-				<h5 class="card-title">{% trans "Congratulations!" %}</h5>
+        <h2 class="card-title h5">{% trans "Congratulations!" %}</h2>
 
-				<p>{% blocktrans %}You have created an account on <strong>{{ site_name }}</strong>.{% endblocktrans %}</p>
+        <p>{% blocktrans %}You have created an account on <strong>{{ site_name }}</strong>.{% endblocktrans %}</p>
 
-				<p>{% trans "To start chatting, you need to enter your new account credentials into your chosen XMPP software." %}</p>
+        <p>{% trans "To start chatting, you need to enter your new account credentials into your chosen XMPP software." %}</p>
 
-				{% if webchat_url %}
-				<div class="alert alert-success">
-					<div class="container">
-						<div class="row">
-							<div class="col-9">
-								<p>{% trans "<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!" %}</p>
-							</div>
-							<div class="col">
-								<a class="btn btn-primary" href="{{ webchat_url }}">{% trans "Log in via web" %}</a>
-							</div>
-						</div>
-					</div>
-				</div>
-				{% endif %}
+        {% if webchat_url %}
+        <div class="alert alert-success">
+            <div class="container">
+                <div class="row">
+                    <div class="col-9">
+                        <p>{% trans "<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!" %}</p>
+                    </div>
+                    <div class="col">
+                        <a class="btn btn-primary" href="{{ webchat_url }}">{% trans "Log in via web" %}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         {% if app %}
         <p>{% blocktrans with app_name=app.name %}You can now set up {{ app_name }} and connect it to your new account.{% endblocktrans %}</p>
 
-				<h5>{% blocktrans with app_name=app.name %}Step 1: Download and install {{ app_name }}{% endblocktrans %}</h5>
+        <h2 class="h5">{% blocktrans with app_name=app.name %}Step 1: Download and install {{ app_name }}{% endblocktrans %}</h2>
 
-				<p>{% if app.download.text %}{{ app.download.text }}{% else %}{% blocktrans with app_name=app.name %}Download and install {{ app_name }} below:{% endblocktrans %}{% endif %}</p>
+        <p>{% if app.download.text %}{{ app.download.text }}{% else %}{% blocktrans with app_name=app.name %}Download and install {{ app_name }} below:{% endblocktrans %}{% endif %}</p>
 
-				<div class="ml-5 mb-3">
-					{% for item in app.download.buttons %}
-						{% if item.image %}
-							<a href="{{ item.url }}" {%if item.target %}target="{{ item.target }}"{% endif %} rel="noopener">
-								<img src="{{ item.image }}" {% if item.alttext %}alt="{{ item.alttext }}"{% endif %}>
-							</a>
-						{% endif %}
-						{%if item.text %}
-							<a href="{{item.url}}" {% if item.target %}target="{{ item.target }}"{% endif %} rel="noopener">
-								<button class="btn btn-primary">
-									{{ item.text }}
-								</button>
-							</a>
-						{% endif %}
-					{% endfor %}
-				</div>
+        <div class="ml-5 mb-3">
+            {% for item in app.download.buttons %}
+            {% if item.image %}
+            <a href="{{ item.url }}" {%if item.target %}target="{{ item.target }}"{% endif %} rel="noopener">
+                <img src="{{ item.image }}" {% if item.alttext %}alt="{{ item.alttext }}"{% endif %}>
+            </a>
+            {% endif %}
+            {%if item.text %}
+            <a href="{{item.url}}" {% if item.target %}target="{{ item.target }}"{% endif %} rel="noopener">
+                <button class="btn btn-primary">
+                    {{ item.text }}
+                </button>
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
 
-				<h5>{% blocktrans with app_name=app.name %}Step 2: Connect {{ app_name }} to your new account{% endblocktrans %}</h5>
+        <h2 class="h5">{% blocktrans with app_name=app.name %}Step 2: Connect {{ app_name }} to your new account{% endblocktrans %}</h2>
 
-				<p>{% if app.setup.text %}{{ app.setup.text }}{% else %}{% blocktrans with app_name=app.name %}Launch {{ app_name }} and sign in using your account credentials.{% endblocktrans %}{% endif %}</p>
+        <p>{% if app.setup.text %}{{ app.setup.text }}{% else %}{% blocktrans with app_name=app.name %}Launch {{ app_name }} and sign in using your account credentials.{% endblocktrans %}{% endif %}</p>
         {% endif %}
 
-				<p>{% trans "As a final reminder, your account details are shown below:" %}</p>
+        <p>{% trans "As a final reminder, your account details are shown below:" %}</p>
 
-				<form class="account-details col-12 col-lg-6 mx-auto">
-					<div class="form-group form-row">
-						<label for="user" class="col-md-4 col-lg-12 col-form-label">{% trans "Chat address (JID)" %}:</label>
-						<div class="col-md-8 col-lg-12">
-							<input type="text" class="form-control-plaintext" readonly value="{{ username }}@{{ domain }}">
-						</div>
-					</div>
-					{% if password %}
-					<div class="form-group form-row">
-						<label for="password" class="col-md-4 col-lg-12 col-form-label">{% trans "Password" %}:</label>
-						<div class="col-md-8 col-lg-12">
-							<div class="input-group">
-								<input type="password" readonly class="form-control" value="{{ password }}">
-								<div class="input-group-append">
-									  <button class="btn btn-outline-secondary" type="button" onclick="toggle_password(event)">{% trans "Show" %}</button>
-								</div>
-							</div>
-						</div>
-					</div>
-					{% endif %}
-				</form>
+        <form class="account-details col-12 col-lg-6 mx-auto">
+            <div class="form-group form-row">
+                <label for="user" class="col-md-4 col-lg-12 col-form-label">{% trans "Chat address (JID)" %}:</label>
+                <div class="col-md-8 col-lg-12">
+                    <input type="text" class="form-control-plaintext" readonly value="{{ username }}@{{ domain }}">
+                </div>
+            </div>
+            {% if password %}
+            <div class="form-group form-row">
+                <label for="password" class="col-md-4 col-lg-12 col-form-label">{% trans "Password" %}:</label>
+                <div class="col-md-8 col-lg-12">
+                    <div class="input-group">
+                        <input type="password" readonly class="form-control" value="{{ password }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggle_password(event)">{% trans "Show" %}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </form>
 
-				{% if password %}
+        {% if password %}
         <p>{% trans "Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone." %}</p>
-				{% endif %}
+        {% endif %}
 {% endblock %}

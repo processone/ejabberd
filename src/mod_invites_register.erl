@@ -213,6 +213,9 @@ try_register(Invite, User, Server, Password, Source, Lang) ->
             {error,
              xmpp:err_jid_malformed(
                  mod_register:format_error(invalid_jid), Lang)};
+        {_, false} ->
+            {error,
+             xmpp:err_not_allowed(mod_register:format_error(not_allowed), Lang)};
         {_, true} ->
             RegF =
                 fun() ->
