@@ -543,7 +543,7 @@
 {"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting using <strong>{{ app_name }}</strong> you need to first register an account.","<strong>{{ site_name }}</strong> es parte de XMPP, una red de mensajería segura y decentralizada. Para comenzar a charlar usando <strong>{{ app_name }}</strong>, primero créate una cuenta."}.
 {"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting you need to first register an account.","<strong>{{ site_name }}</strong> es parte de XMPP, una red de mensajería segura y decentralizada. Para comenzar a charlar, primero has de registrar una cuenta."}.
 {"<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!","<strong>¿No tienes instalada ninguna aplicación ahora mismo?</strong> También puedes entrar en tu cuenta ¡usando el chat web en linea!"}.
-{"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>Truco:</strong> Puedes abrir esta invitación en tu móvil escaneando el código QR con la cámara de fotos."}.
+{"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>Truco:</strong> Puedes abrir esta invitación en tu móvil escaneando el código con la cámara de fotos."}.
 {"Subject","Asunto"}.
 {"Submit","Enviar"}.
 {"Submitted","Enviado"}.
@@ -563,7 +563,7 @@
 {"The body text of the last received message","El contenido de texto del último mensaje recibido"}.
 {"The CAPTCHA is valid.","El CAPTCHA es válido."}.
 {"The CAPTCHA verification has failed","La verificación de CAPTCHA ha fallado"}.
-{"The captcha you entered is wrong","El CAPTCHA que has introducido es erróneo"}.
+{"The captcha you entered is wrong","El captcha que has introducido es erróneo"}.
 {"The child nodes (leaf or collection) associated with a collection","Los nodos hijos (ya sean hojas o colecciones) asociados con una colección"}.
 {"The collections with which a node is affiliated","Las colecciones a las que un nodo está afiliado"}.
 {"The DateTime at which a leased subscription will end or has ended","La FechayHora en la que una suscripción prestada acabará o ha terminado"}.
@@ -702,7 +702,7 @@
 {"Who can send private messages","Quién puede enviar mensajes privados"}.
 {"Who may associate leaf nodes with a collection","Quien puede asociar nodos hoja con una colección"}.
 {"Wrong parameters in the web formulary","Parámetros incorrectos en el formulario web"}.
-{"Wrong xmlns","XMLNS incorrecto"}.
+{"Wrong xmlns","Xmlns incorrecto"}.
 {"XMPP Account Registration","Registro de Cuenta XMPP"}.
 {"XMPP client for Haiku","Cliente XMPP para Haiku"}.
 {"XMPP Domains","Dominios XMPP"}.
@@ -718,7 +718,7 @@
 {"You can later change your password using an XMPP client.","Puedes cambiar tu contraseña después, usando un cliente XMPP."}.
 {"You can now set up {{ app_name }} and connect it to your new account.","Ahora puedes configurar {{ app_name }} y conectarte a tu nueva cuenta."}.
 {"You can start chatting right away with {{ app_name }}. Let's get started!","Puedes empezar ya a charlar usando {{ app_name }}. ¡Empecemos!"}.
-{"You can transfer this invite to your mobile device by scanning a code with your camera.","Puedes transferir esta invitación a tu móvil si escaneas el código QR con la cámara de fotos."}.
+{"You can transfer this invite to your mobile device by scanning a code with your camera.","Puedes transferir esta invitación a tu móvil si escaneas el código con la cámara de fotos."}.
 {"You have been banned from this room","Has sido bloqueado en esta sala"}.
 {"You have been invited to chat on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","Te han invitado a charlar en {{ site_name }}, que forma parte de la red XMPP de mensajería segura y decentralizada."}.
 {"You have been invited to chat on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Te han invitado a charlar en <strong>{{ site_name }}</strong>, que forma parte de la red XMPP de mensajería segura y decentralizada."}.

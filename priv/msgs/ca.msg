@@ -4,21 +4,32 @@
 %%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 
 {" (Add * to the end of field to match substring)"," (Afegix * al final d'un camp per a buscar subcadenes)"}.
+{"{{ app_name }} already installed?","Ja està instal·lat {{ app_name }}?"}.
 {" has set the subject to: "," ha posat el tema: "}.
+{"{{ inviter }} has invited you to connect!","{{ inviter }} t'ha invitat a connectar-te!"}.
 {"# participants","# participants"}.
 {"A description of the node","Una descripció del node"}.
 {"A friendly name for the node","Un nom per al node"}.
+{"A fully-featured desktop chat client for Windows and Linux.","Un client de xat molt complet d'escriptori per a Windows i Linux."}.
+{"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","Un client XMPP lleuger i potent per a iPhone e iPad. Proporciona una forma senzilla de xarrar i compartir moments amb les teues amistats."}.
+{"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","Un client de xat modern i de software lliure per a iPhone i iPad. Es simple d'usar i te una interfície d'usuari neta."}.
+{"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","Un client de xat modern i de software lliure per a Mac. Es simple d'usar i te una interfície d'usuari neta."}.
+{"A modern open-source chat client for the desktop. It focuses on providing a clean and reliable Jabber/XMPP experience while having your privacy in mind.","Un client de xat modern i de software lliure per a l'escriptori. Està enfocat en proporcionar una experiència Jabber/XMPP neta i comfiable, mentre mantenes la teva privacitat en ment."}.
 {"A password is required to enter this room","Es necessita contrasenya per a entrar en aquesta sala"}.
 {"A Web Page","Una Pàgina Web"}.
+{"Accept invite using {{ app_name }}","Accepta la invitació usant {{ app_name }}"}.
 {"Accept","Acceptar"}.
 {"Access denied by service policy","Accés denegat per la política del servei"}.
 {"Access model","Model d'Accés"}.
 {"Account doesn't exist","El compte no existeix"}.
 {"Action on user","Acció en l'usuari"}.
+{"Add {{ inviter }} to your contact list","Afegir {{ inviter }} a la teua llista de contactes"}.
 {"Add User","Afegir usuari"}.
 {"Administration of ","Administració de "}.
 {"Administration","Administració"}.
 {"Administrator privileges required","Es necessita tenir privilegis d'administrador"}.
+{"After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.","Al polsar el boto, s'obrirà {{ app_name }} per a terminar de configurar el teu compte a {{ site_name }}."}.
+{"After successfully installing {{ app_name }}, come back to this page and <strong>continue with Step 2</strong>.","Després d'instal·lar correctament {{ app_name }}, torna ací i <strong>continua amb el Pas 2</strong>."}.
 {"All activity","Tota l'activitat"}.
 {"All Users","Tots els usuaris"}.
 {"Allow subscription","Permetre subscripció"}.
@@ -48,6 +59,7 @@
 {"API Commands","Comandaments API"}.
 {"April","Abril"}.
 {"Arguments","Arguments"}.
+{"As a final reminder, your account details are shown below:","Com a recordatori final, el detalls del teu compte es mostren ací:"}.
 {"Assign a hat to a user","Asignar un barret a un usuari"}.
 {"Attribute 'channel' is required for this request","L'atribut 'channel' és necessari per a aquesta petició"}.
 {"Attribute 'id' is mandatory for MIX messages","L'atribut 'id' es necessari per a missatges MIX"}.
@@ -61,6 +73,8 @@
 {"Backup to File at ","Desar còpia de seguretat a fitxer en "}.
 {"Backup","Guardar còpia de seguretat"}.
 {"Bad format","Format erroni"}.
+{"BAD REQUEST","MALA PETICIÓ"}.
+{"Beagle IM by Tigase, Inc. is a lightweight and powerful XMPP client for macOS.","Beagle IM de Tigase, Inc. es un client XMPP lleuger i poderós per a macOS."}.
 {"Birthday","Aniversari"}.
 {"Both the username and the resource are required","Es requereixen tant el nom d'usuari com el recurs"}.
 {"Bytestream already activated","El Bytestream ja està activat"}.
@@ -77,6 +91,7 @@
 {"Channel JID","JID del Canal"}.
 {"Channels","Canals"}.
 {"Characters not allowed:","Caràcters no permesos:"}.
+{"Chat address (JID)","Direcció de xarrar (JID)"}.
 {"Chatroom configuration modified","Configuració de la sala de xat modificada"}.
 {"Chatroom is created","La sala s'ha creat"}.
 {"Chatroom is destroyed","La sala s'ha destruït"}.
@@ -84,26 +99,35 @@
 {"Chatroom is stopped","La sala s'ha aturat"}.
 {"Chatrooms","Sales de xat"}.
 {"Choose a username and password to register with this server","Tria nom d'usuari i contrasenya per a registrar-te en aquest servidor"}.
+{"Choose a username, this will become the first part of your new chat address.","Elegeix un nom de compte, que serà la primera part de la direcció del teu compte."}.
 {"Choose storage type of tables","Selecciona el tipus d'almacenament de les taules"}.
 {"Choose whether to approve this entity's subscription.","Tria si aproves aquesta entitat de subscripció."}.
 {"City","Ciutat"}.
+{"Click the button to open the Dino website where you can download and install it on your PC.","Polsa el botó per a obrir la pàgina web de Dino on podràs descarregar el programa per a instalarlo al teu ordinador."}.
 {"Client acknowledged more stanzas than sent by server","El client ha reconegut més paquets dels que ha enviat el servidor"}.
+{"Close","Tancar"}.
 {"Clustering","Clustering"}.
 {"Commands","Comandaments"}.
 {"Conference room does not exist","La sala de conferències no existeix"}.
 {"Configuration of room ~s","Configuració de la sala ~s"}.
 {"Configuration","Configuració"}.
+{"Congratulations!","Enhorabona!"}.
 {"Contact Addresses (normally, room owner or owners)","Adreces de contacte (normalment, propietaris de la sala)"}.
 {"Contacts","Contactes"}.
+{"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations es un client Jabber/XMPP per a mòbils Android 6.0+ que ha sigut optimitzat per a proporcionar una experiència mòbil unica."}.
 {"Country","Pais"}.
 {"Create a Hat","Crear un barret"}.
+{"Create Account","Crear un Compte"}.
+{"Create an account","Crear un compte"}.
+{"Creating an account will allow to communicate with other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Crear un compte et permetrà comunicar-te amb altra gent a <strong>{{ site_name }}</strong> i a altres serveis de la xarxa XMPP."}.
+{"Creating an account will allow to communicate with <strong>{{ inviter }}</strong> and other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Crear un compte e permetrà comunicar-te amb <strong>{{ inviter }}</strong> i altra gent a <strong>{{ site_name }}</strong> i a altres serveis de la xarxa XMPP."}.
 {"Current Discussion Topic","Assumpte de discussió actual"}.
 {"Database failure","Error a la base de dades"}.
 {"Database Tables Configuration at ","Configuració de la base de dades en "}.
 {"Database","Base de dades"}.
 {"December","Decembre"}.
 {"Default users as participants","Els usuaris són participants per defecte"}.
-{"Delete message of the day on all hosts","Elimina el missatge del dis de tots els hosts"}.
+{"Delete message of the day on all hosts","Elimina el missatge del dia de tots els dominis"}.
 {"Delete message of the day","Eliminar el missatge del dia"}.
 {"Delete User","Eliminar Usuari"}.
 {"Deliver event notifications","Entrega de notificacions d'events"}.
@@ -112,6 +136,11 @@
 {"Disable User","Deshabilitar un Usuari"}.
 {"Disc only copy","Còpia sols en disc"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","No li donis la teva contrasenya a ningú, ni tan sols als administradors del servidor XMPP."}.
+{"Download and install {{ app_name }} below:","Descarrega e instal·la {{ app_name }} ací baix:"}.
+{"Download Dino for Linux","Descarrega Dino per a Linux"}.
+{"Download from Mac App Store","Descarrega de la Tenda d'Apps de Mac"}.
+{"Download Gajim","Descarregar Gajim"}.
+{"Download Renga for Haiku","Descarrega Renga per a Haiku"}.
 {"Dump Backup to Text File at ","Exporta còpia de seguretat a fitxer de text en "}.
 {"Dump to Text File","Exportar a fitxer de text"}.
 {"Duplicated groups are not allowed by RFC6121","No estan permesos els grups duplicats al RFC6121"}.
@@ -133,6 +162,7 @@
 {"Enable message archiving","Activar l'emmagatzematge de missatges"}.
 {"Enabling push without 'node' attribute is not supported","No està suportat activar Push sense l'atribut 'node'"}.
 {"End User Session","Finalitzar Sesió d'Usuari"}.
+{"Enter a secure password that you do not use anywhere else.","Introdueix una contrasenya segura que no estiguis usant en cap altre lloc."}.
 {"Enter nickname you want to register","Introdueix el sobrenom que vols registrar"}.
 {"Enter path to backup file","Introdueix ruta al fitxer de còpia de seguretat"}.
 {"Enter path to jabberd14 spool dir","Introdueix la ruta al directori de jabberd14 spools"}.
@@ -143,7 +173,7 @@
 {"Exclude Jabber IDs from CAPTCHA challenge","Excloure Jabber IDs de la comprovació CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Exporta totes les taules a un fitxer SQL:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportar dades de tots els usuaris del servidor a arxius PIEFXIS (XEP-0227):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportar dades d'usuaris d'un host a arxius PIEFXIS (XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportar dades d'usuaris d'un domini a arxius PIEFXIS (XEP-0227):"}.
 {"External component failure","Error al component extern"}.
 {"External component timeout","Temps esgotat al component extern"}.
 {"Failed to activate bytestream","Errada al activar bytestream"}.
@@ -172,6 +202,7 @@
 {"Get Number of Online Users","Obtenir Número d'Usuaris Connectats"}.
 {"Get Number of Registered Users","Obtenir Número d'Usuaris Registrats"}.
 {"Get Pending","Obtenir Pendents"}.
+{"Get started","Comencem"}.
 {"Get User Last Login Time","Obtenir la última connexió d'Usuari"}.
 {"Get User Roster","Obtenir llista de contactes de l'usuari"}.
 {"Get User Statistics","Obtenir Estadístiques d'Usuari"}.
@@ -188,9 +219,13 @@
 {"Hat title","Títol del barret"}.
 {"Hat URI","URI del barret"}.
 {"Hats limit exceeded","El límit de tràfic ha sigut sobrepassat"}.
-{"Host unknown","Host desconegut"}.
+{"Hide","Amagar"}.
+{"Host unknown","Domini desconegut"}.
+{"Hostname invalid","Nom de domini no vàlid"}.
 {"HTTP File Upload","HTTP File Upload"}.
 {"Idle connection","Connexió sense us"}.
+{"If you already have {{ app_name }} installed, we recommend that you continue the account creation process using the app by clicking on the button below:","Si ja tens instal·lat {{ app_name }}, et recomanem que continues la creació del teu compte usant eixa app, polsa el boto:"}.
+{"If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform.","Si encara no tens un client XMPP instal·lat, mira esta llista de clients disponibles per a la teva plataforma."}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Si no veus la imatge CAPTCHA açí, visita la pàgina web."}.
 {"Import Directory","Importar directori"}.
 {"Import File","Importar fitxer"}.
@@ -209,6 +244,7 @@
 {"Incorrect value of 'action' in data form","Valor incorrecte de 'action' al formulari de dades"}.
 {"Incorrect value of 'path' in data form","Valor incorrecte de 'path' al formulari de dades"}.
 {"Installed Modules:","Mòduls instal·lats:"}.
+{"Installed ok? Great! <strong>Click or tap the button below</strong> to accept your invite and continue with your account setup:","S'ha instal·lat correctament? Perfecte! <strong>Polsa en el següent boto</strong> per a acceptar l'invitació i continuar preparant el teu compte:"}.
 {"Install","Instal·lar"}.
 {"Insufficient privilege","Privilegi insuficient"}.
 {"Internal server error","Error intern del servidor"}.
@@ -216,6 +252,9 @@
 {"Invalid node name","Nom de node no vàlid"}.
 {"Invalid 'previd' value","Valor no vàlid de 'previd'"}.
 {"Invitations are not allowed in this conference","Les invitacions no estan permeses en aquesta sala de conferència"}.
+{"Invite expired","La invitació ha expirat"}.
+{"Invite to {{ site_name }}","Invitació a {{ site_name }}"}.
+{"Invite User","Invitar Usuari"}.
 {"IP addresses","Adreça IP"}.
 {"is now known as","ara es conegut com"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","No està permés enviar missatges d'error a la sala. El participant (~s) ha enviat un missatge d'error (~s) i ha sigut expulsat de la sala"}.
@@ -225,6 +264,7 @@
 {"January","Gener"}.
 {"JID normalization denied by service policy","S'ha denegat la normalització del JID per política del servei"}.
 {"JID normalization failed","Ha fallat la normalització del JID"}.
+{"Join {{ site_name }} with {{ app_name }}","Uneix-te a {{ site_name }} amb {{ app_name }}"}.
 {"Joined MIX channels of ~ts","Canals MIX units de ~ts"}.
 {"Joined MIX channels:","Canals MIX units:"}.
 {"joins the room","entra a la sala"}.
@@ -236,10 +276,13 @@
 {"Last message","Últim missatge"}.
 {"Last month","Últim mes"}.
 {"Last year","Últim any"}.
+{"Launch {{ app_name }} and sign in using your account credentials.","Inicia {{ app_name }} i entra al compte usant les teves credencials."}.
+{"Launch Beagle IM, and select 'Yes' to add a new account. Click the '+' button under the empty account list and then enter your credentials.","Inicia Beagle IM, i selecciona 'Sí' per a afegir un nou compte. Polsa el botó '+' baix la llista de comptes buida i ja podràs introduir les teues credencials."}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Els bits menys significants del hash SHA-256 del text deurien ser iguals a l'etiqueta hexadecimal"}.
 {"leaves the room","surt de la sala"}.
 {"List of Hats","Llista de barrets"}.
 {"List users with hats","Llista d'usuaris amb barrets"}.
+{"Log in via web","Entrar usant la web"}.
 {"Logged Out","Desconectat"}.
 {"Logging","Registre"}.
 {"Make participants list public","Crear una llista de participants pública"}.
@@ -256,9 +299,11 @@
 {"Max payload size in bytes","Màxim tamany del payload en bytes"}.
 {"Maximum file size","Mida màxima de fitxer"}.
 {"Maximum Number of History Messages Returned by Room","Numero màxim de missatges de l'historia que retorna la sala"}.
+{"Maximum number of invites reached","Ja has arribat al número màxim d'invitacions"}.
 {"Maximum number of items to persist","Número màxim d'elements que persistixen"}.
 {"Maximum Number of Occupants","Número màxim d'ocupants"}.
 {"May","Maig"}.
+{"Members are allowed to invite others","Els membres poden invitar a altres"}.
 {"Membership is required to enter this room","Necessites ser membre d'aquesta sala per a poder entrar"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Memoritza la teva contrasenya, o escriu-la en un paper guardat a un lloc segur. A XMPP no hi ha una forma automatitzada de recuperar la teva contrasenya si la oblides."}.
 {"Mere Availability in XMPP (No Show Value)","Simplement disponibilitat a XMPP (sense valor de 'show')"}.
@@ -327,6 +372,7 @@
 {"None","Cap"}.
 {"Not allowed","No permès"}.
 {"Not Found","No Trobat"}.
+{"NOT FOUND","NO TROBAT"}.
 {"Not subscribed","No subscrit"}.
 {"Notify subscribers when items are removed from the node","Notificar subscriptors quan els elements són eliminats del node"}.
 {"Notify subscribers when the node configuration changes","Notificar subscriptors quan canvia la configuració del node"}.
@@ -363,9 +409,11 @@
 {"Only service administrators are allowed to send service messages","Sols els administradors del servei tenen permís per a enviar missatges de servei"}.
 {"Only those on a whitelist may associate leaf nodes with the collection","Només qui estiga a una llista blanca pot associar nodes fulla amb la col·lecció"}.
 {"Only those on a whitelist may subscribe and retrieve items","Només qui estiga a una llista blanca pot subscriure's i recuperar elements"}.
+{"Open the app","Obrir l'app"}.
 {"Organization Name","Nom de la organizació"}.
 {"Organization Unit","Unitat de la organizació"}.
 {"Other Modules Available:","Altres mòduls disponibles:"}.
+{"Other software","Altres programes"}.
 {"Outgoing s2s Connections","Connexions s2s d'eixida"}.
 {"Owner privileges required","Es requerixen privilegis de propietari de la sala"}.
 {"Packet relay is denied by service policy","S'ha denegat el reenviament del paquet per política del servei"}.
@@ -400,6 +448,7 @@
 {"PubSub subscriber request","Petició de subscriptor PubSub"}.
 {"Purge all items when the relevant publisher goes offline","Eliminar tots els elements quan el publicant relevant es desconnecti"}.
 {"Push record not found","No s'ha trobat l'element Push"}.
+{"QR code icon","Icona de codi QR"}.
 {"Queries to the conference members are not allowed in this room","En aquesta sala no es permeten sol·licituds als membres"}.
 {"Query to another users is forbidden","Enviar peticions a altres usuaris no està permès"}.
 {"RAM and disc copy","Còpia en RAM i disc"}.
@@ -412,7 +461,9 @@
 {"Recipient is not in the conference room","El receptor no està en la sala de conferència"}.
 {"Re-Enable User","Rehabilitar usuari"}.
 {"Register an XMPP account","Registrar un compte XMPP"}.
+{"Register on {{ site_name }}","Registrar a {{ site_name }}"}.
 {"Register","Registrar"}.
+{"Registration error","Error al fer el registre"}.
 {"Remote copy","Còpia remota"}.
 {"Remove a hat from a user","Eliminar un barret d'un usuari"}.
 {"Remove User","Eliminar usuari"}.
@@ -441,29 +492,38 @@
 {"Roster size","Mida de la llista"}.
 {"Running Nodes","Nodes funcionant"}.
 {"~s invites you to the room ~s","~s et convida a la sala ~s"}.
+{"Sad person holding empty box","Persona trista agafant una caixa buida"}.
 {"Saturday","Dissabte"}.
+{"Scan invite code","Escaneja el codi d'invitació"}.
+{"Scan with mobile device","Escanejar amb el mòbil"}.
 {"Search from the date","Buscar des de la data"}.
 {"Search Results for ","Resultats de la búsqueda "}.
 {"Search the text","Buscar el text"}.
 {"Search until the date","Buscar fins la data"}.
 {"Search users in ","Cerca usuaris en "}.
-{"Send announcement to all online users on all hosts","Enviar anunci a tots els usuaris connectats a tots els hosts"}.
+{"Select","Seleccionar"}.
+{"Send announcement to all online users on all hosts","Enviar anunci a tots els usuaris connectats a tots els dominis"}.
 {"Send announcement to all online users","Enviar anunci a tots els usuaris connectats"}.
-{"Send announcement to all users on all hosts","Enviar anunci a tots els usuaris de tots els hosts"}.
+{"Send announcement to all users on all hosts","Enviar anunci a tots els usuaris de tots els dominis"}.
 {"Send announcement to all users","Enviar anunci a tots els usuaris"}.
+{"Send this invite to your device","Envia esta invitació al teu dispositiu"}.
 {"September","Setembre"}.
 {"Server:","Servidor:"}.
 {"Service list retrieval timed out","L'intent de recuperar la llista de serveis ha caducat"}.
 {"Session state copying timed out","La copia del estat de la sessió ha caducat"}.
 {"Set message of the day and send to online users","Configurar el missatge del dia i enviar a tots els usuaris"}.
-{"Set message of the day on all hosts and send to online users","Escriure missatge del dia en tots els hosts i enviar-ho als usuaris connectats"}.
+{"Set message of the day on all hosts and send to online users","Escriure missatge del dia en tots els dominis i enviar-ho als usuaris connectats"}.
 {"Shared Roster Groups","Grups de contactes compartits"}.
 {"Show Integral Table","Mostrar Taula Integral"}.
 {"Show Occupants Join/Leave","Mostrar Entrades/Eixides dels Ocupants"}.
 {"Show Ordinary Table","Mostrar Taula Ordinaria"}.
+{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>","Mostrant apps només per a <span class='platform-name'>la teua plataforma actual</span>. Tambè pots <a href='#' id='show-all-clients-button'>vore totes les apps.</a>"}.
+{"Show","Mostrar"}.
 {"Shut Down Service","Apager el Servei"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clients XMPP poden emmagatzemar la teva contrasenya al ordinador, però només hauries de fer això al teu ordinador personal, per raons de seguretat."}.
+{"Sorry, it looks like this invite code has expired!","Perdona, però pareix que esta invitació ja ha expirat!"}.
+{"Sorry, there was a problem registering your account.","Perdona, però hi ha hagut un error creant el compte."}.
 {"Sources Specs:","Especificacions de Codi Font:"}.
 {"Specify the access model","Especificar el model d'accés"}.
 {"Specify the event message type","Especifica el tipus de missatge d'event"}.
@@ -471,11 +531,19 @@
 {"Stanza id is not valid","L'identificador del paquet no es vàlid"}.
 {"Stanza ID","ID del paquet"}.
 {"Statically specify a replyto of the node owner(s)","Especifica estaticament una adreça on respondre al propietari del node"}.
+{"Step 1: Download and install {{ app_name }}","Pas 1: Descarrega e instal·la {{ app_name }}"}.
+{"Step 1: Install {{ app_name }}","Pas 1: Instal·la {{ app_name }}"}.
+{"Step 2: Activate your account","Pas 2: Activa el teu compte"}.
+{"Step 2: Connect {{ app_name }} to your new account","Pas 2: Connecta {{ app_name }} al teu nou compte"}.
 {"Stopped Nodes","Nodes parats"}.
 {"Store binary backup:","Guardar una còpia de seguretat binària:"}.
 {"Store plain text backup:","Guardar una còpia de seguretat en format de text pla:"}.
 {"Stream management is already enabled","L'administració de la connexió (stream management) ja està activada"}.
 {"Stream management is not enabled","L'administració de la conexió (stream management) no està activada"}.
+{"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting using <strong>{{ app_name }}</strong> you need to first register an account.","<strong>{{ site_name }}</strong> és part de XMPP, una xarxa de missatgeria segura i descentralitzada. Per a començar a xarrar usant <strong>{{ app_name }}</strong> primer tens que registrar un compte."}.
+{"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting you need to first register an account.","<strong>{{ site_name }}</strong> és part de la xarxa XMPP de missatgeria segura i descentralitzada. Per a començar a xarrar, primer tindries que crear-te un compte."}.
+{"<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!","<strong>No tens instal·lat cap programa compatible?</strong> També pots connectarte al teu compte amb el nostre xat web en linia!"}.
+{"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>Truquet:</strong> Pots obrir esta invitació al teu mòbil escanejant el codi amb la camera de fotos."}.
 {"Subject","Tema"}.
 {"Submit","Enviar"}.
 {"Submitted","Enviat"}.
@@ -495,7 +563,7 @@
 {"The body text of the last received message","El contingut del text de l'ultim missatge rebut"}.
 {"The CAPTCHA is valid.","El CAPTCHA es vàlid."}.
 {"The CAPTCHA verification has failed","La verificació CAPTCHA ha fallat"}.
-{"The captcha you entered is wrong","El CAPTCHA que has proporcionat és incorrecte"}.
+{"The captcha you entered is wrong","El captcha que has proporcionat és incorrecte"}.
 {"The child nodes (leaf or collection) associated with a collection","El nodes fills (fulla o col·leccions) associats amb una col·lecció"}.
 {"The collections with which a node is affiliated","Les col.leccions amb les que un node està afiliat"}.
 {"The DateTime at which a leased subscription will end or has ended","La Data i Hora a la que una subscripció prestada terminarà o ha terminat"}.
@@ -536,11 +604,14 @@
 {"The sender of the last received message","Qui ha enviat l'ultim missatge rebut"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","El paquet DEU contindre només un element <active/>, un element <default/>, o un element <list/>"}.
 {"The subscription identifier associated with the subscription request","L'identificador de subscripció associat amb la petició de subscripció"}.
+{"The token provided is either invalid or expired.","El token proporcionat no es vàlid o ja ha expirat."}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","La URL de uns transformació XSL que pot ser aplicada als payloads per a generar un element apropiat de contingut de missatge."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","La URL de una transformació XSL que pot ser aplicada al format de payload per a generar un resultat valid de Data Forms, que el client puga mostrar usant un métode generic de Data Forms"}.
 {"There was an error changing the password: ","Hi ha hagut un error canviant la contrasenya: "}.
 {"There was an error creating the account: ","Hi ha hagut un error creant el compte: "}.
 {"There was an error deleting the account: ","Hi ha hagut un error esborrant el compte: "}.
+{"This button works only if you have the app installed already!","Aquest botó funciona només si ja tens la app instal·lada!"}.
+{"This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!","Esta es una invitació de <strong>{{ inviter }}</strong> per a connectar i xarrar en la xarxa XMPP. Si ja tens un client XMPP instal·lat, ja pots polsar el boto de baix!"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Això no distingeix majúscules de minúscules: macbeth es el mateix que MacBeth i Macbeth."}.
 {"This page allows to register an XMPP account in this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Aquesta pàgina permet crear un compte XMPP en aquest servidor XMPP. El teu JID (Jabber ID; Identificador Jabber) tindrà aquesta forma: usuari@servidor. Si us plau, llegeix amb cura les instruccions per emplenar correctament els camps."}.
 {"This page allows to unregister an XMPP account in this XMPP server.","Aquesta pàgina permet esborrar un compte XMPP en aquest servidor XMPP."}.
@@ -549,7 +620,9 @@
 {"Thursday","Dijous"}.
 {"Time delay","Temps de retard"}.
 {"Timed out waiting for stream resumption","Massa temps esperant que es resumisca la connexió"}.
+{"To get started, you need to install an app for your platform:","Per a començar, tens que instal·lar alguna app:"}.
 {"To register, visit ~s","Per a registrar-te, visita ~s"}.
+{"To start chatting, you need to enter your new account credentials into your chosen XMPP software.","Per a començar a xarrar, tens que proporcionar les credencials del teu no compte al programa XMPP escollit."}.
 {"To ~ts","A ~ts"}.
 {"Token TTL","Token TTL"}.
 {"Too many active bytestreams","N'hi ha massa Bytestreams actius"}.
@@ -576,12 +649,13 @@
 {"Unsupported <index/> element","Element <index/> no soportat"}.
 {"Unsupported version","Versió no suportada"}.
 {"Update message of the day (don't send)","Actualitzar el missatge del dia (no enviar)"}.
-{"Update message of the day on all hosts (don't send)","Actualitza el missatge del dia en tots els hosts (no enviar)"}.
+{"Update message of the day on all hosts (don't send)","Actualitza el missatge del dia en tots els dominis (no enviar)"}.
 {"Update specs to get modules source, then install desired ones.","Actualitza les especificacions per obtindre el codi font dels mòduls, després instal·la els que vulgues."}.
 {"Update Specs","Actualitzar Especificacions"}.
 {"Updating the vCard is not supported by the vCard storage backend","El sistema d'almacenament de vCard no te capacitat per a actualitzar la vCard"}.
 {"Upgrade","Actualitza"}.
 {"URL for Archived Discussion Logs","URL dels Arxius de Discussions"}.
+{"Use a <em>QR code</em> scanner on your mobile device to scan the code below:","Usa un escanejador de <em>codis QR</em> al te mòbil per a escanejar aquest codi:"}.
 {"User already exists","El usuari ja existeix"}.
 {"User JID","JID del usuari"}.
 {"User (jid)","Usuari (jid)"}.
@@ -591,6 +665,9 @@
 {"User session not found","Sessió d'usuari no trobada"}.
 {"User session terminated","Sessió d'usuari terminada"}.
 {"User ~ts","Usuari ~ts"}.
+{"Username invalid","El nom d'usuari no es vàlid"}.
+{"Username is reserved","El nom d'usuari està reservat"}.
+{"Username","Nom d'usuari"}.
 {"Username:","Nom d'usuari:"}.
 {"Users are not allowed to register accounts so quickly","Els usuaris no tenen permís per a crear comptes tan depresa"}.
 {"Users Last Activity","Última activitat d'usuari"}.
@@ -603,7 +680,7 @@
 {"Value 'set' of 'type' attribute is not allowed","El valor 'set' a l'atribut 'type' no és permès"}.
 {"vCard User Search","vCard recerca d'usuari"}.
 {"View joined MIX channels","Vore els canals MIX units"}.
-{"Virtual Hosts","Hosts virtuals"}.
+{"Virtual Hosts","Dominis Virtuals"}.
 {"Visitors are not allowed to change their nicknames in this room","Els visitants no tenen permés canviar el seus Nicknames en esta sala"}.
 {"Visitors are not allowed to send messages to all occupants","Els visitants no poden enviar missatges a tots els ocupants"}.
 {"Visitor","Visitant"}.
@@ -627,6 +704,7 @@
 {"Wrong parameters in the web formulary","Paràmetres incorrectes en el formulari web"}.
 {"Wrong xmlns","El xmlns ès incorrecte"}.
 {"XMPP Account Registration","Registre de compte XMPP"}.
+{"XMPP client for Haiku","Client XMPP per a Haiku"}.
 {"XMPP Domains","Dominis XMPP"}.
 {"XMPP Show Value of Away","Valor 'show' de XMPP: Ausent"}.
 {"XMPP Show Value of Chat","Valor 'show' de XMPP: Disposat per a xarrar"}.
@@ -636,8 +714,17 @@
 {"You are being removed from the room because of a system shutdown","Has sigut expulsat de la sala perquè el sistema va a apagar-se"}.
 {"You are not allowed to send private messages","No tens permés enviar missatges privats"}.
 {"You are not joined to the channel","No t'has unit al canal"}.
+{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\">register an account manually</a>.","Pots connectar-te a {{ site_name }} usant qualsevol programa compatible amb XMPP. Si el teu programa preferit no està en esta llista, pots <a href=\"{{ registration_url }}\">registrarte el teu compte manualment</a>."}.
 {"You can later change your password using an XMPP client.","Podràs canviar la teva contrasenya més endavant utilitzant un client XMPP."}.
+{"You can now set up {{ app_name }} and connect it to your new account.","Ara pots configurar {{ app_name }} i connectar al teu nou compte."}.
+{"You can start chatting right away with {{ app_name }}. Let's get started!","Ja pots començar a xarrar usant {{ app_name }}. Comencem!"}.
+{"You can transfer this invite to your mobile device by scanning a code with your camera.","Pots transferir esta invitació al teu mòbil si escanejes el codi amb la càmera de fotos."}.
 {"You have been banned from this room","Has sigut bloquejat en aquesta sala"}.
+{"You have been invited to chat on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","Has rebut una invitació per a xarrar a {{ site_name }}, que és part de la xarxa XMPP de missatgeria segura i descentralitzada."}.
+{"You have been invited to chat on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Has rebut una invitació per a xarrar a <strong>{{ site_name }}</strong>, que és part de la xarxa XMPP de missatgeria segura i descentralitzada."}.
+{"You have been invited to chat with <strong>{{ inviter }}</strong> on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","Has rebut una invitació a xarrar amb <strong>{{ inviter }}</strong> a {{ site_name }}, que és part de la xarxa XMPP de missatgeria segura i descentralitzada."}.
+{"You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","T'han invitat a xarrar amb <strong>{{ inviter }}</strong> a <strong>{{ site_name }}</strong>, que és part de la xarxa XMPP de missatgeria segura i descentralitzada."}.
+{"You have created an account on <strong>{{ site_name }}</strong>.","Has creat un compte en <strong>{{ site_name }}</strong>."}.
 {"You have joined too many conferences","Has entrat en massa sales de conferència"}.
 {"You must fill in field \"Nickname\" in the form","Deus d'omplir el camp \"Nickname\" al formulari"}.
 {"You need a client that supports x:data and CAPTCHA to register","Necessites un client amb suport x:data i de CAPTCHA para poder registrar-te"}.
@@ -645,6 +732,7 @@
 {"You need an x:data capable client to search","Necessites un client amb suport x:data per a poder buscar"}.
 {"Your active privacy list has denied the routing of this stanza.","La teva llista de privacitat activa ha denegat l'encaminament d'aquesta stanza."}.
 {"Your contact offline message queue is full. The message has been discarded.","La teua cua de missatges offline és plena. El missatge ha sigut descartat."}.
+{"Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone.","La teva contrasenya es guardarà xifrada al servidor, i no serà accessible una vegada que tanques esta pàgina. Mantin la contrasenya segura i no la compartis amb ningú mes."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","La teua petició de subscripció i/o missatges a ~s han sigut bloquejats. Per a desbloquejar-los, visita ~s"}.
 {"Your XMPP account was successfully registered.","El teu compte XMPP ha sigut creat correctament."}.
 {"Your XMPP account was successfully unregistered.","El teu compte XMPP ha sigut esborrat correctament."}.
