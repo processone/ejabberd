@@ -168,11 +168,17 @@ process_register_form(Invite,
     end.
 
 render_register_form(#request{host = Host, lang = Lang}, Ctx, AdditionalCtx) ->
-    MinLength = case mod_register_opt:password_strength(Host) of
-                    0 -> 0;
-                    _ -> 6
-                end,
-    render(Host, Lang, <<"register.html">>, [{password_min_length, MinLength} | Ctx] ++ AdditionalCtx).
+    MinLength =
+        case mod_register_opt:password_strength(Host) of
+            0 ->
+                0;
+            _ ->
+                6
+        end,
+    render(Host,
+           Lang,
+           <<"register.html">>,
+           [{password_min_length, MinLength} | Ctx] ++ AdditionalCtx).
 
 process_register_post(Invite,
                       AppID,
@@ -195,7 +201,11 @@ process_register_post(Invite,
                 {ok, _UpdatedInvite} ->
                     Ctx = [{username, Username}, {password, Password} | AppCtx],
                     render_ok(Host, Lang, <<"register_success.html">>, Ctx);
-                {error, #stanza_error{text = Text, type = Type, reason = Reason} = Error} ->
+                {error,
+                 #stanza_error{text = Text,
+                               type = Type,
+                               reason = Reason} =
+                     Error} ->
                     ?DEBUG("registration failed with error: ~p", [Error]),
                     Msg = xmpp:get_text(Text, xmpp:prep_lang(Lang)),
                     case Type of
@@ -221,11 +231,16 @@ process_register_post(Invite,
             ?BAD_REQUEST
     end.
 
-error_class('jid-malformed') -> username;
-error_class('not-allowed') -> username;
-error_class('conflict') -> username;
-error_class('not-acceptable') -> password;
-error_class(_) -> undefined.
+error_class('jid-malformed') ->
+    username;
+error_class('not-allowed') ->
+    username;
+error_class(conflict) ->
+    username;
+error_class('not-acceptable') ->
+    password;
+error_class(_) ->
+    undefined.
 
 process_roster_token([_Token] = LocalPath,
                      #request{host = Host, lang = Lang} = Request,
@@ -266,7 +281,10 @@ app_ctx(Host, AppID, Lang, Ctx) ->
             throw(not_found)
     end.
 
-ctx(#request{host = Host, path = Path, lang = Lang}, LocalPath) ->
+ctx(#request{host = Host,
+             path = Path,
+             lang = Lang},
+    LocalPath) ->
     Base =
         iolist_to_binary(uri_string:normalize(
                              lists:join(<<"/">>, Path -- LocalPath))),
