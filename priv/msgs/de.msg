@@ -17,7 +17,7 @@
 {"A modern open-source chat client for the desktop. It focuses on providing a clean and reliable Jabber/XMPP experience while having your privacy in mind.","Ein moderner open-source Jabber/XMPP Chatclient für den Desktop mit Fokus auf Einfachheit und Zuverlässigkeit, aber auch Schutz deiner Privatsphäre."}.
 {"A password is required to enter this room","Ein Passwort ist erforderlich um diesen Raum zu betreten"}.
 {"A Web Page","Eine Webseite"}.
-{"Accept invite using {{ app_name }}","Einladung mittels {{ app_name }} annehmen!"}.
+{"Accept invite using {{ app_name }}","Einladung mittels {{ app_name }} annehmen"}.
 {"Accept","Akzeptieren"}.
 {"Access denied by service policy","Zugriff aufgrund der Dienstrichtlinien verweigert"}.
 {"Access model","Zugriffsmodell"}.
@@ -106,6 +106,7 @@
 {"Click the button to open the Dino website where you can download and install it on your PC.","Klicke auf den Button um Dino's Webseite zu öffnen, wo du ihn für deinen PC herunterladen und installieren kannst."}.
 {"Client acknowledged more stanzas than sent by server","Client bestätigte mehr Stanzas als vom Server gesendet"}.
 {"Close","Schließen"}.
+{"Clustering","Clustering"}.
 {"Commands","Befehle"}.
 {"Conference room does not exist","Konferenzraum existiert nicht"}.
 {"Configuration of room ~s","Konfiguration des Raumes ~s"}.
@@ -532,7 +533,7 @@
 {"Statically specify a replyto of the node owner(s)","Ein 'replyto' des/der Nodebesitzer(s) statisch angeben"}.
 {"Step 1: Download and install {{ app_name }}","Schritt 1: {{ app_name }} herunterladen und installieren"}.
 {"Step 1: Install {{ app_name }}","Schritt 1: Installiere {{ app_name }}"}.
-{"Step 2: Activate your account","Konto aktivieren"}.
+{"Step 2: Activate your account","Schritt 2: Konto aktivieren"}.
 {"Step 2: Connect {{ app_name }} to your new account","Schritt 2: Verbinde {{ app_name }} mit deinem neuen Konto"}.
 {"Stopped Nodes","Angehaltene Knoten"}.
 {"Store binary backup:","Speichere binäres Backup:"}.
@@ -603,14 +604,14 @@
 {"The sender of the last received message","Der Absender der letzten erhaltenen Nachricht"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Das Stanza darf nur ein <active/>-Element, ein <default/>-Element oder ein <list/>-Element enthalten"}.
 {"The subscription identifier associated with the subscription request","Die mit der Abonnement-Anforderung verknüpfte Abonnement-Bezeichnung"}.
-{"The token provided is either invalid or expired.","Der Einladungscode ist entweder ungültig oder abgelaufen"}.
+{"The token provided is either invalid or expired.","Der Einladungscode ist entweder ungültig oder abgelaufen."}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","Die URL einer XSL-Transformation welche auf Nutzdaten angewendet werden kann, um ein geeignetes Nachrichtenkörper-Element zu generieren."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","Die URL einer XSL-Transformation welche auf das Nutzdaten-Format angewendet werden kann, um ein gültiges Data Forms-Ergebnis zu generieren das der Client mit Hilfe einer generischen Data Forms-Rendering-Engine anzeigen könnte"}.
 {"There was an error changing the password: ","Es trat ein Fehler beim Ändern des Passwortes auf: "}.
 {"There was an error creating the account: ","Es trat ein Fehler beim Erstellen des Kontos auf: "}.
 {"There was an error deleting the account: ","Es trat ein Fehler beim Löschen des Kontos auf: "}.
 {"This button works only if you have the app installed already!","Dieser Button funktioniert nur, wenn du die App bereits installiert hast!"}.
-{"This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!","Die ist eine Kontakt-Einladung von <strong>{{ inviter }}</strong> um miteinander über XMPP zu chatten. Solltest du bereits einen XMPP-Client haben, so drücke einfach auf den Button hier unten!"}.
+{"This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!","Dies ist eine Kontakt-Einladung von <strong>{{ inviter }}</strong> um miteinander über XMPP zu chatten. Solltest du bereits einen XMPP-Client haben, so drücke einfach auf den Button hier unten!"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Dies ist schreibungsunabhängig: macbeth ist gleich MacBeth und Macbeth."}.
 {"This page allows to register an XMPP account in this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Diese Seite erlaubt das Anlegen eines XMPP-Kontos auf diesem XMPP-Server. Ihre JID (Jabber-ID) wird diese Form aufweisen: benutzername@server. Bitte lesen Sie die Anweisungen genau durch, um die Felder korrekt auszufüllen."}.
 {"This page allows to unregister an XMPP account in this XMPP server.","Diese Seite erlaubt es, ein XMPP-Konto von diesem XMPP-Server zu entfernen."}.
@@ -703,7 +704,7 @@
 {"Wrong parameters in the web formulary","Falsche Parameter im Webformular"}.
 {"Wrong xmlns","Falscher xmlns"}.
 {"XMPP Account Registration","XMPP-Konto-Registrierung"}.
-{"XMPP client for Haiku","XMPP-Client für Haiku."}.
+{"XMPP client for Haiku","XMPP-Client für Haiku"}.
 {"XMPP Domains","XMPP-Domänen"}.
 {"XMPP Show Value of Away","XMPP-Anzeigewert von Abwesend"}.
 {"XMPP Show Value of Chat","XMPP-Anzeigewert von Chat"}.
@@ -722,7 +723,7 @@
 {"You have been invited to chat on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","Du wurdest auf <strong>{{ site_name }}</strong> zum Chat eingeladen, Teil des sicheren und dezentralen XMPP-Sofortnachrichten-Netzwerkes."}.
 {"You have been invited to chat on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Du wurdest auf <strong>{{ site_name }}</strong> zum Chat eingeladen. <strong>{{ site_name }}</strong> ist Teil des sicheren und dezentralen XMPP-Sofortnachrichten-Netzwerkes."}.
 {"You have been invited to chat with <strong>{{ inviter }}</strong> on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","Du wurdest von <strong>{{ inviter }}</strong> auf {{ site_name }} zum Chat eingeladen. {{ site_name }} ist Teil des sicheren und dezentralen XMPP-Sofortnachrichten-Netzwerkes."}.
-{"You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Du wurdest von <strong>{{ inviter }}</strong> auf {{ site_name }} zum Chat eingeladen. {{ site_name }} ist Teil des sicheren und dezentralen XMPP-Sofortnachrichten-Netzwerkes."}.
+{"You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Du wurdest von <strong>{{ inviter }}</strong> auf <strong>{{ site_name }}</strong> zum Chat eingeladen. <strong>{{ site_name }}</strong> ist Teil des sicheren und dezentralen XMPP-Sofortnachrichten-Netzwerkes."}.
 {"You have created an account on <strong>{{ site_name }}</strong>.","Du hast ein Konto auf <strong>{{ site_name }}</strong> angelegt."}.
 {"You have joined too many conferences","Sie sind zu vielen Konferenzen beigetreten"}.
 {"You must fill in field \"Nickname\" in the form","Sie müssen das Feld \"Spitzname\" im Formular ausfüllen"}.
@@ -731,7 +732,7 @@
 {"You need an x:data capable client to search","Sie benötigen einen Client der x:data unterstützt, um zu suchen"}.
 {"Your active privacy list has denied the routing of this stanza.","Ihre aktive Privacy-Liste hat das Routing dieses Stanzas verweigert."}.
 {"Your contact offline message queue is full. The message has been discarded.","Die Offline-Nachrichten-Warteschlange Ihres Kontaktes ist voll. Die Nachricht wurde verworfen."}.
-{"Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone.","Dein Passwort wird verschlüsselt auf dem Server gespeichert und wird nicht mehr im Klartext verfügbar sein nachdem du diese Seite geschlossen hast. Verwahre es an einem sicheren Ort und teile es mit niemandem!"}.
+{"Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone.","Dein Passwort wird verschlüsselt auf dem Server gespeichert und wird nicht mehr im Klartext verfügbar sein, nachdem du diese Seite geschlossen hast. Verwahre es an einem sicheren Ort und teile es mit niemandem!"}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Ihre Abonnement-Anforderung und/oder Nachrichten an ~s wurden blockiert. Um Ihre Abonnement-Anforderungen freizugeben, besuchen Sie ~s"}.
 {"Your XMPP account was successfully registered.","Ihr XMPP-Konto wurde erfolgreich registriert."}.
 {"Your XMPP account was successfully unregistered.","Ihr XMPP-Konto wurde erfolgreich entfernt."}.
