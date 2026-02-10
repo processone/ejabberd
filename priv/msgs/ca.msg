@@ -24,6 +24,7 @@
 {"Account doesn't exist","El compte no existeix"}.
 {"Action on user","Acció en l'usuari"}.
 {"Add {{ inviter }} to your contact list","Afegir {{ inviter }} a la teua llista de contactes"}.
+{"Add Contact","Afegir Contacte"}.
 {"Add User","Afegir usuari"}.
 {"Administration of ","Administració de "}.
 {"Administration","Administració"}.
@@ -57,6 +58,7 @@
 {"Anyone with Voice","Qualsevol amb Veu"}.
 {"Anyone","Qualsevol"}.
 {"API Commands","Comandaments API"}.
+{"Apple Store Logo","Logo de la Apple Store"}.
 {"April","Abril"}.
 {"Arguments","Arguments"}.
 {"As a final reminder, your account details are shown below:","Com a recordatori final, el detalls del teu compte es mostren ací:"}.
@@ -75,6 +77,7 @@
 {"Bad format","Format erroni"}.
 {"BAD REQUEST","MALA PETICIÓ"}.
 {"Beagle IM by Tigase, Inc. is a lightweight and powerful XMPP client for macOS.","Beagle IM de Tigase, Inc. es un client XMPP lleuger i poderós per a macOS."}.
+{"Beagle IM Logo","Logo de Beagle IM"}.
 {"Birthday","Aniversari"}.
 {"Both the username and the resource are required","Es requereixen tant el nom d'usuari com el recurs"}.
 {"Bytestream already activated","El Bytestream ja està activat"}.
@@ -115,6 +118,7 @@
 {"Contact Addresses (normally, room owner or owners)","Adreces de contacte (normalment, propietaris de la sala)"}.
 {"Contacts","Contactes"}.
 {"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations es un client Jabber/XMPP per a mòbils Android 6.0+ que ha sigut optimitzat per a proporcionar una experiència mòbil unica."}.
+{"Conversations Logo","Logo de Conversations"}.
 {"Country","Pais"}.
 {"Create a Hat","Crear un barret"}.
 {"Create Account","Crear un Compte"}.
@@ -133,6 +137,7 @@
 {"Deliver event notifications","Entrega de notificacions d'events"}.
 {"Deliver payloads with event notifications","Enviar payloads junt a les notificacions d'events"}.
 {"Destroy a Hat","Destruir un barret"}.
+{"Dino Logo","Logo de Dino"}.
 {"Disable User","Deshabilitar un Usuari"}.
 {"Disc only copy","Còpia sols en disc"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","No li donis la teva contrasenya a ningú, ni tan sols als administradors del servidor XMPP."}.
@@ -183,6 +188,7 @@
 {"Failed to process option '~s'","Ha fallat el processat de la opció '~s'"}.
 {"Family Name","Cognom"}.
 {"FAQ Entry","Entrada a la FAQ"}.
+{"F-Droid Store Logo","Logo de la F-Droid Store"}.
 {"February","Febrer"}.
 {"File larger than ~w bytes","El fitxer es més gran que ~w bytes"}.
 {"Fill in the form to search for any matching XMPP User","Emplena camps per a buscar usuaris XMPP que concorden"}.
@@ -191,6 +197,7 @@
 {"Full List of Room Admins","Llista completa de administradors de la sala"}.
 {"Full List of Room Owners","Llista completa de propietaris de la sala"}.
 {"Full Name","Nom complet"}.
+{"Gajim Logo","Logo de Gajim"}.
 {"Get List of Active Users","Obté la llista d'usuaris actius"}.
 {"Get List of Disabled Users","Obté la llista d'usuaris deshabilitats"}.
 {"Get List of Idle Users","Obté la llista d'usuaris inactius"}.
@@ -207,6 +214,7 @@
 {"Get User Roster","Obtenir llista de contactes de l'usuari"}.
 {"Get User Statistics","Obtenir Estadístiques d'Usuari"}.
 {"Given Name","Nom propi"}.
+{"Google Play Store Logo","Logo de la Google Play Store"}.
 {"Grant voice to this person?","Concedir veu a aquesta persona?"}.
 {"has been banned","ha sigut bloquejat"}.
 {"has been kicked because of a system shutdown","ha sigut expulsat perquè el sistema va a apagar-se"}.
@@ -277,7 +285,7 @@
 {"Last month","Últim mes"}.
 {"Last year","Últim any"}.
 {"Launch {{ app_name }} and sign in using your account credentials.","Inicia {{ app_name }} i entra al compte usant les teves credencials."}.
-{"Launch Beagle IM, and select 'Yes' to add a new account. Click the '+' button under the empty account list and then enter your credentials.","Inicia Beagle IM, i selecciona 'Sí' per a afegir un nou compte. Polsa el botó '+' baix la llista de comptes buida i ja podràs introduir les teues credencials."}.
+{"Launch Beagle IM, and select \\'Yes\\' to add a new account. Click the \\'+\\' button under the empty account list and then enter your credentials.","Inicia Beagle IM, i selecciona \\'Sí\\' per a afegir un nou compte. Polsa el botó \\'+\\' baix la llista de comptes buida i ja podràs introduir les teues credencials."}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Els bits menys significants del hash SHA-256 del text deurien ser iguals a l'etiqueta hexadecimal"}.
 {"leaves the room","surt de la sala"}.
 {"List of Hats","Llista de barrets"}.
@@ -318,6 +326,7 @@
 {"Moderator","Moderador"}.
 {"Moderators Only","Només moderadors"}.
 {"Module failed to handle the query","El modul ha fallat al gestionar la petició"}.
+{"Monal Logo","Logo de Monal"}.
 {"Monday","Dilluns"}.
 {"Multicast","Multicast"}.
 {"Multiple <item/> elements are not allowed by RFC6121","No estan permesos múltiples elements <item/> per RFC6121"}.
@@ -417,6 +426,7 @@
 {"Outgoing s2s Connections","Connexions s2s d'eixida"}.
 {"Owner privileges required","Es requerixen privilegis de propietari de la sala"}.
 {"Packet relay is denied by service policy","S'ha denegat el reenviament del paquet per política del servei"}.
+{"Page navigation","Navegació de pàgina"}.
 {"Participant ID","ID del Participant"}.
 {"Participant","Participant"}.
 {"Password Verification","Verificació de la Contrasenya"}.
@@ -432,6 +442,8 @@
 {"Ping query is incorrect","La petició de Ping es incorrecta"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Recorda que aquestes opcions només fan còpia de seguretat de la base de dades Mnesia. Si estàs utilitzant el mòdul d'ODBC també deus de fer una còpia de seguretat de la base de dades de SQL a part."}.
+{"Please provide a password! Minimum length: {{ password_min_length }}","Per favor proporciona una contrasenya ! Llargària minima: {{ password_min_length }}"}.
+{"Please provide a valid username!","Per favor proporciona un nom vàlid per al teu compte!"}.
 {"Please, wait for a while before sending new voice request","Si us plau, espera una mica abans d'enviar una nova petició de veu"}.
 {"Pong","Pong"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","Posseir l'atribut 'ask' no està permès per RFC6121"}.
@@ -441,6 +453,7 @@
 {"Previous session PID has exited","El procés de la sessió prèvia ha sortit"}.
 {"Previous session PID is dead","El procés de la sessió prèvia està mort"}.
 {"Previous session timed out","La sessió prèvia ha caducat"}.
+{"Previous","Anterior"}.
 {"private, ","privat, "}.
 {"Public","Public"}.
 {"Publish model","Model de publicació"}.
@@ -448,7 +461,6 @@
 {"PubSub subscriber request","Petició de subscriptor PubSub"}.
 {"Purge all items when the relevant publisher goes offline","Eliminar tots els elements quan el publicant relevant es desconnecti"}.
 {"Push record not found","No s'ha trobat l'element Push"}.
-{"QR code icon","Icona de codi QR"}.
 {"Queries to the conference members are not allowed in this room","En aquesta sala no es permeten sol·licituds als membres"}.
 {"Query to another users is forbidden","Enviar peticions a altres usuaris no està permès"}.
 {"RAM and disc copy","Còpia en RAM i disc"}.
@@ -464,9 +476,11 @@
 {"Register on {{ site_name }}","Registrar a {{ site_name }}"}.
 {"Register","Registrar"}.
 {"Registration error","Error al fer el registre"}.
+{"Registration Error","Error al fer el Registre"}.
 {"Remote copy","Còpia remota"}.
 {"Remove a hat from a user","Eliminar un barret d'un usuari"}.
 {"Remove User","Eliminar usuari"}.
+{"Renga Logo","Logo de Renga"}.
 {"Replaced by new connection","Reemplaçat per una nova connexió"}.
 {"Request has timed out","La petició ha caducat"}.
 {"Request is ignored","La petició ha sigut ignorada"}.
@@ -520,6 +534,7 @@
 {"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>","Mostrant apps només per a <span class='platform-name'>la teua plataforma actual</span>. Tambè pots <a href='#' id='show-all-clients-button'>vore totes les apps.</a>"}.
 {"Show","Mostrar"}.
 {"Shut Down Service","Apager el Servei"}.
+{"Siskin IM Logo","Logo de Siskin IM"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clients XMPP poden emmagatzemar la teva contrasenya al ordinador, però només hauries de fer això al teu ordinador personal, per raons de seguretat."}.
 {"Sorry, it looks like this invite code has expired!","Perdona, però pareix que esta invitació ja ha expirat!"}.
