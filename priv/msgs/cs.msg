@@ -4,6 +4,7 @@
 %%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 
 {" has set the subject to: "," změnil(a) téma na: "}.
+{"A description of the node","Popis uzlu"}.
 {"A friendly name for the node","Přívětivé jméno pro uzel"}.
 {"A password is required to enter this room","Pro vstup do místnosti musíte zadat heslo"}.
 {"Accept","Přijmout"}.
@@ -25,6 +26,7 @@
 {"Allow visitors to send status text in presence updates","Povolit návštěvníkům posílat stavové zprávy ve statusu"}.
 {"Allow visitors to send voice requests","Povolit uživatelům posílat žádosti o voice práva"}.
 {"Announcements","Oznámení"}.
+{"API Commands","API příkazy"}.
 {"April",". dubna"}.
 {"August",". srpna"}.
 {"Automatic node creation is not enabled","Automatické vytváření uzlů není povoleno"}.
