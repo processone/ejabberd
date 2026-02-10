@@ -59,6 +59,7 @@ jobs:
         for: prod
         do: compile
         tool: rebar3
+        configure: --disable-elixir
 
     - name: Compress compiled.tar
       run: |

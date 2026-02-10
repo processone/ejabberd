@@ -37,6 +37,7 @@ jobs:
         for: prod
         do: compile
         tool: rebar3
+        configure: --disable-elixir --disable-mssql
 
   ########################################################## Static Tests #####
 
@@ -114,7 +115,7 @@ jobs:
 
     - name: Run tests
       id: ct
-      run: CT_BACKENDS=agnostic,mnesia,redis,mysql,pgsql,sqlite,ldap,extauth make test
+      run: make test
 
     - name: Send to coveralls
       env:

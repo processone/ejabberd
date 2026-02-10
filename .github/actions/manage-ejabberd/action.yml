@@ -24,6 +24,9 @@ inputs:
   rel_name_vsn:
     default: ""
     description: 'Base name of installer files'
+  configure:
+    default: ""
+    description: 'Options to append to ./configure'
 
 runs:
   using: "composite"
@@ -70,28 +73,15 @@ runs:
 
     ############################################################# Compile #####
 
-    - if: contains(inputs.do, 'compile') &&
-          (inputs.tool == 'rebar' ||
-           inputs.tool == 'rebar3')
+    - if: contains(inputs.do, 'compile')
       shell: sh
       run: |
+        TOOL=${{ inputs.tool }}
+        [ "${TOOL%3}" = "rebar" ] && TOOL="./$TOOL"
         ./autogen.sh
-        ./configure --with-rebar=./${{ inputs.tool }} \
+        ./configure --with-rebar=$TOOL \
                     --prefix=/tmp/ejabberd \
-                    --enable-all \
-                    --disable-elixir
-        sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
-        make
-
-    - if: contains(inputs.do, 'compile') &&
-          (inputs.tool == './rebar3' ||
-           inputs.tool == 'mix')
-      shell: sh
-      run: |
-        ./autogen.sh
-        ./configure --with-rebar=${{ inputs.tool }} \
-                    --prefix=/tmp/ejabberd \
-                    --enable-all
+                    --enable-all ${{ inputs.configure }}
         sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
         make
 
