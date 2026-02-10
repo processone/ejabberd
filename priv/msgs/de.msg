@@ -24,6 +24,7 @@
 {"Account doesn't exist","Konto existiert nicht"}.
 {"Action on user","Aktion auf Benutzer"}.
 {"Add {{ inviter }} to your contact list","Füge {{ inviter }} zu deiner Kontaktliste hinzu"}.
+{"Add Contact","Kontakt hinzufügen"}.
 {"Add User","Benutzer hinzufügen"}.
 {"Administration of ","Administration von "}.
 {"Administration","Verwaltung"}.
@@ -57,6 +58,7 @@
 {"Anyone with Voice","Jeder mit Stimme"}.
 {"Anyone","Jeder"}.
 {"API Commands","API Befehle"}.
+{"Apple Store Logo","Apple Store Logo"}.
 {"April","April"}.
 {"Arguments","Argumente"}.
 {"As a final reminder, your account details are shown below:","Zur Erinnerung hier nochmal deine Kontodetails:"}.
@@ -75,6 +77,7 @@
 {"Bad format","Ungültiges Format"}.
 {"BAD REQUEST","UNGÜLTIGE ANFRAGE"}.
 {"Beagle IM by Tigase, Inc. is a lightweight and powerful XMPP client for macOS.","Beagle IM von Tigase Inc. ist eine schlanker aber funktionsreicher XMPP-Client für macOS."}.
+{"Beagle IM Logo","Beagle IM Logo"}.
 {"Birthday","Geburtsdatum"}.
 {"Both the username and the resource are required","Sowohl der Benutzername als auch die Ressource sind erforderlich"}.
 {"Bytestream already activated","Bytestream bereits aktiviert"}.
@@ -115,6 +118,7 @@
 {"Contact Addresses (normally, room owner or owners)","Kontaktadresse (normalerweise Raumbesitzer)"}.
 {"Contacts","Kontakte"}.
 {"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations ist ein Jabber/XMPP-Client für Android 6.0+, der für mobile Endgeräte optimiert wurde."}.
+{"Conversations Logo","Conversations Logo"}.
 {"Country","Land"}.
 {"Create a Hat","Einen Hut erstellen"}.
 {"Create Account","Konto anlegen"}.
@@ -133,6 +137,7 @@
 {"Deliver event notifications","Ereignisbenachrichtigungen zustellen"}.
 {"Deliver payloads with event notifications","Nutzdaten mit Ereignisbenachrichtigungen zustellen"}.
 {"Destroy a Hat","Einen Hut zerstören"}.
+{"Dino Logo","Dino Logo"}.
 {"Disable User","Benutzer deaktivieren"}.
 {"Disc only copy","Nur auf Festplatte"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","Geben Sie niemandem Ihr Passwort, auch nicht den Administratoren des XMPP-Servers."}.
@@ -183,6 +188,7 @@
 {"Failed to process option '~s'","Konnte Option '~s' nicht verarbeiten"}.
 {"Family Name","Nachname"}.
 {"FAQ Entry","FAQ-Eintrag"}.
+{"F-Droid Store Logo","F-Droid Store Logo"}.
 {"February","Februar"}.
 {"File larger than ~w bytes","Datei größer als ~w Bytes"}.
 {"Fill in the form to search for any matching XMPP User","Füllen Sie das Formular aus, um nach jeglichen passenden XMPP-Benutzern zu suchen"}.
@@ -191,6 +197,7 @@
 {"Full List of Room Admins","Vollständige Liste der Raumadmins"}.
 {"Full List of Room Owners","Vollständige Liste der Raumbesitzer"}.
 {"Full Name","Vollständiger Name"}.
+{"Gajim Logo","Gajim Logo"}.
 {"Get List of Active Users","Liste der aktiven Benutzer abrufen"}.
 {"Get List of Disabled Users","Liste der deaktivierten Benutzer abrufen"}.
 {"Get List of Idle Users","Liste der inaktiven Benutzer abrufen"}.
@@ -207,6 +214,7 @@
 {"Get User Roster","Kontaktliste abrufen"}.
 {"Get User Statistics","Benutzerstatistiken abrufen"}.
 {"Given Name","Vorname"}.
+{"Google Play Store Logo","Google Play Store Logo"}.
 {"Grant voice to this person?","Dieser Person Sprachrechte erteilen?"}.
 {"has been banned","wurde gebannt"}.
 {"has been kicked because of a system shutdown","wurde wegen einer Systemabschaltung hinausgeworfen"}.
@@ -277,7 +285,7 @@
 {"Last month","Letzter Monat"}.
 {"Last year","Letztes Jahr"}.
 {"Launch {{ app_name }} and sign in using your account credentials.","Starte {{ app_name }} und logge dich mit deinen Anmeldedaten ein."}.
-{"Launch Beagle IM, and select 'Yes' to add a new account. Click the '+' button under the empty account list and then enter your credentials.","Starte Beagle IM und wähle 'Yes' um ein neues Konto hinzuzufügen. Drücke auf das '+' unter der leeren Account-Liste und gib dann deine Anmeldedaten ein!"}.
+{"Launch Beagle IM, and select \\'Yes\\' to add a new account. Click the \\'+\\' button under the empty account list and then enter your credentials.","Starte Beagle IM und wähle \\'Yes\\' um ein neues Konto hinzuzufügen. Drücke auf das \\'+\\' unter der leeren Account-Liste und gib dann deine Anmeldedaten ein."}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","Niederwertigstes Bit des SHA-256-Hashes des Textes sollte hexadezimalem Label gleichen"}.
 {"leaves the room","verlässt den Raum"}.
 {"List of Hats","Liste aller Hüte"}.
@@ -318,6 +326,7 @@
 {"Moderator","Moderator"}.
 {"Moderators Only","nur Moderatoren"}.
 {"Module failed to handle the query","Modul konnte die Anfrage nicht verarbeiten"}.
+{"Monal Logo","Monal Logo"}.
 {"Monday","Montag"}.
 {"Multicast","Multicast"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Mehrere <item/>-Elemente sind laut RFC6121 nicht erlaubt"}.
@@ -417,6 +426,7 @@
 {"Outgoing s2s Connections","Ausgehende s2s-Verbindungen"}.
 {"Owner privileges required","Besitzerrechte erforderlich"}.
 {"Packet relay is denied by service policy","Paket-Relay aufgrund der Dienstrichtlinien verweigert"}.
+{"Page navigation","Seiten-Navigation"}.
 {"Participant ID","Teilnehmer-ID"}.
 {"Participant","Teilnehmer"}.
 {"Password Verification","Passwort bestätigen"}.
@@ -432,6 +442,8 @@
 {"Ping query is incorrect","Ping-Anfrage ist falsch"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Beachten Sie, dass diese Optionen nur die eingebaute Mnesia-Datenbank sichern. Wenn Sie das ODBC-Modul verwenden, müssen Sie auch Ihre SQL-Datenbank separat sichern."}.
+{"Please provide a password! Minimum length: {{ password_min_length }}","Bitte gibt ein Passwort ein! Mindestens {{ password_min_length }} Zeichen."}.
+{"Please provide a valid username!","Bitte gib einen gültigen Benutzernamen ein!"}.
 {"Please, wait for a while before sending new voice request","Bitte warten Sie ein wenig, bevor Sie eine weitere Sprachrecht-Anforderung senden"}.
 {"Pong","Pong"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","Ein 'ask'-Attribut zu besitzen ist laut RFC6121 nicht erlaubt"}.
@@ -441,6 +453,7 @@
 {"Previous session PID has exited","Vorherige Sitzungs-PID wurde beendet"}.
 {"Previous session PID is dead","Vorherige Sitzungs-PID ist tot"}.
 {"Previous session timed out","Zeitüberschreitung bei vorheriger Sitzung"}.
+{"Previous","Zurück"}.
 {"private, ","privat, "}.
 {"Public","Öffentlich"}.
 {"Publish model","Veröffentlichungsmodell"}.
@@ -448,7 +461,6 @@
 {"PubSub subscriber request","PubSub-Abonnenten-Anforderung"}.
 {"Purge all items when the relevant publisher goes offline","Alle Items löschen, wenn der relevante Veröffentlicher offline geht"}.
 {"Push record not found","Push-Eintrag nicht gefunden"}.
-{"QR code icon","QR-Code Icon"}.
 {"Queries to the conference members are not allowed in this room","Anfragen an die Konferenzteilnehmer sind in diesem Raum nicht erlaubt"}.
 {"Query to another users is forbidden","Anfrage an andere Benutzer ist verboten"}.
 {"RAM and disc copy","RAM und Festplatte"}.
@@ -463,10 +475,12 @@
 {"Register an XMPP account","Ein XMPP-Konto registrieren"}.
 {"Register on {{ site_name }}","Registriere dich auf {{ site_name }}"}.
 {"Register","Anmelden"}.
-{"Registration error","Fehler beim Registrieren"}.
+{"Registration error","Fehler beim registrieren"}.
+{"Registration Error","Fehler beim Registrieren"}.
 {"Remote copy","Fernkopie"}.
 {"Remove a hat from a user","Eine Funktion bei einem Benutzer entfernen"}.
 {"Remove User","Benutzer löschen"}.
+{"Renga Logo","Renga Logo"}.
 {"Replaced by new connection","Durch neue Verbindung ersetzt"}.
 {"Request has timed out","Zeitüberschreitung bei Anforderung"}.
 {"Request is ignored","Anforderung wird ignoriert"}.
@@ -520,6 +534,7 @@
 {"Show","Anzeigen"}.
 {"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>","Wir zeigen dir nur Apps für <span class=\"platform-name\">deine aktuelle Platform</span> an. Du kannst dir gerne auch <a href=\"#\" id=\"show-all-clients-button\">sämtliche Apps anzeigen lassen</a>."}.
 {"Shut Down Service","Dienst herunterfahren"}.
+{"Siskin IM Logo","Siskin IM Logo"}.
 {"SOCKS5 Bytestreams","SOCKS5-Bytestreams"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Einige XMPP-Clients speichern Ihr Passwort auf dem Computer. Aus Sicherheitsgründen sollten Sie das nur auf Ihrem persönlichen Computer tun."}.
 {"Sorry, it looks like this invite code has expired!","Entschuldigung, es sieht so aus als wäre diese Einladung abgelaufen!"}.
