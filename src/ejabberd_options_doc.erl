@@ -1013,7 +1013,7 @@ doc() ->
                 "serving several XMPP domains and/or changing domains from "
                 "time to time. This avoid need to manage several databases and "
                 "handle complex configuration changes. The default depends on "
-                "_`../install/source.md#configure|./configure`_ "
+                "_`../../admin/install/source.md#configure|./configure`_ "
                 "flag '--enable-sql-schema-multihost' which is set "
                 "at compile time."),
              [binary:part(ejabberd_config:version(), {0,5})]}}},
