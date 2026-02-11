@@ -1,3 +1,17 @@
+## Version 26.02
+
+- Fixes issue with adding hats data in presences send by group chats
+- Removes `mod_muc_occupantid` modules, and integrates its functionality directly into `mod_muc`
+- Fixes issue with reset occupant-id values after restart of ejabberd
+- Improves handling of mediated group chat invitations in `mod_block_stranger`
+- Properly install `mod_invites` templates in `make install` call
+- Better errors in `mod_invites`
+- Accessibility improvements in `mod_invites`
+- Improves handling of request with invalid url encoded values in request handled by `ejabberd_http`
+- Improves handling of invalid responses to disco queries in `mod_pubsub_serverinfo`
+- Fixes conversion of MUC room configs from ejabberd older than 21.12
+- Fixes to autologin in WebAdmin
+
 ## Version 26.01
 
 #### Compile and Start
