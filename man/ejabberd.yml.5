@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 01/21/2026
+.\"      Date: 02/11/2026
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "01/21/2026" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "02/11/2026" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/26\&.01/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/26\&.02/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 26\&.01\&. The options that changed in this version are marked with 🟤\&.
+This section describes top level options of ejabberd 26\&.02\&. The options that changed in this version are marked with 🟠\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLName|ACLDefinition}}\fR
 .RS 4
@@ -1556,7 +1556,7 @@ This is a global option for module
 \fI600 seconds\fR\&.
 .RE
 .PP
-\fBreplaced_connection_timeout 🟤\fR: \fItimeout()\fR
+\fBreplaced_connection_timeout\fR: \fItimeout()\fR
 .RS 4
 \fINote\fR
 about this option: added in 26\&.01\&. Maximum time that new session will wait for termination of session that it\(cqs replacing\&. This allows old session to properly sends its unavailable presences, and helps with potetnial race conditions between old and new sessions presences\&.
@@ -1980,7 +1980,7 @@ if the latter is not set\&.
 \fINote\fR
 about this option: renamed in 25\&.10\&. Whether to use the
 \fIdatabase\&.md#singlehost\-or\-multihost|multihost SQL schema\fR\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/26\&.01/sql\&. There are two schemas available\&. The legacy
+https://github\&.com/processone/ejabberd/tree/26\&.02/sql\&. There are two schemas available\&. The legacy
 \fIsinglehost\fR
 schema stores one XMPP domain into one ejabberd database\&. The
 \fImultihost\fR
@@ -2142,7 +2142,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 26\&.01\&. The modules that changed in this version are marked with 🟤\&.
+This section describes modules options of ejabberd 26\&.02\&. The modules that changed in this version are marked with 🟠\&.
 .SS "mod_adhoc"
 .sp
 def:ad\-hoc command
@@ -2310,8 +2310,6 @@ ejabberdctl srg_create g1 example\&.org "\*(AqGroup number 1\*(Aq" this_is_g1 g1
 This module can be used to convert your existing SQL database from the singlehost to the multihost schema\&. Check the section \fIdatabase\&.md#singlehost\-or\-multihost|Singlehost or Multihost\fR for details\&. Please note that only MS SQL, MySQL, and PostgreSQL are supported\&. When the module is loaded use \fIupdate_sql\fR API\&.
 .sp
 The module has no options\&.
-.sp
-\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#sql|sql\fR
 .SS "mod_announce"
 .sp
 This module enables configured users to broadcast announcements and to set the message of the day (MOTD)\&. Configured users can perform these actions with an XMPP client either using Ad\-Hoc Commands or sending messages to specific JIDs\&. Equivalent API commands are also available\&.
@@ -2629,8 +2627,6 @@ modules:
 .if n \{\
 .RE
 .\}
-.sp
-\fBAPI Tags:\fR \fI\&.\&./\&.\&./developer/ejabberd\-api/admin\-tags\&.md#spam|spam\fR
 .RE
 .SS "mod_auth_fast"
 .sp
@@ -3193,6 +3189,8 @@ Make sure either \fImod_bosh\fR or \fIlisten\&.md#ejabberd_http_ws|ejabberd_http
 .sp
 When \fIconversejs_css\fR and \fIconversejs_script\fR are \fIauto\fR, by default they point to the public Converse client\&.
 .sp
+When this module is enabled in \fImodules\fR, it adds automatically a requesthandler and link in WebAdmin\&. \&.
+.sp
 This module is available since ejabberd 21\&.12\&.
 .sp
 .it 1 an-trap
@@ -3713,7 +3711,7 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_http_fileserver 🟤"
+.SS "mod_http_fileserver"
 .sp
 \fINote\fR about this option: improved \fIdocroot\fR in 26\&.01\&.
 .sp
@@ -3803,7 +3801,7 @@ Indicate one or more directory index files, similarly to Apache\(cqs
 variable\&. When an HTTP request hits a directory instead of a regular file, those directory indices are looked in order, and the first one found is returned\&. The default value is an empty list\&.
 .RE
 .PP
-\fBdocroot 🟤\fR: \fIPathDir | {PathURL, PathDir}\fR
+\fBdocroot\fR: \fIPathDir | {PathURL, PathDir}\fR
 .RS 4
 \fINote\fR
 about this option: improved in 26\&.01\&. Directory to serve the files from, or a map with several URL path (as specified in
@@ -3882,7 +3880,7 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_http_upload 🟤"
+.SS "mod_http_upload"
 .sp
 \fINote\fR about this option: added \fIcontent_types\fR in 26\&.01\&.
 .sp
@@ -3904,7 +3902,7 @@ This option defines the access rule to limit who is permitted to use the HTTP up
 \fIlocal\fR\&. If no access rule of that name exists, no user will be allowed to use the service\&.
 .RE
 .PP
-\fBcontent_types 🟤\fR: \fI{Extension: Type}\fR
+\fBcontent_types\fR: \fI{Extension: Type}\fR
 .RS 4
 \fINote\fR
 about this option: added in 26\&.01\&. Specify mappings of extension to content type, similarly to the option
@@ -4173,7 +4171,7 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_invites 🟤"
+.SS "mod_invites"
 .sp
 \fINote\fR about this option: added in 26\&.01\&.
 .sp
@@ -4202,7 +4200,8 @@ libjs\-jquery
 and
 libjs\-bootstrap4
 which will put them under
-/usr/share/javascript/{jquery,bootstrap4}
+/usr/share/javascript/{jquery,bootstrap4}\&. Alternatively you can use
+tools/dl_invites_page_deps\&.sh <outdir>\&.
 .RE
 .sp
 .RS 4
@@ -4335,7 +4334,7 @@ A human readable name for your site\&. E\&.g\&.
 "My Beautiful Laundrette"\&. Used in landing page templates\&.
 .RE
 .PP
-\fBtemplates_dir\fR: \fIbinary()\fR
+\fBtemplates_dir\fR: \fIPath\fR
 .RS 4
 The directory containing templates and static files used for landing page and web registration form\&. Only needs to be set if you want to ship your own set of templates or list of recommended apps\&.
 .RE
@@ -5174,9 +5173,68 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_muc"
+.SS "mod_muc 🟠"
 .sp
-This module provides support for XEP\-0045: Multi\-User Chat\&. Users can discover existing rooms, join or create them\&. Occupants of a room can chat in public or have private chats\&.
+\fINote\fR about this option: incorporated \fImod_muc_occupantid\fR in 26\&.02\&.
+.sp
+This module provides support for Multi\-User Chat (MUC)\&. Users can discover existing rooms, join or create them\&. Occupants of a room can chat in public or have private chats\&.
+.sp
+Protocols implemented in this module:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+XEP\-0045: Multi\-User Chat
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+XEP\-0249: Direct MUC Invitations
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+XEP\-0421: Occupant identifiers for semi\-anonymous MUCs
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+XEP\-0486: MUC Avatars
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Muc/Sub: Multi\-User Chat Subscriptions
+.RE
 .sp
 The MUC service allows any Jabber ID to register a nickname, so nobody else can use that nickname in any room in the MUC service\&. To register a nickname, open the Service Discovery in your XMPP client and register in the MUC service\&.
 .sp
@@ -5933,15 +5991,6 @@ or a conference JID is appended to the
 otherwise\&. There is no default value\&.
 .RE
 .RE
-.SS "mod_muc_occupantid"
-.sp
-\fINote\fR about this option: added in 23\&.10\&.
-.sp
-This module implements XEP\-0421: Anonymous unique occupant identifiers for MUCs\&.
-.sp
-When the module is enabled, the feature is enabled in all semi\-anonymous rooms\&.
-.sp
-The module has no options\&.
 .SS "mod_muc_rtbl"
 .sp
 \fINote\fR about this option: added in 23\&.04\&.
@@ -7674,7 +7723,9 @@ This module supports \fIbasic\&.md#captcha|CAPTCHA\fR to register a new account\
 .sp
 As an example usage, the users of the host \fIlocalhost\fR can visit the page: \fIhttps://localhost:5280/register/\fR It is important to include the last / character in the URL, otherwise the subpages URL will be incorrect\&.
 .sp
-This module is enabled in \fIlisten\fR → \fIejabberd_http\fR → \fIlisten\-options\&.md#request_handlers|request_handlers\fR, no need to enable in \fImodules\fR\&. The module depends on \fImod_register\fR where all the configuration is performed\&.
+This module is enabled in \fIlisten\fR → \fIejabberd_http\fR → \fIlisten\-options\&.md#request_handlers|request_handlers\fR\&.
+.sp
+There is no need to enable this module in \fImodules\fR, but it adds a link to the register page in WebAdmin menu\&. The module depends on \fImod_register\fR where all the configuration is performed\&.
 .sp
 The module has no options\&.
 .sp
@@ -9330,7 +9381,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 26\&.01\&.
+This section describes listeners options of ejabberd 26\&.02\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -9338,13 +9389,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 26\&.01\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 26\&.02\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/26\&.01/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/26\&.02/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
