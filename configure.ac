@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(ejabberd, m4_esyscmd([echo `git describe --tags 2>/dev/null || echo 26.01` | sed 's/-g.*//;s/-/./' | tr -d '\012']), [ejabberd@process-one.net], [ejabberd])
+AC_INIT(ejabberd, m4_esyscmd([echo `git describe --tags 2>/dev/null || echo 26.02` | sed 's/-g.*//;s/-/./' | tr -d '\012']), [ejabberd@process-one.net], [ejabberd])
 
 AC_ARG_WITH(min-erlang,
 	AS_HELP_STRING([--with-min-erlang=version],[set minimal required erlang version, default to OTP25]),
