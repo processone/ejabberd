@@ -2152,7 +2152,7 @@ filter_presence_hook(#state{users = Users} = StateData, Nick, #presence{from = F
 		 end,
     Pres2 = xmpp:append_subtags(xmpp:remove_subtag(Pres, #occupant_id{}),
 				[#occupant_id{id = OccupantId}]),
-    ejabberd_hooks:run_fold(muc_filter_message,
+    ejabberd_hooks:run_fold(muc_filter_presence,
 			    StateData#state.server_host,
 			    Pres2,
 			    [StateData, Nick]).
