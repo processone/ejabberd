@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        otp: ['25', '26', '27', '28']
+        otp: ['25', '26', '27', '28', '29.0-rc1']
 
     steps:
 
@@ -22,8 +22,8 @@ jobs:
       with:
         otp-version: ${{ matrix.otp }}
         hexpm-mirrors: |
-          https://cdn.jsdelivr.net/hex
           https://builds.hex.pm
+      ## https://cdn.jsdelivr.net/hex # Does not include Erlang 29 yet
 
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:

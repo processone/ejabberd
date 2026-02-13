@@ -32,12 +32,14 @@ jobs:
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        otp: ['25', '26', '27', '28']
+        otp: ['25', '26', '27', '28', '29']
         rebar: ['rebar', 'rebar3']
         exclude:
         - otp: '27'
           rebar: 'rebar'
         - otp: '28'
+          rebar: 'rebar'
+        - otp: '29'
           rebar: 'rebar'
     container:
       image: public.ecr.aws/docker/library/erlang:${{ matrix.otp }}
