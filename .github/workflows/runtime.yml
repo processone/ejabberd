@@ -46,16 +46,6 @@ jobs:
 
     - uses: actions/checkout@v6
 
-    - name: Get recent compatible Rebar binaries
-      if: matrix.otp < 25
-      run: |
-        rm rebar
-        rm rebar3
-        wget https://github.com/processone/ejabberd/raw/24.12/rebar
-        wget https://github.com/processone/ejabberd/raw/24.12/rebar3
-        chmod +x rebar
-        chmod +x rebar3
-
     - name: Prepare libraries
       run: |
         apt-get -qq update
