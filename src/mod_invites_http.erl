@@ -143,12 +143,7 @@ process_valid_token([_Token] = LocalPath,
                     #request{host = Host, lang = Lang} = Request,
                     Invite) ->
     Ctx0 = ctx(Invite, Request, LocalPath),
-    Apps =
-        lists:map(fun(App0) ->
-                     App = app_id(App0),
-                     render_app_urls(App, [{app, App} | Ctx0])
-                  end,
-                  apps_json(Host, Lang, Ctx0)),
+    Apps = [render_app_urls(App, [{app, App} | Ctx0]) || App <- apps_json(Host, Lang, Ctx0)],
     Ctx = [{apps, Apps} | Ctx0],
     render_ok(Host, Lang, <<"invite.html">>, Ctx);
 process_valid_token(_, _, _) ->
@@ -272,8 +267,7 @@ ensure_same(_, _) ->
 app_ctx(_Host, <<>>, _Lang, Ctx) ->
     Ctx;
 app_ctx(Host, AppID, Lang, Ctx) ->
-    FilteredApps =
-        [App || A <- apps_json(Host, Lang, Ctx), maps:get(<<"id">>, App = app_id(A)) == AppID],
+    FilteredApps = [A || A <- apps_json(Host, Lang, Ctx), maps:get(<<"id">>, A) == AppID],
     case FilteredApps of
         [App] ->
             [{app, render_app_button_urls(App, Ctx)} | Ctx];
@@ -302,7 +296,8 @@ ctx(Invite, #request{host = Host} = Request, LocalPath) ->
 apps_json(Host, Lang, Ctx) ->
     AppsBins = render(Host, Lang, <<"apps.json">>, Ctx),
     AppsBin = binary_join(AppsBins, <<>>),
-    misc:json_decode(AppsBin).
+    AppsMap = misc:json_decode(AppsBin),
+    [app_id(App) || App <- AppsMap].
 
 app_id(App = #{<<"id">> := _ID}) ->
     App;

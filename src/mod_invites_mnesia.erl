@@ -81,12 +81,14 @@ init(_Host, _Opts) ->
                             {index, [inviter]}]).
 
 is_reserved(_Host, Token, User) ->
-    [T
-     || T <- mnesia:dirty_all_keys(invite_token),
-        not mod_invites:is_expired(I = hd(mnesia:dirty_read(invite_token, T))),
-        I#invite_token.token /= Token,
-        I#invite_token.invitee == <<>>,
-        I#invite_token.account_name == User]
+    lists:filter(fun(T) ->
+                    I = hd(mnesia:dirty_read(invite_token, T)),
+                    not mod_invites:is_expired(I)
+                    and (I#invite_token.token /= Token)
+                    and (I#invite_token.invitee == <<>>)
+                    and (I#invite_token.account_name == User)
+                 end,
+                 mnesia:dirty_all_keys(invite_token))
     =/= [].
 
 is_token_valid(Host, Token, Scope) ->
@@ -101,10 +103,16 @@ is_token_valid(Host, Token, Scope) ->
     end.
 
 list_invites(Host) ->
-    [Invite
-     || Token <- mnesia:dirty_all_keys(invite_token),
-        element(2, (Invite = hd(mnesia:dirty_read(invite_token, Token)))#invite_token.inviter)
-        == Host].
+    lists:filtermap(fun(Token) ->
+                       Invite = hd(mnesia:dirty_read(invite_token, Token)),
+                       case element(2, Invite#invite_token.inviter) of
+                           Host ->
+                               {true, Invite};
+                           _ ->
+                               false
+                       end
+                    end,
+                    mnesia:dirty_all_keys(invite_token)).
 
 remove_user(User, Server) ->
     Inviter = {User, Server},
