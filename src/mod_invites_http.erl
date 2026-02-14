@@ -40,9 +40,11 @@
 -include("mod_invites.hrl").
 -include("translate.hrl").
 
--define(HTTP(Code, CT, Text), {Code, [{<<"Content-Type">>, CT}], Text}).
+-define(HTTP(Code, Headers, CT, Text), {Code, [{<<"Content-Type">>, CT} | Headers], Text}).
+-define(HTTP(Code, CT, Text), ?HTTP(Code, [], CT, Text)).
 -define(HTTP(Code, Text), ?HTTP(Code, <<"text/plain">>, Text)).
 -define(HTTP_OK(Text), ?HTTP(200, <<"text/html">>, Text)).
+-define(HTTP_OK(Headers, Text), ?HTTP(200, Headers, <<"text/html">>, Text)).
 -define(NOT_FOUND, ?HTTP(404, ?T("NOT FOUND"))).
 -define(NOT_FOUND(Text), ?HTTP(404, <<"text/html">>, Text)).
 -define(BAD_REQUEST, ?HTTP(400, ?T("BAD REQUEST"))).
@@ -380,7 +382,8 @@ lang(Lang) ->
     Lang.
 
 render_ok(Host, Lang, File, Ctx) ->
-    ?HTTP_OK(render(Host, Lang, File, Ctx)).
+    URI = proplists:get_value(uri, Ctx),
+    ?HTTP_OK([{<<"Link">>, <<"<", URI/binary, ">">>}], render(Host, Lang, File, Ctx)).
 
 render_bad_request(Host, File, Ctx) ->
     Renderer = file_to_renderer(Host, File),
