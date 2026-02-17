@@ -59,7 +59,7 @@ jobs:
         path: |
           ~/.cache/rebar3/
           _build/default/lib/
-        key: runtime-${{ matrix.otp }}-${{matrix.rebar}}-${{hashFiles('rebar.config')}}
+        key: runtime-${{ matrix.otp }}-${{matrix.rebar}}-${{hashFiles('rebar.*')}}
 
     - name: Compile
       uses: ./.github/actions/manage-ejabberd
@@ -133,7 +133,7 @@ jobs:
       with:
         path: |
           ~/.cache/rebar3/
-        key: runtime-${{matrix.elixir}}-${{hashFiles('rebar.config')}}
+        key: runtime-${{matrix.elixir}}-${{hashFiles('rebar.*')}}
 
     - name: Install Hex and Rebar3 manually on older Elixir
       if: matrix.elixir < '1.15'
@@ -222,7 +222,7 @@ jobs:
       with:
         path: |
           ~/.hex/
-        key: runtime-${{matrix.elixir}}-${{hashFiles('mix.exs')}}
+        key: runtime-${{matrix.elixir}}-${{hashFiles('mix.*')}}
 
     - name: Install Hex and Rebar3 manually on older Elixir
       if: matrix.elixir < '1.15'

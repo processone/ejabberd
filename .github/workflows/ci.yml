@@ -51,7 +51,7 @@ jobs:
         path: |
           ~/.cache/rebar3/
           _build/default/lib/
-        key: ci-${{ matrix.otp }}-${{hashFiles('rebar.config')}}
+        key: ci-${{ matrix.otp }}-${{hashFiles('rebar.*')}}
 
     - name: Compile
       uses: ./.github/actions/manage-ejabberd
