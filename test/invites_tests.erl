@@ -673,7 +673,9 @@ http(Config) ->
     User = ?config(user, Config),
     {TokenURI, LandingPage} = mod_invites:gen_invite(Server),
     Token = token_from_uri(TokenURI),
-    {ok, {{_, 200, _}, _Headers, Body}} = httpc:request(LandingPage),
+    {ok, {{_, 200, _}, Headers, Body}} = httpc:request(LandingPage),
+    {match, [TokenURI]} = re:run(proplists:get_value("link", Headers),
+				 "<(.+)>", [{capture, [1], binary}]),
     {match, RegistrationURLs} =
         re:run(Body,
                <<"href=\"", Token/binary, "([a-zA-Z0-9\/\-]+)\"">>,
