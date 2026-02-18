@@ -46,9 +46,11 @@
 %%====================================================================
 -spec start(component()) -> ok.
 start(Component) ->
-    catch ets:new(Component, [named_table, public, ordered_set,
+    try ets:new(Component, [named_table, public, ordered_set,
 			      {read_concurrency, true},
-			      {heir, erlang:group_leader(), none}]),
+			      {heir, erlang:group_leader(), none}])
+    catch _:_ -> error
+    end,
     ok.
 
 -spec add_iq_handler(component(), binary(), binary(), module(), atom()) -> ok.

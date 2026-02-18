@@ -37,7 +37,7 @@ update_item_database(_Host, _ServerHost) ->
 update_node_database(Host, ServerHost) ->
     mnesia:del_table_index(pubsub_node, type),
     mnesia:del_table_index(pubsub_node, parentid),
-    case catch mnesia:table_info(pubsub_node, attributes) of
+    try mnesia:table_info(pubsub_node, attributes) of
       [host_node, host_parent, info] ->
 	    ?INFO_MSG("Upgrading pubsub nodes table...", []),
 	  F = fun () ->
@@ -287,6 +287,8 @@ update_node_database(Host, ServerHost) ->
 				 [nodeid, id, parents, type, owners, options]),
 	  rename_default_nodeplugin();
       _ -> ok
+    catch
+        _:_ -> error
     end,
     convert_list_nodes().
 
@@ -452,7 +454,8 @@ convert_table_to_binary(Tab, Fields, Type, DetectFun, ConvertFun) ->
         true ->
             ?INFO_MSG("Converting '~ts' table from strings to binaries.", [Tab]),
             TmpTab = list_to_atom(atom_to_list(Tab) ++ "_tmp_table"),
-            catch mnesia:delete_table(TmpTab),
+            try mnesia:delete_table(TmpTab)
+            catch _:_ -> error end,
             case ejabberd_mnesia:create(?MODULE, TmpTab,
                                      [{disc_only_copies, [node()]},
                                       {type, Type},

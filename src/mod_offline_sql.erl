@@ -234,7 +234,7 @@ remove_all_messages(LUser, LServer) ->
     {atomic, ok}.
 
 count_messages(LUser, LServer) ->
-    case catch ejabberd_sql:sql_query(
+    try ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(count(*))d from spool "
                       "where username=%(LUser)s and %(LServer)H")) of
@@ -244,6 +244,9 @@ count_messages(LUser, LServer) ->
 	    {cache, 0};
         _ ->
 	    {nocache, 0}
+    catch
+        _:_ ->
+            {nocache, 0}
     end.
 
 export(_Server) ->

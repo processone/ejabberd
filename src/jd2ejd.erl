@@ -48,13 +48,14 @@ import_file(File) ->
 	    {ok, Text} ->
 		case fxml_stream:parse_element(Text) of
 		  El when is_record(El, xmlel) ->
-		      case catch process_xdb(User, Server, El) of
-			{'EXIT', Reason} ->
+		      try process_xdb(User, Server, El) of
+			_ -> ok
+                      catch
+			_:Reason ->
 			    ?ERROR_MSG("Error while processing file \"~ts\": "
 				       "~p~n",
 				       [File, Reason]),
-			    {error, Reason};
-			_ -> ok
+			    {error, Reason}
 		      end;
 		  {error, Reason} ->
 		      ?ERROR_MSG("Can't parse file \"~ts\": ~p~n",

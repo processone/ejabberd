@@ -101,8 +101,7 @@ accept(StreamPid) ->
 stop(StreamPid) -> StreamPid ! stop.
 
 activate({P1, J1}, {P2, J2}) ->
-    case catch {p1_fsm:sync_send_all_state_event(P1,
-						  get_socket),
+    try {p1_fsm:sync_send_all_state_event(P1, get_socket),
 		p1_fsm:sync_send_all_state_event(P2, get_socket)}
 	of
       {S1, S2} when is_port(S1), is_port(S2) ->
@@ -113,8 +112,9 @@ activate({P1, J1}, {P2, J2}) ->
 	  ?INFO_MSG("(~w:~w) Activated bytestream for ~ts "
 		    "-> ~ts",
 		    [P1, P2, JID1, JID2]),
-	  ok;
-      _ -> error
+	  ok
+    catch
+       _:_ -> error
     end.
 
 %%%-----------------------

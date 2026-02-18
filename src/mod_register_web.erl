@@ -306,7 +306,7 @@ form_new_get2(Host, Lang, CaptchaEls) ->
 %%%----------------------------------------------------------------------
 
 form_new_post(Q, Ip) ->
-    case catch get_register_parameters(Q) of
+    try get_register_parameters(Q) of
       [Username, Host, Password, Password, Id, Key] ->
 	  form_new_post(Username, Host, Password, {Id, Key}, Ip);
       [_Username, _Host, _Password, _Password2, false, false] ->
@@ -315,6 +315,8 @@ form_new_post(Q, Ip) ->
 	  ejabberd_captcha:check_captcha(Id, Key),
 	  {error, passwords_not_identical};
       _ -> {error, wrong_parameters}
+    catch
+        _:_ -> {error, wrong_parameters}
     end.
 
 get_register_parameters(Q) ->
@@ -418,13 +420,15 @@ form_changepass_get(Host, Lang) ->
 %%%----------------------------------------------------------------------
 
 form_changepass_post(Q) ->
-    case catch get_changepass_parameters(Q) of
+    try get_changepass_parameters(Q) of
       [Username, Host, PasswordOld, Password, Password] ->
 	  try_change_password(Username, Host, PasswordOld,
 			      Password);
       [_Username, _Host, _PasswordOld, _Password, _Password2] ->
 	  {error, passwords_not_identical};
       _ -> {error, wrong_parameters}
+    catch
+        _:_ -> {error, wrong_parameters}
     end.
 
 get_changepass_parameters(Q) ->
@@ -548,23 +552,24 @@ register_account2(Username, Host, Password, Ip) ->
 %%%----------------------------------------------------------------------
 
 form_del_post(Q) ->
-    case catch get_unregister_parameters(Q) of
+    try get_unregister_parameters(Q) of
       [Username, Host, Password] ->
-	  try_unregister_account(Username, Host, Password);
-      _ -> {error, wrong_parameters}
+            try_unregister_account(Username, Host, Password)
+    catch
+        _:_ -> {error, wrong_parameters}
     end.
 
 get_unregister_parameters(Q) ->
-%% @spec(Username, Host, Password) -> {atomic, ok} |
-%%                                    {error, account_doesnt_exist} |
-%%                                    {error, account_exists} |
-%%                                    {error, password_incorrect}
     lists:map(fun (Key) ->
 		      {value, {_Key, Value}} = lists:keysearch(Key, 1, Q),
 		      Value
 	      end,
 	      [<<"username">>, <<"host">>, <<"password">>]).
 
+%% @spec(Username, Host, Password) -> {atomic, ok} |
+%%                                    {error, account_doesnt_exist} |
+%%                                    {error, account_exists} |
+%%                                    {error, password_incorrect}
 try_unregister_account(Username, Host, Password) ->
     try unregister_account(Username, Host, Password) of
       {atomic, ok} -> {atomic, ok}

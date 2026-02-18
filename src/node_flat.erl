@@ -724,18 +724,21 @@ get_nodes_helper(NodeTree, #pubsub_state{stateid = {_, N}, subscriptions = Subs}
 %% ```get_states(Nidx) ->
 %%           node_default:get_states(Nidx).'''</p>
 get_states(Nidx) ->
-    States = case catch mnesia:index_read(pubsub_state, Nidx, #pubsub_state.nodeidx) of
-	List when is_list(List) -> List;
-	_ -> []
+    States = try mnesia:index_read(pubsub_state, Nidx, #pubsub_state.nodeidx) of
+                 List when is_list(List) -> List
+             catch
+                 _:_ -> []
     end,
     {result, States}.
 
 %% @doc <p>Returns a state (one state list), given its reference.</p>
 get_state(Nidx, Key) ->
     StateId = {Key, Nidx},
-    case catch mnesia:read({pubsub_state, StateId}) of
+    try mnesia:read({pubsub_state, StateId}) of
 	[State] when is_record(State, pubsub_state) -> State;
 	_ -> #pubsub_state{stateid = StateId, nodeidx = Nidx}
+    catch
+       _:_ -> #pubsub_state{stateid = StateId, nodeidx = Nidx}
     end.
 
 %% @doc <p>Write a state into database.</p>

@@ -61,10 +61,11 @@ store(R) ->
     mnesia:dirty_write(R).
 
 lookup(Token) ->
-    case catch mnesia:dirty_read(oauth_token, Token) of
+    try mnesia:dirty_read(oauth_token, Token) of
         [R] ->
-            {ok, R};
-        _ ->
+            {ok, R}
+    catch
+        _:_ ->
             error
     end.
 
@@ -85,10 +86,11 @@ clean(TS) ->
     mnesia:async_dirty(F).
 
 lookup_client(ClientID) ->
-    case catch mnesia:dirty_read(oauth_client, ClientID) of
+    try mnesia:dirty_read(oauth_client, ClientID) of
         [R] ->
-            {ok, R};
-        _ ->
+            {ok, R}
+    catch
+        _:_ ->
             error
     end.
 

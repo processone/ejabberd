@@ -107,41 +107,45 @@ do_init_per_group(redis, Config) ->
     mod_muc:shutdown_rooms(?REDIS_VHOST),
     set_opt(server, ?REDIS_VHOST, Config);
 do_init_per_group(mysql, Config) ->
-    case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
+    try ejabberd_sql:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MYSQL_VHOST),
             update_sql(?MYSQL_VHOST, Config),
             stop_temporary_modules(?MYSQL_VHOST),
-            set_opt(server, ?MYSQL_VHOST, Config);
-        Err ->
+            set_opt(server, ?MYSQL_VHOST, Config)
+    catch
+        _:Err ->
             {skip, {mysql_not_available, Err}}
     end;
 do_init_per_group(mssql, Config) ->
-    case catch ejabberd_sql:sql_query(?MSSQL_VHOST, [<<"select 1;">>]) of
+    try ejabberd_sql:sql_query(?MSSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MSSQL_VHOST),
             update_sql(?MSSQL_VHOST, Config),
             stop_temporary_modules(?MSSQL_VHOST),
-            set_opt(server, ?MSSQL_VHOST, Config);
-        Err ->
+            set_opt(server, ?MSSQL_VHOST, Config)
+    catch
+        _:Err ->
             {skip, {mssql_not_available, Err}}
     end;
 do_init_per_group(pgsql, Config) ->
-    case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
+    try ejabberd_sql:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?PGSQL_VHOST),
             update_sql(?PGSQL_VHOST, Config),
             stop_temporary_modules(?PGSQL_VHOST),
-            set_opt(server, ?PGSQL_VHOST, Config);
-        Err ->
+            set_opt(server, ?PGSQL_VHOST, Config)
+    catch
+        _:Err ->
             {skip, {pgsql_not_available, Err}}
     end;
 do_init_per_group(sqlite, Config) ->
-    case catch ejabberd_sql:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
+    try ejabberd_sql:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?SQLITE_VHOST),
-            set_opt(server, ?SQLITE_VHOST, Config);
-        Err ->
+            set_opt(server, ?SQLITE_VHOST, Config)
+    catch
+        _:Err ->
             {skip, {sqlite_not_available, Err}}
     end;
 do_init_per_group(ldap, Config) ->
@@ -185,32 +189,35 @@ end_per_group(redis, _Config) ->
     ok;
 end_per_group(mysql, Config) ->
     Query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'mqtt_pub';",
-    case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [Query]) of
+    try ejabberd_sql:sql_query(?MYSQL_VHOST, [Query]) of
         {selected, _, [[<<"0">>]]} ->
             ok;
         {selected, _, _} ->
-            clear_sql_tables(mysql, Config);
-        Other ->
+            clear_sql_tables(mysql, Config)
+    catch
+        _:Other ->
             ct:fail({failed_to_check_table_existence, mysql, Other})
     end,
     ok;
 end_per_group(mssql, Config) ->
     Query = "SELECT * FROM sys.tables WHERE name = 'mqtt_pub'",
-    case catch ejabberd_sql:sql_query(?MSSQL_VHOST, [Query]) of
+    try ejabberd_sql:sql_query(?MSSQL_VHOST, [Query]) of
         {selected, [t]} ->
-            clear_sql_tables(mssql, Config);
-        Other ->
+            clear_sql_tables(mssql, Config)
+    catch
+        _:Other ->
             ct:fail({failed_to_check_table_existence, mssql, Other})
     end,
     ok;
 end_per_group(pgsql, Config) ->
     Query = "SELECT EXISTS (SELECT 0 FROM information_schema.tables WHERE table_name = 'mqtt_pub');",
-    case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [Query]) of
+    try ejabberd_sql:sql_query(?PGSQL_VHOST, [Query]) of
         {selected, [t]} ->
             clear_sql_tables(pgsql, Config);
 	{selected, _, [[<<"t">>]]} ->
-	    clear_sql_tables(pgsql, Config);
-        Other ->
+	    clear_sql_tables(pgsql, Config)
+    catch
+        _:Other ->
             ct:fail({failed_to_check_table_existence, pgsql, Other})
     end,
     ok;

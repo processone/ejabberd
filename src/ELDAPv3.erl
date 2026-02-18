@@ -129,25 +129,27 @@ encoding_rule() -> ber.
 bit_string_format() -> bitstring.
 
 encode(Type,Data) ->
-case catch encode_disp(Type,Data) of
-  {'EXIT',{error,Reason}} ->
-    {error,Reason};
-  {'EXIT',Reason} ->
-    {error,{asn1,Reason}};
+try encode_disp(Type,Data) of
   {Bytes,_Len} ->
     {ok,iolist_to_binary(Bytes)};
   Bytes ->
     {ok,iolist_to_binary(Bytes)}
+catch
+  _:{error,Reason} ->
+    {error,Reason};
+  _:Reason ->
+    {error,{asn1,Reason}}
 end.
 
 decode(Type,Data) ->
-case catch decode_disp(Type,element(1, ber_decode_nif(Data))) of
-  {'EXIT',{error,Reason}} ->
-    {error,Reason};
-  {'EXIT',Reason} ->
-    {error,{asn1,Reason}};
+try decode_disp(Type,element(1, ber_decode_nif(Data))) of
   Result ->
     {ok,Result}
+catch
+  _:{error,Reason} ->
+    {error,Reason};
+  _:Reason ->
+    {error,{asn1,Reason}}
 end.
 
 encode_disp('LDAPMessage',Data) -> 'enc_LDAPMessage'(Data);

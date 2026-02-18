@@ -88,13 +88,9 @@ get_user_part(String, Pattern) ->
 		TailLength = byte_size(P) - (First+1),
 		str:sub_string(S, First, byte_size(S) - TailLength)
 	end,
-    case catch F(String, Pattern) of
-	{'EXIT', _} ->
-	    {error, badmatch};
+    try F(String, Pattern) of
 	Result ->
-            case catch ejabberd_regexp:replace(Pattern, <<"%u">>, Result) of
-                {'EXIT', _} ->
-                    {error, badmatch};
+            try ejabberd_regexp:replace(Pattern, <<"%u">>, Result) of
 		StringRes ->
                     case case_insensitive_match(StringRes, String) of
                         true ->
@@ -102,7 +98,13 @@ get_user_part(String, Pattern) ->
                         false ->
                             {error, badmatch}
                     end
+            catch
+               _:_ ->
+                    {error, badmatch}
             end
+    catch
+        _:_ ->
+            {error, badmatch}
     end.
 
 -spec make_filter([{binary(), [binary()]}], [{binary(), binary()}]) -> any().

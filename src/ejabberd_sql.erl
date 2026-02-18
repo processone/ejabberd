@@ -515,8 +515,14 @@ handle_info(Info, StateName, State) ->
 
 terminate(_Reason, _StateName, State) ->
     case State#state.db_type of
-        mysql -> catch p1_mysql_conn:stop(State#state.db_ref);
-        sqlite -> catch sqlite3:close(sqlite_db(State#state.host));
+        mysql ->
+            try p1_mysql_conn:stop(State#state.db_ref)
+            catch X:Y -> {X, Y}
+            end;
+        sqlite ->
+            try sqlite3:close(sqlite_db(State#state.host))
+            catch R:S -> {R, S}
+            end;
         _ -> ok
     end,
     ok.
@@ -543,9 +549,18 @@ handle_reconnect(Reason, #state{host = Host, reconnect_count = RC} = State) ->
 		 [State#state.db_type, Reason,
 		  StartInterval div 1000]),
     case State#state.db_type of
-	mysql -> catch p1_mysql_conn:stop(State#state.db_ref);
-	sqlite -> catch sqlite3:close(sqlite_db(State#state.host));
-	pgsql -> catch pgsql:terminate(State#state.db_ref);
+	mysql ->
+           try p1_mysql_conn:stop(State#state.db_ref)
+           catch M1:M2 -> {M1, M2}
+           end;
+	sqlite ->
+           try sqlite3:close(sqlite_db(State#state.host))
+           catch S1:S2 -> {S1, S2}
+           end;
+	pgsql ->
+           try pgsql:terminate(State#state.db_ref)
+           catch P1:P2 -> {P1, P2}
+           end;
 	_ -> ok
     end,
     p1_fsm:send_event_after(StartInterval, connect),
@@ -606,11 +621,14 @@ inner_transaction(F) ->
       _N -> ok
     end,
     put(?NESTING_KEY, PreviousNestingLevel + 1),
-    Result = (catch F()),
+    Result = try F()
+             catch F1:F2 -> {F1, F2}
+             end,
     put(?NESTING_KEY, PreviousNestingLevel),
     case Result of
       {aborted, Reason} -> {aborted, Reason};
-      {'EXIT', Reason} -> {'EXIT', Reason};
+      {exit, Reason} -> {'EXIT', Reason};
+      {error, Reason} -> {'EXIT', Reason};
       {atomic, Res} -> {atomic, Res};
       Res -> {atomic, Res}
     end.
@@ -687,10 +705,11 @@ maybe_restart_transaction(F, NRestarts, Reason, DoRollback) ->
     end.
 
 execute_bloc(F) ->
-    case catch F() of
+    try F() of
       {aborted, Reason} -> {aborted, Reason};
-      {'EXIT', Reason} -> {aborted, Reason};
       Res -> {atomic, Res}
+    catch
+        _:Reason -> {aborted, Reason}
     end.
 
 execute_fun(F) when is_function(F, 0) ->
@@ -774,10 +793,11 @@ sql_query_internal(#sql_query{} = Query) ->
         end,
     check_error(Res, Query);
 sql_query_internal(F) when is_function(F) ->
-    case catch execute_fun(F) of
+    try execute_fun(F) of
         {aborted, Reason} -> {error, Reason};
-        {'EXIT', Reason} -> {error, Reason};
         Res -> Res
+    catch
+        _:Reason -> {error, Reason}
     end;
 sql_query_internal(Query) ->
     State = get(?STATE_KEY),
@@ -1253,10 +1273,11 @@ get_db_version(#state{db_type = pgsql} = State) ->
     case pgsql:squery(State#state.db_ref,
                       <<"select current_setting('server_version_num')">>) of
         {ok, [{_, _, [[SVersion]]}]} ->
-            case catch binary_to_integer(SVersion) of
+            try binary_to_integer(SVersion) of
                 Version when is_integer(Version) ->
-                    State#state{db_version = Version};
-                Error ->
+                    State#state{db_version = Version}
+            catch
+                _:Error ->
                     ?WARNING_MSG("Error getting pgsql version: ~p", [Error]),
                     State
             end;
@@ -1474,10 +1495,11 @@ check_error({error, Why}, #sql_query{} = Query) ->
     {error, Err};
 check_error({error, Why}, Query) ->
     Err = extended_error(Why),
-    case catch iolist_to_binary(Query) of
+    try iolist_to_binary(Query) of
         SQuery when is_binary(SQuery) ->
-            ?ERROR_MSG("SQL query '~ts' failed: ~p", [SQuery, Err]);
-        _ ->
+            ?ERROR_MSG("SQL query '~ts' failed: ~p", [SQuery, Err])
+    catch
+        _:_ ->
             ?ERROR_MSG("SQL query ~p failed: ~p", [Query, Err])
     end,
     {error, Err};

@@ -63,10 +63,11 @@ caps_read(LServer, {Node, SubNode}) ->
            ?SQL("select @(feature)s from caps_features where"
                 " node=%(Node)s and subnode=%(SubNode)s")) of
         {selected, [{H}|_] = Fs} ->
-            case catch binary_to_integer(H) of
+            try binary_to_integer(H) of
                 Int when is_integer(Int), Int>=0 ->
-                    {ok, Int};
-                _ ->
+                    {ok, Int}
+            catch
+                _:_ ->
                     {ok, [F || {F} <- Fs]}
             end;
         _ ->

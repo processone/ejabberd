@@ -330,10 +330,7 @@ process_lists_set(#iq{from = #jid{luser = LUser, lserver = LServer},
     end;
 process_lists_set(#iq{from = #jid{luser = LUser, lserver = LServer} = From,
 		      lang = Lang} = IQ, Name, Items) ->
-    case catch lists:map(fun decode_item/1, Items) of
-	{error, Why} ->
-	    Txt = xmpp:io_format_error(Why),
-	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
+    try lists:map(fun decode_item/1, Items) of
 	List ->
 	    case set_list(LUser, LServer, Name, List) of
 		ok ->
@@ -343,6 +340,10 @@ process_lists_set(#iq{from = #jid{luser = LUser, lserver = LServer} = From,
 		    Txt = ?T("Database failure"),
 		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
 	    end
+    catch
+        throw:{error, Why} ->
+	    Txt = xmpp:io_format_error(Why),
+	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
     end.
 
 -spec push_list_update(jid(), binary()) -> ok.

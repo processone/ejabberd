@@ -794,7 +794,7 @@ route_message(#message{to = To, type = Type} = Packet) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
     PrioRes = get_user_present_resources(LUser, LServer),
-    case catch lists:max(PrioRes) of
+    try lists:max(PrioRes) of
       {MaxPrio, MaxRes}
 	  when is_integer(MaxPrio), MaxPrio >= 0 ->
 	  lists:foreach(fun ({P, R}) when P == MaxPrio;
@@ -819,8 +819,9 @@ route_message(#message{to = To, type = Type} = Packet) ->
 			    %% Ignore other priority:
 			    ({_Prio, _Res}) -> ok
 			end,
-			PrioRes);
-      _ ->
+			PrioRes)
+    catch
+      _:_ ->
 	    case ejabberd_auth:user_exists(LUser, LServer) andalso
 		is_privacy_allow(Packet) of
 		true ->

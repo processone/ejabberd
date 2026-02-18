@@ -147,7 +147,7 @@ check_auth(Host, MatrixServer, AuthParams, Content, Request) ->
     case get_connection(Host, MatrixServer) of
         {ok, S2SPid} ->
             #{<<"key">> := KeyID} = AuthParams,
-            case catch gen_statem:call(S2SPid, {get_key, KeyID}) of
+            try gen_statem:call(S2SPid, {get_key, KeyID}) of
                 {ok, VerifyKey, _ValidUntil} ->
                     %% TODO: check ValidUntil
                     Destination = mod_matrix_gw_opt:matrix_domain(Host),
@@ -175,6 +175,9 @@ check_auth(Host, MatrixServer, AuthParams, Content, Request) ->
                     end;
                 _ ->
                     false
+            catch
+                _:_ ->
+                    false
             end;
         {error, _} = _Error ->
             false
@@ -190,7 +193,7 @@ check_signature(Host, JSON, RoomVersion) ->
                 #{MatrixServer := #{} = KeySig} ->
                     case maps:next(maps:iterator(KeySig)) of
                         {KeyID, _Sig, _} ->
-                            case catch get_key(Host, MatrixServer, KeyID) of
+                            try get_key(Host, MatrixServer, KeyID) of
                                 {ok, VerifyKey, ValidUntil} ->
                                     if
                                         not RoomVersion#room_version.enforce_key_validity or
@@ -206,6 +209,9 @@ check_signature(Host, JSON, RoomVersion) ->
                                             false
                                     end;
                                 _ ->
+                                    false
+                            catch
+                                _:_ ->
                                     false
                             end;
                         _ ->
@@ -324,9 +330,10 @@ handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
                     VerifyKey = mod_matrix_gw:base64_decode(SKey),
                     ?DEBUG("key ~p~n", [VerifyKey]),
                     ?DEBUG("check ~p~n",
-                           [catch check_signature(
+                           [try check_signature(
                                     JSON, Data#data.matrix_server,
-                                    KeyID, VerifyKey)]),
+                                    KeyID, VerifyKey)
+                            catch _:_ -> error_checking_signature end]),
                     true = check_signature(
                              JSON, Data#data.matrix_server,
                              KeyID, VerifyKey),
@@ -506,10 +513,11 @@ do_get_matrix_host_port(MatrixServer) ->
                     end
             end;
         [Addr, SPort] ->
-            case catch binary_to_integer(SPort) of
+            try binary_to_integer(SPort) of
                 Port when is_integer(Port) ->
-                    {Addr, Port};
-                _ ->
+                    {Addr, Port}
+            catch
+                _:_ ->
                     error
             end
     end.

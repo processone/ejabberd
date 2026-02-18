@@ -108,23 +108,23 @@ get_local_stats(_Server, _, _, Lang) ->
 
 get_local_stat(Server, [], Name)
     when Name == <<"users/online">> ->
-    case catch ejabberd_sm:get_vh_session_list(Server) of
-      {'EXIT', _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_sm:get_vh_session_list(Server) of
       Users ->
 	  ?STATVAL((integer_to_binary(length(Users))),
 		   <<"users">>)
+    catch
+        _:_Reason ->
+            ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_local_stat(Server, [], Name)
     when Name == <<"users/total">> ->
-    case catch
-	   ejabberd_auth:count_users(Server)
-	of
-      {'EXIT', _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_auth:count_users(Server) of
       NUsers ->
 	  ?STATVAL((integer_to_binary(NUsers)),
 		   <<"users">>)
+    catch
+       _:_Reason ->
+            ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_local_stat(_Server, [], Name)
     when Name == <<"users/all-hosts/online">> ->

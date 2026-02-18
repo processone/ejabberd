@@ -3375,7 +3375,10 @@ node_options(Host, Type) ->
 -spec node_plugin_options(host(), binary()) -> [{atom(), any()}].
 node_plugin_options(Host, Type) ->
     Module = plugin(Host, Type),
-    case {lists:member(Type, config(Host, plugins)), catch Module:options()} of
+    Options = try Module:options()
+              catch _:_ -> error
+              end,
+    case {lists:member(Type, config(Host, plugins)), Options} of
 	{true, Opts} when is_list(Opts) ->
 	    Opts;
 	{_, _} ->
@@ -3716,9 +3719,11 @@ config(ServerHost, Key) ->
 config({_User, Host, _Resource}, Key, Default) ->
     config(Host, Key, Default);
 config(ServerHost, Key, Default) ->
-    case catch ets:lookup(gen_mod:get_module_proc(ServerHost, config), Key) of
+    try ets:lookup(gen_mod:get_module_proc(ServerHost, config), Key) of
 	[{Key, Value}] -> Value;
 	_ -> Default
+    catch
+        _:_ -> Default
     end.
 
 -spec select_type(binary(), host(), binary(), binary()) -> binary().

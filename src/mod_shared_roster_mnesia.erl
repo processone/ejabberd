@@ -86,9 +86,10 @@ delete_group(Host, Group) ->
     mnesia:transaction(F).
 
 get_group_opts(Host, Group) ->
-    case catch mnesia:dirty_read(sr_group, {Group, Host}) of
-	[#sr_group{opts = Opts}] -> {ok, Opts};
-	_ -> error
+    try mnesia:dirty_read(sr_group, {Group, Host}) of
+	[#sr_group{opts = Opts}] -> {ok, Opts}
+    catch
+       _:_ -> error
     end.
 
 set_group_opts(Host, Group, Opts) ->
@@ -97,29 +98,30 @@ set_group_opts(Host, Group, Opts) ->
     mnesia:transaction(F).
 
 get_user_groups(US, Host) ->
-    case catch mnesia:dirty_read(sr_user, US) of
+    try mnesia:dirty_read(sr_user, US) of
 	Rs when is_list(Rs) ->
-	    [Group || #sr_user{group_host = {Group, H}} <- Rs, H == Host];
-	_ ->
-	    []
+	    [Group || #sr_user{group_host = {Group, H}} <- Rs, H == Host]
+    catch
+        _:_ ->
+            []
     end.
 
 get_group_explicit_users(Host, Group) ->
-    Read = (catch mnesia:dirty_index_read(sr_user,
-					  {Group, Host}, #sr_user.group_host)),
-    case Read of
-	Rs when is_list(Rs) -> [R#sr_user.us || R <- Rs];
-	_ -> []
+    try mnesia:dirty_index_read(sr_user, {Group, Host}, #sr_user.group_host) of
+        Rs when is_list(Rs) -> [R#sr_user.us || R <- Rs]
+    catch
+        _:_ -> []
     end.
 
 get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
-    case catch mnesia:dirty_read(sr_user, {LUser, LServer}) of
+    try mnesia:dirty_read(sr_user, {LUser, LServer}) of
 	Rs when is_list(Rs) ->
 	    [{Group, proplists:get_value(Group, GroupsOpts, [])}
 	     || #sr_user{group_host = {Group, H}} <- Rs,
-		H == LServer];
-	_ ->
-	    []
+		H == LServer]
+    catch
+        _:_ ->
+            []
     end.
 
 is_user_in_group(US, Group, Host) ->

@@ -357,21 +357,23 @@ min_expires() ->
     60.
 
 to_integer(Bin, Min, Max) ->
-    case catch (binary_to_integer(Bin)) of
+    try (binary_to_integer(Bin)) of
         N when N >= Min, N =< Max ->
             {ok, N};
         _ ->
             error
+    catch
+        _:_ ->
+            error
     end.
 
 call(Msg) ->
-    case catch ?GEN_SERVER:call(?MODULE, Msg, ?CALL_TIMEOUT) of
-	{'EXIT', {timeout, _}} ->
-	    {error, timeout};
-	{'EXIT', Why} ->
-	    {error, Why};
-	Reply ->
-	    Reply
+    try ?GEN_SERVER:call(?MODULE, Msg, ?CALL_TIMEOUT)
+    catch
+        _:{timeout, _} ->
+            {error, timeout};
+        _:Why ->
+            {error, Why}
     end.
 
 make_contacts_with_expires(Contacts, Expires) ->
@@ -501,12 +503,13 @@ get_flow_timeout(LServer, #sip_socket{type = Type}) ->
 
 update_table() ->
     Fields = record_info(fields, sip_session),
-    case catch mnesia:table_info(sip_session, attributes) of
+    try mnesia:table_info(sip_session, attributes) of
 	Fields ->
 	    ok;
 	[_|_] ->
-	    mnesia:delete_table(sip_session);
-	{'EXIT', _} ->
+	    mnesia:delete_table(sip_session)
+    catch
+        _:_ ->
 	    ok
     end.
 
@@ -551,7 +554,9 @@ delete_session(#sip_session{reg_tref = RegTRef,
 			    conn_mref = MRef} = Session) ->
     misc:cancel_timer(RegTRef),
     misc:cancel_timer(FlowTRef),
-    catch erlang:demonitor(MRef, [flush]),
+    try erlang:demonitor(MRef, [flush])
+    catch _:_ -> error
+    end,
     mnesia:dirty_delete_object(Session).
 
 process_ping(SIPSocket) ->

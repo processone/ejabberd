@@ -227,10 +227,13 @@ multicast(Msg) ->
       end, ejabberd_cluster:get_nodes()).
 
 setup_database() ->
-    case catch mnesia:table_info(bosh, attributes) of
+    try mnesia:table_info(bosh, attributes) of
         [sid, pid] ->
             mnesia:delete_table(bosh);
         _ ->
+            ok
+    catch
+        _:_ ->
             ok
     end,
     ejabberd_mnesia:create(?MODULE, bosh,

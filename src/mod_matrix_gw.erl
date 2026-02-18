@@ -237,7 +237,7 @@ process([<<"federation">>, <<"v1">>, <<"get_missing_events">>, RoomID],
     end;
 process([<<"federation">>, <<"v1">>, <<"backfill">>, RoomID],
         #request{method = 'GET', host = _Host} = Request) ->
-    case catch binary_to_integer(proplists:get_value(<<"limit">>, Request#request.q)) of
+    try binary_to_integer(proplists:get_value(<<"limit">>, Request#request.q)) of
         Limit when is_integer(Limit) ->
             case preprocess_federation_request(Request, false) of
                 {ok, _JSON, Origin} ->
@@ -265,8 +265,9 @@ process([<<"federation">>, <<"v1">>, <<"backfill">>, RoomID],
                      misc:json_encode(Res)};
                 {result, HTTPResult} ->
                     HTTPResult
-            end;
-        _ ->
+            end
+    catch
+        _:_ ->
             {400, [], <<"400 Bad Request: bad 'limit' parameter">>}
     end;
 process([<<"federation">>, <<"v1">>, <<"state_ids">>, RoomID],

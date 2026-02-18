@@ -51,9 +51,11 @@
 -export_type([features_acc/0, items_acc/0]).
 
 start(Host, Opts) ->
-    catch ets:new(disco_extra_domains,
+    try ets:new(disco_extra_domains,
 		  [named_table, ordered_set, public,
-		   {heir, erlang:group_leader(), none}]),
+		   {heir, erlang:group_leader(), none}])
+    catch _:_ -> error
+    end,
     ExtraDomains = mod_disco_opt:extra_domains(Opts),
     lists:foreach(fun (Domain) ->
 			  register_extra_domain(Host, Domain)
@@ -72,8 +74,10 @@ start(Host, Opts) ->
           {hook, disco_info, get_info, 100}]}.
 
 stop(Host) ->
-    catch ets:match_delete(disco_extra_domains,
-			   {{'_', Host}}),
+    try ets:match_delete(disco_extra_domains,
+			   {{'_', Host}})
+    catch _:_ -> error
+    end,
     ok.
 
 reload(Host, NewOpts, OldOpts) ->

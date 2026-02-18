@@ -76,35 +76,39 @@
 init(_Host, _ServerHost, _Opts) -> ok = create_table().
 
 subscribe_node(JID, NodeId, Options) ->
-    case catch mnesia:sync_dirty(fun add_subscription/3, [JID, NodeId, Options])
+    try mnesia:sync_dirty(fun add_subscription/3, [JID, NodeId, Options])
     of
-	{'EXIT', {aborted, Error}} -> Error;
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
+    catch
+       _:{aborted, Error} -> Error
     end.
 
 unsubscribe_node(JID, NodeId, SubID) ->
-    case catch mnesia:sync_dirty(fun delete_subscription/3, [JID, NodeId, SubID])
+    try mnesia:sync_dirty(fun delete_subscription/3, [JID, NodeId, SubID])
     of
-	{'EXIT', {aborted, Error}} -> Error;
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
+    catch
+        _:{aborted, Error} -> Error
     end.
 
 get_subscription(JID, NodeId, SubID) ->
-    case catch mnesia:sync_dirty(fun read_subscription/3, [JID, NodeId, SubID])
+    try mnesia:sync_dirty(fun read_subscription/3, [JID, NodeId, SubID])
     of
-	{'EXIT', {aborted, Error}} -> Error;
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
+    catch
+        _:{aborted, Error} -> Error
     end.
 
 set_subscription(JID, NodeId, SubID, Options) ->
-    case catch mnesia:sync_dirty(fun write_subscription/4, [JID, NodeId, SubID, Options])
+    try mnesia:sync_dirty(fun write_subscription/4, [JID, NodeId, SubID, Options])
     of
-	{'EXIT', {aborted, Error}} -> Error;
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
+    catch
+        _:{aborted, Error} -> Error
     end.
 
 
@@ -203,9 +207,9 @@ var_xfield(_) -> {error, badarg}.
 val_xfield(deliver = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(digest = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(digest_frequency = Opt, [Val]) ->
-    case catch binary_to_integer(Val) of
-	N when is_integer(N) -> N;
-	_ ->
+    try binary_to_integer(Val)
+    catch
+        _:_ ->
 	    Txt = {?T("Value of '~s' should be integer"), [Opt]},
 	    {error, xmpp:err_not_acceptable(Txt, ejabberd_option:language())}
     end;
@@ -221,9 +225,9 @@ val_xfield(subscription_type, [<<"items">>]) -> items;
 val_xfield(subscription_type, [<<"nodes">>]) -> nodes;
 val_xfield(subscription_depth, [<<"all">>]) -> all;
 val_xfield(subscription_depth = Opt, [Depth]) ->
-    case catch binary_to_integer(Depth) of
-	N when is_integer(N) -> N;
-	_ ->
+    try binary_to_integer(Depth)
+    catch
+       _:_ ->
 	    Txt = {?T("Value of '~s' should be integer"), [Opt]},
 	    {error, xmpp:err_not_acceptable(Txt, ejabberd_option:language())}
     end.

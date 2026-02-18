@@ -1899,8 +1899,13 @@ make_command_allowed(Name, Request, BaseArguments, Options, Cmd) ->
                 false
         end,
     ArgumentsUsed =
-        (catch lists:zip(
-                   lists:map(fun({A, _}) -> A end, ArgumentsFormat), ArgumentsUsed1)),
+        try
+            lists:zip(
+                lists:map(fun({A, _}) -> A end, ArgumentsFormat), ArgumentsUsed1)
+        catch
+            _:_ ->
+                error
+        end,
     ResultEls =
         make_command_result(filter_results(get_filters_from_query(Query,
                                                                   get_result_fields(ResultFormatApi)),

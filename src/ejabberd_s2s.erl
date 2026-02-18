@@ -49,6 +49,7 @@
 
 -export([get_info_s2s_connections/1]).
 
+-include("ejabberd_catch.hrl").
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
@@ -112,20 +113,24 @@ is_temporarly_blocked(Host) ->
 
 -spec have_connection({binary(), binary()}) -> boolean().
 have_connection(FromTo) ->
-    case catch mnesia:dirty_read(s2s, FromTo) of
+    try mnesia:dirty_read(s2s, FromTo) of
 	[_] ->
             true;
         _ ->
+            false
+    catch
+        _:_ ->
             false
     end.
 
 -spec get_connections_pids({binary(), binary()}) -> [pid()].
 get_connections_pids(FromTo) ->
-    case catch mnesia:dirty_read(s2s, FromTo) of
+    try mnesia:dirty_read(s2s, FromTo) of
 	L when is_list(L) ->
-	    [Connection#s2s.pid || Connection <- L];
-	_ ->
-	    []
+	    [Connection#s2s.pid || Connection <- L]
+    catch
+        _:_ ->
+            []
     end.
 
 -spec register_connection(FromTo :: {binary(), binary()}) -> ok.

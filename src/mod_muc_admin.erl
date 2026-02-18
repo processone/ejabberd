@@ -1138,10 +1138,11 @@ make_breadcrumb(Elements) ->
 
 %% Returns: {normal | reverse, Integer}
 get_sort_query(Q) ->
-    case catch get_sort_query2(Q) of
+    try get_sort_query2(Q) of
         {ok, Res} ->
-            Res;
-        _ ->
+            Res
+    catch
+        _:_ ->
             {normal, 1}
     end.
 

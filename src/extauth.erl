@@ -160,7 +160,9 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, State) ->
-    catch port_close(State#state.port),
+    try port_close(State#state.port)
+    catch _:_ -> error
+    end,
     ok.
 
 code_change(_OldVsn, State, _Extra) ->

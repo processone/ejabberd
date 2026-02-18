@@ -93,28 +93,30 @@ delete_motd(LServer) ->
     transaction(LServer, F).
 
 get_motd(LServer) ->
-    case catch ejabberd_sql:sql_query(
+    try ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(xml)s from motd"
                       " where username='' and %(LServer)H")) of
         {selected, [{XML}]} ->
 	    parse_element(XML);
 	{selected, []} ->
-	    error;
-	_ ->
+	    error
+    catch
+        _:_ ->
 	    {error, db_failure}
     end.
 
 is_motd_user(LUser, LServer) ->
-    case catch ejabberd_sql:sql_query(
+    try ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(username)s from motd"
                       " where username=%(LUser)s and %(LServer)H")) of
         {selected, [_|_]} ->
 	    {ok, true};
 	{selected, []} ->
-	    {ok, false};
-	_ ->
+	    {ok, false}
+    catch
+        _:_ ->
 	    {error, db_failure}
     end.
 

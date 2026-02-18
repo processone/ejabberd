@@ -111,17 +111,20 @@ get_all_nodes(Host) ->
     [fixup_node(N) || N <- Nodes].
 
 get_parentnodes(Host, Node, _From) ->
-    case catch mnesia:read({pubsub_node, {Host, Node}}) of
+    try mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) ->
 	    Record#pubsub_node.parents;
 	_ ->
 	    []
+    catch
+       _:_ ->
+            []
     end.
 
 get_parentnodes_tree(Host, Node, _From) ->
     get_parentnodes_tree(Host, Node, 0, []).
 get_parentnodes_tree(Host, Node, Level, Acc) ->
-    case catch mnesia:read({pubsub_node, {Host, Node}}) of
+    try mnesia:read({pubsub_node, {Host, Node}}) of
 	[#pubsub_node{} = Record0] ->
 	    Record = fixup_node(Record0),
 	    Tree = [{Level, [Record]}|Acc],
@@ -131,6 +134,9 @@ get_parentnodes_tree(Host, Node, Level, Acc) ->
 	    end;
 	_ ->
 	    Acc
+    catch
+       _:_ ->
+            []
     end.
 
 get_subnodes(Host, <<>>, infinity) ->
@@ -209,13 +215,16 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 			[] ->
 			    true;
 			[Parent | _] ->
-			    case catch mnesia:read({pubsub_node, {Host, Parent}}) of
+			    try mnesia:read({pubsub_node, {Host, Parent}}) of
 				[#pubsub_node{owners = [{<<>>, Host, <<>>}]}] ->
 				    true;
 				[#pubsub_node{owners = Owners}] ->
 				    lists:member(BJID, Owners);
 				_ ->
 				    false
+                            catch
+                                _:_ ->
+                                    false
 			    end;
 			_ ->
 			    false

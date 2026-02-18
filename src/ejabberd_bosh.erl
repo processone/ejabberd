@@ -635,12 +635,13 @@ reply(State, Body, RID, From) ->
     Receivers = gb_trees:delete_any(RID,
 				    State1#state.receivers),
     State2 = do_reply(State1, From, Body, RID),
-    case catch gb_trees:take_smallest(Receivers) of
+    try gb_trees:take_smallest(Receivers) of
       {NextRID, {From1, Req}, Receivers1}
 	  when NextRID == RID + 1 ->
 	  p1_fsm:send_event(self(), {Req, From1}),
-	  State2#state{receivers = Receivers1};
-      _ -> State2#state{receivers = Receivers}
+	  State2#state{receivers = Receivers1}
+    catch
+      _:_ -> State2#state{receivers = Receivers}
     end.
 
 reply_next_state(State, Body, RID, From) ->
@@ -648,12 +649,13 @@ reply_next_state(State, Body, RID, From) ->
     Receivers = gb_trees:delete_any(RID,
 				    State1#state.receivers),
     State2 = do_reply(State1, From, Body, RID),
-    case catch gb_trees:take_smallest(Receivers) of
+    try gb_trees:take_smallest(Receivers) of
       {NextRID, {From1, Req}, Receivers1}
 	  when NextRID == RID + 1 ->
 	  active(Req, From1,
-		 State2#state{receivers = Receivers1});
-      _ ->
+		 State2#state{receivers = Receivers1})
+    catch
+      _:_ ->
 	  {next_state, active,
 	   State2#state{receivers = Receivers}}
     end.

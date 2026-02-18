@@ -2182,9 +2182,11 @@ filter_presence(Presence) ->
     Els = lists:filter(
 	    fun(El) ->
 		    XMLNS = xmpp:get_ns(El),
-		    case catch binary:part(XMLNS, 0, size(?NS_MUC)) of
+		    try binary:part(XMLNS, 0, size(?NS_MUC)) of
 			?NS_MUC -> false;
 			_ -> XMLNS /= ?NS_HATS
+		    catch
+			_:_ -> XMLNS /= ?NS_HATS
 		    end
 	    end, xmpp:get_els(Presence)),
     xmpp:set_els(Presence, Els).

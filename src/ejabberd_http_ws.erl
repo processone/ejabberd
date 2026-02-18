@@ -98,7 +98,9 @@ peername({http_ws, _FsmRef, IP}) -> {ok, IP}.
 controlling_process(_Socket, _Pid) -> ok.
 
 close({http_ws, FsmRef, _IP}) ->
-    catch p1_fsm:sync_send_all_state_event(FsmRef, close).
+    try p1_fsm:sync_send_all_state_event(FsmRef, close)
+    catch A:B -> {A, B}
+    end.
 
 reset_stream({http_ws, _FsmRef, _IP} = Socket) ->
     Socket.

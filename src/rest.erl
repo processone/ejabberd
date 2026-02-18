@@ -166,11 +166,10 @@ to_list(V) when is_list(V) ->
     V.
 
 encode_json(Content) ->
-    case catch misc:json_encode(Content) of
-        {'EXIT', Reason} ->
-            {error, {invalid_payload, Content, Reason}};
-        Encoded ->
-            Encoded
+    try misc:json_encode(Content)
+    catch
+       _:Reason ->
+            {error, {invalid_payload, Content, Reason}}
     end.
 
 decode_json(<<>>) -> [];
