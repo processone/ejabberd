@@ -476,14 +476,38 @@ ibr(Config0) ->
            send_get_iq_register(Config3)),
     ?match(#iq{type = result}, send_iq_register(Config3, <<"some_self_chosen_name">>)),
 
+    RedirectUrl = <<"http://localhost">>,
+    NewRegisterOpts2 = gen_mod:set_opt(redirect_url, RedirectUrl, NewRegisterOpts),
+    update_module_opts(Server, mod_register, NewRegisterOpts2),
+    Config4 = reconnect(Config3),
+    %% check redirect_url works
+    #iq{type = result, sub_els = [#register{sub_els = [SubEl]}]} =
+           send_get_iq_register(Config4),
+    ?match(#oob_x{url = RedirectUrl}, xmpp:decode(SubEl)),
+    #invite_token{token = Token4} = create_account_invite(Server, {<<>>, Server}),
+    ?match(#iq{type = result}, send_pars(Config4, Token4)),
+    #iq{type = result, sub_els = [#register{sub_els = SubEls}]} =
+           send_get_iq_register(Config4),
+    %% check for absence of redirect_url
+    ?match([], lists:filter(fun(El) ->
+				    Decoded = xmpp:decode(El),
+				    case Decoded of
+					#oob_x{url = RedirectUrl} -> true;
+					_ -> false
+				    end
+			    end,
+			    SubEls)),
+    ?match(#iq{type = result}, send_iq_register(Config4, <<"yet_another_self_chosen_name">>)),
+
     ejabberd_auth:remove_user(AccountName, Server),
+    ejabberd_auth:remove_user(<<"yet_another_self_chosen_name">>, Server),
     ejabberd_auth:remove_user(<<"some_self_chosen_name">>, Server),
     ejabberd_auth:remove_user(<<"some_much_better_name">>, Server),
     update_module_opts(Server, mod_register, OldRegisterOpts),
     mod_invites:remove_user(<<"inviter">>, Server),
     mod_invites:expire_tokens(<<>>, Server),
-    ?match(3, mod_invites:cleanup_expired()),
-    disconnect(Config3).
+    ?match(4, mod_invites:cleanup_expired()),
+    disconnect(Config4).
 
 ibr_reserved(Config0) ->
     Server = ?config(server, Config0),

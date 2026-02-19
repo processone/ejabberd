@@ -215,8 +215,9 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
     Instr = translate:translate(
 	      Lang, ?T("Choose a username and password to register "
 		       "with this server")),
+    IsPreAuth = maps:get(pre_auth, xmpp:get_meta(IQ), false) == true,
     URL = mod_register_opt:redirect_url(Server),
-    if (URL /= undefined) and not IsRegistered ->
+    if (URL /= undefined) and not IsRegistered and not IsPreAuth ->
 	    Desc = str:translate_and_format(Lang, ?T("To register, visit ~s"), [URL]),
 	    xmpp:make_iq_result(
 	      IQ, #register{instructions = Desc,
