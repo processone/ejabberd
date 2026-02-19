@@ -30,8 +30,8 @@
 -protocol({xep, 359, '0.7.0', '15.09', "complete", ""}).
 -protocol({xep, 424, '0.4.2', '24.02', "partial", "Tombstones not implemented"}).
 -protocol({xep, 425, '0.3.0', '24.06', "complete", ""}).
--protocol({xep, 441, '0.2.0', '15.06', "complete", ""}).
 -protocol({xep, 431, '0.2.0', '24.12', "complete", ""}).
+-protocol({xep, 441, '0.2.0', '15.06', "complete", ""}).
 
 -behaviour(gen_mod).
 
@@ -79,6 +79,7 @@
 -callback delete_old_messages(binary() | global,
 			      erlang:timestamp(),
 			      all | chat | groupchat) -> any().
+-callback additional_namespaces(binary()) -> [binary()].
 -callback extended_fields(binary()) -> [mam_query:property() | #xdata_field{}].
 -callback store(xmlel(), binary(), {binary(), binary()}, chat | groupchat,
 		jid(), binary(), recv | send, integer(), binary(),
@@ -627,12 +628,15 @@ parse_query(#mam_query{}, _Lang) ->
 
 disco_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
-disco_local_features(Acc, _From, _To, <<"">>, _Lang) ->
+disco_local_features(Acc, _From, #jid{lserver = LServer} = _To, <<"">>, _Lang) ->
     Features = case Acc of
 		   {result, Fs} -> Fs;
 		   empty -> []
 	       end,
-    {result, [?NS_MESSAGE_RETRACT | Features]};
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    AdditionalNamespaces = Mod:additional_namespaces(LServer),
+    Namespaces = [?NS_MESSAGE_RETRACT],
+    {result, lists:append([Namespaces, AdditionalNamespaces, Features])};
 disco_local_features(empty, _From, _To, _Node, Lang) ->
     Txt = ?T("No features available"),
     {error, xmpp:err_item_not_found(Txt, Lang)};
@@ -644,9 +648,11 @@ disco_sm_features(empty, From, To, Node, Lang) ->
 disco_sm_features({result, OtherFeatures},
 		  #jid{luser = U, lserver = S},
 		  #jid{luser = U, lserver = S}, <<"">>, _Lang) ->
-    {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_SID_0,
-              ?NS_MESSAGE_RETRACT |
-	      OtherFeatures]};
+    Mod = gen_mod:db_mod(S, ?MODULE),
+    AdditionalNamespaces = Mod:additional_namespaces(S),
+    Namespaces = [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_SID_0,
+              ?NS_MESSAGE_RETRACT],
+    {result, lists:append([Namespaces, AdditionalNamespaces, OtherFeatures])};
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
