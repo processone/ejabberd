@@ -286,8 +286,7 @@ delete_old_messages(ServerHost, TimeStamp, Type) ->
 extended_fields(LServer) ->
     case ejabberd_option:sql_type(LServer) of
 	mysql ->
-	    [{withtext, <<"">>},
-	     #xdata_field{var = <<"{urn:xmpp:fulltext:0}fulltext">>,
+	    [#xdata_field{var = <<"{urn:xmpp:fulltext:0}fulltext">>,
 			  type = 'text-single',
 			  label = <<"Search the text">>,
 			  values = []}];
