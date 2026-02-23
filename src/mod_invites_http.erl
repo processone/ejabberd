@@ -28,7 +28,7 @@
 
 -include("logger.hrl").
 
--export([process/2, landing_page/2]).
+-export([process/2, landing_page/2, tmpl_to_renderer/1]).
 
 -ifdef(TEST).
 -export([apps_json/3]).

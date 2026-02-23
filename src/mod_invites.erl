@@ -292,7 +292,24 @@ mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
 mod_opt_type(landing_page) ->
     econf:either(
-        econf:enum([none, auto]), econf:binary());
+        econf:enum([none, auto]),
+        econf:and_then(
+            econf:binary(),
+            fun(Tmpl) ->
+               try
+                   mod_invites_http:tmpl_to_renderer(Tmpl) of
+                   R when is_atom(R) ->
+                       Tmpl
+               catch
+                   error:{badmatch, error} ->
+                       T = <<"There is some problem in the value you configured "
+                             "for option 'landing_page' in 'mod_invites'. "
+                             "Please consult the documentation and fix it: ",
+                             Tmpl/binary>>,
+                       ?CRITICAL_MSG(T, []),
+                       throw({error, T})
+               end
+            end));
 mod_opt_type(max_invites) ->
     econf:pos_int(infinity);
 mod_opt_type(site_name) ->
