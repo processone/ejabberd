@@ -482,21 +482,24 @@ ibr(Config0) ->
     Config4 = reconnect(Config3),
     %% check redirect_url works
     #iq{type = result, sub_els = [#register{sub_els = [SubEl]}]} =
-           send_get_iq_register(Config4),
+        send_get_iq_register(Config4),
     ?match(#oob_x{url = RedirectUrl}, xmpp:decode(SubEl)),
     #invite_token{token = Token4} = create_account_invite(Server, {<<>>, Server}),
     ?match(#iq{type = result}, send_pars(Config4, Token4)),
     #iq{type = result, sub_els = [#register{sub_els = SubEls}]} =
-           send_get_iq_register(Config4),
+        send_get_iq_register(Config4),
     %% check for absence of redirect_url
-    ?match([], lists:filter(fun(El) ->
-				    Decoded = xmpp:decode(El),
-				    case Decoded of
-					#oob_x{url = RedirectUrl} -> true;
-					_ -> false
-				    end
-			    end,
-			    SubEls)),
+    ?match([],
+           lists:filter(fun(El) ->
+                           Decoded = xmpp:decode(El),
+                           case Decoded of
+                               #oob_x{url = RedirectUrl} ->
+                                   true;
+                               _ ->
+                                   false
+                           end
+                        end,
+                        SubEls)),
     ?match(#iq{type = result}, send_iq_register(Config4, <<"yet_another_self_chosen_name">>)),
 
     ejabberd_auth:remove_user(AccountName, Server),
@@ -698,8 +701,9 @@ http(Config) ->
     {TokenURI, LandingPage} = mod_invites:gen_invite(Server),
     Token = token_from_uri(TokenURI),
     {ok, {{_, 200, _}, Headers, Body}} = httpc:request(LandingPage),
-    {match, [TokenURI]} = re:run(proplists:get_value("link", Headers),
-				 "<(.+)>", [{capture, [1], binary}]),
+    {match, [TokenURI]} =
+        re:run(
+            proplists:get_value("link", Headers), "<(.+)>", [{capture, [1], binary}]),
     {match, RegistrationURLs} =
         re:run(Body,
                <<"href=\"", Token/binary, "([a-zA-Z0-9\/\-]+)\"">>,

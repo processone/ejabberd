@@ -296,8 +296,7 @@ mod_opt_type(landing_page) ->
         econf:and_then(
             econf:binary(),
             fun(Tmpl) ->
-               try
-                   mod_invites_http:tmpl_to_renderer(Tmpl) of
+               try mod_invites_http:tmpl_to_renderer(Tmpl) of
                    R when is_atom(R) ->
                        Tmpl
                catch
