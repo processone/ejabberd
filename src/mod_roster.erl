@@ -44,9 +44,11 @@
 	 import_info/0, process_local_iq/1, get_user_roster_items/2,
 	 import/5, get_roster/2, push_item/3,
 	 import_start/2, import_stop/2, is_subscribed/2,
+	 user_send_packet/1,
 	 c2s_self_presence/1, in_subscription/2,
 	 out_subscription/1, set_items/3, remove_user/2,
-	 get_jid_info/4, encode_item/1, get_versioning_feature/2,
+	 get_jid_info/4, encode_item/1,
+	 get_versioning_feature/2, pre_approval_stream_feature/2,
 	 roster_version/2, mod_doc/0,
 	 mod_opt_type/1, mod_options/1, set_roster/1, del_roster/3,
 	 process_rosteritems/5,
@@ -101,6 +103,8 @@ start(Host, Opts) ->
           {hook, remove_user, remove_user, 50},
           {hook, c2s_self_presence, c2s_self_presence, 50},
           {hook, c2s_post_auth_features, get_versioning_feature, 50},
+          {hook, c2s_post_auth_features, pre_approval_stream_feature, 50},
+          {hook, user_send_packet, user_send_packet, 50},
           {hook, webadmin_menu_hostuser, webadmin_menu_hostuser, 50},
           {hook, webadmin_page_hostuser, webadmin_page_hostuser, 50},
           {hook, webadmin_user, webadmin_user, 50},
@@ -201,6 +205,16 @@ get_versioning_feature(Acc, Host) ->
 		false ->
 		    Acc
 	    end;
+	false ->
+	    Acc
+    end.
+
+%% Indicate support for pre-approval as of RFC6121 section 3.4
+-spec pre_approval_stream_feature([xmpp_element()], binary()) -> [xmpp_element()].
+pre_approval_stream_feature(Acc, Host) ->
+    case gen_mod:is_loaded(Host, ?MODULE) of
+	true ->
+	    [#feature_pre_approval{} | Acc];
 	false ->
 	    Acc
     end.
@@ -406,6 +420,7 @@ encode_item(Item) ->
 			   both -> subscribe;
 			   _ -> undefined
 		       end,
+		 approved = Item#roster.approved,
 		 groups = Item#roster.groups}.
 
 -spec decode_item(roster_item(), #roster{}, boolean()) -> #roster{}.
@@ -416,6 +431,7 @@ decode_item(#roster_item{subscription = remove} = Item, R, _) ->
 	     ask = none,
 	     groups = [],
 	     askmessage = <<"">>,
+	     approved = false,
 	     xs = []};
 decode_item(Item, R, Managed) ->
     R#roster{jid = jid:tolower(Item#roster_item.jid),
@@ -424,6 +440,7 @@ decode_item(Item, R, Managed) ->
 				Sub when Managed -> Sub;
 				_ -> R#roster.subscription
 			    end,
+	     approved = Item#roster_item.approved,
 	     groups = Item#roster_item.groups}.
 
 -spec process_iq_set(iq()) -> iq().
@@ -574,41 +591,58 @@ process_subscription(Direction, User, Server, JID1,
 		Item = get_roster_item(LUser, LServer, LJID),
 		NewState = case Direction of
 			     out ->
-				 out_state_change(Item#roster.subscription,
-						  Item#roster.ask, Type);
+				   out_state_change(Item#roster.subscription,
+						    Item#roster.ask, Type);
 			     in ->
-				 in_state_change(Item#roster.subscription,
-						 Item#roster.ask, Type)
+				   case {Type, Item#roster.approved} of
+				       {subscribe, true} ->
+					   {TSub, TAsk} = in_state_change(Item#roster.subscription,
+									  Item#roster.ask, Type),
+					   out_state_change(TSub, TAsk, subscribed);
+				       _ ->
+					   in_state_change(Item#roster.subscription,
+							   Item#roster.ask, Type)
+				   end
 			   end,
 		AutoReply = case Direction of
 			      out -> none;
 			      in ->
-				  in_auto_reply(Item#roster.subscription,
-						Item#roster.ask, Type)
+				    case {Type, Item#roster.approved} of
+					{subscribe, true} ->
+					    subscribed;
+					_ ->
+					    in_auto_reply(Item#roster.subscription,
+							  Item#roster.ask, Type)
+				    end
 			    end,
 		AskMessage = case NewState of
 			       {_, both} -> Reason;
 			       {_, in} -> Reason;
 			       _ -> <<"">>
 			     end,
+		{Unapproved, Approved} = case {Direction, Type, Item#roster.approved} of
+			       {out, unsubscribed, true} ->
+				   {true, false};
+			       {_, _, Approved0} ->
+				   {false, Approved0}
+			   end,
 		case NewState of
 		    none ->
-			{none, AutoReply};
+			NewItem = update_item(Item, Item#roster.subscription, Approved, Item#roster.ask, SubEls, AskMessage),
+			{maybe_push_item(Unapproved, LUser, LServer, LJID, Item, NewItem), AutoReply};
 		    {none, none} when Item#roster.subscription == none,
 				      Item#roster.ask == in ->
-			del_roster_t(LUser, LServer, LJID), {none, AutoReply};
+			del_roster_t(LUser, LServer, LJID),
+			case Unapproved of
+			    true ->
+				NewItem = update_item(Item, none, Approved, none, SubEls, AskMessage),
+				{{push, Item, NewItem}, AutoReply};
+			    false ->
+				{none, AutoReply}
+			end;
 		    {Subscription, Pending} ->
-			NewItem = Item#roster{subscription = Subscription,
-					      ask = Pending,
-					      name = get_nick_subels(SubEls, Item#roster.name),
-					      xs = SubEls,
-					      askmessage = AskMessage},
-			roster_subscribe_t(LUser, LServer, LJID, NewItem),
-			case mod_roster_opt:store_current_id(LServer) of
-			    true -> write_roster_version_t(LUser, LServer);
-			    false -> ok
-			end,
-			{{push, Item, NewItem}, AutoReply}
+			NewItem = update_item(Item, Subscription, Approved, Pending, SubEls, AskMessage),
+			{prepare_push_item(LUser, LServer, LJID, Item, NewItem), AutoReply}
 		end
 	end,
     case transaction(LUser, LServer, [LJID], F) of
@@ -631,7 +665,7 @@ process_subscription(Direction, User, Server, JID1,
 				      encode_item(OldItem),
 				      encode_item(NewItem))
 		    end,
-		    true;
+		    not (Type == subscribe andalso Direction == in andalso NewItem#roster.approved);
 		none ->
 		    false
 	    end;
@@ -639,11 +673,32 @@ process_subscription(Direction, User, Server, JID1,
 	    false
     end.
 
+update_item(Item, Subscription, Approved, Pending, SubEls, AskMessage) ->
+    Item#roster{subscription = Subscription,
+		approved = Approved,
+		ask = Pending,
+		name = get_nick_subels(SubEls, Item#roster.name),
+		xs = SubEls,
+		askmessage = AskMessage}.
+
 get_nick_subels(SubEls, Default) ->
     case xmpp:get_subtag(#presence{sub_els = SubEls}, #nick{}) of
         {nick, N} -> N;
         _ -> Default
     end.
+
+maybe_push_item(true, LUser, LServer, LJID, OldItem, NewItem) ->
+    prepare_push_item(LUser, LServer, LJID, OldItem, NewItem);
+maybe_push_item(false, _LUser, _LServer, _LJID, _OldItem, _NewItem) ->
+    none.
+
+prepare_push_item(LUser, LServer, LJID, OldItem, NewItem) ->
+    roster_subscribe_t(LUser, LServer, LJID, NewItem),
+    case mod_roster_opt:store_current_id(LServer) of
+	true -> write_roster_version_t(LUser, LServer);
+	false -> ok
+    end,
+    {push, OldItem, NewItem}.
 
 %% in_state_change(Subscription, Pending, Type) -> NewState
 %% NewState = none | {NewSubscription, NewPending}
@@ -946,6 +1001,43 @@ process_item_set_t(LUser, LServer, #roster_item{jid = JID1} = QueryItem) ->
     end;
 process_item_set_t(_LUser, _LServer, _) -> ok.
 
+-spec user_send_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_send_packet({#presence{type = subscribed, to = To} = Presence,
+		  #{jid := #jid{luser = LUser, lserver = LServer} = Jid} = C2SState}) ->
+    LJID = jid:tolower(To),
+    {atomic, Item} = transaction(
+		       LUser, LServer, [LJID],
+		       fun() ->
+			       get_roster_item(LUser, LServer, LJID)
+		       end),
+    case Item of
+	#roster{subscription = Subscription, ask = Ask}
+	  when Subscription == both;
+	       Subscription == from, Ask == none;
+	       Subscription == from, Ask == out  ->
+	    {drop, C2SState};
+	#roster{subscription = Subscription, ask = Ask}
+	  when Subscription == to, Ask == in;
+	       Subscription == none, Ask == in;
+	       Subscription == none, Ask == both ->
+	    {Presence, C2SState};
+	#roster{subscription = Subscription, ask = Ask}
+	  when Subscription == to;
+	       Subscription == none, Ask == none;
+	       Subscription == none, Ask == out ->
+	    transaction(
+	      LUser, LServer, [LJID],
+	      fun() ->
+		      update_roster_t(LUser, LServer, LJID, Item#roster{approved = true})
+	      end),
+	    OldItem = encode_item(Item),
+	    NewItem = OldItem#roster_item{approved = true},
+	    push_item(Jid, OldItem, NewItem),
+	    {drop, C2SState}
+	end;
+user_send_packet(Acc) ->
+    Acc.
+
 -spec c2s_self_presence({presence(), c2s_state()}) -> {presence(), c2s_state()}.
 c2s_self_presence({_, #{pres_last := _}} = Acc) ->
     Acc;
@@ -1179,7 +1271,7 @@ export(LServer) ->
 import_info() ->
     [{<<"roster_version">>, 2},
      {<<"rostergroups">>, 3},
-     {<<"rosterusers">>, 10}].
+     {<<"rosterusers">>, 11}].
 
 import_start(LServer, DBType) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),

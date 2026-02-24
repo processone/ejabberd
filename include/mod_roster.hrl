@@ -25,6 +25,7 @@
     jid = {<<>>, <<>>, <<>>}               :: jid:ljid(),
     name = <<>>                            :: binary() | '_',
     subscription = none                    :: subscription() | '_',
+    approved = false                       :: boolean() | '_',
     ask = none                             :: ask() | '_',
     groups = []                            :: [binary()] | '_',
     askmessage = <<"">>                    :: binary() | '_',
