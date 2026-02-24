@@ -130,7 +130,7 @@ need_transform({roster_version, {U, S}, Ver})
   when is_list(U) orelse is_list(S) orelse is_list(Ver) ->
     ?INFO_MSG("Mnesia table 'roster_version' will be converted to binary", []),
     true;
-need_transform({roster, {U, S, _}, _, _, _, _, none, _, _, _, _}) ->
+need_transform({roster, {_, _, _}, _, _, _, _, none, _, _, _, _}) ->
     ?INFO_MSG("Mnesia table 'roster' will be converted to use new boolean() 'approved' attribute.", []),
     true;
 need_transform(_) ->
