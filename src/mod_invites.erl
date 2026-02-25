@@ -46,7 +46,7 @@
 -export([cleanup_expired/0, expire_tokens/2, generate_invite/1, generate_invite/2, list_invites/1]).
 
 %% helpers
--export([create_account_allowed/2, get_invite/2, get_invites/2, get_max_invites/2, is_create_allowed/2,
+-export([create_account_allowed/2, get_invite/2, get_max_invites/2, is_create_allowed/2,
          is_expired/1, is_reserved/3, is_token_valid/2, roster_add/2, send_presence/3,
          set_invitee/3, set_invitee/5, token_uri/1, xdata_field/3]).
 
@@ -54,7 +54,7 @@
 -export([process/2]).
 
 -ifdef(TEST).
--export([create_roster_invite/2, create_account_invite/4, gen_invite/1, gen_invite/2, is_token_valid/3]).
+-export([create_roster_invite/2, create_account_invite/4, gen_invite/1, gen_invite/2, get_invites/2, is_token_valid/3]).
 -endif.
 
 -include("logger.hrl").
@@ -68,11 +68,11 @@
 -type invite_token() :: #invite_token{}.
 
 -callback cleanup_expired(Host :: binary()) -> non_neg_integer().
--callback create_invite(Invite :: invite_token()) -> invite_token().
+-callback create_invite_t(Invite :: invite_token()) -> invite_token().
 -callback expire_tokens(User :: binary(), Server :: binary()) -> non_neg_integer().
 -callback get_invite(Host :: binary(), Token :: binary()) ->
     invite_token() | {error, not_found}.
--callback get_invites(Host :: binary(), Inviter :: {User :: binary(), Host :: binary()}) ->
+-callback get_invites_t(Host :: binary(), Inviter :: {User :: binary(), Host :: binary()}) ->
     [invite_token()].
 -callback init(Host :: binary(), gen_mod:opts()) -> any().
 -callback is_reserved(Host :: binary(), Token :: binary(), User :: binary()) -> boolean().
@@ -85,6 +85,7 @@
                                 Invitee :: binary(),
                                 AccountName :: binary()) -> OkOrError | {error, conflict}
  when OkOrError :: ok | {error, term()}.
+-callback transaction(Host:: binary(), fun(() -> T)) -> {atomic, T} | {aborted, any()}.
 
 %% @format-begin
 
@@ -437,8 +438,6 @@ gen_invite(Host) ->
 gen_invite(AccountName, Host0) ->
     Host = jid:nameprep(Host0),
     case create_account_invite(Host, {<<>>, Host}, AccountName, false) of
-        {error, {module_not_loaded, ?MODULE, Host}} ->
-            {error, host_unknown};
         {error, _Reason} = Error ->
             Error;
         Invite ->
@@ -748,8 +747,15 @@ process(LocalPath, Request) ->
 get_invite(Host, Token) ->
     db_call(Host, get_invite, [Host, Token]).
 
+-ifdef(TEST).
+
 get_invites(Host, Inviter) ->
-    db_call(Host, get_invites, [Host, Inviter]).
+    transaction(Host, fun() -> get_invites_t(Host, Inviter) end).
+
+-endif.
+
+get_invites_t(Host, Inviter) ->
+    db_call(Host, get_invites_t, [Host, Inviter]).
 
 is_expired(#invite_token{expires = Expires}) ->
     Now = erlang:timestamp(),
@@ -795,10 +801,14 @@ create_account_invite(Host, Inviter, AccountName, _Subcribe = false) ->
     create_invite(account_only, Host, Inviter, AccountName).
 
 create_invite(Type, Host, Inviter, AccountName) ->
-    try invite_token(Type, Host, Inviter, AccountName) of
+    F = fun() -> create_invite_t(Type, Host, Inviter, AccountName) end,
+    transaction(Host, F).
+
+create_invite_t(Type, Host, Inviter, AccountName) ->
+    try invite_token_t(Type, Host, Inviter, AccountName) of
         Invite ->
-            ?DEBUG("Created invite: ~p", [Invite]),
-            db_call(Host, create_invite, [Invite])
+            ?DEBUG("Creating invite: ~p", [Invite]),
+            db_call(Host, create_invite_t, [Invite])
     catch
         _:({error, _Reason} = Error) ->
             Error;
@@ -831,10 +841,10 @@ check_account_name(AccountName, Host) ->
             end
     end.
 
-check_max_invites(roster_only, _) ->
+check_max_invites_t(roster_only, _) ->
     ok;
-check_max_invites(_Type, {User, Host}) ->
-    case is_create_allowed(User, Host) of
+check_max_invites_t(_Type, {User, Host}) ->
+    case is_create_allowed_t(User, Host) of
         true ->
             ok;
         false ->
@@ -842,11 +852,14 @@ check_max_invites(_Type, {User, Host}) ->
     end.
 
 is_create_allowed(User, Host) ->
+    transaction(Host, fun() -> is_create_allowed_t(User, Host) end).
+
+is_create_allowed_t(User, Host) ->
     case get_max_invites(User, Host) of
         infinity ->
             true;
         MaxInvites ->
-            Invites = get_invites(Host, {User, Host}),
+            Invites = get_invites_t(Host, {User, Host}),
             NumCreated =
                 lists:foldl(fun (#invite_token{type = roster_only, account_name = <<>>}, Num) ->
                                     Num;
@@ -892,8 +905,8 @@ maybe_throw({error, _} = Error) ->
 maybe_throw(Good) ->
     Good.
 
-invite_token(Type, Host, Inviter, AccountName0) ->
-    maybe_throw(check_max_invites(Type, Inviter)),
+invite_token_t(Type, Host, Inviter, AccountName0) ->
+    maybe_throw(check_max_invites_t(Type, Inviter)),
     Token = p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT),
     AccountName = maybe_throw(check_account_name(jid:nodeprep(AccountName0), Host)),
     set_token_expires(#invite_token{token = Token,
@@ -937,8 +950,13 @@ landing_page(Host, Invite) ->
 
 -spec db_call(binary(), atom(), [any()]) -> any().
 db_call(Host, Fun, Args) ->
-    Mod = gen_mod:db_mod(Host, ?MODULE),
-    apply(Mod, Fun, Args).
+    try gen_mod:db_mod(Host, ?MODULE) of
+        Mod ->
+            apply(Mod, Fun, Args)
+    catch
+        _:{module_not_loaded, ?MODULE, Host} ->
+            throw({error, host_unknown})
+    end.
 
 %% father forgive me
 lift({error, _R} = E) ->
@@ -954,10 +972,21 @@ try_db_call(Host, Fun, Args) ->
     try
         lift(db_call(Host, Fun, Args))
     catch
-        error:({error, _Reason} = Error) ->
+        _:({error, _Reason} = Error) ->
             Error;
         error:Error ->
             {error, Error}
+    end.
+
+transaction(Host, F) ->
+    try db_call(Host, transaction, [Host, F]) of
+        {atomic, Result} ->
+            Result;
+        {aborted, Reason} ->
+            {error, Reason}
+    catch
+        _:Error ->
+            Error
     end.
 
 -spec trans(binary(), binary()) -> binary().
