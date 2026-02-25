@@ -43,12 +43,12 @@
 -define(HTTP(Code, Headers, CT, Text), {Code, [{<<"Content-Type">>, CT} | Headers], Text}).
 -define(HTTP(Code, CT, Text), ?HTTP(Code, [], CT, Text)).
 -define(HTTP(Code, Text), ?HTTP(Code, <<"text/plain">>, Text)).
--define(HTTP_OK(Text), ?HTTP(200, <<"text/html">>, Text)).
--define(HTTP_OK(Headers, Text), ?HTTP(200, Headers, <<"text/html">>, Text)).
+-define(HTTP_OK(Headers, Text), ?HTTP(200, security_headers() ++ Headers, <<"text/html">>, Text)).
 -define(NOT_FOUND, ?HTTP(404, ?T("NOT FOUND"))).
 -define(NOT_FOUND(Text), ?HTTP(404, <<"text/html">>, Text)).
 -define(BAD_REQUEST, ?HTTP(400, ?T("BAD REQUEST"))).
--define(BAD_REQUEST(Text), ?HTTP(400, <<"text/html">>, Text)).
+-define(BAD_REQUEST(Headers, Text), ?HTTP(400, security_headers() ++ Headers, <<"text/html">>, Text)).
+-define(BAD_REQUEST(Text), ?HTTP(400, security_headers(), <<"text/html">>, Text)).
 
 -define(DEFAULT_CONTENT_TYPE, <<"application/octet-stream">>).
 -define(CONTENT_TYPES,
@@ -143,7 +143,7 @@ process_valid_token([_Token, AppID] = LocalPath,
                     Invite) ->
     try app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)) of
         AppCtx ->
-            render_ok(Host, Lang, <<"client.html">>, AppCtx)
+            render_ok(Host, Invite, Lang, <<"client.html">>, AppCtx)
     catch
         _:not_found ->
             ?NOT_FOUND
@@ -154,7 +154,7 @@ process_valid_token([_Token] = LocalPath,
     Ctx0 = ctx(Invite, Request, LocalPath),
     Apps = [render_app_urls(App, [{app, App} | Ctx0]) || App <- apps_json(Host, Lang, Ctx0)],
     Ctx = [{apps, Apps} | Ctx0],
-    render_ok(Host, Lang, <<"invite.html">>, Ctx);
+    render_ok(Host, Invite, Lang, <<"invite.html">>, Ctx);
 process_valid_token(_, _, _) ->
     ?NOT_FOUND.
 
@@ -165,7 +165,8 @@ process_register_form(Invite,
     try app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)) of
         AppCtx ->
             Body = render_register_form(Request, AppCtx, maybe_add_username(Invite)),
-            ?HTTP_OK(Body)
+            Headers = maybe_add_hsts_header(Host, Invite),
+            ?HTTP_OK(Headers, Body)
     catch
         _:not_found ->
             ?NOT_FOUND
@@ -203,7 +204,7 @@ process_register_post(Invite,
             of
                 {ok, _UpdatedInvite} ->
                     Ctx = [{username, Username}, {password, Password} | AppCtx],
-                    render_ok(Host, Lang, <<"register_success.html">>, Ctx);
+                    render_ok(Host, Invite, Lang, <<"register_success.html">>, Ctx);
                 {error,
                  #stanza_error{text = Text,
                                type = Type,
@@ -223,6 +224,7 @@ process_register_post(Invite,
                             ?BAD_REQUEST(Body);
                         _ ->
                             render_bad_request(Host,
+                                               Invite,
                                                <<"register_error.html">>,
                                                [{message, Msg} | ctx(Request, LocalPath)])
                     end
@@ -263,7 +265,7 @@ process_roster_token([_Token] = LocalPath,
                   end,
                   apps_json(Host, Lang, Ctx0)),
     Ctx = [{apps, Apps} | Ctx0],
-    render_ok(Host, Lang, <<"roster.html">>, Ctx);
+    render_ok(Host, Invite, Lang, <<"roster.html">>, Ctx);
 process_roster_token(_, _, _) ->
     ?NOT_FOUND.
 
@@ -387,14 +389,28 @@ lang(default) ->
 lang(Lang) ->
     Lang.
 
-render_ok(Host, Lang, File, Ctx) ->
+render_ok(Host, Invite, Lang, File, Ctx) ->
     URI = proplists:get_value(uri, Ctx),
-    ?HTTP_OK([{<<"Link">>, <<"<", URI/binary, ">">>}], render(Host, Lang, File, Ctx)).
+    Headers = maybe_add_hsts_header([{<<"Link">>, <<"<", URI/binary, ">">>}], Host, Invite),
+    ?HTTP_OK(Headers, render(Host, Lang, File, Ctx)).
 
-render_bad_request(Host, File, Ctx) ->
+maybe_add_hsts_header(Host, Invite) ->
+    maybe_add_hsts_header([], Host, Invite).
+
+maybe_add_hsts_header(Headers, Host, Invite) ->
+    LP = landing_page(Host, Invite),
+    case re:run(LP, "^https://") of
+        nomatch ->
+            Headers;
+        {match, _} ->
+            [{<<"Strict-Transport-Security">>, <<"max-age=31536000; includeSubDomains">>} | Headers]
+    end.
+
+render_bad_request(Host, Invite, File, Ctx) ->
+    Headers = maybe_add_hsts_header(Host, Invite),
     Renderer = file_to_renderer(Host, File),
     {ok, Rendered} = Renderer:render(Ctx),
-    ?BAD_REQUEST(Rendered).
+    ?BAD_REQUEST(Headers, Rendered).
 
 -spec guess_content_type(binary()) -> binary().
 guess_content_type(FileName) ->
@@ -422,3 +438,9 @@ binary_join(List, Sep) ->
                 end,
                 <<>>,
                 List).
+
+security_headers() ->
+    [{<<"Content-Security-Policy">>,
+      <<"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'">>},
+     {<<"X-Content-Type-Options">>, <<"nosniff">>},
+     {<<"Referrer-Policy">>, <<"no-referrer">>}].
