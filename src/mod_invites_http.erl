@@ -91,13 +91,18 @@ render_landing_page_url(Tmpl, Host, Invite) ->
                  {HTTPCode :: integer(), [{binary(), binary()}], Page :: string()}.
 process([?STATIC | StaticFile], #request{host = Host} = Request) ->
     ?DEBUG("Static file requested ~p:~n~p", [StaticFile, Request]),
-    TemplatesDir = mod_invites_opt:templates_dir(Host),
-    Filename = filename:join([TemplatesDir, "static" | StaticFile]),
-    case file:read_file(Filename) of
-        {ok, Content} ->
-            CT = guess_content_type(Filename),
-            ?HTTP(200, CT, Content);
-        {error, _} ->
+    try mod_invites_opt:templates_dir(Host) of
+        TemplatesDir ->
+            Filename = filename:join([TemplatesDir, "static" | StaticFile]),
+            case file:read_file(Filename) of
+                {ok, Content} ->
+                    CT = guess_content_type(Filename),
+                    ?HTTP(200, CT, Content);
+                {error, _} ->
+                    ?NOT_FOUND
+            end
+    catch
+        _:{module_not_loaded, mod_invites, Host} ->
             ?NOT_FOUND
     end;
 process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) ->
@@ -114,6 +119,8 @@ process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) -
             ?NOT_FOUND(render(Host, Lang, <<"invite_invalid.html">>, ctx(Request, LocalPath)))
     catch
         _:not_found ->
+            ?NOT_FOUND;
+        _:{error, host_unknown} ->
             ?NOT_FOUND
     end;
 process([], _Request) ->
