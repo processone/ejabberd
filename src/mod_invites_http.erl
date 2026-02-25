@@ -192,7 +192,6 @@ process_register_post(Invite,
                                ip = {Source, _}} =
                           Request,
                       LocalPath) ->
-    ?DEBUG("got query: ~p", [Q]),
     Username = proplists:get_value(<<"user">>, Q),
     Password = proplists:get_value(<<"password">>, Q),
     Token = Invite#invite_token.token,
