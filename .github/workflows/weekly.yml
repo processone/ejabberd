@@ -21,9 +21,6 @@ jobs:
     - uses: erlef/setup-beam@v1
       with:
         otp-version: ${{ matrix.otp }}
-        hexpm-mirrors: |
-          https://builds.hex.pm
-      ## https://cdn.jsdelivr.net/hex # Does not include Erlang 29 yet
 
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:

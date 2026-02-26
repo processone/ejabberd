@@ -36,9 +36,6 @@ jobs:
     - uses: erlef/setup-beam@v1
       with:
         otp-version: ${{ matrix.otp }}
-        hexpm-mirrors: |
-          https://cdn.jsdelivr.net/hex
-          https://builds.hex.pm
 
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -85,9 +82,6 @@ jobs:
     - uses: erlef/setup-beam@v1
       with:
         otp-version: ${{ matrix.otp }}
-        hexpm-mirrors: |
-          https://cdn.jsdelivr.net/hex
-          https://builds.hex.pm
 
     - uses: actions/download-artifact@v7
       with:
@@ -132,9 +126,6 @@ jobs:
     - uses: erlef/setup-beam@v1
       with:
         otp-version: ${{ matrix.otp }}
-        hexpm-mirrors: |
-          https://cdn.jsdelivr.net/hex
-          https://builds.hex.pm
 
     - uses: awalsh128/cache-apt-pkgs-action@latest
       if: matrix.otp < '28'
@@ -220,9 +211,6 @@ jobs:
     - uses: erlef/setup-beam@v1
       with:
         otp-version: ${{ matrix.otp }}
-        hexpm-mirrors: |
-          https://cdn.jsdelivr.net/hex
-          https://builds.hex.pm
 
     - uses: actions/download-artifact@v7
       with:
@@ -321,9 +309,6 @@ jobs:
     - uses: erlef/setup-beam@v1
       with:
         otp-version: ${{ matrix.otp }}
-        hexpm-mirrors: |
-          https://cdn.jsdelivr.net/hex
-          https://builds.hex.pm
 
     - uses: actions/download-artifact@v7
       with:
