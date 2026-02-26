@@ -164,7 +164,9 @@ process_register_form(Invite,
                       LocalPath) ->
     try app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)) of
         AppCtx ->
-            Body = render_register_form(Request, AppCtx, maybe_add_username(Invite)),
+            Ctx = [{csrf_token, csrf_token(Invite#invite_token.token)}, maybe_add_username(Invite)]
+                  ++ AppCtx,
+            Body = render_register_form(Request, Ctx),
             Headers = maybe_add_hsts_header(Host, Invite),
             ?HTTP_OK(Headers, Body)
     catch
@@ -172,7 +174,7 @@ process_register_form(Invite,
             ?NOT_FOUND
     end.
 
-render_register_form(#request{host = Host, lang = Lang}, Ctx, AdditionalCtx) ->
+render_register_form(#request{host = Host, lang = Lang}, Ctx) ->
     MinLength =
         case mod_register_opt:password_strength(Host) of
             0 ->
@@ -180,10 +182,7 @@ render_register_form(#request{host = Host, lang = Lang}, Ctx, AdditionalCtx) ->
             _ ->
                 6
         end,
-    render(Host,
-           Lang,
-           <<"register.html">>,
-           [{password_min_length, MinLength} | Ctx] ++ AdditionalCtx).
+    render(Host, Lang, <<"register.html">>, [{password_min_length, MinLength} | Ctx]).
 
 process_register_post(Invite,
                       AppID,
@@ -196,10 +195,12 @@ process_register_post(Invite,
     Username = proplists:get_value(<<"user">>, Q),
     Password = proplists:get_value(<<"password">>, Q),
     Token = Invite#invite_token.token,
+    CSRFToken = proplists:get_value(<<"csrf_token">>, Q),
     try {app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)),
-         ensure_same(Token, proplists:get_value(<<"token">>, Q))}
+         ensure_same(Token, proplists:get_value(<<"token">>, Q)),
+         check_csrf(Token, CSRFToken)}
     of
-        {AppCtx, ok} ->
+        {AppCtx, ok, ok} ->
             case mod_invites_register:try_register(Invite, Username, Host, Password, Source, Lang)
             of
                 {ok, _UpdatedInvite} ->
@@ -214,13 +215,10 @@ process_register_post(Invite,
                     Msg = xmpp:get_text(Text, xmpp:prep_lang(Lang)),
                     case Type of
                         T when T == cancel; T == modify ->
-                            Body =
-                                render_register_form(Request,
-                                                     AppCtx,
-                                                     [{username, Username},
-                                                      {error,
-                                                       [{text, Msg},
-                                                        {class, error_class(Reason)}]}]),
+                            Ctx = [{username, Username},
+                                   {error, [{text, Msg}, {class, error_class(Reason)}]}]
+                                  ++ AppCtx,
+                            Body = render_register_form(Request, Ctx),
                             ?BAD_REQUEST(Body);
                         _ ->
                             render_bad_request(Host,
@@ -235,6 +233,29 @@ process_register_post(Invite,
         _:no_match ->
             ?BAD_REQUEST
     end.
+
+check_csrf(_Token, undefined) ->
+    throw(no_match);
+check_csrf(Token, Could) ->
+    Should = csrf_token(Token),
+    try crypto:hash_equals(Should, Could) of
+        true ->
+            ok;
+        _ ->
+            throw(no_match)
+    catch
+        _:_ ->
+            throw(no_match)
+    end.
+
+csrf_token(Msg) ->
+    SecretKey = ejabberd_config:get_shared_key(),
+    base64:encode(
+        crypto:mac(hmac,
+                   sha256,
+                   str:to_hexlist(
+                       crypto:hash(sha256, SecretKey)),
+                   Msg)).
 
 error_class('jid-malformed') ->
     username;
