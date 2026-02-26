@@ -246,6 +246,7 @@ jobs:
       run: CT_BACKENDS=${{ matrix.backend }} make test
 
     - name: Send to coveralls
+      continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
