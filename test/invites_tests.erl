@@ -725,11 +725,20 @@ http(Config) ->
 
     [Last] = hd(lists:reverse(RegistrationURLs)),
     RegURL = <<BaseURL/binary, Last/binary>>,
-    {ok, {{_, 400, _}, _, _}} = post(RegURL, <<"badtoken">>, <<"foo">>, <<"bar">>),
-    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, User, <<"bar">>),
-    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, <<"@invalidUser">>, <<"bar">>),
-    {ok, {{_, 200, _}, _, _}} = post(RegURL, Token, <<"foo">>, <<"bar">>),
-    {ok, {{_, 404, _}, _, _}} = post(RegURL, Token, <<"foo">>, <<"bar">>),
+    {ok, {{_, 200, _}, _, RegURLBody}} = httpc:request(RegURL),
+    {match, [[CSRFToken]]} =
+        re:run(RegURLBody,
+               <<"<input.+name=\"csrf_token\" value=\"(.+)\"">>,
+               [global, {capture, [1], binary}]),
+    ct:pal("extracted csrf token: ~p", [CSRFToken]),
+    {ok, {{_, 400, _}, _, _}} = post(RegURL, <<"badtoken">>, CSRFToken, <<"foo">>, <<"bar">>),
+    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, CSRFToken, User, <<"bar">>),
+    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, CSRFToken, <<"@invalidUser">>, <<"bar">>),
+    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, <<"foo">>, <<"bar">>),
+    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, <<"guLRkZZFv+CGI7UbCnyija0KwPFmob71RGvGa7dQ5G4=">>, <<"foo">>, <<"bar">>),
+    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, <<"nohashtoken">>, <<"foo">>, <<"bar">>),
+    {ok, {{_, 200, _}, _, _}} = post(RegURL, Token, CSRFToken, <<"foo">>, <<"bar">>),
+    {ok, {{_, 404, _}, _, _}} = post(RegURL, Token, CSRFToken, <<"foo">>, <<"bar">>),
     {ok, {{_, 404, _}, _, _}} = httpc:request(LandingPage),
     lists:foreach(fun([URL]) ->
                      FullURL = <<BaseURL/binary, "/", URL/binary>>,
@@ -743,7 +752,8 @@ http(Config) ->
     RosterURL = mod_invites_http:landing_page(Server, RosterInvite),
     {ok, {{_, 200, _}, _, _}} = httpc:request(RosterURL),
     FakeRegURL = <<RosterURL/binary, "/registration">>,
-    {ok, {{_, 404, _}, _, _}} = post(FakeRegURL, RosterToken, <<"baz">>, <<"bar">>),
+    {ok, {{_, 404, _}, _, _}} =
+        post(FakeRegURL, RosterToken, CSRFToken, <<"baz">>, <<"bar">>),
     ejabberd_auth:remove_user(<<"foo">>, Server),
     mod_invites:remove_user(<<"inviter">>, Server),
     mod_invites:expire_tokens(<<>>, Server),
@@ -867,8 +877,23 @@ send_pars(Config, Token) ->
                   to = ServerJID,
                   sub_els = [#preauth{token = Token}]}).
 
-post(URL, Token, User, Password) ->
+post(URL, Token0, User0, Password0) ->
+    [Token, User, Password] = [uri_string:quote(V) || V <- [Token0, User0, Password0]],
     Data = <<"token=", Token/binary, "&user=", User/binary, "&password=", Password/binary>>,
+    httpc:request(post, {URL, [], "application/x-www-form-urlencoded", Data}, [], []).
+
+post(URL, Token0, CSRFToken0, User0, Password0) ->
+    [Token, CSRFToken, User, Password] =
+        [uri_string:quote(V) || V <- [Token0, CSRFToken0, User0, Password0]],
+    Data =
+        <<"token=",
+          Token/binary,
+          "&csrf_token=",
+          CSRFToken/binary,
+          "&user=",
+          User/binary,
+          "&password=",
+          Password/binary>>,
     httpc:request(post, {URL, [], "application/x-www-form-urlencoded", Data}, [], []).
 
 gen_mod_set_opts(OldOpts, NewOpts) ->

@@ -27,9 +27,9 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite/1, expire_tokens/2, get_invite/2, get_invites/2, init/2,
+-export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2, get_invites_t/2, init/2,
          is_reserved/3, is_token_valid/3, list_invites/1, remove_user/2,
-         set_invitee/5]).
+         set_invitee/5, transaction/2]).
 
 -export([sql_schemas/0]).
 
@@ -75,7 +75,7 @@ cleanup_expired(Host) ->
         ejabberd_sql:sql_query(Host, ?SQL("DELETE FROM invite_token WHERE expires < %(NOW)t")),
     Count.
 
-create_invite(Invite) ->
+create_invite_t(Invite) ->
     #invite_token{inviter = {User, Host},
                   token = Token,
                   account_name = AccountName,
@@ -96,7 +96,7 @@ create_invite(Invite) ->
                      "created_at=%(CreatedAt)t",
                      "expires=%(Expires)t",
                      "account_name=%(AccountName)s"]),
-    {updated, 1} = ejabberd_sql:sql_query(Host, Query),
+    {updated, 1} = ejabberd_sql:sql_query_t(Query),
     Invite.
 
 expire_tokens(User, Server) ->
@@ -126,12 +126,11 @@ get_invite(Host, Token) ->
             {error, not_found}
     end.
 
-get_invites(Host, {User, _Host}) ->
+get_invites_t(Host, {User, _Host}) ->
     {selected, Invites} =
-        ejabberd_sql:sql_query(Host,
-                               ?SQL("SELECT @(token)s, @(invitee)s, @(type)s, @(account_name)s, "
-                                    "@(expires)t, @(created_at)t FROM invite_token WHERE %(Host)H "
-                                    "AND username = %(User)s")),
+        ejabberd_sql:sql_query_t(?SQL("SELECT @(token)s, @(invitee)s, @(type)s, @(account_name)s, "
+                                      "@(expires)t, @(created_at)t FROM invite_token WHERE %(Host)H "
+                                      "AND username = %(User)s")),
     lists:map(fun({Token, Invitee, Type, AccountName, Expires, CreatedAt}) ->
                  #invite_token{token = Token,
                                inviter = {User, Host},
@@ -204,6 +203,9 @@ set_invitee(Fun, Host, Token, Invitee, AccountName) ->
         {aborted, {badmatch, {error, _Res} = Error}} ->
             Error
     end.
+
+transaction(Host, Fun) ->
+    ejabberd_sql:sql_transaction(Host, Fun).
 
 %%--------------------------------------------------------------------
 %%| helpers

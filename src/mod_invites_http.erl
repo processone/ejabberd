@@ -43,12 +43,12 @@
 -define(HTTP(Code, Headers, CT, Text), {Code, [{<<"Content-Type">>, CT} | Headers], Text}).
 -define(HTTP(Code, CT, Text), ?HTTP(Code, [], CT, Text)).
 -define(HTTP(Code, Text), ?HTTP(Code, <<"text/plain">>, Text)).
--define(HTTP_OK(Text), ?HTTP(200, <<"text/html">>, Text)).
--define(HTTP_OK(Headers, Text), ?HTTP(200, Headers, <<"text/html">>, Text)).
+-define(HTTP_OK(Headers, Text), ?HTTP(200, security_headers() ++ Headers, <<"text/html">>, Text)).
 -define(NOT_FOUND, ?HTTP(404, ?T("NOT FOUND"))).
 -define(NOT_FOUND(Text), ?HTTP(404, <<"text/html">>, Text)).
 -define(BAD_REQUEST, ?HTTP(400, ?T("BAD REQUEST"))).
--define(BAD_REQUEST(Text), ?HTTP(400, <<"text/html">>, Text)).
+-define(BAD_REQUEST(Headers, Text), ?HTTP(400, security_headers() ++ Headers, <<"text/html">>, Text)).
+-define(BAD_REQUEST(Text), ?HTTP(400, security_headers(), <<"text/html">>, Text)).
 
 -define(DEFAULT_CONTENT_TYPE, <<"application/octet-stream">>).
 -define(CONTENT_TYPES,
@@ -91,13 +91,18 @@ render_landing_page_url(Tmpl, Host, Invite) ->
                  {HTTPCode :: integer(), [{binary(), binary()}], Page :: string()}.
 process([?STATIC | StaticFile], #request{host = Host} = Request) ->
     ?DEBUG("Static file requested ~p:~n~p", [StaticFile, Request]),
-    TemplatesDir = mod_invites_opt:templates_dir(Host),
-    Filename = filename:join([TemplatesDir, "static" | StaticFile]),
-    case file:read_file(Filename) of
-        {ok, Content} ->
-            CT = guess_content_type(Filename),
-            ?HTTP(200, CT, Content);
-        {error, _} ->
+    try mod_invites_opt:templates_dir(Host) of
+        TemplatesDir ->
+            Filename = filename:join([TemplatesDir, "static" | StaticFile]),
+            case file:read_file(Filename) of
+                {ok, Content} ->
+                    CT = guess_content_type(Filename),
+                    ?HTTP(200, CT, Content);
+                {error, _} ->
+                    ?NOT_FOUND
+            end
+    catch
+        _:{module_not_loaded, mod_invites, Host} ->
             ?NOT_FOUND
     end;
 process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) ->
@@ -114,6 +119,8 @@ process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) -
             ?NOT_FOUND(render(Host, Lang, <<"invite_invalid.html">>, ctx(Request, LocalPath)))
     catch
         _:not_found ->
+            ?NOT_FOUND;
+        _:{error, host_unknown} ->
             ?NOT_FOUND
     end;
 process([], _Request) ->
@@ -136,7 +143,7 @@ process_valid_token([_Token, AppID] = LocalPath,
                     Invite) ->
     try app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)) of
         AppCtx ->
-            render_ok(Host, Lang, <<"client.html">>, AppCtx)
+            render_ok(Host, Invite, Lang, <<"client.html">>, AppCtx)
     catch
         _:not_found ->
             ?NOT_FOUND
@@ -147,7 +154,7 @@ process_valid_token([_Token] = LocalPath,
     Ctx0 = ctx(Invite, Request, LocalPath),
     Apps = [render_app_urls(App, [{app, App} | Ctx0]) || App <- apps_json(Host, Lang, Ctx0)],
     Ctx = [{apps, Apps} | Ctx0],
-    render_ok(Host, Lang, <<"invite.html">>, Ctx);
+    render_ok(Host, Invite, Lang, <<"invite.html">>, Ctx);
 process_valid_token(_, _, _) ->
     ?NOT_FOUND.
 
@@ -157,14 +164,17 @@ process_register_form(Invite,
                       LocalPath) ->
     try app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)) of
         AppCtx ->
-            Body = render_register_form(Request, AppCtx, maybe_add_username(Invite)),
-            ?HTTP_OK(Body)
+            Ctx = [{csrf_token, csrf_token(Invite#invite_token.token)}, maybe_add_username(Invite)]
+                  ++ AppCtx,
+            Body = render_register_form(Request, Ctx),
+            Headers = maybe_add_hsts_header(Host, Invite),
+            ?HTTP_OK(Headers, Body)
     catch
         _:not_found ->
             ?NOT_FOUND
     end.
 
-render_register_form(#request{host = Host, lang = Lang}, Ctx, AdditionalCtx) ->
+render_register_form(#request{host = Host, lang = Lang}, Ctx) ->
     MinLength =
         case mod_register_opt:password_strength(Host) of
             0 ->
@@ -172,10 +182,7 @@ render_register_form(#request{host = Host, lang = Lang}, Ctx, AdditionalCtx) ->
             _ ->
                 6
         end,
-    render(Host,
-           Lang,
-           <<"register.html">>,
-           [{password_min_length, MinLength} | Ctx] ++ AdditionalCtx).
+    render(Host, Lang, <<"register.html">>, [{password_min_length, MinLength} | Ctx]).
 
 process_register_post(Invite,
                       AppID,
@@ -185,19 +192,20 @@ process_register_post(Invite,
                                ip = {Source, _}} =
                           Request,
                       LocalPath) ->
-    ?DEBUG("got query: ~p", [Q]),
     Username = proplists:get_value(<<"user">>, Q),
     Password = proplists:get_value(<<"password">>, Q),
     Token = Invite#invite_token.token,
+    CSRFToken = proplists:get_value(<<"csrf_token">>, Q),
     try {app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)),
-         ensure_same(Token, proplists:get_value(<<"token">>, Q))}
+         ensure_same(Token, proplists:get_value(<<"token">>, Q)),
+         check_csrf(Token, CSRFToken)}
     of
-        {AppCtx, ok} ->
+        {AppCtx, ok, ok} ->
             case mod_invites_register:try_register(Invite, Username, Host, Password, Source, Lang)
             of
                 {ok, _UpdatedInvite} ->
                     Ctx = [{username, Username}, {password, Password} | AppCtx],
-                    render_ok(Host, Lang, <<"register_success.html">>, Ctx);
+                    render_ok(Host, Invite, Lang, <<"register_success.html">>, Ctx);
                 {error,
                  #stanza_error{text = Text,
                                type = Type,
@@ -207,16 +215,14 @@ process_register_post(Invite,
                     Msg = xmpp:get_text(Text, xmpp:prep_lang(Lang)),
                     case Type of
                         T when T == cancel; T == modify ->
-                            Body =
-                                render_register_form(Request,
-                                                     AppCtx,
-                                                     [{username, Username},
-                                                      {error,
-                                                       [{text, Msg},
-                                                        {class, error_class(Reason)}]}]),
+                            Ctx = [{username, Username},
+                                   {error, [{text, Msg}, {class, error_class(Reason)}]}]
+                                  ++ AppCtx,
+                            Body = render_register_form(Request, Ctx),
                             ?BAD_REQUEST(Body);
                         _ ->
                             render_bad_request(Host,
+                                               Invite,
                                                <<"register_error.html">>,
                                                [{message, Msg} | ctx(Request, LocalPath)])
                     end
@@ -227,6 +233,29 @@ process_register_post(Invite,
         _:no_match ->
             ?BAD_REQUEST
     end.
+
+check_csrf(_Token, undefined) ->
+    throw(no_match);
+check_csrf(Token, Could) ->
+    Should = csrf_token(Token),
+    try crypto:hash_equals(Should, Could) of
+        true ->
+            ok;
+        _ ->
+            throw(no_match)
+    catch
+        _:_ ->
+            throw(no_match)
+    end.
+
+csrf_token(Msg) ->
+    SecretKey = ejabberd_config:get_shared_key(),
+    base64:encode(
+        crypto:mac(hmac,
+                   sha256,
+                   str:to_hexlist(
+                       crypto:hash(sha256, SecretKey)),
+                   Msg)).
 
 error_class('jid-malformed') ->
     username;
@@ -257,7 +286,7 @@ process_roster_token([_Token] = LocalPath,
                   end,
                   apps_json(Host, Lang, Ctx0)),
     Ctx = [{apps, Apps} | Ctx0],
-    render_ok(Host, Lang, <<"roster.html">>, Ctx);
+    render_ok(Host, Invite, Lang, <<"roster.html">>, Ctx);
 process_roster_token(_, _, _) ->
     ?NOT_FOUND.
 
@@ -381,14 +410,28 @@ lang(default) ->
 lang(Lang) ->
     Lang.
 
-render_ok(Host, Lang, File, Ctx) ->
+render_ok(Host, Invite, Lang, File, Ctx) ->
     URI = proplists:get_value(uri, Ctx),
-    ?HTTP_OK([{<<"Link">>, <<"<", URI/binary, ">">>}], render(Host, Lang, File, Ctx)).
+    Headers = maybe_add_hsts_header([{<<"Link">>, <<"<", URI/binary, ">">>}], Host, Invite),
+    ?HTTP_OK(Headers, render(Host, Lang, File, Ctx)).
 
-render_bad_request(Host, File, Ctx) ->
+maybe_add_hsts_header(Host, Invite) ->
+    maybe_add_hsts_header([], Host, Invite).
+
+maybe_add_hsts_header(Headers, Host, Invite) ->
+    LP = landing_page(Host, Invite),
+    case re:run(LP, "^https://") of
+        nomatch ->
+            Headers;
+        {match, _} ->
+            [{<<"Strict-Transport-Security">>, <<"max-age=31536000; includeSubDomains">>} | Headers]
+    end.
+
+render_bad_request(Host, Invite, File, Ctx) ->
+    Headers = maybe_add_hsts_header(Host, Invite),
     Renderer = file_to_renderer(Host, File),
     {ok, Rendered} = Renderer:render(Ctx),
-    ?BAD_REQUEST(Rendered).
+    ?BAD_REQUEST(Headers, Rendered).
 
 -spec guess_content_type(binary()) -> binary().
 guess_content_type(FileName) ->
@@ -416,3 +459,9 @@ binary_join(List, Sep) ->
                 end,
                 <<>>,
                 List).
+
+security_headers() ->
+    [{<<"Content-Security-Policy">>,
+      <<"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'">>},
+     {<<"X-Content-Type-Options">>, <<"nosniff">>},
+     {<<"Referrer-Policy">>, <<"no-referrer">>}].

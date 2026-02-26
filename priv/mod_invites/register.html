@@ -57,6 +57,7 @@
             </div>
             <div class="form-group form-row">
                 <input type="hidden" name="token" value="{{ token }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 {% if app %}<input type="hidden" name="app_id" value="{{ app.id }}">{% endif %}
                 <button type="submit" tabindex="3" class="btn btn-primary btn-lg">{% trans "Submit" %}</button>
             </div>

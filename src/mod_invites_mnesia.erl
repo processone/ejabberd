@@ -27,9 +27,9 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite/1, expire_tokens/2, get_invite/2, get_invites/2, init/2,
+-export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2, get_invites_t/2, init/2,
          is_reserved/3, is_token_valid/3, list_invites/1, remove_user/2,
-         set_invitee/5]).
+         set_invitee/5, transaction/2]).
 
 -include("mod_invites.hrl").
 
@@ -52,8 +52,8 @@ cleanup_expired(_Host) ->
                 0,
                 mnesia:dirty_all_keys(invite_token)).
 
-create_invite(Invite) ->
-    ok = mnesia:dirty_write(Invite),
+create_invite_t(Invite) ->
+    ok = mnesia:write(Invite),
     Invite.
 
 expire_tokens(User, Server) ->
@@ -70,8 +70,8 @@ get_invite(_Host, Token) ->
             {error, not_found}
     end.
 
-get_invites(_Host, Inviter) ->
-    mnesia:dirty_index_read(invite_token, Inviter, #invite_token.inviter).
+get_invites_t(_Host, Inviter) ->
+    mnesia:index_read(invite_token, Inviter, #invite_token.inviter).
 
 init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE,
@@ -149,3 +149,6 @@ set_invitee(F, _Host, Token, Invitee, AccountName) ->
         end,
     {atomic, Res} = mnesia:transaction(Transaction),
     Res.
+
+transaction(_Host, Fun) ->
+    mnesia:transaction(Fun).
