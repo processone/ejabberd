@@ -27,11 +27,13 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2, get_invites_t/2, init/2,
-         is_reserved/3, is_token_valid/3, list_invites/1, remove_user/2,
-         set_invitee/5, transaction/2]).
+-export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2, get_invites_t/2,
+         get_invite_by_invitee_t/2, init/2, is_reserved/3, is_token_valid/3, list_invites/1,
+         remove_user/2, set_invitee/5, transaction/2]).
 
 -include("mod_invites.hrl").
+-include("logger.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 %% @format-begin
 
@@ -70,6 +72,14 @@ get_invite(_Host, Token) ->
             {error, not_found}
     end.
 
+get_invite_by_invitee_t(_Host, InviteeJid) ->
+    case mnesia:index_read(invite_token, InviteeJid, #invite_token.invitee) of
+        [#invite_token{type = Type} = Invite] when Type /= roster_only ->
+            Invite;
+        _ ->
+            {error, not_found}
+    end.
+
 get_invites_t(_Host, Inviter) ->
     mnesia:index_read(invite_token, Inviter, #invite_token.inviter).
 
@@ -78,7 +88,7 @@ init(_Host, _Opts) ->
                            invite_token,
                            [{disc_copies, [node()]},
                             {attributes, record_info(fields, invite_token)},
-                            {index, [inviter]}]).
+                            {index, [inviter, invitee]}]).
 
 is_reserved(_Host, Token, User) ->
     lists:filter(fun(T) ->

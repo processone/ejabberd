@@ -676,3 +676,4 @@ CREATE TABLE invite_token (
     PRIMARY KEY (token)
 );
 CREATE INDEX i_invite_token_username_server_host ON invite_token USING btree (username, server_host);
+CREATE INDEX i_invite_token_invitee ON invite_token USING btree (invitee);
