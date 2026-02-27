@@ -526,7 +526,10 @@ format_column_def(SchemaInfo, Column) ->
     [<<"    ">>,
      escape_name(SchemaInfo, Column#sql_column.name), <<" ">>,
      format_type(SchemaInfo, Column),
-     <<" NOT NULL">>,
+     case Column#sql_column.nullable of
+         false -> <<" NOT NULL">>;
+         true -> []
+     end,
      case Column#sql_column.default of
          false -> [];
          true ->

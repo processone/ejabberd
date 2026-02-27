@@ -51,6 +51,7 @@
                     meta = #{}}).
 -record(sql_column, {name :: binary(),
                      type,
+                     nullable = false,
                      default = false,
                      opts = []}).
 -record(sql_table, {name :: binary(),
