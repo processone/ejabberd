@@ -125,28 +125,15 @@ mod_doc() ->
               "then guide the recipient with setting up a client "
               "and creating an account if required."),
            "",
-           ?T("In order to use the included landing page feature, you have to"),
+           ?T("In order to use the included landing page feature, you have to"
+              " set `landing_page` to either `auto` or an URL template like "
+              "`https://{{ host }}/invites/{{ invite.token }}` "
+              " if your server setup includes a so called reverse proxy"),
            "",
-           ?T(" * have a copy of https://code.jquery.com/jquery-3.7.1.min.js[jQuery 3] and "
-              "   https://github.com/twbs/bootstrap/releases/download/v4.6.2/bootstrap-4.6.2-dist.zip[Bootstrap 4] "
-              "   in a shared directory on your system. If you're using Debian or "
-              "   derivatives this is easiest accomplished by installing both "
-              "   `libjs-jquery` and `libjs-bootstrap4` which will put them under "
-              "   `/usr/share/javascript/{jquery,bootstrap4}`. Alternatively you can use "
-              "   `tools/dl_invites_page_deps.sh <outdir>`."),
-           ?T(" * in `ejabberd.yml` configure a listener for module `ejabberd_http` "
-              "   with a request handler for `/share: mod_http_fileserver`"),
-           ?T(" * in the `modules` section configure `mod_http_fileserver` so that "
-              "   `docroot` points to the shared directory from above "
-              "   (e.g. `docroot: /usr/share/javascript`)"),
-           ?T(" * configure `mod_invites` and set `landing_page` to either `auto` "
-              "   or an URL template like `https://{{ host }}/invites/{{ invite.token }}` "
-              "   if your server setup includes a so called reverse proxy"),
-           "",
-           "If you'd rather want to use an external service, set `landing_page` "
-           "to something like "
-           "`http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}` "
-           "or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`."],
+           ?T("If you'd rather want to use an external service, set `landing_page` "
+              "to something like "
+              "`http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}` "
+              "or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`.")],
       note => "added in 26.01",
       opts =>
           [{access_create_account,
@@ -208,11 +195,8 @@ mod_doc() ->
              "    module: ejabberd_http",
              "    request_handlers:",
              "      /invites: mod_invites",
-             "      /share: mod_http_fileserver",
              "# [...]",
              "modules:",
-             "  mod_http_fileserver:",
-             "    docroot: /usr/share/javascript",
              "  mod_invites:",
              "    landing_page: auto"]},
            {?T("To allow only admin users to create invites of 'create account' and "

@@ -1,0 +1,15 @@
+{
+  "name": "ejabberd",
+  "version": "1.0.0",
+  "dependencies": {
+      "jquery": "3.7.1",
+      "bootstrap": "4.6.2"
+  },
+  "scripts": {
+      "postinstall": "npm run -s clean && npm run -s mkdir-jquery && npm run -s cp-jquery && npm run -s cp-bootstrap",
+      "clean": "rm -rf priv/mod_invites/static/{jquery,bootstrap4}",
+      "mkdir-jquery": "mkdir -p priv/mod_invites/static/jquery",
+      "cp-jquery": "cp node_modules/jquery/dist/jquery.min.js priv/mod_invites/static/jquery/jquery.min.js",
+      "cp-bootstrap": "cp -r node_modules/bootstrap/dist priv/mod_invites/static/bootstrap4"
+  }
+}

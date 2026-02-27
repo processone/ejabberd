@@ -19,7 +19,7 @@ RUN go install -v \
 FROM docker.io/erlang:${OTP_VSN}-alpine AS ejabberd
 
 RUN apk -U add --no-cache \
-        nodejs npm ca-certificates \
+        ca-certificates \
         autoconf \
         automake \
         bash \
@@ -33,6 +33,7 @@ RUN apk -U add --no-cache \
         libpng-dev \
         libwebp-dev \
         linux-pam-dev \
+        npm \
         openssl-dev \
         sqlite-dev \
         yaml-dev \
@@ -53,15 +54,6 @@ ARG BUILD_DIR
 COPY / $BUILD_DIR/
 
 WORKDIR $BUILD_DIR
-
-RUN npm init -y \
-    && npm install --silent jquery@3.7.1 bootstrap@4.6.2 \
-    && mkdir -p /rootfs/usr/share/javascript/bootstrap4/css \
-    && mkdir -p /rootfs/usr/share/javascript/bootstrap4/js \
-    && mkdir -p /rootfs/usr/share/javascript/jquery/ \
-    && cp -r node_modules/bootstrap/dist/css/bootstrap.min* /rootfs/usr/share/javascript/bootstrap4/css \
-    && cp -r node_modules/bootstrap/dist/js/bootstrap.min* /rootfs/usr/share/javascript/bootstrap4/js \
-    && cp -r node_modules/jquery/dist/jquery.min* /rootfs/usr/share/javascript/jquery/
 
 RUN mv .github/container/ejabberdctl.template . \
     && mv .github/container/ejabberd.yml.example . \
