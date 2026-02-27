@@ -23,7 +23,7 @@ db_type(Opts) when is_map(Opts) ->
 db_type(Host) ->
     gen_mod:get_module_opt(Host, mod_invites, db_type).
 
--spec landing_page(gen_mod:opts() | global | binary()) -> any().
+-spec landing_page(gen_mod:opts() | global | binary()) -> 'none' | 'auto' | binary().
 landing_page(Opts) when is_map(Opts) ->
     gen_mod:get_opt(landing_page, Opts);
 landing_page(Host) ->
