@@ -250,6 +250,8 @@ mod_doc() ->
              "    allow_modules:",
              "      - mod_invites"]}]}.
 
+-spec mod_options(binary()) ->
+          [{landing_page, none | auto | binary()} | {atom(), any()}].
 mod_options(Host) ->
     [{access_create_account, none},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
