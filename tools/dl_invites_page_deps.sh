@@ -25,6 +25,7 @@ bootstrap4="$(mktemp /tmp/bootstrap4.XXXXXXXXX)"
 curl -L -s -o $bootstrap4 https://github.com/twbs/bootstrap/releases/download/v4.6.2/bootstrap-4.6.2-dist.zip
 check $bootstrap4_checksum $bootstrap4
 
+rm -rf "$install_dir/bootstrap4"
 unzip -q -d "$install_dir" $bootstrap4
 mv "$install_dir/bootstrap-4.6.2-dist" "$install_dir/bootstrap4"
 rm $bootstrap4

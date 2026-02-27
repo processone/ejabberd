@@ -52,7 +52,8 @@
 
 -define(DEFAULT_CONTENT_TYPE, <<"application/octet-stream">>).
 -define(CONTENT_TYPES,
-	[{<<".js">>, <<"application/javascript">>},
+	[{<<".css">>, <<"text/css">>},
+	 {<<".js">>, <<"application/javascript">>},
 	 {<<".png">>, <<"image/png">>},
 	 {<<".svg">>, <<"image/svg+xml">>}]).
 

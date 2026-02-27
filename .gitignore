@@ -47,3 +47,6 @@ Mnesia.nonode@nohost/
 /ejabberd-*.rpm
 /ejabberd-*.run
 /ejabberd-*.tar.gz
+/priv/mod_invites/static/bootstrap4/
+/priv/mod_invites/static/jquery/
+/node_modules/
