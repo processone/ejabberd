@@ -188,7 +188,7 @@ end_per_group(mysql, Config) ->
     case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [Query]) of
         {selected, _, [[<<"0">>]]} ->
             ok;
-        {selected, _, [[<<"1">>]]} ->
+        {selected, _, _} ->
             clear_sql_tables(mysql, Config);
         Other ->
             ct:fail({failed_to_check_table_existence, mysql, Other})
