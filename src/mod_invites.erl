@@ -55,6 +55,7 @@
 
 -ifdef(TEST).
 -export([create_roster_invite/2, create_account_invite/4, gen_invite/1, gen_invite/2, get_invites/2, is_token_valid/3]).
+-include_lib("eunit/include/eunit.hrl").
 -endif.
 
 -include("logger.hrl").
@@ -66,11 +67,14 @@
 -include("translate.hrl").
 
 -type invite_token() :: #invite_token{}.
+-export_type([invite_token/0]).
 
 -callback cleanup_expired(Host :: binary()) -> non_neg_integer().
 -callback create_invite_t(Invite :: invite_token()) -> invite_token().
 -callback expire_tokens(User :: binary(), Server :: binary()) -> non_neg_integer().
 -callback get_invite(Host :: binary(), Token :: binary()) ->
+    invite_token() | {error, not_found}.
+-callback get_invite_by_invitee_t(Host :: binary(), InviteeJid :: binary()) ->
     invite_token() | {error, not_found}.
 -callback get_invites_t(Host :: binary(), Inviter :: {User :: binary(), Host :: binary()}) ->
     [invite_token()].
@@ -807,7 +811,6 @@ create_invite(Type, Host, Inviter, AccountName) ->
 create_invite_t(Type, Host, Inviter, AccountName) ->
     try invite_token_t(Type, Host, Inviter, AccountName) of
         Invite ->
-            ?DEBUG("Creating invite: ~p", [Invite]),
             db_call(Host, create_invite_t, [Invite])
     catch
         _:({error, _Reason} = Error) ->
@@ -900,6 +903,169 @@ get_max_invites(User, Server) ->
             MaxInvites
     end.
 
+check_overuse_t(roster_only, {User, Host}) ->
+    NumInvites = length(get_invites_t(Host, {User, Host})),
+    case NumInvites >= ?OVERUSE_LIMIT of
+        true ->
+            {error, num_invites_exceeded};
+        false ->
+            ok
+    end;
+check_overuse_t(_Type, {User, Host}) ->
+    NumInvites = length(get_invites_tree_t(Host, {User, Host})),
+    case NumInvites >= ?OVERUSE_LIMIT of
+        true ->
+            {error, num_invites_exceeded};
+        false ->
+            ok
+    end.
+
+get_invites_tree_t(Host, Inviter) ->
+    Now = calendar:datetime_to_gregorian_seconds(
+              calendar:now_to_datetime(
+                  erlang:timestamp())),
+    Root = find_invites_tree_root_t(Now, Host, Inviter, 0),
+    get_invites_tree_as_root_t(Host, Root).
+
+find_invites_tree_root_t(Now, Host, Invitee, Lvl) ->
+    case get_invite_by_invitee_t(Host, Invitee) of
+        #invite_token{inviter = Inviter, created_at = CreatedAt} ->
+            maybe_block_speedy_goat(Now, CreatedAt, Lvl),
+            find_invites_tree_root_t(Now, Host, Inviter, Lvl + 1);
+        {error, not_found} ->
+            Invitee
+    end.
+
+-spec get_invite_by_invitee_t(binary(), {binary(), binary()}) ->
+                                 invite_token() | {error, not_found}.
+get_invite_by_invitee_t(Host, {User, Server}) ->
+    InviteeJid =
+        jid:encode(
+            jid:make(User, Server)),
+    db_call(Host, get_invite_by_invitee_t, [Host, InviteeJid]).
+
+maybe_block_speedy_goat(Now, CreatedAt, Lvl) when Lvl == ?SPEEDY_GOAT_LEVELS ->
+    Then = calendar:datetime_to_gregorian_seconds(CreatedAt),
+    if Now - Then < ?SPEEDY_GOAT_SECONDS ->
+           throw(speedy_goat);
+       true ->
+           ok
+    end;
+maybe_block_speedy_goat(_, _, _) ->
+    ok.
+
+-ifdef(TEST).
+
+find_invites_tree_root_t_test_() ->
+    {setup,
+     fun() ->
+        meck:new(db, [non_strict]),
+        meck:expect(db,
+                    get_invite_by_invitee_t,
+                    fun (_, <<"4@host">>) ->
+                            #invite_token{inviter = {<<"3">>, <<"host">>}};
+                        (_, <<"3@host">>) ->
+                            #invite_token{inviter = {<<"2">>, <<"host">>}};
+                        (_, <<"2@host">>) ->
+                            #invite_token{inviter = {<<"1">>, <<"host">>}};
+                        (_, _) ->
+                            {error, not_found}
+                    end),
+        meck:new(gen_mod, [passthrough]),
+        meck:expect(gen_mod, db_mod, 2, db),
+        meck:new(calendar, [unstick, passthrough]),
+        meck:expect(calendar, now_to_datetime, 1, then),
+        meck:expect(calendar, datetime_to_gregorian_seconds, fun(then) -> 1 end),
+        [db, gen_mod, calendar]
+     end,
+     fun meck:unload/1,
+     fun(_) ->
+        [%% lvl not reached
+         ?_assertMatch({<<"1">>, <<"host">>},
+                       find_invites_tree_root_t(2, host, {<<"3">>, <<"host">>}, 0)),
+         %% lvl reached
+         ?_assertThrow(speedy_goat, find_invites_tree_root_t(2, host, {<<"4">>, <<"host">>}, 0)),
+         %% lvl reached but later
+         ?_assertMatch({<<"1">>, <<"host">>},
+                       find_invites_tree_root_t(?SPEEDY_GOAT_SECONDS + 1,
+                                                host,
+                                                {<<"4">>, <<"host">>},
+                                                0)),
+         ?_assert(meck:validate(db))]
+     end}.
+
+-endif.
+
+-spec get_invites_tree_as_root_t(binary(), {binary(), binary()}) -> [invite_token()].
+get_invites_tree_as_root_t(Host, Inviter) ->
+    Invites = get_invites_t(Host, Inviter),
+    get_invites_tree_as_root_t(Host, Inviter, Invites, []).
+
+get_invites_tree_as_root_t(_Host, _Inviter, [], Acc) ->
+    Acc;
+get_invites_tree_as_root_t(Host,
+                           Inviter,
+                           [#invite_token{type = roster_only} | Invites],
+                           Acc) ->
+    get_invites_tree_as_root_t(Host, Inviter, Invites, Acc);
+get_invites_tree_as_root_t(Host,
+                           Inviter,
+                           [#invite_token{invitee = <<>>} = Invite | Invites],
+                           Acc) ->
+    get_invites_tree_as_root_t(Host, Inviter, Invites, [Invite | Acc]);
+get_invites_tree_as_root_t(Host,
+                           Inviter,
+                           [#invite_token{invitee = InviteeJID} = Invite | Invites],
+                           Acc) ->
+    case jid:decode(InviteeJID) of
+        #jid{luser = Invitee, lserver = Host} ->
+            get_invites_tree_as_root_t(Host,
+                                       Inviter,
+                                       Invites,
+                                       [Invite | Acc]
+                                       ++ get_invites_tree_as_root_t(Host, {Invitee, Host}));
+        _Nomatch ->
+            get_invites_tree_as_root_t(Host, Inviter, Invites, [Invite | Acc])
+    end.
+
+-ifdef(TEST).
+
+get_invites_tree_as_root_t_test_() ->
+    {setup,
+     fun() ->
+        meck:new(db, [non_strict]),
+        meck:expect(db,
+                    get_invites_t,
+                    fun (_, {<<"1">>, _}) ->
+                            [#invite_token{invitee = <<"2@host">>, type = account_only},
+                             #invite_token{invitee = <<"rosterinvite@forcecrash">>}];
+                        (_, {<<"2">>, _}) ->
+                            [#invite_token{invitee = <<"3@host">>, type = account_only},
+                             #invite_token{invitee = <<"4@host">>, type = account_only}];
+                        (_, {<<"3">>, _}) ->
+                            [#invite_token{invitee = <<"5@host">>, type = account_subscription},
+                             #invite_token{type = account_only}];
+                        (_, {_, <<"host">>}) ->
+                            []
+                    end),
+        meck:new(gen_mod, [passthrough]),
+        meck:expect(gen_mod, db_mod, 2, db),
+        meck:expect(jid,
+                    decode,
+                    fun(Str) ->
+                       [LUser, LServer] =
+                           [list_to_binary(T) || T <- string:tokens(binary_to_list(Str), "@")],
+                       #jid{luser = LUser, lserver = LServer}
+                    end),
+        [db, gen_mod, jid]
+     end,
+     fun meck:unload/1,
+     fun(_) ->
+        [?_assertMatch(5, length(get_invites_tree_as_root_t(<<"host">>, {<<"1">>, <<"host">>})))]
+     end}.
+
+-endif.
+
 maybe_throw({error, _} = Error) ->
     throw(Error);
 maybe_throw(Good) ->
@@ -907,6 +1073,7 @@ maybe_throw(Good) ->
 
 invite_token_t(Type, Host, Inviter, AccountName0) ->
     maybe_throw(check_max_invites_t(Type, Inviter)),
+    maybe_throw(check_overuse_t(Type, Inviter)),
     Token = p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT),
     AccountName = maybe_throw(check_account_name(jid:nodeprep(AccountName0), Host)),
     set_token_expires(#invite_token{token = Token,

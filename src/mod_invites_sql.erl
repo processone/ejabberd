@@ -27,9 +27,9 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2, get_invites_t/2, init/2,
-         is_reserved/3, is_token_valid/3, list_invites/1, remove_user/2,
-         set_invitee/5, transaction/2]).
+-export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2,
+         get_invite_by_invitee_t/2, get_invites_t/2, init/2, is_reserved/3, is_token_valid/3,
+         list_invites/1, remove_user/2, set_invitee/5, transaction/2]).
 
 -export([sql_schemas/0]).
 
@@ -115,6 +115,26 @@ get_invite(Host, Token) ->
                                      "%(Token)s AND %(Host)H"))
     of
         {selected, [{User, Invitee, Type, AccountName, Expires, CreatedAt}]} ->
+            #invite_token{token = Token,
+                          inviter = {User, Host},
+                          invitee = Invitee,
+                          type = dec_type(Type),
+                          account_name = AccountName,
+                          expires = Expires,
+                          created_at = CreatedAt};
+        {selected, []} ->
+            {error, not_found}
+    end.
+
+-spec get_invite_by_invitee_t(binary(), binary()) ->
+                                 mod_invites:invite_token() | {error, not_found}.
+get_invite_by_invitee_t(Host, InviteeJid) ->
+    case ejabberd_sql:sql_query(Host,
+                                ?SQL("SELECT @(token)s, @(username)s, @(invitee)s, @(type)s, "
+                                     "@(account_name)s, @(expires)t, @(created_at)t FROM "
+                                     "invite_token WHERE invitee = %(InviteeJid)s AND %(Host)H"))
+    of
+        {selected, [{Token, User, Invitee, Type, AccountName, Expires, CreatedAt}]} ->
             #invite_token{token = Token,
                           inviter = {User, Host},
                           invitee = Invitee,

@@ -4,6 +4,11 @@
 -define(NS_INVITE_INVITE, <<"urn:xmpp:invite#invite">>).
 -define(NS_INVITE_CREATE_ACCOUNT, <<"urn:xmpp:invite#create-account">>).
 
+-define(OVERUSE_LIMIT, 1000).
+
+-define(SPEEDY_GOAT_LEVELS, 2).
+-define(SPEEDY_GOAT_SECONDS, 300).
+
 -record(invite_token, {token :: binary(),
                        inviter :: {binary(), binary()},
                        %% A non-empty value if `invitee` indicates the invite has been used.
