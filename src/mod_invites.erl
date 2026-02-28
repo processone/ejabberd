@@ -1005,7 +1005,7 @@ get_invites_tree_as_root_t(_Host, _Inviter, [], Acc) ->
     Acc;
 get_invites_tree_as_root_t(Host,
                            Inviter,
-                           [#invite_token{type = roster_only} | Invites],
+                           [#invite_token{type = roster_only, account_name = <<>>} | Invites],
                            Acc) ->
     get_invites_tree_as_root_t(Host, Inviter, Invites, Acc);
 get_invites_tree_as_root_t(Host,
