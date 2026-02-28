@@ -46,15 +46,16 @@
 -export([cleanup_expired/0, expire_tokens/2, generate_invite/1, generate_invite/2, list_invites/1]).
 
 %% helpers
--export([create_account_allowed/2, get_invite/2, get_max_invites/2, is_create_allowed/2,
-         is_expired/1, is_reserved/3, is_token_valid/2, roster_add/2, send_presence/3,
-         set_invitee/3, set_invitee/5, token_uri/1, xdata_field/3]).
+-export([create_account_allowed/2, get_invite/2, get_invites_tree_t/2, get_max_invites/2,
+         is_create_allowed/2, is_expired/1, is_reserved/3, is_token_valid/2, roster_add/2,
+         send_presence/3, set_invitee/3, set_invitee/5, token_uri/1, transaction/2, xdata_field/3]).
 
 %% ejabberd_http
 -export([process/2]).
 
 -ifdef(TEST).
--export([create_roster_invite/2, create_account_invite/4, gen_invite/1, gen_invite/2, get_invites/2, is_token_valid/3]).
+-export([create_roster_invite/2, create_account_invite/4, gen_invite/1, gen_invite/2, get_invites/2,
+         is_token_valid/3]).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
