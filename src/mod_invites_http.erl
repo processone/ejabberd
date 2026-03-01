@@ -70,15 +70,14 @@ landing_page(Host, Invite) ->
         none ->
             <<>>;
         auto ->
-            try ejabberd_http:get_auto_url(any, mod_invites) of
+            case ejabberd_http:get_auto_url(any, mod_invites) of
+               undefined ->
+                    ?WARNING_MSG("'auto' URL configured for mod_invites but no request_handler found in your ~s listeners configuration.",
+                                 [Host]),
+                    <<>>;
                 AutoURL0 ->
                     AutoURL = misc:expand_keyword(<<"@HOST@">>, AutoURL0, Host),
                     render_landing_page_url(<<AutoURL/binary, "{{ invite.token }}">>, Host, Invite)
-            catch
-                _:_ ->
-                    ?WARNING_MSG("'auto' URL configured for mod_invites but no request_handler found in your ~s listeners configuration.",
-                                 [Host]),
-                    <<>>
             end;
         Tmpl ->
             render_landing_page_url(Tmpl, Host, Invite)
@@ -205,7 +204,9 @@ process_register_post(Invite,
             case mod_invites_register:try_register(Invite, Username, Host, Password, Source, Lang)
             of
                 {ok, _UpdatedInvite} ->
-                    Ctx = [{username, Username}, {password, Password} | AppCtx],
+                    Ctx = maybe_add_webchat_url(Host,
+                                                [{username, Username}, {password, Password}
+                                                 | AppCtx]),
                     render_ok(Host, Invite, Lang, <<"register_success.html">>, Ctx);
                 {error,
                  #stanza_error{text = Text,
@@ -258,6 +259,24 @@ csrf_token(Msg) ->
                    str:to_hexlist(
                        crypto:hash(sha256, SecretKey)),
                    Msg)).
+
+maybe_add_webchat_url(Host, Ctx) ->
+    case mod_invites_opt:webchat_url(Host) of
+        none ->
+            Ctx;
+        auto ->
+            case ejabberd_http:get_auto_url(any, mod_conversejs) of
+                undefined ->
+                    ?INFO_MSG("'auto' URL configured for webchat_url but no request_handler for mod_conversejs found in your ~s listeners configuration.",
+                              [Host]),
+                    Ctx;
+                WebchatUrlRaw ->
+                    WebchatUrl = misc:expand_keyword(<<"@HOST@">>, WebchatUrlRaw, Host),
+                    [{webchat_url, WebchatUrl} | Ctx]
+            end;
+        WebchatUrl ->
+            [{webchat_url, WebchatUrl} | Ctx]
+    end.
 
 error_class('jid-malformed') ->
     username;
