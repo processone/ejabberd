@@ -10,6 +10,7 @@
 -export([site_name/1]).
 -export([templates_dir/1]).
 -export([token_expire_seconds/1]).
+-export([webchat_url/1]).
 
 -spec access_create_account(gen_mod:opts() | global | binary()) -> 'none' | acl:acl().
 access_create_account(Opts) when is_map(Opts) ->
@@ -23,7 +24,7 @@ db_type(Opts) when is_map(Opts) ->
 db_type(Host) ->
     gen_mod:get_module_opt(Host, mod_invites, db_type).
 
--spec landing_page(gen_mod:opts() | global | binary()) -> any().
+-spec landing_page(gen_mod:opts() | global | binary()) -> 'none' | 'auto' | binary().
 landing_page(Opts) when is_map(Opts) ->
     gen_mod:get_opt(landing_page, Opts);
 landing_page(Host) ->
@@ -52,4 +53,10 @@ token_expire_seconds(Opts) when is_map(Opts) ->
     gen_mod:get_opt(token_expire_seconds, Opts);
 token_expire_seconds(Host) ->
     gen_mod:get_module_opt(Host, mod_invites, token_expire_seconds).
+
+-spec webchat_url(gen_mod:opts() | global | binary()) -> 'auto' | 'none' | binary().
+webchat_url(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(webchat_url, Opts);
+webchat_url(Host) ->
+    gen_mod:get_module_opt(Host, mod_invites, webchat_url).
 

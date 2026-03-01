@@ -20,7 +20,7 @@
                     <div class="card-body d-flex flex-column h-100">
                         <h3 class="card-title text-nowrap mb-1 h5">{{ app.name }}</h3>
                         <div>
-                            {% for item in app.platforms %}<span class="badge badge-info client-platform-badge client-platform-badge-{{ item|lower }} mr-1 mb-3">{{ item }}</span> {% endfor %}
+                            {% for item in app.platforms %}<span class="badge text-bg-info client-platform-badge client-platform-badge-{{ item|lower }} me-1 mb-3">{{ item }}</span> {% endfor %}
                         </div>
                         <p class="card-text">{{ app.text }}</p>
                     </div>
@@ -28,15 +28,15 @@
             </div>
         </div>
 
-        <h2 style="clear:both" class="h3">{% blocktrans with app_name=app.name %}Step 1: Install {{ app_name }}{% endblocktrans %}</h2>
+        <h2 class="h3 clear-both">{% blocktrans with app_name=app.name %}Step 1: Install {{ app_name }}{% endblocktrans %}</h2>
 
         <p>{% if app.download.text %}{{ app.download.text }}{% else %}{% blocktrans with app_name=app.name %}Download and install {{ app_name }} below:{% endblocktrans %}{% endif %}</p>
 
-        <div class="ml-5">
+        <div class="ms-5">
             {% for button in app.download.buttons %}
             {% if button.image %}
             <a href="{% if button.magic_link %}{{ button.magic_link }}{% else %}{{ button.url }}{% endif %}" {% if button.target %}target="{{ button.target }}"{% endif %} rel="noopener">
-                <img src="{{ button.image }}" {% if button.alttext %}alt="{{ button.alttext }}"{% endif %} style="max-width: 160px;">
+                <img src="{{ button.image }}" {% if button.alttext %}alt="{{ button.alttext }}"{% endif %} class="invite-download-button">
             </a>
             {% endif %}
             {% if button.text %}
@@ -54,7 +54,7 @@
         <p>{% trans "Installed ok? Great! <strong>Click or tap the button below</strong> to accept your invite and continue with your account setup:" %}</p>
 
         <div>
-            <a href="{{ uri }}" id="uri-cta" class="btn btn-primary ml-5 mt-1 mb-3">{% blocktrans with app_name=app.name %}Accept invite using {{ app_name }}{% endblocktrans %}</a><br/>
+            <a href="{{ uri }}" id="uri-cta" class="btn btn-primary ms-5 mt-1 mb-3">{% blocktrans with app_name=app.name %}Accept invite using {{ app_name }}{% endblocktrans %}</a><br/>
         </div>
 
         <p>{% blocktrans with app_name=app.name %}After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.{% endblocktrans %}</p>
@@ -67,10 +67,4 @@
             </ul>
         </nav>
 
-{% endblock %}
-
-{% block extra_scripts %}
-<script src="{{ static }}/qrcode.min.js"></script>
-<script src="{{ static }}/platform.min.js"></script>
-<script src="{{ static }}/invite.js"></script>
 {% endblock %}

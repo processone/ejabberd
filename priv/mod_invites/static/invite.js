@@ -1,4 +1,6 @@
 (function () {
+	document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
 	// If QR lib loaded ok, show QR button on desktop devices
 	if(window.QRCode) {
 		const qrcode_opts = {
@@ -8,6 +10,10 @@
 		new QRCode(document.getElementById("qr-invite-page"), qrcode_opts);
 		document.getElementById('qr-button-container').classList.add("d-md-block");
 	}
+
+	const toggle_pw_button = document.getElementById('toggle-pw-button');
+	if (toggle_pw_button)
+		toggle_pw_button.addEventListener('click', toggle_password);
 
 	// Detect current platform and show/hide appropriate clients
 	if(window.platform) {
@@ -56,6 +62,11 @@
 
 		if(platform_friendly && platform_classname) {
 			if(document.querySelectorAll('.client-card .client-platform-badge-'+platform_classname).length == 0) {
+				const badges = document.querySelectorAll('.client-card .client-platform-badge');
+				for (let badge of badges) {
+					badge.classList.add("text-bg-secondary");
+					badge.classList.remove("text-bg-info");
+				}
 				// No clients recognised for this platform, do nothing
 				return;
 			}
@@ -69,23 +80,58 @@
 				const badges = card.querySelectorAll('.client-platform-badge');
 				for (let badge of badges) {
 					if (badge.classList.contains('client-platform-badge-'+platform_classname)) {
-						badge.classList.add("badge-success");
-						badge.classList.remove("badge-info");
+						badge.classList.add("text-bg-success");
+						badge.classList.remove("text-bg-info");
 					} else {
-						badge.classList.add("badge-secondary");
-						badge.classList.remove("badge-info");
+						badge.classList.add("text-bg-secondary");
+						badge.classList.remove("text-bg-info");
 					}
 				}
 			}
 			const show_all_clients_button_container = document.getElementById('show-all-clients-button-container');
-			show_all_clients_button_container.querySelector('.platform-name').innerHTML = platform_friendly;
-			show_all_clients_button_container.classList.remove("d-none");
-			document.getElementById('show-all-clients-button').addEventListener('click', function (e) {
-				for (let card of client_cards)
-					card.hidden = false;
-				show_all_clients_button_container.hidden = true;
-				e.preventDefault();
-			});
+			if (show_all_clients_button_container) {
+				show_all_clients_button_container.querySelector('.platform-name').innerHTML = platform_friendly;
+				show_all_clients_button_container.classList.remove("d-none");
+				document.getElementById('show-all-clients-button').addEventListener('click', function (e) {
+					for (let card of client_cards)
+						card.hidden = false;
+					show_all_clients_button_container.hidden = true;
+					e.preventDefault();
+				});
+			}
 		}
 	}
+})();
+
+function toggle_password(e) {
+	var button = e.target;
+	var input = button.parentNode.parentNode.querySelector("input");
+	switch(input.attributes.type.value) {
+	case "password":
+		input.attributes.type.value = "text";
+		button.innerText = button.getAttribute('data-text-hide');
+		break;
+	case "text":
+		input.attributes.type.value = "password";
+		button.innerText = button.getAttribute('data-text-show');
+		break;
+	}
+}
+
+(function() {
+	'use strict';
+	window.addEventListener('load', function() {
+		// Fetch all the forms we want to apply custom Bootstrap validation styles to
+		var forms = document.getElementsByClassName('needs-validation');
+		// Loop over them and prevent submission
+		var validation = Array.prototype.filter.call(forms, function(form) {
+			form.addEventListener('submit', function(event) {
+				if (form.checkValidity() === false) {
+					event.preventDefault();
+					event.stopPropagation();
+				}
+				form.classList.add('was-validated');
+			}, false);
+		});
+	}, false);
 })();
