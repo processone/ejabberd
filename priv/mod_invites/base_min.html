@@ -13,28 +13,7 @@
     <!-- <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"> -->
     <meta name="msapplication-TileColor" content="#fbd308">
     <meta name="theme-color" content="#fbd308">
-    <style>
-        #other-software a {
-            text-decoration: underline;
-            color: #0072ed;
-        }
-        a#show-all-clients-button {
-            text-decoration: underline;
-        }
-        .btn-primary {
-            background-color: #0072ed;
-        }
-        .badge-success {
-            background-color: #0a8927;
-        }
-        .alert-info, .alert-info a, .btn-info {
-            background-color: #008297;
-            color: white;
-        }
-        .border-info {
-            border-color: #008297 !important;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ static }}/invite.css" integrity="sha384-hN1sIlm8uxqtq9Q4lhN1KW+O4HHk7Iwu+8ZT5QOZ4NU65xAXc99wTMJQ729MgOBJ">
   </head>
   <body>
     <div id="background" class="fixed-top overflow-hidden"></div>
@@ -51,5 +30,6 @@
     {% block extra_scripts %}{% endblock %}
     <script src="{{ static }}/jquery/jquery.min.js" integrity="sha384-fgGyf7Mo7DURSOMnOy7ed+dkq5Job205Gnzu6QIg0BOHKaqt4D76Dt8VlDCzcMHV"></script>
     <script src="{{ static }}/bootstrap/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"></script>
+    <script src="{{ static }}/invite.js" integrity="sha384-9UT63wKlfkiGEXmaNqAZBDtYPXYiYIbHZj16vD7NbvWF2e6WJNTt+XBev7dlVbm1"></script>
   </body>
 </html>

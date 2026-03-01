@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <h2 style="clear:both" class="h3">{% blocktrans with app_name=app.name %}Step 1: Install {{ app_name }}{% endblocktrans %}</h2>
+        <h2 class="h3 clear-both">{% blocktrans with app_name=app.name %}Step 1: Install {{ app_name }}{% endblocktrans %}</h2>
 
         <p>{% if app.download.text %}{{ app.download.text }}{% else %}{% blocktrans with app_name=app.name %}Download and install {{ app_name }} below:{% endblocktrans %}{% endif %}</p>
 
@@ -36,7 +36,7 @@
             {% for button in app.download.buttons %}
             {% if button.image %}
             <a href="{% if button.magic_link %}{{ button.magic_link }}{% else %}{{ button.url }}{% endif %}" {% if button.target %}target="{{ button.target }}"{% endif %} rel="noopener">
-                <img src="{{ button.image }}" {% if button.alttext %}alt="{{ button.alttext }}"{% endif %} style="max-width: 160px;">
+                <img src="{{ button.image }}" {% if button.alttext %}alt="{{ button.alttext }}"{% endif %} class="invite-download-button">
             </a>
             {% endif %}
             {% if button.text %}
@@ -67,10 +67,4 @@
             </ul>
         </nav>
 
-{% endblock %}
-
-{% block extra_scripts %}
-<script src="{{ static }}/qrcode.min.js"></script>
-<script src="{{ static }}/platform.min.js"></script>
-<script src="{{ static }}/invite.js"></script>
 {% endblock %}
