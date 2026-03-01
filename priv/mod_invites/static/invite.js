@@ -1,4 +1,6 @@
 (function () {
+	document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
 	// If QR lib loaded ok, show QR button on desktop devices
 	if(window.QRCode) {
 		const qrcode_opts = {
@@ -8,6 +10,10 @@
 		new QRCode(document.getElementById("qr-invite-page"), qrcode_opts);
 		document.getElementById('qr-button-container').classList.add("d-md-block");
 	}
+
+	const toggle_pw_button = document.getElementById('toggle-pw-button');
+	if (toggle_pw_button)
+		toggle_pw_button.addEventListener('click', toggle_password);
 
 	// Detect current platform and show/hide appropriate clients
 	if(window.platform) {
@@ -95,10 +101,6 @@
 			}
 		}
 	}
-	const toggle_pw_button = document.getElementById('toggle-pw-button');
-	if (toggle_pw_button)
-		toggle_pw_button.addEventListener('click', toggle_password);
-
 })();
 
 function toggle_password(e) {
