@@ -1045,6 +1045,7 @@ get_invites_tree_as_root_t_test_() ->
                              #invite_token{invitee = <<"4@host">>, type = account_only}];
                         (_, {<<"3">>, _}) ->
                             [#invite_token{invitee = <<"5@host">>, type = account_subscription},
+                             #invite_token{invitee = <<"6@host">>, account_name = <<"6">>},
                              #invite_token{type = account_only}];
                         (_, {_, <<"host">>}) ->
                             []
@@ -1062,7 +1063,7 @@ get_invites_tree_as_root_t_test_() ->
      end,
      fun meck:unload/1,
      fun(_) ->
-        [?_assertMatch(5, length(get_invites_tree_as_root_t(<<"host">>, {<<"1">>, <<"host">>})))]
+        [?_assertMatch(6, length(get_invites_tree_as_root_t(<<"host">>, {<<"1">>, <<"host">>})))]
      end}.
 
 -endif.
