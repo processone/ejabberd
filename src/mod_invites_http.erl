@@ -217,6 +217,7 @@ process_register_post(Invite,
                     case Type of
                         T when T == cancel; T == modify ->
                             Ctx = [{username, Username},
+                                   {csrf_token, csrf_token(Invite#invite_token.token)},
                                    {error, [{text, Msg}, {class, error_class(Reason)}]}]
                                   ++ AppCtx,
                             Body = render_register_form(Request, Ctx),
