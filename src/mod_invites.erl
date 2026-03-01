@@ -185,7 +185,13 @@ mod_doc() ->
             #{value => "pos_integer()",
               desc =>
                   ?T("Number of seconds until token expires. Default value "
-                     "is `432000` (that is five days: `5 * 24 * 60 * 60`)")}}],
+                     "is `432000` (that is five days: `5 * 24 * 60 * 60`)")}},
+           {webchat_url,
+            #{value => "none | auto | Webchat URL",
+              desc =>
+                  ?T("URL to a webchat client. Upon manual registration through web-form this will be"
+                     "recommended in order to get started. If `auto` is chosen, we pick the "
+                     "`mod_conversejs` from the listeners section. Default is `auto`.")}}],
       example =>
           [{?T("Basic configuration with landing page but without creating "
                "accounts, just roster invites:"),
@@ -234,8 +240,7 @@ mod_doc() ->
              "    allow_modules:",
              "      - mod_invites"]}]}.
 
--spec mod_options(binary()) ->
-          [{landing_page, none | auto | binary()} | {atom(), any()}].
+-spec mod_options(binary()) -> [{landing_page, none | auto | binary()} | {atom(), any()}].
 mod_options(Host) ->
     [{access_create_account, none},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
@@ -243,7 +248,8 @@ mod_options(Host) ->
      {max_invites, infinity},
      {site_name, Host},
      {templates_dir, filename:join([code:priv_dir(ejabberd), ?MODULE, <<>>])},
-     {token_expire_seconds, ?INVITE_TOKEN_EXPIRE_SECONDS_DEFAULT}].
+     {token_expire_seconds, ?INVITE_TOKEN_EXPIRE_SECONDS_DEFAULT},
+     {webchat_url, auto}].
 
 reload(ServerHost, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
@@ -303,7 +309,10 @@ mod_opt_type(site_name) ->
 mod_opt_type(templates_dir) ->
     econf:directory();
 mod_opt_type(token_expire_seconds) ->
-    econf:pos_int().
+    econf:pos_int();
+mod_opt_type(webchat_url) ->
+    econf:either(
+        econf:enum([none, auto]), econf:url()).
 
 %%--------------------------------------------------------------------
 %%| ejabberd command callbacks
