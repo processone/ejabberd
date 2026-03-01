@@ -1,0 +1,29 @@
+#other-software a {
+    text-decoration: underline;
+    color: #0072ed;
+}
+a#show-all-clients-button {
+    text-decoration: underline;
+}
+.btn-primary {
+    background-color: #0072ed;
+}
+.badge-success {
+    background-color: #0a8927;
+}
+.alert-info, .alert-info a, .btn-info {
+    background-color: #008297;
+    color: white;
+}
+.border-info {
+    border-color: #008297 !important;
+}
+#qr-invite-page{
+    width: 256px;
+}
+.invite-download-button {
+    max-width: 160px;
+}
+.clear-both {
+    clear: both;
+}

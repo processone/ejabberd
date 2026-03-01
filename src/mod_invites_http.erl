@@ -483,6 +483,6 @@ binary_join(List, Sep) ->
 
 security_headers() ->
     [{<<"Content-Security-Policy">>,
-      <<"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'">>},
+      <<"default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'">>},
      {<<"X-Content-Type-Options">>, <<"nosniff">>},
      {<<"Referrer-Policy">>, <<"no-referrer">>}].

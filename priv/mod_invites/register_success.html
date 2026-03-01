@@ -2,24 +2,6 @@
 {% block form_class %}container col-md-8 col-md-offset-2 col-sm-8 cold-sm-offset-2 col-lg-6 col-lg-offset-3 mt-2 mt-md-5{% endblock %}
 {% block title %}{{site_name}}{% endblock %}
 {% block h1 %}{{site_name}}{% endblock %}
-{% block extra_scripts %}
-    <script>
-    function toggle_password(e) {
-      var button = e.target;
-      var input = button.parentNode.parentNode.querySelector("input");
-      switch(input.attributes.type.value) {
-        case "password":
-          input.attributes.type.value = "text";
-          button.innerText = "{% trans "Hide" %}";
-          break;
-        case "text":
-          input.attributes.type.value = "password";
-          button.innerText = "{% trans "Show" %}";
-          break;
-      }
-    }
-    </script>
-{% endblock %}
 {% block content %}
         <h2 class="card-title h5">{% trans "Congratulations!" %}</h2>
 
@@ -87,7 +69,8 @@
                     <div class="input-group">
                         <input type="password" readonly disabled aria-label="{% trans "Password" %}" class="form-control" value="{{ password }}">
                         <div class="input-group-append">
-                            <button class="btn btn-outline-secondary rounded-start-0" type="button" onclick="toggle_password(event)">{% trans "Show" %}</button>
+                            <button id="toggle-pw-button" class="btn btn-outline-secondary rounded-start-0" type="button"
+                                data-text-show="{% trans "Show" %}" data-text-hide="{% trans "Hide" %}">{% trans "Show" %}</button>
                         </div>
                     </div>
                 </div>
