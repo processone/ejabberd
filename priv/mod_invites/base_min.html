@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% blocktrans %}Invite to {{ site_name }}{% endblocktrans %}{% endblock %}</title>
     {% block rel_alternate %}{% endblock %}
-    <link rel="stylesheet" href="{{ static }}/bootstrap4/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N">
+    <link rel="stylesheet" href="{{ static }}/bootstrap/css/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB">
     <!-- <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"> -->
     <!-- <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"> -->
     <!-- <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"> -->
@@ -39,8 +39,8 @@
   <body>
     <div id="background" class="fixed-top overflow-hidden"></div>
     <div id="form" class="{% block form_class %}container col-md-10 col-md-offset-1 col-sm-8 col-sm-offset-2 col-lg-10 col-lg-offset-1 mt-2 mt-md-5{% endblock %}">
-      <div class="card rounded-lg shadow">
-        <h1 class="card-header rounded-lg rounded-lg">{%block h1 %}{% blocktrans %}Invite to {{ site_name }}{% endblocktrans %}{% endblock %}</h1>
+      <div class="card rounded-2 shadow">
+        <h1 class="card-header">{%block h1 %}{% blocktrans %}Invite to {{ site_name }}{% endblocktrans %}{% endblock %}</h1>
         <div class="card-body">
           {% block qr_button %}{% endblock %}
           {% block content %}{% endblock %}
@@ -50,6 +50,6 @@
     {% block qr_code %}{% endblock %}
     {% block extra_scripts %}{% endblock %}
     <script src="{{ static }}/jquery/jquery.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs"></script>
-    <script src="{{ static }}/bootstrap4/js/bootstrap.min.js" integrity="sha384-+sLIOodYLS7CIrQpBjl+C7nPvqq+FbNUBDunl/OZv93DB7Ln/533i8e/mZXLi/P+"></script>
+    <script src="{{ static }}/bootstrap/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"></script>
   </body>
 </html>

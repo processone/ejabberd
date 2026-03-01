@@ -49,7 +49,7 @@
 
         <p>{% if app.download.text %}{{ app.download.text }}{% else %}{% blocktrans with app_name=app.name %}Download and install {{ app_name }} below:{% endblocktrans %}{% endif %}</p>
 
-        <div class="ml-5 mb-3">
+        <div class="ms-5 mb-3">
             {% for item in app.download.buttons %}
             {% if item.image %}
             <a href="{{ item.url }}" {%if item.target %}target="{{ item.target }}"{% endif %} rel="noopener">
@@ -74,20 +74,20 @@
         <p>{% trans "As a final reminder, your account details are shown below:" %}</p>
 
         <form class="account-details col-12 col-lg-6 mx-auto">
-            <div class="form-group form-row">
+            <div class="input-group">
                 <label for="user" class="col-md-4 col-lg-12 col-form-label">{% trans "Chat address (JID)" %}:</label>
                 <div class="col-md-8 col-lg-12">
                     <input type="text" class="form-control-plaintext" readonly value="{{ username }}@{{ domain }}">
                 </div>
             </div>
             {% if password %}
-            <div class="form-group form-row">
+            <div class="input-group">
                 <label for="password" class="col-md-4 col-lg-12 col-form-label">{% trans "Password" %}:</label>
                 <div class="col-md-8 col-lg-12">
                     <div class="input-group">
-                        <input type="password" readonly class="form-control" value="{{ password }}">
+                        <input type="password" readonly disabled aria-label="{% trans "Password" %}" class="form-control" value="{{ password }}">
                         <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="button" onclick="toggle_password(event)">{% trans "Show" %}</button>
+                            <button class="btn btn-outline-secondary rounded-start-0" type="button" onclick="toggle_password(event)">{% trans "Show" %}</button>
                         </div>
                     </div>
                 </div>
@@ -96,6 +96,6 @@
         </form>
 
         {% if password %}
-        <p>{% trans "Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone." %}</p>
+        <p class="mt-3">{% trans "Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone." %}</p>
         {% endif %}
 {% endblock %}
