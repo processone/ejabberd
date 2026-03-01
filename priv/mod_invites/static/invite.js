@@ -69,11 +69,11 @@
 				const badges = card.querySelectorAll('.client-platform-badge');
 				for (let badge of badges) {
 					if (badge.classList.contains('client-platform-badge-'+platform_classname)) {
-						badge.classList.add("badge-success");
-						badge.classList.remove("badge-info");
+						badge.classList.add("text-bg-success");
+						badge.classList.remove("text-bg-info");
 					} else {
-						badge.classList.add("badge-secondary");
-						badge.classList.remove("badge-info");
+						badge.classList.add("text-bg-secondary");
+						badge.classList.remove("text-bg-info");
 					}
 				}
 			}

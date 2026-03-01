@@ -10,7 +10,7 @@
                             <div class="card-body d-flex flex-column h-100">
                                 <h3 class="card-title text-nowrap mb-1 h5">{{ item.name }}</h3>
                                 <div>
-                                    {% for platform in item.platforms %}<span class="badge badge-info client-platform-badge client-platform-badge-{{ platform|lower }} mr-1 mb-3">{{ platform }}</span>{% endfor %}
+                                    {% for platform in item.platforms %}<span class="badge text-bg-info client-platform-badge client-platform-badge-{{ platform|lower }} me-1 mb-3">{{ platform }}</span>{% endfor %}
                                 </div>
                                 <p class="card-text">{{ item.text }}</p>
                                 <a href="{{ item.proceed_url }}" class="btn btn-primary mt-md-auto">{% if item.select_text %}{{ item.select_text }}{% else %}{% trans "Select" %}{% endif %}</a>
