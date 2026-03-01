@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "bootstrap": "^5.3.8",
-    "jquery": "3.7.1"
+    "jquery": "^4.0.0"
   },
   "scripts": {
     "postinstall": "npm run -s clean && npm run -s mkdir-jquery && npm run -s cp-jquery && npm run -s cp-bootstrap",

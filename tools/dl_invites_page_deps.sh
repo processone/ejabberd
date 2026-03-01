@@ -2,7 +2,7 @@
 
 set -e
 
-jquery_checksum='fc9a93dd241f6b045cbff0481cf4e1901becd0e12fb45166a8f17f95823f0b1a';
+jquery_checksum='39a546ea9ad97f8bfaf5d3e0e8f8556adb415e470e59007ada9759dce472adaa';
 bootstrap_checksum='3258c873cbcb1e2d81f4374afea2ea6437d9eee9077041073fd81dd579c5ba6b';
 
 check() {
@@ -17,7 +17,7 @@ install_dir="$1"
 
 mkdir -p "$install_dir/jquery"
 jquery="$(mktemp /tmp/jquery.XXXXXXXXX)"
-curl -s -o $jquery https://code.jquery.com/jquery-3.7.1.min.js
+curl -s -o $jquery https://code.jquery.com/jquery-4.0.0.min.js
 check $jquery_checksum $jquery
 mv $jquery "$install_dir/jquery/jquery.min.js"
 
