@@ -735,7 +735,12 @@ http(Config) ->
     {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, CSRFToken, User, <<"bar">>),
     {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, CSRFToken, <<"@invalidUser">>, <<"bar">>),
     {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, <<"foo">>, <<"bar">>),
-    {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, <<"guLRkZZFv+CGI7UbCnyija0KwPFmob71RGvGa7dQ5G4=">>, <<"foo">>, <<"bar">>),
+    {ok, {{_, 400, _}, _, _}} =
+        post(RegURL,
+             Token,
+             <<"guLRkZZFv+CGI7UbCnyija0KwPFmob71RGvGa7dQ5G4=">>,
+             <<"foo">>,
+             <<"bar">>),
     {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, <<"nohashtoken">>, <<"foo">>, <<"bar">>),
     {ok, {{_, 200, _}, _, _}} = post(RegURL, Token, CSRFToken, <<"foo">>, <<"bar">>),
     {ok, {{_, 404, _}, _, _}} = post(RegURL, Token, CSRFToken, <<"foo">>, <<"bar">>),

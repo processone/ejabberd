@@ -27,9 +27,9 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2, get_invites_t/2, init/2,
-         is_reserved/3, is_token_valid/3, list_invites/1, remove_user/2,
-         set_invitee/5, transaction/2]).
+-export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2,
+         get_invite_by_invitee_t/2, get_invites_t/2, init/2, is_reserved/3, is_token_valid/3,
+         list_invites/1, remove_user/2, set_invitee/5, transaction/2]).
 
 -export([sql_schemas/0]).
 
@@ -46,7 +46,31 @@ init(Host, _Opts) ->
     ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()).
 
 sql_schemas() ->
-    [#sql_schema{version = 1,
+    [#sql_schema{version = 2,
+                 tables =
+                     [#sql_table{name = <<"invite_token">>,
+                                 columns =
+                                     [#sql_column{name = <<"token">>, type = text},
+                                      #sql_column{name = <<"username">>, type = text},
+                                      #sql_column{name = <<"server_host">>, type = text},
+                                      #sql_column{name = <<"invitee">>,
+                                                  type = {text, 191},
+                                                  default = true},
+                                      #sql_column{name = <<"created_at">>,
+                                                  type = timestamp,
+                                                  default = true},
+                                      #sql_column{name = <<"expires">>,
+                                                  type = timestamp,
+                                                  default = true},
+                                      #sql_column{name = <<"type">>, type = {char, 1}},
+                                      #sql_column{name = <<"account_name">>, type = text}],
+                                 indices =
+                                     [#sql_index{columns = [<<"token">>], unique = true},
+                                      #sql_index{columns =
+                                                     [<<"username">>, <<"server_host">>]},
+                                      #sql_index{columns = [<<"invitee">>]}]}],
+                update = [{create_index, <<"invite_token">>, [<<"invitee">>]}]},
+    #sql_schema{version = 1,
                  tables =
                      [#sql_table{name = <<"invite_token">>,
                                  columns =
@@ -115,6 +139,26 @@ get_invite(Host, Token) ->
                                      "%(Token)s AND %(Host)H"))
     of
         {selected, [{User, Invitee, Type, AccountName, Expires, CreatedAt}]} ->
+            #invite_token{token = Token,
+                          inviter = {User, Host},
+                          invitee = Invitee,
+                          type = dec_type(Type),
+                          account_name = AccountName,
+                          expires = Expires,
+                          created_at = CreatedAt};
+        {selected, []} ->
+            {error, not_found}
+    end.
+
+-spec get_invite_by_invitee_t(binary(), binary()) ->
+                                 mod_invites:invite_token() | {error, not_found}.
+get_invite_by_invitee_t(Host, InviteeJid) ->
+    case ejabberd_sql:sql_query(Host,
+                                ?SQL("SELECT @(token)s, @(username)s, @(invitee)s, @(type)s, "
+                                     "@(account_name)s, @(expires)t, @(created_at)t FROM "
+                                     "invite_token WHERE invitee = %(InviteeJid)s AND %(Host)H"))
+    of
+        {selected, [{Token, User, Invitee, Type, AccountName, Expires, CreatedAt}]} ->
             #invite_token{token = Token,
                           inviter = {User, Host},
                           invitee = Invitee,
