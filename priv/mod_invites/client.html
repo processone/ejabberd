@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% block title %}{% trans "Create Account" %} | {{ app.name }} | {{ site_name }}{% endblock %}
 {% block h1 %}{% blocktrans with app_name=app.name %}Join {{ site_name }} with {{ app_name }}{% endblocktrans %}{% endblock %}
 
 {% block content %}
@@ -35,12 +35,12 @@
         <div class="ms-5">
             {% for button in app.download.buttons %}
             {% if button.image %}
-            <a href="{% if button.magic_link %}{{ button.magic_link }}{% else %}{{ button.url }}{% endif %}" {% if button.target %}target="{{ button.target }}"{% endif %} rel="noopener">
+            <a href="{% if button.magic_link %}{{ button.magic_link }}{% else %}{{ button.url }}{% endif %}" {% if button.target %}target="{{ button.target }}"{% endif %} rel="noopener" tabindex="3">
                 <img src="{{ button.image }}" {% if button.alttext %}alt="{{ button.alttext }}"{% endif %} class="invite-download-button">
             </a>
             {% endif %}
             {% if button.text %}
-            <a href="{{ button.url }}" {% if button.target %}target="{{ button.target }}"{% endif %} class="btn btn-primary" rel="noopener">
+            <a href="{{ button.url }}" {% if button.target %}target="{{ button.target }}"{% endif %} class="btn btn-primary" rel="noopener" tabindex="4">
                 {{ button.text }}
             </a>
             {% endif %}
@@ -54,13 +54,13 @@
         <p>{% trans "Installed ok? Great! <strong>Click or tap the button below</strong> to accept your invite and continue with your account setup:" %}</p>
 
         <div>
-            <a href="{{ uri }}" id="uri-cta" class="btn btn-primary ms-5 mt-1 mb-3">{% blocktrans with app_name=app.name %}Accept invite using {{ app_name }}{% endblocktrans %}</a><br/>
+            <a href="{{ uri }}" id="uri-cta" class="btn btn-primary ms-5 mt-1 mb-3" tabindex="5">{% blocktrans with app_name=app.name %}Accept invite using {{ app_name }}{% endblocktrans %}</a><br/>
         </div>
 
         <p>{% blocktrans with app_name=app.name %}After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.{% endblocktrans %}</p>
         <nav aria-label="{% trans 'Page navigation' %}">
             <ul class="pagination">
-                <li class="page-item"><a tabindex="4" class="page-link" href="/{{ base }}/{{ token }}" aria-label="{% trans 'Previous' %}">
+                <li class="page-item"><a tabindex="6" class="page-link" href="/{{ base }}/{{ token }}" aria-label="{% trans 'Previous' %}">
                     <span aria-hidden="true">&laquo;</span>
                     <span>{% trans "Previous" %}</span>
                 </a></li>

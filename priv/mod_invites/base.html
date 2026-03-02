@@ -3,10 +3,10 @@
 {% block rel_alternate %}<link rel="alternate" href="{{ uri }}">{% endblock %}
 
 {% block qr_button %}
-        <div id="qr-button-container" class="float-end w-25 border border-info p-3 d-none">
+        <div id="qr-button-container" class="float-end w-25 border border-info p-3 ms-3 d-none">
           {% trans "<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera." %}
-          <button id="qr-modal-show" class="mt-2 d-block btn btn-info" title="{% trans "Send this invite to your device" %}"
-              data-bs-toggle="modal" data-bs-target="#qr-modal">
+          <button id="qr-modal-show" class="mt-2 mx-auto d-block btn btn-info" title="{% trans "Send this invite to your device" %}"
+              data-bs-toggle="modal" data-bs-target="#qr-modal" tabindex="1">
             {% trans "Scan with mobile device" %}
           </button>
         </div>
@@ -28,7 +28,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" tabindex="2">{% trans "Close" %}</button>
           </div>
         </div>
       </div>

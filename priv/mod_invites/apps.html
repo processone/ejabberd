@@ -1,7 +1,7 @@
         <div class="container">
             <div class="row">
                 {% for item in apps %}
-                <div class="card m-3 client-card {% for platform in item.platforms %}app-platform-{{ platform|lower }} {% endfor %} flex-wrap col-sm-12 col-md-8 col-lg-5">
+                <div class="card mx-0 mb-3 me-3 client-card {% for platform in item.platforms %}app-platform-{{ platform|lower }} {% endfor %}flex-wrap col-sm-12 col-md-8 col-lg-5">
                     <div class="row no-gutters h-100">
                         <div class="col-md-4">
                             <img src="{{ static }}/{{ item.image }}" class="p-2 img-fluid" alt="{{ item.alttext }}">
@@ -13,7 +13,7 @@
                                     {% for platform in item.platforms %}<span class="badge text-bg-info client-platform-badge client-platform-badge-{{ platform|lower }} me-1 mb-3">{{ platform }}</span>{% endfor %}
                                 </div>
                                 <p class="card-text">{{ item.text }}</p>
-                                <a href="{{ item.proceed_url }}" class="btn btn-primary mt-md-auto">{% if item.select_text %}{{ item.select_text }}{% else %}{% trans "Select" %}{% endif %}</a>
+                                <a href="{{ item.proceed_url }}" class="btn btn-primary mt-md-auto" tabindex="{{ forloop.counter|add:2 }}">{% if item.select_text %}{{ item.select_text }}{% else %}{% trans "Select" %}{% endif %}</a>
                             </div>
                         </div>
                     </div>
@@ -22,5 +22,5 @@
             </div>
         </div>
         <div id="show-all-clients-button-container" class="d-none alert alert-info">
-            {% trans "Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>" %}
+            {% blocktrans with tabidx=apps|length|add:2 %}Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button' tabindex="{{ tabidx }}">view all apps.</a>{% endblocktrans %}
         </div>

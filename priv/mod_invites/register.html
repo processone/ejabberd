@@ -1,10 +1,9 @@
 {% extends "base_min.html" %}
 
+{% block title %}{% if error %}{% trans "Registration Error" %}{% else %}{% trans "Registration Form" %}{% endif %} | {{ site_name }}{% endblock %}
+{% block h1 %}{% if error %}{% trans "Registration Error" %}{% else %}{% blocktrans %}Register on {{ site_name }}{% endblocktrans %}{% endif %}{% endblock %}
 
-{% block title %}{% if error %}{% trans "Registration Error" %}{% else %}{% blocktrans %}Register on {{ site_name }}{% endblocktrans %}{% endif %}{% endblock %}
-{% block h1 %}{% block title %}{% endblock %}{% endblock %}
-
-{% block form_class %}container col-md-8 col-md-offset-2 col-sm-8 cold-sm-offset-2 col-lg-6 col-lg-offset-3 mt-2 mt-md-5{% endblock %}
+{% block form_class %}container col-md-8 col-md-offset-2 col-sm-8 cold-sm-offset-2 col-lg-6 col-lg-offset-3 my-3 mt-md-5{% endblock %}
 
 {% block content %}
         <p>{% if app %}{% blocktrans with app_name=app.name %}<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting using <strong>{{ app_name }}</strong> you need to first register an account.{% endblocktrans %}{% else %}{% blocktrans %}<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting you need to first register an account.{% endblocktrans %}{% endif %}</p>
