@@ -233,7 +233,7 @@
 {"HTTP File Upload","HTTP-Dateiupload"}.
 {"Idle connection","Inaktive Verbindung"}.
 {"If you already have {{ app_name }} installed, we recommend that you continue the account creation process using the app by clicking on the button below:","Solltest du {{ app_name }} bereits installiert haben, empfehlen wir dir die Einrichtung des Kontos mittels dieser App durchzuführen indem du auf den Button unten klickst:"}.
-{"If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform.","Solltest du noch keinen XMPP-Client installiert haben, haben wir hier eine Liste geegineter Clients für deine Platform."}.
+{"If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform.","Solltest du noch keinen XMPP-Client installiert haben, haben wir hier eine Liste geeigneter Clients für deine Platform."}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Wenn Sie das CAPTCHA-Bild nicht sehen, besuchen Sie die Webseite."}.
 {"Import Directory","Verzeichnis importieren"}.
 {"Import File","Datei importieren"}.
