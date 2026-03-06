@@ -1159,6 +1159,8 @@ make_webadmin_roster_table(Host, Username, R, RPath) ->
                                  {{<<"000--error-parsing-jid">>, <<"localhost">>, <<"">>},
                                   <<", Error parsing JID: ", Jid/binary>>}
                          end,
+                     [Gr1 | Gs] = Groups,
+                     GroupsSeparated = [Gr1 | lists:map(fun(Gx) -> ["," | Gx] end, Gs)],
                      {make_command(echo,
                                    R,
                                    [{<<"sentence">>, jid:encode(JidSplit)}],
@@ -1167,7 +1169,7 @@ make_webadmin_roster_table(Host, Username, R, RPath) ->
                       ?C(<<Nick/binary, ProblematicBin/binary>>),
                       ?C(Subscriptions),
                       ?C(Pending),
-                      ?C(Groups),
+                      ?C(GroupsSeparated),
                       make_command(delete_rosteritem,
                                    R,
                                    [{<<"localuser">>, Username},
