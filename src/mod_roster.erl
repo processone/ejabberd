@@ -1121,12 +1121,12 @@ webadmin_page_hostuser(_, Host, Username, #request{path = [<<"roster">> | RPath]
     Head = ?H1GL(<<"Roster">>, <<"modules/#mod_roster">>, <<"mod_roster">>),
     %% Execute twice: first to perform the action, the second to get new roster
     _ = make_webadmin_roster_table(Host, Username, R, RPath),
-    RV2 = make_webadmin_roster_table(Host, Username, R, RPath),
     Set = [make_command(add_rosteritem,
                         R,
                         [{<<"localuser">>, Username}, {<<"localhost">>, Host}],
                         []),
            make_command(push_roster, R, [{<<"user">>, Username}, {<<"host">>, Host}], [])],
+    RV2 = make_webadmin_roster_table(Host, Username, R, RPath),
     Get = [make_command(get_roster, R, [], [{only, presentation}]),
            make_command(delete_rosteritem, R, [], [{only, presentation}]),
            RV2],
