@@ -26,6 +26,7 @@ We would like to thanks official ejabberd source code contributors:
 - Sonny Scroggin
 - Alexey Shchepin
 - Shelley Shyan
+- Stefan Strigler
 - Radoslaw Szymczyszyn
 - Stu Tomlinson
 - Christian Ulrich
