@@ -73,6 +73,27 @@
         "download": {
             "buttons": [
                 {
+                    "image": "{{ static }}/logos/google_ps.png",
+                    "alttext": "{% trans 'Google Play Store Logo' %}",
+                    "url": "https://play.google.com/store/apps/details?id=org.yaxim.androidclient",
+                    "magic_link_format": "https://play.google.com/store/apps/details?id=org.yaxim.androidclient&referrer={{ uri }}"
+                }
+            ]
+        },
+        "image": "logos/yaxim.svg",
+        "link": "https://play.google.com/store/apps/details?id=org.yaxim.androidclient",
+        "magic_link_format": "https://play.google.com/store/apps/details?id=org.yaxim.androidclient&referrer={{ uri }}",
+        "name": "yaxim",
+        "platforms": [
+            "Android"
+        ],
+        "supports_preauth_uri": true,
+        "text": "{% trans 'A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.' %}"
+    },
+    {
+        "download": {
+            "buttons": [
+                {
                     "image": "{{ static }}/logos/apple_as.svg",
                     "alttext": "{% trans 'Apple Store Logo' %}",
                     "target": "_blank",

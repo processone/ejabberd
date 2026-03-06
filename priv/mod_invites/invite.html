@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-
+{% block title %}{% trans "Create Account" %} | {{ site_name }}{% endblock %}
 {% block content %}
         <p>{% if invite.inviter|user %}
             {% blocktrans with inviter=invite.inviter|user %}You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.{% endblocktrans %}
         {% else %}
             {% blocktrans %}You have been invited to chat on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.{% endblocktrans %}
         {% endif %}</p>
-        <h2 class="card-title h5" style="clear:both">{% trans "Get started" %}</h2>
+        <h2 class="card-title h5 clear-both">{% trans "Get started" %}</h2>
         <p>{% trans "To get started, you need to install an app for your platform:" %}</p>
 
 {% include "apps.html" %}
 
-        <h2 class="h5">{% trans "Other software" %}</h2>
-        <p id="other-software">{% blocktrans %}You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href="{{ registration_url }}">register an account manually</a>.{% endblocktrans %}</p>
+        <h2 class="h5 mt-3">{% trans "Other software" %}</h2>
+        <p id="other-software" class="mb-0">{% blocktrans with tabidx=apps|length|add:3 %}You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href="{{ registration_url }}" tabindex='{{ tabidx }}'>register an account manually</a>.{% endblocktrans %}</p>
 {% endblock %}
