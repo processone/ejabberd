@@ -1,9 +1,9 @@
-        <div class="container">
+        <div class="container mb-0">
             <div class="row">
                 {% for item in apps %}
                 <div class="card mx-0 mb-3 me-3 client-card {% for platform in item.platforms %}app-platform-{{ platform|lower }} {% endfor %}flex-wrap col-sm-12 col-md-8 col-lg-5">
                     <div class="row no-gutters h-100">
-                        <div class="col-md-4">
+                        <div class="col-md-4 pt-2 mt-1">
                             <img src="{{ static }}/{{ item.image }}" class="p-2 img-fluid" alt="{{ item.alttext }}">
                         </div>
                         <div class="col-md-8">
@@ -21,6 +21,6 @@
                 {% endfor %}
             </div>
         </div>
-        <div id="show-all-clients-button-container" class="d-none alert alert-info">
+        <div id="show-all-clients-button-container" class="d-none alert alert-info mb-0">
             {% blocktrans with tabidx=apps|length|add:2 %}Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button' tabindex="{{ tabidx }}">view all apps.</a>{% endblocktrans %}
         </div>

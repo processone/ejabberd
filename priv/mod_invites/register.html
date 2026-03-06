@@ -25,7 +25,7 @@
         {%if error and error.class == 'undefined' %}<div class="alert alert-danger" role="alert">{{ error.text }}</div>{% endif %}
         <form method="post" class="needs-validation" novalidate>
             <div class="input-group mb-3">
-                <label for="user" class="col-md-4 col-lg-12 form-label">{% trans "Username" %}:</label>
+                <label for="user" class="col-md-4 col-lg-12 form-label fw-bold">{% trans "Username" %}:</label>
                 <div class="col-md-8 col-lg-12">
                     <div class="input-group">
                         <input
@@ -43,7 +43,7 @@
                 </div>
             </div>
             <div class="input-group mb-3">
-                <label for="password" class="col-md-4 col-lg-12 form-label col-form-label">{% trans "Password" %}:</label>
+                <label for="password" class="col-md-4 col-lg-12 form-label col-form-label fw-bold">{% trans "Password" %}:</label>
                 <div class="col-md-8 col-lg-12">
                     <input type="password" name="password" class="form-control {% if error.class == 'password' %}is-invalid{% endif %}" aria-describedby="passwordHelp" tabindex="2"
                         autocomplete="new-password" required minlength="{{ password_min_length }}">
@@ -58,11 +58,11 @@
                 <input type="hidden" name="token" value="{{ token }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 {% if app %}<input type="hidden" name="app_id" value="{{ app.id }}">{% endif %}
-                <button type="submit" tabindex="3" class="btn btn-primary btn-lg">{% trans "Submit" %}</button>
+                <button type="submit" tabindex="3" class="btn btn-primary float-end">{% trans "Submit" %}</button>
             </div>
         </form>
         <nav aria-label="{% trans 'Page navigation' %}">
-            <ul class="pagination mt-3">
+            <ul class="pagination mt-3 mb-0">
                 <li class="page-item"><a tabindex="4" class="page-link" href="/{{ base }}/{{ token }}" aria-label="{% trans 'Previous' %}">
                     <span aria-hidden="true">&laquo;</span>
                     <span>{% trans "Previous" %}</span>
