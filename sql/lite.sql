@@ -470,3 +470,4 @@ CREATE TABLE invite_token (
     PRIMARY KEY (token)
 );
 CREATE INDEX i_invite_token_username ON invite_token(username);
+CREATE INDEX i_invite_token_invitee ON invite_token(invitee);
