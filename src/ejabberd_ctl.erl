@@ -946,7 +946,11 @@ get_usage_command2(Cmd, C, MaxC, ShCode) ->
 		  end,
 
     NoteEjabberdctlList = case has_list_args(ArgsDefPreliminary) of
-			  true -> ["  ", ?B("Note:"), " In a list argument, separate the elements using the , character for example: one,two,three\n\n"];
+			  true -> ["  ", ?B("Note:"),
+                                   "\n  For argument that is a list of elements:",
+                                   "\n  - To separate the elements use commas: one,two,three"
+                                   "\n  - To set an empty list in ejabberdctl use two double quotes: \"\""
+                                   "\n  - To set an empty list in WebAdmin use a single comma: ,\n\n"];
 			  false -> ""
 		      end,
     NoteEjabberdctlTuple = case has_tuple_args(ArgsDefPreliminary) of
