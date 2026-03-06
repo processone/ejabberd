@@ -109,11 +109,11 @@ jobs:
           sources: |
             ${{ steps.meta-amd.outputs.tags }}
             ${{ steps.meta-arm.outputs.tags }}
-      - uses: dataaxiom/ghcr-cleanup-action@v1
-        with:
-          dry-run: true
-          delete-tags: '*--a??64'
-          delete-untagged: true
-          delete-ghost-images: true
-          delete-partial-images: true
-          delete-orphaned-images: true
+      #- uses: dataaxiom/ghcr-cleanup-action@v1
+      #  with:
+      #    dry-run: true
+      #    delete-tags: '*--a??64'
+      #    delete-untagged: true
+      #    delete-ghost-images: true
+      #    delete-partial-images: true
+      #    delete-orphaned-images: true
