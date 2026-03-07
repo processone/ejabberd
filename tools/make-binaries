@@ -197,8 +197,8 @@ check_configured_dep_vsns()
 	          'https://www.sqlite.org/download.html' \
 	          'sqlite-autoconf-\([1-9][0-9]*\)\.tar\.gz'
 	check_vsn 'ODBC' "$odbc_vsn" \
-	          'http://www.unixodbc.org/download.html' \
-	          'unixODBC-\([1-9][0-9.]*\)\.tar\.gz'
+	          'https://github.com/lurcher/unixODBC/releases' \
+	          '\([1-9]\.[0-9][0-9]*\.[0-9][0-9]*\)'
 	#
 	# Linux-PAM uses Meson since version 1.7.0, we don't support that yet.
 	#
@@ -891,7 +891,7 @@ else
 	curl -fsSLO "https://www.ijg.org/files/$jpeg_tar"
 	curl -fsSLO "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/$webp_tar"
 	curl -fsSLO "https://github.com/libgd/libgd/releases/download/gd-$gd_vsn/$gd_tar"
-	curl -fsSLO "http://www.unixodbc.org/$odbc_tar"
+	curl -fsSLO "https://github.com/lurcher/unixODBC/releases/download/v$odbc_vsn/$odbc_tar"
 	curl -fsSLO "https://www.sqlite.org/$(date '+%Y')/$sqlite_tar" \
 	    || curl -fsSLO "https://www.sqlite.org/$(date -d '1 year ago' '+%Y')/$sqlite_tar" \
 	    || curl -fsSLO "https://www.sqlite.org/$(date -d '2 years ago' '+%Y')/$sqlite_tar"
