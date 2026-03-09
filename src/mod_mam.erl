@@ -1162,7 +1162,7 @@ store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
 	    {U, S, _} = jid:tolower(RoomJID),
 	    LServer = MUCState#state.server_host,
 	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
-					 [U, S, Peer, Nick, groupchat, recv]) of
+					 [U, S, Peer, Nick, groupchat, recv, false]) of
 		#message{} -> ok;
 		_ -> pass
 	    end;
