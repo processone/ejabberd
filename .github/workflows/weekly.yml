@@ -58,7 +58,7 @@ jobs:
     - run: make options
     - run: make xref
     - run: make dialyzer
-    - run: make test-eunit
+    - run: make testeunit
     - run: make elvis
       if: matrix.otp > '25'
 
