@@ -513,7 +513,7 @@ process_mix_message(#message{from = From, to = To,
 		    Msg2 = xmpp:put_meta(Msg1, stanza_id, MamID),
 		    case ejabberd_hooks:run_fold(
 			   store_mam_message, ServerHost, Msg2,
-			   [Chan, Host, BFrom, Nick, groupchat, recv]) of
+			   [Chan, Host, BFrom, Nick, groupchat, recv, false]) of
 			#message{} ->
 			    multicast(Mod, ServerHost, Chan, Host,
 				      ?NS_MIX_NODES_MESSAGES,

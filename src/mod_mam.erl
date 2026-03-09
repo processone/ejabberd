@@ -47,7 +47,7 @@
 	 get_room_config/4, set_room_option/3, offline_message/1, export/1,
 	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2,
 	 is_empty_for_user/2, is_empty_for_room/3, check_create_room/4,
-	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/7,
+	 process_iq/3, store_mam_message/8, make_id/0, wrap_as_mucsub/2, select/7,
 	 is_archiving_enabled/2,
 	 get_mam_count/2,
 	 webadmin_menu_hostuser/4,
@@ -1138,18 +1138,16 @@ store_msg(Pkt, LUser, LServer, Peer, Dir) ->
 	{ok, Prefs} ->
 	    UseMucArchive = mod_mam_opt:user_mucsub_from_muc_archive(LServer),
 	    StoredInMucMam = UseMucArchive andalso xmpp:get_meta(Pkt, in_muc_mam, false),
-	    case {should_archive_peer(LUser, LServer, Prefs, Peer), Pkt, StoredInMucMam} of
-		{true, #message{meta = #{sm_copy := true}}, _} ->
+	    case {should_archive_peer(LUser, LServer, Prefs, Peer), Pkt} of
+		{true, #message{meta = #{sm_copy := true}}} ->
 		    ok; % Already stored.
-		{true, _, true} ->
-		    ok; % Stored in muc archive.
-		{true, _, _} ->
+		{true, _} ->
 		    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
-						 [LUser, LServer, Peer, <<"">>, chat, Dir]) of
+						 [LUser, LServer, Peer, <<"">>, chat, Dir, StoredInMucMam]) of
 			#message{} -> ok;
 			_ -> pass
 		    end;
-		{false, _, _} ->
+		{false, _} ->
 		    pass
 	    end;
 	{error, _} ->
@@ -1171,8 +1169,9 @@ store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
 	false ->
 	    pass
     end.
-
-store_mam_message(Pkt, U, S, Peer, Nick, Type, Dir) ->
+store_mam_message(_Pkt, _U, _S, _Peer, _Nick, _Type, _Dir, true) ->
+	ok;
+store_mam_message(Pkt, U, S, Peer, Nick, Type, Dir, false) ->
     LServer = ejabberd_router:host_of_route(S),
     US = {U, S},
     ID = get_stanza_id(Pkt),
