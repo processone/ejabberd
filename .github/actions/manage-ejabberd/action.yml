@@ -83,7 +83,7 @@ runs:
                     --prefix=/tmp/ejabberd \
                     --enable-all ${{ inputs.configure }}
         sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
-        make
+        REBAR_PROFILE=test make
 
     ############################################################## Deploy #####
 
