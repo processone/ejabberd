@@ -11,6 +11,7 @@
 {"A description of the node","Una descripción del nodo"}.
 {"A friendly name for the node","Un nombre sencillo para el nodo"}.
 {"A fully-featured desktop chat client for Windows and Linux.","Un cliente de charla con muchas posibilidades para Windows y Linux."}.
+{"A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.","Un cliente Jabber/XMPP ligero para Android. Está orientado a la usabilidad, seguridad y bajo consumo, y funciona en aparatos Android antiguos a partir de Android 4.0."}.
 {"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","Un cliente XMPP ligero y potente para iPhone e iPad. Proporciona una forma sencilla de charlar y compartir momentos con tus amistades."}.
 {"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","Un cliente de charla moderno y de software libre para iPhone e iPad. Es simple de usar y tiene una interface de usuario limpia."}.
 {"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","Un cliente de charla moderno y de software libre para Mac. Es simple de usar y tiene una interface de usuario limpia."}.
@@ -228,6 +229,7 @@
 {"Hat URI","Dirección del sombrero"}.
 {"Hats limit exceeded","Se ha excedido el límite de sombreros"}.
 {"Hide","Ocultar"}.
+{"Hint","Consejo"}.
 {"Host unknown","Dominio desconocido"}.
 {"Hostname invalid","Dominio no válido"}.
 {"HTTP File Upload","Subir fichero por HTTP"}.
@@ -261,8 +263,10 @@
 {"Invalid 'previd' value","Valor de 'previd' no válido"}.
 {"Invitations are not allowed in this conference","Las invitaciones no están permitidas en esta sala"}.
 {"Invite expired","Invitación caducada"}.
+{"Invite Expired","Invitación Caducada"}.
 {"Invite to {{ site_name }}","Invitación a {{ site_name }}"}.
 {"Invite User","Invitar Usuario"}.
+{"Invite","Invitar"}.
 {"IP addresses","Direcciones IP"}.
 {"is now known as","se cambia el nombre a"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","No está permitido enviar mensajes de error a la sala. Este participante (~s) ha enviado un mensaje de error (~s) y fue expulsado de la sala"}.
@@ -477,6 +481,8 @@
 {"Register","Registrar"}.
 {"Registration Error","Error al Registrar"}.
 {"Registration error","Error en el registro"}.
+{"Registration Form","Formulario de Registro"}.
+{"Registration Success","Registro completado correctamente"}.
 {"Remote copy","Copia remota"}.
 {"Remove a hat from a user","Quitarle un sombrero a un usuario"}.
 {"Remove User","Eliminar usuario"}.
@@ -531,7 +537,7 @@
 {"Show Integral Table","Mostrar Tabla Integral"}.
 {"Show Occupants Join/Leave","Mostrar personas activas Entrar/Salir"}.
 {"Show Ordinary Table","Mostrar Tabla Ordinaria"}.
-{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>","Mostrando aplicaciones para <span class='platform-name'>tu plataforma actual</span> nada más. También puedes <a href='#' id='show-all-clients-button'>mostrar todas las aplicaciones.</a>"}.
+{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">view all apps.</a>","Mostrando aplicaciones para <span class='platform-name'>tu plataforma actual</span> nada más. También puedes <a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">mostrar todas las aplicaciones.</a>"}.
 {"Show","Mostrar"}.
 {"Shut Down Service","Detener el servicio"}.
 {"Siskin IM Logo","Logo de Siskin IM"}.
@@ -729,7 +735,7 @@
 {"You are being removed from the room because of a system shutdown","Estás siendo expulsado de la sala porque el sistema se va a detener"}.
 {"You are not allowed to send private messages","No tienes permitido enviar mensajes privados"}.
 {"You are not joined to the channel","No has entrado en el canal"}.
-{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\">register an account manually</a>.","Puedes conectarte a {{ site_name }} usando cualquier programa compatible con XMPP. Si tu programa preferido no está en esta lista, puedes <a href=\"{{ registration_url }}\">registrarte una cuenta manualmente</a>."}.
+{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>register an account manually</a>.","Puedes conectarte a {{ site_name }} usando cualquier programa compatible con XMPP. Si tu programa preferido no está en esta lista, puedes <a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>registrarte una cuenta manualmente</a>."}.
 {"You can later change your password using an XMPP client.","Puedes cambiar tu contraseña después, usando un cliente XMPP."}.
 {"You can now set up {{ app_name }} and connect it to your new account.","Ahora puedes configurar {{ app_name }} y conectarte a tu nueva cuenta."}.
 {"You can start chatting right away with {{ app_name }}. Let's get started!","Puedes empezar ya a charlar usando {{ app_name }}. ¡Empecemos!"}.
