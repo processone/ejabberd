@@ -230,7 +230,11 @@ else
   INSTALL_INVITES_DEPS=npm install
 endif
 
-invites-deps:
+invites-deps: priv/mod_invites/static/bootstrap/ priv/mod_invites/static/jquery/
+
+priv/mod_invites/static/bootstrap/:
+	$(INSTALL_INVITES_DEPS)
+priv/mod_invites/static/jquery/:
 	$(INSTALL_INVITES_DEPS)
 
 src: $(DEPSDIR)/.built
@@ -243,13 +247,13 @@ update:
 	$(REBAR) $(UPDATEDEPS) && :> $(DEPSDIR)/.got
 	$(CONFIGURE_DEPS)
 
-xref: all
+xref: src
 	$(REBAR) $(SKIPDEPS) xref $(XREFOPTIONS)
 
-hooks: all
+hooks: src
 	tools/hook_deps.sh $(EBINDIR)
 
-options: all
+options: src
 	tools/opt_types.sh ejabberd_option $(EBINDIR)
 
 translations:
