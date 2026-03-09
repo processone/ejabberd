@@ -692,6 +692,9 @@ build_deps()
 	# Revert https://github.com/erlang/otp/commit/53ef5df40c733ce3d8215c5c98805f99f378f656
 	# because it breaks MSSQL, see https://github.com/processone/ejabberd/issues/4178
 	sed -i 's|if(size == 0 && (sql_type == SQL_LONGVARCHAR|if((sql_type == SQL_LONGVARCHAR|g' lib/odbc/c_src/odbcserver.c
+	# Enable SSL features for static NIFs: https://github.com/erlang/otp/pull/10817
+	sed -i 's|^\(ALL_STATIC_CFLAGS = @DED_STATIC_CFLAGS@.*TYPE_EXTRA_CFLAGS)\) \$(CONFIGURE_ARGS)|\1 @SSL_FLAGS@ $(CONFIGURE_ARGS)|' \
+	    lib/crypto/c_src/Makefile.in
 	# The additional CFLAGS/LIBS below are required by --enable-static-nifs.
 	# The "-ldl" flag specifically is only needed for ODBC, though.
 	$configure \
