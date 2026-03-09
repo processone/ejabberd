@@ -6,14 +6,22 @@
 {" has set the subject to: "," změnil(a) téma na: "}.
 {"A description of the node","Popis uzlu"}.
 {"A friendly name for the node","Přívětivé jméno pro uzel"}.
+{"A fully-featured desktop chat client for Windows and Linux.","Plně funkční desktopový chatovací klient pro Windows a Linux."}.
+{"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","Lehký a výkonný XMPP klient pro iPhone a iPad. Nabízí snadný způsob, jak komunikovat a sdílet okamžiky s přáteli."}.
+{"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","Moderní chatovací klient s otevřeným zdrojovým kódem pro iPhone a iPad. Snadno se používá a má čisté uživatelské rozhraní."}.
+{"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","Moderní chatovací klient s otevřeným zdrojovým kódem pro Mac. Snadno se používá a má čisté uživatelské rozhraní."}.
 {"A password is required to enter this room","Pro vstup do místnosti musíte zadat heslo"}.
+{"Accept invite using {{ app_name }}","Přijmout pozvánku pomocí {{ app_name }}"}.
 {"Accept","Přijmout"}.
 {"Access denied by service policy","Přístup byl zamítnut nastavením služby"}.
 {"Action on user","Akce aplikovaná na uživatele"}.
+{"Add Contact","Přidat kontakt"}.
 {"Add User","Přidat uživatele"}.
 {"Administration of ","Administrace "}.
 {"Administration","Administrace"}.
 {"Administrator privileges required","Potřebujete práva administrátora"}.
+{"After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.","Po kliknutí na tlačítko budete přesměrováni do {{ app_name }}, kde dokončíte nastavení svého nového účtu na {{ site_name }}."}.
+{"After successfully installing {{ app_name }}, come back to this page and <strong>continue with Step 2</strong>.","Po úspěšné instalaci {{ app_name }} se vraťte na tuto stránku a <strong>pokračujte krokem 2</strong>."}.
 {"All activity","Všechny aktivity"}.
 {"All Users","Všichni uživatelé"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Povolit tomuto Jabber ID odebírat tento pubsub uzel?"}.
@@ -28,6 +36,7 @@
 {"Announcements","Oznámení"}.
 {"API Commands","API příkazy"}.
 {"April",". dubna"}.
+{"As a final reminder, your account details are shown below:","Pro připomenutí, níže jsou uvedeny údaje o vašem účtu:"}.
 {"August",". srpna"}.
 {"Automatic node creation is not enabled","Automatické vytváření uzlů není povoleno"}.
 {"Backup Management","Správa zálohování"}.
@@ -35,6 +44,7 @@
 {"Backup to File at ","Záloha do souboru na "}.
 {"Backup","Zálohovat"}.
 {"Bad format","Nesprávný formát"}.
+{"Beagle IM by Tigase, Inc. is a lightweight and powerful XMPP client for macOS.","Beagle IM od Tigase, Inc. je lehký a výkonný klient pro macOS."}.
 {"Birthday","Datum narození"}.
 {"Both the username and the resource are required","Uživatelské jméno i zdroj jsou požadované položky"}.
 {"Bytestream already activated","Bytestream již byl aktivován"}.
@@ -53,14 +63,18 @@
 {"Chatroom is stopped","Místnost zastavena"}.
 {"Chatrooms","Místnosti"}.
 {"Choose a username and password to register with this server","Zadejte jméno uživatele a heslo pro registraci na tomto serveru"}.
+{"Choose a username, this will become the first part of your new chat address.","Zvolte si uživatelské jméno, to se stane první částí Vaší chatovací adresy."}.
 {"Choose storage type of tables","Vyberte typ úložiště pro tabulky"}.
 {"Choose whether to approve this entity's subscription.","Zvolte, zda chcete schválit odebírání touto entitou."}.
 {"City","Město"}.
+{"Click the button to open the Dino website where you can download and install it on your PC.","Kliknutím na tlačítko se otevře webová stránka, odkud si můžete stáhnout aplikaci Dino a nainstalovat ji na svůj počítač."}.
+{"Close","Zavřít"}.
 {"Commands","Příkazy"}.
 {"Conference room does not exist","Místnost neexistuje"}.
 {"Configuration of room ~s","Konfigurace místnosti ~s"}.
 {"Configuration","Konfigurace"}.
 {"Country","Země"}.
+{"Creating an account will allow to communicate with other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","Vytvořením účtu budete moci komunikovat s ostatními lidmi na serveru <strong>{{ site_name }}</strong> i na ostatních serverech v rámci sítě XMPP."}.
 {"Database failure","Chyba databáze"}.
 {"Database Tables Configuration at ","Konfigurace databázových tabulek "}.
 {"Database","Databáze"}.
@@ -72,6 +86,10 @@
 {"Deliver event notifications","Doručovat upozornění na události"}.
 {"Deliver payloads with event notifications","Doručovat náklad s upozorněním na událost"}.
 {"Disc only copy","Jen kopie disku"}.
+{"Download and install {{ app_name }} below:","Stáhněte a nainstalujte {{ app_name }}:"}.
+{"Download Dino for Linux","Stáhnout Dino pro Linux"}.
+{"Download Gajim","Stahnout Gajim"}.
+{"Download Renga for Haiku","Stáhnout Renga pro Haiku"}.
 {"Dump Backup to Text File at ","Uložit zálohu do textového souboru na "}.
 {"Dump to Text File","Uložit do textového souboru"}.
 {"Edit Properties","Upravit vlastnosti"}.
@@ -87,6 +105,7 @@
 {"Enable message archiving","Povolit ukládání historie zpráv"}.
 {"Enabling push without 'node' attribute is not supported","Aktivováno push bez atributu 'node' není podporováno"}.
 {"End User Session","Ukončit sezení uživatele"}.
+{"Enter a secure password that you do not use anywhere else.","Zadejte bezpečné heslo, které nikde jinde nepoužíváte."}.
 {"Enter nickname you want to register","Zadejte přezdívku, kterou chcete zaregistrovat"}.
 {"Enter path to backup file","Zadajte cestu k souboru se zálohou"}.
 {"Enter path to jabberd14 spool dir","Zadejte cestu k jabberd14 spool adresáři"}.
@@ -119,9 +138,11 @@
 {"has been banned","byl(a) zablokován(a)"}.
 {"has been kicked because of a system shutdown","byl(a) vyhozen(a), protože dojde k vypnutí systému"}.
 {"has been kicked because of an affiliation change","byl(a) vyhozen(a) kvůli změně přiřazení"}.
-{"has been kicked because the room has been changed to members-only","byl(a) vyhozen(a), protože mísnost je nyní pouze pro členy"}.
+{"has been kicked because the room has been changed to members-only","byl(a) vyhozen(a), protože místnost je nyní pouze pro členy"}.
 {"has been kicked","byl(a) vyhozen(a) z místnosti"}.
+{"Hide","Skrýt"}.
 {"Host unknown","Neznámý hostitel"}.
+{"If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform.","Pokud ještě nemáte nainstalovaného klienta XMPP, zde je seznam vhodných klientů pro vaši platformu."}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Pokud zde nevidíte obrázek CAPTCHA, přejděte na webovou stránku."}.
 {"Import Directory","Import adresáře"}.
 {"Import File","Import souboru"}.
@@ -143,6 +164,7 @@
 {"Insufficient privilege","Nedostatečné oprávnění"}.
 {"Invalid 'from' attribute in forwarded message","Nesprávný atribut 'from' v přeposlané zprávě"}.
 {"Invitations are not allowed in this conference","Pozvánky nejsou povoleny v této místnosti"}.
+{"Invite expired","Platnost pozvánky vypršela"}.
 {"IP addresses","IP adresy"}.
 {"is now known as","se přejmenoval(a) na"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Není povoleno posílat chybové zprávy do místnosti. Účastník (~s) odeslal chybovou zprávu (~s) a byl vyhozen z místnosti"}.
@@ -154,21 +176,24 @@
 {"joins the room","vstoupil(a) do místnosti"}.
 {"July",". července"}.
 {"June",". června"}.
+{"Just created","Právě vytvořen"}.
 {"Last Activity","Poslední aktivita"}.
 {"Last login","Poslední přihlášení"}.
+{"Last message","Poslední zpráva"}.
 {"Last month","Poslední měsíc"}.
 {"Last year","Poslední rok"}.
+{"Launch {{ app_name }} and sign in using your account credentials.","Spusťte {{ app_name }} a přihlaste se pomocí Vašich přihlašovacích údajů."}.
 {"leaves the room","opustil(a) místnost"}.
+{"Logged Out","Odhlášen"}.
 {"Make participants list public","Nastavit seznam účastníků jako veřejný"}.
 {"Make room CAPTCHA protected","Chránit místnost pomocí CAPTCHA"}.
 {"Make room members-only","Zpřístupnit místnost jen členům"}.
 {"Make room moderated","Nastavit místnost jako moderovanou"}.
 {"Make room password protected","Chránit místnost heslem"}.
 {"Make room persistent","Nastavit místnost jako stálou"}.
-{"Make room public searchable","Nastavit místnost jako veřejnou"}.
 {"Malformed username","Chybně formátováné jméno uživatele"}.
 {"March",". března"}.
-{"Max payload size in bytes","Maximální náklad v bajtech"}.
+{"Maximum file size","Maximální velikost souboru"}.
 {"Maximum Number of Occupants","Maximální počet účastníků"}.
 {"May",". května"}.
 {"Membership is required to enter this room","Pro vstup do místnosti musíte být členem"}.
@@ -195,7 +220,7 @@
 {"No body provided for announce message","Zpráva neobsahuje text"}.
 {"No data form found","Nebyl nalezen datový formulář"}.
 {"No Data","Žádná data"}.
-{"No features available","Žádné funce nejsou dostupné"}.
+{"No features available","Žádné funkce nejsou dostupné"}.
 {"No hook has processed this command","Žádný hook nebyl zpracován tímto příkazem"}.
 {"No info about last activity found","Nebyla žádná informace o poslední aktivitě"}.
 {"No 'item' element found","Element 'item' nebyl nalezen"}.
@@ -221,6 +246,7 @@
 {"Nodeprep has failed","Nodeprep chyboval"}.
 {"Nodes","Uzly"}.
 {"None","Nic"}.
+{"Not allowed","Nepovoleno"}.
 {"Not Found","Nenalezeno"}.
 {"Not subscribed","Není odebíráno"}.
 {"Notify subscribers when items are removed from the node","Upozornit odběratele na odstranění položek z uzlu"}.
@@ -238,14 +264,13 @@
 {"Only deliver notifications to available users","Doručovat upozornění jen právě přihlášeným uživatelům"}.
 {"Only <enable/> or <disable/> tags are allowed","Pouze značky <enable/> nebo <disable/>jsou povoleny"}.
 {"Only <list/> element is allowed in this query","Pouze element <list/> je povolen v tomto dotazu"}.
-{"Only members may query archives of this room","Pouze moderátoři mají povoleno měnit téma místnosti"}.
 {"Only moderators and participants are allowed to change the subject in this room","Jen moderátoři a účastníci mají povoleno měnit téma této místnosti"}.
 {"Only moderators are allowed to change the subject in this room","Jen moderátoři mají povoleno měnit téma místnosti"}.
 {"Only moderators can approve voice requests","Pouze moderátoři mohou schválit žádosti o voice práva"}.
-{"Only occupants are allowed to send messages to the conference","Jen členové mají povolené zasílat zprávy do místnosti"}.
-{"Only occupants are allowed to send queries to the conference","Jen členové mohou odesílat požadavky (query) do místnosti"}.
+{"Only occupants are allowed to send messages to the conference","Pouze členové mají povolené zasílat zprávy do místnosti"}.
+{"Only occupants are allowed to send queries to the conference","Pouze členové mohou odesílat požadavky (query) do místnosti"}.
 {"Only service administrators are allowed to send service messages","Pouze správci služby smí odesílat servisní zprávy"}.
-{"Organization Name","Název firmy"}.
+{"Organization Name","Název organizace"}.
 {"Organization Unit","Oddělení"}.
 {"Other Modules Available:","Ostatní dostupné moduly:"}.
 {"Outgoing s2s Connections","Odchozí s2s spojení"}.
@@ -262,10 +287,14 @@
 {"Ping query is incorrect","Ping dotaz je nesprávný"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Podotýkáme, že tato nastavení budou zálohována do zabudované databáze Mnesia. Pokud používáte ODBC modul, musíte zálohovat svoji SQL databázi samostatně."}.
+{"Please provide a password! Minimum length: {{ password_min_length }}","Prosím vyplňte heslo! Minimální délka hesla: {{ password_min_length }}"}.
+{"Please provide a valid username!","Prosím, zadejte platné uživatelské jméno!"}.
 {"Please, wait for a while before sending new voice request","Prosím, počkejte chvíli před posláním nové žádosti o voice práva"}.
 {"Pong","Pong"}.
 {"Present real Jabber IDs to","Odhalovat skutečná Jabber ID"}.
+{"Previous","Předchozí"}.
 {"private, ","soukromá, "}.
+{"Public","Veřejný"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","Žádost odběratele PubSub"}.
 {"Purge all items when the relevant publisher goes offline","Smazat všechny položky, pokud se příslušný poskytovatel odpojí"}.
@@ -275,10 +304,13 @@
 {"RAM copy","Kopie RAM"}.
 {"Really delete message of the day?","Skutečně smazat zprávu dne?"}.
 {"Recipient is not in the conference room","Příjemce se nenachází v místnosti"}.
+{"Re-Enable User","Znovu povolit uživatele"}.
+{"Register on {{ site_name }}","Registrovat se na {{ site_name }}"}.
 {"Register","Zaregistrovat se"}.
 {"Remote copy","Vzdálená kopie"}.
 {"Remove User","Odstranit uživatele"}.
 {"Replaced by new connection","Nahrazeno novým spojením"}.
+{"Request has timed out","Časový limit požadavku vypršel"}.
 {"Resources","Zdroje"}.
 {"Restart Service","Restartovat službu"}.
 {"Restore Backup from File at ","Obnovit zálohu ze souboru na "}.
@@ -286,6 +318,7 @@
 {"Restore binary backup immediately:","Okamžitě obnovit binární zálohu:"}.
 {"Restore plain text backup immediately:","Okamžitě obnovit zálohu z textového souboru:"}.
 {"Restore","Obnovit"}.
+{"Result","Výsledek"}.
 {"Roles for which Presence is Broadcasted","Role, pro které je zpráva o stavu šířena"}.
 {"Room Configuration","Nastavení místnosti"}.
 {"Room creation is denied by service policy","Pravidla služby nepovolují vytvořit místnost"}.
@@ -295,27 +328,43 @@
 {"Roster groups allowed to subscribe","Skupiny kontaktů, které mohou odebírat"}.
 {"Roster size","Velikost seznamu kontaktů"}.
 {"Running Nodes","Běžící uzly"}.
+{"Sad person holding empty box","Smutný člověk držící prázdnou krabici"}.
 {"Saturday","Sobota"}.
+{"Scan invite code","Naskenovat kód pozvánky"}.
+{"Scan with mobile device","Skenovat pomocí mobilního zařízení"}.
+{"Search from the date","Hledat od data"}.
 {"Search Results for ","Výsledky hledání pro "}.
+{"Search the text","Hledat text"}.
+{"Search until the date","Hledat do data"}.
 {"Search users in ","Hledat uživatele v "}.
+{"Select","Vybrat"}.
 {"Send announcement to all online users on all hosts","Odeslat oznámení všem online uživatelům na všech hostitelích"}.
 {"Send announcement to all online users","Odeslat oznámení všem online uživatelům"}.
 {"Send announcement to all users on all hosts","Odeslat oznámení všem uživatelům na všech hostitelích"}.
 {"Send announcement to all users","Odeslat oznámení všem uživatelům"}.
+{"Send this invite to your device","Zaslat tuto pozvánku na Vaše zařízení"}.
 {"September",". září"}.
 {"Server:","Server:"}.
+{"Service list retrieval timed out","Časový limit pro načtení seznamu služeb vypršel"}.
 {"Set message of the day and send to online users","Nastavit zprávu dne a odeslat ji online uživatelům"}.
 {"Set message of the day on all hosts and send to online users","Nastavit zprávu dne na všech hostitelích a odeslat ji online uživatelům"}.
 {"Shared Roster Groups","Skupiny pro sdílený seznam kontaktů"}.
 {"Show Integral Table","Zobrazit kompletní tabulku"}.
 {"Show Ordinary Table","Zobrazit běžnou tabulku"}.
 {"Shut Down Service","Vypnout službu"}.
+{"Sorry, it looks like this invite code has expired!","Je nám líto, ale zdá se, že platnost pozvánky vypršela!"}.
 {"Specify the access model","Uveďte přístupový model"}.
 {"Specify the event message type","Zvolte typ zpráv pro události"}.
 {"Specify the publisher model","Specifikovat model pro publikování"}.
+{"Step 1: Download and install {{ app_name }}","Krok 1: Stáhněte si a nainstalujte {{ app_name }}"}.
+{"Step 1: Install {{ app_name }}","Krok 1: Instalace {{ app_name }}"}.
+{"Step 2: Activate your account","Krok 2: Aktivujte svůj účet"}.
+{"Step 2: Connect {{ app_name }} to your new account","Step 2: Připojte se pomocí {{ app_name }} k Vašemu novému účtu"}.
 {"Stopped Nodes","Zastavené uzly"}.
 {"Store binary backup:","Uložit binární zálohu:"}.
 {"Store plain text backup:","Uložit zálohu do textového souboru:"}.
+{"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting using <strong>{{ app_name }}</strong> you need to first register an account.","<strong>{{ site_name }}</strong> je součástí XMPP, bezpečné a decentralizované sítě pro zasílání zpráv. Abyste mohli začít chatovat pomocí aplikace <strong>{{ app_name }}</strong>, musíte se nejprve registrovat."}.
+{"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>Tip:</strong> Tuto pozvánku můžete otevřít na svém mobilním zařízení naskenováním kódu fotoaparátem."}.
 {"Subject","Předmět"}.
 {"Submit","Odeslat"}.
 {"Submitted","Odeslané"}.
@@ -324,21 +373,32 @@
 {"Sunday","Neděle"}.
 {"That nickname is already in use by another occupant","Přezdívka je již používána jiným členem"}.
 {"That nickname is registered by another person","Přezdívka je zaregistrována jinou osobou"}.
+{"The account already exists","Účet již existuje"}.
 {"The account was not unregistered","Účet nebyl smazán"}.
 {"The CAPTCHA is valid.","CAPTCHA souhlasí."}.
 {"The CAPTCHA verification has failed","Ověření CAPTCHA se nezdařilo"}.
 {"The collections with which a node is affiliated","Kolekce, se kterými je uzel spřízněn"}.
+{"The datetime when the node was created","Datum a čas vytvoření uzlu"}.
+{"The default language of the node","Výchozí jazyk uzlu"}.
 {"The feature requested is not supported by the conference","Požadovaná vlastnost není podporována touto místností"}.
+{"The list of all online users","Seznam všech online uživatelů"}.
+{"The list of all users","Seznam všech uživatelů"}.
+{"The NodeID of the relevant node","NodeID příslušného uzlu"}.
 {"The number of subscribers to the node","Počet odběratelů uzlu"}.
+{"The number of unread or undelivered messages","Počet nepřečtených nebo nedoručených zpráv"}.
 {"The password contains unacceptable characters","Heslo obsahuje nepovolené znaky"}.
 {"The password is too weak","Heslo je příliš slabé"}.
 {"the password is","heslo je"}.
+{"The passwords are different","Hesla nejsou stejná"}.
 {"The query is only allowed from local users","Dotaz je povolen pouze pro místní uživatele"}.
 {"The query must not contain <item/> elements","Dotaz nesmí obsahovat elementy <item/>"}.
+{"The role","Role"}.
+{"The sender of the last received message","Odesílatel poslední doručené zprávy"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Stanza MUSÍ obsahovat pouze jeden element <active/>, jeden element <default/> nebo jeden element <list/>"}.
 {"There was an error changing the password: ","Při změně hesla došlo k chybě: "}.
 {"There was an error creating the account: ","Při vytváření účtu došlo k chybě: "}.
 {"There was an error deleting the account: ","Při mazání účtu došlo k chybě: "}.
+{"This button works only if you have the app installed already!","Toto tlačítko funguje pouze v případě, že máte nainstalovanou vhodnou aplikaci!"}.
 {"This room is not anonymous","Tato místnost není anonymní"}.
 {"Thursday","Čtvrtek"}.
 {"Time delay","Časový posun"}.
@@ -361,10 +421,12 @@
 {"Unsupported <index/> element","Nepodporovaný <index/> element"}.
 {"Update message of the day (don't send)","Aktualizovat zprávu dne (neodesílat)"}.
 {"Update message of the day on all hosts (don't send)","Aktualizovat zprávu dne pro všechny hostitele (neodesílat)"}.
+{"Use a <em>QR code</em> scanner on your mobile device to scan the code below:","Naskenujte kód níže pomocí skeneru <em>QR kódů</em> na Vašem mobilním zařízení:"}.
 {"User already exists","Uživatel již existuje"}.
 {"User JID","Jabber ID uživatele"}.
 {"User (jid)","Uživatel (JID)"}.
 {"User Management","Správa uživatelů"}.
+{"User removed","Uživatel odstraněn"}.
 {"User session not found","Sezení uživatele nebylo nalezeno"}.
 {"User session terminated","Sezení uživatele bylo ukončeno"}.
 {"Username:","Uživatelské jméno:"}.
@@ -387,13 +449,22 @@
 {"Wednesday","Středa"}.
 {"When to send the last published item","Kdy odeslat poslední publikovanou položku"}.
 {"Whether to allow subscriptions","Povolit odebírání"}.
+{"Wrong xmlns","Chybné xmlns"}.
+{"XMPP client for Haiku","XMPP klient pro Haiku"}.
+{"XMPP Domains","XMPP domény"}.
+{"You are being removed from the room because of a system shutdown","Budete vyloučeni z místnosti kvůli vypnutí systému"}.
+{"You are not allowed to send private messages","Nemáte povoleno posílat soukromé zprávy"}.
+{"You can transfer this invite to your mobile device by scanning a code with your camera.","Tuto pozvánku můžete přenést do svého mobilního zařízení naskenováním kódu pomocí fotoaparátu."}.
 {"You have been banned from this room","Byl jste vyloučen z této místnosti"}.
-{"You have joined too many conferences","Vstoupil jste do příliš velkého množství místností"}.
+{"You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Byli jste pozváni do chatu s <strong>{{ inviter }}</strong> na serveru <strong>{{ site_name }}</strong>, který je součástí XMPP - bezpečné a decentralizované sítě pro zasílání zpráv."}.
+{"You have joined too many conferences","Vstoupili jste do příliš velkého množství místností"}.
 {"You must fill in field \"Nickname\" in the form","Musíte vyplnit políčko \"Přezdívka\" ve formuláři"}.
 {"You need a client that supports x:data and CAPTCHA to register","Pro registraci potřebujete klienta s podporou x:data a CAPTCHA"}.
 {"You need a client that supports x:data to register the nickname","Pro registraci přezdívky potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to search","K vyhledávání potřebujete klienta podporujícího x:data"}.
 {"Your active privacy list has denied the routing of this stanza.","Vaše nastavení soukromí znemožnilo směrování této stance."}.
 {"Your contact offline message queue is full. The message has been discarded.","Fronta offline zpráv pro váš kontakt je plná. Zpráva byla zahozena."}.
+{"Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone.","Vaše heslo je zašifrováno a uloženo na serveru a až zavřete tuto stránku, nebude již dostupné. Uložte si ho do bezpečí a nikdy ho s nikým nesdílejte."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Nesmíte posílat zprávy na ~s. Pro povolení navštivte ~s"}.
+{"Your XMPP account was successfully registered.","Váš účet XMPP byl úspěšně zaregistrován."}.
 {"You're not allowed to create nodes","Nemáte povoleno vytvářet uzly"}.
