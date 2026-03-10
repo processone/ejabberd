@@ -559,13 +559,14 @@ json_error(HTTPCode, JSONCode, Message) ->
 
 log(Call, Args, {Addr, Port}) ->
     AddrS = misc:ip_to_list({Addr, Port}),
-    ?INFO_MSG("API call ~ts ~p from ~ts:~p", [Call, hide_sensitive_args(Args), AddrS, Port]);
+    ?INFO_MSG("API call ~ts ~p from ~ts", [Call, hide_sensitive_args(Args),
+        ejabberd_config:may_hide_data(<<AddrS/binary, ":", (integer_to_binary(Port))/binary>>)]);
 log(Call, Args, IP) ->
-    ?INFO_MSG("API call ~ts ~p (~p)", [Call, hide_sensitive_args(Args), IP]).
+    ?INFO_MSG("API call ~ts ~p (~p)", [Call, hide_sensitive_args(Args), ejabberd_config:may_hide_data(IP)]).
 
 hide_sensitive_args(Args=[_H|_T]) ->
-    lists:map(fun({<<"password">>, Password}) -> {<<"password">>, ejabberd_config:may_hide_data(Password)};
-         ({<<"newpass">>,NewPassword}) -> {<<"newpass">>, ejabberd_config:may_hide_data(NewPassword)};
+    lists:map(fun({<<"password">>, _Password}) -> {<<"password">>, <<"hidden_by_ejabberd">>};
+         ({<<"newpass">>, _NewPassword}) -> {<<"newpass">>, <<"hidden_by_ejabberd">>};
          (E) -> E end,
          Args);
 hide_sensitive_args(NonListArgs) ->
