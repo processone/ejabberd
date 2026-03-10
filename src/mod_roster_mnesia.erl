@@ -148,14 +148,8 @@ transform({roster, USJ, US, Jid, Name, Sub, none, Ask, Groups, AskMsg, XS}) ->
        groups = Groups,
        askmessage = AskMsg,
        xs = XS};
-transform(#roster{usj = {U, S, {LU, LS, LR}},
-		  us = {U1, S1},
-		  jid = {U2, S2, R2},
-		  name = Name,
-		  groups = Gs,
-		  askmessage = Ask,
-		  xs = Xs} = R) ->
-    R#roster{usj = {iolist_to_binary(U), iolist_to_binary(S),
+transform({roster, {U, S, {LU, LS, LR}}, {U1, S1}, {U2, S2, R2}, Name, Sub, Ask, Gs, AskMsg, Xs}) ->
+    #roster{usj = {iolist_to_binary(U), iolist_to_binary(S),
 		    {iolist_to_binary(LU),
 		     iolist_to_binary(LS),
 		     iolist_to_binary(LR)}},
@@ -164,8 +158,10 @@ transform(#roster{usj = {U, S, {LU, LS, LR}},
 		    iolist_to_binary(S2),
 		    iolist_to_binary(R2)},
 	     name = iolist_to_binary(Name),
+         subscription = Sub,
+         ask = Ask,
 	     groups = [iolist_to_binary(G) || G <- Gs],
-	     askmessage = try iolist_to_binary(Ask)
+	     askmessage = try iolist_to_binary(AskMsg)
 			  catch _:_ -> <<"">> end,
 	     xs = [fxml:to_xmlel(X) || X <- Xs]};
 transform(#roster_version{us = {U, S}, version = Ver} = R) ->
