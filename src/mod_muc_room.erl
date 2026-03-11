@@ -1097,21 +1097,21 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 			 drop ->
 			     {next_state, normal_state, StateData};
 			 NewPacket1 ->
-			     NewPacket = xmpp:put_meta(xmpp:remove_subtag(
-				 add_stanza_id(NewPacket1, StateData), #nick{}),
-				 muc_sender_real_jid, From),
+			     NewPacket2 = xmpp:put_meta(NewPacket1, muc_sender_real_jid, From),
+			     NewPacket3 = xmpp:remove_subtag(NewPacket2, #nick{}),
+			     {ForHistory, ToSend} = add_stanza_id(NewPacket3, StateData),
 			     Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
 				       true -> ?NS_MUCSUB_NODES_SUBJECT
 				    end,
-			     NewStateData2 = check_message_for_retractions(NewPacket1, NewStateData1),
+			     NewStateData2 = check_message_for_retractions(ToSend, NewStateData1),
 			     send_wrapped_multiple(
-			       jid:replace_resource(StateData#state.jid, FromNick),
-			       get_users_and_subscribers_with_node(Node, StateData),
-			       NewPacket, Node, NewStateData2),
-			     NewStateData3 = case has_body_or_subject(NewPacket) of
+				 jid:replace_resource(StateData#state.jid, FromNick),
+				 get_users_and_subscribers_with_node(Node, StateData),
+				 ToSend, Node, NewStateData2),
+			     NewStateData3 = case has_body_or_subject(ToSend) of
 					       true ->
 						   add_message_to_history(FromNick, From,
-									  NewPacket,
+									  ForHistory,
 									  NewStateData2);
 					       false ->
 						   NewStateData2
@@ -1176,28 +1176,20 @@ check_message_for_retractions(Packet,
 	    State
     end.
 
--spec add_stanza_id(Packet :: message(), State :: state()) -> message().
-add_stanza_id(Packet, #state{jid = JID}) ->
-    {AddId, NewPacket} =
-    case xmpp:get_meta(Packet, stanza_id, false) of
-	false ->
-	    GenID = erlang:system_time(microsecond),
-	    {true, xmpp:put_meta(Packet, stanza_id, GenID)};
+-spec add_stanza_id(Packet :: message(), State :: state()) -> {message(), message()}.
+add_stanza_id(#message{meta = Meta} = Packet, #state{jid = JID}) ->
+    case Meta of
+	#{stanza_id := _StanzaId, mam_archived := _Archived} ->
+	    {Packet, Packet};
+	#{stanza_id := StanzaId} ->
+	    ToSend = xmpp:append_subtags(Packet, [#stanza_id{by = JID, id = integer_to_binary(StanzaId)}]),
+	    {Packet, ToSend};
 	_ ->
-	    StanzaIds = xmpp:get_subtags(Packet, #stanza_id{by = #jid{}}),
-	    HasOurStanzaId = lists:any(
-		fun(#stanza_id{by = JID2}) when JID == JID2 -> true;
-		   (_) -> false
-		end, StanzaIds),
-	    {not HasOurStanzaId, Packet}
-    end,
-    if
-	AddId ->
-	    ID = xmpp:get_meta(NewPacket, stanza_id),
-	    IDs = integer_to_binary(ID),
-	    xmpp:append_subtags(NewPacket, [#stanza_id{by = JID, id = IDs}]);
-	true ->
-	    Packet
+	    StanzaId = xmpp:get_meta(Packet, stanza_id, mod_mam:make_id()),
+	    Stripped = mod_mam:strip_my_stanza_id(Packet, JID#jid.lserver),
+	    ForHistory = xmpp:put_meta(Stripped, stanza_id, StanzaId),
+	    ToSend = xmpp:append_subtags(Packet, [#stanza_id{by = JID, id = integer_to_binary(StanzaId)}]),
+	    {ForHistory, ToSend}
     end.
 
 -spec process_normal_message(jid(), message(), state()) -> state().
@@ -2131,7 +2123,7 @@ calculate_occupant_id(Jid, #state{salt = Salt, jid = RoomJid}) ->
     Term = <<Salt/binary, ":", RoomJidS/binary, ":", JidS/binary>>,
     misc:term_to_base64(crypto:hash(sha256, Term)).
 
--spec filter_message_hook(state(), binary(), #message{}) -> drop | #message{}.
+-spec filter_message_hook(state(), binary(), #message{}) -> drop | stanza().
 filter_message_hook(#state{users = Users} = StateData, Nick, #message{from = From} = Message) ->
     OccupantId = case maps:find(jid:tolower(From), Users) of
 		     {ok, #user{occupant_id = Id}} -> Id;
@@ -2997,7 +2989,8 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
     add_to_log(text, {FromNick, Packet}, StateData),
     case check_subject(Packet) of
 	[] ->
-	    TimeStamp = erlang:timestamp(),
+	    StanzaId = xmpp:get_meta(Packet, stanza_id, mod_mam:make_id()),
+	    TimeStamp = misc:usec_to_now(StanzaId),
 	    AddrPacket = case (StateData#state.config)#config.anonymous of
 			     true -> Packet;
 			     false ->
@@ -5837,7 +5830,7 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 				    ok
 			    end;
 			_ ->
-			    false
+			    ok
 		    end;
 		_ ->
 		    ok

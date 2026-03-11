@@ -54,7 +54,7 @@
 	 webadmin_page_hostuser/4,
 	 get_mam_messages/2, webadmin_user/4,
 	 delete_old_messages_batch/5, delete_old_messages_status/1, delete_old_messages_abort/1,
-	 remove_message_from_archive/3]).
+	 remove_message_from_archive/3, strip_my_stanza_id/2]).
 
 -import(ejabberd_web_admin, [make_command/4, make_command/2]).
 
