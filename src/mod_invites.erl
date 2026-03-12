@@ -132,7 +132,7 @@ mod_doc() ->
            ?T("In order to use the included landing page feature, you have to"
               " set `landing_page` to either `auto` or an URL template like "
               "`https://{{ host }}/invites/{{ invite.token }}` "
-              " if your server setup includes a so called reverse proxy"),
+              " if your server setup includes a so called reverse proxy."),
            "",
            ?T("If you'd rather want to use an external service, set `landing_page` "
               "to something like "
@@ -193,7 +193,7 @@ mod_doc() ->
            {webchat_url,
             #{value => "none | auto | Webchat URL",
               desc =>
-                  ?T("URL to a webchat client. Upon manual registration through web-form this will be"
+                  ?T("URL to a webchat client. Upon manual registration through web-form this will be "
                      "recommended in order to get started. If `auto` is chosen, we pick the "
                      "`mod_conversejs` from the listeners section. Default is `auto`.")}}],
       example =>
