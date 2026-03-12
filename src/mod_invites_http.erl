@@ -66,6 +66,14 @@
 %% @format-begin
 
 landing_page(Host, Invite) ->
+    case landing_page_tmpl(Host) of
+        <<>> ->
+            <<>>;
+        Tmpl ->
+            render_landing_page_url(Tmpl, Host, Invite)
+    end.
+
+landing_page_tmpl(Host) ->
     case mod_invites_opt:landing_page(Host) of
         none ->
             <<>>;
@@ -75,12 +83,12 @@ landing_page(Host, Invite) ->
                     ?WARNING_MSG("'auto' URL configured for mod_invites but no request_handler found in your ~s listeners configuration.",
                                  [Host]),
                     <<>>;
-                AutoURL0 ->
-                    AutoURL = misc:expand_keyword(<<"@HOST@">>, AutoURL0, Host),
-                    render_landing_page_url(<<AutoURL/binary, "{{ invite.token }}">>, Host, Invite)
+                AutoURL ->
+                    ExpandedAutoURL = misc:expand_keyword(<<"@HOST@">>, AutoURL, Host),
+                    <<ExpandedAutoURL/binary, "{{ invite.token }}">>
             end;
         Tmpl ->
-            render_landing_page_url(Tmpl, Host, Invite)
+            Tmpl
     end.
 
 render_landing_page_url(Tmpl, Host, Invite) ->
@@ -116,7 +124,7 @@ process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) -
                     process_valid_token(LocalPath, Request, Invite)
             end;
         false ->
-            ?NOT_FOUND(render(Host, Lang, <<"invite_invalid.html">>, ctx(Request, LocalPath)))
+            ?NOT_FOUND(render(Host, Lang, <<"invite_invalid.html">>, ctx(Request, LocalPath, Token)))
     catch
         _:not_found ->
             ?NOT_FOUND;
@@ -227,7 +235,7 @@ process_register_post(Invite,
                             render_bad_request(Host,
                                                Invite,
                                                <<"register_error.html">>,
-                                               [{message, Msg} | ctx(Request, LocalPath)])
+                                               [{message, Msg} | ctx(Request, LocalPath, Token)])
                     end
             end
     catch
@@ -330,20 +338,29 @@ app_ctx(Host, AppID, Lang, Ctx) ->
 ctx(#request{host = Host,
              path = Path,
              lang = Lang},
-    LocalPath) ->
+    LocalPath,
+    Token) ->
+    OriginalPath = case landing_page_tmpl(Host) of
+		       <<>> ->
+			   Path;
+		       Tmpl ->
+			   Url = render_url(Tmpl, [{invite, [{token, Token}]}, {host, Host}]),
+			   #{path := OPath} = uri_string:parse(Url),
+			   {LPath, _Q} = ejabberd_http:url_decode_q_split_normalize(OPath),
+			   LPath
+		   end,
     Base =
         iolist_to_binary(uri_string:normalize(
-                             lists:join(<<"/">>, Path -- LocalPath))),
+                             lists:join(<<"/">>, OriginalPath -- LocalPath))),
     SiteName = mod_invites_opt:site_name(Host),
-    [{base, Base}, ?STATIC_CTX, ?SITE_NAME_CTX(SiteName), ?LANG(Lang)].
-
+    [{base, Base}, ?STATIC_CTX, ?SITE_NAME_CTX(SiteName), ?LANG(Lang)];
 ctx(Invite, #request{host = Host} = Request, LocalPath) ->
     [{invite, invite_to_proplist(Invite)},
      {uri, mod_invites:token_uri(Invite)},
      {domain, Host},
      {token, Invite#invite_token.token},
      {registration_url, <<(Invite#invite_token.token)/binary, "/", ?REGISTRATION/binary>>}
-     | ctx(Request, LocalPath)].
+     | ctx(Request, LocalPath, Invite#invite_token.token)].
 
 apps_json(Host, Lang, Ctx) ->
     AppsBins = render(Host, Lang, <<"apps.json">>, Ctx),
