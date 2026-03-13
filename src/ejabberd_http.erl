@@ -134,7 +134,7 @@ init(SockMod, Socket, Opts) ->
                                               [Opts]),
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
-    {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?$">>),
+    {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?\s*$">>),
 
     CustomHeaders = proplists:get_value(custom_headers, Opts, []),
 
