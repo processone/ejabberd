@@ -216,7 +216,7 @@ get_api_version([], Host) ->
     catch error:{module_not_loaded, ?MODULE, Host} ->
         ?WARNING_MSG("Using module ~p for host ~s, but it isn't configured "
                      "in the configuration file", [?MODULE, Host]),
-        ?DEFAULT_API_VERSION
+        mod_http_api_opt:default_version(global)
     end.
 
 %% ----------------
