@@ -37,7 +37,7 @@
                 bind/1, auth/1, auth/2, open_session/1, open_session/2,
 		zlib/1, starttls/1, starttls/2, close_socket/1, init_stream/1,
 		auth_legacy/2, auth_legacy/3, tcp_connect/1, send_text/2,
-		set_roster/3, del_roster/1]).
+		set_roster/3, del_roster/1, connect_sasl2/2, auth_SASL2/3, auth_fast_token/4]).
 -include("suite.hrl").
 
 suite() ->
@@ -331,6 +331,9 @@ init_per_testcase(TestCase, OrigConfig) ->
             connect(Config);
         "auth_plain" ->
             connect(Config);
+	"auth_sasl2" ->
+	    Jid = jid:encode(jid:make(User, Server)),
+	    connect_sasl2(starttls(connect_sasl2(Config, Jid)), Jid);
 	"auth_external" ++ _ ->
 	    connect(Config);
 	"unauthenticated_" ++ _ ->
@@ -433,6 +436,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
       [test_register,
        legacy_auth_tests(),
        auth_plain,
+       auth_sasl2,
        auth_md5,
        presence_broadcast,
        last,
@@ -849,6 +853,26 @@ auth_plain(Config) ->
         false ->
             disconnect(Config),
             {skipped, 'PLAIN_not_available'}
+    end.
+
+auth_sasl2(Config) ->
+    Mechs = ?config(mechs, Config),
+    case lists:member(<<"DIGEST-MD5">>, Mechs) of
+	true ->
+	    Config2 = disconnect(auth_SASL2(<<"DIGEST-MD5">>, Config, false)),
+	    case ?config(fast_token, Config2) of
+		<<>> -> disconnect(Config);
+		Token ->
+		    User = ?config(user, Config),
+		    Jid = jid:encode(jid:make(User, ?config(server, Config))),
+		    Hash = crypto:mac(hmac, sha256, Token, <<"Initiator">>),
+		    CalcToken = (<<User/binary, 0, Hash/binary>>),
+		    Config3 = connect_sasl2(starttls(connect_sasl2(Config2, Jid)), Jid),
+		    disconnect(auth_fast_token(<<"HT-SHA-256-NONE">>, CalcToken, Config3, false))
+	    end;
+	false ->
+	    disconnect(Config),
+	    {skipped, 'PLAIN_not_available'}
     end.
 
 auth_external(Config0) ->

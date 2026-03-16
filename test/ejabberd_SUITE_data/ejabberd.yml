@@ -156,6 +156,7 @@ Welcome to this XMPP server."
     get_url: GET_URL
     max_size: 10000
     vcard: VCARD
+  mod_auth_fast: []
 registration_timeout: infinity
 s2s_use_starttls: false
 ca_file: CAFILE

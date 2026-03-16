@@ -273,6 +273,15 @@ connect(Config) ->
 	component -> NewConfig
     end.
 
+connect_sasl2(Config, Jid) ->
+    Config2 = set_opt(stream_from, Jid, Config),
+    NewConfig = init_stream(Config2),
+    case ?config(type, NewConfig) of
+	client -> process_stream_features(NewConfig);
+	server -> process_stream_features(NewConfig);
+	component -> NewConfig
+    end.
+
 tcp_connect(Config) ->
     case ?config(receiver, Config) of
 	undefined ->
@@ -548,6 +557,70 @@ wait_auth_SASL_result(Config, ShouldFail) ->
 	    Config;
         #sasl_failure{} ->
             ct:fail(sasl_auth_failed)
+    end.
+
+auth_fast_token(Mech, Token, Config, ShouldFail) ->
+    Pkt = #sasl2_authenticate{mechanism = Mech, initial_response = Token,
+			      sub_els = [#bind2_bind{tag = <<"TestRunner">>}],
+			      user_agent = #sasl2_user_agent{id = <<"9A62C3A9-FE59-43B7-80F3-9E8EE25DE6C5">>,
+							     software = <<"TestRunner">>, device = <<"tester">>}},
+    send(Config, Pkt),
+    wait_auth_SASL2_result(Config, ShouldFail).
+
+auth_SASL2(Mech, Config, ShouldFail) ->
+    Creds = {?config(user, Config),
+	     ?config(server, Config),
+	     ?config(password, Config)},
+    {Response, SASL} = sasl_new(Mech, Creds),
+    Pkt = #sasl2_authenticate{mechanism = Mech, initial_response = Response,
+			      sub_els = [#bind2_bind{tag = <<"TestRunner">>}, #fast_request_token{mech = <<"HT-SHA-256-NONE">>}],
+			      user_agent = #sasl2_user_agent{id = <<"9A62C3A9-FE59-43B7-80F3-9E8EE25DE6C5">>,
+				  software = <<"TestRunner">>, device = <<"tester">>}},
+    send(Config, Pkt),
+    wait_auth_SASL2_result(set_opt(sasl, SASL, Config), ShouldFail).
+
+wait_auth_SASL2_result(Config, ShouldFail) ->
+    receive
+	#sasl2_success{} when ShouldFail ->
+	    ct:fail(sasl_auth_should_have_failed);
+	#sasl2_success{jid = JID} = Pkt ->
+	    case {xmpp:get_subtag(Pkt, #bind2_bound{}), xmpp:get_subtag(Pkt, #fast_token{})} of
+		{false, _} ->
+		    ct:fail(sasl2_bound_missing);
+		{_, Token} ->
+		    {User, S, Resource} = jid:tolower(JID),
+		    RawToken = case Token of
+			#fast_token{token = T} -> T;
+			_ -> <<>>
+		    end,
+		    Config2 = set_opt(user, User,
+				      set_opt(resource, Resource,
+					      set_opt(fast_token, RawToken, Config))),
+		    receive #stream_features{sub_els = Fs} ->
+			lists:foldl(
+			    fun(#feature_sm{}, ConfigAcc) ->
+				set_opt(sm, true, ConfigAcc);
+			       (#feature_csi{}, ConfigAcc) ->
+				   set_opt(csi, true, ConfigAcc);
+			       (#rosterver_feature{}, ConfigAcc) ->
+				   set_opt(rosterver, true, ConfigAcc);
+			       (#feature_pre_approval{}, ConfigAcc) ->
+				   set_opt(pre_approval, true, ConfigAcc);
+			       (#compression{methods = Ms}, ConfigAcc) ->
+				   set_opt(compression, Ms, ConfigAcc);
+			       (_, ConfigAcc) ->
+				   ConfigAcc
+			    end, Config2, Fs)
+		    end
+	    end;
+	#sasl2_challenge{text = ClientIn} ->
+	    {Response, SASL} = (?config(sasl, Config))(ClientIn),
+	    send(Config, #sasl2_response{text = Response}),
+	    wait_auth_SASL2_result(set_opt(sasl, SASL, Config), ShouldFail);
+	#sasl2_failure{} when ShouldFail ->
+	    Config;
+	#sasl2_failure{} ->
+	    ct:fail(sasl_auth_failed)
     end.
 
 re_register(Config) ->
