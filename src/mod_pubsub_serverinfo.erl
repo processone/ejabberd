@@ -49,16 +49,12 @@
 %% @format-begin
 
 start(Host, Opts) ->
-    case pubsub_host(Host, Opts) of
-        {error, _Reason} = Error ->
-            Error;
-        PubsubHost ->
-            ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
-            ejabberd_hooks:add(disco_info, Host, ?MODULE, get_info, 50),
-            ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE, out_auth_result, 50),
-            ejabberd_hooks:add(s2s_in_auth_result, Host, ?MODULE, in_auth_result, 50),
-            gen_mod:start_child(?MODULE, Host, PubsubHost)
-    end.
+    PubsubHost = mod_pubsub_serverinfo_opt:pubsub_host(Opts),
+    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
+    ejabberd_hooks:add(disco_info, Host, ?MODULE, get_info, 50),
+    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE, out_auth_result, 50),
+    ejabberd_hooks:add(s2s_in_auth_result, Host, ?MODULE, in_auth_result, 50),
+    gen_mod:start_child(?MODULE, Host, #{pubsub => PubsubHost}).
 
 stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 50),
@@ -67,7 +63,7 @@ stop(Host) ->
     ejabberd_hooks:delete(s2s_in_auth_result, Host, ?MODULE, in_auth_result, 50),
     gen_mod:stop_child(?MODULE, Host).
 
-init([Host, PubsubHost]) ->
+init([Host, #{pubsub := PubsubHost}]) ->
     TRef =
         timer:send_interval(
             timer:minutes(5), self(), update_pubsub),
@@ -194,10 +190,13 @@ depends(_Host, _Opts) ->
     [{mod_pubsub, hard}].
 
 mod_options(_Host) ->
-    [{pubsub_host, undefined}].
+    [{pubsub_host, gen_mod:depend_on([{mod_pubsub, host}, {mod_pubsub, hosts}],
+                                     fun([Host, Hosts]) ->
+                                         hd(gen_mod:get_opt_hosts(#{host => Host, hosts => Hosts}))
+                                     end)}].
 
 mod_opt_type(pubsub_host) ->
-    econf:either(undefined, econf:host()).
+    econf:host().
 
 mod_doc() ->
     #{desc =>
@@ -340,7 +339,7 @@ get_info(Acc, Host, Mod, Node, Lang)
     when Mod == undefined orelse Mod == mod_disco, Node == <<"">> ->
     case mod_disco:get_info(Acc, Host, Mod, Node, Lang) of
         [#xdata{fields = Fields} = XD | Rest] ->
-            PubsubHost = pubsub_host(Host),
+            PubsubHost = mod_pubsub_serverinfo_opt:pubsub_host(Host),
             NodeField =
                 #xdata_field{var = <<"serverinfo-pubsub-node">>,
                              values = [<<"xmpp:", PubsubHost/binary, "?;node=serverinfo">>]},
@@ -349,7 +348,7 @@ get_info(Acc, Host, Mod, Node, Lang)
             Acc
     end;
 get_info(Acc, Host, Mod, Node, _Lang) when Node == <<"">>, is_atom(Mod) ->
-    PubsubHost = pubsub_host(Host),
+    PubsubHost = mod_pubsub_serverinfo_opt:pubsub_host(Host),
     [#xdata{type = result,
             fields =
                 [#xdata_field{type = hidden,
@@ -360,35 +359,3 @@ get_info(Acc, Host, Mod, Node, _Lang) when Node == <<"">>, is_atom(Mod) ->
      | Acc];
 get_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
-
-pubsub_host(Host) ->
-    {ok, PubsubHost} =
-        gen_server:call(
-            gen_mod:get_module_proc(Host, ?MODULE), pubsub_host),
-    PubsubHost.
-
-pubsub_host(Host, Opts) ->
-    case gen_mod:get_opt(pubsub_host, Opts) of
-        undefined ->
-            PubsubHost = hd(get_mod_pubsub_hosts(Host)),
-            ?INFO_MSG("No pubsub_host in configuration for ~p, choosing ~s", [?MODULE, PubsubHost]),
-            PubsubHost;
-        PubsubHost ->
-            case check_pubsub_host_exists(Host, PubsubHost) of
-                true ->
-                    PubsubHost;
-                false ->
-                    {error, {pubsub_host_does_not_exist, PubsubHost}}
-            end
-    end.
-
-check_pubsub_host_exists(Host, PubsubHost) ->
-    lists:member(PubsubHost, get_mod_pubsub_hosts(Host)).
-
-get_mod_pubsub_hosts(Host) ->
-    case gen_mod:get_module_opt(Host, mod_pubsub, hosts) of
-        [] ->
-            [gen_mod:get_module_opt(Host, mod_pubsub, host)];
-        PubsubHosts ->
-            PubsubHosts
-    end.
