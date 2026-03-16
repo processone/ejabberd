@@ -588,7 +588,7 @@ wait_auth_SASL2_result(Config, ShouldFail) ->
 		{false, _} ->
 		    ct:fail(sasl2_bound_missing);
 		{_, Token} ->
-		    {User, S, Resource} = jid:tolower(JID),
+		    {User, _S, Resource} = jid:tolower(JID),
 		    RawToken = case Token of
 			#fast_token{token = T} -> T;
 			_ -> <<>>
