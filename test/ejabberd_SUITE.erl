@@ -861,7 +861,7 @@ auth_sasl2(Config) ->
 	true ->
 	    Config2 = disconnect(auth_SASL2(<<"DIGEST-MD5">>, Config, false)),
 	    case ?config(fast_token, Config2) of
-		<<>> -> disconnect(Config);
+		<<>> -> Config2;
 		Token ->
 		    User = ?config(user, Config),
 		    Jid = jid:encode(jid:make(User, ?config(server, Config))),
