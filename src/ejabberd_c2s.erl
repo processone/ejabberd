@@ -504,10 +504,10 @@ get_fast_tokens_fun(_Mech, #{lserver := LServer}) ->
 	end
     end.
 
-fast_mechanisms(#{lserver := LServer}) ->
+fast_mechanisms(#{lserver := LServer} = State) ->
     case gen_mod:is_loaded(LServer, mod_auth_fast) of
 	false -> [];
-	_  -> mod_auth_fast:get_mechanisms(LServer)
+	_  -> mod_auth_fast:get_mechanisms(LServer, State)
     end.
 
 bind(

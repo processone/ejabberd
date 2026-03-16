@@ -30,7 +30,7 @@
 -export([mod_doc/0]).
 %% Hooks
 -export([c2s_inline_features/3, c2s_handle_sasl2_inline/1,
-	 get_tokens/3, get_mechanisms/1, remove_user_tokens/2]).
+	 get_tokens/3, get_mechanisms/2, remove_user_tokens/2]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include_lib("xmpp/include/scram.hrl").
@@ -117,8 +117,22 @@ mod_doc() ->
        "  mod_auth_fast:",
        "    token_lifetime: 14days"]}.
 
-get_mechanisms(_LServer) ->
-    [<<"HT-SHA-256-NONE">>, <<"HT-SHA-256-UNIQ">>, <<"HT-SHA-256-EXPR">>, <<"HT-SHA-256-ENDP">>].
+get_mechanisms(_LServer, #{sasl_channel_bindings := Bindings}) ->
+    [<<"HT-SHA-256-NONE">>] ++
+    case Bindings of
+	#{<<"tls-unique">> := _} -> [<<"HT-SHA-256-UNIQ">>];
+	_ -> []
+    end ++
+    case Bindings of
+	#{<<"tls-exporter">> := _} -> [<<"HT-SHA-256-EXPR">>];
+	_ -> []
+    end ++
+    case Bindings of
+	#{<<"tls-server-end-point">> := _} -> [<<"HT-SHA-256-ENDP">>];
+	_ -> []
+    end;
+get_mechanisms(_LServer, _State) ->
+    [<<"HT-SHA-256-NONE">>].
 
 ua_hash(UA) ->
     crypto:hash(sha256, UA).
@@ -131,8 +145,8 @@ get_tokens(LServer, LUser, UA) ->
 	    {{Type, CreatedAt < ToRefresh}, Token}
 	end, Mod:get_tokens(LServer, LUser, ua_hash(UA))).
 
-c2s_inline_features({Sasl, Bind, Extra}, Host, _State) ->
-    {Sasl ++ [#fast{mechs = get_mechanisms(Host)}], Bind, Extra}.
+c2s_inline_features({Sasl, Bind, Extra}, Host, State) ->
+    {Sasl ++ [#fast{mechs = get_mechanisms(Host, State)}], Bind, Extra}.
 
 gen_token(#{sasl2_ua_id := UA, server := Server, user := User}) ->
     Mod = gen_mod:db_mod(Server, ?MODULE),
