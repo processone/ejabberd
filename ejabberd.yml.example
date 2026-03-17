@@ -76,11 +76,6 @@ listen:
     # turn_ipv4_address: "203.0.113.3"
     ## The server's public IPv6 address:
     # turn_ipv6_address: "2001:db8::3"
-  -
-    port: 1883
-    ip: "::"
-    module: mod_mqtt
-    backlog: 1000
 
 s2s_use_starttls: optional
 
@@ -192,7 +187,6 @@ modules:
     ## db_type: sql
     assume_mam_usage: true
     default: always
-  mod_mqtt: {}
   mod_muc:
     access:
       - allow
