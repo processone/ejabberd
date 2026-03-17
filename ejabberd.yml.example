@@ -24,6 +24,15 @@ loglevel: info
 #  - /etc/letsencrypt/live/domain.tld/fullchain.pem
 #  - /etc/letsencrypt/live/domain.tld/privkey.pem
 
+auth_stored_password_types:
+    - scram_sha1
+    - scram_sha256
+    - scram_sha512
+
+disable_sasl_mechanisms:
+  - "digest-md5"
+  - "X-OAUTH2"
+
 listen:
   -
     port: 5222
