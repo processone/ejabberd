@@ -33,6 +33,8 @@ disable_sasl_mechanisms:
   - "digest-md5"
   - "X-OAUTH2"
 
+registration_timeout: 3600
+
 listen:
   -
     port: 5222
