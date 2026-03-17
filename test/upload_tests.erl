@@ -167,10 +167,20 @@ put_request(_Config, URL0, Data) ->
 get_request(_Config, URL0, Data) ->
     ct:comment("Getting ~B bytes from ~s", [size(Data), URL0]),
     URL = binary_to_list(URL0),
-    {ok, {{"HTTP/1.1", 200, _}, _, Body}} =
+    {ok, {{"HTTP/1.1", 200, _}, Headers, Body}} =
 	httpc:request(get, {URL, []}, [], [{body_format, binary}]),
     ct:comment("Checking returned body"),
-    Body = Data.
+    Body = Data,
+    ct:comment("Request had Etag"),
+    Etag = ?match({_, Etag}, lists:keyfind("etag", 1, Headers), Etag),
+    ct:comment("Request had Last-Modified"),
+    LM = ?match({_, LM}, lists:keyfind("last-modified", 1, Headers), LM),
+    ct:comment("Request with Etag are handled correctly"),
+    {ok, {{"HTTP/1.1", 304, _}, _, _}} =
+	httpc:request(get, {URL, [{"If-None-Match", ["\"",Etag,"\""]}]}, [], [{body_format, binary}]),
+    ct:comment("Request with If-Modified-Since are handled correctly"),
+    {ok, {{"HTTP/1.1", 304, _}, _, _}} =
+	httpc:request(get, {URL, [{"If-Modified-Since", LM}]}, [], [{body_format, binary}]).
 
 max_size_exceed(Config, NS) ->
     To = upload_jid(Config),

@@ -517,7 +517,9 @@ process_request(#state{request_method = Method,
 			  make_text_output(State, Status,
 					   apply_custom_headers(Headers, CustomHeaders), Output);
 		      {Status, Headers, {file, FileName}} ->
-			  make_file_output(State, Status, Headers, FileName);
+			  make_file_output(State, Status, Headers, FileName, []);
+		      {Status, Headers, {file, FileName, ReqHeaders}} ->
+			  make_file_output(State, Status, Headers, FileName, ReqHeaders);
 		      {Status, Reason, Headers, Output}
 			when is_binary(Output) or is_list(Output) ->
 			  make_text_output(State, Status, Reason,
@@ -683,22 +685,107 @@ make_text_output(State, Status, Reason, Headers, Text) ->
     EncodedHdrs = make_headers(State, Status, Reason, Headers, Data2),
     [EncodedHdrs, Data2].
 
-make_file_output(State, Status, Headers, FileName) ->
+parse_etags(Etags, WeakIgnore) ->
+    lists:filtermap(
+	fun(Value) ->
+	    case string:trim(Value) of
+		<<"W/\"", _Rest/binary>> when WeakIgnore ->
+		    false;
+		<<"W/\"", Rest/binary>> ->
+		    case string:split(Rest, <<"\"">>, trailing) of
+			[Etag, _] -> {true, Etag};
+			_ -> false
+		    end;
+		<<"\"", Rest/binary>> ->
+		    case string:split(Rest, <<"\"">>, trailing) of
+			[Etag, _] -> {true, Etag};
+			_ -> false
+		    end;
+		<<"*">> -> true;
+		_ -> false
+	    end
+	end,
+	string:split(Etags, <<",">>, all)).
+
+
+process_etags(Etag, RequestHeaders) ->
+    process_etags(Etag, RequestHeaders, if_match).
+
+process_etags(Etag, RequestHeaders, if_match) ->
+    case lists:keyfind('If-Match', 1, RequestHeaders) of
+	{_, Header} ->
+	    Etags = parse_etags(Header, true),
+	    case lists:any(fun(V) -> V == <<"*">> orelse V == Etag end, Etags) of
+		true -> process_etags(Etag, RequestHeaders, if_none_match);
+		_ -> {true, 412}
+	    end;
+	_ ->
+	    process_etags(Etag, RequestHeaders, if_none_match)
+    end;
+process_etags(Etag, RequestHeaders, if_none_match) ->
+    case lists:keyfind('If-None-Match', 1, RequestHeaders) of
+	{_, Header} ->
+	    Etags = parse_etags(Header, false),
+	    case lists:any(fun(V) -> V == <<"*">> orelse V == Etag end, Etags) of
+		true -> {true, 304};
+		_ -> false
+	    end;
+	_ ->
+	    false
+    end.
+
+process_if_modified_since(MTime, RequestHeaders) ->
+    case lists:keyfind('If-Modified-Since', 1, RequestHeaders) of
+	{_, Header} ->
+	    case httpd_util:convert_request_date(binary_to_list(Header)) of
+		bad_date ->
+		    false;
+		LM ->
+		    T1 = calendar:datetime_to_gregorian_seconds(
+			calendar:universal_time_to_local_time(LM)),
+		    T2 = calendar:datetime_to_gregorian_seconds(MTime),
+		    case T1 >= T2 of
+			true ->
+			    {true, 304};
+			_-> false
+		    end
+	    end;
+	_ ->
+	    false
+    end.
+
+make_file_output(State, Status, Headers, FileName, RequestHeaders) ->
     case file:read_file_info(FileName) of
-	{ok, #file_info{size = Size}} when State#state.request_method == 'HEAD' ->
-	    make_headers(State, Status, <<"">>, Headers, Size);
-	{ok, #file_info{size = Size}} ->
-	    case file:open(FileName, [raw, read]) of
-		{ok, Fd} ->
-		    EncodedHdrs = make_headers(State, Status, <<"">>, Headers, Size),
-		    send_text(State, EncodedHdrs),
-		    send_file(State, Fd, Size, FileName),
-		    file:close(Fd),
-		    none;
-		{error, Why} ->
-		    Reason = file_format_error(Why),
-		    ?ERROR_MSG("Failed to open ~ts: ~ts", [FileName, Reason]),
-		    make_text_output(State, 404, Reason, [], <<>>)
+	{ok, #file_info{size = Size, mtime = MTime} = FI} ->
+	    Etag = list_to_binary(httpd_util:create_etag(FI)),
+	    ExtraHeaders = [{<<"Last-Modified">>, httpd_util:rfc1123_date(MTime)},
+			    {<<"ETag">>, Etag}],
+	    case process_etags(Etag, RequestHeaders) of
+		false ->
+		    case process_if_modified_since(MTime, RequestHeaders) of
+			false ->
+			    if
+				State#state.request_method == 'HEAD' ->
+				    make_headers(State, Status, <<"">>, ExtraHeaders ++ Headers, Size);
+				true ->
+				    case file:open(FileName, [raw, read]) of
+					{ok, Fd} ->
+					    EncodedHdrs = make_headers(State, Status, <<"">>, ExtraHeaders ++ Headers, Size),
+					    send_text(State, EncodedHdrs),
+					    send_file(State, Fd, Size, FileName),
+					    file:close(Fd),
+					    none;
+					{error, Why} ->
+					    Reason = file_format_error(Why),
+					    ?ERROR_MSG("Failed to open ~ts: ~ts", [FileName, Reason]),
+					    make_text_output(State, 404, Reason, [], <<>>)
+				    end
+			    end;
+			{_, NewStatus} ->
+			    make_headers(State, NewStatus, <<"">>, ExtraHeaders ++ Headers, 0)
+		    end;
+		{_, NewStatus} ->
+		    make_headers(State, NewStatus, <<"">>, ExtraHeaders ++ Headers, 0)
 	    end;
 	{error, Why} ->
 	    Reason = file_format_error(Why),
