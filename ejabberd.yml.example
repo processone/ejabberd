@@ -158,6 +158,10 @@ shaper_rules:
     normal: all
   s2s_shaper: fast
 
+trusted_proxies:
+  - 127.0.0.1
+  - 2a01:4f9:c010:c62b::1
+
 modules:
   mod_adhoc: {}
   mod_adhoc_api: {}
