@@ -57,6 +57,7 @@ listen:
       /api: mod_http_api
       /bosh: mod_bosh
       /captcha: ejabberd_captcha
+      /invites: mod_invites
       /upload: mod_http_upload
       /ws: ejabberd_http_ws
   -
@@ -179,6 +180,8 @@ modules:
       "Access-Control-Allow-Origin": "https://@HOST@"
       "Access-Control-Allow-Methods": "GET,HEAD,PUT,OPTIONS"
       "Access-Control-Allow-Headers": "Content-Type"
+  mod_invites:
+      landing_page: auto
   mod_last: {}
   mod_mam:
     ## Mnesia is limited to 2GB, better to use an SQL backend
