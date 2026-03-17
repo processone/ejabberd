@@ -98,6 +98,10 @@ acl:
     ip:
       - 127.0.0.0/8
       - ::1/128
+  ## Uncomment below to set an admin user. Be sure to edit the value of that
+  ## user to the account you want to use.
+#  admin:
+#    user: admin
 
 access_rules:
   local:
