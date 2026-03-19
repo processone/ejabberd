@@ -33,6 +33,8 @@ disable_sasl_mechanisms:
   - "digest-md5"
   - "X-OAUTH2"
 
+hide_sensitive_log_data: true
+
 registration_timeout: 3600
 
 listen:
