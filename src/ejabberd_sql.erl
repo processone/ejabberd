@@ -91,6 +91,10 @@
 -dialyzer([no_opaque_union]).
 -endif.
 
+-ifndef(OTP_BELOW_28).
+-compile({nowarn_deprecated_function, [{odbc, connect, 2}, {odbc, sql_query, 3}]}).
+-endif.
+
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 

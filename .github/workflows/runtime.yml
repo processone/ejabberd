@@ -52,7 +52,8 @@ jobs:
       run: |
         apt-get -qq update
         apt-get -q -y install libexpat1-dev libgd-dev libpam0g-dev \
-                              libsqlite3-dev libwebp-dev libyaml-dev
+                              libsqlite3-dev libwebp-dev libyaml-dev \
+                              unixodbc-dev
 
     - name: Cache rebar3
       if: matrix.rebar == 'rebar3'
