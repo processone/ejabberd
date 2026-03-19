@@ -33,7 +33,7 @@
 	 accept/1, receive_headers/1, recv_file/2,
 	 listen_opt_type/1, listen_options/0,
 	 apply_custom_headers/2]).
--export([get_url/4, get_auto_url/2, get_auto_urls/2, find_handler_port_path/2]).
+-export([get_url/4, get_auto_url/2, get_auto_urls/2, find_handler_port_path/2, url_decode_q_split_normalize/1]).
 -export([init/3]).
 
 -deprecate({get_auto_url, 2}).
