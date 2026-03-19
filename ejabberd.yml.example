@@ -89,7 +89,7 @@ listen:
     ## The server's public IPv6 address:
     # turn_ipv6_address: "2001:db8::3"
 
-s2s_use_starttls: optional
+s2s_use_starttls: required
 
 acl:
   local:
