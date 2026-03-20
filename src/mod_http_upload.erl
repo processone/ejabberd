@@ -1070,7 +1070,8 @@ http_response(Code, ExtraHeaders) ->
     Message = <<(code_to_message(Code))/binary, $\n>>,
     http_response(Code, ExtraHeaders, Message).
 
--type http_body() :: binary() | {file, file:filename_all()}.
+-type http_body() :: binary() | {file, file:filename_all()} |
+	{file, file:filename_all(), [{binary(), binary()}]}.
 -spec http_response(100..599, [{binary(), binary()}], http_body())
       -> {pos_integer(), [{binary(), binary()}], http_body()}.
 http_response(Code, ExtraHeaders, Body) ->
