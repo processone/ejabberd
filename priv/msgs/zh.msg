@@ -10,7 +10,8 @@
 {"# participants","# 参与者"}.
 {"A description of the node","节点的描述"}.
 {"A friendly name for the node","节点的友好名称"}.
-{"A fully-featured desktop chat client for Windows and Linux.","功能齐全的 Windows 和 Linux 桌面聊天客户端。"}.
+{"A fully-featured desktop chat client for Windows and Linux.","适用于 Windows 和 Linux 的功能齐全的桌面聊天客户端。"}.
+{"A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.","适用于 Android 的轻量级 Jabber/XMPP 客户端，注重易用性、低开销和安全性，可在 Android 4.0 及更高版本的低端设备上运行。"}.
 {"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","适用于 iPhone 和 iPad 的轻量高效 XMPP 客户端，让您轻松与好友畅聊并分享生活瞬间。"}.
 {"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","适用于 iPhone 和 iPad 的现代开源聊天客户端，易于使用，界面简洁。"}.
 {"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","适用于 Mac 的现代开源聊天客户端，易于使用，界面简洁。"}.
@@ -117,7 +118,7 @@
 {"Congratulations!","恭喜！"}.
 {"Contact Addresses (normally, room owner or owners)","联系地址（通常为房间所有者）"}.
 {"Contacts","联系人"}.
-{"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations 是专为 Android 6.0 及更高版本智能手机优化的 Jabber/XMPP 客户端，提供独特的移动端体验。"}.
+{"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations 是适用于 Android 6.0 及更高版本智能手机的 Jabber/XMPP 客户端，经过优化以提供独特的移动端体验。"}.
 {"Conversations Logo","Conversations 徽标"}.
 {"Country","国家/地区"}.
 {"Create a Hat","创建头衔"}.
@@ -228,6 +229,7 @@
 {"Hat URI","头衔 URI"}.
 {"Hats limit exceeded","已超过头衔限制"}.
 {"Hide","隐藏"}.
+{"Hint","提示"}.
 {"Host unknown","主机未知"}.
 {"Hostname invalid","主机名无效"}.
 {"HTTP File Upload","HTTP 文件上传"}.
@@ -261,8 +263,10 @@
 {"Invalid 'previd' value","“previd”值无效"}.
 {"Invitations are not allowed in this conference","此会议不允许邀请"}.
 {"Invite expired","邀请已过期"}.
+{"Invite Expired","邀请已过期"}.
 {"Invite to {{ site_name }}","邀请加入 {{ site_name }}"}.
 {"Invite User","邀请用户"}.
+{"Invite","邀请"}.
 {"IP addresses","IP 地址"}.
 {"is now known as","现在昵称为"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","不允许向此房间发送错误消息。参与者（~s）发送了错误消息（~s），被踢出了房间"}.
@@ -477,6 +481,8 @@
 {"Register","注册"}.
 {"Registration error","注册错误"}.
 {"Registration Error","注册错误"}.
+{"Registration Form","注册表单"}.
+{"Registration Success","注册成功"}.
 {"Remote copy","远程副本"}.
 {"Remove a hat from a user","移除用户头衔"}.
 {"Remove User","移除用户"}.
@@ -531,7 +537,7 @@
 {"Show Integral Table","显示完整表"}.
 {"Show Occupants Join/Leave","显示使用者加入/离开"}.
 {"Show Ordinary Table","显示普通表"}.
-{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>","仅显示适用于<span class='platform-name'>您当前平台</span>的应用。您也可以<a href='#' id='show-all-clients-button'>查看所有应用。</a>"}.
+{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">view all apps.</a>","仅显示适用于<span class='platform-name'>您当前平台</span>的应用。您也可以<a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">查看所有应用。</a>"}.
 {"Show","显示"}.
 {"Shut Down Service","关闭服务"}.
 {"Siskin IM Logo","Siskin IM 徽标"}.
@@ -729,7 +735,7 @@
 {"You are being removed from the room because of a system shutdown","由于系统关闭，您将被移出房间"}.
 {"You are not allowed to send private messages","不允许您发送私信"}.
 {"You are not joined to the channel","您未加入频道"}.
-{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\">register an account manually</a>.","您可以使用任意 XMPP 兼容软件连接至 {{ site_name }}。如果您常用的软件未在上方列出，您仍然可以<a href=\"{{ registration_url }}\">手动注册账号</a>。"}.
+{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>register an account manually</a>.","您可以使用任何兼容 XMPP 的软件连接至 {{ site_name }}。如果您首选的软件未在上方列出，您仍然可以<a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>手动注册账号</a>。"}.
 {"You can later change your password using an XMPP client.","您之后可以使用 XMPP 客户端更改密码。"}.
 {"You can now set up {{ app_name }} and connect it to your new account.","您现在可以设置 {{ app_name }} 并将其连接至您的新账号。"}.
 {"You can start chatting right away with {{ app_name }}. Let's get started!","您现在可以使用 {{ app_name }} 开始聊天。开始吧！"}.
