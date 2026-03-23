@@ -11,6 +11,7 @@
 {"A description of the node","Описание на нода"}.
 {"A friendly name for the node","Удобно име на нода"}.
 {"A fully-featured desktop chat client for Windows and Linux.","Пълнофункционален чат клиент за Windows и Linux."}.
+{"A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.","Изчистен Jabber/XMPP клиент за Android. Насочен е към функционалност, лек и сигурен. Работи на устройства с Android от нисък клас, започвайки с Android 4.0."}.
 {"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","Лек и мощен XMPP клиент за iPhone и iPad. Предоставя лесен начин да говорите и споделяте моменти с приятелите си."}.
 {"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","Модерен чат клиент с отворен код за iPhone и iPad. Лесен за използване, с изчистен потребителски интерфейс."}.
 {"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","Модерен чат клиент с отворен код за Mac. Лесен за използване, с изчистен потребителски интерфейс."}.
@@ -228,6 +229,7 @@
 {"Hat URI","URI адрес за шапка"}.
 {"Hats limit exceeded","Превишен е лимитът за шапка"}.
 {"Hide","Скрий"}.
+{"Hint","Подсказка"}.
 {"Host unknown","Неизвестен хост"}.
 {"Hostname invalid","Невалидно име за хост"}.
 {"HTTP File Upload","Качване на файл по HTTP"}.
@@ -260,9 +262,11 @@
 {"Invalid node name","Невалидно име на нода"}.
 {"Invalid 'previd' value","Невалидна стойност на 'previd'"}.
 {"Invitations are not allowed in this conference","Поканите не са разрешени в тази конференция"}.
+{"Invite Expired","Изтекла покана"}.
 {"Invite expired","Поканата е изтекла"}.
 {"Invite to {{ site_name }}","Покани в {{ site_name }}"}.
 {"Invite User","Покани потребител"}.
+{"Invite","Покани"}.
 {"IP addresses","IP адреси"}.
 {"is now known as","е известен като"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Не е позволено да изпращате съобщения за грешки в стаята. Участникът (~s) е изпратил съобщение за грешка (~s) и е бил отстранен от стаята"}.
@@ -477,6 +481,8 @@
 {"Register","Регистрирай"}.
 {"Registration Error","Грешка при регистрация"}.
 {"Registration error","Грешка при регистриране"}.
+{"Registration Form","Форма за регистрация"}.
+{"Registration Success","Успешна регистрация"}.
 {"Remote copy","Отдалечено копие"}.
 {"Remove a hat from a user","Премахни шапка от потребител"}.
 {"Remove User","Премахни потребител"}.
@@ -531,7 +537,7 @@
 {"Show Integral Table","Покажи интегрална таблица"}.
 {"Show Occupants Join/Leave","Покажи участници Влязъл/Напускнал"}.
 {"Show Ordinary Table","Покажи обикновена таблица"}.
-{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>","Показаните приложения са само за <span class='platform-name'>, което е текущата ви платформа</span>. Можете също да <a href='#' id='show-all-clients-button'>прегледате всички налични приложения.</a>"}.
+{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">view all apps.</a>","Показват се приложения само за <span class='platform-name'>текущата ви платформа</span>. Можете също да <a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">прегледате всички приложения.</a>"}.
 {"Show","Покажи"}.
 {"Shut Down Service","Изключи услугата"}.
 {"Siskin IM Logo","Siskin IM лого"}.
@@ -729,7 +735,7 @@
 {"You are being removed from the room because of a system shutdown","Премахнати сте от стаята поради изключване на системата"}.
 {"You are not allowed to send private messages","Нямате право да изпращате лични съобщения"}.
 {"You are not joined to the channel","Не сте присъединени към канала"}.
-{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\">register an account manually</a>.","Можете да се свържете с {{ site_name }}, използвайки всеки XMPP-съвместим софтуер. Ако предпочитаният от вас софтуер не е посочен по-горе, все още можете <a href=\"{{ registration_url }}\">, ръчно да регистрирате профил</a>."}.
+{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>register an account manually</a>.","Можете да се свържете с {{ site_name }}, използвайки всеки XMPP-съвместим софтуер. Ако предпочитаният от вас софтуер не е посочен по-горе, все още можете <a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>да регистрирате акаунт ръчно</a>."}.
 {"You can later change your password using an XMPP client.","По-късно можете да промените паролата си с помощта на XMPP клиент."}.
 {"You can now set up {{ app_name }} and connect it to your new account.","Вече можете да настроите {{ app_name }} и да го свържете с вашия нов профил."}.
 {"You can start chatting right away with {{ app_name }}. Let's get started!","Можете да започнете да чатите веднага с {{ app_name }}. Да започваме!"}.
