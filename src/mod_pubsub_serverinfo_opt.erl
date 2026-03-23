@@ -5,7 +5,7 @@
 
 -export([pubsub_host/1]).
 
--spec pubsub_host(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
+-spec pubsub_host(gen_mod:opts() | global | binary()) -> binary().
 pubsub_host(Opts) when is_map(Opts) ->
     gen_mod:get_opt(pubsub_host, Opts);
 pubsub_host(Host) ->

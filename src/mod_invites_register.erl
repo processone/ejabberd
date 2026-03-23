@@ -197,12 +197,10 @@ create_account_allowed(#invite_token{type = roster_only} = Invite) ->
     case mod_invites:is_create_allowed(User, Host) of
         true ->
             NumInvites =
-                length(
-                  mod_invites:transaction(
-                    Host,
-                    fun() ->
-                            mod_invites:get_invites_tree_t(Host, {User, Host})
-                    end)),
+                length(mod_invites:transaction(Host,
+                                               fun() ->
+                                                  mod_invites:get_invites_tree_t(Host, {User, Host})
+                                               end)),
             case NumInvites >= ?OVERUSE_LIMIT of
                 false ->
                     ok;

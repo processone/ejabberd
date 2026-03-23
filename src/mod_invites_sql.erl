@@ -66,11 +66,10 @@ sql_schemas() ->
                                       #sql_column{name = <<"account_name">>, type = text}],
                                  indices =
                                      [#sql_index{columns = [<<"token">>], unique = true},
-                                      #sql_index{columns =
-                                                     [<<"username">>, <<"server_host">>]},
+                                      #sql_index{columns = [<<"username">>, <<"server_host">>]},
                                       #sql_index{columns = [<<"invitee">>]}]}],
-                update = [{create_index, <<"invite_token">>, [<<"invitee">>]}]},
-    #sql_schema{version = 1,
+                 update = [{create_index, <<"invite_token">>, [<<"invitee">>]}]},
+     #sql_schema{version = 1,
                  tables =
                      [#sql_table{name = <<"invite_token">>,
                                  columns =

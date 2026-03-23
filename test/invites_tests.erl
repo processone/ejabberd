@@ -71,13 +71,14 @@ find_invites_tree_root_t_test_() ->
          ?_assertMatch({<<"1">>, <<"host">>},
                        mod_invites:find_invites_tree_root_t(2, host, {<<"3">>, <<"host">>}, 0)),
          %% lvl reached
-         ?_assertThrow(speedy_goat, mod_invites:find_invites_tree_root_t(2, host, {<<"4">>, <<"host">>}, 0)),
+         ?_assertThrow(speedy_goat,
+                       mod_invites:find_invites_tree_root_t(2, host, {<<"4">>, <<"host">>}, 0)),
          %% lvl reached but later
          ?_assertMatch({<<"1">>, <<"host">>},
                        mod_invites:find_invites_tree_root_t(?SPEEDY_GOAT_SECONDS + 1,
-                                                host,
-                                                {<<"4">>, <<"host">>},
-                                                0)),
+                                                            host,
+                                                            {<<"4">>, <<"host">>},
+                                                            0)),
          ?_assert(meck:validate(db))]
      end}.
 
@@ -113,9 +114,10 @@ get_invites_tree_as_root_t_test_() ->
      end,
      fun meck:unload/1,
      fun(_) ->
-        [?_assertMatch(6, length(mod_invites:get_invites_tree_as_root_t(<<"host">>, {<<"1">>, <<"host">>})))]
+        [?_assertMatch(6,
+                       length(mod_invites:get_invites_tree_as_root_t(<<"host">>,
+                                                                     {<<"1">>, <<"host">>})))]
      end}.
-
 
 %%%===================================================================
 %%% API

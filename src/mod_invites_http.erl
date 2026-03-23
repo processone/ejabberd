@@ -79,7 +79,7 @@ landing_page_tmpl(Host) ->
             <<>>;
         auto ->
             case ejabberd_http:get_auto_url(any, mod_invites) of
-               undefined ->
+                undefined ->
                     ?WARNING_MSG("'auto' URL configured for mod_invites but no request_handler found in your ~s listeners configuration.",
                                  [Host]),
                     <<>>;
@@ -124,7 +124,10 @@ process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) -
                     process_valid_token(LocalPath, Request, Invite)
             end;
         false ->
-            ?NOT_FOUND(render(Host, Lang, <<"invite_invalid.html">>, ctx(Request, LocalPath, Token)))
+            ?NOT_FOUND(render(Host,
+                              Lang,
+                              <<"invite_invalid.html">>,
+                              ctx(Request, LocalPath, Token)))
     catch
         _:not_found ->
             ?NOT_FOUND;
@@ -340,15 +343,16 @@ ctx(#request{host = Host,
              lang = Lang},
     LocalPath,
     Token) ->
-    OriginalPath = case landing_page_tmpl(Host) of
-		       <<>> ->
-			   Path;
-		       Tmpl ->
-			   Url = render_url(Tmpl, [{invite, [{token, Token}]}, {host, Host}]),
-			   #{path := OPath} = uri_string:parse(Url),
-			   {LPath, _Q} = ejabberd_http:url_decode_q_split_normalize(OPath),
-			   LPath
-		   end,
+    OriginalPath =
+        case landing_page_tmpl(Host) of
+            <<>> ->
+                Path;
+            Tmpl ->
+                Url = render_url(Tmpl, [{invite, [{token, Token}]}, {host, Host}]),
+                #{path := OPath} = uri_string:parse(Url),
+                {LPath, _Q} = ejabberd_http:url_decode_q_split_normalize(OPath),
+                LPath
+        end,
     Base =
         iolist_to_binary(uri_string:normalize(
                              lists:join(<<"/">>, OriginalPath -- LocalPath))),
