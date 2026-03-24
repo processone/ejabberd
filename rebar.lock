@@ -27,7 +27,7 @@
  {<<"unicode_util_compat">>,{pkg,<<"unicode_util_compat">>,<<"0.7.1">>},1},
  {<<"xmpp">>,
   {git,"https://github.com/processone/xmpp",
-       {ref,"8c1920d450f0a96cc89ed4f52ec429dfa404ae5a"}},
+       {ref,"7a2dfa9914ac83dc191a1f03ee6a7c1aa403fb17"}},
   0},
  {<<"yconf">>,{pkg,<<"yconf">>,<<"1.0.22">>},0}]}.
 [
