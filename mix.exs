@@ -114,7 +114,7 @@ defmodule Ejabberd.MixProject do
      {:fast_tls, "~> 1.1.24"},
      {:fast_xml, "~> 1.1.56"},
      {:fast_yaml, "~> 1.0"},
-     {:idna, "~> 6.0"},
+     {:idna, "~> 7.1", override: true},
      {:mqtree, "~> 1.0"},
      {:p1_acme, ">= 1.0.28"},
      {:p1_oauth2, "~> 0.6"},
