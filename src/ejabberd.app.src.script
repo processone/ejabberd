@@ -17,6 +17,10 @@
             true -> lists:keystore(tools, 1, Terms, {tools, true});
             false -> Terms
         end,
+        EZlib = case lists:keyfind(zlib, 1, Terms2) of
+            {zlib, true} -> [ezlib];
+            _ -> []
+        end,
         Tools = case lists:keyfind(tools, 1, Terms2) of
             {tools, true} -> [observer];
             _ -> []
@@ -25,7 +29,7 @@
         {[lists:keyfind(description, 1, Terms),
          lists:keyfind(vsn, 1, Terms),
          {env, [{enabled_backends, EBs}]}
-        ], Elixirs ++ Tools};
+        ], Elixirs ++ Tools ++ EZlib};
     _Err ->
         {[], []}
     end,
