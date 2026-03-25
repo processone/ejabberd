@@ -335,6 +335,7 @@ defmodule Ejabberd.MixProject do
         "CONTRIBUTORS.md": [title: "Contributors"],
         "CODE_OF_CONDUCT.md": [title: "Code of Conduct"],
         "CHANGELOG.md": [title: "ChangeLog"],
+        "SECURITY.md": [title: "Security Policy"],
         "COPYING": [title: "Copying License"],
         "_build/edoc/docs.md": [title: "&xrArr; ejabberd Docs"]
       ],
