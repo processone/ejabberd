@@ -1,3 +1,78 @@
+## Version 26.03
+
+#### Core
+
+- Fix mysql authentication for tls connections that required auth plugin switch
+- Improve handling of scram "wanted to use channel-bindings but was not offered one" flag
+- Add ability for mod_options values to depend on other options
+- Don't fail to classify stand-alone chat states
+- Fix some warnings compiling with Erlang/OTP 29 ([#4527](https://github.com/processone/ejabberd/issues/4527))
+- `ejabberd_ctl`: Document how to set empty lists in ejabberdctl and WebAdmin
+- `ejabberd_http`: Add handling of `Etag` and `If-Modified-Since` headers to files served by `mod_http_upload`
+- `ejabberd_http`: Ignore whitespaces at end of host header
+- SQL: Add ability to mark that column can be null in e_sql_schema
+- Tests: Add tests for sasl2
+- Tests: Make table cleanup in test more robust
+
+#### Modules
+
+- `mod_fast_auth`: Offered methods are based on available channel bindings
+- `mod_http_api`: Always hide password in log entries
+- `mod_mam`: Call `store_mam_message` hook for messages that `user_mucsub_from_muc_archive` was filtering out
+- `mod_mam_sql`: Only provide the new XEP-0431 `fulltext` field, not old custom `withtext`
+- `mod_muc_room`: Fix duplicate stanza-id in muc mam responses generated from local history ([#4544](https://github.com/processone/ejabberd/issues/4544))
+- `mod_muc_room`: Fix hook name in commit 7732984 ([#4526](https://github.com/processone/ejabberd/issues/4526))
+- `mod_pubsub_serverinfo`: Don't use `gen_server:call` for resolving pubsub host
+- `mod_roster`: Add support for roster pre-approval ([#4512](https://github.com/processone/ejabberd/issues/4512))
+- `mod_roster`: Fix display of groups in WebAdmin when it's a list
+- `mod_roster`: in WebAdmin page, first execute SET actions, later GET
+- `mod_roster_mnesia`: Improve transformation code
+
+#### mod_invites
+
+- Makefile: Run invites-deps only when files are missing
+- Fix path to bootstrap files
+- Check at start time the syntax of landing_page option ([#4525](https://github.com/processone/ejabberd/issues/4525))
+- Send 'Link' http header ([#4531](https://github.com/processone/ejabberd/issues/4531))
+- Set meta.pre-auth to skip redirect_url if token validated ([#4535](https://github.com/processone/ejabberd/issues/4535))
+- Many security fixes ([#4539](https://github.com/processone/ejabberd/issues/4539))
+- Add favicon and change color to match ejabberd branding
+- Enable dark mode
+- Add support for webchat_url
+- Migrate to bootstrap5 and update jquery
+- No inline scripts
+- Make format csrf token
+- Add csrf token to failed post
+- Include js/css deps in static dir
+- Correct hashes for bootstrap 4.6.2
+- Hint at type for landing_page opt
+- Many more security fixes ([#4538](https://github.com/processone/ejabberd/issues/4538))
+- Check CSRF token in register form
+- Add integrity hashes to scripts and css
+- Comment unused resources
+- Add security headers
+- Remove debug log of whole query parameters (including pw)
+- Don't crash on unknown host from http host header
+- Make creating invite transactional
+- Set overuse limits ([#4540](https://github.com/processone/ejabberd/issues/4540))
+- Fix broken path when behind proxy with prefix ([#4547](https://github.com/processone/ejabberd/issues/4547))
+
+#### Container and Installers
+
+- Bump Erlang/OTP 28.4.1
+- `make-binaries`: Bump libexpat to 2.7.5
+- `make-binaries`: Bump zlib to 1.3.2
+- `make-binaries`: Enable missing crypto features ([#4542](https://github.com/processone/ejabberd/issues/4542))
+
+#### Translations
+
+- Update Bulgarian translation
+- Update Catalan and Spanish translations
+- Update Chinese Simplified translation
+- Update Czech translation
+- Update French translation
+- Update German translation
+
 ## Version 26.02
 
 - Fixes issue with adding hats data in presences send by group chats ([#4516](https://github.com/processone/ejabberd/issues/4516))
