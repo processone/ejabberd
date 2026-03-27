@@ -24,6 +24,19 @@ loglevel: info
 #  - /etc/letsencrypt/live/domain.tld/fullchain.pem
 #  - /etc/letsencrypt/live/domain.tld/privkey.pem
 
+auth_stored_password_types:
+    - scram_sha1
+    - scram_sha256
+    - scram_sha512
+
+disable_sasl_mechanisms:
+  - "digest-md5"
+  - "X-OAUTH2"
+
+hide_sensitive_log_data: true
+
+registration_timeout: 3600
+
 listen:
   -
     port: 5222
@@ -57,6 +70,7 @@ listen:
       /api: mod_http_api
       /bosh: mod_bosh
       /captcha: ejabberd_captcha
+      /invites: mod_invites
       /upload: mod_http_upload
       /ws: ejabberd_http_ws
   -
@@ -76,13 +90,8 @@ listen:
     # turn_ipv4_address: "203.0.113.3"
     ## The server's public IPv6 address:
     # turn_ipv6_address: "2001:db8::3"
-  -
-    port: 1883
-    ip: "::"
-    module: mod_mqtt
-    backlog: 1000
 
-s2s_use_starttls: optional
+s2s_use_starttls: required
 
 acl:
   local:
@@ -91,6 +100,10 @@ acl:
     ip:
       - 127.0.0.0/8
       - ::1/128
+  ## Uncomment below to set an admin user. Be sure to edit the value of that
+  ## user to the account you want to use.
+#  admin:
+#    user: admin
 
 access_rules:
   local:
@@ -162,6 +175,10 @@ shaper_rules:
     normal: all
   s2s_shaper: fast
 
+trusted_proxies:
+  - 127.0.0.1
+  - 2a01:4f9:c010:c62b::1
+
 modules:
   mod_adhoc: {}
   mod_adhoc_api: {}
@@ -184,6 +201,8 @@ modules:
       "Access-Control-Allow-Origin": "https://@HOST@"
       "Access-Control-Allow-Methods": "GET,HEAD,PUT,OPTIONS"
       "Access-Control-Allow-Headers": "Content-Type"
+  mod_invites:
+      landing_page: auto
   mod_last: {}
   mod_mam:
     ## Mnesia is limited to 2GB, better to use an SQL backend
@@ -192,7 +211,6 @@ modules:
     ## db_type: sql
     assume_mam_usage: true
     default: always
-  mod_mqtt: {}
   mod_muc:
     access:
       - allow
