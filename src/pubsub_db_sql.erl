@@ -184,15 +184,10 @@ export(_Server) ->
                                 payload = Payload}) ->
             P = jid:encode(JID),
             XML = str:join([fxml:element_to_binary(X) || X<-Payload], <<>>),
-            SM = encode_now(M),
-            SC = encode_now(C),
+            SM = misc:now_to_usec(M),
+            SC = misc:now_to_usec(C),
             [?SQL("insert into pubsub_item(itemid,nodeid,creation,modification,publisher,payload)"
-                  " values (%(ItemId)s, %(Nidx)d, %(SC)s, %(SM)s, %(P)s, %(XML)s);")];
+                  " values (%(ItemId)s, %(Nidx)d, %(SC)d, %(SM)d, %(P)s, %(XML)s);")];
            (_Host, _R) ->
             []
         end}].
-
-encode_now({T1, T2, T3}) ->
-    <<(misc:i2l(T1, 6))/binary, ":",
-      (misc:i2l(T2, 6))/binary, ":",
-      (misc:i2l(T3, 6))/binary>>.
