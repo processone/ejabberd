@@ -2,8 +2,8 @@
 
 set -e
 
-jquery_checksum='39a546ea9ad97f8bfaf5d3e0e8f8556adb415e470e59007ada9759dce472adaa';
-bootstrap_checksum='3258c873cbcb1e2d81f4374afea2ea6437d9eee9077041073fd81dd579c5ba6b';
+jquery_checksum='39a546ea9ad97f8bfaf5d3e0e8f8556adb415e470e59007ada9759dce472adaa'
+bootstrap_checksum='3258c873cbcb1e2d81f4374afea2ea6437d9eee9077041073fd81dd579c5ba6b'
 
 check() {
   echo "$1 $2" | sha256sum -c - || (echo "checksum failed: $2 (does not match $1)"; exit 1)
