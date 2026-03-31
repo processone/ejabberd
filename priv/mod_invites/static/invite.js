@@ -89,8 +89,11 @@
                         badge.classList.remove("text-bg-info");
                     }
                 }
-                if (!has_platform)
-                    $(card).find("a.btn").removeClass("btn-primary").addClass("btn-secondary");
+                if (!has_platform) {
+                    const button = card.querySelector('a.btn');
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-secondary');
+                }
             }
             const show_all_clients_button_container = document.getElementById('show-all-clients-button-container');
             if (show_all_clients_button_container) {

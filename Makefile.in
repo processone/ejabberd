@@ -235,7 +235,7 @@ else
 endif
 
 ifeq (@bootstrap@,true)
-invites-deps: priv/mod_invites/static/bootstrap/ priv/mod_invites/static/jquery/
+invites-deps: priv/mod_invites/static/bootstrap/
 
 priv/mod_invites/static/bootstrap/:
 	$(INSTALL_INVITES_DEPS)
@@ -330,7 +330,7 @@ BINARIES=$(DEPSDIR)/epam/priv/bin/epam $(DEPSDIR)/eimp/priv/bin/eimp $(DEPSDIR)/
 DEPS_FILES_FILTERED=$(filter-out $(BINARIES) $(DEPSDIR)/elixir/ebin/elixir.app,$(DEPS_FILES))
 DEPS_DIRS=$(sort $(DEPSDIR)/ $(foreach DEP,$(DEPS),$(DEPSDIR)/$(DEP)/) $(dir $(DEPS_FILES)))
 
-MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,$(EBINDIR)/*.beam $(EBINDIR)/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* priv/mod_invites/* priv/mod_invites/static/* priv/mod_invites/static/bootstrap/css/bootstrap.min.css priv/mod_invites/static/bootstrap/js/bootstrap.min.js priv/mod_invites/static/jquery/jquery.min.js \
+MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,$(EBINDIR)/*.beam $(EBINDIR)/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* priv/mod_invites/* priv/mod_invites/static/* priv/mod_invites/static/bootstrap/css/bootstrap.min.css priv/mod_invites/static/bootstrap/js/bootstrap.min.js \
 	priv/mod_invites/static/logos/* include/*.hrl COPYING))
 MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql priv/lua priv/mod_invites)
 
@@ -573,7 +573,7 @@ clean:
 	rm -rf test/*.beam
 	rm -f rebar.lock
 	rm -f ejabberdctl.example ejabberd.init ejabberd.service
-	rm -rf priv/mod_invites/static/{jquery,bootstrap4}
+	rm -rf priv/mod_invites/static/bootstrap
 	$(REBAR) clean $(CLEANARG)
 
 clean-rel:
