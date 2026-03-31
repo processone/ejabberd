@@ -1,0 +1,7 @@
+# HOWTO
+
+## How to create checksums for included css and js files used in templates
+
+```sh
+openssl dgst -sha384 -binary priv/mod_invites/static/invite.js | openssl base64 -A
+```
