@@ -30,6 +30,7 @@ send_recv/2, put_event/2, get_event/1]).
 
 -include("suite.hrl").
 -include_lib("stdlib/include/assert.hrl").
+-include("mod_invites.hrl").
 
 %%%===================================================================
 %%% API
@@ -44,7 +45,8 @@ single_cases() ->
       single_test(user_page),
       single_test(adduser),
       single_test(changepassword),
-      single_test(removeuser)]}.
+      single_test(removeuser),
+      single_test(invites)]}.
 
 login_page(Config) ->
     Headers = ?match({ok, {{"HTTP/1.1", 401, _}, Headers, _}},
@@ -105,6 +107,24 @@ removeuser(Config) ->
 	     <<"&unregister=Unregister">>),
     false = ejabberd_auth:user_exists(User, Server),
     ?match(nomatch, binary:match(Body, <<"<h3>Last Activity</h3>20">>)).
+
+invites(Config) ->
+    Server = ?config(server, Config),
+    URL = "server/" ++ binary_to_list(Server) ++ "/invites/",
+    Body = ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
+		  httpc:request(get, {page(Config, URL), [basic_auth_header(Config)]}, [],
+				[{body_format, binary}]),
+		  Body),
+    ?match({_, _}, binary:match(Body, <<"<title>ejabberd Web Admin">>)),
+    #invite_token{token = Token} = mod_invites:create_account_invite(Server, {<<"foo">>, Server}, <<>>, false),
+    _PBody = make_query(
+	     Config,
+	     "server/" ++ binary_to_list(Server)
+	     ++ "/invites/",
+	     <<"&expire_invite_by_token=", (mue(<<"Expire Invite By Token">>))/binary, "&token=", Token/binary>>),
+    ?match(true,
+           mod_invites:is_expired(mod_invites:get_invite(Server, Token))),
+    ok.
 
 %%%===================================================================
 %%% Internal functions

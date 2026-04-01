@@ -292,6 +292,26 @@ select {
   margin-right: 1em;
   background: #FFE3C9;
 }
+.actionresult {
+  border-style: dashed;
+  padding: 1em;
+  margin: 0 2em;
+}
+.actionresult.success {
+  border-color: #247A15;
+  background: #CEFFC5;
+}
+.actionresult.error {
+  border-color: #B51717;
+  background: #FFBFBF;
+}
+.filters {
+  border-style: dashed;
+  border-color: #FFE3C9;
+  padding: 0 1em;
+  margin: 0 2em;
+  background: #FFF4E9;
+}
 *.alignright {
   text-align: right;
 }

@@ -27,9 +27,9 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2,
-         get_invite_by_invitee_t/2, get_invites_t/2, init/2, is_reserved/3, is_token_valid/3,
-         list_invites/1, remove_user/2, set_invitee/5, transaction/2]).
+-export([cleanup_expired/1, create_invite_t/1, delete_invite_by_token/2, expire_invite_by_token/2,
+         expire_tokens/2, get_invite/2, get_invite_by_invitee_t/2, get_invites_t/2, init/2,
+         is_reserved/3, is_token_valid/3, list_invites/1, remove_user/2, set_invitee/5, transaction/2]).
 
 -export([sql_schemas/0]).
 
@@ -148,6 +148,28 @@ create_invite_t(Invite) ->
                      "account_name=%(AccountName)s"]),
     {updated, 1} = ejabberd_sql:sql_query_t(Query),
     Invite.
+
+delete_invite_by_token(Host, Token) ->
+    case ejabberd_sql:sql_query(Host,
+                                ?SQL("DELETE FROM invite_token WHERE "
+                                     "token = %(Token)s AND %(Host)H"))
+    of
+        {updated, 1} ->
+            ok;
+        {updated, 0} ->
+            {error, not_found}
+    end.
+
+expire_invite_by_token(Host, Token) ->
+    case ejabberd_sql:sql_query(Host,
+                                ?SQL("UPDATE invite_token SET expires = '1970-01-01 00:00:01' WHERE "
+                                     "token = %(Token)s AND %(Host)H AND type != 'R'"))
+    of
+        {updated, 1} ->
+            ok;
+        {updated, 0} ->
+            {error, not_found}
+    end.
 
 expire_tokens(User, Server) ->
     NOW = sql_now(),
