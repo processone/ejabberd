@@ -53,6 +53,13 @@
 %% ejabberd_http
 -export([process/2]).
 
+%% webadmin
+-export([webadmin_menu_main/2, webadmin_page_main/2, webadmin_menu_host/3,
+         webadmin_page_host/3]).
+-import(ejabberd_web_admin, [make_command/4, make_command_raw_value/3, make_table/4]).
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
+
 -ifdef(TEST).
 -export([create_roster_invite/2, create_account_invite/4, find_invites_tree_root_t/4, gen_invite/1,
          gen_invite/2, get_invites/2, get_invites_tree_as_root_t/2, is_token_valid/3]).
@@ -279,6 +286,11 @@ start(Host, Opts) ->
       {hook, c2s_pre_auth_features, stream_feature_register, 50},
       %% note the sequence below is important
       {hook, c2s_unauthenticated_packet, c2s_unauthenticated_packet, 10},
+      %% webadmin
+      {hook, webadmin_menu_main, webadmin_menu_main, 50, global},
+      {hook, webadmin_page_main, webadmin_page_main, 50, global},
+      {hook, webadmin_menu_host, webadmin_menu_host, 50},
+      {hook, webadmin_page_host, webadmin_page_host, 50},
       {commands, get_commands_spec()}]}.
 
 stop(_Host) ->
@@ -318,6 +330,54 @@ mod_opt_type(token_expire_seconds) ->
 mod_opt_type(webchat_url) ->
     econf:either(
         econf:enum([none, auto]), econf:url()).
+
+%%--------------------------------------------------------------------
+%%| WebAdmin
+
+%%---------------
+%% WebAdmin Main
+
+webadmin_menu_main(Acc, Lang) ->
+    Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Great Invitations"))}].
+
+webadmin_page_main(_,
+                   #request{us = _US,
+                            path = [<<"invites">>],
+                            lang = Lang} =
+                       R) ->
+    PageTitle = translate:translate(Lang, ?T("Great Invitations")),
+    Head = ?H1GL(PageTitle, <<"modules/#mod_invites">>, <<"mod_invites">>),
+    Cs = [make_command(cleanup_expired_invite_tokens,
+                       R,
+                       [],
+                       [{style, danger}, {force_execution, false}])],
+    {stop, Head ++ Cs};
+webadmin_page_main(Acc, _) ->
+    Acc.
+
+%%---------------
+%% WebAdmin Host
+
+webadmin_menu_host(Acc, _Host, Lang) ->
+    Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Great Invitations"))}].
+
+webadmin_page_host(_, Host, #request{path = [<<"invites">> | _RPath], lang = Lang} = R) ->
+    PageTitle = translate:translate(Lang, ?T("Great Invitations")),
+    Head = ?H1GL(PageTitle, <<"modules/#mod_invites">>, <<"mod_invites">>),
+    Set = [make_command(generate_invite, R, [{<<"host">>, Host}], [{force_execution, false}]),
+           make_command(generate_invite_with_username,
+                        R,
+                        [{<<"host">>, Host}],
+                        [{force_execution, false}]),
+           make_command(expire_invite_tokens, R, [{<<"host">>, Host}], []),
+           make_command(cleanup_expired_invite_tokens,
+                        R,
+                        [],
+                        [{style, danger}, {force_execution, false}])],
+    Get = [make_command(list_invites, R, [{<<"host">>, Host}], [])],
+    {stop, Head ++ Get ++ Set};
+webadmin_page_host(Acc, _, _) ->
+    Acc.
 
 %%--------------------------------------------------------------------
 %%| ejabberd command callbacks
