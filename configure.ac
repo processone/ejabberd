@@ -110,6 +110,14 @@ AC_ARG_ENABLE(all,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
+AC_ARG_ENABLE(bootstrap,
+[AS_HELP_STRING([--enable-bootstrap],[include bootstrap dependencies for mod_invites (default: yes)])],
+[case "${enableval}" in
+  yes) bootstrap=true ;;
+  no)  bootstrap=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-bootstrap) ;;
+esac],[if test "x$bootstrap" = "x"; then bootstrap=true; fi])
+
 AC_ARG_ENABLE(debug,
 [AS_HELP_STRING([--enable-debug],[enable debug information (default: yes)])],
 [case "${enableval}" in
@@ -348,6 +356,7 @@ AC_SUBST(system_deps)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
+AC_SUBST(bootstrap)
 
 AC_OUTPUT
 
