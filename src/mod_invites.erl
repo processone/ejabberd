@@ -56,7 +56,7 @@
 %% webadmin
 -export([webadmin_menu_main/2, webadmin_page_main/2, webadmin_menu_host/3,
          webadmin_page_host/3]).
--import(ejabberd_web_admin, [make_command/4, make_command_raw_value/3, make_table/4]).
+-import(ejabberd_web_admin, [make_command/4]).
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 
@@ -338,14 +338,14 @@ mod_opt_type(webchat_url) ->
 %% WebAdmin Main
 
 webadmin_menu_main(Acc, Lang) ->
-    Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Great Invitations"))}].
+    Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Invites"))}].
 
 webadmin_page_main(_,
                    #request{us = _US,
                             path = [<<"invites">>],
                             lang = Lang} =
                        R) ->
-    PageTitle = translate:translate(Lang, ?T("Great Invitations")),
+    PageTitle = translate:translate(Lang, ?T("Invites")),
     Head = ?H1GL(PageTitle, <<"modules/#mod_invites">>, <<"mod_invites">>),
     Cs = [make_command(cleanup_expired_invite_tokens,
                        R,
@@ -359,10 +359,10 @@ webadmin_page_main(Acc, _) ->
 %% WebAdmin Host
 
 webadmin_menu_host(Acc, _Host, Lang) ->
-    Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Great Invitations"))}].
+    Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Invites"))}].
 
 webadmin_page_host(_, Host, #request{path = [<<"invites">> | _RPath], lang = Lang} = R) ->
-    PageTitle = translate:translate(Lang, ?T("Great Invitations")),
+    PageTitle = translate:translate(Lang, ?T("Invites")),
     Head = ?H1GL(PageTitle, <<"modules/#mod_invites">>, <<"mod_invites">>),
     Set = [make_command(generate_invite, R, [{<<"host">>, Host}], [{force_execution, false}]),
            make_command(generate_invite_with_username,
@@ -374,7 +374,15 @@ webadmin_page_host(_, Host, #request{path = [<<"invites">> | _RPath], lang = Lan
                         R,
                         [],
                         [{style, danger}, {force_execution, false}])],
-    Get = [make_command(list_invites, R, [{<<"host">>, Host}], [])],
+    Get = [make_command(list_invites, R, [{<<"host">>, Host}],
+                        [{result_links,
+                          [{valid, filter, 0, <<>>},
+                           {type, filter, 0, <<>>},
+                           {inviter, filter, 0, <<>>},
+                           {invitee, filter, 3, inviter},
+                           {account_name, username, 3, <<>>},
+                           {token_uri, paragraph, 0, <<>>},
+                           {landing_page, self, 0, <<>>}]}])],
     {stop, Head ++ Get ++ Set};
 webadmin_page_host(Acc, _, _) ->
     Acc.
