@@ -1730,12 +1730,18 @@ make_menu_system_el(Icon, Text, Append, {ThisTls, Url}) ->
               [?C(unicode:characters_to_binary(TextParsed))])]).
 
 %%%==================================
-
 %%%% make_command: API
+
+-spec make_command_raw_value(Name :: atom(),
+                             Request :: http_request(),
+                             BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}]) ->
+                                any().
+make_command_raw_value(Name, Request, BaseArguments) ->
+    make_command(Name, Request, BaseArguments, [{only, raw_value}]).
 
 -spec make_command(Name :: atom(), Request :: http_request()) -> xmlel().
 make_command(Name, Request) ->
-    make_command2(Name, Request, [], []).
+    make_command(Name, Request, [], []).
 
 -spec make_command(Name :: atom(),
                    Request :: http_request(),
@@ -1750,48 +1756,11 @@ make_command(Name, Request) ->
              {result_named, boolean()} |
              {result_links,
               [{ResultName :: atom(),
-                LinkType :: host | node | user | room | shared_roster | arg_host | paragraph,
+                LinkType :: host | node | user | username | room | shared_roster | arg_host | paragraph | filter | self,
                 Level :: integer(),
                 Append :: binary()}]} |
              {style, normal | danger}.
 make_command(Name, Request, BaseArguments, Options) ->
-    make_command2(Name, Request, BaseArguments, Options).
-
--spec make_command_raw_value(Name :: atom(),
-                             Request :: http_request(),
-                             BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}]) ->
-                                any().
-make_command_raw_value(Name, Request, BaseArguments) ->
-    make_command2(Name, Request, BaseArguments, [{only, raw_value}]).
-
-%%%==================================
-%%%% make_command: main
-
--spec make_command2(Name :: atom(),
-                    Request :: http_request(),
-                    BaseArguments :: [{ArgName :: binary(), ArgValue :: binary()}],
-                    [Option]) ->
-                       xmlel() | any()
-    when Option ::
-             {only,
-              presentation |
-              without_presentation |
-              button |
-              result |
-              value |
-              raw_value |
-              raw_and_value} |
-             {input_name_append, [binary()]} |
-             {force_execution, boolean() | undefined} |
-             {table_options, {PageSize :: integer(), RemainingPath :: [binary()]}} |
-             {result_named, boolean()} |
-             {result_links,
-              [{ResultName :: atom(),
-                LinkType :: host | node | user | room | shared_roster | arg_host | paragraph,
-                Level :: integer(),
-                Append :: binary()}]} |
-             {style, normal | danger}.
-make_command2(Name, Request, BaseArguments, Options) ->
     Only = proplists:get_value(only, Options, all),
     ForceExecution = proplists:get_value(force_execution, Options, undefined),
     InputNameAppend = proplists:get_value(input_name_append, Options, []),
@@ -1809,18 +1778,18 @@ make_command2(Name, Request, BaseArguments, Options) ->
          ejabberd_access_permissions:can_access(Name, CallerInfo)}
     of
         {C, allow} ->
-            make_command2(Name,
-                          Request,
-                          CallerInfo,
-                          BaseArguments,
-                          C,
-                          Only,
-                          ForceExecution,
-                          InputNameAppend,
-                          Resultnamed,
-                          ResultLinks,
-                          Style,
-                          TO);
+            make_command(Name,
+                         Request,
+                         CallerInfo,
+                         BaseArguments,
+                         C,
+                         Only,
+                         ForceExecution,
+                         InputNameAppend,
+                         Resultnamed,
+                         ResultLinks,
+                         Style,
+                         TO);
         {_C, deny} ->
             ?DEBUG("Blocked access to command ~p for~n CallerInfo: ~p", [Name, CallerInfo]),
             ?C(<<"">>)
@@ -1830,18 +1799,18 @@ make_command2(Name, Request, BaseArguments, Options) ->
             ?C(<<"">>)
     end.
 
-make_command2(Name,
-              Request,
-              CallerInfo,
-              BaseArguments,
-              C,
-              Only,
-              ForceExecution,
-              InputNameAppend,
-              Resultnamed,
-              ResultLinks,
-              Style,
-              TO) ->
+make_command(Name,
+             Request,
+             CallerInfo,
+             BaseArguments,
+             C,
+             Only,
+             ForceExecution,
+             InputNameAppend,
+             Resultnamed,
+             ResultLinks,
+             Style,
+             TO) ->
     {ArgumentsFormat, _Rename, ResultFormatApi} = ejabberd_commands:get_command_format(Name),
     Method =
         case {ForceExecution, ResultFormatApi} of
@@ -1890,42 +1859,86 @@ make_command2(Name,
         (catch lists:zip(
                    lists:map(fun({A, _}) -> A end, ArgumentsFormat), ArgumentsUsed1)),
     ResultEls =
-        make_command_result(ExecRes,
+        make_command_result(filter_results(Query, ResultFormatApi, ExecRes),
                             ArgumentsUsed,
                             ResultFormatApi,
                             Automated,
                             Resultnamed,
                             ResultLinks,
                             TO),
-    make_command3(Only, ExecRes, PresentationEls, ArgumentsEls, ResultEls).
+    format_result(Only, ExecRes, PresentationEls, ArgumentsEls, ResultEls).
 
-make_command3(presentation, _ExecRes, PresentationEls, _ArgumentsEls, _ResultEls) ->
+filter_results(Query, {_, {list, {_, {tuple, Fields}}}}, Result) ->
+    Filters = get_filters_from_query(Query, Fields, []),
+    lists:filter(
+      fun(Tuple) ->
+             lists:all(fun({_K, Pos, V}) ->
+                               element(Pos, Tuple) == V
+                       end, Filters)
+      end,
+      Result);
+filter_results(_Q, _F, Result) ->
+    Result.
+
+get_filters_from_query([], _F, Acc) ->
+    Acc;
+get_filters_from_query([{<<"filter_", FilterBin/binary>>, Key} | Query], Fields, Acc) ->
+    Filter = binary_to_atom(FilterBin),
+    case lists:keyfind(Filter, 1, Fields) of
+        false ->
+            get_filters_from_query(Query, Fields, Acc);
+        {Filter, Type} ->
+            get_filters_from_query(Query, Fields, [{Filter, get_pos(Filter, Fields, 1), convert_type(strip_slash(Key), Type)} | Acc])
+    end;
+get_filters_from_query([_ | Query], Fields, Acc) ->
+    get_filters_from_query(Query, Fields, Acc).
+
+get_pos(K, [{K, _} | _], Pos) ->
+    Pos;
+get_pos(K, [_ | Tail], Pos) ->
+    get_pos(K, Tail, Pos + 1).
+
+strip_slash(Key) ->
+    Len = byte_size(Key),
+    case binary:at(Key, Len-1) of
+        $/ ->
+            binary:part(Key, 0, Len-1);
+        _ ->
+            Key
+    end.
+
+convert_type(K, atom) ->
+    binary_to_existing_atom(K);
+convert_type(K, _Unknown) ->
+    K.
+
+format_result(presentation, _ExecRes, PresentationEls, _ArgumentsEls, _ResultEls) ->
     ?XAE(<<"p">>, [{<<"class">>, <<"api">>}], PresentationEls);
-make_command3(button, _ExecRes, _PresentationEls, [Button], _ResultEls) ->
+format_result(button, _ExecRes, _PresentationEls, [Button], _ResultEls) ->
     Button;
-make_command3(result,
+format_result(result,
               _ExecRes,
               _PresentationEls,
               _ArgumentsEls,
               [{xmlcdata, _}, Xmlel]) ->
     ?XAE(<<"p">>, [{<<"class">>, <<"api">>}], [Xmlel]);
-make_command3(value, _ExecRes, _PresentationEls, _ArgumentsEls, [{xmlcdata, _}, Xmlel]) ->
+format_result(value, _ExecRes, _PresentationEls, _ArgumentsEls, [{xmlcdata, _}, Xmlel]) ->
     Xmlel;
-make_command3(value,
+format_result(value,
               _ExecRes,
               _PresentationEls,
               _ArgumentsEls,
               [{xmlel, _, _, _} = Xmlel]) ->
     Xmlel;
-make_command3(raw_and_value,
+format_result(raw_and_value,
               ExecRes,
               _PresentationEls,
               _ArgumentsEls,
               [{xmlel, _, _, _} = Xmlel]) ->
     {raw_and_value, ExecRes, Xmlel};
-make_command3(raw_value, ExecRes, _PresentationEls, _ArgumentsEls, _ResultEls) ->
+format_result(raw_value, ExecRes, _PresentationEls, _ArgumentsEls, _ResultEls) ->
     ExecRes;
-make_command3(without_presentation,
+format_result(without_presentation,
               _ExecRes,
               _PresentationEls,
               ArgumentsEls,
@@ -1933,7 +1946,7 @@ make_command3(without_presentation,
     ?XAE(<<"p">>,
          [{<<"class">>, <<"api">>}],
          [?XE(<<"blockquote">>, ArgumentsEls ++ ResultEls)]);
-make_command3(all, _ExecRes, PresentationEls, ArgumentsEls, ResultEls) ->
+format_result(all, _ExecRes, PresentationEls, ArgumentsEls, ResultEls) ->
     ?XAE(<<"p">>,
          [{<<"class">>, <<"api">>}],
          PresentationEls ++ [?XE(<<"blockquote">>, ArgumentsEls ++ ResultEls)]).
@@ -2269,13 +2282,15 @@ make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, 
         end,
     ?XE(<<"code">>, Res2).
 
-make_result(Binary, ElementName, ArgumentsUsed, [{ResultName, arg_host, Level, Append}])
+make_result(<<>>, _ElementName, _ArgumentsUsed, _ResultLinks) ->
+    ?C(<<>>);
+make_result(Binary, ElementName, ArgumentsUsed, [{ResultName, arg_host, Level, Append} | _])
     when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
     {_, Host} = lists:keyfind(host, 1, ArgumentsUsed),
     UrlBinary =
         replace_url_elements([<<"server/">>, host, <<"/">>, Append], [{host, Host}], Level),
     ?AC(UrlBinary, Binary);
-make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, host, Level, Append}])
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, host, Level, Append} | _])
     when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
     UrlBinary =
         replace_url_elements([<<"server/">>, host, <<"/">>, Append], [{host, Binary}], Level),
@@ -2283,7 +2298,7 @@ make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, host, Level, Appe
 make_result(Binary,
             ElementName,
             _ArgumentsUsed,
-            [{ResultName, mnesia_table, Level, Append}])
+            [{ResultName, mnesia_table, Level, Append} | _])
     when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
     Node = misc:atom_to_binary(node()),
     UrlBinary =
@@ -2291,12 +2306,12 @@ make_result(Binary,
                              [{node, Node}, {tablename, Binary}],
                              Level),
     ?AC(UrlBinary, Binary);
-make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, node, Level, Append}])
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, node, Level, Append} | _])
     when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
     UrlBinary =
         replace_url_elements([<<"node/">>, node, <<"/">>, Append], [{node, Binary}], Level),
     ?AC(UrlBinary, Binary);
-make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, user, Level, Append}])
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, user, Level, Append} | _])
     when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
     Jid = try jid:decode(Binary) of
               #jid{} = J ->
@@ -2318,7 +2333,21 @@ make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, user, Level, Appe
         false ->
             ?C(Binary)
     end;
-make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, room, Level, Append}])
+make_result(Binary, ElementName, ArgumentsUsed, [{ResultName, username, Level, Append} | _])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    {_, Host} = lists:keyfind(host, 1, ArgumentsUsed),
+    case jid:nodeprep(Binary) of
+        error ->
+            ?INFO_MSG("Error parsing Binary that is not a valid username:~n  ~p", [Binary]),
+            ?C(Binary);
+        User ->
+            UrlBinary =
+                replace_url_elements([<<"server/">>, host, <<"/user/">>, user, <<"/">>, Append],
+                                     [{user, misc:url_encode(User)}, {host, Host}],
+                                     Level),
+            ?AC(UrlBinary, Binary)
+    end;
+make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, room, Level, Append} | _])
     when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
     Jid = jid:decode(Binary),
     {Roomname, Service, _} = jid:split(Jid),
@@ -2341,7 +2370,7 @@ make_result(Binary, ElementName, _ArgumentsUsed, [{ResultName, room, Level, Appe
 make_result(Binary,
             ElementName,
             ArgumentsUsed,
-            [{ResultName, shared_roster, Level, Append}])
+            [{ResultName, shared_roster, Level, Append} | _])
     when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
     First = proplists:get_value(first, ArgumentsUsed),
     Second = proplists:get_value(second, ArgumentsUsed),
@@ -2365,6 +2394,31 @@ make_result(Binary,
                              [{host, Host}, {srg, GroupId}],
                              Level),
     ?AC(UrlBinary, Binary);
+make_result(Binary,
+            ElementName,
+            _ArgumentsUsed,
+            [{ResultName, self, _Level, _Append} | _])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    ?AC(Binary, Binary);
+make_result(Binary,
+            ElementName,
+            _ArgumentsUsed,
+            [{ResultName, filter, _Level, Append} | _])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    Filter = case is_atom(Append) of
+                 true ->
+                     atom_to_binary(Append);
+                 _ ->
+                     atom_to_binary(ResultName)
+             end,
+    UrlBinary = <<"?filter_", Filter/binary, "=", Binary/binary>>,
+    ?AC(UrlBinary, Binary);
+make_result(Binary,
+            ElementName,
+            _ArgumentsUsed,
+            [{ResultName, paragraph, _Level, _Append} | _])
+    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
+    ?XC(<<"pre">>, Binary);
 make_result([{xmlcdata, _, _, _} | _] = Any,
             _ElementName,
             _ArgumentsUsed,
@@ -2372,13 +2426,9 @@ make_result([{xmlcdata, _, _, _} | _] = Any,
     Any;
 make_result([{xmlel, _, _, _} | _] = Any, _ElementName, _ArgumentsUsed, _ResultLinks) ->
     Any;
-make_result(Binary,
-            ElementName,
-            _ArgumentsUsed,
-            [{ResultName, paragraph, _Level, _Append}])
-    when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
-    ?XC(<<"pre">>, Binary);
-make_result(Binary, _ElementName, _ArgumentsUsed, _ResultLinks) ->
+make_result(Binary, ElementName, ArgumentsUsed, [_ | ResultLinksRest]) ->
+    make_result(Binary, ElementName, ArgumentsUsed, ResultLinksRest);
+make_result(Binary, _ElementName, _ArgumentsUsed, []) ->
     ?C(Binary).
 
 replace_url_elements(UrlComponents, Replacements, Level) ->
