@@ -361,7 +361,7 @@ webadmin_page_main(Acc, _) ->
 webadmin_menu_host(Acc, _Host, Lang) ->
     Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Invites"))}].
 
-webadmin_page_host(_, Host, #request{path = [<<"invites">> | _RPath], lang = Lang} = R) ->
+webadmin_page_host(_, Host, #request{path = [<<"invites">> | RPath], lang = Lang} = R) ->
     PageTitle = translate:translate(Lang, ?T("Invites")),
     Head = ?H1GL(PageTitle, <<"modules/#mod_invites">>, <<"mod_invites">>),
     Set = [make_command(generate_invite, R, [{<<"host">>, Host}], [{force_execution, false}]),
@@ -375,7 +375,10 @@ webadmin_page_host(_, Host, #request{path = [<<"invites">> | _RPath], lang = Lan
                         [],
                         [{style, danger}, {force_execution, false}])],
     Get = [make_command(list_invites, R, [{<<"host">>, Host}],
-                        [{result_links,
+                        [{form_table, []},
+                         {result_named, true},
+                         {table_options, {5, RPath}},
+                         {result_links,
                           [{valid, filter, 0, <<>>},
                            {type, filter, 0, <<>>},
                            {inviter, filter, 0, <<>>},
