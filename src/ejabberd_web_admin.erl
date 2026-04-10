@@ -2436,7 +2436,7 @@ make_result(Binary,
                      atom_to_binary(ResultName)
              end,
     QS = make_query_string([{Filter, Binary} | Query]),
-    UrlBinary = QS,
+    UrlBinary = unpage(RPath, QS),
     ?AC(UrlBinary, Binary);
 make_result(Binary,
             ElementName,
@@ -2455,6 +2455,13 @@ make_result(Binary, ElementName, ArgumentsUsed, [_ | ResultLinksRest]) ->
     make_result(Binary, ElementName, ArgumentsUsed, ResultLinksRest);
 make_result(Binary, _ElementName, _ArgumentsUsed, []) ->
     ?C(Binary).
+
+unpage([], QS) ->
+    QS;
+unpage([<<"sort">>, _Sort | T], QS) ->
+    unpage(T, QS);
+unpage([<<"page">>, _Page], QS) ->
+    <<"../../", QS/binary>>.
 
 replace_url_elements(UrlComponents, Replacements, Level) ->
     Base = get_base_path_sum(0, 0, Level),
