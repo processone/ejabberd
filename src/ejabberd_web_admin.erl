@@ -149,6 +149,9 @@ process(Path, #request{raw_path = RawPath} = Request) ->
 		   _ ->
 		       false
 	       end,
+    %% FIXME: We need to respect query parameters here. Eg http://example.domain/admin/foo/bar?baz=qux should
+    %% redirect to http://example.domain/admin/foo/bar/?baz=qux
+    %% (not http://example.domain/admin/foo/bar?baz=qux/).
     case Continue orelse binary:at(RawPath, size(RawPath) - 1) == $/ of
 	true ->
 	    process2(Path, Request);
@@ -435,6 +438,7 @@ process_admin(global, #request{path = [], lang = Lang} = Request, AJID) ->
     Title = ?H1GLraw(<<"">>, <<"">>, <<"home">>),
     MenuItems = get_menu_items(global, cluster, Lang, AJID, 0),
     Disclaimer = maybe_disclaimer_not_admin(MenuItems, AJID, Lang),
+    %% FIXME: abuse of blockquote (here and further down). What was the intention behind it?
     WelcomeText =
         [?BR,
          ?XAE(<<"p">>, [{<<"align">>, <<"center">>}],
