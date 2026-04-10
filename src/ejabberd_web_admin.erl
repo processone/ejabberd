@@ -31,7 +31,7 @@
 
 -export([process/2, pretty_print_xml/1,
          make_command/2, make_command/4, make_command_raw_value/3,
-         make_table/2, make_table/4,
+         make_table/2, make_table/4, action_button/4,
          make_menu_system/4, make_menu_system_el/4,
          nice_this/1,
          term_to_id/1, id_to_term/1]).
@@ -1751,7 +1751,7 @@ make_command(Name, Request) ->
              {input_name_append, [binary()]} |
              {force_execution, boolean()} |
              {table_options, {PageSize :: integer(), RemainingPath :: [binary()]}} |
-             {form_table, Actions :: [any()]} |
+             {action_table, Actions :: [any()]} |
              {result_named, boolean()} |
              {result_links,
               [{ResultName :: atom(),
@@ -1799,7 +1799,7 @@ make_command_allowed(Name,
     Resultnamed = proplists:get_value(result_named, Options, false),
     ResultLinks = proplists:get_value(result_links, Options, []),
     TO = proplists:get_value(table_options, Options, {999999, []}),
-    Actions = proplists:get_value(form_table, Options, undefined),
+    Actions = proplists:get_value(action_table, Options, []),
     Style = proplists:get_value(style, Options, normal),
     {ArgumentsFormat, _Rename, ResultFormatApi} = ejabberd_commands:get_command_format(Name),
     Method =
@@ -2062,6 +2062,8 @@ make_command_arguments(Name,
     case {(ArgumentsFields /= []) or (Method == manual), Only} of
         {false, _} ->
             [];
+        {true, action_button} ->
+            [Button];
         {true, button} ->
             [?XAE(<<"form">>, [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}], [Button])];
         {true, _} ->
@@ -2565,13 +2567,13 @@ format_result(Value, _ResultFormat) ->
 %%%% make_table
 
 make_table(PageSize, RPath, NameOptionList, Values1) ->
-    make_table([], PageSize, RPath, NameOptionList, Values1, undefined).
+    make_table([], PageSize, RPath, NameOptionList, Values1, []).
 
 -spec make_table(Query:: any(), PageSize :: integer(),
                  RemainingPath :: [binary()],
                  NameOptionList :: [Name :: binary() | {Name :: binary(), left | right}],
                  Values :: [tuple()],
-                 Actions :: [any()] | undefined) ->
+                 Actions :: [any()]) ->
                     xmlel().
 make_table(Query, PageSize, RPath, NameOptionList, Values1, Actions) ->
     Values =
@@ -2755,14 +2757,14 @@ make_query_string([{K, V} | Query], QS) ->
                  Values :: [tuple()]) ->
                     xmlel().
 make_table(NameOptionList, Values) ->
-    make_table(NameOptionList, Values, undefined).
+    make_table(NameOptionList, Values, []).
 
 make_table(NameOptionList, Values, Actions) ->
     NamesAndAttributes = [make_column_attributes(NameOption) || NameOption <- NameOptionList],
     {Names, ColumnsAttributes} = lists:unzip(NamesAndAttributes),
     make_table_xhtml(Names, ColumnsAttributes, Values, Actions).
 
-make_table_xhtml(Names, ColumnsAttributes, Values, undefined) ->
+make_table_xhtml(Names, ColumnsAttributes, Values, []) ->
     ?XAE(<<"table">>,
          [{<<"class">>, <<"sortable">>}],
          [?XE(<<"thead">>,
@@ -2780,22 +2782,17 @@ make_table_xhtml(Names, ColumnsAttributes, Values, Actions) ->
          [?XAE(<<"table">>,
                [{<<"class">>, <<"sortable">>}],
                [?XE(<<"thead">>,
-                    [?XE(<<"tr">>, [?XAE(<<"th">>, [{<<"class">>, <<"no-sort select-all-checkbox">>}], [?CHECKBOX(<<"all">>)])] ++ [?XC(<<"th">>, nice_this(HeadElement)) || HeadElement <- Names])]),
+                    [?XE(<<"tr">>, [?XAE(<<"th">>, [{<<"class">>, <<"no-sort select-all-checkbox">>}], [?CHECKBOX(<<"all">>, <<>>)])] ++ [?XC(<<"th">>, nice_this(HeadElement)) || HeadElement <- Names])]),
                 ?XE(<<"tbody">>,
                     [?XE(<<"tr">>,
-                         [?XE(<<"td">>, [?CHECKBOX(element(2, element(1, ValueTuple)))])] ++
-                       [?XAE(<<"td">>, CAs, [V])
-                        || {CAs, V} <- lists:zip(ColumnsAttributes, tuple_to_list(ValueTuple))])
-                     || ValueTuple <- Values])]),
-          ?XE(<<"p">>,
-                lists:flatten([[action_button(Action), ?C(<<" ">>)] || Action <- Actions]))]).
-
-action_button({Name, danger}) ->
-    ?INPUTD(<<"submit">>, atom_to_binary(Name), nice_this(Name));
-action_button({Name, _}) ->
-    ?INPUT(<<"submit">>, atom_to_binary(Name), nice_this(Name));
-action_button(Name) ->
-    action_button({Name, default}).
+                         %% FIXME this assumes first element is identifier and it's name is just the
+                         %% lower case of the matching header element
+                         [?XE(<<"td">>, [?CHECKBOX(string:lowercase(hd(Names)),
+                                                   element(2, element(1, ValueTuple)))])] ++
+                             [?XAE(<<"td">>, CAs, [V])
+                              || {CAs, V} <- lists:zip(ColumnsAttributes, tuple_to_list(ValueTuple))])
+                     || ValueTuple <- Values])]), ?P
+          ] ++ Actions).
 
 make_column_attributes({Name, Option}) ->
     {Name, [make_column_attribute(Option)]};
@@ -2806,6 +2803,68 @@ make_column_attribute(left) ->
     {<<"class">>, <<"alignleft">>};
 make_column_attribute(right) ->
     {<<"class">>, <<"alignright">>}.
+
+%%%==================================
+%%%% action_button
+
+action_button(Name, Request, BaseArguments, Options) ->
+    if_cmd_allowed(Name, Request,
+                   fun(Cmd) ->
+                           action_button_allowed(Name, Request, BaseArguments, Options, Cmd)
+                   end).
+
+action_button_allowed(Name, Request, BaseArguments, Options, Cmd) ->
+    Style = proplists:get_value(style, Options, normal),
+    CallerInfo = caller_info(Request),
+
+    {ArgumentsFormat, _Rename, ResultFormatApi} = ejabberd_commands:get_command_format(Name),
+    Method = manual,
+    PresentationEls = make_command_presentation(Name, Cmd#ejabberd_commands.tags),
+    Query = Request#request.q,
+    {ArgumentsUsed1, ExecRes} =
+        execute_command(Name,
+                        Query,
+                        BaseArguments,
+                        Method,
+                        ArgumentsFormat,
+                        CallerInfo,
+                        []),
+    ArgumentsFormatDetailed =
+        add_arguments_details(ArgumentsFormat,
+                              Cmd#ejabberd_commands.args_desc,
+                              Cmd#ejabberd_commands.args_example),
+    ArgumentsEls =
+        make_command_arguments(Name,
+                               Query,
+                               action_button,
+                               Method,
+                               Style,
+                               ArgumentsFormatDetailed,
+                               BaseArguments,
+                               []),
+    Automated =
+        case ArgumentsEls of
+            [] ->
+                true;
+            _ ->
+                false
+        end,
+    ArgumentsUsed =
+        (catch lists:zip(
+                   lists:map(fun({A, _}) -> A end, ArgumentsFormat), ArgumentsUsed1)),
+    ResultEls =
+        make_command_result(ExecRes,
+                            ArgumentsUsed,
+                            ResultFormatApi,
+                            Automated,
+                            false,
+                            [],
+                            Query,
+                            [],
+                            [],
+                            Request
+                           ),
+    format_result(button, ExecRes, PresentationEls, ArgumentsEls, ResultEls).
 
 %%%==================================
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:
