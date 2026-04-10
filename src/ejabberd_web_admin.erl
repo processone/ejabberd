@@ -2783,7 +2783,7 @@ make_table_xhtml(Names, ColumnsAttributes, Values, Actions) ->
                     [?XE(<<"tr">>, [?XAE(<<"th">>, [{<<"class">>, <<"no-sort select-all-checkbox">>}], [?CHECKBOX(<<"all">>)])] ++ [?XC(<<"th">>, nice_this(HeadElement)) || HeadElement <- Names])]),
                 ?XE(<<"tbody">>,
                     [?XE(<<"tr">>,
-                         [?XE(<<"td">>, [?CHECKBOX(<<"test">>)])] ++
+                         [?XE(<<"td">>, [?CHECKBOX(element(2, element(1, ValueTuple)))])] ++
                        [?XAE(<<"td">>, CAs, [V])
                         || {CAs, V} <- lists:zip(ColumnsAttributes, tuple_to_list(ValueTuple))])
                      || ValueTuple <- Values])]),
