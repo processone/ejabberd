@@ -1760,37 +1760,18 @@ make_command(Name, Request) ->
                 Append :: binary()}]} |
              {style, normal | danger}.
 make_command(Name, Request, BaseArguments, Options) ->
-    Only = proplists:get_value(only, Options, all),
-    ForceExecution = proplists:get_value(force_execution, Options, undefined),
-    InputNameAppend = proplists:get_value(input_name_append, Options, []),
-    Resultnamed = proplists:get_value(result_named, Options, false),
-    ResultLinks = proplists:get_value(result_links, Options, []),
-    TO = proplists:get_value(table_options, Options, {999999, []}),
-    Actions = proplists:get_value(form_table, Options, undefined),
-    Style = proplists:get_value(style, Options, normal),
-    #request{us = {RUser, RServer}, ip = RIp} = Request,
-    CallerInfo =
-        #{usr => {RUser, RServer, <<"">>},
-          ip => RIp,
-          caller_host => RServer,
-          caller_module => ?MODULE},
+    if_cmd_allowed(Name, Request,
+                   fun(Cmd) ->
+                           make_command_allowed(Name, Request, BaseArguments, Options, Cmd)
+                   end).
+
+if_cmd_allowed(Name, Request, Fun) ->
+    CallerInfo = caller_info(Request),
     try {ejabberd_commands:get_command_definition(Name),
          ejabberd_access_permissions:can_access(Name, CallerInfo)}
     of
-        {C, allow} ->
-            make_command(Name,
-                         Request,
-                         CallerInfo,
-                         BaseArguments,
-                         C,
-                         Only,
-                         ForceExecution,
-                         InputNameAppend,
-                         Resultnamed,
-                         ResultLinks,
-                         Style,
-                         TO,
-                         Actions);
+        {Cmd, allow} ->
+            Fun(Cmd);
         {_C, deny} ->
             ?DEBUG("Blocked access to command ~p for~n CallerInfo: ~p", [Name, CallerInfo]),
             ?C(<<"">>)
@@ -1800,19 +1781,26 @@ make_command(Name, Request, BaseArguments, Options) ->
             ?C(<<"">>)
     end.
 
-make_command(Name,
+caller_info(Request) ->
+    #request{us = {RUser, RServer}, ip = RIp} = Request,
+    #{usr => {RUser, RServer, <<"">>},
+      ip => RIp,
+      caller_host => RServer,
+      caller_module => ?MODULE}.
+
+make_command_allowed(Name,
              Request,
-             CallerInfo,
              BaseArguments,
-             C,
-             Only,
-             ForceExecution,
-             InputNameAppend,
-             Resultnamed,
-             ResultLinks,
-             Style,
-             TO,
-             Actions) ->
+             Options,
+             Cmd) ->
+    Only = proplists:get_value(only, Options, all),
+    ForceExecution = proplists:get_value(force_execution, Options, undefined),
+    InputNameAppend = proplists:get_value(input_name_append, Options, []),
+    Resultnamed = proplists:get_value(result_named, Options, false),
+    ResultLinks = proplists:get_value(result_links, Options, []),
+    TO = proplists:get_value(table_options, Options, {999999, []}),
+    Actions = proplists:get_value(form_table, Options, undefined),
+    Style = proplists:get_value(style, Options, normal),
     {ArgumentsFormat, _Rename, ResultFormatApi} = ejabberd_commands:get_command_format(Name),
     Method =
         case {ForceExecution, ResultFormatApi} of
@@ -1827,7 +1815,8 @@ make_command(Name,
             _ ->
                 auto
         end,
-    PresentationEls = make_command_presentation(Name, C#ejabberd_commands.tags),
+    PresentationEls = make_command_presentation(Name, Cmd#ejabberd_commands.tags),
+    CallerInfo = caller_info(Request),
     Query = Request#request.q,
     {ArgumentsUsed1, ExecRes} =
         execute_command(Name,
@@ -1839,8 +1828,8 @@ make_command(Name,
                         InputNameAppend),
     ArgumentsFormatDetailed =
         add_arguments_details(ArgumentsFormat,
-                              C#ejabberd_commands.args_desc,
-                              C#ejabberd_commands.args_example),
+                              Cmd#ejabberd_commands.args_desc,
+                              Cmd#ejabberd_commands.args_example),
     ArgumentsEls =
         make_command_arguments(Name,
                                Query,
@@ -2574,7 +2563,6 @@ format_result(Value, _ResultFormat) ->
 
 %%%==================================
 %%%% make_table
-
 
 make_table(PageSize, RPath, NameOptionList, Values1) ->
     make_table([], PageSize, RPath, NameOptionList, Values1, undefined).
