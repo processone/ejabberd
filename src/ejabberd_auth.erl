@@ -930,7 +930,7 @@ is_password_scram_valid(Password, Scram) ->
 	    Salt = base64:decode(Scram#scram.salt),
 	    SaltedPassword = scram:salted_password(Hash, Password, Salt, IterationCount),
 	    StoredKey =	scram:stored_key(Hash, scram:client_key(Hash, SaltedPassword)),
-	    base64:decode(Scram#scram.storedkey) == StoredKey
+	    crypto:hash_equals(base64:decode(Scram#scram.storedkey), StoredKey)
     end.
 
 password_to_scram(Host, Password) ->
