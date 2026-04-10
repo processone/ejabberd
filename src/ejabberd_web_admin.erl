@@ -1883,7 +1883,7 @@ filter_results(_Q, _F, Result) ->
 
 get_filters_from_query([], _F, Acc) ->
     Acc;
-get_filters_from_query([{<<"filter_", FilterBin/binary>>, Key} | Query], Fields, Acc) ->
+get_filters_from_query([{FilterBin, Key} | Query], Fields, Acc) when is_binary(FilterBin) ->
     Filter = binary_to_atom(FilterBin),
     case lists:keyfind(Filter, 1, Fields) of
         false ->
@@ -2245,7 +2245,7 @@ make_command_result_element(ArgumentsUsed,
         [list_to_tuple([make_result(format_result(V, {ElementName, ElementFormat}),
                                     ElementName,
                                     ArgumentsUsed,
-                                    ResultLinks)
+                                    add_rpath_and_query(ResultLinks, RPath, Query))
                         || {V, {ElementName, ElementFormat}}
                                <- lists:zip(tuple_to_list(Tuple), TupleElements)])
          || Tuple <- ListOfTuples],
@@ -2298,6 +2298,13 @@ make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, 
                 [Z]
         end,
     ?XE(<<"code">>, Res2).
+
+add_rpath_and_query(ResultLinks, RPath, Query) when is_list(ResultLinks) ->
+    [add_rpath_and_query(Link, RPath, Query) || Link <- ResultLinks];
+add_rpath_and_query({Name, filter, Lvl, OtherField}, RPath, Query) ->
+    {Name, filter, Lvl, {OtherField, RPath, Query}};
+add_rpath_and_query(Other, _RPath, _Query) ->
+    Other.
 
 make_result(<<>>, _ElementName, _ArgumentsUsed, _ResultLinks) ->
     ?C(<<>>);
@@ -2420,15 +2427,16 @@ make_result(Binary,
 make_result(Binary,
             ElementName,
             _ArgumentsUsed,
-            [{ResultName, filter, _Level, Append} | _])
+            [{ResultName, filter, _Level, {OtherField, RPath, Query}} | _])
     when (ElementName == ResultName) or (ElementName == unknown_element_name) ->
-    Filter = case is_atom(Append) of
+    Filter = case is_atom(OtherField) of
                  true ->
-                     atom_to_binary(Append);
+                     atom_to_binary(OtherField);
                  _ ->
                      atom_to_binary(ResultName)
              end,
-    UrlBinary = <<"?filter_", Filter/binary, "=", Binary/binary>>,
+    QS = make_query_string([{Filter, Binary} | Query]),
+    UrlBinary = QS,
     ?AC(UrlBinary, Binary);
 make_result(Binary,
             ElementName,
@@ -2639,7 +2647,7 @@ make_table1(Query, PageSize, [], PageUrlBase, SortUrlBase, Start, NameOptionList
             _ ->
                 1
         end,
-    QS = make_query_string(Query, <<>>),
+    QS = make_query_string(Query),
     NumPages = max(0, Size div PageSize + Remaining - 1),
     PLinks1 =
         lists:foldl(fun(N, Acc) ->
@@ -2684,6 +2692,14 @@ make_table1(Query, PageSize, [], PageUrlBase, SortUrlBase, Start, NameOptionList
         end,
 
     ?XE(<<"div">>, [Table | PLinks ++ SLinks]).
+
+make_query_string(Query) ->
+    make_query_string(remove_duplicate_keys(Query), <<>>).
+
+remove_duplicate_keys([]) ->
+    [];
+remove_duplicate_keys([{K, V} | T]) ->
+    [{K, V} | [X || X = {XK, _} <- remove_duplicate_keys(T), K =/= XK]].
 
 make_query_string([], QS) ->
     QS;
