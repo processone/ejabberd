@@ -27,9 +27,9 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2, get_invites_t/2,
-         get_invite_by_invitee_t/2, init/2, is_reserved/3, is_token_valid/3, list_invites/1,
-         remove_user/2, set_invitee/5, transaction/2]).
+-export([cleanup_expired/1, create_invite_t/1, expire_invite_by_token/2, expire_tokens/2,
+         get_invite/2, get_invites_t/2, get_invite_by_invitee_t/2, init/2, is_reserved/3,
+         is_token_valid/3, list_invites/1, remove_user/2, set_invitee/5, transaction/2]).
 
 -include("mod_invites.hrl").
 -include("logger.hrl").
@@ -57,6 +57,14 @@ cleanup_expired(_Host) ->
 create_invite_t(Invite) ->
     ok = mnesia:write(Invite),
     Invite.
+
+expire_invite_by_token(_Host, Token) ->
+    case mnesia:dirty_read(invite_token, Token) of
+        [Invite] ->
+            mnesia:dirty_write(Invite#invite_token{expires = {{1970, 1, 1}, {0, 0, 1}}});
+        [] ->
+            {error, not_found}
+    end.
 
 expire_tokens(User, Server) ->
     length([mnesia:dirty_write(I#invite_token{expires = {{1970, 1, 1}, {0, 0, 1}}})

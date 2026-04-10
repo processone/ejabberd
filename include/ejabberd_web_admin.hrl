@@ -86,6 +86,9 @@
 -define(INPUTST(Type, Name, Value, Size),
 	?INPUT(Type, Name, (translate:translate(Lang, Value)), Size)).
 
+-define(CHECKBOX(Name, Value),
+       ?INPUT(<<"checkbox">>, Name, Value)).
+
 -define(ACLINPUT(Text),
 	?XE(<<"td">>,
 	    [?INPUT(<<"text">>, <<"value", ID/binary>>, Text)])).
