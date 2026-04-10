@@ -1762,7 +1762,7 @@ make_command(Name, Request, BaseArguments, Options) ->
     Resultnamed = proplists:get_value(result_named, Options, false),
     ResultLinks = proplists:get_value(result_links, Options, []),
     TO = proplists:get_value(table_options, Options, {999999, []}),
-    FormTable = proplists:get_value(form_table, Options, undefined),
+    Actions = proplists:get_value(form_table, Options, undefined),
     Style = proplists:get_value(style, Options, normal),
     #request{us = {RUser, RServer}, ip = RIp} = Request,
     CallerInfo =
@@ -1786,7 +1786,7 @@ make_command(Name, Request, BaseArguments, Options) ->
                          ResultLinks,
                          Style,
                          TO,
-                         FormTable);
+                         Actions);
         {_C, deny} ->
             ?DEBUG("Blocked access to command ~p for~n CallerInfo: ~p", [Name, CallerInfo]),
             ?C(<<"">>)
@@ -1808,7 +1808,7 @@ make_command(Name,
              ResultLinks,
              Style,
              TO,
-             FormTable) ->
+             Actions) ->
     {ArgumentsFormat, _Rename, ResultFormatApi} = ejabberd_commands:get_command_format(Name),
     Method =
         case {ForceExecution, ResultFormatApi} of
@@ -1865,7 +1865,7 @@ make_command(Name,
                             ResultLinks,
                             Query,
                             TO,
-                            FormTable
+                            Actions
                            ),
     format_result(Only, ExecRes, PresentationEls, ArgumentsEls, ResultEls).
 
@@ -2206,7 +2206,7 @@ make_command_result(Value,
                     ResultLinks,
                     Query,
                     TO,
-                    FormTable) ->
+                    Actions) ->
     ResNameBin0 = nice_this(ResName),
     ResNameBin =
         case is_list(Value) of
@@ -2217,7 +2217,7 @@ make_command_result(Value,
                 ResNameBin0
         end,
     ResultValueEl =
-        make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, Query, TO, FormTable),
+        make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, Query, TO, Actions),
     ResultEls =
         case Resultnamed of
             true ->
@@ -2238,7 +2238,7 @@ make_command_result_element(ArgumentsUsed,
                             ResultLinks,
                             Query,
                             {PageSize, RPath},
-                            FormTable) ->
+                            Actions) ->
     HeadElements =
         [nice_this(ElementName, ElementFormat) || {ElementName, ElementFormat} <- TupleElements],
     ContentElements =
@@ -2249,14 +2249,14 @@ make_command_result_element(ArgumentsUsed,
                         || {V, {ElementName, ElementFormat}}
                                <- lists:zip(tuple_to_list(Tuple), TupleElements)])
          || Tuple <- ListOfTuples],
-    make_table(Query, PageSize, RPath, HeadElements, ContentElements, FormTable);
+    make_table(Query, PageSize, RPath, HeadElements, ContentElements, Actions);
 make_command_result_element(_ArgumentsUsed,
                             Values,
                             {_ArgName, {tuple, TupleElements}},
                             _ResultLinks,
                             _Query,
                             _TO,
-                            _FormTable) ->
+                            _Actions) ->
     ?XE(<<"table">>,
         [?XE(<<"thead">>,
              [?XE(<<"tr">>,
@@ -2276,7 +2276,7 @@ make_command_result_element(ArgumentsUsed,
                             ResultLinks,
                             Query,
                             {PageSize, RPath},
-                            FormTable) ->
+                            Actions) ->
     HeadElements = [nice_this(ElementsName)],
     ContentElements =
         [{make_result(format_result(V, {ElementsName, ElementsFormat}),
@@ -2284,8 +2284,8 @@ make_command_result_element(ArgumentsUsed,
                       ArgumentsUsed,
                       ResultLinks)}
          || V <- Value],
-    make_table(Query, PageSize, RPath, HeadElements, ContentElements, FormTable);
-make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, _Query, _TO, _FormTable) ->
+    make_table(Query, PageSize, RPath, HeadElements, ContentElements, Actions);
+make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, _Query, _TO, _Actions) ->
     Res = make_result(format_result(Value, ResultFormatApi),
                       unknown_element_name,
                       ArgumentsUsed,
@@ -2522,9 +2522,9 @@ make_table(PageSize, RPath, NameOptionList, Values1) ->
                  RemainingPath :: [binary()],
                  NameOptionList :: [Name :: binary() | {Name :: binary(), left | right}],
                  Values :: [tuple()],
-                FormTable :: [any()] | undefined) ->
+                 Actions :: [any()] | undefined) ->
                     xmlel().
-make_table(Query, PageSize, RPath, NameOptionList, Values1, FormTable) ->
+make_table(Query, PageSize, RPath, NameOptionList, Values1, Actions) ->
     Values =
         case lists:member(<<"sort">>, RPath) of
             true ->
@@ -2542,7 +2542,7 @@ make_table(Query, PageSize, RPath, NameOptionList, Values1, FormTable) ->
                     fun(Row1) -> list_to_tuple(lists:map(GetXmlValue, tuple_to_list(Row1))) end,
                 lists:map(ConvertTupleToTuple, Values1)
         end,
-    make_table1(Query, PageSize, RPath, <<"">>, <<"">>, 1, NameOptionList, Values, FormTable).
+    make_table1(Query, PageSize, RPath, <<"">>, <<"">>, 1, NameOptionList, Values, Actions).
 
 make_table1(Query, PageSize,
             [<<"page">>, PageNumber | RPath],
@@ -2551,7 +2551,7 @@ make_table1(Query, PageSize,
             _Start,
             NameOptionList,
             Values1,
-            FormTable) ->
+            Actions) ->
     make_table1(Query, PageSize,
                 RPath,
                 <<PageUrlBase/binary, "../../">>,
@@ -2559,7 +2559,7 @@ make_table1(Query, PageSize,
                 1 + PageSize * binary_to_integer(PageNumber),
                 NameOptionList,
                 Values1,
-                FormTable);
+                Actions);
 make_table1(Query,
             PageSize,
             [<<"sort">>, SortType | RPath],
@@ -2568,7 +2568,7 @@ make_table1(Query,
             Start,
             NameOptionList,
             Rows1,
-            FormTable) ->
+            Actions) ->
     ColumnToSort =
         length(lists:takewhile(fun (A) when A == SortType ->
                                        false;
@@ -2627,10 +2627,10 @@ make_table1(Query,
                 Start,
                 NameOptionList,
                 Rows,
-                FormTable);
-make_table1(Query, PageSize, [], PageUrlBase, SortUrlBase, Start, NameOptionList, Values1, FormTable) ->
+                Actions);
+make_table1(Query, PageSize, [], PageUrlBase, SortUrlBase, Start, NameOptionList, Values1, Actions) ->
     Values = lists:sublist(Values1, Start, PageSize),
-    Table = make_table(NameOptionList, Values, FormTable),
+    Table = make_table(NameOptionList, Values, Actions),
     Size = length(Values1),
     Remaining =
         case Size rem PageSize of
@@ -2639,7 +2639,6 @@ make_table1(Query, PageSize, [], PageUrlBase, SortUrlBase, Start, NameOptionList
             _ ->
                 1
         end,
-    ?DEBUG("query: ~p", [Query]),
     QS = make_query_string(Query, <<>>),
     NumPages = max(0, Size div PageSize + Remaining - 1),
     PLinks1 =
@@ -2701,10 +2700,10 @@ make_query_string([{K, V} | Query], QS) ->
 make_table(NameOptionList, Values) ->
     make_table(NameOptionList, Values, undefined).
 
-make_table(NameOptionList, Values, FormTable) ->
+make_table(NameOptionList, Values, Actions) ->
     NamesAndAttributes = [make_column_attributes(NameOption) || NameOption <- NameOptionList],
     {Names, ColumnsAttributes} = lists:unzip(NamesAndAttributes),
-    make_table_xhtml(Names, ColumnsAttributes, Values, FormTable).
+    make_table_xhtml(Names, ColumnsAttributes, Values, Actions).
 
 make_table_xhtml(Names, ColumnsAttributes, Values, undefined) ->
     ?XAE(<<"table">>,
@@ -2716,9 +2715,11 @@ make_table_xhtml(Names, ColumnsAttributes, Values, undefined) ->
                    [?XAE(<<"td">>, CAs, [V])
                     || {CAs, V} <- lists:zip(ColumnsAttributes, tuple_to_list(ValueTuple))])
                || ValueTuple <- Values])]);
-make_table_xhtml(Names, ColumnsAttributes, Values, FormTable) ->
+make_table_xhtml(Names, ColumnsAttributes, Values, Actions) ->
     ?XAE(<<"form">>,
-         [{<<"class">>, <<"form-table">>}],
+         [{<<"class">>, <<"form-table">>},
+          {<<"action">>, <<>>},
+          {<<"method">>, <<"post">>}],
          [?XAE(<<"table">>,
                [{<<"class">>, <<"sortable">>}],
                [?XE(<<"thead">>,
@@ -2728,7 +2729,16 @@ make_table_xhtml(Names, ColumnsAttributes, Values, FormTable) ->
                          [?XE(<<"td">>, [?CHECKBOX(<<"test">>)])] ++
                        [?XAE(<<"td">>, CAs, [V])
                         || {CAs, V} <- lists:zip(ColumnsAttributes, tuple_to_list(ValueTuple))])
-                     || ValueTuple <- Values])])]).
+                     || ValueTuple <- Values])]),
+          ?XE(<<"p">>,
+                lists:flatten([[action_button(Action), ?C(<<" ">>)] || Action <- Actions]))]).
+
+action_button({Name, danger}) ->
+    ?INPUTD(<<"submit">>, atom_to_binary(Name), nice_this(Name));
+action_button({Name, _}) ->
+    ?INPUT(<<"submit">>, atom_to_binary(Name), nice_this(Name));
+action_button(Name) ->
+    action_button({Name, default}).
 
 make_column_attributes({Name, Option}) ->
     {Name, [make_column_attribute(Option)]};
