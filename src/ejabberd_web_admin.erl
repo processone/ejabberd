@@ -1857,7 +1857,8 @@ make_command(Name,
         (catch lists:zip(
                    lists:map(fun({A, _}) -> A end, ArgumentsFormat), ArgumentsUsed1)),
     ResultEls =
-        make_command_result(filter_results(Query, ResultFormatApi, ExecRes),
+        make_command_result(filter_results(
+                              get_filters_from_query(Query, get_result_fields(ResultFormatApi)), ExecRes),
                             ArgumentsUsed,
                             ResultFormatApi,
                             Automated,
@@ -1865,21 +1866,20 @@ make_command(Name,
                             ResultLinks,
                             Query,
                             TO,
-                            Actions
+                            Actions,
+                            Request
                            ),
     format_result(Only, ExecRes, PresentationEls, ArgumentsEls, ResultEls).
 
-filter_results(Query, {_, {list, {_, {tuple, Fields}}}}, Result) ->
-    Filters = get_filters_from_query(Query, Fields, []),
-    lists:filter(
-      fun(Tuple) ->
-             lists:all(fun({_K, Pos, V}) ->
-                               element(Pos, Tuple) == V
-                       end, Filters)
-      end,
-      Result);
-filter_results(_Q, _F, Result) ->
-    Result.
+get_result_fields({_, {list, {_, {tuple, Fields}}}}) ->
+    Fields;
+get_result_fields(_) ->
+    [].
+
+get_filters_from_query(_Query, []) ->
+    [];
+get_filters_from_query(Query, Fields) ->
+    get_filters_from_query(Query, Fields, []).
 
 get_filters_from_query([], _F, Acc) ->
     Acc;
@@ -1912,6 +1912,17 @@ convert_type(K, atom) ->
     binary_to_existing_atom(K);
 convert_type(K, _Unknown) ->
     K.
+
+filter_results(Filters, Results) when is_list(Results) ->
+    lists:filter(
+      fun(Tuple) ->
+             lists:all(fun({_K, Pos, V}) ->
+                               element(Pos, Tuple) == V
+                       end, Filters)
+      end,
+      Results);
+filter_results(_, Result) ->
+    Result.
 
 format_result(presentation, _ExecRes, PresentationEls, _ArgumentsEls, _ResultEls) ->
     ?XAE(<<"p">>, [{<<"class">>, <<"api">>}], PresentationEls);
@@ -2193,9 +2204,9 @@ format_arg(Value, ArgFormat) ->
 %%%==================================
 %%%% make_command: result
 
-make_command_result(not_executed, _, _, _, _, _, _, _, _) ->
+make_command_result(not_executed, _, _, _, _, _, _, _, _, _) ->
     [];
-make_command_result({error, ErrorElement}, _, _, _, _, _, _, _, _) ->
+make_command_result({error, ErrorElement}, _, _, _, _, _, _, _, _, _) ->
     [?DIVRES([?C(<<"Error: ">>),
               ?XC(<<"code">>, list_to_binary(io_lib:format("~p", [ErrorElement])))])];
 make_command_result(Value,
@@ -2206,22 +2217,33 @@ make_command_result(Value,
                     ResultLinks,
                     Query,
                     TO,
-                    Actions) ->
-    ResNameBin0 = nice_this(ResName),
-    ResNameBin =
-        case is_list(Value) of
-            true ->
-                ResultLen = integer_to_binary(length(Value)),
-                <<ResNameBin0/binary, " (", ResultLen/binary, ")">>;
-            false ->
-                ResNameBin0
-        end,
+                    Actions,
+                    #request{lang = Lang}) ->
     ResultValueEl =
         make_command_result_element(ArgumentsUsed, Value, ResultFormatApi, ResultLinks, Query, TO, Actions),
     ResultEls =
         case Resultnamed of
             true ->
-                [?C(<<ResNameBin/binary, ": ">>), ResultValueEl];
+                ResNameBin0 = nice_this(ResName),
+                ResNameBin =
+                    case is_list(Value) of
+                        true ->
+                            ResultLen = integer_to_binary(length(Value)),
+                            <<ResNameBin0/binary, " (", ResultLen/binary, ")">>;
+                        false ->
+                            ResNameBin0
+                    end,
+                case to_filters_bin(to_filter_query(get_filters_from_query(Query, get_result_fields(ResultFormatApi))), <<>>) of
+                    <<>> ->
+                        [?C(<<ResNameBin/binary, ": ">>), ResultValueEl];
+                    FiltersBin ->
+                        ResNameEls =
+                            ?XAE(<<"form">>,
+                                 [{<<"class">>, <<"reset-filter-form">>}],
+                                 lists:flatten([?C(<<ResNameBin/binary, ": ">>),
+                                                ?P, ?CT(<<"Filters:">>), ?C(<<" ">>), ?C(FiltersBin), ?C(<<" ">>), ?P, ?INPUTT(<<"submit">>, <<"">>, <<"Reset Filters">>)])),
+                        [ResNameEls, ResultValueEl]
+                end;
             false ->
                 [ResultValueEl]
         end,
@@ -2230,6 +2252,17 @@ make_command_result(Value,
             ResultEls;
         false ->
             [?DIVRES(ResultEls)]
+    end.
+
+to_filters_bin([], Filters) ->
+    Filters;
+to_filters_bin([{K, V} | T], Filters) ->
+    Filter = <<K/binary, "=", (strip_slash(V))/binary>>,
+    case Filters of
+        <<>> ->
+            to_filters_bin(T, Filter);
+        _ ->
+            to_filters_bin(T, <<Filters/binary, ", ", Filter/binary>>)
     end.
 
 make_command_result_element(ArgumentsUsed,
@@ -2241,15 +2274,16 @@ make_command_result_element(ArgumentsUsed,
                             Actions) ->
     HeadElements =
         [nice_this(ElementName, ElementFormat) || {ElementName, ElementFormat} <- TupleElements],
+    FilterQuery = to_filter_query(get_filters_from_query(Query, TupleElements)),
     ContentElements =
         [list_to_tuple([make_result(format_result(V, {ElementName, ElementFormat}),
                                     ElementName,
                                     ArgumentsUsed,
-                                    add_rpath_and_query(ResultLinks, RPath, Query))
+                                    add_rpath_and_query(ResultLinks, RPath, FilterQuery))
                         || {V, {ElementName, ElementFormat}}
                                <- lists:zip(tuple_to_list(Tuple), TupleElements)])
          || Tuple <- ListOfTuples],
-    make_table(Query, PageSize, RPath, HeadElements, ContentElements, Actions);
+    make_table(FilterQuery, PageSize, RPath, HeadElements, ContentElements, Actions);
 make_command_result_element(_ArgumentsUsed,
                             Values,
                             {_ArgName, {tuple, TupleElements}},
@@ -2305,6 +2339,14 @@ add_rpath_and_query({Name, filter, Lvl, OtherField}, RPath, Query) ->
     {Name, filter, Lvl, {OtherField, RPath, Query}};
 add_rpath_and_query(Other, _RPath, _Query) ->
     Other.
+
+to_filter_query(Q) ->
+    [{to_bin(K), to_bin(V)} || {K, _P, V} <- Q].
+
+to_bin(V) when is_atom(V) ->
+    atom_to_binary(V);
+to_bin(V) ->
+    V.
 
 make_result(<<>>, _ElementName, _ArgumentsUsed, _ResultLinks) ->
     ?C(<<>>);
