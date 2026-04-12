@@ -49,11 +49,11 @@ find_invites_tree_root_t_test_() ->
         meck:new(db, [non_strict]),
         meck:expect(db,
                     get_invite_by_invitee_t,
-                    fun (_, <<"4@host">>) ->
+                    fun (_, {<<"4">>, <<"host">>}) ->
                             #invite_token{inviter = {<<"3">>, <<"host">>}};
-                        (_, <<"3@host">>) ->
+                        (_, {<<"3">>, <<"host">>}) ->
                             #invite_token{inviter = {<<"2">>, <<"host">>}};
-                        (_, <<"2@host">>) ->
+                        (_, {<<"2">>, <<"host">>}) ->
                             #invite_token{inviter = {<<"1">>, <<"host">>}};
                         (_, _) ->
                             {error, not_found}
@@ -138,6 +138,7 @@ single_cases() ->
       single_test(remove_user),
       single_test(expire_tokens),
       single_test(max_invites),
+      single_test(overuse),
       single_test(presence_with_preauth_token),
       single_test(is_reserved),
       single_test(stream_feature),
@@ -425,6 +426,53 @@ max_invites(Config0) ->
     ?match(4, mod_invites:cleanup_expired()),
     disconnect(Config).
 
+overuse(Config0) ->
+    Server = ?config(server, Config0),
+    User = ?config(user, Config0),
+    Inviter = {User, Server},
+    InviteeJID = jid:make(User, Server),
+    OldOpts = gen_mod:get_module_opts(Server, mod_invites),
+    NewOpts =
+        gen_mod_set_opts(OldOpts,
+                         [{access_create_account, account_invite},
+                          {allow_modules, [mod_invites]}]),
+    update_module_opts(Server, mod_invites, NewOpts),
+
+    Config1 = reconnect(Config0),
+    update_module_opts(Server, mod_invites, OldOpts),
+
+    %% We only test we're not causing any crashes - these are test from reported bugs. We're not
+    %% testing the actual overuse scenario.
+
+    #invite_token{token = AToken} = create_account_invite(Server, {<<>>, Server}),
+    mod_invites:set_invitee(Server, AToken, InviteeJID),
+
+    #invite_token{token = RToken} = mod_invites:create_roster_invite(Server, {<<"foo">>, Server}),
+    mod_invites:set_invitee(Server, RToken, InviteeJID),
+
+    #invite_token{} = create_account_invite(Server, Inviter),
+
+    mod_invites:expire_tokens(<<>>, Server),
+    ?match(1, mod_invites:cleanup_expired()),
+    mod_invites:remove_user(User, Server),
+
+    #invite_token{token = RToken2} = mod_invites:create_roster_invite(Server, {<<"foo">>, Server}),
+
+    ?match(#iq{type = result}, send_pars(Config1, RToken2)),
+    ?match(#iq{type = result}, send_iq_register(Config1, <<"overuser">>)),
+
+    _Config2 =
+        open_session(bind(auth(set_opt(password,
+                                       <<"mySecret">>,
+                                       set_opt(user, <<"overuser">>, Config1))))),
+
+    #invite_token{token = RToken3} = mod_invites:create_roster_invite(Server, {<<"foo">>, Server}),
+    mod_invites:set_invitee(Server, RToken3, jid:make(<<"overuser">>, Server)),
+
+    #invite_token{} = create_account_invite(Server, {<<"overuser">>, Server}),
+    ejabberd_auth:remove_user(<<"overuser">>, Server).
+
+
 presence_with_preauth_token(Config) ->
     Server = ?config(server, Config),
     User = ?config(user, Config),
@@ -580,6 +628,7 @@ ibr(Config0) ->
                         SubEls)),
     ?match(#iq{type = result}, send_iq_register(Config4, <<"yet_another_self_chosen_name">>)),
 
+    ejabberd_auth:remove_user(<<"roster_invite_user">>, Server),
     ejabberd_auth:remove_user(AccountName, Server),
     ejabberd_auth:remove_user(<<"yet_another_self_chosen_name">>, Server),
     ejabberd_auth:remove_user(<<"some_self_chosen_name">>, Server),

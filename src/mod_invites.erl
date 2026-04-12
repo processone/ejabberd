@@ -74,7 +74,7 @@
 -callback expire_tokens(User :: binary(), Server :: binary()) -> non_neg_integer().
 -callback get_invite(Host :: binary(), Token :: binary()) ->
     invite_token() | {error, not_found}.
--callback get_invite_by_invitee_t(Host :: binary(), InviteeJid :: binary()) ->
+-callback get_invite_by_invitee_t(Host :: binary(), Invitee :: {User :: binary(), Host :: binary()}) ->
     invite_token() | {error, not_found}.
 -callback get_invites_t(Host :: binary(), Inviter :: {User :: binary(), Host :: binary()}) ->
     [invite_token()].
@@ -934,11 +934,10 @@ find_invites_tree_root_t(Now, Host, Invitee, Lvl) ->
 
 -spec get_invite_by_invitee_t(binary(), {binary(), binary()}) ->
                                  invite_token() | {error, not_found}.
+get_invite_by_invitee_t(_Host, {<<>>, _Server}) ->
+    {error, not_found};
 get_invite_by_invitee_t(Host, {User, Server}) ->
-    InviteeJid =
-        jid:encode(
-            jid:make(User, Server)),
-    db_call(Host, get_invite_by_invitee_t, [Host, InviteeJid]).
+    db_call(Host, get_invite_by_invitee_t, [Host, {User, Server}]).
 
 maybe_block_speedy_goat(Now, CreatedAt, Lvl) when Lvl == ?SPEEDY_GOAT_LEVELS ->
     Then = calendar:datetime_to_gregorian_seconds(CreatedAt),
