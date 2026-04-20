@@ -97,8 +97,8 @@ render_landing_page_url(Tmpl, Host, Invite) ->
 
 -spec process(LocalPath :: [binary()], #request{}) ->
                  {HTTPCode :: integer(), [{binary(), binary()}], Page :: string()}.
-process([?STATIC | StaticFile], #request{host = Host} = Request) ->
-    ?DEBUG("Static file requested ~p:~n~p", [StaticFile, Request]),
+process([?STATIC | StaticFile], #request{host = Host} = _Request) ->
+    %%?DEBUG("Static file requested ~p:~n~p", [StaticFile, _Request]),
     try mod_invites_opt:templates_dir(Host) of
         TemplatesDir ->
             Filename = filename:join([TemplatesDir, "static" | StaticFile]),
@@ -175,8 +175,7 @@ process_register_form(Invite,
                       LocalPath) ->
     try app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)) of
         AppCtx ->
-            Ctx = [{csrf_token, csrf_token(Invite#invite_token.token)}, maybe_add_username(Invite)]
-                  ++ AppCtx,
+            Ctx = [{csrf_token, csrf_token(Invite#invite_token.token)} | maybe_add_username(AppCtx, Invite)],
             Body = render_register_form(Request, Ctx),
             Headers = maybe_add_hsts_header(Host, Invite),
             ?HTTP_OK(Headers, Body)
@@ -479,10 +478,10 @@ render_bad_request(Host, Invite, File, Ctx) ->
 guess_content_type(FileName) ->
     mod_http_fileserver:content_type(FileName, ?DEFAULT_CONTENT_TYPE, ?CONTENT_TYPES).
 
-maybe_add_username(#invite_token{account_name = <<>>}) ->
-    [];
-maybe_add_username(#invite_token{account_name = AccountName}) ->
-    [{username, AccountName}].
+maybe_add_username(Ctx, #invite_token{account_name = <<>>}) ->
+    Ctx;
+maybe_add_username(Ctx, #invite_token{account_name = AccountName}) ->
+    [{username, AccountName} | Ctx].
 
 -spec binary_join(binary() | [binary()], binary()) -> binary().
 binary_join(Bin, _Sep) when is_binary(Bin) ->

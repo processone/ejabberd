@@ -24,12 +24,12 @@
         <h2 class="card-title h5">{% trans "Create an account" %}</h2>
         {%if error and error.class == 'undefined' %}<div class="alert alert-danger" role="alert">{{ error.text }}</div>{% endif %}
         <form method="post" class="needs-validation" novalidate>
-            <div class="input-group mb-3">
-                <label for="user" class="col-md-4 col-lg-12 form-label fw-bold">{% trans "Username" %}:</label>
-                <div class="col-md-8 col-lg-12">
+            <div class="row mb-3">
+                <label for="user" class="col-md-4 form-label fw-bold">{% trans "Username" %}:</label>
+                <div class="col-md-8">
                     <div class="input-group">
                         <input
-                            type="text" name="user" class="form-control {% if error.class == 'username' %}is-invalid{% endif %}" aria-describedby="usernameHelp" tabindex="1"
+                            type="text" name="user" id="user" class="form-control {% if error.class == 'username' %}is-invalid{% endif %}" aria-describedby="usernameHelp" tabindex="1"
                             required autofocus minlength="1" maxlength="30" length="30"{% if username %} value="{{ username }}"{% endif %}>
                         <div class="input-group-append">
                             <span class="input-group-text">@{{ domain }}</span>
@@ -42,10 +42,10 @@
                     <small id="usernameHelp" class="d-block form-text text-muted">{% trans "Choose a username, this will become the first part of your new chat address." %}</small>
                 </div>
             </div>
-            <div class="input-group mb-3">
-                <label for="password" class="col-md-4 col-lg-12 form-label col-form-label fw-bold">{% trans "Password" %}:</label>
-                <div class="col-md-8 col-lg-12">
-                    <input type="password" name="password" class="form-control {% if error.class == 'password' %}is-invalid{% endif %}" aria-describedby="passwordHelp" tabindex="2"
+            <div class="row mb-3">
+                <label for="password" class="col-md-4 form-label col-form-label fw-bold">{% trans "Password" %}:</label>
+                <div class="col-md-8">
+                    <input type="password" name="password" id="password" class="form-control {% if error.class == 'password' %}is-invalid{% endif %}" aria-describedby="passwordHelp" tabindex="2"
                         autocomplete="new-password" required minlength="{{ password_min_length }}">
                     <div class="invalid-feedback">
                         {% if error.class == 'password' %}{{ error.text }}{% else %}
