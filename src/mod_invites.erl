@@ -46,15 +46,16 @@
 -export([cleanup_expired/0, expire_tokens/2, generate_invite/1, generate_invite/2, list_invites/1]).
 
 %% helpers
--export([create_account_allowed/2, get_invite/2, get_invites_tree_t/2, get_max_invites/2,
-         is_create_allowed/2, is_expired/1, is_reserved/3, is_token_valid/2, roster_add/2,
-         send_presence/3, set_invitee/3, set_invitee/5, token_uri/1, transaction/2, xdata_field/3]).
+-export([create_account_allowed/2, create_account_invite/4, get_invite/2, get_invites_tree_t/2,
+         get_max_invites/2, is_create_allowed/2, is_expired/1, is_reserved/3, is_token_valid/2,
+         roster_add/2, send_presence/3, set_invitee/3, set_invitee/5, token_uri/1, transaction/2,
+         xdata_field/3]).
 
 %% ejabberd_http
 -export([process/2]).
 
 -ifdef(TEST).
--export([create_roster_invite/2, create_account_invite/4, find_invites_tree_root_t/4, gen_invite/1,
+-export([create_roster_invite/2, find_invites_tree_root_t/4, gen_invite/1,
          gen_invite/2, get_invites/2, get_invites_tree_as_root_t/2, is_token_valid/3]).
 -endif.
 
@@ -132,7 +133,15 @@ mod_doc() ->
            ?T("In order to use the included landing page feature, you have to"
               " set `landing_page` to either `auto` or an URL template like "
               "`https://{{ host }}/invites/{{ invite.token }}` "
-              " if your server setup includes a so called reverse proxy."),
+              " if your server setup includes a so called reverse proxy. "
+              "Furthermore you need to connect this module as a handler of an `ejabberd_http` "
+              "listener as shown at the example below."),
+           "",
+           ?T("For convenience there's now also a start page included at wherever you 'mount' "
+              "`mod_invites` at the `ejabberd_http` handler. This start page will allow people to "
+              "generate invites by giving their username and password. As such the URL should be "
+              "protected by HTTPS. The main use-case is when people have only clients, that don't "
+              "support generating invites natively."),
            "",
            ?T("If you'd rather want to use an external service, set `landing_page` "
               "to something like "

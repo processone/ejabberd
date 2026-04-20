@@ -1,0 +1,113 @@
+{% extends "base_min.html" %}
+
+{% block title %}{% if error %}{% trans "Form Error" %}{% else %}{% trans "Startpage" %}{% endif %} | {{ site_name }}{% endblock %}
+{% block h1 %}{% if error %}{% trans "Form Error" %}{% else %}{% blocktrans %}Welcome to {{ site_name }}{% endblocktrans %}{% endif %}{% endblock %}
+
+{% block form_class %}container col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 col-lg-6 col-lg-offset-3 my-3 mt-md-5{% endblock %}
+
+{% block content %}
+      <h2 class="h3">Create Account Invite</h2>
+      {% if token %}
+      <div class="alert alert-success">Congratulations, a new invite has been created! Forward this link to someone you want to invite to this service.</div>
+      <div class="container-sm-fluid">
+          <div class="text-center">
+              <strong>{% trans "Your Invite-Link:" %}</strong> <a href="{{ landing_page }}" target="_blank">{{ token }}</a>
+              <br/>
+              <button type="button" class="clipboard btn btn-sm btn-outline-secondary mt-1" data-text-copied='{% trans "Copied!" %}' data-text-copy-failed='{% trans "Failed to copy data" %}' data-copy='{{ landing_page }}'>
+              <span>{% trans "Copy to clipboard" %}</span>
+              <svg class="svg-inline--fa fa-w-16" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" title='{% trans "Copy to clipboard" %}'>
+                  <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                      <g fill="currentColor" fill-rule="nonzero">
+                          <path d="M5.50280381,4.62704038 L5.5,6.75 L5.5,17.2542087 C5.5,19.0491342 6.95507456,20.5042087 8.75,20.5042087 L17.3662868,20.5044622 C17.057338,21.3782241 16.2239751,22.0042087 15.2444057,22.0042087 L8.75,22.0042087 C6.12664744,22.0042087 4,19.8775613 4,17.2542087 L4,6.75 C4,5.76928848 4.62744523,4.93512464 5.50280381,4.62704038 Z M17.75,2 C18.9926407,2 20,3.00735931 20,4.25 L20,17.25 C20,18.4926407 18.9926407,19.5 17.75,19.5 L8.75,19.5 C7.50735931,19.5 6.5,18.4926407 6.5,17.25 L6.5,4.25 C6.5,3.00735931 7.50735931,2 8.75,2 L17.75,2 Z M17.75,3.5 L8.75,3.5 C8.33578644,3.5 8,3.83578644 8,4.25 L8,17.25 C8,17.6642136 8.33578644,18 8.75,18 L17.75,18 C18.1642136,18 18.5,17.6642136 18.5,17.25 L18.5,4.25 C18.5,3.83578644 18.1642136,3.5 17.75,3.5 Z">
+                          </path>
+                      </g>
+                  </g>
+              </svg>
+              </button>
+          </div>
+          <div class="bd-callout bd-callout-info">
+              <svg class="svg-inline--fa fa-lightbulb fa-w-11 text-warning" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="lightbulb" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512" data-fa-i2svg=""><path fill="currentColor" d="M96.06 454.35c.01 6.29 1.87 12.45 5.36 17.69l17.09 25.69a31.99 31.99 0 0 0 26.64 14.28h61.71a31.99 31.99 0 0 0 26.64-14.28l17.09-25.69a31.989 31.989 0 0 0 5.36-17.69l.04-38.35H96.01l.05 38.35zM0 176c0 44.37 16.45 84.85 43.56 115.78 16.52 18.85 42.36 58.23 52.21 91.45.04.26.07.52.11.78h160.24c.04-.26.07-.51.11-.78 9.85-33.22 35.69-72.6 52.21-91.45C335.55 260.85 352 220.37 352 176 352 78.61 272.91-.3 175.45 0 73.44.31 0 82.97 0 176zm176-80c-44.11 0-80 35.89-80 80 0 8.84-7.16 16-16 16s-16-7.16-16-16c0-61.76 50.24-112 112-112 8.84 0 16 7.16 16 16s-7.16 16-16 16z"></path></svg>
+              {% trans "You can transfer this invite to a mobile device by scanning the QR code below with its camera." %}
+          </div>
+              <div id="qr-info-url" class="tab-pane show active">
+                  <div id="qr-invite-page" class="bg-light mx-auto" data-link="{{ landing_page }}"></div>
+              </div>
+      </div>
+
+      <nav aria-label="{% trans 'Page navigation' %}">
+          <ul class="pagination mt-3 mb-0">
+              <li class="page-item"><a tabindex="4" class="page-link" href="/{{ base }}/" aria-label="{% trans 'Previous' %}">
+                  <span aria-hidden="true">&laquo;</span>
+                  <span>{% trans "Previous" %}</span>
+              </a></li>
+          </ul>
+      </nav>
+      {% else %}
+      <p>{% blocktrans %}This form allows you to create an invite that you can send to someone else, so they can create a new account at this service. Be aware that you need to have the <strong>necessary rights</strong> to do so, otherwise this command will fail.{% endblocktrans %}</p>
+        <form method="post" class="needs-validation" novalidate>
+            <div class="row mb-3">
+                <label for="user" class="col-md-4 form-label fw-bold">{% trans "Username" %}:</label>
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input
+                            type="text" name="user" id="user" class="form-control {% if error.class == 'username' %}is-invalid{% endif %}" aria-describedby="usernameHelp" tabindex="1" required autofocus minlength="1" maxlength="30" length="30"{% if username %} value="{{ username }}"{% endif %}>
+                        <div class="input-group-append">
+                            <span class="input-group-text">@{{ domain }}</span>
+                        </div>
+                        <div class="invalid-feedback">
+                            {% if error.class == 'username' %}{{ error.text }}{% else %}
+                            {% blocktrans %}Please provide a valid username!{% endblocktrans %}{% endif %}
+                        </div>
+                    </div>
+                    <small id="usernameHelp" class="d-block form-text text-muted">{% trans "Enter the username you use to log into this service." %}</small>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label for="password" class="col-md-4 form-label col-form-label fw-bold">{% trans "Password" %}:</label>
+                <div class="col-md-8">
+                    <input type="password" name="password" id="password" class="form-control {% if error.class == 'password' %}is-invalid{% endif %}" aria-describedby="passwordHelp" tabindex="2" required>
+                    <div class="invalid-feedback">
+                        {% if error.class == 'password' %}{{ error.text }}{% else %}
+                        {% blocktrans %}Please provide a password!{% endblocktrans %}{% endif %}
+                    </div>
+                    <small id="passwordHelp" class="form-text text-muted">{% trans "Enter the corresponding password." %}</small>
+                </div>
+            </div>
+            <div class="border border-secondary-light rounded my-3">
+                <div class="text-bg-light rounded-top p-2 mb-3 h6">{% trans "Invite Options" %}</div>
+                <div class="p-2">
+                    <div class="row mb-3">
+                        <label for="account_name" class="col-xl-4 form-label fw-bold">{% trans "Suggested Name" %}:</label>
+                        <div class="col-12 col-xl-8">
+                            <div class="input-group">
+                                <input type="text" name="account_name" id="account_name" class="form-control {% if error.class == 'account_name' %}is-invalid{% endif %}" aria-describedby="accountnameHelp" tabindex="3" minlength="1" maxlength="30" length="30">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">@{{ domain }}</span>
+                                </div>
+                                <div class="invalid-feedback">
+                                    {% if error.class == 'account_name' %}{{ error.text }}{% endif %}
+                                </div>
+                                <small id="accountnameHelp" class="d-block form-text text-muted">{% trans "You can suggest a username for the account to be created with this invite." %}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="subscribe" name="subscribe" value="yes" tabindex="4">
+                        <label class="form-check-label" for="subscribe">
+                            {% trans "Add to contact list" %}
+                        </label>
+                        <small id="subscribeHelp" class="d-block form-text text-muted">{% trans "If checked once an account is created using this invite, it will automatically be added to your contact list." %}</small>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" tabindex="5" class="btn btn-primary float-end">{% trans "Submit" %}</button>
+            </div>
+        </form>
+        {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{{ static }}/qrcode.min.js" integrity="sha384-XfbBihCQqSDyejklP5yun2CbVxqR+2eNfx0Fhx5pQAfN5ypWGhSBjXaXr5g6X4DE"></script>
+{% endblock %}

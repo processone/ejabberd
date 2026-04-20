@@ -26,15 +26,17 @@
 
 -author('stefan@strigler.de').
 
--include("logger.hrl").
-
 -export([process/2, landing_page/2, tmpl_to_renderer/1]).
+
+-import(translate, [translate/2]).
 
 -ifdef(TEST).
 -export([apps_json/3]).
 -endif.
 
 -include_lib("xmpp/include/xmpp.hrl").
+
+-include("logger.hrl").
 
 -include("ejabberd_http.hrl").
 -include("mod_invites.hrl").
@@ -43,6 +45,7 @@
 -define(HTTP(Code, Headers, CT, Text), {Code, [{<<"Content-Type">>, CT} | Headers], Text}).
 -define(HTTP(Code, CT, Text), ?HTTP(Code, [], CT, Text)).
 -define(HTTP(Code, Text), ?HTTP(Code, <<"text/plain">>, Text)).
+-define(HTTP_OK(Text), ?HTTP_OK([], Text)).
 -define(HTTP_OK(Headers, Text), ?HTTP(200, security_headers() ++ Headers, <<"text/html">>, Text)).
 -define(NOT_FOUND, ?HTTP(404, ?T("NOT FOUND"))).
 -define(NOT_FOUND(Text), ?HTTP(404, <<"text/html">>, Text)).
@@ -56,7 +59,6 @@
 	 {<<".js">>, <<"application/javascript">>},
 	 {<<".png">>, <<"image/png">>},
 	 {<<".svg">>, <<"image/svg+xml">>}]).
-
 -define(STATIC, <<"static">>).
 -define(REGISTRATION, <<"registration">>).
 -define(STATIC_CTX, {static, <<"/", Base/binary, "/", ?STATIC/binary>>}).
@@ -98,7 +100,6 @@ render_landing_page_url(Tmpl, Host, Invite) ->
 -spec process(LocalPath :: [binary()], #request{}) ->
                  {HTTPCode :: integer(), [{binary(), binary()}], Page :: string()}.
 process([?STATIC | StaticFile], #request{host = Host} = _Request) ->
-    %%?DEBUG("Static file requested ~p:~n~p", [StaticFile, _Request]),
     try mod_invites_opt:templates_dir(Host) of
         TemplatesDir ->
             Filename = filename:join([TemplatesDir, "static" | StaticFile]),
@@ -110,11 +111,10 @@ process([?STATIC | StaticFile], #request{host = Host} = _Request) ->
                     ?NOT_FOUND
             end
     catch
-        _:{module_not_loaded, mod_invites, Host} ->
+        _:{module_not_loaded, mod_invites, _Host} ->
             ?NOT_FOUND
     end;
-process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) ->
-    ?DEBUG("Requested:~n~p", [Request]),
+process([Token | _] = LocalPath, #request{host = Host, lang = Lang, path = Path} = Request) ->
     try mod_invites:is_token_valid(Host, Token) of
         true ->
             case mod_invites:get_invite(Host, Token) of
@@ -127,15 +127,67 @@ process([Token | _] = LocalPath, #request{host = Host, lang = Lang} = Request) -
             ?NOT_FOUND(render(Host,
                               Lang,
                               <<"invite_invalid.html">>,
-                              ctx(Request, LocalPath, Token)))
+                              base_ctx(Host, Lang, Path, LocalPath)))
     catch
         _:not_found ->
             ?NOT_FOUND;
         _:{error, host_unknown} ->
             ?NOT_FOUND
     end;
-process([], _Request) ->
-    ?NOT_FOUND.
+process([] = LocalPath, #request{method = 'POST', q = Q, path = Path, host = Host, lang = Lang, headers = Headers}) ->
+    Username = proplists:get_value(<<"user">>, Q),
+    Password = proplists:get_value(<<"password">>, Q),
+    CSRFToken = proplists:get_value(<<"csrf_token">>, Q),
+    #{<<"form-id">> := Cookieval} = parse_cookie_header(Headers),
+    try { check_csrf(Cookieval, CSRFToken),
+          ejabberd_auth:check_password(Username, <<"plain">>, Host, Password),
+          mod_invites:create_account_allowed(Host, jid:make(Username, Host))
+         }
+    of
+        {ok, true, ok} ->
+            AccountName = proplists:get_value(<<"account_name">>, Q, <<>>),
+            Subscribe = proplists:get_value(<<"subscribe">>, Q, <<"no">>) == <<"yes">>,
+            case mod_invites:create_account_invite(Host, {Username, Host}, AccountName, Subscribe) of
+                #invite_token{} = Invite ->
+                    Ctx = [{uri, mod_invites:token_uri(Invite)},
+                           {landing_page, landing_page(Host, Invite)},
+                           {token, Invite#invite_token.token}
+                          | base_ctx(Host, Lang, Path, LocalPath)],
+                    ?HTTP_OK(render(Host, Lang, <<"index.html">>, Ctx));
+                {error, Reason} ->
+                    Ctx = [{username, Username},
+                           {csrf_token, CSRFToken},
+                           {error, [{text, reason_to_hr(Lang, Reason)}, {class, error_class(Reason)}]}
+                          | base_ctx(Host, Lang, Path, LocalPath)],
+                    render_bad_request(Host, true, <<"index.html">>, Ctx)
+            end;
+        {ok, true, {error, not_allowed}}->
+            Ctx = [{username, Username},
+                   {csrf_token, CSRFToken},
+                   {error, [{text, translate(Lang, ?T("User is not allowed to create invites"))}, {class, username}]}
+                  | base_ctx(Host, Lang, Path, LocalPath)],
+            render_bad_request(Host, true, <<"index.html">>, Ctx);
+        {ok, false, _} ->
+            Ctx = [{username, Username},
+                   {csrf_token, CSRFToken},
+                   {error, [{text, translate(Lang, ?T("Password invalid"))}, {class, password}]}
+                  | base_ctx(Host, Lang, Path, LocalPath)],
+            render_bad_request(Host, true, <<"index.html">>, Ctx)
+    catch
+        _:no_match ->
+            ?BAD_REQUEST
+    end;
+process([] = LocalPath, #request{path = Path, host = Host, lang = Lang}) ->
+    Cookieval = p1_rand:get_alphanum_string(32),
+    Cookie = <<"form-id=", Cookieval/binary, "; HttpOnly; SameSite=strict">>,
+    Ctx = [{csrf_token, csrf_token(Cookieval)}
+          | base_ctx(Host, Lang, Path, LocalPath)],
+    ?HTTP_OK(maybe_add_hsts_header([{<<"Set-Cookie">>, Cookie}], true),
+             render(Host, Lang, <<"index.html">>, Ctx)).
+
+parse_cookie_header(Headers) ->
+    C = proplists:get_value('Cookie', Headers),
+    lists:foldl(fun([K, V], M) -> M#{K => V} end, #{}, [binary:split(S, <<"=">>) || S <- binary:split(C, <<"; ">>)]).
 
 process_valid_token([_Token, AppID, ?REGISTRATION] = LocalPath,
                     #request{method = 'POST'} = Request,
@@ -177,7 +229,7 @@ process_register_form(Invite,
         AppCtx ->
             Ctx = [{csrf_token, csrf_token(Invite#invite_token.token)} | maybe_add_username(AppCtx, Invite)],
             Body = render_register_form(Request, Ctx),
-            Headers = maybe_add_hsts_header(Host, Invite),
+            Headers = maybe_hsts_header(is_https_lp(Host, Invite)),
             ?HTTP_OK(Headers, Body)
     catch
         _:not_found ->
@@ -199,6 +251,7 @@ process_register_post(Invite,
                       #request{host = Host,
                                q = Q,
                                lang = Lang,
+                               path = Path,
                                ip = {Source, _}} =
                           Request,
                       LocalPath) ->
@@ -235,9 +288,9 @@ process_register_post(Invite,
                             ?BAD_REQUEST(Body);
                         _ ->
                             render_bad_request(Host,
-                                               Invite,
+                                               is_https_lp(Host, Invite),
                                                <<"register_error.html">>,
-                                               [{message, Msg} | ctx(Request, LocalPath, Token)])
+                                               [{message, Msg} | base_ctx(Host, Lang, Path, LocalPath, Token)])
                     end
             end
     catch
@@ -261,7 +314,7 @@ check_csrf(Token, Could) ->
             throw(no_match)
     end.
 
-csrf_token(Msg) ->
+csrf_token(Msg) when Msg /= <<>> ->
     SecretKey = ejabberd_config:get_shared_key(),
     base64:encode(
         crypto:mac(hmac,
@@ -288,17 +341,6 @@ maybe_add_webchat_url(Host, Ctx) ->
             [{webchat_url, WebchatUrl} | Ctx]
     end.
 
-error_class('jid-malformed') ->
-    username;
-error_class('not-allowed') ->
-    username;
-error_class(conflict) ->
-    username;
-error_class('not-acceptable') ->
-    password;
-error_class(_) ->
-    undefined.
-
 process_roster_token([_Token] = LocalPath,
                      #request{host = Host, lang = Lang} = Request,
                      Invite) ->
@@ -313,7 +355,7 @@ process_roster_token([_Token] = LocalPath,
                                  Url
                          end,
                      App#{proceed_url => ProceedUrl,
-                          select_text => translate:translate(Lang, ?T("Install"))}
+                          select_text => translate(Lang, ?T("Install"))}
                   end,
                   apps_json(Host, Lang, Ctx0)),
     Ctx = [{apps, Apps} | Ctx0],
@@ -337,33 +379,34 @@ app_ctx(Host, AppID, Lang, Ctx) ->
             throw(not_found)
     end.
 
-ctx(#request{host = Host,
-             path = Path,
-             lang = Lang},
-    LocalPath,
-    Token) ->
-    OriginalPath =
+base_ctx(Host, Lang, Path, LocalPath) ->
+    base_ctx(Host, Lang, Path, LocalPath, <<>>).
+
+base_ctx(Host, Lang, Path, LocalPath, Token) ->
+    Base = configured_base_path(Host, Path, LocalPath, Token),
+    SiteName = mod_invites_opt:site_name(Host),
+    [{base, Base}, {domain, Host}, ?STATIC_CTX, ?SITE_NAME_CTX(SiteName), ?LANG(Lang)].
+
+configured_base_path(Host, Path, LocalPath, Token) ->
+    BasePath =
         case landing_page_tmpl(Host) of
             <<>> ->
-                Path;
+                Path -- LocalPath;
             Tmpl ->
                 Url = render_url(Tmpl, [{invite, [{token, Token}]}, {host, Host}]),
-                #{path := OPath} = uri_string:parse(Url),
-                {LPath, _Q} = ejabberd_http:url_decode_q_split_normalize(OPath),
-                LPath
+                #{path := OPath0} = uri_string:parse(Url),
+                {OPath, _Q} = ejabberd_http:url_decode_q_split_normalize(OPath0),
+                OPath -- LocalPath
         end,
-    Base =
-        iolist_to_binary(uri_string:normalize(
-                             lists:join(<<"/">>, OriginalPath -- LocalPath))),
-    SiteName = mod_invites_opt:site_name(Host),
-    [{base, Base}, ?STATIC_CTX, ?SITE_NAME_CTX(SiteName), ?LANG(Lang)];
-ctx(Invite, #request{host = Host} = Request, LocalPath) ->
+    iolist_to_binary(uri_string:normalize(
+                       lists:join(<<"/">>, BasePath))).
+
+ctx(Invite, #request{host = Host, lang = Lang, path = Path}, LocalPath) ->
     [{invite, invite_to_proplist(Invite)},
      {uri, mod_invites:token_uri(Invite)},
-     {domain, Host},
      {token, Invite#invite_token.token},
      {registration_url, <<(Invite#invite_token.token)/binary, "/", ?REGISTRATION/binary>>}
-     | ctx(Request, LocalPath, Invite#invite_token.token)].
+    | base_ctx(Host, Lang, Path, LocalPath, Invite#invite_token.token)].
 
 apps_json(Host, Lang, Ctx) ->
     AppsBins = render(Host, Lang, <<"apps.json">>, Ctx),
@@ -442,7 +485,7 @@ render(Host, Lang, File, Ctx) ->
         Renderer:render(Ctx,
                         [{locale, Lang},
                          {translation_fun,
-                          fun(Msg, TFLang) -> translate:translate(lang(TFLang), list_to_binary(Msg))
+                          fun(Msg, TFLang) -> translate(lang(TFLang), list_to_binary(Msg))
                           end}]),
     Rendered.
 
@@ -453,23 +496,23 @@ lang(Lang) ->
 
 render_ok(Host, Invite, Lang, File, Ctx) ->
     URI = proplists:get_value(uri, Ctx),
-    Headers = maybe_add_hsts_header([{<<"Link">>, <<"<", URI/binary, ">">>}], Host, Invite),
+    Headers = maybe_add_hsts_header([{<<"Link">>, <<"<", URI/binary, ">">>}], is_https_lp(Host, Invite)),
     ?HTTP_OK(Headers, render(Host, Lang, File, Ctx)).
 
-maybe_add_hsts_header(Host, Invite) ->
-    maybe_add_hsts_header([], Host, Invite).
-
-maybe_add_hsts_header(Headers, Host, Invite) ->
+is_https_lp(Host, Invite) ->
     LP = landing_page(Host, Invite),
-    case re:run(LP, "^https://") of
-        nomatch ->
-            Headers;
-        {match, _} ->
-            [{<<"Strict-Transport-Security">>, <<"max-age=31536000; includeSubDomains">>} | Headers]
-    end.
+    re:run(LP, "^https://") =/= nomatch.
 
-render_bad_request(Host, Invite, File, Ctx) ->
-    Headers = maybe_add_hsts_header(Host, Invite),
+maybe_hsts_header(IsHttps) ->
+    maybe_add_hsts_header([], IsHttps).
+
+maybe_add_hsts_header(Headers, true) ->
+    [{<<"Strict-Transport-Security">>, <<"max-age=31536000; includeSubDomains">>} | Headers];
+maybe_add_hsts_header(Headers, false) ->
+    Headers.
+
+render_bad_request(Host, IsHttps, File, Ctx) ->
+    Headers = maybe_hsts_header(IsHttps),
     Renderer = file_to_renderer(Host, File),
     {ok, Rendered} = Renderer:render(Ctx),
     ?BAD_REQUEST(Headers, Rendered).
@@ -506,3 +549,36 @@ security_headers() ->
       <<"default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'">>},
      {<<"X-Content-Type-Options">>, <<"nosniff">>},
      {<<"Referrer-Policy">>, <<"no-referrer">>}].
+
+error_class('jid-malformed') ->
+    username;
+error_class('not-allowed') ->
+    username;
+error_class('conflict') ->
+    username;
+error_class('num_invites_exceeded') ->
+    username;
+error_class('not-acceptable') ->
+    password;
+error_class('reserved') ->
+    account_name;
+error_class('user_exists') ->
+    account_name;
+error_class('account_name_invalid') ->
+    account_name;
+error_class(_) ->
+    undefined.
+
+reason_to_hr(Lang, num_invites_exceeded) ->
+    translate(Lang, ?T("Maximum number of invites reached"));
+reason_to_hr(Lang, user_exists) ->
+    translate(Lang, ?T("Username exists already"));
+reason_to_hr(Lang, account_name_invalid) ->
+    translate(Lang, ?T("Username contains invalid characters"));
+reason_to_hr(Lang, reserved) ->
+    translate(Lang, ?T("Username is reserved"));
+reason_to_hr(_Lang, T) when is_atom(T) ->
+    atom_to_binary(T);
+reason_to_hr(_Lang, T) ->
+    %% good luck!
+    T.
