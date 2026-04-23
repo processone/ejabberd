@@ -283,8 +283,7 @@ uninstall(Package) when is_binary(Package) ->
                 true -> ModuleRuntime:pre_uninstall();
                 _ -> ok
             end,
-            [catch gen_mod:stop_module(Host, ModuleRuntime)
-             || Host <- ejabberd_option:hosts()],
+            stop_module_all_hosts(ModuleRuntime),
             code:purge(ModuleRuntime),
             code:delete(ModuleRuntime),
             [code:del_path(PathDelete) || PathDelete <- [module_ebin_dir(Module)|module_deps_dirs(Module)]],
@@ -292,6 +291,17 @@ uninstall(Package) when is_binary(Package) ->
             ejabberd_config:reload();
         false ->
             {error, not_installed}
+    end.
+
+stop_module_all_hosts(ModuleRuntime) ->
+    [stop_module(ModuleRuntime, Host) || Host <- ejabberd_option:hosts()].
+
+stop_module(ModuleRuntime, Host) ->
+    try gen_mod:stop_module(Host, ModuleRuntime)
+    catch A:B ->
+              ?WARNING_MSG("Problem stopping module ~ts at host ~ts: ~p: ~p",
+                             [ModuleRuntime, Host, A, B ]),
+              ok
     end.
 
 upgrade() ->
