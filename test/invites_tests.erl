@@ -825,6 +825,7 @@ ibr_conflict(Config0) ->
 http(Config) ->
     Server = ?config(server, Config),
     User = ?config(user, Config),
+    httpc:set_options([{cookies, enabled}]),
     {TokenURI, LandingPage} = mod_invites:gen_invite(Server),
     Token = token_from_uri(TokenURI),
     {ok, {{_, 200, _}, Headers, Body}} = httpc:request(LandingPage),
@@ -1009,24 +1010,24 @@ send_pars(Config, Token) ->
                   to = ServerJID,
                   sub_els = [#preauth{token = Token}]}).
 
-post(URL, Token0, User0, Password0) ->
-    [Token, User, Password] = [uri_string:quote(V) || V <- [Token0, User0, Password0]],
-    Data = <<"token=", Token/binary, "&user=", User/binary, "&password=", Password/binary>>,
-    httpc:request(post, {URL, [], "application/x-www-form-urlencoded", Data}, [], []).
+post(URL, Token, User, Password) ->
+    Data = to_qs([{token, Token}, {user, User}, {password, Password}]),
+    post(URL, [], Data).
 
-post(URL, Token0, CSRFToken0, User0, Password0) ->
-    [Token, CSRFToken, User, Password] =
-        [uri_string:quote(V) || V <- [Token0, CSRFToken0, User0, Password0]],
-    Data =
-        <<"token=",
-          Token/binary,
-          "&csrf_token=",
-          CSRFToken/binary,
-          "&user=",
-          User/binary,
-          "&password=",
-          Password/binary>>,
-    httpc:request(post, {URL, [], "application/x-www-form-urlencoded", Data}, [], []).
+post(URL, Token, CSRFToken, User, Password) ->
+    Data = to_qs([{token, Token}, {user, User}, {password, Password}, {csrf_token, CSRFToken}]),
+    post(URL, [], Data).
+
+post(URL, Headers, Data) ->
+    httpc:request(post, {URL, Headers, "application/x-www-form-urlencoded", Data}, [], []).
+
+to_qs(List) ->
+    lists:foldl(
+      fun({K, V}, <<>>) ->
+              <<(atom_to_binary(K))/binary, "=", (uri_string:quote(V))/binary>>;
+         ({K, V}, QS) ->
+              <<QS/binary, "&", (atom_to_binary(K))/binary, "=", (uri_string:quote(V))/binary>>
+         end, <<>>, List).
 
 gen_mod_set_opts(OldOpts, NewOpts) ->
     lists:foldl(fun({Opt, Val}, Opts) -> gen_mod:set_opt(Opt, Val, Opts) end,

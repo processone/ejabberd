@@ -37,7 +37,6 @@
 -include_lib("xmpp/include/xmpp.hrl").
 
 -include("logger.hrl").
-
 -include("ejabberd_http.hrl").
 -include("mod_invites.hrl").
 -include("translate.hrl").
@@ -114,7 +113,11 @@ process([?STATIC | StaticFile], #request{host = Host} = _Request) ->
         _:{module_not_loaded, mod_invites, _Host} ->
             ?NOT_FOUND
     end;
-process([Token | _] = LocalPath, #request{host = Host, lang = Lang, path = Path} = Request) ->
+process([Token | _] = LocalPath,
+        #request{host = Host,
+                 lang = Lang,
+                 path = Path} =
+            Request) ->
     try mod_invites:is_token_valid(Host, Token) of
         true ->
             case mod_invites:get_invite(Host, Token) of
@@ -134,60 +137,69 @@ process([Token | _] = LocalPath, #request{host = Host, lang = Lang, path = Path}
         _:{error, host_unknown} ->
             ?NOT_FOUND
     end;
-process([] = LocalPath, #request{method = 'POST', q = Q, path = Path, host = Host, lang = Lang, headers = Headers}) ->
+process([] = LocalPath,
+        #request{method = 'POST',
+                 q = Q,
+                 path = Path,
+                 host = Host,
+                 lang = Lang,
+                 headers = Headers}) ->
     Username = proplists:get_value(<<"user">>, Q),
     Password = proplists:get_value(<<"password">>, Q),
     CSRFToken = proplists:get_value(<<"csrf_token">>, Q),
-    #{<<"form-id">> := Cookieval} = parse_cookie_header(Headers),
-    try { check_csrf(Cookieval, CSRFToken),
-          ejabberd_auth:check_password(Username, <<"plain">>, Host, Password),
-          mod_invites:create_account_allowed(Host, jid:make(Username, Host))
-         }
+    CookieVal = get_csrf_cookie(<<"gen-invite-id">>, Headers),
+    try {check_csrf(CookieVal, CSRFToken),
+         ejabberd_auth:check_password(Username, <<"plain">>, Host, Password),
+         mod_invites:create_account_allowed(Host, jid:make(Username, Host))}
     of
         {ok, true, ok} ->
             AccountName = proplists:get_value(<<"account_name">>, Q, <<>>),
             Subscribe = proplists:get_value(<<"subscribe">>, Q, <<"no">>) == <<"yes">>,
-            case mod_invites:create_account_invite(Host, {Username, Host}, AccountName, Subscribe) of
+            case mod_invites:create_account_invite(Host, {Username, Host}, AccountName, Subscribe)
+            of
                 #invite_token{} = Invite ->
                     Ctx = [{uri, mod_invites:token_uri(Invite)},
                            {landing_page, landing_page(Host, Invite)},
                            {token, Invite#invite_token.token}
-                          | base_ctx(Host, Lang, Path, LocalPath)],
+                           | base_ctx(Host, Lang, Path, LocalPath)],
                     ?HTTP_OK(render(Host, Lang, <<"index.html">>, Ctx));
                 {error, Reason} ->
                     Ctx = [{username, Username},
                            {csrf_token, CSRFToken},
-                           {error, [{text, reason_to_hr(Lang, Reason)}, {class, error_class(Reason)}]}
-                          | base_ctx(Host, Lang, Path, LocalPath)],
+                           {error,
+                            [{text, reason_to_hr(Lang, Reason)}, {class, error_class(Reason)}]}
+                           | base_ctx(Host, Lang, Path, LocalPath)],
                     render_bad_request(Host, true, <<"index.html">>, Ctx)
             end;
-        {ok, true, {error, not_allowed}}->
+        {ok, true, {error, not_allowed}} ->
             Ctx = [{username, Username},
                    {csrf_token, CSRFToken},
-                   {error, [{text, translate(Lang, ?T("User is not allowed to create invites"))}, {class, username}]}
-                  | base_ctx(Host, Lang, Path, LocalPath)],
+                   {error,
+                    [{text, translate(Lang, ?T("User is not allowed to create invites"))},
+                     {class, username}]}
+                   | base_ctx(Host, Lang, Path, LocalPath)],
             render_bad_request(Host, true, <<"index.html">>, Ctx);
         {ok, false, _} ->
             Ctx = [{username, Username},
                    {csrf_token, CSRFToken},
                    {error, [{text, translate(Lang, ?T("Password invalid"))}, {class, password}]}
-                  | base_ctx(Host, Lang, Path, LocalPath)],
+                   | base_ctx(Host, Lang, Path, LocalPath)],
             render_bad_request(Host, true, <<"index.html">>, Ctx)
     catch
         _:no_match ->
             ?BAD_REQUEST
     end;
-process([] = LocalPath, #request{path = Path, host = Host, lang = Lang}) ->
-    Cookieval = p1_rand:get_alphanum_string(32),
-    Cookie = <<"form-id=", Cookieval/binary, "; HttpOnly; SameSite=strict">>,
-    Ctx = [{csrf_token, csrf_token(Cookieval)}
-          | base_ctx(Host, Lang, Path, LocalPath)],
-    ?HTTP_OK(maybe_add_hsts_header([{<<"Set-Cookie">>, Cookie}], true),
+process([] = LocalPath,
+        #request{path = Path,
+                 host = Host,
+                 lang = Lang}) ->
+    CSRFCookie = gen_rand_id(),
+    Ctx = [{csrf_token, csrf_token(CSRFCookie)} | base_ctx(Host, Lang, Path, LocalPath)],
+    ?HTTP_OK(maybe_add_hsts_header(add_cookie_header([],
+                                                     csrf_cookie_string(<<"gen-invite-id">>,
+                                                                        CSRFCookie)),
+                                   true),
              render(Host, Lang, <<"index.html">>, Ctx)).
-
-parse_cookie_header(Headers) ->
-    C = proplists:get_value('Cookie', Headers),
-    lists:foldl(fun([K, V], M) -> M#{K => V} end, #{}, [binary:split(S, <<"=">>) || S <- binary:split(C, <<"; ">>)]).
 
 process_valid_token([_Token, AppID, ?REGISTRATION] = LocalPath,
                     #request{method = 'POST'} = Request,
@@ -227,9 +239,12 @@ process_register_form(Invite,
                       LocalPath) ->
     try app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)) of
         AppCtx ->
-            Ctx = [{csrf_token, csrf_token(Invite#invite_token.token)} | maybe_add_username(AppCtx, Invite)],
+            CSRFCookie = gen_rand_id(),
+            Ctx = [{csrf_token, csrf_token(CSRFCookie)} | maybe_add_username(AppCtx, Invite)],
             Body = render_register_form(Request, Ctx),
-            Headers = maybe_hsts_header(is_https_lp(Host, Invite)),
+            Headers =
+                add_cookie_header(maybe_hsts_header(is_https_lp(Host, Invite)),
+                                  csrf_cookie_string(<<"register-id">>, CSRFCookie)),
             ?HTTP_OK(Headers, Body)
     catch
         _:not_found ->
@@ -252,16 +267,18 @@ process_register_post(Invite,
                                q = Q,
                                lang = Lang,
                                path = Path,
-                               ip = {Source, _}} =
+                               ip = {Source, _},
+                               headers = Headers} =
                           Request,
                       LocalPath) ->
     Username = proplists:get_value(<<"user">>, Q),
     Password = proplists:get_value(<<"password">>, Q),
-    Token = Invite#invite_token.token,
     CSRFToken = proplists:get_value(<<"csrf_token">>, Q),
+    Token = Invite#invite_token.token,
+    CSRFCookie = get_csrf_cookie(<<"register-id">>, Headers),
     try {app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)),
          ensure_same(Token, proplists:get_value(<<"token">>, Q)),
-         check_csrf(Token, CSRFToken)}
+         check_csrf(CSRFCookie, CSRFToken)}
     of
         {AppCtx, ok, ok} ->
             case mod_invites_register:try_register(Invite, Username, Host, Password, Source, Lang)
@@ -281,7 +298,7 @@ process_register_post(Invite,
                     case Type of
                         T when T == cancel; T == modify ->
                             Ctx = [{username, Username},
-                                   {csrf_token, csrf_token(Invite#invite_token.token)},
+                                   {csrf_token, CSRFToken},
                                    {error, [{text, Msg}, {class, error_class(Reason)}]}]
                                   ++ AppCtx,
                             Body = render_register_form(Request, Ctx),
@@ -290,7 +307,11 @@ process_register_post(Invite,
                             render_bad_request(Host,
                                                is_https_lp(Host, Invite),
                                                <<"register_error.html">>,
-                                               [{message, Msg} | base_ctx(Host, Lang, Path, LocalPath, Token)])
+                                               [{message, Msg} | base_ctx(Host,
+                                                                          Lang,
+                                                                          Path,
+                                                                          LocalPath,
+                                                                          Token)])
                     end
             end
     catch
@@ -301,6 +322,8 @@ process_register_post(Invite,
     end.
 
 check_csrf(_Token, undefined) ->
+    throw(no_match);
+check_csrf(<<>>, _Could) ->
     throw(no_match);
 check_csrf(Token, Could) ->
     Should = csrf_token(Token),
@@ -354,8 +377,7 @@ process_roster_token([_Token] = LocalPath,
                              #{<<"url">> := Url} ->
                                  Url
                          end,
-                     App#{proceed_url => ProceedUrl,
-                          select_text => translate(Lang, ?T("Install"))}
+                     App#{proceed_url => ProceedUrl, select_text => translate(Lang, ?T("Install"))}
                   end,
                   apps_json(Host, Lang, Ctx0)),
     Ctx = [{apps, Apps} | Ctx0],
@@ -399,14 +421,18 @@ configured_base_path(Host, Path, LocalPath, Token) ->
                 OPath -- LocalPath
         end,
     iolist_to_binary(uri_string:normalize(
-                       lists:join(<<"/">>, BasePath))).
+                         lists:join(<<"/">>, BasePath))).
 
-ctx(Invite, #request{host = Host, lang = Lang, path = Path}, LocalPath) ->
+ctx(Invite,
+    #request{host = Host,
+             lang = Lang,
+             path = Path},
+    LocalPath) ->
     [{invite, invite_to_proplist(Invite)},
      {uri, mod_invites:token_uri(Invite)},
      {token, Invite#invite_token.token},
      {registration_url, <<(Invite#invite_token.token)/binary, "/", ?REGISTRATION/binary>>}
-    | base_ctx(Host, Lang, Path, LocalPath, Invite#invite_token.token)].
+     | base_ctx(Host, Lang, Path, LocalPath, Invite#invite_token.token)].
 
 apps_json(Host, Lang, Ctx) ->
     AppsBins = render(Host, Lang, <<"apps.json">>, Ctx),
@@ -485,8 +511,7 @@ render(Host, Lang, File, Ctx) ->
         Renderer:render(Ctx,
                         [{locale, Lang},
                          {translation_fun,
-                          fun(Msg, TFLang) -> translate(lang(TFLang), list_to_binary(Msg))
-                          end}]),
+                          fun(Msg, TFLang) -> translate(lang(TFLang), list_to_binary(Msg)) end}]),
     Rendered.
 
 lang(default) ->
@@ -496,7 +521,9 @@ lang(Lang) ->
 
 render_ok(Host, Invite, Lang, File, Ctx) ->
     URI = proplists:get_value(uri, Ctx),
-    Headers = maybe_add_hsts_header([{<<"Link">>, <<"<", URI/binary, ">">>}], is_https_lp(Host, Invite)),
+    Headers =
+        maybe_add_hsts_header([{<<"Link">>, <<"<", URI/binary, ">">>}],
+                              is_https_lp(Host, Invite)),
     ?HTTP_OK(Headers, render(Host, Lang, File, Ctx)).
 
 is_https_lp(Host, Invite) ->
@@ -550,21 +577,43 @@ security_headers() ->
      {<<"X-Content-Type-Options">>, <<"nosniff">>},
      {<<"Referrer-Policy">>, <<"no-referrer">>}].
 
+gen_rand_id() ->
+    p1_rand:get_alphanum_string(32).
+
+csrf_cookie_string(Key, CSRFCookie) ->
+    <<Key/binary, "=", CSRFCookie/binary, "; HttpOnly; SameSite=strict; Max-Age=86400">>.
+
+add_cookie_header(Headers, Cookie) ->
+    [{<<"Set-Cookie">>, Cookie} | Headers].
+
+get_csrf_cookie(Key, Headers) ->
+    maps:get(Key, parse_cookie_header(Headers), <<>>).
+
+parse_cookie_header(Headers) ->
+    C = proplists:get_value('Cookie', Headers, <<>>),
+    lists:foldl(fun ([K, V], M) ->
+                        M#{K => V};
+                    (_, M) ->
+                        M
+                end,
+                #{},
+                [binary:split(S, <<"=">>) || S <- binary:split(C, <<"; ">>)]).
+
 error_class('jid-malformed') ->
     username;
 error_class('not-allowed') ->
     username;
-error_class('conflict') ->
+error_class(conflict) ->
     username;
-error_class('num_invites_exceeded') ->
+error_class(num_invites_exceeded) ->
     username;
 error_class('not-acceptable') ->
     password;
-error_class('reserved') ->
+error_class(reserved) ->
     account_name;
-error_class('user_exists') ->
+error_class(user_exists) ->
     account_name;
-error_class('account_name_invalid') ->
+error_class(account_name_invalid) ->
     account_name;
 error_class(_) ->
     undefined.
