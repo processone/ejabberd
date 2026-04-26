@@ -146,7 +146,8 @@ single_cases() ->
       single_test(ibr_reserved),
       single_test(ibr_subscription),
       single_test(ibr_conflict),
-      single_test(http)]}.
+      single_test(http),
+      single_test(create_invite_page)]}.
 
 %%%===================================================================
 
@@ -853,12 +854,8 @@ http(Config) ->
 
     [Last] = hd(lists:reverse(RegistrationURLs)),
     RegURL = <<BaseURL/binary, Last/binary>>,
-    {ok, {{_, 200, _}, _, RegURLBody}} = httpc:request(RegURL),
-    {match, [[CSRFToken]]} =
-        re:run(RegURLBody,
-               <<"<input.+name=\"csrf_token\" value=\"(.+)\"">>,
-               [global, {capture, [1], binary}]),
-    ct:pal("extracted csrf token: ~p", [CSRFToken]),
+    CSRFToken = get_csrf_token(RegURL),
+
     {ok, {{_, 400, _}, _, _}} = post(RegURL, <<"badtoken">>, CSRFToken, <<"foo">>, <<"bar">>),
     {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, CSRFToken, User, <<"bar">>),
     {ok, {{_, 400, _}, _, _}} = post(RegURL, Token, CSRFToken, <<"@invalidUser">>, <<"bar">>),
@@ -891,6 +888,76 @@ http(Config) ->
     mod_invites:remove_user(<<"inviter">>, Server),
     mod_invites:expire_tokens(<<>>, Server),
     ?match(1, mod_invites:cleanup_expired()),
+    disconnect(Config).
+
+create_invite_page(Config) ->
+    Server = ?config(server, Config),
+    User = ?config(user, Config),
+    Password = ?config(password, Config),
+
+    AutoURL = ejabberd_http:get_auto_url(any, mod_invites),
+    BaseURL = misc:expand_keyword(<<"@HOST@">>, AutoURL, Server),
+
+    httpc:set_options([{cookies, disabled}]),
+
+    ?match({ok, {{_, 400, _}, _, _}}, post(BaseURL, [], <<>>)),
+    ?match({ok, {{_, 400, _}, _, _}},
+           post(BaseURL,
+                [],
+                to_qs([{user, User}, {password, Password}, {csrf_token, <<"some_nonsense">>}]))),
+
+    CSRFToken = get_csrf_token(BaseURL),
+    %% still not working because no cookie
+    ?match({ok, {{_, 400, _}, _, _}},
+           post(BaseURL, [], to_qs([{user, User}, {password, Password}, {csrf_token, CSRFToken}]))),
+
+    httpc:set_options([{cookies, enabled}]),
+
+    NewCSRFToken = get_csrf_token(BaseURL),
+
+    %% user not allowed to create invites
+    ?match({ok, {{_, 400, _}, _, _}},
+           post(BaseURL,
+                [],
+                to_qs([{user, User}, {password, Password}, {csrf_token, NewCSRFToken}]))),
+
+    OldOpts = gen_mod:get_module_opts(Server, mod_invites),
+    NewOpts = gen_mod:set_opt(access_create_account, account_invite, OldOpts),
+    update_module_opts(Server, mod_invites, NewOpts),
+
+    ?match({ok, {{_, 200, _}, _, _}},
+           post(BaseURL,
+                [],
+                to_qs([{user, User}, {password, Password}, {csrf_token, NewCSRFToken}]))),
+    ?match({ok, {{_, 400, _}, _, _}},
+           post(BaseURL,
+                [],
+                to_qs([{user, User}, {password, <<"bad_password">>}, {csrf_token, NewCSRFToken}]))),
+    ?match({ok, {{_, 400, _}, _, _}},
+           post(BaseURL,
+                [],
+                to_qs([{user, User},
+                       {password, Password},
+                       {csrf_token, NewCSRFToken},
+                       {account_name, User}]))),
+    ?match({ok, {{_, 200, _}, _, _}},
+           post(BaseURL,
+                [],
+                to_qs([{user, User},
+                       {password, Password},
+                       {csrf_token, NewCSRFToken},
+                       {account_name, <<"some_free_account_name">>}]))),
+    %% now it's reserved
+    ?match({ok, {{_, 400, _}, _, _}},
+           post(BaseURL,
+                [],
+                to_qs([{user, User},
+                       {password, Password},
+                       {csrf_token, NewCSRFToken},
+                       {account_name, <<"some_free_account_name">>}]))),
+
+    mod_invites:remove_user(User, Server),
+    update_module_opts(Server, mod_invites, OldOpts),
     disconnect(Config).
 
 %%%===================================================================
@@ -1015,19 +1082,34 @@ post(URL, Token, User, Password) ->
     post(URL, [], Data).
 
 post(URL, Token, CSRFToken, User, Password) ->
-    Data = to_qs([{token, Token}, {user, User}, {password, Password}, {csrf_token, CSRFToken}]),
+    Data =
+        to_qs([{token, Token}, {user, User}, {password, Password}, {csrf_token, CSRFToken}]),
     post(URL, [], Data).
 
 post(URL, Headers, Data) ->
     httpc:request(post, {URL, Headers, "application/x-www-form-urlencoded", Data}, [], []).
 
 to_qs(List) ->
-    lists:foldl(
-      fun({K, V}, <<>>) ->
-              <<(atom_to_binary(K))/binary, "=", (uri_string:quote(V))/binary>>;
-         ({K, V}, QS) ->
-              <<QS/binary, "&", (atom_to_binary(K))/binary, "=", (uri_string:quote(V))/binary>>
-         end, <<>>, List).
+    lists:foldl(fun ({K, V}, <<>>) ->
+                        <<(atom_to_binary(K))/binary, "=", (uri_string:quote(V))/binary>>;
+                    ({K, V}, QS) ->
+                        <<QS/binary,
+                          "&",
+                          (atom_to_binary(K))/binary,
+                          "=",
+                          (uri_string:quote(V))/binary>>
+                end,
+                <<>>,
+                List).
+
+get_csrf_token(URL) ->
+    {ok, {{_, 200, _}, _, Body}} = httpc:request(URL),
+    {match, [[CSRFToken]]} =
+        re:run(Body,
+               <<"<input.+name=\"csrf_token\" value=\"(.+)\"">>,
+               [global, {capture, [1], binary}]),
+    ct:pal("extracted csrf token: ~p", [CSRFToken]),
+    CSRFToken.
 
 gen_mod_set_opts(OldOpts, NewOpts) ->
     lists:foldl(fun({Opt, Val}, Opts) -> gen_mod:set_opt(Opt, Val, Opts) end,
