@@ -74,6 +74,11 @@
 -type role() :: moderator | participant | visitor | none.
 -type affiliation() :: admin | member | outcast | owner | none.
 
+-record(affiliation,
+        {affiliation :: affiliation(),
+         reason :: binary(),
+         meta :: map()}).
+
 -record(user,
 {
     jid :: jid(),
@@ -97,6 +102,13 @@
 -type subscribers() :: #{ljid() => #subscriber{}}.
 -type subscriber_nicks() :: #{binary() => [ljid()]}.
 -type subscriber_nodes() :: #{binary() => subscribers()}.
+
+-record(kickban_info,
+        {actor :: jid() | undefined,
+         reason = <<"">> :: binary(),
+         code :: pos_integer(),
+         affiliation = unchanged :: affiliation() | unchanged
+        }).
 
 -record(activity,
 {
@@ -126,16 +138,18 @@
     history                 = #lqueue{} :: lqueue(),
     subject                 = [] :: [text()],
     subject_author          = {<<"">>, #jid{}} :: {binary(), jid()},
+    secret                  = crypto:strong_rand_bytes(16) :: binary(),
     hats_users              = #{} :: map(), % FIXME on OTP 21+: #{ljid() => #{binary() => binary()}},
     just_created            = erlang:system_time(microsecond) :: true | integer(),
     activity                = treap:empty() :: treap:treap(),
     room_shaper             = none :: ejabberd_shaper:shaper(),
     room_queue              :: p1_queue:queue({message | presence, jid()}) | undefined,
-    hibernate_timer         = none :: reference() | none | hibernating
+    hibernate_timer         = none :: reference() | none | hibernating,
+    mods                    = #{} :: #{atom() => any()}
 }).
 
 -type users() :: #{ljid() => #user{}}.
 -type robots() :: #{jid() => {binary(), stanza()}}.
 -type nicks() :: #{binary() => [ljid()]}.
--type affiliations() :: #{ljid() => affiliation() | {affiliation(), binary()}}.
+-type affiliations() :: #{ljid() => affiliation() | {affiliation(), binary()} | #affiliation{}}.
 -type roles() :: #{ljid() => role() | {role(), binary()}}.

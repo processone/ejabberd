@@ -575,7 +575,7 @@ unregister_routes(_, _) ->
     ok.
 
 %% Function copied from mod_muc_room.erl
--spec extract_password(presence() | iq()) -> binary() | false.
+-spec extract_password(stanza()) -> binary() | false.
 extract_password(#presence{} = Pres) ->
     case xmpp:get_subtag(Pres, #muc{}) of
         #muc{password = Password} when is_binary(Password) ->
@@ -589,7 +589,9 @@ extract_password(#iq{} = IQ) ->
             Password;
         _ ->
             false
-    end.
+    end;
+extract_password(#message{}) ->
+    false.
 
 -spec unhibernate_room(binary(), binary(), binary()) -> {ok, pid()} | {error, notfound | db_failure | term()}.
 unhibernate_room(ServerHost, Host, Room) ->
@@ -613,7 +615,7 @@ route_to_room(Packet, ServerHost) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
-	    case should_start_room(Packet) of
+	    case should_start_room(Packet, ServerHost) of
 		false ->
 		    Lang = xmpp:get_lang(Packet),
 		    ErrText = ?T("Conference room does not exist"),
@@ -818,6 +820,12 @@ should_start_room(#message{type = T, to = #jid{lresource = Res}})
     load;
 should_start_room(_) ->
     false.
+
+-spec should_start_room(stanza(), binary()) -> start | load | false.
+should_start_room(Packet, ServerHost) ->
+    Default = should_start_room(Packet),
+    ejabberd_hooks:run_fold(muc_should_start_room, ServerHost, Default,
+                            [ServerHost, Packet]).
 
 -spec check_create_room(binary(), binary(), binary(), jid()) -> boolean().
 check_create_room(ServerHost, Host, Room, From) ->

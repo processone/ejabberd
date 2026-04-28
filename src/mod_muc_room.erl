@@ -59,7 +59,13 @@
 	 is_subscribed/2,
 	 get_subscribers/1,
 	 service_message/2,
-	 get_disco_item/4]).
+	 get_disco_item/4,
+         send_nick_changing/6,
+         send_new_presence_default/5,
+         send_existing_presence/5,
+         get_users_and_subscribers_with_node/2,
+         send_wrapped_multiple/5]).
+
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -103,7 +109,8 @@
 -type fsm_next() :: {next_state, normal_state, state()}.
 -type fsm_transition() :: fsm_stop() | fsm_next().
 -type disco_item_filter() ::  only_non_empty | all | non_neg_integer().
--type admin_action() :: {jid(), affiliation | role, affiliation() | role(), binary()}.
+-type admin_action() :: {jid(), affiliation, affiliation(), binary()} |
+                        {jid(), role, role(), binary()}.
 -export_type([state/0, disco_item_filter/0]).
 
 -callback set_affiliation(binary(), binary(), binary(), jid(), affiliation(),
@@ -314,9 +321,11 @@ init([Host, ServerHost, Access, Room, HistorySize,
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
     ejabberd_hooks:run(start_room, ServerHost, [ServerHost, Room, Host]),
+    State2 =
+        ejabberd_hooks:run_fold(muc_start_room, ServerHost, State1, [Creator]),
     erlang:send_after(?CLEAN_ROOM_TIMEOUT, self(),
                       close_room_if_temporary_and_empty),
-    {ok, normal_state, reset_hibernate_timer(State1)};
+    {ok, normal_state, reset_hibernate_timer(State2)};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType]) ->
     process_flag(trap_exit, true),
     misc:set_proc_label({?MODULE, Room, Host}),
@@ -463,8 +472,8 @@ normal_state({route, <<"">>,
 	    ejabberd_router:route_error(Packet, Err),
 	    {next_state, normal_state, StateData};
 	false when Type /= error ->
-	    handle_roommessage_from_nonparticipant(Packet, StateData, From),
-	    {next_state, normal_state, StateData};
+	    StateData1 = handle_roommessage_from_nonparticipant(Packet, StateData, From),
+	    {next_state, normal_state, StateData1};
 	false ->
 	    {next_state, normal_state, StateData}
     end;
@@ -710,7 +719,7 @@ normal_state({route, ToNick,
     end,
     {next_state, normal_state, StateData};
 normal_state(hibernate, StateData) ->
-    case maps:size(StateData#state.users) of
+    case get_user_count(StateData) of
 	0 ->
 	    store_room_no_checks(StateData, [], true),
 	    ?INFO_MSG("Hibernating room ~ts@~ts", [StateData#state.room, StateData#state.host]),
@@ -763,7 +772,7 @@ handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 handle_sync_event({get_disco_item, Filter, JID, Lang, Time}, _From, StateName, StateData) ->
-    Len = maps:size(StateData#state.nicks),
+    Len = get_nick_count(StateData),
     Reply = case (Filter == all) or (Filter == Len) or ((Filter /= 0) and (Len /= 0)) of
 	true ->
 	    get_roomdesc_reply(JID, StateData,
@@ -791,7 +800,7 @@ handle_sync_event(get_state, _From, StateName,
     {reply, {ok, StateData}, StateName, StateData};
 handle_sync_event(get_info, _From, StateName,
 		  StateData) ->
-    Result = #{occupants_number => maps:size(StateData#state.users)},
+    Result = #{occupants_number => get_user_count(StateData)},
     {reply, Result, StateName, StateData};
 handle_sync_event({change_config, Config}, _From,
 		  StateName, StateData) ->
@@ -979,8 +988,13 @@ handle_info(config_reloaded, StateName, StateData) ->
 	 end,
     History2 = History1#lqueue{queue = Q2, max = Max},
     {next_state, StateName, StateData#state{history = History2}};
-handle_info(_Info, StateName, StateData) ->
-    {next_state, StateName, StateData}.
+handle_info(Info, StateName, StateData) ->
+    StateData2 =
+        ejabberd_hooks:run_fold(muc_handle_info,
+                                StateData#state.server_host,
+                                StateData,
+                                [Info]),
+    {next_state, StateName, StateData2}.
 
 terminate(Reason, _StateName,
 	  #state{server_host = LServer, host = Host, room = Room} = StateData) ->
@@ -1046,102 +1060,110 @@ route(Pid, Packet) ->
 process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData) ->
     IsSubscriber = is_subscriber(From, StateData),
     case is_user_online(From, StateData) orelse IsSubscriber orelse
-	   is_user_allowed_message_nonparticipant(From, StateData)
-	of
-      true ->
-	  {FromNick, Role} = get_participant_data(From, StateData),
-	  #config{moderated = Moderated} = StateData#state.config,
-	  AllowedByModerationRules =
-	  case {Role == moderator orelse Role == participant orelse
-		not Moderated, IsSubscriber} of
-	      {true, _} -> true;
-	      {_, true} ->
-		  % We assume all subscribers are at least members
-		  true;
-	      _ ->
-		  false
-	  end,
-	  if AllowedByModerationRules ->
-	      Subject = check_subject(Packet),
-	      {NewStateData1, IsAllowed} =
-	      case Subject of
-		  [] ->
-		      {StateData, true};
-		  _ ->
-		      case
-			  can_change_subject(Role,
-					     IsSubscriber,
-					     StateData)
-		      of
-			  true ->
-			      NSD =
-			      StateData#state{subject = Subject,
-					      subject_author = {FromNick, From}},
-			      store_room(NSD),
-			      {NSD, true};
-			  _ -> {StateData, false}
-		      end
-	      end,
-	      case IsAllowed of
-		   true ->
-		       case
-			 ejabberd_hooks:run_fold(muc_filter_message,
-						 StateData#state.server_host,
-						 Packet,
-						 [StateData, FromNick])
-			   of
-			 drop ->
-			     {next_state, normal_state, StateData};
-			 NewPacket1 ->
-			     NewPacket = xmpp:put_meta(xmpp:remove_subtag(
-				 add_stanza_id(NewPacket1, StateData), #nick{}),
-				 muc_sender_real_jid, From),
-			     Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
-				       true -> ?NS_MUCSUB_NODES_SUBJECT
-				    end,
-			     NewStateData2 = check_message_for_retractions(NewPacket1, NewStateData1),
-			     send_wrapped_multiple(
-			       jid:replace_resource(StateData#state.jid, FromNick),
-			       get_users_and_subscribers_with_node(Node, StateData),
-			       NewPacket, Node, NewStateData2),
-			     NewStateData3 = case has_body_or_subject(NewPacket) of
-					       true ->
-						   add_message_to_history(FromNick, From,
-									  NewPacket,
-									  NewStateData2);
-					       false ->
-						   NewStateData2
-					     end,
-			     {next_state, normal_state, NewStateData3}
-		       end;
-		   _ ->
-		       Err = case (StateData#state.config)#config.allow_change_subj of
-			       true ->
-				   xmpp:err_forbidden(
-				     ?T("Only moderators and participants are "
-					"allowed to change the subject in this "
-					"room"), Lang);
-			       _ ->
-				   xmpp:err_forbidden(
-				     ?T("Only moderators are allowed to change "
-					"the subject in this room"), Lang)
-			     end,
-		       ejabberd_router:route_error(Packet, Err),
-		       {next_state, normal_state, StateData}
-		 end;
-	     true ->
-		 ErrText = ?T("Visitors are not allowed to send messages "
-			      "to all occupants"),
-		 Err = xmpp:err_forbidden(ErrText, Lang),
-		 ejabberd_router:route_error(Packet, Err),
-		 {next_state, normal_state, StateData}
-	  end;
-      false ->
-	  ErrText = ?T("Only occupants are allowed to send messages "
-		       "to the conference"),
-	  Err = xmpp:err_not_acceptable(ErrText, Lang),
-	  ejabberd_router:route_error(Packet, Err),
-	  {next_state, normal_state, StateData}
+        is_user_allowed_message_nonparticipant(From, StateData)
+    of
+        true ->
+            {FromNick, Role} = get_participant_data(From, StateData),
+            #config{moderated = Moderated} = StateData#state.config,
+            AllowedByModerationRules =
+                case {Role == moderator orelse Role == participant orelse
+                      not Moderated, IsSubscriber} of
+                    {true, _} -> true;
+                    {_, true} ->
+                                                % We assume all subscribers are at least members
+                        true;
+                    _ ->
+                        false
+                end,
+            if AllowedByModerationRules ->
+                    Subject = check_subject(Packet),
+                    {NewStateData1, IsAllowed} =
+                        case Subject of
+                            [] ->
+                                {StateData, true};
+                            _ ->
+                                case
+                                    can_change_subject(Role,
+                                                       IsSubscriber,
+                                                       StateData)
+                                of
+                                    true ->
+                                        NSD =
+                                            StateData#state{subject = Subject,
+                                                            subject_author = {FromNick, From}},
+                                        store_room(NSD),
+                                        {NSD, true};
+                                    _ -> {StateData, false}
+                                end
+                        end,
+                    case IsAllowed of
+                        true ->
+                            case
+                                ejabberd_hooks:run_fold(muc_filter_message,
+                                                        StateData#state.server_host,
+                                                        Packet,
+                                                        [StateData, FromNick])
+                            of
+                                drop ->
+                                    {next_state, normal_state, StateData};
+                                NewPacket1 ->
+                                    NewPacket = xmpp:put_meta(xmpp:remove_subtag(
+                                                                add_stanza_id(NewPacket1, StateData), #nick{}),
+                                                              muc_sender_real_jid, From),
+                                    Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
+                                              true -> ?NS_MUCSUB_NODES_SUBJECT
+                                           end,
+                                    NewStateData2 = check_message_for_retractions(NewPacket1, NewStateData1),
+                                    NewStateData3 =
+                                        ejabberd_hooks:run_fold(
+                                          muc_add_message,
+                                          StateData#state.server_host,
+                                          NewStateData2,
+                                          [FromNick, From, NewPacket]),
+                                    send_wrapped_multiple(
+                                      jid:replace_resource(StateData#state.jid, FromNick),
+                                      get_users_and_subscribers_with_node(Node, StateData),
+                                      NewPacket, Node, NewStateData3),
+                                    NewStateData4 =
+                                        case has_body_or_subject(NewPacket) of
+                                            true ->
+                                                add_message_to_history(
+                                                  FromNick, From,
+                                                  NewPacket,
+                                                  NewStateData3);
+                                            false ->
+                                                NewStateData3
+                                        end,
+                                    {next_state, normal_state, NewStateData4}
+                            end;
+                        _ ->
+                            Err = case (StateData#state.config)#config.allow_change_subj of
+                                      true ->
+                                          xmpp:err_forbidden(
+                                            ?T("Only moderators and participants are "
+                                               "allowed to change the subject in this "
+                                               "room"), Lang);
+                                      _ ->
+                                          xmpp:err_forbidden(
+                                            ?T("Only moderators are allowed to change "
+                                               "the subject in this room"), Lang)
+                                  end,
+                            ejabberd_router:route_error(Packet, Err),
+                            {next_state, normal_state, StateData}
+                    end;
+               true ->
+                    ErrText = ?T("Visitors are not allowed to send messages "
+                                 "to all occupants"),
+                    Err = xmpp:err_forbidden(ErrText, Lang),
+                    ejabberd_router:route_error(Packet, Err),
+                    {next_state, normal_state, StateData}
+            end;
+        false ->
+            ErrText = ?T("Only occupants are allowed to send messages "
+                         "to the conference"),
+            Err = xmpp:err_not_acceptable(ErrText, Lang),
+            ejabberd_router:route_error(Packet, Err),
+            {next_state, normal_state, StateData}
     end.
 
 -spec check_message_for_retractions(Packet :: message(), State :: state()) -> state().
@@ -1449,7 +1471,16 @@ do_process_presence(Nick, #presence{from = From, type = available, lang = Lang} 
 			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
 			_ ->
-			    change_nick(From, Nick, StateData)
+                            case ejabberd_hooks:run_fold(
+                                   muc_change_nick,
+                                   StateData#state.server_host,
+                                   {StateData, unhandled},
+                                   [From, Nick]) of
+                                {StateData1, unhandled} ->
+                                    change_nick(From, Nick, StateData1);
+                                {StateData1, handled} ->
+                                    StateData1
+                            end
 		    end;
 		false ->
 		    Stanza = maybe_strip_status_from_presence(
@@ -1474,21 +1505,8 @@ do_process_presence(Nick, #presence{from = From, type = unavailable} = Packet,
 			strip_status(Packet);
 		    _ -> Packet
 		end,
-    NewState = add_user_presence_un(From, NewPacket, StateData),
-    case maps:get(Nick, StateData#state.nicks, []) of
-	[_, _ | _] ->
-	    Aff = get_affiliation(From, StateData),
-	    Item = #muc_item{affiliation = Aff, role = none, jid = From},
-	    Pres = xmpp:set_subtag(
-		     Packet, #muc_user{items = [Item],
-				       status_codes = [110]}),
-	    send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
-			 From, Pres, ?NS_MUCSUB_NODES_PRESENCE, StateData);
-	_ ->
-	    send_new_presence(From, NewState, StateData)
-    end,
-    Reason = xmpp:get_text(NewPacket#presence.status),
-    remove_online_user(From, NewState, Reason);
+    process_unavailable_presence(From, NewPacket, Nick, StateData);
+
 do_process_presence(_Nick, #presence{from = From, type = error, lang = Lang} = Packet,
 		    StateData) ->
     ErrorText = ?T("It is not allowed to send error messages to the"
@@ -1510,7 +1528,7 @@ maybe_strip_status_from_presence(From, Packet, StateData) ->
 -spec close_room_if_temporary_and_empty(state()) -> fsm_transition().
 close_room_if_temporary_and_empty(StateData1) ->
     case not (StateData1#state.config)#config.persistent
-	andalso maps:size(StateData1#state.users) == 0
+	andalso get_user_count(StateData1) == 0
 	andalso muc_subscribers_size(StateData1#state.muc_subscribers) == 0 of
       true ->
 	  ?INFO_MSG("Destroyed MUC room ~ts because it's temporary "
@@ -1661,12 +1679,18 @@ make_reason(Packet, From, StateData, Reason1) ->
 				 state().
 expulse_participant(Packet, From, StateData, Reason1) ->
     Reason2 = make_reason(Packet, From, StateData, Reason1),
-    NewState = add_user_presence_un(From,
-				    #presence{type = unavailable,
-					      status = xmpp:mk_text(Reason2)},
-				    StateData),
+    NewPacket = #presence{type = unavailable,
+                          status = xmpp:mk_text(Reason2)},
     LJID = jid:tolower(From),
     #user{nick = Nick} = maps:get(LJID, StateData#state.users),
+    process_unavailable_presence(From, NewPacket, Nick, StateData).
+
+-spec process_unavailable_presence(
+        From :: jid(), Packet :: presence(), Nick :: binary(),
+        StateData :: state()) ->
+          state().
+process_unavailable_presence(From, Packet, Nick, StateData) ->
+    NewState = add_user_presence_un(From, Packet, StateData),
     case maps:get(Nick, StateData#state.nicks, []) of
 	[_, _ | _] ->
 	    Aff = get_affiliation(From, StateData),
@@ -1679,7 +1703,8 @@ expulse_participant(Packet, From, StateData, Reason1) ->
 	_ ->
 	    send_new_presence(From, NewState, StateData)
     end,
-    remove_online_user(From, NewState).
+    Reason = xmpp:get_text(Packet#presence.status),
+    remove_online_user(From, NewState, Reason).
 
 -spec set_affiliation(jid(), affiliation(), state()) -> state().
 set_affiliation(JID, Affiliation, StateData) ->
@@ -1704,12 +1729,17 @@ set_affiliation(JID, Affiliation, StateData, Reason) ->
 
 -spec set_affiliation_fallback(jid(), affiliation(), state(), binary()) -> state().
 set_affiliation_fallback(JID, Affiliation, StateData, Reason) ->
+    AffiliationData =
+        ejabberd_hooks:run_fold(
+          muc_set_affiliation, StateData#state.server_host,
+          {Affiliation, Reason},
+          [JID, StateData]),
     LJID = jid:remove_resource(jid:tolower(JID)),
-    Affiliations = case Affiliation of
-		       none ->
+    Affiliations = case AffiliationData of
+		       {none, _} ->
 			   maps:remove(LJID, StateData#state.affiliations);
 		       _ ->
-			   maps:put(LJID, {Affiliation, Reason},
+			   maps:put(LJID, AffiliationData,
 				    StateData#state.affiliations)
 		   end,
     StateData#state{affiliations = Affiliations}.
@@ -1741,6 +1771,7 @@ get_affiliation(#jid{} = JID, StateData) ->
 	    owner;
 	none ->
 	    Aff = case do_get_affiliation(JID, StateData) of
+                      #affiliation{affiliation = Affiliation} -> Affiliation;
 		      {Affiliation, _Reason} -> Affiliation;
 		      Affiliation -> Affiliation
 		  end,
@@ -1758,7 +1789,7 @@ get_affiliation(#jid{} = JID, StateData) ->
 get_affiliation(LJID, StateData) ->
     get_affiliation(jid:make(LJID), StateData).
 
--spec do_get_affiliation(jid(), state()) -> affiliation() | {affiliation(), binary()}.
+-spec do_get_affiliation(jid(), state()) -> affiliation() | {affiliation(), binary()} | #affiliation{}.
 do_get_affiliation(JID, #state{config = #config{persistent = false}} = StateData) ->
     do_get_affiliation_fallback(JID, StateData);
 do_get_affiliation(JID, StateData) ->
@@ -1775,7 +1806,7 @@ do_get_affiliation(JID, StateData) ->
 	    Affiliation
     end.
 
--spec do_get_affiliation_fallback(jid(), state()) -> affiliation() | {affiliation(),  binary()}.
+-spec do_get_affiliation_fallback(jid(), state()) -> affiliation() | {affiliation(),  binary()} | #affiliation{}.
 do_get_affiliation_fallback(JID, StateData) ->
     LJID = jid:tolower(JID),
     try maps:get(LJID, StateData#state.affiliations)
@@ -1827,6 +1858,23 @@ get_service_affiliation(JID, StateData) ->
 
 -spec set_role(jid(), role(), state()) -> state().
 set_role(JID, Role, StateData) ->
+    set_role(JID, Role, undefined, StateData).
+
+-spec set_role(jid(), role(), #kickban_info{} | undefined, state()) -> state().
+set_role(JID, Role, KickBan, StateData) ->
+    case ejabberd_hooks:run_fold(
+           muc_set_role,
+           StateData#state.server_host,
+           {StateData, unhandled},
+           [JID, Role, KickBan]) of
+        {StateData1, unhandled} ->
+            set_role1(JID, Role, KickBan, StateData1);
+        {StateData1, handled} ->
+            StateData1
+    end.
+
+-spec set_role1(jid(), role(), #kickban_info{} | undefined, state()) -> state().
+set_role1(JID, Role, KickBan, StateData) ->
     LJID = jid:tolower(JID),
     LJIDs = case LJID of
 	      {U, S, <<"">>} ->
@@ -1885,10 +1933,16 @@ set_role(JID, Role, StateData) ->
 -spec get_role(jid(), state()) -> role().
 get_role(JID, StateData) ->
     LJID = jid:tolower(JID),
-    try maps:get(LJID, StateData#state.users) of
-	#user{role = Role} -> Role
-    catch _:{badkey, _} -> none
-    end.
+    Role =
+        try maps:get(LJID, StateData#state.users) of
+            #user{role = R} -> R
+        catch _:{badkey, _} -> none
+        end,
+    ejabberd_hooks:run_fold(
+      muc_get_role,
+      StateData#state.server_host,
+      Role,
+      [JID, StateData]).
 
 -spec get_default_role(affiliation(), state()) -> role().
 get_default_role(Affiliation, StateData) ->
@@ -2078,12 +2132,16 @@ update_online_user(JID, #user{nick = Nick} = User, StateData) ->
     NewStateData = StateData#state{users = Users, nicks = Nicks},
     case {maps:get(LJID, StateData#state.users, error),
 	  maps:get(LJID, NewStateData#state.users, error)} of
-	{#user{nick = Old}, #user{nick = New}} when Old /= New ->
-	    send_nick_changing(JID, Old, NewStateData, true, true);
+	{#user{nick = Old} = OldUser, #user{nick = New} = NewUser} when Old /= New ->
+	    send_nick_changing(JID, OldUser, NewUser, NewStateData, true, true);
 	_ ->
 	    ok
     end,
-    NewStateData.
+    ejabberd_hooks:run_fold(
+      muc_update_online_user,
+      NewStateData#state.server_host,
+      NewStateData,
+      [JID, User]).
 
 -spec set_subscriber(jid(), binary(), [binary()], state()) -> state().
 set_subscriber(JID, Nick, Nodes,
@@ -2147,7 +2205,13 @@ remove_online_user(JID, StateData, Reason) ->
 	    catch _:{badkey, _} ->
 		    StateData#state.nicks
 	    end,
-    reset_hibernate_timer(StateData#state{users = Users, nicks = Nicks}).
+    NewStateData =
+    ejabberd_hooks:run_fold(
+      muc_remove_online_user,
+      StateData#state.server_host,
+      StateData#state{users = Users, nicks = Nicks},
+      [JID, Reason]),
+    reset_hibernate_timer(NewStateData).
 
 -spec filter_presence(presence()) -> presence().
 filter_presence(Presence) ->
@@ -2173,7 +2237,11 @@ add_user_presence(JID, Presence, StateData) ->
 			     fun (#user{} = User) ->
 				     User#user{last_presence = FPresence}
 			     end, StateData#state.users),
-    StateData#state{users = Users}.
+    ejabberd_hooks:run_fold(
+      muc_add_user_presence,
+      StateData#state.server_host,
+      StateData#state{users = Users},
+      [JID, FPresence]).
 
 -spec add_user_presence_un(jid(), presence(), state()) -> state().
 add_user_presence_un(JID, Presence, StateData) ->
@@ -2184,12 +2252,29 @@ add_user_presence_un(JID, Presence, StateData) ->
 				     User#user{last_presence = FPresence,
 					       role = none}
 			     end, StateData#state.users),
-    StateData#state{users = Users}.
+    ejabberd_hooks:run_fold(
+      muc_add_user_presence_un,
+      StateData#state.server_host,
+      StateData#state{users = Users},
+      [JID, FPresence]).
 
 %% Find and return a list of the full JIDs of the users of Nick.
 %% Return jid record.
 -spec find_jids_by_nick(binary(), state()) -> [jid()].
 find_jids_by_nick(Nick, StateData) ->
+    case ejabberd_hooks:run_fold(
+           muc_find_jids_by_nick,
+           StateData#state.server_host,
+           false,
+           [Nick, StateData]) of
+        false ->
+            find_jids_by_nick1(Nick, StateData);
+        JIDs ->
+            JIDs
+    end.
+
+-spec find_jids_by_nick1(binary(), state()) -> [jid()].
+find_jids_by_nick1(Nick, StateData) ->
     Users = case maps:get(Nick, StateData#state.nicks, []) of
                 [] -> muc_subscribers_get_by_nick(
                         Nick, StateData#state.muc_subscribers);
@@ -2201,6 +2286,19 @@ find_jids_by_nick(Nick, StateData) ->
 %% highest-priority presence.  Return jid record.
 -spec find_jid_by_nick(binary(), state()) -> jid() | false.
 find_jid_by_nick(Nick, StateData) ->
+    case ejabberd_hooks:run_fold(
+           muc_find_jid_by_nick,
+           StateData#state.server_host,
+           false,
+           [Nick, StateData]) of
+        false ->
+            find_jid_by_nick1(Nick, StateData);
+        JID ->
+            JID
+    end.
+
+-spec find_jid_by_nick1(binary(), state()) -> jid() | false.
+find_jid_by_nick1(Nick, StateData) ->
     try maps:get(Nick, StateData#state.nicks) of
 	[User] -> jid:make(User);
 	[FirstUser | Users] ->
@@ -2253,6 +2351,20 @@ find_nick_by_jid(JID, StateData) ->
 	    end
     end.
 
+-spec find_user_by_jid(JID :: jid(), StateData :: state()) -> #user{}.
+find_user_by_jid(JID, StateData) ->
+    case ejabberd_hooks:run_fold(
+           muc_find_user_by_jid,
+           StateData#state.server_host,
+           undefined,
+           [JID, StateData]) of
+        undefined ->
+            LJID = jid:tolower(JID),
+            maps:get(LJID, StateData#state.users);
+        #user{} = User ->
+            User
+    end.
+
 -spec is_nick_change(jid(), binary(), state()) -> boolean().
 is_nick_change(JID, Nick, StateData) ->
     LJID = jid:tolower(JID),
@@ -2286,7 +2398,7 @@ add_new_user(From, Nick, Packet, StateData) ->
     MaxUsers = get_max_users(StateData),
     MaxAdminUsers = MaxUsers +
 		      get_max_users_admin_threshold(StateData),
-    NUsers = maps:size(StateData#state.users),
+    NUsers = get_user_count(StateData),
     Affiliation = get_affiliation(From, StateData),
     ServiceAffiliation = get_service_affiliation(From,
 						 StateData),
@@ -2391,7 +2503,10 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  ResultState =
 		      case NewStateData#state.just_created of
 			  true ->
-			      NewStateData#state{just_created = erlang:system_time(microsecond)};
+                              ejabberd_hooks:run_fold(
+                                muc_room_created, NewStateData#state.server_host,
+                                NewStateData#state{
+                                  just_created = erlang:system_time(microsecond)}, []);
 			  _ ->
 			      Robots = maps:remove(From, StateData#state.robots),
 			      NewStateData#state{robots = Robots}
@@ -2568,7 +2683,7 @@ filter_history(Queue, Now, Nick,
 -spec is_room_overcrowded(state()) -> boolean().
 is_room_overcrowded(StateData) ->
     MaxUsersPresence = mod_muc_opt:max_users_presence(StateData#state.server_host),
-    maps:size(StateData#state.users) > MaxUsersPresence.
+    get_user_count(StateData) > MaxUsersPresence.
 
 -spec presence_broadcast_allowed(jid(), state()) -> boolean().
 presence_broadcast_allowed(JID, StateData) ->
@@ -2606,7 +2721,7 @@ advertise_entity_capabilities(JID, State) ->
 
 -spec send_self_presence(jid(), state(), state()) -> ok.
 send_self_presence(NJID, StateData, OldStateData) ->
-    send_new_presence(NJID, <<"">>, true, StateData, OldStateData).
+    send_new_presence(NJID, <<"">>, initial, StateData, OldStateData).
 
 -spec send_update_presence(jid(), state(), state()) -> ok.
 send_update_presence(JID, StateData, OldStateData) ->
@@ -2637,18 +2752,18 @@ send_update_presence1(JID, Reason, StateData, OldStateData) ->
 		  end
 	    end,
     lists:foreach(fun (J) ->
-			  send_new_presence(J, Reason, false, StateData,
+			  send_new_presence(J, Reason, normal, StateData,
 					    OldStateData)
 		  end,
 		  LJIDs).
 
 -spec send_new_presence(jid(), state(), state()) -> ok.
 send_new_presence(NJID, StateData, OldStateData) ->
-    send_new_presence(NJID, <<"">>, false, StateData, OldStateData).
+    send_new_presence(NJID, <<"">>, normal, StateData, OldStateData).
 
 -spec send_new_presence(jid(), binary(), state(), state()) -> ok.
 send_new_presence(NJID, Reason, StateData, OldStateData) ->
-    send_new_presence(NJID, Reason, false, StateData, OldStateData).
+    send_new_presence(NJID, Reason, normal, StateData, OldStateData).
 
 -spec is_ra_changed(jid(), boolean(), state(), state()) -> boolean().
 is_ra_changed(_, _IsInitialPresence = true, _, _) ->
@@ -2665,22 +2780,66 @@ is_ra_changed(JID, _IsInitialPresence = false, NewStateData, OldStateData) ->
 	    (NewRole /= OldRole) or (NewAff /= OldAff)
     end.
 
--spec send_new_presence(jid(), binary(), boolean(), state(), state()) -> ok.
-send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
+-spec send_new_presence(
+        jid(), binary(),
+        initial | normal | leaving | #kickban_info{},
+        state(), state()) -> ok.
+send_new_presence(NJID, Reason, PresenceKind, StateData, OldStateData) ->
+    case ejabberd_hooks:run_fold(
+           muc_send_new_presence,
+           StateData#state.server_host,
+           unhandled,
+           [NJID, Reason, PresenceKind,
+            StateData, OldStateData]) of
+        unhandled ->
+            send_new_presence_default(NJID, Reason, PresenceKind,
+                                      StateData, OldStateData);
+        handled ->
+            ok
+    end.
+
+-spec send_new_presence_default(
+        jid(), binary(),
+        initial | normal | leaving | #kickban_info{},
+        state(), state()) -> ok.
+send_new_presence_default(NJID, Reason0, PresenceKind, StateData, OldStateData) ->
+    CurStateData =
+        case PresenceKind of
+            leaving -> OldStateData;
+            #kickban_info{} -> OldStateData;
+            initial -> StateData;
+            normal -> StateData
+        end,
     LNJID = jid:tolower(NJID),
-    #user{nick = Nick} = maps:get(LNJID, StateData#state.users),
-    LJID = find_jid_by_nick(Nick, StateData),
+    #user{nick = Nick} = find_user_by_jid(NJID, CurStateData),
+    LJID = #jid{} = find_jid_by_nick(Nick, CurStateData),
     #user{jid = RealJID, role = Role0,
 	  last_presence = Presence0} = UserInfo =
-	maps:get(jid:tolower(LJID), StateData#state.users),
+        find_user_by_jid(LJID, StateData),
     {Role1, Presence1} =
         case (presence_broadcast_allowed(NJID, StateData) orelse
-         presence_broadcast_allowed(NJID, OldStateData)) of
+              presence_broadcast_allowed(NJID, OldStateData)) of
             true -> {Role0, Presence0};
             false -> {none, #presence{type = unavailable}}
         end,
-    Affiliation = get_affiliation(LJID, StateData),
-    Node1 = case is_ra_changed(NJID, IsInitialPresence, StateData, OldStateData) of
+    Affiliation =
+        case PresenceKind of
+            #kickban_info{affiliation = A} when A /= unchanged -> A;
+            _ -> get_affiliation(LJID, StateData)
+        end,
+    Reason =
+        case PresenceKind of
+            #kickban_info{reason = R} -> R;
+            _ -> Reason0
+        end,
+    ActorNick =
+        case PresenceKind of
+            #kickban_info{actor = #jid{} = MJID} ->
+                find_nick_by_jid(MJID, CurStateData);
+            _ ->
+                <<"">>
+        end,
+    Node1 = case is_ra_changed(NJID, PresenceKind == initial, StateData, OldStateData) of
                 true -> ?NS_MUCSUB_NODES_AFFILIATIONS;
                 false -> ?NS_MUCSUB_NODES_PRESENCE
             end,
@@ -2693,10 +2852,11 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
                 #{LNJID => UserInfo};
             false ->
                 %% TODO: optimize further
-                UM1 = get_users_and_subscribers_with_node(Node1, StateData),
-                UM2 = get_users_and_subscribers_with_node(Node2, StateData),
+                UM1 = get_users_and_subscribers_with_node(Node1, CurStateData),
+                UM2 = get_users_and_subscribers_with_node(Node2, CurStateData),
                 maps:merge(UM1, UM2)
         end,
+?INFO_MSG("send_new_presence ~p", [{NJID, PresenceKind, UserInfo, UserMap}]),
     maps:fold(
       fun(LUJID, Info, _) ->
 	      IsSelfPresence = LNJID == LUJID,
@@ -2706,13 +2866,17 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
 	      Item0 = #muc_item{affiliation = Affiliation,
 				role = Role},
 	      Item1 = case Info#user.role == moderator orelse
-			  (StateData#state.config)#config.anonymous
-			  == false orelse IsSelfPresence of
+			  (StateData#state.config)#config.anonymous == false
+                          orelse IsSelfPresence of
 			  true -> Item0#muc_item{jid = RealJID};
 			  false -> Item0
 		      end,
-	      Item = Item1#muc_item{reason = Reason},
-	      StatusCodes = status_codes(IsInitialPresence, IsSelfPresence,
+	      Item2 = Item1#muc_item{reason = Reason},
+	      Item = case ActorNick of
+			 <<"">> -> Item2;
+			 _ -> Item2#muc_item{actor = #muc_actor{nick = ActorNick}}
+		     end,
+	      StatusCodes = status_codes(PresenceKind, IsSelfPresence,
 					 StateData),
 	      Pres = if Presence == undefined -> #presence{};
 			true -> Presence
@@ -2722,12 +2886,12 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
                          #muc_user{items = [Item],
                                    status_codes = StatusCodes}),
 	      send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
-			   Info#user.jid, Packet, Node1, StateData),
+			   Info#user.jid, Packet, Node1, CurStateData),
 	      Type = xmpp:get_type(Packet),
 	      IsSubscriber = is_subscriber(Info#user.jid, StateData),
 	      IsOccupant = Info#user.last_presence /= undefined,
-	      if (IsSubscriber and not IsOccupant) and
-		 (IsInitialPresence or (Type == unavailable)) ->
+	      if (IsSubscriber andalso not IsOccupant) andalso
+		 (PresenceKind == initial orelse Type == unavailable) ->
 		      send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
 				   Info#user.jid, Packet, Node2, StateData);
 		 true ->
@@ -2739,7 +2903,20 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
 send_existing_presences(ToJID, StateData) ->
     case is_room_overcrowded(StateData) of
 	true -> ok;
-	false -> send_existing_presences1(ToJID, StateData)
+	false -> send_existing_presences0(ToJID, StateData)
+    end.
+
+-spec send_existing_presences0(jid(), state()) -> ok.
+send_existing_presences0(ToJID, StateData) ->
+    case ejabberd_hooks:run_fold(
+           muc_send_existing_presences,
+           StateData#state.server_host,
+           unhandled,
+           [ToJID, StateData]) of
+        unhandled ->
+            send_existing_presences1(ToJID, StateData);
+        handled ->
+            ok
     end.
 
 -spec send_existing_presences1(jid(), state()) -> ok.
@@ -2749,33 +2926,40 @@ send_existing_presences1(ToJID, StateData) ->
     maps:fold(
       fun(FromNick, _Users, _) ->
 	      LJID = find_jid_by_nick(FromNick, StateData),
-	      #user{jid = FromJID, role = FromRole,
-		    last_presence = Presence} =
-		  maps:get(jid:tolower(LJID), StateData#state.users),
-	      PresenceBroadcast =
-		  lists:member(
-		    FromRole, (StateData#state.config)#config.presence_broadcast),
-	      case {RealToJID, PresenceBroadcast} of
-		  {FromJID, _} -> ok;
-		  {_, false} -> ok;
-		  _ ->
-		      FromAffiliation = get_affiliation(LJID, StateData),
-		      Item0 = #muc_item{affiliation = FromAffiliation,
-					role = FromRole},
-		      Item = case Role == moderator orelse
-				 (StateData#state.config)#config.anonymous
-				 == false of
-				 true -> Item0#muc_item{jid = FromJID};
-				 false -> Item0
-			     end,
-		      Packet = xmpp:set_subtag(
-                                 add_presence_hats(
-                                   FromJID, Presence, StateData),
-                                 #muc_user{items = [Item]}),
-		      send_wrapped(jid:replace_resource(StateData#state.jid, FromNick),
-				   RealToJID, Packet, ?NS_MUCSUB_NODES_PRESENCE, StateData)
-	      end
+              User = maps:get(jid:tolower(LJID), StateData#state.users),
+	      send_existing_presence(
+                RealToJID, FromNick, Role, User, StateData)
       end, ok, StateData#state.nicks).
+
+-spec send_existing_presence(RealToJID :: jid(), FromNick :: binary(),
+                             Role :: role(), User :: #user{},
+                             StateData :: state()) -> ok.
+send_existing_presence(RealToJID, FromNick, Role, User, StateData) ->
+    #user{jid = FromJID, role = FromRole,
+          last_presence = Presence} = User,
+    PresenceBroadcast =
+        lists:member(
+          FromRole, (StateData#state.config)#config.presence_broadcast),
+    case {RealToJID, PresenceBroadcast} of
+        {FromJID, _} -> ok;
+        {_, false} -> ok;
+        _ ->
+            FromAffiliation = get_affiliation(FromJID, StateData),
+            Item0 = #muc_item{affiliation = FromAffiliation,
+                              role = FromRole},
+            Item = case Role == moderator orelse
+                       (StateData#state.config)#config.anonymous
+                       == false of
+                       true -> Item0#muc_item{jid = FromJID};
+                       false -> Item0
+                   end,
+            Packet = xmpp:set_subtag(
+                       add_presence_hats(
+                         FromJID, Presence, StateData),
+                       #muc_user{items = [Item]}),
+            send_wrapped(jid:replace_resource(StateData#state.jid, FromNick),
+                         RealToJID, Packet, ?NS_MUCSUB_NODES_PRESENCE, StateData)
+    end.
 
 -spec set_nick(jid(), binary(), state()) -> state().
 set_nick(JID, Nick, State) ->
@@ -2800,27 +2984,34 @@ set_nick(JID, Nick, State) ->
 -spec change_nick(jid(), binary(), state()) -> state().
 change_nick(JID, Nick, StateData) ->
     LJID = jid:tolower(JID),
-    #user{nick = OldNick} = maps:get(LJID, StateData#state.users),
+    #user{nick = OldNick} = OldUser = maps:get(LJID, StateData#state.users),
     OldNickUsers = maps:get(OldNick, StateData#state.nicks),
     NewNickUsers = maps:get(Nick, StateData#state.nicks, []),
     SendOldUnavailable = length(OldNickUsers) == 1,
     SendNewAvailable = SendOldUnavailable orelse NewNickUsers == [],
     NewStateData = set_nick(JID, Nick, StateData),
-    case presence_broadcast_allowed(JID, NewStateData) of
-        true ->
-            send_nick_changing(JID, OldNick, NewStateData,
-                               SendOldUnavailable, SendNewAvailable);
-        false -> ok
-    end,
-    add_to_log(nickchange, {OldNick, Nick}, StateData),
+    NewUser = maps:get(LJID, NewStateData#state.users),
+    send_nick_changing(JID, OldUser, NewUser, NewStateData,
+                       SendOldUnavailable, SendNewAvailable),
     NewStateData.
 
--spec send_nick_changing(jid(), binary(), state(), boolean(), boolean()) -> ok.
-send_nick_changing(JID, OldNick, StateData,
+-spec send_nick_changing(jid(), #user{}, #user{}, state(), boolean(), boolean()) -> ok.
+send_nick_changing(JID, OldUser, NewUser, StateData,
 		   SendOldUnavailable, SendNewAvailable) ->
+    case presence_broadcast_allowed(JID, StateData) of
+        true ->
+            send_nick_changing1(JID, OldUser, NewUser, StateData,
+                                SendOldUnavailable, SendNewAvailable);
+        false -> ok
+    end,
+    add_to_log(nickchange, {OldUser#user.nick, NewUser#user.nick}, StateData).
+
+-spec send_nick_changing1(jid(), #user{}, #user{}, state(), boolean(), boolean()) -> ok.
+send_nick_changing1(JID, OldUser, NewUser, StateData,
+                    SendOldUnavailable, SendNewAvailable) ->
+    #user{nick = OldNick} = OldUser,
     #user{jid = RealJID, nick = Nick, role = Role,
-	  last_presence = Presence} =
-	maps:get(jid:tolower(JID), StateData#state.users),
+	  last_presence = Presence} = NewUser,
     Affiliation = get_affiliation(JID, StateData),
     maps:fold(
       fun(LJID, Info, _) when Presence /= undefined ->
@@ -2907,11 +3098,12 @@ send_affiliation(JID, Affiliation, StateData) ->
     send_wrapped_multiple(StateData#state.jid, Recipients, Message,
 			  ?NS_MUCSUB_NODES_AFFILIATIONS, StateData).
 
--spec status_codes(boolean(), boolean(), state()) -> [pos_integer()].
-status_codes(IsInitialPresence, _IsSelfPresence = true, StateData) ->
+-spec status_codes(initial | normal | #kickban_info{}, boolean(), state()) ->
+          [pos_integer()].
+status_codes(PresenceKind, _IsSelfPresence = true, StateData) ->
     S0 = [110],
-    case IsInitialPresence of
-	true ->
+    case PresenceKind of
+	initial ->
 	    S1 = case StateData#state.just_created of
 		     true -> [201|S0];
 		     _ -> S0
@@ -2925,9 +3117,13 @@ status_codes(IsInitialPresence, _IsSelfPresence = true, StateData) ->
 		     false -> S2
 		 end,
 	    S3;
-	false -> S0
+        #kickban_info{code = Code} ->
+            [Code | S0];
+	_ -> S0
     end;
-status_codes(_IsInitialPresence, _IsSelfPresence = false, _StateData) -> [].
+status_codes(#kickban_info{code = Code}, _IsSelfPresence = false, _StateData) ->
+    [Code];
+status_codes(_PresenceKind, _IsSelfPresence = false, _StateData) -> [].
 
 -spec lqueue_new(non_neg_integer(), ram | file) -> lqueue().
 lqueue_new(Max, Type) ->
@@ -3211,19 +3407,26 @@ process_item_change(Item, SD, UJID) ->
 		%% forget the affiliation completely
 		SD;
 	    {JID, role, none, Reason} ->
+                KickBan = #kickban_info{actor = UJID,
+                                        reason = Reason,
+                                        code = 307},
 		send_kickban_presence(UJID, JID, Reason, 307, SD),
-		set_role(JID, none, SD);
+		set_role(JID, none, KickBan, SD);
 	    {JID, affiliation, none, Reason} ->
                 case get_affiliation(JID, SD) of
                     none -> SD;
                     _ ->
                         case (SD#state.config)#config.members_only of
                             true ->
+                                KickBan = #kickban_info{actor = UJID,
+                                                        reason = Reason,
+                                                        code = 321,
+                                                        affiliation = none},
                                 send_kickban_presence(UJID, JID, Reason, 321, none, SD),
                                 maybe_send_affiliation(JID, none, SD),
                                 unsubscribe_from_room(JID, SD),
                                 SD1 = set_affiliation(JID, none, SD),
-                                set_role(JID, none, SD1);
+                                set_role(JID, none, KickBan, SD1);
                             _ ->
                                 SD1 = set_affiliation(JID, none, SD),
                                 SD2 = case (SD1#state.config)#config.moderated of
@@ -3236,6 +3439,10 @@ process_item_change(Item, SD, UJID) ->
                         end
                 end;
 	    {JID, affiliation, outcast, Reason} ->
+                KickBan = #kickban_info{actor = UJID,
+                                        reason = Reason,
+                                        code = 301,
+                                        affiliation = outcast},
 		send_kickban_presence(UJID, JID, Reason, 301, outcast, SD),
 		maybe_send_affiliation(JID, outcast, SD),
 		unsubscribe_from_room(JID, SD),
@@ -3243,7 +3450,7 @@ process_item_change(Item, SD, UJID) ->
                     process_iq_mucsub(JID,
                                       #iq{type = set,
                                           sub_els = [#muc_unsubscribe{}]}, SD),
-		set_role(JID, none, set_affiliation(JID, outcast, SD2, Reason));
+		set_role(JID, none, KickBan, set_affiliation(JID, outcast, SD2, Reason));
 	    {JID, affiliation, A, Reason} when (A == admin) or (A == owner) ->
 		SD1 = set_affiliation(JID, A, SD, Reason),
 		SD2 = set_role(JID, moderator, SD1),
@@ -4063,13 +4270,14 @@ send_config_change_info(New, #state{config = Old} = StateData) ->
 
 -spec remove_nonmembers(state()) -> state().
 remove_nonmembers(StateData) ->
+    KickBan = #kickban_info{code = 322},
     maps:fold(
       fun(_LJID, #user{jid = JID}, SD) ->
 	      Affiliation = get_affiliation(JID, SD),
 	      case Affiliation of
 		  none ->
 		      catch send_kickban_presence(undefined, JID, <<"">>, 322, SD),
-		      set_role(JID, none, SD);
+		      set_role(JID, none, KickBan, SD);
 		  _ -> SD
 	      end
       end, StateData, get_users_and_subscribers(StateData)).
@@ -4253,6 +4461,8 @@ set_opts2([{Opt, Val} | Opts], StateData) ->
                   StateData#state{subject_author = Val};
 	    subject_author when is_binary(Val) -> % ejabberd 23.04 or older
                   StateData#state{subject_author = {Val, #jid{}}};
+	    secret ->
+                  StateData#state{secret = Val};
             hats_users ->
                   Hats = maps:from_list(
                            lists:map(fun({U, H}) -> {U, maps:from_list(H)} end,
@@ -4338,6 +4548,7 @@ make_opts(StateData, Hibernation) ->
      {roles, maps:to_list(StateData#state.roles)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author},
+     {secret, StateData#state.secret},
      {hats_users,
       lists:map(fun({U, H}) -> {U, maps:to_list(H)} end,
                 maps:to_list(StateData#state.hats_users))},
@@ -4590,7 +4801,7 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 	  end,
     Fs3 = case Static of
 	      false ->
-		  [{occupants, maps:size(StateData#state.nicks)}|Fs2];
+		  [{occupants, get_nick_count(StateData)}|Fs2];
 	      true ->
 		  Fs2
 	  end,
@@ -4925,7 +5136,7 @@ get_roomdesc_tail(StateData, Lang) ->
 	     true -> <<"">>;
 	     _ -> translate:translate(Lang, ?T("private, "))
 	   end,
-    Len = maps:size(StateData#state.nicks),
+    Len = get_nick_count(StateData),
     <<" (", Desc/binary, (integer_to_binary(Len))/binary, ")">>.
 
 -spec get_mucroom_disco_items(state()) -> disco_items().
@@ -5365,7 +5576,7 @@ route_invitation(From, Pkt, Invitation, Lang, StateData) ->
 %% Handle a message sent to the room by a non-participant.
 %% If it is a decline, send to the inviter.
 %% Otherwise, an error message is sent to the sender.
--spec handle_roommessage_from_nonparticipant(message(), state(), jid()) -> ok.
+-spec handle_roommessage_from_nonparticipant(message(), state(), jid()) -> state().
 handle_roommessage_from_nonparticipant(Packet, StateData, From) ->
     try xmpp:try_subtag(Packet, #muc_user{}) of
 	#muc_user{decline = #muc_decline{to = #jid{} = To} = Decline} = XUser ->
@@ -5373,16 +5584,30 @@ handle_roommessage_from_nonparticipant(Packet, StateData, From) ->
 	    NewXUser = XUser#muc_user{decline = NewDecline},
 	    NewPacket = xmpp:set_subtag(Packet, NewXUser),
 	    ejabberd_router:route(
-	      xmpp:set_from_to(NewPacket, StateData#state.jid, To));
+	      xmpp:set_from_to(NewPacket, StateData#state.jid, To)),
+            StateData;
 	_ ->
-	    ErrText = ?T("Only occupants are allowed to send messages "
-			 "to the conference"),
-	    Err = xmpp:err_not_acceptable(ErrText, xmpp:get_lang(Packet)),
-	    ejabberd_router:route_error(Packet, Err)
+            {StateData1, Res} =
+                ejabberd_hooks:run_fold(
+                  muc_nonparticipant_message,
+                  StateData#state.server_host,
+                  {StateData, error},
+                  [Packet]),
+            case Res of
+                error ->
+                    ErrText = ?T("Only occupants are allowed to send messages "
+                                 "to the conference"),
+                    Err = xmpp:err_not_acceptable(ErrText, xmpp:get_lang(Packet)),
+                    ejabberd_router:route_error(Packet, Err);
+                ok ->
+                    ok
+            end,
+            StateData1
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:io_format_error(Why),
 	    Err = xmpp:err_bad_request(Txt, xmpp:get_lang(Packet)),
-	    ejabberd_router:route_error(Packet, Err)
+	    ejabberd_router:route_error(Packet, Err),
+            StateData
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5649,6 +5874,22 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 						      Wra, NewPacket2, true)
     end.
 
+-spec get_user_count(StateData :: state()) -> non_neg_integer().
+get_user_count(StateData) ->
+    ejabberd_hooks:run_fold(
+      muc_get_user_count,
+      StateData#state.server_host,
+      maps:size(StateData#state.users),
+      [StateData]).
+
+-spec get_nick_count(StateData :: state()) -> non_neg_integer().
+get_nick_count(StateData) ->
+    ejabberd_hooks:run_fold(
+      muc_get_nick_count,
+      StateData#state.server_host,
+      maps:size(StateData#state.nicks),
+      [StateData]).
+
 %%%----------------------------------------------------------------------
 %%% #muc_subscribers API
 %%%----------------------------------------------------------------------
@@ -5679,7 +5920,7 @@ muc_subscribers_size(MUCSubscribers) ->
 muc_subscribers_fold(Fun, Init, MUCSubscribers) ->
     maps:fold(Fun, Init, MUCSubscribers#muc_subscribers.subscribers).
 
--spec muc_subscribers_get_by_nick(binary(), #muc_subscribers{}) -> [#subscriber{}].
+-spec muc_subscribers_get_by_nick(binary(), #muc_subscribers{}) -> [ljid()].
 muc_subscribers_get_by_nick(Nick, MUCSubscribers) ->
     maps:get(Nick, MUCSubscribers#muc_subscribers.subscriber_nicks, []).
 
@@ -5764,7 +6005,7 @@ reset_hibernate_timer(State) ->
 	_ ->
 	    disable_hibernate_timer(State),
 	    NewTimer = case {mod_muc_opt:hibernation_timeout(State#state.server_host),
-			     maps:size(State#state.users)} of
+			     get_user_count(State)} of
 			   {infinity, _} ->
 			       none;
 			   {Timeout, 0} ->
