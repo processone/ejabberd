@@ -155,8 +155,7 @@ process([] = LocalPath,
         {ok, true, ok} ->
             AccountName = proplists:get_value(<<"account_name">>, Q, <<>>),
             Subscribe = proplists:get_value(<<"subscribe">>, Q, <<"no">>) == <<"yes">>,
-            case mod_invites:create_account_invite(Host, {Username, Host}, AccountName, Subscribe)
-            of
+            case mod_invites:create_account_invite(Host, {jid:nodeprep(Username), Host}, AccountName, Subscribe) of
                 #invite_token{} = Invite ->
                     Ctx = [{uri, mod_invites:token_uri(Invite)},
                            {landing_page, landing_page(Host, Invite)},
