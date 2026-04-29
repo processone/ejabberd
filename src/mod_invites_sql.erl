@@ -268,11 +268,12 @@ is_token_valid(Host, Token, {User, Host}) ->
 list_invites(Host) ->
     {selected, Rows} =
         ejabberd_sql:sql_query(Host,
-                               ?SQL("SELECT @(token)s, @(username)s, @(type)s, @(account_name)s, "
+                               ?SQL("SELECT @(token)s, @(username)s, @(invitee)s, @(type)s, @(account_name)s, "
                                     "@(expires)t, @(created_at)t FROM invite_token WHERE %(Host)H")),
-    lists:map(fun({Token, User, Type, AccountName, Expires, CreatedAt}) ->
+    lists:map(fun({Token, User, Invitee, Type, AccountName, Expires, CreatedAt}) ->
                  #invite_token{token = Token,
                                inviter = {User, Host},
+                               invitee = Invitee,
                                type = dec_type(Type),
                                account_name = AccountName,
                                expires = Expires,
@@ -314,11 +315,15 @@ enc_type(roster_only) ->
 enc_type(account_subscription) ->
     <<"S">>;
 enc_type(account_only) ->
-    <<"A">>.
+    <<"A">>;
+enc_type(reset_token) ->
+    <<"T">>.
 
 dec_type(<<"R">>) ->
     roster_only;
 dec_type(<<"S">>) ->
     account_subscription;
 dec_type(<<"A">>) ->
-    account_only.
+    account_only;
+dec_type(<<"T">>) ->
+    reset_token.
