@@ -137,6 +137,7 @@ start(Host, Opts) ->
 	    RMod = gen_mod:ram_db_mod(Opts, ?MODULE),
 	    Mod:init(Host, gen_mod:set_opt(hosts, MyHosts, Opts)),
 	    RMod:init(Host, gen_mod:set_opt(hosts, MyHosts, Opts)),
+	    check_duplicate_routes(Host, MyHosts),
 	    load_permanent_rooms(MyHosts, Host, Opts);
 	Err ->
 	    Err
@@ -203,6 +204,23 @@ procname(Host, RoomHost) ->
     Cores = misc:logical_processors(),
     I = erlang:phash2(RoomHost, Cores) + 1,
     procname(Host, I).
+
+check_duplicate_routes(HostNew, MyHosts) when is_list(MyHosts) ->
+    [check_duplicate_routes(HostNew, MyHost) || MyHost <- MyHosts];
+check_duplicate_routes(HostNew, MyHost) ->
+    case ejabberd_router:host_of_route(MyHost) of
+        HostNew ->
+            ok;
+        HostExisting ->
+            ?WARNING_MSG("The MUC service '~ts' is already being served by vhost '~ts', "
+                         "and you configured it also for vhost '~ts' ! "
+                         "That may lead to unexpected results. "
+                         "Please edit the ejabberd configuration to ensure each "
+                         "mod_muc serves different hosts: "
+                         "for example use @HOST@ in the 'hosts' option in mod_muc, "
+                         "or use 'append_host_config' toplevel option.",
+                       [MyHost, HostExisting, HostNew])
+    end.
 
 -spec route(stanza()) -> ok.
 route(Pkt) ->
