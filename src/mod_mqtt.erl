@@ -113,11 +113,13 @@ accept(Pid) ->
 socket_handoff(LocalPath, Request, Opts) ->
     mod_mqtt_ws:socket_handoff(LocalPath, Request, Opts).
 
-open_session({U, S, R}) ->
+open_session({U, S, R} = USR) ->
+    ejabberd_hooks:run(mqtt_open_session, S, [USR]),
     Mod = gen_mod:ram_db_mod(S, ?MODULE),
     Mod:open_session({U, S, R}).
 
-close_session({U, S, R}) ->
+close_session({U, S, R} = USR) ->
+    ejabberd_hooks:run(mqtt_close_session, S, [USR]),
     Mod = gen_mod:ram_db_mod(S, ?MODULE),
     Mod:close_session({U, S, R}).
 
