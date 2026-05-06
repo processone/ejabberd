@@ -1086,9 +1086,6 @@ export_db_ext(Host, Dir, Mods, <<"json">>) ->
     ejabberd_db_serialize:export(Host, Dir, Mods, json);
 export_db_ext(Host, Dir, Mods, <<"dbser">>) ->
     ejabberd_db_serialize:export(Host, Dir, Mods, dbser).
-    
-    
-    
 
 %%%
 %%% Purge DB
