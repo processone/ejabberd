@@ -67,6 +67,7 @@
 	 gc/0,
 	 get_commands_spec/0,
 	 delete_old_messages_batch/4, delete_old_messages_status/1, delete_old_messages_abort/1,
+     export_db_ext/4,
 	 %% Internal
 	 mnesia_list_tables/0,
 	 mnesia_table_details/1,
@@ -463,6 +464,19 @@ get_commands_spec() ->
 				     "Directory name where exported files should be created"],
 			args_example = [<<"localhost">>, <<"/home/ejabberd/export">>],
 			args = [{host, binary}, {dir, binary}],
+			result = {res, restuple},
+			result_desc = "Result tuple",
+			result_example = {ok, <<"Export started">>}},
+     #ejabberd_commands{name = export_db_ext, tags = [db],
+			desc = "Export database records for host to files",
+			note = "added in 26.XX",
+			module = ejabberd_admin, function = export_db_ext,
+			args_desc = ["Name of host that should be exported",
+				     "Directory name where exported files should be created",
+                     "List of modules separated by ',' that should be exported, use 'all' to use all available",
+                     "Type of serialization, recognized values are dbser and json"],
+			args_example = [<<"localhost">>, <<"/home/ejabberd/export">>, <<"all">>, <<"json">>],
+			args = [{host, binary}, {dir, binary}, {modules, binary}, {type, binary}],
 			result = {res, restuple},
 			result_desc = "Result tuple",
 			result_example = {ok, <<"Export started">>}},
@@ -1062,6 +1076,19 @@ import_dir(Path) ->
 				   [filename:absname(Path), node(), Reason]),
 	    {cannot_import_dir, String}
     end.
+
+export_db_ext(Host, Dir, <<"all">>, Type) ->
+    export_db_ext(Host, Dir, undefined, Type);
+export_db_ext(Host, Dir, Modules, Type) when is_binary(Modules) ->
+    Mods = [binary_to_atom(M, latin1) || M <- binary:split(Modules, <<",">>, [global])],
+    export_db_ext(Host, Dir, Mods, Type);
+export_db_ext(Host, Dir, Mods, <<"json">>) ->
+    ejabberd_db_serialize:export(Host, Dir, Mods, json);
+export_db_ext(Host, Dir, Mods, <<"dbser">>) ->
+    ejabberd_db_serialize:export(Host, Dir, Mods, dbser).
+    
+    
+    
 
 %%%
 %%% Purge DB
