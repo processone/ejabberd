@@ -44,7 +44,7 @@
 -define(BATCH_SIZE, 1000).
 
 export(Host, Dir) ->
-    export(Host, Dir, undefined, serialize).
+    export(Host, Dir, undefined, dbser).
 
 
 export(Host, Dir, Mods, json) ->
@@ -139,13 +139,15 @@ to_json(#serialize_muc_room_v1{options = Options} = Data) ->
                  end,
                  #{},
                  Options),
-    to_json(tuple_to_list(Data#serialize_muc_room_v1{options = Options2}), [type | record_info(fields, serialize_muc_room_v1)], #{});
+    Data2 = setelement(#serialize_muc_room_v1.options, Data, Options2),
+    to_json(tuple_to_list(Data2), [type | record_info(fields, serialize_muc_room_v1)], #{});
 to_json(#serialize_roster_v1{entries = Entries} = Data) ->
     Entries2 = lists:map(fun({Jid, Nick, Groups, Sub, Ask, AskMsg}) ->
                                  #{jid => Jid, nick => Nick, groups => Groups, sub => Sub, ask => Ask, ask_msg => AskMsg}
                          end,
                          Entries),
-    to_json(tuple_to_list(Data#serialize_roster_v1{entries = Entries2}), [type | record_info(fields, serialize_roster_v1)], #{}).
+    Data2 = setelement(#serialize_roster_v1.entries, Data, Entries2),
+    to_json(tuple_to_list(Data2), [type | record_info(fields, serialize_roster_v1)], #{}).
 
 
 to_json([], _, Acc) ->
