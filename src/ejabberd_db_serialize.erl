@@ -24,8 +24,10 @@
 %%%----------------------------------------------------------------------
 -module(ejabberd_db_serialize).
 
+-include("ejabberd_db_serialize.hrl").
+
 %% API
--export([export/2, export/3,
+-export([export/2, export/4,
 	 export_status/1,
 	 export_abort/1,
 	 import/2, import/3,
@@ -42,13 +44,41 @@
 -define(BATCH_SIZE, 1000).
 
 export(Host, Dir) ->
-    export(Host, Dir, undefined).
+    export(Host, Dir, undefined, serialize).
 
+export(Host, Dir, Mods, json) ->
+	F = fun(IO, Data) ->
+		lists:foldl(
+			fun(_Rec, {error, _} = Acc) ->
+				Acc;
+				(Rec, _) ->
+				    Ser = to_json(Rec),
+				    try io:fwrite(IO, "~s~n~n", [Ser])
+				    catch _:_ ->
+						{error, <<"Error durring write">>}
+				    end
+			end, ok, Data)
+	end,
+	export(Host, Dir, Mods, F, <<"json">>);
+export(Host, Dir, Mods, serialize) ->
+	F = fun(IO, Data) ->
+	    Ser = term_to_binary(Data),
+	    SerLen = byte_size(Ser),
+	    maybe
+		ok ?= file:write(IO, <<"dbdb", SerLen:32/unsigned-little-integer>>),
+		ok ?= file:write(IO, Ser),
+		{ok, length(Data)}
+	    else
+		{error, Msg} ->
+		    {error, Msg}
+	    end
+	end,
+	export(Host, Dir, Mods, F, <<"dbser">>).
 
-export(Host0, Dir, undefined) ->
+export(Host0, Dir, undefined, WriteFun, Ext) ->
     Host = jid:nameprep(Host0),
-    export(Host, Dir, [ejabberd_auth | gen_mod:loaded_modules(Host)]);
-export(Host0, Dir, Mods) ->
+    export(Host, Dir, [ejabberd_auth | gen_mod:loaded_modules(Host)], WriteFun, Ext);
+export(Host0, Dir, Mods, WriteFun, Ext) ->
     Host = jid:nameprep(Host0),
     ModsF = compatible_mods(Host, fun module_can_serialize/3, Mods),
     F = fun Job({[], _State}) ->
@@ -58,7 +88,7 @@ export(Host0, Dir, Mods) ->
 	 fmt(<<"Serialization finished for modules: ~s">>,
 	     [lists:join(<<", ">>, MM)])};
 	    Job({[{Mod2, DbMod2} | Rest] = Mods2, Key}) ->
-		case write_batch(Host, Mod2, DbMod2, Dir, Key) of
+		case write_batch(WriteFun, Ext,Host, Mod2, DbMod2, Dir, Key) of
 		    {ok, undefined, _Count} ->
 			Job({Rest, undefined});
 		    {ok, NextKey, Count} ->
@@ -80,13 +110,47 @@ export(Host0, Dir, Mods) ->
 	    {error, <<"Operation in progress">>}
     end.
 
+to_json(#serialize_auth_v1{} = Data) ->
+	to_json(tuple_to_list(Data), [type | record_info(fields, serialize_auth_v1)], #{});
+to_json(#serialize_mam_prefs_v1{} = Data) ->
+	to_json(tuple_to_list(Data), [type | record_info(fields, serialize_mam_prefs_v1)], #{});
+to_json(#serialize_mam_v1{} = Data) ->
+	to_json(tuple_to_list(Data), [type | record_info(fields, serialize_mam_v1)], #{});
+to_json(#serialize_muc_registrations_v1{} = Data) ->
+	to_json(tuple_to_list(Data), [type | record_info(fields, serialize_muc_registrations_v1)], #{});
+to_json(#serialize_muc_room_v1{options = Options} = Data) ->
+	Options2 = lists:foldl(
+	   fun({affiliations, Aff}, Acc) ->
+	     Aff2 = [#{jid => jid:encode(J), type => Type, msg => Msg} || {J, {Type, Msg}} <- Aff],
+		Acc#{affiliatons => Aff2};
+	   ({subject_author, {Nick, J}}, Acc) ->
+		Acc#{subject_author => #{author => jid:encode(J), nick => Nick}};
+	   ({subscribers, Subs}, Acc) ->
+	     Subs2 = [#{jid => jid:encode(J), nick => Nick, events => Events} || {J, Nick, Events} <- Subs],
+		Acc#{subscribers => Subs2};
+	({K, V}, Acc) ->
+		Acc#{K => V}
+	end, #{}, Options),
+	to_json(tuple_to_list(Data#serialize_muc_room_v1{options = Options2}), [type | record_info(fields, serialize_muc_room_v1)], #{});
+to_json(#serialize_roster_v1{entries = Entries} = Data) ->
+	Entries2 = lists:map(fun({Jid, Nick, Groups, Sub, Ask, AskMsg}) ->
+		#{jid => Jid, nick => Nick, groups => Groups, sub => Sub, ask => Ask, ask_msg => AskMsg}
+	end, Entries),
+	to_json(tuple_to_list(Data#serialize_roster_v1{entries = Entries2}), [type | record_info(fields, serialize_roster_v1)], #{}).
+
+to_json([], _, Acc) ->
+	misc:json_encode(Acc);
+to_json([V | VRest], [F | FRest], Acc) ->
+	to_json(VRest, FRest, Acc#{F => V}).
+	
+
 
 export_status(Host0) ->
     Host = jid:nameprep(Host0),
     case ejabberd_batch:task_status({db_export, Host}) of
 	not_started -> <<"Operation not started">>;
 	{failed, Steps, Error} ->
-	    fmt("Operation failed after exporting ~p records with error ~p",
+	    fmt("Operation failed after exporting ~p records with error ~s",
 		[Steps, misc:format_val(Error)]);
 	{aborted, Steps, _} ->
 	    fmt("Operation was aborted after exporting ~p records",
@@ -247,34 +311,30 @@ module_has_methods(_Host, _Mod, DbMod, Methods) ->
     end.
 
 
-write_batch(Host, Mod, DbMod, Dir, undefined) ->
-    FN = <<Host/binary, "_", (atom_to_binary(Mod, latin1))/binary, ".dbser">>,
+write_batch(WriteFun, Ext, Host, Mod, DbMod, Dir, undefined) ->
+    FN = <<Host/binary, "_", (atom_to_binary(Mod, latin1))/binary, ".", Ext/binary>>,
     Path = filename:join([Dir, FN]),
-    case file:open(Path, [write, raw, binary]) of
+    case file:open(Path, [write, binary]) of
 	{ok, IO} ->
-	    write_batch(Host, Mod, DbMod, Dir, {IO, Path, undefined});
+	    write_batch(WriteFun, Ext, Host, Mod, DbMod, Dir, {IO, Path, undefined});
 	{error, Msg} ->
 	    {error, iolist_to_binary(io_lib:format("Unable to open file ~s for write: ~p",
 						   [Path, Msg]))}
     end;
-write_batch(Host, _Mod, DbMod, _Dir, {IO, Path, Key}) ->
+write_batch(WriteFun, _Ext, Host, _Mod, DbMod, _Dir, {IO, Path, Key}) ->
     case DbMod:serialize(Host, ?BATCH_SIZE, Key) of
 	{ok, [], _} ->
 	    file:close(IO),
 	    {ok, undefined, 0};
 	{ok, Data, NextKey} ->
-	    Ser = term_to_binary(Data),
-	    SerLen = byte_size(Ser),
-	    maybe
-		ok ?= file:write(IO, <<"dbdb", SerLen:32/unsigned-little-integer>>),
-		ok ?= file:write(IO, Ser),
-		{ok, {IO, Path, NextKey}, length(Data)}
-	    else
-		{error, Msg} ->
-		    file:close(IO),
-		    file:delete(Path),
-		    {error, iolist_to_binary(io_lib:format("Error when writing to file ~s: ~p",
-							   [Path, Msg]))}
+		case WriteFun(IO, Data) of
+			ok ->
+				{ok, {IO, Path, NextKey}, length(Data)};
+			{error, Msg} ->
+			    file:close(IO),
+			    file:delete(Path),
+			    {error, iolist_to_binary(io_lib:format("Error when writing to file ~s: ~p",
+								   [Path, Msg]))}
 	    end;
 	{error, Error} ->
 	    file:close(IO),
