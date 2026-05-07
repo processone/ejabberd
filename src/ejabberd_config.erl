@@ -450,7 +450,7 @@ replace_keywords(Host, List, Keywords) when is_list(List) ->
     [replace_keywords(Host, Element, Keywords) || Element <- List];
 replace_keywords(Host, Atom, Keywords) when is_atom(Atom) ->
     Str = atom_to_list(Atom),
-    Bin = iolist_to_binary(Str),
+    Bin = atom_to_binary(Atom, utf8),
     case Str == string:uppercase(Str) of
         false ->
             BinaryReplaced = replace_keywords(Host, Bin, Keywords),
@@ -717,7 +717,9 @@ get_additional_macros() ->
 
 parse_macro_string(MacroString) ->
     [NameString, ValueString] = string:split(MacroString, "="),
-    {ok, [ValueDecoded]} = fast_yaml:decode(ValueString),
+    %% fast_yaml can't parse string with utf8 chars, let's pass as binary
+    ValueBinary = unicode:characters_to_binary(ValueString, utf8),
+    {ok, [ValueDecoded]} = fast_yaml:decode(ValueBinary),
     {list_to_atom(NameString), ValueDecoded}.
 
 read_yaml_files(Files, Opts) ->
