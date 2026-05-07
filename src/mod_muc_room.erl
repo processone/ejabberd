@@ -70,11 +70,11 @@
 	 terminate/3,
 	 code_change/4]).
 
+-include("ejabberd_catch.hrl").
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 -include("mod_muc_room.hrl").
-
 
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
@@ -1296,8 +1296,7 @@ process_voice_approval(From, Pkt, VoiceApproval, StateData) ->
 			true when Allow ->
 			    Reason = <<>>,
 			    NSD = set_role(TargetJid, participant, StateData),
-			    catch send_new_presence(
-				    TargetJid, Reason, NSD, StateData),
+			    ?CATCH_TRY(send_new_presence, TargetJid, Reason, NSD, StateData),
 			    NSD;
 			_ ->
 			    StateData
@@ -4103,7 +4102,7 @@ remove_nonmembers(StateData) ->
 	      Affiliation = get_affiliation(JID, SD),
 	      case Affiliation of
 		  none ->
-		      catch send_kickban_presence(undefined, JID, <<"">>, 322, SD),
+		      ?CATCH_TRY(send_kickban_presence, undefined, JID, <<"">>, 322, SD),
 		      set_role(JID, none, SD);
 		  _ -> SD
 	      end

@@ -2254,7 +2254,7 @@ execute_command2(Name,
         end,
     case LetsExecute of
         true ->
-            catch ejabberd_commands:execute_command2(Name, Arguments, CallerInfo);
+            ?CATCH_MFA(ejabberd_commands, execute_command2, [Name, Arguments, CallerInfo]);
         false ->
             not_executed
     end.
