@@ -42,6 +42,7 @@
 %% For debugging purposes
 -export([list/2]).
 
+-include("ejabberd_catch.hrl").
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
@@ -187,9 +188,11 @@ send_copies(JID, To, Msg, Direction)->
     {U, S, R} = jid:tolower(JID),
     PrioRes = ejabberd_sm:get_user_present_resources(U, S),
     {_, AvailRs} = lists:unzip(PrioRes),
-    {MaxPrio, _MaxRes} = case catch lists:max(PrioRes) of
-	{Prio, Res} -> {Prio, Res};
+    {MaxPrio, _MaxRes} = try lists:max(PrioRes) of
+	{Prio, Res} when is_integer(Prio) -> {Prio, Res};
 	_ -> {0, undefined}
+    catch
+        error:function_clause -> {0, undefined}
     end,
 
     %% unavailable resources are handled like bare JIDs

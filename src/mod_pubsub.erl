@@ -3780,9 +3780,8 @@ features() ->
 -spec plugin_features(host(), binary()) -> [binary()].
 plugin_features(Host, Type) ->
     Module = plugin(Host, Type),
-    case catch Module:features() of
-	{'EXIT', {undef, _}} -> [];
-	Result -> Result
+    try Module:features()
+    catch error:undef -> []
     end.
 
 -spec features(binary(), binary()) -> [binary()].

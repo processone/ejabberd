@@ -3208,7 +3208,7 @@ search_affiliation_fallback(Affiliation, StateData) ->
 process_admin_items_set(UJID, Items, Lang, StateData) ->
     UAffiliation = get_affiliation(UJID, StateData),
     URole = get_role(UJID, StateData),
-    case catch find_changed_items(UJID, UAffiliation, URole,
+    try find_changed_items(UJID, UAffiliation, URole,
 				  Items, Lang, StateData, [])
 	of
       {result, Res} ->
@@ -3223,8 +3223,9 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 	      NSD ->
 		  store_room(NSD),
 		  {result, undefined, NSD}
-	  end;
-	{error, Err} -> {error, Err}
+	  end
+    catch
+	throw:{error, Err} -> {error, Err}
     end.
 
 -spec process_item_change(jid()) -> fun((admin_action(), state() | {error, stanza_error()}) ->

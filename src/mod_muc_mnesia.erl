@@ -51,6 +51,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
+-include("ejabberd_catch.hrl").
 -include("ejabberd_db_serialize.hrl").
 
 -record(state, {}).
@@ -103,15 +104,16 @@ can_use_nick(_LServer, ServiceOrRoom, JID, Nick) ->
                     {'==', {element, 2, '$1'}, Service},
                     {'==', {element, 2, '$1'}, ServiceOrRoom} }]
                 end,
-    case catch mnesia:dirty_select(muc_registered,
+    try mnesia:dirty_select(muc_registered,
 				   [{#muc_registered{us_host = '$1',
 						     nick = Nick, _ = '_'},
 				     MatchSpec,
 				     ['$_']}])
 	of
-      {'EXIT', _Reason} -> true;
       [] -> true;
       [#muc_registered{us_host = {U, _Host}}] -> U == LUS
+    catch
+        exit:_Reason -> true
     end.
 
 get_rooms(_LServer, Host) ->
@@ -373,7 +375,9 @@ init([_Host, Opts]) ->
 				   [{ram_copies, [node()]},
 				    {type, ordered_set},
 				    {attributes, record_info(fields, muc_online_room)}]),
-	    catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
+	    try ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}])
+            catch _:_ -> ok
+            end,
 	    lists:foreach(
 	      fun(MyHost) ->
 		      clean_table_from_bad_node(node(), MyHost)

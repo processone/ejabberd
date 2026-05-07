@@ -173,11 +173,10 @@ timestamp_to_now(I) ->
     {MSec, Sec, USec}.
 
 dec_priority(Prio) ->
-    case catch binary_to_integer(Prio) of
-	{'EXIT', _} ->
-	    undefined;
-	Int ->
-	    Int
+    try binary_to_integer(Prio)
+    catch
+        error:_ ->
+            undefined
     end.
 
 enc_priority(undefined) ->

@@ -142,17 +142,18 @@ get_node(Host, Node) ->
     end.
 
 get_node(Nidx) ->
-    case catch
+    try
 	ejabberd_sql:sql_query_t(
 	  ?SQL("select @(host)s, @(node)s, @(parent)s, @(plugin)s from pubsub_node "
 	       "where nodeid=%(Nidx)d"))
     of
 	{selected, [{Host, Node, Parent, Type}]} ->
 	    raw_to_node(Host, {Node, Parent, Type, Nidx});
-	{'EXIT', _Reason} ->
-	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())};
 	_ ->
 	    {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
+    catch
+        exit:_Reason ->
+            {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())}
     end.
 
 get_nodes(Host) ->

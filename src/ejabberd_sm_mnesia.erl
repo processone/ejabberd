@@ -140,15 +140,16 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 update_tables() ->
-    case catch mnesia:table_info(session, attributes) of
+    try mnesia:table_info(session, attributes) of
       [ur, user, node] -> mnesia:delete_table(session);
       [ur, user, pid] -> mnesia:delete_table(session);
       [usr, us, pid] -> mnesia:delete_table(session);
       [usr, us, sid, priority, info] -> mnesia:delete_table(session);
       [sid, usr, us, priority] ->
 	  mnesia:delete_table(session);
-      [sid, usr, us, priority, info] -> ok;
-      {'EXIT', _} -> ok
+      [sid, usr, us, priority, info] -> ok
+    catch
+      exit:_ -> ok
     end,
     case lists:member(presence, mnesia:system_info(tables))
 	of

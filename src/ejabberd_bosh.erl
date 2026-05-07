@@ -112,16 +112,17 @@
 start(#body{attrs = Attrs} = Body, IP, SID) ->
     XMPPDomain = get_attr(to, Attrs),
     SupervisorProc = gen_mod:get_module_proc(XMPPDomain, mod_bosh),
-    case catch supervisor:start_child(SupervisorProc,
+    try supervisor:start_child(SupervisorProc,
 				      [Body, IP, SID])
 	of
       {ok, Pid} -> {ok, Pid};
-      {'EXIT', {noproc, _}} ->
-	  check_bosh_module(XMPPDomain),
-	  {error, module_not_loaded};
-      Err ->
+      {error, Err} ->
 	  ?ERROR_MSG("Failed to start BOSH session: ~p", [Err]),
 	  {error, Err}
+    catch
+      exit:{noproc, _} ->
+	  check_bosh_module(XMPPDomain),
+	  {error, module_not_loaded}
     end.
 
 start(StateName, State) ->
@@ -136,13 +137,12 @@ send({http_bind, FsmRef, IP}, Packet) ->
     send_xml({http_bind, FsmRef, IP}, Packet).
 
 send_xml({http_bind, FsmRef, _IP}, Packet) ->
-    case catch p1_fsm:sync_send_all_state_event(FsmRef,
+    try p1_fsm:sync_send_all_state_event(FsmRef,
 						    {send_xml, Packet},
 						    ?SEND_TIMEOUT)
-	of
-      {'EXIT', {timeout, _}} -> {error, timeout};
-      {'EXIT', _} -> {error, einval};
-      Res -> Res
+    catch
+        exit:{timeout, _} -> {error, timeout};
+        exit:_ -> {error, einval}
     end.
 
 setopts({http_bind, FsmRef, _IP}, Opts) ->
@@ -153,11 +153,9 @@ setopts({http_bind, FsmRef, _IP}, Opts) ->
       _ ->
 	  case lists:member({active, false}, Opts) of
 	    true ->
-		case catch p1_fsm:sync_send_all_state_event(FsmRef,
-								deactivate_socket)
-		    of
-		  {'EXIT', _} -> {error, einval};
-		  Res -> Res
+		try p1_fsm:sync_send_all_state_event(FsmRef, deactivate_socket)
+                catch
+		  exit:_ -> {error, einval}
 		end;
 	    _ -> ok
 	  end
@@ -172,8 +170,9 @@ change_shaper({http_bind, FsmRef, _IP}, Shaper) ->
     p1_fsm:send_all_state_event(FsmRef, {change_shaper, Shaper}).
 
 close({http_bind, FsmRef, _IP}) ->
-    catch p1_fsm:sync_send_all_state_event(FsmRef,
-					       close).
+    try p1_fsm:sync_send_all_state_event(FsmRef, close)
+    catch X:Y -> {X, Y}
+    end.
 
 sockname(_Socket) -> {ok, {{0, 0, 0, 0}, 0}}.
 
@@ -245,11 +244,10 @@ process_request(Data, IP, Type) ->
     end.
 
 process_request(Pid, Req, _IP, Type) ->
-    case catch p1_fsm:sync_send_event(Pid, Req,
-					  infinity)
-	of
-      #body{} = Resp -> bosh_response(Resp, Type);
-      {'EXIT', {Reason, _}}
+    try p1_fsm:sync_send_event(Pid, Req, infinity) of
+      #body{} = Resp -> bosh_response(Resp, Type)
+    catch
+      exit:{Reason, _}
 	  when Reason == noproc; Reason == normal ->
 	  bosh_response(#body{http_reason =
 				  <<"BOSH session not found">>,
@@ -257,7 +255,7 @@ process_request(Pid, Req, _IP, Type) ->
 				  [{type, <<"terminate">>},
 				   {condition, <<"item-not-found">>}]},
                         Type);
-      {'EXIT', _} ->
+      exit:_ ->
 	  bosh_response(#body{http_reason =
 				  <<"Unexpected error">>,
 			      attrs =
