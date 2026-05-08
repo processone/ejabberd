@@ -843,6 +843,12 @@ listen_opt_type(tls) ->
     econf:bool();
 listen_opt_type(max_stanza_size) ->
     econf:pos_int(infinity);
+listen_opt_type(max_stanza_elements) ->
+    econf:pos_int(infinity);
+listen_opt_type(pre_auth_max_stanza_size) ->
+    econf:pos_int(infinity);
+listen_opt_type(pre_auth_max_stanza_elements) ->
+    econf:pos_int(infinity);
 listen_opt_type(max_fsm_queue) ->
     econf:pos_int();
 listen_opt_type(send_timeout) ->

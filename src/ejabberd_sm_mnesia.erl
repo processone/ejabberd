@@ -97,9 +97,6 @@ init([]) ->
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, session)},
 			 {index, [usr,us]}]),
-    ejabberd_mnesia:create(?MODULE, session_counter,
-			[{ram_copies, [node()]},
-			 {attributes, record_info(fields, session_counter)}]),
     mnesia:subscribe(system),
     {ok, #state{}}.
 

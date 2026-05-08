@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 03/25/2026
+.\"      Date: 04/14/2026
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "03/25/2026" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "04/14/2026" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/26\&.03/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/26\&.04/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 26\&.03\&. The options that changed in this version are marked with 🟠\&.
+This section describes top level options of ejabberd 26\&.04\&. The options that changed in this version are marked with 🟠\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLName|ACLDefinition}}\fR
 .RS 4
@@ -1061,9 +1061,50 @@ field name where the JID is defined\&.
 .RS 4
 Path to the file that contains the
 \fIauthentication\&.md#jwt\-authentication|JWT\fR
-key\&. The default value is
-\fIundefined\fR\&.
+key\&.
 .RE
+.sp
+Supported file formats:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBPEM format\fR
+\- Standard PEM\-encoded keys (RSA, EC, EdDSA, etc\&.)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBJWK (JSON Web Key)\fR
+\- JSON format
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBJWK Set\fR
+\- JSON with a
+"keys"
+array (but must contain exactly one key)
+.RE
+.sp
+By default there is no path defined, that is: \fIundefined\fR\&.
 .PP
 \fBlanguage\fR: \fILanguage\fR
 .RS 4
@@ -1893,10 +1934,14 @@ A time to wait for connection to an SQL server to be established\&. The default 
 seconds\&.
 .RE
 .PP
-\fBsql_database\fR: \fIDatabase\fR
+\fBsql_database 🟠\fR: \fIDatabaseName | PathSqliteFile\fR
 .RS 4
-An SQL database name\&. For SQLite this must be a full path to a database file\&. The default value is
-\fIejabberd\fR\&.
+\fINote\fR
+about this option: improved in 26\&.04\&. An SQL database name, being the default value
+\fIejabberd\fR\&. If option
+\fIsql_type\fR
+is set to
+\fIsqlite\fR, this must be a full path to a database file, being the default value: \*(Aq"@DATABASE_PATH@/sqlite/@HOST@\&.sqlite"
 .RE
 .PP
 \fBsql_flags\fR: \fI[mysql_alternative_upsert]\fR
@@ -1980,7 +2025,7 @@ if the latter is not set\&.
 \fINote\fR
 about this option: renamed in 25\&.10\&. Whether to use the
 \fIdatabase\&.md#singlehost\-or\-multihost|multihost SQL schema\fR\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/26\&.03/sql\&. There are two schemas available\&. The legacy
+https://github\&.com/processone/ejabberd/tree/26\&.04/sql\&. There are two schemas available\&. The legacy
 \fIsinglehost\fR
 schema stores one XMPP domain into one ejabberd database\&. The
 \fImultihost\fR
@@ -2142,7 +2187,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 26\&.03\&. The modules that changed in this version are marked with 🟠\&.
+This section describes modules options of ejabberd 26\&.04\&. The modules that changed in this version are marked with 🟠\&.
 .SS "mod_adhoc"
 .sp
 def:ad\-hoc command
@@ -4171,7 +4216,7 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_invites 🟠"
+.SS "mod_invites"
 .sp
 \fINote\fR about this option: improved in 26\&.03\&.
 .sp
@@ -4273,7 +4318,7 @@ Number of seconds until token expires\&. Default value is
 5 * 24 * 60 * 60)
 .RE
 .PP
-\fBwebchat_url 🟠\fR: \fInone | auto | Webchat URL\fR
+\fBwebchat_url\fR: \fInone | auto | Webchat URL\fR
 .RS 4
 \fINote\fR
 about this option: added in 26\&.03\&. URL to a webchat client\&. Upon manual registration through web\-form this will be recommended in order to get started\&. If
@@ -9315,7 +9360,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 26\&.03\&.
+This section describes listeners options of ejabberd 26\&.04\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -9323,13 +9368,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 26\&.03\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 26\&.04\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/26\&.03/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/26\&.04/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp

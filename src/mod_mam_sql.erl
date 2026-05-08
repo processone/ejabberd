@@ -227,8 +227,13 @@ delete_old_messages_batch(ServerHost, TimeStamp, Type, Batch) ->
 				 "(select rowid from archive where timestamp < %(TS)d and %(ServerHost)H limit %(Batch)d)"));
 		       (mssql, _) ->
 			   ejabberd_sql:sql_query_t(
-			       ?SQL("delete top(%(Batch)d)§ from archive"
+			       ?SQL("delete top(%(Batch)d) from archive"
 				    " where timestamp < %(TS)d and %(ServerHost)H"));
+		       (pgsql, _) ->
+			   ejabberd_sql:sql_query_t(
+			       ?SQL("delete from archive"
+				    " where %(ServerHost)H and timestamp in "
+					"(select timestamp from archive where timestamp < %(TS)d and %(ServerHost)H limit %(Batch)d)"));
 		       (_, _) ->
 			   ejabberd_sql:sql_query_t(
 			       ?SQL("delete from archive"
@@ -250,6 +255,13 @@ delete_old_messages_batch(ServerHost, TimeStamp, Type, Batch) ->
 				    " where timestamp < %(TS)d"
 				    " and kind=%(SType)s"
 				    " and %(ServerHost)H"));
+		       (pgsql,_)->
+			   ejabberd_sql:sql_query_t(
+			       ?SQL("delete from archive"
+				    " where timestamp in"
+					" (select timestamp from archive where timestamp < %(TS)d"
+				    " and kind=%(SType)s"
+				    " and %(ServerHost)H limit %(Batch)d)"));
 		       (_,_)->
 			   ejabberd_sql:sql_query_t(
 			       ?SQL("delete from archive"

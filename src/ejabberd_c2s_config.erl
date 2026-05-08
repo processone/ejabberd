@@ -45,7 +45,10 @@ select_opts_values(Opts) ->
     maps:fold(
       fun(Opt, Val, Acc) when Opt == access;
 			      Opt == shaper;
-			      Opt == max_stanza_size ->
+			      Opt == max_stanza_size;
+			      Opt == max_stanza_elements;
+			      Opt == pre_auth_max_stanza_size;
+			      Opt == pre_auth_max_stanza_elements ->
 	      [{Opt, Val}|Acc];
 	 (_, _, Acc) ->
 	      Acc

@@ -358,20 +358,20 @@ sqlite_db(Host) ->
 
 -spec sqlite_file(binary()) -> string().
 sqlite_file(Host) ->
-    case ejabberd_option:sql_database(Host) of
+    case option_sql_database(Host) of
 	undefined ->
-	    Path = ["sqlite", atom_to_list(node()),
-		    binary_to_list(Host), "ejabberd.db"],
-	    case file:get_cwd() of
-		{ok, Cwd} ->
-		    filename:join([Cwd|Path]);
-		{error, Reason} ->
-		    ?ERROR_MSG("Failed to get current directory: ~ts",
-			       [file:format_error(Reason)]),
-		    filename:join(Path)
-	    end;
+            SqliteDefaultPath = <<"@DATABASE_PATH@/sqlite/@HOST@.sqlite">>,
+            binary_to_list(ejabberd_config:replace_keywords(Host, SqliteDefaultPath));
 	File ->
 	    binary_to_list(File)
+    end.
+
+option_sql_database(Host) ->
+    case ejabberd_option:sql_database(Host) of
+        Bin when is_binary(Bin) ->
+            misc:expand_keyword(<<"@HOST@">>, Bin, Host);
+        Other ->
+            Other
     end.
 
 use_multihost_schema() ->
@@ -1079,6 +1079,8 @@ sqlite_connect(Host) ->
 	ok ->
 	    case sqlite3:open(sqlite_db(Host), [{file, File}]) of
 		{ok, Ref} ->
+                    ?INFO_MSG("Storing sqlite database for host ~s in file ~s",
+                                 [Host, File]),
 		    sqlite3:sql_exec(
 		      sqlite_db(Host), "pragma foreign_keys = on"),
 		    {ok, Ref};
@@ -1313,7 +1315,7 @@ db_opts(Host) ->
             [sqlite, Host];
         _ ->
             Port = ejabberd_option:sql_port(Host),
-            DB = case ejabberd_option:sql_database(Host) of
+            DB = case option_sql_database(Host) of
 		     undefined -> <<"ejabberd">>;
 		     D -> D
 		 end,

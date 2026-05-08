@@ -201,10 +201,14 @@ handle_cast(Msg, State) ->
     {noreply, State}.
 
 handle_info({node_up, Node}, State) ->
-    ?INFO_MSG("Node ~ts has joined", [Node]),
+    ?INFO_MSG("Node ~ts has joined our cluster", [Node]),
+    {noreply, State};
+handle_info({node_down, Node, LeaveFun}, State) ->
+    LeaveFun(),
+    ?INFO_MSG("Node ~ts has left our cluster", [Node]),
     {noreply, State};
 handle_info({node_down, Node}, State) ->
-    ?INFO_MSG("Node ~ts has left", [Node]),
+    ?INFO_MSG("Node ~ts has left our cluster", [Node]),
     {noreply, State};
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),

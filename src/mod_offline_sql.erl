@@ -138,17 +138,21 @@ remove_old_messages_batch(LServer, Days, Batch) ->
 	fun(pgsql, _) ->
 	    ejabberd_sql:sql_query_t(
 		?SQL("DELETE FROM spool"
-		     " WHERE created_at <"
-		     " NOW() - %(Days)d * INTERVAL '1 DAY' LIMIT %(Batch)d"));
+		     " WHERE (LServer)H AND created_at in"
+		     "(SELECT created_at FROM spool where (LServer)H and created_at < NOW() - %(Days)d * INTERVAL '1 DAY' LIMIT %(Batch)d)"));
+       (mssql, _) ->
+		   ejabberd_sql:sql_query_t(
+		       ?SQL("DELETE TOP(%(Batch)d) FROM spool"
+			    " WHERE (LServer)H AND created_at < NOW() - INTERVAL %(Days)d DAY"));
 	   (sqlite, _) ->
 	       ejabberd_sql:sql_query_t(
 		   ?SQL("DELETE FROM spool"
-			" WHERE created_at <"
+			" WHERE (LServer)H AND created_at <"
 			" DATETIME('now', '-%(Days)d days') LIMIT %(Batch)d"));
 	   (_, _) ->
 	       ejabberd_sql:sql_query_t(
 		   ?SQL("DELETE FROM spool"
-			" WHERE created_at < NOW() - INTERVAL %(Days)d DAY LIMIT %(Batch)d"))
+			" WHERE (LServer)H AND created_at < NOW() - INTERVAL %(Days)d DAY LIMIT %(Batch)d"))
 	end)
     of
 	{updated, N} ->

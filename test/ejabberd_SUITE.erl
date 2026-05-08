@@ -872,7 +872,7 @@ auth_sasl2(Config) ->
 	    end;
 	false ->
 	    disconnect(Config),
-	    {skipped, 'PLAIN_not_available'}
+	    {skipped, 'DIGEST-MD5_not_available'}
     end.
 
 auth_external(Config0) ->

@@ -116,11 +116,12 @@
 %%====================================================================
 
 start(Host, Opts) ->
-    ejabberd_hooks:add(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 1000-$f),
+    %% 1000-$f = 898
+    ejabberd_hooks:add(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 898),
     gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    ejabberd_hooks:delete(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 1000-$f),
+    ejabberd_hooks:delete(webadmin_menu_system_post, global, ?MODULE, web_menu_system, 898),
     gen_mod:stop_child(?MODULE, Host).
 
 reload(Host, NewOpts, OldOpts) ->

@@ -1,3 +1,34 @@
+## Version 26.04
+
+#### Core
+
+- Add new listener options for limits to xml parser accepted input
+- Improve `leave_cluster` command to work even in own node
+- New predefined keyword `DATABASE_PATH` that points to the Mnesia spool dir
+- Support HOST keyword in `sql_database` toplevel option, set nice default value
+- Provide more details in log messages when using SQLite
+- Update documentation of jwt_key to match the Docs site
+- ejabberd_config: New default_ram_db/3 clause that checks module support
+- ejabberd_sm: Remove session_counter, used for get_vh_session_number now removed
+
+#### Modules
+
+- `mod_http_fileserver`: Use integer in `ejabberd_hooks:add` as expected by "make hooks"
+- `mod_invites`: Add `--enable-bootstrap=no` to configure options to bypass download ([#4558](https://github.com/processone/ejabberd/pull/4558))
+- `mod_invites`: don't crash in `get_invite_by_invitee_t` for sql backend ([#4566](https://github.com/processone/ejabberd/pull/4566))
+- `mod_invites`: quick howto for creating integrity check checksums
+- `mod_invites`: remove dependency on jquery
+- `mod_mqtt`: Define RAM callbacks as optional
+- `mod_mqtt`: Use `default_ram_db` only if it really supports RAM storage
+- `mod_roster`: Fix bug introduced in 26.03 in commit d5c1440 ([#4564](https://github.com/processone/ejabberd/issues/4564))
+- `mod_roster_sql`: Cast `approved` integer as boolean when exporting Mnesia to SQL
+- `mod_shared_roster_sql`: Fix typo introduced 10 years ago in commit 0ea0ba30
+
+#### Container and Installers
+
+- Bump Erlang/OTP 28.4.2
+- make-binaries: Bump OpenSSL to 3.5.6
+
 ## Version 26.03
 
 #### Core

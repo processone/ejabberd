@@ -371,7 +371,7 @@ update_roster_sql({LUser, LServer, SJID, Name, SSubscription, BApproved, SAsk, A
          "jid=%(SJID)s",
          "nick=%(Name)s",
          "subscription=%(SSubscription)s",
-         "approved=%(BApproved)b",
+         "approved=CAST(%(BApproved)b as boolean)",
          "ask=%(SAsk)s",
          "askmessage=%(AskMessage)s",
          "server='N'",

@@ -226,7 +226,7 @@ export(_Server) ->
       fun(Host, #sr_user{us = {U, S}, group_host = {Group, LServer}})
             when LServer == Host ->
               SJID = make_jid_s(U, S),
-              [?SQL("select @(jid)s from sr_user where jid=%(SJID)s"
+              [?SQL("delete from sr_user where jid=%(SJID)s"
                     " and %(Host)H and grp=%(Group)s;"),
                ?SQL_INSERT(
                   "sr_user",

@@ -741,7 +741,9 @@ create_table(Host, SchemaInfo, Table) ->
 
 create_table_t(SchemaInfo, Table) ->
     SQLs = format_create_table(SchemaInfo, Table),
-    ?INFO_MSG("Creating table ~s:~n~s~n",
+    ?INFO_MSG("Creating ~p table ~s", [SchemaInfo#sql_schema_info.db_type,
+                                       Table#sql_table.name]),
+    ?DEBUG("Creating table ~s:~n~s~n",
         [Table#sql_table.name, SQLs]),
     lists:foreach(
         fun(SQL) -> ejabberd_sql:sql_query_t(SQL) end, SQLs),
