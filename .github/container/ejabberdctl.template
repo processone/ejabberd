@@ -367,7 +367,7 @@ post_waiter_waiting()
 
 post_waiter_loop()
 {
-    LIST=$@
+    LIST=$*
     HEAD=${LIST%% ; *}
     TAIL=${LIST#* ; }
     HEAD2=${HEAD#\! *}
