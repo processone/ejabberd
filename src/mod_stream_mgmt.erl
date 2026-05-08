@@ -49,7 +49,7 @@
 
 -define(STREAM_MGMT_CACHE, stream_mgmt_cache).
 
--define(is_sm_packet(Pkt),
+-define(IS_SM_PACKET(Pkt),
 	is_record(Pkt, sm_enable) or
 	is_record(Pkt, sm_resume) or
 	is_record(Pkt, sm_a) or
@@ -163,7 +163,7 @@ c2s_handle_bind2_inline({State, Els, Results}) ->
 	    {State, Els, Results}
     end.
 
-c2s_unauthenticated_packet(#{lang := Lang} = State, Pkt) when ?is_sm_packet(Pkt) ->
+c2s_unauthenticated_packet(#{lang := Lang} = State, Pkt) when ?IS_SM_PACKET(Pkt) ->
     %% XEP-0198 says: "For client-to-server connections, the client MUST NOT
     %% attempt to enable stream management until after it has completed Resource
     %% Binding unless it is resuming a previous session".  However, it also
@@ -183,13 +183,13 @@ c2s_unbinded_packet(State, #sm_resume{} = Pkt) ->
 	{error, State1} ->
 	    {stop, State1}
     end;
-c2s_unbinded_packet(State, Pkt) when ?is_sm_packet(Pkt) ->
+c2s_unbinded_packet(State, Pkt) when ?IS_SM_PACKET(Pkt) ->
     c2s_unauthenticated_packet(State, Pkt);
 c2s_unbinded_packet(State, _Pkt) ->
     State.
 
 c2s_authenticated_packet(#{mgmt_state := MgmtState} = State, Pkt)
-  when ?is_sm_packet(Pkt) ->
+  when ?IS_SM_PACKET(Pkt) ->
     if MgmtState == pending; MgmtState == active ->
 	    {stop, perform_stream_mgmt(Pkt, State)};
        true ->

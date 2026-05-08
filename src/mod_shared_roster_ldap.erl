@@ -461,7 +461,7 @@ get_user_part_re(String, Pattern) ->
 
 parse_options(Host, Opts) ->
     Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
-    Cfg = ?eldap_config(mod_shared_roster_ldap_opt, Opts),
+    Cfg = ?ELDAP_CONFIG(mod_shared_roster_ldap_opt, Opts),
     GroupAttr = mod_shared_roster_ldap_opt:ldap_groupattr(Opts),
     GroupDesc = case mod_shared_roster_ldap_opt:ldap_groupdesc(Opts) of
 		    undefined -> GroupAttr;

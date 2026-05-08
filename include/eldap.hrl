@@ -63,7 +63,7 @@
 -type eldap_search() :: #eldap_search{}.
 -type eldap_entry() :: #eldap_entry{}.
 
--define(eldap_config(M, H),
+-define(ELDAP_CONFIG(M, H),
 	#eldap_config{
 	   servers = M:ldap_servers(H),
 	   backups = M:ldap_backups(H),
