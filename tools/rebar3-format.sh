@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # To start formatting a file, add a line that contains:
 #   @format-begin

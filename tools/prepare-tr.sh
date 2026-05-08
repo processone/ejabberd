@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Frontend for ejabberd's extract-tr.sh
 

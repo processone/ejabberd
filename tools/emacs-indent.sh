@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # To indent and remove tabs, surround the piece of code with:
 #   %% @indent-begin
