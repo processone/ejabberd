@@ -58,6 +58,8 @@
 %% webadmin
 -export([webadmin_menu_main/2, webadmin_page_main/2, webadmin_menu_host/3,
          webadmin_page_host/3]).
+-export([web_menu_system/3]).
+
 -import(ejabberd_web_admin, [make_command/4, action_button/4]).
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
@@ -299,6 +301,7 @@ start(Host, Opts) ->
       %% note the sequence below is important
       {hook, c2s_unauthenticated_packet, c2s_unauthenticated_packet, 10},
       %% webadmin
+      {hook, webadmin_menu_system_post, web_menu_system, 1000-$i, global},
       {hook, webadmin_menu_main, webadmin_menu_main, 50, global},
       {hook, webadmin_page_main, webadmin_page_main, 50, global},
       {hook, webadmin_menu_host, webadmin_menu_host, 50},
@@ -369,6 +372,10 @@ webadmin_page_main(Acc, _) ->
 
 %%---------------
 %% WebAdmin Host
+
+web_menu_system(Result, _Request, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "🎫", "Invites", ""),
+    Els ++ Result.
 
 webadmin_menu_host(Acc, _Host, Lang) ->
     Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Invites"))}].
