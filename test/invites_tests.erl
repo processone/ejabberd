@@ -148,7 +148,8 @@ single_cases() ->
       single_test(ibr_subscription),
       single_test(ibr_conflict),
       single_test(http),
-      single_test(create_invite_page)]}.
+      single_test(create_invite_page),
+      single_test(reset_token)]}.
 
 %%%===================================================================
 
@@ -412,10 +413,7 @@ max_invites(Config0) ->
     Inviter = {User, Server},
     OldOpts = gen_mod:get_module_opts(Server, mod_invites),
     NewOpts =
-        gen_mod_set_opts(OldOpts,
-                         [{max_invites, 3},
-                          {access_create_account, account_invite},
-                          {allow_modules, [mod_invites]}]),
+        gen_mod_set_opts(OldOpts, [{max_invites, 3}, {access_create_account, account_invite}]),
     update_module_opts(Server, mod_invites, NewOpts),
 
     Config = reconnect(Config0),
@@ -446,9 +444,7 @@ overuse(Config0) ->
     Inviter = {User, Server},
     InviteeJID = jid:make(User, Server),
     OldOpts = gen_mod:get_module_opts(Server, mod_invites),
-    NewOpts =
-        gen_mod_set_opts(OldOpts,
-                         [{access_create_account, account_invite}, {allow_modules, [mod_invites]}]),
+    NewOpts = gen_mod_set_opts(OldOpts, [{access_create_account, account_invite}]),
     update_module_opts(Server, mod_invites, NewOpts),
 
     Config1 = reconnect(Config0),
@@ -973,6 +969,57 @@ create_invite_page(Config) ->
     update_module_opts(Server, mod_invites, OldOpts),
     disconnect(Config).
 
+reset_token(Config0) ->
+    Server = ?config(server, Config0),
+    User = ?config(user, Config0),
+    Password = ?config(password, Config0),
+
+    httpc:set_options([{cookies, enabled}]),
+
+    OldRegisterOpts = gen_mod:get_module_opts(Server, mod_register),
+    NewRegisterOpts = gen_mod:set_opt(allow_modules, [mod_invites], OldRegisterOpts),
+    update_module_opts(Server, mod_register, NewRegisterOpts),
+
+    Config1 = reconnect(Config0),
+
+    #invite_token{token = Token} = mod_invites:create_reset_token(User, Server),
+
+    BaseURL = mod_invites_http:landing_page(Server, mod_invites:get_invite(Server, Token)),
+    CSRFToken = get_csrf_token(BaseURL),
+
+    ?match(true, ejabberd_auth:check_password(User, <<"plain">>, Server, Password)),
+
+    ?match(#iq{type = error}, send_iq_register(Config1, User, <<"newPassword">>)),
+    ?match(#iq{type = result}, send_pars(Config1, Token)),
+    ?match(#iq{type = error}, send_iq_register(Config1, <<"wrong_user">>, <<"newPassword">>)),
+    ?match(#iq{type = result}, send_iq_register(Config1, User, <<"newPassword">>)),
+
+    ?match(true, ejabberd_auth:check_password(User, <<"plain">>, Server, <<"newPassword">>)),
+    ?match(false, ejabberd_auth:check_password(User, <<"plain">>, Server, Password)),
+
+    ?match(false, mod_invites:is_token_valid(Server, Token)),
+
+    {ok, {{_, 404, _}, _, _}} = post(BaseURL, Token, CSRFToken, User, <<"anotherPassword">>),
+
+    #invite_token{token = Token2} = mod_invites:create_reset_token(User, Server),
+    BaseURL2 = mod_invites_http:landing_page(Server, mod_invites:get_invite(Server, Token2)),
+    CSRFToken2 = get_csrf_token(BaseURL2),
+
+    {ok, {{_, 400, _}, _, _}} =
+        post(BaseURL2, Token2, CSRFToken, User, <<"anotherPassword">>),
+    {ok, {{_, 400, _}, _, _}} =
+        post(BaseURL2, Token2, CSRFToken2, <<"wronguser">>, <<"anotherPassword">>),
+    {ok, {{_, 200, _}, _, _}} =
+        post(BaseURL2, Token2, CSRFToken2, User, <<"anotherPassword">>),
+    ?match(true,
+           ejabberd_auth:check_password(User, <<"plain">>, Server, <<"anotherPassword">>)),
+
+    ok = mod_register:try_set_password(User, Server, Password),
+    update_module_opts(Server, mod_register, OldRegisterOpts),
+    mod_invites:expire_invites(<<>>, Server),
+    ?match(2, mod_invites:cleanup_expired()),
+    disconnect(Config1).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -1076,12 +1123,15 @@ send_get_iq_register(Config) ->
                   to = ServerJID,
                   sub_els = [#register{}]}).
 
-send_iq_register(Config, AccountName) ->
+send_iq_register(Config, Username) ->
+    send_iq_register(Config, Username, <<"mySecret">>).
+
+send_iq_register(Config, Username, Password) ->
     ServerJID = jid:from_string(?config(server, Config)),
     send_recv(Config,
               #iq{type = set,
                   to = ServerJID,
-                  sub_els = [#register{username = AccountName, password = <<"mySecret">>}]}).
+                  sub_els = [#register{username = Username, password = Password}]}).
 
 send_pars(Config, Token) ->
     ServerJID = jid:from_string(?config(server, Config)),

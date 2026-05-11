@@ -121,6 +121,8 @@ process([Token | _] = LocalPath,
     try mod_invites:is_token_valid(Host, Token) of
         true ->
             case mod_invites:get_invite(Host, Token) of
+                #invite_token{type = reset_token} = Invite ->
+                    process_reset_token(Request, Invite, LocalPath);
                 #invite_token{type = roster_only} = Invite ->
                     process_roster_token(LocalPath, Request, Invite);
                 Invite ->
@@ -155,7 +157,10 @@ process([] = LocalPath,
         {ok, true, ok} ->
             AccountName = proplists:get_value(<<"account_name">>, Q, <<>>),
             Subscribe = proplists:get_value(<<"subscribe">>, Q, <<"no">>) == <<"yes">>,
-            case mod_invites:create_account_invite(Host, {Username, Host}, AccountName, Subscribe)
+            case mod_invites:create_account_invite(Host,
+                                                   {jid:nodeprep(Username), Host},
+                                                   AccountName,
+                                                   Subscribe)
             of
                 #invite_token{} = Invite ->
                     Ctx = [{uri, mod_invites:token_uri(Invite)},
@@ -233,25 +238,34 @@ process_valid_token([_Token] = LocalPath,
 process_valid_token(_, _, _) ->
     ?NOT_FOUND.
 
-process_register_form(Invite,
-                      AppID,
-                      #request{host = Host, lang = Lang} = Request,
-                      LocalPath) ->
+process_reset_token(#request{method = 'POST'} = Request, Invite, LocalPath) ->
+    process_post(reset_token, Invite, <<>>, Request, LocalPath);
+process_reset_token(Request, Invite, LocalPath) ->
+    process_form(reset_token, Invite, <<>>, Request, LocalPath).
+
+process_register_form(Invite, AppID, Request, LocalPath) ->
+    process_form(register, Invite, AppID, Request, LocalPath).
+
+process_form(Form,
+             Invite,
+             AppID,
+             #request{host = Host, lang = Lang} = Request,
+             LocalPath) ->
     try app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)) of
         AppCtx ->
             CSRFCookie = gen_rand_id(),
             Ctx = [{csrf_token, csrf_token(CSRFCookie)} | maybe_add_username(AppCtx, Invite)],
-            Body = render_register_form(Request, Ctx),
+            Body = render_form(Form, Request, Ctx),
             Headers =
                 add_cookie_header(maybe_hsts_header(is_https_lp(Host, Invite)),
-                                  csrf_cookie_string(<<"register-id">>, CSRFCookie)),
+                                  csrf_cookie_string(form_id(Form), CSRFCookie)),
             ?HTTP_OK(Headers, Body)
     catch
         _:not_found ->
             ?NOT_FOUND
     end.
 
-render_register_form(#request{host = Host, lang = Lang}, Ctx) ->
+render_form(Form, #request{host = Host, lang = Lang}, Ctx) ->
     MinLength =
         case mod_register_opt:password_strength(Host) of
             0 ->
@@ -259,23 +273,47 @@ render_register_form(#request{host = Host, lang = Lang}, Ctx) ->
             _ ->
                 6
         end,
-    render(Host, Lang, <<"register.html">>, [{password_min_length, MinLength} | Ctx]).
+    render(Host, Lang, form(Form), [{password_min_length, MinLength} | Ctx]).
 
-process_register_post(Invite,
-                      AppID,
-                      #request{host = Host,
-                               q = Q,
-                               lang = Lang,
-                               path = Path,
-                               ip = {Source, _},
-                               headers = Headers} =
-                          Request,
-                      LocalPath) ->
+form(register) ->
+    <<"register.html">>;
+form(reset_token) ->
+    <<"reset_token.html">>.
+
+form_success(register) ->
+    <<"register_success.html">>;
+form_success(reset_token) ->
+    <<"reset_success.html">>.
+
+form_error(register) ->
+    <<"register_error.html">>;
+form_error(reset_token) ->
+    <<"reset_error.html">>.
+
+form_id(register) ->
+    <<"register-id">>;
+form_id(reset_token) ->
+    <<"reset-id">>.
+
+process_register_post(Invite, AppID, Request, LocalPath) ->
+    process_post(register, Invite, AppID, Request, LocalPath).
+
+process_post(Form,
+             Invite,
+             AppID,
+             #request{host = Host,
+                      q = Q,
+                      lang = Lang,
+                      path = Path,
+                      ip = {Source, _},
+                      headers = Headers} =
+                 Request,
+             LocalPath) ->
     Username = proplists:get_value(<<"user">>, Q),
     Password = proplists:get_value(<<"password">>, Q),
     CSRFToken = proplists:get_value(<<"csrf_token">>, Q),
     Token = Invite#invite_token.token,
-    CSRFCookie = get_csrf_cookie(<<"register-id">>, Headers),
+    CSRFCookie = get_csrf_cookie(form_id(Form), Headers),
     try {app_ctx(Host, AppID, Lang, ctx(Invite, Request, LocalPath)),
          ensure_same(Token, proplists:get_value(<<"token">>, Q)),
          check_csrf(CSRFCookie, CSRFToken)}
@@ -284,10 +322,11 @@ process_register_post(Invite,
             case mod_invites_register:try_register(Invite, Username, Host, Password, Source, Lang)
             of
                 {ok, _UpdatedInvite} ->
-                    Ctx = maybe_add_webchat_url(Host,
+                    Ctx = maybe_add_webchat_url(Form,
+                                                Host,
                                                 [{username, Username}, {password, Password}
                                                  | AppCtx]),
-                    render_ok(Host, Invite, Lang, <<"register_success.html">>, Ctx);
+                    render_ok(Host, Invite, Lang, form_success(Form), Ctx);
                 {error,
                  #stanza_error{text = Text,
                                type = Type,
@@ -301,12 +340,12 @@ process_register_post(Invite,
                                    {csrf_token, CSRFToken},
                                    {error, [{text, Msg}, {class, error_class(Reason)}]}]
                                   ++ AppCtx,
-                            Body = render_register_form(Request, Ctx),
+                            Body = render_form(Form, Request, Ctx),
                             ?BAD_REQUEST(Body);
                         _ ->
                             render_bad_request(Host,
                                                is_https_lp(Host, Invite),
-                                               <<"register_error.html">>,
+                                               form_error(Form),
                                                [{message, Msg} | base_ctx(Host,
                                                                           Lang,
                                                                           Path,
@@ -346,7 +385,7 @@ csrf_token(Msg) when Msg /= <<>> ->
                        crypto:hash(sha256, SecretKey)),
                    Msg)).
 
-maybe_add_webchat_url(Host, Ctx) ->
+maybe_add_webchat_url(register, Host, Ctx) ->
     case mod_invites_opt:webchat_url(Host) of
         none ->
             Ctx;
@@ -362,7 +401,9 @@ maybe_add_webchat_url(Host, Ctx) ->
             end;
         WebchatUrl ->
             [{webchat_url, WebchatUrl} | Ctx]
-    end.
+    end;
+maybe_add_webchat_url(_, _, Ctx) ->
+    Ctx.
 
 process_roster_token([_Token] = LocalPath,
                      #request{host = Host, lang = Lang} = Request,
@@ -597,7 +638,7 @@ parse_cookie_header(Headers) ->
                         M
                 end,
                 #{},
-                [binary:split(S, <<"=">>) || S <- binary:split(C, <<"; ">>)]).
+                [binary:split(S, <<"=">>) || S <- binary:split(C, <<"; ">>, [global])]).
 
 error_class('jid-malformed') ->
     username;
