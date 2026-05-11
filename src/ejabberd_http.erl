@@ -360,8 +360,7 @@ process(Handlers, Request) ->
                 {Pfx, Mod, Opts, Tail}
         end,
 
-    case (lists:prefix(HandlerPathPrefix, Request#request.path) or
-         (HandlerPathPrefix==Request#request.path)) of
+    case lists:prefix(HandlerPathPrefix, Request#request.path) orelse (HandlerPathPrefix==Request#request.path) of
         true ->
             ?DEBUG("~p matches ~p", [Request#request.path, HandlerPathPrefix]),
             %% LocalPath is the path "local to the handler", i.e. if
@@ -510,10 +509,10 @@ process_request(#state{request_method = Method,
 			when is_record(El, xmlel) ->
 			  make_xhtml_output(State, Status,
 					    apply_custom_headers(Headers, CustomHeaders), El);
-		      Output when is_binary(Output) or is_list(Output) ->
+		      Output when is_binary(Output) orelse is_list(Output) ->
 			  make_text_output(State, 200, CustomHeaders, Output);
 		      {Status, Headers, Output}
-			when is_binary(Output) or is_list(Output) ->
+			when is_binary(Output) orelse is_list(Output) ->
 			  make_text_output(State, Status,
 					   apply_custom_headers(Headers, CustomHeaders), Output);
 		      {Status, Headers, {file, FileName}} ->
@@ -521,7 +520,7 @@ process_request(#state{request_method = Method,
 		      {Status, Headers, {file, FileName, ReqHeaders}} ->
 			  make_file_output(State, Status, apply_custom_headers(Headers, CustomHeaders), FileName, ReqHeaders);
 		      {Status, Reason, Headers, Output}
-			when is_binary(Output) or is_list(Output) ->
+			when is_binary(Output) orelse is_list(Output) ->
 			  make_text_output(State, Status, Reason,
 					   apply_custom_headers(Headers, CustomHeaders), Output);
 		      _ ->
@@ -618,7 +617,7 @@ do_recv_file(Len, SockMod, Socket, Fd) ->
 	{ok, Data} ->
 	    case file:write(Fd, Data) of
 		ok ->
-		    do_recv_file(Len-size(Data), SockMod, Socket, Fd);
+		    do_recv_file(Len-byte_size(Data), SockMod, Socket, Fd);
 		{error, _} = Err ->
 		    Err
 	    end;
@@ -1013,7 +1012,7 @@ find_handler_port_path(Tls, Handler) ->
       fun({{Port, _, _},
            ejabberd_http,
            #{tls := ThisTls, request_handlers := Handlers}})
-            when is_integer(Port) and ((Tls == any) or (Tls == ThisTls)) ->
+            when is_integer(Port) andalso (Tls == any) orelse (Tls == ThisTls) ->
               find_handler_port_path_option(ThisTls, Port, Handler, Handlers);
          (_) ->
               []
