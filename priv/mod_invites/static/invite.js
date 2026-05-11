@@ -2,13 +2,20 @@
     document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
     // If QR lib loaded ok, show QR button on desktop devices
-    if (window.QRCode) {
+    const qr_el = document.getElementById("qr-invite-page");
+    if (window.QRCode && qr_el) {
+        let link = document.location.href;
+        const data_link = qr_el.getAttribute('data-link');
+        if (data_link && data_link != '')
+            link = data_link;
         const qrcode_opts = {
-            text: document.location.href,
+            text: link,
             addQuietZone: true
         };
-        new QRCode(document.getElementById("qr-invite-page"), qrcode_opts);
-        document.getElementById('qr-button-container').classList.add("d-md-block");
+        new QRCode(qr_el, qrcode_opts);
+        const qr_button = document.getElementById('qr-button-container');
+        if (qr_button)
+            qr_button.classList.add("d-md-block");
     }
 
     const toggle_pw_button = document.getElementById('toggle-pw-button');
@@ -129,9 +136,9 @@ function toggle_password(e) {
     'use strict';
     window.addEventListener('load', function () {
         // Fetch all the forms we want to apply custom Bootstrap validation styles to
-        var forms = document.getElementsByClassName('needs-validation');
+        const forms = document.getElementsByClassName('needs-validation');
         // Loop over them and prevent submission
-        var validation = Array.prototype.filter.call(forms, function (form) {
+        const validation = Array.prototype.filter.call(forms, function (form) {
             form.addEventListener('submit', function (event) {
                 if (form.checkValidity() === false) {
                     event.preventDefault();
@@ -139,6 +146,29 @@ function toggle_password(e) {
                 }
                 form.classList.add('was-validated');
             }, false);
+        });
+
+        const clipboard_btns = document.getElementsByClassName('clipboard');
+
+        Array.prototype.forEach.call(clipboard_btns, function(btn) {
+            btn.addEventListener('click', (e) => {
+                const span = btn.children[0];
+                const oldVal = span.innerText;
+                Promise.resolve().then(() => {
+                    return navigator.clipboard.writeText(btn.getAttribute('data-copy'));
+                }).then(
+                    () => {
+                        span.innerText = btn.getAttribute('data-text-copied');
+                    },
+                    () => {
+                        span.innerText = btn.getAttribute('data-text-copy-failed');
+                    }
+                ).finally(() => {
+                    window.setTimeout(() => {
+                        span.innerText = oldVal;
+                    }, 1000);
+});
+            });
         });
     }, false);
 })();
