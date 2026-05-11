@@ -27,6 +27,16 @@ jobs:
         packages: libexpat1-dev libgd-dev libpam0g-dev
                   libsqlite3-dev libwebp-dev libyaml-dev
 
+    - name: Get recent compatible Rebar binaries
+      if: matrix.otp < 26
+      run: |
+        rm rebar
+        rm rebar3
+        wget https://github.com/processone/ejabberd/raw/26.04/rebar
+        wget https://github.com/processone/ejabberd/raw/26.04/rebar3
+        chmod +x rebar
+        chmod +x rebar3
+
     - name: Compile
       uses: ./.github/actions/manage-ejabberd
       with:
