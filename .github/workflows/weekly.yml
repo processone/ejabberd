@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        otp: ['25', '26', '27', '28', '29.0-rc1']
+        otp: ['25', '26', '27', '28', '29.0-rc3']
 
     steps:
 
