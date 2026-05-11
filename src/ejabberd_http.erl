@@ -517,9 +517,9 @@ process_request(#state{request_method = Method,
 			  make_text_output(State, Status,
 					   apply_custom_headers(Headers, CustomHeaders), Output);
 		      {Status, Headers, {file, FileName}} ->
-			  make_file_output(State, Status, Headers, FileName, []);
+			  make_file_output(State, Status, apply_custom_headers(Headers, CustomHeaders), FileName, []);
 		      {Status, Headers, {file, FileName, ReqHeaders}} ->
-			  make_file_output(State, Status, Headers, FileName, ReqHeaders);
+			  make_file_output(State, Status, apply_custom_headers(Headers, CustomHeaders), FileName, ReqHeaders);
 		      {Status, Reason, Headers, Output}
 			when is_binary(Output) or is_list(Output) ->
 			  make_text_output(State, Status, Reason,
