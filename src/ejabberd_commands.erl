@@ -60,6 +60,7 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 
 -type auth() :: {binary(), binary(), binary() | {oauth, binary()}, boolean()} | map().
+-export_type([ejabberd_commands/0]).
 
 -record(state, {}).
 
