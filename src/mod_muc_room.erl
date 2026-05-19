@@ -5105,15 +5105,19 @@ process_iq_adhoc_hats(?MUC_HAT_CREATE_CMD, _StateData, Lang) ->
                                  label = translate:translate(Lang, ?T("Hat hue")),
                                  var = <<"hats#hue">>}]},
     {executing, Form};
-process_iq_adhoc_hats(?MUC_HAT_DESTROY_CMD, _StateData, Lang) ->
+process_iq_adhoc_hats(?MUC_HAT_DESTROY_CMD, StateData, Lang) ->
+    Hats = get_defined_hats(StateData),
+    Options =
+        [#xdata_option{label = Title, value = Uri}
+         || {Uri, Title, _Hue} <- lists:keysort(2, Hats)],
     Form =
         #xdata{title = translate:translate(Lang, ?T("Destroy a Hat")),
                type = form,
                fields =
-                   [#xdata_field{type = 'text-single',
-                                 label = translate:translate(Lang, ?T("Hat URI")),
-                                 required = true,
-                                 var = <<"hat">>}]},
+                   [#xdata_field{type = 'list-single',
+                                 label = translate:translate(Lang, ?T("The role")),
+                                 var = <<"hat">>,
+                                 options = Options}]},
     {executing, Form};
 process_iq_adhoc_hats(?MUC_HAT_ASSIGN_CMD, StateData, Lang) ->
     Hats = get_defined_hats(StateData),
