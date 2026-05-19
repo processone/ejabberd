@@ -68,7 +68,9 @@
 {"Conference room does not exist","Dhoma e konferencës s’ekziston"}.
 {"Configuration of room ~s","Formësim i dhomë ~s"}.
 {"Configuration","Formësim"}.
+{"Congratulations!","Urime!"}.
 {"Country","Vend"}.
+{"Create an account","Krijoni një llogari"}.
 {"Current Discussion Topic","Tema e Tanishme e Diskutimit"}.
 {"Database failure","Dështim baze të dhënash"}.
 {"Database Tables Configuration at ","Formësim Tabelash Baze të Dhënash te "}.
@@ -77,6 +79,7 @@
 {"Delete message of the day","Fshini mesazhin e ditës"}.
 {"Delete User","Fshi Përdorues"}.
 {"Deliver event notifications","Dërgo njoftime aktesh"}.
+{"Disable User","Çaktivizo Përdorues"}.
 {"Disc only copy","Kopje vetëm në disk"}.
 {"Duplicated groups are not allowed by RFC6121","Grupe të përsëdytur s’lejohen nga RFC6121"}.
 {"Edit Properties","Përpunoni Veti"}.
@@ -97,20 +100,30 @@
 {"February","Shkurt"}.
 {"File larger than ~w bytes","Kartelë më e madhe se ~w bajte"}.
 {"Fill in the form to search for any matching XMPP User","Plotësoni formularin që të kërkohet për çfarëdo përdoruesi XMPP me përputhje"}.
+{"Form Error","Gabim Formulari"}.
 {"Friday","E premte"}.
 {"From ~ts","Nga ~ts"}.
 {"Full List of Room Admins","Listë e Plotë Përgjegjësish Dhome"}.
 {"Full List of Room Owners","Listë e Plotë të Zotësh Dhome"}.
 {"Full Name","Emër i Plotë"}.
+{"Get List of Active Users","Merr Listë Përdoruesish Aktivë"}.
+{"Get List of Disabled Users","Merr Listë Përdoruesish të Çaktivizuar"}.
+{"Get List of Idle Users","Merr Listë Përdoruesish të Plogësht"}.
 {"Get List of Online Users","Merr Listë Përdoruesish Në Linjë"}.
 {"Get List of Registered Users","Merr Listë Përdoruesish të Regjistruar"}.
+{"Get Number of Active Users","Merr Numër Përdoruesish Aktivë"}.
+{"Get Number of Disabled Users","Merr Numër Përdoruesish të Çaktivizuar"}.
+{"Get Number of Idle Users","Merr Numër Përdoruesish të Plogësht"}.
 {"Get Number of Online Users","Merr Numër Përdoruesish Në Linjë"}.
 {"Get Number of Registered Users","Merr Numër Përdoruesish të Regjistruar"}.
+{"Get started","Fillojani"}.
 {"Get User Statistics","Merr Statistika Përdoruesi"}.
 {"Given Name","Emër"}.
 {"Grant voice to this person?","T’i akordohet zë këtij personi?"}.
 {"has been banned","është dëbuar"}.
 {"has been kicked","është përzënë"}.
+{"Hat hue","Ngjyrim kapeleje"}.
+{"Hat title","Titull kapeleje"}.
 {"Host unknown","Strehë e panjohur"}.
 {"HTTP File Upload","Ngarkim Kartelash HTTP"}.
 {"Idle connection","Lidhje e plogësht"}.
@@ -127,6 +140,11 @@
 {"Invalid node name","Emër i pavlefshëm nyjeje"}.
 {"Invalid 'previd' value","Vlerë e pavlefshme 'previd'"}.
 {"Invitations are not allowed in this conference","Në këtë konferencë nuk lejohen ftesa"}.
+{"Invite Expired","Ftesa Skadoi"}.
+{"Invite Options","Mundësi Ftese"}.
+{"Invite User","Ftoni Përdorues"}.
+{"Invite","Ftesë"}.
+{"Invites","Ftesa"}.
 {"IP addresses","Adresa IP"}.
 {"is now known as","tani njihet si"}.
 {"It is not allowed to send private messages to the conference","Nuk lejohet të dërgohen mesazhe private te konferenca"}.
@@ -143,6 +161,7 @@
 {"Last month","Muaji i fundit"}.
 {"Last year","Viti i shkuar"}.
 {"leaves the room","del nga dhoma"}.
+{"List of Hats","Listë Kapelesh"}.
 {"Logging","Regjistrim"}.
 {"Make participants list public","Bëje publike listën e pjesëmarrësve"}.
 {"Make room CAPTCHA protected","Bëje dhomën të mbrojtur me CAPTCHA"}.
@@ -155,8 +174,10 @@
 {"March","Mars"}.
 {"Max payload size in bytes","Madhësi maksimum ngarkese në bajte"}.
 {"Maximum file size","Madhësi maksimum kartelash"}.
+{"Maximum number of invites reached","U mbërrit në numër maksimum ftesash"}.
 {"Maximum Number of Occupants","Numër Maksimum të Pranishmish"}.
 {"May","Maj"}.
+{"Members are allowed to invite others","Anëtarëve u është lejuar të ftojnë të tjerë"}.
 {"Membership is required to enter this room","Lypset anëtarësim për të hyrë në këtë dhomë"}.
 {"Message body","Lëndë mesazhi"}.
 {"Messages from strangers are rejected","Mesazhet prej të panjohurish hidhen tej"}.
@@ -173,6 +194,7 @@
 {"Name","Emër"}.
 {"Natural-Language Room Name","Emër Dhome Në Gjuhë Natyrale"}.
 {"Never","Kurrë"}.
+{"New Password","Fjalëkalim i Ri"}.
 {"New Password:","Fjalëkalim i Ri:"}.
 {"Nickname can't be empty","Nofka s’mund të jetë e zbrazët"}.
 {"Nickname Registration at ","Regjistrim Nofke te "}.
@@ -203,7 +225,10 @@
 {"Not Found","S’u Gjet"}.
 {"Not subscribed","Jo i pajtuar"}.
 {"November","Nëntor"}.
+{"Number of active users","Numër përdoruesish aktivë"}.
 {"Number of answers required","Numër përgjigjesh të domosdoshme"}.
+{"Number of disabled users","Numër përdoruesish të çaktivizuar"}.
+{"Number of idle users","Numër përdoruesish të plogësht"}.
 {"Number of occupants","Numër të pranishmish"}.
 {"Number of Offline Messages","Numër Mesazhesh Jo Në Linjë"}.
 {"Number of online users","Numër përdoruesish në linjë"}.
@@ -225,6 +250,7 @@
 {"Owner privileges required","Lypset privilegje të zoti"}.
 {"Participant ID","ID Pjesëmarrësi"}.
 {"Participant","Pjesëmarrës"}.
+{"Password invalid","Fjalëkalim i pavlefshëm"}.
 {"Password Verification","Verifikim Fjalëkalimi"}.
 {"Password Verification:","Verifikim Fjalëkalimi:"}.
 {"Password","Fjalëkalim"}.
@@ -242,14 +268,20 @@
 {"RAM copy","Kopje në RAM"}.
 {"Really delete message of the day?","Të fshihet vërtet mesazhi i ditës?"}.
 {"Recipient is not in the conference room","Pjesëmarrësi s’është në dhomën e konferencës"}.
+{"Re-Enable User","Riaktivizo Përdorues"}.
 {"Register an XMPP account","Regjistroni një llogari XMPP"}.
 {"Register","Regjistrohuni"}.
+{"Registration error","Gabim regjistrimi"}.
+{"Registration Error","Gabim Regjistrimi"}.
+{"Registration Form","Formular Regjistrimesh"}.
+{"Registration Success","Sukses Regjistrimi"}.
 {"Remote copy","Kopje e largët"}.
 {"Remove User","Hiqeni Përdoruesin"}.
 {"Replaced by new connection","Zëvendësuar nga lidhje e re"}.
 {"Request has timed out","Kërkesës i mbaroi koha"}.
 {"Request is ignored","Kërkesa u shpërfill"}.
 {"Requested role","Rol i domosdoshëm"}.
+{"Reset Password","Ricaktoni Fjalëkalimin"}.
 {"Resources","Burime"}.
 {"Restart Service","Rinise Shërbimin"}.
 {"Restore","Riktheje"}.
@@ -262,15 +294,18 @@
 {"Saturday","E shtunë"}.
 {"Search from the date","Kërko nga data"}.
 {"Search Results for ","Përfundime Kërkimi për "}.
-{"Search the text","Kërkoni për tekst"}.
+{"Search the text (obsolete)","Kërkoni për tekst (e vjetruar)"}.
 {"Search until the date","Kërko deri më datën"}.
 {"Search users in ","Kërko përdorues te "}.
+{"Select","Përzgjidhni"}.
 {"Send announcement to all users","Dërgo njoftim krejt përdoruesve"}.
 {"September","Shtator"}.
 {"Server:","Shërbyes:"}.
 {"Show Integral Table","Shfaq Tabelë të Plotë"}.
 {"Show Ordinary Table","Shfaq Tabelë të Rëndomtë"}.
 {"Shut Down Service","Fike Shërbimin"}.
+{"Sorry, there was a problem changing your account password.","Na ndjeni, pati një gabim në ndryshimin e fjalëkalimit të llogarisë tuaj."}.
+{"Sorry, there was a problem registering your account.","Na ndjeni, pati një gabim në regjistrimin e llogarisë tuaj."}.
 {"Specify the access model","Specifikoni model hyrjeje"}.
 {"Specify the event message type","Përcaktoni llojin e mesazhit për aktin"}.
 {"Specify the publisher model","Përcaktoni model botuesi"}.
@@ -287,6 +322,9 @@
 {"The default language of the node","Gjuha parazgjedhje e nyjës"}.
 {"The feature requested is not supported by the conference","Veçoria e kërkuar nuk mbulohen nga konferenca"}.
 {"The JID of the node creator","JID i krijjuesit të nyjës"}.
+{"The list of all active users","Lista e krejt përdoruesve aktivë"}.
+{"The list of all disabled users","Lista e krejt përdoruesve të çaktivizuar"}.
+{"The list of all idle users","Lista e krejt përdoruesve të plogësht"}.
 {"The list of all online users","Lista e krejt përdoruesve në linjë"}.
 {"The name of the node","Emri i nyjës"}.
 {"The number of subscribers to the node","Numri i pajtimtarëve te nyja"}.
@@ -316,12 +354,18 @@
 {"Unsupported version","Version i pambuluar"}.
 {"Updating the vCard is not supported by the vCard storage backend","Përditësimi i vCard-it nuk mbulohet nga mekanizmi i depozitimit të vCard-ve"}.
 {"User already exists","Ka tashmë një përdorues të tillë"}.
+{"User is not allowed to create invites","Përdoruesve s’u është lejuar të krijojnë ftesa"}.
 {"User JID","JID përdoruesi"}.
 {"User (jid)","Përdorues (jid)"}.
 {"User Management","Administrim Përdoruesish"}.
 {"User removed","Përdoruesi u hoq"}.
 {"User session not found","S’u gjet sesion përdoruesi"}.
 {"User session terminated","Sesioni i përdoruesit përfundoi"}.
+{"Username contains invalid characters","Emri i përdoruesit përmban shenja të pavlefshme"}.
+{"Username exists already","Emri i përdoruesit ekziston tashmë"}.
+{"Username invalid","Emër i pavlefshëm përdoruesi"}.
+{"Username is reserved","Emri i përdoruesit është i rezervuar"}.
+{"Username","Emër përdoruesi"}.
 {"Username:","Emër përdoruesi:"}.
 {"User","Përdorues"}.
 {"Users Last Activity","Veprimtaria e Fundit Nga Përdorues"}.
