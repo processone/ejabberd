@@ -470,6 +470,7 @@ db_tests(DB) ->
       [test_register,
        legacy_auth_tests(),
        auth_plain,
+       auth_sasl2,
        auth_md5,
        presence_broadcast,
        last,

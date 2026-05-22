@@ -62,6 +62,8 @@ define_macro:
       mod_stream_mgmt:
         resume_timeout: 3
       mod_legacy_auth: []
+      mod_auth_fast:
+        db_type: sql
       mod_register:
         welcome_message:
           subject: "Welcome!"
