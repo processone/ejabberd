@@ -63,8 +63,7 @@
          send_nick_changing/6,
          send_new_presence_default/5,
          send_existing_presence/5,
-         get_users_and_subscribers_with_node/2,
-         send_wrapped_multiple/5]).
+         add_groupchat_message/6]).
 
 
 %% gen_fsm callbacks
@@ -1098,44 +1097,11 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
                         end,
                     case IsAllowed of
                         true ->
-                            case
-                                ejabberd_hooks:run_fold(muc_filter_message,
-                                                        StateData#state.server_host,
-                                                        Packet,
-                                                        [StateData, FromNick])
-                            of
-                                drop ->
-                                    {next_state, normal_state, StateData};
-                                NewPacket1 ->
-                                    NewPacket = xmpp:put_meta(xmpp:remove_subtag(
-                                                                add_stanza_id(NewPacket1, StateData), #nick{}),
-                                                              muc_sender_real_jid, From),
-                                    Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
-                                              true -> ?NS_MUCSUB_NODES_SUBJECT
-                                           end,
-                                    NewStateData2 = check_message_for_retractions(NewPacket1, NewStateData1),
-                                    NewStateData3 =
-                                        ejabberd_hooks:run_fold(
-                                          muc_add_message,
-                                          StateData#state.server_host,
-                                          NewStateData2,
-                                          [FromNick, From, NewPacket]),
-                                    send_wrapped_multiple(
-                                      jid:replace_resource(StateData#state.jid, FromNick),
-                                      get_users_and_subscribers_with_node(Node, StateData),
-                                      NewPacket, Node, NewStateData3),
-                                    NewStateData4 =
-                                        case has_body_or_subject(NewPacket) of
-                                            true ->
-                                                add_message_to_history(
-                                                  FromNick, From,
-                                                  NewPacket,
-                                                  NewStateData3);
-                                            false ->
-                                                NewStateData3
-                                        end,
-                                    {next_state, normal_state, NewStateData4}
-                            end;
+                            NewStateData2 =
+                                add_groupchat_message(
+                                  From, FromNick, Subject, Packet,
+                                  StateData, NewStateData1),
+                            {next_state, normal_state, NewStateData2};
                         _ ->
                             Err = case (StateData#state.config)#config.allow_change_subj of
                                       true ->
@@ -1164,6 +1130,47 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
             Err = xmpp:err_not_acceptable(ErrText, Lang),
             ejabberd_router:route_error(Packet, Err),
             {next_state, normal_state, StateData}
+    end.
+
+add_groupchat_message(From, FromNick, Subject, Packet, StateData, NewStateData) ->
+    case
+        ejabberd_hooks:run_fold(muc_filter_message,
+                                StateData#state.server_host,
+                                Packet,
+                                [StateData, FromNick])
+    of
+        drop ->
+            StateData;
+        NewPacket1 ->
+            NewPacket = xmpp:put_meta(
+                          xmpp:remove_subtag(
+                            add_stanza_id(NewPacket1, NewStateData), #nick{}),
+                                      muc_sender_real_jid, From),
+            Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
+                      true -> ?NS_MUCSUB_NODES_SUBJECT
+                   end,
+            NewStateData2 = check_message_for_retractions(NewPacket1, NewStateData),
+            NewStateData3 =
+                ejabberd_hooks:run_fold(
+                  muc_add_message,
+                  NewStateData2#state.server_host,
+                  NewStateData2,
+                  [FromNick, From, NewPacket]),
+            send_wrapped_multiple(
+              jid:replace_resource(NewStateData3#state.jid, FromNick),
+              get_users_and_subscribers_with_node(Node, NewStateData3),
+              NewPacket, Node, NewStateData3),
+            NewStateData4 =
+                case has_body_or_subject(NewPacket) of
+                    true ->
+                        add_message_to_history(
+                          FromNick, From,
+                          NewPacket,
+                          NewStateData3);
+                    false ->
+                        NewStateData3
+                end,
+            NewStateData4
     end.
 
 -spec check_message_for_retractions(Packet :: message(), State :: state()) -> state().
@@ -1706,43 +1713,51 @@ process_unavailable_presence(From, Packet, Nick, StateData) ->
     Reason = xmpp:get_text(Packet#presence.status),
     remove_online_user(From, NewState, Reason).
 
--spec set_affiliation(jid(), affiliation(), state()) -> state().
-set_affiliation(JID, Affiliation, StateData) ->
-    set_affiliation(JID, Affiliation, StateData, <<"">>).
-
--spec set_affiliation(jid(), affiliation(), state(), binary()) -> state().
-set_affiliation(JID, Affiliation,
-		#state{config = #config{persistent = false}} = StateData,
-		Reason) ->
-    set_affiliation_fallback(JID, Affiliation, StateData, Reason);
-set_affiliation(JID, Affiliation, StateData, Reason) ->
+-spec set_affiliation(jid(), affiliation_data(), state()) -> state().
+set_affiliation(JID, AffiliationData,
+		#state{config = #config{persistent = false}} = StateData) ->
+    set_affiliation_fallback(JID, AffiliationData, StateData);
+set_affiliation(JID, AffiliationData, StateData) ->
     ServerHost = StateData#state.server_host,
     Room = StateData#state.room,
     Host = StateData#state.host,
     Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    {Affiliation, Reason} =
+        case AffiliationData of
+            A when is_atom(A) -> {A, <<"">>};
+            {_, _} -> AffiliationData;
+            #affiliation{affiliation = A, reason = R} -> {A, R}
+        end,
     case Mod:set_affiliation(ServerHost, Room, Host, JID, Affiliation, Reason) of
 	ok ->
 	    StateData;
 	{error, _} ->
-	    set_affiliation_fallback(JID, Affiliation, StateData, Reason)
+	    set_affiliation_fallback(JID, AffiliationData, StateData)
     end.
 
--spec set_affiliation_fallback(jid(), affiliation(), state(), binary()) -> state().
-set_affiliation_fallback(JID, Affiliation, StateData, Reason) ->
-    AffiliationData =
+-spec set_affiliation_fallback(jid(), affiliation_data(), state()) -> state().
+set_affiliation_fallback(JID, AffiliationData, StateData) ->
+    Remove =
+        case AffiliationData of
+            none -> true;
+            {none, _} -> true;
+            #affiliation{affiliation = none} -> true;
+            _ -> false
+        end,
+    {StateData2, AffiliationData2, Remove2} =
         ejabberd_hooks:run_fold(
           muc_set_affiliation, StateData#state.server_host,
-          {Affiliation, Reason},
-          [JID, StateData]),
+          {StateData, AffiliationData, Remove},
+          [JID]),
     LJID = jid:remove_resource(jid:tolower(JID)),
-    Affiliations = case AffiliationData of
-		       {none, _} ->
-			   maps:remove(LJID, StateData#state.affiliations);
+    Affiliations = case Remove2 of
+		       true ->
+			   maps:remove(LJID, StateData2#state.affiliations);
 		       _ ->
-			   maps:put(LJID, AffiliationData,
-				    StateData#state.affiliations)
+			   maps:put(LJID, AffiliationData2,
+				    StateData2#state.affiliations)
 		   end,
-    StateData#state{affiliations = Affiliations}.
+    StateData2#state{affiliations = Affiliations}.
 
 -spec set_affiliations(affiliations(), state()) -> state().
 set_affiliations(Affiliations,
@@ -3312,10 +3327,14 @@ items_with_role(SRole, StateData) ->
 -spec items_with_affiliation(affiliation(), state()) -> [muc_item()].
 items_with_affiliation(SAffiliation, StateData) ->
     lists:map(
-      fun({JID, {Affiliation, Reason}}) ->
+      fun({JID, #affiliation{affiliation = Affiliation,
+                             reason = Reason}}) ->
 	      #muc_item{affiliation = Affiliation, jid = jid:make(JID),
 			reason = Reason};
-	 ({JID, Affiliation}) ->
+	 ({JID, {Affiliation, Reason}}) ->
+	      #muc_item{affiliation = Affiliation, jid = jid:make(JID),
+			reason = Reason};
+	 ({JID, Affiliation}) when is_atom(Affiliation) ->
 	      #muc_item{affiliation = Affiliation, jid = jid:make(JID)}
       end,
       search_affiliation(SAffiliation, StateData)).
@@ -3360,6 +3379,7 @@ search_affiliation_fallback(Affiliation, StateData) ->
     lists:filter(
       fun({_, A}) ->
 	      case A of
+                  #affiliation{affiliation = A1} -> Affiliation == A1;
 		  {A1, _Reason} -> Affiliation == A1;
 		  _ -> Affiliation == A
 	      end
@@ -3450,15 +3470,15 @@ process_item_change(Item, SD, UJID) ->
                     process_iq_mucsub(JID,
                                       #iq{type = set,
                                           sub_els = [#muc_unsubscribe{}]}, SD),
-		set_role(JID, none, KickBan, set_affiliation(JID, outcast, SD2, Reason));
+		set_role(JID, none, KickBan, set_affiliation(JID, {outcast, Reason}, SD2));
 	    {JID, affiliation, A, Reason} when (A == admin) or (A == owner) ->
-		SD1 = set_affiliation(JID, A, SD, Reason),
+		SD1 = set_affiliation(JID, {A, Reason}, SD),
 		SD2 = set_role(JID, moderator, SD1),
 		send_update_presence(JID, Reason, SD2, SD),
 		maybe_send_affiliation(JID, A, SD2),
 		SD2;
 	    {JID, affiliation, member, Reason} ->
-		SD1 = set_affiliation(JID, member, SD, Reason),
+		SD1 = set_affiliation(JID, {member, Reason}, SD),
 		SD2 = set_role(JID, participant, SD1),
 		send_update_presence(JID, Reason, SD2, SD),
 		maybe_send_affiliation(JID, member, SD2),

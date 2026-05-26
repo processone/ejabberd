@@ -76,8 +76,8 @@
 
 -record(affiliation,
         {affiliation :: affiliation(),
-         reason :: binary(),
-         meta :: map()}).
+         reason = <<"">> :: binary(),
+         meta = #{} :: map()}).
 
 -record(user,
 {
@@ -151,5 +151,8 @@
 -type users() :: #{ljid() => #user{}}.
 -type robots() :: #{jid() => {binary(), stanza()}}.
 -type nicks() :: #{binary() => [ljid()]}.
--type affiliations() :: #{ljid() => affiliation() | {affiliation(), binary()} | #affiliation{}}.
+-type affiliation_data() :: affiliation() |
+                            {affiliation(), binary()} |
+                            #affiliation{}.
+-type affiliations() :: #{ljid() => affiliation_data()}.
 -type roles() :: #{ljid() => role() | {role(), binary()}}.
