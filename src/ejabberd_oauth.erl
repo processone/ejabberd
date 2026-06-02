@@ -852,14 +852,15 @@ logo() ->
 web_menu_main(Acc, _Lang) ->
     Acc ++ [{<<"oauth">>, <<"OAuth">>}].
 
-web_page_main(_, #request{path = [<<"oauth">>]} = R) ->
+web_page_main(_, #request{path = [<<"oauth">> | RPath]} = R) ->
     Head = ?H1GLraw(<<"OAuth">>, <<"developer/ejabberd-api/oauth/">>, <<"OAuth">>),
+    Level = 1 + length(RPath),
     Set = [?X(<<"hr">>),
            ?XAC(<<"h2">>, [{<<"id">>, <<"token">>}], <<"Token">>),
            ?XE(<<"blockquote">>,
-               [ejabberd_web_admin:make_command(oauth_list_tokens, R),
-                ejabberd_web_admin:make_command(oauth_issue_token, R),
-                ejabberd_web_admin:make_command(oauth_revoke_token, R)]),
+               [make_webadmin_oauth_table(R, RPath, Level),
+                ejabberd_web_admin:make_command(oauth_revoke_token, R, [], [{only, presentation}]),
+                ejabberd_web_admin:make_command(oauth_issue_token, R)]),
            ?X(<<"hr">>),
            ?XAC(<<"h2">>, [{<<"id">>, <<"client">>}], <<"Client">>),
            ?XE(<<"blockquote">>,
@@ -877,3 +878,13 @@ web_menu_system(Result, #request{host = Host}, _Level) ->
                                               "OAuth",
                                               "authorization_token"),
     Els ++ Result.
+
+make_webadmin_oauth_table(Request, RPath, Level) ->
+    DeleteRosteritem = ejabberd_web_admin:action_button(oauth_revoke_token, Request, [], []),
+    ejabberd_web_admin:make_command(oauth_list_tokens,
+                                    Request,
+                                    [],
+                                    [{action_table, [DeleteRosteritem]},
+                                     {result_named, true},
+                                     {table_options, {20, RPath}},
+                                     {result_links, [{user, user, Level, <<"">>}]}]).
