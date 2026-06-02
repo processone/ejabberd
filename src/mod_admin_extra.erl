@@ -62,6 +62,7 @@
 
 	 % Roster
 	 add_rosteritem/7, delete_rosteritem/4,
+	 delete_rosteritem_jid/3,
 	 get_roster/2, get_roster_count/2, push_roster/3,
 	 push_roster_all/1, push_alltoall/2,
 	 push_roster_item/5, build_roster_item/3,
@@ -718,6 +719,14 @@ get_commands_spec() ->
 			args_rename = [{localserver, localhost}, {server, host}],
 			args_example = [<<"user1">>,<<"myserver.com">>,<<"user2">>, <<"myserver.com">>],
 			args_desc = ["User name", "Server name", "Contact user name", "Contact server name"],
+			result = {res, rescode}},
+     #ejabberd_commands{name = delete_rosteritem_jid, tags = [roster, internal],
+			desc = "This is just a wrapper for delete_rosteritem",
+			longdesc = "Instead of user/host, it acceps jid."
+			           "This is used by the mod_roster webadmin page.",
+			module = ?MODULE, function = delete_rosteritem_jid,
+			args = [{localuser, binary}, {localhost, binary},
+				{jid, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = process_rosteritems, tags = [roster],
 			desc = "List/delete rosteritems that match filter",
@@ -1778,6 +1787,10 @@ delete_rosteritem(LocalUser, LocalServer, User, Server) ->
 	    end
     end.
 
+delete_rosteritem_jid(LocalUser, LocalServer, Contact) ->
+    Jid = jid:decode(Contact),
+    delete_rosteritem(LocalUser, LocalServer, Jid#jid.luser, Jid#jid.lserver).
+
 %% -----------------------------
 %% Get Roster
 %% -----------------------------
@@ -1795,8 +1808,8 @@ make_roster_xmlrpc(Roster) ->
     lists:map(
       fun(#roster_item{jid = JID, name = Nick, subscription = Sub, ask = Ask, groups = Groups}) ->
 	      JIDS = jid:encode(JID),
-	      Subs = atom_to_list(Sub),
-	      Asks = atom_to_list(Ask),
+	      Subs = atom_to_binary(Sub),
+	      Asks = atom_to_binary(Ask),
 	      {JIDS, Nick, Subs, Asks, Groups}
       end,
       Roster).

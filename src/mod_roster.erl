@@ -56,7 +56,7 @@
 
 -export([webadmin_page_hostuser/4, webadmin_menu_hostuser/4, webadmin_user/4]).
 
--import(ejabberd_web_admin, [make_command/4, make_command_raw_value/3, make_table/4]).
+-import(ejabberd_web_admin, [make_command/4, make_command_raw_value/3, make_table/4, action_button/4]).
 
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -1119,73 +1119,17 @@ webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
 
 webadmin_page_hostuser(_, Host, Username, #request{path = [<<"roster">> | RPath]} = R) ->
     Head = ?H1GL(<<"Roster">>, <<"modules/#mod_roster">>, <<"mod_roster">>),
-    %% Execute twice: first to perform the action, the second to get new roster
-    _ = make_webadmin_roster_table(Host, Username, R, RPath),
     Set = [make_command(add_rosteritem,
                         R,
                         [{<<"localuser">>, Username}, {<<"localhost">>, Host}],
                         []),
            make_command(push_roster, R, [{<<"user">>, Username}, {<<"host">>, Host}], [])],
-    RV2 = make_webadmin_roster_table(Host, Username, R, RPath),
-    Get = [make_command(get_roster, R, [], [{only, presentation}]),
-           make_command(delete_rosteritem, R, [], [{only, presentation}]),
-           RV2],
+    Level = 5 + length(RPath),
+    Get = [make_webadmin_roster_table(Host, Username, R, RPath, Level),
+           make_command(delete_rosteritem, R, [], [{only, presentation}])],
     {stop, Head ++ Get ++ Set};
 webadmin_page_hostuser(Acc, _, _, _) ->
     Acc.
-
-make_webadmin_roster_table(Host, Username, R, RPath) ->
-    Contacts =
-        case make_command_raw_value(get_roster, R, [{<<"user">>, Username}, {<<"host">>, Host}])
-        of
-            Cs when is_list(Cs) ->
-                Cs;
-            _ ->
-                []
-        end,
-    Level = 5 + length(RPath),
-    Columns =
-        [<<"jid">>, <<"nick">>, <<"subscription">>, <<"pending">>, <<"groups">>, <<"">>],
-    Rows =
-        lists:map(fun({Jid, Nick, Subscriptions, Pending, Groups}) ->
-                     {JidSplit, ProblematicBin} =
-                         try jid:decode(Jid) of
-                             #jid{} = J ->
-                                 {jid:split(J), <<"">>}
-                         catch
-                             _:{bad_jid, _} ->
-                                 ?INFO_MSG("Error parsing contact of ~s@~s that is invalid JID: ~s",
-                                           [Username, Host, Jid]),
-                                 {{<<"000--error-parsing-jid">>, <<"localhost">>, <<"">>},
-                                  <<", Error parsing JID: ", Jid/binary>>}
-                         end,
-                     GroupsSeparated = lists:join(<<",">>, Groups),
-                     {make_command(echo,
-                                   R,
-                                   [{<<"sentence">>, jid:encode(JidSplit)}],
-                                   [{only, raw_and_value},
-                                    {result_links, [{sentence, user, Level, <<"">>}]}]),
-                      ?C(<<Nick/binary, ProblematicBin/binary>>),
-                      ?C(Subscriptions),
-                      ?C(Pending),
-                      ?C(GroupsSeparated),
-                      make_command(delete_rosteritem,
-                                   R,
-                                   [{<<"localuser">>, Username},
-                                    {<<"localhost">>, Host},
-                                    {<<"user">>, element(1, JidSplit)},
-                                    {<<"host">>, element(2, JidSplit)}],
-                                   [{only, button},
-                                    {style, danger},
-                                    {input_name_append,
-                                     [Username,
-                                      Host,
-                                      element(1, JidSplit),
-                                      element(2, JidSplit)]}])}
-                  end,
-                  lists:keysort(1, Contacts)),
-    Table = make_table(20, RPath, Columns, Rows),
-    ?XE(<<"blockquote">>, [Table]).
 
 webadmin_user(Acc, User, Server, R) ->
     Acc
@@ -1194,6 +1138,22 @@ webadmin_user(Acc, User, Server, R) ->
                      [{<<"user">>, User}, {<<"host">>, Server}],
                      [{result_links,
                        [{value, arg_host, 4, <<"user/", User/binary, "/roster/">>}]}])].
+
+make_webadmin_roster_table(Host, Username, Request, RPath, Level) ->
+    BaseArguments = [{<<"user">>, Username}, {<<"host">>, Host}],
+    BaseArguments2 = [{<<"localuser">>, Username}, {<<"localhost">>, Host}],
+    DeleteRosteritem =
+        action_button(delete_rosteritem_jid, Request, BaseArguments2, [{style, danger}]),
+    make_command(get_roster,
+                 Request,
+                 BaseArguments,
+                 [{action_table, [DeleteRosteritem]},
+                  {result_named, true},
+                  {table_options, {20, RPath}},
+                  {result_links,
+                   [{jid, user, Level, <<"">>},
+                    {subscription, filter, 0, <<>>},
+                    {pending, filter, 0, <<>>}]}]).
 %%% @format-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
