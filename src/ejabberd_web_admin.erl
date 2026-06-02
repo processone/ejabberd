@@ -3016,6 +3016,8 @@ action_button_allowed(Name, Request, BaseArguments, Options, Cmd) ->
 action_button_result_el(not_executed, _L, _N) ->
     [];
 action_button_result_el(ok, Lang, Name) ->
+    action_button_result_el({ok, ""}, Lang, Name);
+action_button_result_el({ok, _Element}, Lang, Name) ->
     NiceName = nice_this(Name),
     ResultCData =
         binary:list_to_bin(
