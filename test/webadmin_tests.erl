@@ -31,6 +31,7 @@ send_recv/2, put_event/2, get_event/1]).
 -include("suite.hrl").
 -include_lib("stdlib/include/assert.hrl").
 -include("mod_invites.hrl").
+-include("mod_roster.hrl").
 
 %%%===================================================================
 %%% API
@@ -43,6 +44,7 @@ single_cases() ->
      [single_test(login_page),
       single_test(welcome_page),
       single_test(user_page),
+      single_test(user_roster_page),
       single_test(adduser),
       single_test(changepassword),
       single_test(removeuser),
@@ -65,6 +67,17 @@ welcome_page(Config) ->
 user_page(Config) ->
     Server = ?config(server, Config),
     URL = "server/" ++ binary_to_list(Server) ++ "/user/admin/",
+    Body = ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
+		  httpc:request(get, {page(Config, URL), [basic_auth_header(Config)]}, [],
+				[{body_format, binary}]),
+		  Body),
+    ?match({_, _}, binary:match(Body, <<"<title>ejabberd Web Admin">>)).
+
+user_roster_page(Config) ->
+    Server = ?config(server, Config),
+    User = ?config(user, Config),
+    mod_roster:set_roster(#roster{us = {User, Server}, jid = {<<"admin">>, Server, <<>>}}),
+    URL = "server/" ++ binary_to_list(Server) ++ "/user/" ++ binary_to_list(misc:url_encode(User)) ++ "/roster/",
     Body = ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
 		  httpc:request(get, {page(Config, URL), [basic_auth_header(Config)]}, [],
 				[{body_format, binary}]),
