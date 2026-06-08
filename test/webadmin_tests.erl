@@ -76,13 +76,16 @@ user_page(Config) ->
 user_roster_page(Config) ->
     Server = ?config(server, Config),
     User = ?config(user, Config),
-    mod_roster:set_roster(#roster{us = {User, Server}, jid = {<<"admin">>, Server, <<>>}}),
+    LJID = {<<"admin">>, Server, <<>>},
+    mod_roster:set_roster(#roster{usj = {User, Server, LJID}, us = {User, Server}, jid = LJID}),
     URL = "server/" ++ binary_to_list(Server) ++ "/user/" ++ binary_to_list(misc:url_encode(User)) ++ "/roster/",
     Body = ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
 		  httpc:request(get, {page(Config, URL), [basic_auth_header(Config)]}, [],
 				[{body_format, binary}]),
 		  Body),
-    ?match({_, _}, binary:match(Body, <<"<title>ejabberd Web Admin">>)).
+    ?match({_, _}, binary:match(Body, <<"<title>ejabberd Web Admin">>)),
+    mod_roster:del_roster(User, Server, LJID),
+    ?match([], mod_roster:get_roster(User, Server)).
 
 adduser(Config) ->
     User = <<"userwebadmin-", (?config(user, Config))/binary>>,
