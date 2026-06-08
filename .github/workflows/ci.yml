@@ -25,6 +25,8 @@ jobs:
 
   compile:
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']
@@ -73,6 +75,8 @@ jobs:
   static:
     needs: compile
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']
@@ -119,6 +123,8 @@ jobs:
   dynamic:
     needs: compile
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']
@@ -191,6 +197,8 @@ jobs:
   ct:
     needs: compile
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']
@@ -302,6 +310,8 @@ jobs:
   schema:
     needs: compile
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']
