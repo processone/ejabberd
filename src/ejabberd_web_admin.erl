@@ -1986,7 +1986,9 @@ filter_results(_, Result) ->
 
 format_result(presentation, _ExecRes, PresentationEls, _ArgumentsEls, _ResultEls) ->
     ?XAE(<<"p">>, [{<<"class">>, <<"api">>}], PresentationEls);
-format_result(button, _ExecRes, _PresentationEls, [Button], ResultEls) ->
+format_result(button, _ExecRes, _PresentationEls, [Button], _ResultEls) ->
+    Button;
+format_result(action_button, _ExecRes, _PresentationEls, [Button], ResultEls) ->
     {ResultEls, Button};
 format_result(result,
               _ExecRes,
@@ -3009,7 +3011,7 @@ action_button_allowed(Name, Request, BaseArguments, Options, Cmd) ->
                                BaseArguments,
                                []),
     ResultEls = action_button_result_el(ExecRes, Request#request.lang, Name),
-    format_result(button, ExecRes, PresentationEls, ArgumentsEls, ResultEls).
+    format_result(action_button, ExecRes, PresentationEls, ArgumentsEls, ResultEls).
 
 action_button_result_el(not_executed, _L, _N) ->
     [];
