@@ -82,8 +82,8 @@ s2s_in_packet(State, _) ->
 s2s_out_unauthenticated_features(#{db_verify := _} = State, _) ->
     State;
 s2s_out_unauthenticated_features(State, #stream_features{} = Pkt) ->
-    try xmpp:try_subtag(Pkt, #s2s_bidi{}) of
-	#s2s_bidi{} ->
+    try xmpp:try_subtag(Pkt, #s2s_bidi_feature{}) of
+	#s2s_bidi_feature{} ->
 	    ejabberd_s2s_out:send(State#{bidi_enabled => true}, #s2s_bidi{});
 	_ ->
 	    State
