@@ -189,6 +189,8 @@ FROM scratch
 ARG USER
 ARG HOME
 
+USER $USER
+
 COPY --from=runtime / /
 COPY --from=ejabberd /rootfs /
 
@@ -200,7 +202,6 @@ HEALTHCHECK \
     CMD ejabberdctl status
 
 WORKDIR /$HOME
-USER $USER
 VOLUME ["/$HOME"]
 EXPOSE 1880 1883 4369-4399 5210 5222 5269 5280 5443 5478 7777 50000-50099
 
