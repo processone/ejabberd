@@ -107,7 +107,7 @@ RUN export PEM=$HOME/conf/server.pem \
 
 RUN sed -i 's|^#CTL_OVER_HTTP=|CTL_OVER_HTTP=../|' "$HOME/conf/ejabberdctl.cfg"
 
-RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
+RUN home_root_dir="$(echo "$HOME" | sed 's|\(.*\)/.*|\1 |')" \
     && setcap 'cap_net_bind_service=+ep' $(find $home_root_dir -name beam.smp) \
     && echo -e \
         "#!/bin/sh \
@@ -151,7 +151,7 @@ ARG UID
 RUN chown -R $UID:$UID $HOME
 
 RUN cp /rootfs/$HOME-$VERSION/lib/captcha*.sh usr/local/bin/
-RUN mkdir $HOME/sql \
+RUN mkdir -- "$HOME/sql" \
     && find /rootfs/$HOME-$VERSION/lib/ -name *.sql -exec cp {} $HOME/sql \; -exec cp {} $HOME/database \;
 
 ################################################################################
