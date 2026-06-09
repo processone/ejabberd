@@ -3,6 +3,7 @@
 [![ejabberd Container on GitHub](https://img.shields.io/github/v/tag/processone/ejabberd?label=ejabberd&sort=semver&logo=opencontainersinitiative&logoColor=2094f3)](https://github.com/processone/ejabberd/pkgs/container/ejabberd)
 [![ecs Container on Docker](https://img.shields.io/docker/v/ejabberd/ecs?label=ecs&sort=semver&logo=docker)](https://hub.docker.com/r/ejabberd/ecs/)
 
+
 ejabberd Container Images
 =========================
 
@@ -216,7 +217,8 @@ documentation section.
 Advanced
 --------
 
-### Ports 🟠
+### Ports
+
 The container image exposes several ports
 (check also [Docs: Firewall Settings](https://docs.ejabberd.im/admin/guide/security/#firewall-settings)):
 
@@ -369,7 +371,7 @@ This section addresses those topics related to
 The `ejabberd` container image includes the ejabberd-contrib git repository source code,
 but `ecs` does not, so first download it:
 ```bash
-$ docker exec ejabberd ejabberdctl modules_update_specs
+docker exec ejabberd ejabberdctl modules_update_specs
 ```
 
 #### Install a module
@@ -655,46 +657,53 @@ but don't have access to the old container anymore, go to
 and later come back here.
 
 2. Generate a backup file and check it was created:
-```bash
-docker exec -it $OLDCONTAINER ejabberdctl backup $OLDFILE
-ls -l database/*.backup
-```
+
+    ```bash
+    docker exec -it $OLDCONTAINER ejabberdctl backup $OLDFILE
+    ls -l database/*.backup
+    ```
 
 3. Stop ejabberd:
-```bash
-docker stop $OLDCONTAINER
-```
+
+    ```bash
+    docker stop $OLDCONTAINER
+    ```
 
 4. Create the new container. For example:
-```bash
-docker run \
-       --name $NEWCONTAINER \
-       -d \
-       -p 5222:5222 \
-       -v $(pwd)/database:/opt/ejabberd/database \
-       ghcr.io/processone/ejabberd:latest
-```
+
+    ```bash
+    docker run \
+           --name $NEWCONTAINER \
+           -d \
+           -p 5222:5222 \
+           -v $(pwd)/database:/opt/ejabberd/database \
+           ghcr.io/processone/ejabberd:latest
+    ```
 
 5. Convert the backup file to new node name:
-```bash
-docker exec -it $NEWCONTAINER ejabberdctl mnesia_change_nodename $OLDNODE $NEWNODE $OLDFILE $NEWFILE
-```
+
+    ```bash
+    docker exec -it $NEWCONTAINER ejabberdctl mnesia_change_nodename $OLDNODE $NEWNODE $OLDFILE $NEWFILE
+    ```
 
 6. Install the backup file as a fallback:
-```bash
-docker exec -it $NEWCONTAINER ejabberdctl install_fallback $NEWFILE
-```
+
+    ```bash
+    docker exec -it $NEWCONTAINER ejabberdctl install_fallback $NEWFILE
+    ```
 
 7. Restart the container:
-```bash
-docker restart $NEWCONTAINER
-```
+
+    ```bash
+    docker restart $NEWCONTAINER
+    ```
 
 8. Check that the information of the old database is available.
-In this example, it should show that the account `user1` is registered:
-```bash
-docker exec -it $NEWCONTAINER ejabberdctl registered_users localhost
-```
+
+    In this example, it should show that the account `user1` is registered:
+    ```bash
+    docker exec -it $NEWCONTAINER ejabberdctl registered_users localhost
+    ```
 
 9. When the new container is working perfectly with the converted Mnesia database,
 you may want to remove the unneeded files:
