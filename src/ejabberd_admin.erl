@@ -1443,9 +1443,10 @@ mnesia_table_details(STable) ->
      || {Name, Value} <- mnesia:table_info(Table, all)].
 
 mnesia_list_tables() ->
-    STables =
+    STables1 =
         lists:sort(
             mnesia:system_info(tables)),
+    STables = lists:delete(schema, STables1),
     lists:map(fun(Table) ->
                  TInfo = mnesia:table_info(Table, all),
                  {value, {storage_type, Type}} = lists:keysearch(storage_type, 1, TInfo),
