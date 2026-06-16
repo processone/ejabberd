@@ -360,7 +360,7 @@ parse_options(Host, Opts) ->
     Search = mod_vcard_opt:search(Opts),
     Matches = mod_vcard_opt:matches(Opts),
     Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
-    Cfg = ?eldap_config(mod_vcard_ldap_opt, Opts),
+    Cfg = ?ELDAP_CONFIG(mod_vcard_ldap_opt, Opts),
     UIDsTemp = mod_vcard_ldap_opt:ldap_uids(Opts),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),
     SubFilter = eldap_utils:generate_subfilter(UIDs),

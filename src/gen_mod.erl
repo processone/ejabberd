@@ -376,16 +376,28 @@ stop_module_keep_config(Host, Module) ->
                 []
         end,
     del_registrations(Host, Module, Registrations),
-    try Module:stop(Host) of
-	_ ->
-	    ets:delete(ejabberd_modules, {Module, Host}),
-	    ok
-    catch
-        Class:Reason:StackTrace ->
-            ?ERROR_MSG("Failed to stop module ~ts at ~ts:~n** ~ts",
+    maybe
+        true ?= is_loaded(Host, Module),
+        {file, _} ?= code:is_loaded(Module),
+        try Module:stop(Host) of
+            _ ->
+                ets:delete(ejabberd_modules, {Module, Host}),
+                ok
+        catch
+            Class:Reason:StackTrace ->
+                ?ERROR_MSG("Failed to stop module ~ts at ~ts:~n** ~ts",
+                           [Module,
+                            Host,
+                            misc:format_exception(2, Class, Reason, StackTrace)]),
+            error
+        end
+    else
+        false ->
+            Explanation = "The module is not loaded in that host, maybe it was already stopped by ext_mod.",
+            ?WARNING_MSG("Failed to stop module ~ts at ~ts:~n** ~ts",
                        [Module,
                         Host,
-                        misc:format_exception(2, Class, Reason, StackTrace)]),
+                        Explanation]),
             error
     end.
 

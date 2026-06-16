@@ -470,6 +470,7 @@ db_tests(DB) ->
       [test_register,
        legacy_auth_tests(),
        auth_plain,
+       auth_sasl2,
        auth_md5,
        presence_broadcast,
        last,
@@ -872,7 +873,7 @@ auth_sasl2(Config) ->
 	    end;
 	false ->
 	    disconnect(Config),
-	    {skipped, 'PLAIN_not_available'}
+	    {skipped, 'DIGEST-MD5_not_available'}
     end.
 
 auth_external(Config0) ->

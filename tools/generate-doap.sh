@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Erlang modules in ejabberd use a custom module attribute [1]
 # named -protocol to define what XEPs and RFCs that module implements.

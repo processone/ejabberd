@@ -190,10 +190,11 @@ depends(_Host, _Opts) ->
     [{mod_pubsub, hard}].
 
 mod_options(_Host) ->
-    [{pubsub_host, gen_mod:depend_on([{mod_pubsub, host}, {mod_pubsub, hosts}],
-                                     fun([Host, Hosts]) ->
-                                         hd(gen_mod:get_opt_hosts(#{host => Host, hosts => Hosts}))
-                                     end)}].
+    [{pubsub_host,
+      gen_mod:depend_on([{mod_pubsub, host}, {mod_pubsub, hosts}],
+                        fun([Host, Hosts]) ->
+                           hd(gen_mod:get_opt_hosts(#{host => Host, hosts => Hosts}))
+                        end)}].
 
 mod_opt_type(pubsub_host) ->
     econf:host().

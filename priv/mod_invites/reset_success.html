@@ -1,0 +1,41 @@
+{% extends "base_min.html" %}
+{% block form_class %}container col-md-8 col-md-offset-2 col-sm-8 cold-sm-offset-2 col-lg-6 col-lg-offset-3 my-3 mt-md-5{% endblock %}
+{% block title %}{% trans "Password Change Success" %} | {{site_name}}{% endblock %}
+{% block h1 %}{{site_name}}{% endblock %}
+{% block content %}
+        <h2 class="card-title h5">{% trans "Congratulations!" %}</h2>
+
+        <p>{% blocktrans %}You have changed your password on <strong>{{ site_name }}</strong>.{% endblocktrans %}</p>
+
+        <p>{% trans "To continue chatting, you need to enter your new account credentials into your chosen XMPP software." %}</p>
+
+
+        <p>{% trans "As a final reminder, your account details are shown below:" %}</p>
+
+        <form class="account-details col-12 mx-auto">
+            <div class="input-group">
+                <label for="user" class="col-md-4 col-form-label fw-bold">{% trans "Chat address (JID)" %}:</label>
+                <div class="col-md-8 col-12">
+                    <input type="text" class="form-control-plaintext" readonly value="{{ username }}@{{ domain }}">
+                </div>
+            </div>
+            {% if password %}
+            <div class="input-group">
+                <label for="password" class="col-md-4 col-12 col-form-label fw-bold">{% trans "Password" %}:</label>
+                <div class="col-md-8 col-12">
+                    <div class="input-group">
+                        <input type="password" readonly disabled aria-label="{% trans "Password" %}" class="form-control" value="{{ password }}">
+                        <div class="input-group-append">
+                            <button id="toggle-pw-button" class="btn btn-outline-secondary rounded-start-0" type="button"
+                                data-text-show="{% trans "Show" %}" data-text-hide="{% trans "Hide" %}">{% trans "Show" %}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </form>
+
+        {% if password %}
+        <p class="mt-3">{% trans "Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone." %}</p>
+        {% endif %}
+{% endblock %}

@@ -73,11 +73,11 @@
 %%% ejabberd_listener API
 %%%===================================================================
 start(SockMod, Socket, Opts) ->
-    xmpp_stream_in:start(?MODULE, [{SockMod, Socket}, Opts],
+    xmpp_stream_in:start(?MODULE, [{SockMod, Socket}, Opts ++ pre_auth_limits()],
 			 ejabberd_config:fsm_limit_opts(Opts)).
 
 start_link(SockMod, Socket, Opts) ->
-    xmpp_stream_in:start_link(?MODULE, [{SockMod, Socket}, Opts],
+    xmpp_stream_in:start_link(?MODULE, [{SockMod, Socket}, Opts ++ pre_auth_limits()],
 			      ejabberd_config:fsm_limit_opts(Opts)).
 
 accept(Ref) ->
@@ -421,7 +421,9 @@ inline_stream_features(#{lserver := LServer} = State) ->
 
 sasl_mechanisms(Mechs, #{lserver := LServer, stream_encrypted := Encrypted} = State) ->
     Type = ejabberd_auth:store_type(LServer),
-    Mechs1 = ejabberd_option:disable_sasl_mechanisms(LServer),
+    DisabledMechs = ejabberd_option:disable_sasl_mechanisms(LServer),
+    PlusMechs = [<<"SCRAM-SHA-1-PLUS">>,<<"SCRAM-SHA-256-PLUS">>,<<"SCRAM-SHA-512-PLUS">>],
+    PlusDisabled = (PlusMechs -- DisabledMechs) == [],
 
     {Digest, ShaAv, Sha256Av, Sha512Av} =
 	case ejabberd_option:auth_stored_password_types(LServer) of
@@ -454,9 +456,9 @@ sasl_mechanisms(Mechs, #{lserver := LServer, stream_encrypted := Encrypted} = St
 	   (<<"X-OAUTH2">>) -> [ejabberd_auth_anonymous] /= ejabberd_auth:auth_modules(LServer);
 	   (<<"EXTERNAL">>) -> maps:get(tls_verify, State, false);
 	   (_) -> false
-	end, Mechs -- Mechs1),
+	end, Mechs -- DisabledMechs),
     case ejabberd_option:auth_password_types_hidden_in_sasl1() of
-	[] -> Mechs2;
+	[] -> {Mechs2, Mechs2, PlusDisabled};
 	List ->
 	    Mechs3 = lists:foldl(
 		fun(plain, Acc) -> Acc -- [<<"PLAIN">>];
@@ -464,7 +466,7 @@ sasl_mechanisms(Mechs, #{lserver := LServer, stream_encrypted := Encrypted} = St
 		   (scram_sha256, Acc) -> Acc -- [<<"SCRAM-SHA-256">>, <<"SCRAM-SHA-256-PLUS">>];
 		   (scram_sha512, Acc) -> Acc -- [<<"SCRAM-SHA-512">>, <<"SCRAM-SHA-512-PLUS">>]
 		end, Mechs2, List),
-	    {Mechs3, Mechs2}
+	    {Mechs3, Mechs2, PlusDisabled}
     end.
 
 sasl_options(#{lserver := LServer}) ->
@@ -1146,6 +1148,10 @@ listen_opt_type(zlib) ->
 	      true
       end).
 
+pre_auth_limits() ->
+    [{pre_auth_max_stanza_size, 8192},
+     {pre_auth_max_stanza_elements, 32}].
+
 listen_options() ->
     [{access, all},
      {shaper, none},
@@ -1161,4 +1167,5 @@ listen_options() ->
      {tls_verify, false},
      {zlib, false},
      {max_stanza_size, infinity},
-     {max_fsm_queue, 10000}].
+     {max_stanza_elements, infinity},
+     {max_fsm_queue, 10000}] ++ pre_auth_limits().

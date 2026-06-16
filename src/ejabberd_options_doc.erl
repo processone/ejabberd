@@ -802,9 +802,13 @@ doc() ->
      {jwt_key,
       #{value => ?T("FilePath"),
         desc =>
-            ?T("Path to the file that contains the "
-               "_`authentication.md#jwt-authentication|JWT`_ key. "
-               "The default value is 'undefined'.")}},
+            [?T("Path to the file that contains the "
+                "_`authentication.md#jwt-authentication|JWT`_ key."), "",
+            ?T("Supported file formats:"), "",
+            ?T("* *PEM format* - Standard PEM-encoded keys (RSA, EC, EdDSA, etc.)"), "",
+            ?T("* *JWK (JSON Web Key)* - JSON format"), "",
+            ?T("* *JWK Set* - JSON with a `\"keys\"` array (but must contain exactly one key)"), "",
+            ?T("By default there is no path defined, that is: 'undefined'."), ""]}},
      {language,
       #{value => ?T("Language"),
         desc =>
@@ -1472,10 +1476,14 @@ doc() ->
             ?T("A time to wait for connection to an SQL server to be "
                "established. The default value is '5' seconds.")}},
      {sql_database,
-      #{value => ?T("Database"),
+      #{value => ?T("DatabaseName | PathSqliteFile"),
+        note => "improved in 26.04",
         desc =>
-            ?T("An SQL database name. For SQLite this must be a full "
-               "path to a database file. The default value is 'ejabberd'.")}},
+            ?T("An SQL database name, being the default value 'ejabberd'. "
+               "If option _`sql_type`_ is set to 'sqlite', "
+                "this must be a full path to a database file, "
+                "being the default value: '\"@DATABASE_PATH@/sqlite/@HOST@.sqlite\"")
+       }},
      {sql_keepalive_interval,
       #{value => "timeout()",
         desc =>

@@ -25,6 +25,8 @@ jobs:
 
   compile:
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']
@@ -73,6 +75,8 @@ jobs:
   static:
     needs: compile
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']
@@ -92,11 +96,13 @@ jobs:
       run: |
         shellcheck ejabberd.init.template
         shellcheck -x ejabberdctl.template
+        shellcheck -x .github/container/ejabberdctl.template
         shellcheck .vscode/relive.sh
         shellcheck rel/setup-dev.sh
         shellcheck rel/setup-relive.sh
         shellcheck test/ejabberd_SUITE_data/gencerts.sh
         shellcheck tools/captcha.sh
+        shellcheck tools/dl_invites_page_deps.sh
         shellcheck tools/emacs-indent.sh
         shellcheck tools/generate-doap.sh
         shellcheck tools/prepare-tr.sh
@@ -117,6 +123,8 @@ jobs:
   dynamic:
     needs: compile
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']
@@ -189,6 +197,8 @@ jobs:
   ct:
     needs: compile
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']
@@ -300,6 +310,8 @@ jobs:
   schema:
     needs: compile
     runs-on: ubuntu-24.04-arm
+    env:
+      ImageOS: ubuntu24
     strategy:
       matrix:
         otp: ['28']

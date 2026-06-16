@@ -38,7 +38,7 @@
 -type loglevel() :: none | emergency | alert | critical |
 		    error | warning | notice | info | debug.
 
--define(is_loglevel(L),
+-define(IS_LOGLEVEL(L),
 	((L == none) or (L == emergency) or (L == alert)
 	 or (L == critical) or (L == error) or (L == warning)
 	 or (L == notice) or (L == info) or (L == debug))).
@@ -255,7 +255,7 @@ get() ->
 -spec set(0..5 | loglevel()) -> ok.
 set(N) when is_integer(N), N>=0, N=<5 ->
     set(convert_loglevel(N));
-set(Level) when ?is_loglevel(Level) ->
+set(Level) when ?IS_LOGLEVEL(Level) ->
     case get() of
 	Level -> ok;
 	PrevLevel ->

@@ -191,7 +191,8 @@ check_sqlite_db(Host) ->
                     ok
             end;
         {error, Reason} ->
-            ?WARNING_MSG("Failed open sqlite database, reason ~p", [Reason])
+            ?WARNING_MSG("Failed open sqlite database file ~s: ~p",
+                         [File, Reason])
     end.
 
 create_sqlite_tables(DB) ->
@@ -208,8 +209,8 @@ create_sqlite_tables(DB) ->
             [ok = sqlite3:sql_exec(DB, Q) || Q <- Qs],
             ok = sqlite3:sql_exec(DB, "commit");
         {error, Reason} ->
-            ?WARNING_MSG("Failed to read SQLite schema file: ~ts",
-			 [file:format_error(Reason)])
+            ?WARNING_MSG("Failed to read SQLite schema file ~s: ~ts",
+			 [File, file:format_error(Reason)])
     end.
 
 read_lines(Fd, File, Acc) ->

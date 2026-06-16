@@ -12,6 +12,7 @@ ERLANG_NODE=ejabberd@localhost
 # define default environment variables
 [ -z "$SCRIPT" ] && SCRIPT=$0
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT")" && pwd -P)"
+SCRIPT_ABSOLUTE="$SCRIPT_DIR/$(basename "$SCRIPT")"
 # shellcheck disable=SC2034
 ERTS_VSN="{{erts_vsn}}"
 ERL="{{erl}}"
@@ -355,19 +356,19 @@ check_start()
 
 post_waiter_fork()
 {
-    (FIRST_RUN=$FIRST_RUN "$0" post_waiter)&
+    (FIRST_RUN=$FIRST_RUN "$SCRIPT_ABSOLUTE" post_waiter)&
 }
 
 post_waiter_waiting()
 {
-    $0 started
+    $SCRIPT_ABSOLUTE started
     [ -n "$FIRST_RUN" ] && [ -n "$CTL_ON_CREATE" ] && (post_waiter_loop $CTL_ON_CREATE)
     [ -n "$CTL_ON_START" ] && post_waiter_loop $CTL_ON_START
 }
 
 post_waiter_loop()
 {
-    LIST=$@
+    LIST=$*
     HEAD=${LIST%% ; *}
     TAIL=${LIST#* ; }
     HEAD2=${HEAD#\! *}

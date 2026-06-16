@@ -1,5 +1,5 @@
 #' Define default build variables
-ARG OTP_VSN='28.4.1.0'
+ARG OTP_VSN='28.5.0.1'
 ARG ELIXIR_VSN='1.19.5'
 ARG UID='9000'
 ARG USER='ejabberd'
@@ -107,7 +107,7 @@ RUN export PEM=$HOME/conf/server.pem \
 
 RUN sed -i 's|^#CTL_OVER_HTTP=|CTL_OVER_HTTP=../|' "$HOME/conf/ejabberdctl.cfg"
 
-RUN home_root_dir=$(echo $HOME | sed 's|\(.*\)/.*|\1 |') \
+RUN home_root_dir="$(echo "$HOME" | sed 's|\(.*\)/.*|\1 |')" \
     && setcap 'cap_net_bind_service=+ep' $(find $home_root_dir -name beam.smp) \
     && echo -e \
         "#!/bin/sh \
@@ -151,7 +151,7 @@ ARG UID
 RUN chown -R $UID:$UID $HOME
 
 RUN cp /rootfs/$HOME-$VERSION/lib/captcha*.sh usr/local/bin/
-RUN mkdir $HOME/sql \
+RUN mkdir -- "$HOME/sql" \
     && find /rootfs/$HOME-$VERSION/lib/ -name *.sql -exec cp {} $HOME/sql \; -exec cp {} $HOME/database \;
 
 ################################################################################
@@ -189,6 +189,8 @@ FROM scratch
 ARG USER
 ARG HOME
 
+USER $USER
+
 COPY --from=runtime / /
 COPY --from=ejabberd /rootfs /
 
@@ -200,7 +202,6 @@ HEALTHCHECK \
     CMD ejabberdctl status
 
 WORKDIR /$HOME
-USER $USER
 VOLUME ["/$HOME"]
 EXPOSE 1880 1883 4369-4399 5210 5222 5269 5280 5443 5478 7777 50000-50099
 

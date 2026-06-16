@@ -27,13 +27,11 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2, get_invites_t/2,
-         get_invite_by_invitee_t/2, init/2, is_reserved/3, is_token_valid/3, list_invites/1,
-         remove_user/2, set_invitee/5, transaction/2]).
+-export([cleanup_expired/1, create_invite_t/1, delete_invite_by_token/2, expire_invite_by_token/2,
+         expire_tokens/2, get_invite/2, get_invites_t/2, get_invite_by_invitee_t/2, init/2,
+         is_reserved/3, is_token_valid/3, list_invites/1, remove_user/2, set_invitee/5, transaction/2]).
 
 -include("mod_invites.hrl").
--include("logger.hrl").
--include_lib("xmpp/include/xmpp.hrl").
 
 %% @format-begin
 
@@ -58,6 +56,22 @@ create_invite_t(Invite) ->
     ok = mnesia:write(Invite),
     Invite.
 
+delete_invite_by_token(_Host, Token) ->
+    case mnesia:dirty_read(invite_token, Token) of
+        [_Invite] ->
+            mnesia:dirty_delete(invite_token, Token);
+        [] ->
+            {error, not_found}
+    end.
+
+expire_invite_by_token(_Host, Token) ->
+    case mnesia:dirty_read(invite_token, Token) of
+        [Invite] ->
+            mnesia:dirty_write(Invite#invite_token{expires = {{1970, 1, 1}, {0, 0, 1}}});
+        [] ->
+            {error, not_found}
+    end.
+
 expire_tokens(User, Server) ->
     length([mnesia:dirty_write(I#invite_token{expires = {{1970, 1, 1}, {0, 0, 1}}})
             || I <- mnesia:dirty_index_read(invite_token, {User, Server}, #invite_token.inviter),
@@ -72,12 +86,26 @@ get_invite(_Host, Token) ->
             {error, not_found}
     end.
 
-get_invite_by_invitee_t(_Host, InviteeJid) ->
-    case mnesia:index_read(invite_token, InviteeJid, #invite_token.invitee) of
-        [#invite_token{type = Type} = Invite] when Type /= roster_only ->
+get_invite_by_invitee_t(_Host, {User, Host}) ->
+    Invitee =
+        jid:encode(
+            jid:make(User, Host)),
+    Invites = mnesia:index_read(invite_token, Invitee, #invite_token.invitee),
+    case [I
+          || I = #invite_token{type = Type, account_name = AccountName} <- Invites,
+             Type =/= roster_only orelse AccountName == User]
+    of
+        [Invite] ->
             Invite;
-        _ ->
-            {error, not_found}
+        [] ->
+            %% It might be a roster_only invite was used to create account but invitee has not been
+            %% set
+            case mnesia:index_read(invite_token, User, #invite_token.account_name) of
+                [#invite_token{type = Type} = Invite] when Type == roster_only ->
+                    Invite;
+                _ ->
+                    {error, not_found}
+            end
     end.
 
 get_invites_t(_Host, Inviter) ->
@@ -88,7 +116,7 @@ init(_Host, _Opts) ->
                            invite_token,
                            [{disc_copies, [node()]},
                             {attributes, record_info(fields, invite_token)},
-                            {index, [inviter, invitee]}]).
+                            {index, [inviter, invitee, account_name]}]).
 
 is_reserved(_Host, Token, User) ->
     lists:filter(fun(T) ->

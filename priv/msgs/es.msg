@@ -26,6 +26,7 @@
 {"Action on user","Acción en el usuario"}.
 {"Add {{ inviter }} to your contact list","Añade {{ inviter }} a tu lista de contactos"}.
 {"Add Contact","Añadir Contacto"}.
+{"Add to contact list","Añade a la lista de contactos"}.
 {"Add User","Añadir usuario"}.
 {"Administration of ","Administración de "}.
 {"Administration","Administración"}.
@@ -120,6 +121,8 @@
 {"Contacts","Contactos"}.
 {"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations es un cliente Jabber/XMPP para móviles Android 6.0+ optimizado para proporcionar una experiencia móvil única."}.
 {"Conversations Logo","Logo de Conversations"}.
+{"Copied!","¡Copiado!"}.
+{"Copy to clipboard","Copiar al portapapeles"}.
 {"Country","País"}.
 {"Create a Hat","Crear un sombrero"}.
 {"Create Account","Crear Cuenta"}.
@@ -174,7 +177,9 @@
 {"Enter path to jabberd14 spool dir","Introduce la ruta al directorio de jabberd14 spools"}.
 {"Enter path to jabberd14 spool file","Introduce ruta al fichero jabberd14 spool"}.
 {"Enter path to text file","Introduce ruta al fichero de texto"}.
+{"Enter the corresponding password.","Indica la contraseña correspondiente."}.
 {"Enter the text you see","Teclea el texto que ves"}.
+{"Enter the username you use to log into this service.","Indica el nombre de la cuenta que usas para conectarte en este servicio."}.
 {"Erlang XMPP Server","Servidor XMPP en Erlang"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Excluir Jabber IDs de las pruebas de CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Exportar todas las tablas a un fichero SQL:"}.
@@ -183,6 +188,7 @@
 {"External component failure","Fallo en el componente externo"}.
 {"External component timeout","Demasiado retraso (timeout) en el componente externo"}.
 {"Failed to activate bytestream","Falló la activación de bytestream"}.
+{"Failed to copy data","Falló la copia de datos"}.
 {"Failed to extract JID from your voice request approval","Fallo al extraer el Jabber ID de tu aprobación de petición de voz"}.
 {"Failed to map delegated namespace to external component","Falló el mapeo de espacio de nombres delegado al componente externo"}.
 {"Failed to parse HTTP response","Falló la comprensión de la respuesta HTTP"}.
@@ -193,6 +199,7 @@
 {"February","Febrero"}.
 {"File larger than ~w bytes","El fichero es más grande que ~w bytes"}.
 {"Fill in the form to search for any matching XMPP User","Rellena campos para buscar usuarios XMPP que concuerden"}.
+{"Form Error","Error en el formulario"}.
 {"Friday","Viernes"}.
 {"From ~ts","De ~ts"}.
 {"Full List of Room Admins","Lista completa de administradores de la sala"}.
@@ -228,12 +235,15 @@
 {"Hat title","Título del sombrero"}.
 {"Hat URI","Dirección del sombrero"}.
 {"Hats limit exceeded","Se ha excedido el límite de sombreros"}.
+{"Hey, <strong class=\"text-alert\">{{ username }}</strong>, if you'd like to change your password, maybe because you forgot your old one, you've come to the right place!","Oye, <strong class=\"text-alert\">{{ username }}</strong>, si quieres cambiar tu contraseña, quizá porque olvidaste tu antigua contraseña, ¡has llegado al lugar indicado!"}.
 {"Hide","Ocultar"}.
 {"Hint","Consejo"}.
 {"Host unknown","Dominio desconocido"}.
 {"Hostname invalid","Dominio no válido"}.
 {"HTTP File Upload","Subir fichero por HTTP"}.
 {"Idle connection","Conexión sin uso"}.
+{"If checked once an account is created using this invite, it will automatically be added to your contact list.","Si está activado, cuando se cree una cuenta usando esta invitación, se añadirá automáticamente a tu lista de contactos."}.
+{"If this is not you, please disregard!","Si no eres esta persona, ¡por favor disculpa!"}.
 {"If you already have {{ app_name }} installed, we recommend that you continue the account creation process using the app by clicking on the button below:","Si ya tienes {{ app_name }} instalado, te recomendamos que continúes la creación de tu cuenta usando esa aplicación, para ello pulsa el botón:"}.
 {"If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform.","Si no tienes ningún cliente XMPP instalado aún, aquí hay una lista de clientes disponibles para tu plataforma."}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Si no ves la imagen CAPTCHA aquí, visita la página web."}.
@@ -264,9 +274,11 @@
 {"Invitations are not allowed in this conference","Las invitaciones no están permitidas en esta sala"}.
 {"Invite expired","Invitación caducada"}.
 {"Invite Expired","Invitación Caducada"}.
+{"Invite Options","Opciones de Invitación"}.
 {"Invite to {{ site_name }}","Invitación a {{ site_name }}"}.
 {"Invite User","Invitar Usuario"}.
 {"Invite","Invitar"}.
+{"Invites","Invitaciones"}.
 {"IP addresses","Direcciones IP"}.
 {"is now known as","se cambia el nombre a"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","No está permitido enviar mensajes de error a la sala. Este participante (~s) ha enviado un mensaje de error (~s) y fue expulsado de la sala"}.
@@ -341,6 +353,7 @@
 {"Neither 'jid' nor 'nick' attribute found","No se encontraron los atributos 'jid' ni 'nick'"}.
 {"Neither 'role' nor 'affiliation' attribute found","No se encontraron los atributos 'role' ni 'affiliation'"}.
 {"Never","Nunca"}.
+{"New Password","Nueva contraseña"}.
 {"New Password:","Nueva contraseña:"}.
 {"Nickname can't be empty","El apodo no puede estar vacío"}.
 {"Nickname Registration at ","Registro del apodo en "}.
@@ -433,6 +446,9 @@
 {"Page navigation","Navegación de Página"}.
 {"Participant ID","ID del Participante"}.
 {"Participant","Participante"}.
+{"Password Change Success","Contraseña cambiada con éxito"}.
+{"Password invalid","La contraseña no es válida"}.
+{"Password reset error","Error al restablecer la contraseña"}.
 {"Password Verification","Verificación de la contraseña"}.
 {"Password Verification:","Verificación de la contraseña:"}.
 {"Password","Contraseña"}.
@@ -447,6 +463,7 @@
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ten en cuenta que estas opciones solo harán copia de seguridad de la base de datos Mnesia embebida. Si estás usando ODBC tendrás que hacer también copia de seguridad de tu base de datos SQL."}.
 {"Please provide a password! Minimum length: {{ password_min_length }}","¡Por favor proporciona una contraseña! Longitud mínima: {{ password_min_length }}"}.
+{"Please provide a password!","¡Por favor proporciona una contraseña!"}.
 {"Please provide a valid username!","¡Por favor proporciona un nombre de usuario válido!"}.
 {"Please, wait for a while before sending new voice request","Por favor, espera un poco antes de enviar otra petición de voz"}.
 {"Pong","Pong"}.
@@ -491,6 +508,8 @@
 {"Request has timed out","La petición ha caducado"}.
 {"Request is ignored","La petición ha sido ignorada"}.
 {"Requested role","Rol solicitado"}.
+{"Reset Password on {{ site_name }}","Restablecer contraseña en {{ site_name }}"}.
+{"Reset Password","Restablecer Contraseña"}.
 {"Resources","Recursos"}.
 {"Restart Service","Reiniciar el servicio"}.
 {"Restore Backup from File at ","Restaura copia de seguridad desde el fichero en "}.
@@ -518,7 +537,7 @@
 {"Scan with mobile device","Escanear (fotografiar) con el móvil"}.
 {"Search from the date","Buscar desde la fecha"}.
 {"Search Results for ","Buscar resultados por "}.
-{"Search the text","Buscar el texto"}.
+{"Search the text (obsolete)","Buscar el texto (obsoleto)"}.
 {"Search until the date","Buscar hasta la fecha"}.
 {"Search users in ","Buscar usuarios en "}.
 {"Select","Seleccionar"}.
@@ -544,6 +563,7 @@
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Algunos clientes XMPP pueden guardar tu contraseña en la máquina, pero solo deberías hacer esto en tu propia máquina personal, por razones de seguridad."}.
 {"Sorry, it looks like this invite code has expired!","Lo siento ¡parece que este código de invitación ha caducado!"}.
+{"Sorry, there was a problem changing your account password.","Lo siento, ha habido un problema cambiando la contraseña de tu cuenta."}.
 {"Sorry, there was a problem registering your account.","Lo siento, ha habido un problema durante el registro de tu cuenta."}.
 {"Sources Specs:","Especificaciones de Códigos Fuente:"}.
 {"Specify the access model","Especifica el modelo de acceso"}.
@@ -551,6 +571,7 @@
 {"Specify the publisher model","Especificar el modelo del publicante"}.
 {"Stanza id is not valid","El identificador de la estrofa no es válido"}.
 {"Stanza ID","ID del paquete"}.
+{"Startpage","Página de inicio"}.
 {"Statically specify a replyto of the node owner(s)","Especificar de forma estática un 'replyto' de dueño(s) del nodo"}.
 {"Step 1: Download and install {{ app_name }}","Paso 1: Descarga e instala {{ app_name }}"}.
 {"Step 1: Install {{ app_name }}","Paso 1: Instala {{ app_name }}"}.
@@ -572,6 +593,7 @@
 {"Subscribers may publish","Los suscriptores pueden publicar"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","Las peticiones de suscripción deben ser aprobadas y solo los suscriptores pueden obtener elementos"}.
 {"Subscriptions are not allowed","Las subscripciones no están permitidas"}.
+{"Suggested Name","Nombre Sugerido"}.
 {"Sunday","Domingo"}.
 {"Text associated with a picture","Texto asociado con una imagen"}.
 {"Text associated with a sound","Texto asociado con un sonido"}.
@@ -632,6 +654,7 @@
 {"There was an error creating the account: ","Hubo uno error al crear la cuenta: "}.
 {"There was an error deleting the account: ","Hubo un error borrando la cuenta: "}.
 {"This button works only if you have the app installed already!","¡Este botón funciona solamente si ya tienes la aplicación instalada!"}.
+{"This form allows you to create an invite that you can send to someone else, so they can create a new account at this service. Be aware that you need to have the <strong>necessary rights</strong> to do so, otherwise this command will fail.","Este formulario te permite crear una invitación para enviar a alguien, y así podrá crearse una cuenta nueva en este servicio. Ten en cuenta que necesitas tener los <strong>permisos necesarios</strong> para hacer esto, en caso contrario este comando fallará."}.
 {"This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!","Esto es una invitación de <strong>{{ inviter }}</strong> para conectarte y charlar en la red XMPP. Si ya tienes un cliente XMPP instalado ¡simplemente pulsa el botón de aquí abajo!"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","No importa si usas mayúsculas: macbeth es lo mismo que MacBeth y Macbeth."}.
 {"This page allows to register an XMPP account in this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta página te permite crear una cuenta XMPP este servidor XMPP. Tu JID (Jabber ID) será de la forma: nombredeusuario@servidor. Por favor lee detenidamente las instrucciones para rellenar correctamente los campos."}.
@@ -641,6 +664,7 @@
 {"Thursday","Jueves"}.
 {"Time delay","Retraso temporal"}.
 {"Timed out waiting for stream resumption","Ha pasado demasiado tiempo esperando que la conexión se restablezca"}.
+{"To continue chatting, you need to enter your new account credentials into your chosen XMPP software.","Para continuar charlando, introduce las credenciales de tu nueva cuenta en el programa XMPP que has elegido."}.
 {"To get started, you need to install an app for your platform:","Para empezar, instala una aplicación en tu sistema:"}.
 {"To register, visit ~s","Para registrarte, visita ~s"}.
 {"To start chatting, you need to enter your new account credentials into your chosen XMPP software.","Para comenzar a charlar, introduce las credenciales de tu nueva cuenta en el programa XMPP que has elegido."}.
@@ -678,6 +702,7 @@
 {"URL for Archived Discussion Logs","URL del registro de discusiones archivadas"}.
 {"Use a <em>QR code</em> scanner on your mobile device to scan the code below:","Usa un escaneador de <em>códigos QR</em> en tu móvil para escanear este código:"}.
 {"User already exists","El usuario ya existe"}.
+{"User is not allowed to create invites","El usuario no tiene permitido crear invitaciones"}.
 {"User JID","Jabber ID del usuario"}.
 {"User (jid)","Usuario (jid)"}.
 {"User Management","Administración de usuarios"}.
@@ -686,6 +711,8 @@
 {"User session not found","Sesión de usuario no encontrada"}.
 {"User session terminated","Sesión de usuario terminada"}.
 {"User ~ts","Usuario ~ts"}.
+{"Username contains invalid characters","La contraseña contiene caracteres no válidos"}.
+{"Username exists already","El nombre de usuario ya existe"}.
 {"Username invalid","Nombre de usuario no válido"}.
 {"Username is reserved","El nombre de usuario está reservado"}.
 {"Username","Nombre de usuario"}.
@@ -709,6 +736,7 @@
 {"Voice requests are disabled in this conference","Las peticiones de voz están desactivadas en esta sala"}.
 {"Web client which allows to join the room anonymously","Cliente web que permite entrar en la sala anonimamente"}.
 {"Wednesday","Miércoles"}.
+{"Welcome to {{ site_name }}","Te damos la bienvenida a {{ site_name }}"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Cuando se procesa una nueva suscripción y cuando un suscriptor se conecta"}.
 {"When a new subscription is processed","Cuando se procesa una nueva suscripción"}.
 {"When to send the last published item","Cuando enviar el último elemento publicado"}.
@@ -739,12 +767,15 @@
 {"You can later change your password using an XMPP client.","Puedes cambiar tu contraseña después, usando un cliente XMPP."}.
 {"You can now set up {{ app_name }} and connect it to your new account.","Ahora puedes configurar {{ app_name }} y conectarte a tu nueva cuenta."}.
 {"You can start chatting right away with {{ app_name }}. Let's get started!","Puedes empezar ya a charlar usando {{ app_name }}. ¡Empecemos!"}.
+{"You can suggest a username for the account to be created with this invite.","Puedes sugerir un nombre para la cuenta que se creará con esta invitación."}.
+{"You can transfer this invite to a mobile device by scanning the QR code below with its camera.","Puedes transferir esta invitación a tu móvil si escaneas este código QR con la cámara de fotos."}.
 {"You can transfer this invite to your mobile device by scanning a code with your camera.","Puedes transferir esta invitación a tu móvil si escaneas el código con la cámara de fotos."}.
 {"You have been banned from this room","Has sido bloqueado en esta sala"}.
 {"You have been invited to chat on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","Te han invitado a charlar en {{ site_name }}, que forma parte de la red XMPP de mensajería segura y decentralizada."}.
 {"You have been invited to chat on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Te han invitado a charlar en <strong>{{ site_name }}</strong>, que forma parte de la red XMPP de mensajería segura y decentralizada."}.
 {"You have been invited to chat with <strong>{{ inviter }}</strong> on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","Has recibido una invitación para charlar con <strong>{{ inviter }}</strong> en {{ site_name }}, que forma parte de la red XMPP de mensajería segura y decentralizada."}.
 {"You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Has recibido una invitación para charlar con <strong>{{ inviter }}</strong> en <strong>{{ site_name }}</strong>, que forma parte de la red XMPP de mensajería segura y decentralizada."}.
+{"You have changed your password on <strong>{{ site_name }}</strong>.","Has cambiado tu contraseña en <strong>{{ site_name }}</strong>."}.
 {"You have created an account on <strong>{{ site_name }}</strong>.","Has registrado tu cuenta en <strong>{{ site_name }}</strong>."}.
 {"You have joined too many conferences","Has entrado en demasiadas salas de conferencia"}.
 {"You must fill in field \"Nickname\" in the form","Debes rellenar el campo \"Apodo\" en el formulario"}.
@@ -753,6 +784,7 @@
 {"You need an x:data capable client to search","Necesitas un cliente con soporte de x:data para poder buscar"}.
 {"Your active privacy list has denied the routing of this stanza.","Tu lista de privacidad activa ha denegado el envío de este paquete."}.
 {"Your contact offline message queue is full. The message has been discarded.","Tu cola de mensajes diferidos de contactos está llena. El mensaje se ha descartado."}.
+{"Your Invite-Link:","Tu Enlace-Invitación:"}.
 {"Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone.","Tu contraseña se guardará cifrada en el servidor, y no será accesible una vez que cierres esta página. Mantenla segura y no la compartas con nadie más."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Tu petición de suscripción y/o mensajes a ~s ha sido bloqueado. Para desbloquear tu petición de suscripción visita ~s"}.
 {"Your XMPP account was successfully registered.","Tu cuenta XMPP se ha registrado correctamente."}.

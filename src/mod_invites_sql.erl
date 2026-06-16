@@ -27,9 +27,9 @@
 
 -behaviour(mod_invites).
 
--export([cleanup_expired/1, create_invite_t/1, expire_tokens/2, get_invite/2,
-         get_invite_by_invitee_t/2, get_invites_t/2, init/2, is_reserved/3, is_token_valid/3,
-         list_invites/1, remove_user/2, set_invitee/5, transaction/2]).
+-export([cleanup_expired/1, create_invite_t/1, delete_invite_by_token/2, expire_invite_by_token/2,
+         expire_tokens/2, get_invite/2, get_invite_by_invitee_t/2, get_invites_t/2, init/2,
+         is_reserved/3, is_token_valid/3, list_invites/1, remove_user/2, set_invitee/5, transaction/2]).
 
 -export([sql_schemas/0]).
 
@@ -46,7 +46,7 @@ init(Host, _Opts) ->
     ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()).
 
 sql_schemas() ->
-    [#sql_schema{version = 2,
+    [#sql_schema{version = 3,
                  tables =
                      [#sql_table{name = <<"invite_token">>,
                                  columns =
@@ -66,11 +66,37 @@ sql_schemas() ->
                                       #sql_column{name = <<"account_name">>, type = text}],
                                  indices =
                                      [#sql_index{columns = [<<"token">>], unique = true},
-                                      #sql_index{columns =
-                                                     [<<"username">>, <<"server_host">>]},
+                                      #sql_index{columns = [<<"username">>, <<"server_host">>]},
+                                      #sql_index{columns = [<<"type">>]},
+                                      #sql_index{columns = [<<"account_name">>]},
                                       #sql_index{columns = [<<"invitee">>]}]}],
-                update = [{create_index, <<"invite_token">>, [<<"invitee">>]}]},
-    #sql_schema{version = 1,
+                 update =
+                     [{create_index, <<"invite_token">>, [<<"type">>]},
+                      {create_index, <<"invite_token">>, [<<"account_name">>]}]},
+     #sql_schema{version = 2,
+                 tables =
+                     [#sql_table{name = <<"invite_token">>,
+                                 columns =
+                                     [#sql_column{name = <<"token">>, type = text},
+                                      #sql_column{name = <<"username">>, type = text},
+                                      #sql_column{name = <<"server_host">>, type = text},
+                                      #sql_column{name = <<"invitee">>,
+                                                  type = {text, 191},
+                                                  default = true},
+                                      #sql_column{name = <<"created_at">>,
+                                                  type = timestamp,
+                                                  default = true},
+                                      #sql_column{name = <<"expires">>,
+                                                  type = timestamp,
+                                                  default = true},
+                                      #sql_column{name = <<"type">>, type = {char, 1}},
+                                      #sql_column{name = <<"account_name">>, type = text}],
+                                 indices =
+                                     [#sql_index{columns = [<<"token">>], unique = true},
+                                      #sql_index{columns = [<<"username">>, <<"server_host">>]},
+                                      #sql_index{columns = [<<"invitee">>]}]}],
+                 update = [{create_index, <<"invite_token">>, [<<"invitee">>]}]},
+     #sql_schema{version = 1,
                  tables =
                      [#sql_table{name = <<"invite_token">>,
                                  columns =
@@ -123,6 +149,28 @@ create_invite_t(Invite) ->
     {updated, 1} = ejabberd_sql:sql_query_t(Query),
     Invite.
 
+delete_invite_by_token(Host, Token) ->
+    case ejabberd_sql:sql_query(Host,
+                                ?SQL("DELETE FROM invite_token WHERE "
+                                     "token = %(Token)s AND %(Host)H"))
+    of
+        {updated, 1} ->
+            ok;
+        {updated, 0} ->
+            {error, not_found}
+    end.
+
+expire_invite_by_token(Host, Token) ->
+    case ejabberd_sql:sql_query(Host,
+                                ?SQL("UPDATE invite_token SET expires = '1970-01-01 00:00:01' WHERE "
+                                     "token = %(Token)s AND %(Host)H AND type != 'R'"))
+    of
+        {updated, 1} ->
+            ok;
+        {updated, 0} ->
+            {error, not_found}
+    end.
+
 expire_tokens(User, Server) ->
     NOW = sql_now(),
     {updated, Count} =
@@ -150,18 +198,23 @@ get_invite(Host, Token) ->
             {error, not_found}
     end.
 
--spec get_invite_by_invitee_t(binary(), binary()) ->
+-spec get_invite_by_invitee_t(binary(), {binary(), binary()}) ->
                                  mod_invites:invite_token() | {error, not_found}.
-get_invite_by_invitee_t(Host, InviteeJid) ->
+get_invite_by_invitee_t(Host, {User, Server}) ->
+    Invitee =
+        jid:encode(
+            jid:make(User, Server)),
     case ejabberd_sql:sql_query(Host,
                                 ?SQL("SELECT @(token)s, @(username)s, @(invitee)s, @(type)s, "
                                      "@(account_name)s, @(expires)t, @(created_at)t FROM "
-                                     "invite_token WHERE invitee = %(InviteeJid)s AND %(Host)H"))
+                                     "invite_token WHERE %(Host)H AND "
+                                     "(type != 'R' AND invitee = %(Invitee)s) OR "
+                                     "(type = 'R' AND account_name = %(User)s)"))
     of
-        {selected, [{Token, User, Invitee, Type, AccountName, Expires, CreatedAt}]} ->
+        {selected, [{Token, Inviter, IInvitee, Type, AccountName, Expires, CreatedAt}]} ->
             #invite_token{token = Token,
-                          inviter = {User, Host},
-                          invitee = Invitee,
+                          inviter = {Inviter, Host},
+                          invitee = IInvitee,
                           type = dec_type(Type),
                           account_name = AccountName,
                           expires = Expires,
@@ -215,11 +268,12 @@ is_token_valid(Host, Token, {User, Host}) ->
 list_invites(Host) ->
     {selected, Rows} =
         ejabberd_sql:sql_query(Host,
-                               ?SQL("SELECT @(token)s, @(username)s, @(type)s, @(account_name)s, "
+                               ?SQL("SELECT @(token)s, @(username)s, @(invitee)s, @(type)s, @(account_name)s, "
                                     "@(expires)t, @(created_at)t FROM invite_token WHERE %(Host)H")),
-    lists:map(fun({Token, User, Type, AccountName, Expires, CreatedAt}) ->
+    lists:map(fun({Token, User, Invitee, Type, AccountName, Expires, CreatedAt}) ->
                  #invite_token{token = Token,
                                inviter = {User, Host},
+                               invitee = Invitee,
                                type = dec_type(Type),
                                account_name = AccountName,
                                expires = Expires,
@@ -261,11 +315,15 @@ enc_type(roster_only) ->
 enc_type(account_subscription) ->
     <<"S">>;
 enc_type(account_only) ->
-    <<"A">>.
+    <<"A">>;
+enc_type(reset_token) ->
+    <<"T">>.
 
 dec_type(<<"R">>) ->
     roster_only;
 dec_type(<<"S">>) ->
     account_subscription;
 dec_type(<<"A">>) ->
-    account_only.
+    account_only;
+dec_type(<<"T">>) ->
+    reset_token.

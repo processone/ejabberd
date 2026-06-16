@@ -162,7 +162,7 @@ maybe_create_mutual_subscription(#invite_token{inviter = {User, Server},
 
 process_token(#{server := Host} = State, Token, #iq{lang = Lang} = IQ) ->
     ?DEBUG("processing token (~s): ~s", [Host, Token]),
-    case can_create(Host, Token) of
+    case can_create_account_or_change_pw(Host, Token) of
         {true, Invite} ->
             NewState = State#{invite => Invite},
             {NewState, xmpp:make_iq_result(IQ)};
@@ -170,19 +170,19 @@ process_token(#{server := Host} = State, Token, #iq{lang = Lang} = IQ) ->
             {State, preauth_invalid(IQ, Lang)}
     end.
 
-can_create(Host, Token) ->
+can_create_account_or_change_pw(Host, Token) ->
     try mod_invites:is_token_valid(Host, Token) of
         true ->
             case mod_invites:get_invite(Host, Token) of
+                #invite_token{type = reset_token} = Invite ->
+                    {true, Invite};
                 #invite_token{type = roster_only, account_name = AccountName}
                     when AccountName /= <<>> ->
                     false;
                 Invite ->
-                    case create_account_allowed(Invite) of
-                        ok ->
-                            {true, Invite};
-                        {error, not_allowed} ->
-                            false
+                    maybe
+                        true ?= create_account_allowed(Invite),
+                        {true, Invite}
                     end
             end;
         false ->
@@ -197,41 +197,58 @@ create_account_allowed(#invite_token{type = roster_only} = Invite) ->
     case mod_invites:is_create_allowed(User, Host) of
         true ->
             NumInvites =
-                length(
-                  mod_invites:transaction(
-                    Host,
-                    fun() ->
-                            mod_invites:get_invites_tree_t(Host, {User, Host})
-                    end)),
-            case NumInvites >= ?OVERUSE_LIMIT of
-                false ->
-                    ok;
-                true ->
-                    {error, not_allowed}
-            end;
+                length(mod_invites:transaction(Host,
+                                               fun() ->
+                                                  mod_invites:get_invites_tree_t(Host, {User, Host})
+                                               end)),
+            NumInvites < ?OVERUSE_LIMIT;
         false ->
-            {error, not_allowed}
+            false
     end;
 create_account_allowed(#invite_token{inviter = {<<>>, _Host}}) ->
-    ok;
+    true;
 create_account_allowed(#invite_token{inviter = {User, Host}}) ->
-    mod_invites:create_account_allowed(Host, jid:make(User, Host)).
+    mod_invites:create_account_allowed(Host, jid:make(User, Host)) == ok.
 
 preauth_invalid(IQ, Lang) ->
     Text = ?T("The token provided is either invalid or expired."),
     make_stripped_error(IQ, #preauth{}, xmpp:err_item_not_found(Text, Lang)).
 
+-spec try_register(mod_invites:invite_token(),
+                   binary(),
+                   binary(),
+                   binary(),
+                   tuple(),
+                   binary()) ->
+                      {ok, mod_invites:invite_token()} | {error, stanza_error()}.
+try_register(#invite_token{type = reset_token} = Invite,
+             User,
+             Server,
+             Password,
+             _Source,
+             Lang) ->
+    case Invite#invite_token.account_name == User of
+        true ->
+            ChPwF = fun() -> mod_register:try_set_password(User, Server, Password) end,
+            NewInvite =
+                #invite_token{invitee = Invitee} =
+                    maybe_set_invitee(Invite, jid:make(User, Server)),
+            case mod_invites:set_invitee(ChPwF, Server, Invite#invite_token.token, Invitee, User) of
+                ok ->
+                    {ok, NewInvite};
+                {error, Why} ->
+                    {error, to_xmpp_error(Why, Lang)}
+            end;
+        false ->
+            {error, to_xmpp_error(not_allowed, Lang)}
+    end;
 try_register(Invite, User, Server, Password, Source, Lang) ->
     #invite_token{token = Token} = Invite,
     case {jid:nodeprep(User), not mod_invites:is_reserved(Server, Token, User)} of
         {error, _} ->
-            {error,
-             xmpp:err_jid_malformed(
-                 mod_register:format_error(invalid_jid), Lang)};
+            {error, to_xmpp_error(invalid_jid, Lang)};
         {_, false} ->
-            {error,
-             xmpp:err_not_allowed(
-                 mod_register:format_error(not_allowed), Lang)};
+            {error, to_xmpp_error(not_allowed, Lang)};
         {_, true} ->
             RegF =
                 fun() ->
@@ -246,13 +263,30 @@ try_register(Invite, User, Server, Password, Source, Lang) ->
                     {ok, NewInvite};
                 {error, conflict} ->
                     ?LOG_WARNING("Conflict when redeeming invite token: ~p", [NewInvite]),
-                    {error,
-                     xmpp:err_conflict(
-                         mod_register:format_error(not_allowed), Lang)};
-                {error, _Reason} = Error ->
-                    Error
+                    {error, to_xmpp_error(conflict, Lang)};
+                {error, Why} ->
+                    {error, to_xmpp_error(Why, Lang)}
             end
     end.
+
+to_xmpp_error(Why, Lang) when Why == not_allowed; Why == invalid_password ->
+    xmpp:err_not_allowed(
+        mod_register:format_error(Why), Lang);
+to_xmpp_error(weak_password = Why, Lang) ->
+    xmpp:err_not_acceptable(
+        mod_register:format_error(Why), Lang);
+to_xmpp_error(invalid_jid = Why, Lang) ->
+    xmpp:err_jid_malformed(
+        mod_register:format_error(Why), Lang);
+to_xmpp_error(db_failure = Why, Lang) ->
+    xmpp:err_internal_server_error(
+        mod_register:format_error(Why), Lang);
+to_xmpp_error(conflict, Lang) ->
+    xmpp:err_conflict(
+        mod_register:format_error(not_allowed), Lang);
+to_xmpp_error(Unexpected, Lang) ->
+    xmpp:err_internal_server_error(
+        mod_register:format_error(Unexpected), Lang).
 
 check_captcha(true, #register{xdata = X}, #iq{lang = Lang} = IQ) ->
     XdataC =

@@ -4,13 +4,14 @@
 %%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 
 {" (Add * to the end of field to match substring)"," （在字段末尾添加 * 以匹配子字符串）"}.
-{"{{ app_name }} already installed?","已安装 {{ app_name }}？"}.
+{"{{ app_name }} already installed?","{{ app_name }} 已安装？"}.
 {" has set the subject to: "," 已将主题设置为： "}.
-{"{{ inviter }} has invited you to connect!","{{ inviter }} 邀请您建立联系！"}.
+{"{{ inviter }} has invited you to connect!","{{ inviter }} 邀请您建立连接！"}.
 {"# participants","# 参与者"}.
 {"A description of the node","节点的描述"}.
 {"A friendly name for the node","节点的友好名称"}.
-{"A fully-featured desktop chat client for Windows and Linux.","功能齐全的 Windows 和 Linux 桌面聊天客户端。"}.
+{"A fully-featured desktop chat client for Windows and Linux.","适用于 Windows 和 Linux 的功能齐全的桌面聊天客户端。"}.
+{"A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.","适用于 Android 的轻量级 Jabber/XMPP 客户端，注重易用性、低开销和安全性，可在 Android 4.0 及更高版本的低端设备上运行。"}.
 {"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","适用于 iPhone 和 iPad 的轻量高效 XMPP 客户端，让您轻松与好友畅聊并分享生活瞬间。"}.
 {"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","适用于 iPhone 和 iPad 的现代开源聊天客户端，易于使用，界面简洁。"}.
 {"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","适用于 Mac 的现代开源聊天客户端，易于使用，界面简洁。"}.
@@ -25,12 +26,13 @@
 {"Action on user","对用户的操作"}.
 {"Add {{ inviter }} to your contact list","将 {{ inviter }} 添加到您的联系人列表"}.
 {"Add Contact","添加联系人"}.
+{"Add to contact list","添加到联系人列表"}.
 {"Add User","添加用户"}.
 {"Administration of ","管理 "}.
 {"Administration","管理"}.
 {"Administrator privileges required","需要管理员权限"}.
 {"After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.","点击按钮将跳转到 {{ app_name }}，完成新 {{ site_name }} 账号的设置。"}.
-{"After successfully installing {{ app_name }}, come back to this page and <strong>continue with Step 2</strong>.","成功安装 {{ app_name }} 后，请返回此页面并<strong>继续执行步骤 2</strong>。"}.
+{"After successfully installing {{ app_name }}, come back to this page and <strong>continue with Step 2</strong>.","成功安装 {{ app_name }} 后，返回此页面并 <strong>继续执行步骤 2</strong>。"}.
 {"All activity","所有活动"}.
 {"All Users","所有用户"}.
 {"Allow subscription","允许订阅"}.
@@ -69,7 +71,7 @@
 {"Attribute 'node' is not allowed here","此处不允许“node”属性"}.
 {"Attribute 'to' of stanza that triggered challenge","触发挑战节的“to”属性"}.
 {"August","八月"}.
-{"Automatic node creation is not enabled","未启用自动节点创建"}.
+{"Automatic node creation is not enabled","自动节点创建未启用"}.
 {"Backup Management","备份管理"}.
 {"Backup of ~p","~p 的备份"}.
 {"Backup to File at ","备份文件位于 "}.
@@ -101,7 +103,7 @@
 {"Chatroom is started","聊天室已启动"}.
 {"Chatroom is stopped","聊天室已停止"}.
 {"Chatrooms","聊天室"}.
-{"Choose a username and password to register with this server","请选择要在此服务器中注册的用户名和密码"}.
+{"Choose a username and password to register with this server","选择用户名和密码以在此服务器上注册"}.
 {"Choose a username, this will become the first part of your new chat address.","选择一个用户名，这将成为您新聊天地址的第一部分。"}.
 {"Choose storage type of tables","选择表的存储类型"}.
 {"Choose whether to approve this entity's subscription.","选择是否批准此实体的订阅。"}.
@@ -117,8 +119,10 @@
 {"Congratulations!","恭喜！"}.
 {"Contact Addresses (normally, room owner or owners)","联系地址（通常为房间所有者）"}.
 {"Contacts","联系人"}.
-{"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations 是专为 Android 6.0 及更高版本智能手机优化的 Jabber/XMPP 客户端，提供独特的移动端体验。"}.
+{"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations 是适用于 Android 6.0 及更高版本智能手机的 Jabber/XMPP 客户端，经过优化以提供独特的移动端体验。"}.
 {"Conversations Logo","Conversations 徽标"}.
+{"Copied!","已复制！"}.
+{"Copy to clipboard","复制到剪贴板"}.
 {"Country","国家/地区"}.
 {"Create a Hat","创建头衔"}.
 {"Create Account","创建账号"}.
@@ -141,7 +145,7 @@
 {"Disable User","禁用用户"}.
 {"Disc only copy","仅磁盘副本"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","不要将您的密码告诉任何人，甚至是 XMPP 服务器的管理员。"}.
-{"Download and install {{ app_name }} below:","请下载并安装下方 {{ app_name }}："}.
+{"Download and install {{ app_name }} below:","下载并安装下方 {{ app_name }}："}.
 {"Download Dino for Linux","下载适用于 Linux 的 Dino"}.
 {"Download from Mac App Store","从 Mac App Store 下载"}.
 {"Download Gajim","下载 Gajim"}.
@@ -167,13 +171,15 @@
 {"Enable message archiving","启用消息归档"}.
 {"Enabling push without 'node' attribute is not supported","不支持没有“node”属性就启用推送"}.
 {"End User Session","结束用户会话"}.
-{"Enter a secure password that you do not use anywhere else.","请输入一个您在其他任何地方都未使用的安全密码。"}.
-{"Enter nickname you want to register","请输入要注册的昵称"}.
-{"Enter path to backup file","请输入备份文件路径"}.
-{"Enter path to jabberd14 spool dir","请输入 jabberd14 spool 目录路径"}.
-{"Enter path to jabberd14 spool file","请输入 jabberd14 spool 文件路径"}.
-{"Enter path to text file","请输入文本文件路径"}.
-{"Enter the text you see","请输入您看到的文本"}.
+{"Enter a secure password that you do not use anywhere else.","输入一个您未在其他任何地方使用过的安全密码。"}.
+{"Enter nickname you want to register","输入您要注册的昵称"}.
+{"Enter path to backup file","输入备份文件的路径"}.
+{"Enter path to jabberd14 spool dir","输入 jabberd14 spool 目录的路径"}.
+{"Enter path to jabberd14 spool file","输入 jabberd14 spool 文件的路径"}.
+{"Enter path to text file","输入文本文件的路径"}.
+{"Enter the corresponding password.","输入相应的密码。"}.
+{"Enter the text you see","输入您看到的文本"}.
+{"Enter the username you use to log into this service.","输入您用于登录此服务的用户名。"}.
 {"Erlang XMPP Server","Erlang XMPP 服务器"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","从验证码挑战中排除的 Jabber ID"}.
 {"Export all tables as SQL queries to a file:","将所有表以 SQL 查询导出到文件："}.
@@ -182,6 +188,7 @@
 {"External component failure","外部组件故障"}.
 {"External component timeout","外部组件超时"}.
 {"Failed to activate bytestream","无法激活字节流"}.
+{"Failed to copy data","无法复制数据"}.
 {"Failed to extract JID from your voice request approval","无法从您的发言权请求批准中提取 JID"}.
 {"Failed to map delegated namespace to external component","无法将委托命名空间映射到外部组件"}.
 {"Failed to parse HTTP response","无法解析 HTTP 响应"}.
@@ -192,6 +199,7 @@
 {"February","二月"}.
 {"File larger than ~w bytes","文件大于 ~w 字节"}.
 {"Fill in the form to search for any matching XMPP User","填写表单以搜索任何匹配的 XMPP 用户"}.
+{"Form Error","表单错误"}.
 {"Friday","周五"}.
 {"From ~ts","来自 ~ts"}.
 {"Full List of Room Admins","房间管理员的完整列表"}.
@@ -217,9 +225,9 @@
 {"Google Play Store Logo","Google Play 商店徽标"}.
 {"Grant voice to this person?","是否授予此用户发言权？"}.
 {"has been banned","已被封禁"}.
-{"has been kicked because of a system shutdown","因系统关闭被踢出"}.
-{"has been kicked because of an affiliation change","因从属关系更改被踢出"}.
-{"has been kicked because the room has been changed to members-only","被踢出，因为房间已更改为仅成员"}.
+{"has been kicked because of a system shutdown","因系统关闭已被踢出"}.
+{"has been kicked because of an affiliation change","因从属关系更改已被踢出"}.
+{"has been kicked because the room has been changed to members-only","已被踢出，因为房间已更改为仅成员"}.
 {"has been kicked","已被踢出"}.
 {"Hash computed from the list of hats available in a room","根据房间中可用头衔列表计算的散列"}.
 {"Hash of the vCard-temp avatar of this room","此房间的 vCard-temp 头像的散列"}.
@@ -227,11 +235,15 @@
 {"Hat title","头衔标题"}.
 {"Hat URI","头衔 URI"}.
 {"Hats limit exceeded","已超过头衔限制"}.
+{"Hey, <strong class=\"text-alert\">{{ username }}</strong>, if you'd like to change your password, maybe because you forgot your old one, you've come to the right place!","您好，<strong class=\"text-alert\">{{ username }}</strong>，如果您想更改密码，也许是因为您忘记了旧密码，那么您来对地方了！"}.
 {"Hide","隐藏"}.
+{"Hint","提示"}.
 {"Host unknown","主机未知"}.
 {"Hostname invalid","主机名无效"}.
 {"HTTP File Upload","HTTP 文件上传"}.
 {"Idle connection","空闲连接"}.
+{"If checked once an account is created using this invite, it will automatically be added to your contact list.","如果勾选此选项，一旦有人使用此邀请创建账号，该账号将自动添加到您的联系人列表中。"}.
+{"If this is not you, please disregard!","如果这不是您本人操作，请忽略！"}.
 {"If you already have {{ app_name }} installed, we recommend that you continue the account creation process using the app by clicking on the button below:","如果您已安装 {{ app_name }}，我们推荐您点击下方按钮，使用该应用继续完成账号创建流程："}.
 {"If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform.","如果您尚未安装 XMPP 客户端，以下是适用于您平台的推荐客户端列表。"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","如果您在此处没有看到验证码图片，请访问网页。"}.
@@ -252,20 +264,24 @@
 {"Incorrect value of 'action' in data form","数据表单中“action”的值不正确"}.
 {"Incorrect value of 'path' in data form","数据表单中“path”的值不正确"}.
 {"Installed Modules:","已安装的模块："}.
-{"Installed ok? Great! <strong>Click or tap the button below</strong> to accept your invite and continue with your account setup:","安装完成？太棒了！<strong>点击下方按钮</strong>接受邀请并继续账号设置："}.
+{"Installed ok? Great! <strong>Click or tap the button below</strong> to accept your invite and continue with your account setup:","安装完成？太棒了！<strong>点击下方按钮</strong> 接受您的邀请并继续您的账号设置："}.
 {"Install","安装"}.
 {"Insufficient privilege","权限不足"}.
 {"Internal server error","内部服务器错误"}.
 {"Invalid 'from' attribute in forwarded message","转发消息中的“from”属性无效"}.
 {"Invalid node name","节点名称无效"}.
 {"Invalid 'previd' value","“previd”值无效"}.
-{"Invitations are not allowed in this conference","此会议不允许邀请"}.
+{"Invitations are not allowed in this conference","此会议中不允许邀请"}.
 {"Invite expired","邀请已过期"}.
+{"Invite Expired","邀请已过期"}.
+{"Invite Options","邀请选项"}.
 {"Invite to {{ site_name }}","邀请加入 {{ site_name }}"}.
 {"Invite User","邀请用户"}.
+{"Invites","邀请"}.
+{"Invite","邀请"}.
 {"IP addresses","IP 地址"}.
 {"is now known as","现在昵称为"}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","不允许向此房间发送错误消息。参与者（~s）发送了错误消息（~s），被踢出了房间"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","不允许向此房间发送错误消息。该参与者（~s）已发送错误消息（~s），并已被踢出房间"}.
 {"It is not allowed to send private messages of type \"groupchat\"","不允许发送“groupchat”类型的私信"}.
 {"It is not allowed to send private messages to the conference","不允许向会议发送私信"}.
 {"Jabber ID","Jabber ID"}.
@@ -312,7 +328,7 @@
 {"Maximum Number of Occupants","最大使用者数"}.
 {"May","五月"}.
 {"Members are allowed to invite others","允许成员邀请他人"}.
-{"Membership is required to enter this room","进入此房间需要成员资格"}.
+{"Membership is required to enter this room","需要成员资格才能进入此房间"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","请记住您的密码，或写在纸上并妥善保管。在 XMPP 中，如果您忘记密码，没有自动恢复密码的方法。"}.
 {"Mere Availability in XMPP (No Show Value)","XMPP 中的可用性（无显示值）"}.
 {"Message body","消息正文"}.
@@ -337,6 +353,7 @@
 {"Neither 'jid' nor 'nick' attribute found","未找到“jid”和“nick”属性"}.
 {"Neither 'role' nor 'affiliation' attribute found","未找到“role”或“affiliation”属性"}.
 {"Never","从不"}.
+{"New Password","新密码"}.
 {"New Password:","新密码："}.
 {"Nickname can't be empty","昵称不能为空"}.
 {"Nickname Registration at ","昵称注册于 "}.
@@ -355,16 +372,16 @@
 {"No hook has processed this command","没有钩子处理此命令"}.
 {"No info about last activity found","未找到有关上次活动的信息"}.
 {"No 'item' element found","未找到“item”元素"}.
-{"No items found in this query","在此查询中未找到任何项目"}.
+{"No items found in this query","此查询中未找到项目"}.
 {"No limit","无限制"}.
 {"No module is handling this query","没有模块正在处理此查询"}.
 {"No node specified","未指定节点"}.
 {"No 'password' found in data form","在数据表单中未找到“password”"}.
-{"No 'password' found in this query","在此查询中未找到“password”"}.
+{"No 'password' found in this query","此查询中未找到“password”"}.
 {"No 'path' found in data form","在数据表单中未找到“path”"}.
 {"No pending subscriptions found","未找到待处理的订阅"}.
 {"No privacy list with this name found","未找到具有此名称的隐私列表"}.
-{"No private data found in this query","在此查询中未找到专用数据"}.
+{"No private data found in this query","此查询中未找到专用数据"}.
 {"No running node found","未找到正在运行的节点"}.
 {"No services available","无可用服务"}.
 {"No statistics found for this item","未找到此项目的统计数据"}.
@@ -408,8 +425,8 @@
 {"Only <enable/> or <disable/> tags are allowed","仅允许 <enable/> 或 <disable/> 标签"}.
 {"Only <list/> element is allowed in this query","此查询中只允许 <list/> 元素"}.
 {"Only members may query archives of this room","只有成员才能查询此房间的归档"}.
-{"Only moderators and participants are allowed to change the subject in this room","只允许主持人和参与者更改此房间的主题"}.
-{"Only moderators are allowed to change the subject in this room","只允许主持人更改此房间的主题"}.
+{"Only moderators and participants are allowed to change the subject in this room","此房间中只允许主持人和参与者更改主题"}.
+{"Only moderators are allowed to change the subject in this room","此房间中只允许主持人更改主题"}.
 {"Only moderators are allowed to retract messages","只允许主持人撤回消息"}.
 {"Only moderators can approve voice requests","只有主持人可以批准发言权请求"}.
 {"Only occupants are allowed to send messages to the conference","只允许使用者向会议发送消息"}.
@@ -429,12 +446,15 @@
 {"Page navigation","页面导航"}.
 {"Participant ID","参与者 ID"}.
 {"Participant","参与者"}.
+{"Password Change Success","密码更改成功"}.
+{"Password invalid","密码无效"}.
+{"Password reset error","密码重置错误"}.
 {"Password Verification","密码验证"}.
 {"Password Verification:","密码验证："}.
 {"Password","密码"}.
 {"Password:","密码："}.
-{"Path to Dir","目录路径"}.
-{"Path to File","文件路径"}.
+{"Path to Dir","目录的路径"}.
+{"Path to File","文件的路径"}.
 {"Payload semantic type information","有效负载语义类型信息"}.
 {"Period: ","时段： "}.
 {"Persist items to storage","将项目保留到存储"}.
@@ -443,6 +463,7 @@
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","注意：这些选项只会备份内置的 Mnesia 数据库。如果使用 ODBC 模块，还需要单独备份 SQL 数据库。"}.
 {"Please provide a password! Minimum length: {{ password_min_length }}","请提供密码！最小长度：{{ password_min_length }}"}.
+{"Please provide a password!","请提供密码！"}.
 {"Please provide a valid username!","请提供有效的用户名！"}.
 {"Please, wait for a while before sending new voice request","请稍候再发送新的发言权请求"}.
 {"Pong","Pong"}.
@@ -461,7 +482,7 @@
 {"PubSub subscriber request","PubSub 订阅者请求"}.
 {"Purge all items when the relevant publisher goes offline","相关发布者离线后清除所有项目"}.
 {"Push record not found","未找到推送记录"}.
-{"Queries to the conference members are not allowed in this room","此房间不允许向会议成员查询"}.
+{"Queries to the conference members are not allowed in this room","此房间中不允许向会议成员查询"}.
 {"Query to another users is forbidden","禁止查询其他用户"}.
 {"RAM and disc copy","RAM 和磁盘副本"}.
 {"RAM copy","RAM 副本"}.
@@ -473,10 +494,12 @@
 {"Recipient is not in the conference room","接收者不在会议室"}.
 {"Re-Enable User","重新启用用户"}.
 {"Register an XMPP account","注册 XMPP 账号"}.
-{"Register on {{ site_name }}","在 {{ site_name }} 注册"}.
+{"Register on {{ site_name }}","在 {{ site_name }} 上注册"}.
 {"Register","注册"}.
 {"Registration error","注册错误"}.
 {"Registration Error","注册错误"}.
+{"Registration Form","注册表单"}.
+{"Registration Success","注册成功"}.
 {"Remote copy","远程副本"}.
 {"Remove a hat from a user","移除用户头衔"}.
 {"Remove User","移除用户"}.
@@ -485,6 +508,8 @@
 {"Request has timed out","请求已超时"}.
 {"Request is ignored","请求被忽略"}.
 {"Requested role","请求的角色"}.
+{"Reset Password on {{ site_name }}","在 {{ site_name }} 上重置密码"}.
+{"Reset Password","重置密码"}.
 {"Resources","资源"}.
 {"Restart Service","重启服务"}.
 {"Restore Backup from File at ","从文件恢复备份，文件位于 "}.
@@ -512,7 +537,7 @@
 {"Scan with mobile device","使用移动设备扫描"}.
 {"Search from the date","从日期搜索"}.
 {"Search Results for ","搜索结果 "}.
-{"Search the text","搜索文本"}.
+{"Search the text (obsolete)","搜索文本（已废弃）"}.
 {"Search until the date","搜索截至日期"}.
 {"Search users in ","在以下位置搜索用户 "}.
 {"Select","选择"}.
@@ -520,7 +545,7 @@
 {"Send announcement to all online users","向所有在线用户发送公告"}.
 {"Send announcement to all users on all hosts","向所有主机上的所有用户发送公告"}.
 {"Send announcement to all users","向所有用户发送公告"}.
-{"Send this invite to your device","将此邀请发送至您的设备"}.
+{"Send this invite to your device","将此邀请发送到您的设备"}.
 {"September","九月"}.
 {"Server:","服务器："}.
 {"Service list retrieval timed out","服务列表检索超时"}.
@@ -531,34 +556,36 @@
 {"Show Integral Table","显示完整表"}.
 {"Show Occupants Join/Leave","显示使用者加入/离开"}.
 {"Show Ordinary Table","显示普通表"}.
-{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button'>view all apps.</a>","仅显示适用于<span class='platform-name'>您当前平台</span>的应用。您也可以<a href='#' id='show-all-clients-button'>查看所有应用。</a>"}.
+{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">view all apps.</a>","仅显示适用于 <span class='platform-name'>您当前平台</span> 的应用。您也可以 <a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">查看所有应用。</a>"}.
 {"Show","显示"}.
 {"Shut Down Service","关闭服务"}.
 {"Siskin IM Logo","Siskin IM 徽标"}.
 {"SOCKS5 Bytestreams","SOCKS5 字节流"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","部分 XMPP 客户端可以将您的密码存储在计算机中，但出于安全考虑，您应该仅在个人计算机中存储密码。"}.
 {"Sorry, it looks like this invite code has expired!","抱歉，此邀请码似乎已过期！"}.
-{"Sorry, there was a problem registering your account.","抱歉，您的账号注册出现问题。"}.
+{"Sorry, there was a problem changing your account password.","抱歉，更改您的账号密码时出现问题。"}.
+{"Sorry, there was a problem registering your account.","抱歉，注册您的账号时出现问题。"}.
 {"Sources Specs:","源规格："}.
 {"Specify the access model","指定访问模型"}.
 {"Specify the event message type","指定事件消息类型"}.
 {"Specify the publisher model","指定发布者模型"}.
 {"Stanza id is not valid","节 ID 无效"}.
 {"Stanza ID","节 ID"}.
+{"Startpage","首页"}.
 {"Statically specify a replyto of the node owner(s)","静态指定节点所有者的 replyto"}.
 {"Step 1: Download and install {{ app_name }}","步骤 1：下载并安装 {{ app_name }}"}.
 {"Step 1: Install {{ app_name }}","步骤 1：安装 {{ app_name }}"}.
 {"Step 2: Activate your account","步骤 2：启用您的账号"}.
-{"Step 2: Connect {{ app_name }} to your new account","步骤 2：将 {{ app_name }} 连接至您的新账号"}.
+{"Step 2: Connect {{ app_name }} to your new account","步骤 2：将 {{ app_name }} 连接到您的新账号"}.
 {"Stopped Nodes","已停止的节点"}.
 {"Store binary backup:","存储二进制备份："}.
 {"Store plain text backup:","存储纯文本备份："}.
 {"Stream management is already enabled","流管理已启用"}.
-{"Stream management is not enabled","未启用流管理"}.
+{"Stream management is not enabled","流管理未启用"}.
 {"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting using <strong>{{ app_name }}</strong> you need to first register an account.","<strong>{{ site_name }}</strong> 属于安全去中心化的 XMPP 即时通讯网络。要开始使用 <strong>{{ app_name }}</strong> 聊天，您需要先注册账号。"}.
 {"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting you need to first register an account.","<strong>{{ site_name }}</strong> 属于安全去中心化的 XMPP 即时通讯网络。要开始聊天，您需要先注册账号。"}.
-{"<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!","<strong>暂未安装适用软件？</strong>您也可以通过我们的在线网页聊天登录账号！"}.
-{"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>提示：</strong>您可以使用手机相机扫描二维码，在移动设备上打开此邀请。"}.
+{"<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!","<strong>暂未安装适用软件？</strong> 您也可以通过我们的在线网页聊天登录账号！"}.
+{"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>提示：</strong> 您可以在移动设备上使用摄像头扫描二维码，打开此邀请。"}.
 {"Subject","主题"}.
 {"Submitted","已提交"}.
 {"Submit","提交"}.
@@ -566,6 +593,7 @@
 {"Subscribers may publish","订阅者可以发布"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","订阅请求必须得到批准，只有订阅者才能检索项目"}.
 {"Subscriptions are not allowed","不允许订阅"}.
+{"Suggested Name","建议名称"}.
 {"Sunday","周日"}.
 {"Text associated with a picture","与图片相关的文本"}.
 {"Text associated with a sound","与声音相关的文本"}.
@@ -573,8 +601,8 @@
 {"Text associated with speech","与语音相关的文本"}.
 {"That nickname is already in use by another occupant","该昵称已被其他使用者使用"}.
 {"That nickname is registered by another person","该昵称已被其他用户注册"}.
-{"The account already exists","此账号已存在"}.
-{"The account was not unregistered","此账号未注销"}.
+{"The account already exists","该账号已存在"}.
+{"The account was not unregistered","该账号未注销"}.
 {"The body text of the last received message","最后收到的消息的正文"}.
 {"The CAPTCHA is valid.","验证码有效。"}.
 {"The CAPTCHA verification has failed","验证码验证失败"}.
@@ -626,7 +654,8 @@
 {"There was an error creating the account: ","创建账号时出错： "}.
 {"There was an error deleting the account: ","删除账号时出错： "}.
 {"This button works only if you have the app installed already!","此按钮仅在已安装应用时生效！"}.
-{"This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!","这是来自 <strong>{{ inviter }}</strong> 的邀请，用于连接至 XMPP 网络进行聊天。如果您已安装 XMPP 客户端，请直接点击下方按钮！"}.
+{"This form allows you to create an invite that you can send to someone else, so they can create a new account at this service. Be aware that you need to have the <strong>necessary rights</strong> to do so, otherwise this command will fail.","此表单允许您创建一个邀请，您可以将其发送给他人，以便他们在此服务上创建新账号。请注意，您需要拥有 <strong>必要的权限</strong> 才能执行此操作，否则此命令将失败。"}.
+{"This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!","这是来自 <strong>{{ inviter }}</strong> 的邀请，邀请您在 XMPP 网络上建立连接并聊天。如果您已安装 XMPP 客户端，只需点击下方按钮即可！"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","此处不区分大小写：MacBeth 和 Macbeth 都是 macbeth。"}.
 {"This page allows to register an XMPP account in this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","本页面允许在此服务器中注册 XMPP 账号，您的 JID（Jabber ID）的格式为：用户名@服务器。请仔细阅读说明以正确填写字段。"}.
 {"This page allows to unregister an XMPP account in this XMPP server.","本页面允许在此 XMPP 服务器中注销 XMPP 账号。"}.
@@ -635,8 +664,9 @@
 {"Thursday","周四"}.
 {"Time delay","时间延迟"}.
 {"Timed out waiting for stream resumption","等待流恢复超时"}.
-{"To get started, you need to install an app for your platform:","开始前，请为您的设备平台安装应用："}.
-{"To register, visit ~s","要注册，请访问 ~s"}.
+{"To continue chatting, you need to enter your new account credentials into your chosen XMPP software.","要继续聊天，您需要在您选择的 XMPP 软件中输入您的新账号凭据。"}.
+{"To get started, you need to install an app for your platform:","要开始使用，您需要为您的平台安装应用："}.
+{"To register, visit ~s","如需注册，请访问 ~s"}.
 {"To start chatting, you need to enter your new account credentials into your chosen XMPP software.","要开始聊天，您需要在您选择的 XMPP 软件中输入您的新账号凭据。"}.
 {"To ~ts","到 ~ts"}.
 {"Token TTL","令牌 TTL"}.
@@ -669,9 +699,10 @@
 {"Update Specs","更新规格"}.
 {"Updating the vCard is not supported by the vCard storage backend","vCard 存储后端不支持更新 vCard"}.
 {"Upgrade","升级"}.
-{"URL for Archived Discussion Logs","已归档的讨论日志 URL"}.
-{"Use a <em>QR code</em> scanner on your mobile device to scan the code below:","使用移动设备上的<em>二维码</em>扫描器扫描下方二维码："}.
+{"URL for Archived Discussion Logs","已归档讨论日志的 URL"}.
+{"Use a <em>QR code</em> scanner on your mobile device to scan the code below:","使用移动设备上的 <em>二维码</em> 扫描器扫描下方二维码："}.
 {"User already exists","用户已存在"}.
+{"User is not allowed to create invites","不允许用户创建邀请"}.
 {"User JID","用户 JID"}.
 {"User (jid)","用户（JID）"}.
 {"User Management","用户管理"}.
@@ -680,8 +711,10 @@
 {"User session not found","未找到用户会话"}.
 {"User session terminated","用户会话已终止"}.
 {"User ~ts","用户 ~ts"}.
+{"Username contains invalid characters","用户名包含无效字符"}.
+{"Username exists already","用户名已存在"}.
 {"Username invalid","用户名无效"}.
-{"Username is reserved","用户名已被保留"}.
+{"Username is reserved","用户名已保留"}.
 {"Username","用户名"}.
 {"Username:","用户名："}.
 {"Users are not allowed to register accounts so quickly","不允许用户太频繁地注册账号"}.
@@ -696,13 +729,14 @@
 {"vCard User Search","vCard 用户搜索"}.
 {"View joined MIX channels","查看已加入的 MIX 频道"}.
 {"Virtual Hosts","虚拟主机"}.
-{"Visitors are not allowed to change their nicknames in this room","不允许参观者在此房间中更改其昵称"}.
+{"Visitors are not allowed to change their nicknames in this room","此房间中不允许参观者更改其昵称"}.
 {"Visitors are not allowed to send messages to all occupants","不允许参观者向所有使用者发送消息"}.
 {"Visitor","参观者"}.
 {"Voice requests are disabled in this conference","此会议中已禁用发言权请求"}.
 {"Voice request","发言权请求"}.
 {"Web client which allows to join the room anonymously","允许匿名加入房间的网络客户端"}.
 {"Wednesday","周三"}.
+{"Welcome to {{ site_name }}","欢迎加入 {{ site_name }}"}.
 {"When a new subscription is processed and whenever a subscriber comes online","处理新订阅时和订阅者上线时"}.
 {"When a new subscription is processed","处理新订阅时"}.
 {"When to send the last published item","何时发送最后发布的项目"}.
@@ -726,29 +760,33 @@
 {"XMPP Show Value of DND (Do Not Disturb)","XMPP 的 DND（请勿打扰）显示值"}.
 {"XMPP Show Value of XA (Extended Away)","XMPP 的 XA（延长离开）显示值"}.
 {"XMPP URI of Associated Publish-Subscribe Node","关联发布–订阅节点的 XMPP URI"}.
-{"You are being removed from the room because of a system shutdown","由于系统关闭，您将被移出房间"}.
+{"You are being removed from the room because of a system shutdown","您因系统关闭正在被移出房间"}.
 {"You are not allowed to send private messages","不允许您发送私信"}.
 {"You are not joined to the channel","您未加入频道"}.
-{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\">register an account manually</a>.","您可以使用任意 XMPP 兼容软件连接至 {{ site_name }}。如果您常用的软件未在上方列出，您仍然可以<a href=\"{{ registration_url }}\">手动注册账号</a>。"}.
+{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>register an account manually</a>.","您可以使用任何兼容 XMPP 的软件连接到 {{ site_name }}。如果您首选的软件未在上方列出，您仍然可以 <a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>手动注册账号</a>。"}.
 {"You can later change your password using an XMPP client.","您之后可以使用 XMPP 客户端更改密码。"}.
-{"You can now set up {{ app_name }} and connect it to your new account.","您现在可以设置 {{ app_name }} 并将其连接至您的新账号。"}.
+{"You can now set up {{ app_name }} and connect it to your new account.","您现在可以设置 {{ app_name }} 并将其连接到您的新账号。"}.
 {"You can start chatting right away with {{ app_name }}. Let's get started!","您现在可以使用 {{ app_name }} 开始聊天。开始吧！"}.
-{"You can transfer this invite to your mobile device by scanning a code with your camera.","您可以使用相机扫描二维码，将此邀请转移至您的移动设备。"}.
-{"You have been banned from this room","禁止您进入此房间"}.
+{"You can suggest a username for the account to be created with this invite.","您可以为使用此邀请创建的账号建议一个用户名。"}.
+{"You can transfer this invite to a mobile device by scanning the QR code below with its camera.","您可以使用摄像头扫描下方二维码，将此邀请转移到移动设备。"}.
+{"You can transfer this invite to your mobile device by scanning a code with your camera.","您可以使用摄像头扫描二维码，将此邀请转移到您的移动设备。"}.
+{"You have been banned from this room","您已被禁止进入此房间"}.
 {"You have been invited to chat on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","您已受邀在 {{ site_name }} 上聊天，该服务属于安全去中心化的 XMPP 即时通讯网络。"}.
 {"You have been invited to chat on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","您已受邀在 <strong>{{ site_name }}</strong> 上聊天，该服务属于安全去中心化的 XMPP 即时通讯网络。"}.
 {"You have been invited to chat with <strong>{{ inviter }}</strong> on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","您已受邀与 <strong>{{ inviter }}</strong> 在 {{ site_name }} 上聊天，该服务属于安全去中心化的 XMPP 即时通讯网络。"}.
 {"You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","您已受邀与 <strong>{{ inviter }}</strong> 在 <strong>{{ site_name }}</strong> 上聊天，该服务属于安全去中心化的 XMPP 即时通讯网络。"}.
-{"You have created an account on <strong>{{ site_name }}</strong>.","您已在 <strong>{{ site_name }}</strong> 创建账号。"}.
+{"You have changed your password on <strong>{{ site_name }}</strong>.","您已在 <strong>{{ site_name }}</strong> 上更改密码。"}.
+{"You have created an account on <strong>{{ site_name }}</strong>.","您已在 <strong>{{ site_name }}</strong> 上创建账号。"}.
 {"You have joined too many conferences","您已加入太多会议"}.
 {"You must fill in field \"Nickname\" in the form","您必须在表单中填写“昵称”字段"}.
 {"You need a client that supports x:data and CAPTCHA to register","您需要支持 x:data 和验证码的客户端来注册"}.
 {"You need a client that supports x:data to register the nickname","您需要支持 x:data 的客户端来注册昵称"}.
 {"You need an x:data capable client to search","您需要支持 x:data 的客户端来搜索"}.
-{"Your active privacy list has denied the routing of this stanza.","您的活动隐私列表已拒绝路由此节。"}.
+{"Your active privacy list has denied the routing of this stanza.","您的活动隐私列表已拒绝此节的路由。"}.
 {"Your contact offline message queue is full. The message has been discarded.","您的联系人离线消息队列已满。消息已被丢弃。"}.
+{"Your Invite-Link:","您的邀请链接："}.
 {"Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone.","您的密码已加密存储在服务器上，关闭此页面后将无法访问。请妥善保管您的密码，切勿与任何人分享。"}.
-{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","您发给 ~s 的订阅请求和/或消息已被屏蔽。若要解除屏蔽您的订阅请求，请访问 ~s"}.
+{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","您发送给 ~s 的订阅请求和/或消息已被屏蔽。如需解除屏蔽您的订阅请求，请访问 ~s"}.
 {"Your XMPP account was successfully registered.","您的 XMPP 账号注册成功。"}.
 {"Your XMPP account was successfully unregistered.","您的 XMPP 账号注销成功。"}.
 {"You're not allowed to create nodes","不允许您创建节点"}.

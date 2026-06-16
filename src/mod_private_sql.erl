@@ -143,8 +143,8 @@ get_users_with_data(LServer, NS) ->
 	   LServer,
 	   ?SQL("select @(username)s from private_storage"
 		" where namespace=%(NS)s and %(LServer)H")) of
-    	{selected, Value} ->
-            {ok, Value};
+        {selected, UsernameTupleList} ->
+            {ok, [Username || {Username} <- UsernameTupleList]};
         _ ->
             {error, db_failure}
     end.

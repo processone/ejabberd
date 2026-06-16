@@ -60,6 +60,10 @@
 -callback unsubscribe(jid:ljid(), binary()) -> ok | {error, notfound | db_failure}.
 -callback find_subscriber(binary(), binary() | continuation()) ->
           {ok, {pid(), qos()}, continuation()} | {error, notfound | db_failure}.
+
+-optional_callbacks([init/0, open_session/1, close_session/1, lookup_session/1,
+                     get_sessions/2, subscribe/4, unsubscribe/2, find_subscriber/2]).
+
 %% Disc backend callbacks
 -callback init(binary(), gen_mod:opts()) -> ok | {error, any()}.
 -callback publish(jid:ljid(), binary(), binary(), qos(), properties(), seconds()) ->
@@ -227,7 +231,7 @@ mod_options(Host) ->
      {access_subscribe, []},
      {access_publish, []},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
-     {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
+     {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE, {open_session, 1})},
      {queue_type, ejabberd_option:queue_type(Host)},
      {use_cache, ejabberd_option:use_cache(Host)},
      {cache_size, ejabberd_option:cache_size(Host)},

@@ -30,6 +30,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
+         additional_namespaces/1,
 	 extended_fields/1, store/10, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
 	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6,
 	 delete_old_messages_batch/4, count_messages_to_delete/3]).
@@ -226,8 +227,13 @@ delete_old_messages_batch(ServerHost, TimeStamp, Type, Batch) ->
 				 "(select rowid from archive where timestamp < %(TS)d and %(ServerHost)H limit %(Batch)d)"));
 		       (mssql, _) ->
 			   ejabberd_sql:sql_query_t(
-			       ?SQL("delete top(%(Batch)d)§ from archive"
+			       ?SQL("delete top(%(Batch)d) from archive"
 				    " where timestamp < %(TS)d and %(ServerHost)H"));
+		       (pgsql, _) ->
+			   ejabberd_sql:sql_query_t(
+			       ?SQL("delete from archive"
+				    " where %(ServerHost)H and timestamp in "
+					"(select timestamp from archive where timestamp < %(TS)d and %(ServerHost)H limit %(Batch)d)"));
 		       (_, _) ->
 			   ejabberd_sql:sql_query_t(
 			       ?SQL("delete from archive"
@@ -249,6 +255,13 @@ delete_old_messages_batch(ServerHost, TimeStamp, Type, Batch) ->
 				    " where timestamp < %(TS)d"
 				    " and kind=%(SType)s"
 				    " and %(ServerHost)H"));
+		       (pgsql,_)->
+			   ejabberd_sql:sql_query_t(
+			       ?SQL("delete from archive"
+				    " where timestamp in"
+					" (select timestamp from archive where timestamp < %(TS)d"
+				    " and kind=%(SType)s"
+				    " and %(ServerHost)H limit %(Batch)d)"));
 		       (_,_)->
 			   ejabberd_sql:sql_query_t(
 			       ?SQL("delete from archive"
@@ -282,6 +295,14 @@ delete_old_messages(ServerHost, TimeStamp, Type) ->
                    " and %(ServerHost)H"))
     end,
     ok.
+
+additional_namespaces(LServer) ->
+    case ejabberd_option:sql_type(LServer) of
+	mysql ->
+	    [?NS_MAM_FULLTEXT_0];
+	_ ->
+	    []
+    end.
 
 extended_fields(LServer) ->
     case ejabberd_option:sql_type(LServer) of

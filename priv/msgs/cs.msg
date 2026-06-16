@@ -334,7 +334,6 @@
 {"Scan with mobile device","Skenovat pomocí mobilního zařízení"}.
 {"Search from the date","Hledat od data"}.
 {"Search Results for ","Výsledky hledání pro "}.
-{"Search the text","Hledat text"}.
 {"Search until the date","Hledat do data"}.
 {"Search users in ","Hledat uživatele v "}.
 {"Select","Vybrat"}.

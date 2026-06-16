@@ -1,0 +1,48 @@
+{% extends "base_min.html" %}
+
+{% block title %}{% if error %}{% trans "Form Error" %}{% else %}{% trans "Reset Password" %}{% endif %} | {{ site_name }}{% endblock %}
+{% block h1 %}{% if error %}{% trans "Form Error" %}{% else %}{% blocktrans %}Reset Password on {{ site_name }}{% endblocktrans %}{% endif %}{% endblock %}
+
+{% block form_class %}container col-md-8 col-md-offset-2 col-sm-8 cold-sm-offset-2 col-lg-6 col-lg-offset-3 my-3 mt-md-5{% endblock %}
+
+{% block content %}
+        <p>{% blocktrans %}Hey, <strong class="text-alert">{{ username }}</strong>, if you'd like to change your password, maybe because you forgot your old one, you've come to the right place!{% endblocktrans %}</p>
+        <p class="alert alert-warning">{% blocktrans %}If this is not you, please disregard!{% endblocktrans %}</p>
+        <div class="alert alert-info">If you have a compatible XMPP/Jabber client installed on your system you can try using this button to reset your password instead. This way you don't need to copy your password. Otherwise proceed with the form below!</div>
+        <div class="text-center">
+            <a href="{{ uri }}" type="button" class="btn btn-secondary">Change Password using your installed client</a></div>
+
+        <h3 class="card-title h4 my-3">{% trans "Reset Password" %}</h3>
+        {%if error and error.class == 'undefined' %}<div class="alert alert-danger" role="alert">{{ error.text }}</div>{% endif %}
+        <form method="post" class="needs-validation" novalidate>
+            <div class="row mb-3">
+                <label for="user" class="col-md-4 form-label fw-bold">{% trans "Username" %}:</label>
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input
+                            type="text" name="user" id="user" class="form-control" readonly minlength="1" maxlength="30" length="30" value="{{ username }}">
+                        <div class="input-group-append">
+                            <span class="input-group-text">@{{ domain }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label for="password" class="col-md-4 form-label col-form-label fw-bold">{% trans "New Password" %}:</label>
+                <div class="col-md-8">
+                    <input type="password" name="password" id="password" class="form-control {% if error.class == 'password' %}is-invalid{% endif %}" aria-describedby="passwordHelp" tabindex="1"
+                        autocomplete="new-password" required autofocus minlength="{{ password_min_length }}">
+                    <div class="invalid-feedback">
+                        {% if error.class == 'password' %}{{ error.text }}{% else %}
+                        {% blocktrans %}Please provide a password! Minimum length: {{ password_min_length }}{% endblocktrans %}{% endif %}
+                    </div>
+                    <small id="passwordHelp" class="form-text text-muted">{% trans "Enter a secure password that you do not use anywhere else." %}</small>
+                </div>
+            </div>
+            <div>
+                <input type="hidden" name="token" value="{{ token }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" tabindex="2" class="btn btn-primary float-end">{% trans "Submit" %}</button>
+            </div>
+        </form>
+{% endblock %}

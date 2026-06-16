@@ -18,13 +18,10 @@
 -module(mod_mqtt_sql).
 -behaviour(mod_mqtt).
 
-%% API
+%% Disk backend
 -export([init/2, publish/6, delete_published/2, lookup_published/2]).
 -export([list_topics/1]).
-%% Unsupported backend API
--export([init/0]).
--export([subscribe/4, unsubscribe/2, find_subscriber/2]).
--export([open_session/1, close_session/1, lookup_session/1, get_sessions/2]).
+
 -export([sql_schemas/0]).
 
 -include("logger.hrl").
@@ -33,10 +30,6 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init() ->
-    ?ERROR_MSG("Backend 'sql' is only supported for db_type", []),
-    {error, db_failure}.
-
 init(Host, _Opts) ->
     ejabberd_sql_schema:update_schema(Host, ?MODULE, sql_schemas()),
     ok.
@@ -140,27 +133,6 @@ list_topics(LServer) ->
 	_ ->
 	    {error, db_failure}
     end.
-
-open_session(_) ->
-    erlang:nif_error(unsupported_db).
-
-close_session(_) ->
-    erlang:nif_error(unsupported_db).
-
-lookup_session(_) ->
-    erlang:nif_error(unsupported_db).
-
-get_sessions(_, _) ->
-    erlang:nif_error(unsupported_db).
-
-subscribe(_, _, _, _) ->
-    erlang:nif_error(unsupported_db).
-
-unsubscribe(_, _) ->
-    erlang:nif_error(unsupported_db).
-
-find_subscriber(_, _) ->
-    erlang:nif_error(unsupported_db).
 
 %%%===================================================================
 %%% Internal functions

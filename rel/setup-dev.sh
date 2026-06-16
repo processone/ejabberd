@@ -1,3 +1,5 @@
+#!/bin/sh
+
 printf "===> Preparing dev configuration files: "
 
 PWD_DIR=$(pwd)

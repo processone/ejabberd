@@ -51,11 +51,11 @@
 %%% API
 %%%===================================================================
 start(SockMod, Socket, Opts) ->
-    xmpp_stream_in:start(?MODULE, [{SockMod, Socket}, Opts],
+    xmpp_stream_in:start(?MODULE, [{SockMod, Socket}, Opts ++ pre_auth_limits()],
 			 ejabberd_config:fsm_limit_opts(Opts)).
 
 start_link(SockMod, Socket, Opts) ->
-    xmpp_stream_in:start_link(?MODULE, [{SockMod, Socket}, Opts],
+    xmpp_stream_in:start_link(?MODULE, [{SockMod, Socket}, Opts ++ pre_auth_limits()],
 			      ejabberd_config:fsm_limit_opts(Opts)).
 
 close(Ref) ->
@@ -346,6 +346,10 @@ change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
     Shaper = ejabberd_shaper:match(ServerHost, ShaperName, jid:make(RServer)),
     xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)).
 
+pre_auth_limits() ->
+    [{pre_auth_max_stanza_size, 8192},
+     {pre_auth_max_stanza_elements, 32}].
+
 listen_options() ->
     [{shaper, none},
      {ciphers, undefined},
@@ -355,4 +359,5 @@ listen_options() ->
      {tls, false},
      {tls_compression, false},
      {max_stanza_size, infinity},
-     {max_fsm_queue, 10000}].
+     {max_stanza_elements, infinity},
+     {max_fsm_queue, 10000}] ++ pre_auth_limits().

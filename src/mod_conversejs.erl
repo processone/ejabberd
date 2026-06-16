@@ -305,16 +305,13 @@ get_plugins_html(Host, RawPath) ->
 %% @format-begin
 
 http_handlers_init(Handlers, _Opts) ->
-    Handlers2 =
-        lists:foldl(fun ({Path, ejabberd_web_admin} = Handler, Acc) ->
-                            [Handler, {lists:append(Path, [?AUTOLOGIN_PATH]), mod_conversejs}
-                             | Acc];
-                        (Handler, Acc) ->
-                            [Handler | Acc]
-                    end,
-                    [],
-                    Handlers),
-    lists:reverse(Handlers2).
+    maybe
+        {value, {Path, _}} ?= lists:keysearch(ejabberd_web_admin, 2, Handlers),
+        [{lists:append(Path, [?AUTOLOGIN_PATH]), mod_conversejs} | Handlers]
+    else
+        false ->
+            Handlers
+    end.
 
 web_menu_system(Result, #request{tp = Protocol}, Level) ->
     Els = ejabberd_web_admin:make_menu_system(?MODULE, "☯️", "Converse", ""),

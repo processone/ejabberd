@@ -43,18 +43,29 @@
 -export([get_local_identity/5, get_local_features/5]).
 
 %% commands
--export([cleanup_expired/0, expire_tokens/2, generate_invite/1, generate_invite/2, list_invites/1]).
+-export([cleanup_expired/0, delete_invite_by_token/2, expire_invites/2, expire_invite_by_token/2, generate_invite/1,
+         generate_invite/2, generate_reset_token/2, list_invites/1]).
 
 %% helpers
--export([create_account_allowed/2, get_invite/2, get_invites_tree_t/2, get_max_invites/2,
-         is_create_allowed/2, is_expired/1, is_reserved/3, is_token_valid/2, roster_add/2,
-         send_presence/3, set_invitee/3, set_invitee/5, token_uri/1, transaction/2, xdata_field/3]).
+-export([create_account_allowed/2, create_account_invite/4, get_invite/2, get_invites_tree_t/2,
+         get_max_invites/2, is_create_allowed/2, is_expired/1, is_reserved/3, is_token_valid/2,
+         roster_add/2, send_presence/3, set_invitee/3, set_invitee/5, token_uri/1, transaction/2,
+         xdata_field/3]).
 
 %% ejabberd_http
 -export([process/2]).
 
+%% webadmin
+-export([webadmin_menu_main/2, webadmin_page_main/2, webadmin_menu_host/3,
+         webadmin_page_host/3]).
+-export([web_menu_system/3]).
+
+-import(ejabberd_web_admin, [make_command/4, action_button/4]).
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
+
 -ifdef(TEST).
--export([create_roster_invite/2, create_account_invite/4, find_invites_tree_root_t/4, gen_invite/1,
+-export([create_roster_invite/2, create_reset_token/2, find_invites_tree_root_t/4, gen_invite/1,
          gen_invite/2, get_invites/2, get_invites_tree_as_root_t/2, is_token_valid/3]).
 -endif.
 
@@ -71,10 +82,12 @@
 
 -callback cleanup_expired(Host :: binary()) -> non_neg_integer().
 -callback create_invite_t(Invite :: invite_token()) -> invite_token().
+-callback delete_invite_by_token(Server :: binary(), Token :: binary()) -> ok | {error, not_found}.
+-callback expire_invite_by_token(Server :: binary(), Token :: binary()) -> ok | {error, not_found}.
 -callback expire_tokens(User :: binary(), Server :: binary()) -> non_neg_integer().
 -callback get_invite(Host :: binary(), Token :: binary()) ->
     invite_token() | {error, not_found}.
--callback get_invite_by_invitee_t(Host :: binary(), InviteeJid :: binary()) ->
+-callback get_invite_by_invitee_t(Host :: binary(), Invitee :: {User :: binary(), Host :: binary()}) ->
     invite_token() | {error, not_found}.
 -callback get_invites_t(Host :: binary(), Inviter :: {User :: binary(), Host :: binary()}) ->
     [invite_token()].
@@ -132,13 +145,21 @@ mod_doc() ->
            ?T("In order to use the included landing page feature, you have to"
               " set `landing_page` to either `auto` or an URL template like "
               "`https://{{ host }}/invites/{{ invite.token }}` "
-              " if your server setup includes a so called reverse proxy."),
+              " if your server setup includes a so called reverse proxy. "
+              "Furthermore you need to connect this module as a handler of an `ejabberd_http` "
+              "listener as shown at the example below."),
+           "",
+           ?T("For convenience there's now also a start page included at wherever you 'mount' "
+              "`mod_invites` at the `ejabberd_http` handler. This start page will allow people to "
+              "generate invites by giving their username and password. As such the URL should be "
+              "protected by HTTPS. The main use-case is when people have only clients, that don't "
+              "support generating invites natively."),
            "",
            ?T("If you'd rather want to use an external service, set `landing_page` "
               "to something like "
               "`http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}` "
               "or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`.")],
-      note => "added in 26.01",
+      note => "improved in 26.03",
       opts =>
           [{access_create_account,
             #{value => ?T("Access Rule Name"),
@@ -192,6 +213,7 @@ mod_doc() ->
                      "is `432000` (that is five days: `5 * 24 * 60 * 60`)")}},
            {webchat_url,
             #{value => "none | auto | Webchat URL",
+              note => "added in 26.03",
               desc =>
                   ?T("URL to a webchat client. Upon manual registration through web-form this will be "
                      "recommended in order to get started. If `auto` is chosen, we pick the "
@@ -278,6 +300,12 @@ start(Host, Opts) ->
       {hook, c2s_pre_auth_features, stream_feature_register, 50},
       %% note the sequence below is important
       {hook, c2s_unauthenticated_packet, c2s_unauthenticated_packet, 10},
+      %% webadmin
+      {hook, webadmin_menu_system_post, web_menu_system, 1000 - $i, global},
+      {hook, webadmin_menu_main, webadmin_menu_main, 50, global},
+      {hook, webadmin_page_main, webadmin_page_main, 50, global},
+      {hook, webadmin_menu_host, webadmin_menu_host, 50},
+      {hook, webadmin_page_host, webadmin_page_host, 50},
       {commands, get_commands_spec()}]}.
 
 stop(_Host) ->
@@ -319,6 +347,81 @@ mod_opt_type(webchat_url) ->
         econf:enum([none, auto]), econf:url()).
 
 %%--------------------------------------------------------------------
+%%| WebAdmin
+
+%%---------------
+%% WebAdmin Main
+
+webadmin_menu_main(Acc, Lang) ->
+    Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Invites"))}].
+
+webadmin_page_main(_,
+                   #request{us = _US,
+                            path = [<<"invites">>],
+                            lang = Lang} =
+                       R) ->
+    PageTitle = translate:translate(Lang, ?T("Invites")),
+    Head = ?H1GL(PageTitle, <<"modules/#mod_invites">>, <<"mod_invites">>),
+    Cs = [make_command(cleanup_expired_invite_tokens,
+                       R,
+                       [],
+                       [{style, danger}, {force_execution, false}])],
+    {stop, Head ++ Cs};
+webadmin_page_main(Acc, _) ->
+    Acc.
+
+%%---------------
+%% WebAdmin Host
+
+web_menu_system(Result, _Request, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(?MODULE, "🎫", "Invites", ""),
+    Els ++ Result.
+
+webadmin_menu_host(Acc, _Host, Lang) ->
+    Acc ++ [{<<"invites">>, translate:translate(Lang, ?T("Invites"))}].
+
+webadmin_page_host(_,
+                   Host,
+                   #request{path = [<<"invites">> | RPath], lang = Lang} = Request) ->
+    BaseArguments = [{<<"host">>, Host}],
+    PageTitle = translate:translate(Lang, ?T("Invites")),
+    Head = ?H1GL(PageTitle, <<"modules/#mod_invites">>, <<"mod_invites">>),
+    Set = [make_command(generate_invite, Request, BaseArguments, [{force_execution, false}]),
+           make_command(generate_invite_with_username,
+                        Request,
+                        BaseArguments,
+                        [{force_execution, false}]),
+           make_command(expire_invite_tokens, Request, BaseArguments, []),
+           make_command(generate_reset_token, Request, BaseArguments, [{force_execution, false}]),
+           make_command(cleanup_expired_invite_tokens,
+                        Request,
+                        [],
+                        [{style, danger}, {force_execution, false}])],
+    ExpireInvites = action_button(expire_invite_by_token, Request, BaseArguments, []),
+    DeleteInvites =
+        action_button(delete_invite_by_token, Request, BaseArguments, [{style, danger}]),
+    Get = [make_command(list_invites,
+                        Request,
+                        BaseArguments,
+                        [{action_table, [ExpireInvites, DeleteInvites]},
+                         {result_named, true},
+                         {table_options, {100, RPath}},
+                         {result_links,
+                          [{token, paragraph, 0, <<>>},
+                           {valid, filter, 0, <<>>},
+                           {created_at, paragraph, 0, <<>>},
+                           {expires, paragraph, 0, <<>>},
+                           {type, filter, 0, <<>>},
+                           {inviter, filter, 0, <<>>},
+                           {invitee, filter, 3, inviter},
+                           {account_name, username, 3, <<>>},
+                           {token_uri, paragraph, 0, <<>>},
+                           {landing_page, self, 0, <<>>}]}])],
+    {stop, Head ++ Get ++ Set};
+webadmin_page_host(Acc, _, _) ->
+    Acc.
+
+%%--------------------------------------------------------------------
 %%| ejabberd command callbacks
 
 -spec get_commands_spec() -> [ejabberd_commands()].
@@ -332,17 +435,39 @@ get_commands_spec() ->
                         args = [],
                         result_example = 42,
                         result = {num_deleted, integer}},
+     #ejabberd_commands{name = delete_invite_by_token,
+                        tags = [purge],
+                        desc = "Delete invite for given token",
+                        module = ?MODULE,
+                        function = delete_invite_by_token,
+                        note = "added in 26.04",
+                        args = [{host, binary}, {token, binary}],
+                        args_desc = ["Hostname token belongs to", "Token to be expired"],
+                        args_example = [<<"example.com">>, <<"stDqh4dEEmrWxb0TFJDxitnc">>],
+                        result_example = ok,
+                        result = {res, rescode}},
      #ejabberd_commands{name = expire_invite_tokens,
                         tags = [purge],
                         desc =
                             "Sets expiration to a date in the past for all tokens belonging "
                             "to user",
                         module = ?MODULE,
-                        function = expire_tokens,
+                        function = expire_invites,
                         note = "added in 26.01",
                         args = [{username, binary}, {host, binary}],
                         result_example = 42,
-                        result = {num_deleted, integer}},
+                        result = {num_expired, integer}},
+     #ejabberd_commands{name = expire_invite_by_token,
+                        tags = [purge],
+                        desc = "Sets expiration to a date in the past for all tokens given",
+                        module = ?MODULE,
+                        function = expire_invite_by_token,
+                        note = "added in 26.04",
+                        args = [{host, binary}, {token, binary}],
+                        args_desc = ["Hostname token belongs to", "Token to be expired"],
+                        args_example = [<<"example.com">>, <<"stDqh4dEEmrWxb0TFJDxitnc">>],
+                        result_example = ok,
+                        result = {res, rescode}},
      #ejabberd_commands{name = generate_invite,
                         tags = [accounts],
                         desc = "Create a new 'create account' invite",
@@ -368,6 +493,20 @@ get_commands_spec() ->
                         args_desc =
                             ["Preselected Username",
                              "hostname  to generate 'create account' invite for."],
+                        args_example = [<<"juliet">>, <<"example.com">>],
+                        result_example =
+                            {<<"xmpp:juliet@example.com?register;preauth=4bsdpwVrRDQYnF9aQQKXGbF7">>,
+                             <<"https://example.com/invites/4bsdpwVrRDQYnF9aQQKXGbF7">>},
+                        result = {invite, {tuple, [{invite_uri, string}, {landing_page, string}]}}},
+     #ejabberd_commands{name = generate_reset_token,
+                        tags = [accounts],
+                        desc =
+                            "Create a password reset token for user with given name on given host.",
+                        module = ?MODULE,
+                        function = generate_reset_token,
+                        note = "added in 26.05",
+                        args = [{username, binary}, {host, binary}],
+                        args_desc = ["Username", "Hostname"],
                         args_example = [<<"juliet">>, <<"example.com">>],
                         result_example =
                             {<<"xmpp:juliet@example.com?register;preauth=4bsdpwVrRDQYnF9aQQKXGbF7">>,
@@ -411,17 +550,25 @@ cleanup_expired() ->
                 0,
                 ejabberd_option:hosts()).
 
--spec expire_tokens(binary(), binary()) -> non_neg_integer().
-expire_tokens(User0, Server0) ->
+-spec delete_invite_by_token(binary(), binary()) -> ok | {error, not_found}.
+delete_invite_by_token(Host, Token) ->
+    pretty_format_command_result(try_db_call(Host, delete_invite_by_token, [Host, Token])).
+
+-spec expire_invites(binary(), binary()) -> non_neg_integer().
+expire_invites(User0, Server0) ->
     User = jid:nodeprep(User0),
     Server = jid:nameprep(Server0),
     pretty_format_command_result(try_db_call(Server, expire_tokens, [User, Server])).
 
--spec generate_invite(binary()) -> binary() | {error, any()}.
+-spec expire_invite_by_token(binary(), binary()) -> ok | {error, not_found}.
+expire_invite_by_token(Host, Token) ->
+    pretty_format_command_result(try_db_call(Host, expire_invite_by_token, [Host, Token])).
+
+-spec generate_invite(binary()) -> {binary(), binary()} | {error, any()}.
 generate_invite(Host) ->
     generate_invite(<<>>, Host).
 
--spec generate_invite(binary(), binary()) -> binary() | {error, any()}.
+-spec generate_invite(binary(), binary()) -> {binary(), binary()} | {error, any()}.
 generate_invite(AccountName, Host) ->
     pretty_format_command_result(gen_invite(AccountName, Host)).
 
@@ -433,7 +580,7 @@ gen_invite(Host) ->
 
 -endif.
 
--spec gen_invite(binary(), binary()) -> binary() | {error, any()}.
+-spec gen_invite(binary(), binary()) -> {binary(), binary()} | {error, any()}.
 gen_invite(AccountName, Host0) ->
     Host = jid:nameprep(Host0),
     case create_account_invite(Host, {<<>>, Host}, AccountName, false) of
@@ -442,6 +589,16 @@ gen_invite(AccountName, Host0) ->
         Invite ->
             {token_uri(Invite), landing_page(Host, Invite)}
     end.
+
+-spec generate_reset_token(binary(), binary()) -> {binary(), binary()} | {error, any()}.
+generate_reset_token(User, Host) ->
+    Res = case create_reset_token(User, Host) of
+              {error, _Reason} = Error ->
+                  Error;
+              Invite ->
+                  {token_uri(Invite), landing_page(Host, Invite)}
+          end,
+    pretty_format_command_result(Res).
 
 list_invites(Host) ->
     Res = maybe
@@ -933,11 +1090,10 @@ find_invites_tree_root_t(Now, Host, Invitee, Lvl) ->
 
 -spec get_invite_by_invitee_t(binary(), {binary(), binary()}) ->
                                  invite_token() | {error, not_found}.
+get_invite_by_invitee_t(_Host, {<<>>, _Server}) ->
+    {error, not_found};
 get_invite_by_invitee_t(Host, {User, Server}) ->
-    InviteeJid =
-        jid:encode(
-            jid:make(User, Server)),
-    db_call(Host, get_invite_by_invitee_t, [Host, InviteeJid]).
+    db_call(Host, get_invite_by_invitee_t, [Host, {User, Server}]).
 
 maybe_block_speedy_goat(Now, CreatedAt, Lvl) when Lvl == ?SPEEDY_GOAT_LEVELS ->
     Then = calendar:datetime_to_gregorian_seconds(CreatedAt),
@@ -997,19 +1153,26 @@ invite_token_t(Type, Host, Inviter, AccountName0) ->
                                     account_name = AccountName},
                       mod_invites_opt:token_expire_seconds(Host)).
 
-token_uri(#invite_token{type = Type,
-                        token = Token,
-                        account_name = AccountName,
-                        inviter = {_User, Host}})
-    when Type =:= account_only; Type =:= account_subscription ->
-    Invitee =
-        case AccountName of
-            <<>> ->
-                Host;
-            _ ->
-                <<AccountName/binary, "@", Host/binary>>
-        end,
-    <<"xmpp:", Invitee/binary, "?register;preauth=", Token/binary>>;
+-spec create_reset_token(binary(), binary()) -> invite_token() | {error, any()}.
+create_reset_token(User, Host) ->
+    maybe
+        (#invite_token{} = ResetToken) ?= reset_token(User, Host),
+        F = fun() -> db_call(Host, create_invite_t, [ResetToken]) end,
+        transaction(Host, F)
+    end.
+
+reset_token(User, Host) ->
+    maybe
+        true ?= lists:member(Host, ejabberd_option:hosts()) orelse {error, host_unknown},
+        true ?= ejabberd_auth:user_exists(User, Host) orelse {error, user_not_exists},
+        set_token_expires(#invite_token{token =
+                                            p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT),
+                                        inviter = {<<>>, Host},
+                                        type = reset_token,
+                                        account_name = User},
+                          mod_invites_opt:token_expire_seconds(Host))
+    end.
+
 token_uri(#invite_token{type = roster_only,
                         token = Token,
                         inviter = {User, Host}}) ->
@@ -1017,7 +1180,18 @@ token_uri(#invite_token{type = roster_only,
     Inviter =
         jid:encode(
             jid:make(User, Host)),
-    <<"xmpp:", Inviter/binary, "?roster;preauth=", Token/binary, IBR/binary>>.
+    <<"xmpp:", Inviter/binary, "?roster;preauth=", Token/binary, IBR/binary>>;
+token_uri(#invite_token{token = Token,
+                        account_name = AccountName,
+                        inviter = {_User, Host}}) ->
+    Invitee =
+        case AccountName of
+            <<>> ->
+                Host;
+            _ ->
+                <<AccountName/binary, "@", Host/binary>>
+        end,
+    <<"xmpp:", Invitee/binary, "?register;preauth=", Token/binary>>.
 
 maybe_add_ibr_allowed(User, Host) ->
     case create_account_allowed(Host, jid:make(User, Host)) of
@@ -1181,6 +1355,8 @@ pretty_format_command_result({error, host_unknown}) ->
     {error, "Virtual host not known"};
 pretty_format_command_result({error, user_exists}) ->
     {error, "Username already taken"};
+pretty_format_command_result({error, user_not_exists}) ->
+    {error, "User does not exist"};
 pretty_format_command_result({ok, Result}) ->
     Result;
 pretty_format_command_result(Result) ->

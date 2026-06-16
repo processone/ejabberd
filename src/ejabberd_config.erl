@@ -274,17 +274,30 @@ default_db(Host, Module, Default) ->
 default_ram_db(Host, Module) ->
     default_db(default_ram_db, ram_db_type, Host, Module, mnesia).
 
--spec default_ram_db(binary() | global, module(), atom()) -> atom().
+-spec default_ram_db(binary() | global, module(), atom() | tuple()) -> atom().
+default_ram_db(Host, Module, {Function, Arity}) ->
+    default_db(default_ram_db, ram_db_type, Host, Module, mnesia, {Function, Arity});
 default_ram_db(Host, Module, Default) ->
     default_db(default_ram_db, ram_db_type, Host, Module, Default).
 
 -spec default_db(default_db | default_ram_db, db_type | ram_db_type, binary() | global, module(), atom()) -> atom().
 default_db(Opt, ModOpt, Host, Mod, Default) ->
+    default_db(Opt, ModOpt, Host, Mod, Default, dont_check).
+default_db(Opt, ModOpt, Host, Mod, Default, FunctionCheck) ->
     Type = get_option({Opt, Host}),
     DBMod = list_to_atom(atom_to_list(Mod) ++ "_" ++ atom_to_list(Type)),
-    case code:ensure_loaded(DBMod) of
-	{module, _} -> Type;
-	{error, _} ->
+    maybe
+        {module, _} ?= code:ensure_loaded(DBMod),
+        FunCheck = case {Opt, FunctionCheck} of
+            {default_ram_db, {Function, Arity}} ->
+                erlang:function_exported(DBMod, Function, Arity);
+            _ ->
+                true
+        end,
+        true ?= FunCheck,
+        Type
+    else
+	_ ->
 	    ?WARNING_MSG("Module ~ts doesn't support database '~ts' "
 			 "defined in toplevel option '~ts': will use the value "
                          "set in ~ts option '~ts', or '~ts' as fallback",
@@ -514,12 +527,14 @@ get_predefined_keywords(Host) ->
     ConfigDirPath =
         iolist_to_binary(filename:dirname(
                              ejabberd_config:path())),
+    DatabasePath = iolist_to_binary(mnesia:system_info(directory)),
     LogDirPath =
         iolist_to_binary(filename:dirname(
                              ejabberd_logger:get_log_path())),
     HostList
     ++ [{<<"HOME">>, list_to_binary(Home)},
         {<<"CONFIG_PATH">>, ConfigDirPath},
+        {<<"DATABASE_PATH">>, DatabasePath},
         {<<"LOG_PATH">>, LogDirPath},
         {<<"SEMVER">>, ejabberd_option:version()},
         {<<"VERSION">>,
