@@ -62,7 +62,8 @@
 	 keep_alive/2,
 	 to_list/2,
 	 to_array/2,
-         parse_mysql_version/2]).
+         parse_mysql_version/2,
+     get_workers_status/1]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4,
@@ -106,6 +107,7 @@
 	 timeout              :: pos_integer()}).
 
 -define(STATE_KEY, ejabberd_sql_state).
+-define(STATUS_KEY, ejabberd_sql_status).
 -define(NESTING_KEY, ejabberd_sql_nesting_level).
 -define(TOP_LEVEL_TXN, 0).
 -define(MAX_TRANSACTION_RESTARTS, 10).
@@ -390,6 +392,29 @@ get_worker(Host) ->
 get_worker_name(Host, I) ->
     <<"ejabberd_sql_", Host/binary, $_, (integer_to_binary(I))/binary>>.
 
+-spec get_workers_status(binary()) -> #{connected => pos_integer(), disconnected => pos_integer(), overloaded => pos_integer}.
+get_workers_status(Host) ->
+    PoolSize = ejabberd_option:sql_pool_size(Host),
+    lists:foldl(
+        fun(I, #{connected := C, disconnected := D, overloaded := O} = Acc) ->
+            maybe
+                Pid ?= whereis(binary_to_atom(get_worker_name(Host, I), utf8)),
+                true ?= is_pid(Pid),
+                {dictionary, Dict} ?= process_info(Pid, dictionary),
+                case lists:keyfind(?STATUS_KEY, 1, Dict) of
+                    {_, connected} -> Acc#{connected => C+1};
+                    {_, {overloaded, TS}} ->
+                        case current_time() - TS > timer:seconds(60) of
+                            true -> Acc#{connected => C+1};
+                            _ -> Acc#{overloaded => O+1}
+                        end;
+                    _ -> Acc#{disconnected => D+1}
+                end
+            else
+                _ -> Acc#{disconnected => D+1}
+            end
+        end, #{connected => 0, disconnected => 0, overloaded => 0}, lists:seq(1, PoolSize)).
+
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
@@ -437,6 +462,7 @@ connecting(connect, #state{host = Host} = State) ->
 		    State1 = State#state{db_ref = Ref,
 					 pending_requests = PendingRequests},
 		    State2 = get_db_version(State1),
+            put(?STATUS_KEY, connected),
 		    {next_state, session_established, State2#state{reconnect_count = 0}}
 	    catch _:Reason ->
 		    handle_reconnect(Reason, State)
@@ -548,6 +574,7 @@ handle_reconnect(Reason, #state{host = Host, reconnect_count = RC} = State) ->
 	pgsql -> catch pgsql:terminate(State#state.db_ref);
 	_ -> ok
     end,
+    put(?STATUS_KEY, disconnected),
     p1_fsm:send_event_after(StartInterval, connect),
     {next_state, connecting, State#state{reconnect_count = RC + 1,
 					 timeout = query_timeout(Host)}}.
@@ -1039,6 +1066,7 @@ abort_on_driver_error(Reply, From, Timestamp) ->
 -spec report_overload(state()) -> state().
 report_overload(#state{overload_reported = PrevTime} = State) ->
     CurrTime = current_time(),
+    put(?STATUS_KEY, {overloaded, CurrTime}),
     case PrevTime == undefined orelse (CurrTime - PrevTime) > timer:seconds(30) of
 	true ->
 	    ?ERROR_MSG("SQL connection pool is overloaded, "
