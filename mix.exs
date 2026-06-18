@@ -146,7 +146,7 @@ defmodule Ejabberd.MixProject do
                          {config(:redis), {:eredis, "~> 1.7.1"}},
                          {config(:sip), {:esip, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
-                         {if_version_below(~c"27", true), {:jiffy, "~> 1.1.4"}},
+                         {if_version_below(~c"27", true), {:jiffy, "~> 1.1.5"}},
                          {if_version_below(~c"26", true), {:jose, "1.11.10", override: true}},
                          {if_version_above(~c"25", true), {:jose, "~> 1.11.12"}},
                          {config(:lua), {:luerl, "~> 1.2.0"}},
