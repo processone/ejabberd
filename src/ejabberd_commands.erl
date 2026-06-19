@@ -324,6 +324,9 @@ do_execute_command(Command, Arguments) ->
     ejabberd_hooks:run(api_call, [Module, Function, Arguments]),
     try apply(Module, Function, Arguments)
     catch
+        throw:{error, _} = Err ->
+            % We use those for custom errors in some commands
+            throw(Err);
         throw:Term ->
             ?ERROR_MSG("A problem appears when executing command ~p with arguments ~p:~n  ~p:~p",
                            [Command#ejabberd_commands.name, Arguments, throw, Term]),
