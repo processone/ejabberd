@@ -1128,7 +1128,7 @@ make_breadcrumb(Elements) ->
                       ?C(<<" > ">>);
                   (Bin) when is_binary(Bin) ->
                       ?C(Bin);
-                  ({Level, Bin}) when is_integer(Level) and is_binary(Bin) ->
+                  ({Level, Bin}) when is_integer(Level), is_binary(Bin) ->
                       ?AC(binary:copy(<<"../">>, Level), Bin)
               end,
               Elements).
@@ -1138,11 +1138,12 @@ make_breadcrumb(Elements) ->
 
 %% Returns: {normal | reverse, Integer}
 get_sort_query(Q) ->
-    case catch get_sort_query2(Q) of
+    try get_sort_query2(Q) of
         {ok, Res} ->
             Res;
-        _ ->
-            {normal, 1}
+		_ -> {normal, 1}
+	catch _:_ ->
+        {normal, 1}
     end.
 
 get_sort_query2(Q) ->
@@ -1843,13 +1844,13 @@ format_room_option(OptionString, ValueString) ->
 		subscribers ->
 		    [parse_subscription_string(Opt) || Opt <- str:tokens(ValueString, <<";,">>)];
                 allow_private_messages_from_visitors when
-                      (ValueString == <<"anyone">>) or
-                      (ValueString == <<"moderators">>) or
+                      (ValueString == <<"anyone">>);
+                      (ValueString == <<"moderators">>);
                       (ValueString == <<"nobody">>) -> binary_to_existing_atom(ValueString, utf8);
                 allowpm when
-                      (ValueString == <<"anyone">>) or
-                      (ValueString == <<"participants">>) or
-                      (ValueString == <<"moderators">>) or
+                      (ValueString == <<"anyone">>);
+                      (ValueString == <<"participants">>);
+                      (ValueString == <<"moderators">>);
                       (ValueString == <<"none">>) -> binary_to_existing_atom(ValueString, utf8);
 		presence_broadcast ->
 		    [parse_presence_broadcast(Opt) || Opt <- str:tokens(ValueString, <<";,">>)];
