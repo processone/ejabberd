@@ -277,17 +277,15 @@ get_rooms_without_subscribers(LServer, Host) ->
 
 get_hibernated_rooms_older_than(LServer, Host, Timestamp) ->
     TimestampS = usec_to_sql_timestamp(Timestamp),
-    case catch ejabberd_sql:sql_query(
+    case ejabberd_sql:sql_query(
 	LServer,
-	?SQL("select @(name)s, @(opts)s from muc_room"
+	?SQL("select @(name)s from muc_room"
 	     " where host=%(Host)s and created_at < %(TimestampS)t and created_at > '1970-01-02 00:00:00'")) of
-	{selected, RoomOpts} ->
+	{selected, Rooms} ->
 	    lists:map(
-		fun({Room, Opts}) ->
-		    OptsD = ejabberd_sql:decode_term(Opts),
-		    #muc_room{name_host = {Room, Host},
-			      opts = mod_muc:opts_to_binary(OptsD)}
-		end, RoomOpts);
+		fun({Room}) ->
+		    Room
+		end, Rooms);
 	_Err ->
 	    []
     end.

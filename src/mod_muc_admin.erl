@@ -29,31 +29,31 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, depends/2, mod_doc/0,
-	 muc_online_rooms/1, muc_online_rooms_by_regex/2,
-	 muc_register_nick/3, muc_register_nick/4,
-	 muc_unregister_nick/2, muc_unregister_nick/3,
+         muc_online_rooms/1, muc_online_rooms_by_regex/2,
+         muc_register_nick/3, muc_register_nick/4,
+         muc_unregister_nick/2, muc_unregister_nick/3,
          muc_get_registered_nick/3,
          muc_get_registered_nicks/1,
-	 create_room_with_opts/4, create_room/3, destroy_room/2,
-	 create_rooms_file/1, destroy_rooms_file/1,
-	 rooms_unused_list/2, rooms_unused_destroy/2,
-	 rooms_empty_list/1, rooms_empty_destroy/1, rooms_empty_destroy_restuple/1,
-	 get_user_rooms/2, get_user_subscriptions/2, get_room_occupants/2,
-	 get_room_occupants_number/2, send_direct_invitation/5,
-	 change_room_option/4, get_room_options/2,
-	 set_room_affiliation/4, set_room_affiliation/5, get_room_affiliations/2,
-	 get_room_affiliations_v3/2, get_room_affiliation/3,
-	 subscribe_room/4, subscribe_room/6,
-	 subscribe_room_many/3, subscribe_room_many_v3/4,
-	 unsubscribe_room/2, unsubscribe_room/4, get_subscribers/2,
-	 get_room_serverhost/1,
-	 web_menu_main/2, web_page_main/2,
+         create_room_with_opts/4, create_room/3, destroy_room/2,
+         create_rooms_file/1, destroy_rooms_file/1,
+         rooms_unused_list/2, rooms_unused_destroy/2, rooms_unused_destroy_skip_notifications/2,
+         rooms_empty_list/1, rooms_empty_destroy/1, rooms_empty_destroy_restuple/1,
+         get_user_rooms/2, get_user_subscriptions/2, get_room_occupants/2,
+         get_room_occupants_number/2, send_direct_invitation/5,
+         change_room_option/4, get_room_options/2,
+         set_room_affiliation/4, set_room_affiliation/5, get_room_affiliations/2,
+         get_room_affiliations_v3/2, get_room_affiliation/3,
+         subscribe_room/4, subscribe_room/6,
+         subscribe_room_many/3, subscribe_room_many_v3/4,
+         unsubscribe_room/2, unsubscribe_room/4, get_subscribers/2,
+         get_room_serverhost/1,
+         web_menu_main/2, web_page_main/2,
          web_menu_host/3, web_page_host/3,
          web_menu_hostuser/4, web_page_hostuser/4,
          webadmin_muc/2,
-	 mod_opt_type/1, mod_options/1,
-	 get_commands_spec/0, find_hosts/1, room_diagnostics/2,
-	 get_room_pid/2, get_room_history/2, muc_online_rooms_count/1]).
+         mod_opt_type/1, mod_options/1,
+         get_commands_spec/0, find_hosts/1, room_diagnostics/2,
+         get_room_pid/2, get_room_history/2, muc_online_rooms_count/1]).
 
 -import(ejabberd_web_admin, [make_command/4, make_command_raw_value/3, make_table/4]).
 
@@ -286,6 +286,21 @@ get_commands_spec() ->
 		       args = [{service, binary}, {days, integer}],
 		       args_rename = [{host, service}],
 		       result = {rooms, {list, {room, string}}}},
+     #ejabberd_commands{name = rooms_unused_destroy_skip_notifications, tags = [muc],
+                        desc = "Destroy the rooms that are unused for many days in the service, but may skip notifications to subscribers",
+                        note = "added in 26.XX",
+                        longdesc = "The room recent history is used, so it's recommended "
+                                   " to wait a few days after service start before running this."
+                                   " The MUC service argument can be `global` to get all hosts."
+                                   " This version may skip sending notifications to subscribers, for performance reasons",
+                        module = ?MODULE, function = rooms_unused_destroy_skip_notifications,
+                        args_desc = ["MUC service, or `global` for all", "Number of days"],
+                        args_example = ["conference.example.com", 31],
+                        result_desc = "List of unused rooms that has been destroyed",
+                        result_example = ["room1@conference.example.com", "room2@conference.example.com"],
+                        args = [{service, binary}, {days, integer}],
+                        args_rename = [{host, service}],
+                        result = {rooms, {list, {room, string}}}},
 
      #ejabberd_commands{name = rooms_empty_list, tags = [muc],
 		       desc = "List the rooms that have no messages in archive",
@@ -1510,10 +1525,112 @@ get_host_details(Host, ServerHostsDetails) ->
 %%---------------
 %% Control
 
-rooms_unused_list(Service, Days) ->
-    rooms_report(unused, list, Service, Days).
-rooms_unused_destroy(Service, Days) ->
-    rooms_report(unused, destroy, Service, Days).
+get_unused_rooms(Service, ServerHost, Days) ->
+    Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    RMod = gen_mod:ram_db_mod(ServerHost, mod_muc),
+    NodeStartTime = erlang:system_time(microsecond) -
+                    1000000*(erlang:monotonic_time(second) - ejabberd_config:get_node_start()),
+    DaysMs = Days*timer:hours(24),
+    Timestamp = erlang:system_time(microsecond) - DaysMs*1000,
+
+    DbRooms = case erlang:function_exported(Mod, get_hibernated_rooms_older_than, 3) of
+		  true ->
+		      lists:filtermap(
+		          fun(R) ->
+			      case RMod:find_online_room(ServerHost, R, Service) of
+				  error ->
+				      {true, {R, Service, undefined}};
+				  _ ->
+				      false
+			      end
+			  end, Mod:get_hibernated_rooms_older_than(ServerHost, Service, Timestamp));
+		  _ ->
+		      lists:filtermap(
+		          fun(#muc_room{name_host = {R, _}, opts = Opts}) ->
+			      case RMod:find_online_room(ServerHost, R, Service) of
+				  error ->
+				      TS = case lists:keyfind(hibernation_time, 1, Opts) of
+					       false -> NodeStartTime;
+					       {_, undefined} -> NodeStartTime;
+					       {_, T} -> T
+					   end,
+				      if TS > Timestamp ->
+					  false;
+					  true ->
+					      {true, {R, Service, undefined}}
+				      end;
+				  _ ->
+				      false
+			      end
+			  end, Mod:get_rooms(ServerHost, Service))
+	      end,
+    case mod_muc_opt:hibernation_timeout(ServerHost) < DaysMs of
+	true ->
+	    DbRooms;
+	false ->
+	    OldOnline = lists:filtermap(
+		     fun({RoomName, RoomHost, RoomPid}) ->
+		    case mod_muc_room:get_state(RoomPid) of
+			{ok, #state{just_created = true}} ->
+			    false;
+			{ok, #state{just_created = TS, users = U}} when TS =< Timestamp, map_size(U) == 0 ->
+			    {true, {RoomName, RoomHost, RoomPid}};
+			_ ->
+			    false
+		    end
+		end, RMod:get_online_rooms(ServerHost, Service, undefined)),
+	    OldOnline ++ DbRooms
+    end.
+
+destroy_room_helper(Msg, _Room, _Service, _ServerHost, Pid, _) when is_pid(Pid) ->
+    mod_muc_room:destroy(Pid, Msg);
+destroy_room_helper(Msg, Room, Service, _ServerHost, _Pid, true) ->
+    case get_room_pid(Room, Service) of
+	Pid2 when is_pid(Pid2) ->
+	    mod_muc_room:destroy(Pid2, Msg);
+	_ ->
+	    ok
+    end;
+destroy_room_helper(_Msg, Room, Service, ServerHost, _Pid, false) ->
+    mod_muc:forget_room(ServerHost, Service, Room).
+
+rooms_unused_list(ServiceArg, Days) ->
+    Services = find_services(ServiceArg),
+    lists:flatmap(
+        fun(Service) ->
+	    ServerHost = get_room_serverhost(Service),
+	    lists:map(
+		fun({R, S, _}) ->
+		    jid:encode({R, S, <<>>})
+		end,
+	        get_unused_rooms(Service, ServerHost, Days))
+	end, Services).
+
+rooms_unused_destroy(ServiceArg, Days) ->
+    Services = find_services(ServiceArg),
+    Msg = <<"Room destroyed by rooms_unused_destroy">>,
+    lists:flatmap(
+	fun(Service) ->
+	    ServerHost = get_room_serverhost(Service),
+	    lists:map(
+		fun({R, S, Pid}) ->
+		    destroy_room_helper(Msg, R, S, ServerHost, Pid, true),
+		    jid:encode({R, S, <<>>})
+		end, get_unused_rooms(Service, ServerHost, Days))
+	end, Services).
+
+rooms_unused_destroy_skip_notifications(ServiceArg, Days) ->
+    Services = find_services(ServiceArg),
+    Msg = <<"Room destroyed by rooms_unused_destroy">>,
+    lists:flatmap(
+	fun(Service) ->
+	    ServerHost = get_room_serverhost(Service),
+	    lists:map(
+		fun({R, S, Pid}) ->
+		    destroy_room_helper(Msg, R, S, ServerHost, Pid, false),
+		    jid:encode({R, S, <<>>})
+		end, get_unused_rooms(Service, ServerHost, Days))
+	end, Services).
 
 rooms_empty_list(Service) ->
     rooms_report(empty, list, Service, 0).
@@ -1532,10 +1649,10 @@ rooms_report(Method, Action, Service, Days) ->
 
 muc_unused(Method, Action, Service, Last_allowed) ->
     %% Get all required info about all existing rooms
-    Rooms_all = get_all_rooms(Service, erlang:system_time(microsecond) - Last_allowed*24*60*60*1000),
+    Rooms_all = get_all_rooms(Service),
 
     %% Decide which ones pass the requirements
-    Rooms_pass = decide_rooms(Method, Rooms_all, Last_allowed),
+    Rooms_pass = decide_rooms( Rooms_all, Last_allowed),
 
     Num_rooms_all = length(Rooms_all),
     Num_rooms_pass = length(Rooms_pass),
@@ -1557,14 +1674,14 @@ get_online_rooms(ServiceArg) ->
 	   || {RoomName, RoomHost, Pid} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
-get_all_rooms(ServiceArg, Timestamp) ->
+get_all_rooms(ServiceArg) ->
     Hosts = find_services(ServiceArg),
     lists:flatmap(
       fun(Host) ->
-              get_all_rooms2(Host, Timestamp)
+              get_all_rooms2(Host)
       end, Hosts).
 
-get_all_rooms2(Host, Timestamp) ->
+get_all_rooms2(Host) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     OnlineRooms = get_online_rooms(Host),
     OnlineMap = lists:foldl(
@@ -1574,11 +1691,8 @@ get_all_rooms2(Host, Timestamp) ->
 
     Mod = gen_mod:db_mod(ServerHost, mod_muc),
     DbRooms =
-    case {erlang:function_exported(Mod, get_rooms_without_subscribers, 2),
-	  erlang:function_exported(Mod, get_hibernated_rooms_older_than, 3)} of
-	{_, true} ->
-	    Mod:get_hibernated_rooms_older_than(ServerHost, Host, Timestamp);
-	{true, _} ->
+    case erlang:function_exported(Mod, get_rooms_without_subscribers, 2) of
+	true ->
 	    Mod:get_rooms_without_subscribers(ServerHost, Host);
 	_ ->
 	    Mod:get_rooms(ServerHost, Host)
@@ -1605,54 +1719,11 @@ get_room_state(Room_pid) ->
 %%---------------
 %% Decide
 
-decide_rooms(Method, Rooms, Last_allowed) ->
-    Decide = fun(R) -> decide_room(Method, R, Last_allowed) end,
+decide_rooms(Rooms, Last_allowed) ->
+    Decide = fun(R) -> decide_room(R, Last_allowed) end,
     lists:filter(Decide, Rooms).
 
-decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
-    NodeStartTime = erlang:system_time(microsecond) -
-		    1000000*(erlang:monotonic_time(second)-ejabberd_config:get_node_start()),
-    OnlyHibernated = case mod_muc_opt:hibernation_timeout(ServerHost) of
-	Value when Value < Last_allowed*24*60*60*1000 ->
-	    true;
-	_ ->
-	    false
-	end,
-    {Just_created, Num_users} =
-    case Room_pid of
-	Pid when is_pid(Pid) andalso OnlyHibernated ->
-	    {erlang:system_time(microsecond), 0};
-	Pid when is_pid(Pid) ->
-	    case mod_muc_room:get_state(Room_pid) of
-		{ok, #state{just_created = JC, users = U}} ->
-		    {JC, maps:size(U)};
-		_ ->
-		    {erlang:system_time(microsecond), 0}
-	    end;
-	Opts ->
-	    case lists:keyfind(hibernation_time, 1, Opts) of
-		false ->
-		    {NodeStartTime, 0};
-		{_, undefined} ->
-		    {NodeStartTime, 0};
-		{_, T} ->
-		    {T, 0}
-	    end
-    end,
-    Last = case Just_created of
-	       true ->
-		   0;
-	       _ ->
-		   (erlang:system_time(microsecond)
-		    - Just_created) div 1000000
-	   end,
-    case {Num_users, seconds_to_days(Last)} of
-	{0, Last_days} when (Last_days >= Last_allowed) ->
-	    true;
-	_ ->
-	    false
-    end;
-decide_room(empty, {Room_name, Host, ServerHost, Room_pid}, _Last_allowed) ->
+decide_room({Room_name, Host, ServerHost, Room_pid}, _Last_allowed) ->
     case gen_mod:is_loaded(ServerHost, mod_mam) of
 	true ->
 	    Room_options = case Room_pid of
@@ -1670,9 +1741,6 @@ decide_room(empty, {Room_name, Host, ServerHost, Room_pid}, _Last_allowed) ->
 	_ ->
 	    false
     end.
-
-seconds_to_days(S) ->
-    S div (60*60*24).
 
 %%---------------
 %% Act
