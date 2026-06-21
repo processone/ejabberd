@@ -1148,12 +1148,15 @@ delete_old_users(Days, Users) ->
     TimeStamp_now = erlang:system_time(second),
     TimeStamp_oldest = TimeStamp_now - SecOlder,
     F = fun({LUser, LServer}) ->
-	    case catch delete_or_not(LUser, LServer, TimeStamp_oldest) of
+	    try delete_or_not(LUser, LServer, TimeStamp_oldest) of
 		true ->
 		    ejabberd_auth:remove_user(LUser, LServer),
 		    true;
 		_ ->
 		    false
+            catch
+                _:_ ->
+                    false
 	    end
 	end,
     Users_removed = lists:filter(F, Users),
@@ -1385,7 +1388,7 @@ get_status_list(Host, Status_required) ->
 	    end,
     Sessions3 = [ {Pid, Server, Priority} || {{_User, Server, _Resource}, {_, Pid}, Priority} <- Sessions2, apply(Fhost, [Server, Host])],
     %% For each Pid, get its presence
-    Sessions4 = [ {catch get_presence(Pid), Server, Priority} || {Pid, Server, Priority} <- Sessions3],
+    Sessions4 = [ {get_presence(Pid), Server, Priority} || {Pid, Server, Priority} <- Sessions3],
     %% Filter by status
     Fstatus = case Status_required of
 		  <<"all">> ->
@@ -2161,12 +2164,14 @@ stats(Name, Host) ->
 user_action(User, Server, Fun, OK) ->
     case ejabberd_auth:user_exists(User, Server) of
         true ->
-            case catch Fun() of
+            try Fun() of
                 OK -> ok;
                 {error, Error} -> throw(Error);
                 Error ->
                     ?ERROR_MSG("Command returned: ~p", [Error]),
                     1
+            catch
+                _:Error -> throw(Error)
             end;
         false ->
             throw({not_found, "unknown_user"})

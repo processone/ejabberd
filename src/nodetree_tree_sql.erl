@@ -71,22 +71,28 @@ set_node(Record) when is_record(Record, pubsub_node) ->
     H = node_flat_sql:encode_host(Host),
     Nidx = case nodeidx(Host, Node) of
 	{result, OldNidx} ->
-	    catch
+	    try
 	    ejabberd_sql:sql_query_t(
 	      ?SQL("delete from pubsub_node_option "
-		   "where nodeid=%(OldNidx)d")),
-	    catch
+		   "where nodeid=%(OldNidx)d"))
+            catch _:_ -> error
+            end,
+	    try
 	    ejabberd_sql:sql_query_t(
 	      ?SQL("update pubsub_node set"
 		   " host=%(H)s, node=%(Node)s,"
 		   " parent=%(Parent)s, plugin=%(Type)s "
-		   "where nodeid=%(OldNidx)d")),
+		   "where nodeid=%(OldNidx)d"))
+            catch _:_ -> error
+            end,
 	    OldNidx;
 	{error, not_found} ->
-	    catch
+	    try
 	    ejabberd_sql:sql_query_t(
 	      ?SQL("insert into pubsub_node(host, node, parent, plugin) "
-		   "values(%(H)s, %(Node)s, %(Parent)s, %(Type)s)")),
+		   "values(%(H)s, %(Node)s, %(Parent)s, %(Type)s)"))
+            catch _:_ -> error
+            end,
 	    case nodeidx(Host, Node) of
 		{result, NewNidx} -> NewNidx;
 		{error, not_found} -> none;  % this should not happen
@@ -105,10 +111,12 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	    lists:foreach(fun ({Key, Value}) ->
 			SKey = iolist_to_binary(atom_to_list(Key)),
 			SValue = misc:term_to_expr(Value),
-			catch
+			try
 			ejabberd_sql:sql_query_t(
 			  ?SQL("insert into pubsub_node_option(nodeid, name, val) "
 			       "values (%(Nidx)d, %(SKey)s, %(SValue)s)"))
+                        catch _:_ -> error
+                        end
 		end,
 		Record#pubsub_node.options),
 	    {result, Nidx}
@@ -119,31 +127,33 @@ get_node(Host, Node, _From) ->
 
 get_node(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    case catch
+    try
 	ejabberd_sql:sql_query_t(
 	  ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d from pubsub_node "
 	       "where host=%(H)s and node=%(Node)s"))
     of
 	{selected, [RItem]} ->
 	    raw_to_node(Host, RItem);
-	{'EXIT', _Reason} ->
-	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())};
 	_ ->
 	    {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
+    catch
+        _:_Reason ->
+	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())}
     end.
 
 get_node(Nidx) ->
-    case catch
+    try
 	ejabberd_sql:sql_query_t(
 	  ?SQL("select @(host)s, @(node)s, @(parent)s, @(plugin)s from pubsub_node "
 	       "where nodeid=%(Nidx)d"))
     of
 	{selected, [{Host, Node, Parent, Type}]} ->
 	    raw_to_node(Host, {Node, Parent, Type, Nidx});
-	{'EXIT', _Reason} ->
-	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())};
 	_ ->
 	    {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
+    catch
+        exit:_Reason ->
+            {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())}
     end.
 
 get_nodes(Host) ->
@@ -255,16 +265,15 @@ get_subnodes_tree(Host, Node) ->
 	    Type = Rec#pubsub_node.type,
 	    H = node_flat_sql:encode_host(Host),
 	    N = <<(ejabberd_sql:escape_like_arg(Node))/binary, "/%">>,
-	    Sub = case catch
+	    Sub = try
 		ejabberd_sql:sql_query_t(
 		?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d from pubsub_node "
 		     "where host=%(H)s and plugin=%(Type)s and"
 		     " (parent=%(Node)s or parent like %(N)s %ESCAPE)"))
 	    of
 		{selected, RItems} ->
-		    [raw_to_node(Host, Item) || Item <- RItems];
-		_ ->
-		    []
+		    [raw_to_node(Host, Item) || Item <- RItems]
+                  catch _:_ -> []
 	    end,
 	    [Rec|Sub]
     end.
@@ -318,8 +327,10 @@ delete_node(Host, Node) ->
     lists:map(
 	fun(Rec) ->
 	    Nidx = Rec#pubsub_node.id,
-	    catch ejabberd_sql:sql_query_t(
-		    ?SQL("delete from pubsub_node where nodeid=%(Nidx)d")),
+	    try ejabberd_sql:sql_query_t(
+		    ?SQL("delete from pubsub_node where nodeid=%(Nidx)d"))
+            catch _:_ -> error
+            end,
 	    Rec
 	end, get_subnodes_tree(Host, Node)).
 
@@ -327,7 +338,7 @@ delete_node(Host, Node) ->
 raw_to_node(Host, [Node, Parent, Type, Nidx]) ->
     raw_to_node(Host, {Node, Parent, Type, binary_to_integer(Nidx)});
 raw_to_node(Host, {Node, Parent, Type, Nidx}) ->
-    Options = case catch
+    Options = try
 	ejabberd_sql:sql_query_t(
 	  ?SQL("select @(name)s, @(val)s from pubsub_node_option "
 	       "where nodeid=%(Nidx)d"))
@@ -348,9 +359,10 @@ raw_to_node(Host, {Node, Parent, Type, Nidx}) ->
 	    lists:foldl(fun ({Key, Value}, Acc) ->
 			lists:keystore(Key, 1, Acc, {Key, Value})
 		end,
-		StdOpts, DbOpts);
-	_ ->
-	    []
+		StdOpts, DbOpts)
+    catch
+        _:_ ->
+            []
     end,
     Parents = case Parent of
 	<<>> -> [];
@@ -361,17 +373,18 @@ raw_to_node(Host, {Node, Parent, Type, Nidx}) ->
 
 nodeidx(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    case catch
+    try
 	ejabberd_sql:sql_query_t(
 	  ?SQL("select @(nodeid)d from pubsub_node "
 	       "where host=%(H)s and node=%(Node)s"))
     of
 	{selected, [{Nidx}]} ->
 	    {result, Nidx};
-	{'EXIT', _Reason} ->
-	    {error, db_fail};
 	_ ->
 	    {error, not_found}
+    catch
+        _:_Reason ->
+            {error, db_fail}
     end.
 
 nodeowners(Nidx) ->

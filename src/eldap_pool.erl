@@ -51,12 +51,13 @@ start_link(Name, Hosts, Backups, Port, Rootdn, Passwd,
     pg:start_link(),
     lists:foreach(fun (Host) ->
 			  ID = list_to_binary(erlang:ref_to_list(make_ref())),
-			  case catch eldap:start_link(ID, [Host | Backups],
+			  try eldap:start_link(ID, [Host | Backups],
 						      Port, Rootdn, Passwd,
 						      Opts)
 			      of
-			    {ok, Pid} -> pg:join(PoolName, Pid);
-			    Err ->
+			    {ok, Pid} -> pg:join(PoolName, Pid)
+                          catch
+                             _:Err ->
                                   ?ERROR_MSG("Err = ~p", [Err]),
                                   error
 			  end
@@ -69,14 +70,14 @@ start_link(Name, Hosts, Backups, Port, Rootdn, Passwd,
 do_request(Name, {F, Args}) ->
     case pg_get_closest_pid(make_id(Name)) of
       Pid when is_pid(Pid) ->
-	  case catch apply(eldap, F, [Pid | Args]) of
-	    {'EXIT', {timeout, _}} ->
-		?ERROR_MSG("LDAP request failed: timed out", []);
-	    {'EXIT', Reason} ->
+	  try apply(eldap, F, [Pid | Args])
+          catch
+              _:timeout ->
+                  ?ERROR_MSG("LDAP request failed: timed out", []);
+              _:Reason ->
 		?ERROR_MSG("LDAP request failed: eldap:~p(~p)~nReason: ~p",
 			   [F, Args, Reason]),
-		{error, Reason};
-	    Reply -> Reply
+		{error, Reason}
 	  end;
       Err -> Err
     end.

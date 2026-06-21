@@ -62,12 +62,13 @@ start_link() ->
 route_multicast(From0, Domain0, Destinations0, Packet0, Wrapped0) ->
     {From, Domain, Destinations, Packet, Wrapped} =
     ejabberd_hooks:run_fold(multicast_route, Domain0, {From0, Domain0, Destinations0, Packet0, Wrapped0}, []),
-    case catch do_route(Domain, Destinations, xmpp:set_from(Packet, From), Wrapped) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nwhen processing: ~p",
-		       [Reason, {From, Domain, Destinations, Packet}]);
+    try do_route(Domain, Destinations, xmpp:set_from(Packet, From), Wrapped) of
 	_ ->
 	    ok
+    catch
+        _:Reason ->
+            ?ERROR_MSG("~p~nwhen processing: ~p",
+                       [Reason, {From, Domain, Destinations, Packet}])
     end.
 
 -spec register_route(binary()) -> any().
@@ -159,12 +160,13 @@ handle_cast(Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route_multicast, Domain, Destinations, Packet}, State) ->
-    case catch do_route(Domain, Destinations, Packet, false) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nwhen processing: ~p",
-		       [Reason, {Domain, Destinations, Packet}]);
+    try do_route(Domain, Destinations, Packet, false) of
 	_ ->
 	    ok
+    catch
+        _:Reason ->
+            ?ERROR_MSG("~p~nwhen processing: ~p",
+                       [Reason, {Domain, Destinations, Packet}])
     end,
     {noreply, State};
 handle_info({mnesia_table_event, {write, #route_multicast{pid = Pid}, _ActivityId}},

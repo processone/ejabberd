@@ -119,9 +119,7 @@ do_create(Module, Name, TabDef, TabDefs) ->
     code:ensure_loaded(Module),
     Schema = schema(Name, TabDef, TabDefs),
     {attributes, Attrs} = lists:keyfind(attributes, 1, Schema),
-    case catch mnesia:table_info(Name, attributes) of
-	{'EXIT', _} ->
-	    create(Name, TabDef);
+    try mnesia:table_info(Name, attributes) of
 	Attrs ->
 	    case need_reset(Name, Schema) of
 		true ->
@@ -136,6 +134,9 @@ do_create(Module, Name, TabDef, TabDefs) ->
 	    end;
 	OldAttrs ->
 	    transform(Module, Name, OldAttrs, Attrs)
+    catch
+	_:_ ->
+	    create(Name, TabDef)
     end.
 
 reset(Name, TabDef) ->

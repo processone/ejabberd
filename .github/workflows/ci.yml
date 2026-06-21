@@ -43,6 +43,7 @@ jobs:
       with:
         packages: libexpat1-dev libgd-dev libpam0g-dev
                   libsqlite3-dev libwebp-dev libyaml-dev
+                  unixodbc-dev
 
     - name: Cache rebar3
       uses: actions/cache@v5

@@ -28,6 +28,7 @@ jobs:
       with:
         packages: libexpat1-dev libgd-dev libpam0g-dev
                   libsqlite3-dev libwebp-dev libyaml-dev
+                  unixodbc-dev
 
     - name: Get recent compatible Rebar binaries
       if: matrix.otp < 26

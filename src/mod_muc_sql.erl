@@ -49,6 +49,7 @@
 -include_lib("xmpp/include/jid.hrl").
 -include("mod_muc.hrl").
 -include("logger.hrl").
+-include("ejabberd_catch.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("ejabberd_db_serialize.hrl").
 
@@ -196,13 +197,13 @@ change_room(Host, Room, Change) ->
     ?ERROR_MSG("Unsupported change on room ~ts@~ts: ~p", [Room, Host, Change]).
 
 restore_room(LServer, Host, Name) ->
-    case catch ejabberd_sql:sql_query(
+    case try_sql_query(
                  LServer,
                  ?SQL("select @(opts)s from muc_room where name=%(Name)s"
                       " and host=%(Host)s")) of
 	{selected, [{Opts}]} ->
 	    OptsD = ejabberd_sql:decode_term(Opts),
-	    case catch ejabberd_sql:sql_query(
+	    case try_sql_query(
 		LServer,
 		?SQL("select @(jid)s, @(nick)s, @(nodes)s from muc_room_subscribers where room=%(Name)s"
 		     " and host=%(Host)s")) of
@@ -254,13 +255,13 @@ can_use_nick(LServer, ServiceOrRoom, JID, Nick) ->
                             "where nick=%(Nick)s"
                             " and (host=%(ServiceOrRoom)s or host=%(Service)s)")
                end,
-    case catch ejabberd_sql:sql_query(LServer, SqlQuery) of
+    case try_sql_query(LServer, SqlQuery) of
 	{selected, [{SJID1}]} -> SJID == SJID1;
 	_ -> true
     end.
 
 get_rooms_without_subscribers(LServer, Host) ->
-    case catch ejabberd_sql:sql_query(
+    case try_sql_query(
 	LServer,
 	?SQL("select @(name)s, @(opts)s from muc_room"
 	     " where host=%(Host)s")) of
@@ -277,7 +278,7 @@ get_rooms_without_subscribers(LServer, Host) ->
 
 get_hibernated_rooms_older_than(LServer, Host, Timestamp) ->
     TimestampS = usec_to_sql_timestamp(Timestamp),
-    case catch ejabberd_sql:sql_query(
+    case try_sql_query(
 	LServer,
 	?SQL("select @(name)s, @(opts)s from muc_room"
 	     " where host=%(Host)s and created_at < %(TimestampS)t and created_at > '1970-01-02 00:00:00'")) of
@@ -293,12 +294,12 @@ get_hibernated_rooms_older_than(LServer, Host, Timestamp) ->
     end.
 
 get_rooms(LServer, Host) ->
-    case catch ejabberd_sql:sql_query(
+    case try_sql_query(
                  LServer,
                  ?SQL("select @(name)s, @(opts)s from muc_room"
                       " where host=%(Host)s")) of
 	{selected, RoomOpts} ->
-	    case catch ejabberd_sql:sql_query(
+            case try_sql_query(
 		LServer,
 		?SQL("select @(room)s, @(jid)s, @(nick)s, @(nodes)s from muc_room_subscribers"
 		     " where host=%(Host)s")) of
@@ -339,7 +340,7 @@ get_rooms(LServer, Host) ->
 
 get_nick(LServer, Host, From) ->
     SJID = jid:encode(jid:tolower(jid:remove_resource(From))),
-    case catch ejabberd_sql:sql_query(
+    case try_sql_query(
                  LServer,
                  ?SQL("select @(nick)s from muc_registered where"
                       " jid=%(SJID)s and host=%(Host)s")) of
@@ -348,7 +349,7 @@ get_nick(LServer, Host, From) ->
     end.
 
 get_nicks(LServer, Host) ->
-    case catch ejabberd_sql:sql_query(LServer,
+    case try_sql_query(LServer,
                                       ?SQL("select @(jid)s, @(nick)s from muc_registered where"
                                            " host=%(Host)s"))
     of
@@ -760,3 +761,6 @@ clean_tables(ServerHost) ->
 usec_to_sql_timestamp(Timestamp) ->
     TS = misc:usec_to_now(Timestamp),
     calendar:now_to_universal_time(TS).
+
+try_sql_query(LServer, Query) ->
+    ?CATCH_MFA(ejabberd_sql, sql_query, [LServer, Query]).

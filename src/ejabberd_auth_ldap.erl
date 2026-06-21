@@ -124,9 +124,10 @@ check_password(User, AuthzId, Server, Password) ->
        Password == <<"">> ->
 	    {nocache, false};
        true ->
-	    case catch check_password_ldap(User, Server, Password) of
-		{'EXIT', _} -> {nocache, false};
+	    try check_password_ldap(User, Server, Password) of
 		Result -> {cache, Result}
+            catch
+		_:_ -> {nocache, false}
 	    end
     end.
 
@@ -143,18 +144,19 @@ set_password(User, Server, Password) ->
     end.
 
 get_users(Server, []) ->
-    case catch get_users_ldap(Server) of
-      {'EXIT', _} -> [];
-      Result -> Result
+    try get_users_ldap(Server)
+    catch
+      _:_ -> []
     end.
 
 count_users(Server, Opts) ->
     length(get_users(Server, Opts)).
 
 user_exists(User, Server) ->
-    case catch user_exists_ldap(User, Server) of
-	{'EXIT', _Error} -> {nocache, {error, db_failure}};
+    try user_exists_ldap(User, Server) of
 	Result -> {cache, Result}
+    catch
+	_:_Error -> {nocache, {error, db_failure}}
     end.
 
 %%%----------------------------------------------------------------------

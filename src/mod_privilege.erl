@@ -404,9 +404,11 @@ process_presence_in(Acc) ->
 %%%===================================================================
 init([Host|_]) ->
     process_flag(trap_exit, true),
-    catch ets:new(?MODULE,
+    try ets:new(?MODULE,
                   [named_table, public,
-                   {heir, erlang:group_leader(), none}]),
+                   {heir, erlang:group_leader(), none}])
+    catch _:_ -> error
+    end,
     ejabberd_hooks:add(component_connected, ?MODULE,
                        component_connected, 50),
     ejabberd_hooks:add(component_disconnected, ?MODULE,

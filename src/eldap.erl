@@ -200,9 +200,9 @@ add_attrs(Attrs) ->
     F = fun ({Type, Vals}) ->
 		{'AddRequest_attributes', Type, Vals}
 	end,
-    case catch lists:map(F, Attrs) of
-      {'EXIT', _} -> throw({error, attribute_values});
-      Else -> Else
+    try lists:map(F, Attrs)
+    catch
+      _:_ -> throw({error, attribute_values})
     end.
 
 %%% --------------------------------------------------------------------
@@ -347,11 +347,11 @@ optional(Value) -> Value.
 search(Handle, A) when is_record(A, eldap_search) ->
     call_search(Handle, A);
 search(Handle, L) when is_list(L) ->
-    case catch parse_search_args(L) of
-      {error, Emsg} -> {error, Emsg};
-      {'EXIT', Emsg} -> {error, Emsg};
+    try parse_search_args(L) of
       A when is_record(A, eldap_search) ->
 	  call_search(Handle, A)
+    catch
+        throw:{error, Emsg} -> {error, Emsg}
     end.
 
 call_search(Handle, A) ->
@@ -643,7 +643,9 @@ active(Event, From, S) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event(close, _StateName, S) ->
-    catch (S#eldap.sockmod):close(S#eldap.fd),
+    try (S#eldap.sockmod):close(S#eldap.fd)
+    catch _:_ -> error
+    end,
     {stop, normal, S};
 handle_event(_Event, StateName, S) ->
     {next_state, StateName, S}.
@@ -661,23 +663,24 @@ handle_info({Tag, _Socket, Data}, connecting, S)
 handle_info({Tag, _Socket, Data}, wait_bind_response, S)
     when Tag == tcp; Tag == ssl ->
     misc:cancel_timer(S#eldap.bind_timer),
-    case catch recvd_wait_bind_response(Data, S) of
+    try recvd_wait_bind_response(Data, S) of
       bound -> dequeue_commands(S);
       {fail_bind, Reason} ->
 	  report_bind_failure(S#eldap.host, S#eldap.port, Reason),
 	  {next_state, connecting,
-	   close_and_retry(S, ?GRACEFUL_RETRY_TIMEOUT)};
-      {'EXIT', Reason} ->
+	   close_and_retry(S, ?GRACEFUL_RETRY_TIMEOUT)}
+    catch
+      throw:{error, Reason} ->
 	  report_bind_failure(S#eldap.host, S#eldap.port, Reason),
 	  {next_state, connecting, close_and_retry(S)};
-      {error, Reason} ->
+      _:Reason ->
 	  report_bind_failure(S#eldap.host, S#eldap.port, Reason),
 	  {next_state, connecting, close_and_retry(S)}
     end;
 handle_info({Tag, _Socket, Data}, StateName, S)
     when (StateName == active orelse StateName == active_bind)
 	   andalso (Tag == tcp orelse Tag == ssl) ->
-    case catch recvd_packet(Data, S) of
+    try recvd_packet(Data, S) of
       {response, Response, RequestType} ->
 	  NewS = case Response of
 		   {reply, Reply, To, S1} -> p1_fsm:reply(To, Reply), S1;
@@ -690,6 +693,8 @@ handle_info({Tag, _Socket, Data}, StateName, S)
 	     true -> {next_state, StateName, NewS}
 	  end;
       _ -> {next_state, StateName, S}
+    catch
+      _:_ -> {next_state, StateName, S}
     end;
 handle_info({Tag, _Socket}, Fsm_state, S)
     when Tag == tcp_closed; Tag == ssl_closed ->
@@ -970,7 +975,9 @@ check_id(_, _) -> throw({error, wrong_bind_id}).
 %%-----------------------------------------------------------------------
 
 close_and_retry(S, Timeout) ->
-    catch (S#eldap.sockmod):close(S#eldap.fd),
+    try (S#eldap.sockmod):close(S#eldap.fd)
+    catch _:_ -> error
+    end,
     Queue = dict:fold(fun (_Id,
 			   [{Timer, Command, From, _Name} | _], Q) ->
 			      misc:cancel_timer(Timer),

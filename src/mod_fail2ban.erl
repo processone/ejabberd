@@ -105,8 +105,10 @@ c2s_stream_started(#{ip := {Addr, _}} = State, _) ->
 %% gen_mod callbacks
 %%====================================================================
 start(Host, Opts) ->
-    catch ets:new(failed_auth, [named_table, public,
-				{heir, erlang:group_leader(), none}]),
+    try ets:new(failed_auth, [named_table, public,
+				{heir, erlang:group_leader(), none}])
+    catch _:_ -> error
+    end,
     ejabberd_commands:register_commands(Host, ?MODULE, get_commands_spec()),
     gen_mod:start_child(?MODULE, Host, Opts).
 

@@ -658,9 +658,12 @@ set_state(Nidx, State) ->
 
 del_state(Nidx, JID) ->
     J = encode_jid(JID),
-    catch ejabberd_sql:sql_query_t(
+    try ejabberd_sql:sql_query_t(
             ?SQL("delete from pubsub_state"
-                 " where jid=%(J)s and nodeid=%(Nidx)d")),
+                 " where jid=%(J)s and nodeid=%(Nidx)d"))
+    catch
+        _:_ -> error
+    end,
     ok.
 
 get_items(Nidx, _From, undefined) ->
@@ -676,11 +679,13 @@ get_items(Nidx, _From, undefined) ->
     end;
 get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 				'after' = After, before = Before}) ->
-    Count = case catch ejabberd_sql:sql_query_t(
+    Count = try ejabberd_sql:sql_query_t(
 		    ?SQL("select @(count(itemid))d from pubsub_item"
 		         " where nodeid=%(Nidx)d")) of
 		{selected, [{C}]} -> C;
 		_ -> 0
+            catch
+                _:_ -> 0
 	    end,
     Offset = case {IncIndex, Before, After} of
 		{I, undefined, undefined} when is_integer(I) -> I;
@@ -763,11 +768,14 @@ get_last_items(Nidx, _From, Limit) ->
 			 "' order by modification desc ",
 			 " limit ", (integer_to_binary(Limit))/binary>>])
 	    end,
-    case catch ejabberd_sql:sql_query_t(Query) of
+    try ejabberd_sql:sql_query_t(Query) of
 	{selected, [<<"itemid">>, <<"publisher">>, <<"creation">>,
 		    <<"modification">>, <<"payload">>], RItems} ->
 	    {result, [raw_to_item(Nidx, RItem) || RItem <- RItems]};
 	_ ->
+	    {result, []}
+    catch
+        _:_ ->
 	    {result, []}
     end.
 
@@ -782,16 +790,19 @@ get_only_item(Nidx, _From) ->
 		       [<<"select itemid, publisher, creation, modification, payload",
 			  " from pubsub_item where nodeid='", SNidx/binary, "'">>])
 	    end,
-    case catch ejabberd_sql:sql_query_t(Query) of
+    try ejabberd_sql:sql_query_t(Query) of
 	{selected, [<<"itemid">>, <<"publisher">>, <<"creation">>,
 		    <<"modification">>, <<"payload">>], RItems} ->
 	    {result, [raw_to_item(Nidx, RItem) || RItem <- RItems]};
 	_ ->
 	    {result, []}
+    catch
+       _:_ ->
+            {result, []}
     end.
 
 get_item(Nidx, ItemId) ->
-    case catch ejabberd_sql:sql_query_t(
+    try ejabberd_sql:sql_query_t(
 		 ?SQL("select @(itemid)s, @(publisher)s, @(creation)s,"
 		      " @(modification)s, @(payload)s from pubsub_item"
 		      " where nodeid=%(Nidx)d and itemid=%(ItemId)s"))
@@ -799,8 +810,9 @@ get_item(Nidx, ItemId) ->
 	{selected, [RItem]} ->
 	    {result, raw_to_item(Nidx, RItem)};
 	{selected, []} ->
-	    {error, xmpp:err_item_not_found()};
-	{'EXIT', _} ->
+	    {error, xmpp:err_item_not_found()}
+    catch
+        _:_ ->
 	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())}
     end.
 
@@ -858,9 +870,11 @@ set_item(Item) ->
     ok.
 
 del_item(Nidx, ItemId) ->
-    catch ejabberd_sql:sql_query_t(
+    try ejabberd_sql:sql_query_t(
             ?SQL("delete from pubsub_item where itemid=%(ItemId)s"
-                 " and nodeid=%(Nidx)d")).
+                 " and nodeid=%(Nidx)d"))
+    catch _:_ -> error
+    end.
 
 del_items(_, []) ->
     ok;
@@ -869,9 +883,11 @@ del_items(Nidx, [ItemId]) ->
 del_items(Nidx, ItemIds) ->
     I = str:join([ejabberd_sql:to_string_literal_t(X) || X <- ItemIds], <<",">>),
     SNidx = misc:i2l(Nidx),
-    catch
+    try
     ejabberd_sql:sql_query_t([<<"delete from pubsub_item where itemid in (">>,
-	    I, <<") and nodeid='">>, SNidx, <<"';">>]).
+	    I, <<") and nodeid='">>, SNidx, <<"';">>])
+    catch _:_ -> error
+    end.
 
 get_item_name(_Host, _Node, Id) ->
     {result, Id}.
@@ -892,7 +908,7 @@ first_in_list(Pred, [H | T]) ->
     end.
 
 itemids(Nidx) ->
-    case catch
+    try
 	ejabberd_sql:sql_query_t(
 	  ?SQL("select @(itemid)s from pubsub_item where "
 	       "nodeid=%(Nidx)d order by modification desc"))
@@ -901,12 +917,15 @@ itemids(Nidx) ->
 	    [ItemId || {ItemId} <- RItems];
 	_ ->
 	    []
+    catch
+        _:_ ->
+            []
     end.
 
 itemids(Nidx, {_U, _S, _R} = JID) ->
     SJID = encode_jid(JID),
     SJIDLike = <<(encode_jid_like(JID))/binary, "/%">>,
-    case catch
+    try
 	ejabberd_sql:sql_query_t(
           ?SQL("select @(itemid)s from pubsub_item where "
                "nodeid=%(Nidx)d and (publisher=%(SJID)s"
@@ -917,11 +936,14 @@ itemids(Nidx, {_U, _S, _R} = JID) ->
 	    [ItemId || {ItemId} <- RItems];
 	_ ->
 	    []
+    catch
+        _:_ ->
+            []
     end.
 
 select_affiliation_subscriptions(Nidx, JID) ->
     J = encode_jid(JID),
-    case catch
+    try
 	ejabberd_sql:sql_query_t(
           ?SQL("select @(affiliation)s, @(subscriptions)s from "
                " pubsub_state where nodeid=%(Nidx)d and jid=%(J)s"))
@@ -930,6 +952,9 @@ select_affiliation_subscriptions(Nidx, JID) ->
 	    {decode_affiliation(A), decode_subscriptions(S)};
 	_ ->
 	    {none, []}
+    catch
+        _:_ ->
+            {none, []}
     end.
 
 select_affiliation_subscriptions(Nidx, JID, JID) ->
@@ -937,7 +962,7 @@ select_affiliation_subscriptions(Nidx, JID, JID) ->
 select_affiliation_subscriptions(Nidx, GenKey, SubKey) ->
     GJ = encode_jid(GenKey),
     SJ = encode_jid(SubKey),
-    case catch ejabberd_sql:sql_query_t(
+    try ejabberd_sql:sql_query_t(
 	?SQL("select @(jid)s, @(affiliation)s, @(subscriptions)s from "
 	     " pubsub_state where nodeid=%(Nidx)d and jid in (%(GJ)s, %(SJ)s)"))
     of
@@ -950,6 +975,9 @@ select_affiliation_subscriptions(Nidx, GenKey, SubKey) ->
 		end, {none, []}, Res);
 	_ ->
 	    {none, []}
+    catch
+        _:_ ->
+            {none, []}
     end.
 
 update_affiliation(Nidx, JID, Affiliation) ->

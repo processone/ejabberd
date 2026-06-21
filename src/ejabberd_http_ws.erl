@@ -74,13 +74,12 @@ start_link(WS) ->
     p1_fsm:start_link(?MODULE, [WS], ?FSMOPTS).
 
 send_xml({http_ws, FsmRef, _IP}, Packet) ->
-    case catch p1_fsm:sync_send_all_state_event(FsmRef,
+    try p1_fsm:sync_send_all_state_event(FsmRef,
 						    {send_xml, Packet},
 						    15000)
-    of
-	{'EXIT', {timeout, _}} -> {error, timeout};
-	{'EXIT', _} -> {error, einval};
-	Res -> Res
+    catch
+        exit:{timeout, _} -> {error, timeout};
+        exit:_ -> {error, einval}
     end.
 
 setopts({http_ws, FsmRef, _IP}, Opts) ->
@@ -98,7 +97,9 @@ peername({http_ws, _FsmRef, IP}) -> {ok, IP}.
 controlling_process(_Socket, _Pid) -> ok.
 
 close({http_ws, FsmRef, _IP}) ->
-    catch p1_fsm:sync_send_all_state_event(FsmRef, close).
+    try p1_fsm:sync_send_all_state_event(FsmRef, close)
+    catch A:B -> {A, B}
+    end.
 
 reset_stream({http_ws, _FsmRef, _IP} = Socket) ->
     Socket.

@@ -151,7 +151,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 -spec update_table() -> ok.
 update_table() ->
-    catch mnesia:delete_table(iq_response),
+    try mnesia:delete_table(iq_response)
+    catch _:_ -> error
+    end,
     ok.
 
 host_up(Host) ->

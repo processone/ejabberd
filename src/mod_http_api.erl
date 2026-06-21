@@ -178,7 +178,7 @@ process(_Path, Request) ->
     json_error(400, 40, <<"Missing command name.">>).
 
 perform_call(Command, Args, Req, Version) ->
-    case catch binary_to_existing_atom(Command, utf8) of
+    try binary_to_existing_atom(Command, utf8) of
 	Call when is_atom(Call) ->
 	    case extract_auth(Req) of
 		{error, expired} -> invalid_token_response();
@@ -187,8 +187,9 @@ perform_call(Command, Args, Req, Version) ->
 		Auth when is_map(Auth) ->
 		    Result = handle(Call, Auth, Args, Version),
 		    json_format(Result)
-	    end;
-	_ ->
+	    end
+    catch
+        _:_ ->
 	    json_error(404, 40, <<"Endpoint not found.">>)
     end.
 
@@ -203,10 +204,9 @@ get_api_version(#request{path = Path, host = Host}) ->
     get_api_version(lists:reverse(Path), Host).
 
 get_api_version([<<"v", String/binary>> | Tail], Host) ->
-    case catch binary_to_integer(String) of
-	N when is_integer(N) ->
-	    N;
-	_ ->
+    try binary_to_integer(String)
+    catch
+        _:_ ->
 	    get_api_version(Tail, Host)
     end;
 get_api_version([_Head | Tail], Host) ->

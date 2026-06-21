@@ -85,11 +85,11 @@ add_to_log(Host, Type, Data, Room, Opts) ->
 check_access_log(allow, _Host, _From) ->
     allow;
 check_access_log(_Acc, Host, From) ->
-    case catch gen_server:call(get_proc_name(Host),
+    try gen_server:call(get_proc_name(Host),
 			       {check_access_log, Host, From})
-	of
-      {'EXIT', _Error} -> deny;
-      Res -> Res
+    catch
+        _:_ ->
+            deny
     end.
 
 -spec get_url(any(), #state{}) -> {ok, binary()} | error.
@@ -133,9 +133,10 @@ handle_call(stop, _From, State) ->
 handle_cast({reload, Opts}, #logstate{host = Host}) ->
     {noreply, init_state(Host, Opts)};
 handle_cast({add_to_log, Type, Data, Room, Opts}, State) ->
-    case catch add_to_log2(Type, Data, Room, Opts, State) of
-      {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
-      _ -> ok
+    try add_to_log2(Type, Data, Room, Opts, State) of
+        _ -> ok
+    catch
+        _:Reason -> ?ERROR_MSG("~p", [Reason])
     end,
     {noreply, State};
 handle_cast(Msg, State) ->
@@ -342,7 +343,9 @@ add_message_to_log(Nick1, Message, RoomJID, Opts,
       {error, enoent} ->
 	  make_dir_rec(Fd),
 	  {ok, F} = file:open(Fn, [append]),
-	  catch set_filemode(Fn, FilePermissions),
+	  try set_filemode(Fn, FilePermissions)
+          catch _:_ -> error
+          end,
 	  Datestring = get_dateweek(Date, Lang),
 	  TimeStampYesterday = get_timestamp_daydiff(TimeStamp,
 						     -1),

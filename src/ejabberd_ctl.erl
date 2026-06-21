@@ -347,7 +347,7 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
                    list_to_binary(CmdString), <<"-">>, <<"_">>),
     Command = list_to_atom(binary_to_list(CmdStringU)),
     {ArgsFormat, _, ResultFormat} = ejabberd_commands:get_command_format(Command, Auth, Version),
-    case (catch format_args(Args, ArgsFormat)) of
+    try format_args(Args, ArgsFormat) of
 	ArgsFormatted when is_list(ArgsFormatted) ->
 	    CI = case Auth of
 		     {U, S, _, _} -> #{usr => {U, S, <<"">>}, caller_host => S};
@@ -358,8 +358,10 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
 							ArgsFormatted,
 							CI2,
 							Version),
-	    format_result_preliminary(Result, ResultFormat, Version);
-	{'EXIT', {function_clause,[{lists,zip,[A1,A2|_], _} | _]}} ->
+	    format_result_preliminary(Result, ResultFormat, Version)
+    catch
+	error:function_clause:Stacktrace ->
+            [{lists, zip, [A1,A2|_], _} | _] = Stacktrace,
 	    {NumCompa, TextCompa} =
 		case {length(A1), length(A2)} of
 		    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};

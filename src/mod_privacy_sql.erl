@@ -241,12 +241,15 @@ remove_lists(LUser, LServer) ->
 
 export(Server) ->
     SqlType = ejabberd_option:sql_type(Server),
-    case catch ejabberd_sql:sql_query(jid:nameprep(Server),
+    try ejabberd_sql:sql_query(jid:nameprep(Server),
 				 [<<"select id from privacy_list order by "
 				    "id desc limit 1;">>]) of
         {selected, [<<"id">>], [[I]]} ->
             put(id, binary_to_integer(I));
         _ ->
+            put(id, 0)
+    catch
+        _:_ ->
             put(id, 0)
     end,
     [{privacy,

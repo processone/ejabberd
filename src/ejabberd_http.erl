@@ -266,11 +266,12 @@ process_header(State, Data) ->
 		      request_headers = add_header(Name, Auth, State)};
       {ok,
        {http_header, _, 'Content-Length' = Name, _, SLen}} ->
-	  case catch binary_to_integer(SLen) of
+	  try binary_to_integer(SLen) of
 	    Len when is_integer(Len) ->
 		State#state{request_content_length = Len,
-			    request_headers = add_header(Name, SLen, State)};
-	    _ -> State
+			    request_headers = add_header(Name, SLen, State)}
+          catch
+             _:_ -> State
 	  end;
       {ok,
        {http_header, _, 'Accept-Language' = Name, _, Langs}} ->

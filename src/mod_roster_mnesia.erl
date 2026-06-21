@@ -253,13 +253,16 @@ print_progress_line({Pr, NT, NV, ND}) ->
     Pr2.
 
 decide_rip(Key, {_Action, Subs, Asks, User, Contact}) ->
-    case catch mnesia:dirty_read(roster, Key) of
+    try mnesia:dirty_read(roster, Key) of
         [RI] ->
             lists:member(RI#roster.subscription, Subs)
                 andalso lists:member(RI#roster.ask, Asks)
                 andalso decide_rip_jid(RI#roster.us, User)
                 andalso decide_rip_jid(RI#roster.jid, Contact);
         _ ->
+            false
+    catch
+        _:_ ->
             false
     end.
 

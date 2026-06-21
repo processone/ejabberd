@@ -178,11 +178,12 @@ handle_cast(Msg, State) ->
 %%--------------------------------------------------------------------
 
 handle_info({route, #iq{} = Packet}, State) ->
-    case catch handle_iq(Packet, State) of
-        {'EXIT', Reason} ->
-            ?ERROR_MSG("Error when processing IQ stanza: ~p",
-                       [Reason]);
+    try handle_iq(Packet, State) of
         _ -> ok
+    catch
+        _:Reason ->
+            ?ERROR_MSG("Error when processing IQ stanza: ~p",
+                       [Reason])
     end,
     {noreply, State};
 %% XEP33 allows only 'message' and 'presence' stanza type
@@ -197,11 +198,12 @@ handle_info({route_trusted, Destinations, Packet},
 	    #state{lservice = LServiceS, lserver = LServerS} =
 		State) ->
     From = xmpp:get_from(Packet),
-    case catch route_trusted(LServiceS, LServerS, From, Destinations,
+    try route_trusted(LServiceS, LServerS, From, Destinations,
                              Packet) of
-        {'EXIT', Reason} ->
-            ?ERROR_MSG("Error in route_trusted: ~p", [Reason]);
         _ -> ok
+    catch
+        _:Reason ->
+            ?ERROR_MSG("Error in route_trusted: ~p", [Reason])
     end,
     {noreply, State};
 handle_info({get_host, Pid}, State) ->

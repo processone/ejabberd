@@ -642,9 +642,11 @@ init_cache(Mod, Host, Opts) ->
 
 -spec init_topic_cache(module(), binary()) -> ok | {error, db_failure}.
 init_topic_cache(Mod, Host) ->
-    catch ets:new(?MQTT_TOPIC_CACHE,
+    try ets:new(?MQTT_TOPIC_CACHE,
                   [named_table, ordered_set, public,
-                   {heir, erlang:group_leader(), none}]),
+                   {heir, erlang:group_leader(), none}])
+    catch _:_ -> error
+    end,
     ?INFO_MSG("Building MQTT cache for ~ts, this may take a while", [Host]),
     case Mod:list_topics(Host) of
         {ok, Topics} ->

@@ -223,7 +223,7 @@ AppendList2 = fun(Append) ->
 % https://github.com/rebar/rebar/wiki/Dependency-management
 Rebar2DepsFilter =
 fun(DepsList, GitOnlyDeps) ->
-	lists:map(fun({DepName, _HexVersion, Source}) ->
+	lists:map(fun({DepName, _HexPackage, Source}) ->
 	              {DepName, ".*", Source}
 		  end, DepsList)
 end,
@@ -233,14 +233,22 @@ end,
 % https://hexdocs.pm/elixir/Version.html
 Rebar3DepsFilter =
 fun(DepsList, GitOnlyDeps) ->
-	lists:map(fun({DepName, HexVersion, {git, _, {tag, GitVersion}} = Source}) ->
-			  case {lists:member(DepName, GitOnlyDeps), HexVersion == ".*"} of
-                              {true, _} ->
+	lists:map(fun({DepName, HexPackageVersion, {git, _, {tag, GitVersion}} = Source}) ->
+                          {HexPackage, HexVersion} = case HexPackageVersion of
+                                           HV when is_list(HV) -> {false, HV};
+                                           {package, HP, HV} -> {HP, HV}
+                                       end,
+			  case {lists:member(DepName, GitOnlyDeps),
+                                HexPackage,
+                                HexVersion == ".*"} of
+                              {true, _, _} ->
                                   {DepName, ".*", Source};
-                              {false, true} ->
+                              {false, _, true} ->
                                   {DepName, GitVersion};
-                              {false, false} ->
-                                  {DepName, HexVersion}
+                              {false, false, false} ->
+                                  {DepName, HexVersion};
+                              {false, PkgName, false} ->
+                                  {DepName, HexVersion, {pkg, PkgName}}
                           end;
 		     ({DepName, _HexVersion, Source}) ->
 	              {DepName, ".*", Source}

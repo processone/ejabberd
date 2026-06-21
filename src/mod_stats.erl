@@ -108,23 +108,23 @@ get_local_stats(_Server, _, _, Lang) ->
 
 get_local_stat(Server, [], Name)
     when Name == <<"users/online">> ->
-    case catch ejabberd_sm:get_vh_session_list(Server) of
-      {'EXIT', _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_sm:get_vh_session_list(Server) of
       Users ->
 	  ?STATVAL((integer_to_binary(length(Users))),
 		   <<"users">>)
+    catch
+        _:_Reason ->
+            ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_local_stat(Server, [], Name)
     when Name == <<"users/total">> ->
-    case catch
-	   ejabberd_auth:count_users(Server)
-	of
-      {'EXIT', _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_auth:count_users(Server) of
       NUsers ->
 	  ?STATVAL((integer_to_binary(NUsers)),
 		   <<"users">>)
+    catch
+       _:_Reason ->
+            ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_local_stat(_Server, [], Name)
     when Name == <<"users/all-hosts/online">> ->
@@ -144,79 +144,73 @@ get_local_stat(_Server, _, Name) ->
 
 get_node_stat(Node, Name)
     when Name == <<"time/uptime">> ->
-    case catch ejabberd_cluster:call(Node, erlang, statistics,
-			[wall_clock])
-	of
-      {badrpc, _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_cluster:call(Node, erlang, statistics, [wall_clock]) of
       CPUTime ->
 	    ?STATVAL(str:format("~.3f",	[element(1, CPUTime) / 1000]),
 		   <<"seconds">>)
+    catch
+        badrpc:_Reason ->
+            ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_node_stat(Node, Name)
     when Name == <<"time/cputime">> ->
-    case catch ejabberd_cluster:call(Node, erlang, statistics, [runtime])
-	of
-      {badrpc, _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_cluster:call(Node, erlang, statistics, [runtime]) of
       RunTime ->
 	  ?STATVAL(str:format("~.3f", [element(1, RunTime) / 1000]),
 		   <<"seconds">>)
+    catch
+        badrpc:_Reason ->
+	  ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_node_stat(Node, Name)
     when Name == <<"users/online">> ->
-    case catch ejabberd_cluster:call(Node, ejabberd_sm,
-			dirty_get_my_sessions_list, [])
-	of
-      {badrpc, _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_cluster:call(Node, ejabberd_sm, dirty_get_my_sessions_list, []) of
       Users ->
 	  ?STATVAL((integer_to_binary(length(Users))),
 		   <<"users">>)
+    catch
+        badrpc:_Reason ->
+            ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_node_stat(Node, Name)
     when Name == <<"transactions/committed">> ->
-    case catch ejabberd_cluster:call(Node, mnesia, system_info,
-			[transaction_commits])
-	of
-      {badrpc, _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_cluster:call(Node, mnesia, system_info, [transaction_commits]) of
       Transactions ->
 	  ?STATVAL((integer_to_binary(Transactions)),
 		   <<"transactions">>)
+    catch
+        badrpc:_Reason ->
+            ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_node_stat(Node, Name)
     when Name == <<"transactions/aborted">> ->
-    case catch ejabberd_cluster:call(Node, mnesia, system_info,
-			[transaction_failures])
-	of
-      {badrpc, _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_cluster:call(Node, mnesia, system_info, [transaction_failures]) of
       Transactions ->
 	  ?STATVAL((integer_to_binary(Transactions)),
 		   <<"transactions">>)
+    catch
+        badrpc:_Reason ->
+            ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_node_stat(Node, Name)
     when Name == <<"transactions/restarted">> ->
-    case catch ejabberd_cluster:call(Node, mnesia, system_info,
-			[transaction_restarts])
-	of
-      {badrpc, _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_cluster:call(Node, mnesia, system_info, [transaction_restarts]) of
       Transactions ->
 	  ?STATVAL((integer_to_binary(Transactions)),
 		   <<"transactions">>)
+    catch
+        badrpc:_Reason ->
+            ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_node_stat(Node, Name)
     when Name == <<"transactions/logged">> ->
-    case catch ejabberd_cluster:call(Node, mnesia, system_info,
-			[transaction_log_writes])
-	of
-      {badrpc, _Reason} ->
-	  ?STATERR(500, <<"Internal Server Error">>);
+    try ejabberd_cluster:call(Node, mnesia, system_info, [transaction_log_writes]) of
       Transactions ->
 	  ?STATVAL((integer_to_binary(Transactions)),
 		   <<"transactions">>)
+    catch
+        badrpc:_Reason ->
+	  ?STATERR(500, <<"Internal Server Error">>)
     end;
 get_node_stat(_, Name) ->
     ?STATERR(404, <<"Not Found">>).

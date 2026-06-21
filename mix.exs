@@ -67,7 +67,11 @@ defmodule Ejabberd.MixProject do
     if :erlang.system_info(:otp_release) > ver do
       okResult
     else
-      []
+      if :erlang.is_boolean(okResult) do
+        not okResult
+      else
+        []
+      end
     end
   end
 
@@ -75,7 +79,11 @@ defmodule Ejabberd.MixProject do
     if :erlang.system_info(:otp_release) < ver do
       okResult
     else
-      []
+      if :erlang.is_boolean(okResult) do
+        not okResult
+      else
+        []
+      end
     end
   end
 
@@ -151,6 +159,9 @@ defmodule Ejabberd.MixProject do
                          {if_version_above(~c"25", true), {:jose, "~> 1.11.12"}},
                          {config(:lua), {:luerl, "~> 1.2.0"}},
                          {config(:mysql), {:p1_mysql, ">= 1.0.28"}},
+                         {if_version_above(~c"28", true) and config(:odbc),
+                          {:odbc, "~> 2.17.1", hex: :erlang_otp_odbc}
+                         },
                          {config(:pgsql), {:p1_pgsql, ">= 1.1.38"}},
                          {config(:sqlite), {:sqlite3, "~> 1.1"}},
                          {config(:stun), {:stun, "~> 1.0"}}], do:

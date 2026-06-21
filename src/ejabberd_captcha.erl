@@ -546,12 +546,13 @@ is_limited(Limiter) ->
     case ejabberd_option:captcha_limit() of
       infinity -> false;
       Int ->
-	  case catch gen_server:call(?MODULE,
+	  try gen_server:call(?MODULE,
 				     {is_limited, Limiter, Int}, 5000)
 	      of
 	    true -> true;
-	    false -> false;
-	    Err -> ?ERROR_MSG("Call failed: ~p", [Err]), false
+	    false -> false
+          catch
+	    _:Err -> ?ERROR_MSG("Call failed: ~p", [Err]), false
 	  end
     end.
 
@@ -587,7 +588,9 @@ recv_data(Port, TRef, Buf) ->
 		    {ok, binary()} | {error, image_error()}.
 return(Port, TRef, Result) ->
     misc:cancel_timer(TRef),
-    catch port_close(Port),
+    try port_close(Port)
+    catch _:_ -> error
+    end,
     Result.
 
 is_feature_available() ->

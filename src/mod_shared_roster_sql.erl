@@ -121,13 +121,14 @@ delete_group(Host, Group) ->
     end.
 
 get_group_opts(Host, Group) ->
-    case catch ejabberd_sql:sql_query(
+    try ejabberd_sql:sql_query(
 		 Host,
 		 ?SQL("select @(opts)s from sr_group"
                       " where name=%(Group)s and %(Host)H")) of
 	{selected, [{SOpts}]} ->
             {ok, mod_shared_roster:opts_to_binary(ejabberd_sql:decode_term(SOpts))};
 	_ -> error
+    catch _:_ -> error
     end.
 
 set_group_opts(Host, Group, Opts) ->
@@ -143,16 +144,17 @@ set_group_opts(Host, Group, Opts) ->
 
 get_user_groups(US, Host) ->
     SJID = make_jid_s(US),
-    case catch ejabberd_sql:sql_query(
+    try ejabberd_sql:sql_query(
 		 Host,
 		 ?SQL("select @(grp)s from sr_user"
                       " where jid=%(SJID)s and %(Host)H")) of
 	{selected, Rs} -> [G || {G} <- Rs];
 	_ -> []
+    catch _:_ -> []
     end.
 
 get_group_explicit_users(Host, Group) ->
-    case catch ejabberd_sql:sql_query(
+    try ejabberd_sql:sql_query(
 		 Host,
 		 ?SQL("select @(jid)s from sr_user"
                       " where grp=%(Group)s and %(Host)H")) of
@@ -164,11 +166,12 @@ get_group_explicit_users(Host, Group) ->
 	      end, Rs);
 	_ ->
 	    []
+    catch _:_ -> []
     end.
 
 get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
     SJID = make_jid_s(LUser, LServer),
-    case catch ejabberd_sql:sql_query(
+    try ejabberd_sql:sql_query(
 		 LServer,
 		 ?SQL("select @(grp)s from sr_user"
                       " where jid=%(SJID)s and %(LServer)H")) of
@@ -176,16 +179,18 @@ get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
 	    [{Group, proplists:get_value(Group, GroupsOpts, [])}
 	     || {Group} <- Rs];
 	_ -> []
+    catch _:_ -> []
     end.
 
 is_user_in_group(US, Group, Host) ->
     SJID = make_jid_s(US),
-    case catch ejabberd_sql:sql_query(
+    try ejabberd_sql:sql_query(
                  Host,
                  ?SQL("select @(jid)s from sr_user where jid=%(SJID)s"
                       " and %(Host)H and grp=%(Group)s")) of
 	{selected, []} -> false;
 	_ -> true
+    catch _:_ -> []
     end.
 
 add_user_to_group(Host, US, Group) ->

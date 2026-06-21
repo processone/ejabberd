@@ -168,9 +168,9 @@ var_xfield(_) -> {error, badarg}.
 val_xfield(deliver = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(digest = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(digest_frequency = Opt, [Val]) ->
-    case catch binary_to_integer(Val) of
-	N when is_integer(N) -> N;
-	_ ->
+    try binary_to_integer(Val)
+    catch
+        _:_ ->
 	    Txt = {?T("Value of '~s' should be integer"), [Opt]},
 	    {error, xmpp:err_not_acceptable(Txt, ejabberd_option:language())}
     end;
@@ -186,9 +186,9 @@ val_xfield(subscription_type, [<<"items">>]) -> items;
 val_xfield(subscription_type, [<<"nodes">>]) -> nodes;
 val_xfield(subscription_depth, [<<"all">>]) -> all;
 val_xfield(subscription_depth = Opt, [Depth]) ->
-    case catch binary_to_integer(Depth) of
-	N when is_integer(N) -> N;
-	_ ->
+    try binary_to_integer(Depth)
+    catch
+        _:_ ->
 	    Txt = {?T("Value of '~s' should be integer"), [Opt]},
 	    {error, xmpp:err_not_acceptable(Txt, ejabberd_option:language())}
     end.

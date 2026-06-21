@@ -1596,10 +1596,14 @@ match_interval(Now, Start, End) ->
     (Now >= Start) and (Now =< End).
 
 match_rsm(Now, #rsm_set{'after' = ID}) when is_binary(ID), ID /= <<"">> ->
-    Now1 = (catch misc:usec_to_now(binary_to_integer(ID))),
+    Now1 = try misc:usec_to_now(binary_to_integer(ID))
+           catch _:_ -> error
+           end,
     Now > Now1;
 match_rsm(Now, #rsm_set{before = ID}) when is_binary(ID), ID /= <<"">> ->
-    Now1 = (catch misc:usec_to_now(binary_to_integer(ID))),
+    Now1 = try misc:usec_to_now(binary_to_integer(ID))
+           catch _:_ -> error
+           end,
     Now < Now1;
 match_rsm(_Now, _) ->
     true.

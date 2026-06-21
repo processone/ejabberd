@@ -80,10 +80,8 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
        not AllowReturnAll ->
 	    [];
        true ->
-	    case catch mnesia:dirty_select(vcard_search,
+	    try mnesia:dirty_select(vcard_search,
 					   [{MatchSpec, [], ['$_']}]) of
-		{'EXIT', Reason} ->
-		    ?ERROR_MSG("~p", [Reason]), [];
 		Rs ->
 		    Fields = lists:map(fun record_to_item/1, Rs),
 		    case MaxMatch of
@@ -92,6 +90,10 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 			Val ->
 			    lists:sublist(Fields, Val)
 		    end
+            catch
+               _:Reason ->
+                    ?ERROR_MSG("~p", [Reason]),
+                    []
 	    end
     end.
 

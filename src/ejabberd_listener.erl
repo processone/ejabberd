@@ -417,15 +417,16 @@ is_ctl_over_http(State) ->
 udp_recv(Socket, Module, State) ->
     case gen_udp:recv(Socket, 0) of
 	{ok, {Addr, Port, Packet}} ->
-	    case catch Module:udp_recv(Socket, Addr, Port, Packet, State) of
-		{'EXIT', Reason} ->
+	    try Module:udp_recv(Socket, Addr, Port, Packet, State) of
+		NewState ->
+		    udp_recv(Socket, Module, NewState)
+            catch
+		_:Reason ->
 		    ?ERROR_MSG("Failed to process UDP packet:~n"
 			       "** Source: {~p, ~p}~n"
 			       "** Reason: ~p~n** Packet: ~p",
 			       [Addr, Port, Reason, Packet]),
-		    udp_recv(Socket, Module, State);
-		NewState ->
-		    udp_recv(Socket, Module, NewState)
+		    udp_recv(Socket, Module, State)
 	    end;
 	{error, Reason} ->
 	    ?ERROR_MSG("Unexpected UDP error: ~ts", [format_error(Reason)]),

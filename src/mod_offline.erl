@@ -413,7 +413,7 @@ handle_offline_fetch(#jid{luser = U, lserver = S} = JID) ->
 
 -spec fetch_msg_by_node(jid(), binary()) -> error | {ok, #offline_msg{}}.
 fetch_msg_by_node(To, Seq) ->
-    case catch binary_to_integer(Seq) of
+    try binary_to_integer(Seq) of
 	I when is_integer(I), I >= 0 ->
 	    LUser = To#jid.luser,
 	    LServer = To#jid.lserver,
@@ -421,11 +421,14 @@ fetch_msg_by_node(To, Seq) ->
 	    Mod:read_message(LUser, LServer, I);
 	_ ->
 	    error
+    catch
+        _:_ ->
+            error
     end.
 
 -spec remove_msg_by_node(jid(), binary()) -> boolean().
 remove_msg_by_node(To, Seq) ->
-    case catch binary_to_integer(Seq) of
+    try binary_to_integer(Seq) of
 	I when is_integer(I), I>= 0 ->
 	    LUser = To#jid.luser,
 	    LServer = To#jid.lserver,
@@ -435,6 +438,9 @@ remove_msg_by_node(To, Seq) ->
 	    true;
 	_ ->
 	    false
+    catch
+        _:_ ->
+            false
     end.
 
 -spec need_to_store(binary(), message()) -> boolean().

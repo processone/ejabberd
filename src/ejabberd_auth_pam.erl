@@ -46,10 +46,11 @@ check_password(User, AuthzId, Host, Password) ->
 			   username -> User;
 			   jid -> <<User/binary, "@", Host/binary>>
 		       end,
-	    case catch epam:authenticate(Service, UserInfo, Password) of
+	    try epam:authenticate(Service, UserInfo, Password) of
 		true -> {cache, true};
-		false -> {cache, false};
-		_ -> {nocache, false}
+		false -> {cache, false}
+            catch
+		_:_ -> {nocache, false}
 	    end
     end.
 
@@ -59,10 +60,11 @@ user_exists(User, Host) ->
 		 username -> User;
 		 jid -> <<User/binary, "@", Host/binary>>
 	       end,
-    case catch epam:acct_mgmt(Service, UserInfo) of
+    try epam:acct_mgmt(Service, UserInfo) of
 	true -> {cache, true};
-	false -> {cache, false};
-	_Err -> {nocache, {error, db_failure}}
+	false -> {cache, false}
+    catch
+	_:_Err -> {nocache, {error, db_failure}}
     end.
 
 plain_password_required(_) -> true.

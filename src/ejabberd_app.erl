@@ -240,9 +240,11 @@ print_distribution_listening() ->
     end,
     {Addr, Port} = lists:foldl(
           fun(Link, Acc) ->
-                  case catch inet:sockname(Link) of
+                  try inet:sockname(Link) of
                       {ok, {A1, P1}} -> {misc:ip_to_list(A1), P1};
                       _ -> Acc
+                  catch
+                      _:_ -> Acc
                   end
           end, {"UnknownAddress", "UnknownPort"}, Links),
     ?INFO_MSG("Start accepting TCP connections at ~ts:~p for erlang distribution", [Addr, Port]).

@@ -30,6 +30,7 @@
 %% External exports
 -export([import_file/1, import_dir/1]).
 
+-include("ejabberd_catch.hrl").
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 
@@ -48,13 +49,14 @@ import_file(File) ->
 	    {ok, Text} ->
 		case fxml_stream:parse_element(Text) of
 		  El when is_record(El, xmlel) ->
-		      case catch process_xdb(User, Server, El) of
-			{'EXIT', Reason} ->
+		      try process_xdb(User, Server, El) of
+			_ -> ok
+                      catch
+			_:Reason ->
 			    ?ERROR_MSG("Error while processing file \"~ts\": "
 				       "~p~n",
 				       [File, Reason]),
-			    {error, Reason};
-			_ -> ok
+			    {error, Reason}
 		      end;
 		  {error, Reason} ->
 		      ?ERROR_MSG("Can't parse file \"~ts\": ~p~n",
@@ -118,17 +120,17 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 	  ejabberd_auth:set_password(User, Server, Password),
 	  ok;
       ?NS_ROSTER ->
-	  catch mod_roster:set_items(User, Server, xmpp:decode(El)),
+	  ?CATCH_MFA(mod_roster, set_items, [User, Server, xmpp:decode(El)]),
 	  ok;
       ?NS_LAST ->
 	  TimeStamp = fxml:get_attr_s(<<"last">>, Attrs),
 	  Status = fxml:get_tag_cdata(El),
-	  catch mod_last:store_last_info(User, Server,
+	  ?CATCH_MFA(mod_last, store_last_info, [User, Server,
 					 binary_to_integer(TimeStamp),
-					 Status),
+					 Status]),
 	  ok;
       ?NS_VCARD ->
-	  catch mod_vcard:set_vcard(User, LServer, El),
+	  ?CATCH_MFA(mod_vcard, set_vcard, [User, LServer, El]),
 	  ok;
       <<"jabber:x:offline">> ->
 	  process_offline(Server, From, El), ok;
@@ -140,9 +142,9 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 				({<<"xdbns">>, _}) -> false;
 				(_) -> true
 			     end, Attrs),
-		catch mod_private:set_data(
+	  ?CATCH_MFA(mod_private, set_data, [
 			From,
-			[{XMLNS, El#xmlel{attrs = NewAttrs}}]);
+			[{XMLNS, El#xmlel{attrs = NewAttrs}}]]);
 	    _ ->
 		?DEBUG("Unknown namespace \"~ts\"~n", [XMLNS])
 	  end,

@@ -70,11 +70,11 @@
 	 terminate/3,
 	 code_change/4]).
 
+-include("ejabberd_catch.hrl").
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 -include("mod_muc_room.hrl").
-
 
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
@@ -1296,8 +1296,7 @@ process_voice_approval(From, Pkt, VoiceApproval, StateData) ->
 			true when Allow ->
 			    Reason = <<>>,
 			    NSD = set_role(TargetJid, participant, StateData),
-			    catch send_new_presence(
-				    TargetJid, Reason, NSD, StateData),
+			    ?CATCH_TRY(send_new_presence, TargetJid, Reason, NSD, StateData),
 			    NSD;
 			_ ->
 			    StateData
@@ -2182,9 +2181,11 @@ filter_presence(Presence) ->
     Els = lists:filter(
 	    fun(El) ->
 		    XMLNS = xmpp:get_ns(El),
-		    case catch binary:part(XMLNS, 0, size(?NS_MUC)) of
+		    try binary:part(XMLNS, 0, size(?NS_MUC)) of
 			?NS_MUC -> false;
 			_ -> XMLNS /= ?NS_HATS
+		    catch
+			_:_ -> XMLNS /= ?NS_HATS
 		    end
 	    end, xmpp:get_els(Presence)),
     xmpp:set_els(Presence, Els).
@@ -3206,7 +3207,7 @@ search_affiliation_fallback(Affiliation, StateData) ->
 process_admin_items_set(UJID, Items, Lang, StateData) ->
     UAffiliation = get_affiliation(UJID, StateData),
     URole = get_role(UJID, StateData),
-    case catch find_changed_items(UJID, UAffiliation, URole,
+    try find_changed_items(UJID, UAffiliation, URole,
 				  Items, Lang, StateData, [])
 	of
       {result, Res} ->
@@ -3221,8 +3222,9 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 	      NSD ->
 		  store_room(NSD),
 		  {result, undefined, NSD}
-	  end;
-	{error, Err} -> {error, Err}
+	  end
+    catch
+	throw:{error, Err} -> {error, Err}
     end.
 
 -spec process_item_change(jid()) -> fun((admin_action(), state() | {error, stanza_error()}) ->
@@ -4100,7 +4102,7 @@ remove_nonmembers(StateData) ->
 	      Affiliation = get_affiliation(JID, SD),
 	      case Affiliation of
 		  none ->
-		      catch send_kickban_presence(undefined, JID, <<"">>, 322, SD),
+		      ?CATCH_TRY(send_kickban_presence, undefined, JID, <<"">>, 322, SD),
 		      set_role(JID, none, SD);
 		  _ -> SD
 	      end

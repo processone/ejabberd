@@ -83,6 +83,7 @@
          web_menu_node/3, web_page_node/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
+-include("ejabberd_catch.hrl").
 -include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
@@ -839,7 +840,7 @@ perform_kindly(DelaySeconds, AnnouncementTextString, Action) ->
                    io:format("~s[~p/~p ~ps]~s ~ts...~s ",
                              [?CLEAD ++ ?CINFO, NumberThis, NumberLast, SecondsDiff,
                               ?CMID ++ ?CINFO, Desc, ?CCLEAN]),
-                   Result = (catch apply(Mod, Func, Args)),
+                   Result = ?CATCH_TRY(apply, Mod, Func, Args),
                    io:format("~p~n", [Result]),
                    NumberThis + 1
                 end,

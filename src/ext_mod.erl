@@ -43,6 +43,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include("ejabberd_catch.hrl").
 -include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
@@ -1338,9 +1339,9 @@ get_commit_link(CommitHtmlUrl, TitleEl, CommitSha) ->
 
 get_content(Node, Query, Lang) ->
     {{_CommandCtl}, _Res} =
-        case catch parse_and_execute(Query, Node) of
-            {'EXIT', _} -> {{""}, <<"">>};
-            Result_tuple -> Result_tuple
+        try parse_and_execute(Query, Node)
+        catch
+            _:_ -> {{""}, <<"">>}
         end,
 
     AvailableModulesEls = get_available_modules_table(Lang),

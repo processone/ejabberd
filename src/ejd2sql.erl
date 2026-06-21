@@ -267,10 +267,11 @@ flatten1([], Acc) ->
 import_rows(LServer, FromType, ToType, Tab, Mod, Dump, FieldsNumber) ->
     case read_row_from_sql_dump(Dump, FieldsNumber) of
         {ok, Fields} ->
-            case catch Mod:import(LServer, FromType, ToType, Tab, Fields) of
+            try Mod:import(LServer, FromType, ToType, Tab, Fields) of
                 ok ->
-                    ok;
-                Err ->
+                    ok
+            catch
+                _:Err ->
                     ?ERROR_MSG("Failed to import fields ~p for tab ~p: ~p",
                                [Fields, Tab, Err])
             end,

@@ -41,6 +41,7 @@
          webadmin_node_db_table_page/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
+-include("ejabberd_catch.hrl").
 -include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
@@ -1069,13 +1070,12 @@ list_last_activity(Host, Lang, Integral, Period) ->
       <<"year">> -> TS = TimeStamp - 366 * 86400, Days = 366;
       _ -> TS = TimeStamp - 31 * 86400, Days = 31
     end,
-    case catch mnesia:dirty_select(last_activity,
+    try mnesia:dirty_select(last_activity,
 				   [{{last_activity, {'_', Host}, '$1', '_'},
 				     [{'>', '$1', TS}],
 				     [{trunc,
 				       {'/', {'-', TimeStamp, '$1'}, 86400}}]}])
 	of
-      {'EXIT', _Reason} -> [];
       Vals ->
 	  Hist = histogram(Vals, Integral),
 	  if Hist == [] -> [?CT(?T("No Data"))];
@@ -1099,6 +1099,8 @@ list_last_activity(Host, Lang, Integral, Period) ->
 			     [{xmlcdata, pretty_string_int(V)}])
 			|| V <- Hist ++ Tail])]
 	  end
+    catch
+      exit:_Reason -> []
     end.
 
 histogram(Values, Integral) ->
@@ -1899,8 +1901,13 @@ make_command_allowed(Name, Request, BaseArguments, Options, Cmd) ->
                 false
         end,
     ArgumentsUsed =
-        (catch lists:zip(
-                   lists:map(fun({A, _}) -> A end, ArgumentsFormat), ArgumentsUsed1)),
+        try
+            lists:zip(
+                lists:map(fun({A, _}) -> A end, ArgumentsFormat), ArgumentsUsed1)
+        catch
+            _:_ ->
+                error
+        end,
     ResultEls =
         make_command_result(filter_results(get_filters_from_query(Query,
                                                                   get_result_fields(ResultFormatApi)),
@@ -2249,7 +2256,7 @@ execute_command2(Name,
         end,
     case LetsExecute of
         true ->
-            catch ejabberd_commands:execute_command2(Name, Arguments, CallerInfo);
+            ?CATCH_MFA(ejabberd_commands, execute_command2, [Name, Arguments, CallerInfo]);
         false ->
             not_executed
     end.

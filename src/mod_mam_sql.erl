@@ -639,17 +639,18 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 			true ->
 			     []
 		     end,
-    WithClause = case catch jid:tolower(With) of
+    WithClause = try jid:tolower(With) of
 		     {_, _, <<>>} ->
 			 [<<" and bare_peer=">>,
 			  ToString(jid:encode(With))];
 		     {_, _, _} ->
 			 [<<" and peer=">>,
-			  ToString(jid:encode(With))];
-		     _ ->
-			 []
+			  ToString(jid:encode(With))]
+                 catch
+                     _:_ ->
+                         []
 		 end,
-    PageClause = case catch binary_to_integer(ID) of
+    PageClause = try binary_to_integer(ID) of
 		     I when is_integer(I), I >= 0 ->
 			 case Direction of
 			     before ->
@@ -658,9 +659,10 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 				 [<<" AND timestamp > ">>, ID];
 			     _ ->
 				 []
-			 end;
-		     _ ->
-			 []
+			 end
+                 catch
+                     _:_ ->
+                         []
 		 end,
     StartClause = case Start of
 		      {_, _, _} ->

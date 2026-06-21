@@ -205,7 +205,7 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 			Val ->
 			    [<<" LIMIT ">>, integer_to_binary(Val)]
 		    end,
-	   case catch ejabberd_sql:sql_query(
+	   try ejabberd_sql:sql_query(
 			LServer,
 			[<<"select username, fn, family, given, "
 			   "middle,        nickname, bday, ctry, "
@@ -220,6 +220,10 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 		   [row_to_item(LServer, R) || R <- Rs];
 	       Error ->
 		   ?ERROR_MSG("~p", [Error]), []
+           catch
+               _:Error ->
+                   ?ERROR_MSG("~p", [Error]),
+                   []
 	   end
     end.
 
