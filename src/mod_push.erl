@@ -504,10 +504,9 @@ notify(LUser, LServer, Clients, Pkt, Dir) ->
 						LServer, Node, Reason, Type])
 			  end;
 		     (timeout) ->
-			  ?DEBUG("Timeout sending notification for ~ts@~ts (~ts) "
-				 "to ~ts",
-				 [LUser, LServer, Node, jid:encode(PushLJID)]),
-			  ok % Hmm.
+			  ?WARNING_MSG("Timeout sending notification for ~ts@~ts (~ts) "
+				       "to ~ts",
+				       [LUser, LServer, Node, jid:encode(PushLJID)])
 		  end,
 	      notify(LServer, PushLJID, Node, XData, Pkt, Dir, HandleResponse)
       end, Clients).
