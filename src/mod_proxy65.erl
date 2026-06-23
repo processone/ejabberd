@@ -40,6 +40,7 @@
 -export([init/1]).
 
 -export([start_link/1, mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
+-export([get_mod_option/3]).
 
 -define(PROCNAME, ejabberd_mod_proxy65).
 
@@ -93,6 +94,12 @@ init([Host]) ->
 depends(_Host, _Opts) ->
     [].
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec get_mod_option(binary(), binary(), atom()) -> any().
+get_mod_option(ServerHost, MucHost, Option) ->
+    gen_mod:get_module_option_append(ServerHost, MucHost, mod_proxy65_opt, Option).
+
 mod_opt_type(access) ->
     econf:acl();
 mod_opt_type(hostname) ->
@@ -109,6 +116,13 @@ mod_opt_type(host) ->
     econf:host();
 mod_opt_type(hosts) ->
     econf:hosts();
+mod_opt_type(append_module_config) ->
+    econf:and_then(
+        econf:map(econf:domain(), econf:list(econf:any())),
+      econf:map(
+        econf:domain(),
+        ejabberd_options:validator(?MODULE, [append_module_config]),
+        [unique]));
 mod_opt_type(ram_db_type) ->
     econf:db_type(?MODULE);
 mod_opt_type(server_host) ->
@@ -124,11 +138,35 @@ mod_opt_type(sndbuf) ->
 mod_opt_type(vcard) ->
     econf:vcard_temp().
 
+-spec mod_options(binary()) -> [{append_module_config, [{binary(), any()}]} |
+                                {atom(), any()}].
 mod_options(Host) ->
     [{ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
+           {append_module_config,
+            #{value => "{UploadHost: Options}",
+              note => "added in 25.xx",
+              desc =>
+                  ?T("Add a few specific options to a certain upload host "
+                     "previously defined in the mod_http_upload 'hosts' option. "
+                     "Right now only 'name' and 'vcard' can be defined here. "
+                     "This is similar to the toplevel _`append_host_config`_ option, "
+                     "but in this case it's applied to this module options."),
+              example =>
+                  ["modules:",
+                   "  mod_http_upload:",
+                   "    hosts:",
+                   "      - service1.@HOST@",
+                   "      - service2.@HOST@",
+                   "    name: \"Service General\"",
+                   "    append_module_config:",
+                   "      service1.localhost:",
+                   "        name: \"Service 1\"",
+                   "      service2.example.net:",
+                   "        name: \"Service 2\""]}},
      {access, all},
      {host, <<"proxy.", Host/binary>>},
      {hosts, []},
+     {append_module_config, []},
      {hostname, undefined},
      {ip, undefined},
      {port, 7777},
@@ -154,8 +192,29 @@ mod_doc() ->
               desc =>
                   ?T("This option defines the Jabber IDs of the service. "
                      "If the 'hosts' option is not specified, the only Jabber ID will "
-                     "be the hostname of the virtual host with the prefix \"proxy.\". "
+                     "be the hostname of the virtual host with the prefix '\"proxy.\"'. "
                      "The keyword '@HOST@' is replaced with the real virtual host name.")}},
+           {append_module_config,
+            #{value => "{ProxyHost: Options}",
+              note => "added in 25.xx",
+              desc =>
+                  ?T("Add a few specific options to a certain upload host "
+                     "previously defined in the mod_proxy65 'hosts' option. "
+                     "Right now only 'name' and 'vcard' can be defined here. "
+                     "This is similar to the toplevel _`append_host_config`_ option, "
+                     "but in this case it's applied to this module options."),
+              example =>
+                  ["modules:",
+                   "  mod_proxy65:",
+                   "    hosts:",
+                   "      - service1.@HOST@",
+                   "      - service2.@HOST@",
+                   "    name: \"Service General\"",
+                   "    append_module_config:",
+                   "      service1.localhost:",
+                   "        name: \"Service 1\"",
+                   "      service2.example.net:",
+                   "        name: \"Service 2\""]}},
            {name,
             #{value => ?T("Name"),
               desc =>

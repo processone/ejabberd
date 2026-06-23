@@ -309,7 +309,7 @@ disco_features(Acc, _From, _To, _Node, _Lang) ->
 		     binary(),  binary()) -> [identity()].
 disco_identity(Acc, _From, To, <<"">>, Lang) ->
     Host = ejabberd_router:host_of_route(To#jid.lserver),
-    Name = mod_vcard_opt:name(Host),
+    Name = get_mod_option(Host, To#jid.lserver, name),
     [#identity{category = <<"directory">>,
 	       type = <<"user">>,
 	       name = translate:translate(Lang, Name)}|Acc];
@@ -627,6 +627,10 @@ webadmin_page_hostuser(Acc, _, _, _) -> Acc.
 depends(_Host, _Opts) ->
     [].
 
+-spec get_mod_option(binary(), binary(), atom()) -> any().
+get_mod_option(ServerHost, MucHost, Option) ->
+    gen_mod:get_module_option_append(ServerHost, MucHost, mod_vcard_opt, Option).
+
 mod_opt_type(allow_return_all) ->
     econf:bool();
 mod_opt_type(name) ->
@@ -639,6 +643,13 @@ mod_opt_type(host) ->
     econf:host();
 mod_opt_type(hosts) ->
     econf:hosts();
+mod_opt_type(append_module_config) ->
+    econf:and_then(
+        econf:map(econf:domain(), econf:list(econf:any())),
+      econf:map(
+        econf:domain(),
+        ejabberd_options:validator(?MODULE, [append_module_config]),
+        [unique]));
 mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
 mod_opt_type(use_cache) ->
@@ -652,10 +663,13 @@ mod_opt_type(cache_life_time) ->
 mod_opt_type(vcard) ->
     econf:vcard_temp().
 
+-spec mod_options(binary()) -> [{append_module_config, [{binary(), any()}]} |
+                                {atom(), any()}].
 mod_options(Host) ->
     [{allow_return_all, false},
      {host, <<"vjud.", Host/binary>>},
      {hosts, []},
+     {append_module_config, []},
      {matches, 30},
      {search, false},
      {name, ?T("vCard User Search")},
@@ -690,8 +704,29 @@ mod_doc() ->
               desc =>
                   ?T("This option defines the Jabber IDs of the service. "
                      "If the 'hosts' option is not specified, the only Jabber ID will "
-                     "be the hostname of the virtual host with the prefix \"vjud.\". "
+                     "be the hostname of the virtual host with the prefix '\"vjud.\"'. "
                      "The keyword '@HOST@' is replaced with the real virtual host name.")}},
+           {append_module_config,
+            #{value => "{VcardHost: Options}",
+              note => "added in 25.xx",
+              desc =>
+                  ?T("Add a few specific options to a certain upload host "
+                     "previously defined in the mod_vcard 'hosts' option. "
+                     "Right now only 'name' can be defined here. "
+                     "This is similar to the toplevel _`append_host_config`_ option, "
+                     "but in this case it's applied to this module options."),
+              example =>
+                  ["modules:",
+                   "  mod_vcard:",
+                   "    hosts:",
+                   "      - service1.@HOST@",
+                   "      - service2.@HOST@",
+                   "    name: \"Service General\"",
+                   "    append_module_config:",
+                   "      service1.localhost:",
+                   "        name: \"Service 1\"",
+                   "      service2.example.net:",
+                   "        name: \"Service 2\""]}},
            {name,
             #{value => ?T("Name"),
               desc =>

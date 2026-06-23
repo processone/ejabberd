@@ -20,6 +20,7 @@
 -behaviour(ejabberd_config).
 
 -export([opt_type/1, options/0, globals/0, doc/0]).
+-export([validator/2]).
 
 -ifdef(MULTIHOST_SQL_SCHEMA).
 -define(USE_MULTIHOST_SQL_SCHEMA_DEFAULT, true).
@@ -841,7 +842,19 @@ doc() ->
 -spec validator() -> econf:validator().
 validator() ->
     Disallowed = ejabberd_config:globals(),
-    {Validators, Required} = ejabberd_config:validators(Disallowed),
+    validator2(Disallowed, toplevel).
+
+-spec validator(atom(), list()) -> econf:validator().
+validator(Module, Disallowed) ->
+    validator2(Disallowed,
+               #{modules => [Module],
+                 options_module => Module,
+                 options_type_function => mod_opt_type,
+                 options_function => mod_options,
+                 options_arguments => [<<"undefined">>]}).
+
+validator2(Disallowed, Custom) ->
+    {Validators, Required} = ejabberd_config:validators(Disallowed, Custom),
     econf:and_then(
       fun econf:group_dups/1,
       econf:options(

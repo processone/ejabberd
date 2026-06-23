@@ -149,7 +149,7 @@ process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_info(#iq{type = get, to = To, lang = Lang} = IQ) ->
     Host = ejabberd_router:host_of_route(To#jid.lserver),
-    Name = mod_proxy65_opt:name(Host),
+    Name = mod_proxy65:get_mod_option(Host, To#jid.server, name),
     Info = ejabberd_hooks:run_fold(disco_info, Host,
 				   [], [Host, ?MODULE, <<"">>, <<"">>]),
     xmpp:make_iq_result(
@@ -173,7 +173,7 @@ process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_vcard(#iq{type = get, to = To, lang = Lang} = IQ) ->
     ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
-    VCard = case mod_proxy65_opt:vcard(ServerHost) of
+    VCard = case mod_proxy65:get_mod_option(ServerHost, To#jid.server, vcard) of
 		undefined ->
 		    #vcard_temp{fn = <<"ejabberd/mod_proxy65">>,
 				url = ejabberd_config:get_uri(),

@@ -881,7 +881,7 @@ process_pubsub_owner(#iq{to = To} = IQ) ->
 -spec process_vcard(iq()) -> iq().
 process_vcard(#iq{type = get, to = To, lang = Lang} = IQ) ->
     ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
-    xmpp:make_iq_result(IQ, iq_get_vcard(ServerHost, Lang));
+    xmpp:make_iq_result(IQ, iq_get_vcard(ServerHost, To#jid.lserver, Lang));
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang)).
@@ -990,7 +990,7 @@ iq_disco_info(ServerHost, Host, SNode, From, Lang) ->
 		 end,
     case Node of
 	<<>> ->
-	    Name = mod_pubsub_opt:name(ServerHost),
+	    Name = get_mod_option(ServerHost, Host, name),
 	    {result,
 	     #disco_info{
 		identities = [#identity{
@@ -1105,9 +1105,9 @@ iq_sm(#iq{to = To, sub_els = [SubEl]} = IQ) ->
 	    xmpp:make_error(IQ, Error)
     end.
 
--spec iq_get_vcard(binary(), binary()) -> vcard_temp().
-iq_get_vcard(ServerHost, Lang) ->
-    case mod_pubsub_opt:vcard(ServerHost) of
+-spec iq_get_vcard(binary(), binary(), binary()) -> vcard_temp().
+iq_get_vcard(ServerHost, ServiceHost, Lang) ->
+    case get_mod_option(ServerHost, ServiceHost, vcard) of
 	undefined ->
 	    Desc = misc:get_descr(Lang, ?T("ejabberd Publish-Subscribe module")),
 	    #vcard_temp{fn = <<"ejabberd/mod_pubsub">>,
@@ -4273,6 +4273,12 @@ get_commands_spec() ->
 			result_desc = "0 if command failed, 1 when succeeded",
 			result_example = ok}].
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec get_mod_option(binary(), binary(), atom()) -> any().
+get_mod_option(ServerHost, MucHost, Option) ->
+    gen_mod:get_module_option_append(ServerHost, MucHost, mod_pubsub_opt, Option).
+
 -spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(access_createnode) ->
     econf:acl();
@@ -4318,16 +4324,28 @@ mod_opt_type(host) ->
     econf:host();
 mod_opt_type(hosts) ->
     econf:hosts();
+mod_opt_type(append_module_config) ->
+    econf:and_then(
+        econf:map(econf:domain(), econf:list(econf:any())),
+      econf:map(
+        econf:domain(),
+        ejabberd_options:validator(?MODULE, [append_module_config]),
+        [unique]));
 mod_opt_type(db_type) ->
     econf:db_type(?MODULE);
 mod_opt_type(vcard) ->
     econf:vcard_temp().
 
+%% We only define the types of options that cannot be derived
+%% automatically by tools/opt_type.sh script
+-spec mod_options(binary()) -> [{append_module_config, [{binary(), any()}]} |
+		    {atom(), any()}].
 mod_options(Host) ->
     [{access_createnode, all},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {host, <<"pubsub.", Host/binary>>},
      {hosts, []},
+     {append_module_config, []},
      {name, ?T("Publish-Subscribe")},
      {vcard, undefined},
      {ignore_pep_from_offline, true},
@@ -4362,6 +4380,27 @@ mod_doc() ->
 		     "By default any account in the local ejabberd server "
 		     "is allowed to create pubsub nodes. "
 		     "The default value is: 'all'.")}},
+           {append_module_config,
+            #{value => "{PubSubHost: Options}",
+              note => "added in 25.xx",
+              desc =>
+                  ?T("Add a few specific options to a certain PubSub host "
+                     "previously defined in the mod_pubsub 'hosts' option. "
+                     "Right now only 'name' and 'vcard' can be defined here. "
+                     "This is similar to the toplevel _`append_host_config`_ option, "
+                     "but in this case it's applied to this module options."),
+              example =>
+                  ["modules:",
+                   "  mod_pubsub:",
+                   "    hosts:",
+                   "      - service1.@HOST@",
+                   "      - service2.@HOST@",
+                   "    name: \"Service General\"",
+                   "    append_module_config:",
+                   "      service1.localhost:",
+                   "        name: \"Service 1\"",
+                   "      service2.example.net:",
+                   "        name: \"Service 2\""]}},
 	   {db_type,
 	    #{value => "mnesia | sql",
 	      desc =>
@@ -4393,7 +4432,7 @@ mod_doc() ->
 		  ?T("This option defines the Jabber IDs of the service. "
 		     "If the 'hosts' option is not specified, the only Jabber "
 		     "ID will be the hostname of the virtual host with the "
-		     "prefix \"pubsub.\". The keyword '@HOST@' is replaced "
+		     "prefix '\"pubsub.\"'. The keyword '@HOST@' is replaced "
 		     "with the real virtual host name.")}},
 	   {ignore_pep_from_offline,
 	    #{value => "false | true",

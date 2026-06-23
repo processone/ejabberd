@@ -131,6 +131,12 @@ reload(ServerHost, NewOpts, OldOpts) ->
 	    gen_server:cast(NewProc, {reload, NewOpts, OldOpts})
     end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec get_mod_option(binary(), binary(), atom()) -> any().
+get_mod_option(ServerHost, MucHost, Option) ->
+    gen_mod:get_module_option_append(ServerHost, MucHost, mod_http_upload_opt, Option).
+
 -spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(name) ->
     econf:binary();
@@ -177,14 +183,25 @@ mod_opt_type(host) ->
     econf:host();
 mod_opt_type(hosts) ->
     econf:hosts();
+mod_opt_type(append_module_config) ->
+    econf:and_then(
+        econf:map(econf:domain(), econf:list(econf:any())),
+      econf:map(
+        econf:domain(),
+        ejabberd_options:validator(?MODULE, [append_module_config]),
+        [unique]));
 mod_opt_type(vcard) ->
     econf:vcard_temp().
 
+%% we only define the types of options that cannot be derived
+%% automatically by tools/opt_type.sh script
 -spec mod_options(binary()) -> [{thumbnail, boolean()} |
+				{append_module_config, [{binary(), any()}]} |
 				{atom(), any()}].
 mod_options(Host) ->
     [{host, <<"upload.", Host/binary>>},
      {hosts, []},
+     {append_module_config, []},
      {name, ?T("HTTP File Upload")},
      {vcard, undefined},
      {access, local},
@@ -225,6 +242,27 @@ mod_doc() ->
                      "If the 'hosts' option is not specified, the only Jabber ID will "
                      "be the hostname of the virtual host with the prefix '\"upload.\"'. "
                      "The keyword '@HOST@' is replaced with the real virtual host name.")}},
+           {append_module_config,
+            #{value => "{UploadHost: Options}",
+              note => "added in 25.xx",
+              desc =>
+                  ?T("Add a few specific options to a certain upload host "
+                     "previously defined in the mod_http_upload 'hosts' option. "
+                     "Right now only 'name' and 'vcard' can be defined here. "
+                     "This is similar to the toplevel _`append_host_config`_ option, "
+                     "but in this case it's applied to this module options."),
+              example =>
+                  ["modules:",
+                   "  mod_http_upload:",
+                   "    hosts:",
+                   "      - service1.@HOST@",
+                   "      - service2.@HOST@",
+                   "    name: \"Service General\"",
+                   "    append_module_config:",
+                   "      service1.localhost:",
+                   "        name: \"Service 1\"",
+                   "      service2.example.net:",
+                   "        name: \"Service 2\""]}},
            {name,
             #{value => ?T("Name"),
               desc =>
@@ -722,16 +760,17 @@ expand_host(Input, Host) ->
 %% XMPP request handling.
 
 -spec process_iq(iq(), state()) -> {iq(), state()} | iq() | not_request.
-process_iq(#iq{type = get, lang = Lang, sub_els = [#disco_info{}]} = IQ,
-	   #state{server_host = ServerHost, name = Name}) ->
+process_iq(#iq{type = get, to = To, lang = Lang, sub_els = [#disco_info{}]} = IQ,
+	   #state{server_host = ServerHost, name = _NameGeneral}) ->
+    Name = get_mod_option(ServerHost, To#jid.lserver, name),
     AddInfo = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
 				      [ServerHost, ?MODULE, <<"">>, <<"">>]),
     xmpp:make_iq_result(IQ, iq_disco_info(ServerHost, Lang, Name, AddInfo));
 process_iq(#iq{type = get, sub_els = [#disco_items{}]} = IQ, _State) ->
     xmpp:make_iq_result(IQ, #disco_items{});
-process_iq(#iq{type = get, sub_els = [#vcard_temp{}], lang = Lang} = IQ,
+process_iq(#iq{type = get, to = To, sub_els = [#vcard_temp{}], lang = Lang} = IQ,
 	   #state{server_host = ServerHost}) ->
-    VCard = case mod_http_upload_opt:vcard(ServerHost) of
+    VCard = case get_mod_option(ServerHost, To#jid.lserver, vcard) of
 		undefined ->
 		    #vcard_temp{fn = <<"ejabberd/mod_http_upload">>,
 				url = ejabberd_config:get_uri(),

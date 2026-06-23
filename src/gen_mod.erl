@@ -31,6 +31,7 @@
 -export([start_module/2, stop_module/2, stop_module_keep_config/2,
 	 get_opt/2, set_opt/3, get_opt_hosts/1, is_equal_opt/3,
 	 get_module_opt/3, get_module_opts/2, get_module_opt_hosts/2,
+	 get_module_option_append/4,
 	 loaded_modules/1, loaded_modules_with_opts/1,
 	 get_hosts/2, get_module_proc/2, is_loaded/2, is_loaded_elsewhere/2,
 	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
@@ -491,6 +492,22 @@ get_opt_hosts(Opts) ->
 get_module_opts(Host, Module) ->
     try ets:lookup_element(ejabberd_modules, {Module, Host}, 3)
     catch _:badarg -> erlang:error({module_not_loaded, Module, Host})
+    end.
+
+-spec get_module_option_append(binary(), binary(), atom(), atom()) -> any().
+get_module_option_append(ServerHost, PubsubHost, Module, Option) ->
+    Appends = Module:append_module_config(ServerHost),
+    GlobalValue = Module:Option(ServerHost),
+    case proplists:get_value(PubsubHost, Appends) of
+        undefined ->
+            GlobalValue;
+        Opts when is_list(Opts) ->
+            case proplists:get_value(Option, Opts) of
+                undefined ->
+                    GlobalValue;
+                Value ->
+                    Value
+            end
     end.
 
 -spec db_mod(binary() | global | db_type() | opts(), module()) -> module().

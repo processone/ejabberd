@@ -34,7 +34,7 @@
 -export([codec_options/0]).
 -export([version/0]).
 -export([default_db/2, default_db/3, default_ram_db/2, default_ram_db/3]).
--export([beams/1, validators/1, globals/0, may_hide_data/1]).
+-export([beams/1, validators/2, globals/0, may_hide_data/1]).
 -export([dump/0, dump/1, convert_to_yaml/1, convert_to_yaml/2]).
 -export([callback_modules/1]).
 -export([set_option/2]).
@@ -371,23 +371,33 @@ env_binary_to_list(Application, Parameter) ->
     end.
 
 %% ejabberd_options calls this function when parsing options inside host_config
--spec validators([atom()]) -> {econf:validators(), [atom()]}.
-validators(Disallowed) ->
+-spec validators([atom()], toplevel | map()) -> {econf:validators(), [atom()]}.
+validators(Disallowed, Custom) ->
     Host = global,
     DefinedKeywords = get_defined_keywords(Host),
-    validators(Disallowed, DefinedKeywords).
+    validators(Disallowed, DefinedKeywords, Custom).
 
 %% validate/1 calls this function when parsing toplevel options
--spec validators([atom()], [any()]) -> {econf:validators(), [atom()]}.
-validators(Disallowed, DK) ->
-    Modules = callback_modules(all),
+-spec validators([atom()], [any()], toplevel | map()) -> {econf:validators(), [atom()]}.
+validators(Disallowed, DK, toplevel) ->
+    Custom = #{modules => callback_modules(all),
+               options_module => ejabberd_options,
+               options_type_function => opt_type,
+               options_function => options,
+               options_arguments => []},
+    validators(Disallowed, DK, Custom);
+validators(Disallowed, DK, Custom) ->
+    #{modules := Modules,
+      options_function := OptionsFunction,
+      options_arguments := OptionsArguments
+     } = Custom,
     Validators = lists:foldl(
 		   fun(M, Vs) ->
-			   maps:merge(Vs, validators(M, Disallowed, DK))
+			   maps:merge(Vs, validators(M, Disallowed, DK, Custom))
 		   end, #{}, Modules),
     Required = lists:flatmap(
 		 fun(M) ->
-			 [O || O <- M:options(), is_atom(O)]
+			 [O || O <- apply(M, OptionsFunction, OptionsArguments), is_atom(O)]
 		 end, Modules),
     {Validators, Required}.
 
@@ -649,8 +659,13 @@ callback_modules(external) ->
 callback_modules(all) ->
     lists:uniq(callback_modules(local) ++ callback_modules(external)).
 
--spec validators(module(), [atom()], [any()]) -> econf:validators().
-validators(Mod, Disallowed, DK) ->
+-spec validators(module(), [atom()], [any()], map()) -> econf:validators().
+validators(Mod, Disallowed, DK, Custom) ->
+    #{options_module := OptionsModule,
+      options_type_function := OptionsTypeFunction,
+      options_function := OptionsFunction,
+      options_arguments := OptionsArguments
+     } = Custom,
     Keywords = DK ++ get_predefined_keywords(global),
     maps:from_list(
       lists:filtermap(
@@ -661,7 +676,7 @@ validators(Mod, Disallowed, DK) ->
 			Type =
 			 try Mod:opt_type(O)
 			 catch _:_ ->
-				 ejabberd_options:opt_type(O)
+				 OptionsModule:OptionsTypeFunction(O)
 			 end,
                          TypeProcessed =
                              econf:and_then(
@@ -671,7 +686,7 @@ validators(Mod, Disallowed, DK) ->
                               Type),
 			{true, {O, TypeProcessed}}
 		end
-	end, proplists:get_keys(Mod:options()))).
+	end, proplists:get_keys(apply(Mod, OptionsFunction, OptionsArguments)))).
 
 read_file(File) ->
     read_file(File, [replace_macros, include_files, include_modules_configs]).
@@ -770,7 +785,7 @@ validate(Y1) ->
 		    set_option(host, hd(Hosts)),
 		    set_option(version, Version),
 		    set_option(yaml_config, Y3),
-		    {Validators, Required} = validators([], DK),
+		    {Validators, Required} = validators([], DK, toplevel),
 		    Validator = econf:options(Validators,
 					      [{required, Required},
 					       unique]),
