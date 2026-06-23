@@ -1035,9 +1035,10 @@ mod_doc() ->
                   [?T("This option defines the Jabber IDs of the service. "
 		      "If the 'hosts' option is not specified, the only "
 		      "Jabber ID will be the hostname of the virtual host "
-		      "with the prefix \"multicast.\". The keyword '@HOST@' "
+		      "with the prefix '\"multicast.\"'. The keyword '@HOST@' "
 		      "is replaced with the real virtual host name."),
-		   ?T("The default value is 'multicast.@HOST@'.")]}},
+		   ?T("Please note: this module only uses the first vhost "
+                      "defined in this option.")]}},
 	   {limits,
 	    #{value => "Sender: Stanza: Number",
 	      desc =>
