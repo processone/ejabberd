@@ -4,6 +4,7 @@
 -module(mod_pubsub_opt).
 
 -export([access_createnode/1]).
+-export([append_module_config/1]).
 -export([db_type/1]).
 -export([default_node_config/1]).
 -export([force_node_config/1]).
@@ -26,6 +27,12 @@ access_createnode(Opts) when is_map(Opts) ->
     gen_mod:get_opt(access_createnode, Opts);
 access_createnode(Host) ->
     gen_mod:get_module_opt(Host, mod_pubsub, access_createnode).
+
+-spec append_module_config(gen_mod:opts() | global | binary()) -> [{binary(),any()}].
+append_module_config(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(append_module_config, Opts);
+append_module_config(Host) ->
+    gen_mod:get_module_opt(Host, mod_pubsub, append_module_config).
 
 -spec db_type(gen_mod:opts() | global | binary()) -> atom().
 db_type(Opts) when is_map(Opts) ->

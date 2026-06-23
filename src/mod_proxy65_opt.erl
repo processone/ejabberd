@@ -4,6 +4,7 @@
 -module(mod_proxy65_opt).
 
 -export([access/1]).
+-export([append_module_config/1]).
 -export([auth_type/1]).
 -export([host/1]).
 -export([hostname/1]).
@@ -24,6 +25,12 @@ access(Opts) when is_map(Opts) ->
     gen_mod:get_opt(access, Opts);
 access(Host) ->
     gen_mod:get_module_opt(Host, mod_proxy65, access).
+
+-spec append_module_config(gen_mod:opts() | global | binary()) -> [{binary(),any()}].
+append_module_config(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(append_module_config, Opts);
+append_module_config(Host) ->
+    gen_mod:get_module_opt(Host, mod_proxy65, append_module_config).
 
 -spec auth_type(gen_mod:opts() | global | binary()) -> 'anonymous' | 'plain'.
 auth_type(Opts) when is_map(Opts) ->

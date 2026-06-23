@@ -9,6 +9,7 @@
 -export([access_mam/1]).
 -export([access_persistent/1]).
 -export([access_register/1]).
+-export([append_module_config/1]).
 -export([cleanup_affiliations_on_start/1]).
 -export([db_type/1]).
 -export([default_room_options/1]).
@@ -73,6 +74,12 @@ access_register(Opts) when is_map(Opts) ->
     gen_mod:get_opt(access_register, Opts);
 access_register(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, access_register).
+
+-spec append_module_config(gen_mod:opts() | global | binary()) -> [{binary(),any()}].
+append_module_config(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(append_module_config, Opts);
+append_module_config(Host) ->
+    gen_mod:get_module_opt(Host, mod_muc, append_module_config).
 
 -spec cleanup_affiliations_on_start(gen_mod:opts() | global | binary()) -> boolean().
 cleanup_affiliations_on_start(Opts) when is_map(Opts) ->

@@ -4,6 +4,7 @@
 -module(mod_vcard_opt).
 
 -export([allow_return_all/1]).
+-export([append_module_config/1]).
 -export([cache_life_time/1]).
 -export([cache_missed/1]).
 -export([cache_size/1]).
@@ -21,6 +22,12 @@ allow_return_all(Opts) when is_map(Opts) ->
     gen_mod:get_opt(allow_return_all, Opts);
 allow_return_all(Host) ->
     gen_mod:get_module_opt(Host, mod_vcard, allow_return_all).
+
+-spec append_module_config(gen_mod:opts() | global | binary()) -> [{binary(),any()}].
+append_module_config(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(append_module_config, Opts);
+append_module_config(Host) ->
+    gen_mod:get_module_opt(Host, mod_vcard, append_module_config).
 
 -spec cache_life_time(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
 cache_life_time(Opts) when is_map(Opts) ->
