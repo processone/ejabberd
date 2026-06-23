@@ -503,7 +503,12 @@ auth_SASL(Mech, Config) ->
     auth_SASL(Mech, Config, false).
 
 auth_SASL(Mech, Config, ShouldFail) ->
-    Creds = {?config(user, Config),
+    Authzid = case ?config(authzid, Config) of
+        undefined -> <<>>;
+        Val -> Val
+    end,
+    Creds = {Authzid,
+         ?config(user, Config),
 	     ?config(server, Config),
 	     ?config(password, Config)},
     auth_SASL(Mech, Config, ShouldFail, Creds).
@@ -568,7 +573,12 @@ auth_fast_token(Mech, Token, Config, ShouldFail) ->
     wait_auth_SASL2_result(Config, ShouldFail).
 
 auth_SASL2(Mech, Config, ShouldFail) ->
-    Creds = {?config(user, Config),
+    Authzid = case ?config(authzid, Config) of
+        undefined -> <<>>;
+        Val -> Val
+    end,
+    Creds = {Authzid,
+         ?config(user, Config),
 	     ?config(server, Config),
 	     ?config(password, Config)},
     {Response, SASL} = sasl_new(Mech, Creds),
@@ -711,16 +721,22 @@ send_recv(State, #iq{} = IQ) ->
     ID = send(State, IQ),
     receive #iq{id = ID} = Result -> Result end.
 
-sasl_new(<<"PLAIN">>, {User, Server, Password}) ->
-    {<<User/binary, $@, Server/binary, 0, User/binary, 0, Password/binary>>,
+sasl_new(Method, {User, Server, Password}) ->
+    sasl_new(Method, {<<>>, User, Server, Password});
+sasl_new(<<"PLAIN">>, {AuthzId, User, Server, Password}) ->
+    AZ = case AuthzId of
+        <<>> -> <<User/binary, "@", Server/binary>>;
+        _ -> AuthzId
+    end,
+    {<<AZ/binary, 0, User/binary, 0, Password/binary>>,
      fun (_) -> {error, <<"Invalid SASL challenge">>} end};
-sasl_new(<<"EXTERNAL">>, {User, Server, _Password}) ->
+sasl_new(<<"EXTERNAL">>, {_Authzid, User, Server, _Password}) ->
     {jid:encode(jid:make(User, Server)),
      fun(_) -> ct:fail(sasl_challenge_is_not_expected) end};
 sasl_new(<<"ANONYMOUS">>, _) ->
     {<<"">>,
      fun(_) -> ct:fail(sasl_challenge_is_not_expected) end};
-sasl_new(<<"DIGEST-MD5">>, {User, Server, Password}) ->
+sasl_new(<<"DIGEST-MD5">>, {AuthzId, User, Server, Password}) ->
     {<<"">>,
      fun (ServerIn) ->
 	     case xmpp_sasl_digest:parse(ServerIn) of
@@ -732,7 +748,6 @@ sasl_new(<<"DIGEST-MD5">>, {User, Server, Password}) ->
 		   DigestURI = <<"xmpp/", Realm/binary>>,
 		   NC = <<"00000001">>,
 		   QOP = <<"auth">>,
-		   AuthzId = <<"">>,
 		   MyResponse = response(User, Password, Nonce, AuthzId,
 					 Realm, CNonce, DigestURI, NC, QOP,
 					 <<"AUTHENTICATE">>),

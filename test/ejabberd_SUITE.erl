@@ -329,7 +329,11 @@ init_per_testcase(TestCase, OrigConfig) ->
             connect(Config);
         "auth_md5" ->
             connect(Config);
+        "auth_md5_wrong_authzid" ->
+            connect(Config);
         "auth_plain" ->
+            connect(Config);
+        "auth_plain_wrong_authzid" ->
             connect(Config);
 	"auth_sasl2" ->
 	    Jid = jid:encode(jid:make(User, Server)),
@@ -438,8 +442,10 @@ db_tests(DB) when DB == mnesia; DB == redis ->
       [test_register,
        legacy_auth_tests(),
        auth_plain,
+       auth_plain_wrong_authzid,
        auth_sasl2,
        auth_md5,
+       auth_md5_wrong_authzid,
        presence_broadcast,
        last,
        antispam_tests:single_cases(),
@@ -477,8 +483,10 @@ db_tests(DB) ->
       [test_register,
        legacy_auth_tests(),
        auth_plain,
+       auth_plain_wrong_authzid,
        auth_sasl2,
        auth_md5,
+       auth_md5_wrong_authzid,
        presence_broadcast,
        last,
        webadmin_tests:single_cases(),
@@ -853,11 +861,37 @@ auth_md5(Config) ->
             {skipped, 'DIGEST-MD5_not_available'}
     end.
 
+auth_md5_wrong_authzid(Config) ->
+    Mechs = ?config(mechs, Config),
+    case lists:member(<<"DIGEST-MD5">>, Mechs) of
+        true ->
+            AZ = <<"fake@", (?config(server, Config))/binary>>,
+            Config2 = set_opt(authzid, AZ, Config),
+            Config3 = disconnect(auth_SASL(<<"DIGEST-MD5">>, Config2, true)),
+            set_opt(authzid, <<>>, Config3);
+        false ->
+            disconnect(Config),
+            {skipped, 'DIGEST-MD5_not_available'}
+    end.
+
 auth_plain(Config) ->
     Mechs = ?config(mechs, Config),
     case lists:member(<<"PLAIN">>, Mechs) of
         true ->
             disconnect(auth_SASL(<<"PLAIN">>, Config));
+        false ->
+            disconnect(Config),
+            {skipped, 'PLAIN_not_available'}
+    end.
+    
+auth_plain_wrong_authzid(Config) ->
+    Mechs = ?config(mechs, Config),
+    case lists:member(<<"PLAIN">>, Mechs) of
+        true ->
+            AZ = <<"fake@", (?config(server, Config))/binary>>,
+            Config2 = set_opt(authzid, AZ, Config),
+            Config3 = disconnect(auth_SASL(<<"PLAIN">>, Config2, true)),
+            set_opt(authzid, <<>>, Config3);
         false ->
             disconnect(Config),
             {skipped, 'PLAIN_not_available'}

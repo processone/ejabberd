@@ -258,6 +258,8 @@ check_password_with_authmodule(User, AuthzId, Server, Password, Digest, DigestGe
 		    false;
                 {_, {is_banned, BanReason}} ->
                     {false, 'account-disabled', BanReason};
+                {LAuthzId, _} when LAuthzId /= <<>> andalso LAuthzId /= LUser ->
+					false;
                 {LAuthzId, _} ->
                     untag_stop(
                       lists:foldl(
