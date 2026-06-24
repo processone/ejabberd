@@ -3236,6 +3236,7 @@ process_item_change(UJID) ->
 
 -spec process_item_change(admin_action(), state(), undefined | jid()) -> state() | {error, stanza_error()}.
 process_item_change(Item, SD, UJID) ->
+    ServerHost = SD#state.server_host,
     try case Item of
 	    {JID, affiliation, owner, _} when JID#jid.luser == <<"">> ->
 		%% If the provided JID does not have username,
@@ -3247,14 +3248,16 @@ process_item_change(Item, SD, UJID) ->
 	    {JID, affiliation, none, Reason} ->
                 case get_affiliation(JID, SD) of
                     none -> SD;
-                    _ ->
+                    OldAffiliation ->
                         case (SD#state.config)#config.members_only of
                             true ->
                                 send_kickban_presence(UJID, JID, Reason, 321, none, SD),
                                 maybe_send_affiliation(JID, none, SD),
                                 unsubscribe_from_room(JID, SD),
                                 SD1 = set_affiliation(JID, none, SD),
-                                set_role(JID, none, SD1);
+                                SD2 = set_role(JID, none, SD1),
+                                ok = ejabberd_hooks:run(muc_affiliation_changed, ServerHost, [JID, OldAffiliation, none, SD2]),
+                                SD2;
                             _ ->
                                 SD1 = set_affiliation(JID, none, SD),
                                 SD2 = case (SD1#state.config)#config.moderated of
@@ -3263,10 +3266,12 @@ process_item_change(Item, SD, UJID) ->
                                       end,
                                 send_update_presence(JID, Reason, SD2, SD),
                                 maybe_send_affiliation(JID, none, SD2),
+                                ok = ejabberd_hooks:run(muc_affiliation_changed, ServerHost, [JID, OldAffiliation, none, SD2]),
                                 SD2
                         end
                 end;
 	    {JID, affiliation, outcast, Reason} ->
+		OldAffiliation = get_affiliation(JID, SD),
 		send_kickban_presence(UJID, JID, Reason, 301, outcast, SD),
 		maybe_send_affiliation(JID, outcast, SD),
 		unsubscribe_from_room(JID, SD),
@@ -3274,27 +3279,35 @@ process_item_change(Item, SD, UJID) ->
                     process_iq_mucsub(JID,
                                       #iq{type = set,
                                           sub_els = [#muc_unsubscribe{}]}, SD),
-		set_role(JID, none, set_affiliation(JID, outcast, SD2, Reason));
+		SD3 = set_role(JID, none, set_affiliation(JID, outcast, SD2, Reason)),
+		ok = ejabberd_hooks:run(muc_affiliation_changed, ServerHost, [JID, OldAffiliation, outcast, SD3]),
+		SD3;
 	    {JID, affiliation, A, Reason} when (A == admin) or (A == owner) ->
+		OldAffiliation = get_affiliation(JID, SD),
 		SD1 = set_affiliation(JID, A, SD, Reason),
 		SD2 = set_role(JID, moderator, SD1),
 		send_update_presence(JID, Reason, SD2, SD),
 		maybe_send_affiliation(JID, A, SD2),
+		ok = ejabberd_hooks:run(muc_affiliation_changed, ServerHost, [JID, OldAffiliation, A, SD2]),
 		SD2;
 	    {JID, affiliation, member, Reason} ->
+		OldAffiliation = get_affiliation(JID, SD),
 		SD1 = set_affiliation(JID, member, SD, Reason),
 		SD2 = set_role(JID, participant, SD1),
 		send_update_presence(JID, Reason, SD2, SD),
 		maybe_send_affiliation(JID, member, SD2),
+		ok = ejabberd_hooks:run(muc_affiliation_changed, ServerHost, [JID, OldAffiliation, member, SD2]),
 		SD2;
 	    {JID, role, Role, Reason} ->
 		SD1 = set_role(JID, Role, SD),
 		send_new_presence(JID, Reason, SD1, SD),
 		SD1;
 	    {JID, affiliation, A, _Reason} ->
+		OldAffiliation = get_affiliation(JID, SD),
 		SD1 = set_affiliation(JID, A, SD),
 		send_update_presence(JID, SD1, SD),
 		maybe_send_affiliation(JID, A, SD1),
+		ok = ejabberd_hooks:run(muc_affiliation_changed, ServerHost, [JID, OldAffiliation, A, SD1]),
 		SD1
 	end
     catch
