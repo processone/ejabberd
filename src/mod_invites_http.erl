@@ -151,7 +151,7 @@ process([] = LocalPath,
     CSRFToken = proplists:get_value(<<"csrf_token">>, Q),
     CookieVal = get_csrf_cookie(<<"gen-invite-id">>, Headers),
     try {check_csrf(CookieVal, CSRFToken),
-         ejabberd_auth:check_password(Username, <<"plain">>, Host, Password),
+         ejabberd_auth:check_password(Username, <<>>, Host, Password),
          mod_invites:create_account_allowed(Host, jid:make(Username, Host))}
     of
         {ok, true, ok} ->
