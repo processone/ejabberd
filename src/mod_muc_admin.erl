@@ -1155,8 +1155,7 @@ make_breadcrumb(Elements) ->
 get_sort_query(Q) ->
     try get_sort_query2(Q) of
         {ok, Res} ->
-            Res;
-		_ -> {normal, 1}
+            Res
 	catch _:_ ->
         {normal, 1}
     end.
