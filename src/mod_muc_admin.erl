@@ -1651,7 +1651,7 @@ muc_unused(Method, Action, Service, Last_allowed) ->
     Rooms_all = get_all_rooms(Service),
 
     %% Decide which ones pass the requirements
-    Rooms_pass = decide_rooms( Rooms_all, Last_allowed),
+    Rooms_pass = decide_rooms(Rooms_all, Last_allowed),
 
     Num_rooms_all = length(Rooms_all),
     Num_rooms_pass = length(Rooms_pass),
