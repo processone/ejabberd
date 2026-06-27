@@ -63,7 +63,8 @@
          send_nick_changing/6,
          send_new_presence_default/5,
          send_existing_presence/5,
-         add_groupchat_message/6]).
+         add_groupchat_message/6,
+         process_item_change/3]).
 
 
 %% gen_fsm callbacks
@@ -109,6 +110,7 @@
 -type fsm_transition() :: fsm_stop() | fsm_next().
 -type disco_item_filter() ::  only_non_empty | all | non_neg_integer().
 -type admin_action() :: {jid(), affiliation, affiliation(), binary()} |
+                        {jid(), #affiliation{}} |
                         {jid(), role, role(), binary()}.
 -export_type([state/0, disco_item_filter/0]).
 
@@ -313,15 +315,15 @@ init([Host, ServerHost, Access, Room, HistorySize,
 			    just_created = true,
 			    room_queue = RoomQueue,
 			    room_shaper = Shaper}),
-    State1 = set_affiliation(Creator, owner, State),
-    store_room(State1),
+    State1 =
+        ejabberd_hooks:run_fold(muc_start_room, ServerHost, State, [Creator]),
+    State2 = set_affiliation(Creator, owner, State1),
+    store_room(State2),
     ?INFO_MSG("Created MUC room ~ts@~ts by ~ts",
 	      [Room, Host, jid:encode(Creator)]),
-    add_to_log(room_existence, created, State1),
-    add_to_log(room_existence, started, State1),
+    add_to_log(room_existence, created, State2),
+    add_to_log(room_existence, started, State2),
     ejabberd_hooks:run(start_room, ServerHost, [ServerHost, Room, Host]),
-    State2 =
-        ejabberd_hooks:run_fold(muc_start_room, ServerHost, State1, [Creator]),
     erlang:send_after(?CLEAN_ROOM_TIMEOUT, self(),
                       close_room_if_temporary_and_empty),
     {ok, normal_state, reset_hibernate_timer(State2)};
@@ -1873,23 +1875,28 @@ get_service_affiliation(JID, StateData) ->
 
 -spec set_role(jid(), role(), state()) -> state().
 set_role(JID, Role, StateData) ->
-    set_role(JID, Role, undefined, StateData).
+    set_role(JID, Role, undefined, undefined, StateData).
 
--spec set_role(jid(), role(), #kickban_info{} | undefined, state()) -> state().
-set_role(JID, Role, KickBan, StateData) ->
+-spec set_role(jid(), role(),
+               #kickban_info{} | undefined,
+               undefined | {affiliation, #affiliation{}} | config_change,
+               state()) -> state().
+set_role(JID, Role, KickBan, Reason, StateData) ->
     case ejabberd_hooks:run_fold(
            muc_set_role,
            StateData#state.server_host,
            {StateData, unhandled},
-           [JID, Role, KickBan]) of
+           [JID, Role, KickBan, Reason]) of
         {StateData1, unhandled} ->
-            set_role1(JID, Role, KickBan, StateData1);
+            set_role1(JID, Role, KickBan, Reason, StateData1);
         {StateData1, handled} ->
             StateData1
     end.
 
--spec set_role1(jid(), role(), #kickban_info{} | undefined, state()) -> state().
-set_role1(JID, Role, KickBan, StateData) ->
+-spec set_role1(jid(), role(), #kickban_info{} | undefined,
+                undefined | {affiliation, #affiliation{}} | config_change,
+                state()) -> state().
+set_role1(JID, Role, KickBan, Reason, StateData) ->
     LJID = jid:tolower(JID),
     LJIDs = case LJID of
 	      {U, S, <<"">>} ->
@@ -3355,8 +3362,7 @@ search_role(Role, StateData) ->
 		 maps:to_list(StateData#state.users)).
 
 -spec search_affiliation(affiliation(), state()) ->
-			 [{ljid(),
-			   affiliation() | {affiliation(), binary()}}].
+			 [{ljid(), affiliation_data()}].
 search_affiliation(Affiliation,
                    #state{config = #config{persistent = false}} = StateData) ->
     search_affiliation_fallback(Affiliation, StateData);
@@ -3373,8 +3379,7 @@ search_affiliation(Affiliation, StateData) ->
     end.
 
 -spec search_affiliation_fallback(affiliation(), state()) ->
-				  [{ljid(),
-				    affiliation() | {affiliation(), binary()}}].
+				  [{ljid(), affiliation_data()}].
 search_affiliation_fallback(Affiliation, StateData) ->
     lists:filter(
       fun({_, A}) ->
@@ -3421,8 +3426,15 @@ process_item_change(UJID) ->
 
 -spec process_item_change(admin_action(), state(), undefined | jid()) -> state() | {error, stanza_error()}.
 process_item_change(Item, SD, UJID) ->
-    try case Item of
-	    {JID, affiliation, owner, _} when JID#jid.luser == <<"">> ->
+    Item2 =
+        case Item of
+            {JJ, affiliation, AA, RR} ->
+                {JJ, #affiliation{affiliation = AA, reason = RR, actor = UJID}};
+            _ ->
+                Item
+        end,
+    try case Item2 of
+	    {JID, #affiliation{affiliation = owner}} when JID#jid.luser == <<"">> ->
 		%% If the provided JID does not have username,
 		%% forget the affiliation completely
 		SD;
@@ -3431,8 +3443,8 @@ process_item_change(Item, SD, UJID) ->
                                         reason = Reason,
                                         code = 307},
 		send_kickban_presence(UJID, JID, Reason, 307, SD),
-		set_role(JID, none, KickBan, SD);
-	    {JID, affiliation, none, Reason} ->
+		set_role(JID, none, KickBan, undefined, SD);
+	    {JID, #affiliation{affiliation = none, reason = Reason} = Aff} ->
                 case get_affiliation(JID, SD) of
                     none -> SD;
                     _ ->
@@ -3445,20 +3457,29 @@ process_item_change(Item, SD, UJID) ->
                                 send_kickban_presence(UJID, JID, Reason, 321, none, SD),
                                 maybe_send_affiliation(JID, none, SD),
                                 unsubscribe_from_room(JID, SD),
-                                SD1 = set_affiliation(JID, none, SD),
-                                set_role(JID, none, KickBan, SD1);
+                                SD1 = set_affiliation(JID, Aff, SD),
+                                set_role(JID, none, KickBan,
+                                         {affiliation, Aff}, SD1);
                             _ ->
-                                SD1 = set_affiliation(JID, none, SD),
+                                SD1 = set_affiliation(JID, Aff, SD),
                                 SD2 = case (SD1#state.config)#config.moderated of
-                                          true -> set_role(JID, visitor, SD1);
-                                          false -> set_role(JID, participant, SD1)
+                                          true ->
+                                              set_role(JID, visitor,
+                                                       undefined,
+                                                       {affiliation, Aff},
+                                                       SD1);
+                                          false ->
+                                              set_role(JID, participant,
+                                                       undefined,
+                                                       {affiliation, Aff},
+                                                       SD1)
                                       end,
                                 send_update_presence(JID, Reason, SD2, SD),
                                 maybe_send_affiliation(JID, none, SD2),
                                 SD2
                         end
                 end;
-	    {JID, affiliation, outcast, Reason} ->
+	    {JID, #affiliation{affiliation = outcast, reason = Reason} = Aff} ->
                 KickBan = #kickban_info{actor = UJID,
                                         reason = Reason,
                                         code = 301,
@@ -3470,16 +3491,21 @@ process_item_change(Item, SD, UJID) ->
                     process_iq_mucsub(JID,
                                       #iq{type = set,
                                           sub_els = [#muc_unsubscribe{}]}, SD),
-		set_role(JID, none, KickBan, set_affiliation(JID, {outcast, Reason}, SD2));
-	    {JID, affiliation, A, Reason} when (A == admin) or (A == owner) ->
-		SD1 = set_affiliation(JID, {A, Reason}, SD),
-		SD2 = set_role(JID, moderator, SD1),
+		set_role(JID, none, KickBan,
+                         {affiliation, Aff},
+                         set_affiliation(JID, Aff, SD2));
+	    {JID, #affiliation{affiliation = A, reason = Reason} = Aff}
+              when (A == admin) orelse (A == owner) ->
+		SD1 = set_affiliation(JID, Aff, SD),
+		SD2 = set_role(JID, moderator,
+                               undefined, {affiliation, Aff}, SD1),
 		send_update_presence(JID, Reason, SD2, SD),
 		maybe_send_affiliation(JID, A, SD2),
 		SD2;
-	    {JID, affiliation, member, Reason} ->
-		SD1 = set_affiliation(JID, {member, Reason}, SD),
-		SD2 = set_role(JID, participant, SD1),
+	    {JID, #affiliation{affiliation = member, reason = Reason} = Aff} ->
+		SD1 = set_affiliation(JID, Aff, SD),
+		SD2 = set_role(JID, participant,
+                               undefined, {affiliation, Aff}, SD1),
 		send_update_presence(JID, Reason, SD2, SD),
 		maybe_send_affiliation(JID, member, SD2),
 		SD2;
@@ -3487,8 +3513,8 @@ process_item_change(Item, SD, UJID) ->
 		SD1 = set_role(JID, Role, SD),
 		send_new_presence(JID, Reason, SD1, SD),
 		SD1;
-	    {JID, affiliation, A, _Reason} ->
-		SD1 = set_affiliation(JID, A, SD),
+	    {JID, #affiliation{affiliation = A} = Aff} ->
+		SD1 = set_affiliation(JID, Aff, SD),
 		send_update_presence(JID, SD1, SD),
 		maybe_send_affiliation(JID, A, SD1),
 		SD1
@@ -4297,7 +4323,7 @@ remove_nonmembers(StateData) ->
 	      case Affiliation of
 		  none ->
 		      catch send_kickban_presence(undefined, JID, <<"">>, 322, SD),
-		      set_role(JID, none, KickBan, SD);
+		      set_role(JID, none, KickBan, config_change, SD);
 		  _ -> SD
 	      end
       end, StateData, get_users_and_subscribers(StateData)).

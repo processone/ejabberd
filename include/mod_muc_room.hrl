@@ -77,6 +77,7 @@
 -record(affiliation,
         {affiliation :: affiliation(),
          reason = <<"">> :: binary(),
+         actor :: jid() | undefined,
          meta = #{} :: map()}).
 
 -record(user,
