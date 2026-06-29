@@ -447,6 +447,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        auth_md5,
        auth_md5_wrong_authzid,
        presence_broadcast,
+       caps_stuffing_bug,
        last,
        antispam_tests:single_cases(),
        webadmin_tests:single_cases(),
@@ -488,6 +489,7 @@ db_tests(DB) ->
        auth_md5,
        auth_md5_wrong_authzid,
        presence_broadcast,
+       caps_stuffing_bug,
        last,
        webadmin_tests:single_cases(),
        roster_tests:single_cases(),
@@ -1051,6 +1053,51 @@ presence_broadcast(Config) ->
 	  end, [], [0, 100, 200, 2000, 5000, 10000]),
     disconnect(Config).
 
+caps_stuffing_bug(Config) ->
+    Feature = <<"p1:tmp:", (p1_rand:get_string())/binary>>,
+    Ver = crypto:hash(sha, ["client", $/, "bot", $/, "en", $/,
+                            "ejabberd_ct", $<, Feature, $<]),
+    B64Ver = base64:encode(Ver),
+    Node = <<(?EJABBERD_CT_URI)/binary, $#, B64Ver/binary>>,
+    Server = ?config(server, Config),
+    Info = #disco_info{identities =
+			   [#identity{category = <<"client">>,
+				      type = <<"bot">>,
+				      lang = <<"en">>,
+				      name = <<"ejabberd_ct">>}],
+		       node = Node, features = [Feature]},
+    BadInfo = Info#disco_info{features = [Feature, <<"p1:bad:feature">>]},
+    Caps = #caps{hash = <<"sha-1">>, node = ?EJABBERD_CT_URI, version = B64Ver},
+    BadCaps = Caps#caps{hash = <<>>},
+    send(Config, #presence{sub_els = [BadCaps]}),
+    JID = my_jid(Config),
+    IQ = #iq{type = get,
+	     from = JID,
+	     sub_els = [#disco_info{node = Node}]} = recv_iq(Config),
+    %% #message{type = chat,
+    %%          subject = [#text{lang = <<"en">>,data = <<"Welcome!">>}]} = recv_message(Config),
+    #presence{from = JID, to = JID} = recv_presence(Config),
+    send(Config, #iq{type = result, id = IQ#iq.id,
+		     to = JID, sub_els = [BadInfo]}),
+    send(Config, #presence{sub_els = [Caps]}),
+    receive #iq{} = IQ2 ->
+        send(Config, #iq{type = result, id = IQ2#iq.id,
+    		     to = JID, sub_els = [Info]})
+        after 2000 ->
+            ok
+    end,
+    #presence{from = JID, to = JID} = recv_presence(Config),
+    RetrievedCaps =
+	lists:foldl(
+	  fun(Time, []) ->
+		  timer:sleep(Time),
+		  mod_caps:get_features(Server, Caps);
+	     (_, Acc) ->
+		  Acc
+	  end, [], [0, 100, 200, 2000, 5000, 10000]),
+    ?match([Feature], RetrievedCaps),
+    disconnect(Config).
+    
 ping(Config) ->
     true = is_feature_advertised(Config, ?NS_PING),
     #iq{type = result, sub_els = []} =

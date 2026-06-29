@@ -83,12 +83,12 @@ stop(Host) ->
 -spec get_features(binary(), nothing | caps()) -> [binary()].
 get_features(_Host, nothing) -> [];
 get_features(Host, #caps{node = Node, version = Version,
-		   exts = Exts}) ->
+		   exts = Exts} = Caps) ->
     SubNodes = [Version | Exts],
     Mod = gen_mod:db_mod(Host, ?MODULE),
     lists:foldl(
       fun(SubNode, Acc) ->
-	      NodePair = {Node, SubNode},
+	      NodePair = node_pair(Node, SubNode, Caps),
 	      Res = case use_cache(Mod, Host) of
 			true ->
 			    ets_cache:lookup(caps_features_cache, NodePair,
@@ -367,7 +367,7 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 feature_request(Host, From, To, Caps,
 		[SubNode | Tail] = SubNodes) ->
     Node = Caps#caps.node,
-    NodePair = {Node, SubNode},
+    NodePair = node_pair(Node, SubNode, Caps),
     Mod = gen_mod:db_mod(Host, ?MODULE),
     Res = case use_cache(Mod, Host) of
 	      true ->
@@ -401,7 +401,7 @@ feature_request(_Host, _From, _To, _Caps, []) -> ok.
 -spec feature_response(iq(), binary(), jid(), jid(), caps(), [binary()]) -> any().
 feature_response(#iq{type = result, sub_els = [El]},
 		 Host, From, To, Caps, [SubNode | SubNodes]) ->
-    NodePair = {Caps#caps.node, SubNode},
+    NodePair = node_pair(Caps#caps.node, SubNode, Caps),
     try
 	DiscoInfo = xmpp:decode(El),
 	case check_hash(Caps, DiscoInfo) of
@@ -487,7 +487,8 @@ check_hash(Caps, DiscoInfo) ->
 	  Caps#caps.version == compute_disco_hash(DiscoInfo, sha384);
       <<"sha-512">> ->
 	  Caps#caps.version == compute_disco_hash(DiscoInfo, sha512);
-      _ -> true
+      <<>> -> true;
+      _ -> false
     end.
 
 -spec concat_features(disco_info()) -> iolist().
@@ -522,6 +523,11 @@ is_valid_node(Node) ->
         [] ->
             false
     end.
+
+node_pair(Node, SubNode, #caps{hash = <<>>}) ->
+    {Node, <<"legacy-", SubNode/binary>>};
+node_pair(Node, SubNode, _) ->
+    {Node, SubNode}.
 
 init_cache(Mod, Host, Opts) ->
     CacheOpts = cache_opts(Opts),
