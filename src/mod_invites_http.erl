@@ -28,6 +28,36 @@
 
 -export([process/2, landing_page/2, tmpl_to_renderer/1]).
 
+-export([
+         %% cookie: <<"OBtET491uhXQfSQRshsscN4b2hl5cqmw">>
+         %% token:  <<"VIbOSkwFgRIG7y143WM8xRplefvv0zyWCAzK8LyyJFY=">>
+
+         %% Prepara formulario:
+
+         gen_rand_id/0,
+         %% -> cookie:binary()
+
+         csrf_token/1,
+         %% cookie::binary()
+         %% -> token::binary()
+
+         csrf_cookie_string/2,
+         %% key::binary(), cookie::binary()
+         %% -> cookie_string::binary()
+         %%    <<"gen-invite-id=QKy..MW; HttpOnly; SameSite=strict; Max-Age=86400">>
+
+         %% Analiza respuesta:
+
+         get_csrf_cookie/2,
+         %% key::binary(), headers::[]
+         %% -> cookie::binary() QKy..MW
+
+         check_csrf/2
+         %% cookie::binary(), token::binary()
+         %% -> ok o crash
+
+        ]).
+
 -import(translate, [translate/2]).
 
 -ifdef(TEST).

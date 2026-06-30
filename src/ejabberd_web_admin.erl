@@ -175,8 +175,9 @@ process2([<<"server">>, SHost | RPath] = Path,
 	  case get_auth_admin(Auth, HostHTTP, Path, Method) of
 	    {ok, {User, Server}} ->
 		AJID = get_jid(Auth, HostHTTP, Method),
+		Request2 = add_cookie_opts(Request),
 		process_admin(Host,
-			      Request#request{path = RPath,
+			      Request2#request{path = RPath,
 					      us = {User, Server}},
 			      AJID);
 	    {unauthorized, <<"no-auth-provided">>} ->
@@ -205,8 +206,9 @@ process2(RPath,
     case get_auth_admin(Auth, HostHTTP, RPath, Method) of
 	{ok, {User, Server}} ->
 	    AJID = get_jid(Auth, HostHTTP, Method),
+	    Request2 = add_cookie_opts(Request),
 	    process_admin(global,
-			  Request#request{path = RPath,
+			  Request2#request{path = RPath,
 					  us = {User, Server}},
 			  AJID);
 	{unauthorized, <<"no-auth-provided">>} ->
@@ -304,7 +306,8 @@ make_xhtml(Els, Host, Node, Username, #request{lang = Lang} = R, JID, Level) ->
     Base = get_base_path_sum(0, 0, Level),
     MenuItems = make_navigation(Host, Node, Username, Lang, JID, Level)
     ++ make_login_items(R, Level, JID),
-    {200, [html],
+    SetCookie = make_set_cookie(R),
+    {200, [html | SetCookie],
      #xmlel{name = <<"html">>,
 	    attrs =
 		[{<<"xmlns">>, <<"http://www.w3.org/1999/xhtml">>},
@@ -1800,8 +1803,10 @@ if_cmd_allowed(Name, Request, Fun) ->
 
 caller_info(Request) ->
     #request{us = {RUser, RServer}, ip = RIp} = Request,
+    CSRFPassed = proplists:get_value(csrf_passed, Request#request.opts),
     #{usr => {RUser, RServer, <<"">>},
       ip => RIp,
+      csrf_passed => CSRFPassed,
       caller_host => RServer,
       caller_module => ?MODULE}.
 
@@ -1887,6 +1892,7 @@ make_command_allowed(Name, Request, BaseArguments, Options, Cmd) ->
                                Query,
                                Only,
                                Method,
+                               get_cookie_map(Request),
                                Style,
                                ArgumentsFormatDetailed,
                                BaseArguments,
@@ -1988,6 +1994,8 @@ format_result(presentation, _ExecRes, PresentationEls, _ArgumentsEls, _ResultEls
     ?XAE(<<"p">>, [{<<"class">>, <<"api">>}], PresentationEls);
 format_result(button, _ExecRes, _PresentationEls, [Button], _ResultEls) ->
     Button;
+format_result(action_button, _ExecRes, _PresentationEls, [CsEl, Button], ResultEls) ->
+    {[CsEl | ResultEls], Button};
 format_result(action_button, _ExecRes, _PresentationEls, [Button], ResultEls) ->
     {ResultEls, Button};
 format_result(result,
@@ -2116,6 +2124,7 @@ make_command_arguments(Name,
                        Query,
                        Only,
                        Method,
+                       #{token := Token},
                        Style,
                        ArgumentsFormat,
                        BaseArguments,
@@ -2126,17 +2135,22 @@ make_command_arguments(Name,
     ButtonElement =
         ?XE(<<"tr">>,
             [?X(<<"td">>), ?XAE(<<"td">>, [{<<"class">>, <<"alignright">>}], [Button])]),
+    CSRFInput =
+        ?XA(<<"input">>,
+            [{<<"type">>, <<"hidden">>}, {<<"name">>, <<"csrf_token">>}, {<<"value">>, Token}]),
     case {(ArgumentsFields /= []) or (Method == manual), Only} of
         {false, _} ->
             [];
         {true, action_button} ->
-            [Button];
+            [?XAE(<<"p">>, [], [CSRFInput, Button])];
         {true, button} ->
-            [?XAE(<<"form">>, [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}], [Button])];
+            [?XAE(<<"form">>,
+                  [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
+                  [CSRFInput, Button])];
         {true, _} ->
             [?XAE(<<"form">>,
                   [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
-                  [?XE(<<"table">>, ArgumentsFields ++ [ButtonElement])])]
+                  [CSRFInput, ?XE(<<"table">>, ArgumentsFields ++ [ButtonElement])])]
     end.
 
 remove_base_arguments(ArgumentsFormat, BaseArguments) ->
@@ -2187,7 +2201,7 @@ execute_command(Name,
                 ArgumentsFormat,
                 CallerInfo,
                 InputNameAppend) ->
-    Queries = duplicate_query(RawQuery),
+    Queries = duplicate_query(clean_token_duplicates_query(RawQuery)),
     execute_queries(Queries,
                     {Name, BaseArguments, Method, ArgumentsFormat, CallerInfo, InputNameAppend},
                     none).
@@ -2238,12 +2252,19 @@ execute_command2(Name,
                  InputNameAppend) ->
     AllArgumentsProvided = length(Arguments) == length(ArgumentsFormat),
     PressedExecuteButton = is_this_to_execute(Name, Query, Arguments, InputNameAppend),
+    CSRFPassed = maps:get(csrf_passed, CallerInfo, false),
     LetsExecute =
-        case {Method, PressedExecuteButton, AllArgumentsProvided} of
-            {auto, _, true} ->
+        case {Method, PressedExecuteButton, AllArgumentsProvided, CSRFPassed} of
+            {auto, _, true, _} ->
                 true;
-            {manual, true, true} ->
+            {manual, true, true, true} ->
                 true;
+            {manual, true, true, false} ->
+                ?WARNING_MSG("I've blocked execution of an API command because the web browser "
+                             "HTTP request has not passed CSRF validation: maybe it was "
+                             "an attack attempt?~n  Query: ~p~n  CallerInfo: ~p",
+                             [Query, CallerInfo]),
+                false;
             _ ->
                 false
         end,
@@ -3006,6 +3027,7 @@ action_button_allowed(Name, Request, BaseArguments, Options, Cmd) ->
                                Query,
                                action_button,
                                Method,
+                               get_cookie_map(Request),
                                Style,
                                ArgumentsFormatDetailed,
                                BaseArguments,
@@ -3034,6 +3056,54 @@ action_button_result_el({error, Reason}, Lang, Name) ->
                 translate:translate(Lang, <<"Error executing command ~s (~s): ~s">>),
                 [NiceName, Name, ReasonBin])),
     ?XAE(<<"div">>, [{<<"class">>, <<"actionresult error">>}], [?C(ResultCData)]).
+
+%%%==================================
+%%%% CSRF validation
+
+make_set_cookie(#request{headers = Headers} = R) ->
+    case mod_invites_http:get_csrf_cookie(
+             misc:atom_to_binary(?MODULE), Headers)
+    of
+        <<>> ->
+            #{key := Key, cookie := Cookie} = proplists:get_value(cookie_map, R#request.opts),
+            [{<<"Set-Cookie">>, mod_invites_http:csrf_cookie_string(Key, Cookie)}];
+        _OldCookieVal ->
+            []
+    end.
+
+add_cookie_opts(#request{headers = Headers, q = Q} = R) ->
+    {Cookie, CSRFPassed} =
+        case mod_invites_http:get_csrf_cookie(
+                 misc:atom_to_binary(?MODULE), Headers)
+        of
+            <<>> ->
+                {mod_invites_http:gen_rand_id(), false};
+            CookieVal ->
+                CSRFToken = proplists:get_value(<<"csrf_token">>, Q),
+                CSRFP =
+                    try mod_invites_http:check_csrf(CookieVal, CSRFToken) of
+                        ok ->
+                            true
+                    catch
+                        no_match ->
+                            false
+                    end,
+                {CookieVal, CSRFP}
+        end,
+    CookieMap =
+        {cookie_map,
+         #{key => misc:atom_to_binary(?MODULE),
+           cookie => Cookie,
+           token => mod_invites_http:csrf_token(Cookie)}},
+    R#request{opts = [{csrf_passed, CSRFPassed}, CookieMap | R#request.opts]}.
+
+get_cookie_map(Request) ->
+    proplists:get_value(cookie_map, Request#request.opts).
+
+clean_token_duplicates_query(Query) ->
+    Value = proplists:get_value(<<"csrf_token">>, Query),
+    Cleaned = proplists:delete(<<"csrf_token">>, Query),
+    [{<<"csrf_token">>, Value} | Cleaned].
 
 %%%==================================
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:
