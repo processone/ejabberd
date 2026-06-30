@@ -639,6 +639,11 @@ re_register(Config) ->
     Pass = ?config(password, Config),
     ok = ejabberd_auth:try_register(User, Server, Pass).
 
+not_match_failure(Received, [Match]) when is_list(Match)->
+    ct:fail("Received input:~n~n~p~n~nmatches bad patterns:~n~n~s", [Received, Match]);
+not_match_failure(Received, Matches) ->
+    ct:fail("Received input:~n~n~p~n~nmatches bad patterns:~n~n~p", [Received, Matches]).
+
 match_failure(Received, [Match]) when is_list(Match)->
     ct:fail("Received input:~n~n~p~n~ndon't match expected patterns:~n~n~s", [Received, Match]);
 match_failure(Received, Matches) ->

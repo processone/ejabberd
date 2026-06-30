@@ -53,6 +53,7 @@ single_cases() ->
       single_test(test_publish),
       single_test(test_auto_create),
       single_test(test_get_items),
+      single_test(test_get_items_rsm_bug),
       single_test(test_delete_item),
       single_test(test_purge),
       single_test(test_subscribe),
@@ -147,6 +148,13 @@ test_get_items(Config) ->
     ItemsOut = get_items(Config, Node),
     true = [I || #ps_item{id = I} <- lists:sort(ItemsIn)]
 	== [I || #ps_item{id = I} <- lists:sort(ItemsOut)],
+    delete_node(Config, Node),
+    disconnect(Config).
+    
+test_get_items_rsm_bug(Config) ->
+    Node = create_node(Config, <<>>),
+    ItemsIn = [publish_item(Config, Node) || _ <- lists:seq(1, 5)],
+    ?not_match([_|_], get_items(Config, Node, #rsm_set{'after' = <<"' or 1=1 or ''='">>})),
     delete_node(Config, Node),
     disconnect(Config).
 
@@ -628,10 +636,13 @@ publish_item(Config, Node) ->
     end.
 
 get_items(Config, Node) ->
+    get_items(Config, Node, undefined).
+
+get_items(Config, Node, Rsm) ->
     PJID = pubsub_jid(Config),
     case send_recv(Config,
 		   #iq{type = get, to = PJID,
-		       sub_els = [#pubsub{items = #ps_items{node = Node}}]}) of
+		       sub_els = [#pubsub{items = #ps_items{node = Node}, rsm = Rsm}]}) of
 	#iq{type = result,
 	    sub_els = [#pubsub{items = #ps_items{node = Node, items = Items}}]} ->
 	    Items;

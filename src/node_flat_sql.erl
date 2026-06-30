@@ -295,7 +295,7 @@ remove_extra_items(Nidx, MaxItems, ItemIds) ->
 remove_expired_items(_Nidx, infinity) ->
     {result, []};
 remove_expired_items(Nidx, Seconds) ->
-    ExpT = encode_now(
+    ExpT = now_to_bin(
 	     misc:usec_to_now(
 	       erlang:system_time(microsecond) - (Seconds * 1000000))),
     case ejabberd_sql:sql_query_t(
@@ -676,43 +676,48 @@ get_items(Nidx, _From, undefined) ->
     end;
 get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 				'after' = After, before = Before}) ->
-    Count = case catch ejabberd_sql:sql_query_t(
-		    ?SQL("select @(count(itemid))d from pubsub_item"
-		         " where nodeid=%(Nidx)d")) of
-		{selected, [{C}]} -> C;
-		_ -> 0
-	    end,
-    Offset = case {IncIndex, Before, After} of
-		{I, undefined, undefined} when is_integer(I) -> I;
-		_ -> 0
-	     end,
-    Limit = case Max of
-		undefined -> ?MAXITEMS;
-		_ -> Max
-	    end,
-    Filters = rsm_filters(misc:i2l(Nidx), Before, After),
-    Query = fun(mssql, _) ->
-		    ejabberd_sql:sql_query_t(
-		      [<<"select top ", (integer_to_binary(Limit))/binary,
-			 " itemid, publisher, creation, modification, payload",
-			 " from pubsub_item", Filters/binary>>]);
-			 %OFFSET 10 ROWS FETCH NEXT 10 ROWS ONLY;
-	       (_, _) ->
-		    ejabberd_sql:sql_query_t(
-		      [<<"select itemid, publisher, creation, modification, payload",
-			 " from pubsub_item", Filters/binary,
-			 " limit ", (integer_to_binary(Limit))/binary,
-			 " offset ", (integer_to_binary(Offset))/binary>>])
-	    end,
-    case ejabberd_sql:sql_query_t(Query) of
-	{selected, _, []} ->
-	    {result, {[], #rsm_set{count = Count}}};
-	{selected, [<<"itemid">>, <<"publisher">>, <<"creation">>,
-		    <<"modification">>, <<"payload">>], RItems} ->
-	    Rsm = rsm_page(Count, IncIndex, Offset, RItems),
-	    {result, {[raw_to_item(Nidx, RItem) || RItem <- RItems], Rsm}};
-	_ ->
-	    {result, {[], undefined}}
+    case rsm_filters(Before, After) of
+	error ->
+	    {error, xmpp:err_bad_request()};
+	{ok, FilterFun} ->
+	    Count = case ejabberd_sql:sql_query_t(
+		?SQL("select @(count(itemid))d from pubsub_item"
+		     " where nodeid=%(Nidx)d")) of
+			{selected, [{C}]} -> C;
+			_ -> 0
+		    end,
+	    Offset = case {IncIndex, Before, After} of
+			 {I, undefined, undefined} when is_integer(I) -> I;
+			 _ -> 0
+		     end,
+	    Limit = case Max of
+			undefined -> ?MAXITEMS;
+			_ -> Max
+		    end,
+	    Filters = FilterFun(misc:i2l(Nidx)),
+	    Query = fun(mssql, _) ->
+		ejabberd_sql:sql_query_t(
+		    [<<"select top ", (integer_to_binary(Limit))/binary,
+		       " itemid, publisher, creation, modification, payload",
+		       " from pubsub_item", Filters/binary>>]);
+			%OFFSET 10 ROWS FETCH NEXT 10 ROWS ONLY;
+		       (_, _) ->
+			   ejabberd_sql:sql_query_t(
+			       [<<"select itemid, publisher, creation, modification, payload",
+			          " from pubsub_item", Filters/binary,
+			          " limit ", (integer_to_binary(Limit))/binary,
+			          " offset ", (integer_to_binary(Offset))/binary>>])
+		    end,
+	    case ejabberd_sql:sql_query_t(Query) of
+		{selected, _, []} ->
+		    {result, {[], #rsm_set{count = Count}}};
+		{selected, [<<"itemid">>, <<"publisher">>, <<"creation">>,
+		            <<"modification">>, <<"payload">>], RItems} ->
+		    Rsm = rsm_page(Count, IncIndex, Offset, RItems),
+		    {result, {[raw_to_item(Nidx, RItem) || RItem <- RItems], Rsm}};
+		_ ->
+		    {result, {[], undefined}}
+	    end
     end.
 
 get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM) ->
@@ -844,8 +849,8 @@ set_item(Item) ->
     P = encode_jid(JID),
     Payload = Item#pubsub_item.payload,
     XML = str:join([fxml:element_to_binary(X) || X<-Payload], <<>>),
-    SM = encode_now(M),
-    SC = encode_now(C),
+    SM = now_to_bin(M),
+    SC = now_to_bin(C),
     ?SQL_UPSERT_T(
        "pubsub_item",
        ["!nodeid=%(Nidx)d",
@@ -1060,47 +1065,53 @@ raw_to_item(Nidx, {ItemId, SJID, Creation, Modification, XML}) ->
     end,
     #pubsub_item{itemid = {ItemId, Nidx},
 	nodeidx = Nidx,
-	creation = {decode_now(Creation), jid:remove_resource(JID)},
-	modification = {decode_now(Modification), JID},
+	creation = {bin_to_now(Creation), jid:remove_resource(JID)},
+	modification = {bin_to_now(Modification), JID},
 	payload = Payload}.
 
-rsm_filters(SNidx, undefined, undefined) ->
-    <<" where nodeid='", SNidx/binary, "'",
-      " order by creation asc">>;
-rsm_filters(SNidx, undefined, After)  ->
-    <<" where nodeid='", SNidx/binary, "'",
-      " and creation>'", (encode_stamp(After))/binary, "'",
-      " order by creation asc">>;
-rsm_filters(SNidx, <<>>, undefined) ->
+rsm_filters(undefined, undefined) ->
+    {ok, fun(SNidx) -> <<" where nodeid='", SNidx/binary, "'",
+      " order by creation asc">> end};
+rsm_filters(undefined, After) ->
+    try xmpp_util:decode_timestamp(After) of
+	Now ->
+	    Stamp = now_to_bin(Now),
+	    {ok, fun(SNidx) ->
+		<<" where nodeid='", SNidx/binary, "'",
+		  " and creation>'", Stamp/binary, "'",
+		  " order by creation asc">> end}
+	catch _:{bad_timestamp, _} ->
+	    error
+    end;
+rsm_filters(<<>>, undefined) ->
     %% 2.5 Requesting the Last Page in a Result Set
-    <<" where nodeid='", SNidx/binary, "'",
-      " order by creation desc">>;
-rsm_filters(SNidx, Before, undefined) ->
-    <<" where nodeid='", SNidx/binary, "'",
-      " and creation<'", (encode_stamp(Before))/binary, "'",
-      " order by creation desc">>.
+    {ok, fun(SNidx) -> <<" where nodeid='", SNidx/binary, "'",
+      " order by creation desc">> end};
+rsm_filters(Before, undefined) ->
+    try xmpp_util:decode_timestamp(Before) of
+		Now ->
+		    Stamp = now_to_bin(Now),
+		    {ok, fun(SNidx) -> <<" where nodeid='", SNidx/binary, "'",
+		      " and creation<'", Stamp/binary, "'",
+		      " order by creation desc">> end}
+    catch _:{bad_timestamp, _} ->
+	    error
+    end.
 
 rsm_page(Count, Index, Offset, Items) ->
-    First = decode_stamp(lists:nth(3, hd(Items))),
-    Last = decode_stamp(lists:nth(3, lists:last(Items))),
+    First = bin_to_stamp(lists:nth(3, hd(Items))),
+    Last = bin_to_stamp(lists:nth(3, lists:last(Items))),
     #rsm_set{count = Count, index = Index,
 	     first = #rsm_first{index = Offset, data = First},
 	     last = Last}.
 
-encode_stamp(Stamp) ->
-    try xmpp_util:decode_timestamp(Stamp) of
-	Now ->
-	    encode_now(Now)
-    catch _:{bad_timestamp, _} ->
-	    Stamp % We should return a proper error to the client instead.
-    end.
-decode_stamp(Stamp) ->
-    xmpp_util:encode_timestamp(decode_now(Stamp)).
+bin_to_stamp(Stamp) ->
+    xmpp_util:encode_timestamp(bin_to_now(Stamp)).
 
-encode_now({T1, T2, T3}) ->
+now_to_bin({T1, T2, T3}) ->
     <<(misc:i2l(T1, 6))/binary, ":",
       (misc:i2l(T2, 6))/binary, ":",
       (misc:i2l(T3, 6))/binary>>.
-decode_now(NowStr) ->
+bin_to_now(NowStr) ->
     [MS, S, US] = binary:split(NowStr, <<":">>, [global]),
     {binary_to_integer(MS), binary_to_integer(S), binary_to_integer(US)}.

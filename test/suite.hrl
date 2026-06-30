@@ -75,6 +75,16 @@
 		suite:match_failure([Mismatch], [??Pattern])
 	end
     end)()).
+    
+-define(not_match(Pattern, Result),
+    (fun() ->
+	case Result of
+	    Pattern ->
+    		suite:match_failure([Result], [??Pattern]);
+        _ ->
+            ok
+	end
+    end)()).
 
 -define(match(Pattern, Result, PatternRes),
     (fun() ->
