@@ -650,6 +650,9 @@ process(_Handlers,
                               "&state=", State/binary>>
                            }],
                      ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"302 Found">>)])};
+                {error, invalid_client} ->
+                    Body = [?XC(<<"h1">>, <<"Used client_id is invalid">>)],
+                    {400, [html], ejabberd_web:make_xhtml(web_head(), Body)};
                 {error, Error} when is_atom(Error) ->
                     %oauth2_wrq:redirected_error_response(
                     %    ReqData, RedirectURI, Error, State, Context)
@@ -661,13 +664,19 @@ process(_Handlers,
                      ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"302 Found">>)])}
             end
     catch _:{bad_jid, _} ->
-        State = proplists:get_value(<<"state">>, Q, <<"">>),
-        {400, [{<<"Location">>,
-                <<RedirectURI/binary,
-                  "?error=invalid_request",
-                  "&state=", State/binary>>
-               }],
-         ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"400 Invalid request">>)])}
+        case valid_client_id(ClientId, RedirectURI) of
+            true ->
+                State = proplists:get_value(<<"state">>, Q, <<"">>),
+                {400, [{<<"Location">>,
+                        <<RedirectURI/binary,
+                          "?error=invalid_request",
+                          "&state=", State/binary>>
+                       }],
+                 ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"400 Invalid request">>)])};
+            _ ->
+                Body = [?XC(<<"h1">>, <<"Used client_id is invalid">>)],
+                {400, [html], ejabberd_web:make_xhtml(web_head(), Body)}
+        end
     end;
 process(_Handlers,
 	#request{method = 'POST', q = Q, lang = _Lang,
@@ -767,6 +776,16 @@ process(_Handlers, _Request) ->
     ejabberd_web:error(not_found).
 
 -spec get_db_backend() -> module().
+
+valid_client_id(ClientId, RedirectUrl) ->
+    case authenticate_client(ClientId, #oauth_ctx{password = admin_generated}) of
+        {ok, {Ctx, Client}} ->
+            case verify_redirection_uri(Client, RedirectUrl, Ctx) of
+                {error, _} -> false;
+                _ -> true
+            end;
+        {error, _} -> false
+    end.
 
 get_db_backend() ->
     DBType = ejabberd_option:oauth_db_type(),
