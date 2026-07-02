@@ -1075,7 +1075,7 @@ doc() ->
         desc =>
             ?T("Define whether the client authentication is always allowed, "
                "denied, or it will depend if the client ID is present in the "
-               "database. The default value is 'allow'.")}},
+               "database. The default value is 'db'.")}},
      {oauth_use_cache,
       #{value => "true | false",
         desc =>

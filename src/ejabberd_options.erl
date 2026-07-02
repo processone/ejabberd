@@ -651,7 +651,7 @@ options() ->
      {oauth_expire, 4294967},
      {oauth_use_cache,
       fun(Host) -> ejabberd_config:get_option({use_cache, Host}) end},
-     {oauth_client_id_check, allow},
+     {oauth_client_id_check, db},
      {oom_killer, true},
      {oom_queue, 10000},
      {oom_watermark, 80},
