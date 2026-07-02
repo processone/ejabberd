@@ -90,7 +90,7 @@ update_captcha_key(Id, _Key, Key2) ->
 create_captcha(SID, From, To, Lang, Limiter, Args) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
-	    Id = <<(p1_rand:get_string())/binary>>,
+	    Id = misc:strong_alphanum_token(),
 	    JID = jid:encode(From),
 	    CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
 	    Data = #bob_data{cid = CID, 'max-age' = 0, type = Type, data = Image},
@@ -118,7 +118,7 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
-	    Id = <<(p1_rand:get_string())/binary>>,
+	    Id = misc:strong_alphanum_token(),
 	    CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
 	    Data = #bob_data{cid = CID, 'max-age' = 0, type = Type, data = Image},
 	    HelpTxt = translate:translate(

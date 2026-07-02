@@ -1151,7 +1151,7 @@ maybe_throw(Good) ->
 invite_token_t(Type, Host, Inviter, AccountName0) ->
     maybe_throw(check_max_invites_t(Type, Inviter)),
     maybe_throw(check_overuse_t(Type, Inviter)),
-    Token = p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT),
+    Token = misc:strong_alphanum_token(?INVITE_TOKEN_LENGTH_DEFAULT),
     AccountName = maybe_throw(check_account_name(jid:nodeprep(AccountName0), Host)),
     set_token_expires(#invite_token{token = Token,
                                     inviter = Inviter,
@@ -1172,7 +1172,7 @@ reset_token(User, Host) ->
         true ?= lists:member(Host, ejabberd_option:hosts()) orelse {error, host_unknown},
         true ?= ejabberd_auth:user_exists(User, Host) orelse {error, user_not_exists},
         set_token_expires(#invite_token{token =
-                                            p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT),
+                                            misc:strong_alphanum_token(?INVITE_TOKEN_LENGTH_DEFAULT),
                                         inviter = {<<>>, Host},
                                         type = reset_token,
                                         account_name = User},
@@ -1335,7 +1335,7 @@ reason_to_text(user_exists) ->
     ?T("User already exists").
 
 maybe_gen_sid(<<>>) ->
-    p1_rand:get_alphanum_string(?INVITE_TOKEN_LENGTH_DEFAULT);
+    misc:strong_alphanum_token(?INVITE_TOKEN_LENGTH_DEFAULT);
 maybe_gen_sid(SID) ->
     SID.
 

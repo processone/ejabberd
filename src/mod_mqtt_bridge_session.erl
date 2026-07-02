@@ -335,7 +335,7 @@ connect({ok, Sock}, State0, Transport, Auth) ->
 connect_ws(_Host, _Port, _Path, {error, Reason}, _State, _Transport, _Auth) ->
     {stop, {error, Reason}};
 connect_ws(Host, Port, Path, {ok, Sock}, State0, Transport, Auth) ->
-    Key = base64:encode(p1_rand:get_string()),
+    Key = base64:encode(misc:strong_alphanum_token()),
     Hash = str:to_lower(base64:encode(crypto:hash(sha, <<Key/binary, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11">>))),
     Data = <<"GET ", (list_to_binary(Path))/binary, " HTTP/1.1\r\n",
 	     "Host: ", (list_to_binary(Host))/binary, ":", (integer_to_binary(Port))/binary,"\r\n",

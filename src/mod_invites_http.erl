@@ -619,7 +619,7 @@ security_headers() ->
      {<<"Referrer-Policy">>, <<"no-referrer">>}].
 
 gen_rand_id() ->
-    p1_rand:get_alphanum_string(32).
+    misc:strong_alphanum_token(32).
 
 csrf_cookie_string(Key, CSRFCookie) ->
     <<Key/binary, "=", CSRFCookie/binary, "; HttpOnly; SameSite=strict; Max-Age=86400">>.

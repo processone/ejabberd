@@ -149,7 +149,7 @@ c2s_inline_features({Sasl, Bind, Extra}, Host, State) ->
 
 gen_token(Server, User, UA) ->
     Mod = gen_mod:db_mod(Server, ?MODULE),
-    Token = base64:encode(ua_hash(<<UA/binary, (p1_rand:get_string())/binary>>)),
+    Token = base64:encode(ua_hash(<<UA/binary, (misc:strong_alphanum_token())/binary>>)),
     ExpiresAt = erlang:system_time(second) + (mod_auth_fast_opt:token_lifetime(Server) div 1000),
     Mod:set_token(Server, User, ua_hash(UA), next, Token, ExpiresAt),
     #fast_token{token = Token, expiry = misc:usec_to_now(ExpiresAt*1000000)}.

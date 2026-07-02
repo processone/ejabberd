@@ -1181,7 +1181,7 @@ convert(InData, #media_info{path = Path, type = T, width = W, height = H} = Info
        true ->
 	    Dir = filename:dirname(Path),
 	    Ext = atom_to_binary(T, latin1),
-	    FileName = <<(p1_rand:get_string())/binary, $., Ext/binary>>,
+	    FileName = <<(misc:strong_alphanum_token())/binary, $., Ext/binary>>,
 	    OutPath = filename:join(Dir, FileName),
 	    {W1, H1} = if W > H -> {300, round(H*300/W)};
 			  H > W -> {round(W*300/H), 300};

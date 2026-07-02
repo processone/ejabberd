@@ -960,7 +960,7 @@ http_error(Status, Reason, Type) ->
             end,
     {Status, Reason, ?HEADER(CType), <<"">>}.
 
-make_sid() -> str:sha(p1_rand:get_string()).
+make_sid() -> str:sha(misc:strong_alphanum_token()).
 
 -compile({no_auto_import, [{min, 2}]}).
 

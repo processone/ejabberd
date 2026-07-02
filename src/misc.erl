@@ -45,6 +45,7 @@
 	 uri_parse/1, uri_parse/2,
          json_encode/1, json_decode/1,
 	 set_proc_label/1,
+	 strong_alphanum_token/0, strong_alphanum_token/1,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
 	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1]).
 
@@ -53,6 +54,7 @@
         crypto_hmac/3, crypto_hmac/4,
         uri_quote/1, uri_decode/1,
         lists_uniq/1]).
+
 -deprecated([{decode_base64, 1},
 	     {encode_base64, 1},
 	     {crypto_hmac, 3},
@@ -673,6 +675,32 @@ semver_to_xxyy(<<Y1, Y2, $., M1, M2, $., $0>>) ->
     <<Y1, Y2, $., M1, M2>>;
 semver_to_xxyy(Version) when is_binary(Version) ->
     Version.
+
+encode_alphanum(A) when A >= $z-$a ->
+    $0 + A - $z + $a;
+encode_alphanum(A) ->
+    A + $a.
+
+encode_alphanum(Pfx, <<S1:5, S2:5, S3:5, S4:5, S5:5, S6:5, S7:5, S8:5, Rest/binary>>) ->
+    encode_alphanum(<<Pfx/binary,
+                      (encode_alphanum(S1)),
+                      (encode_alphanum(S2)),
+                      (encode_alphanum(S3)),
+                      (encode_alphanum(S4)),
+                      (encode_alphanum(S5)),
+                      (encode_alphanum(S6)),
+                      (encode_alphanum(S7)),
+                      (encode_alphanum(S8))>>, Rest);
+encode_alphanum(Pfx, <<>>) ->
+    Pfx.
+
+strong_alphanum_token() ->
+    strong_alphanum_token(16).
+
+strong_alphanum_token(Len) ->
+    Bytes = ((Len + 4) div 5) *5,
+    Result = encode_alphanum(<<>>, crypto:strong_rand_bytes(Bytes)),
+    binary:part(Result, 1, Len).
 
 %%%===================================================================
 %%% Internal functions
