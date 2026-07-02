@@ -177,6 +177,9 @@ request(Req, SIPSock, TrID, Action) ->
                                     type = response});
         not_found ->
             make_response(Req, #sip{status = 480,
+                                    type = response});
+        malformed ->
+            make_response(Req, #sip{status = 400,
                                     type = response})
     end.
 
@@ -237,30 +240,38 @@ action(#sip{method = Method, hdrs = Hdrs, type = request} = Req, SIPSock) ->
                 [_|_] ->
                     {unsupported, Require};
                 _ ->
-                    {_, ToURI, _} = esip:get_hdr('to', Hdrs),
-                    {_, FromURI, _} = esip:get_hdr('from', Hdrs),
-		    case at_my_host(FromURI) of
-			true ->
-			    case check_auth(Req, 'proxy-authorization', SIPSock) of
-                                true ->
-				    case at_my_host(ToURI) of
-					true ->
-					    find(ToURI);
-					false ->
-					    LServer = jid:nameprep(FromURI#uri.host),
-					    {relay, LServer}
-				    end;
-                                false ->
-                                    {proxy_auth, FromURI#uri.host}
-                            end;
-			false ->
-			    case at_my_host(ToURI) of
-				true ->
-				    find(ToURI);
-				false ->
-				    deny
-			    end
+                    %% RFC 3261 Section 8.1.1.3/8.1.1.4: There MUST be
+                    %% exactly one From and one To header field value
+                    case {esip:get_hdrs('from', Hdrs), esip:get_hdrs('to', Hdrs)} of
+                        {[{_, FromURI, _}], [{_, ToURI, _}]} ->
+                            action_route(FromURI, ToURI, Req, SIPSock);
+                        _ ->
+                            malformed
                     end
+            end
+    end.
+
+action_route(FromURI, ToURI, Req, SIPSock) ->
+    case at_my_host(FromURI) of
+        true ->
+            case check_auth(Req, 'proxy-authorization', SIPSock) of
+                true ->
+                    case at_my_host(ToURI) of
+                        true ->
+                            find(ToURI);
+                        false ->
+                            LServer = jid:nameprep(FromURI#uri.host),
+                            {relay, LServer}
+                    end;
+                false ->
+                    {proxy_auth, FromURI#uri.host}
+            end;
+        false ->
+            case at_my_host(ToURI) of
+                true ->
+                    find(ToURI);
+                false ->
+                    deny
             end
     end.
 
