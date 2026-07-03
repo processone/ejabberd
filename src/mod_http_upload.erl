@@ -620,7 +620,9 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP, headers = Re
 				       <<"attachment; filename=",
 					 $", FileName/binary, $">>}]
 			       end,
-		    Headers2 = [{<<"Content-Type">>, ContentType} | Headers1],
+		    Headers2 = [{<<"Content-Type">>, ContentType},
+				{<<"X-Content-Type-Options">>, <<"nosniff">>},
+				{<<"Content-Security-Policy">>, <<"sandbox; default-src 'none'">>} | Headers1],
 		    Headers3 = ejabberd_http:apply_custom_headers(Headers2, CustomHeaders),
 		    http_response(200, Headers3, {file, Path, ReqHeaders});
 		{error, eacces} ->

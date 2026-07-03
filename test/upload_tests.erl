@@ -175,6 +175,10 @@ get_request(_Config, URL0, Data) ->
     Etag = ?match({_, Etag}, lists:keyfind("etag", 1, Headers), Etag),
     ct:comment("Request had Last-Modified"),
     LM = ?match({_, LM}, lists:keyfind("last-modified", 1, Headers), LM),
+    ct:comment("Response had correct Content-Security-Policy"),
+	?match({_, "sandbox; default-src 'none'"}, lists:keyfind("content-security-policy", 1, Headers)),
+    ct:comment("Response had correct X-Content-Type-Options"),
+	?match({_, "nosniff"}, lists:keyfind("x-content-type-options", 1, Headers)),
     ct:comment("Request with Etag are handled correctly"),
     {ok, {{"HTTP/1.1", 304, _}, _, _}} =
 	httpc:request(get, {URL, [{"If-None-Match", ["\"",Etag,"\""]}]}, [], [{body_format, binary}]),
