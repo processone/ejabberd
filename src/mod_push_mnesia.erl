@@ -52,6 +52,14 @@ store_session(LUser, LServer, TS, PushJID, Node, XData) ->
     PushLJID = jid:tolower(PushJID),
     MaxSessions = ejabberd_sm:get_max_user_sessions(LUser, LServer),
     F = fun() ->
+		Recs = mnesia:wread({push_session, US}),
+		lists:foreach(
+		  fun(#push_session{service = P, node = N} = Rec)
+			when P == PushLJID, N == Node ->
+			  mnesia:delete_object(Rec);
+		     (_) ->
+			  ok
+		  end, Recs),
 		enforce_max_sessions(US, MaxSessions),
 		mnesia:write(#push_session{us = US,
 					   timestamp = TS,
@@ -78,8 +86,13 @@ lookup_session(LUser, LServer, PushJID, Node) ->
 			     N == Node ->
 			  Rec
 		  end),
-    case mnesia:dirty_select(push_session, MatchSpec) of
-	[#push_session{timestamp = TS, xml = El}] ->
+    Records = mnesia:dirty_select(push_session, MatchSpec),
+    SortedRecords = lists:sort(fun(#push_session{timestamp = TS1},
+				   #push_session{timestamp = TS2}) ->
+				       TS1 >= TS2
+			       end, Records),
+    case SortedRecords of
+	[#push_session{timestamp = TS, xml = El} | _] ->
 	    {ok, {TS, PushLJID, Node, decode_xdata(El)}};
 	[] ->
 	    ?DEBUG("No push session found for ~ts@~ts (~p, ~ts)",
