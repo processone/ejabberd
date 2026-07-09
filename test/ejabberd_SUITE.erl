@@ -67,6 +67,7 @@ start_ejabberd(_) ->
     application:set_env(ejabberd, external_beams, TestBeams),
     {ok, _} = application:ensure_all_started(ejabberd, transient).
 
+
 end_per_suite(_Config) ->
     application:stop(ejabberd).
 
@@ -435,7 +436,9 @@ no_db_tests() ->
      replaced_tests:master_slave_cases(),
      upload_tests:single_cases(),
      carbons_tests:single_cases(),
-     carbons_tests:master_slave_cases()].
+     carbons_tests:master_slave_cases(),
+     sip_tests:single_cases(),
+     sip_tests:master_slave_cases()].
 
 db_tests(DB) when DB == mnesia; DB == redis ->
     [{single_user, [sequence],
@@ -1303,3 +1306,23 @@ split(Data) ->
          (_) ->
               true
       end, re:split(Data, <<"\s">>)).
+
+%%%===================================================================
+%%% SIP test wrappers (for GHSA-8j9p-hpfg-5cg3 security fixes)
+%%% These delegate to sip_tests module
+%%%===================================================================
+sip_reject_multiple_from_headers(Config) ->
+    sip_tests:sip_reject_multiple_from_headers(Config).
+
+sip_reject_multiple_to_headers(Config) ->
+    sip_tests:sip_reject_multiple_to_headers(Config).
+
+sip_reject_missing_from_header(Config) ->
+    sip_tests:sip_reject_missing_from_header(Config).
+
+sip_reject_missing_to_header(Config) ->
+    sip_tests:sip_reject_missing_to_header(Config).
+
+
+sip_require_auth_external_to_local(Config) ->
+    sip_tests:sip_require_auth_external_to_local(Config).

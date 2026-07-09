@@ -50,6 +50,11 @@ mod_doc() ->
 -export([start/2, stop/1, reload/3,
 	 make_response/2, is_my_host/1, at_my_host/1]).
 
+%% Exported for testing (GHSA-8j9p-hpfg-5cg3 security fixes)
+-ifdef(TEST).
+-export([action/2, action_route/4]).
+-endif.
+
 -export([data_in/2, data_out/2, message_in/2,
 	 message_out/2, request/2, request/3, response/2,
 	 locate/1, mod_opt_type/1, mod_options/1, depends/2,
@@ -254,6 +259,7 @@ action(#sip{method = Method, hdrs = Hdrs, type = request} = Req, SIPSock) ->
 action_route(FromURI, ToURI, Req, SIPSock) ->
     case at_my_host(FromURI) of
         true ->
+            %% Local sender: require proxy-authorization
             case check_auth(Req, 'proxy-authorization', SIPSock) of
                 true ->
                     case at_my_host(ToURI) of
@@ -269,7 +275,14 @@ action_route(FromURI, ToURI, Req, SIPSock) ->
         false ->
             case at_my_host(ToURI) of
                 true ->
-                    find(ToURI);
+                    %% External sender to local recipient: require authentication
+                    %% to prevent caller-ID spoofing (GHSA-8j9p-hpfg-5cg3)
+                    case check_auth(Req, 'proxy-authorization', SIPSock) of
+                        true ->
+                            find(ToURI);
+                        false ->
+                            {proxy_auth, ToURI#uri.host}
+                    end;
                 false ->
                     deny
             end
