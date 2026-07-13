@@ -60,6 +60,7 @@
 ).
 
 -include("logger.hrl").
+-include("ejabberd_http.hrl").
 
 
 -record(state, {}).
@@ -457,6 +458,7 @@ safe_apply(Hook, Module, Function, Args) ->
 	end
     catch
         E:R:Stack when E /= exit; R /= normal ->
+            Args2 = [format_arg_for_exception(Arg) || Arg <- Args],
             ?ERROR_MSG("Hook ~p crashed when running ~p:~p/~p:~n" ++
                        string:join(
                          ["** ~ts" | [ "** Arg " ++ integer_to_list(I) ++ " = ~p"
@@ -466,9 +468,15 @@ safe_apply(Hook, Module, Function, Args) ->
                         Module,
                         Function,
                         length(Args),
-                        misc:format_exception(2, E, R, Stack) | Args]),
+                        misc:format_exception(2, E, R, Stack) | Args2]),
             'EXIT'
     end.
+
+format_arg_for_exception(#request{headers = Headers} = Req) ->
+    Headers2 = lists:keydelete('Authorization', 1, Headers),
+    Req#request{auth = undefined, headers = Headers2};
+format_arg_for_exception(Arg) ->
+    Arg.
 
 -spec call_subscriber_list([subscriber()], binary() | global, atom(), {atom(), atom(), integer(), list()} | list(), subscriber_event(), [subscriber()]) -> any().
 call_subscriber_list([], _Host, _Hook, _CallbackOrArgs, _Event, []) ->
