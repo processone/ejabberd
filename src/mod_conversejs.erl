@@ -112,8 +112,8 @@ process2([], #request{method = 'GET', host = Host, auth = Auth, raw_path = RawPa
       <<"<html>">>,
       <<"<head>">>,
       <<"<meta charset='utf-8'/>">>,
-      <<"<title>", Title/binary, "</title>">>,
-      <<"<link rel='shortcut icon' type='image/x-icon' href='", Favicon/binary, "'>">>,
+      <<"<title>", (fxml:crypt(Title))/binary, "</title>">>,
+      <<"<link rel='shortcut icon' type='image/x-icon' href='", (fxml:crypt(Favicon))/binary, "'>">>,
       <<"<link rel='stylesheet' type='text/css' media='screen' href='">>,
       fxml:crypt(CSS), <<"'/>">>,
       <<"<script type='module' src='">>, fxml:crypt(Script), <<"'></script>">>
