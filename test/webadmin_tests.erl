@@ -48,7 +48,8 @@ single_cases() ->
       single_test(adduser),
       single_test(changepassword),
       single_test(removeuser),
-      single_test(invites)]}.
+      single_test(invites),
+      single_test(register_web)]}.
 
 login_page(Config) ->
     Headers = ?match({ok, {{"HTTP/1.1", 401, _}, Headers, _}},
@@ -141,6 +142,25 @@ invites(Config) ->
     ?match(true,
            mod_invites:is_expired(mod_invites:get_invite(Server, Token))),
     ok.
+
+register_web(Config) ->
+    Server = ?config(server_host, Config),
+    Port = ct:get_config(web_port, 5280),
+    Url = "http://" ++ Server ++ ":" ++ integer_to_list(Port) ++ "/register/new/",
+    Body = ?match({ok, {{_, 200, _}, _, Body}}, httpc:request(get, {Url, []}, [], [{body_format, binary}]), Body),
+    case binary:match(Body, <<"<img ">>) of
+        nomatch ->
+            % No captcha on page
+            captcha_not_offered;
+        _ ->
+            Host = ?config(server, Config),
+	        Query = [{"username", "bad_user"}, {"host", Host}, {"password", "pass"}, {"password2", "pass"}],
+            Data = iolist_to_binary(uri_string:compose_query(Query)),
+            ?match({ok, {{_, 404, _}, _, _}},
+                httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Data},
+                 [], [{body_format, binary}])),
+            ?match(false, ejabberd_auth:user_exists(<<"bad_user">>, Host))
+    end.
 
 %%%===================================================================
 %%% Internal functions

@@ -99,6 +99,7 @@ listen:
       "/upload": mod_http_upload
       "/captcha": ejabberd_captcha
       "/random/test/prefix/invites": mod_invites
+      "/register": mod_register_web
   -
     port: STUN_PORT
     module: ejabberd_stun
@@ -171,6 +172,8 @@ certfiles:
 sql_schema_multihost: MULTIHOST_SCHEMA
 
 update_sql_schema: UPDATE_SQL_SCHEMA
+
+captcha_cmd: captcha_gen
 
 api_permissions:
   "public commands":

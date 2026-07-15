@@ -328,7 +328,12 @@ get_register_parameters(Q) ->
 	       <<"id">>, <<"key">>]).
 
 form_new_post(Username, Host, Password, {false, false}, Ip) ->
-    register_account(Username, Host, Password, Ip);
+	case ejabberd_captcha:is_feature_available() of
+		true ->
+			{error, captcha_not_valid};
+		_ ->
+		    register_account(Username, Host, Password, Ip)
+	end;
 form_new_post(Username, Host, Password, {Id, Key}, Ip) ->
     case ejabberd_captcha:check_captcha(Id, Key) of
       captcha_valid ->

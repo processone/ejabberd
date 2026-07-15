@@ -342,6 +342,7 @@ jobs:
             --suite=test/ejabberd_SUITE --group=configtest_single
         make dev
         cp test/ejabberd_SUITE_data/ejabberd.yml ${{ env.DEV }}/conf/
+        sed -i 's|captcha_cmd: captcha_gen||g' ${{ env.DEV }}/conf/ejabberd.yml
         cp _build/test/logs/last/*.yml ${{ env.DEV }}/database/
         echo "define_macro: [CONFIGTEST_CONFIG: {modules: {mod_muc: {}}}]" \
              > ${{ env.DEV }}/database/configtest.yml
