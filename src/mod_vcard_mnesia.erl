@@ -186,23 +186,23 @@ transform(#vcard_search{} = VS) ->
 %%% Internal functions
 %%%===================================================================
 make_matchspec(LServer, Data) ->
-    GlobMatch = #vcard_search{_ = '_'},
+    GlobMatch = case mod_vcard_mnesia_opt:search_all_hosts(LServer) of
+        true -> #vcard_search{_ = '_'};
+        false ->
+            Host = find_my_host(LServer),
+            #vcard_search{us = {'_', Host}, _ = '_'}
+    end,
     Match = filter_fields(Data, GlobMatch, LServer),
     Match.
 
 filter_fields([], Match, _LServer) ->
     Match;
 filter_fields([{SVar, [Val]} | Ds], Match, LServer)
-  when is_binary(Val) and (Val /= <<"">>) ->
+  when is_binary(Val), (Val /= <<"">>) ->
     LVal = mod_vcard:string2lower(Val),
     NewMatch = case SVar of
 		   <<"user">> ->
-		       case mod_vcard_mnesia_opt:search_all_hosts(LServer) of
-			   true -> Match#vcard_search{luser = make_val(LVal)};
-			   false ->
-			       Host = find_my_host(LServer),
-			       Match#vcard_search{us = {make_val(LVal), Host}}
-		       end;
+			   Match#vcard_search{luser = make_val(LVal)};
 		   <<"fn">> -> Match#vcard_search{lfn = make_val(LVal)};
 		   <<"last">> ->
 		       Match#vcard_search{lfamily = make_val(LVal)};
