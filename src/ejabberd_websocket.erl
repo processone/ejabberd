@@ -280,12 +280,14 @@ handle_data(_, Codec, Data, Socket, WsHandleLoopPid, SockMod, Shaper) ->
 
 handle_data_int(Codec, Data, Socket, WsHandleLoopPid, SockMod, Shaper) ->
     {Type, NewCodec, Recv} = ejabberd_websocket_codec:decode(Codec, Data),
-    Send =
-    lists:filtermap(
-        fun({Op, Payload}) when Op == 1; Op == 2 ->
-            WsHandleLoopPid ! {received, Payload},
-            false;
-           ({8, Payload}) ->
+    {Abort, Send} =
+    lists:foldl(
+        fun(_, {true, _} = Acc) ->
+               Acc;
+           ({Op, Payload}, Acc) when Op == 1; Op == 2 ->
+               WsHandleLoopPid ! {received, Payload},
+               Acc;
+           ({8, Payload}, {_, Frames}) ->
                CloseCode =
                case Payload of
                    <<Code:16/integer-big, Message/binary>> ->
@@ -300,20 +302,21 @@ handle_data_int(Codec, Data, Socket, WsHandleLoopPid, SockMod, Shaper) ->
                        1000
                end,
                Frame = ejabberd_websocket_codec:encode(Codec, 8, <<CloseCode:16/integer-big>>),
-               {true, Frame};
-           ({9, Payload}) ->
+               {false, [Frame | Frames]};
+           ({9, Payload}, {_, Frames}) ->
                WsHandleLoopPid ! ping,
                Frame = ejabberd_websocket_codec:encode(Codec, 10, Payload),
-               {true, Frame};
-           ({10, _Payload}) ->
+               {false, [Frame | Frames]};
+           ({10, _Payload}, Acc) ->
                WsHandleLoopPid ! pong,
-               false
-        end, Recv),
-    case Type of
-        error ->
+               Acc;
+           (_, _) ->
+               {true, []}
+        end, {false, []}, Recv),
+    if Type == error orelse Abort ->
             {error, protocol, NewCodec};
-        _ ->
-            {NewCodec, Send, handle_shaping(Data, Socket, SockMod, Shaper)}
+        true ->
+            {NewCodec, lists:reverse(Send), handle_shaping(Data, Socket, SockMod, Shaper)}
     end.
 
 websocket_close(Codec, Socket, WsHandleLoopPid,
