@@ -43,6 +43,10 @@
 	 host_up/1, host_down/1,
 	 config_reloaded/0, process_iq/1]).
 
+-ifdef(TEST).
+-export([verify_pow/3, pow_label/1, insert_pow_challenge/3]).
+-endif.
+
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
@@ -60,9 +64,10 @@
 
 -record(captcha, {id :: binary(),
                   pid :: pid() | undefined,
-                  key :: binary(),
+                  key :: binary() | undefined,
                   tref :: reference(),
-                  args :: any()}).
+                  args :: any(),
+                  pow :: {binary(), binary()} | undefined}).
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
@@ -77,6 +82,11 @@ mk_ocr_field(Lang, CID, Type) ->
     URI = #media_uri{type = Type, uri = <<"cid:", CID/binary>>},
     [_, F] = captcha_form:encode([{ocr, <<>>}], Lang, [ocr]),
     xmpp:set_els(F, [#media{uri = [URI]}]).
+
+-spec mk_pow_field(binary(), binary()) -> xdata_field().
+mk_pow_field(Lang, Label) ->
+    [_, F] = captcha_form:encode([{'SHA-256', <<>>}], Lang, ['SHA-256']),
+    F#xdata_field{label = Label}.
 
 update_captcha_key(_Id, Key, Key) ->
     ok;
@@ -116,25 +126,57 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 -spec create_captcha_x(binary(), jid(), binary(), any(), xdata()) ->
 			      {ok, [xmpp_element()]} | {error, image_error()}.
 create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
-    case create_image(Limiter) of
-      {ok, Type, Key, Image} ->
-	    Id = <<(p1_rand:get_string())/binary>>,
-	    CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
-	    Data = #bob_data{cid = CID, 'max-age' = 0, type = Type, data = Image},
-	    HelpTxt = translate:translate(
-			Lang, ?T("If you don't see the CAPTCHA image here, visit the web page.")),
-	    Imageurl = get_url(<<Id/binary, "/image">>),
-	    [H|T] = captcha_form:encode(
-		      [{'captcha-fallback-text', HelpTxt},
-		       {'captcha-fallback-url', Imageurl},
-		       {from, To}, {challenge, Id}, {sid, SID},
-		       mk_ocr_field(Lang, CID, Type)],
-		      Lang, [challenge]),
-	    Captcha = X#xdata{type = form, fields = [H|Fs ++ T]},
+    Id = <<(p1_rand:get_string())/binary>>,
+    ImageRes = case captcha_cmd_configured() of
+		   true -> create_image(Limiter);
+		   false -> false
+	       end,
+    Pow = ejabberd_option:captcha_pow(),
+    case build_challenge_fields(Id, To, Lang, ImageRes, Pow) of
+	{ok, ChallengeFields, ExtraEls, Key, PowState} ->
+	    [H | T] = captcha_form:encode(
+			[{from, To}, {challenge, Id}, {sid, SID} | ChallengeFields],
+			Lang, [challenge]),
+	    Captcha = X#xdata{type = form, fields = [H | Fs ++ T]},
 	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
-	    ets:insert(captcha, #captcha{id = Id, key = Key, tref = Tref}),
-	    {ok, [Captcha, Data]};
-	Err -> Err
+	    ets:insert(captcha, #captcha{id = Id, key = Key, tref = Tref, pow = PowState}),
+	    {ok, [Captcha | ExtraEls]};
+	{error, _} = Err ->
+	    Err
+    end.
+
+build_challenge_fields(Id, To, Lang, ImageRes, Pow) ->
+    {ImgFields, ImgEls, Key} =
+	case ImageRes of
+	    {ok, Type, K, Image} ->
+		CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
+		Data = #bob_data{cid = CID, 'max-age' = 0, type = Type, data = Image},
+		HelpTxt = translate:translate(
+			    Lang, ?T("If you don't see the CAPTCHA image here, visit the web page.")),
+		Imageurl = get_url(<<Id/binary, "/image">>),
+		{[{'captcha-fallback-text', HelpTxt},
+		  {'captcha-fallback-url', Imageurl},
+		  mk_ocr_field(Lang, CID, Type)],
+		 [Data], K};
+	    _ ->
+		{[], [], undefined}
+	end,
+    {PowFields, PowState} =
+	case Pow of
+	    N when is_integer(N), N >= 1 ->
+		Label = pow_label(N),
+		{[mk_pow_field(Lang, Label)], {jid:encode(To), Label}};
+	    _ ->
+		{[], undefined}
+	end,
+    case {ImgFields, PowFields} of
+	{[], []} ->
+	    case ImageRes of
+		{error, Reason} -> {error, Reason};
+		_ -> {error, enodata}
+	    end;
+	_ ->
+	    {ok, ImgFields ++ PowFields, ImgEls, Key, PowState}
     end.
 
 -spec build_captcha_html(binary(), binary()) -> captcha_not_found |
@@ -187,7 +229,17 @@ build_captcha_html(Id, Lang) ->
 
 -spec process_reply(xmpp_element()) -> ok | {error, bad_match | not_found | malformed}.
 
-process_reply(#xdata{} = X) ->
+process_reply(#xdata{fields = Fields} = X) ->
+    case field_has_value(<<"SHA-256">>, Fields) of
+	true -> process_pow_reply(X);
+	false -> process_ocr_reply(X)
+    end;
+process_reply(#xcaptcha{xdata = #xdata{} = X}) ->
+    process_reply(X);
+process_reply(_) ->
+    {error, malformed}.
+
+process_ocr_reply(#xdata{} = X) ->
     Required = [<<"challenge">>, <<"ocr">>],
     Fs = lists:filter(
 	   fun(#xdata_field{var = Var}) ->
@@ -197,20 +249,39 @@ process_reply(#xdata{} = X) ->
 	Props ->
 	    Id = proplists:get_value(challenge, Props),
 	    OCR = proplists:get_value(ocr, Props),
-	    case check_captcha(Id, OCR) of
-		captcha_valid -> ok;
-		captcha_non_valid -> {error, bad_match};
-		captcha_not_found -> {error, not_found}
-	    end
+	    result_to_reply(check_captcha(Id, OCR))
     catch _:{captcha_form, Why} ->
 	    ?WARNING_MSG("Malformed CAPTCHA form: ~ts",
 			 [captcha_form:format_error(Why)]),
 	    {error, malformed}
-    end;
-process_reply(#xcaptcha{xdata = #xdata{} = X}) ->
-    process_reply(X);
-process_reply(_) ->
-    {error, malformed}.
+    end.
+
+process_pow_reply(#xdata{} = X) ->
+    Required = [<<"challenge">>, <<"SHA-256">>],
+    Fs = lists:filter(
+	   fun(#xdata_field{var = Var}) ->
+		   lists:member(Var, [<<"FORM_TYPE">>|Required])
+	   end, X#xdata.fields),
+    try captcha_form:decode(Fs, [?NS_CAPTCHA], Required) of
+	Props ->
+	    Id = proplists:get_value(challenge, Props),
+	    Solution = proplists:get_value('SHA-256', Props),
+	    result_to_reply(check_captcha_pow(Id, Solution))
+    catch _:{captcha_form, Why} ->
+	    ?WARNING_MSG("Malformed CAPTCHA form: ~ts",
+			 [captcha_form:format_error(Why)]),
+	    {error, malformed}
+    end.
+
+result_to_reply(captcha_valid) -> ok;
+result_to_reply(captcha_non_valid) -> {error, bad_match};
+result_to_reply(captcha_not_found) -> {error, not_found}.
+
+field_has_value(Var, Fields) ->
+    case lists:keyfind(Var, #xdata_field.var, Fields) of
+	#xdata_field{values = [_|_]} -> true;
+	_ -> false
+    end.
 
 -spec process_iq(iq()) -> iq().
 process_iq(#iq{type = set, lang = Lang, sub_els = [#xcaptcha{} = El]} = IQ) ->
@@ -439,6 +510,9 @@ do_create_image(Key, FileName) when is_binary(FileName) ->
 	  {error, Reason}
     end.
 
+captcha_cmd_configured() ->
+    ejabberd_option:captcha_cmd() /= undefined.
+
 get_prog_name() ->
     case ejabberd_option:captcha_cmd() of
         undefined ->
@@ -639,6 +713,46 @@ check_captcha(Id, ProvidedKey) ->
 	    captcha_not_found
     end.
 
+check_captcha_pow(Id, Solution) when is_binary(Id), is_binary(Solution) ->
+    case lookup_captcha(Id) of
+	{ok, #captcha{pow = {Prefix, Label}, pid = Pid, args = Args, tref = Tref}} ->
+	    ets:delete(captcha, Id),
+	    misc:cancel_timer(Tref),
+	    case verify_pow(Solution, Prefix, Label) of
+		true ->
+		    callback(captcha_succeed, Pid, Args),
+		    captcha_valid;
+		false ->
+		    callback(captcha_failed, Pid, Args),
+		    captcha_non_valid
+	    end;
+	_ ->
+	    captcha_not_found
+    end;
+check_captcha_pow(_, _) ->
+    captcha_not_found.
+
+-spec verify_pow(binary(), binary(), binary()) -> boolean().
+verify_pow(Solution, Prefix, Label) ->
+    byte_size(Solution) =< 256
+	andalso has_prefix(Solution, Prefix)
+	andalso ends_with(str:to_hexlist(crypto:hash(sha256, Solution)), Label).
+
+has_prefix(Bin, Prefix) ->
+    PS = byte_size(Prefix),
+    byte_size(Bin) >= PS andalso binary:part(Bin, 0, PS) == Prefix.
+
+ends_with(Bin, Suffix) ->
+    SS = byte_size(Suffix),
+    BS = byte_size(Bin),
+    BS >= SS andalso binary:part(Bin, BS - SS, SS) == Suffix.
+
+-spec pow_label(pos_integer()) -> binary().
+pow_label(N) ->
+    <<B0, Rest/binary>> = crypto:strong_rand_bytes((N + 1) div 2),
+    Hex = str:to_hexlist(<<(B0 bor 16#80), Rest/binary>>),
+    binary:part(Hex, 0, N).
+
 -spec clean_treap(treap:treap(), priority()) -> treap:treap().
 clean_treap(Treap, CleanPriority) ->
     case treap:is_empty(Treap) of
@@ -664,3 +778,11 @@ callback(_, _, _) ->
 -spec now_priority() -> priority().
 now_priority() ->
     -erlang:system_time(microsecond).
+
+-ifdef(TEST).
+insert_pow_challenge(Id, Prefix, Label) ->
+    _ = (catch ets:new(captcha, [named_table, public, {keypos, #captcha.id}])),
+    Tref = erlang:send_after(?CAPTCHA_LIFETIME, self(), {remove_id, Id}),
+    ets:insert(captcha, #captcha{id = Id, tref = Tref, pow = {Prefix, Label}}),
+    ok.
+-endif.
