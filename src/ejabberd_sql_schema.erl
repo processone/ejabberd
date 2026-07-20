@@ -863,24 +863,29 @@ update_schema(Host, Module, RawSchemas) ->
             LastVersion = LastSchema#sql_schema.version,
             case Version of
                 _ when Version < 0 ->
-                    ?ERROR_MSG("Can't update SQL schema for module ~p, please do it manually", [Module]);
+                    ?ERROR_MSG("Can't update SQL schema for module ~p, please do it manually", [Module]),
+                    error;
                 0 ->
                     create_tables(Host, Module, SchemaInfo, LastSchema);
                 LastVersion ->
                     ok;
                 _ when LastVersion < Version ->
-                    ?ERROR_MSG("The current SQL schema for module ~p is ~p, but the latest known schema in the module is ~p", [Module, Version, LastVersion]);
+                    ?ERROR_MSG("The current SQL schema for module ~p is ~p, but the latest known schema in the module is ~p", [Module, Version, LastVersion]),
+                    error;
                 _ ->
-                    lists:foreach(
-                      fun(Schema) ->
+                    lists:foldl(
+                      fun(Schema, Res) ->
                               if
                                   Schema#sql_schema.version > Version ->
-                                      do_update_schema(Host, Module,
-                                                       SchemaInfo, Schema);
+                                      case do_update_schema(Host, Module,
+                                                       SchemaInfo, Schema) of
+                                          {atomic, _} -> Res;
+                                          _ -> error
+                                      end;
                                   true ->
-                                      ok
+                                      Res
                               end
-                      end, lists:sort(Schemas))
+                      end, ok, lists:sort(Schemas))
             end;
         false ->
             ok
@@ -948,6 +953,69 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                           ColumnName,
                                           SQL]),
                                ejabberd_sql:sql_query_t(SQL)
+                           end),
+                   case Res of
+                       {error, Error} ->
+                           ?ERROR_MSG("Failed to update table ~s: ~p",
+                                      [TableName, Error]),
+                           error(Error);
+                       _ ->
+                           ok
+                   end;
+               ({change_column_type, TableName, ColumnName}) ->
+                   {value, Table} =
+                       lists:keysearch(
+                           TableName, #sql_table.name, Schema#sql_schema.tables),
+                   {value, Column} =
+                       lists:keysearch(
+                           ColumnName, #sql_column.name, Table#sql_table.columns),
+                   Res =
+                       ejabberd_sql:sql_query_t(
+                           fun(DBType, _DBVersion) ->
+                               SQL =
+                                   case DBType of
+                                       mysql ->
+                                           Def = format_column_def(SchemaInfo, Column),
+                                           [<<"ALTER TABLE ">>,
+                                            TableName,
+                                            <<" MODIFY COLUMN ">>,
+                                            Def,
+                                            <<";">>];
+                                       sqlite ->
+                                           sqlite_table_copy_t(SchemaInfo, Table);
+                                       mssql ->
+                                           Type = format_type(SchemaInfo, Column),
+                                           [<<"ALTER TABLE ">>,
+                                            TableName,
+                                            <<" ALTER COLUMN ">>,
+                                            ColumnName,
+                                            <<" ">>,
+                                            Type,
+                                            <<";">>];
+                                       pgsql ->
+                                           Type = format_type(SchemaInfo, Column),
+                                           [<<"ALTER TABLE ">>,
+                                            TableName,
+                                            <<" ALTER COLUMN ">>,
+                                            ColumnName,
+                                            <<" TYPE ">>,
+                                            Type,
+                                            <<" USING ">>,
+                                            ColumnName, <<"::">>, Type,
+                                            <<";">>]
+                                   end,
+                               case SQL of
+                                   _ when is_list(SQL) ->
+                                       ?INFO_MSG("Change column type ~s/~s:~n~s~n",
+                                                 [TableName,
+                                                  ColumnName,
+                                                  SQL]),
+                                       ejabberd_sql:sql_query_t(SQL);
+                                   _ ->
+                                       ?INFO_MSG("Change column type ~s/~s:~n",
+                                                 [TableName,
+                                                  ColumnName])
+                               end
                            end),
                    case Res of
                        {error, Error} ->

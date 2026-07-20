@@ -348,6 +348,8 @@ init_per_testcase(TestCase, OrigConfig) ->
             bind(auth(connect(Config)));
 	"replaced" ++ _ ->
 	    auth(connect(Config));
+	"sqlschemaupdater_" ++ _ ->
+	    Config;
 	_ when TestGroup == s2s_tests ->
 	    auth(connect(starttls(connect(Config))));
         _ ->
@@ -466,6 +468,11 @@ db_tests(DB) when DB == mnesia; DB == redis ->
      csi_tests:master_slave_cases(),
      push_tests:master_slave_cases()];
 db_tests(DB) ->
+    SqlUpdate = if
+		    DB == sqlite; DB == mysql; DB == pgsql; DB == mssql ->
+			[sqlschemaupdater_tests:single_cases()];
+		    true -> []
+		end,
     [{single_user, [sequence],
       [test_register,
        legacy_auth_tests(),
@@ -486,7 +493,7 @@ db_tests(DB) ->
        push_tests:single_cases(),
        invites_tests:single_cases(),
        test_pass_change,
-       test_unregister]},
+       test_unregister] ++ SqlUpdate},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
      pubsub_tests:master_slave_cases(),
