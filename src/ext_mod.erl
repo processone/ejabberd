@@ -306,14 +306,19 @@ stop_module(ModuleRuntime, Host) ->
 
 upgrade() ->
     [{Package, upgrade(Package)} || {Package, _Spec} <- installed()].
-upgrade(Module) when is_atom(Module) ->
-    upgrade(misc:atom_to_binary(Module));
 upgrade(Package) when is_binary(Package) ->
-    uninstall(Package),
-    clean(Package),
-    install(Package).
+    upgrade(misc:binary_to_atom(Package));
+upgrade(Module) when is_atom(Module) ->
+    uninstall(Module),
+    clean(Module),
+    case lists:member(Module, ejabberd_option:install_contrib_modules()) of
+        true -> ok;
+        false -> install(Module)
+    end.
 
-clean(Package) ->
+clean(Module) when is_atom(Module) ->
+    clean(misc:atom_to_binary(Module));
+clean(Package) when is_binary(Package) ->
     Spec = [S || {Mod, S} <- available(), misc:atom_to_binary(Mod)==Package],
     case Spec of
         [] ->
