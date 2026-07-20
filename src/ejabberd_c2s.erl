@@ -687,13 +687,17 @@ init([State, Opts]) ->
                    false -> [compression_none | TLSOpts1];
                    true -> TLSOpts1
                end,
+    TLSVerify = proplists:get_bool(tls_verify, Opts),
+    TLSOpts3 = case TLSVerify of
+		   true -> TLSOpts2;
+		   _ -> [verify_none, TLSOpts2] % Don't request client certs
+	       end,
     TLSEnabled = proplists:get_bool(starttls, Opts),
     TLSRequired = proplists:get_bool(starttls_required, Opts),
-    TLSVerify = proplists:get_bool(tls_verify, Opts),
     AllowUnencryptedSasl2 = proplists:get_bool(allow_unencrypted_sasl2, Opts),
     Zlib = proplists:get_bool(zlib, Opts),
     Timeout = ejabberd_option:negotiation_timeout(),
-    State1 = State#{tls_options => TLSOpts2,
+    State1 = State#{tls_options => TLSOpts3,
 		    tls_required => TLSRequired,
 		    tls_enabled => TLSEnabled,
 		    tls_verify => TLSVerify,
