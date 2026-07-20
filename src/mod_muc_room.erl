@@ -673,7 +673,7 @@ normal_state({route, ToNick,
 	      #iq{from = From, lang = Lang} = Packet},
 	     #state{config = #config{allow_query_users = AllowQuery}} = StateData) ->
     DirectIqType = direct_iq_type(Packet),
-    try maps:get(jid:tolower(From), StateData#state.users) of
+    case get_user(From, StateData) of
 	#user{nick = FromNick} when AllowQuery
                                     orelse DirectIqType == vcard
                                     orelse ToNick == FromNick ->
@@ -705,15 +705,15 @@ normal_state({route, ToNick,
 			      xmpp:set_from_to(Packet, FromJID, To), Packet, self())
 		    end
 	    end;
+	user_not_found ->
+	    ErrText = ?T("Only occupants are allowed to send queries "
+			 "to the conference"),
+	    Err = xmpp:err_not_acceptable(ErrText, Lang),
+	    ejabberd_router:route_error(Packet, Err);
 	_ ->
 	    ErrText = ?T("Queries to the conference members are "
 			 "not allowed in this room"),
 	    Err = xmpp:err_not_allowed(ErrText, Lang),
-	    ejabberd_router:route_error(Packet, Err)
-    catch _:{badkey, _} ->
-	    ErrText = ?T("Only occupants are allowed to send queries "
-			 "to the conference"),
-	    Err = xmpp:err_not_acceptable(ErrText, Lang),
 	    ejabberd_router:route_error(Packet, Err)
     end,
     {next_state, normal_state, StateData};
@@ -1371,10 +1371,10 @@ is_user_allowed_private_message(JID, StateData) ->
 %% If the JID is not a participant, return values for a service message.
 -spec get_participant_data(jid(), state()) -> {binary(), role()}.
 get_participant_data(From, StateData) ->
-    try maps:get(jid:tolower(From), StateData#state.users) of
+    case get_user(From, StateData) of
 	#user{nick = FromNick, role = Role} ->
-	    {FromNick, Role}
-    catch _:{badkey, _} ->
+	    {FromNick, Role};
+	user_not_found ->
 	    try muc_subscribers_get(jid:tolower(jid:remove_resource(From)),
                                     StateData#state.muc_subscribers) of
 		#subscriber{nick = FromNick} ->
@@ -1646,7 +1646,7 @@ get_error_text(#stanza_error{text = Txt}) ->
 
 -spec make_reason(stanza(), jid(), state(), binary()) -> binary().
 make_reason(Packet, From, StateData, Reason1) ->
-    #user{nick = FromNick} = maps:get(jid:tolower(From), StateData#state.users),
+    #user{nick = FromNick} = get_user(From, StateData),
     Condition = get_error_condition(xmpp:get_error(Packet)),
     Reason2 = unicode:characters_to_list(Reason1),
     str:format(Reason2, [FromNick, Condition]).
@@ -1659,8 +1659,7 @@ expulse_participant(Packet, From, StateData, Reason1) ->
 				    #presence{type = unavailable,
 					      status = xmpp:mk_text(Reason2)},
 				    StateData),
-    LJID = jid:tolower(From),
-    #user{nick = Nick} = maps:get(LJID, StateData#state.users),
+    #user{nick = Nick} = get_user(From, StateData),
     case maps:get(Nick, StateData#state.nicks, []) of
 	[_, _ | _] ->
 	    Aff = get_affiliation(From, StateData),
@@ -1876,12 +1875,18 @@ set_role(JID, Role, StateData) ->
     end,
     StateData#state{users = Users, nicks = Nicks, roles = Roles}.
 
+-spec get_user(jid(), state()) -> #user{} | user_not_found.
+get_user(JID, StateData) ->
+    try maps:get(jid:tolower(JID), StateData#state.users) of
+	#user{} = User -> User
+    catch _:{badkey, _} -> user_not_found
+    end.
+
 -spec get_role(jid(), state()) -> role().
 get_role(JID, StateData) ->
-    LJID = jid:tolower(JID),
-    try maps:get(LJID, StateData#state.users) of
-	#user{role = Role} -> Role
-    catch _:{badkey, _} -> none
+    case get_user(JID, StateData) of
+	#user{role = Role} -> Role;
+        user_not_found -> none
     end.
 
 -spec get_default_role(affiliation(), state()) -> role().
@@ -2050,7 +2055,7 @@ prepare_room_queue(StateData) ->
 update_online_user(JID, #user{nick = Nick} = User, StateData) ->
     LJID = jid:tolower(JID),
     add_to_log(join, Nick, StateData),
-    Nicks1 = try maps:get(LJID, StateData#state.users) of
+    Nicks1 = case get_user(JID, StateData) of
 		 #user{nick = OldNick} ->
 		     case lists:delete(
 			    LJID, maps:get(OldNick, StateData#state.nicks)) of
@@ -2058,8 +2063,8 @@ update_online_user(JID, #user{nick = Nick} = User, StateData) ->
 			     maps:remove(OldNick, StateData#state.nicks);
 			 LJIDs ->
 			     maps:put(OldNick, LJIDs, StateData#state.nicks)
-		     end
-	     catch _:{badkey, _} ->
+		     end;
+		 user_not_found ->
 		     StateData#state.nicks
 	     end,
     Nicks = maps:update_with(Nick,
@@ -2163,7 +2168,7 @@ remove_online_user(JID, StateData) ->
 -spec remove_online_user(jid(), state(), binary()) -> state().
 remove_online_user(JID, StateData, Reason) ->
     LJID = jid:tolower(JID),
-    #user{nick = Nick} = maps:get(LJID, StateData#state.users),
+    #user{nick = Nick} = get_user(JID, StateData),
     add_to_log(leave, {Nick, Reason}, StateData),
     tab_remove_online_user(JID, StateData),
     Users = maps:remove(LJID, StateData#state.users),
@@ -2233,11 +2238,11 @@ find_jid_by_nick(Nick, StateData) ->
 	[User] -> jid:make(User);
 	[FirstUser | Users] ->
 	    #user{last_presence = FirstPresence} =
-		maps:get(FirstUser, StateData#state.users),
+		get_user(FirstUser, StateData),
 	    {LJID, _} = lists:foldl(
 			  fun(Compare, {HighestUser, HighestPresence}) ->
 				  #user{last_presence = P1} =
-				      maps:get(Compare, StateData#state.users),
+				      get_user(Compare, StateData),
 				  case higher_presence(P1, HighestPresence) of
 				      true -> {Compare, P1};
 				      false -> {HighestUser, HighestPresence}
@@ -2283,11 +2288,10 @@ find_nick_by_jid(JID, StateData) ->
 
 -spec is_nick_change(jid(), binary(), state()) -> boolean().
 is_nick_change(JID, Nick, StateData) ->
-    LJID = jid:tolower(JID),
     case Nick of
       <<"">> -> false;
       _ ->
-	  #user{nick = OldNick} = maps:get(LJID, StateData#state.users),
+	  #user{nick = OldNick} = get_user(JID, StateData),
 	  Nick /= OldNick
     end.
 
@@ -2700,11 +2704,11 @@ is_ra_changed(JID, _IsInitialPresence = false, NewStateData, OldStateData) ->
 -spec send_new_presence(jid(), binary(), boolean(), state(), state()) -> ok.
 send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
     LNJID = jid:tolower(NJID),
-    #user{nick = Nick} = maps:get(LNJID, StateData#state.users),
+    #user{nick = Nick} = get_user(NJID, StateData),
     LJID = find_jid_by_nick(Nick, StateData),
     #user{jid = RealJID, role = Role0,
 	  last_presence = Presence0} = UserInfo =
-	maps:get(jid:tolower(LJID), StateData#state.users),
+	get_user(LJID, StateData),
     {Role1, Presence1} =
         case (presence_broadcast_allowed(NJID, StateData) orelse
          presence_broadcast_allowed(NJID, OldStateData)) of
@@ -2776,14 +2780,13 @@ send_existing_presences(ToJID, StateData) ->
 
 -spec send_existing_presences1(jid(), state()) -> ok.
 send_existing_presences1(ToJID, StateData) ->
-    LToJID = jid:tolower(ToJID),
-    #user{jid = RealToJID, role = Role} = maps:get(LToJID, StateData#state.users),
+    #user{jid = RealToJID, role = Role} = get_user(ToJID, StateData),
     maps:fold(
       fun(FromNick, _Users, _) ->
 	      LJID = find_jid_by_nick(FromNick, StateData),
 	      #user{jid = FromJID, role = FromRole,
 		    last_presence = Presence} =
-		  maps:get(jid:tolower(LJID), StateData#state.users),
+		  get_user(LJID, StateData),
 	      PresenceBroadcast =
 		  lists:member(
 		    FromRole, (StateData#state.config)#config.presence_broadcast),
@@ -2812,7 +2815,7 @@ send_existing_presences1(ToJID, StateData) ->
 -spec set_nick(jid(), binary(), state()) -> state().
 set_nick(JID, Nick, State) ->
     LJID = jid:tolower(JID),
-    #user{nick = OldNick} = maps:get(LJID, State#state.users),
+    #user{nick = OldNick} = get_user(JID, State),
     Users = maps:update_with(LJID,
 			     fun (#user{} = User) -> User#user{nick = Nick} end,
 			     State#state.users),
@@ -2831,8 +2834,7 @@ set_nick(JID, Nick, State) ->
 
 -spec change_nick(jid(), binary(), state()) -> state().
 change_nick(JID, Nick, StateData) ->
-    LJID = jid:tolower(JID),
-    #user{nick = OldNick} = maps:get(LJID, StateData#state.users),
+    #user{nick = OldNick} = get_user(JID, StateData),
     OldNickUsers = maps:get(OldNick, StateData#state.nicks),
     NewNickUsers = maps:get(Nick, StateData#state.nicks, []),
     SendOldUnavailable = length(OldNickUsers) == 1,
@@ -2852,7 +2854,7 @@ send_nick_changing(JID, OldNick, StateData,
 		   SendOldUnavailable, SendNewAvailable) ->
     #user{jid = RealJID, nick = Nick, role = Role,
 	  last_presence = Presence} =
-	maps:get(jid:tolower(JID), StateData#state.users),
+	get_user(JID, StateData),
     Affiliation = get_affiliation(JID, StateData),
     maps:fold(
       fun(LJID, Info, _) when Presence /= undefined ->
@@ -3616,7 +3618,7 @@ send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 		    end
 	    end,
     lists:foreach(fun (LJ) ->
-			  #user{nick = Nick, jid = J} = maps:get(LJ, StateData#state.users),
+			  #user{nick = Nick, jid = J} = get_user(LJ, StateData),
 			  add_to_log(kickban, {Nick, Reason, Code}, StateData),
 			  tab_remove_online_user(J, StateData),
 			  send_kickban_presence1(UJID, J, Reason, Code,
@@ -3628,7 +3630,7 @@ send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 			     affiliation(), state()) -> ok.
 send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		       StateData) ->
-    #user{jid = RealJID, nick = Nick} = maps:get(jid:tolower(UJID), StateData#state.users),
+    #user{jid = RealJID, nick = Nick} = get_user(UJID, StateData),
     ActorNick = find_nick_by_jid(MJID, StateData),
     %% TODO: optimize further
     UserMap =
