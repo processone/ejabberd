@@ -92,7 +92,7 @@ jobs:
       uses: ./.github/actions/manage-ejabberd
       with:
         for: prod
-        do: deploy, start, register, stop, check, logs
+        do: deploy, no_acme, start, register, stop, check, logs
         tool: ${{ matrix.rebar }}
         username: user1
 
@@ -101,7 +101,7 @@ jobs:
       uses: ./.github/actions/manage-ejabberd
       with:
         for: dev
-        do: deploy, start, register, stop, check, logs
+        do: deploy, no_acme, start, register, stop, check, logs
         tool: ${{ matrix.rebar }}
         username: user2
 
@@ -109,7 +109,7 @@ jobs:
       uses: ./.github/actions/manage-ejabberd
       with:
         for: install
-        do: deploy, start, register, stop, check, logs
+        do: deploy, no_acme, start, register, stop, check, logs
         tool: ${{ matrix.rebar }}
         username: user3
 
@@ -177,21 +177,21 @@ jobs:
       uses: ./.github/actions/manage-ejabberd
       with:
         for: prod
-        do: deploy, start, register, stop, check, logs
+        do: deploy, no_acme, start, register, stop, check, logs
         username: user1
 
     - name: Release
       uses: ./.github/actions/manage-ejabberd
       with:
         for: dev
-        do: deploy, start, register, stop, check, logs
+        do: deploy, no_acme, start, register, stop, check, logs
         username: user2
 
     - name: Installed
       uses: ./.github/actions/manage-ejabberd
       with:
         for: install
-        do: deploy, start, register, stop, check, logs
+        do: deploy, no_acme, start, register, stop, check, logs
         username: user3
 
   ################################################################### Mix #####
@@ -263,19 +263,19 @@ jobs:
       uses: ./.github/actions/manage-ejabberd
       with:
         for: prod
-        do: deploy, start, register, stop, check, logs
+        do: deploy, no_acme, start, register, stop, check, logs
         username: user1
 
     - name: Development
       uses: ./.github/actions/manage-ejabberd
       with:
         for: dev
-        do: deploy, start, register, stop, check, logs
+        do: deploy, no_acme, start, register, stop, check, logs
         username: user2
 
     - name: Installed
       uses: ./.github/actions/manage-ejabberd
       with:
         for: install
-        do: deploy, start, register, stop, check, logs
+        do: deploy, no_acme, start, register, stop, check, logs
         username: user3

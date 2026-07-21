@@ -151,13 +151,13 @@ jobs:
       uses: ./.github/actions/manage-ejabberd
       with:
         for: prod
-        do: deploy, start, stop, check
+        do: deploy, no_acme, start, stop, check
 
     - name: Start development release
       uses: ./.github/actions/manage-ejabberd
       with:
         for: dev
-        do: deploy, no_tls, start, register
+        do: deploy, no_acme, no_tls, start, register
         username: user123
 
     - name: Run XMPP Interoperability Tests against CI server
