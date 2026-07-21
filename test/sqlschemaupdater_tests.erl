@@ -69,7 +69,8 @@ add_column(Config) ->
                  version = 2,
                  tables = [#sql_table{
                              name = <<"schemaupdate">>,
-                             columns = [#sql_column{name = <<"first">>, type = integer}#sql_column{name = <<"second">>, type = integer}]
+                             columns = [#sql_column{name = <<"first">>, type = integer},
+                                        #sql_column{name = <<"second">>, type = integer}]
                             }],
                  update = [{add_column, <<"schemaupdate">>, <<"second">>}]
                 },
