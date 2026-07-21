@@ -3,6 +3,7 @@
 
 -define(NS_INVITE_INVITE, <<"urn:xmpp:invite#invite">>).
 -define(NS_INVITE_CREATE_ACCOUNT, <<"urn:xmpp:invite#create-account">>).
+-define(NS_INVITE_INVITATION, <<"urn:xmpp:invite#invitation">>).
 
 -define(OVERUSE_LIMIT, 1000).
 
