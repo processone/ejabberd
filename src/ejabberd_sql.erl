@@ -295,6 +295,7 @@ escape_timestamp({{Y, Mo, D}, {H, Mi, S}}) ->
                                  [Y, Mo, D, H, Mi, S])).
 
 
+to_timestamp({{0, 0, 0}, {H, M, S, _}}, mysql_prepared) -> {{0, 1, 1}, {H, M, S}};
 to_timestamp({Y, {H, M, S, _}}, mysql_prepared) -> {Y, {H, M, S}};
 to_timestamp(<<TS:64/signed-big-integer>>, pgsql_prepared) ->
     calendar:gregorian_seconds_to_datetime(
@@ -302,8 +303,14 @@ to_timestamp(<<TS:64/signed-big-integer>>, pgsql_prepared) ->
 to_timestamp(<<Y:4/binary, $-, Mo:2/binary, $-, D:2/binary, " ",
                H:2/binary, $:, Mi:2/binary, $:, S:2/binary>>,
              _) ->
-    {{binary_to_integer(Y), binary_to_integer(Mo), binary_to_integer(D)},
-     {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}}.
+    case {binary_to_integer(Mo), binary_to_integer(D)} of
+        {0, 0} ->
+            {{binary_to_integer(Y), 1, 1},
+            {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}};
+        {MoI, DI} ->
+            {{binary_to_integer(Y), MoI, DI},
+            {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}}
+    end.
 
 
 to_list(EscapeFun, Val) ->
