@@ -39,6 +39,7 @@ jobs:
       with:
         otp-version: ${{ matrix.otp }}
 
+    - run: sudo apt-get update
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: libexpat1-dev libgd-dev libpam0g-dev
