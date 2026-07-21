@@ -97,6 +97,7 @@ jobs:
         username: user1
 
     - name: Development
+      if: matrix.rebar == 'rebar3'
       uses: ./.github/actions/manage-ejabberd
       with:
         for: dev
