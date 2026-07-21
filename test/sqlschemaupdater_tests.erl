@@ -92,7 +92,7 @@ change_column(Config) ->
                  version = 2,
                  tables = [#sql_table{
                              name = <<"schemaupdate">>,
-                             columns = [#sql_column{name = <<"first">>, type = integer}]
+                             columns = [#sql_column{name = <<"first">>, type = smallint}]
                             }],
                  update = [{change_column_type, <<"schemaupdate">>, <<"first">>}]
                 },

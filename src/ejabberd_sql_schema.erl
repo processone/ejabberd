@@ -517,6 +517,21 @@ format_default(#sql_schema_info{db_type = mysql}, Column) ->
         %bigserial -> <<"0">>
     end.
 
+pgsql_type_cast(#sql_column{type = Type}) ->
+    case Type of
+        text -> <<"text">>;
+        {text, _} -> <<"text">>;
+        bigint -> <<"integer">>;
+        integer -> <<"integer">>;
+        smallint -> <<"integer">>;
+        numeric -> <<"integer">>;
+        boolean -> <<"boolean">>;
+        blob -> <<"bytea">>;
+        timestamp -> <<"timestamp">>;
+        {char, _} -> <<"text">>;
+        bigserial -> <<"integer">>
+    end.
+
 escape_name(#sql_schema_info{db_type = pgsql}, <<"type">>) ->
     <<"\"type\"">>;
 escape_name(_SchemaInfo, ColumnName) ->
@@ -994,6 +1009,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                             <<";">>];
                                        pgsql ->
                                            Type = format_type(SchemaInfo, Column),
+                                           Cast = pgsql_type_cast(Column),
                                            [<<"ALTER TABLE ">>,
                                             TableName,
                                             <<" ALTER COLUMN ">>,
@@ -1001,7 +1017,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                             <<" TYPE ">>,
                                             Type,
                                             <<" USING ">>,
-                                            ColumnName, <<"::">>, Type,
+                                            ColumnName, <<"::">>, Cast,
                                             <<";">>]
                                    end,
                                case SQL of
@@ -1096,7 +1112,6 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                            sqlite ->
                                sqlite_table_copy_t(SchemaInfo, Table);
                            pgsql ->
-                               TableName = Table#sql_table.name,
                                SQL1 = [<<"ALTER TABLE ">>, TableName, <<" DROP CONSTRAINT ",
                                                                         TableName/binary, "_pkey, ",
                                                                         "ADD PRIMARY KEY (">>,
@@ -1114,7 +1129,6 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                        ejabberd_sql:sql_query_t(SQL)
                                    end);
                            mysql ->
-                               TableName = Table#sql_table.name,
                                SQL1 = [<<"ALTER TABLE ">>, TableName, <<" DROP PRIMARY KEY, "
                                                                         "ADD PRIMARY KEY (">>,
                                        lists:join(
