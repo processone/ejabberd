@@ -1875,9 +1875,11 @@ set_role(JID, Role, StateData) ->
     end,
     StateData#state{users = Users, nicks = Nicks, roles = Roles}.
 
--spec get_user(jid(), state()) -> #user{} | user_not_found.
-get_user(JID, StateData) ->
-    try maps:get(jid:tolower(JID), StateData#state.users) of
+-spec get_user(jid() | tuple(), state()) -> #user{} | user_not_found.
+get_user(JID, StateData) when is_record(JID, jid) ->
+    get_user(jid:tolower(JID), StateData);
+get_user(LJID, StateData) ->
+    try maps:get(LJID, StateData#state.users) of
 	#user{} = User -> User
     catch _:{badkey, _} -> user_not_found
     end.
@@ -2840,12 +2842,7 @@ change_nick(JID, Nick, StateData) ->
     SendOldUnavailable = length(OldNickUsers) == 1,
     SendNewAvailable = SendOldUnavailable orelse NewNickUsers == [],
     NewStateData = set_nick(JID, Nick, StateData),
-    case presence_broadcast_allowed(JID, NewStateData) of
-        true ->
-            send_nick_changing(JID, OldNick, NewStateData,
-                               SendOldUnavailable, SendNewAvailable);
-        false -> ok
-    end,
+    send_nick_changing(JID, OldNick, NewStateData, SendOldUnavailable, SendNewAvailable),
     add_to_log(nickchange, {OldNick, Nick}, StateData),
     NewStateData.
 
@@ -2894,8 +2891,15 @@ send_nick_changing(JID, OldNick, StateData,
 	      end;
 	 (_, _, _) ->
 	      ok
-      end, ok, get_users_and_subscribers_with_node(
-                 ?NS_MUCSUB_NODES_PRESENCE, StateData)).
+      end, ok, recipients_presence_broadcast(JID, StateData)).
+
+recipients_presence_broadcast(JID, StateData) ->
+    case presence_broadcast_allowed(JID, StateData) of
+        true ->
+            get_users_and_subscribers_with_node(?NS_MUCSUB_NODES_PRESENCE, StateData);
+        false ->
+            maps:from_list([{jid:tolower(JID), get_user(JID, StateData)}])
+    end.
 
 -spec maybe_send_affiliation(jid(), affiliation(), state()) -> ok.
 maybe_send_affiliation(JID, Affiliation, StateData) ->
