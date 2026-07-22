@@ -129,7 +129,7 @@ process([<<"federation">>, <<"v1">>, <<"user">>, <<"devices">>, UserID],
     end;
 process([<<"federation">>, <<"v1">>, <<"user">>, <<"keys">>, <<"query">>],
         #request{method = 'POST', host = _Host} = Request) ->
-    case preprocess_federation_request(Request, false) of
+    case preprocess_federation_request(Request) of
         {ok, #{<<"device_keys">> := DeviceKeys}, _Origin} ->
             DeviceKeys2 = maps:map(fun(_Key, _) -> #{} end, DeviceKeys),
             Res = #{<<"device_keys">> => DeviceKeys2},
@@ -191,7 +191,7 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
     end;
 process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
         #request{method = 'PUT', host = _Host} = Request) ->
-    case preprocess_federation_request(Request, false) of
+    case preprocess_federation_request(Request) of
         {ok, #{<<"origin">> := Origin,
                <<"pdus">> := PDUs} = JSON,
          Origin} ->
@@ -216,7 +216,7 @@ process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
     end;
 process([<<"federation">>, <<"v1">>, <<"get_missing_events">>, RoomID],
         #request{method = 'POST', host = _Host} = Request) ->
-    case preprocess_federation_request(Request, false) of
+    case preprocess_federation_request(Request) of
         {ok, #{<<"earliest_events">> := EarliestEvents,
                <<"latest_events">> := LatestEvents} = JSON,
          Origin} ->
@@ -239,7 +239,7 @@ process([<<"federation">>, <<"v1">>, <<"backfill">>, RoomID],
         #request{method = 'GET', host = _Host} = Request) ->
     case catch binary_to_integer(proplists:get_value(<<"limit">>, Request#request.q)) of
         Limit when is_integer(Limit) ->
-            case preprocess_federation_request(Request, false) of
+            case preprocess_federation_request(Request) of
                 {ok, _JSON, Origin} ->
                     LatestEvents = proplists:get_all_values(<<"v">>, Request#request.q),
                     ?DEBUG("backfill request ~p~n", [{Limit, LatestEvents}]),
