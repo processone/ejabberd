@@ -417,7 +417,7 @@ process(Path, Request) ->
 preprocess_federation_request(Request) ->
     preprocess_federation_request(Request, true).
 
-preprocess_federation_request(Request, DoSignCheck) ->
+preprocess_federation_request(Request, _DoSignCheck) ->
     ?DEBUG("matrix federation: ~p~n", [Request]),
     case proplists:get_value('Authorization', Request#request.headers) of
         Auth when is_binary(Auth) ->
@@ -445,8 +445,8 @@ preprocess_federation_request(Request, DoSignCheck) ->
                             case JSON of
                                 error ->
                                     {result, {400, [], <<"400 Bad Request: invalid JSON">>}};
-                                JSON when not DoSignCheck ->
-                                    {ok, JSON, MatrixServer};
+                                %JSON when not DoSignCheck ->
+                                %    {ok, JSON, MatrixServer};
                                 JSON ->
                                     Host = ejabberd_config:get_myname(),
                                     case mod_matrix_gw_s2s:check_auth(
