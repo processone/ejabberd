@@ -1156,8 +1156,9 @@ get_sort_query(Q) ->
     try get_sort_query2(Q) of
         {ok, Res} ->
             Res
-	catch _:_ ->
-        {normal, 1}
+    catch
+        _:_ ->
+            {normal, 1}
     end.
 
 get_sort_query2(Q) ->

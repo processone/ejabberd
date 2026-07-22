@@ -128,7 +128,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0045.html"/>
-        <xmpp:version>1.35.3</xmpp:version>
+        <xmpp:version>1.35.5</xmpp:version>
         <xmpp:since>0.5.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_muc</xmpp:note>
@@ -686,7 +686,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0384.html"/>
-        <xmpp:version>0.9.0</xmpp:version>
+        <xmpp:version>0.9.1</xmpp:version>
         <xmpp:since>21.12</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>node_pep</xmpp:note>
