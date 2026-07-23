@@ -44,7 +44,6 @@ RUN wget -O - https://github.com/elixir-lang/elixir/archive/v$ELIXIR_VSN.tar.gz 
         | tar -xzf -
 
 WORKDIR /elixir-$ELIXIR_VSN
-ENV ERL_FLAGS="+JPperf true"
 RUN make install clean
 
 RUN mix local.hex --force \
