@@ -513,6 +513,15 @@ doc() ->
             ?T("Maximum number of _`basic.md#captcha|CAPTCHA`_ generated images per minute for "
                "any given JID. The option is intended to protect the server "
                "from CAPTCHA DoS. The default value is 'infinity'.")}},
+     {captcha_pow,
+      #{value => "pos_integer() | false",
+        desc =>
+            ?T("Offer an XEP-0158 SHA-256 hashcash (proof-of-work) challenge in the "
+               "_`basic.md#captcha|CAPTCHA`_ form, alongside the image challenge or on its own. "
+               "The value is the difficulty: the number of hexadecimal digits of the SHA-256 "
+               "digest a client must match. "
+               "Unlike the image challenge, this does not require _`captcha_cmd`_. "
+               "The default value is 'false'.")}},
      {captcha_host,
       #{value => "String",
         desc => ?T("Deprecated. Use _`captcha_url`_ instead.")}},
