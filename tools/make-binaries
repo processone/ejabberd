@@ -261,7 +261,7 @@ create_common_config()
 		CT_CC_LANG_CXX=y
 		CT_ARCH_64=y
 		CT_KERNEL_LINUX=y
-		CT_LINUX_V_3_16=y
+		CT_LINUX_V_3_19=y
 		CT_LOG_PROGRESS_BAR=n
 	EOF
 }
@@ -595,9 +595,7 @@ build_deps()
 
 	info "Building Expat $expat_vsn for $arch-$libc ..."
 	cd "$target_src_dir/$expat_dir"
-	CPPFLAGS="-DXML_POOR_ENTROPY=1 -DXML_DEV_URANDOM=1" $configure \
-	    --prefix="$prefix" --enable-static --disable-shared \
-	    --with-dev-urandom \
+	$configure --prefix="$prefix" --enable-static --disable-shared \
 	    --without-docbook \
 	    CFLAGS="$CFLAGS -O3 -fPIC"
 	make
