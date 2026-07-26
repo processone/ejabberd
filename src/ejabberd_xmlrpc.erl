@@ -108,7 +108,7 @@ extract_auth(AuthList) ->
 	    S = jid:nameprep(S0),
 	    case ejabberd_oauth:check_token(T) of
 		{ok, {U, S}, Scope} ->
-		    #{usr => {U, S, <<"">>}, oauth_scope => Scope, caller_server => S};
+		    #{usr => {U, S, <<"">>}, oauth_scope => Scope, caller_host => S};
 		{false, Reason} ->
 		    {error, Reason};
 		_ ->
@@ -122,7 +122,7 @@ extract_auth(AuthList) ->
 		    S = jid:nameprep(S0),
 		    case ejabberd_auth:check_password(U, <<"">>, S, P) of
 			true ->
-			    #{usr => {U, S, <<"">>}, caller_server => S};
+			    #{usr => {U, S, <<"">>}, caller_host => S};
 			false ->
 			    {error, invalid_auth}
 		    end

@@ -98,7 +98,7 @@ extract_auth(#request{auth = HTTPAuth, ip = {IP, _}, opts = Opts}) ->
 		       #jid{luser = User, lserver = Server} ->
 			   case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
 			       true ->
-				   #{usr => {User, Server, <<"">>}, caller_server => Server};
+				   #{usr => {User, Server, <<"">>}, caller_host => Server};
 			       false ->
 				   {error, invalid_auth}
 			   end
@@ -108,7 +108,7 @@ extract_auth(#request{auth = HTTPAuth, ip = {IP, _}, opts = Opts}) ->
 	       {oauth, Token, _} ->
 		   case ejabberd_oauth:check_token(Token) of
 		       {ok, {U, S}, Scope} ->
-			   #{usr => {U, S, <<"">>}, oauth_scope => Scope, caller_server => S};
+			   #{usr => {U, S, <<"">>}, oauth_scope => Scope, caller_host => S};
 		       {false, Reason} ->
 			   {error, Reason}
 		   end;

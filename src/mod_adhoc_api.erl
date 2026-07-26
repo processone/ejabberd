@@ -377,7 +377,7 @@ get_api_command(Name, Host) when is_atom(Name) ->
 get_caller_info(#jid{user = User, server = Server} = From) ->
     #{tag => <<>>,
       usr => {User, Server, <<"">>},
-      caller_server => Server,
+      caller_host => Server,
       ip => get_ip_address(From),
       caller_module => ?MODULE}.
 
