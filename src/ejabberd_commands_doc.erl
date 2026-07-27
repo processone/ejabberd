@@ -483,19 +483,13 @@ generate_html_output(File, RegExp, Languages) ->
     Cmds3 = lists:sort(fun(#ejabberd_commands{name=N1}, #ejabberd_commands{name=N2}) ->
                                N1 =< N2
                        end, Cmds2),
-    Cmds4 = [maybe_add_policy_arguments(Cmd) || Cmd <- Cmds3],
+    Cmds4 = Cmds3,
     Langs = binary:split(Languages, <<",">>, [global]),
     Out = lists:map(fun(C) -> gen_doc(C, true, Langs) end, Cmds4),
     {ok, Fh} = file:open(File, [write]),
     io:format(Fh, "~ts", [[html_pre(), Out, html_post()]]),
     file:close(Fh),
     ok.
-
-maybe_add_policy_arguments(#ejabberd_commands{args=Args1, policy=user}=Cmd) ->
-    Args2 = [{user, binary}, {host, binary} | Args1],
-    Cmd#ejabberd_commands{args = Args2};
-maybe_add_policy_arguments(Cmd) ->
-    Cmd.
 
 generate_md_output(File, <<"runtime">>, Languages) ->
     Cmds = lists:map(fun({N, _, _}) ->
@@ -515,7 +509,7 @@ generate_md_output(File, RegExp, Languages, Cmds) ->
     Cmds3 = lists:sort(fun(#ejabberd_commands{name=N1}, #ejabberd_commands{name=N2}) ->
                                N1 =< N2
                        end, Cmds2),
-    Cmds4 = [maybe_add_policy_arguments(Cmd) || Cmd <- Cmds3],
+    Cmds4 = Cmds3,
     Langs = binary:split(Languages, <<",">>, [global]),
     Version = binary_to_list(ejabberd_config:version()),
     Header = ["# API Reference\n\n"

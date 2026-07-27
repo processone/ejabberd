@@ -175,14 +175,35 @@ register_commands(Host, Definer, Commands) ->
             ok
     end.
 
+%% @format-begin
 register_command_prepare(Command, Definer) ->
     Tags1 = Command#ejabberd_commands.tags,
-    Tags2 = case Command#ejabberd_commands.version of
-                0 -> Tags1;
-                Version -> Tags1 ++ [list_to_atom("v"++integer_to_list(Version))]
-            end,
-    Command#ejabberd_commands{definer = Definer, tags = Tags2}.
-
+    Tags2 =
+        case Command#ejabberd_commands.version of
+            0 ->
+                Tags1;
+            Version ->
+                Tags1 ++ [list_to_atom("v" ++ integer_to_list(Version))]
+        end,
+    Command2 =
+        case Command of
+            #ejabberd_commands{policy = user, args = Args, args_desc = none, args_example = none} ->
+                Command#ejabberd_commands{args = [{user, binary}, {host, binary} | Args]};
+            #ejabberd_commands{policy = user, args = Args, args_desc = Desc, args_example = none} ->
+                Command#ejabberd_commands{args = [{user, binary}, {host, binary} | Args],
+                    args_desc = ["Username", "Hostname" | Desc]};
+            #ejabberd_commands{policy = user, args = Args, args_desc = none, args_example = Example} ->
+                Command#ejabberd_commands{args = [{user, binary}, {host, binary} | Args],
+                    args_example = [<<"jan">>, <<"example.com">> | Example]};
+            #ejabberd_commands{policy = user, args = Args, args_desc = Desc, args_example = Example} ->
+                Command#ejabberd_commands{args = [{user, binary}, {host, binary} | Args],
+                    args_example = [<<"jan">>, <<"example.com">> | Example],
+                    args_desc = ["Username", "Hostname" | Desc]};
+            _ ->
+                Command
+        end,
+    Command2#ejabberd_commands{definer = Definer, tags = Tags2}.
+%% @format-end
 
 -spec unregister_commands([ejabberd_commands()]) -> ok.
 
@@ -239,20 +260,12 @@ get_command_format(Name, Auth)  ->
     get_command_format(Name, Auth, ?DEFAULT_VERSION).
 
 -spec get_command_format(atom(), noauth | admin | auth(), integer()) -> {[aterm()], [{atom(),atom()}], rterm()}.
-get_command_format(Name, Auth, Version) ->
-    Admin = is_admin(Name, Auth, #{}),
+get_command_format(Name, _Auth, Version) ->
     #ejabberd_commands{args = Args,
 		       result = Result,
-		       args_rename = Rename,
-                       policy = Policy} =
+		       args_rename = Rename} =
         get_command_definition(Name, Version),
-    case Policy of
-        user when Admin;
-                  Auth == noauth ->
-            {[{user, binary}, {host, binary} | Args], Rename, Result};
-        _ ->
-            {Args, Rename, Result}
-    end.
+    {Args, Rename, Result}.
 
 -spec get_command_definition(atom()) -> ejabberd_commands().
 
@@ -369,16 +382,3 @@ get_tags_commands(Version) ->
 	     orddict:new(),
 	     CommandTags),
     orddict:to_list(Dict).
-
-%% -----------------------------
-%% Access verification
-%% -----------------------------
--spec is_admin(atom(), admin | noauth | auth(), map()) -> boolean().
-is_admin(_Name, admin, _Extra) ->
-    true;
-is_admin(_Name, {_User, _Server, _, false}, _Extra) ->
-    false;
-is_admin(_Name, Map, _extra) when is_map(Map) ->
-    true;
-is_admin(_Name, _Auth, _Extra) ->
-    false.

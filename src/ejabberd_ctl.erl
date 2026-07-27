@@ -865,11 +865,6 @@ filter_commands_regexp(All, Glob) ->
       end,
       All).
 
-maybe_add_policy_arguments(Args, user) ->
-    [{user, binary}, {host, binary} | Args];
-maybe_add_policy_arguments(Args, _) ->
-    Args.
-
 -spec print_usage_command(Cmd::string(), MaxC::integer(),
                           ShCode::boolean(), Version::integer()) -> ok.
 print_usage_command(Cmd, MaxC, ShCode, Version) ->
@@ -885,11 +880,10 @@ get_usage_command2(Cmd, C, MaxC, ShCode) ->
 		     tags = TagsAtoms,
 		     definer = Definer,
 		     desc = Desc,
-		     args = ArgsDefPreliminary,
+		     args = ArgsDef,
 		     args_desc = ArgsDesc,
 		     args_example = ArgsExample,
 		     result_example = ResultExample,
-		     policy = Policy,
 		     longdesc = LongDesc,
 		     note = Note,
 		     result = ResultDef} = C,
@@ -897,7 +891,6 @@ get_usage_command2(Cmd, C, MaxC, ShCode) ->
     NameFmt = ["  ", ?B("Command Name"), ": ", ?C(Cmd), "\n"],
 
     %% Initial indentation of result is 13 = length("  Arguments: ")
-    ArgsDef = maybe_add_policy_arguments(ArgsDefPreliminary, Policy),
     ArgsDetailed = add_args_desc(ArgsDef, ArgsDesc),
     Args = [format_usage_ctype1(ArgDetailed, 13, ShCode) || ArgDetailed <- ArgsDetailed],
 
@@ -945,7 +938,7 @@ get_usage_command2(Cmd, C, MaxC, ShCode) ->
 		      _ -> ["", prepare_description(0, MaxC, LongDesc), "\n\n"]
 		  end,
 
-    NoteEjabberdctlList = case has_list_args(ArgsDefPreliminary) of
+    NoteEjabberdctlList = case has_list_args(ArgsDef) of
 			  true -> ["  ", ?B("Note:"),
                                    "\n  For argument that is a list of elements:",
                                    "\n  - To separate the elements use commas: one,two,three"
@@ -953,7 +946,7 @@ get_usage_command2(Cmd, C, MaxC, ShCode) ->
                                    "\n  - To set an empty list in WebAdmin use a single comma: ,\n\n"];
 			  false -> ""
 		      end,
-    NoteEjabberdctlTuple = case has_tuple_args(ArgsDefPreliminary) of
+    NoteEjabberdctlTuple = case has_tuple_args(ArgsDef) of
 			  true -> ["  ", ?B("Note:"), " In a tuple argument, separate the elements using the : character for example: members_only:true\n\n"];
 			  false -> ""
 		      end,
