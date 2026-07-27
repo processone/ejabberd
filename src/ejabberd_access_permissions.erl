@@ -33,6 +33,7 @@
 %% API
 -export([start_link/0,
 	 can_access/2,
+	 can_access/4,
 	 invalidate/0,
 	 validator/0,
 	 show_current_definitions/0]).
@@ -70,7 +71,42 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+-spec can_access(atom(), caller_info(), list(), list()) -> allow | deny.
+can_access(Cmd, CallerInfo, Arguments, ArgsFormat) ->
+    Filtered = lists:filtermap(fun({{host, _}, Hostt}) -> {true, Hostt};
+                                  (_) -> false
+                               end,
+                               lists:zip(ArgsFormat, Arguments)
+                              ),
+    HostCheck = case {maps:get(usr, CallerInfo, no_usr), Filtered} of
+                    {USR, [HostArg]} when is_tuple(USR) ->
+                        acl:match_rule(HostArg,
+                                       configure,
+                                       jid:make(USR));
+                     _ ->
+                         allow
+         end,
+    CallerInfo2 = case Filtered of
+                      [_ | _] -> CallerInfo;
+                      _ -> CallerInfo#{caller_host => global}
+                  end,
+    case HostCheck of
+        allow ->
+            can_access(Cmd, CallerInfo2);
+        _ ->
+            ?DEBUG("Command '~p' execution denied because "
+                      "tried to execute a command with a host argument "
+                      "but the account doesn't have admin rights for that host "
+                      "~n (CallerInfo=~p)", [Cmd, CallerInfo]),
+            deny
+    end.
+
 -spec can_access(atom(), caller_info()) -> allow | deny.
+can_access(echo, _CallerInfo) ->
+    allow;
+can_access(registered_vhosts, #{caller_module := ejabberd_web_admin}) ->
+    allow;
 can_access(Cmd, CallerInfo) ->
     Defs0 = show_current_definitions(),
     CallerModule = maps:get(caller_module, CallerInfo, none),

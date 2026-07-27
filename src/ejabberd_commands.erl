@@ -306,7 +306,8 @@ execute_command2(Name, Arguments, CallerInfo, Version) ->
     FrontedCalledInternal =
         maps:get(caller_module, CallerInfo, none) /= ejabberd_web_admin
         andalso lists:member(internal, Command#ejabberd_commands.tags),
-    case {ejabberd_access_permissions:can_access(Name, CallerInfo),
+    {ArgsFormat, _, _} = get_command_format(Name, Version),
+    case {ejabberd_access_permissions:can_access(Name, CallerInfo, Arguments, ArgsFormat),
           FrontedCalledInternal} of
         {allow, false} ->
 	    do_execute_command(Command, Arguments);
