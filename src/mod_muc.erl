@@ -1628,7 +1628,7 @@ mod_doc() ->
                      "to register any free nick in the MUC service and in the rooms.")}},
            {append_module_config,
             #{value => "{MUCHost: Options}",
-              note => "added in 25.xx",
+              note => "added in 26.07",
               desc =>
                   ?T("Add a few specific options to a certain MUC host "
                      "previously defined in the mod_muc 'hosts' option. "

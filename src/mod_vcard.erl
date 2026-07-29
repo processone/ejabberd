@@ -708,7 +708,7 @@ mod_doc() ->
                      "The keyword '@HOST@' is replaced with the real virtual host name.")}},
            {append_module_config,
             #{value => "{VcardHost: Options}",
-              note => "added in 25.xx",
+              note => "added in 26.07",
               desc =>
                   ?T("Add a few specific options to a certain upload host "
                      "previously defined in the mod_vcard 'hosts' option. "

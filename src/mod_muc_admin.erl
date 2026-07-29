@@ -288,7 +288,7 @@ get_commands_spec() ->
 		       result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = rooms_unused_destroy_skip_notifications, tags = [muc],
                         desc = "Destroy the rooms that are unused for many days in the service, but may skip notifications to subscribers",
-                        note = "added in 26.XX",
+                        note = "added in 26.07",
                         longdesc = "The room recent history is used, so it's recommended "
                                    " to wait a few days after service start before running this."
                                    " The MUC service argument can be `global` to get all hosts."

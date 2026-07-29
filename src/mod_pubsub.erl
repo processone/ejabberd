@@ -4382,7 +4382,7 @@ mod_doc() ->
 		     "The default value is: 'all'.")}},
            {append_module_config,
             #{value => "{PubSubHost: Options}",
-              note => "added in 25.xx",
+              note => "added in 26.07",
               desc =>
                   ?T("Add a few specific options to a certain PubSub host "
                      "previously defined in the mod_pubsub 'hosts' option. "

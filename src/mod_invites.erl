@@ -159,7 +159,7 @@ mod_doc() ->
               "to something like "
               "`http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}` "
               "or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`.")],
-      note => "improved in 26.03",
+      note => "improved in 26.07",
       opts =>
           [{access_create_account,
             #{value => ?T("Access Rule Name"),
@@ -440,7 +440,7 @@ get_commands_spec() ->
                         desc = "Delete invite for given token",
                         module = ?MODULE,
                         function = delete_invite_by_token,
-                        note = "added in 26.04",
+                        note = "added in 26.07",
                         args = [{host, binary}, {token, binary}],
                         args_desc = ["Hostname token belongs to", "Token to be expired"],
                         args_example = [<<"example.com">>, <<"stDqh4dEEmrWxb0TFJDxitnc">>],
@@ -462,7 +462,7 @@ get_commands_spec() ->
                         desc = "Sets expiration to a date in the past for all tokens given",
                         module = ?MODULE,
                         function = expire_invite_by_token,
-                        note = "added in 26.04",
+                        note = "added in 26.07",
                         args = [{host, binary}, {token, binary}],
                         args_desc = ["Hostname token belongs to", "Token to be expired"],
                         args_example = [<<"example.com">>, <<"stDqh4dEEmrWxb0TFJDxitnc">>],
@@ -504,7 +504,7 @@ get_commands_spec() ->
                             "Create a password reset token for user with given name on given host.",
                         module = ?MODULE,
                         function = generate_reset_token,
-                        note = "added in 26.05",
+                        note = "added in 26.07",
                         args = [{username, binary}, {host, binary}],
                         args_desc = ["Username", "Hostname"],
                         args_example = [<<"juliet">>, <<"example.com">>],

@@ -98,10 +98,11 @@ mod_doc() ->
 	  "https://xmpp.org/extensions/xep-0484.html"
 	  "[XEP-0484: Fast Authentication Streamlining Tokens] that allows users to authenticate "
 	  "using self-managed tokens.")],
-      note => "added in 24.12",
+      note => "improved in 26.07",
       opts =>
       [{db_type,
-	#{value => "mnesia",
+	#{value => "mnesia | sql",
+	  note => "improved in 26.07",
 	  desc =>
 	  ?T("Same as top-level _`default_db`_ option, but applied to this module only.")}},
        {token_lifetime,

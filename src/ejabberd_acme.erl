@@ -462,6 +462,7 @@ get_commands_spec() ->
 			           "toplevel option `hosts` and other routes served by ejabberd. "
 			           "If domains is `all_and_alias`, it also requests for domains "
 			           "defined in toplevel option `hosts_alias`.",
+                        note = "improved in 26.07",
 			module = ?MODULE, function = request_certificate,
 			args_desc = ["Domains for which to acquire a certificate, or `all`, or `all_and_alias`"],
 			args_example = ["example.com,domain.tld,conference.domain.tld"],

@@ -144,7 +144,7 @@ mod_options(Host) ->
     [{ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
            {append_module_config,
             #{value => "{UploadHost: Options}",
-              note => "added in 25.xx",
+              note => "added in 26.07",
               desc =>
                   ?T("Add a few specific options to a certain upload host "
                      "previously defined in the mod_http_upload 'hosts' option. "

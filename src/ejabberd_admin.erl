@@ -469,7 +469,7 @@ get_commands_spec() ->
 			result_example = {ok, <<"Export started">>}},
      #ejabberd_commands{name = export_db_ext, tags = [db],
 			desc = "Export database records for host to files",
-			note = "added in 26.XX",
+			note = "added in 26.07",
 			module = ejabberd_admin, function = export_db_ext,
 			args_desc = ["Name of host that should be exported",
 				     "Directory name where exported files should be created",
