@@ -1013,8 +1013,7 @@ reset_token(Config0) ->
         post(BaseURL2, Token2, CSRFToken2, <<"wronguser">>, <<"anotherPassword">>),
     {ok, {{_, 200, _}, _, _}} =
         post(BaseURL2, Token2, CSRFToken2, User, <<"anotherPassword">>),
-    ?match(true,
-           ejabberd_auth:check_password(User, <<>>, Server, <<"anotherPassword">>)),
+    ?match(true, ejabberd_auth:check_password(User, <<>>, Server, <<"anotherPassword">>)),
 
     ok = mod_register:try_set_password(User, Server, Password),
     update_module_opts(Server, mod_register, OldRegisterOpts),

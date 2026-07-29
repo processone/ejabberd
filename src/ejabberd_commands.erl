@@ -187,18 +187,30 @@ register_command_prepare(Command, Definer) ->
         end,
     Command2 =
         case Command of
-            #ejabberd_commands{policy = user, args = Args, args_desc = none, args_example = none} ->
+            #ejabberd_commands{policy = user,
+                               args = Args,
+                               args_desc = none,
+                               args_example = none} ->
                 Command#ejabberd_commands{args = [{user, binary}, {host, binary} | Args]};
-            #ejabberd_commands{policy = user, args = Args, args_desc = Desc, args_example = none} ->
+            #ejabberd_commands{policy = user,
+                               args = Args,
+                               args_desc = Desc,
+                               args_example = none} ->
                 Command#ejabberd_commands{args = [{user, binary}, {host, binary} | Args],
-                    args_desc = ["Username", "Hostname" | Desc]};
-            #ejabberd_commands{policy = user, args = Args, args_desc = none, args_example = Example} ->
+                                          args_desc = ["Username", "Hostname" | Desc]};
+            #ejabberd_commands{policy = user,
+                               args = Args,
+                               args_desc = none,
+                               args_example = Example} ->
                 Command#ejabberd_commands{args = [{user, binary}, {host, binary} | Args],
-                    args_example = [<<"jan">>, <<"example.com">> | Example]};
-            #ejabberd_commands{policy = user, args = Args, args_desc = Desc, args_example = Example} ->
+                                          args_example = [<<"jan">>, <<"example.com">> | Example]};
+            #ejabberd_commands{policy = user,
+                               args = Args,
+                               args_desc = Desc,
+                               args_example = Example} ->
                 Command#ejabberd_commands{args = [{user, binary}, {host, binary} | Args],
-                    args_example = [<<"jan">>, <<"example.com">> | Example],
-                    args_desc = ["Username", "Hostname" | Desc]};
+                                          args_example = [<<"jan">>, <<"example.com">> | Example],
+                                          args_desc = ["Username", "Hostname" | Desc]};
             _ ->
                 Command
         end,
