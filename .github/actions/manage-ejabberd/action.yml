@@ -81,6 +81,7 @@ runs:
         ./autogen.sh
         ./configure --with-rebar=$TOOL \
                     --prefix=/tmp/ejabberd \
+                    --with-min-erlang=13.0 \
                     --enable-all ${{ inputs.configure }}
         sed -i 's|, syntax_tools||g' src/ejabberd.app.src.script
         REBAR_PROFILE=test make
