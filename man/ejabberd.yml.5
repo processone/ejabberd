@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 04/14/2026
+.\"      Date: 07/30/2026
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "04/14/2026" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "07/30/2026" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/26\&.04/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/26\&.07/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 26\&.04\&. The options that changed in this version are marked with 🟠\&.
+This section describes top level options of ejabberd 26\&.07\&. The options that changed in this version are marked with 🟠\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLName|ACLDefinition}}\fR
 .RS 4
@@ -1390,7 +1390,7 @@ will be used\&.
 \fBoauth_client_id_check\fR: \fIallow | db | deny\fR
 .RS 4
 Define whether the client authentication is always allowed, denied, or it will depend if the client ID is present in the database\&. The default value is
-\fIallow\fR\&.
+\fIdb\fR\&.
 .RE
 .PP
 \fBoauth_db_type\fR: \fImnesia | sql\fR
@@ -1934,7 +1934,7 @@ A time to wait for connection to an SQL server to be established\&. The default 
 seconds\&.
 .RE
 .PP
-\fBsql_database 🟠\fR: \fIDatabaseName | PathSqliteFile\fR
+\fBsql_database\fR: \fIDatabaseName | PathSqliteFile\fR
 .RS 4
 \fINote\fR
 about this option: improved in 26\&.04\&. An SQL database name, being the default value
@@ -2025,7 +2025,7 @@ if the latter is not set\&.
 \fINote\fR
 about this option: renamed in 25\&.10\&. Whether to use the
 \fIdatabase\&.md#singlehost\-or\-multihost|multihost SQL schema\fR\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/26\&.04/sql\&. There are two schemas available\&. The legacy
+https://github\&.com/processone/ejabberd/tree/26\&.07/sql\&. There are two schemas available\&. The legacy
 \fIsinglehost\fR
 schema stores one XMPP domain into one ejabberd database\&. The
 \fImultihost\fR
@@ -2187,7 +2187,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 26\&.04\&. The modules that changed in this version are marked with 🟠\&.
+This section describes modules options of ejabberd 26\&.07\&. The modules that changed in this version are marked with 🟠\&.
 .SS "mod_adhoc"
 .sp
 def:ad\-hoc command
@@ -2673,9 +2673,9 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_auth_fast"
+.SS "mod_auth_fast 🟠"
 .sp
-\fINote\fR about this option: added in 24\&.12\&.
+\fINote\fR about this option: improved in 26\&.07\&.
 .sp
 The module adds support for XEP\-0484: Fast Authentication Streamlining Tokens that allows users to authenticate using self\-managed tokens\&.
 .sp
@@ -2687,9 +2687,10 @@ The module adds support for XEP\-0484: Fast Authentication Streamlining Tokens t
 \fBAvailable options:\fR
 .RS 4
 .PP
-\fBdb_type\fR: \fImnesia\fR
+\fBdb_type 🟠\fR: \fImnesia | sql\fR
 .RS 4
-Same as top\-level
+\fINote\fR
+about this option: improved in 26\&.07\&. Same as top\-level
 \fIdefault_db\fR
 option, but applied to this module only\&.
 .RE
@@ -3234,7 +3235,7 @@ Make sure either \fImod_bosh\fR or \fIlisten\&.md#ejabberd_http_ws|ejabberd_http
 .sp
 When \fIconversejs_css\fR and \fIconversejs_script\fR are \fIauto\fR, by default they point to the public Converse client\&.
 .sp
-When this module is enabled in \fImodules\fR, it adds automatically a requesthandler and link in WebAdmin\&. \&.
+When this module is enabled in \fImodules\fR, it adds automatically a request handler and link in WebAdmin\&. \&.
 .sp
 This module is available since ejabberd 21\&.12\&.
 .sp
@@ -3275,7 +3276,10 @@ Converse configuration\&. Only boolean, integer and string values are supported;
 List of additional local files to include as scripts in the homepage\&. Please make sure those files are available in the path specified in
 \fIconversejs_resources\fR
 option, in subdirectory
-\fIplugins/\fR\&. If using the public Converse client, then
+\fIplugins/\fR\&. Notice that
+\fIlibsignal\fR
+is only required for OMEMO encryption in Converse 13 or lower; Converse 14 uses and includes
+\fIlibomemo\fR\&. If using the public Converse client, then
 \fI"libsignal"\fR
 gets replaced with the URL of the public library\&. The default value is
 \fI[]\fR\&.
@@ -3339,7 +3343,6 @@ listen:
 modules:
   mod_bosh: {}
   mod_conversejs:
-    conversejs_plugins: ["libsignal"]
     websocket_url: "ws://@HOST@:5280/websocket"
 .fi
 .if n \{\
@@ -3814,6 +3817,7 @@ content_types:
   \&.ttf: font/ttf
   \&.txt: text/plain
   \&.wav: audio/wav
+  \&.wasm: application/wasm
   \&.webp: image/webp
   \&.woff: font/woff
   \&.woff2: font/woff2
@@ -3945,6 +3949,42 @@ In order to use this module, it must be enabled in \fIlisten\fR → \fIejabberd_
 .RS 4
 This option defines the access rule to limit who is permitted to use the HTTP upload service\&. The default value is
 \fIlocal\fR\&. If no access rule of that name exists, no user will be allowed to use the service\&.
+.RE
+.PP
+\fBappend_module_config 🟠\fR: \fI{UploadHost: Options}\fR
+.RS 4
+\fINote\fR
+about this option: added in 26\&.07\&. Add a few specific options to a certain upload host previously defined in the mod_http_upload
+\fIhosts\fR
+option\&. Right now only
+\fIname\fR
+and
+\fIvcard\fR
+can be defined here\&. This is similar to the toplevel
+\fIappend_host_config\fR
+option, but in this case it\(cqs applied to this module options\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_http_upload:
+    hosts:
+      \- service1\&.@HOST@
+      \- service2\&.@HOST@
+    name: "Service General"
+    append_module_config:
+      service1\&.localhost:
+        name: "Service 1"
+      service2\&.example\&.net:
+        name: "Service 2"
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .PP
 \fBcontent_types\fR: \fI{Extension: Type}\fR
@@ -4216,9 +4256,9 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_invites"
+.SS "mod_invites 🟠"
 .sp
-\fINote\fR about this option: improved in 26\&.03\&.
+\fINote\fR about this option: improved in 26\&.07\&.
 .sp
 Allow User Invitation and Account Creation to create out\-of\-band links to onboard others onto the XMPP network and establish a mutual subscription\&. This implements XEP\-0379: Pre\-Authenticated Roster Subscription, XEP\-0401: Ad\-hoc Account Invitation Generation, and XEP\-0445: Pre\-Authenticated In\-Band Registration\&.
 .sp
@@ -4226,7 +4266,9 @@ These invitations are created as XMPP URIs either via ad\-hoc commands or via AP
 .sp
 The receiving user should have installed a client that supports those invitations\&. Since this has proven to be a common obstacle for easy adoption, this module comes with an optional landing page parameter, that can either be some external service like an installation of easy\-xmpp\-invitation, a third\-party service like JoinJabber or for convenience a built\-in service\&. This landing page will then guide the recipient with setting up a client and creating an account if required\&.
 .sp
-In order to use the included landing page feature, you have to set landing_page to either auto or an URL template like https://{{ host }}/invites/{{ invite\&.token }} if your server setup includes a so called reverse proxy\&.
+In order to use the included landing page feature, you have to set landing_page to either auto or an URL template like https://{{ host }}/invites/{{ invite\&.token }} if your server setup includes a so called reverse proxy\&. Furthermore you need to connect this module as a handler of an ejabberd_http listener as shown at the example below\&.
+.sp
+For convenience there\(cqs now also a start page included at wherever you \fImount\fR mod_invites at the ejabberd_http handler\&. This start page will allow people to generate invites by giving their username and password\&. As such the URL should be protected by HTTPS\&. The main use\-case is when people have only clients, that don\(cqt support generating invites natively\&.
 .sp
 If you\(cqd rather want to use an external service, set landing_page to something like http://{{ host }}:8080/easy\-xmpp\-invites/#{{ invite\&.uri|strip_protocol }} or https://invites\&.joinjabber\&.org/#{{ invite\&.uri|strip_protocol }}\&.
 .sp
@@ -5270,6 +5312,38 @@ about this option: improved in 23\&.10\&. This option specifies who is allowed t
 for backward compatibility, which means that any user is allowed to register any free nick in the MUC service and in the rooms\&.
 .RE
 .PP
+\fBappend_module_config 🟠\fR: \fI{MUCHost: Options}\fR
+.RS 4
+\fINote\fR
+about this option: added in 26\&.07\&. Add a few specific options to a certain MUC host previously defined in the mod_muc
+\fIhosts\fR
+option\&. This is similar to the toplevel
+\fIappend_host_config\fR
+option, but in this case it\(cqs applied to the mod_muc options\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_muc:
+    hosts:
+      \- service1\&.@HOST@
+      \- service2\&.@HOST@
+    name: "Service General"
+    append_module_config:
+      service1\&.localhost:
+        name: "Service 1"
+      service2\&.example\&.net:
+        name: "Service 2"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 \fBcleanup_affiliations_on_start\fR: \fItrue | false\fR
 .RS 4
 \fINote\fR
@@ -5527,7 +5601,8 @@ instead\&.
 .RS 4
 This option defines the Jabber IDs of the service\&. If the
 \fIhosts\fR
-option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix "conference\&."\&. The keyword
+option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix
+\fI"conference\&."\fR\&. The keyword
 \fI@HOST@\fR
 is replaced with the real virtual host name\&.
 .RE
@@ -6027,10 +6102,10 @@ instead\&.
 .RS 4
 This option defines the Jabber IDs of the service\&. If the
 \fIhosts\fR
-option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix "multicast\&."\&. The keyword
+option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix
+\fI"multicast\&."\fR\&. The keyword
 \fI@HOST@\fR
-is replaced with the real virtual host name\&. The default value is
-\fImulticast\&.@HOST@\fR\&.
+is replaced with the real virtual host name\&. Please note: this module only uses the first vhost defined in this option\&.
 .RE
 .PP
 \fBlimits\fR: \fISender: Stanza: Number\fR
@@ -6910,6 +6985,42 @@ Defines an access rule for file transfer initiators\&. The default value is
 \fIall\fR\&. You may want to restrict access to the users of your server only, in order to avoid abusing your proxy by the users of remote servers\&.
 .RE
 .PP
+\fBappend_module_config\fR: \fI{ProxyHost: Options}\fR
+.RS 4
+\fINote\fR
+about this option: added in 25\&.xx\&. Add a few specific options to a certain upload host previously defined in the mod_proxy65
+\fIhosts\fR
+option\&. Right now only
+\fIname\fR
+and
+\fIvcard\fR
+can be defined here\&. This is similar to the toplevel
+\fIappend_host_config\fR
+option, but in this case it\(cqs applied to this module options\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_proxy65:
+    hosts:
+      \- service1\&.@HOST@
+      \- service2\&.@HOST@
+    name: "Service General"
+    append_module_config:
+      service1\&.localhost:
+        name: "Service 1"
+      service2\&.example\&.net:
+        name: "Service 2"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 \fBauth_type\fR: \fIanonymous | plain\fR
 .RS 4
 SOCKS5 authentication type\&. The default value is
@@ -6939,7 +7050,8 @@ option\&. Examples:
 .RS 4
 This option defines the Jabber IDs of the service\&. If the
 \fIhosts\fR
-option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix "proxy\&."\&. The keyword
+option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix
+\fI"proxy\&."\fR\&. The keyword
 \fI@HOST@\fR
 is replaced with the real virtual host name\&.
 .RE
@@ -7070,6 +7182,42 @@ and
 \fIall\fR\&.
 .RE
 .PP
+\fBappend_module_config 🟠\fR: \fI{PubSubHost: Options}\fR
+.RS 4
+\fINote\fR
+about this option: added in 26\&.07\&. Add a few specific options to a certain PubSub host previously defined in the mod_pubsub
+\fIhosts\fR
+option\&. Right now only
+\fIname\fR
+and
+\fIvcard\fR
+can be defined here\&. This is similar to the toplevel
+\fIappend_host_config\fR
+option, but in this case it\(cqs applied to this module options\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_pubsub:
+    hosts:
+      \- service1\&.@HOST@
+      \- service2\&.@HOST@
+    name: "Service General"
+    append_module_config:
+      service1\&.localhost:
+        name: "Service 1"
+      service2\&.example\&.net:
+        name: "Service 2"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 \fBdb_type\fR: \fImnesia | sql\fR
 .RS 4
 Same as top\-level
@@ -7114,7 +7262,8 @@ instead\&.
 .RS 4
 This option defines the Jabber IDs of the service\&. If the
 \fIhosts\fR
-option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix "pubsub\&."\&. The keyword
+option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix
+\fI"pubsub\&."\fR\&. The keyword
 \fI@HOST@\fR
 is replaced with the real virtual host name\&.
 .RE
@@ -8914,6 +9063,40 @@ This option enables you to specify if search operations with empty input fields 
 \fIfalse\fR\&.
 .RE
 .PP
+\fBappend_module_config 🟠\fR: \fI{VcardHost: Options}\fR
+.RS 4
+\fINote\fR
+about this option: added in 26\&.07\&. Add a few specific options to a certain upload host previously defined in the mod_vcard
+\fIhosts\fR
+option\&. Right now only
+\fIname\fR
+can be defined here\&. This is similar to the toplevel
+\fIappend_host_config\fR
+option, but in this case it\(cqs applied to this module options\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  mod_vcard:
+    hosts:
+      \- service1\&.@HOST@
+      \- service2\&.@HOST@
+    name: "Service General"
+    append_module_config:
+      service1\&.localhost:
+        name: "Service 1"
+      service2\&.example\&.net:
+        name: "Service 2"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 \fBcache_life_time\fR: \fItimeout()\fR
 .RS 4
 Same as top\-level
@@ -8953,7 +9136,8 @@ instead\&.
 .RS 4
 This option defines the Jabber IDs of the service\&. If the
 \fIhosts\fR
-option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix "vjud\&."\&. The keyword
+option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix
+\fI"vjud\&."\fR\&. The keyword
 \fI@HOST@\fR
 is replaced with the real virtual host name\&.
 .RE
@@ -9360,7 +9544,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 26\&.04\&.
+This section describes listeners options of ejabberd 26\&.07\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -9368,13 +9552,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 26\&.04\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 26\&.07\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/26\&.04/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/26\&.07/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
