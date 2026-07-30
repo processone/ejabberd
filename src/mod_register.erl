@@ -32,10 +32,10 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, stream_feature_register/2,
-	 c2s_unauthenticated_packet/2, try_register/4, try_register/5,
-	 try_register/6, try_set_password/3, process_iq/1, send_registration_notifications/3,
-	 mod_opt_type/1, mod_options/1, depends/2,
-	 format_error/1, mod_doc/0]).
+         c2s_unauthenticated_packet/2, try_register/4, try_register/5,
+         try_register/6, try_set_password/3, process_iq/1, send_registration_notifications/3,
+         mod_opt_type/1, mod_options/1, depends/2,
+         format_error/1, mod_doc/0, user_send_packet/1, set_password/2, c2s_handle_info/2]).
 
 -deprecated({try_register, 4}).
 
@@ -49,6 +49,9 @@ start(_Host, _Opts) ->
 			 {attributes, [key, value]}]),
     {ok, [{iq_handler, ejabberd_local, ?NS_REGISTER, process_iq},
           {iq_handler, ejabberd_sm, ?NS_REGISTER, process_iq},
+          {hook, user_send_packet, user_send_packet, 50},
+          {hook, set_password, set_password, 50},
+          {hook, c2s_handle_info, c2s_handle_info, 50},
           {hook, c2s_pre_auth_features, stream_feature_register, 50},
           {hook, c2s_unauthenticated_packet, c2s_unauthenticated_packet, 50}]}.
 
@@ -92,6 +95,45 @@ c2s_unauthenticated_packet(#{ip := IP, server := Server} = State,
     end;
 c2s_unauthenticated_packet(State, _) ->
     State.
+
+user_send_packet({#iq{type = set} = IQ, C2sState} = Acc) ->
+    try xmpp:try_subtag(IQ, #register{}) of
+	#register{} ->
+	    case maps:get(password_change_disabled, C2sState, false) == true orelse
+	        maps:get(auth_module, C2sState, unknown) == mod_auth_fast
+	    of
+		true ->
+		    {xmpp:put_meta(IQ, disable_password_change, true), C2sState};
+		_ ->
+		    {IQ, C2sState#{password_change_disabled => from_here}}
+	    end;
+	_ ->
+	    Acc
+    catch
+	_:_ -> Acc
+    end;
+user_send_packet(Acc) ->
+    Acc.
+
+-spec set_password(binary(), binary()) -> ok.
+set_password(User, Server) ->
+    Jid = jid:make(User, Server),
+    lists:foreach(
+	fun(R) ->
+	    To = jid:replace_resource(Jid, R),
+	    ejabberd_sm:route(To, password_changed)
+	end, ejabberd_sm:get_user_resources(User, Server)).
+
+c2s_handle_info(C2sState, password_changed) ->
+    ?INFO_MSG("C2s password_changed received", []),
+    case C2sState of
+	#{password_change_disabled := from_here} ->
+	    {stop, maps:remove(password_change_disabled, C2sState)};
+	_ ->
+	    {stop, C2sState#{password_change_disabled => true}}
+    end;
+c2s_handle_info(C2sState, _) ->
+    C2sState.
 
 process_iq(#iq{from = From} = IQ) ->
     process_iq(IQ, jid:tolower(From)).
@@ -273,7 +315,13 @@ try_register_or_set_password(User, Server, Password,
 	    Err = xmpp:err_jid_malformed(format_error(invalid_jid), Lang),
 	    make_stripped_error(IQ, Err);
 	{UserP, #jid{user = User2, lserver = Server}} when UserP == User2 ->
-	    try_set_password(User, Server, Password, IQ);
+	    case xmpp:get_meta(IQ, disable_password_change, false) of
+		true ->
+		    Txt = ?T("Account must me authenticated with current password"),
+		    make_stripped_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+		_ ->
+		    try_set_password(User, Server, Password, IQ)
+	    end;
 	_ when CaptchaSucceed ->
 	    case check_from(From, Server) of
 		allow ->
