@@ -26,6 +26,7 @@
 {"Action on user","Действие върху потребител"}.
 {"Add {{ inviter }} to your contact list","Добавете {{ inviter }} към вашия списък с контакти"}.
 {"Add Contact","Добавете контакти"}.
+{"Add to contact list","Добавете към списъка с контакти"}.
 {"Add User","Добави потребител"}.
 {"Administration of ","Администриране на "}.
 {"Administration","Администриране"}.
@@ -120,6 +121,8 @@
 {"Contacts","Контакти"}.
 {"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","Conversations е Jabber/XMPP клиент за смартфони с Android 6.0+, оптимизиран да осигури уникално мобилно изживяване."}.
 {"Conversations Logo","Conversations лого"}.
+{"Copied!","Копирано!"}.
+{"Copy to clipboard","Копирай в клипборда"}.
 {"Country","Държава"}.
 {"Create a Hat","Създай Шапка"}.
 {"Create Account","Създай профил"}.
@@ -174,7 +177,9 @@
 {"Enter path to jabberd14 spool dir","Въведете пътя към jabberd14 spool директорията"}.
 {"Enter path to jabberd14 spool file","Въведете пътя към jabberd14 spool файла"}.
 {"Enter path to text file","Въведете пътя към текстовия файл"}.
+{"Enter the corresponding password.","Въведете съответната парола."}.
 {"Enter the text you see","Въведете текста, който виждате"}.
+{"Enter the username you use to log into this service.","Въведете потребителското име, което използвате за вход на този сървър."}.
 {"Erlang XMPP Server","Erlang XMPP сървър"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Изключи CAPTCHA предизвикателство за следните Jabber ID-та"}.
 {"Export all tables as SQL queries to a file:","Експортирай всички таблици като SQL заявки във файл:"}.
@@ -183,6 +188,7 @@
 {"External component failure","Неуспех породен от външен компонент"}.
 {"External component timeout","Времето за изчакване на външен компонент изтече"}.
 {"Failed to activate bytestream","Неуспешно активиране на bytestream"}.
+{"Failed to copy data","Неуспешно копиране на данните"}.
 {"Failed to extract JID from your voice request approval","Неуспешно извличане на JID от одобрението за гласова заявка"}.
 {"Failed to map delegated namespace to external component","Неуспешно съпоставяне на делегирано пространство от имена с външен компонент"}.
 {"Failed to parse HTTP response","Неуспешно анализиран HTTP отговор"}.
@@ -193,6 +199,7 @@
 {"February","Февруари"}.
 {"File larger than ~w bytes","Файлът е по-голям от ~w байта"}.
 {"Fill in the form to search for any matching XMPP User","Попълнете формата, за да търсите съвпадащ XMPP потребител"}.
+{"Form Error","Грешка във формата"}.
 {"Friday","Петък"}.
 {"From ~ts","От ~ts"}.
 {"Full List of Room Admins","Пълен списък на администраторите на стаята"}.
@@ -228,12 +235,15 @@
 {"Hat title","Заглавие на шапката"}.
 {"Hat URI","URI адрес за шапка"}.
 {"Hats limit exceeded","Превишен е лимитът за шапка"}.
+{"Hey, <strong class=\"text-alert\">{{ username }}</strong>, if you'd like to change your password, maybe because you forgot your old one, you've come to the right place!","Здравей, <strong class=\"text-alert\">{{ username }}</strong>, ако желаеш да промениш паролата си, може би защото си забравил старата, значи си на правилното място!"}.
 {"Hide","Скрий"}.
 {"Hint","Подсказка"}.
 {"Host unknown","Неизвестен хост"}.
 {"Hostname invalid","Невалидно име за хост"}.
 {"HTTP File Upload","Качване на файл по HTTP"}.
 {"Idle connection","Неактивна връзка"}.
+{"If checked once an account is created using this invite, it will automatically be added to your contact list.","Ако бъде отметнато след създаване на акаунт с тази покана, той автоматично ще бъде добавен към списъка Ви с контакти."}.
+{"If this is not you, please disregard!","Ако това не сте Вие, моля, игнорирайте!"}.
 {"If you already have {{ app_name }} installed, we recommend that you continue the account creation process using the app by clicking on the button below:","Ако вече сте инсталирали {{ app_name }}, препоръчваме Ви да продължите процеса на създаване на профил, използвайки приложението, като кликнете върху бутона по-долу:"}.
 {"If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform.","Ако все още нямате инсталиран XMPP клиент, ето списък с подходящи клиенти за вашата платформа."}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Ако не виждате CAPTCHA изображението, посетете уеб страницата."}.
@@ -264,9 +274,11 @@
 {"Invitations are not allowed in this conference","Поканите не са разрешени в тази конференция"}.
 {"Invite Expired","Изтекла покана"}.
 {"Invite expired","Поканата е изтекла"}.
+{"Invite Options","Опции за покана"}.
 {"Invite to {{ site_name }}","Покани в {{ site_name }}"}.
 {"Invite User","Покани потребител"}.
-{"Invite","Покани"}.
+{"Invites","Покани"}.
+{"Invite","Поканете"}.
 {"IP addresses","IP адреси"}.
 {"is now known as","е известен като"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Не е позволено да изпращате съобщения за грешки в стаята. Участникът (~s) е изпратил съобщение за грешка (~s) и е бил отстранен от стаята"}.
@@ -334,13 +346,14 @@
 {"Monday","Понеделник"}.
 {"Multicast","Мултикаст"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Повече от един <item/> елемента не се разрешават от RFC6121"}.
-{"Multi-User Chat","Групов чат (MUC)"}.
+{"Multi-User Chat","Групов чат"}.
 {"Name","Име"}.
 {"Natural Language for Room Discussions","Език за дискусии в стаята"}.
 {"Natural-Language Room Name","Име на стаята на предпочитания език"}.
 {"Neither 'jid' nor 'nick' attribute found","Атрибутите 'jid' и 'nick' не са намерени"}.
 {"Neither 'role' nor 'affiliation' attribute found","Атрибути 'role' или 'affiliation' не са намерени"}.
 {"Never","Никога"}.
+{"New Password","Нова парола"}.
 {"New Password:","Нова парола:"}.
 {"Nickname can't be empty","Псевдонимът не може да бъде празен"}.
 {"Nickname Registration at ","Регистрация на псевдоним в "}.
@@ -433,6 +446,9 @@
 {"Page navigation","Навигация по страниците"}.
 {"Participant ID","ID на участник"}.
 {"Participant","Участник"}.
+{"Password Change Success","Паролата е успешно променена"}.
+{"Password invalid","Невалидна парола"}.
+{"Password reset error","Грешка при промяна на паролата"}.
 {"Password Verification","Проверка на паролата"}.
 {"Password Verification:","Проверка на паролата:"}.
 {"Password","Парола"}.
@@ -447,6 +463,7 @@
 {"Ping","Пинг"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Обърнете внимание, че тези опции ще направят резервно копие само на вградената (Mnesia) база данни. Ако използвате модула ODBC, трябва да направите резервно копие на SQL базата данни отделно."}.
 {"Please provide a password! Minimum length: {{ password_min_length }}","Моля, въведете парола! Минимална дължина: {{ password_min_length }}"}.
+{"Please provide a password!","Моля, въведете парола!"}.
 {"Please provide a valid username!","Моля, въведете валидно потребителско име!"}.
 {"Please, wait for a while before sending new voice request","Моля, изчакайте известно време, преди да изпратите нова заявка за гласова връзка"}.
 {"Pong","Понг"}.
@@ -491,6 +508,8 @@
 {"Request has timed out","Времето за заявка изтече"}.
 {"Request is ignored","Заявката е игнорирано"}.
 {"Requested role","Заявена роля"}.
+{"Reset Password on {{ site_name }}","Нулиране на парола в {{ site_name }}"}.
+{"Reset Password","Нулиране на парола"}.
 {"Resources","Ресурси"}.
 {"Restart Service","Рестартирай услугата"}.
 {"Restore Backup from File at ","Възстанови резервно копие от файл в "}.
@@ -518,7 +537,7 @@
 {"Scan with mobile device","Сканиране с мобилно устройство"}.
 {"Search from the date","Търси от дата"}.
 {"Search Results for ","Резултати от търсенето за "}.
-{"Search the text","Търси текста"}.
+{"Search the text (obsolete)","Търси текста (излязло от употреба)"}.
 {"Search until the date","Търси до дата"}.
 {"Search users in ","Търси потребители в "}.
 {"Select","Избери"}.
@@ -544,13 +563,15 @@
 {"SOCKS5 Bytestreams","SOCKS5 байтови потоци"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Някои XMPP клиенти могат да съхраняват паролата Ви в компютъра, но от съображения за сигурност трябва да го правите само на личния си компютър."}.
 {"Sorry, it looks like this invite code has expired!","Съжалявам, изглежда, че този код за покана е изтекъл!"}.
+{"Sorry, there was a problem changing your account password.","За съжаление, възникна проблем при промяна на паролата."}.
 {"Sorry, there was a problem registering your account.","За съжаление, възникна проблем с регистрацията на вашия профил."}.
 {"Sources Specs:","Спецификации на източниците:"}.
 {"Specify the access model","Задай модела за достъп"}.
 {"Specify the event message type","Задай типа на съобщението за събитие"}.
 {"Specify the publisher model","Задайте модела на публикуващия"}.
-{"Stanza id is not valid","Невалидно ID на строфата"}.
+{"Stanza id is not valid","Невалиден идентификатор на строфата"}.
 {"Stanza ID","ID на строфа"}.
+{"Startpage","Начална страница"}.
 {"Statically specify a replyto of the node owner(s)","Статично задаване на replyto на собственика(ците) на нода"}.
 {"Step 1: Download and install {{ app_name }}","Стъпка 1: Изтеглете и инсталирайте {{ app_name }}"}.
 {"Step 1: Install {{ app_name }}","Стъпка 1: Инсталирайте {{ app_name }}"}.
@@ -572,6 +593,7 @@
 {"Subscribers may publish","Абонатите могат да публикуват"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","Заявките за абонамент трябва да бъдат одобрени и само абонатите могат да извличат елементи"}.
 {"Subscriptions are not allowed","Абонаментите не са разрешени"}.
+{"Suggested Name","Предложено име"}.
 {"Sunday","Неделя"}.
 {"Text associated with a picture","Текст, свързан със снимка"}.
 {"Text associated with a sound","Текст, свързан със звук"}.
@@ -632,6 +654,7 @@
 {"There was an error creating the account: ","Възникна грешка при създаването на профила: "}.
 {"There was an error deleting the account: ","Възникна грешка при изтриването на профила: "}.
 {"This button works only if you have the app installed already!","Този бутон работи, само ако вече имате инсталирано приложението!"}.
+{"This form allows you to create an invite that you can send to someone else, so they can create a new account at this service. Be aware that you need to have the <strong>necessary rights</strong> to do so, otherwise this command will fail.","Тази форма Ви позволява да създадете покана, която можете да изпратите на някого, за да може той да създаде нов акаунт на този сървър. Имайте предвид, че трябва да имате <strong>необходимите права</strong>, за да го направите, в противен случай тази команда ще бъде неуспешна."}.
 {"This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!","Това е покана от <strong>{{ inviter }}</strong> за свързване и чат в XMPP мрежата. Ако вече имате инсталиран XMPP клиент, просто натиснете бутона по-долу!"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Не е чувствително към регистъра (главни и малки букви): \"macbeth\"е същото като \"MacBeth\"и \"Macbeth\"."}.
 {"This page allows to register an XMPP account in this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Тази страница позволява регистриране на XMPP профил на този сървър. Вашият JID (Jabber ID) ще бъде във формата: username@server. Моля, прочетете внимателно инструкциите, за да попълните правилно полетата."}.
@@ -641,6 +664,7 @@
 {"Thursday","Четвъртък"}.
 {"Time delay","Закъснение"}.
 {"Timed out waiting for stream resumption","Времето за изчакване за възобновяване на потока изтече"}.
+{"To continue chatting, you need to enter your new account credentials into your chosen XMPP software.","За да продължите чата, трябва да въведете новите си идентификационни данни в избрания от вас XMPP софтуер."}.
 {"To get started, you need to install an app for your platform:","За да започнете, трябва да инсталирате приложение за вашата платформа:"}.
 {"To register, visit ~s","За да се регистрирате, посетете ~s"}.
 {"To start chatting, you need to enter your new account credentials into your chosen XMPP software.","За да започнете чат, трябва да въведете новите си идентификационни данни в избрания от вас XMPP софтуер."}.
@@ -678,6 +702,7 @@
 {"URL for Archived Discussion Logs","URL адрес за дневници на архивирани дискусии"}.
 {"Use a <em>QR code</em> scanner on your mobile device to scan the code below:","Използвайте скенер за <em>QR код</em> на вашето мобилно устройство, за да сканирате кода по-долу:"}.
 {"User already exists","Потребителят вече съществува"}.
+{"User is not allowed to create invites","Потребил няма право да създава покани"}.
 {"User (jid)","Потребител (jid)"}.
 {"User JID","Потребител JID"}.
 {"User Management","Управление на потребители"}.
@@ -686,6 +711,8 @@
 {"User session not found","Потребителската сесия не е намерена"}.
 {"User session terminated","Потребителската сесия е прекратена"}.
 {"User ~ts","Потребител ~ts"}.
+{"Username contains invalid characters","Потребителското име съдържа недопустими символи"}.
+{"Username exists already","Потребител с това име вече съществува"}.
 {"Username invalid","Невалидно потребителско име"}.
 {"Username is reserved","Потребителското име е резервирано"}.
 {"Username","Потребителско име"}.
@@ -709,6 +736,7 @@
 {"Voice request","Заявка за гласово обаждане"}.
 {"Web client which allows to join the room anonymously","Уеб клиентът, който позволява анонимно свързване със стаята"}.
 {"Wednesday","Сряда"}.
+{"Welcome to {{ site_name }}","Добре дошли в {{ site_name }}"}.
 {"When a new subscription is processed and whenever a subscriber comes online","Когато се обработва нов абонамент и всеки път, когато абонат се появи онлайн"}.
 {"When a new subscription is processed","Когато се обработва нов абонамент"}.
 {"When to send the last published item","Кога да изпратите последния публикуван елемент"}.
@@ -739,12 +767,15 @@
 {"You can later change your password using an XMPP client.","По-късно можете да промените паролата си с помощта на XMPP клиент."}.
 {"You can now set up {{ app_name }} and connect it to your new account.","Вече можете да настроите {{ app_name }} и да го свържете с вашия нов профил."}.
 {"You can start chatting right away with {{ app_name }}. Let's get started!","Можете да започнете да чатите веднага с {{ app_name }}. Да започваме!"}.
+{"You can suggest a username for the account to be created with this invite.","Можете да предложите потребителско име за акаунта, който ще бъде създаден с тази покана."}.
+{"You can transfer this invite to a mobile device by scanning the QR code below with its camera.","Можете да прехвърлите тази покана на мобилно устройство, сканирайки QR кода по-долу с камерата."}.
 {"You can transfer this invite to your mobile device by scanning a code with your camera.","Можете да прехвърлите тази покана на мобилното си устройство, като сканирате код с камерата на вашето устройство."}.
 {"You have been banned from this room","Достъпът ви до тази стая е забранен"}.
 {"You have been invited to chat on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","Поканени сте да чатите в {{ site_name }}, част от защитената и децентрализирана мрежа за съобщения XMPP."}.
 {"You have been invited to chat on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Поканени сте да чатите в <strong>{{ site_name }}</strong>, част от защитената и децентрализирана мрежа за съобщения XMPP."}.
 {"You have been invited to chat with <strong>{{ inviter }}</strong> on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","Поканени сте да чатите с <strong>{{ inviter }}</strong> на {{ site_name }}, част от защитената и децентрализирана мрежа за съобщения XMPP."}.
-{"You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Поканени сте да чатите с <strong>{{ inviter }}</strong>на <strong>{{ site_name }}</strong>, част от защитената и децентрализирана мрежа за съобщения XMPP."}.
+{"You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","Поканени сте да чатите с <strong>{{ inviter }}</strong> в <strong>{{ site_name }}</strong>, част от XMPP децентрализираната и сигурна мрежа за незабавни съобщения."}.
+{"You have changed your password on <strong>{{ site_name }}</strong>.","Променихте Вашата парола в <strong>{{ site_name }}</strong>."}.
 {"You have created an account on <strong>{{ site_name }}</strong>.","Създадохте профил в <strong>{{ site_name }}</strong>."}.
 {"You have joined too many conferences","Присъединили сте се към твърде много конференции"}.
 {"You must fill in field \"Nickname\" in the form","Трябва да попълните полето \"Псевдоним\" във формата"}.
@@ -753,6 +784,7 @@
 {"You need an x:data capable client to search","За да търсите, Ви е нужен клиент, който поддържа x:data"}.
 {"Your active privacy list has denied the routing of this stanza.","Вашият активен списък за поверителност отказа маршрутизирането на тази строфа."}.
 {"Your contact offline message queue is full. The message has been discarded.","Достигнат е максималният брой офлайн съобщения за вашия контакт. Съобщението е отхвърлено."}.
+{"Your Invite-Link:","Вашата покана, под формата на линк:"}.
 {"Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone.","Вашата парола се съхранява криптирана на сървъра и няма да бъде достъпна, след като затворите тази страница. Пазете я в безопасност и не я споделяйте с никого."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Вашата заявка за абонамент и/или съобщения до ~s са блокирани. За да отблокирате заявката си за абонамент, посетете ~s"}.
 {"Your XMPP account was successfully registered.","Вашият XMPP профил, беше регистриран успешно."}.
