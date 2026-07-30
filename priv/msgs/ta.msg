@@ -4,21 +4,35 @@
 %%   https://docs.ejabberd.im/developer/extending-ejabberd/localization/
 
 {" (Add * to the end of field to match substring)"," (அடி மூலக்கூறுடன் பொருந்தக்கூடிய புலத்தின் முடிவில் * சேர்க்கவும்)"}.
+{"{{ app_name }} already installed?","{{ app_name }} ஏற்கனவே நிறுவப்பட்டுள்ளதா?"}.
 {" has set the subject to: "," இதற்கு பொருள் அமைத்துள்ளது: "}.
+{"{{ inviter }} has invited you to connect!","{{ inviter }} உங்களை இணைக்க அழைத்துள்ளார்!"}.
 {"# participants","# பங்கேற்பாளர்கள்"}.
 {"A description of the node","முனையின் விளக்கம்"}.
 {"A friendly name for the node","முனைக்கு ஒரு நட்பு பெயர்"}.
+{"A fully-featured desktop chat client for Windows and Linux.","சாளரங்கள் மற்றும் லினக்சிற்கான முழு அம்சமான டெச்க்டாப் அரட்டை கிளையன்ட்."}.
+{"A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.","ஆண்ட்ராய்டுக்கான மெலிந்த சாபர்/எக்ச்எம்பிபி கிளையன்ட். இது பயன்பாட்டினை, குறைந்த மேல்நிலை மற்றும் பாதுகாப்பை நோக்கமாகக் கொண்டுள்ளது, மேலும் ஆண்ட்ராய்டு 4.0 இல் தொடங்கும் குறைந்த விலை ஆண்ட்ராய்டு சாதனங்களில் வேலை செய்கிறது."}.
+{"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","iPhone மற்றும் iPadக்கான இலகுரக மற்றும் சக்திவாய்ந்த XMPP கிளையன்ட். இது உங்கள் நண்பர்களுடன் பேசவும் தருணங்களைப் பகிர்ந்து கொள்ளவும் எளிதான வழியை வழங்குகிறது."}.
+{"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","iPhone மற்றும் iPad க்கான நவீன திறந்த மூல அரட்டை கிளையன்ட். இது பயன்படுத்த எளிதானது மற்றும் தூய்மையான பயனர் இடைமுகத்தைக் கொண்டுள்ளது."}.
+{"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","Mac க்கான நவீன திறந்த மூல அரட்டை கிளையன்ட். இது பயன்படுத்த எளிதானது மற்றும் தூய்மையான பயனர் இடைமுகத்தைக் கொண்டுள்ளது."}.
+{"A modern open-source chat client for the desktop. It focuses on providing a clean and reliable Jabber/XMPP experience while having your privacy in mind.","டெச்க்டாப்பிற்கான நவீன திறந்த மூல அரட்டை கிளையன்ட். உங்கள் தனியுரிமையை மனதில் கொண்டு தூய்மையான மற்றும் நம்பகமான Jabber/XMPP அனுபவத்தை வழங்குவதில் இது கவனம் செலுத்துகிறது."}.
 {"A password is required to enter this room","இந்த அறைக்குள் நுழைய கடவுச்சொல் தேவை"}.
 {"A Web Page","ஒரு வலைப்பக்கம்"}.
+{"Accept invite using {{ app_name }}","{{ app_name }} ஐப் பயன்படுத்தி அழைப்பை ஏற்கவும்"}.
 {"Accept","ஏற்றுக்கொள்"}.
 {"Access denied by service policy","பணி கொள்கையால் மறுக்கப்பட்டது"}.
 {"Access model","அணுகல் மாதிரி"}.
 {"Account doesn't exist","கணக்கு இல்லை"}.
 {"Action on user","பயனரின் செயல்"}.
+{"Add {{ inviter }} to your contact list","உங்கள் தொடர்பு பட்டியலில் {{ inviter }} ஐச் சேர்க்கவும்"}.
+{"Add Contact","தொடர்பைச் சேர்க்கவும்"}.
+{"Add to contact list","தொடர்பு பட்டியலில் சேர்க்கவும்"}.
 {"Add User","பயனரைச் சேர்க்கவும்"}.
 {"Administration of ","நிர்வாகம் "}.
 {"Administration","நிர்வாகம்"}.
 {"Administrator privileges required","நிர்வாகி சலுகைகள் தேவை"}.
+{"After clicking the button you will be taken to {{ app_name }} to finish setting up your new {{ site_name }} account.","பொத்தானைக் சொடுக்கு செய்த பிறகு, உங்கள் புதிய {{ site_name }} கணக்கை அமைப்பதை முடிக்க, நீங்கள் {{ app_name }} க்கு அழைத்துச் செல்லப்படுவீர்கள்."}.
+{"After successfully installing {{ app_name }}, come back to this page and <strong>continue with Step 2</strong>.","{{ app_name }} ஐ வெற்றிகரமாக நிறுவிய பின், இந்தப் பக்கத்திற்கு வந்து <strong>படி 2ஐத் தொடரவும்</strong>."}.
 {"All activity","அனைத்து செயல்பாடுகளும்"}.
 {"All Users","அனைத்து பயனர்களும்"}.
 {"Allow subscription","சந்தாவை அனுமதிக்கவும்"}.
@@ -46,8 +60,11 @@
 {"Anyone with Voice","குரல் உள்ள எவரும்"}.
 {"Anyone","யாரும்"}.
 {"API Commands","பநிஇ கட்டளைகள்"}.
+{"Apple Store Logo","ஆப்பிள் கடை லோகோ"}.
 {"April","ப-சித்திரை"}.
 {"Arguments","வாதங்கள்"}.
+{"As a final reminder, your account details are shown below:","இறுதி நினைவூட்டலாக, உங்கள் கணக்கு விவரங்கள் கீழே காட்டப்பட்டுள்ளன:"}.
+{"Assign a hat to a user","ஒரு பயனருக்கு ஒரு தொப்பியை ஒதுக்கவும்"}.
 {"Attribute 'channel' is required for this request","இந்த கோரிக்கைக்கு 'சேனல்' என்ற பண்புக்கூறு தேவை"}.
 {"Attribute 'id' is mandatory for MIX messages","கலவை செய்திகளுக்கு 'ஐடி' கட்டாயமாகும்"}.
 {"Attribute 'jid' is not allowed here","'சிட்' என்ற பண்புக்கூறு இங்கே அனுமதிக்கப்படவில்லை"}.
@@ -60,6 +77,9 @@
 {"Backup to File at ","தாக்கல் செய்ய காப்புப்பிரதி "}.
 {"Backup","காப்புப்பிரதி"}.
 {"Bad format","மோசமான வடிவம்"}.
+{"BAD REQUEST","மோசமான கோரிக்கை"}.
+{"Beagle IM by Tigase, Inc. is a lightweight and powerful XMPP client for macOS.","Tigase, Inc. வழங்கும் Beagle IM என்பது macOSக்கான இலகுரக மற்றும் சக்திவாய்ந்த XMPP கிளையன்ட் ஆகும்."}.
+{"Beagle IM Logo","பீகிள் IM லோகோ"}.
 {"Birthday","பிறந்த நாள்"}.
 {"Both the username and the resource are required","பயனர்பெயர் மற்றும் சான்று இரண்டும் தேவை"}.
 {"Bytestream already activated","பைட்டெச்ட்ரீம் ஏற்கனவே செயல்படுத்தப்பட்டது"}.
@@ -76,6 +96,7 @@
 {"Channel JID","சேனல் சிட்"}.
 {"Channels","சேனல்கள்"}.
 {"Characters not allowed:","எழுத்துக்கள் அனுமதிக்கப்படவில்லை:"}.
+{"Chat address (JID)","அரட்டை முகவரி (JID)"}.
 {"Chatroom configuration modified","அரட்டை உள்ளமைவு மாற்றப்பட்டது"}.
 {"Chatroom is created","அரட்டை அறை உருவாக்கப்பட்டது"}.
 {"Chatroom is destroyed","அரட்டை அறை அழிக்கப்படுகிறது"}.
@@ -83,17 +104,31 @@
 {"Chatroom is stopped","அரட்டை அறை நிறுத்தப்பட்டது"}.
 {"Chatrooms","அரட்டை அறைகள்"}.
 {"Choose a username and password to register with this server","இந்த சேவையகத்துடன் பதிவு செய்ய பயனர்பெயர் மற்றும் கடவுச்சொல்லைத் தேர்வுசெய்க"}.
+{"Choose a username, this will become the first part of your new chat address.","ஒரு பயனர்பெயரை தேர்வு செய்யவும், இது உங்கள் புதிய அரட்டை முகவரியின் முதல் பகுதியாக மாறும்."}.
 {"Choose storage type of tables","அட்டவணைகளின் சேமிப்பக வகை என்பதைத் தேர்வுசெய்க"}.
 {"Choose whether to approve this entity's subscription.","இந்த நிறுவனத்தின் சந்தாவை அங்கீகரிக்க வேண்டுமா என்பதைத் தேர்வுசெய்க."}.
 {"City","நகரம்"}.
+{"Click the button to open the Dino website where you can download and install it on your PC.","உங்கள் கணினியில் பதிவிறக்கி நிறுவக்கூடிய டினோ வலைத்தளத்தைத் திறக்க பொத்தானைக் சொடுக்கு செய்யவும்."}.
 {"Client acknowledged more stanzas than sent by server","சேவையகத்தால் அனுப்பப்பட்டதை விட கிளையன்ட் அதிக சரணத்தை ஒப்புக் கொண்டார்"}.
+{"Close","மூடு"}.
 {"Clustering","கிளச்டரிங்"}.
 {"Commands","கட்டளைகள்"}.
 {"Conference room does not exist","மாநாட்டு அறை இல்லை"}.
 {"Configuration of room ~s","அறையின் உள்ளமைவு ~s"}.
 {"Configuration","உள்ளமைவு"}.
+{"Congratulations!","வாழ்த்துகள்!"}.
 {"Contact Addresses (normally, room owner or owners)","தொடர்பு முகவரிகள் (பொதுவாக, அறை உரிமையாளர் அல்லது உரிமையாளர்கள்)"}.
+{"Contacts","தொடர்புகள்"}.
+{"Conversations is a Jabber/XMPP client for Android 6.0+ smartphones that has been optimized to provide a unique mobile experience.","உரையாடல்கள் என்பது ஆண்ட்ராய்டு 6.0+ ச்மார்ட்ஃபோன்களுக்கான Jabber/XMPP வாங்கி ஆகும், இது தனித்துவமான மொபைல் அனுபவத்தை வழங்கும் வகையில் மேம்படுத்தப்பட்டுள்ளது."}.
+{"Conversations Logo","உரையாடல் லோகோ"}.
+{"Copied!","நகலெடுக்கப்பட்டது!"}.
+{"Copy to clipboard","இடைநிலைப்பலகைக்கு நகலெடுக்கவும்"}.
 {"Country","நாடு"}.
+{"Create a Hat","ஒரு தொப்பியை உருவாக்கவும்"}.
+{"Create Account","கணக்கை உருவாக்கவும்"}.
+{"Create an account","ஒரு கணக்கை உருவாக்கவும்"}.
+{"Creating an account will allow to communicate with other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","கணக்கை உருவாக்குவது, <strong>{{ site_name }}</strong> மற்றும் XMPP நெட்வொர்க்கில் உள்ள பிற சேவைகளில் உள்ள மற்றவர்களுடன் தொடர்பு கொள்ள அனுமதிக்கும்."}.
+{"Creating an account will allow to communicate with <strong>{{ inviter }}</strong> and other people on <strong>{{ site_name }}</strong> and other services on the XMPP network.","ஒரு கணக்கை உருவாக்குவது, <strong>{{ inviter }}</strong> மற்றும் <strong>{{ site_name }}</strong> இல் உள்ள பிற நபர்களுடனும் XMPP நெட்வொர்க்கில் உள்ள பிற சேவைகளுடனும் தொடர்பு கொள்ள அனுமதிக்கும்."}.
 {"Current Discussion Topic","தற்போதைய கலந்துரையாடல் தலைப்பு"}.
 {"Database failure","தரவுத்தள தோல்வி"}.
 {"Database Tables Configuration at ","தரவுத்தள அட்டவணைகள் உள்ளமைவு "}.
@@ -105,8 +140,16 @@
 {"Delete User","பயனரை நீக்கு"}.
 {"Deliver event notifications","நிகழ்வு அறிவிப்புகளை வழங்கவும்"}.
 {"Deliver payloads with event notifications","நிகழ்வு அறிவிப்புகளுடன் பேலோடுகளை வழங்கவும்"}.
+{"Destroy a Hat","ஒரு தொப்பியை அழிக்கவும்"}.
+{"Dino Logo","டினோ லோகோ"}.
+{"Disable User","பயனரை முடக்கு"}.
 {"Disc only copy","வட்டு மட்டுமே நகலெடுக்கவும்"}.
 {"Don't tell your password to anybody, not even the administrators of the XMPP server.","உங்கள் கடவுச்சொல்லை யாரிடமும் சொல்லாதீர்கள், எக்ச்எம்பி.பி சேவையகத்தின் நிர்வாகிகள் கூட இல்லை."}.
+{"Download and install {{ app_name }} below:","கீழே {{ app_name }} ஐப் பதிவிறக்கி நிறுவவும்:"}.
+{"Download Dino for Linux","லினக்சுக்கு டினோவைப் பதிவிறக்கவும்"}.
+{"Download from Mac App Store","Mac பயன்பாடு Store இலிருந்து பதிவிறக்கவும்"}.
+{"Download Gajim","காசிம் பதிவிறக்கவும்"}.
+{"Download Renga for Haiku","ஐக்கூவுக்காக ரெங்காவைப் பதிவிறக்கவும்"}.
 {"Dump Backup to Text File at ","உரை கோப்பில் காப்புப்பிரதியை டம்ப் செய்யுங்கள் "}.
 {"Dump to Text File","உரை கோப்பில் டம்ப் செய்யுங்கள்"}.
 {"Duplicated groups are not allowed by RFC6121","நகல் குழுக்கள் RFC6121 ஆல் அனுமதிக்கப்படவில்லை"}.
@@ -128,12 +171,15 @@
 {"Enable message archiving","செய்தி காப்பகத்தை இயக்கவும்"}.
 {"Enabling push without 'node' attribute is not supported","'முனை' பண்புக்கூறு இல்லாமல் உந்துதலை இயக்குவது ஆதரிக்கப்படவில்லை"}.
 {"End User Session","இறுதி பயனர் அமர்வு"}.
+{"Enter a secure password that you do not use anywhere else.","நீங்கள் வேறு எங்கும் பயன்படுத்தாத பாதுகாப்பான கடவுச்சொல்லை உள்ளிடவும்."}.
 {"Enter nickname you want to register","நீங்கள் பதிவு செய்ய விரும்பும் புனைப்பெயரை உள்ளிடவும்"}.
 {"Enter path to backup file","காப்புப்பிரதி கோப்பிற்கு பாதையை உள்ளிடவும்"}.
 {"Enter path to jabberd14 spool dir","Jabberd14 Spool அடைவு க்கு பாதையை உள்ளிடவும்"}.
 {"Enter path to jabberd14 spool file","சாபர்ட் 14 ச்பூல் கோப்புக்கு பாதையை உள்ளிடவும்"}.
 {"Enter path to text file","உரை கோப்புக்கு பாதையை உள்ளிடவும்"}.
+{"Enter the corresponding password.","தொடர்புடைய கடவுச்சொல்லை உள்ளிடவும்."}.
 {"Enter the text you see","நீங்கள் பார்க்கும் உரையை உள்ளிடவும்"}.
+{"Enter the username you use to log into this service.","இந்த சேவையில் உள்நுழைய நீங்கள் பயன்படுத்தும் பயனர்பெயரை உள்ளிடவும்."}.
 {"Erlang XMPP Server","எர்லாங் எக்ச்எம்பிபி சேவையகம்"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","கேப்ட்சா சேலஞ்சில் இருந்து சாபர் ஐடிகளை விலக்குங்கள்"}.
 {"Export all tables as SQL queries to a file:","அனைத்து அட்டவணைகளையும் கவிமொ வினவல்களாக ஒரு கோப்பில் ஏற்றுமதி செய்யுங்கள்:"}.
@@ -142,40 +188,64 @@
 {"External component failure","வெளிப்புற கூறு தோல்வி"}.
 {"External component timeout","வெளிப்புற கூறு நேரம் முடிந்தது"}.
 {"Failed to activate bytestream","பைட்டெச்ட்ரீமை செயல்படுத்தத் தவறிவிட்டது"}.
+{"Failed to copy data","தரவை நகலெடுக்க முடியவில்லை"}.
 {"Failed to extract JID from your voice request approval","உங்கள் குரல் கோரிக்கை ஒப்புதலிலிருந்து சிட் பிரித்தெடுப்பதில் தோல்வி"}.
 {"Failed to map delegated namespace to external component","வெளிப்புற கூறுகளுக்கு பிரதிநிதித்துவ பெயர்வெளியை வரைபடமாக்குவதில் தோல்வி"}.
 {"Failed to parse HTTP response","HTTP பதிலை அலசத் தவறிவிட்டது"}.
 {"Failed to process option '~s'","விருப்பத்தை '~s' செயலாக்குவதில் தோல்வி"}.
 {"Family Name","குடும்ப பெயர்"}.
 {"FAQ Entry","கேள்விகள் நுழைவு"}.
+{"F-Droid Store Logo","F-Droid கடை லோகோ"}.
 {"February","தை-மாசி"}.
 {"File larger than ~w bytes","~w பைட்டுகளை விட பெரியது"}.
 {"Fill in the form to search for any matching XMPP User","பொருந்தக்கூடிய எக்ச்எம்பிபி பயனரைத் தேட படிவத்தை நிரப்பவும்"}.
+{"Form Error","படிவப் பிழை"}.
 {"Friday","வெள்ளிக்கிழமை"}.
 {"From ~ts","~ts இலிருந்து"}.
 {"Full List of Room Admins","அறை நிர்வாகிகளின் முழு பட்டியல்"}.
 {"Full List of Room Owners","அறை உரிமையாளர்களின் முழு பட்டியல்"}.
 {"Full Name","முழு பெயர்"}.
+{"Gajim Logo","gazim லோகோ"}.
+{"Get List of Active Users","செயலில் உள்ள பயனர்களின் பட்டியலைப் பெறுங்கள்"}.
+{"Get List of Disabled Users","ஊனமுற்ற பயனர்களின் பட்டியலைப் பெறுங்கள்"}.
+{"Get List of Idle Users","செயலற்ற பயனர்களின் பட்டியலைப் பெறுங்கள்"}.
 {"Get List of Online Users","நிகழ்நிலை பயனர்களின் பட்டியலைப் பெறுங்கள்"}.
 {"Get List of Registered Users","பதிவுசெய்யப்பட்ட பயனர்களின் பட்டியலைப் பெறுங்கள்"}.
+{"Get Number of Active Users","செயலில் உள்ள பயனர்களின் எண்ணிக்கையைப் பெறுங்கள்"}.
+{"Get Number of Disabled Users","ஊனமுற்ற பயனர்களின் எண்ணிக்கையைப் பெறுங்கள்"}.
+{"Get Number of Idle Users","செயலற்ற பயனர்களின் எண்ணிக்கையைப் பெறுங்கள்"}.
 {"Get Number of Online Users","நிகழ்நிலை பயனர்களின் எண்ணிக்கையைப் பெறுங்கள்"}.
 {"Get Number of Registered Users","பதிவுசெய்யப்பட்ட பயனர்களின் எண்ணிக்கையைப் பெறுங்கள்"}.
 {"Get Pending","நிலுவையில் செல்லுங்கள்"}.
+{"Get started","தொடங்குங்கள்"}.
 {"Get User Last Login Time","பயனர் கடைசி உள்நுழைவு நேரத்தைப் பெறுங்கள்"}.
+{"Get User Roster","பயனர் பட்டியலைப் பெறுங்கள்"}.
 {"Get User Statistics","பயனர் புள்ளிவிவரங்களைப் பெறுங்கள்"}.
 {"Given Name","கொடுக்கப்பட்ட பெயர்"}.
+{"Google Play Store Logo","Google Play Store லோகோ"}.
 {"Grant voice to this person?","இந்த நபருக்கு குரல் கொடுக்கவா?"}.
 {"has been banned","தடைசெய்யப்பட்டுள்ளது"}.
 {"has been kicked because of a system shutdown","கணினி பணிநிறுத்தம் காரணமாக உதைக்கப்பட்டுள்ளது"}.
 {"has been kicked because of an affiliation change","இணைப்பு மாற்றம் காரணமாக உதைக்கப்பட்டுள்ளது"}.
 {"has been kicked because the room has been changed to members-only","அறை உறுப்பினர்களுக்கு மட்டுமே மாற்றப்பட்டதால் உதைக்கப்பட்டுள்ளது"}.
 {"has been kicked","உதைக்கப்பட்டுள்ளது"}.
+{"Hash computed from the list of hats available in a room","ஆச் ஒரு அறையில் இருக்கும் தொப்பிகளின் பட்டியலிலிருந்து கணக்கிடப்பட்டது"}.
 {"Hash of the vCard-temp avatar of this room","இந்த அறையின் vcard-temp அவதாரத்தின் ஆச்"}.
+{"Hat hue","தொப்பி சாயல்"}.
+{"Hat title","தொப்பி தலைப்பு"}.
 {"Hat URI","தொப்பி யூரி"}.
 {"Hats limit exceeded","தொப்பிகள் வரம்பு மீறியது"}.
+{"Hey, <strong class=\"text-alert\">{{ username }}</strong>, if you'd like to change your password, maybe because you forgot your old one, you've come to the right place!","ஏய், <strong class=\"text-alert\">{{ username }}</strong>, உங்கள் கடவுச்சொல்லை மாற்ற விரும்பினால், பழையதை மறந்துவிட்டதால், நீங்கள் சரியான இடத்திற்கு வந்துவிட்டீர்கள்!"}.
+{"Hide","மறை"}.
+{"Hint","குறிப்பு"}.
 {"Host unknown","புரவலன் தெரியவில்லை"}.
+{"Hostname invalid","ஓச்ட்பெயர் தவறானது"}.
 {"HTTP File Upload","HTTP கோப்பு பதிவேற்றம்"}.
 {"Idle connection","செயலற்ற இணைப்பு"}.
+{"If checked once an account is created using this invite, it will automatically be added to your contact list.","இந்த அழைப்பைப் பயன்படுத்தி ஒரு கணக்கு உருவாக்கப்பட்டவுடன் சரிபார்த்தால், அது தானாகவே உங்கள் தொடர்பு பட்டியலில் சேர்க்கப்படும்."}.
+{"If this is not you, please disregard!","இது நீங்கள் இல்லையென்றால், தயவுசெய்து புறக்கணிக்கவும்!"}.
+{"If you already have {{ app_name }} installed, we recommend that you continue the account creation process using the app by clicking on the button below:","நீங்கள் ஏற்கனவே {{ app_name }} நிறுவியிருந்தால், கீழே உள்ள பொத்தானைக் சொடுக்கு செய்வதன் மூலம் பயன்பாட்டைப் பயன்படுத்தி கணக்கை உருவாக்கும் செயல்முறையைத் தொடருமாறு பரிந்துரைக்கிறோம்:"}.
+{"If you don't have an XMPP client installed yet, here's a list of suitable clients for your platform.","உங்களிடம் இன்னும் XMPP கிளையன்ட் நிறுவப்படவில்லை எனில், உங்கள் இயங்குதளத்திற்கு ஏற்ற வாடிக்கையாளர்களின் பட்டியல் இங்கே உள்ளது."}.
 {"If you don't see the CAPTCHA image here, visit the web page.","நீங்கள் இங்கே கேப்ட்சா படத்தைக் காணவில்லை என்றால், வலைப்பக்கத்தைப் பார்வையிடவும்."}.
 {"Import Directory","இறக்குமதி அடைவு"}.
 {"Import File","கோப்பு இறக்குமதி"}.
@@ -194,6 +264,7 @@
 {"Incorrect value of 'action' in data form","தரவு வடிவத்தில் 'செயல்' இன் தவறான மதிப்பு"}.
 {"Incorrect value of 'path' in data form","தரவு வடிவத்தில் 'பாதை' இன் தவறான மதிப்பு"}.
 {"Installed Modules:","நிறுவப்பட்ட தொகுதிகள்:"}.
+{"Installed ok? Great! <strong>Click or tap the button below</strong> to accept your invite and continue with your account setup:","நிறுவப்பட்டது சரியா? அருமை! உங்கள் அழைப்பை ஏற்று உங்கள் கணக்கு அமைப்பைத் தொடர <strong>கீழே உள்ள பொத்தானைக் சொடுக்கு செய்யவும் அல்லது தட்டவும்</strong>:"}.
 {"Install","நிறுவவும்"}.
 {"Insufficient privilege","போதிய சலுகை"}.
 {"Internal server error","உள் சேவையக பிழை"}.
@@ -201,6 +272,13 @@
 {"Invalid node name","தவறான முனை பெயர்"}.
 {"Invalid 'previd' value","தவறான 'முந்தைய' மதிப்பு"}.
 {"Invitations are not allowed in this conference","இந்த மாநாட்டில் அழைப்புகள் அனுமதிக்கப்படவில்லை"}.
+{"Invite expired","அழைப்பு காலாவதியானது"}.
+{"Invite Expired","அழைப்பு காலாவதியானது"}.
+{"Invite Options","அழைப்பு விருப்பங்கள்"}.
+{"Invite to {{ site_name }}","{{ site_name }} க்கு அழை"}.
+{"Invite User","பயனரை அழைக்கவும்"}.
+{"Invites","அழைக்கிறது"}.
+{"Invite","அழைக்கவும்"}.
 {"IP addresses","ஐபி முகவரிகள்"}.
 {"is now known as","இப்போது அழைக்கப்படுகிறது"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","பிழை செய்திகளை அறைக்கு அனுப்ப அனுமதிக்கப்படவில்லை. பங்கேற்பாளர் (~s) ஒரு பிழை செய்தியை (~s) அனுப்பி அறையிலிருந்து உதைத்துள்ளார்"}.
@@ -210,6 +288,7 @@
 {"January","மா-தை"}.
 {"JID normalization denied by service policy","பணி கொள்கையால் மறுக்கப்பட்ட சிட் இயல்பாக்கம்"}.
 {"JID normalization failed","சிட் இயல்பாக்கம் தோல்வியடைந்தது"}.
+{"Join {{ site_name }} with {{ app_name }}","{{ app_name }} உடன் {{ site_name }} இல் சேரவும்"}.
 {"Joined MIX channels of ~ts","~ts இன் கலவை சேனல்களில் சேர்ந்தது"}.
 {"Joined MIX channels:","இணைந்த கலவை சேனல்கள்:"}.
 {"joins the room","அறையில் இணைகிறது"}.
@@ -221,9 +300,13 @@
 {"Last message","கடைசி செய்தி"}.
 {"Last month","கடந்த மாதம்"}.
 {"Last year","கடந்த ஆண்டு"}.
+{"Launch {{ app_name }} and sign in using your account credentials.","{{ app_name }} ஐத் தொடங்கி, உங்கள் கணக்குச் சான்றுகளைப் பயன்படுத்தி உள்நுழையவும்."}.
+{"Launch Beagle IM, and select \\'Yes\\' to add a new account. Click the \\'+\\' button under the empty account list and then enter your credentials.","Beagle IM ஐ துவக்கி, புதிய கணக்கைச் சேர்க்க \\'ஆம்\\' என்பதைத் தேர்ந்தெடுக்கவும். வெற்றுக் கணக்குப் பட்டியலின் கீழ் உள்ள \\'+\\' பொத்தானைக் சொடுக்கு செய்து, உங்கள் சான்றுகளை உள்ளிடவும்."}.
 {"Least significant bits of SHA-256 hash of text should equal hexadecimal label","உரையின் SHA-256 ஆசின் குறைந்த குறிப்பிடத்தக்க பிட்கள் எக்சாடெசிமல் சிட்டை சமமாக இருக்க வேண்டும்"}.
 {"leaves the room","அறையை விட்டு வெளியேறுகிறது"}.
+{"List of Hats","தொப்பிகளின் பட்டியல்"}.
 {"List users with hats","தொப்பிகளுடன் பயனர்களை பட்டியலிடுங்கள்"}.
+{"Log in via web","இணையம் வழியாக உள்நுழைக"}.
 {"Logged Out","வெளியேறியது"}.
 {"Logging","பதிவு"}.
 {"Make participants list public","பங்கேற்பாளர்கள் பட்டியலிடுங்கள்"}.
@@ -240,9 +323,11 @@
 {"Max payload size in bytes","பைட்டுகளில் அதிகபட்ச பேலோட் அளவு"}.
 {"Maximum file size","அதிகபட்ச கோப்பு அளவு"}.
 {"Maximum Number of History Messages Returned by Room","அறையால் திரும்பிய அதிகபட்ச வரலாற்று செய்திகளின் எண்ணிக்கை"}.
+{"Maximum number of invites reached","அழைப்புகளின் அதிகபட்ச எண்ணிக்கையை அடைந்தது"}.
 {"Maximum number of items to persist","தொடர்ந்து அதிகபட்ச உருப்படிகளின் எண்ணிக்கை"}.
 {"Maximum Number of Occupants","அதிகபட்ச குடியிருப்பாளர்களின் எண்ணிக்கை"}.
 {"May","சி-வைகாசி"}.
+{"Members are allowed to invite others","உறுப்பினர்கள் மற்றவர்களை அழைக்க அனுமதிக்கப்படுகிறார்கள்"}.
 {"Membership is required to enter this room","இந்த அறைக்குள் நுழைய உறுப்பினர் தேவை"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","உங்கள் கடவுச்சொல்லை மனப்பாடம் செய்யுங்கள், அல்லது பாதுகாப்பான இடத்தில் வைக்கப்பட்டுள்ள ஒரு காகிதத்தில் எழுதுங்கள். உங்கள் கடவுச்சொல்லை மறந்துவிட்டால் அதை மீட்டெடுக்க எக்ச்எம்பிபியில் தானியங்கு வழி இல்லை."}.
 {"Mere Availability in XMPP (No Show Value)","எக்ச்எம்பிபியில் வெறும் கிடைக்கும் (காட்சி மதிப்பு இல்லை)"}.
@@ -257,6 +342,7 @@
 {"Moderators Only","மதிப்பீட்டாளர்கள் மட்டுமே"}.
 {"Moderator","மதிப்பீட்டாளர்"}.
 {"Module failed to handle the query","தொகுதி வினவலைக் கையாளத் தவறிவிட்டது"}.
+{"Monal Logo","மோனல் லோகோ"}.
 {"Monday","திங்கள்"}.
 {"Multicast","மல்டிகாச்ட்"}.
 {"Multiple <item/> elements are not allowed by RFC6121","பல <item/> கூறுகள் RFC6121 ஆல் அனுமதிக்கப்படாது"}.
@@ -267,6 +353,7 @@
 {"Neither 'jid' nor 'nick' attribute found","'சிட்' அல்லது 'நிக்' பண்புக்கூறு இல்லை"}.
 {"Neither 'role' nor 'affiliation' attribute found","'பங்கு' அல்லது 'இணைப்பு' பண்புக்கூறு இல்லை"}.
 {"Never","ஒருபோதும்"}.
+{"New Password","புதிய கடவுச்சொல்"}.
 {"New Password:","புதிய கடவுச்சொல்:"}.
 {"Nickname can't be empty","புனைப்பெயர் காலியாக இருக்க முடியாது"}.
 {"Nickname Registration at ","இல் புனைப்பெயர் பதிவு "}.
@@ -311,12 +398,16 @@
 {"None","எதுவுமில்லை"}.
 {"Not allowed","அனுமதிக்கப்படவில்லை"}.
 {"Not Found","கண்டுபிடிக்கப்படவில்லை"}.
+{"NOT FOUND","கிடைக்கவில்லை"}.
 {"Not subscribed","குழுசேரவில்லை"}.
 {"Notify subscribers when items are removed from the node","முனையிலிருந்து உருப்படிகள் அகற்றப்படும்போது சந்தாதாரர்களுக்கு அறிவிக்கவும்"}.
 {"Notify subscribers when the node configuration changes","முனை உள்ளமைவு மாறும்போது சந்தாதாரர்களுக்கு அறிவிக்கவும்"}.
 {"Notify subscribers when the node is deleted","முனை நீக்கப்படும் போது சந்தாதாரர்களுக்கு அறிவிக்கவும்"}.
 {"November","ஐ-கார்த்திகை"}.
+{"Number of active users","செயலில் உள்ள பயனர்களின் எண்ணிக்கை"}.
 {"Number of answers required","தேவையான பதில்களின் எண்ணிக்கை"}.
+{"Number of disabled users","ஊனமுற்ற பயனர்களின் எண்ணிக்கை"}.
+{"Number of idle users","செயலற்ற பயனர்களின் எண்ணிக்கை"}.
 {"Number of occupants","குடியிருப்பாளர்களின் எண்ணிக்கை"}.
 {"Number of Offline Messages","இணைப்பில்லாத செய்திகளின் எண்ணிக்கை"}.
 {"Number of online users","நிகழ்நிலை பயனர்களின் எண்ணிக்கை"}.
@@ -344,14 +435,20 @@
 {"Only service administrators are allowed to send service messages","பணி செய்திகளை அனுப்ப பணி நிர்வாகிகள் மட்டுமே அனுமதிக்கப்படுகிறார்கள்"}.
 {"Only those on a whitelist may associate leaf nodes with the collection","அனுமதிப்பட்டியலில் இருப்பவர்கள் மட்டுமே இலை முனைகளை சேகரிப்புடன் தொடர்புபடுத்தலாம்"}.
 {"Only those on a whitelist may subscribe and retrieve items","அனுமதிப்பட்டியலில் இருப்பவர்கள் மட்டுமே உருப்படிகளை குழுசேரலாம் மற்றும் மீட்டெடுக்கலாம்"}.
+{"Open the app","பயன்பாட்டைத் திறக்கவும்"}.
 {"Organization Name","அமைப்பு பெயர்"}.
 {"Organization Unit","அமைப்பு பிரிவு"}.
 {"Other Modules Available:","பிற தொகுதிகள் கிடைக்கின்றன:"}.
+{"Other software","மற்ற மென்பொருள்"}.
 {"Outgoing s2s Connections","வெளிச்செல்லும் எச் 2 எச் இணைப்புகள்"}.
 {"Owner privileges required","உரிமையாளர் சலுகைகள் தேவை"}.
 {"Packet relay is denied by service policy","பணி கொள்கையால் பாக்கெட் ரிலே மறுக்கப்படுகிறது"}.
+{"Page navigation","பக்க வழிசெலுத்தல்"}.
 {"Participant ID","பங்கேற்பாளர் ஐடி"}.
 {"Participant","பங்கேற்பாளர்"}.
+{"Password Change Success","கடவுச்சொல் மாற்றம் செய்"}.
+{"Password invalid","கடவுச்சொல் தவறானது"}.
+{"Password reset error","கடவுச்சொல் மீட்டமைப்பு பிழை"}.
 {"Password Verification","கடவுச்சொல் சரிபார்ப்பு"}.
 {"Password Verification:","கடவுச்சொல் சரிபார்ப்பு:"}.
 {"Password","கடவுச்சொல்"}.
@@ -365,6 +462,9 @@
 {"Ping query is incorrect","பிங் வினவல் தவறானது"}.
 {"Ping","பிங்"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","இந்த விருப்பங்கள் பில்டின் மென்சியா தரவுத்தளத்தை மட்டுமே காப்புப் பிரதி எடுக்கும் என்பதை நினைவில் கொள்க. நீங்கள் ODBC தொகுதியைப் பயன்படுத்துகிறீர்கள் என்றால், உங்கள் கவிமொ தரவுத்தளத்தையும் தனித்தனியாக காப்புப் பிரதி எடுக்க வேண்டும்."}.
+{"Please provide a password! Minimum length: {{ password_min_length }}","கடவுச்சொல்லை வழங்கவும்! குறைந்தபட்ச நீளம்: {{ password_min_length }}"}.
+{"Please provide a password!","கடவுச்சொல்லை வழங்கவும்!"}.
+{"Please provide a valid username!","சரியான பயனர்பெயரை வழங்கவும்!"}.
 {"Please, wait for a while before sending new voice request","தயவுசெய்து, புதிய குரல் கோரிக்கையை அனுப்புவதற்கு முன் சிறிது நேரம் காத்திருங்கள்"}.
 {"Pong","பாங்"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","'கேளுங்கள்' பண்புக்கூறு வைத்திருப்பது RFC6121 ஆல் அனுமதிக்கப்படவில்லை"}.
@@ -374,6 +474,7 @@
 {"Previous session PID has exited","முந்தைய அமர்வு பிஐடி வெளியேறியது"}.
 {"Previous session PID is dead","முந்தைய அமர்வு பிஐடி இறந்துவிட்டது"}.
 {"Previous session timed out","முந்தைய அமர்வு நேரம் முடிந்தது"}.
+{"Previous","முந்தைய"}.
 {"private, ","தனிப்பட்ட, "}.
 {"Public","பொது"}.
 {"Publish model","மாதிரி வெளியிடு"}.
@@ -391,15 +492,24 @@
 {"Receive notification of new items only","புதிய பொருட்களின் அறிவிப்பைப் பெறுங்கள்"}.
 {"Receive notification of new nodes only","புதிய முனைகளின் அறிவிப்பைப் பெறுங்கள்"}.
 {"Recipient is not in the conference room","பெறுநர் மாநாட்டு அறையில் இல்லை"}.
+{"Re-Enable User","பயனரை மீண்டும் இயக்கு"}.
 {"Register an XMPP account","எக்ச்எம்பி.பி கணக்கை பதிவு செய்யுங்கள்"}.
+{"Register on {{ site_name }}","{{ site_name }} இல் பதிவு செய்யவும்"}.
 {"Register","பதிவு செய்யுங்கள்"}.
+{"Registration error","பதிவு பிழை"}.
+{"Registration Error","பதிவு பிழை"}.
+{"Registration Form","பதிவு படிவம்"}.
+{"Registration Success","பதிவு செய்"}.
 {"Remote copy","தொலை நகல்"}.
 {"Remove a hat from a user","ஒரு பயனரிடமிருந்து ஒரு தொப்பியை அகற்றவும்"}.
 {"Remove User","பயனரை அகற்று"}.
+{"Renga Logo","லோகோவை வாங்கவும்"}.
 {"Replaced by new connection","புதிய இணைப்பு மூலம் மாற்றப்பட்டது"}.
 {"Request has timed out","கோரிக்கை நேரம் முடிந்துவிட்டது"}.
 {"Request is ignored","கோரிக்கை புறக்கணிக்கப்படுகிறது"}.
 {"Requested role","கோரப்பட்ட பங்கு"}.
+{"Reset Password on {{ site_name }}","{{ site_name }} இல் கடவுச்சொல்லை மீட்டமைக்கவும்"}.
+{"Reset Password","கடவுச்சொல்லை மீட்டமைக்கவும்"}.
 {"Resources","வளங்கள்"}.
 {"Restart Service","சேவையை மறுதொடக்கம் செய்யுங்கள்"}.
 {"Restore Backup from File at ","கோப்பிலிருந்து காப்புப்பிரதியை மீட்டெடுக்கவும் "}.
@@ -421,16 +531,21 @@
 {"Roster size","பட்டியல் அளவு"}.
 {"Running Nodes","இயங்கும் முனைகள்"}.
 {"~s invites you to the room ~s","~s எச் உங்களை அறைக்கு அழைக்கிறது ~s கள்"}.
+{"Sad person holding empty box","வெற்றுப் பெட்டியை வைத்திருக்கும் சோகமான நபர்"}.
 {"Saturday","காரிக்கிழமை"}.
+{"Scan invite code","அழைப்புக் குறியீட்டை வருடு செய்யவும்"}.
+{"Scan with mobile device","மொபைல் சாதனம் மூலம் வருடு செய்யவும்"}.
 {"Search from the date","தேதியிலிருந்து தேடுங்கள்"}.
 {"Search Results for ","தேடல் முடிவுகள் "}.
-{"Search the text","உரையைத் தேடுங்கள்"}.
+{"Search the text (obsolete)","உரையைத் தேடுங்கள் (வழக்கற்றது)"}.
 {"Search until the date","தேதி வரை தேடுங்கள்"}.
 {"Search users in ","பயனர்களைத் தேடுங்கள் "}.
+{"Select","தேர்ந்தெடு"}.
 {"Send announcement to all online users on all hosts","அனைத்து ஓச்ட்களிலும் அனைத்து நிகழ்நிலை பயனர்களுக்கும் அறிவிப்பை அனுப்பவும்"}.
 {"Send announcement to all online users","அனைத்து நிகழ்நிலை பயனர்களுக்கும் அறிவிப்பை அனுப்பவும்"}.
 {"Send announcement to all users on all hosts","அனைத்து ஓச்ட்களிலும் உள்ள அனைத்து பயனர்களுக்கும் அறிவிப்பை அனுப்பவும்"}.
 {"Send announcement to all users","அனைத்து பயனர்களுக்கும் அறிவிப்பை அனுப்பவும்"}.
+{"Send this invite to your device","இந்த அழைப்பை உங்கள் சாதனத்திற்கு அனுப்பவும்"}.
 {"September","ஆ-புரட்டாசி"}.
 {"Server:","சேவையகம்:"}.
 {"Service list retrieval timed out","பணி பட்டியல் மீட்டெடுப்பு நேரம் முடிந்தது"}.
@@ -441,27 +556,44 @@
 {"Show Integral Table","ஒருங்கிணைந்த அட்டவணையைக் காட்டு"}.
 {"Show Occupants Join/Leave","காட்டு குடியிருப்பாளர்கள் சேர/விடுகிறார்கள்"}.
 {"Show Ordinary Table","சாதாரண அட்டவணையைக் காட்டு"}.
+{"Showing apps for <span class='platform-name'>your current platform</span> only. You may also <a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">view all apps.</a>","<span class='platform-name'>உங்கள் தற்போதைய இயங்குதளத்திற்கு</span> மட்டும் பயன்பாடுகளைக் காட்டுகிறது. நீங்கள் <a href='#' id='show-all-clients-button' tabindex=\"{{ tabidx }}\">அனைத்து பயன்பாடுகளையும் பார்க்கலாம்.</a>"}.
+{"Show","காட்டு"}.
 {"Shut Down Service","சேவையை மூடு"}.
+{"Siskin IM Logo","பைது mi லோகோ"}.
 {"SOCKS5 Bytestreams","SOCKS5 BYTESTREAMS"}.
 {"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","சில எக்ச்எம்பிபி வாடிக்கையாளர்கள் உங்கள் கடவுச்சொல்லை கணினியில் சேமிக்க முடியும், ஆனால் பாதுகாப்பு காரணங்களுக்காக இதை உங்கள் தனிப்பட்ட கணினியில் மட்டுமே செய்ய வேண்டும்."}.
+{"Sorry, it looks like this invite code has expired!","மன்னிக்கவும், இந்த அழைப்புக் குறியீடு காலாவதியானது போல் தெரிகிறது!"}.
+{"Sorry, there was a problem changing your account password.","மன்னிக்கவும், உங்கள் கணக்கின் கடவுச்சொல்லை மாற்றுவதில் சிக்கல் உள்ளது."}.
+{"Sorry, there was a problem registering your account.","மன்னிக்கவும், உங்கள் கணக்கைப் பதிவு செய்வதில் சிக்கல்."}.
 {"Sources Specs:","ஆதார விவரக்குறிப்புகள்:"}.
 {"Specify the access model","அணுகல் மாதிரியைக் குறிப்பிடவும்"}.
 {"Specify the event message type","நிகழ்வு செய்தி வகையைக் குறிப்பிடவும்"}.
 {"Specify the publisher model","வெளியீட்டாளர் மாதிரியைக் குறிப்பிடவும்"}.
 {"Stanza id is not valid","முடிப்பு ஐடி செல்லுபடியாகாது"}.
 {"Stanza ID","முடிப்பு"}.
+{"Startpage","தொடக்கப்பக்கம்"}.
 {"Statically specify a replyto of the node owner(s)","முனை உரிமையாளரின் (கள்) ஒரு பதிலை நிலையான முறையில் குறிப்பிடவும்"}.
+{"Step 1: Download and install {{ app_name }}","படி 1: பதிவிறக்கி நிறுவவும் {{ app_name }}"}.
+{"Step 1: Install {{ app_name }}","படி 1: {{ app_name }} ஐ நிறுவவும்"}.
+{"Step 2: Activate your account","படி 2: உங்கள் கணக்கை இயக்கவும்"}.
+{"Step 2: Connect {{ app_name }} to your new account","படி 2: உங்கள் புதிய கணக்குடன் {{ app_name }} ஐ இணைக்கவும்"}.
 {"Stopped Nodes","நிறுத்தப்பட்ட முனைகள்"}.
 {"Store binary backup:","பைனரி காப்புப்பிரதியை சேமிக்கவும்:"}.
 {"Store plain text backup:","எளிய உரை காப்புப்பிரதியை சேமிக்கவும்:"}.
 {"Stream management is already enabled","ச்ட்ரீம் மேலாண்மை ஏற்கனவே இயக்கப்பட்டது"}.
 {"Stream management is not enabled","ச்ட்ரீம் மேலாண்மை இயக்கப்படவில்லை"}.
+{"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting using <strong>{{ app_name }}</strong> you need to first register an account.","<strong>{{ site_name }}</strong> என்பது XMPP இன் ஒரு பகுதியாகும், இது பாதுகாப்பான மற்றும் பரவலாக்கப்பட்ட செய்தி பிணையம் ஆகும். <strong>{{ app_name }}</strong> ஐப் பயன்படுத்தி அரட்டையைத் தொடங்க, நீங்கள் முதலில் ஒரு கணக்கைப் பதிவு செய்ய வேண்டும்."}.
+{"<strong>{{ site_name }}</strong> is part of XMPP, a secure and decentralized messaging network. To begin chatting you need to first register an account.","<strong>{{ site_name }}</strong> என்பது XMPP இன் ஒரு பகுதியாகும், இது பாதுகாப்பான மற்றும் பரவலாக்கப்பட்ட செய்தி பிணையம் ஆகும். அரட்டையைத் தொடங்க நீங்கள் முதலில் ஒரு கணக்கைப் பதிவு செய்ய வேண்டும்."}.
+{"<strong>No suitable software installed right now?</strong> You can also log in to your account through our online web chat!","<strong>தற்போது பொருத்தமான மென்பொருள் எதுவும் நிறுவப்படவில்லையா?</strong> எங்கள் நிகழ்நிலை இணைய அரட்டை மூலமாகவும் உங்கள் கணக்கில் உள்நுழையலாம்!"}.
+{"<strong>Tip:</strong> You can open this invite on your mobile device by scanning a barcode with your camera.","<strong>உதவிக்குறிப்பு:</strong> உங்கள் கேமரா மூலம் பார்கோடை வருடு செய்வதன் மூலம் உங்கள் மொபைல் சாதனத்தில் இந்த அழைப்பைத் திறக்கலாம்."}.
 {"Subject","பொருள்"}.
 {"Submitted","சமர்ப்பிக்கப்பட்டது"}.
+{"Submit","சமர்ப்பிக்கவும்"}.
 {"Subscriber Address","சந்தாதாரர் முகவரி"}.
 {"Subscribers may publish","சந்தாதாரர்கள் வெளியிடலாம்"}.
 {"Subscription requests must be approved and only subscribers may retrieve items","சந்தா கோரிக்கைகள் அங்கீகரிக்கப்பட வேண்டும் மற்றும் சந்தாதாரர்கள் மட்டுமே உருப்படிகளை மீட்டெடுக்க முடியும்"}.
 {"Subscriptions are not allowed","சந்தாக்கள் அனுமதிக்கப்படவில்லை"}.
+{"Suggested Name","பரிந்துரைக்கப்பட்ட பெயர்"}.
 {"Sunday","ஞாயிற்றுக்கிழமை"}.
 {"Text associated with a picture","ஒரு படத்துடன் தொடர்புடைய உரை"}.
 {"Text associated with a sound","ஒலி ஒரு ஒலியுடன் தொடர்புடையது"}.
@@ -485,6 +617,9 @@
 {"The JIDs of those to contact with questions","கேள்விகளுடன் தொடர்பு கொள்ளுபவர்களின் குழந்தைகள்"}.
 {"The JIDs of those with an affiliation of owner","உரிமையாளரின் இணைப்பு உள்ளவர்களின் குழந்தைகள்"}.
 {"The JIDs of those with an affiliation of publisher","வெளியீட்டாளரின் இணைப்பு உள்ளவர்களின் குழந்தைகள்"}.
+{"The list of all active users","அனைத்து செயலில் உள்ள பயனர்களின் பட்டியல்"}.
+{"The list of all disabled users","அனைத்து முடக்கப்பட்ட பயனர்களின் பட்டியல்"}.
+{"The list of all idle users","அனைத்து செயலற்ற பயனர்களின் பட்டியல்"}.
 {"The list of all online users","அனைத்து நிகழ்நிலை பயனர்களின் பட்டியல்"}.
 {"The list of all users","அனைத்து பயனர்களின் பட்டியல்"}.
 {"The list of JIDs that may associate leaf nodes with a collection","இலை முனைகளை ஒரு தொகுப்போடு தொடர்புபடுத்தக்கூடிய JIDS இன் பட்டியல்"}.
@@ -506,16 +641,21 @@
 {"The presence states for which an entity wants to receive notifications","ஒரு நிறுவனம் அறிவிப்புகளைப் பெற விரும்பும் இருப்பு நிலைகள்"}.
 {"The query is only allowed from local users","வினவல் உள்ளக பயனர்களிடமிருந்து மட்டுமே அனுமதிக்கப்படுகிறது"}.
 {"The query must not contain <item/> elements","வினவலில் <item/>கூறுகள் இருக்கக் கூடாது"}.
+{"The role","பாத்திரம்"}.
 {"The room subject can be modified by participants","அறை பொருள் பங்கேற்பாளர்களால் மாற்றப்படலாம்"}.
 {"The semantic type information of data in the node, usually specified by the namespace of the payload (if any)","முனையில் உள்ள தரவின் சொற்பொருள் வகை செய்தி, பொதுவாக பேலோடின் பெயர்வெளியால் குறிப்பிடப்படுகிறது (ஏதேனும் இருந்தால்)"}.
 {"The sender of the last received message","கடைசியாக பெறப்பட்ட செய்தியை அனுப்பு"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","ச்டான்சாவில் ஒரே <active/> உறுப்பு, ஒரு <default/>உறுப்பு அல்லது ஒரு <list/>உறுப்பு மட்டுமே இருக்க வேண்டும்"}.
 {"The subscription identifier associated with the subscription request","சந்தா கோரிக்கையுடன் தொடர்புடைய சந்தா அடையாளங்காட்டி"}.
+{"The token provided is either invalid or expired.","வழங்கப்பட்ட கிள்ளாக்கு தவறானது அல்லது காலாவதியானது."}.
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","பொருத்தமான செய்தி உடல் உறுப்பை உருவாக்குவதற்காக பேலோடுகளுக்கு பயன்படுத்தக்கூடிய எக்ச்எச்எல் மாற்றத்தின் முகவரி."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","செல்லுபடியாகும் தரவு படிவங்களை உருவாக்குவதற்காக பேலோட் வடிவத்தில் பயன்படுத்தக்கூடிய ஒரு எக்ச்எச்எல் உருமாற்றத்தின் முகவரி, கிளையன்ட் பொதுவான தரவு படிவங்கள் வழங்குதல் எஞ்சின் பயன்படுத்தி காண்பிக்க முடியும்"}.
 {"There was an error changing the password: ","கடவுச்சொல்லை மாற்றுவதில் பிழை ஏற்பட்டது: "}.
 {"There was an error creating the account: ","கணக்கை உருவாக்கும் பிழை இருந்தது: "}.
 {"There was an error deleting the account: ","கணக்கை நீக்குவதில் பிழை ஏற்பட்டது: "}.
+{"This button works only if you have the app installed already!","நீங்கள் ஏற்கனவே பயன்பாட்டை நிறுவியிருந்தால் மட்டுமே இந்த பொத்தான் செயல்படும்!"}.
+{"This form allows you to create an invite that you can send to someone else, so they can create a new account at this service. Be aware that you need to have the <strong>necessary rights</strong> to do so, otherwise this command will fail.","வேறொருவருக்கு நீங்கள் அனுப்பக்கூடிய அழைப்பை உருவாக்க இந்தப் படிவம் உங்களை அனுமதிக்கிறது, எனவே அவர்கள் இந்தச் சேவையில் புதிய கணக்கை உருவாக்க முடியும். அவ்வாறு செய்ய உங்களிடம் <strong>தேவையான உரிமைகள்</strong> இருக்க வேண்டும், இல்லையெனில் இந்த கட்டளை தோல்வியடையும்."}.
+{"This is an invite from <strong>{{ inviter }}</strong> to connect and chat on the XMPP network. If you already have an XMPP client installed just press the button below!","இது XMPP நெட்வொர்க்கில் இணைக்க மற்றும் அரட்டையடிக்க <strong>{{ inviter }}</strong> இடமிருந்து வந்த அழைப்பு. உங்களிடம் ஏற்கனவே XMPP கிளையன்ட் நிறுவப்பட்டிருந்தால், கீழே உள்ள பொத்தானை அழுத்தவும்!"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","இது வழக்கு உணர்வற்றது: மாக்பெத் மற்றும் மாக்பெத் தான்."}.
 {"This page allows to register an XMPP account in this XMPP server. Your JID (Jabber ID) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","இந்த XMPP சேவையகத்தில் ஒரு XMPP கணக்கை பதிவு செய்ய இந்த பக்கம் அனுமதிக்கிறது. உங்கள் சிட் (சாபர் ஐடி) படிவமாக இருக்கும்: பயனர்பெயர்@சேவையகம். புலங்களை சரியாக நிரப்ப வழிமுறைகளை கவனமாகப் படியுங்கள்."}.
 {"This page allows to unregister an XMPP account in this XMPP server.","இந்த எக்ச்எம்பி.பி சேவையகத்தில் எக்ச்எம்பி.பி கணக்கை பதிவு செய்ய இந்த பக்கம் அனுமதிக்கிறது."}.
@@ -524,7 +664,10 @@
 {"Thursday","வியாழக்கிழமை"}.
 {"Time delay","நேர நேரந்தவறுகை"}.
 {"Timed out waiting for stream resumption","ச்ட்ரீம் மறுதொடக்கத்திற்காக காத்திருக்கும் நேரம்"}.
+{"To continue chatting, you need to enter your new account credentials into your chosen XMPP software.","அரட்டையைத் தொடர, நீங்கள் தேர்ந்தெடுத்த XMPP மென்பொருளில் உங்கள் புதிய கணக்குச் சான்றுகளை உள்ளிட வேண்டும்."}.
+{"To get started, you need to install an app for your platform:","தொடங்குவதற்கு, உங்கள் இயங்குதளத்திற்கான பயன்பாட்டை நிறுவ வேண்டும்:"}.
 {"To register, visit ~s","பதிவு செய்ய, ~s பார்வையிடவும்"}.
+{"To start chatting, you need to enter your new account credentials into your chosen XMPP software.","அரட்டையைத் தொடங்க, நீங்கள் தேர்ந்தெடுத்த XMPP மென்பொருளில் உங்கள் புதிய கணக்குச் சான்றுகளை உள்ளிட வேண்டும்."}.
 {"To ~ts","~ts K"}.
 {"Token TTL","கிள்ளாக்கு டி.டி.எல்"}.
 {"Too many active bytestreams","பல செயலில் உள்ள பைட்டிரீம்கள்"}.
@@ -557,7 +700,9 @@
 {"Updating the vCard is not supported by the vCard storage backend","VCARD ஐப் புதுப்பிப்பது VCARD சேமிப்பக பின்தளத்தில் ஆதரிக்கப்படவில்லை"}.
 {"Upgrade","மேம்படுத்தல்"}.
 {"URL for Archived Discussion Logs","காப்பகப்படுத்தப்பட்ட கலந்துரையாடல் பதிவுகளுக்கான முகவரி"}.
+{"Use a <em>QR code</em> scanner on your mobile device to scan the code below:","கீழே உள்ள குறியீட்டை வருடு செய்ய உங்கள் மொபைல் சாதனத்தில் <em>QR குறியீடு</em> ச்கேனரைப் பயன்படுத்தவும்:"}.
 {"User already exists","பயனர் ஏற்கனவே உள்ளது"}.
+{"User is not allowed to create invites","அழைப்புகளை உருவாக்க பயனருக்கு இசைவு இல்லை"}.
 {"User (jid)","பயனர் (சிட்)"}.
 {"User JID","பயனர் சிட்"}.
 {"User Management","பயனர் மேலாண்மை"}.
@@ -566,6 +711,11 @@
 {"User session not found","பயனர் அமர்வு காணப்படவில்லை"}.
 {"User session terminated","பயனர் அமர்வு நிறுத்தப்பட்டது"}.
 {"User ~ts","பயனர் ~ts"}.
+{"Username contains invalid characters","பயனர்பெயரில் தவறான எழுத்துகள் உள்ளன"}.
+{"Username exists already","பயனர் பெயர் ஏற்கனவே உள்ளது"}.
+{"Username invalid","பயனர்பெயர் தவறானது"}.
+{"Username is reserved","பயனர் பெயர் ஒதுக்கப்பட்டுள்ளது"}.
+{"Username","பயனர் பெயர்"}.
 {"Username:","பயனர்பெயர்:"}.
 {"Users are not allowed to register accounts so quickly","பயனர்கள் கணக்குகளை விரைவாக பதிவு செய்ய அனுமதிக்கப்படுவதில்லை"}.
 {"Users Last Activity","பயனர்கள் கடைசி செயல்பாடு"}.
@@ -586,6 +736,7 @@
 {"Voice request","குரல் கோரிக்கை"}.
 {"Web client which allows to join the room anonymously","அநாமதேயமாக அறையில் சேர அனுமதிக்கும் வலை கிளையண்ட்"}.
 {"Wednesday","புதன்கிழமை"}.
+{"Welcome to {{ site_name }}","{{ site_name }} க்கு வரவேற்கிறோம்"}.
 {"When a new subscription is processed and whenever a subscriber comes online","புதிய சந்தா செயலாக்கப்படும் போது, சந்தாதாரர் ஆன்லைனில் வரும்போதெல்லாம்"}.
 {"When a new subscription is processed","புதிய சந்தா செயலாக்கப்படும் போது"}.
 {"When to send the last published item","கடைசியாக வெளியிடப்பட்ட உருப்படியை எப்போது அனுப்ப வேண்டும்"}.
@@ -602,6 +753,7 @@
 {"Wrong parameters in the web formulary","வலை சூத்திரத்தில் தவறான அளவுருக்கள்"}.
 {"Wrong xmlns","தவறான xmlns"}.
 {"XMPP Account Registration","எக்ச்எம்பிபி கணக்கு பதிவு"}.
+{"XMPP client for Haiku","ஐக்கூவுக்கான XMPP கிளையன்ட்"}.
 {"XMPP Domains","எக்ச்எம்பிபி களங்கள்"}.
 {"XMPP Show Value of Away","எக்ச்எம்பிபி சோ மதிப்பைக் காட்டுகிறது"}.
 {"XMPP Show Value of Chat","எக்ச்எம்பிபி அரட்டையின் மதிப்பைக் காட்டுகிறது"}.
@@ -611,8 +763,20 @@
 {"You are being removed from the room because of a system shutdown","கணினி பணிநிறுத்தம் காரணமாக நீங்கள் அறையிலிருந்து அகற்றப்படுகிறீர்கள்"}.
 {"You are not allowed to send private messages","தனிப்பட்ட செய்திகளை அனுப்ப உங்களுக்கு இசைவு இல்லை"}.
 {"You are not joined to the channel","நீங்கள் சேனலுடன் சேரவில்லை"}.
+{"You can connect to {{ site_name }} using any XMPP-compatible software. If your preferred software is not listed above, you may still <a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>register an account manually</a>.","எந்த XMPP-இணக்கமான மென்பொருளையும் பயன்படுத்தி {{ site_name }} உடன் இணைக்கலாம். உங்கள் விருப்பமான மென்பொருள் மேலே பட்டியலிடப்படவில்லை என்றால், நீங்கள் இன்னும் <a href=\"{{ registration_url }}\" tabindex='{{ tabidx }}'>ஒரு கணக்கை கைமுறையாகப் பதிவு செய்யலாம்</a>."}.
 {"You can later change your password using an XMPP client.","எக்ச்எம்பிபி கிளையண்டைப் பயன்படுத்தி உங்கள் கடவுச்சொல்லை பின்னர் மாற்றலாம்."}.
+{"You can now set up {{ app_name }} and connect it to your new account.","நீங்கள் இப்போது {{ app_name }} ஐ அமைத்து உங்கள் புதிய கணக்குடன் இணைக்கலாம்."}.
+{"You can start chatting right away with {{ app_name }}. Let's get started!","{{ app_name }} உடன் நீங்கள் இப்போதே அரட்டையடிக்கத் தொடங்கலாம். தொடங்குவோம்!"}.
+{"You can suggest a username for the account to be created with this invite.","இந்த அழைப்பின் மூலம் உருவாக்கப்படும் கணக்கிற்கான பயனர்பெயரை நீங்கள் பரிந்துரைக்கலாம்."}.
+{"You can transfer this invite to a mobile device by scanning the QR code below with its camera.","கீழே உள்ள QR குறியீட்டை அதன் கேமரா மூலம் வருடு செய்வதன் மூலம் இந்த அழைப்பை மொபைல் சாதனத்திற்கு மாற்றலாம்."}.
+{"You can transfer this invite to your mobile device by scanning a code with your camera.","உங்கள் கேமரா மூலம் குறியீட்டை வருடு செய்வதன் மூலம் இந்த அழைப்பை உங்கள் மொபைல் சாதனத்திற்கு மாற்றலாம்."}.
 {"You have been banned from this room","இந்த அறையிலிருந்து நீங்கள் தடை செய்யப்பட்டுள்ளீர்கள்"}.
+{"You have been invited to chat on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","XMPP பாதுகாப்பான மற்றும் பரவலாக்கப்பட்ட செய்தி நெட்வொர்க்கின் ஒரு பகுதியான {{ site_name }} இல் அரட்டையடிக்க அழைக்கப்பட்டுள்ளீர்கள்."}.
+{"You have been invited to chat on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","XMPP பாதுகாப்பான மற்றும் பரவலாக்கப்பட்ட செய்தி நெட்வொர்க்கின் ஒரு பகுதியான <strong>{{ site_name }}</strong> இல் அரட்டையடிக்க அழைக்கப்பட்டுள்ளீர்கள்."}.
+{"You have been invited to chat with <strong>{{ inviter }}</strong> on {{ site_name }}, part of the XMPP secure and decentralized messaging network.","XMPP பாதுகாப்பான மற்றும் பரவலாக்கப்பட்ட செய்தி நெட்வொர்க்கின் ஒரு பகுதியான {{ site_name }} இல் <strong>{{ inviter }}</strong> உடன் அரட்டையடிக்க அழைக்கப்பட்டுள்ளீர்கள்."}.
+{"You have been invited to chat with <strong>{{ inviter }}</strong> on <strong>{{ site_name }}</strong>, part of the XMPP secure and decentralized messaging network.","XMPP பாதுகாப்பான மற்றும் பரவலாக்கப்பட்ட செய்தி நெட்வொர்க்கின் ஒரு பகுதியான <strong>{{ site_name }}</strong> இல் <strong>{{ inviter }}</strong> உடன் அரட்டையடிக்க அழைக்கப்பட்டுள்ளீர்கள்."}.
+{"You have changed your password on <strong>{{ site_name }}</strong>.","<strong>{{ site_name }}</strong> இல் உங்கள் கடவுச்சொல்லை மாற்றியுள்ளீர்கள்."}.
+{"You have created an account on <strong>{{ site_name }}</strong>.","நீங்கள் <strong>{{ site_name }}</strong> இல் கணக்கை உருவாக்கியுள்ளீர்கள்."}.
 {"You have joined too many conferences","நீங்கள் பல மாநாடுகளில் சேர்ந்துள்ளீர்கள்"}.
 {"You must fill in field \"Nickname\" in the form","நீங்கள் வடிவத்தில் புலம் \"புனைப்பெயரை\" நிரப்ப வேண்டும்"}.
 {"You need a client that supports x:data and CAPTCHA to register","எக்ச்: தரவு மற்றும் கேப்ட்சா பதிவு செய்ய உங்களுக்கு ஒரு வாங்கி தேவை"}.
@@ -620,6 +784,8 @@
 {"You need an x:data capable client to search","தேட உங்களுக்கு ஒரு ஃச் தேவை: தேட தரவு திறன் கொண்ட வாங்கி"}.
 {"Your active privacy list has denied the routing of this stanza.","உங்கள் செயலில் உள்ள தனியுரிமை பட்டியல் இந்த சரணத்தை வழிநடத்துவதை மறுத்துள்ளது."}.
 {"Your contact offline message queue is full. The message has been discarded.","உங்கள் தொடர்பு இணைப்பில்லாத செய்தி வரிசை நிரம்பியுள்ளது. செய்தி நிராகரிக்கப்பட்டுள்ளது."}.
+{"Your Invite-Link:","உங்கள் அழைப்பு-இணைப்பு:"}.
+{"Your password is stored encrypted on the server and will not be accessible after you close this page. Keep it safe and never share it with anyone.","உங்கள் கடவுச்சொல் சர்வரில் என்க்ரிப்ட் செய்யப்பட்டு சேமிக்கப்பட்டு, இந்தப் பக்கத்தை மூடிய பிறகு அணுக முடியாது. அதைப் பாதுகாப்பாக வைத்திருங்கள், யாருடனும் பகிர வேண்டாம்."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","உங்கள் சந்தா கோரிக்கை மற்றும்/அல்லது செய்திகளுக்கான செய்திகள் தடுக்கப்பட்டுள்ளன ~s. உங்கள் சந்தா கோரிக்கையைத் தடுக்க, ~s கள் பார்வையிடவும்"}.
 {"Your XMPP account was successfully registered.","உங்கள் எக்ச்எம்பிபி கணக்கு வெற்றிகரமாக பதிவு செய்யப்பட்டது."}.
 {"Your XMPP account was successfully unregistered.","உங்கள் எக்ச்எம்பிபி கணக்கு வெற்றிகரமாக பதிவு செய்யப்படவில்லை."}.
