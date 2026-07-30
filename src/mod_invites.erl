@@ -158,7 +158,7 @@ mod_doc() ->
            ?T("If you'd rather want to use an external service, set `landing_page` "
               "to something like "
               "`http://{{ host }}:8080/easy-xmpp-invites/#{{ invite.uri|strip_protocol }}` "
-              "or `https://invites.joinjabber.org/#{{ invite.uri|strip_protocol }}`.")],
+              "or `https://invite.joinjabber.org/#{{ invite.uri|strip_protocol }}`.")],
       note => "improved in 26.07",
       opts =>
           [{access_create_account,
