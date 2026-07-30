@@ -274,11 +274,14 @@ mod_opt_type(cache_life_time) ->
 listen_opt_type(tls_verify) ->
     econf:bool();
 listen_opt_type(max_payload_size) ->
+    econf:pos_int(infinity);
+listen_opt_type(pre_auth_max_payload_size) ->
     econf:pos_int(infinity).
 
 listen_options() ->
     [{max_fsm_queue, 10000},
      {max_payload_size, infinity},
+     {pre_auth_max_payload_size, 16000},
      {tls, false},
      {tls_verify, false}].
 

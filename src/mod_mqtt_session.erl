@@ -49,7 +49,8 @@
 		codec                 :: mqtt_codec:state(),
 		queue                 :: undefined | p1_queue:queue(publish()),
 		tls                   :: boolean(),
-		tls_verify            :: boolean()}).
+		tls_verify            :: boolean(),
+                post_auth_max_size    :: pos_integer() | infinity}).
 
 -type acks() :: #{non_neg_integer() => pubrec()}.
 -type subscriptions() :: #{binary() => {sub_opts(), non_neg_integer()}}.
@@ -161,11 +162,13 @@ format_error(Reason) ->
 %%%===================================================================
 init([SockMod, Socket, ListenOpts]) ->
     MaxSize = proplists:get_value(max_payload_size, ListenOpts, infinity),
+    PreAuthMaxSize = proplists:get_value(pre_auth_max_payload_size, ListenOpts, MaxSize),
     State1 = #state{socket = {SockMod, Socket},
 		    id = p1_rand:uniform(65535),
 		    tls = proplists:get_bool(tls, ListenOpts),
 		    tls_verify = proplists:get_bool(tls_verify, ListenOpts),
-		    codec = mqtt_codec:new(MaxSize)},
+		    codec = mqtt_codec:new(PreAuthMaxSize),
+		    post_auth_max_size = MaxSize},
     Timeout = timer:seconds(30),
     State2 = set_timeout(State1, Timeout),
     {ok, State2, Timeout}.
@@ -485,7 +488,7 @@ open_session(State, JID, _CleanStart = true) ->
 
 -spec register_session(state(), jid(), undefined | pid()) ->
                    {ok, boolean(), state()} | {error, state(), error_reason()}.
-register_session(#state{peername = IP} = State, JID, Parent) ->
+register_session(#state{peername = IP, codec = Codec, post_auth_max_size = MaxSize} = State, JID, Parent) ->
     USR = {_, S, _} = jid:tolower(JID),
     case mod_mqtt:open_session(USR) of
 	ok ->
@@ -508,7 +511,9 @@ register_session(#state{peername = IP} = State, JID, Parent) ->
 			    Q1 ->
 				Q1
 			end,
-                    {ok, is_pid(Parent), State#state{jid = JID, queue = Q}};
+                    {ok, is_pid(Parent), State#state{jid = JID,
+						     codec = mqtt_codec:update_max_size(Codec, MaxSize),
+						     queue = Q}};
 		{error, Why} ->
                     mod_mqtt:close_session(USR),
 		    {error, State#state{session_expiry = 0}, Why}

@@ -18,7 +18,7 @@
 -module(mqtt_codec).
 
 %% API
--export([new/1, new/2, renew/1, decode/2, encode/2]).
+-export([new/1, new/2, renew/1, decode/2, encode/2, update_max_size/2]).
 -export([pp/1, pp/2, format_error/1, format_reason_code/1]).
 -export([error_reason_code/1, is_error_code/1]).
 %% Validators
@@ -156,6 +156,10 @@ encode(Version, Pkt) ->
         #disconnect{} -> encode_disconnect(Version, Pkt);
         #auth{} -> encode_auth(Pkt)
     end.
+
+-spec update_max_size(state(), pos_integer() | infinity) -> state().
+update_max_size(State, MaxSize) ->
+    State#codec_state{max_size = MaxSize}.
 
 -spec pp(any()) -> iolist().
 pp(Term) ->
