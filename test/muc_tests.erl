@@ -53,7 +53,8 @@ single_cases() ->
       single_test(configure_non_existent),
       single_test(cancel_configure_non_existent),
       single_test(service_subscriptions),
-      single_test(set_room_affiliation)]}.
+      single_test(set_room_affiliation),
+      single_test(hats_without_xdata)]}.
 
 service_presence_error(Config) ->
     Service = muc_jid(Config),
@@ -244,32 +245,100 @@ service_subscriptions(Config) ->
     disconnect(Config).
 
 set_room_affiliation(Config) ->
-  #jid{server = RoomService} = muc_jid(Config),
-  RoomName = <<"set_room_affiliation">>,
-  RoomJID = jid:make(RoomName, RoomService),
-  MyJID = my_jid(Config),
-  PeerJID = jid:remove_resource(?config(slave, Config)),
+    #jid{server = RoomService} = muc_jid(Config),
+    RoomName = <<"set_room_affiliation">>,
+    RoomJID = jid:make(RoomName, RoomService),
+    MyJID = my_jid(Config),
+    PeerJID = jid:remove_resource(?config(slave, Config)),
 
-  ct:pal("joining room ~p", [RoomJID]),
-  ok = join_new(Config, RoomJID),
+    ct:pal("joining room ~p", [RoomJID]),
+    ok = join_new(Config, RoomJID),
 
-  ct:pal("setting affiliation in room ~p to 'member' for ~p", [RoomJID, PeerJID]),
-  ServerHost = ?config(server_host, Config),
-  WebPort = ct:get_config(web_port, 5280),
-  RequestURL = "http://" ++ ServerHost ++ ":" ++ integer_to_list(WebPort) ++ "/api/set_room_affiliation",
-  Headers = [{"X-Admin", "true"}],
-  ContentType = "application/json",
-  Body = misc:json_encode(#{room => RoomName, service => RoomService,
-                            user => PeerJID#jid.luser, host => PeerJID#jid.lserver,
-                            affiliation => member}),
-  {ok, {{_, 200, _}, _, _}} = httpc:request(post, {RequestURL, Headers, ContentType, Body}, [], []),
+    ct:pal("setting affiliation in room ~p to 'member' for ~p", [RoomJID, PeerJID]),
+    ServerHost = ?config(server_host, Config),
+    WebPort = ct:get_config(web_port, 5280),
+    RequestURL = "http://" ++ ServerHost ++ ":" ++ integer_to_list(WebPort) ++ "/api/set_room_affiliation",
+    Headers = [{"X-Admin", "true"}],
+    ContentType = "application/json",
+    Body = misc:json_encode(#{room => RoomName, service => RoomService,
+                              user => PeerJID#jid.luser, host => PeerJID#jid.lserver,
+                              affiliation => member}),
+    {ok, {{_, 200, _}, _, _}} = httpc:request(post, {RequestURL, Headers, ContentType, Body}, [], []),
 
-  #message{id = _, from = RoomJID, to = MyJID, sub_els = [
-    #muc_user{items = [
-      #muc_item{affiliation = member, role = none, jid = PeerJID}]}]} = recv_message(Config),
+    #message{id = _, from = RoomJID, to = MyJID, sub_els = [
+	#muc_user{items = [
+	    #muc_item{affiliation = member, role = none, jid = PeerJID}]}]} = recv_message(Config),
 
-  ok = leave(Config, RoomJID),
-  disconnect(Config).
+    ok = leave(Config, RoomJID),
+    disconnect(Config).
+
+hats_without_xdata(Config) ->
+    RoomJID = muc_room_jid(Config),
+    MyJID = my_jid(Config),
+    MyNick = ?config(nick, Config),
+    MyRoomJID = jid:replace_resource(RoomJID, MyNick),
+
+    ct:pal("joining room ~p", [RoomJID]),
+    ok = join_new(Config, RoomJID),
+
+    CommandCreate =
+	#adhoc_command{action = complete, node = <<"urn:xmpp:hats:commands:create">>, xdata = #xdata{
+	    type = form, fields = [
+		#xdata_field{var = <<"FORM_TYPE">>, values = [<<"urn:xmpp:hats:commands">>]},
+		#xdata_field{var = <<"hats#title">>, values = [<<"Test">>]},
+		#xdata_field{var = <<"hats#uri">>, values = [<<"https://example.com/Test">>]},
+		#xdata_field{var = <<"hats#hue">>, values = [<<"100">>]}
+	    ]}},
+    ?match(#iq{type = error, sub_els = [#adhoc_command{}, #stanza_error{reason = 'bad-request'}]},
+           send_recv(Config, #iq{type = set, to = RoomJID,
+                                 sub_els = [CommandCreate#adhoc_command{xdata = undefined}]})),
+    ?match(#iq{type = result, sub_els = [#adhoc_command{status = completed}]},
+           send_recv(Config, #iq{type = set, to = RoomJID,
+                                 sub_els = [CommandCreate]})),
+    CommandAssign =
+	#adhoc_command{action = complete, node = <<"urn:xmpp:hats:commands:assign">>, xdata = #xdata{
+	    type = form, fields = [
+		#xdata_field{var = <<"FORM_TYPE">>, values = [<<"urn:xmpp:hats:commands">>]},
+		#xdata_field{var = <<"hats#jid">>, values = [jid:encode(MyJID)]},
+		#xdata_field{var = <<"hat">>, values = [<<"https://example.com/Test">>]}
+	    ]}},
+    ?match(#iq{type = error, sub_els = [#adhoc_command{}, #stanza_error{reason = 'bad-request'}]},
+           send_recv(Config, #iq{type = set, to = RoomJID,
+                                 sub_els = [CommandAssign#adhoc_command{xdata = undefined}]})),
+    ?match(#iq{type = result, sub_els = [#adhoc_command{status = completed}]},
+           send_recv(Config, #iq{type = set, to = RoomJID,
+                                 sub_els = [CommandAssign]})),
+    [104] = recv_only_config_change_message(Config),
+    #presence{from = MyRoomJID} = recv_presence(Config),
+    CommandUnassign =
+	#adhoc_command{action = complete, node = <<"urn:xmpp:hats:commands:unassign">>, xdata = #xdata{
+	    type = form, fields = [
+		#xdata_field{var = <<"FORM_TYPE">>, values = [<<"urn:xmpp:hats:commands">>]},
+		#xdata_field{var = <<"hats#jid">>, values = [jid:encode(MyJID)]},
+		#xdata_field{var = <<"hat">>, values = [<<"https://example.com/Test">>]}
+	    ]}},
+    ?match(#iq{type = error, sub_els = [#adhoc_command{}, #stanza_error{reason = 'bad-request'}]},
+           send_recv(Config, #iq{type = set, to = RoomJID,
+                                 sub_els = [CommandUnassign#adhoc_command{xdata = undefined}]})),
+    ?match(#iq{type = result, sub_els = [#adhoc_command{status = completed}]},
+           send_recv(Config, #iq{type = set, to = RoomJID,
+                                 sub_els = [CommandUnassign]})),
+    #presence{from = MyRoomJID} = recv_presence(Config),
+    CommandDestroy =
+	#adhoc_command{action = complete, node = <<"urn:xmpp:hats:commands:destroy">>, xdata = #xdata{
+	    type = form, fields = [
+		#xdata_field{var = <<"FORM_TYPE">>, values = [<<"urn:xmpp:hats:commands">>]},
+		#xdata_field{var = <<"hat">>, values = [<<"https://example.com/Test">>]}
+	    ]}},
+    ?match(#iq{type = error, sub_els = [#adhoc_command{}, #stanza_error{reason = 'bad-request'}]},
+           send_recv(Config, #iq{type = set, to = RoomJID,
+                                 sub_els = [CommandDestroy#adhoc_command{xdata = undefined}]})),
+    ?match(#iq{type = result, sub_els = [#adhoc_command{status = completed}]},
+           send_recv(Config, #iq{type = set, to = RoomJID,
+                                 sub_els = [CommandDestroy]})),
+    [104] = recv_only_config_change_message(Config),
+    ok = leave(Config, RoomJID),
+    disconnect(Config).
 
 %%%===================================================================
 %%% Master-slave tests
@@ -2024,7 +2093,7 @@ recv_config_change_message(Config) ->
 recv_only_config_change_message(Config) ->
     ct:comment("Receiving configuration change notification message"),
     Room = muc_room_jid(Config),
-    #message{type = groupchat, from = Room} = Msg = recv_message(Config),
+    Msg = ?match(#message{type = groupchat, from = Room} = Msg, recv_message(Config), Msg),
     #muc_user{status_codes = Codes} = xmpp:get_subtag(Msg, #muc_user{}),
     lists:sort(Codes).
 

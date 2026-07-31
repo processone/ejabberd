@@ -5036,10 +5036,10 @@ process_iq_adhoc(From,
                      xmpp_util:make_adhoc_response(Request,
                                                    #adhoc_command{status = Status, xdata = Form})};
                 {Node, complete}
-                    when XData /= undefined andalso Node == ?MUC_HAT_CREATE_CMD;
-                         Node == ?MUC_HAT_DESTROY_CMD;
-                         Node == ?MUC_HAT_ASSIGN_CMD;
-                         Node == ?MUC_HAT_UNASSIGN_CMD ->
+		    when XData /= undefined andalso (Node == ?MUC_HAT_CREATE_CMD orelse
+		                                     Node == ?MUC_HAT_DESTROY_CMD orelse
+						     Node == ?MUC_HAT_ASSIGN_CMD orelse
+						     Node == ?MUC_HAT_UNASSIGN_CMD) ->
                     case process_iq_adhoc_hats_complete(Node, XData, StateData, Lang) of
                         {ok, NewStateData} ->
                             {result,
