@@ -1,5 +1,5 @@
 #' Define default build variables
-ARG OTP_VSN='28.5.0.4'
+ARG OTP_VSN='28.5.0'
 ARG ELIXIR_VSN='1.19.5'
 ARG UID='9000'
 ARG USER='ejabberd'
