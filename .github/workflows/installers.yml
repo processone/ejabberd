@@ -103,7 +103,7 @@ jobs:
         with:
           merge-multiple: true
       - name: Draft Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           draft: true
           files: ejabberd-packages/*
