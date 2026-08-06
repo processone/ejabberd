@@ -128,6 +128,8 @@ jobs:
       id: ct
       run: make test
 
+    - run: ./rebar3 cover
+
     - name: Send to coveralls
       continue-on-error: true
       env:
@@ -166,11 +168,17 @@ jobs:
         echo "::endgroup::"
 
     - name: Upload CT logs
-      if: failure()
       uses: actions/upload-artifact@v7
       with:
         name: ct-logs-${{ matrix.otp }}
         path: _build/test/logs
+        retention-days: 14
+
+    - name: Upload CT cover
+      uses: actions/upload-artifact@v7
+      with:
+        name: ct-cover-${{ matrix.otp }}
+        path: _build/test/cover
         retention-days: 14
 
   ############################################################# Coveralls #####
