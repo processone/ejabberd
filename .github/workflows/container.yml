@@ -30,12 +30,12 @@ jobs:
       packages: write
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Checkout ejabberd-contrib
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: processone/ejabberd-contrib
           path: .ejabberd-modules/sources/ejabberd-contrib
