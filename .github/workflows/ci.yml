@@ -88,7 +88,7 @@ jobs:
       with:
         otp-version: ${{ matrix.otp }}
 
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         name: compiled-${{ matrix.otp }}
     - run: tar -xf compiled.tar
@@ -142,7 +142,7 @@ jobs:
         packages: libexpat1-dev libgd-dev libpam0g-dev
                   libsqlite3-dev libwebp-dev libyaml-dev
 
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         name: compiled-${{ matrix.otp }}
     - run: tar -xf compiled.tar
@@ -223,7 +223,7 @@ jobs:
       with:
         otp-version: ${{ matrix.otp }}
 
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         name: compiled-${{ matrix.otp }}
     - run: tar -xf compiled.tar
@@ -323,7 +323,7 @@ jobs:
       with:
         otp-version: ${{ matrix.otp }}
 
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         name: compiled-${{ matrix.otp }}
     - run: tar -xf compiled.tar
