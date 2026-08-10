@@ -72,24 +72,29 @@
 %%% API
 %%%===================================================================
 
+get_vhost_argument([]) ->
+    no_host_argument;
+get_vhost_argument([{{service, _}, Service} | _Tail]) ->
+    mod_muc_admin:get_room_serverhost(Service);
+get_vhost_argument([{{host, _}, Host} | _Tail]) ->
+    Host;
+get_vhost_argument([_ | Tail]) ->
+    get_vhost_argument(Tail).
+
 -spec can_access(atom(), caller_info(), list(), list()) -> allow | deny.
 can_access(Cmd, CallerInfo, Arguments, ArgsFormat) ->
-    Filtered = lists:filtermap(fun({{host, _}, Hostt}) -> {true, Hostt};
-                                  (_) -> false
-                               end,
-                               lists:zip(ArgsFormat, Arguments)
-                              ),
-    HostCheck = case {maps:get(usr, CallerInfo, no_usr), Filtered} of
-                    {USR, [HostArg]} when is_tuple(USR) ->
-                        acl:match_rule(HostArg,
+    Vhost = get_vhost_argument(lists:zip(ArgsFormat, Arguments)),
+    HostCheck = case {maps:get(usr, CallerInfo, no_usr), Vhost} of
+                    {USR, VhostArg} when is_tuple(USR) and is_binary(VhostArg) ->
+                        acl:match_rule(VhostArg,
                                        configure,
                                        jid:make(USR));
                      _ ->
                          allow
          end,
-    CallerInfo2 = case Filtered of
-                      [_ | _] -> CallerInfo;
-                      _ -> CallerInfo#{caller_host => global}
+    CallerInfo2 = case Vhost of
+                      B when is_binary(B) -> CallerInfo;
+                      no_host_argument -> CallerInfo#{caller_host => global}
                   end,
     case HostCheck of
         allow ->
