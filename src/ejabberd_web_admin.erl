@@ -1647,7 +1647,7 @@ any_rules_allowed(Host, Access, Entity) ->
 
 %%% @format-begin
 
-make_login_items(#request{us = {Username, Host}} = R, Level, JID) ->
+make_login_items(#request{us = {Username, Host}, auth = Auth} = R, Level, JID) ->
     UserBin =
         jid:encode(
             jid:make(Username, Host, <<"">>)),
@@ -1681,6 +1681,18 @@ make_login_items(#request{us = {Username, Host}} = R, Level, JID) ->
             [_ | _] ->
                 {MenuInside1, MenuPost1}
         end,
+    NodeEls =
+        case get_auth_admin(Auth, Host, [<<"node">>], 'GET') of
+            {ok, _} ->
+                [?LI([?C(unicode:characters_to_binary("🏭")),
+                      make_command(echo,
+                                   R,
+                                   [{<<"sentence">>, misc:atom_to_binary(node())}],
+                                   [{only, value},
+                                    {result_links, [{sentence, node, Level, <<"">>}]}])])];
+            _ ->
+                []
+        end,
     [{xmlel,
       <<"li">>,
       [{<<"id">>, <<"navitemlogin-start">>}],
@@ -1688,13 +1700,8 @@ make_login_items(#request{us = {Username, Host}} = R, Level, JID) ->
         <<"div">>,
         [{<<"id">>, <<"navitemlogin">>}],
         [?XE(<<"ul">>,
-             [?LI([?C(unicode:characters_to_binary("👤")), UserEl2]),
-              ?LI([?C(unicode:characters_to_binary("🏭")),
-                   make_command(echo,
-                                R,
-                                [{<<"sentence">>, misc:atom_to_binary(node())}],
-                                [{only, value},
-                                 {result_links, [{sentence, node, Level, <<"">>}]}])])]
+             [?LI([?C(unicode:characters_to_binary("👤")), UserEl2])]
+             ++ NodeEls
              ++ MenuInside
              ++ [?LI([?C(unicode:characters_to_binary("📤")),
                       ?AC(<<(binary:copy(<<"../">>, Level))/binary, "logout/">>,
