@@ -373,8 +373,8 @@ webadmin_page_main(Acc, _) ->
 %%---------------
 %% WebAdmin Host
 
-web_menu_system(Result, _Request, _Level) ->
-    Els = ejabberd_web_admin:make_menu_system(?MODULE, "🎫", "Invites", ""),
+web_menu_system(Result, #request{host = Host}, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(Host, ?MODULE, "🎫", "Invites", ""),
     Els ++ Result.
 
 webadmin_menu_host(Acc, _Host, Lang) ->

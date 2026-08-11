@@ -326,8 +326,8 @@ http_handlers_init(Handlers, _Opts) ->
             Handlers
     end.
 
-web_menu_system(Result, #request{tp = Protocol}, Level) ->
-    Els = ejabberd_web_admin:make_menu_system(?MODULE, "☯️", "Converse", ""),
+web_menu_system(Result, #request{tp = Protocol, host = Host}, Level) ->
+    Els = ejabberd_web_admin:make_menu_system(Host, ?MODULE, "☯️", "Converse", ""),
     Base = iolist_to_binary(lists:duplicate(Level, "../")),
     ThisTls =
         case Protocol of

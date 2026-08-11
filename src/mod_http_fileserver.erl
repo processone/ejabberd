@@ -520,8 +520,8 @@ ip_to_string(Address) when size(Address) == 8 ->
 %% WebAdmin
 %%----------------------------------------------------------------------
 
-web_menu_system(Result, _Request, _Level) ->
-    Els = ejabberd_web_admin:make_menu_system(?MODULE, "📁", "Fileserver: {URLPATH}", ""),
+web_menu_system(Result, #request{host = Host}, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(Host, ?MODULE, "📁", "Fileserver: {URLPATH}", ""),
     Els ++ Result.
 
 %%----------------------------------------------------------------------

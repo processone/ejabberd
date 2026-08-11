@@ -870,6 +870,10 @@ web_page_main(_, #request{path = [<<"oauth">>]} = R) ->
 web_page_main(Acc, _) ->
     Acc.
 
-web_menu_system(Result, _Request, _Level) ->
-    Els = ejabberd_web_admin:make_menu_system(?MODULE, "⚫", "OAuth", "authorization_token"),
+web_menu_system(Result, #request{host = Host}, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(Host,
+                                              ?MODULE,
+                                              "⚫",
+                                              "OAuth",
+                                              "authorization_token"),
     Els ++ Result.

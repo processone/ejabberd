@@ -616,8 +616,8 @@ get_error_text({error, Why}) ->
 %% WebAdmin
 %%----------------------------------------------------------------------
 
-web_menu_system(Result, _Request, _Level) ->
-    Els = ejabberd_web_admin:make_menu_system(?MODULE, "🪪", "Register Web", ""),
+web_menu_system(Result, #request{host = Host}, _Level) ->
+    Els = ejabberd_web_admin:make_menu_system(Host, ?MODULE, "🪪", "Register Web", ""),
     Els ++ Result.
 
 %%----------------------------------------------------------------------

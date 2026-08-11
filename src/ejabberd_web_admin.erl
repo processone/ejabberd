@@ -32,13 +32,16 @@
 -export([process/2, pretty_print_xml/1,
          make_command/2, make_command/4, make_command_raw_value/3,
          make_table/2, make_table/4, action_button/4,
-         make_menu_system/4, make_menu_system_el/4,
+         make_menu_system/5, make_menu_system/4,
+         make_menu_system_el/4,
          nice_this/1,
          term_to_id/1, id_to_term/1]).
 
 %% Internal commands
 -export([webadmin_host_last_activity/3,
          webadmin_node_db_table_page/3]).
+
+-deprecated({make_menu_system, 4}).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
@@ -1711,13 +1714,17 @@ make_login_items(#request{us = {Username, Host}, auth = Auth} = R, Level, JID) -
 %%%==================================
 %%%% menu_system
 
+-spec make_menu_system(binary(), atom(), string(), string(), string()) -> [xmlel()].
+make_menu_system(Host, Module, Icon, Text, Append) ->
+    [make_menu_system_el(Icon, Text, Append, UrlTuple) || UrlTuple <- get_urls(Host, Module)].
+
 -spec make_menu_system(atom(), string(), string(), string()) -> [xmlel()].
 make_menu_system(Module, Icon, Text, Append) ->
-    [make_menu_system_el(Icon, Text, Append, UrlTuple) || UrlTuple <- get_urls(Module)].
-
-get_urls(Module) ->
-    Urls = ejabberd_http:get_auto_urls(any, Module),
     Host = ejabberd_config:get_myname(),
+    make_menu_system(Host, Module, Icon, Text, Append).
+
+get_urls(Host, Module) ->
+    Urls = ejabberd_http:get_auto_urls(any, Module),
     [{Tls, misc:expand_keyword(<<"@HOST@">>, Url, Host)} || {Tls, Url} <- Urls].
 
 -spec make_menu_system_el(string(), string(), string(), {boolean(), binary()}) -> xmlel().
