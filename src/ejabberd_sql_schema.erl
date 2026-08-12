@@ -981,14 +981,32 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                ({rename_column, TableName, OldColumnName, NewColumnName}) ->
                    Res =
                        ejabberd_sql:sql_query_t(
-                           fun(_DBType, _DBVersion) ->
-                               SQL = [<<"ALTER TABLE ">>,
-                                      escape_name(SchemaInfo, TableName),
-                                      <<" RENAME COLUMN ">>,
-                                      escape_name(SchemaInfo, OldColumnName),
-                                      <<" TO ">>,
-                                      escape_name(SchemaInfo, NewColumnName),
-                                      <<";">>],
+                           fun(DBType, _DBVersion) ->
+                               SQL =
+                                   case DBType of
+                                       mysql ->
+                                           {value, Table} =
+                                               lists:keysearch(
+                                                   TableName, #sql_table.name, Schema#sql_schema.tables),
+                                           {value, NewColumn} =
+                                               lists:keysearch(
+                                                   NewColumnName, #sql_column.name, Table#sql_table.columns),
+                                           Def = format_column_def(SchemaInfo, NewColumn),
+                                           [<<"ALTER TABLE ">>,
+                                            escape_name(SchemaInfo, TableName),
+                                            <<" CHANGE COLUMN ">>,
+                                            escape_name(SchemaInfo, OldColumnName), <<" ">>,
+                                            Def,
+                                            <<";">>];
+                                       _ ->
+                                           [<<"ALTER TABLE ">>,
+                                            escape_name(SchemaInfo, TableName),
+                                            <<" RENAME COLUMN ">>,
+                                            escape_name(SchemaInfo, OldColumnName),
+                                            <<" TO ">>,
+                                            escape_name(SchemaInfo, NewColumnName),
+                                            <<";">>]
+                                   end,
                                ?INFO_MSG("Rename column ~s/~s -> ~s:~n~s~n",
                                          [TableName,
                                           OldColumnName,
