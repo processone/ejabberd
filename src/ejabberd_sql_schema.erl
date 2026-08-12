@@ -608,7 +608,7 @@ format_create_index(#sql_schema_info{db_type = sqlite} = SchemaInfo, Table, Inde
             false -> <<"">>
         end,
     Name = [<<"i_">>, TableName, <<"_">>,
-            lists:join( <<"_">>, Index#sql_index.columns)],
+            lists:join(<<"_">>, Index#sql_index.columns)],
     [<<"CREATE ">>, Unique, <<"INDEX ">>, Name, <<" ON ">>, escape_name(SchemaInfo, TableName),
      <<"(">>,
      columns_list(SchemaInfo, Index#sql_index.columns),
@@ -621,7 +621,7 @@ format_create_index(#sql_schema_info{db_type = mysql} = SchemaInfo, Table, Index
             false -> <<"">>
         end,
     Name = [<<"i_">>, TableName, <<"_">>,
-            lists:join( <<"_">>, Index#sql_index.columns)],
+            lists:join(<<"_">>, Index#sql_index.columns)],
     [<<"CREATE ">>, Unique, <<"INDEX ">>, Name,
      <<" USING BTREE ON ">>, escape_name(SchemaInfo, TableName),
      <<"(">>,
