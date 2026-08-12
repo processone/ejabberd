@@ -65,6 +65,6 @@
                          column :: binary()}).
 
 -record(sql_schema_info,
-        {db_type :: pgsql | mysql | sqlite,
+        {db_type :: pgsql | mysql | sqlite | mssql,
          db_version :: any(),
          multihost_schema = true :: boolean()}).

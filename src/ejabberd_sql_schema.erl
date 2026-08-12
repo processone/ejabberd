@@ -582,7 +582,7 @@ format_mysql_index_column(Table, ColumnName) ->
         NeedsSizeLimit ->
             [ColumnName, <<"(191)">>];
         true ->
-            escape_name(#sql_schema_info{db_type = mysql}, ColumnName)
+            escape_name(#sql_schema_info{db_type = mysql, db_version = 1, multihost_schema = true}, ColumnName)
     end.
 
 format_create_index(#sql_schema_info{db_type = pgsql} = SchemaInfo, Table, Index) ->
