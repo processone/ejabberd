@@ -413,17 +413,17 @@ sqlite_table_copy_t(SchemaInfo, Table) ->
     Columns = lists:join(<<",">>,
                          lists:map(fun(C) -> escape_name(SchemaInfo, C#sql_column.name) end,
                                    Table#sql_table.columns)),
-    SQL2 = [<<"INSERT INTO ">>, NewTableName,
-            <<" SELECT ">>, Columns, <<" FROM ">>, TableName],
+    SQL2 = [<<"INSERT INTO ">>, escape_name(SchemaInfo, NewTableName),
+            <<" SELECT ">>, Columns, <<" FROM ">>, escape_name(SchemaInfo, TableName)],
     ?INFO_MSG("Copying table ~s to ~s:~n~s~n",
               [TableName, NewTableName, SQL2]),
     ejabberd_sql:sql_query_t(SQL2),
-    SQL3 = <<"DROP TABLE ", TableName/binary>>,
+    SQL3 = <<"DROP TABLE ", (escape_name(SchemaInfo, TableName))/binary>>,
     ?INFO_MSG("Droping old table ~s:~n~s~n",
               [TableName, SQL3]),
     ejabberd_sql:sql_query_t(SQL3),
-    SQL4 = <<"ALTER TABLE ", NewTableName/binary,
-             " RENAME TO ", TableName/binary>>,
+    SQL4 = <<"ALTER TABLE ", (escape_name(SchemaInfo, NewTableName))/binary,
+             " RENAME TO ", (escape_name(SchemaInfo, TableName))/binary>>,
     ?INFO_MSG("Renaming table ~s to ~s:~n~s~n",
               [NewTableName, TableName, SQL4]),
     ejabberd_sql:sql_query_t(SQL4).
@@ -532,10 +532,20 @@ pgsql_type_cast(#sql_column{type = Type}) ->
         bigserial -> <<"integer">>
     end.
 
-escape_name(#sql_schema_info{db_type = pgsql}, <<"type">>) ->
-    <<"\"type\"">>;
-escape_name(_SchemaInfo, ColumnName) ->
-    ColumnName.
+escape_name(#sql_schema_info{db_type = mysql}, Name) ->
+    <<$`, Name/binary, $`>>;
+escape_name(#sql_schema_info{db_type = mssql}, Name) ->
+    <<$[, Name/binary, $]>>;
+escape_name(_SchemaInfo, Name) ->
+    <<$", Name/binary, $">>.
+
+columns_list(SchemaInfo, Columns) ->
+    lists:foldr(
+        fun(Col, []) ->
+            [escape_name(SchemaInfo, Col)];
+           (Col, Acc) ->
+            [escape_name(SchemaInfo, Col), ", " | Acc]
+        end, [], Columns).
 
 format_column_def(SchemaInfo, Column) ->
     [<<"    ">>,
@@ -553,7 +563,8 @@ format_column_def(SchemaInfo, Column) ->
      case lists:keyfind(sql_references, 1, Column#sql_column.opts) of
          false -> [];
          #sql_references{table = T, column = C} ->
-             [<<" REFERENCES ">>, T, <<"(">>, C, <<") ON DELETE CASCADE">>]
+             [<<" REFERENCES ">>, escape_name(SchemaInfo, T),
+                 <<"(">>, escape_name(SchemaInfo, C), <<") ON DELETE CASCADE">>]
      end].
 
 format_mysql_index_column(Table, ColumnName) ->
@@ -571,10 +582,10 @@ format_mysql_index_column(Table, ColumnName) ->
         NeedsSizeLimit ->
             [ColumnName, <<"(191)">>];
         true ->
-            ColumnName
+            escape_name(#sql_schema_info{db_type = mysql}, ColumnName)
     end.
 
-format_create_index(#sql_schema_info{db_type = pgsql}, Table, Index) ->
+format_create_index(#sql_schema_info{db_type = pgsql} = SchemaInfo, Table, Index) ->
     TableName = Table#sql_table.name,
     Unique =
         case Index#sql_index.unique of
@@ -585,13 +596,11 @@ format_create_index(#sql_schema_info{db_type = pgsql}, Table, Index) ->
             lists:join(
               <<"_">>,
               Index#sql_index.columns)],
-    [<<"CREATE ">>, Unique, <<"INDEX ">>, Name, <<" ON ">>, TableName,
+    [<<"CREATE ">>, Unique, <<"INDEX ">>, Name, <<" ON ">>, escape_name(SchemaInfo, TableName),
      <<" USING btree (">>,
-     lists:join(
-       <<", ">>,
-       Index#sql_index.columns),
+     columns_list(SchemaInfo, Index#sql_index.columns),
      <<");">>];
-format_create_index(#sql_schema_info{db_type = sqlite}, Table, Index) ->
+format_create_index(#sql_schema_info{db_type = sqlite} = SchemaInfo, Table, Index) ->
     TableName = Table#sql_table.name,
     Unique =
         case Index#sql_index.unique of
@@ -599,16 +608,12 @@ format_create_index(#sql_schema_info{db_type = sqlite}, Table, Index) ->
             false -> <<"">>
         end,
     Name = [<<"i_">>, TableName, <<"_">>,
-            lists:join(
-              <<"_">>,
-              Index#sql_index.columns)],
-    [<<"CREATE ">>, Unique, <<"INDEX ">>, Name, <<" ON ">>, TableName,
+            lists:join( <<"_">>, Index#sql_index.columns)],
+    [<<"CREATE ">>, Unique, <<"INDEX ">>, Name, <<" ON ">>, escape_name(SchemaInfo, TableName),
      <<"(">>,
-     lists:join(
-       <<", ">>,
-       Index#sql_index.columns),
+     columns_list(SchemaInfo, Index#sql_index.columns),
      <<");">>];
-format_create_index(#sql_schema_info{db_type = mysql}, Table, Index) ->
+format_create_index(#sql_schema_info{db_type = mysql} = SchemaInfo, Table, Index) ->
     TableName = Table#sql_table.name,
     Unique =
         case Index#sql_index.unique of
@@ -616,11 +621,9 @@ format_create_index(#sql_schema_info{db_type = mysql}, Table, Index) ->
             false -> <<"">>
         end,
     Name = [<<"i_">>, TableName, <<"_">>,
-            lists:join(
-              <<"_">>,
-              Index#sql_index.columns)],
+            lists:join( <<"_">>, Index#sql_index.columns)],
     [<<"CREATE ">>, Unique, <<"INDEX ">>, Name,
-     <<" USING BTREE ON ">>, TableName,
+     <<" USING BTREE ON ">>, escape_name(SchemaInfo, TableName),
      <<"(">>,
      lists:join(
        <<", ">>,
@@ -647,7 +650,7 @@ format_primary_key(#sql_schema_info{db_type = mysql}, Table) ->
                   end, I#sql_index.columns)),
               <<")">>]]
     end;
-format_primary_key(_SchemaInfo, Table) ->
+format_primary_key(SchemaInfo, Table) ->
     case lists:filter(
            fun(#sql_index{meta = #{primary_key := true}}) -> true;
               (_) -> false
@@ -656,23 +659,21 @@ format_primary_key(_SchemaInfo, Table) ->
         [I] ->
             [[<<"    ">>,
               <<"PRIMARY KEY (">>,
-              lists:join(<<", ">>, I#sql_index.columns),
+                columns_list(SchemaInfo, I#sql_index.columns),
               <<")">>]]
     end.
 
 format_add_primary_key(#sql_schema_info{db_type = sqlite} = SchemaInfo,
                        Table, Index) ->
     format_create_index(SchemaInfo, Table, Index);
-format_add_primary_key(#sql_schema_info{db_type = pgsql}, Table, Index) ->
+format_add_primary_key(#sql_schema_info{db_type = pgsql} = SchemaInfo, Table, Index) ->
     TableName = Table#sql_table.name,
-    [<<"ALTER TABLE ">>, TableName, <<" ADD PRIMARY KEY (">>,
-     lists:join(
-       <<", ">>,
-       Index#sql_index.columns),
+    [<<"ALTER TABLE ">>, escape_name(SchemaInfo, TableName), <<" ADD PRIMARY KEY (">>,
+     columns_list(SchemaInfo, Index#sql_index.columns),
      <<");">>];
-format_add_primary_key(#sql_schema_info{db_type = mysql}, Table, Index) ->
+format_add_primary_key(#sql_schema_info{db_type = mysql} = SchemaInfo, Table, Index) ->
     TableName = Table#sql_table.name,
-    [<<"ALTER TABLE ">>, TableName, <<" ADD PRIMARY KEY (">>,
+    [<<"ALTER TABLE ">>, escape_name(SchemaInfo, TableName), <<" ADD PRIMARY KEY (">>,
      lists:join(
        <<", ">>,
        lists:map(
@@ -684,7 +685,7 @@ format_add_primary_key(#sql_schema_info{db_type = mysql}, Table, Index) ->
 format_create_table(#sql_schema_info{db_type = pgsql} = SchemaInfo, Table) ->
     TableName = Table#sql_table.name,
     [iolist_to_binary(
-       [<<"CREATE TABLE ">>, TableName, <<" (\n">>,
+       [<<"CREATE TABLE ">>, escape_name(SchemaInfo, TableName), <<" (\n">>,
         lists:join(
           <<",\n">>,
           lists:map(
@@ -706,7 +707,7 @@ format_create_table(#sql_schema_info{db_type = pgsql} = SchemaInfo, Table) ->
 format_create_table(#sql_schema_info{db_type = sqlite} = SchemaInfo, Table) ->
     TableName = Table#sql_table.name,
     [iolist_to_binary(
-       [<<"CREATE TABLE ">>, TableName, <<" (\n">>,
+       [<<"CREATE TABLE ">>, escape_name(SchemaInfo, TableName), <<" (\n">>,
         lists:join(
           <<",\n">>,
           lists:map(
@@ -728,7 +729,7 @@ format_create_table(#sql_schema_info{db_type = sqlite} = SchemaInfo, Table) ->
 format_create_table(#sql_schema_info{db_type = mysql} = SchemaInfo, Table) ->
     TableName = Table#sql_table.name,
     [iolist_to_binary(
-      [<<"CREATE TABLE ">>, TableName, <<" (\n">>,
+      [<<"CREATE TABLE ">>, escape_name(SchemaInfo, TableName), <<" (\n">>,
        lists:join(
          <<",\n">>,
          lists:map(
@@ -923,7 +924,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                             Default = format_default(SchemaInfo, Column),
                             SQLs =
                                 [[<<"ALTER TABLE ">>,
-                                  TableName,
+                                  escape_name(SchemaInfo, TableName),
                                   <<" ADD COLUMN\n">>,
                                   Def,
                                   <<" DEFAULT ">>,
@@ -931,9 +932,9 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                 case Column#sql_column.default of
                                     false when DBType /= sqlite ->
                                         [[<<"ALTER TABLE ">>,
-                                          TableName,
+                                          escape_name(SchemaInfo, TableName),
                                           <<" ALTER COLUMN ">>,
-                                          ColumnName,
+                                          escape_name(SchemaInfo, ColumnName),
                                           <<" DROP DEFAULT;">>]];
                                     _ ->
                                         []
@@ -959,9 +960,9 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                        ejabberd_sql:sql_query_t(
                            fun(_DBType, _DBVersion) ->
                                SQL = [<<"ALTER TABLE ">>,
-                                      TableName,
+                                      escape_name(SchemaInfo, TableName),
                                       <<" DROP COLUMN ">>,
-                                      ColumnName,
+                                      escape_name(SchemaInfo, ColumnName),
                                       <<";">>],
                                ?INFO_MSG("Drop column ~s/~s:~n~s~n",
                                          [TableName,
@@ -992,7 +993,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                        mysql ->
                                            Def = format_column_def(SchemaInfo, Column),
                                            [<<"ALTER TABLE ">>,
-                                            TableName,
+                                            escape_name(SchemaInfo, TableName),
                                             <<" MODIFY COLUMN ">>,
                                             Def,
                                             <<";">>];
@@ -1001,9 +1002,9 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                        mssql ->
                                            Type = format_type(SchemaInfo, Column),
                                            [<<"ALTER TABLE ">>,
-                                            TableName,
+                                            escape_name(SchemaInfo, TableName),
                                             <<" ALTER COLUMN ">>,
-                                            ColumnName,
+                                            escape_name(SchemaInfo, ColumnName),
                                             <<" ">>,
                                             Type,
                                             <<";">>];
@@ -1011,13 +1012,13 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                            Type = format_type(SchemaInfo, Column),
                                            Cast = pgsql_type_cast(Column),
                                            [<<"ALTER TABLE ">>,
-                                            TableName,
+                                            escape_name(SchemaInfo, TableName),
                                             <<" ALTER COLUMN ">>,
-                                            ColumnName,
+                                            escape_name(SchemaInfo, ColumnName),
                                             <<" TYPE ">>,
                                             Type,
                                             <<" USING ">>,
-                                            ColumnName, <<"::">>, Cast,
+                                            (ColumnName), <<"::">>, Cast,
                                             <<";">>]
                                    end,
                                case SQL of
@@ -1112,7 +1113,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                            sqlite ->
                                sqlite_table_copy_t(SchemaInfo, Table);
                            pgsql ->
-                               SQL1 = [<<"ALTER TABLE ">>, TableName, <<" DROP CONSTRAINT ",
+                               SQL1 = [<<"ALTER TABLE ">>, escape_name(SchemaInfo, TableName), <<" DROP CONSTRAINT ",
                                                                         TableName/binary, "_pkey, ",
                                                                         "ADD PRIMARY KEY (">>,
                                        lists:join(
@@ -1129,7 +1130,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                        ejabberd_sql:sql_query_t(SQL)
                                    end);
                            mysql ->
-                               SQL1 = [<<"ALTER TABLE ">>, TableName, <<" DROP PRIMARY KEY, "
+                               SQL1 = [<<"ALTER TABLE ">>, escape_name(SchemaInfo, TableName), <<" DROP PRIMARY KEY, "
                                                                         "ADD PRIMARY KEY (">>,
                                        lists:join(
                                            <<", ">>,
@@ -1179,7 +1180,7 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                                                    [<<"DROP INDEX ">>,
                                                     IndexName,
                                                     <<" ON ">>,
-                                                    TableName,
+                                                    escape_name(SchemaInfo, TableName),
                                                     <<";">>];
                                                _ ->
                                                    [<<"DROP INDEX ">>,
