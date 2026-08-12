@@ -35,7 +35,8 @@ single_cases() ->
     {sqlschemaupdater_single,
      [sequence],
      [single_test(add_column),
-      single_test(change_column)]}.
+      single_test(change_column),
+      single_test(rename_column)]}.
 
 
 %% Interactions
@@ -99,6 +100,26 @@ change_column(Config) ->
                [<<"select first from schemaupdate">>, [[<<"0">>]]],
                <<"update schemaupdate set first=2">>,
                [<<"select first from schemaupdate">>, [[<<"2">>]]]],
+    apply_schemas(Config, Schemas).
+
+rename_column(Config) ->
+    Schemas = [#sql_schema{
+                 version = 1,
+                 tables = [#sql_table{
+                             name = <<"schemaupdate">>,
+                             columns = [#sql_column{name = <<"first">>, type = integer}]
+                            }]
+                },
+               <<"insert into schemaupdate (first) values (100)">>,
+               #sql_schema{
+                 version = 2,
+                 tables = [#sql_table{
+                             name = <<"schemaupdate">>,
+                             columns = [#sql_column{name = <<"second">>, type = integer}]
+                            }],
+                 update = [{rename_column, <<"schemaupdate">>, <<"first">>, <<"second">>}]
+                },
+               [<<"select second from schemaupdate">>, [[<<"100">>]]]],
     apply_schemas(Config, Schemas).
 
 

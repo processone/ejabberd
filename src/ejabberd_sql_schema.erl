@@ -978,6 +978,32 @@ do_update_schema(Host, Module, SchemaInfo, Schema) ->
                        _ ->
                            ok
                    end;
+               ({rename_column, TableName, OldColumnName, NewColumnName}) ->
+                   Res =
+                       ejabberd_sql:sql_query_t(
+                           fun(_DBType, _DBVersion) ->
+                               SQL = [<<"ALTER TABLE ">>,
+                                      escape_name(SchemaInfo, TableName),
+                                      <<" RENAME COLUMN ">>,
+                                      escape_name(SchemaInfo, OldColumnName),
+                                      <<" TO ">>,
+                                      escape_name(SchemaInfo, NewColumnName),
+                                      <<";">>],
+                               ?INFO_MSG("Rename column ~s/~s -> ~s:~n~s~n",
+                                         [TableName,
+                                          OldColumnName,
+                                          NewColumnName,
+                                          SQL]),
+                               ejabberd_sql:sql_query_t(SQL)
+                           end),
+                   case Res of
+                       {error, Error} ->
+                           ?ERROR_MSG("Failed to update table ~s: ~p",
+                                      [TableName, Error]),
+                           error(Error);
+                       _ ->
+                           ok
+                   end;
                ({change_column_type, TableName, ColumnName}) ->
                    {value, Table} =
                        lists:keysearch(
