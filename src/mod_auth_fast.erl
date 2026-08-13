@@ -30,7 +30,7 @@
 -export([mod_doc/0]).
 %% Hooks
 -export([c2s_inline_features/3, c2s_handle_sasl2_inline/1,
-	 get_tokens/3, get_mechanisms/2, remove_user_tokens/2]).
+	 get_tokens/4, get_mechanisms/2, remove_user_tokens/2]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include_lib("xmpp/include/scram.hrl").
@@ -135,35 +135,44 @@ get_mechanisms(_LServer, #{sasl_channel_bindings := Bindings}) ->
 get_mechanisms(_LServer, _State) ->
     [<<"HT-SHA-256-NONE">>].
 
-ua_hash(UA) ->
+ua_hash(UA, <<"HT-SHA-256-NONE">>) ->
+    <<"N", (hash(UA))/binary>>;
+ua_hash(UA, <<"HT-SHA-256-UNIQ">>) ->
+    <<"U", (hash(UA))/binary>>;
+ua_hash(UA, <<"HT-SHA-256-EXPR">>) ->
+    <<"E", (hash(UA))/binary>>;
+ua_hash(UA, <<"HT-SHA-256-ENDP">>) ->
+    <<"P", (hash(UA))/binary>>.
+
+hash(UA) ->
     crypto:hash(sha256, UA).
 
-get_tokens(_LServer, _LUser, undefined) ->
+get_tokens(_LServer, _LUser, undefined, _Mech) ->
     [];
-get_tokens(LServer, LUser, UA) ->
+get_tokens(LServer, LUser, UA, Mech) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     ToRefresh = erlang:system_time(second) - (mod_auth_fast_opt:token_refresh_age(LServer) div 1000),
-    [{{Type, CreatedAt < ToRefresh}, Token} || {Type, Token, CreatedAt} <- Mod:get_tokens(LServer, LUser, ua_hash(UA))].
+    [{{Type, CreatedAt < ToRefresh}, Token} || {Type, Token, CreatedAt} <- Mod:get_tokens(LServer, LUser, ua_hash(UA, Mech))].
 
 c2s_inline_features({Sasl, Bind, Extra}, Host, State) ->
     {Sasl ++ [#fast{mechs = get_mechanisms(Host, State)}], Bind, Extra}.
 
-gen_token(Server, User, UA) ->
+gen_token(Server, User, UA, Mech) ->
     Mod = gen_mod:db_mod(Server, ?MODULE),
-    Token = base64:encode(ua_hash(<<UA/binary, (misc:strong_alphanum_token())/binary>>)),
+    Token = base64:encode(hash(<<UA/binary, (misc:strong_alphanum_token())/binary>>)),
     ExpiresAt = erlang:system_time(second) + (mod_auth_fast_opt:token_lifetime(Server) div 1000),
-    Mod:set_token(Server, User, ua_hash(UA), next, Token, ExpiresAt),
+    Mod:set_token(Server, User, ua_hash(UA, Mech), next, Token, ExpiresAt),
     #fast_token{token = Token, expiry = misc:usec_to_now(ExpiresAt*1000000)}.
 
 c2s_handle_sasl2_inline({#{sasl2_ua_id := undefined}, _, _} = Acc) ->
     Acc;
-c2s_handle_sasl2_inline({#{server := Server, user := User, sasl2_ua_id := UA,
+c2s_handle_sasl2_inline({#{server := Server, user := User, sasl2_ua_id := UA, sasl_mech := Mech,
 			   sasl2_axtra_auth_info := Extra} = State, Els, Results} = Acc) ->
     Mod = gen_mod:db_mod(Server, ?MODULE),
     NeedRegen =
 	case Extra of
 	    {token, {next, Rotate}} ->
-		Mod:rotate_token(Server, User, ua_hash(UA)),
+		Mod:rotate_token(Server, User, ua_hash(UA, Mech)),
 		Rotate;
 	    {token, {_, true}} ->
 		true;
@@ -171,16 +180,16 @@ c2s_handle_sasl2_inline({#{server := Server, user := User, sasl2_ua_id := UA,
 		false
 	end,
     case {lists:keyfind(fast_request_token, 1, Els), lists:keyfind(fast, 1, Els)} of
-	{#fast_request_token{mech = _Mech}, #fast{invalidate = true}} ->
-	    Mod:del_token(Server, User, ua_hash(UA), current),
-	    {State, Els, [gen_token(Server, User, UA) | Results]};
+	{#fast_request_token{mech = Mech2}, #fast{invalidate = true}} ->
+	    Mod:del_token(Server, User, ua_hash(UA, Mech2), current),
+	    {State, Els, [gen_token(Server, User, UA, Mech2) | Results]};
 	{_, #fast{invalidate = true}} ->
-	    Mod:del_token(Server, User, ua_hash(UA), current),
+	    Mod:del_token(Server, User, ua_hash(UA, Mech), current),
 	    Acc;
-	{#fast_request_token{mech = _Mech}, _} ->
-	    {State, Els, [gen_token(Server, User, UA) | Results]};
+	{#fast_request_token{mech = Mech3}, _} ->
+	    {State, Els, [gen_token(Server, User, UA, Mech3) | Results]};
 	_ when NeedRegen ->
-	    {State, Els, [gen_token(Server, User, UA) | Results]};
+	    {State, Els, [gen_token(Server, User, UA, Mech) | Results]};
 	_ ->
 	    Acc
     end.

@@ -915,7 +915,12 @@ auth_sasl2(Config) ->
 		    Hash = crypto:mac(hmac, sha256, Token, <<"Initiator">>),
 		    CalcToken = (<<User/binary, 0, Hash/binary>>),
 		    Config3 = connect_sasl2(starttls(connect_sasl2(Config2, Jid)), Jid),
-		    disconnect(auth_fast_token(<<"HT-SHA-256-NONE">>, CalcToken, Config3, false))
+		    Config4 = disconnect(auth_fast_token(<<"HT-SHA-256-NONE">>, CalcToken, Config3, false)),
+		    Config5 = connect_sasl2(starttls(connect_sasl2(Config4, Jid)), Jid),
+       	    {ok, CB} = suite:recv_call(Config5, get_cb),
+		    Hash2 = crypto:mac(hmac, sha256, Token, <<"Initiator", CB/binary>>),
+		    CalcToken2 = (<<User/binary, 0, Hash2/binary>>),
+		    disconnect(auth_fast_token(<<"HT-SHA-256-ENDP">>, CalcToken2, Config5, true))
 	    end;
 	false ->
 	    disconnect(Config),

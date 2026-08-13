@@ -498,11 +498,11 @@ check_password_digest_fun(_Mech, #{lserver := LServer}) ->
 	    ejabberd_auth:check_password_with_authmodule(U, AuthzId, LServer, P, D, DG)
     end.
 
-get_fast_tokens_fun(_Mech, #{lserver := LServer}) ->
+get_fast_tokens_fun(Mech, #{lserver := LServer}) ->
     fun(User, UA) ->
 	case gen_mod:is_loaded(LServer, mod_auth_fast) of
 	    false -> false;
-	    _  -> mod_auth_fast:get_tokens(LServer, User, UA)
+	    _  -> mod_auth_fast:get_tokens(LServer, User, UA, Mech)
 	end
     end.
 

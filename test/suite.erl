@@ -989,7 +989,10 @@ receiver(NS, Owner, Socket, MRef) ->
 	    xmpp_socket:close(Socket),
 	    Owner ! {Ref, ok},
 	    receiver(NS, Owner, Socket, MRef);
-        {'$gen_event', {xmlstreamelement, El}} ->
+	{Ref, get_cb} ->
+	    Owner ! {Ref, xmpp_socket:get_tls_cert_hash(Socket)},
+	    receiver(NS, Owner, Socket, MRef);
+    {'$gen_event', {xmlstreamelement, El}} ->
 	    Owner ! decode_stream_element(NS, El),
 	    receiver(NS, Owner, Socket, MRef);
 	{'$gen_event', {xmlstreamstart, Name, Attrs}} ->
