@@ -93,6 +93,8 @@ can_access(Cmd, CallerInfo, Arguments, ArgsFormat) ->
 -spec can_access(atom(), caller_info()) -> allow | deny.
 can_access(echo, _CallerInfo) ->
     allow;
+can_access(echo3, _CallerInfo) ->
+    allow;
 can_access(registered_vhosts, #{caller_module := ejabberd_web_admin}) ->
     allow;
 can_access(Cmd, CallerInfo) ->
