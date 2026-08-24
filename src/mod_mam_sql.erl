@@ -258,7 +258,7 @@ delete_old_messages_batch(ServerHost, TimeStamp, Type, Batch) ->
 		       (pgsql,_)->
 			   ejabberd_sql:sql_query_t(
 			       ?SQL("delete from archive"
-				    " where timestamp in"
+				    " where %(ServerHost)H and timestamp in"
 					" (select timestamp from archive where timestamp < %(TS)d"
 				    " and kind=%(SType)s"
 				    " and %(ServerHost)H limit %(Batch)d)"));
