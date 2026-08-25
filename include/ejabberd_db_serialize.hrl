@@ -68,3 +68,18 @@
     jid :: binary(),
     nick :: binary()
 }).
+
+-record(serialize_privacy_v1, {
+    serverhost :: binary(),
+    username :: binary(),
+    default :: binary(),
+    lists :: [{binary(), [{
+        nothing | none | both | from | to | binary(),
+        allow | deny,
+        integer(),
+        boolean(),
+        boolean(),
+        boolean(),
+        boolean(),
+        boolean()}]}]
+}).

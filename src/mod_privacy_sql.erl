@@ -35,11 +35,13 @@
 -export([item_to_raw/1, raw_to_item/1]).
 
 -export([sql_schemas/0]).
+-export([serialize/3, deserialize_start/1, deserialize/2]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("ejabberd_db_serialize.hrl").
 
 %%%===================================================================
 %%% API
@@ -320,6 +322,81 @@ get_id() ->
 
 import(_) ->
     ok.
+
+serialize(LServer, BatchSize, undefined) ->
+    serialize(LServer, BatchSize, 0);
+serialize(LServer, BatchSize, Offset) ->
+    case ejabberd_sql:sql_query(
+	LServer,
+	?SQL("select @(username)s from privacy_list"
+	     " where %(LServer)H "
+	     "order by username "
+	     "limit %(BatchSize)d offset %(Offset)d")) of
+	{selected, Rows} ->
+	    Data = lists:foldl(
+	        fun(_, {error, _} = Err) -> Err;
+	           (Username, Acc) ->
+		       case get_lists(Username, LServer) of
+			   {ok, PrivList} ->
+			       [mod_privacy_mnesia:serialize_privacy_record(PrivList) | Acc];
+			   {error, _} ->
+			       {error, io_lib:format(
+				   "Error when reading privacy records for user ~s@~s",
+			           [Username, LServer])}
+		       end
+		end, [], Rows),
+	    case Data of
+		{error, _} = Err -> Err;
+		_ ->
+		    {ok, Data, Offset + length(Data)}
+	    end;
+	_ ->
+	    {error, io_lib:format("Error when retrieving list of privacy records", [])}
+    end.
+
+deserialize_start(LServer) ->
+    ejabberd_sql:sql_query(
+	LServer,
+	?SQL("delete from privacy_list where %(LServer)H")),
+    ejabberd_sql:sql_query(
+	LServer,
+	?SQL("delete from privacy_default_list where %(LServer)H")).
+
+deserialize(LServer, Batch) ->
+    F = fun() ->
+	lists:foreach(
+	    fun(#serialize_privacy_v1{username = LUser, lists = Lists, default = Def}) ->
+		lists:foreach(
+		    fun({Name, Rules}) ->
+			add_privacy_list(LUser, LServer, Name),
+			{selected, [{ID}]} =
+			    get_privacy_list_id_t(LUser, LServer, Name),
+			case Def of
+			    <<>> -> ok;
+			    _ ->
+				set_default_privacy_list(LUser, LServer, Def)
+			end,
+			RItems = lists:map(
+			    fun({Value, Action, Order, MA, MI, MM, MPI, MPO}) ->
+				{Type, Value2} = case Value of
+						     <<"J:", J/binary>> ->
+							 {jid, jid:tolower(jid:decode(J))};
+						     <<"G:", G/binary>> -> {group, G};
+						     nothing -> {none, none};
+						     Other -> {subscription, Other}
+						 end,
+				item_to_raw(#listitem{type = Type, value = Value2, action = Action, order = Order,
+				          match_all = MA, match_iq = MI, match_message = MM,
+				          match_presence_in = MPI, match_presence_out = MPO})
+			    end, Rules),
+			set_privacy_list_new(ID, RItems)
+		    end, Lists)
+	    end, Batch)
+	end,
+    case ejabberd_sql:sql_transaction(LServer, F) of
+	{atomic, _} -> ok;
+	_ -> {error, io_lib:format("Error when writing privacy data", [])}
+    end.
 
 %%%===================================================================
 %%% Internal functions

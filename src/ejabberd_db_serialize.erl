@@ -148,6 +148,23 @@ to_json(#serialize_roster_v1{entries = Entries} = Data) ->
                          Entries),
     Data2 = setelement(#serialize_roster_v1.entries, Data, Entries2),
     to_json(tuple_to_list(Data2), [type | record_info(fields, serialize_roster_v1)], #{}).
+to_json(#serialize_privacy_v1{lists = Lists} = Data) ->
+    Lists2 = lists:map(
+        fun({Name, Entries}) ->
+            Entries2 = lists:map(
+                fun({Value, Action, Order, MA, MI, MM, MPI, MPO}) ->
+                    Value2 = case Value of
+                                 V when is_atom(V) -> atom_to_binary(V, utf8);
+                                 V -> V
+                             end,
+                    #{value => Value2, action => atom_to_binary(Action, utf8), order => Order,
+                      match_all => MA, match_iq => MI, match_message => MM,
+                      match_presence_in => MPI, match_presence_out => MPO}
+                end, Entries),
+            #{list_name => Name, entries => Entries2}
+        end, Lists),
+Data2 = setelement(#serialize_privacy_v1.lists, Data, Lists2),
+    to_json(tuple_to_list(Data2), [type | record_info(fields, serialize_privacy_v1)], #{});
 
 
 to_json([], _, Acc) ->
