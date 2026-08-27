@@ -112,7 +112,7 @@ defmodule Ejabberd.MixProject do
      {:erlydtl, "~> 0.14.0"},
      {:ex_doc, "~> 0.31", only: [:edoc], runtime: false},
      {:fast_tls, "~> 1.1.24"},
-     {:fast_xml, "~> 1.1.60"},
+     {:fast_xml, git: "https://github.com/processone/fast_xml", ref: "ee0e6569f44659327a022c0d23d193d1c3e72288"},
      {:fast_yaml, "~> 1.0"},
      {:idna, "~> 7.1"},
      {:mqtree, "~> 1.0"},
@@ -121,7 +121,7 @@ defmodule Ejabberd.MixProject do
      {:p1_utils, "~> 1.0"},
      {:pkix, "~> 1.0"},
      {:stringprep, ">= 1.0.26"},
-     {:xmpp, ">= 1.13.3"},
+     {:xmpp, git: "https://github.com/processone/xmpp", ref: "02893ce01f4d761659988edd85de99d24ccd6bdf"},
      {:yconf, ">= 1.0.22"}]
     ++ cond_deps()
   end
