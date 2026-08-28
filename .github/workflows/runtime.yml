@@ -119,7 +119,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        elixir: ['1.14', '1.18', '1.19']
+        elixir: ['1.14', '1.18', '1.19', '1.20']
     container:
       image: public.ecr.aws/docker/library/elixir:${{ matrix.elixir }}
 
@@ -200,7 +200,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        elixir: ['1.14', '1.18', '1.19']
+        elixir: ['1.14', '1.18', '1.19', '1.20']
     container:
       image: public.ecr.aws/docker/library/elixir:${{ matrix.elixir }}
 
