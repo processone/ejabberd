@@ -189,12 +189,19 @@ get_all_nodes(Host) ->
     Pattern1 = <<"%@", Host/binary>>,
     Pattern2 = <<"%@", Host/binary, "/%">>,
     case ejabberd_sql:sql_query_t(
-	   ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
+	   ?SQL("select @(host)s, @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
 		"from pubsub_node where host=%(Host)s "
-		"or host like %(Pattern1)s "
+		"or host like %(Pattern1)s %ESCAPE "
 		"or host like %(Pattern2)s %ESCAPE")) of
 	{selected, RItems} ->
-	    [raw_to_node(Host, Item) || Item <- RItems];
+		lists:map(
+			fun({NH, Node, Parent, Plugin, NodeId}) ->
+				GenKey = case jid:decode(NH) of
+					#jid{luser = <<>>, lserver = Server} -> Server;
+					Jid -> jid:remove_resource(jid:tolower(Jid))
+				end,
+				raw_to_node(GenKey, {Node, Parent, Plugin, NodeId})
+			end, RItems);
 	_ ->
 	    []
     end.

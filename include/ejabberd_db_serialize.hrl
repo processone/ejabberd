@@ -83,3 +83,34 @@
         boolean(),
         boolean()}]}]
 }).
+
+-record(serialize_pubsub_subscription_v1, {
+    subid :: binary(),
+    subscription :: none | subscribed | pending | unconfigured,
+    options :: [{atom(), term()}]
+}).
+
+-record(serialize_pubsub_state_v1, {
+    jid :: binary(),
+    items :: [binary()],
+    affiliation :: none | owner | publisher | publish_only | member | outcast,
+    subscriptions = [#serialize_pubsub_subscription_v1{}]
+}).
+
+-record(serialize_pubsub_item_v1, {
+    id :: binary(),
+    created :: {binary(), binary()} | undefined,
+    modified :: {binary(), binary()} | undefined,
+    xml :: binary()
+}).
+
+-record(serialize_pubsub_v1, {
+    serverhost :: binary(),
+    jid :: binary(),
+    node :: binary(),
+    parents :: [binary()],
+    plugin :: binary(),
+    options :: [{atom(), term()}],
+    states :: [#serialize_pubsub_state_v1{}],
+    items :: [#serialize_pubsub_item_v1{}]
+}).

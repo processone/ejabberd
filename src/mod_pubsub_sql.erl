@@ -18,9 +18,14 @@
 %%%----------------------------------------------------------------------
 -module(mod_pubsub_sql).
 
+-behaviour(ejabberd_db_serialize).
+
 %% API
 -export([init/3]).
 -export([sql_schemas/0]).
+
+%% Callbacks for `ejabberd_db_serialize`
+-export([serialize/3, deserialize_start/1, deserialize/2]).
 
 -include("ejabberd_sql_pt.hrl").
 
@@ -115,3 +120,20 @@ sql_schemas() ->
                      #sql_column{name = <<"opt_value">>, type = text}],
                 indices = [#sql_index{columns = [<<"subid">>, <<"opt_name">>],
                                       unique = true}]}]}].
+
+-spec serialize(binary(), non_neg_integer(), undefined | term()) ->
+              {ok, [term()], term()} | {error, iolist()}.
+serialize(Host, BatchSize, Last) ->
+    mod_pubsub:serialize_service(Host, BatchSize, Last).
+
+-spec deserialize_start(binary()) -> ok | {error, iolist()}.
+deserialize_start(Host) ->
+    Service = mod_pubsub_opt:host(Host),
+    Pattern = <<"%@", (ejabberd_sql:escape_like_arg(Host))/binary>>,
+    ejabberd_sql:sql_query(Host, ?SQL("DELETE FROM pubsub_node where host=%(Host)s or "
+        "host=%(Service)s or host like %(Pattern)s %ESCAPE")).
+
+-spec deserialize(binary(), [term()]) -> ok | {error, iolist()}.
+deserialize(Host, Data) ->
+    mod_pubsub:deserialize_service(Host, Data).
+

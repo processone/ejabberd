@@ -46,6 +46,7 @@
 -include("pubsub.hrl").
 -include("mod_roster.hrl").
 -include("translate.hrl").
+-include("ejabberd_db_serialize.hrl").
 
 -include("ejabberd_commands.hrl").
 
@@ -69,10 +70,10 @@
 
 %% exports for console debug manual use
 -export([create_node/5, create_node/7, delete_node/3,
-    subscribe_node/5, unsubscribe_node/5, publish_item/6, publish_item/8,
-    delete_item/4, delete_item/5, send_items/7, get_items/2, get_item/3,
-    get_cached_item/2, get_configure/5, set_configure/5,
-    tree_action/3, node_action/4, node_call/4]).
+	 subscribe_node/5, unsubscribe_node/5, publish_item/6, publish_item/8,
+	 delete_item/4, delete_item/5, send_items/7, get_items/2, get_item/3,
+	 get_cached_item/2, get_configure/5, set_configure/5,
+	 tree_action/3, node_action/4, node_call/4]).
 
 %% general helpers for plugins
 -export([extended_error/2, service_jid/1,
@@ -100,6 +101,7 @@
 -export([get_commands_spec/0, delete_old_items/1, delete_expired_items/0]).
 
 -export([route/1]).
+-export([serialize_service/3, deserialize_service/2]).
 
 %%====================================================================
 %% API
@@ -4272,6 +4274,259 @@ get_commands_spec() ->
 			result = {res, rescode},
 			result_desc = "0 if command failed, 1 when succeeded",
 			result_example = ok}].
+
+node_host_to_bin({_, _, _} = Jid) ->
+    jid:encode(Jid);
+node_host_to_bin(Bin) when is_binary(Bin) ->
+    Bin.
+
+foldshort(_F, Acc, []) ->
+    Acc;
+foldshort(F, Acc, [H | Rest]) ->
+    case F(H, Acc) of
+	{stop, Result} -> Result;
+	{continue, Result} -> foldshort(F, Result, Rest);
+	{reduce, Reduce} -> Reduce(Rest)
+    end.
+
+serialize_service_int(MainHost, [Host | HostsLeft] = Hosts, Concat, Nodes, BatchSize) ->
+    Jid = jid:make(Host),
+    SubModule = subscription_plugin(Host),
+    F = fun() ->
+	foldshort(
+	    fun(Node, {Results, 0}) ->
+		{reduce, fun(Rest) -> {Results, [Node | Rest]} end};
+	       (#pubsub_node{id = Nidx, type = Type, nodeid = {NodeHost, Name}, options = NodeOpts, parents = Parents}, {Results, Left}) ->
+		   maybe
+		       {result, States} ?= node_call(Host, Type, get_states, [Nidx]),
+		       {result, {Items, _}} ?= node_call(Host, Type, get_items, [Nidx, Jid, undefined]),
+		       HasSubOpts = lists:member(<<"subscription-options">>, plugin_features(Host, Type)),
+		       States2 = lists:map(
+			   fun(#pubsub_state{stateid = {SJid, _}, affiliation = Aff, subscriptions = Subs, items = SubItems}) ->
+			       Subs2 = lists:map(
+				   fun({SType, SubId}) when HasSubOpts ->
+				       case SubModule:get_subscription(SJid, Nidx, SubId) of
+					   #pubsub_subscription{options = Options} ->
+					       #serialize_pubsub_subscription_v1{
+						   subid = SubId,
+						   subscription = SType,
+						   options = Options};
+					   _ ->
+					       #serialize_pubsub_subscription_v1{
+						   subid = SubId,
+						   subscription = SType,
+						   options = []}
+				       end;
+				      ({SType, SubId}) ->
+					  #serialize_pubsub_subscription_v1{
+					      subid = SubId,
+					      subscription = SType,
+					      options = []}
+				   end, Subs),
+			       #serialize_pubsub_state_v1{jid = jid:encode(SJid),
+							  affiliation = Aff, subscriptions = Subs2, items = SubItems}
+			   end, States),
+		       Items2 = lists:map(
+			   fun(#pubsub_item{itemid = {ItemId, _}, creation = {CTS, CJid}, modification = {MTS, MJid}, payload = Xml}) ->
+			       #serialize_pubsub_item_v1{
+				   id = ItemId,
+				   created = {xmpp_util:encode_timestamp(CTS), jid:encode(CJid)},
+				   modified = {xmpp_util:encode_timestamp(MTS), jid:encode(MJid)},
+				   xml = str:join([fxml:element_to_binary(X) || X <- Xml], <<>>)}
+			   end, Items),
+		       Val = #serialize_pubsub_v1{
+			   serverhost = MainHost,
+			   jid = node_host_to_bin(NodeHost),
+			   node = Name,
+			   parents = Parents,
+			   plugin = Type,
+			   options = NodeOpts -- node_options(Host, Type),
+			   states = States2,
+			   items = Items2},
+		       {continue, {[Val | Results], Left - 1}}
+		   else
+		       _ ->
+			   exit({aborted, {<<"Unable to retrieve informations for node '", Name/binary,
+					     "' of '", (node_host_to_bin(NodeHost))/binary,
+					     "'">>}})
+		   end
+	    end, {Concat, BatchSize}, Nodes)
+	end,
+    case serialize_trans(MainHost, F, false) of
+	{atomic, {Processed, Left}} when is_list(Left) ->
+	    {ok, Processed, {Hosts, [], Left}};
+	{atomic, {Processed, BatchLeft}} ->
+	    serialize_service(MainHost, BatchLeft, {HostsLeft, Processed, []});
+	{aborted, Err} ->
+	    Err
+    end.
+
+
+serialize_service(Host, BatchSize, undefined) ->
+    serialize_service(Host, BatchSize, {[Host, mod_pubsub_opt:host(Host)], [], []});
+serialize_service(_Host, _BatchSize, {[], Processed, _Left}) ->
+    {ok, Processed, {[], [], 0}};
+serialize_service(Host, BatchSize, {Hosts, Processed, [_ | _] = Nodes}) ->
+    serialize_service_int(Host, Hosts, Processed, Nodes, BatchSize);
+serialize_service(Host, BatchSize, {[H | _] = Hosts, Processed, []}) ->
+    case tree_action(Host, get_all_nodes, [H]) of
+	Nodes when is_list(Nodes) ->
+	    Sorted = lists:sort(
+		fun(#pubsub_node{nodeid = {_, N1}, id = I1, parents = P1},
+		    #pubsub_node{nodeid = {_, N2}, id = I2, parents = P2}) ->
+		    case lists:member(N1, P2) of
+			true -> false;
+			_ ->
+			    case lists:member(N2, P1) of
+				true -> true;
+				_ ->
+				    I1 >= I2
+			    end
+		    end
+		end, Nodes),
+	    serialize_service_int(Host, Hosts, Processed, Sorted, BatchSize);
+	_ ->
+	    {error, <<"Unable to retrieve nodes for service '", H/binary, "'">>}
+    end.
+
+
+deserialize_service(_Host, []) ->
+    ok;
+deserialize_service(Host, [#serialize_pubsub_v1{jid = Jid, node = Node, plugin = Plugin,
+						options = NodeOptions, states = States, items = Items, parents = Parents} | Rest]) ->
+    Owner = jid:decode(Jid),
+    TreeHost = case Owner of
+		   #jid{luser = <<>>, lserver = LS} -> LS;
+		   J -> jid:tolower(J)
+	       end,
+    F = fun() ->
+	maybe
+	    {ok, Nidx} ?= case tree_call(Host, create_node,
+					 [TreeHost, Node, Plugin, Owner, NodeOptions, Parents])
+			  of
+			      {ok, Nidx2} ->
+				  {ok, Nidx2};
+			      {error, {virtual, Nidx2}} ->
+				  {ok, Nidx2};
+			      Error ->
+				  {error, Error}
+			  end,
+	    ok ?= foldshort(
+		fun(#serialize_pubsub_item_v1{id = ItemId, created = {CTS, CJid}, modified = {MTS, MJid}, xml = Xml}, _) ->
+		    maybe
+			#xmlel{} = Payload ?= fxml_stream:parse_element(Xml),
+			#jid{} = CJ ?= jid:decode(CJid),
+			CT = xmpp_util:decode_timestamp(CTS),
+			#jid{} = MJ ?= jid:decode(MJid),
+			MT = xmpp_util:decode_timestamp(MTS),
+			Item = #pubsub_item{itemid = {ItemId, Nidx},
+					    nodeidx = Nidx,
+					    creation = {CT, jid:tolower(CJ)},
+					    modification = {MT, jid:tolower(MJ)},
+					    payload = [Payload]},
+			Module = plugin(Host, Plugin),
+			Module:set_item(Item),
+			{continue, ok}
+		    else
+			_ ->
+			    {stop, {aborted, {error, <<"Unable to add item '", ItemId/binary, "' for node '",
+						       Node/binary, "' of '", Jid/binary, "'">>}}}
+		    end
+		end, ok, Items),
+	    SubModule = subscription_plugin(Host),
+	    ok ?= foldshort(
+		fun(#serialize_pubsub_state_v1{jid = SubJid, affiliation = Affiliation,
+					       subscriptions = Subscriptions, items = SubItems}, _) ->
+		    maybe
+			#jid{} = SJid ?= jid:decode(SubJid),
+			SJidL = jid:tolower(SJid),
+			{ok, Subs} ?= foldshort(
+			    fun(#serialize_pubsub_subscription_v1{subid = SubID, options = Options, subscription = Subscription}, {ok, Acc}) ->
+				case Options of
+				    [] ->
+					{continue, {ok, [{Subscription, SubID} | Acc]}};
+				    _ ->
+					case SubModule:set_subscription(SJidL, Nidx, SubID, Options) of
+					    {result, _} ->
+						{continue, {ok, [{Subscription, SubID} | Acc]}};
+					    _ ->
+						{stop, error}
+					end
+				end
+			    end, {ok, []}, Subscriptions),
+			State = #pubsub_state{stateid = {SJidL, Nidx},
+					      nodeidx = Nidx,
+					      items = SubItems,
+					      affiliation = Affiliation,
+					      subscriptions = Subs},
+			Module = plugin(Host, Plugin),
+			Module:set_state(State),
+			{continue, ok}
+		    else
+			_ ->
+			    exit({aborted, {error, <<"Unable to add subscription for '", Jid/binary, "' in node '",
+						       Node/binary, "' of '", Jid/binary, "'">>}})
+		    end
+		end, ok, States),
+	    ok
+	else
+	    {aborted, _} = E ->
+		E;
+	    _ ->
+		exit({aborted, {error, <<"Unable to create node '", Node/binary, "' of '", Jid/binary, "'">>}})
+	end
+	end,
+    case serialize_trans(Host, F, true) of
+	{atomic, _} ->
+	    deserialize_service(Host, Rest);
+	{aborted, Err} ->
+	    Err
+    end.
+
+serialize_trans(Host, Fun, true) ->
+    DBType = mod_pubsub_opt:db_type(Host),
+    case DBType of
+	sql ->
+	    Timeout = ejabberd_option:sql_query_timeout(Host),
+	    ejabberd_sql:sql_transaction(Host, Fun, Timeout, 1);
+	mnesia ->
+	    mnesia:transaction(Fun);
+	_ ->
+	    try Fun() of
+		Val -> {atomic, Val}
+	    catch
+		exit:{aborted, _} = Aborted ->
+		    Aborted;
+		Class:Msg:Stack ->
+			?INFO_MSG("Exception in serialize_trans ~p:~p~n~p", [Class, Msg, Stack]),
+			{aborted, <<"Error durring execution">>}
+	    end
+    end;
+serialize_trans(Host, Fun, _) ->
+    DBType = mod_pubsub_opt:db_type(Host),
+    case DBType of
+	sql ->
+	    Timeout = ejabberd_option:sql_query_timeout(Host),
+	    ejabberd_sql:sql_bloc(Host, Fun, Timeout);
+	mnesia ->
+	    try mnesia:sync_dirty(Fun) of
+	    	Val -> {atomic, Val}
+	    catch
+		exit:{aborted, _} = Aborted ->
+		    Aborted;
+		_:_ -> {aborted, <<"Error durring execution">>}
+	    end;
+	_ ->
+	    try Fun() of
+		Val -> {atomic, Val}
+	    catch
+		exit:{aborted, _} = Aborted ->
+		    Aborted;
+		Class:Msg:Stack ->
+			?INFO_MSG("Exception in serialize_trans ~p:~p~n~p", [Class, Msg, Stack]),
+			{aborted, <<"Error durring execution">>}
+	    end
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

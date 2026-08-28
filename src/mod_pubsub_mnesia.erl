@@ -21,6 +21,8 @@
 %% API
 -export([init/3]).
 
+-export([serialize/3]).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -30,3 +32,9 @@ init(Host, ServerHost, Opts) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+-spec serialize(binary(), non_neg_integer(), undefined | term()) ->
+               {ok, [term()], term()} | {error, iolist()}.
+ serialize(Host, BatchSize, Last) ->
+     mod_pubsub:serialize_service(Host, BatchSize, Last).
+

@@ -147,7 +147,7 @@ to_json(#serialize_roster_v1{entries = Entries} = Data) ->
                          end,
                          Entries),
     Data2 = setelement(#serialize_roster_v1.entries, Data, Entries2),
-    to_json(tuple_to_list(Data2), [type | record_info(fields, serialize_roster_v1)], #{}).
+    to_json(tuple_to_list(Data2), [type | record_info(fields, serialize_roster_v1)], #{});
 to_json(#serialize_privacy_v1{lists = Lists} = Data) ->
     Lists2 = lists:map(
         fun({Name, Entries}) ->
@@ -165,7 +165,31 @@ to_json(#serialize_privacy_v1{lists = Lists} = Data) ->
         end, Lists),
 Data2 = setelement(#serialize_privacy_v1.lists, Data, Lists2),
     to_json(tuple_to_list(Data2), [type | record_info(fields, serialize_privacy_v1)], #{});
+to_json(#serialize_pubsub_item_v1{id = Id, created = {CTs, CJid}, modified = {MTs, MJid}, xml = Xml}) ->
+    #{id => Id, created_ts => CTs, created_by => CJid, modified_ts => MTs, modified_by => MJid, payload => Xml};
+to_json(#serialize_pubsub_state_v1{jid = Jid, items = Items, affiliation = Affiliation, subscriptions = Subscriptions}) ->
+    Subs = [to_json(S) || S <- Subscriptions],
+    #{jid => Jid, items => Items, affiliation => atom_to_binary(Affiliation), subscriptions => Subs};
+to_json(#serialize_pubsub_subscription_v1{subid = SubId, subscription = Subscription, options = Options}) ->
+    Options2 = tl_to_json(Options, #{}),
+    #{id => SubId, subscription => atom_to_binary(Subscription), options => Options2};
+to_json(#serialize_pubsub_v1{jid = Jid, node = Node, items = Items, options = Options, parents = Parents,
+                             plugin = Plugin, states = States}) ->
+    Items2 = [to_json(I) || I <- Items],
+    States2 = [to_json(S) || S <- States],
+    Options2 = tl_to_json(Options, #{}),
+    misc:json_encode(
+        #{type => <<"serialize_pubsub_v1">>, jid => Jid, node => Node, items => Items2, parents => Parents, plugin => Plugin,
+          states => States2, options => Options2}).
 
+tl_to_json([], Acc) ->
+    Acc;
+tl_to_json([{N, Atom} | Rest], Acc) when Atom == true; Atom == false ->
+    tl_to_json(Rest, Acc#{N => Atom});
+tl_to_json([{N, Atom} | Rest], Acc) when is_atom(Atom) ->
+    tl_to_json(Rest, Acc#{N => atom_to_binary(Atom, utf8)});
+tl_to_json([{N, Other} | Rest], Acc) ->
+    tl_to_json(Rest, Acc#{N => Other}).
 
 to_json([], _, Acc) ->
     misc:json_encode(Acc);
