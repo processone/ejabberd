@@ -231,15 +231,25 @@ mod_doc() ->
           ["modules:", "  mod_pubsub_serverinfo:", "    pubsub_host: custom.pubsub.domain.local"]}.
 
 in_auth_result(#{server_host := Host, remote_server := RServer} = State, true, _Server) ->
-    gen_server:cast(
-        gen_mod:get_module_proc(Host, ?MODULE), {register_in, RServer, self()}),
+    try gen_mod:get_module_proc_check(Host, ?MODULE) of
+        Proc ->
+            gen_server:cast(Proc, {register_in, RServer, self()})
+    catch
+        error:badarg ->
+            ok
+    end,
     State;
 in_auth_result(State, _, _) ->
     State.
 
 out_auth_result(#{server_host := Host, remote_server := RServer} = State, true) ->
-    gen_server:cast(
-        gen_mod:get_module_proc(Host, ?MODULE), {register_out, RServer, self()}),
+    try gen_mod:get_module_proc_check(Host, ?MODULE) of
+        Proc ->
+            gen_server:cast(Proc, {register_out, RServer, self()})
+    catch
+        error:badarg ->
+            ok
+    end,
     State;
 out_auth_result(State, _) ->
     State.
@@ -266,12 +276,17 @@ is_monitored(Domain, #state{host = Host, monitors = Mons}) ->
 maybe_send_disco_info(true, _Domain, _State) ->
     true;
 maybe_send_disco_info(false, Domain, #state{host = Host}) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    IQ = #iq{type = get,
-             from = jid:make(Host),
-             to = jid:make(Domain),
-             sub_els = [#disco_info{}]},
-    ejabberd_router:route_iq(IQ, {Host, Domain}, Proc),
+    try gen_mod:get_module_proc_check(Host, ?MODULE) of
+        Proc ->
+            IQ = #iq{type = get,
+                     from = jid:make(Host),
+                     to = jid:make(Domain),
+                     sub_els = [#disco_info{}]},
+            ejabberd_router:route_iq(IQ, {Host, Domain}, Proc)
+    catch
+        error:badarg ->
+            ok
+    end,
     false.
 
 update_pubsub(#state{host = Host,

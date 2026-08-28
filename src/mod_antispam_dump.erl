@@ -93,18 +93,23 @@ reopen_dump_file(Host, Fd) ->
 
 -spec dump_spam_stanza(message()) -> ok.
 dump_spam_stanza(#message{to = #jid{lserver = LServer}} = Msg) ->
-    By = jid:make(<<>>, LServer),
-    Proc = get_proc_name(LServer),
-    Time = erlang:timestamp(),
-    Msg1 = misc:add_delay_info(Msg, By, Time),
-    XML = fxml:element_to_binary(
-              xmpp:encode(Msg1)),
-    gen_server:cast(Proc, {dump_stanza, XML}).
+    try gen_mod:get_module_proc_check(LServer, ?MODULE_ANTISPAM) of
+        Proc ->
+            By = jid:make(<<>>, LServer),
+            Time = erlang:timestamp(),
+            Msg1 = misc:add_delay_info(Msg, By, Time),
+            XML = fxml:element_to_binary(
+                      xmpp:encode(Msg1)),
+            gen_server:cast(Proc, {dump_stanza, XML})
+    catch
+        error:badarg ->
+            ok
+    end.
 
 -spec reopen_log() -> ok.
 reopen_log() ->
     lists:foreach(fun(Host) ->
-                     Proc = get_proc_name(Host),
+                     Proc = gen_mod:get_module_proc_check(Host, ?MODULE_ANTISPAM),
                      gen_server:cast(Proc, reopen_log)
                   end,
                   get_spam_filter_hosts()).
@@ -172,10 +177,6 @@ get_path_option(Host, Opts) ->
 
 %%--------------------------------------------------------------------
 %%| Copied from mod_antispam.erl
-
--spec get_proc_name(binary()) -> atom().
-get_proc_name(Host) ->
-    gen_mod:get_module_proc(Host, ?MODULE_ANTISPAM).
 
 -spec get_spam_filter_hosts() -> [binary()].
 get_spam_filter_hosts() ->

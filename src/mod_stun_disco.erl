@@ -566,6 +566,9 @@ get_password(Username, HostHash) ->
 	{turn_disco, Password} ->
 	    Password
     catch
+	error:badarg ->
+	    ?DEBUG("Cannot retrieve password for ~ts", [Username]),
+	    <<>>;
 	exit:{timeout, _} ->
 	    ?ERROR_MSG("Asking ~ts for password timed out", [HostHash]),
 	    <<>>;
@@ -581,6 +584,8 @@ get_services(Host, JID, Request) ->
 	{turn_disco, Services} ->
 	    {ok, Services}
     catch
+	error:badarg ->
+	    {error, wrong_host};
 	exit:{timeout, _} ->
 	    ?ERROR_MSG("Asking ~ts for services timed out", [Host]),
 	    {error, timeout}
@@ -681,12 +686,12 @@ is_restricted(#{auth_type := anonymous}) ->
 
 -spec call(host_or_hash(), term()) -> term().
 call(Host, Request) ->
-    Proc = get_proc_name(Host),
+    Proc = get_proc_name_check(Host),
     gen_server:call(Proc, Request, timer:seconds(15)).
 
 -spec cast(host_or_hash(), term()) -> ok.
 cast(Host, Request) ->
-    Proc = get_proc_name(Host),
+    Proc = get_proc_name_check(Host),
     gen_server:cast(Proc, Request).
 
 -spec get_proc_name(host_or_hash()) -> atom().
@@ -694,6 +699,12 @@ get_proc_name(Host) when is_binary(Host) ->
     get_proc_name({hash, hash(Host)});
 get_proc_name({hash, HostHash}) ->
     gen_mod:get_module_proc(HostHash, ?MODULE).
+
+-spec get_proc_name_check(host_or_hash()) -> atom().
+get_proc_name_check(Host) when is_binary(Host) ->
+    get_proc_name_check({hash, hash(Host)});
+get_proc_name_check({hash, HostHash}) ->
+    gen_mod:get_module_proc_check(HostHash, ?MODULE).
 
 -spec hash(binary()) -> binary().
 hash(Host) ->

@@ -326,7 +326,7 @@ process_iq(#iq{to = To, lang = Lang, sub_els = [SubEl]} = IQ, Type) ->
 		  from = NewFrom,
 		  to = NewTo,
 		  sub_els = [Delegation]},
-	      IQ, gen_mod:get_module_proc(LServer, ?MODULE)),
+	      IQ, gen_mod:get_module_proc_check(LServer, ?MODULE)),
 	    ignore;
 	error ->
 	    Txt = ?T("Failed to map delegated namespace to external component"),
@@ -393,7 +393,7 @@ send_disco_queries(LServer, Host, NS) ->
 		#iq{type = get, from = From, to = To,
 		    sub_els = [#disco_info{node = Node}]},
 		{disco_info, Type, Host, NS},
-		gen_mod:get_module_proc(LServer, ?MODULE))
+		gen_mod:get_module_proc_check(LServer, ?MODULE))
       end, [{ejabberd_local, <<(?NS_DELEGATION)/binary, "::", NS/binary>>},
 	    {ejabberd_sm, <<(?NS_DELEGATION)/binary, ":bare:", NS/binary>>}]).
 

@@ -3718,9 +3718,10 @@ config(ServerHost, Key) ->
 config({_User, Host, _Resource}, Key, Default) ->
     config(Host, Key, Default);
 config(ServerHost, Key, Default) ->
-    case catch ets:lookup(gen_mod:get_module_proc(ServerHost, config), Key) of
+    try ets:lookup(gen_mod:get_module_proc_check(ServerHost, config), Key) of
 	[{Key, Value}] -> Value;
 	_ -> Default
+    catch _:_ -> Default
     end.
 
 -spec select_type(binary(), host(), binary(), binary()) -> binary().

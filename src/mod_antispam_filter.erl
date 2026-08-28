@@ -149,12 +149,12 @@ needs_checking(#jid{lserver = FromHost} = From, #jid{lserver = LServer} = To) ->
 
 -spec check_from(binary(), jid()) -> ham | spam.
 check_from(Host, From) ->
-    Proc = get_proc_name(Host),
-    LFrom =
-        {_, FromDomain, _} =
-            jid:remove_resource(
-                jid:tolower(From)),
     try
+        Proc = gen_mod:get_module_proc_check(Host, ?MODULE_ANTISPAM),
+        LFrom =
+            {_, FromDomain, _} =
+                jid:remove_resource(
+                    jid:tolower(From)),
         case gen_server:call(Proc, {is_blocked_domain, FromDomain}) of
             true ->
                 ?DEBUG("Spam JID found in blocked domains: ~p", [From]),
@@ -167,6 +167,8 @@ check_from(Host, From) ->
                 end
         end
     catch
+        error:badarg ->
+            ham;
         exit:{timeout, _} ->
             ?WARNING_MSG("Timeout while checking ~s against list of blocked domains or spammers",
                          [jid:encode(From)]),
@@ -180,14 +182,17 @@ check_body(Host, From, Body) ->
             ?DEBUG("No JIDs/URLs found in message", []),
             ham;
         {URLs, JIDs} ->
-            Proc = get_proc_name(Host),
-            LFrom =
-                jid:remove_resource(
-                    jid:tolower(From)),
-            try gen_server:call(Proc, {check_body, URLs, JIDs, LFrom}) of
+            try Proc = gen_mod:get_module_proc_check(Host, ?MODULE_ANTISPAM),
+                LFrom =
+                    jid:remove_resource(
+                        jid:tolower(From)),
+                gen_server:call(Proc, {check_body, URLs, JIDs, LFrom})
+            of
                 {spam_filter, Result} ->
                     Result
             catch
+                error:badarg ->
+                    ham;
                 exit:{timeout, _} ->
                     ?WARNING_MSG("Timeout while checking body", []),
                     ham
@@ -288,10 +293,6 @@ reject(#presence{from = From,
     ejabberd_router:route_error(Presence, Err);
 reject(_) ->
     ok.
-
--spec get_proc_name(binary()) -> atom().
-get_proc_name(Host) ->
-    gen_mod:get_module_proc(Host, ?MODULE_ANTISPAM).
 
 %%--------------------------------------------------------------------
 

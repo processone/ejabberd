@@ -212,7 +212,7 @@ depends(_, _) ->
 component_connected(Host) ->
     lists:foreach(
       fun(ServerHost) ->
-	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
+	      Proc = gen_mod:get_module_proc_check(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_connected, Host})
       end, ejabberd_option:hosts()).
 
@@ -220,7 +220,7 @@ component_connected(Host) ->
 component_disconnected(Host, _Reason) ->
     lists:foreach(
       fun(ServerHost) ->
-	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
+	      Proc = gen_mod:get_module_proc_check(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_disconnected, Host})
       end, ejabberd_option:hosts()).
 

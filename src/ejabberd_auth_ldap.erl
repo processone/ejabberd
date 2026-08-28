@@ -305,7 +305,7 @@ result_attrs(#state{uids = UIDs,
 %%%----------------------------------------------------------------------
 parse_options(Host) ->
     Cfg = ?ELDAP_CONFIG(ejabberd_option, Host),
-    Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
+    Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc_check(Host, ?MODULE)),
     Bind_Eldap_ID = misc:atom_to_binary(
                       gen_mod:get_module_proc(Host, bind_ejabberd_auth_ldap)),
     UIDsTemp = ejabberd_option:ldap_uids(Host),

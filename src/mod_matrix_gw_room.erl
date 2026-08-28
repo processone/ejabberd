@@ -156,10 +156,14 @@ create_db() ->
 get_room_pid(Host, RoomID) ->
     case get_existing_room_pid(Host, RoomID) of
         {error, not_found} ->
-            case supervisor:start_child(supervisor(Host),
-                                        [Host, RoomID]) of
+            try
+                Proc = gen_mod:get_module_proc_check(Host, mod_matrix_gw_room_sup),
+                supervisor:start_child(Proc, [Host, RoomID])
+            of
                 {ok, undefined} -> {error, ignored};
                 Res -> Res
+            catch
+                error:badarg -> {error, wrong_host}
             end;
         {ok, Pid} ->
             {ok, Pid}

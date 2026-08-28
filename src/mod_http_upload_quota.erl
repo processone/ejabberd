@@ -72,11 +72,11 @@
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
 start(ServerHost, Opts) ->
-    Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
+    Proc = mod_http_upload:get_proc_name_init(ServerHost, ?MODULE),
     gen_mod:start_child(?MODULE, ServerHost, Opts, Proc).
 
 stop(ServerHost) ->
-    Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
+    Proc = mod_http_upload:get_proc_name_init(ServerHost, ?MODULE),
     gen_mod:stop_child(Proc).
 
 -spec mod_opt_type(atom()) -> econf:validator().
@@ -282,9 +282,12 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
 -spec handle_slot_request(allow | deny, binary(), jid(), binary(),
 			  non_neg_integer(), binary()) -> allow | deny.
 handle_slot_request(allow, ServerHost, JID, Path, Size, _Lang) ->
-    Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
-    gen_server:cast(Proc, {handle_slot_request, JID, Path, Size}),
-    allow;
+    try mod_http_upload:get_proc_name(ServerHost, ?MODULE) of
+	Proc ->
+	    gen_server:cast(Proc, {handle_slot_request, JID, Path, Size}),
+	    allow
+    catch error:badarg -> allow
+    end;
 handle_slot_request(Acc, _ServerHost, _JID, _Path, _Size, _Lang) -> Acc.
 
 %%--------------------------------------------------------------------

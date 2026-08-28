@@ -33,9 +33,9 @@
 	 get_module_opt/3, get_module_opts/2, get_module_opt_hosts/2,
 	 get_module_option_append/4,
 	 loaded_modules/1, loaded_modules_with_opts/1,
-	 get_hosts/2, get_module_proc/2, is_loaded/2, is_loaded_elsewhere/2,
+	 get_hosts/2, get_module_proc_check/2, is_loaded/2, is_loaded_elsewhere/2,
 	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
-	 db_mod/2, ram_db_mod/2, depend_on/2]).
+	 db_mod/2, ram_db_mod/2, depend_on/2, get_module_proc/2]).
 -export([validate/2]).
 
 %% Deprecated functions
@@ -565,9 +565,19 @@ get_hosts(Opts, Prefix) ->
 
 -spec get_module_proc(binary() | global, atom()) -> atom().
 get_module_proc(global, Base) ->
-    get_module_proc(<<"global">>, Base);
+    binary_to_atom(
+	<<(erlang:atom_to_binary(Base, latin1))/binary, "_global">>,
+	latin1);
 get_module_proc(Host, Base) ->
     binary_to_atom(
+	<<(erlang:atom_to_binary(Base, latin1))/binary, "_", Host/binary>>,
+	latin1).
+
+-spec get_module_proc_check(binary() | global, atom()) -> atom().
+get_module_proc_check(global, Base) ->
+    get_module_proc(<<"global">>, Base);
+get_module_proc_check(Host, Base) ->
+    binary_to_existing_atom(
       <<(erlang:atom_to_binary(Base, latin1))/binary, "_", Host/binary>>,
       latin1).
 

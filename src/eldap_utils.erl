@@ -151,7 +151,7 @@ case_insensitive_match(X, Y) ->
     end.
 
 get_state(Server, Module) ->
-    Proc = gen_mod:get_module_proc(Server, Module),
+    Proc = gen_mod:get_module_proc_check(Server, Module),
     gen_server:call(Proc, get_state).
 
 %% From the list of uids attribute:

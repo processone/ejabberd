@@ -96,10 +96,15 @@ create_db() ->
 get_connection(Host, MatrixServer) ->
     case mnesia:dirty_read(matrix_s2s, MatrixServer) of
 	[] ->
-	    case supervisor:start_child(supervisor(Host),
-					[Host, MatrixServer]) of
+	    try
+                Proc = gen_mod:get_module_proc_check(Host, mod_matrix_gw_s2s_sup),
+                supervisor:start_child(Proc, [Host, MatrixServer])
+            of
 		{ok, undefined} -> {error, ignored};
 		Res -> Res
+            catch
+                error:badarg ->
+                    {error, wrong_host}
 	    end;
         [#matrix_s2s{pid = Pid}] ->
             {ok, Pid}

@@ -134,7 +134,7 @@ pubsub_event_handler(#message{from = FromJid,
     case RTBLHost of
         From ->
             ParsedItems = parse_pubsub_event(Msg),
-            Proc = gen_mod:get_module_proc(LServer, ?SERVICE_MODULE),
+            Proc = gen_mod:get_module_proc_check(LServer, ?SERVICE_MODULE),
             gen_server:cast(Proc, {update_blocked_domains, ParsedItems}),
             %% FIXME what's the difference between `{drop, ...}` and `{stop, {drop, ...}}`?
             drop;

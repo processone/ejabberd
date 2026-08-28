@@ -359,7 +359,7 @@ parse_options(Host, Opts) ->
     MyHosts = gen_mod:get_opt_hosts(Opts),
     Search = mod_vcard_opt:search(Opts),
     Matches = mod_vcard_opt:matches(Opts),
-    Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
+    Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc_check(Host, ?PROCNAME)),
     Cfg = ?ELDAP_CONFIG(mod_vcard_ldap_opt, Opts),
     UIDsTemp = mod_vcard_ldap_opt:ldap_uids(Opts),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),

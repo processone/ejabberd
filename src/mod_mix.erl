@@ -74,7 +74,7 @@ stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
 
 reload(Host, NewOpts, OldOpts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    Proc = gen_mod:get_module_proc_check(Host, ?MODULE),
     gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
 depends(_Host, _Opts) ->

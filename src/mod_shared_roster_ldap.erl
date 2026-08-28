@@ -99,7 +99,7 @@ reload(Host, NewOpts, _OldOpts) ->
 	false ->
 	    ok
     end,
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    Proc = gen_mod:get_module_proc_check(Host, ?MODULE),
     gen_server:cast(Proc, {set_state, parse_options(Host, NewOpts)}).
 
 depends(_Host, _Opts) ->
@@ -460,7 +460,7 @@ get_user_part_re(String, Pattern) ->
     end.
 
 parse_options(Host, Opts) ->
-    Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
+    Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc_check(Host, ?MODULE)),
     Cfg = ?ELDAP_CONFIG(mod_shared_roster_ldap_opt, Opts),
     GroupAttr = mod_shared_roster_ldap_opt:ldap_groupattr(Opts),
     GroupDesc = case mod_shared_roster_ldap_opt:ldap_groupdesc(Opts) of

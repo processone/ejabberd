@@ -66,12 +66,12 @@
 %%====================================================================
 -spec start_ping(binary(), jid()) -> ok.
 start_ping(Host, JID) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    Proc = gen_mod:get_module_proc_check(Host, ?MODULE),
     gen_server:cast(Proc, {start_ping, JID}).
 
 -spec stop_ping(binary(), jid()) -> ok.
 stop_ping(Host, JID) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    Proc = gen_mod:get_module_proc_check(Host, ?MODULE),
     gen_server:cast(Proc, {stop_ping, JID}).
 
 %%====================================================================
@@ -84,7 +84,7 @@ stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
 
 reload(Host, NewOpts, OldOpts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    Proc = gen_mod:get_module_proc_check(Host, ?MODULE),
     gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
 %%====================================================================
@@ -213,9 +213,15 @@ user_send({Packet, #{jid := JID} = C2SState}) ->
 c2s_handle_cast(#{lserver := Host, jid := JID} = C2SState, send_ping) ->
     From = jid:make(Host),
     IQ = #iq{from = From, to = JID, type = get, sub_els = [#ping{}]},
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    PingAckTimeout = mod_ping_opt:ping_ack_timeout(Host),
-    ejabberd_router:route_iq(IQ, JID, Proc, PingAckTimeout),
+    try
+    gen_mod:get_module_proc(Host, ?MODULE) of
+	Proc ->
+	    PingAckTimeout = mod_ping_opt:ping_ack_timeout(Host),
+	    ejabberd_router:route_iq(IQ, JID, Proc, PingAckTimeout)
+    catch
+	error:badarg ->
+	    ok
+    end,
     {stop, C2SState};
 c2s_handle_cast(C2SState, _Msg) ->
     C2SState.

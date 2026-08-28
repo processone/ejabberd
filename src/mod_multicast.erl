@@ -92,7 +92,7 @@ stop(LServerS) ->
     gen_mod:stop_child(?MODULE, LServerS).
 
 reload(LServerS, NewOpts, OldOpts) ->
-    Proc = gen_mod:get_module_proc(LServerS, ?MODULE),
+    Proc = gen_mod:get_module_proc_check(LServerS, ?MODULE),
     gen_server:cast(Proc, {reload, NewOpts, OldOpts}).
 
 -define(SETS, gb_sets).

@@ -203,7 +203,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 -spec announce(stanza()) -> ok | stop.
 announce(#message{to = #jid{luser = <<>>} = To} = Packet) ->
-    Proc = gen_mod:get_module_proc(To#jid.lserver, ?MODULE),
+    Proc = gen_mod:get_module_proc_check(To#jid.lserver, ?MODULE),
     Res = case To#jid.lresource of
 	      <<"announce/all">> ->
 		  gen_server:cast(Proc, {announce_all, Packet});
@@ -603,7 +603,7 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 		      type = headline,
 		      body = xmpp:mk_text(Body),
 		      subject = xmpp:mk_text(Subject)},
-    Proc = gen_mod:get_module_proc(LServer, ?MODULE),
+    Proc = gen_mod:get_module_proc_check(LServer, ?MODULE),
     case {Node, Body} of
 	{?NS_ADMIN_DELETE_MOTD, _} ->
 	    if	Confirm ->

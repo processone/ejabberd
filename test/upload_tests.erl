@@ -44,6 +44,7 @@ single_cases() ->
       single_test(get_max_size),
       single_test(slot_request),
       single_test(put_get_request),
+      single_test(invalid_requests),
       single_test(max_size_exceed)]}.
 
 feature_enabled(Config) ->
@@ -91,6 +92,19 @@ put_get_request(Config) ->
 	      put_request(Config, PutURL, Data),
 	      get_request(Config, GetURL, Data)
       end, namespaces()),
+    disconnect(Config).
+
+invalid_requests(Config) ->
+    {GetURL, PutURL, _Filename, _Size} = slot_request(Config, ?NS_HTTP_UPLOAD_0),
+    ?match({ok, {{_, 404, _}, _, _}},
+           httpc:request(put, {PutURL, [{"Host", "fake.host"}], ?CONTENT_TYPE, <<"1">>}, [], [])),
+    ?match({ok, {{_, 404, _}, _, _}},
+           httpc:request(get, {GetURL, [{"Host", "fake.host"}]}, [], [{body_format, binary}])),
+    try binary_to_existing_atom(<<"mod_http_upload_fake.host/upload">>, latin) of
+	Atom -> suite:match_failure([Atom], [no_atom])
+    catch error:badarg ->
+	ok
+    end,
     disconnect(Config).
 
 max_size_exceed(Config) ->

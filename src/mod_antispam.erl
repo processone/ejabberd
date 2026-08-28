@@ -126,7 +126,7 @@ stop(Host) ->
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(Host, NewOpts, OldOpts) ->
     ?DEBUG("reloading", []),
-    Proc = get_proc_name(Host),
+    Proc = gen_mod:get_module_proc_check(Host, ?MODULE),
     gen_server:cast(Proc, {reload, NewOpts, OldOpts}).
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
@@ -616,10 +616,6 @@ get_rtbl_services_option(Opts) when is_map(Opts) ->
             [#rtbl_service{host = Host, node = Node}]
     end.
 
--spec get_proc_name(binary()) -> atom().
-get_proc_name(Host) ->
-    gen_mod:get_module_proc(Host, ?MODULE).
-
 -spec get_spam_filter_hosts() -> [binary()].
 get_spam_filter_hosts() ->
     [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, ?MODULE)].
@@ -786,11 +782,14 @@ for_all_hosts(F, A) ->
 
 try_call_by_host(Host, Call) ->
     LServer = jid:nameprep(Host),
-    Proc = get_proc_name(LServer),
-    try gen_server:call(Proc, Call, ?COMMAND_TIMEOUT) of
+    try Proc = gen_mod:get_module_proc_check(LServer, ?MODULE),
+        gen_server:call(Proc, Call, ?COMMAND_TIMEOUT)
+    of
         Result ->
             Result
     catch
+        error:badarg ->
+            {error, "Not configured for " ++ binary_to_list(Host)};
         exit:{noproc, _} ->
             {error, "Not configured for " ++ binary_to_list(Host)};
         exit:{timeout, _} ->

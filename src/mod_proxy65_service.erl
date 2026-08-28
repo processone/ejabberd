@@ -55,7 +55,7 @@ start_link(Host) ->
     gen_server:start_link({local, Proc}, ?MODULE, [Host], []).
 
 reload(Host, NewOpts, OldOpts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc = gen_mod:get_module_proc_check(Host, ?PROCNAME),
     gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
 init([Host]) ->

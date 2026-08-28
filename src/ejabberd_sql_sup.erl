@@ -118,7 +118,7 @@ config_reloaded() ->
 reload(Host) ->
     case is_started(Host) of
 	true ->
-	    Sup = gen_mod:get_module_proc(Host, ?MODULE),
+	    Sup = gen_mod:get_module_proc_check(Host, ?MODULE),
 	    Type = ejabberd_option:sql_type(Host),
 	    PoolSize = get_pool_size(Type, Host),
 	    lists:foreach(
@@ -140,7 +140,10 @@ reload(Host) ->
 
 -spec is_started(binary()) -> boolean().
 is_started(Host) ->
-    whereis(gen_mod:get_module_proc(Host, ?MODULE)) /= undefined.
+    try whereis(gen_mod:get_module_proc_check(Host, ?MODULE)) /= undefined
+    catch
+	error:badarg -> false
+    end.
 
 -spec get_pool_size(atom(), binary()) -> pos_integer().
 get_pool_size(SQLType, Host) ->

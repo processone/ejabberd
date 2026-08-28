@@ -111,17 +111,21 @@
 
 start(#body{attrs = Attrs} = Body, IP, SID) ->
     XMPPDomain = get_attr(to, Attrs),
-    SupervisorProc = gen_mod:get_module_proc(XMPPDomain, mod_bosh),
-    case catch supervisor:start_child(SupervisorProc,
-				      [Body, IP, SID])
-	of
-      {ok, Pid} -> {ok, Pid};
-      {'EXIT', {noproc, _}} ->
-	  check_bosh_module(XMPPDomain),
-	  {error, module_not_loaded};
-      Err ->
-	  ?ERROR_MSG("Failed to start BOSH session: ~p", [Err]),
-	  {error, Err}
+    try
+	SupervisorProc = gen_mod:get_module_proc_check(XMPPDomain, mod_bosh),
+	supervisor:start_child(SupervisorProc,
+			       [Body, IP, SID])
+    of
+	{ok, Pid} -> {ok, Pid};
+	Err ->
+	    ?ERROR_MSG("Failed to start BOSH session: ~p", [Err]),
+	    {error, Err}
+    catch
+	exit:{noproc, _} ->
+	    check_bosh_module(XMPPDomain),
+	    {error, module_not_loaded};
+	error:badarg ->
+	    {error, wrong_host}
     end.
 
 start(StateName, State) ->
@@ -218,6 +222,14 @@ process_request(Data, IP, Type) ->
 		    SID == <<"">> ->
 			case start(Body, IP, make_sid()) of
 			  {ok, Pid} -> process_request(Pid, Body, IP, Type);
+			  {error, wrong_host} ->
+				bosh_response_with_msg(#body{http_reason =
+							     <<"Failed to start BOSH session">>,
+							     attrs =
+							     [{type, <<"terminate">>},
+							      {condition,
+							       <<"host-unknown">>}]},
+						       Type, Body);
 			  _Err ->
 			      bosh_response_with_msg(#body{http_reason =
 						      <<"Failed to start BOSH session">>,

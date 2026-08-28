@@ -75,21 +75,24 @@ stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
 
 reload(Host, NewOpts, _OldOpts) ->
-    Proc = get_proc_name(Host),
+    Proc = gen_mod:get_module_proc_check(Host, ?MODULE),
     gen_server:cast(Proc, {reload, NewOpts}).
 
 add_to_log(Host, Type, Data, Room, Opts) ->
-    gen_server:cast(get_proc_name(Host),
+    gen_server:cast(gen_mod:get_module_proc_check(Host, ?MODULE),
 		    {add_to_log, Type, Data, Room, Opts}).
 
 check_access_log(allow, _Host, _From) ->
     allow;
 check_access_log(_Acc, Host, From) ->
-    case catch gen_server:call(get_proc_name(Host),
-			       {check_access_log, Host, From})
-	of
-      {'EXIT', _Error} -> deny;
-      Res -> Res
+    try
+	Proc = gen_mod:get_module_proc_check(Host, ?MODULE),
+	gen_server:call(Proc, {check_access_log, Host, From})
+    of
+	Res -> Res
+    catch
+	exit:_ -> deny;
+	error:badarg -> deny
     end.
 
 -spec get_url(any(), #state{}) -> {ok, binary()} | error.
@@ -969,9 +972,6 @@ get_room_state(RoomPid) ->
 	{ok, State} -> {ok, State};
 	{error, _} -> error
     end.
-
-get_proc_name(Host) ->
-    gen_mod:get_module_proc(Host, ?MODULE).
 
 calc_hour_offset(TimeHere) ->
     TimeZero = calendar:universal_time(),

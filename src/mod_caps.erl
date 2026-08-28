@@ -390,7 +390,7 @@ feature_request(Host, From, To, Caps,
 							     SubNode/binary>>}]},
 		    ejabberd_router:route_iq(
 		      IQ, {Host, From, To, Caps, SubNodes},
-		      gen_mod:get_module_proc(Host, ?MODULE));
+		      gen_mod:get_module_proc_check(Host, ?MODULE));
 		false ->
 		    ok
 	    end,

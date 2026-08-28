@@ -59,6 +59,7 @@
 
 %% Utility functions.
 -export([get_proc_name/2,
+	 get_proc_name_init/2,
 	 expand_home/1,
 	 expand_host/2]).
 
@@ -102,7 +103,7 @@
 %%--------------------------------------------------------------------
 -spec start(binary(), gen_mod:opts()) -> {ok, pid()} | {error, term()}.
 start(ServerHost, Opts) ->
-    Proc = get_proc_name(ServerHost, ?MODULE),
+    Proc = get_proc_name_init(ServerHost, ?MODULE),
     case gen_mod:start_child(?MODULE, ServerHost, Opts, Proc) of
 	{ok, _} = Ret -> Ret;
 	{error, {already_started, _}} = Err ->
@@ -115,15 +116,15 @@ start(ServerHost, Opts) ->
 
 -spec stop(binary()) -> ok | {error, any()}.
 stop(ServerHost) ->
-    Proc = get_proc_name(ServerHost, ?MODULE),
+    Proc = get_proc_name_init(ServerHost, ?MODULE),
     gen_mod:stop_child(Proc).
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok | {ok, pid()} | {error, term()}.
 reload(ServerHost, NewOpts, OldOpts) ->
     NewURL = mod_http_upload_opt:put_url(NewOpts),
     OldURL = mod_http_upload_opt:put_url(OldOpts),
-    OldProc = get_proc_name(ServerHost, ?MODULE, OldURL),
-    NewProc = get_proc_name(ServerHost, ?MODULE, NewURL),
+    OldProc = get_proc_name_init(ServerHost, ?MODULE, OldURL),
+    NewProc = get_proc_name_init(ServerHost, ?MODULE, NewURL),
     if OldProc /= NewProc ->
 	    gen_mod:stop_child(OldProc),
 	    start(ServerHost, NewOpts);
@@ -560,8 +561,9 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 			     length = Length} = Request0) ->
     Request = Request0#request{host = redecode_url(Host)},
-    {Proc, Slot} = parse_http_request(Request),
-    try gen_server:call(Proc, {use_slot, Slot, Length}, ?CALL_TIMEOUT) of
+    try
+	{Proc, Slot} = parse_http_request(Request),
+	gen_server:call(Proc, {use_slot, Slot, Length}, ?CALL_TIMEOUT) of
 	{ok, Path, FileMode, DirMode, GetPrefix, Thumbnail, CustomHeaders} ->
 	    ?DEBUG("Storing file from ~ts for ~ts: ~ts",
 		   [encode_addr(IP), Host, Path]),
@@ -589,6 +591,11 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		      [lists:last(Slot), encode_addr(IP), Host]),
 	    http_response(403)
     catch
+        error:badarg ->
+	    ?WARNING_MSG("Cannot handle PUT request from ~ts for ~ts: "
+			 "Upload not configured for this host",
+			 [encode_addr(IP), Host]),
+	    http_response(404);
 	exit:{noproc, _} ->
 	    ?WARNING_MSG("Cannot handle PUT request from ~ts for ~ts: "
 			 "Upload not configured for this host",
@@ -603,8 +610,9 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP, headers = Re
     when Method == 'GET';
 	 Method == 'HEAD' ->
     Request = Request0#request{host = redecode_url(Host)},
-    {Proc, [_UserDir, _RandDir, FileName] = Slot} = parse_http_request(Request),
-    try gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
+    try
+	{Proc, [_UserDir, _RandDir, FileName] = Slot} = parse_http_request(Request),
+	gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
 	{ok, DocRoot, ServerHost, CustomHeaders} ->
 	    Path = str:join([DocRoot | Slot], <<$/>>),
 	    case file:open(Path, [read]) of
@@ -643,6 +651,11 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP, headers = Re
 		    http_response(500)
 	    end
     catch
+	error:badarg ->
+	    ?WARNING_MSG("Cannot handle ~ts request from ~ts for ~ts: "
+			 "Upload not configured for this host",
+			 [Method, encode_addr(IP), Host]),
+	    http_response(404);
 	exit:{noproc, _} ->
 	    ?WARNING_MSG("Cannot handle ~ts request from ~ts for ~ts: "
 			 "Upload not configured for this host",
@@ -657,12 +670,18 @@ process(_LocalPath, #request{method = 'OPTIONS', host = Host,
 			     ip = IP} = Request) ->
     ?DEBUG("Responding to OPTIONS request from ~ts for ~ts",
 	   [encode_addr(IP), Host]),
-    {Proc, _Slot} = parse_http_request(Request),
-    try gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
+    try
+	{Proc, _Slot} = parse_http_request(Request),
+	gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
 	{ok, _DocRoot, _ServerHost, CustomHeaders} ->
 	    AllowHeader = {<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>},
 	    http_response(200, ejabberd_http:apply_custom_headers([AllowHeader], CustomHeaders))
     catch
+	error:badarg ->
+	    ?WARNING_MSG("Cannot handle OPTIONS request from ~ts for ~ts: "
+			 "Upload not configured for this host",
+			 [encode_addr(IP), Host]),
+	    http_response(404);
 	exit:{noproc, _} ->
 	    ?WARNING_MSG("Cannot handle OPTIONS request from ~ts for ~ts: "
 			 "Upload not configured for this host",
@@ -734,10 +753,21 @@ init_state(#state{server_host = ServerHost, hosts = Hosts} = State, Opts) ->
 -spec get_proc_name(binary(), atom()) -> atom().
 get_proc_name(ServerHost, ModuleName) ->
     PutURL = mod_http_upload_opt:put_url(ServerHost),
-    get_proc_name(ServerHost, ModuleName, PutURL).
+    %% Once we depend on OTP >= 20.0, we can use binaries with http_uri.
+    {ok, _Scheme, _UserInfo, Host0, _Port, Path0, _Query} =
+	misc:uri_parse(expand_host(PutURL, ServerHost)),
+    Host = jid:nameprep(iolist_to_binary(Host0)),
+    Path = str:strip(iolist_to_binary(Path0), right, $/),
+    ProcPrefix = <<Host/binary, Path/binary>>,
+    gen_mod:get_module_proc_check(ProcPrefix, ModuleName).
 
--spec get_proc_name(binary(), atom(), binary()) -> atom().
-get_proc_name(ServerHost, ModuleName, PutURL) ->
+-spec get_proc_name_init(binary(), atom()) -> atom().
+get_proc_name_init(ServerHost, ModuleName) ->
+    PutURL = mod_http_upload_opt:put_url(ServerHost),
+    get_proc_name_init(ServerHost, ModuleName, PutURL).
+
+-spec get_proc_name_init(binary(), atom(), binary()) -> atom().
+get_proc_name_init(ServerHost, ModuleName, PutURL) ->
     %% Once we depend on OTP >= 20.0, we can use binaries with http_uri.
     {ok, _Scheme, _UserInfo, Host0, _Port, Path0, _Query} =
         misc:uri_parse(expand_host(PutURL, ServerHost)),
@@ -1031,7 +1061,7 @@ parse_http_request(#request{host = Host0, path = Path}) ->
 			 true ->
 			      {Host, Path}
 		      end,
-    {gen_mod:get_module_proc(ProcURL, ?MODULE), Slot}.
+    {gen_mod:get_module_proc_check(ProcURL, ?MODULE), Slot}.
 
 -spec store_file(binary(), http_request(),
 		 integer() | undefined,

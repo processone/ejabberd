@@ -126,7 +126,7 @@ stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
 
 reload(Host, NewOpts, OldOpts) ->
-    Proc = get_proc_name(Host),
+    Proc = gen_mod:get_module_proc_check(Host, ?MODULE),
     gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
 depends(_Host, _Opts) ->
@@ -319,12 +319,12 @@ process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders, raw_pa
     ?DEBUG("Requested ~p", [LocalPath]),
     try
 	VHost = ejabberd_router:host_of_route(Host),
+	Proc = gen_mod:get_module_proc_check(VHost, ?MODULE),
 	{FileSize, Code, Headers, Contents} =
-	    gen_server:call(get_proc_name(VHost),
-			    {serve, RawPath, LocalPath, Auth, RHeaders}),
+	    gen_server:call(Proc, {serve, RawPath, LocalPath, Auth, RHeaders}),
 	add_to_log(FileSize, Code, Request#request{host = VHost}),
 	{Code, Headers, Contents}
-    catch _:{Why, _} when Why == noproc; Why == invalid_domain; Why == unregistered_route ->
+    catch _:{Why, _} when Why == noproc; Why == badarg; Why == invalid_domain; Why == unregistered_route ->
 	    ?DEBUG("Received an HTTP request with Host: ~ts, "
 		   "but couldn't find the related "
 		   "ejabberd virtual host", [Host]),
@@ -434,11 +434,11 @@ reopen_log(FN, FD) ->
 reopen_log() ->
     lists:foreach(
       fun(Host) ->
-	      gen_server:cast(get_proc_name(Host), reopen_log)
+	      gen_server:cast(gen_mod:get_module_proc_check(Host, ?MODULE), reopen_log)
       end, ejabberd_option:hosts()).
 
 add_to_log(FileSize, Code, Request) ->
-    gen_server:cast(get_proc_name(Request#request.host),
+    gen_server:cast(gen_mod:get_module_proc_check(Request#request.host, ?MODULE),
 		    {add_to_log, FileSize, Code, Request}).
 
 add_to_log(undefined, _FileSize, _Code, _Request) ->
@@ -485,8 +485,6 @@ find_header(Header, Headers, Default) ->
 %%----------------------------------------------------------------------
 %% Utilities
 %%----------------------------------------------------------------------
-
-get_proc_name(Host) -> gen_mod:get_module_proc(Host, ?MODULE).
 
 join([], _) ->
     <<"">>;
