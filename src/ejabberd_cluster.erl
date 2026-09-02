@@ -64,7 +64,12 @@ call(Node, Module, Function, Args) ->
 
 -spec call(node(), module(), atom(), [any()], timeout()) -> any().
 call(Node, Module, Function, Args, Timeout) ->
-    rpc:call(Node, Module, Function, Args, Timeout).
+    case check_node(Node) of
+	true ->
+	    rpc:call(Node, Module, Function, Args, Timeout);
+	_ ->
+	    {badrpc, unknown_node}
+    end.
 
 -spec multicall(module(), atom(), [any()]) -> {list(), [node()]}.
 multicall(Module, Function, Args) ->
@@ -76,7 +81,12 @@ multicall(Nodes, Module, Function, Args) ->
 
 -spec multicall([node()], module(), atom(), list(), timeout()) -> {list(), [node()]}.
 multicall(Nodes, Module, Function, Args, Timeout) ->
-    rpc:multicall(Nodes, Module, Function, Args, Timeout).
+    case check_nodes(Nodes) of
+	true ->
+	    rpc:multicall(Nodes, Module, Function, Args, Timeout);
+	_ ->
+	    {badrpc, unknown_node}
+    end.
 
 -spec eval_everywhere(module(), atom(), [any()]) -> ok.
 eval_everywhere(Module, Function, Args) ->
@@ -85,8 +95,21 @@ eval_everywhere(Module, Function, Args) ->
 
 -spec eval_everywhere([node()], module(), atom(), [any()]) -> ok.
 eval_everywhere(Nodes, Module, Function, Args) ->
-    rpc:eval_everywhere(Nodes, Module, Function, Args),
-    ok.
+    case check_nodes(Nodes) of
+	true ->
+	    rpc:eval_everywhere(Nodes, Module, Function, Args),
+	    ok;
+	_ ->
+	    {badrpc, unknown_node}
+    end.
+
+check_nodes([]) ->
+    true;
+check_nodes([Node | Rest]) ->
+    check_node(Node) andalso check_nodes(Rest).
+
+check_node(Node) ->
+    lists:member(Node, get_known_nodes()).
 
 %%%===================================================================
 %%% Backend dependent API
