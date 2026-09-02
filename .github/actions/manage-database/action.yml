@@ -26,14 +26,6 @@ runs:
 
     ############################################################# Install #####
 
-    - if: contains(inputs.for, 'pgsql') && contains(inputs.do, 'install')
-      shell: sh
-      run: |
-        sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
-        sudo rm -f /var/lib/man-db/auto-update || echo ok
-        sudo apt-get -q update
-        sudo apt-get -q -y install postgresql
-
     - if: contains(inputs.for, 'redis') && contains(inputs.do, 'install')
       shell: sh
       run: |
