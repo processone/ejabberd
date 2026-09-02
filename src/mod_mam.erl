@@ -719,7 +719,7 @@ delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"c
     CurrentTime = make_id(),
     Diff = Days * 24 * 60 * 60 * 1000000,
     TimeStamp = misc:usec_to_now(CurrentTime - Diff),
-    TypeA = misc:binary_to_atom(Type),
+    TypeA = misc:binary_to_existing_atom(Type),
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
 
@@ -783,7 +783,7 @@ delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
     CurrentTime = make_id(),
     Diff = Days * 24 * 60 * 60 * 1000000,
     TimeStamp = misc:usec_to_now(CurrentTime - Diff),
-    Type = misc:binary_to_atom(TypeBin),
+    Type = misc:binary_to_existing_atom(TypeBin),
     DBTypes = lists:usort(
 		lists:map(
 		  fun(Host) ->

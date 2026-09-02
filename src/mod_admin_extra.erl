@@ -1127,7 +1127,7 @@ check_password_hash(User, Host, PasswordHash, HashMethod) ->
 get_hash(AccountPass, Method) ->
     iolist_to_binary([io_lib:format("~2.16.0B", [X])
           || X <- binary_to_list(
-              crypto:hash(binary_to_atom(Method, latin1), AccountPass))]).
+              crypto:hash(binary_to_existing_atom(Method, latin1), AccountPass))]).
 
 delete_old_users(Days) ->
     %% Get the list of registered users
@@ -1458,9 +1458,9 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pres = #presence{
         from = jid:make(User, Host, Resource),
         to = jid:make(User, Host),
-        type = misc:binary_to_atom(Type),
+        type = binary_to_existing_atom(Type, latin1),
         status = xmpp:mk_text(Status),
-        show = misc:binary_to_atom(Show),
+        show = binary_to_existing_atom(Show, latin1),
         priority = Priority,
         sub_els = []},
     case ejabberd_sm:get_session_pid(User, Host, Resource) of
@@ -1796,7 +1796,7 @@ build_roster_item(U, S, {add, Nick, Subs, Group}) ->
     Groups = binary:split(Group,<<";">>, [global, trim]),
     #roster_item{jid = jid:make(U, S),
 		 name = Nick,
-		 subscription = misc:binary_to_atom(Subs),
+		 subscription = binary_to_existing_atom(Subs, latin1),
 		 groups = Groups};
 build_roster_item(U, S, remove) ->
     #roster_item{jid = jid:make(U, S), subscription = remove}.
@@ -1806,7 +1806,7 @@ build_iq_roster_push(Item) ->
 	sub_els = [#roster_query{items = [Item]}]}.
 
 build_broadcast(U, S, {add, _Nick, Subs, _Group}) ->
-    build_broadcast(U, S, list_to_atom(binary_to_list(Subs)));
+    build_broadcast(U, S, binary_to_existing_atom(Subs, latin1));
 build_broadcast(U, S, remove) ->
     build_broadcast(U, S, none);
 %% @spec (U::binary(), S::binary(), Subs::atom()) -> any()

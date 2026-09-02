@@ -324,7 +324,7 @@ try_call_command(Args, Auth, AccessCommands, Version) ->
     catch
 	throw:{error, unknown_command} ->
 	    KnownCommands = [Cmd || {Cmd, _, _} <- ejabberd_commands:list_commands(Version)],
-	    UnknownCommand = list_to_atom(hd(Args)),
+	    UnknownCommand = hd(Args),
 	    {io_lib:format(
 	       "Error: unknown command '~ts'. Did you mean '~ts'?",
 	       [hd(Args), misc:best_match(UnknownCommand, KnownCommands)]),

@@ -1324,15 +1324,19 @@ pretty_string_int(String) when is_binary(String) ->
 %%%% mnesia table view
 
 webadmin_node_db_table_page(Node, STable, PageNumber) ->
-    Table = misc:binary_to_atom(STable),
-    TInfo = ejabberd_cluster:call(Node, mnesia, table_info, [Table, all]),
-    {value, {storage_type, Type}} = lists:keysearch(storage_type, 1, TInfo),
-    {value, {size, Size}} = lists:keysearch(size, 1, TInfo),
-    PageSize = 500,
-    TableContentErl = get_table_content(Node, Table, Type, PageNumber, PageSize),
-    TableContent = str:format("~p", [TableContentErl]),
-    PagesLinks = build_elements_pages_list(Size, PageNumber, PageSize),
-    [?P] ++ PagesLinks ++ [?XC(<<"pre">>, TableContent)].
+    try binary_to_existing_atom(STable, utf8) of
+	Table ->
+	    TInfo = ejabberd_cluster:call(Node, mnesia, table_info, [Table, all]),
+	    {value, {storage_type, Type}} = lists:keysearch(storage_type, 1, TInfo),
+	    {value, {size, Size}} = lists:keysearch(size, 1, TInfo),
+	    PageSize = 500,
+	    TableContentErl = get_table_content(Node, Table, Type, PageNumber, PageSize),
+	    TableContent = str:format("~p", [TableContentErl]),
+	    PagesLinks = build_elements_pages_list(Size, PageNumber, PageSize),
+	    [?P] ++ PagesLinks ++ [?XC(<<"pre">>, TableContent)]
+    catch
+	error:badarg -> []
+    end.
 
 build_elements_pages_list(Size, PageNumber, PageSize) ->
     PagesNumber = calculate_pages_number(Size, PageSize),
@@ -1949,27 +1953,32 @@ get_filters_from_query(Query, Fields) ->
 get_filters_from_query([], _F, Acc) ->
     Acc;
 get_filters_from_query([{KeyBin, Value} | Query], Fields, Acc) when is_binary(KeyBin) ->
-    Key = binary_to_atom(KeyBin),
-    case lists:keyfind(Key, 1, Fields) of
-        false ->
-            get_filters_from_query(Query, Fields, Acc);
-        {Key, Type} ->
-            case lists:keyfind(Key, 1, Acc) of
+    try binary_to_existing_atom(KeyBin) of
+        Key ->
+            case lists:keyfind(Key, 1, Fields) of
                 false ->
-                    get_filters_from_query(Query,
-                                           Fields,
-                                           [{Key,
-                                             get_pos(Key, Fields, 1),
-                                             [convert_type(strip_slash(Value), Type)]}
-                                            | Acc]);
-                {_, _, Values} ->
-                    NewVal =
-                        {Key,
-                         get_pos(Key, Fields, 1),
-                         [convert_type(strip_slash(Value), Type) | Values]},
-                    Acc0 = lists:keyreplace(Key, 1, Acc, NewVal),
-                    get_filters_from_query(Query, Fields, Acc0)
+                    get_filters_from_query(Query, Fields, Acc);
+                {Key, Type} ->
+                    case lists:keyfind(Key, 1, Acc) of
+                        false ->
+                            get_filters_from_query(Query,
+                                                   Fields,
+                                                   [{Key,
+                                                     get_pos(Key, Fields, 1),
+                                                     [convert_type(strip_slash(Value), Type)]}
+                                                    | Acc]);
+                        {_, _, Values} ->
+                            NewVal =
+                                {Key,
+                                 get_pos(Key, Fields, 1),
+                                 [convert_type(strip_slash(Value), Type) | Values]},
+                            Acc0 = lists:keyreplace(Key, 1, Acc, NewVal),
+                            get_filters_from_query(Query, Fields, Acc0)
+                    end
             end
+    catch
+        error:badarg ->
+            get_filters_from_query(Query, Fields, Acc)
     end;
 get_filters_from_query([_ | Query], Fields, Acc) ->
     get_filters_from_query(Query, Fields, Acc).

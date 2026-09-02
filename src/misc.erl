@@ -32,7 +32,7 @@
 	 unwrap_carbon/1, unwrap_mucsub_message/1, is_standalone_chat_state/1,
 	 tolower/1, term_to_base64/1, base64_to_term/1, ip_to_list/1,
 	 hex_to_bin/1, hex_to_base64/1, url_encode/1, expand_keyword/3,
-	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
+	 atom_to_binary/1, binary_to_atom/1, binary_to_existing_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
 	 now_to_usec/1, usec_to_now/1, encode_pid/1, decode_pid/2,
 	 compile_exprs/2, join_atoms/2, try_read_file/1, get_descr/2,
@@ -289,6 +289,9 @@ expand_keyword(Keyword, Input, Replacement) ->
 
 binary_to_atom(Bin) ->
     erlang:binary_to_atom(Bin, utf8).
+
+binary_to_existing_atom(Bin) ->
+    erlang:binary_to_existing_atom(Bin, utf8).
 
 tuple_to_binary(T) ->
     iolist_to_binary(tuple_to_list(T)).

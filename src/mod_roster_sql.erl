@@ -490,8 +490,9 @@ format_row_error(User, Server, Why) ->
      " detected for ", User, "@", Server, " in table 'rosterusers'"].
 
 process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
-    process_rosteritems_sql(ActionS, list_to_atom(SubsS), list_to_atom(AsksS),
-	list_to_binary(UsersS), list_to_binary(ContactsS)).
+    process_rosteritems_sql(ActionS, list_to_existing_atom(SubsS),
+			    list_to_existing_atom(AsksS), list_to_binary(UsersS),
+			    list_to_binary(ContactsS)).
 
 process_rosteritems_sql(ActionS, Subscription, Ask, SLocalJID, SJID) ->
     [LUser, LServer] = binary:split(SLocalJID, <<"@">>),

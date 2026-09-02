@@ -1286,7 +1286,7 @@ set_form(_From, _Host,
       Node ->
 	  lists:foreach(
 	    fun(#xdata_field{var = SVar, values = SVals}) ->
-		    Table = misc:binary_to_atom(SVar),
+		    Table = misc:binary_to_existing_atom(SVar),
 		    Type = case SVals of
 			       [<<"unknown">>] -> unknown;
 			       [<<"ram_copies">>] -> ram_copies;
@@ -1696,7 +1696,7 @@ stop_node(From, Host, ENode, Action, XData) ->
 	    mod_announce:announce_commands(empty, From, To, Request)
     end,
     Time = timer:seconds(Delay),
-    Node = misc:binary_to_atom(ENode),
+    Node = misc:binary_to_existing_atom(ENode),
     {ok, _} = timer:apply_after(Time, ejabberd_cluster, call, [Node, init, Action, []]),
     {result, undefined}.
 

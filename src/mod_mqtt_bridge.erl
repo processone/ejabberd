@@ -156,7 +156,7 @@ mod_opt_type(servers) ->
 		    Publish = maps:get(publish, Opts, #{}),
 		    Subscribe = maps:get(subscribe, Opts, #{}),
 		    Authentication = maps:get(authentication, Opts, []),
-		    Proto = list_to_atom(Scheme),
+		    Proto = list_to_existing_atom(Scheme),
 		    Proc = proc_name(Scheme, Host, Port, Path),
 		    PAcc2 = maps:fold(
 			fun(Topic, _RemoteTopic, Acc) ->

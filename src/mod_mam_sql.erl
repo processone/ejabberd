@@ -764,7 +764,7 @@ make_archive_el(User, TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchi
 			    T = case Kind of
 				    <<"">> -> chat;
 				    null -> chat;
-				    _ -> misc:binary_to_atom(Kind)
+				    _ -> misc:binary_to_existing_atom(Kind)
 				end,
 			    mod_mam:msg_to_el(
 			      #archive_msg{timestamp = Now,

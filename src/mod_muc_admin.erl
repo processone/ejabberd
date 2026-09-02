@@ -1892,7 +1892,7 @@ change_room_option(Pid, Option, Value) ->
     end.
 
 format_room_option(OptionString, ValueString) ->
-    Option = misc:binary_to_atom(OptionString),
+    Option = misc:binary_to_existing_atom(OptionString),
     Value = case Option of
 		title -> ValueString;
 		description -> ValueString;

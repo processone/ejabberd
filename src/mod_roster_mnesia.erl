@@ -180,14 +180,14 @@ process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
                 (Sub, Subs) -> [Sub | Subs]
              end,
              [],
-             [list_to_atom(S) || S <- string:tokens(SubsS, ":")]
+             [list_to_existing_atom(S) || S <- string:tokens(SubsS, ":")]
             ),
     Asks = lists:foldl(
              fun(any, _) -> [none, out, in];
                 (Ask, Asks) -> [Ask | Asks]
              end,
              [],
-             [list_to_atom(S) || S <- string:tokens(AsksS, ":")]
+             [list_to_existing_atom(S) || S <- string:tokens(AsksS, ":")]
             ),
     Users = lists:foldl(
               fun("any", _) -> ["*", "*@*"];
