@@ -148,6 +148,13 @@ to_json(#serialize_roster_v1{entries = Entries} = Data) ->
                          Entries),
     Data2 = setelement(#serialize_roster_v1.entries, Data, Entries2),
     to_json(tuple_to_list(Data2), [type | record_info(fields, serialize_roster_v1)], #{});
+to_json(#serialize_roster_v2{entries = Entries} = Data) ->
+    Entries2 = lists:map(fun({Jid, Nick, Groups, Sub, Ask, AskMsg, Approved}) ->
+        #{jid => Jid, nick => Nick, groups => Groups, sub => Sub, ask => Ask, ask_msg => AskMsg, approved => Approved}
+                         end,
+                         Entries),
+    Data2 = setelement(#serialize_roster_v1.entries, Data, Entries2),
+    to_json(tuple_to_list(Data2), [type | record_info(fields, serialize_roster_v1)], #{});
 to_json(#serialize_privacy_v1{lists = Lists} = Data) ->
     Lists2 = lists:map(
         fun({Name, Entries}) ->
@@ -394,6 +401,11 @@ write_batch(WriteFun, _Ext, Host, _Mod, DbMod, _Dir, {IO, Path, Key}) ->
             {error, iolist_to_binary(Error)}
     end.
 
+update(#serialize_roster_v1{serverhost = ServerHost, entries = Entries, username = Username, version = Version}) ->
+    Entries2 = [{E1, E2, E3, E4, E5, E6, E7, false} || {E1, E2, E3, E4, E5, E6, E7} <- Entries],
+    #serialize_roster_v2{serverhost = ServerHost, username = Username, version = Version, entries = Entries2};
+update(Other) ->
+    Other.
 
 read_batch(Host, Mod, DbMod, Dir, undefined) ->
     FN = <<Host/binary, "_", (atom_to_binary(Mod, latin1))/binary, ".dbser">>,
@@ -413,7 +425,8 @@ read_batch(Host, _Mod, DbMod, _Dir, {IO, Path}) ->
                 {ok, Data} when byte_size(Data) == Len ->
                     try
                         Decoded = erlang:binary_to_term(iolist_to_binary(Data)),
-                        case DbMod:deserialize(Host, Decoded) of
+                        Updated = lists:map(fun update/1, Decoded),
+                        case DbMod:deserialize(Host, Updated) of
                             ok ->
                                 {ok, {IO, Path}, length(Decoded)};
                             Err -> Err

@@ -49,6 +49,20 @@
 		 binary()}]
 }).
 
+-record(serialize_roster_v2, {
+    serverhost :: binary(),
+    username :: binary(),
+    version :: binary() | undefined,
+    entries :: [{binary(),
+                 binary(),
+                 [binary()],
+                 both | from | to | none,
+                 boolean(),
+                 subscribe | unsubscribe | both | in | out | none,
+                 binary(),
+                 boolean()}]
+}).
+
 -record(serialize_auth_v1, {
     serverhost :: binary(),
     username :: binary(),

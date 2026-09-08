@@ -533,19 +533,19 @@ serialize(LServer, BatchSize, Last) ->
                                      {error, io_lib:format("Error when retrieving roster for ~s@~s", [Username, LServer])};
                                  {ok, Items} ->
                                      Entries = lists:map(
-                                                 fun(#roster{jid = Jid, name = Name, groups = Groups, ask = Ask, subscription = Sub, askmessage = AskMsg}) ->
-                                                         {jid:encode(Jid), Name, Groups, Sub, Ask, AskMsg}
+                                                 fun(#roster{jid = Jid, name = Name, groups = Groups, ask = Ask, subscription = Sub, askmessage = AskMsg, approved = Approved}) ->
+                                                         {jid:encode(Jid), Name, Groups, Sub, Ask, AskMsg, Approved}
                                                  end,
                                                  Items),
                                      case read_roster_version(Username, LServer) of
                                          error ->
-                                             [#serialize_roster_v1{
+                                             [#serialize_roster_v2{
                                                 serverhost = LServer,
                                                 username = Username,
                                                 entries = Entries
                                                } | Res];
                                          {ok, Ver} ->
-                                             [#serialize_roster_v1{
+                                             [#serialize_roster_v2{
                                                 serverhost = LServer,
                                                 username = Username,
                                                 version = Ver,
@@ -580,9 +580,9 @@ deserialize_start(LServer) ->
 deserialize(LServer, Batch) ->
     F = fun() ->
                 lists:foreach(
-                  fun(#serialize_roster_v1{username = Username, version = Version, entries = Entries}) ->
+                  fun(#serialize_roster_v2{username = Username, version = Version, entries = Entries}) ->
                           lists:foreach(
-                            fun({Jid, Name, Groups, Sub, Ask, AskMsg}) ->
+                            fun({Jid, Name, Groups, Sub, Ask, AskMsg, Approved}) ->
                                     SSubscription = encode_subscription(Sub),
                                     SAsk = encode_ask(Ask),
                                     ejabberd_sql:sql_query_t(?SQL_INSERT(
@@ -594,6 +594,7 @@ deserialize(LServer, Batch) ->
                                                                 "subscription=%(SSubscription)s",
                                                                 "ask=%(SAsk)s",
                                                                 "askmessage=%(AskMsg)s",
+								"approved=%(Approved)b",
                                                                 "server='N'",
                                                                 "subscribe=''",
                                                                 "type='item'"])),
@@ -623,5 +624,5 @@ deserialize(LServer, Batch) ->
         end,
     case ejabberd_sql:sql_transaction(LServer, F) of
         {atomic, _} -> ok;
-        _ -> {error, io_lib:format("Error when writing roster data", [])}
+        Err -> {error, io_lib:format("Error when writing roster data: ~p", [Err])}
     end.
