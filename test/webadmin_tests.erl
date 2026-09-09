@@ -201,10 +201,10 @@ make_query(Config, URL, BodyQ) ->
         _ ->
             ok
     end,
-    {Headers, Page} = ?match({ok, {{"HTTP/1.1", 200, _}, Headers, Page}},
+    Page = ?match({ok, {{"HTTP/1.1", 200, _}, _Headers, Page}},
 		     httpc:request(get, {page(Config, URL), [basic_auth_header(Config)]}, [],
 				   [{body_format, binary}], csrf),
-		     {Headers, Page}),
+		     Page),
     {match, [CsrfToken]} = re:run(Page, <<"name='csrf_token' value='(.*?)'">>, [{capture, [1], binary}]),
     Q = iolist_to_binary(uri_string:compose_query([{"csrf_token", CsrfToken}])),
     ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},

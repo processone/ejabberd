@@ -150,10 +150,10 @@ test_get_items(Config) ->
 	== [I || #ps_item{id = I} <- lists:sort(ItemsOut)],
     delete_node(Config, Node),
     disconnect(Config).
-    
+
 test_get_items_rsm_bug(Config) ->
     Node = create_node(Config, <<>>),
-    ItemsIn = [publish_item(Config, Node) || _ <- lists:seq(1, 5)],
+    [publish_item(Config, Node) || _ <- lists:seq(1, 5)],
     ?not_match([_|_], get_items(Config, Node, #rsm_set{'after' = <<"' or 1=1 or ''='">>})),
     delete_node(Config, Node),
     disconnect(Config).
