@@ -446,29 +446,53 @@ overuse(Config0) ->
     Inviter = {User, Server},
     InviteeJID = jid:make(User, Server),
     OldOpts = gen_mod:get_module_opts(Server, mod_invites),
-    NewOpts = gen_mod_set_opts(OldOpts, [{access_create_account, account_invite}]),
+    NewOpts = gen_mod_set_opts(OldOpts, [{max_invites, 100}, {access_create_account, account_invite}]),
     update_module_opts(Server, mod_invites, NewOpts),
 
-    Config1 = reconnect(Config0),
-    update_module_opts(Server, mod_invites, OldOpts),
+    #invite_token{} = create_account_invite(Server, Inviter),
+    mod_invites:remove_user(User, Server),
 
-    %% We only test we're not causing any crashes - these are test from reported bugs. We're not
-    %% testing the actual overuse scenario.
+    ?match([],
+           [error
+                   || _ <- lists:seq(1, ?OVERUSE_LIMIT + 1),
+                      element(1, create_account_invite(Server, {<<>>, Server})) == error]),
+    mod_invites:expire_invites(<<>>, Server),
+    timer:sleep(1000),
+    ?match(?OVERUSE_LIMIT + 1, mod_invites:cleanup_expired()),
+
+    ?match([],
+           [error
+                   || _ <- lists:seq(1, ?OVERUSE_LIMIT + 1),
+                      element(1, create_account_invite(Server, {<<"admin">>, Server})) == error]),
+    timer:sleep(1000),
+    mod_invites:remove_user(<<"admin">>, Server),
+    timer:sleep(1000),
+
+    %% We don't test for actual overuse of account invites, that's part of a unit test instead
+    ?match([error],
+           [error
+                   || _ <- lists:seq(1, ?OVERUSE_LIMIT + 1),
+                      element(1, create_roster_invite(Server, {<<"overuser">>, Server})) == error]),
+    timer:sleep(1000),
+    mod_invites:remove_user(<<"overuser">>, Server),
+    timer:sleep(1000),
+
+    %% Make sure we don't crash in the process of using those tokens (set_invitee)
     #invite_token{token = AToken} = create_account_invite(Server, {<<>>, Server}),
     mod_invites:set_invitee(Server, AToken, InviteeJID),
 
-    #invite_token{token = RToken} =
-        mod_invites:create_roster_invite(Server, {<<"foo">>, Server}),
-    mod_invites:set_invitee(Server, RToken, InviteeJID),
-
-    #invite_token{} = create_account_invite(Server, Inviter),
-
     mod_invites:expire_invites(<<>>, Server),
     ?match(1, mod_invites:cleanup_expired()),
-    mod_invites:remove_user(User, Server),
+
+    #invite_token{token = RToken} =
+        create_roster_invite(Server, {<<"foo">>, Server}),
+    mod_invites:set_invitee(Server, RToken, InviteeJID),
 
     #invite_token{token = RToken2} =
         mod_invites:create_roster_invite(Server, {<<"foo">>, Server}),
+
+    Config1 = reconnect(Config0),
+    update_module_opts(Server, mod_invites, OldOpts),
 
     ?match(#iq{type = result}, send_pars(Config1, RToken2)),
     ?match(#iq{type = result}, send_iq_register(Config1, <<"overuser">>)),
@@ -481,6 +505,7 @@ overuse(Config0) ->
     #invite_token{token = RToken3} =
         mod_invites:create_roster_invite(Server, {<<"foo">>, Server}),
     mod_invites:set_invitee(Server, RToken3, jid:make(<<"overuser">>, Server)),
+    mod_invites:remove_user(<<"foo">>, Server),
 
     #invite_token{} = create_account_invite(Server, {<<"overuser">>, Server}),
     ejabberd_auth:remove_user(<<"overuser">>, Server).
@@ -1032,8 +1057,10 @@ token_from_uri(Uri) ->
         re:run(Uri, ".+preauth=([a-zA-z0-9]+)", [{capture, all_but_first, binary}]),
     Token.
 
-create_account_invite(Server, Inviter) ->
-    mod_invites:create_account_invite(Server, Inviter, <<>>, false).
+create_account_invite(Server, Inviter) -> mod_invites:create_account_invite(Server, Inviter, <<>>,
+    false).
+
+create_roster_invite(Server, Inviter) -> mod_invites:create_roster_invite(Server, Inviter).
 
 update_module_opts(Host, Module, Opts) ->
     [EjabMod] = ets:lookup(ejabberd_modules, {Module, Host}),
