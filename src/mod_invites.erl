@@ -1061,22 +1061,28 @@ get_max_invites(User, Server) ->
             MaxInvites
     end.
 
-check_overuse_t(roster_only, {User, Host}) ->
-    NumInvites = length(get_invites_t(Host, {User, Host})),
-    case NumInvites >= ?OVERUSE_LIMIT of
-        true ->
-            {error, num_invites_exceeded};
-        false ->
-            ok
-    end;
-check_overuse_t(_Type, {User, Host}) ->
-    NumInvites = length(get_invites_tree_t(Host, {User, Host})),
-    case NumInvites >= ?OVERUSE_LIMIT of
+check_overuse_t(_Type, {<<>>, _Host}) ->
+    ok;
+check_overuse_t(Type, {User, Host}) ->
+    case over_overuse_limit(Type, User, Host) of
         true ->
             {error, num_invites_exceeded};
         false ->
             ok
     end.
+
+over_overuse_limit(Type, User, Host) ->
+    case get_max_invites(User, Host) of
+        infinity ->
+            false;
+        _ ->
+            get_num_invites(Type, User, Host) >= ?OVERUSE_LIMIT
+    end.
+
+get_num_invites(roster_only, User, Host) ->
+    length(get_invites_t(Host, {User, Host}));
+get_num_invites(_Type, User, Host) ->
+    length(get_invites_tree_t(Host, {User, Host})).
 
 get_invites_tree_t(Host, Inviter) ->
     Now = calendar:datetime_to_gregorian_seconds(
@@ -1087,6 +1093,8 @@ get_invites_tree_t(Host, Inviter) ->
 
 find_invites_tree_root_t(Now, Host, Invitee, Lvl) ->
     case get_invite_by_invitee_t(Host, Invitee) of
+        #invite_token{inviter = {<<>>, _}} ->
+            Invitee;
         #invite_token{inviter = Inviter, created_at = CreatedAt} ->
             maybe_block_speedy_goat(Now, CreatedAt, Lvl),
             find_invites_tree_root_t(Now, Host, Inviter, Lvl + 1);
