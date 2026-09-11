@@ -74,6 +74,12 @@
 -type role() :: moderator | participant | visitor | none.
 -type affiliation() :: admin | member | outcast | owner | none.
 
+-record(affiliation,
+        {affiliation :: affiliation(),
+         reason = <<"">> :: binary(),
+         actor :: jid() | undefined,
+         meta = #{} :: map()}).
+
 -record(user,
 {
     jid :: jid(),
@@ -82,7 +88,7 @@
     %%is_subscriber = false :: boolean(),
     %%subscriptions = [] :: [binary()],
     last_presence :: presence() | undefined,
-    occupant_id :: binary()
+    occupant_id :: binary() | undefined
 }).
 
 -record(subscriber, {jid :: jid(),
@@ -98,6 +104,13 @@
 -type subscribers() :: #{ljid() => #subscriber{}}.
 -type subscriber_nicks() :: #{binary() => [ljid()]}.
 -type subscriber_nodes() :: #{binary() => subscribers()}.
+
+-record(kickban_info,
+        {actor :: jid() | undefined,
+         reason = <<"">> :: binary(),
+         code :: pos_integer(),
+         affiliation = unchanged :: affiliation() | unchanged
+        }).
 
 -record(activity,
 {
@@ -134,11 +147,15 @@
     room_shaper             = none :: ejabberd_shaper:shaper(),
     room_queue              :: p1_queue:queue({message | presence, jid()}) | undefined,
     hibernate_timer         = none :: reference() | none | hibernating,
-    salt                    = <<>> :: binary()
+    salt                    = crypto:strong_rand_bytes(16) :: binary(),
+    mods                    = #{} :: #{atom() => any()}
 }).
 
 -type users() :: #{ljid() => #user{}}.
 -type robots() :: #{jid() => {binary(), stanza()}}.
 -type nicks() :: #{binary() => [ljid()]}.
--type affiliations() :: #{ljid() => affiliation() | {affiliation(), binary()}}.
+-type affiliation_data() :: affiliation() |
+                            {affiliation(), binary()} |
+                            #affiliation{}.
+-type affiliations() :: #{ljid() => affiliation_data()}.
 -type roles() :: #{ljid() => role() | {role(), binary()}}.
