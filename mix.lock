@@ -1,6 +1,6 @@
 %{
   "cache_tab": {:hex, :cache_tab, "1.0.34", "935902ac8300d30f17c24f4d4056175f053ccc0572acab5fb4d1ce503831bee1", [:rebar3], [{:p1_utils, "1.0.29", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm", "0db9f317f3941c17c9f8ea8125e25efa27bbed4cbf24a42c426fada74c82b692"},
-  "dialyxir": {:hex, :dialyxir, "1.4.7", "dda948fcee52962e4b6c5b4b16b2d8fa7d50d8645bbae8b8685c3f9ecb7f5f4d", [:mix], [{:erlex, ">= 0.2.8", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm", "b34527202e6eb8cee198efec110996c25c5898f43a4094df157f8d28f27d9efe"},
+  "dialyxir": {:hex, :dialyxir, "1.4.8", "7ef671a8aff9948b091d8c30f09467fbb16e77305cda451bce48109a0f5e021c", [:mix], [{:erlex, ">= 0.2.8", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm", "cbd5a851571e5dfeb32aaf2e840bfa98b7864cb3071bf2ef5d95d1276b12e072"},
   "earmark_parser": {:hex, :earmark_parser, "1.4.46", "67607a0532e810c6f630a515c548d0b24949643f168cc556303bee4cf96105c7", [:mix], [], "hexpm", "9c44636e8a1c68c62f526b2dcd85d941dbbcee7ab82cf64ba06ce28bef8e89f5"},
   "eimp": {:hex, :eimp, "1.0.27", "14bf9e6fac791d0c098708cbc5a0928746ed575869f4ce42a266643947790a3a", [:rebar3], [{:p1_utils, "~> 1.0.25", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm", "3c7e83e293bcfaf50a1bf054fc4b62b7b8c484a6e4218e397709a4d0d857f3fc"},
   "epam": {:hex, :epam, "1.0.14", "aa0b85d27f4ef3a756ae995179df952a0721237e83c6b79d644347b75016681a", [:rebar3], [], "hexpm", "2f3449e72885a72a6c2a843f561add0fc2f70d7a21f61456930a547473d4d989"},
