@@ -1131,12 +1131,7 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
         Packet :: message(),
         StateData :: state(), NewStateData :: state()) -> state().
 add_groupchat_message(From, FromNick, Subject, Packet, StateData, NewStateData) ->
-    case
-        ejabberd_hooks:run_fold(muc_filter_message,
-                                StateData#state.server_host,
-                                Packet,
-                                [StateData, FromNick])
-    of
+    case filter_message_hook(StateData, FromNick, Packet) of
         drop ->
             StateData;
         NewPacket1 ->
