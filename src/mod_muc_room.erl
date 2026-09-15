@@ -324,7 +324,7 @@ init([Host, ServerHost, Access, Room, HistorySize,
 			    room_shaper = Shaper}),
     State1 =
         ejabberd_hooks:run_fold(muc_start_room, ServerHost, State, [Creator]),
-    State2 = set_affiliation(Creator, owner, State1),
+    State2 = set_affiliation(Creator, #affiliation{affiliation = owner}, State1),
     store_room(State2),
     ?INFO_MSG("Created MUC room ~ts@~ts by ~ts",
 	      [Room, Host, jid:encode(Creator)]),
@@ -1262,7 +1262,8 @@ process_invitation(From, Pkt, Invitation, Lang, StateData) ->
 	true ->
 	    case get_affiliation(IJID, StateData) of
 		none ->
-		    NSD = set_affiliation(IJID, member, StateData),
+		    NSD = set_affiliation(
+                            IJID, #affiliation{affiliation = member}, StateData),
 		    send_affiliation(IJID, member, StateData),
 		    store_room(NSD),
 		    NSD;
@@ -1698,7 +1699,7 @@ process_unavailable_presence(From, Packet, Nick, StateData) ->
     Reason = xmpp:get_text(Packet#presence.status),
     remove_online_user(From, NewState, Reason).
 
--spec set_affiliation(jid(), affiliation_data(), state()) -> state().
+-spec set_affiliation(jid(), #affiliation{}, state()) -> state().
 set_affiliation(JID, AffiliationData,
 		#state{config = #config{persistent = false}} = StateData) ->
     set_affiliation_fallback(JID, AffiliationData, StateData);
@@ -1707,12 +1708,7 @@ set_affiliation(JID, AffiliationData, StateData) ->
     Room = StateData#state.room,
     Host = StateData#state.host,
     Mod = gen_mod:db_mod(ServerHost, mod_muc),
-    {Affiliation, Reason} =
-        case AffiliationData of
-            A when is_atom(A) -> {A, <<"">>};
-            {_, _} -> AffiliationData;
-            #affiliation{affiliation = A, reason = R} -> {A, R}
-        end,
+    #affiliation{affiliation = Affiliation, reason = Reason} = AffiliationData,
     case Mod:set_affiliation(ServerHost, Room, Host, JID, Affiliation, Reason) of
 	ok ->
 	    StateData;
@@ -1720,12 +1716,10 @@ set_affiliation(JID, AffiliationData, StateData) ->
 	    set_affiliation_fallback(JID, AffiliationData, StateData)
     end.
 
--spec set_affiliation_fallback(jid(), affiliation_data(), state()) -> state().
+-spec set_affiliation_fallback(jid(), #affiliation{}, state()) -> state().
 set_affiliation_fallback(JID, AffiliationData, StateData) ->
     Remove =
         case AffiliationData of
-            none -> true;
-            {none, _} -> true;
             #affiliation{affiliation = none} -> true;
             _ -> false
         end,
