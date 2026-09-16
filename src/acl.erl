@@ -230,9 +230,10 @@ load_tab(Tab, Hosts, Fun) ->
                     [{{Name, Host}, List} || {Name, List} <- Fun(Host)]
             end, [global|Hosts]),
     ets:insert(Tab, New),
+    NewKeys = maps:from_keys([Key || {Key, _} <- New], true),
     lists:foreach(
       fun({Key, _}) ->
-              case lists:keymember(Key, 1, New) of
+              case maps:is_key(Key, NewKeys) of
                   false -> ets:delete(Tab, Key);
                   true -> ok
               end
