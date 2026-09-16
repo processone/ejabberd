@@ -222,21 +222,15 @@ create_tab(Tab) ->
     _ = mnesia:delete_table(Tab),
     ets:new(Tab, [named_table, set, {read_concurrency, true}]).
 
--spec load_tab(atom(), [binary()], fun((global | binary()) -> {atom(), list()})) -> ok.
+-spec load_tab(atom(), [binary()], fun((global | binary()) -> [{atom(), list()}])) -> ok.
 load_tab(Tab, Hosts, Fun) ->
-    Old = ets:tab2list(Tab),
     New = lists:flatmap(
             fun(Host) ->
                     [{{Name, Host}, List} || {Name, List} <- Fun(Host)]
             end, [global|Hosts]),
+    ets:delete_all_objects(Tab),
     ets:insert(Tab, New),
-    lists:foreach(
-      fun({Key, _}) ->
-              case lists:keymember(Key, 1, New) of
-                  false -> ets:delete(Tab, Key);
-                  true -> ok
-              end
-      end, Old).
+    ok.
 
 -spec read_access(atom(), global | binary()) -> access().
 read_access(Name, Host) ->
