@@ -77,7 +77,7 @@ init(_Opts) ->
 	[$@ | _Abstract] ->
 	    ?CRITICAL_MSG("Abstract NOTIFY_SOCKET not supported", []),
 	    {stop, esocktnosupport};
-	Path when is_list(Path), length(Path) > 0 ->
+	[_ | _] = Path ->
 	    ?DEBUG("Got NOTIFY_SOCKET: ~s", [Path]),
 	    Destination = {local, Path},
 	    case gen_udp:open(0, [local]) of
@@ -150,7 +150,7 @@ code_change(_OldVsn, State, _Extra) ->
 -spec get_watchdog_interval() -> integer() | undefined.
 get_watchdog_interval() ->
     case os:getenv("WATCHDOG_USEC") of
-	WatchdogUSec when is_list(WatchdogUSec), length(WatchdogUSec) > 0 ->
+	[_ | _] = WatchdogUSec ->
 	    Interval = round(0.5 * list_to_integer(WatchdogUSec)),
 	    ?DEBUG("Watchdog interval: ~B microseconds", [Interval]),
 	    erlang:convert_time_unit(Interval, microsecond, millisecond);
