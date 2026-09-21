@@ -93,7 +93,7 @@ get_invite_by_invitee_t(_Host, {User, Host}) ->
     Invites = mnesia:index_read(invite_token, Invitee, #invite_token.invitee),
     case [I
           || I = #invite_token{type = Type, account_name = AccountName} <- Invites,
-             Type =/= roster_only orelse AccountName == User]
+             (Type =/= roster_only orelse AccountName == User) andalso Type =/= reset_token]
     of
         [Invite] ->
             Invite;

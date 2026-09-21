@@ -449,21 +449,29 @@ overuse(Config0) ->
     NewOpts = gen_mod_set_opts(OldOpts, [{max_invites, 100}, {access_create_account, account_invite}]),
     update_module_opts(Server, mod_invites, NewOpts),
 
+    %% make sure we don't crash with a reset token for this user in the system
+    #invite_token{} = mod_invites:create_roster_invite(Server, Inviter),
+    #invite_token{token = ResetToken} = mod_invites:create_reset_token(User, Server),
+    mod_invites:set_invitee(Server, ResetToken, InviteeJID),
+    #invite_token{token = AccountToken} = create_account_invite(Server, {<<>>, Server}),
+    mod_invites:set_invitee(Server, AccountToken, InviteeJID),
+
     #invite_token{} = create_account_invite(Server, Inviter),
+
     mod_invites:remove_user(User, Server),
 
     ?match([],
            [error
                    || _ <- lists:seq(1, ?OVERUSE_LIMIT + 1),
-                      element(1, create_account_invite(Server, {<<>>, Server})) == error]),
+                      element(1, slow_down(create_account_invite(Server, {<<>>, Server}))) == error]),
     mod_invites:expire_invites(<<>>, Server),
     timer:sleep(1000),
-    ?match(?OVERUSE_LIMIT + 1, mod_invites:cleanup_expired()),
+    ?match(?OVERUSE_LIMIT + 3, mod_invites:cleanup_expired()),
 
     ?match([],
            [error
                    || _ <- lists:seq(1, ?OVERUSE_LIMIT + 1),
-                      element(1, create_account_invite(Server, {<<"admin">>, Server})) == error]),
+                      element(1, slow_down(create_account_invite(Server, {<<"admin">>, Server}))) == error]),
     timer:sleep(1000),
     mod_invites:remove_user(<<"admin">>, Server),
     timer:sleep(1000),
@@ -472,7 +480,7 @@ overuse(Config0) ->
     ?match([error],
            [error
                    || _ <- lists:seq(1, ?OVERUSE_LIMIT + 1),
-                      element(1, create_roster_invite(Server, {<<"overuser">>, Server})) == error]),
+                      element(1, slow_down(create_roster_invite(Server, {<<"overuser">>, Server}))) == error]),
     timer:sleep(1000),
     mod_invites:remove_user(<<"overuser">>, Server),
     timer:sleep(1000),
@@ -1244,3 +1252,7 @@ re_escape(<<C:1/binary, Tail/binary>>, Acc) ->
         false ->
             re_escape(Tail, <<Acc/binary, C/binary>>)
     end.
+
+slow_down(Res) ->
+    timer:sleep(1),
+    Res.
