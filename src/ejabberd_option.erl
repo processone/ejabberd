@@ -237,10 +237,10 @@ auth_cache_missed() ->
 auth_cache_size() ->
     ejabberd_config:get_option({auth_cache_size, global}).
 
--spec auth_external_user_exists_check() -> boolean().
+-spec auth_external_user_exists_check() -> 'false' | 'force' | 'true'.
 auth_external_user_exists_check() ->
     auth_external_user_exists_check(global).
--spec auth_external_user_exists_check(global | binary()) -> boolean().
+-spec auth_external_user_exists_check(global | binary()) -> 'false' | 'force' | 'true'.
 auth_external_user_exists_check(Host) ->
     ejabberd_config:get_option({auth_external_user_exists_check, Host}).
 

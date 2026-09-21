@@ -475,21 +475,27 @@ user_exists(_User, <<"">>) ->
 user_exists(User, Server) ->
     case validate_credentials(User, Server) of
 	{ok, LUser, LServer} ->
+		{ExternCheck, PerformExtCheckInitial} =
+		case ejabberd_option:auth_external_user_exists_check(LServer) of
+			false -> {false, false};
+			true -> {true, false};
+			force -> {true, true}
+		end,
 	    {Exists, PerformExternalUserCheck} =
 	    lists:foldl(
-		fun(M, {Exists0, PerformExternalUserCheck0}) ->
+		fun(_M, {true, _} = Acc) -> Acc;
+		      (M, {Exists0, PerformExternalUserCheck0}) ->
 		    case db_user_exists(LUser, LServer, M) of
 			{{error, _}, Check} ->
 			    {Exists0, PerformExternalUserCheck0 orelse Check};
 			{Else, Check2} ->
 			    {Exists0 orelse Else, PerformExternalUserCheck0 orelse Check2}
 		    end
-		end, {false, false}, auth_modules(LServer)),
-	    case (not Exists) andalso PerformExternalUserCheck andalso
-		 ejabberd_option:auth_external_user_exists_check(Server) andalso
-		 gen_mod:is_loaded(Server, mod_last) of
+		end, {false, PerformExtCheckInitial}, auth_modules(LServer)),
+	    case (not Exists) andalso PerformExternalUserCheck andalso ExternCheck andalso
+		 gen_mod:is_loaded(LServer, mod_last) of
 		true ->
-		    case mod_last:get_last_info(User, Server) of
+		    case mod_last:get_last_info(LUser, LServer) of
 			not_found ->
 			    false;
 			_ ->

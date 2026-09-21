@@ -426,13 +426,15 @@ doc() ->
            "to a more secure format. If this option if set, it will override values set in _`auth_scram_hash`_ "
            "and _`auth_password_format`_ options. The default value is `[]`.")}},
      {auth_external_user_exists_check,
-      #{value => "true | false",
-        note => "added in 23.10",
+      #{value => "true | false | force",
+        note => "added in 23.10, `force` added in 26.09",
         desc =>
         ?T("Supplement check for user existence based on _`mod_last`_ data, for authentication "
            "methods that don't have a way to reliably tell if a user exists (like is the case for "
            "'jwt' and certificate based authentication). This helps with processing offline message "
-           "for those users. The default value is 'true'.")}},
+           "for those users. Using `force` values enables this processing even when no external storage "
+           "method is enabled (like when using certificate authentications together with local stored passwords. "
+           "The default value is 'true'.")}},
      {auth_use_cache,
       #{value => "true | false",
         desc =>

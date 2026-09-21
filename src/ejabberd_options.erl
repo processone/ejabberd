@@ -87,7 +87,7 @@ opt_type(auth_password_format) ->
 opt_type(auth_scram_hash) ->
     econf:enum([sha, sha256, sha512]);
 opt_type(auth_external_user_exists_check) ->
-    econf:bool();
+    econf:enum([true, false, force]);
 opt_type(auth_use_cache) ->
     econf:bool();
 opt_type(c2s_cafile) ->
