@@ -208,7 +208,7 @@ get_invite_by_invitee_t(Host, {User, Server}) ->
                                 ?SQL("SELECT @(token)s, @(username)s, @(invitee)s, @(type)s, "
                                      "@(account_name)s, @(expires)t, @(created_at)t FROM "
                                      "invite_token WHERE %(Host)H AND "
-                                     "(type != 'R' AND invitee = %(Invitee)s) OR "
+                                     "((type != 'R' AND type != 'T') AND invitee = %(Invitee)s) OR "
                                      "(type = 'R' AND account_name = %(User)s)"))
     of
         {selected, [{Token, Inviter, IInvitee, Type, AccountName, Expires, CreatedAt}]} ->
