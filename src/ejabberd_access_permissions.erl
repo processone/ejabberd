@@ -84,28 +84,11 @@ get_vhost_argument([_ | Tail]) ->
 -spec can_access(atom(), caller_info(), list(), list()) -> allow | deny.
 can_access(Cmd, CallerInfo, Arguments, ArgsFormat) ->
     Vhost = get_vhost_argument(lists:zip(ArgsFormat, Arguments)),
-    HostCheck = case {maps:get(usr, CallerInfo, no_usr), Vhost} of
-                    {USR, VhostArg} when is_tuple(USR) and is_binary(VhostArg) ->
-                        acl:match_rule(VhostArg,
-                                       configure,
-                                       jid:make(USR));
-                     _ ->
-                         allow
-         end,
-    CallerInfo2 = case Vhost of
-                      B when is_binary(B) -> CallerInfo;
-                      no_host_argument -> CallerInfo#{caller_host => global}
+    CallerHost = case Vhost of
+                      B when is_binary(B) -> B;
+                      no_host_argument -> global
                   end,
-    case HostCheck of
-        allow ->
-            can_access(Cmd, CallerInfo2);
-        _ ->
-            ?DEBUG("Command '~p' execution denied because "
-                      "tried to execute a command with a host argument "
-                      "but the account doesn't have admin rights for that host "
-                      "~n (CallerInfo=~p)", [Cmd, CallerInfo]),
-            deny
-    end.
+    can_access(Cmd, CallerInfo#{caller_host => CallerHost}).
 
 -spec can_access(atom(), caller_info()) -> allow | deny.
 can_access(echo, _CallerInfo) ->
