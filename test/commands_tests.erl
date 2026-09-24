@@ -61,6 +61,16 @@ single_cases() ->
       single_test(adhoc_rescode),
       single_test(adhoc_restuple),
       %%single_test(adhoc_all),
+      single_test(permissions_global_allallowed),
+      single_test(permissions_global),
+      single_test(permissions_localhost),
+      single_test(permissions_second),
+      single_test(permissions_third),
+      single_test(permissions_hostadmin_other_host),
+      single_test(permissions_hostadmin_not_command),
+      single_test(permissions_hostadmin_not_globaladmin),
+      single_test(permissions_just_regular_account),
+      single_test(permissions_no_auth),
       single_test(clean)]}.
 
 %% @format-begin
@@ -431,6 +441,123 @@ set_form(Config, Node, Sid, ArgFields) ->
         #iq{type = error} = Err ->
             xmpp:get_error(Err)
     end.
+
+%%%==================================
+%%%% API Permissions
+
+permissions_global_allallowed(C) ->
+    global_command_allallowed(C, <<"admin">>, <<"localhost">>, 200),
+    global_command_allallowed(C, <<"hostadmin">>, <<"localhost">>, 200),
+    global_command_allallowed(C, <<"hostadmin">>, <<"second">>, 200),
+    global_command_allallowed(C, <<"hostadmin">>, <<"third">>, 200),
+    global_command_allallowed(C, <<"user123">>, <<"localhost">>, 200).
+
+permissions_global(C) ->
+    global_command(C, <<"admin">>, <<"localhost">>, 200).
+
+permissions_localhost(C) ->
+    host_command(C, <<"admin">>, <<"localhost">>, <<"localhost">>, 200),
+    host_command(C, <<"hostadmin">>, <<"localhost">>, <<"localhost">>, 200).
+
+permissions_second(C) ->
+    host_command(C, <<"admin">>, <<"localhost">>, <<"second">>, 200),
+    host_command(C, <<"hostadmin">>, <<"second">>, <<"second">>, 200),
+    host_command(C, <<"hostadmin">>, <<"third">>, <<"second">>, 200).
+
+permissions_third(C) ->
+    host_command(C, <<"admin">>, <<"localhost">>, <<"third">>, 200),
+    host_command(C, <<"hostadmin">>, <<"second">>, <<"third">>, 200).
+
+%% hostadmin of one host cannot execute on other vhost
+permissions_hostadmin_other_host(C) ->
+    host_command(C, <<"hostadmin">>, <<"localhost">>, <<"second">>, 403),
+    host_command(C, <<"hostadmin">>, <<"localhost">>, <<"third">>, 403),
+    host_command(C, <<"hostadmin">>, <<"second">>, <<"localhost">>, 403),
+    host_command(C, <<"hostadmin">>, <<"third">>, <<"localhost">>, 403),
+    host_command(C, <<"hostadmin">>, <<"third">>, <<"third">>, 403).
+
+%% hostadmin cannot execute admin command
+permissions_hostadmin_not_command(C) ->
+    global_command(C, <<"hostadmin">>, <<"localhost">>, 403),
+    global_command(C, <<"hostadmin">>, <<"second">>, 403),
+    global_command(C, <<"hostadmin">>, <<"third">>, 403).
+
+%% hostadmin cannot execute global command that requires admin|hostadmin
+permissions_hostadmin_not_globaladmin(C) ->
+    global_command_hostadmin(C, <<"admin">>, <<"localhost">>, 200),
+    global_command_hostadmin(C, <<"hostadmin">>, <<"localhost">>, 403),
+    global_command_hostadmin(C, <<"hostadmin">>, <<"second">>, 403),
+    global_command_hostadmin(C, <<"hostadmin">>, <<"third">>, 403).
+
+%% Account is a regular user
+permissions_just_regular_account(C) ->
+    global_command(C, <<"user123">>, <<"localhost">>, 403),
+    host_command(C, <<"user123">>, <<"localhost">>, <<"localhost">>, 403),
+    host_command(C, <<"user123">>, <<"localhost">>, <<"second">>, 403),
+    host_command(C, <<"user123">>, <<"localhost">>, <<"third">>, 403),
+    global_command_hostadmin(C, <<"user123">>, <<"localhost">>, 403).
+
+%% No authentication provided in query
+permissions_no_auth(C) ->
+    global_command_allallowed(C, none, <<"localhost">>, 200),
+    global_command_allallowed(C, none, <<"localhost">>, 200),
+    global_command_allallowed(C, none, <<"second">>, 200),
+    global_command_allallowed(C, none, <<"third">>, 200),
+    global_command_allallowed(C, none, <<"localhost">>, 200),
+    global_command(C, none, <<"localhost">>, 403),
+    global_command_hostadmin(C, none, <<"localhost">>, 403),
+    host_command(C, none, <<"localhost">>, <<"localhost">>, 403),
+    host_command(C, none, <<"localhost">>, <<"second">>, 403),
+    host_command(C, none, <<"localhost">>, <<"third">>, 403),
+    host_command(C, none, <<"second">>, <<"second">>, 403),
+    host_command(C, none, <<"third">>, <<"second">>, 403),
+    host_command(C, none, <<"second">>, <<"third">>, 403).
+
+%%% internal functions
+
+global_command_allallowed(Config, U, S, Code) ->
+    queryp(Config, {U, S}, "status_list", #{status => <<"dnd">>}, Code).
+
+global_command(Config, U, S, Code) ->
+    queryp(Config, {U, S}, "stats", #{name => <<"registeredusers">>}, Code).
+
+host_command(Config, U, S, Host, Code) ->
+    queryp(Config, {U, S}, "status_num_host", #{host => Host, status => <<"dnd">>}, Code).
+
+global_command_hostadmin(Config, U, S, Code) ->
+    queryp(Config, {U, S}, "status_num", #{status => <<"dnd">>}, Code).
+
+queryp(Config, US, Tail, Map, Code) ->
+    BodyQ = misc:json_encode(Map),
+    Body = make_queryp(Config, US, Tail, BodyQ, Code),
+    misc:json_decode(Body).
+
+make_queryp(Config, US, Tail, BodyQ, Code) ->
+    ?match({ok, {{"HTTP/1.1", Code, _}, _, Body}},
+           httpc:request(post,
+                         {pagep(Config, Tail),
+                          basic_auth_headers(US, Config),
+                          "application/json",
+                          BodyQ},
+                         [],
+                         [{body_format, binary}]),
+           Body).
+
+%% Copied from test/webadmin_tests.erl
+basic_auth_headers({User, Server}, Config) ->
+    Password = ?config(password, Config),
+    ejabberd_auth:try_register(User, Server, Password),
+    basic_auth_headers(User, Server, Password).
+basic_auth_headers(none, _Server, _Password) ->
+    [];
+basic_auth_headers(Username, Server, Password) ->
+    JidBin = <<Username/binary, "@", Server/binary, ":", Password/binary>>,
+    [{"authorization", "Basic " ++ base64:encode_to_string(JidBin)}].
+
+pagep(Config, Tail) ->
+    Server = ?config(server_host, Config),
+    Port = ct:get_config(web_port, 5280),
+    "http://" ++ Server ++ ":" ++ integer_to_list(Port) ++ "/api/" ++ Tail.
 
 %%%==================================
 

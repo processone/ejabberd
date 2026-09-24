@@ -36,6 +36,8 @@ hosts:
   - extauth.localhost
   - ldap.localhost
   - sqlite.localhost
+  - second
+  - third
 
 shaper_rules:
   c2s_shaper:
@@ -178,4 +180,42 @@ captcha_cmd: captcha_gen
 api_permissions:
   "public commands":
     who: all
-    what: "*"
+    what:
+      - "*"
+      - "!stats"
+      - "!status_num"
+      - "!status_num_host"
+  "global-query http access":
+    from: mod_http_api
+    who:
+      access:
+        allow:
+          - acl: admin
+    what:
+      - stats
+  "host-query http access":
+    from: mod_http_api
+    who:
+      access:
+        allow:
+          - acl: admin
+        allow:
+          - acl: aclhostadmin
+    what:
+      - status_num
+      - status_num_host
+
+append_host_config:
+  localhost:
+    acl:
+      aclhostadmin:
+        - user: hostadmin@localhost
+  second:
+    acl:
+      aclhostadmin:
+        - user: hostadmin@second
+        - user: hostadmin@third
+  third:
+    acl:
+      aclhostadmin:
+        - user: hostadmin@second
