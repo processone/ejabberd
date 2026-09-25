@@ -355,18 +355,23 @@ process_mix_create(#iq{to = To, from = From,
 		<<>> -> p1_rand:get_string();
 		_ -> Chan
 	    end,
-    Ret = case Mod:get_channel(ServerHost, Chan1, Host) of
-	      {ok, {#jid{luser = U, lserver = S}, _, _}} ->
-		  case {From#jid.luser, From#jid.lserver} of
-		      {U, S} -> ok;
-		      _ -> {error, conflict}
+    Ret = case acl:match_rule(Host, mod_mix_opt:access_create(Host), From) of
+	      allow ->
+		  case Mod:get_channel(ServerHost, Chan1, Host) of
+		      {ok, {#jid{luser = U, lserver = S}, _, _}} ->
+			  case {From#jid.luser, From#jid.lserver} of
+			      {U, S} -> ok;
+			      _ -> {error, conflict}
+			  end;
+		      {error, notfound} ->
+			  Key = xmpp_util:hex(p1_rand:bytes(20)),
+			  Mod:set_channel(ServerHost, Chan1, Host,
+					  Creator, Chan == <<>>, Key);
+		      {error, db_failure} = Err ->
+			  Err
 		  end;
-	      {error, notfound} ->
-		  Key = xmpp_util:hex(p1_rand:bytes(20)),
-		  Mod:set_channel(ServerHost, Chan1, Host,
-				  Creator, Chan == <<>>, Key);
-	      {error, db_failure} = Err ->
-		  Err
+	      _ ->
+		  {error, not_allowed}
 	  end,
     case Ret of
 	ok ->
@@ -374,7 +379,9 @@ process_mix_create(#iq{to = To, from = From,
 	{error, conflict} ->
 	    xmpp:make_error(IQ, channel_exists_error(IQ));
 	{error, db_failure} ->
-	    xmpp:make_error(IQ, db_error(IQ))
+	    xmpp:make_error(IQ, db_error(IQ));
+	{error, not_allowed} ->
+	    xmpp:make_error(IQ, not_allowed(IQ))
     end.
 
 -spec process_mix_destroy(iq()) -> iq().
@@ -677,6 +684,11 @@ unsupported_error(Pkt) ->
 ownership_error(Pkt) ->
     Txt = ?T("Owner privileges required"),
     xmpp:err_forbidden(Txt, xmpp:get_lang(Pkt)).
+
+-spec not_allowed(stanza()) -> stanza_error().
+not_allowed(Pkt) ->
+    Txt = ?T("You are not allowed to do this operations"),
+    xmpp:err_not_allowed(Txt, xmpp:get_lang(Pkt)).
 
 %%%===================================================================
 %%% IQ handlers
