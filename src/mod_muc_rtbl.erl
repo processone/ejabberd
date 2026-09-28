@@ -177,11 +177,12 @@ pubsub_event_handler(#message{from = #jid{luser = <<>>, lserver = SServer},
 pubsub_event_handler(_) ->
     ok.
 
-muc_presence_filter(#presence{from = #jid{lserver = Server} = From, lang = Lang} = Packet, _State, _Nick) ->
+muc_presence_filter(#presence{from = #jid{lserver = Server} = From, lang = Lang} = Packet,
+                    #state{server_host = ServerHost}, _Nick) ->
     Allowed = maybe
                   JidClean = jid:encode(jid:tolower(jid:remove_resource(From))),
-                  [] ?= mnesia:dirty_read(muc_rtbl, {Server, sha256(Server)}),
-                  [] ?= mnesia:dirty_read(muc_rtbl, {Server, sha256(JidClean)}),
+                  [] ?= mnesia:dirty_read(muc_rtbl, {ServerHost, sha256(Server)}),
+                  [] ?= mnesia:dirty_read(muc_rtbl, {ServerHost, sha256(JidClean)}),
                   true
               end,
     case Allowed of
