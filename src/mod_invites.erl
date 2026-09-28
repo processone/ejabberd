@@ -49,8 +49,8 @@
 %% helpers
 -export([create_account_allowed/2, create_account_invite/4, get_invite/2, get_invites_tree_t/2,
          get_max_invites/2, is_create_allowed/2, is_expired/1, is_reserved/3, is_token_valid/2,
-         roster_add/2, send_presence/3, set_invitee/3, set_invitee/5, token_uri/1, transaction/2,
-         xdata_field/3]).
+         overuse_limit/0, roster_add/2, send_presence/3, set_invitee/3, set_invitee/5, token_uri/1,
+         transaction/2, xdata_field/3]).
 
 %% ejabberd_http
 -export([process/2]).
@@ -1076,8 +1076,12 @@ over_overuse_limit_t(Type, User, Host) ->
         infinity ->
             false;
         _ ->
-            get_num_invites_t(Type, User, Host) >= ?OVERUSE_LIMIT
+            get_num_invites_t(Type, User, Host) >= ?MODULE:overuse_limit()
     end.
+
+overuse_limit() ->
+    %% Mostly so we can meck this function in tests
+    ?OVERUSE_LIMIT.
 
 get_num_invites_t(roster_only, User, Host) ->
     length(get_invites_t(Host, {User, Host}));
