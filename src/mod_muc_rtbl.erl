@@ -183,6 +183,8 @@ muc_presence_filter(#presence{from = #jid{lserver = Server} = From, lang = Lang}
                   JidClean = jid:encode(jid:tolower(jid:remove_resource(From))),
                   [] ?= mnesia:dirty_read(muc_rtbl, {ServerHost, sha256(Server)}),
                   [] ?= mnesia:dirty_read(muc_rtbl, {ServerHost, sha256(JidClean)}),
+                  [] ?= mnesia:dirty_read(muc_rtbl, {ServerHost, Server}),
+                  [] ?= mnesia:dirty_read(muc_rtbl, {ServerHost, JidClean}),
                   true
               end,
     case Allowed of
