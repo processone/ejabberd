@@ -11,7 +11,6 @@
 {"A description of the node","Una descripción del nodo"}.
 {"A friendly name for the node","Un nombre sencillo para el nodo"}.
 {"A fully-featured desktop chat client for Windows and Linux.","Un cliente de charla con muchas posibilidades para Windows y Linux."}.
-{"A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.","Un cliente Jabber/XMPP ligero para Android. Está orientado a la usabilidad, seguridad y bajo consumo, y funciona en aparatos Android antiguos a partir de Android 4.0."}.
 {"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","Un cliente XMPP ligero y potente para iPhone e iPad. Proporciona una forma sencilla de charlar y compartir momentos con tus amistades."}.
 {"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","Un cliente de charla moderno y de software libre para iPhone e iPad. Es simple de usar y tiene una interface de usuario limpia."}.
 {"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","Un cliente de charla moderno y de software libre para Mac. Es simple de usar y tiene una interface de usuario limpia."}.
@@ -25,6 +24,7 @@
 {"Account doesn't exist","La cuenta no existe"}.
 {"Action on user","Acción en el usuario"}.
 {"Add {{ inviter }} to your contact list","Añade {{ inviter }} a tu lista de contactos"}.
+{"Add a few specific options to a certain upload host previously defined in the mod_http_upload 'hosts' option. Right now only 'name' and 'vcard' can be defined here. This is similar to the toplevel _`append_host_config`_ option, but in this case it's applied to this module options.","Añade algunas opciones específicas a un dominio previamente definido en la opción 'hosts' de mod_http_upload. Actualmente solo se pueden definir 'name' y 'vcard'. Esto es similar a la opción _`append_host_config`_, pero en este caso se aplica a las opciones de este módulo."}.
 {"Add Contact","Añadir Contacto"}.
 {"Add to contact list","Añade a la lista de contactos"}.
 {"Add User","Añadir usuario"}.

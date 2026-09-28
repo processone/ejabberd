@@ -11,7 +11,6 @@
 {"A description of the node","Una descripció del node"}.
 {"A friendly name for the node","Un nom per al node"}.
 {"A fully-featured desktop chat client for Windows and Linux.","Un client de xat molt complet d'escriptori per a Windows i Linux."}.
-{"A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.","Un client Jabber/XMPP lleuger per a Android. Està orientat a la usabilitat, la seguretat i el baix consum, i funciona en aparats Android antics a partir de Android 4.0."}.
 {"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","Un client XMPP lleuger i potent per a iPhone e iPad. Proporciona una forma senzilla de xarrar i compartir moments amb les teues amistats."}.
 {"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","Un client de xat modern i de software lliure per a iPhone i iPad. Es simple d'usar i te una interfície d'usuari neta."}.
 {"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","Un client de xat modern i de software lliure per a Mac. Es simple d'usar i te una interfície d'usuari neta."}.
@@ -25,6 +24,7 @@
 {"Account doesn't exist","El compte no existeix"}.
 {"Action on user","Acció en l'usuari"}.
 {"Add {{ inviter }} to your contact list","Afegir {{ inviter }} a la teua llista de contactes"}.
+{"Add a few specific options to a certain upload host previously defined in the mod_http_upload 'hosts' option. Right now only 'name' and 'vcard' can be defined here. This is similar to the toplevel _`append_host_config`_ option, but in this case it's applied to this module options.","Afegix algunes opcions específiques a un domini previament definit en la opció 'hosts' de mod_http_upload. Actualment nomes es pot definir 'name' i 'vcard'. Aixó es similar a l'opció _`append_host_config`_, però en este cas s'aplica a les opcions d'este module."}.
 {"Add Contact","Afegir Contacte"}.
 {"Add to contact list","Afegir a la teua llista de contactes"}.
 {"Add User","Afegir usuari"}.
