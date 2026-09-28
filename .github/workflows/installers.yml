@@ -102,6 +102,10 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           merge-multiple: true
+      - name: Compute checksums
+        run: |
+          cd ejabberd-packages
+          sha256sum -- * > "ejabberd-$GITHUB_REF_NAME-checksums.txt"
       - name: Draft Release
         uses: softprops/action-gh-release@v3
         with:
