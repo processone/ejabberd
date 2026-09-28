@@ -75,6 +75,9 @@ handle_info({iq_reply, IQReply, initial_items}, State) ->
 handle_info({iq_reply, IQReply, subscription}, State) ->
     State2 = parse_subscription(State, IQReply),
     {noreply, State2};
+handle_info(fetch_list, #rtbl_state{host = Host} = State) ->
+    request_initial_items(Host),
+    {noreply, State#rtbl_state{retry_timer = undefined}};
 handle_info(_Request, State) ->
     {noreply, State}.
 
