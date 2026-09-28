@@ -178,18 +178,14 @@ pubsub_event_handler(_) ->
     ok.
 
 muc_presence_filter(#presence{from = #jid{lserver = Server} = From, lang = Lang} = Packet, _State, _Nick) ->
-    Blocked =
-    case mnesia:dirty_read(muc_rtbl, {Server, sha256(Server)}) of
-	[] ->
-	    JIDs = sha256(jid:encode(jid:tolower(jid:remove_resource(From)))),
-	    case mnesia:dirty_read(muc_rtbl, {Server, JIDs}) of
-		[] -> false;
-		_ -> true
-	    end;
-	_ -> true
-    end,
-    case Blocked of
-	false -> Packet;
+    Allowed = maybe
+                  JidClean = jid:encode(jid:tolower(jid:remove_resource(From))),
+                  [] ?= mnesia:dirty_read(muc_rtbl, {Server, sha256(Server)}),
+                  [] ?= mnesia:dirty_read(muc_rtbl, {Server, sha256(JidClean)}),
+                  true
+              end,
+    case Allowed of
+	true -> Packet;
 	_ ->
 	    ErrText = ?T("You have been banned from this room"),
 	    Err = xmpp:err_forbidden(ErrText, Lang),
