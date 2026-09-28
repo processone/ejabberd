@@ -447,7 +447,7 @@ overuse(Config0) ->
     InviteeJID = jid:make(User, Server),
     OldOpts = gen_mod:get_module_opts(Server, mod_invites),
     NewOpts =
-        gen_mod_set_opts(OldOpts, [{max_invites, 100}, {access_create_account, account_invite}]),
+        gen_mod_set_opts(OldOpts, [{max_invites, 10}, {access_create_account, account_invite}]),
     update_module_opts(Server, mod_invites, NewOpts),
 
     %% make sure we don't crash with a reset token for this user in the system
@@ -461,32 +461,31 @@ overuse(Config0) ->
 
     mod_invites:remove_user(User, Server),
 
-    ?match([],
-           [error
-            || _ <- lists:seq(1, ?OVERUSE_LIMIT + 1),
-               element(1, slow_down(create_account_invite(Server, {<<>>, Server}))) == error]),
-    mod_invites:expire_invites(<<>>, Server),
-    timer:sleep(1000),
-    ?match(?OVERUSE_LIMIT + 3, mod_invites:cleanup_expired()),
+    meck:new(mod_invites, [passthrough]),
+    meck:expect(mod_invites, overuse_limit, 0, 11), % must be higher than max_invites
+
+    OveruseLimit = mod_invites:overuse_limit(),
 
     ?match([],
            [error
-            || _ <- lists:seq(1, ?OVERUSE_LIMIT + 1),
-               element(1, slow_down(create_account_invite(Server, {<<"admin">>, Server})))
-               == error]),
-    timer:sleep(1000),
+            || _ <- lists:seq(1, OveruseLimit + 1),
+               element(1, create_account_invite(Server, {<<>>, Server})) == error]),
+    mod_invites:expire_invites(<<>>, Server),
+    OverusePlus3 = OveruseLimit + 3,
+    ?match(OverusePlus3, mod_invites:cleanup_expired()),
+
+    ?match([],
+           [error
+            || _ <- lists:seq(1, OveruseLimit + 1),
+               element(1, create_account_invite(Server, {<<"admin">>, Server})) == error]),
     mod_invites:remove_user(<<"admin">>, Server),
-    timer:sleep(1000),
 
     %% We don't test for actual overuse of account invites, that's part of a unit test instead
     ?match([error],
            [error
-            || _ <- lists:seq(1, ?OVERUSE_LIMIT + 1),
-               element(1, slow_down(create_roster_invite(Server, {<<"overuser">>, Server})))
-               == error]),
-    timer:sleep(1000),
+            || _ <- lists:seq(1, OveruseLimit + 1),
+               element(1, create_roster_invite(Server, {<<"overuser">>, Server})) == error]),
     mod_invites:remove_user(<<"overuser">>, Server),
-    timer:sleep(1000),
 
     %% Make sure we don't crash in the process of using those tokens (set_invitee)
     #invite_token{token = AToken} = create_account_invite(Server, {<<>>, Server}),
@@ -518,7 +517,8 @@ overuse(Config0) ->
     mod_invites:remove_user(<<"foo">>, Server),
 
     #invite_token{} = create_account_invite(Server, {<<"overuser">>, Server}),
-    ejabberd_auth:remove_user(<<"overuser">>, Server).
+    ejabberd_auth:remove_user(<<"overuser">>, Server),
+    meck:unload([mod_invites]).
 
 presence_with_preauth_token(Config) ->
     Server = ?config(server, Config),
@@ -1255,7 +1255,3 @@ re_escape(<<C:1/binary, Tail/binary>>, Acc) ->
         false ->
             re_escape(Tail, <<Acc/binary, C/binary>>)
     end.
-
-slow_down(Res) ->
-    timer:sleep(1),
-    Res.
