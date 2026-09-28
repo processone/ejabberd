@@ -11,7 +11,6 @@
 {"A description of the node","节点的描述"}.
 {"A friendly name for the node","节点的友好名称"}.
 {"A fully-featured desktop chat client for Windows and Linux.","适用于 Windows 和 Linux 的功能齐全的桌面聊天客户端。"}.
-{"A lean Jabber/XMPP client for Android. It aims at usability, low overhead and security, and works on low-end Android devices starting with Android 4.0.","适用于 Android 的轻量级 Jabber/XMPP 客户端，注重易用性、低开销和安全性，可在 Android 4.0 及更高版本的低端设备上运行。"}.
 {"A lightweight and powerful XMPP client for iPhone and iPad. It provides an easy way to talk and share moments with your friends.","适用于 iPhone 和 iPad 的轻量高效 XMPP 客户端，让您轻松与好友畅聊并分享生活瞬间。"}.
 {"A modern open-source chat client for iPhone and iPad. It is easy to use and has a clean user interface.","适用于 iPhone 和 iPad 的现代开源聊天客户端，易于使用，界面简洁。"}.
 {"A modern open-source chat client for Mac. It is easy to use and has a clean user interface.","适用于 Mac 的现代开源聊天客户端，易于使用，界面简洁。"}.
@@ -25,6 +24,7 @@
 {"Account doesn't exist","账号不存在"}.
 {"Action on user","对用户的操作"}.
 {"Add {{ inviter }} to your contact list","将 {{ inviter }} 添加到您的联系人列表"}.
+{"Add a few specific options to a certain upload host previously defined in the mod_http_upload 'hosts' option. Right now only 'name' and 'vcard' can be defined here. This is similar to the toplevel _`append_host_config`_ option, but in this case it's applied to this module options.","为之前在 mod_http_upload 的“hosts”选项中定义的某个上传主机添加一些特定选项。目前此处仅可定义“name”和“vcard”。这类似于顶层 _`append_host_config`_ 选项，但在此情况下，它应用于此模块的选项。"}.
 {"Add Contact","添加联系人"}.
 {"Add to contact list","添加到联系人列表"}.
 {"Add User","添加用户"}.
