@@ -548,6 +548,7 @@ basic_auth_headers({User, Server}, Config) ->
     Password = ?config(password, Config),
     ejabberd_auth:try_register(User, Server, Password),
     basic_auth_headers(User, Server, Password).
+
 basic_auth_headers(none, _Server, _Password) ->
     [];
 basic_auth_headers(Username, Server, Password) ->
