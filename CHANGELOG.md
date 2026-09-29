@@ -1,3 +1,59 @@
+## Version 26.09
+
+#### Core
+
+- Add `force` value to `auth_external_user_exists_check` option
+- Add XEP-0158 SHA-256 hashcash CAPTCHA challenge ([#4594](https://github.com/processone/ejabberd/pull/4594))
+- Add `gen_mod:get_module_proc_check()`
+- Fix to preserve reference order in XML, done in fast_xml and xmpp ([#4606](https://github.com/processone/ejabberd/issues/4606))
+- Get rid of couple `*_to_atom`
+- Make `ejabberd_cluster:*call` operate only on known nodes
+- More fixes for arguments in commands for vhost-admin
+- Optimize `acl:load_tab()`
+- `ejabberd_systemd`: Prefer matching over `length/1`
+- Updated Portuguese-Brazil and Chinese-Simplified translations
+
+#### Modules
+
+- `mod_auth_fast`: Make sure that fast tokens can be used only with method that they were created for
+- `mod_invites`: don't apply overuse limit if `max_invites` is `infinity` ([#4615](https://github.com/processone/ejabberd/pull/4615))
+- `mod_invites`: don't crash in `get_invite_by_invitee_t` if `reset_token` present ([#4620](https://github.com/processone/ejabberd/pull/4620))
+- `mod_invites`: now that Conversations is for free we remove Yaxim ([#4621](https://github.com/processone/ejabberd/pull/4621))
+- `mod_mix`: Make access_create rule be applied when creating channel
+- `mod_mqtt`: Add lower limits for pre-auth packets
+- `mod_muc_room`: Fix handling of hats request with missing xdata
+- `mod_muc_rtbl`: Accept also plain account and domain JIDs
+- `mod_muc_rtbl`: Fix handling of remote ban servers ([#4622](https://github.com/processone/ejabberd/issues/4622))
+- `mod_register`: After changing password disallow password change on currently authenticated sessions
+
+#### SQL
+
+- Add `db_serialize` to `mod_privacy` and `mod_pubsub`
+- Add `rename_column` op to `ejabbrd_sql_schema` update routines
+- Make `rename_column` compatible with older mysql versions
+- `ejabberd_sql_schema`: Escape all column/table names
+- Update `mod_roster` serializer with info about approved field
+
+#### Administration
+
+- Allow vhost-admin to execute MUC commands for his vhost ([#4603](https://github.com/processone/ejabberd/issues/4603))
+- Fix method to check vhost-admin permission in Host API ([#4619](https://github.com/processone/ejabberd/issues/4619))
+- WebAdmin: Fix shared roster page when visited by vhost-admin
+- WebAdmin: For vhost-admins, hide useless link to node page
+- WebAdmin: Show proper domain in URLs, not the first configured vhost
+
+#### Installers and Container
+
+- `make-binaries`: Bump Elixir to 1.19.6
+- `make-binaries`: Bump Erlang/OTP version to 28.5.0.7
+- `make-binaries`: Bump Expat version to 2.8.5
+- `make-binaries`: Bump JPEG version to 10
+- `make-binaries`: Bump OpenSSL 3.6.4
+- `make-binaries`: Bump PNG version to 1.6.58
+- `make-binaries`: Bump SQLite version to 3530400
+- `make-binaries`: Bump WebP version to 1.6.0
+- `Dockerfile`: Workaround to get image with `amd64` ([#4598](https://github.com/processone/ejabberd/issues/4598))
+
 ## Version 26.07
 
 #### Security fixes
