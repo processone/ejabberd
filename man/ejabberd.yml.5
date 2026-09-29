@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 07/30/2026
+.\"      Date: 09/29/2026
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "07/30/2026" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "09/29/2026" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/26\&.07/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/26\&.09/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd 26\&.07\&. The options that changed in this version are marked with 🟠\&.
+This section describes top level options of ejabberd 26\&.09\&. The options that changed in this version are marked with 🟠\&.
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLName|ACLDefinition}}\fR
 .RS 4
@@ -399,14 +399,18 @@ Same as
 will be used\&.
 .RE
 .PP
-\fBauth_external_user_exists_check\fR: \fItrue | false\fR
+\fBauth_external_user_exists_check 🟠\fR: \fItrue | false | force\fR
 .RS 4
 \fINote\fR
-about this option: added in 23\&.10\&. Supplement check for user existence based on
+about this option: added in 23\&.10,
+force
+added in 26\&.09\&. Supplement check for user existence based on
 \fImod_last\fR
 data, for authentication methods that don\(cqt have a way to reliably tell if a user exists (like is the case for
 \fIjwt\fR
-and certificate based authentication)\&. This helps with processing offline message for those users\&. The default value is
+and certificate based authentication)\&. This helps with processing offline message for those users\&. Using
+force
+values enables this processing even when no external storage method is enabled (like when using certificate authentications together with local stored passwords\&. The default value is
 \fItrue\fR\&.
 .RE
 .PP
@@ -640,6 +644,15 @@ Maximum number of
 \fIbasic\&.md#captcha|CAPTCHA\fR
 generated images per minute for any given JID\&. The option is intended to protect the server from CAPTCHA DoS\&. The default value is
 \fIinfinity\fR\&.
+.RE
+.PP
+\fBcaptcha_pow\fR: \fIpos_integer() | false\fR
+.RS 4
+Offer an XEP\-0158 SHA\-256 hashcash (proof\-of\-work) challenge in the
+\fIbasic\&.md#captcha|CAPTCHA\fR
+form, alongside the image challenge or on its own\&. The value is the difficulty: the number of hexadecimal digits of the SHA\-256 digest a client must match\&. Unlike the image challenge, this does not require
+\fIcaptcha_cmd\fR\&. The default value is
+\fIfalse\fR\&.
 .RE
 .PP
 \fBcaptcha_url\fR: \fIURL | auto | undefined\fR
@@ -2025,7 +2038,7 @@ if the latter is not set\&.
 \fINote\fR
 about this option: renamed in 25\&.10\&. Whether to use the
 \fIdatabase\&.md#singlehost\-or\-multihost|multihost SQL schema\fR\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/26\&.07/sql\&. There are two schemas available\&. The legacy
+https://github\&.com/processone/ejabberd/tree/26\&.09/sql\&. There are two schemas available\&. The legacy
 \fIsinglehost\fR
 schema stores one XMPP domain into one ejabberd database\&. The
 \fImultihost\fR
@@ -2187,7 +2200,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes modules options of ejabberd 26\&.07\&. The modules that changed in this version are marked with 🟠\&.
+This section describes modules options of ejabberd 26\&.09\&. The modules that changed in this version are marked with 🟠\&.
 .SS "mod_adhoc"
 .sp
 def:ad\-hoc command
@@ -2673,7 +2686,7 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_auth_fast 🟠"
+.SS "mod_auth_fast"
 .sp
 \fINote\fR about this option: improved in 26\&.07\&.
 .sp
@@ -2687,7 +2700,7 @@ The module adds support for XEP\-0484: Fast Authentication Streamlining Tokens t
 \fBAvailable options:\fR
 .RS 4
 .PP
-\fBdb_type 🟠\fR: \fImnesia | sql\fR
+\fBdb_type\fR: \fImnesia | sql\fR
 .RS 4
 \fINote\fR
 about this option: improved in 26\&.07\&. Same as top\-level
@@ -3951,7 +3964,7 @@ This option defines the access rule to limit who is permitted to use the HTTP up
 \fIlocal\fR\&. If no access rule of that name exists, no user will be allowed to use the service\&.
 .RE
 .PP
-\fBappend_module_config 🟠\fR: \fI{UploadHost: Options}\fR
+\fBappend_module_config\fR: \fI{UploadHost: Options}\fR
 .RS 4
 \fINote\fR
 about this option: added in 26\&.07\&. Add a few specific options to a certain upload host previously defined in the mod_http_upload
@@ -4256,7 +4269,7 @@ modules:
 .RE
 .\}
 .RE
-.SS "mod_invites 🟠"
+.SS "mod_invites"
 .sp
 \fINote\fR about this option: improved in 26\&.07\&.
 .sp
@@ -4270,7 +4283,7 @@ In order to use the included landing page feature, you have to set landing_page 
 .sp
 For convenience there\(cqs now also a start page included at wherever you \fImount\fR mod_invites at the ejabberd_http handler\&. This start page will allow people to generate invites by giving their username and password\&. As such the URL should be protected by HTTPS\&. The main use\-case is when people have only clients, that don\(cqt support generating invites natively\&.
 .sp
-If you\(cqd rather want to use an external service, set landing_page to something like http://{{ host }}:8080/easy\-xmpp\-invites/#{{ invite\&.uri|strip_protocol }} or https://invites\&.joinjabber\&.org/#{{ invite\&.uri|strip_protocol }}\&.
+If you\(cqd rather want to use an external service, set landing_page to something like http://{{ host }}:8080/easy\-xmpp\-invites/#{{ invite\&.uri|strip_protocol }} or https://invite\&.joinjabber\&.org/#{{ invite\&.uri|strip_protocol }}\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -5312,7 +5325,7 @@ about this option: improved in 23\&.10\&. This option specifies who is allowed t
 for backward compatibility, which means that any user is allowed to register any free nick in the MUC service and in the rooms\&.
 .RE
 .PP
-\fBappend_module_config 🟠\fR: \fI{MUCHost: Options}\fR
+\fBappend_module_config\fR: \fI{MUCHost: Options}\fR
 .RS 4
 \fINote\fR
 about this option: added in 26\&.07\&. Add a few specific options to a certain MUC host previously defined in the mod_muc
@@ -7182,7 +7195,7 @@ and
 \fIall\fR\&.
 .RE
 .PP
-\fBappend_module_config 🟠\fR: \fI{PubSubHost: Options}\fR
+\fBappend_module_config\fR: \fI{PubSubHost: Options}\fR
 .RS 4
 \fINote\fR
 about this option: added in 26\&.07\&. Add a few specific options to a certain PubSub host previously defined in the mod_pubsub
@@ -9063,7 +9076,7 @@ This option enables you to specify if search operations with empty input fields 
 \fIfalse\fR\&.
 .RE
 .PP
-\fBappend_module_config 🟠\fR: \fI{VcardHost: Options}\fR
+\fBappend_module_config\fR: \fI{VcardHost: Options}\fR
 .RS 4
 \fINote\fR
 about this option: added in 26\&.07\&. Add a few specific options to a certain upload host previously defined in the mod_vcard
@@ -9544,7 +9557,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes listeners options of ejabberd 26\&.07\&.
+This section describes listeners options of ejabberd 26\&.09\&.
 .sp
 TODO
 .SH "AUTHOR"
@@ -9552,13 +9565,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 26\&.07\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 26\&.09\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/26\&.07/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/26\&.09/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
