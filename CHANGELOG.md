@@ -1,5 +1,11 @@
 ## Version 26.09
 
+#### Security fixes
+
+- Unauthenticated Remote Code Execution on ejabberd
+- DoS attack on BOSH
+- Cross-Tenant MUC, Roster and Shared-Roster unauthorized access
+
 #### Core
 
 - Add `force` value to `auth_external_user_exists_check` option
