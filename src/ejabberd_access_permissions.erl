@@ -138,6 +138,7 @@ can_access(Cmd, CallerInfo, Arguments, ArgsFormat) ->
     Vhost = get_vhost_argument(ArgsFormat, Arguments),
     CallerHost = case Vhost of
                       B when is_binary(B) -> B;
+                      global_scope -> global;
                       no_host_argument -> global
                   end,
     can_access(Cmd, CallerInfo#{caller_host => CallerHost}).
