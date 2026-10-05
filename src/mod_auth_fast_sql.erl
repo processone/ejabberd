@@ -77,14 +77,14 @@ get_tokens(LServer, LUser, UA) ->
                                                    "username=%(LUser)s and ua=%(UAs)s and %(LServer)H")) of
                     {selected, Entries} ->
                         lists:filtermap(
-                          fun({<<"c">>, _Token, _Created, Expires}) when Expires < Now ->
+                          fun({<<"c">>, _Token, _Created, Expires}) when Expires =< Now ->
                                   ejabberd_sql:sql_query_t(?SQL("delete from auth_fast_tokens where "
                                                                 "username=%(LUser)s and ua=%(UAs)s and type='c' and %(LServer)H")),
                                   false;
-                             ({<<"c">>, Token, Created, _Expires}) ->
+                            ({<<"c">>, Token, Created, _Expires}) ->
                                   CreatedTS = system_time_seconds_from_datetime(Created),
                                   {true, {current, Token, CreatedTS}};
-                             ({<<"n">>, _Token, _Created, Expires}) when Expires < Now ->
+                             ({<<"n">>, _Token, _Created, Expires}) when Expires =< Now ->
                                   ejabberd_sql:sql_query_t(?SQL("delete from auth_fast_tokens where "
                                                                 "username=%(LUser)s and ua=%(UAs)s and type='n' and %(LServer)H")),
                                   false;
