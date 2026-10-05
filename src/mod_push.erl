@@ -687,7 +687,7 @@ drop_online_sessions(LUser, LServer, Clients) ->
 
 -spec make_summary(binary(), xmpp_element() | xmlel() | none, direction())
       -> xdata() | undefined.
-make_summary(Host, #message{from = From0} = Pkt, recv) ->
+make_summary(Host, #message{type = Type, from = From0} = Pkt, recv) ->
     case {mod_push_opt:include_sender(Host),
 	  mod_push_opt:include_body(Host)} of
 	{false, false} ->
@@ -706,6 +706,8 @@ make_summary(Host, #message{from = From0} = Pkt, recv) ->
 				      []
 			      end,
 		    Fields2 = case IncludeSender of
+				  true when Type == groupchat ->
+				      [{'last-message-sender', From0} | Fields1];
 				  true ->
 				      From = jid:remove_resource(From0),
 				      [{'last-message-sender', From} | Fields1];
