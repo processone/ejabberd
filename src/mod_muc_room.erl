@@ -349,8 +349,10 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType])
 				  room_queue = RoomQueue,
 				  room_shaper = Shaper}),
     add_to_log(room_existence, started, State),
+    State0 =
+        ejabberd_hooks:run_fold(muc_start_room, ServerHost, State, [false]),
     ejabberd_hooks:run(start_room, ServerHost, [ServerHost, Room, Host]),
-    State1 = cleanup_affiliations(State),
+    State1 = cleanup_affiliations(State0),
     State2 =
     case {lists:keyfind(hibernation_time, 1, Opts),
 	  (State1#state.config)#config.mam,
@@ -4693,6 +4695,10 @@ destroy_room(DEl, StateData) ->
 			   ?NS_MUCSUB_NODES_CONFIG, StateData)
       end, ok, get_users_and_subscribers_with_node(
                  ?NS_MUCSUB_NODES_CONFIG, StateData)),
+    ejabberd_hooks:run(
+      muc_destroy_room,
+      StateData#state.server_host,
+      [DEl, StateData]),
     forget_room(StateData),
     {result, undefined, stop}.
 
