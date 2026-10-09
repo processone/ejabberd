@@ -3104,7 +3104,10 @@ send_items(Host, Node, Nidx, Type, Options, Publisher, SubLJID, ToLJID, Number) 
 			add_message_type(Stanza, NotificationType))
     end.
 
--spec send_stanza(host(), ljid(), binary(), stanza()) -> ok.
+-spec send_stanza(host() | {direct, host()}, ljid(), binary(), stanza()) -> ok.
+send_stanza({direct, Host}, USR, _Node, Stanza) ->
+    ejabberd_router:route(
+      xmpp:set_from_to(Stanza, service_jid(Host), jid:make(USR)));
 send_stanza({LUser, LServer, _} = Publisher, USR, Node, BaseStanza) ->
     Stanza = xmpp:set_from(BaseStanza, jid:make(LUser, LServer)),
     USRs = case USR of
@@ -3148,10 +3151,13 @@ send_last_items(JID) ->
       fun(PType) ->
 	      Subs = get_subscriptions_for_send_last(Host, PType, DBType, JID, LJID, BJID),
 	      lists:foreach(
-		fun({#pubsub_node{nodeid = {_, Node}, type = Type, id = Nidx,
-				  options = Options}, _, SubJID})
+		fun({#pubsub_node{nodeid = {NodeHost, Node}, type = Type,
+				  id = Nidx, options = Options}, _, SubJID})
 		      when Type == PType->
-			send_items(Host, Node, Nidx, PType, Options, Host, SubJID, LJID, 1);
+			%% Notify explicit subscribers directly rather than via
+			%% the owner's c2s session (no caps filter).
+			send_items(NodeHost, Node, Nidx, PType, Options,
+				   {direct, NodeHost}, SubJID, LJID, 1);
 		   (_) ->
 			ok
 		end,
