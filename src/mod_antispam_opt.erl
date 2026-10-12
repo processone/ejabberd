@@ -4,19 +4,25 @@
 -module(mod_antispam_opt).
 
 -export([access_spam/1]).
+-export([allow_domains_file/1]).
 -export([cache_size/1]).
 -export([rtbl_services/1]).
 -export([spam_domains_file/1]).
 -export([spam_dump_file/1]).
 -export([spam_jids_file/1]).
 -export([spam_urls_file/1]).
--export([whitelist_domains_file/1]).
 
 -spec access_spam(gen_mod:opts() | global | binary()) -> 'none' | acl:acl().
 access_spam(Opts) when is_map(Opts) ->
     gen_mod:get_opt(access_spam, Opts);
 access_spam(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, access_spam).
+
+-spec allow_domains_file(gen_mod:opts() | global | binary()) -> 'none' | binary().
+allow_domains_file(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(allow_domains_file, Opts);
+allow_domains_file(Host) ->
+    gen_mod:get_module_opt(Host, mod_antispam, allow_domains_file).
 
 -spec cache_size(gen_mod:opts() | global | binary()) -> 'unlimited' | pos_integer().
 cache_size(Opts) when is_map(Opts) ->
@@ -53,10 +59,4 @@ spam_urls_file(Opts) when is_map(Opts) ->
     gen_mod:get_opt(spam_urls_file, Opts);
 spam_urls_file(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, spam_urls_file).
-
--spec whitelist_domains_file(gen_mod:opts() | global | binary()) -> 'none' | binary().
-whitelist_domains_file(Opts) when is_map(Opts) ->
-    gen_mod:get_opt(whitelist_domains_file, Opts);
-whitelist_domains_file(Host) ->
-    gen_mod:get_module_opt(Host, mod_antispam, whitelist_domains_file).
 
