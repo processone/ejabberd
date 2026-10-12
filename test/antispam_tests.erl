@@ -31,6 +31,7 @@
 		disconnect/1, put_event/2, get_event/1, peer_muc_jid/1,
 		my_muc_jid/1, get_features/2, set_opt/3]).
 -include("suite.hrl").
+-include("mod_roster.hrl").
 -include("mod_antispam.hrl").
 
 %% @format-begin
@@ -50,6 +51,8 @@ single_cases() ->
       single_test(blocked_jid_is_cached),
       single_test(uncache_blocked_jid),
       single_test(check_blocked_domain),
+      single_test(check_not_blocked_friend),
+      single_test(check_not_blocked_room_member),
       single_test(unblock_domain),
       single_test(empty_domain_list),
       single_test(block_domain_globally),
@@ -66,47 +69,77 @@ single_cases() ->
 %%%===================================================================
 
 block_by_jid(Config) ->
-    is_spam(message_hello(<<"spammer_jid">>, <<"localhost">>, Config)).
+    Server = ?config(server, Config),
+    is_spam(message_hello(<<"spammer_jid">>, <<"localhost">>, Config), Server).
 
 block_by_url(Config) ->
+    Server = ?config(server, Config),
     From = jid:make(<<"spammer">>, <<"localhost">>, <<"spam_client">>),
     To = my_jid(Config),
-    is_not_spam(message_hello(<<"spammer">>, <<"localhost">>, Config)),
-    is_spam(message(From, To, <<"hello world\nhttps://spam.domain.url">>)).
+    is_not_spam(message_hello(<<"spammer">>, <<"localhost">>, Config), Server),
+    is_spam(message(From, To, <<"hello world\nhttps://spam.domain.url">>), Server).
 
 blocked_jid_is_cached(Config) ->
-    is_spam(message_hello(<<"spammer">>, <<"localhost">>, Config)).
+    Server = ?config(server, Config),
+    is_spam(message_hello(<<"spammer">>, <<"localhost">>, Config), Server).
 
 uncache_blocked_jid(Config) ->
-    Host = ?config(server, Config),
+    Server = ?config(server, Config),
     Spammer = jid:make(<<"spammer">>, <<"localhost">>, <<"">>),
-    mod_antispam:drop_from_spam_filter_cache(Host, jid:to_string(Spammer)),
-    is_not_spam(message_hello(<<"spammer">>, <<"localhost">>, Config)).
+    mod_antispam:drop_from_spam_filter_cache(Server, jid:encode(Spammer)),
+    is_not_spam(message_hello(<<"spammer">>, <<"localhost">>, Config), Server).
 
 check_blocked_domain(Config) ->
-    is_spam(message_hello(<<"other_spammer">>, <<"spam_domain.org">>, Config)).
+    Server = ?config(server, Config),
+    is_spam(message_hello(<<"other_spammer">>, <<"spam_domain.org">>, Config), Server).
+
+check_not_blocked_friend(Config) ->
+    Server = ?config(server, Config),
+    is_spam(message_hello(<<"friend">>, <<"spam_domain.org">>, Config), Server),
+    #jid{luser = LUser, lserver = LServer} = MyJid = my_jid(Config),
+    Ljid = jid:tolower(MyJid),
+    mod_roster:set_roster(#roster{usj = {LUser, LServer, Ljid},
+                                  us = {LUser, LServer},
+                                  jid = jid:tolower(jid:make(<<"friend">>, <<"spam_domain.org">>)),
+                                  subscription = both}
+                         ),
+    is_not_spam(message_hello(<<"friend">>, <<"spam_domain.org">>, Config), Server),
+    mod_roster:remove_user(LUser, LServer).
+
+check_not_blocked_room_member(Config) ->
+    Server = ?config(server, Config),
+    UserJid = jid:make(<<"room_member">>, <<"spam_domain.org">>),
+    RoomName = <<"room">>,
+    MucHost = <<"conference.localhost">>,
+    RoomJid = jid:make(RoomName, MucHost),
+    is_spam(message(UserJid, RoomJid, <<"hello room">>), Server),
+    ok = mod_muc:create_room(MucHost, RoomName, [{persistent, true}]),
+    {ok, Pid} = mod_muc:find_online_room(RoomName, MucHost),
+    {ok, _State} = mod_muc_room:change_item(Pid, UserJid, affiliation, member, <<>>),
+    is_not_spam(message(UserJid, RoomJid, <<"hello room">>), Server).
 
 unblock_domain(Config) ->
-    Host = ?config(server, Config),
-    ?match({ok, _}, mod_antispam:remove_blocked_domain(Host, <<"spam_domain.org">>)),
-    ?match([], mod_antispam:get_blocked_domains(Host)),
-    is_not_spam(message_hello(<<"spammer">>, <<"spam_domain.org">>, Config)).
+    Server = ?config(server, Config),
+    ?match({ok, _}, mod_antispam:remove_blocked_domain(Server, <<"spam_domain.org">>)),
+    ?match([], mod_antispam:get_blocked_domains(Server)),
+    is_not_spam(message_hello(<<"spammer">>, <<"spam_domain.org">>, Config), Server).
 
 %%%===================================================================
 
 empty_domain_list(Config) ->
-    Host = ?config(server, Config),
-    ?match([], mod_antispam:get_blocked_domains(Host)),
+    Server = ?config(server, Config),
+    ?match([], mod_antispam:get_blocked_domains(Server)),
     SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
     To = my_jid(Config),
     Msg = message(SpamFrom, To, <<"hello world">>),
-    is_not_spam(Msg).
+    is_not_spam(Msg, Server).
 
 block_domain_globally(Config) ->
+    Server = ?config(server, Config),
     ?match({ok, _}, mod_antispam:add_blocked_domain(<<"global">>, <<"spam.domain">>)),
     SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
     To = my_jid(Config),
-    is_spam(message(SpamFrom, To, <<"hello world">>)).
+    is_spam(message(SpamFrom, To, <<"hello world">>), Server).
 
 check_domain_blocked_globally(_Config) ->
     Vhosts = [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, mod_antispam)],
@@ -114,12 +147,12 @@ check_domain_blocked_globally(_Config) ->
     ?match(NumVhosts, length(lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts))).
 
 unblock_domain_in_vhost(Config) ->
-    Host = ?config(server, Config),
-    ?match({ok, _}, mod_antispam:remove_blocked_domain(Host, <<"spam.domain">>)),
-    ?match([], mod_antispam:get_blocked_domains(Host)),
+    Server = ?config(server, Config),
+    ?match({ok, _}, mod_antispam:remove_blocked_domain(Server, <<"spam.domain">>)),
+    ?match([], mod_antispam:get_blocked_domains(Server)),
     SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
     To = my_jid(Config),
-    is_not_spam(message(SpamFrom, To, <<"hello world">>)).
+    is_not_spam(message(SpamFrom, To, <<"hello world">>), Server).
 
 unblock_domain_globally(_Config) ->
     Vhosts = [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, mod_antispam)],
@@ -129,43 +162,43 @@ unblock_domain_globally(_Config) ->
     ?match([], lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts)).
 
 block_domain_in_vhost(Config) ->
-    Host = ?config(server, Config),
+    Server = ?config(server, Config),
     Vhosts = [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, mod_antispam)],
-    ?match({ok, _}, mod_antispam:add_blocked_domain(Host, <<"spam.domain">>)),
-    ?match([Host], lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts)),
+    ?match({ok, _}, mod_antispam:add_blocked_domain(Server, <<"spam.domain">>)),
+    ?match([Server], lists:filter(has_spam_domain(<<"spam.domain">>), Vhosts)),
     SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
     To = my_jid(Config),
-    is_spam(message(SpamFrom, To, <<"hello world">>)).
+    is_spam(message(SpamFrom, To, <<"hello world">>), Server).
 
 unblock_domain_in_vhost2(Config) ->
-    Host = ?config(server, Config),
-    ?match({ok, _}, mod_antispam:remove_blocked_domain(Host, <<"spam.domain">>)),
+    Server = ?config(server, Config),
+    ?match({ok, _}, mod_antispam:remove_blocked_domain(Server, <<"spam.domain">>)),
     SpamFrom = jid:make(<<"spammer">>, <<"spam.domain">>, <<"spam_client">>),
     To = my_jid(Config),
-    is_not_spam(message(SpamFrom, To, <<"hello world">>)),
+    is_not_spam(message(SpamFrom, To, <<"hello world">>), Server),
     disconnect(Config).
 
 %%%===================================================================
 
 jid_cache(Config) ->
-    Host = ?config(server, Config),
-    SpamFrom = jid:make(<<"spammer">>, Host, <<"spam_client">>),
-    is_not_spam(message_hello(<<"spammer">>, Host, Config)),
-    mod_antispam:add_to_spam_filter_cache(Host, jid:to_string(SpamFrom)),
-    is_spam(message_hello(<<"spammer">>, Host, Config)),
-    mod_antispam:drop_from_spam_filter_cache(Host, jid:to_string(SpamFrom)),
-    is_not_spam(message_hello(<<"spammer">>, Host, Config)),
+    Server = ?config(server, Config),
+    SpamFrom = jid:make(<<"spammer">>, Server, <<"spam_client">>),
+    is_not_spam(message_hello(<<"spammer">>, Server, Config), Server),
+    mod_antispam:add_to_spam_filter_cache(Server, jid:encode(SpamFrom)),
+    is_spam(message_hello(<<"spammer">>, Server, Config), Server),
+    mod_antispam:drop_from_spam_filter_cache(Server, jid:encode(SpamFrom)),
+    is_not_spam(message_hello(<<"spammer">>, Server, Config), Server),
     disconnect(Config).
 
 %%%===================================================================
 
 rtbl_domains(Config) ->
-    Host = ?config(server, Config),
+    Server = ?config(server, Config),
     RTBLHost =
-        jid:to_string(
+        jid:encode(
             suite:pubsub_jid(Config)),
     RTBLDomainsNode = <<"spam_source_domains">>,
-    OldOpts = gen_mod:get_module_opts(Host, mod_antispam),
+    OldOpts = gen_mod:get_module_opts(Server, mod_antispam),
     NewOpts =
         maps:merge(OldOpts,
                    #{rtbl_services => [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}]}),
@@ -184,11 +217,11 @@ rtbl_domains(Config) ->
                                 <<"spam.source.domain">>,
                                 [xmpp:encode(#ps_item{id = <<"spam.source.domain">>,
                                                       sub_els = []})]),
-    mod_antispam:reload(Host, OldOpts, NewOpts),
-    ?match({ok, _}, mod_antispam:remove_blocked_domain(Host, <<"spam_domain.org">>)),
+    mod_antispam:reload(Server, OldOpts, NewOpts),
+    ?match({ok, _}, mod_antispam:remove_blocked_domain(Server, <<"spam_domain.org">>)),
     ?retry(100,
            10,
-           ?match([<<"spam.source.domain">>], mod_antispam:get_blocked_domains(Host))),
+           ?match([<<"spam.source.domain">>], mod_antispam:get_blocked_domains(Server))),
     {result, _} =
         mod_pubsub:publish_item(RTBLHost,
                                 ?config(server, Config),
@@ -197,20 +230,20 @@ rtbl_domains(Config) ->
                                 <<"spam.source.another">>,
                                 [xmpp:encode(#ps_item{id = <<"spam.source.another">>,
                                                       sub_els = []})]),
-    ?retry(100, 10, ?match(true, (has_spam_domain(<<"spam.source.another">>))(Host))),
+    ?retry(100, 10, ?match(true, (has_spam_domain(<<"spam.source.another">>))(Server))),
     {result, _} =
         mod_pubsub:delete_item(RTBLHost, RTBLDomainsNode, Owner, <<"spam.source.another">>, true),
-    ?retry(100, 10, ?match(false, (has_spam_domain(<<"spam.source.another">>))(Host))),
+    ?retry(100, 10, ?match(false, (has_spam_domain(<<"spam.source.another">>))(Server))),
     {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
     disconnect(Config).
 
 rtbl_domains_whitelisted(Config) ->
-    Host = ?config(server, Config),
+    Server = ?config(server, Config),
     RTBLHost =
-        jid:to_string(
+        jid:encode(
             suite:pubsub_jid(Config)),
     RTBLDomainsNode = <<"spam_source_domains">>,
-    OldOpts = gen_mod:get_module_opts(Host, mod_antispam),
+    OldOpts = gen_mod:get_module_opts(Server, mod_antispam),
     NewOpts =
         maps:merge(OldOpts,
                    #{rtbl_services => [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}]}),
@@ -229,7 +262,7 @@ rtbl_domains_whitelisted(Config) ->
                                 <<"whitelisted.domain">>,
                                 [xmpp:encode(#ps_item{id = <<"whitelisted.domain">>,
                                                       sub_els = []})]),
-    mod_antispam:reload(Host, OldOpts, NewOpts),
+    mod_antispam:reload(Server, OldOpts, NewOpts),
     {result, _} =
         mod_pubsub:publish_item(RTBLHost,
                                 ?config(server, Config),
@@ -238,22 +271,23 @@ rtbl_domains_whitelisted(Config) ->
                                 <<"yetanother.domain">>,
                                 [xmpp:encode(#ps_item{id = <<"yetanother.domain">>,
                                                       sub_els = []})]),
-    ?retry(100, 10, ?match(true, (has_spam_domain(<<"yetanother.domain">>))(Host))),
+    ?retry(100, 10, ?match(true, (has_spam_domain(<<"yetanother.domain">>))(Server))),
     %% we assume that the previous "whitelisted.domain" pubsub item has been consumed by now, so we
     %% can check that it doesn't exist
-    ?match(false, (has_spam_domain(<<"whitelisted.domain">>))(Host)),
+    ?match(false, (has_spam_domain(<<"whitelisted.domain">>))(Server)),
     {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
     disconnect(Config).
 
 %%%===================================================================
 
 spam_dump_file(Config) ->
+    Server = ?config(server, Config),
     {ok, CWD} = file:get_cwd(),
     Filename = filename:join([CWD, "spam.log"]),
     ?retry(100, 100, ?match(true, size(get_bytes(Filename)) > 0)),
     From = jid:make(<<"spammer_jid">>, <<"localhost">>, <<"spam_client">>),
     To = my_jid(Config),
-    is_spam(message(From, To, <<"A very specific spam message">>)),
+    is_spam(message(From, To, <<"A very specific spam message">>), Server),
     ?retry(100,
            100,
            ?match({match, _}, re:run(get_bytes(Filename), <<"A very specific spam message">>))).
@@ -267,12 +301,13 @@ single_test(T) ->
 has_spam_domain(Domain) ->
     fun(Host) -> lists:member(Domain, mod_antispam:get_blocked_domains(Host)) end.
 
-is_not_spam(Msg) ->
-    ?match({Msg, undefined}, mod_antispam_filter:s2s_receive_packet({Msg, undefined})).
+is_not_spam(Msg, Host) ->
+    ?match({Msg, _},
+           mod_antispam_filter:s2s_receive_packet({Msg, #{server_host => Host}})).
 
-is_spam(Spam) ->
-    ?match({stop, {drop, undefined}},
-           mod_antispam_filter:s2s_receive_packet({Spam, undefined})).
+is_spam(Spam, Host) ->
+    ?match({stop, {drop, _}},
+           mod_antispam_filter:s2s_receive_packet({Spam, #{server_host => Host}})).
 
 message_hello(Username, Host, Config) ->
     SpamFrom = jid:make(Username, Host, <<"spam_client">>),
