@@ -129,6 +129,8 @@ to_json(#serialize_muc_room_v1{options = Options} = Data) ->
                  fun({affiliations, Aff}, Acc) ->
                          Aff2 = [ #{jid => jid:encode(J), type => Type, msg => Msg} || {J, {Type, Msg}} <- Aff ],
                          Acc#{affiliatons => Aff2};
+                    ({subject, Subs}, Acc) when Subs /= [] ->
+                         Acc#{subjects => [#{lang => Lang, text => Sub} || {text, Lang, Sub} <- Subs]};
                     ({subject_author, {Nick, J}}, Acc) ->
                          Acc#{subject_author => #{author => jid:encode(J), nick => Nick}};
                     ({subscribers, Subs}, Acc) ->
