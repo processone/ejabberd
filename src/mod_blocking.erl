@@ -55,9 +55,9 @@ depends(_Host, _Opts) ->
 disco_features({error, Err}, _From, _To, _Node, _Lang) ->
     {error, Err};
 disco_features(empty, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_BLOCKING]};
+    {result, [?NS_BLOCKING, ?NS_REPORTING_1]};
 disco_features({result, Feats}, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_BLOCKING|Feats]};
+    {result, [?NS_BLOCKING, ?NS_REPORTING_1|Feats]};
 disco_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -81,13 +81,13 @@ process_iq_get(#iq{lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_iq_set(iq()) -> iq().
-process_iq_set(#iq{lang = Lang, sub_els = [SubEl]} = IQ) ->
+process_iq_set(#iq{from = #jid{lserver = Host}, lang = Lang, sub_els = [SubEl]} = IQ) ->
     case SubEl of
 	#block{items = []} ->
 	    Txt = ?T("No items found in this query"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	#block{items = Items} ->
-	    JIDs = [jid:tolower(JID) || #block_item{jid = JID} <- Items],
+	    JIDs = [extract_jid_and_maybe_handle_report(Host, I) || I <- Items],
 	    process_block(IQ, JIDs);
 	#unblock{items = []} ->
 	    process_unblock_all(IQ);
@@ -98,6 +98,16 @@ process_iq_set(#iq{lang = Lang, sub_els = [SubEl]} = IQ) ->
 	    Txt = ?T("No module is handling this query"),
 	    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang))
     end.
+
+extract_jid_and_maybe_handle_report(Host, #block_item{jid = JID} = Item) ->
+    maybe_handle_report(Host, Item),
+    jid:tolower(JID).
+
+maybe_handle_report(_Host, #block_item{spam_report = undefined}) ->
+    ok;
+maybe_handle_report(Host, #block_item{jid = JID, spam_report = #report{reason = Reason} = Report}) ->
+    ejabberd_hooks:run(spam_reported, Host, [JID, Reason, Report]),
+    ok.
 
 -spec listitems_to_jids([listitem()], [ljid()]) -> [ljid()].
 listitems_to_jids([], JIDs) ->
