@@ -3241,12 +3241,20 @@ process_item_change(UJID) ->
     end.
 
 -spec process_item_change(admin_action(), state(), undefined | jid()) -> state() | {error, stanza_error()}.
+process_item_change({JID, affiliation, owner, _} = Item, SD, UJID) ->
+    case is_acceptable_owner(JID) of
+	true ->
+	    do_process_item_change(Item, SD, UJID);
+	false ->
+	    Txt = ?T("Only a user, a component or a local service can be a room owner"),
+	    {error, xmpp:err_not_acceptable(Txt, (SD#state.config)#config.lang)}
+    end;
 process_item_change(Item, SD, UJID) ->
+    do_process_item_change(Item, SD, UJID).
+
+-spec do_process_item_change(admin_action(), state(), undefined | jid()) -> state() | {error, stanza_error()}.
+do_process_item_change(Item, SD, UJID) ->
     try case Item of
-	    {JID, affiliation, owner, _} when JID#jid.luser == <<"">> ->
-		%% If the provided JID does not have username,
-		%% forget the affiliation completely
-		SD;
 	    {JID, role, none, Reason} ->
 		send_kickban_presence(UJID, JID, Reason, 307, SD),
 		set_role(JID, none, SD);
@@ -3412,6 +3420,7 @@ find_changed_items(UJID, UAffiliation, URole,
 			       Items, Lang, StateData,
 			       Res);
 	true ->
+	    check_owner_change(RoleOrAff, RoleOrAffValue, JIDs, Lang),
 	    MoreRes = case RoleOrAff of
 			  affiliation ->
 			      [{jid:remove_resource(Jidx),
@@ -3428,6 +3437,29 @@ find_changed_items(UJID, UAffiliation, URole,
 	    Txt = ?T("Changing role/affiliation is not allowed"),
 	    throw({error, xmpp:err_not_allowed(Txt, Lang)})
     end.
+
+%% Checked before any item is applied, so the request fails as a whole.
+-spec check_owner_change(affiliation | role, affiliation() | role(),
+			 [jid()], binary()) -> ok.
+check_owner_change(affiliation, owner, JIDs, Lang) ->
+    case lists:all(fun is_acceptable_owner/1, JIDs) of
+	true ->
+	    ok;
+	false ->
+	    Txt = ?T("Only a user, a component or a local service can be a room owner"),
+	    throw({error, xmpp:err_not_acceptable(Txt, Lang)})
+    end;
+check_owner_change(_RoleOrAff, _Value, _JIDs, _Lang) ->
+    ok.
+
+%% A domain affiliation also applies to every user@domain, so only a
+%% local domain without accounts (a component or a service) can be owner.
+-spec is_acceptable_owner(jid()) -> boolean().
+is_acceptable_owner(#jid{luser = <<"">>, lserver = LServer}) ->
+    ejabberd_router:is_my_route(LServer) andalso
+	not ejabberd_router:is_my_host(LServer);
+is_acceptable_owner(_JID) ->
+    true.
 
 -spec can_change_ra(affiliation(), role(), affiliation(), role(),
 		    affiliation, affiliation(), affiliation()) -> boolean() | nothing | check_owner;

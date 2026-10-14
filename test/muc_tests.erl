@@ -54,6 +54,7 @@ single_cases() ->
       single_test(cancel_configure_non_existent),
       single_test(service_subscriptions),
       single_test(set_room_affiliation),
+      single_test(domain_owner_affiliation),
       single_test(hats_without_xdata)]}.
 
 service_presence_error(Config) ->
@@ -270,6 +271,41 @@ set_room_affiliation(Config) ->
 	    #muc_item{affiliation = member, role = none, jid = PeerJID}]}]} = recv_message(Config),
 
     ok = leave(Config, RoomJID),
+    disconnect(Config).
+
+domain_owner_affiliation(Config) ->
+    Room = muc_room_jid(Config),
+    Server = jid:make(?config(server, Config)),
+    Service = muc_jid(Config),
+    PeerJID = jid:remove_resource(?config(slave, Config)),
+    ok = join_new(Config),
+    SetOwners =
+	fun(JIDs) ->
+		send_recv(Config,
+			  #iq{type = set, to = Room,
+			      sub_els = [#muc_admin{
+					    items = [#muc_item{affiliation = owner,
+							       jid = J}
+						     || J <- JIDs]}]})
+	end,
+    ct:comment("Setting a virtual host as owner"),
+    #stanza_error{reason = 'not-acceptable'} =
+	xmpp:get_error(SetOwners([Server])),
+    ct:comment("Setting an unrouted domain as owner"),
+    #stanza_error{reason = 'not-acceptable'} =
+	xmpp:get_error(SetOwners([jid:make(<<"unrouted.example">>)])),
+    ct:comment("Setting a user and a virtual host as owners"),
+    #stanza_error{reason = 'not-acceptable'} =
+	xmpp:get_error(SetOwners([PeerJID, Server])),
+    [_] = get_affiliation(Config, owner),
+    ct:comment("Setting the MUC service as owner"),
+    #iq{type = result} = SetOwners([Service]),
+    #message{from = Room,
+	     sub_els = [#muc_user{items = [#muc_item{affiliation = owner,
+						     jid = Service}]}]} =
+	recv_message(Config),
+    [_, _] = get_affiliation(Config, owner),
+    ok = leave(Config),
     disconnect(Config).
 
 hats_without_xdata(Config) ->
