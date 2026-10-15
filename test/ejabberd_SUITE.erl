@@ -458,6 +458,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        caps_stuffing_bug,
        last,
        antispam_tests:single_cases(),
+       antispam_report_tests:single_cases(),
        webadmin_tests:single_cases(),
        roster_tests:single_cases(),
        private_tests:single_cases(),
@@ -1198,7 +1199,7 @@ bookmark_conference() ->
                                  <<>>)}.
 
 '$handle_undefined_function'(F, [Config]) when is_list(Config) ->
-    case re:split(atom_to_list(F), "_", [{return, list}, {parts, 2}]) of
+    case split_function_name(F) of
 	[M, T] ->
 	    Module = list_to_atom(M ++ "_tests"),
 	    Function = list_to_atom(T),
@@ -1214,6 +1215,11 @@ bookmark_conference() ->
 '$handle_undefined_function'(_, _) ->
     erlang:error(undef).
 
+split_function_name(F) ->
+    case re:split(atom_to_list(F), "\\.", [{return, list}, {parts, 2}]) of
+        Res when length(Res) == 2 -> Res;
+        _ -> re:split(atom_to_list(F), "_", [{return, list}, {parts, 2}])
+    end.
 
 %%%===================================================================
 %%% SQL stuff

@@ -80,14 +80,16 @@ sm_receive_packet(Stanza) ->
 
 -spec handle_receive_packet(stanza() | drop, binary()) -> stanza() | drop | {stop, drop}.
 handle_receive_packet(#message{from = From,
-                           to = To,
-                           type = Type} = Msg,
+                               to = To,
+                               type = Type} =
+                          Msg,
                       Host)
     when Type /= error ->
     do_check(From, To, Host, Msg);
 handle_receive_packet(#presence{from = From,
-                            to = To,
-                            type = subscribe} = Presence,
+                                to = To,
+                                type = subscribe} =
+                          Presence,
                       Host) ->
     do_check(From, To, Host, Presence);
 handle_receive_packet(Acc, _Host) ->
@@ -142,8 +144,8 @@ needs_checking(Host, #jid{lserver = FromHost} = From, To) ->
                     ?DEBUG("Spam is filtered for ~s", [jid:encode(To)]),
                     not mod_roster:is_subscribed(From, To)
                     andalso not
-                        mod_roster:is_subscribed(
-                                  jid:make(<<>>, FromHost),
+                                mod_roster:is_subscribed(
+                                    jid:make(<<>>, FromHost),
                                     To) % likely a gateway or user allowed whole domain
                     andalso not is_room_affiliated(From, To)
             end;
@@ -303,13 +305,16 @@ is_room_affiliated(From, #jid{luser = RoomName, lserver = MucHost}) ->
     try mod_muc:find_online_room(RoomName, MucHost) of
         {ok, Pid} ->
             {ok, Room} = mod_muc_room:get_state(Pid),
-            mod_muc_room:get_affiliation(jid:tolower(From), Room) =/= none;
+            mod_muc_room:get_affiliation(
+                jid:tolower(From), Room)
+            =/= none;
         error ->
             false
     catch
         _:{unregistered_route, _Route} ->
             false
     end.
+
 %%--------------------------------------------------------------------
 
 %%| vim: set foldmethod=marker foldmarker=%%|,%%-:

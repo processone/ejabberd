@@ -100,9 +100,10 @@ check_not_blocked_friend(Config) ->
     Ljid = jid:tolower(MyJid),
     mod_roster:set_roster(#roster{usj = {LUser, LServer, Ljid},
                                   us = {LUser, LServer},
-                                  jid = jid:tolower(jid:make(<<"friend">>, <<"spam_domain.org">>)),
-                                  subscription = both}
-                         ),
+                                  jid =
+                                      jid:tolower(
+                                          jid:make(<<"friend">>, <<"spam_domain.org">>)),
+                                  subscription = both}),
     is_not_spam(message_hello(<<"friend">>, <<"spam_domain.org">>, Config), Server),
     mod_roster:remove_user(LUser, LServer).
 
@@ -302,8 +303,7 @@ has_spam_domain(Domain) ->
     fun(Host) -> lists:member(Domain, mod_antispam:get_blocked_domains(Host)) end.
 
 is_not_spam(Msg, Host) ->
-    ?match({Msg, _},
-           mod_antispam_filter:s2s_receive_packet({Msg, #{server_host => Host}})).
+    ?match({Msg, _}, mod_antispam_filter:s2s_receive_packet({Msg, #{server_host => Host}})).
 
 is_spam(Spam, Host) ->
     ?match({stop, {drop, _}},
