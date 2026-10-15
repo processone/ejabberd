@@ -83,7 +83,7 @@
 	 rtbl_retry_timer = undefined	:: reference() | undefined,
 	 rtbl_domains_node		:: binary(),
 	 blocked_domains = #{}		:: #{binary() => any()},
-	 whitelist_domains = #{}	:: #{binary() => false}
+	 allow_domains = #{}	:: #{binary() => false}
 	}).
 
 -type state() :: #state{}.
@@ -158,7 +158,7 @@ mod_opt_type(spam_jids_file) ->
 mod_opt_type(spam_urls_file) ->
     econf:either(
         econf:enum([none]), econf:file());
-mod_opt_type(whitelist_domains_file) ->
+mod_opt_type(allow_domains_file) ->
     econf:either(
         econf:enum([none]), econf:file()).
 
@@ -171,7 +171,7 @@ mod_options(_Host) ->
      {spam_dump_file, false},
      {spam_jids_file, none},
      {spam_urls_file, none},
-     {whitelist_domains_file, none}].
+     {allow_domains_file, none}].
 
 mod_doc() ->
     #{desc =>
@@ -267,11 +267,11 @@ mod_doc() ->
                      "https://docs.ejabberd.im/admin/configuration/file-format/#predefined-keywords[predefined keyword] "
                      "if the file is available in the configuration directory. "
                      "The default value is 'none'.")}},
-           {whitelist_domains_file,
+           {allow_domains_file,
             #{value => ?T("none | Path"),
               desc =>
                   ?T("Path to a file containing a list of "
-                     "domains to whitelist from being blocked, one per line. "
+                     "domains to remove from list of blocked domains, one per line. "
                      "If either it is in 'spam_domains_file' or more realistically "
                      "in a domain sent by a RTBL host (see option 'rtbl_services') "
                      "then this domain will be ignored and stanzas from there won't be blocked. "
@@ -298,7 +298,7 @@ init([Host, Opts]) ->
     #{jid := JIDsSet,
       url := URLsSet,
       domains := SpamDomainsSet,
-      whitelist_domains := WhitelistDomains} =
+      allow_domains := AllowDomains} =
         FilesResults,
     ejabberd_hooks:add(local_send_to_resource_hook,
                        Host,
@@ -314,7 +314,7 @@ init([Host, Opts]) ->
                dump_fd = mod_antispam_dump:init_dumping(Host),
                max_cache_size = gen_mod:get_opt(cache_size, Opts),
                blocked_domains = set_to_map(SpamDomainsSet),
-               whitelist_domains = set_to_map(WhitelistDomains, false),
+               allow_domains = set_to_map(AllowDomains, false),
                rtbl_host = RTBLHost,
                rtbl_domains_node = RTBLDomainsNode},
     mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
@@ -365,15 +365,15 @@ handle_call({remove_blocked_domain, Domain},
     {reply, {spam_filter, {ok, Txt}}, State#state{blocked_domains = BlockedDomains1}};
 handle_call(get_blocked_domains,
             _From,
-            #state{blocked_domains = BlockedDomains, whitelist_domains = WhitelistDomains} =
+            #state{blocked_domains = BlockedDomains, allow_domains = AllowDomains} =
                 State) ->
-    {reply, {blocked_domains, maps:merge(BlockedDomains, WhitelistDomains)}, State};
+    {reply, {blocked_domains, maps:merge(BlockedDomains, AllowDomains)}, State};
 handle_call({is_blocked_domain, Domain},
             _From,
-            #state{blocked_domains = BlockedDomains, whitelist_domains = WhitelistDomains} =
+            #state{blocked_domains = BlockedDomains, allow_domains = AllowDomains} =
                 State) ->
     {reply,
-     maps:get(Domain, maps:merge(BlockedDomains, WhitelistDomains), false) =/= false,
+     maps:get(Domain, maps:merge(BlockedDomains, AllowDomains), false) =/= false,
      State};
 handle_call(prepare_stop,
             _From,
@@ -554,7 +554,7 @@ reload_files(#state{host = Host, blocked_domains = BlockedDomains} = State) ->
         #{jid := JIDsSet,
           url := URLsSet,
           domains := SpamDomainsSet,
-          whitelist_domains := WhitelistDomains} ->
+          allow_domains := AllowDomains} ->
             case sets_equal(JIDsSet, State#state.jid_set) of
                 true ->
                     ?INFO_MSG("Reloaded spam JIDs for ~s (unchanged)", [Host]);
@@ -571,7 +571,7 @@ reload_files(#state{host = Host, blocked_domains = BlockedDomains} = State) ->
              State#state{jid_set = JIDsSet,
                          url_set = URLsSet,
                          blocked_domains = maps:merge(BlockedDomains, set_to_map(SpamDomainsSet)),
-                         whitelist_domains = set_to_map(WhitelistDomains, false)}};
+                         allow_domains = set_to_map(AllowDomains, false)}};
         {config_error, ErrorText} ->
             {{error, ErrorText}, State}
     end.
@@ -587,12 +587,12 @@ read_files(Host) ->
         #{jid => sets:new(),
           url => sets:new(),
           domains => sets:new(),
-          whitelist_domains => sets:new()},
+          allow_domains => sets:new()},
     Files =
         #{jid => gen_mod:get_module_opt(Host, ?MODULE, spam_jids_file),
           url => gen_mod:get_module_opt(Host, ?MODULE, spam_urls_file),
           domains => gen_mod:get_module_opt(Host, ?MODULE, spam_domains_file),
-          whitelist_domains => gen_mod:get_module_opt(Host, ?MODULE, whitelist_domains_file)},
+          allow_domains => gen_mod:get_module_opt(Host, ?MODULE, allow_domains_file)},
     ejabberd_hooks:run_fold(antispam_get_lists, Host, AccInitial, [Files]).
 
 get_rtbl_services_option(Host) when is_binary(Host) ->
