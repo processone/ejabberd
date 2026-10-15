@@ -31,6 +31,7 @@
 		set_roster/3, del_roster/1, get_roster/1]).
 -include("suite.hrl").
 -include("mod_roster.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
 %%%===================================================================
 %%% API
@@ -59,12 +60,14 @@ single_cases() ->
       single_test(malformed_get),
       single_test(malformed_set),
       single_test(malformed_type_value),
-      single_test(set_get_block)]}.
+      single_test(set_get_block),
+      single_test(handle_report)]}.
 
 feature_enabled(Config) ->
     Features = get_features(Config),
     true = lists:member(?NS_PRIVACY, Features),
     true = lists:member(?NS_BLOCKING, Features),
+    true = lists:member(?NS_REPORTING_1, Features),
     disconnect(Config).
 
 set_get_list(Config) ->
@@ -212,8 +215,10 @@ malformed_get(Config) ->
 	    #privacy_query{default = none},
 	    #privacy_query{lists = [#privacy_list{name = <<"1">>},
 				    #privacy_list{name = <<"2">>}]},
-	    #block{items = [Item]}, #unblock{items = [Item]},
-	    #block{}, #unblock{}]),
+	    #block{items = [Item]},
+            #unblock{items = [Item]},
+	    #block{},
+            #unblock{}]),
     disconnect(Config).
 
 malformed_set(Config) ->
@@ -252,6 +257,22 @@ set_get_block(Config) ->
     JIDs = lists:sort([J1, J2]),
     {ok, ListName} = set_unblock(Config, [J2, J1]),
     [] = get_block(Config),
+    del_privacy(disconnect(Config)).
+
+handle_report(Config) ->
+    meck:new(ejabberd_hooks, [passthrough]),
+    meck:expect(ejabberd_hooks, run, fun(Hook, Host, Args) -> meck:passthrough([Hook, Host, Args]) end),
+    JID = jid:make(p1_rand:get_string(), p1_rand:get_string()),
+    Items = [#block_item{jid = JID, spam_report = #report{reason = spam}}],
+    #iq{type = result} =
+        send_recv(Config, #iq{type = set,
+                              sub_els = [#block{items = Items}]}),
+    {#iq{sub_els = [#block{items = _Items1}]},
+     #iq{sub_els = [#privacy_query{lists = _Lists}]}} =
+        ?recv2(#iq{type = set, sub_els = [#block{}]},
+               #iq{type = set, sub_els = [#privacy_query{}]}),
+    ?assertMatch([ok], [ok || {_, {ejabberd_hooks, run, [spam_reported, _, _]}, _} <- meck:history(ejabberd_hooks)]),
+    meck:unload([ejabberd_hooks]),
     del_privacy(disconnect(Config)).
 
 %%%===================================================================

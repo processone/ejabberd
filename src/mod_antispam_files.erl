@@ -37,10 +37,8 @@
 % Hooks
 -export([get_files_lists/2]).
 
--include("ejabberd_commands.hrl").
 -include("logger.hrl").
 -include("mod_antispam.hrl").
--include("translate.hrl").
 
 -include_lib("xmpp/include/xmpp.hrl").
 
@@ -49,10 +47,6 @@
     #{jid => jid_set(),
       url => url_set(),
       atom() => sets:set(binary())}.
-
--define(COMMAND_TIMEOUT, timer:seconds(30)).
--define(DEFAULT_CACHE_SIZE, 10000).
--define(HTTPC_TIMEOUT, timer:seconds(3)).
 
 %%--------------------------------------------------------------------
 %%| Exported
@@ -70,18 +64,18 @@ terminate_files(Host) ->
 get_files_lists(#{jid := AccJids,
                   url := AccUrls,
                   domains := AccDomains,
-                  whitelist_domains := AccWhitelist} =
+                  allow_domains := AccAllowlist} =
                     Acc,
                 Files) ->
     try read_files(Files) of
         #{jid := JIDsSet,
           url := URLsSet,
           domains := SpamDomainsSet,
-          whitelist_domains := WhitelistDomains} ->
+          allow_domains := AllowDomains} ->
             Acc#{jid => sets:union(AccJids, JIDsSet),
                  url => sets:union(AccUrls, URLsSet),
                  domains => sets:union(AccDomains, SpamDomainsSet),
-                 whitelist_domains => sets:union(AccWhitelist, WhitelistDomains)}
+                 allow_domains => sets:union(AccAllowlist, AllowDomains)}
     catch
         {Op, File, Reason} when Op == open; Op == read ->
             ErrorText = format("Error trying to ~s file ~s: ~s", [Op, File, format_error(Reason)]),

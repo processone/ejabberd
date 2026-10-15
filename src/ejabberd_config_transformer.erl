@@ -410,6 +410,9 @@ transform_module_options(Opts) ->
 	 ({iqdisc, _}) ->
 	      warn_removed_option(iqdisc),
 	      false;
+	 ({whitelist_domains_file=Opt, Val}) ->
+	      warn_replaced_option(Opt, allow_domains_file),
+	      {true, {allow_domains_file, Val}};
 	 (_) ->
 	      true
       end, Opts).
