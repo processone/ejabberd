@@ -53,14 +53,13 @@
     serverhost :: binary(),
     username :: binary(),
     version :: binary() | undefined,
-    entries :: [{binary(),
-                 binary(),
-                 [binary()],
-                 both | from | to | none,
-                 boolean(),
-                 subscribe | unsubscribe | both | in | out | none,
-                 binary(),
-                 boolean()}]
+    entries :: [{Jid :: binary(),
+                 Name :: binary(),
+                 Groups :: [binary()],
+                 Subscription :: both | from | to | none,
+                 Ask :: subscribe | unsubscribe | both | in | out | none,
+                 AskMsg :: binary(),
+                 Approved :: boolean()}]
 }).
 
 -record(serialize_auth_v1, {

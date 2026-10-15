@@ -25,6 +25,7 @@
 -module(mod_roster_mnesia).
 
 -behaviour(mod_roster).
+-behaviour(ejabberd_db_serialize).
 
 %% API
 -export([init/2, read_roster_version/2, write_roster_version/4,
@@ -34,10 +35,13 @@
 	 process_rosteritems/5,
 	 use_cache/2]).
 -export([need_transform/1, transform/1]).
+-export([serialize/3, deserialize_start/1, deserialize/2]).
 
 -include("mod_roster.hrl").
 -include("logger.hrl").
+-include("ejabberd_db_serialize.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 %%%===================================================================
 %%% API
@@ -302,6 +306,73 @@ is_glob_match(String, <<"!", Glob/binary>>) ->
     not is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob));
 is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
+
+serialize(LServer, BatchSize, undefined) ->
+    Users = lists:uniq(lists:sort(mnesia:dirty_select(roster, ets:fun2ms(
+	fun(#roster{us = {U, S}}) when S == LServer -> U end)))),
+    ReadRoster =
+	fun(U) ->
+	    Roster = mnesia:dirty_index_read(roster, {U, LServer}, #roster.us),
+	    Entries = [{jid:encode(Jid), Name, Groups, Sub, Ask, AskMsg, Approved} ||
+			  #roster{jid = Jid, name = Name, groups = Groups, ask = Ask,
+				  subscription = Sub, askmessage = AskMsg, approved = Approved} <- Roster],
+	    case mnesia:dirty_read(roster_version, {U, LServer}) of
+		[] ->
+		    {ok, #serialize_roster_v2{username = U, serverhost = LServer, entries = Entries}};
+		[#roster_version{version = V} | _] ->
+		    {ok, #serialize_roster_v2{username = U, serverhost = LServer, entries = Entries, version = V}}
+	    end
+	end,
+
+    ejabberd_db_serialize:iter_records(
+	[{
+	     fun() ->
+		 case Users of
+		     [H | T] -> {ok, H, T};
+		     _ -> fin
+		 end
+	     end,
+	     fun([]) -> fin;
+		([H | T]) -> {ok, H, T}
+	     end, ReadRoster}], [], BatchSize);
+serialize(_LServer, BatchSize, Key) ->
+    ejabberd_db_serialize:iter_records(Key, [], BatchSize).
+
+deserialize_start(LServer) ->
+    mnesia:transaction(
+	fun() ->
+	    Keys = mnesia:select(roster,
+				 ets:fun2ms(
+				     fun(#roster{us = {_, S}, usj = USJ}) when S == LServer -> USJ end)),
+	    lists:foreach(fun(Key) -> mnesia:delete(roster, Key, write) end, Keys)
+	end),
+    ok.
+
+deserialize(LServer, Batch) ->
+    F = fun() ->
+	lists:foreach(
+	    fun(#serialize_roster_v2{username = User, entries = Entries, version = Version}) ->
+		US = {User, LServer},
+		lists:foreach(
+		    fun({Jid, Name, Groups, Sub, Ask, AskMsg, Approved}) ->
+			J = jid:tolower(jid:decode(Jid)),
+			mnesia:write(#roster{us = US, usj = {User, LServer, J}, jid = J, name = Name,
+					     groups = Groups, subscription = Sub, ask = Ask, askmessage = AskMsg,
+					     approved = Approved})
+		    end, Entries),
+		case Version of
+		    undefined -> ok;
+		    _ ->
+			mnesia:write(#roster_version{us = US, version = Version})
+		end
+	    end, Batch)
+	end,
+    case mnesia:transaction(F) of
+	{atomic, _} ->
+	    ok;
+	{aborted, Reason} ->
+	    {error, io_lib:format("Error when writing roster data: ~p", [Reason])}
+    end.
 
 %%%===================================================================
 %%% Internal functions
