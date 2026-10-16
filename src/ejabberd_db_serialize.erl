@@ -116,8 +116,17 @@ export(Host0, Dir, Mods, WriteFun, Ext) ->
     end.
 
 
-to_json(#serialize_auth_v1{} = Data) ->
-    to_json(tuple_to_list(Data), [type | record_info(fields, serialize_auth_v1)], #{});
+to_json(#serialize_auth_v1{passwords = Passwords} = Data) ->
+    Passwords2 = lists:map(
+        fun({Type, StoredKey, ServerKey, Salt, IterCount}) ->
+            #{type => atom_to_binary(Type, latin1),
+              stored_key => StoredKey,
+              server_key => ServerKey,
+              salt => Salt,
+              iter_count => IterCount};
+           (Val) when is_binary(Val) -> Val
+        end, Passwords),
+    to_json(tuple_to_list(Data#serialize_auth_v1{passwords = Passwords2}), [type | record_info(fields, serialize_auth_v1)], #{});
 to_json(#serialize_mam_prefs_v1{} = Data) ->
     to_json(tuple_to_list(Data), [type | record_info(fields, serialize_mam_prefs_v1)], #{});
 to_json(#serialize_mam_v1{} = Data) ->
