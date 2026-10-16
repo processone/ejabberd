@@ -33,7 +33,7 @@
          import/2, import/3,
          import_status/1,
          import_abort/1]).
--export([iter_records/3, fmt/2, mnesia_iter/2]).
+-export([iter_records/3, fmt/2, mnesia_iter/2, to_json/1]).
 
 
 -callback serialize(binary(), non_neg_integer(), undefined | term()) ->

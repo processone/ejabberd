@@ -575,7 +575,8 @@ deserialize_start(LServer) ->
       ?SQL("delete from rostergroups where %(LServer)H")),
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("delete from roster_version where %(LServer)H")).
+      ?SQL("delete from roster_version where %(LServer)H")),
+    ok.
 
 
 deserialize(LServer, Batch) ->

@@ -355,6 +355,8 @@ init_per_testcase(TestCase, OrigConfig) ->
 	    auth(connect(Config));
 	"sqlschemaupdater_" ++ _ ->
 	    Config;
+	"dbserializer_" ++ _ ->
+	    Config;
 	_ when TestGroup == s2s_tests ->
 	    auth(connect(starttls(connect(Config))));
         _ ->
@@ -369,6 +371,9 @@ end_per_testcase(TestCase, Config) ->
             User = ?config(user, Config),
             Server = ?config(server, Config),
             mod_offline:remove_user(User, Server);
+	"dbserializer_" ++ Test ->
+	    Clean = list_to_atom(Test ++ "_clean"),
+	    dbserializer_tests:Clean(Config);
         _ ->
             ok
     end.
@@ -465,6 +470,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        mam_tests:single_cases(),
        csi_tests:single_cases(),
        push_tests:single_cases(),
+       dbserializer_tests:single_cases(),
        test_pass_change,
        test_unregister]},
      muc_tests:master_slave_cases(),
@@ -505,6 +511,7 @@ db_tests(DB) ->
        mam_tests:single_cases(),
        push_tests:single_cases(),
        invites_tests:single_cases(),
+       dbserializer_tests:single_cases(),
        test_pass_change,
        test_unregister] ++ SqlUpdate},
      muc_tests:master_slave_cases(),
@@ -888,7 +895,7 @@ auth_plain(Config) ->
             disconnect(Config),
             {skipped, 'PLAIN_not_available'}
     end.
-    
+
 auth_plain_wrong_authzid(Config) ->
     Mechs = ?config(mechs, Config),
     case lists:member(<<"PLAIN">>, Mechs) of
@@ -1105,7 +1112,7 @@ caps_stuffing_bug(Config) ->
 	  end, [], [0, 100, 200, 2000, 5000, 10000]),
     ?match([Feature], RetrievedCaps),
     disconnect(Config).
-    
+
 ping(Config) ->
     true = is_feature_advertised(Config, ?NS_PING),
     #iq{type = result, sub_els = []} =
