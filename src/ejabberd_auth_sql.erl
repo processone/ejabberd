@@ -450,74 +450,87 @@ export(_Server) ->
 
 
 serialize(LServer, BatchSize, Last) ->
-    Offset = case Last of
-                 undefined -> 0;
-                 _ -> Last
+    {Offset, LastEntry} = case Last of
+                 undefined -> {0, undefined};
+		 _ -> Last
              end,
     case ejabberd_sql:sql_query(
-           LServer,
-           ?SQL("select @(username)s, @(type)d, @(password)s, @(serverkey)s, @(salt)s, @(iterationcount)d  from users "
-                "where %(LServer)H "
-                "order by username, type "
-                "limit %(BatchSize)d offset %(Offset)d")) of
-        {selected, Rows} ->
-            Data = lists:map(
-                     fun({Username, _, Password, <<>>, <<>>, 0}) ->
-                             #serialize_auth_v1{serverhost = LServer, username = Username, passwords = [Password]};
-                        ({Username, 1, Password, _, _, _}) ->
-                             #serialize_auth_v1{serverhost = LServer, username = Username, passwords = [Password]};
-                        ({Username, 0, Password, ServerKey, Salt, IterationCount}) ->
-                             {Hash, SK} = case Password of
-                                              <<"sha256:", Rest/binary>> ->
-                                                  {sha256, Rest};
-                                              <<"sha512:", Rest/binary>> ->
-                                                  {sha512, Rest};
-                                              Other ->
-                                                  {sha, Other}
-                                          end,
-                             #serialize_auth_v1{
-                               serverhost = LServer,
-                               username = Username,
-                               passwords = [{Hash, SK, ServerKey, Salt, IterationCount}]
-                              };
-                        ({Username, Type, StoredKey, ServerKey, Salt, IterationCount}) ->
-                             #serialize_auth_v1{
-                               serverhost = LServer,
-                               username = Username,
-                               passwords = [{num_to_hash(Type),
-                                             StoredKey,
-                                             ServerKey,
-                                             Salt,
-                                             IterationCount}]
-                              }
-                     end,
-                     Rows),
-            Data2 = case length(Rows) < BatchSize of
-                        true -> Data ++ [#serialize_auth_v1{serverhost = <<>>, username = <<>>, passwords = []}];
-                        _ -> Data
-                    end,
-            {_, Data3, _, RC2} = lists:foldl(
-                                   fun(Next, {undefined, Res, _, _}) ->
-                                           {Next, Res, 1, 0};
-                                      (#serialize_auth_v1{username = U1, passwords = [P1]},
-                                       {#serialize_auth_v1{username = U2, passwords = P2} = Next, Res, NC, RC})
-                                         when U1 == U2 ->
-                                           {Next#serialize_auth_v1{passwords = [P1 | P2]}, Res, NC + 1, RC};
-                                      (Current, {Next, Acc, NC, RC}) ->
-                                           {Current, [Next | Acc], 1, RC + NC}
-                                   end,
-                                   {undefined, [], 0, 0},
-                                   Data2),
-            {ok, Data3, Offset + RC2};
-        _ ->
-            {error, io_lib:format("Error when retrieving passwords data from database", [])}
+	LServer,
+	?SQL("select @(username)s, @(type)d, @(password)s, @(serverkey)s, @(salt)s, @(iterationcount)d  from users "
+	     "where %(LServer)H "
+	     "order by username, type "
+	     "limit %(BatchSize)d offset %(Offset)d")) of
+	{selected, []} ->
+	    case LastEntry of
+		undefined -> {ok, [], {Offset, undefined}};
+		_ -> {ok, [LastEntry], {Offset, undefined}}
+	    end;
+	{selected, Rows} ->
+	    Data = lists:map(
+		fun({Username, _, Password, <<>>, <<>>, 0}) ->
+		    #serialize_auth_v1{serverhost = LServer, username = Username, passwords = [Password]};
+		   ({Username, 1, Password, _, _, _}) ->
+		       #serialize_auth_v1{serverhost = LServer, username = Username, passwords = [Password]};
+		   ({Username, 0, Password, ServerKey, Salt, IterationCount}) ->
+		       {Hash, SK} = case Password of
+					<<"sha256:", Rest/binary>> ->
+					    {sha256, Rest};
+					<<"sha512:", Rest/binary>> ->
+					    {sha512, Rest};
+					Other ->
+					    {sha, Other}
+				    end,
+		       #serialize_auth_v1{
+			   serverhost = LServer,
+			   username = Username,
+			   passwords = [{Hash, SK, ServerKey, Salt, IterationCount}]
+		       };
+		   ({Username, Type, StoredKey, ServerKey, Salt, IterationCount}) ->
+		       #serialize_auth_v1{
+			   serverhost = LServer,
+			   username = Username,
+			   passwords = [{num_to_hash(Type),
+					 StoredKey,
+					 ServerKey,
+					 Salt,
+					 IterationCount}]
+		       }
+		end,
+		Rows),
+	    {Next, Res} = lists:foldl(
+		fun(Next, {undefined, Res}) ->
+		    {Next, Res};
+		   (#serialize_auth_v1{username = U1, passwords = [P1]},
+		    {#serialize_auth_v1{username = U2, passwords = P2} = Next, Res}) when U1 == U2 ->
+		       {Next#serialize_auth_v1{passwords = [P1 | P2]}, Res};
+		   (Current, {Next, Res}) ->
+		       {Current, [Next | Res]}
+		end,
+		{LastEntry, []},
+		Data),
+	    case length(Rows) < BatchSize of
+		true ->
+		    {ok, [Next | Res], {Offset + length(Rows), undefined}};
+		_ ->
+		    case Res of
+			[] ->
+			    serialize(LServer, BatchSize, {Offset + BatchSize, Next});
+			_ ->
+			    {ok, Res, {Offset + BatchSize, Next}}
+		    end
+	    end;
+	_ ->
+	    {error, io_lib:format("Error when retrieving passwords data from database", [])}
     end.
 
 
 deserialize_start(LServer) ->
-    ejabberd_sql:sql_query(
+    case ejabberd_sql:sql_query(
       LServer,
-      ?SQL("delete from users where %(LServer)H")).
+      ?SQL("delete from users where %(LServer)H")) of
+	{error, _} = Err -> Err;
+	_ -> ok
+    end.
 
 
 deserialize(LServer, Batch) ->
