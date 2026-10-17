@@ -274,8 +274,7 @@ process_join(#iq{from = From, lang = Lang,
                 Txt = xmpp:io_format_error(Reason),
                 Err = xmpp:err_bad_request(Txt, Lang),
                 ejabberd_router:route_error(IQ, Err)
-        end
-      end;
+        end;
          (Err) ->
         process_join_result(Err, IQ)
       end),
