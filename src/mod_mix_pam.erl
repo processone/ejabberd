@@ -275,6 +275,9 @@ process_join(#iq{from = From, lang = Lang,
                 Err = xmpp:err_bad_request(Txt, Lang),
                 ejabberd_router:route_error(IQ, Err)
         end
+      end;
+         (Err) ->
+        process_join_result(Err, IQ)
       end),
     ignore.
 
@@ -293,7 +296,7 @@ process_leave(#iq{from = From,
 	    xmpp:make_error(IQ, db_error(IQ))
     end.
 
--spec process_join_result(iq(), iq()) -> ok.
+-spec process_join_result(iq() | timeout, iq()) -> ok.
 process_join_result(#iq{from = #jid{} = Channel,
 			type = result, sub_els = [#mix_join{id = ID, xmlns = XmlNs} = Join]},
 		    #iq{to = To} = IQ) ->
@@ -316,7 +319,7 @@ process_join_result(#iq{from = #jid{} = Channel,
 	{error, db_failure} ->
 	    ejabberd_router:route_error(IQ, db_error(IQ))
     end;
-process_join_result(#iq{type = error} = Err, IQ) ->
+process_join_result(Err, IQ) ->
     process_iq_error(Err, IQ).
 
 -spec process_leave_result(iq(), iq()) -> ok.
