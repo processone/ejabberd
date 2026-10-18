@@ -24,7 +24,7 @@
  {<<"stun">>,{pkg,<<"stun">>,<<"1.2.23">>},0},
  {<<"xmpp">>,
   {git,"https://github.com/processone/xmpp",
-       {ref,"81f3b4c1f13dc71d478e1947a580f899599d7d30"}},
+       {ref,"270ae772f4e6cdeb6f717ddf6e56aae91567f8cb"}},
   0},
  {<<"yconf">>,{pkg,<<"yconf">>,<<"1.0.23">>},0}]}.
 [
