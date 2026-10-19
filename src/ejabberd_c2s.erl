@@ -208,11 +208,12 @@ copy_state(NewState,
 		     NewState
 	     end,
     Conn = get_conn_type(State1),
-    State2 = State1#{jid => JID, resource => Resource,
+    State2 = inherit_user_agent(State1, OldState),
+    State3 = State2#{jid => JID, resource => Resource,
 		     conn => Conn,
 		     auth_module => AuthModule,
 		     pres_a => PresA},
-    ejabberd_hooks:run_fold(c2s_copy_session, LServer, State2, [OldState]).
+    ejabberd_hooks:run_fold(c2s_copy_session, LServer, State3, [OldState]).
 
 -spec open_session(state()) -> {ok, state()} | state().
 open_session(#{user := U, server := S, resource := R,
@@ -225,7 +226,8 @@ open_session(#{user := U, server := S, resource := R,
 	       undefined -> undefined;
 	       Pres -> get_priority_from_presence(Pres)
 	   end,
-    Info = [{ip, IP}, {conn, Conn}, {auth_module, AuthModule}],
+    Info = [{ip, IP}, {conn, Conn}, {auth_module, AuthModule}
+	    | user_agent_info(State)],
     case State of
 	#{bind2_session_id := Tag} ->
 	    ejabberd_sm:open_session(SID, U, S, R, Prio, Info, Tag);
@@ -1022,6 +1024,20 @@ get_priority_from_presence(#presence{priority = Prio}) ->
 	undefined -> 0;
 	_ -> Prio
     end.
+
+-spec user_agent_info(state()) -> [{user_agent, xmpp_stream_in:user_agent()}].
+user_agent_info(#{user_agent := UA}) ->
+    [{user_agent, UA}];
+user_agent_info(_) ->
+    [].
+
+-spec inherit_user_agent(state(), state()) -> state().
+inherit_user_agent(#{user_agent := _} = NewState, _OldState) ->
+    NewState;
+inherit_user_agent(NewState, #{user_agent := UA}) ->
+    NewState#{user_agent => UA};
+inherit_user_agent(NewState, _OldState) ->
+    NewState.
 
 -spec route_multiple(state(), [jid()], stanza()) -> ok.
 route_multiple(#{lserver := LServer}, JIDs, Pkt) ->
