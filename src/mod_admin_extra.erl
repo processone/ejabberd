@@ -45,8 +45,9 @@
 	 kick_session/4, status_num/2, status_num/1,
 	 status_list/2, status_list_v3/2,
 	 status_list/1, status_list_v3/1, connected_users_info/0,
-	 connected_users_vhost/1, set_presence/7,
-	 get_presence/2, user_sessions_info/2, get_last/2, set_last/4,
+	 connected_users_info_v4/0, connected_users_vhost/1, set_presence/7,
+	 get_presence/2, user_sessions_info/2, user_sessions_info_v4/2,
+	 get_last/2, set_last/4,
 
 	 % Accounts
 	 set_password/3, check_password_hash/4, delete_old_users/1,
@@ -468,6 +469,34 @@ get_commands_spec() ->
 					       {statustext, string}
 					      ]}}
 				  }}},
+     #ejabberd_commands{name = connected_users_info,
+			tags = [session],
+			desc = "List all established sessions and their information",
+			module = ?MODULE, function = connected_users_info_v4,
+			version = 4,
+			note = "updated in 26.xx",
+			args = [],
+			result_example = [{"user1@myserver.com/tka",
+					    "c2s", "127.0.0.1", 42656,8, "ejabberd@localhost",
+                                           231, <<"dnd">>, <<"tka">>, <<>>,
+					   <<"ChatApp">>, <<"Work Phone">>}],
+			result = {connected_users_info,
+				  {list,
+				   {session, {tuple,
+					      [{jid, string},
+					       {connection, string},
+					       {ip, string},
+					       {port, integer},
+					       {priority, integer},
+					       {node, string},
+					       {uptime, integer},
+					       {status, string},
+					       {resource, string},
+					       {statustext, string},
+					       {software, string},
+					       {device, string}
+					      ]}}
+				  }}},
 
      #ejabberd_commands{name = connected_users_vhost,
 			tags = [session],
@@ -500,6 +529,34 @@ get_commands_spec() ->
 					       {status, string},
 					       {resource, string},
 					       {statustext, string}
+					      ]}}
+				  }}},
+     #ejabberd_commands{name = user_sessions_info,
+			tags = [session],
+			desc = "Get information about all sessions of a user",
+			module = ?MODULE, function = user_sessions_info_v4,
+			version = 4,
+			note = "updated in 26.xx",
+			args = [{user, binary}, {host, binary}],
+			args_example = [<<"peter">>, <<"myserver.com">>],
+			args_desc = ["User name", "Server name"],
+			result_example = [{"c2s", "127.0.0.1", 42656,8, "ejabberd@localhost",
+                                           231, <<"dnd">>, <<"tka">>, <<>>,
+					   <<"ChatApp">>, <<"Work Phone">>}],
+			result = {sessions_info,
+				  {list,
+				   {session, {tuple,
+					      [{connection, string},
+					       {ip, string},
+					       {port, integer},
+					       {priority, integer},
+					       {node, string},
+					       {uptime, integer},
+					       {status, string},
+					       {resource, string},
+					       {statustext, string},
+					       {software, string},
+					       {device, string}
 					      ]}}
 				  }}},
 
@@ -1400,9 +1457,15 @@ get_status_list(Host, Status_required) ->
 	apply(Fstatus, [Status, Status_required])].
 
 connected_users_info() ->
+    connected_users_info(fun user_session_info/3).
+
+connected_users_info_v4() ->
+    connected_users_info(fun user_session_info_v4/3).
+
+connected_users_info(SessionInfo) ->
     lists:filtermap(
       fun({U, S, R}) ->
-	    case user_session_info(U, S, R) of
+	    case SessionInfo(U, S, R) of
 		offline ->
 		    false;
 		Info ->
@@ -1469,31 +1532,51 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     end.
 
 user_sessions_info(User, Host) ->
+    user_sessions_info(User, Host, fun user_session_info/3).
+
+user_sessions_info_v4(User, Host) ->
+    user_sessions_info(User, Host, fun user_session_info_v4/3).
+
+user_sessions_info(User, Host, SessionInfo) ->
     lists:filtermap(fun(Resource) ->
-			    case user_session_info(User, Host, Resource) of
+			    case SessionInfo(User, Host, Resource) of
 				offline -> false;
 				Info -> {true, Info}
 			    end
 		    end, ejabberd_sm:get_user_resources(User, Host)).
 
 user_session_info(User, Host, Resource) ->
-    CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
     case ejabberd_sm:get_user_info(User, Host, Resource) of
 	offline ->
 	    offline;
 	Info ->
-	    Now = proplists:get_value(ts, Info),
-	    Pid = proplists:get_value(pid, Info),
-	    {_U, _Resource, Status, StatusText} = get_presence(Pid),
-	    Priority = proplists:get_value(priority, Info),
-	    Conn = proplists:get_value(conn, Info),
-	    {Ip, Port} = proplists:get_value(ip, Info),
-	    IPS = inet_parse:ntoa(Ip),
-	    NodeS = atom_to_list(node(Pid)),
-	    Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
-				    calendar:now_to_local_time(Now)),
-	    {atom_to_list(Conn), IPS, Port, num_prio(Priority), NodeS, Uptime, Status, Resource, StatusText}
+	    session_info(Resource, Info, [])
     end.
+
+user_session_info_v4(User, Host, Resource) ->
+    case ejabberd_sm:get_user_info(User, Host, Resource) of
+	offline ->
+	    offline;
+	Info ->
+	    Software = proplists:get_value(software, Info, <<>>),
+	    Device = proplists:get_value(device, Info, <<>>),
+	    session_info(Resource, Info, [Software, Device])
+    end.
+
+session_info(Resource, Info, Extra) ->
+    CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
+    Now = proplists:get_value(ts, Info),
+    Pid = proplists:get_value(pid, Info),
+    {_U, _Resource, Status, StatusText} = get_presence(Pid),
+    Priority = proplists:get_value(priority, Info),
+    Conn = proplists:get_value(conn, Info),
+    {Ip, Port} = proplists:get_value(ip, Info),
+    IPS = inet_parse:ntoa(Ip),
+    NodeS = atom_to_list(node(Pid)),
+    Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
+			    calendar:now_to_local_time(Now)),
+    list_to_tuple([atom_to_list(Conn), IPS, Port, num_prio(Priority), NodeS,
+		   Uptime, Status, Resource, StatusText | Extra]).
 
 
 %%%
