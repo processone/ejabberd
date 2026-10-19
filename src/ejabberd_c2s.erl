@@ -1025,9 +1025,9 @@ get_priority_from_presence(#presence{priority = Prio}) ->
 	_ -> Prio
     end.
 
--spec user_agent_info(state()) -> [{user_agent, xmpp_stream_in:user_agent()}].
+-spec user_agent_info(state()) -> [{software | device, binary()}].
 user_agent_info(#{user_agent := UA}) ->
-    [{user_agent, UA}];
+    maps:to_list(maps:with([software, device], UA));
 user_agent_info(_) ->
     [].
 
