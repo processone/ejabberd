@@ -495,12 +495,17 @@ user_exists(User, Server) ->
 	    case (not Exists) andalso PerformExternalUserCheck andalso ExternCheck andalso
 		 gen_mod:is_loaded(LServer, mod_last) of
 		true ->
-		    case mod_last:get_last_info(LUser, LServer) of
-			not_found ->
-			    false;
-			_ ->
-			    true
-		    end;
+			case ejabberd_sm:get_user_resources(LUser, LServer) of
+				[_|_] ->
+					true;
+				_ ->
+				    case mod_last:get_last_info(LUser, LServer) of
+					not_found ->
+					    false;
+					_ ->
+					    true
+				    end
+			end;
 		_ ->
 		    Exists
 	    end;
