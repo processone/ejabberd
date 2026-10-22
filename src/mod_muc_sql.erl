@@ -626,7 +626,7 @@ serialize(LServer, BatchSize, {rooms, Offset}) ->
 		       case ejabberd_sql:sql_query(
 			   LServer,
 			   ?SQL("select @(jid)s, @(nick)s, @(nodes)s from muc_room_subscribers where room=%(Name)s"
-				" and host=%(Host)s and %(LServer)H")) of
+				" and host=%(Host)s")) of
 			   {selected, Subs} ->
 			       SubData = lists:map(
 				   fun({Jid, Nick, Nodes}) ->

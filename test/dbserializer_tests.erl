@@ -27,6 +27,7 @@
 -compile(export_all).
 -include("suite.hrl").
 -include_lib("xmpp/include/scram.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
 %%%===================================================================
 %%% API
@@ -134,7 +135,9 @@ export_import(Config, Mod) ->
 			    ct:pal("Compare~n~p~n~p", [DataS, Data2S]),
 			    ?match(DataS, Data2S),
 			    Config
-		    end
+		    end;
+		{error, Err} ->
+		    ?assertMatch(no_error, iolist_to_binary(Err))
 	    end
     end.
 
