@@ -34,7 +34,8 @@
 single_cases() ->
     {dbserializer_single, [sequence],
      [single_test(auth),
-      single_test(roster)]}.
+      single_test(roster),
+      single_test(muc)]}.
 
 single_test(T) ->
     list_to_atom("dbserializer_" ++ atom_to_list(T)).
@@ -84,6 +85,28 @@ roster(Config) ->
 roster_clean(Config) ->
     Host = ?config(server, Config),
     mod_roster:remove_user(<<"bob">>, Host).
+
+muc(Config) ->
+    Host = ?config(server, Config),
+    MucHost = <<"conference.",Host/binary>>,
+    mod_muc_admin:create_room_with_opts(<<"test">>, MucHost, Host, [
+        {<<"persistent">>, <<"true">>},
+        {<<"affiliations">>, <<"owner=bob@server;member=peter@server">>},
+        {<<"subscribers">>, <<"bob@server=bob=messages">>}]),
+    mod_muc_admin:create_room_with_opts(<<"test2">>, MucHost, Host, [
+        {<<"persistent">>, <<"true">>},
+        {<<"affiliations">>, <<"owner=bob@server;member=peter@server">>},
+        {<<"subscribers">>, <<"bob@server=bob=messages">>}]),
+    mod_muc_admin:muc_register_nick(<<"bob">>, <<"bob@server">>, MucHost),
+    export_import(Config, gen_mod:db_mod(Host, mod_muc)).
+
+muc_clean(Config) ->
+    Host = ?config(server, Config),
+    MucHost = <<"conference.",Host/binary>>,
+    mod_muc_admin:destroy_room(<<"test">>, MucHost),
+    mod_muc_admin:destroy_room(<<"test2">>, MucHost),
+    mod_muc_admin:muc_unregister_nick(<<"bob@server">>, MucHost),
+    ok.
 
 
 export_import(Config, Mod) ->
