@@ -34,7 +34,7 @@
 -export([mod_doc/0]).
 %% ejabberd_hooks callbacks.
 -export([disco_sm_features/5, c2s_session_pending/1, c2s_copy_session/2,
-	 c2s_session_resumed/1, c2s_handle_cast/2, c2s_stanza/3, mam_message/8,
+	 c2s_session_resumed/1, c2s_handle_cast/2, user_receive_packet/1, mam_message/8,
 	 offline_message/1, remove_user/2]).
 
 %% gen_iq_handler callback.
@@ -103,7 +103,7 @@ start(Host, Opts) ->
           {hook, c2s_copy_session, c2s_copy_session, 50},
           {hook, c2s_session_resumed, c2s_session_resumed, 50},
           {hook, c2s_handle_cast, c2s_handle_cast, 50},
-          {hook, c2s_handle_send, c2s_stanza, 50},
+          {hook, user_receive_packet, user_receive_packet, 90},
           {hook, store_mam_message, mam_message, 50},
           {hook, offline_message_hook, offline_message, 55},
           {hook, remove_user, remove_user, 50}]}.
@@ -371,16 +371,15 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 %%--------------------------------------------------------------------
 %% Hook callbacks.
 %%--------------------------------------------------------------------
--spec c2s_stanza(c2s_state(), xmpp_element() | xmlel(), term()) -> c2s_state().
-c2s_stanza(State, #stream_error{}, _SendResult) ->
-    State;
-c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
-	   Pkt, _SendResult) ->
+-spec user_receive_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
+user_receive_packet({#stream_error{}, _C2SState} = Acc) ->
+    Acc;
+user_receive_packet({Pkt, #{push_enabled := true, mgmt_state := pending} = State}) ->
     ?DEBUG("Notifying client of stanza", []),
-    notify(State, Pkt, get_direction(Pkt)),
-    State;
-c2s_stanza(State, _Pkt, _SendResult) ->
-    State.
+    {notify(State, Pkt, get_direction(Pkt)),
+	State};
+user_receive_packet(Acc) ->
+    Acc.
 
 -spec mam_message(message() | drop, binary(), binary(), jid(),
 		  binary(), chat | groupchat, recv | send, boolean()) -> message().
@@ -392,12 +391,11 @@ mam_message(#message{} = Pkt, LUser, LServer, _Peer, _Nick, chat, Dir, _InMucMam
 		    ?DEBUG("Notifying ~ts@~ts of MAM message", [LUser, LServer]),
 		    notify(LUser, LServer, Clients1, Pkt, Dir);
 		[] ->
-		    ok
+		    Pkt
 	    end;
 	_ ->
-	    ok
-    end,
-    Pkt;
+	    Pkt
+    end;
 mam_message(Pkt, _LUser, _LServer, _Peer, _Nick, _Type, _Dir, _InMucMam) ->
     Pkt.
 
@@ -410,11 +408,10 @@ offline_message({offlined,
     case lookup_sessions(LUser, LServer) of
 	{ok, [_|_] = Clients} ->
 	    ?DEBUG("Notifying ~ts@~ts of offline message", [LUser, LServer]),
-	    notify(LUser, LServer, Clients, Pkt, recv);
+	    {offlined, notify(LUser, LServer, Clients, Pkt, recv)};
 	_ ->
-	    ok
-    end,
-    Acc;
+	    Acc
+    end;
 offline_message(Acc) ->
     Acc.
 
@@ -422,19 +419,29 @@ offline_message(Acc) ->
 c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
     case p1_queue:len(Queue) of
 	Len when Len > 0 ->
-	    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
-	    {Pkt, Dir} = case mod_stream_mgmt:queue_find(
-				fun is_incoming_chat_msg/1, Queue) of
-			     none -> {none, undefined};
-			     Pkt0 -> {Pkt0, get_direction(Pkt0)}
-			 end,
-	    notify(State, Pkt, Dir),
-	    State;
+	    case mod_stream_mgmt:queue_find(
+		fun should_notify_for_queued_message/1, Queue) of
+		none ->
+		    State;
+		Pkt0 ->
+		    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
+		    notify(State, Pkt0, get_direction(Pkt0)),
+		    State
+	    end;
 	0 ->
 	    State
     end;
 c2s_session_pending(State) ->
     State.
+
+-spec should_notify_for_queued_message(stanza()) -> boolean().
+should_notify_for_queued_message(#message{} = Pkt) ->
+    case xmpp:get_meta(Pkt, mod_push_notified, false) of
+	false ->
+	    is_incoming_chat_msg(Pkt);
+	true ->
+	    false
+    end.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{push_enabled := true,
@@ -473,20 +480,22 @@ remove_user(LUser, LServer) ->
 %%--------------------------------------------------------------------
 %% Generate push notifications.
 %%--------------------------------------------------------------------
--spec notify(c2s_state(), xmpp_element() | xmlel() | none, direction()) -> ok.
+-spec notify(c2s_state(), xmpp_element() | xmlel() | none, direction()) ->
+    xmpp_element() | xmlel() | none.
 notify(#{jid := #jid{luser = LUser, lserver = LServer}} = State, Pkt, Dir) ->
     case lookup_session(LUser, LServer, State) of
 	{ok, Client} ->
 	    notify(LUser, LServer, [Client], Pkt, Dir);
 	_Err ->
-	    ok
+	    Pkt
     end.
 
 -spec notify(binary(), binary(), [push_session()],
-	     xmpp_element() | xmlel() | none, direction()) -> ok.
+	     xmpp_element() | xmlel() | none, direction()) ->
+    xmpp_element() | xmlel() | none.
 notify(LUser, LServer, Clients, Pkt, Dir) ->
-    lists:foreach(
-      fun({ID, PushLJID, Node, XData}) ->
+    lists:foldl(
+      fun({ID, PushLJID, Node, XData}, PktA) ->
 	      HandleResponse =
 	          fun(#iq{type = result}) ->
 			  ?DEBUG("~ts accepted notification for ~ts@~ts (~ts)",
@@ -512,19 +521,20 @@ notify(LUser, LServer, Clients, Pkt, Dir) ->
 				       "to ~ts",
 				       [LUser, LServer, Node, jid:encode(PushLJID)])
 		  end,
-	      notify(LServer, PushLJID, Node, XData, Pkt, Dir, HandleResponse)
-      end, Clients).
+	      notify(LServer, PushLJID, Node, XData, PktA, Dir, HandleResponse)
+      end, Pkt, Clients).
 
 -spec notify(binary(), ljid(), binary(), xdata(),
 	     xmpp_element() | xmlel() | none, direction(),
-	     fun((iq() | timeout) -> any())) -> ok.
+	     fun((iq() | timeout) -> any())) ->
+    xmpp_element() | xmlel() | none.
 notify(LServer, PushLJID, Node, XData, Pkt0, Dir, HandleResponse) ->
     Pkt = unwrap_message(Pkt0),
     From = jid:make(LServer),
     case {make_summary(LServer, Pkt, Dir), mod_push_opt:notify_on(LServer)} of
 	{undefined, messages} ->
 	    ?DEBUG("Suppressing notification for stanza without payload", []),
-	    ok;
+	    Pkt0;
 	{Summary, _NotifyOn} ->
 	    Item = #ps_item{sub_els = [#push_notification{xdata = Summary}]},
 	    PubSub = #pubsub{publish = #ps_publish{node = Node, items = [Item]},
@@ -538,10 +548,14 @@ notify(LServer, PushLJID, Node, XData, Pkt0, Dir, HandleResponse) ->
 					 LServer, IQ0, [Pkt]) of
 	      drop ->
 		    ?DEBUG("Notification dropped by hook", []),
-		    ok;
+		    Pkt0;
 		IQ ->
 		    ?DEBUG("Sending notification: ~n~ts", [xmpp:pp(IQ)]),
-		    ejabberd_router:route_iq(IQ, HandleResponse)
+		    ejabberd_router:route_iq(IQ, HandleResponse),
+		    case Pkt0 of
+			#message{} ->
+			    xmpp:put_meta(Pkt0, mod_push_notified, true)
+		    end
 	    end
     end.
 
