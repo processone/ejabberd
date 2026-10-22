@@ -54,7 +54,7 @@ init_config(Config) ->
     copy_file(Config, "spam_jids.txt"),
     copy_file(Config, "spam_urls.txt"),
     copy_file(Config, "spam_domains.txt"),
-    copy_file(Config, "whitelist_domains.txt"),
+    copy_file(Config, "allow_domains.txt"),
     file:write_file(filename:join([CWD, "spam.log"]), []),
     {ok, MacrosContentTpl} = file:read_file(MacrosPathTpl),
     Password = <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>,
