@@ -374,7 +374,7 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 -spec user_receive_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
 user_receive_packet({#stream_error{}, _C2SState} = Acc) ->
     Acc;
-user_receive_packet({#message{type = groupchat, meta = #{muc_sender_real_jid := J} = Pkt},
+user_receive_packet({#message{type = groupchat, meta = #{muc_sender_real_jid := J}} = Pkt,
 		     #{jid := J2, push_enabled := true, mgmt_state := pending} = State} = Acc) ->
     case jid:remove_resource(J) == jid:remove_resource(J2) of
 	true ->
