@@ -218,13 +218,22 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, TS,
               end);
         false -> ok
     end,
-    case {mnesia:table_info(archive_msg, disc_only_copies),
-	  mnesia:table_info(archive_msg, memory)} of
-	{[_|_], TableSize} when TableSize > ?TABLE_SIZE_LIMIT ->
+    TableSize = case mnesia:table_info(archive_msg, storage_type) of
+		    disc_only_copies ->
+			%% DETS size queries flush pending writes; stat the file instead.
+			case dets:info(archive_msg, filename) of
+			    File when is_list(File); is_binary(File) ->
+				filelib:file_size(File);
+			    _ -> 0
+			end;
+		    _ -> 0
+		end,
+    case TableSize > ?TABLE_SIZE_LIMIT of
+	true ->
 	    ?ERROR_MSG("MAM archives too large, won't store message for ~ts@~ts",
 		       [LUser, LServer]),
 	    {error, overflow};
-	_ ->
+	false ->
 	    LPeer = {PUser, PServer, _} = jid:tolower(Peer),
 	    F = fun() ->
 			mnesia:write(
