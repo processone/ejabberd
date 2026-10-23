@@ -30,7 +30,7 @@
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
          additional_namespaces/1,
-	 extended_fields/1, store/10, write_prefs/4, get_prefs/2, select/6,
+	 extended_fields/1, store/10, write_prefs/4, get_prefs/2, select/6, select/7,
          remove_from_archive/3,
 	 is_empty_for_user/2, is_empty_for_room/3, delete_old_messages_batch/5,
          transform/1]).
@@ -259,9 +259,12 @@ get_prefs(LUser, LServer) ->
 	    error
     end.
 
+select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
+    select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType, all).
+
 select(_LServer, JidRequestor,
        #jid{luser = LUser, lserver = LServer} = JidArchive,
-       Query, RSM, MsgType) ->
+       Query, RSM, MsgType, Flags) ->
     Start = proplists:get_value(start, Query),
     End = proplists:get_value('end', Query),
     With = proplists:get_value(with, Query),
@@ -269,10 +272,7 @@ select(_LServer, JidRequestor,
 	       true -> undefined
 	    end,
     MS = make_matchspec(LUser, LServer, Start, End, LWith),
-    Msgs = mnesia:dirty_select(archive_msg, MS),
-    SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
-    {FilteredMsgs, IsComplete} = filter_by_rsm(SortedMsgs, RSM),
-    Count = length(Msgs),
+    {Msgs, IsComplete, Count} = select_messages(MS, RSM, Flags),
     Result = {lists:flatmap(
 		fun(Msg) ->
 			case mod_mam:msg_to_el(
@@ -284,7 +284,7 @@ select(_LServer, JidRequestor,
 			    {error, _} ->
 				[]
 			end
-		end, FilteredMsgs), IsComplete, Count},
+		end, Msgs), IsComplete, Count},
     erlang:garbage_collect(),
     Result.
 
@@ -297,53 +297,90 @@ is_empty_for_room(_LServer, LName, LHost) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+select_messages(MS, _RSM, only_count) ->
+    CountMS = [{Head, Guards, [true]} || {Head, Guards, _} <- MS],
+    {[], true, length(mnesia:dirty_select(archive_msg, CountMS))};
+select_messages(MS, RSM, _Flags) ->
+    case RSM of
+	undefined ->
+	    select_all_messages(MS, RSM);
+	#rsm_set{max = undefined} ->
+	    select_all_messages(MS, RSM);
+	_ ->
+	    Metadata = mnesia:dirty_select(archive_msg, MS),
+	    Count = length(Metadata),
+	    Sorted = lists:keysort(1, Metadata),
+	    {Page, IsComplete} = filter_by_rsm(Sorted, RSM, 2),
+	    {select_page_messages(MS, Page, RSM), IsComplete, Count}
+    end.
+
+select_all_messages(MS, RSM) ->
+    FullMS = [{Head, Guards, ['$_']} || {Head, Guards, _} <- MS],
+    Msgs = mnesia:dirty_select(archive_msg, FullMS),
+    Sorted = lists:keysort(#archive_msg.timestamp, Msgs),
+    {Filtered, IsComplete} = filter_by_rsm(Sorted, RSM, #archive_msg.id),
+    {Filtered, IsComplete, length(Msgs)}.
+
+select_page_messages(_MS, [], _RSM) ->
+    [];
+select_page_messages(MS, Page, RSM) ->
+    Keys = maps:from_list([{Key, true} || Key <- Page]),
+    PageMS = [{Head,
+	       Guards ++ [{is_map_key, {{TS, ID}}, {const, Keys}}],
+	       ['$_']} || {Head, Guards, [{{TS, ID}}]} <- MS],
+    Msgs = mnesia:dirty_select(archive_msg, PageMS),
+    Sorted = lists:keysort(#archive_msg.timestamp, Msgs),
+    {Filtered, _} = filter_by_rsm(Sorted, RSM, #archive_msg.id),
+    Filtered.
+
+%% A bound archive key makes DETS load the whole bag before projection.
 make_matchspec(LUser, LServer, Start, undefined, With) ->
     %% List is always greater than a tuple
     make_matchspec(LUser, LServer, Start, [], With);
 make_matchspec(LUser, LServer, Start, End, {_, _, <<>>} = With) ->
     ets:fun2ms(
-      fun(#archive_msg{timestamp = TS,
+      fun(#archive_msg{id = ID, timestamp = TS,
 		       us = US,
-		       bare_peer = BPeer} = Msg)
+		       bare_peer = BPeer})
 	    when Start =< TS, End >= TS,
 		 US == {LUser, LServer},
 		 BPeer == With ->
-	      Msg
+	      {TS, ID}
       end);
 make_matchspec(LUser, LServer, Start, End, {_, _, _} = With) ->
     ets:fun2ms(
-      fun(#archive_msg{timestamp = TS,
+      fun(#archive_msg{id = ID, timestamp = TS,
 		       us = US,
-		       peer = Peer} = Msg)
+		       peer = Peer})
 	    when Start =< TS, End >= TS,
 		 US == {LUser, LServer},
 		 Peer == With ->
-	      Msg
+	      {TS, ID}
       end);
 make_matchspec(LUser, LServer, Start, End, undefined) ->
     ets:fun2ms(
-      fun(#archive_msg{timestamp = TS,
-		       us = US,
-		       peer = Peer} = Msg)
+      fun(#archive_msg{id = ID, timestamp = TS,
+		       us = US})
 	    when Start =< TS, End >= TS,
 		 US == {LUser, LServer} ->
-	      Msg
+	      {TS, ID}
       end).
 
-filter_by_rsm(Msgs, undefined) ->
+filter_by_rsm(Msgs, undefined, _IDPos) ->
     {Msgs, true};
-filter_by_rsm(_Msgs, #rsm_set{max = Max}) when Max < 0 ->
+filter_by_rsm(_Msgs, #rsm_set{max = Max}, _IDPos) when Max < 0 ->
     {[], true};
-filter_by_rsm(Msgs, #rsm_set{max = Max, before = Before, 'after' = After}) ->
+filter_by_rsm(Msgs, #rsm_set{max = Max, before = Before, 'after' = After}, IDPos) ->
     NewMsgs = if is_binary(After), After /= <<"">> ->
 		      lists:filter(
-			fun(#archive_msg{id = I}) ->
+			fun(Msg) ->
+				I = element(IDPos, Msg),
 				?BIN_GREATER_THAN(I, After)
 			end, Msgs);
 		 is_binary(Before), Before /= <<"">> ->
 		      lists:foldl(
-			fun(#archive_msg{id = I} = Msg, Acc)
-				when ?BIN_LESS_THAN(I, Before) ->
+			fun(Msg, Acc)
+				when ?BIN_LESS_THAN(element(IDPos, Msg), Before) ->
 				[Msg|Acc];
 			   (_, Acc) ->
 				Acc
