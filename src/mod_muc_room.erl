@@ -4553,7 +4553,7 @@ make_disco_info(From, StateData) ->
 	       {true, true} ->
                    Mod = gen_mod:db_mod(ServerHost, mod_mam),
                    AdditionalNamespaces = Mod:additional_namespaces(ServerHost),
-		   [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_SID_0
+		   [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_MAM_2_EXTENDED, ?NS_SID_0
                     | AdditionalNamespaces];
 	       _ ->
 		   []

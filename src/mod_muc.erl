@@ -745,7 +745,7 @@ process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
     X = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
 				[ServerHost, ?MODULE, <<"">>, Lang]),
     MAMFeatures = case gen_mod:is_loaded(ServerHost, mod_mam) of
-		      true -> [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2];
+		      true -> [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_MAM_2_EXTENDED];
 		      false -> []
 		  end,
     RSMFeatures = case RMod:rsm_supported() of

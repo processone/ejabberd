@@ -33,6 +33,7 @@
 	 extended_fields/1, store/10, write_prefs/4, get_prefs/2, select/6,
          remove_from_archive/3,
 	 is_empty_for_user/2, is_empty_for_room/3, delete_old_messages_batch/5,
+         get_metadata/2,
          transform/1]).
 -export([serialize/3, deserialize_start/1, deserialize/2]).
 
@@ -262,13 +263,19 @@ get_prefs(LUser, LServer) ->
 select(_LServer, JidRequestor,
        #jid{luser = LUser, lserver = LServer} = JidArchive,
        Query, RSM, MsgType) ->
-    Start = proplists:get_value(start, Query),
-    End = proplists:get_value('end', Query),
+    Start0 = proplists:get_value(start, Query),
+    End0 = proplists:get_value('end', Query),
+    AfterID = proplists:get_value('after-id', Query),
+    BeforeID = proplists:get_value('before-id', Query),
+    Start = adjust_timestamp(Start0, LUser, LServer, AfterID, fun older/2, fun add_one/1),
+    End = adjust_timestamp(End0, LUser, LServer, BeforeID, fun younger/2, fun rem_one/1),
     With = proplists:get_value(with, Query),
     LWith = if With /= undefined -> jid:tolower(With);
 	       true -> undefined
 	    end,
-    MS = make_matchspec(LUser, LServer, Start, End, LWith),
+    IDs = proplists:get_value(ids, Query, []),
+    _= [get_message_by_id(LUser, LServer, ID) || ID <- IDs],
+    MS = make_matchspec(LUser, LServer, IDs, Start, End, LWith),
     Msgs = mnesia:dirty_select(archive_msg, MS),
     SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
     {FilteredMsgs, IsComplete} = filter_by_rsm(SortedMsgs, RSM),
@@ -288,6 +295,43 @@ select(_LServer, JidRequestor,
     erlang:garbage_collect(),
     Result.
 
+adjust_timestamp(Ts, _LUser, _LServer, undefined, _Cmp, _AdjustF) ->
+    Ts;
+adjust_timestamp(Ts, LUser, LServer, ID, Cmp, AdjustF) ->
+    Msg = get_message_by_id(LUser, LServer, ID),
+    case Cmp(Ts, Msg#archive_msg.timestamp) of
+        true ->
+            AdjustF(Msg#archive_msg.timestamp);
+        false ->
+            Ts
+    end.
+
+older(TS1, TS2) -> TS1 =< TS2.
+
+younger(undefined, _TS2) -> true;
+younger(TS1, TS2) -> TS1 >= TS2.
+
+add_one(TS) ->
+    ts_rochade(TS, fun(I) -> I + 1 end).
+
+rem_one(TS) ->
+    ts_rochade(TS, fun(I) -> I - 1 end).
+
+ts_rochade(TS, F) ->
+    misc:usec_to_now(F(misc:now_to_usec(TS))).
+
+get_message_by_id(LUser, LServer, ID) ->
+    case
+        mnesia:dirty_select(archive_msg,
+                            make_matchspec(LUser, LServer, [ID], undefined, [], undefined))
+    of
+        [] -> throw({error, not_found});
+        [Msg] ->
+            Msg
+    end.
+
+
+
 is_empty_for_user(LUser, LServer) ->
     mnesia:dirty_read(archive_msg, {LUser, LServer}) == [].
 
@@ -297,36 +341,46 @@ is_empty_for_room(_LServer, LName, LHost) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-make_matchspec(LUser, LServer, Start, undefined, With) ->
+make_matchspec(LUser, LServer, [], Start, End, With) ->
+    make_matchspec(LUser, LServer, undefined, Start, End, With);
+make_matchspec(LUser, LServer, IDs, Start, End, With) when is_list(IDs) ->
+    lists:flatten([make_matchspec(LUser, LServer, ID, Start, End, With) || ID <- IDs]);
+make_matchspec(LUser, LServer, ID,Start, undefined, With) ->
     %% List is always greater than a tuple
-    make_matchspec(LUser, LServer, Start, [], With);
-make_matchspec(LUser, LServer, Start, End, {_, _, <<>>} = With) ->
+    make_matchspec(LUser, LServer, ID, Start, [], With);
+make_matchspec(LUser, LServer, ID, Start, End, {_, _, <<>>} = With) ->
     ets:fun2ms(
-      fun(#archive_msg{timestamp = TS,
+      fun(#archive_msg{id = ID0,
+                       timestamp = TS,
 		       us = US,
 		       bare_peer = BPeer} = Msg)
 	    when Start =< TS, End >= TS,
 		 US == {LUser, LServer},
-		 BPeer == With ->
+		 BPeer == With,
+                 (ID == undefined orelse ID0 == ID) ->
 	      Msg
       end);
-make_matchspec(LUser, LServer, Start, End, {_, _, _} = With) ->
+make_matchspec(LUser, LServer, ID, Start, End, {_, _, _} = With) ->
     ets:fun2ms(
-      fun(#archive_msg{timestamp = TS,
+      fun(#archive_msg{id = ID0,
+                       timestamp = TS,
 		       us = US,
 		       peer = Peer} = Msg)
 	    when Start =< TS, End >= TS,
 		 US == {LUser, LServer},
-		 Peer == With ->
+		 Peer == With,
+                 (ID == undefined orelse ID0 == ID) ->
 	      Msg
       end);
-make_matchspec(LUser, LServer, Start, End, undefined) ->
+make_matchspec(LUser, LServer, ID, Start, End, undefined) ->
     ets:fun2ms(
-      fun(#archive_msg{timestamp = TS,
+      fun(#archive_msg{id = ID0,
+                       timestamp = TS,
 		       us = US,
 		       peer = Peer} = Msg)
 	    when Start =< TS, End >= TS,
-		 US == {LUser, LServer} ->
+		 US == {LUser, LServer},
+                 (ID == undefined orelse ID0 == ID) ->
 	      Msg
       end).
 
@@ -477,3 +531,11 @@ deserialize(LServer, Batch) ->
 	{aborted, Reason} ->
 	    {error, iolist_to_binary(io_lib:format("Error when writing archive data: ~p", [Reason]))}
     end.
+
+get_metadata(LUser, LServer) ->
+    Msgs = mnesia:dirty_read(archive_msg, {LUser, LServer}),
+    SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
+    Start = hd(SortedMsgs),
+    End = lists:last(SortedMsgs),
+    {{Start#archive_msg.id, Start#archive_msg.timestamp},
+     {End#archive_msg.id, End#archive_msg.timestamp}}.
