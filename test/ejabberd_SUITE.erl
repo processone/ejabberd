@@ -556,6 +556,7 @@ component_tests() ->
        test_missing_to,
        test_invalid_from,
        test_component_send,
+       test_component_privilege,
        bad_nonza,
        codec_failure]}].
 
@@ -829,6 +830,46 @@ test_component_send(Config) ->
     #iq{type = result, from = To, to = From} =
 	send_recv(Config, #iq{type = get, to = To, from = From,
 			      sub_els = [#ping{}]}),
+    disconnect(Config).
+
+test_component_privilege(Config) ->
+    Server = ?COMMON_VHOST,
+    Host = jid:make(Server),
+    Upload = jid:make(?UPLOAD_VHOST),
+    User = jid:make(<<"test_privilege">>, Server),
+    From = server_jid(Config),
+    %% Without privileges, plain IQs go to the host and to a service
+    %% that is not a host, as if mod_privilege were not loaded (#4472)
+    #iq{type = result, from = Upload} =
+	send_recv(Config, #iq{type = get, to = Upload, from = From,
+			      sub_els = [#disco_info{}]}),
+    gen_mod:update_module(Server, mod_privilege,
+			  #{iq => [{?NS_PING, [{both, all}]}]}),
+    ejabberd_hooks:run(component_connected, [From#jid.lserver]),
+    ?recv1(#message{from = Host, sub_els = [#privilege{}]}),
+    %% With privileges, plain IQs still go anywhere
+    #iq{type = result, from = Host} =
+	send_recv(Config, #iq{type = get, to = Host, from = From,
+			      sub_els = [#ping{}]}),
+    #iq{type = result, from = Upload} =
+	send_recv(Config, #iq{type = get, to = Upload, from = From,
+			      sub_els = [#disco_info{}]}),
+    %% A privileged IQ in a granted namespace is forwarded
+    #iq{type = result, from = User,
+	sub_els = [#privilege{forwarded = #forwarded{sub_els = [_]}}]} =
+	send_recv(Config, #iq{type = get, to = User, from = From,
+			      sub_els = [#privileged_iq{
+					    iq = #iq{type = get, to = User, from = User,
+						     sub_els = [#ping{}]}}]}),
+    %% A privileged IQ in a namespace not granted is dropped
+    send(Config, #iq{type = get, to = User, from = From,
+		     sub_els = [#privileged_iq{
+				   iq = #iq{type = get, to = User, from = User,
+					    sub_els = [#disco_info{}]}}]}),
+    ID = send(Config, #iq{type = get, to = Host, from = From,
+			  sub_els = [#ping{}]}),
+    ?recv1(#iq{type = result, id = ID, from = Host}),
+    gen_mod:update_module(Server, mod_privilege, #{iq => []}),
     disconnect(Config).
 
 s2s_dialback(Config) ->

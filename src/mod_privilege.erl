@@ -272,6 +272,10 @@ component_send_packet({#iq{from = From,
     Permissions = get_permissions(ServerHost),
     Result =
         case {maps:find(Host, Permissions), get_iq_encapsulated_details(IQ)} of
+            {_, {unprivileged_iq}} ->
+                ?DEBUG("Component ~ts sent a not-wrapped IQ stanza, routing it as-is.",
+                       [From#jid.lserver]),
+                IQ;
             {{ok, Access}, {privileged_iq, EncapType, EncapNs, EncapFrom, EncIq}}
                 when (EncapType == Type) and ((EncapFrom == undefined) or (EncapFrom == To)) ->
                 NsPermissions = proplists:get_value(iq, Access, []),
@@ -307,10 +311,6 @@ component_send_packet({#iq{from = From,
                           "IQ stanza and the TO in top-level IQ stanza do not match",
                           []),
                 drop;
-            {_, {unprivileged_iq}} ->
-                ?DEBUG("Component ~ts sent a not-wrapped IQ stanza, routing it as-is.",
-                       [From#jid.lserver]),
-                IQ;
             {_, {error, ErrType, _Err}} ->
                 ?INFO_MSG("IQ not forwarded: Component tried to send not valid IQ stanza: ~p.",
                           [ErrType]),
