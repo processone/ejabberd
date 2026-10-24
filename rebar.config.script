@@ -240,7 +240,12 @@ fun(DepsList, GitOnlyDeps) ->
                               {false, true} ->
                                   {DepName, GitVersion};
                               {false, false} ->
-                                  {DepName, HexVersion}
+                                  case HexVersion of
+                                      {ActualHexVersion, {pkg, HexPkgName}} ->
+                                          {DepName, ActualHexVersion, {pkg, HexPkgName}};
+                                      _ ->
+                                          {DepName, HexVersion}
+                                  end
                           end;
 		     ({DepName, _HexVersion, Source}) ->
 	              {DepName, ".*", Source}
