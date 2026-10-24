@@ -179,7 +179,7 @@ make_received_report(Host, FromJID, JID, Report) ->
                      reported_at = Now,
                      reported_entity = ReportedEntity,
                      reporter = make_reporter(FromJID),
-                     stanzas = get_stanzas(FromJID, Report)}.
+                     stanzas = get_stanzas(Host, FromJID, JID, Report)}.
 
 %% strip_report(Report) ->
 %%     Report#report{report_origin = false, third_party = false}.
@@ -244,15 +244,15 @@ get_server_ip(Host, Server) ->
 make_reporter(JID) ->
     #reporter{jid = JID}.
 
-get_stanzas(_, #report{stanza_ids = []}) ->
+get_stanzas(_, _, _, #report{stanza_ids = []}) ->
     undefined;
-get_stanzas(FromJID, #report{stanza_ids = StanzaIds}) ->
-    %% TODO
-    ?INFO_MSG("***TODO*** retrieving stanzas by id not supported yet: ~p", [StanzaIds]),
-    lists:flatten([get_stanza(FromJID, Elem) || Elem <- StanzaIds]).
-
-get_stanza(_FromJID, _Id) ->
-    [].
+get_stanzas(Host, FromJID, With, #report{stanza_ids = StanzaIds}) ->
+    {Results, _Complete, _Count} =
+        mod_mam:select(Host, FromJID, FromJID,
+                       [{'with', With},
+                        {'ids', [Id || #stanza_id{by = By, id = Id} <- StanzaIds, By == With]}],
+                       undefined, chat, only_messages),
+    [Forwarded || {_BinID, _ID, #forwarded{} = Forwarded} <- Results].
 
 maybe_anonymize(Host, To, ReceivedReport) ->
     case lists:member(To, trusted_origin_servers(Host)) of

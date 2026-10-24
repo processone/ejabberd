@@ -26,7 +26,7 @@
 
 -import(suite, [recv_presence/1, send_recv/2, my_jid/1, muc_room_jid/1,
 		send/2, recv_message/1, recv_iq/1, muc_jid/1,
-		alt_room_jid/1, wait_for_slave/1, wait_for_master/1,
+		alt_room_jid/1, wait_for_peer/1,
 		disconnect/1, put_event/2, get_event/1, peer_muc_jid/1,
 		my_muc_jid/1, get_features/2, set_opt/3]).
 -include("suite.hrl").
@@ -82,12 +82,57 @@ report_spam(Config) ->
     disconnect(Config).
 
 %%%===================================================================
+%%% Master-slave tests
+%%%===================================================================
+couple_cases() ->
+    {antispam_report_couple, [sequence],
+     [couple_test(report_stanza_id)]}.
+
+report_stanza_id_romeo(Config) ->
+    wait_for_peer(Config),
+    Peer = ?config(peer, Config),
+    send(Config, #message{to = Peer, body = [#text{data = <<"make $$ fast!">>}]}),
+    disconnect(Config).
+
+report_stanza_id_julia(Config) ->
+    Server = ?config(server, Config),
+    ejabberd_auth:try_register(<<"abuse">>, Server, <<"topSecret">>),
+    Peer = ?config(peer, Config),
+    ok = mam_tests:set_default(Config, always),
+
+    wait_for_peer(Config),
+    #message{from = Peer,
+             sub_els = [#mam_archived{id = ArchiveId} | _]} = Msg = recv_message(Config),
+    ct:pal("julia got message: ~p", [Msg]),
+    peer_down = get_event(Config),
+
+    do_report(Config, Peer, true, false, ArchiveId),
+
+    await(1, {mod_offline, count_offline_messages, [<<"abuse">>, Server]}, 10, 500),
+
+    [#message{sub_els = [ReceivedReport | _]}] = mod_offline:get_offline_els(<<"abuse">>, Server),
+    #received_report{
+        stanzas =
+            [#forwarded{sub_els =
+                            [Message]}]}
+        = xmpp:decode(ReceivedReport),
+    #message{body = [#text{data = <<"make $$ fast!">>}]} = xmpp:decode(Message),
+    unblock(Config, Peer),
+    ejabberd_auth:remove_user(<<"abuse">>, Server),
+    disconnect(Config).
+
+%%%===================================================================
 %%% Internal functions
 %%%===================================================================
 single_test(T) ->
     list_to_atom("antispam_report." ++ atom_to_list(T)).
 
-report_spam_iq(JID, ReportOrigin, ThirdParty) ->
+couple_test(T) ->
+    {list_to_atom("antispam_report_" ++ atom_to_list(T)), [parallel],
+     [list_to_atom("antispam_report." ++ atom_to_list(T) ++ "_romeo"),
+      list_to_atom("antispam_report." ++ atom_to_list(T) ++ "_julia")]}.
+
+report_spam_iq(JID, ReportOrigin, ThirdParty, StanzaIDs) ->
     #iq{type = set,
         sub_els =
             [#block{items =
@@ -96,16 +141,21 @@ report_spam_iq(JID, ReportOrigin, ThirdParty) ->
                                          #report{reason = spam,
                                                  report_origin = ReportOrigin,
                                                  third_party = ThirdParty,
-                                                 stanza_ids =
-                                                     [#stanza_id{by = JID,
-                                                                 id = <<"some-random-id">>}]}}]}]}.
+                                                 stanza_ids = [#stanza_id{by = JID,
+                                                                          id = Id} || Id <- StanzaIDs]
+                                                }}]}]}.
 
 unblock_iq(JID) ->
     #iq{type = set, sub_els = [#unblock{items = [#block_item{jid = JID}]}]}.
 
 do_report(Config, SpamJID, ReportOrigin, ThirdParty) ->
+    do_report(Config, SpamJID, ReportOrigin, ThirdParty, []).
+
+do_report(Config, SpamJID, ReportOrigin, ThirdParty, StanzaID) when not is_list(StanzaID) ->
+    do_report(Config, SpamJID, ReportOrigin, ThirdParty, [StanzaID]);
+do_report(Config, SpamJID, ReportOrigin, ThirdParty, StanzaIDs) ->
     ?match(#iq{type = result},
-           send_recv(Config, report_spam_iq(SpamJID, ReportOrigin, ThirdParty))),
+           send_recv(Config, report_spam_iq(SpamJID, ReportOrigin, ThirdParty, StanzaIDs))),
     ?recv1(#iq{type = set, sub_els = [#privacy_query{}]}),
     ?recv1(#iq{type = set, sub_els = [#block{items = [#block_item{jid = SpamJID}]}]}).
 
