@@ -268,7 +268,8 @@ select(_LServer, JidRequestor,
     LWith = if With /= undefined -> jid:tolower(With);
 	       true -> undefined
 	    end,
-    MS = make_matchspec(LUser, LServer, Start, End, LWith),
+    IDs = proplists:get_value(ids, Query, []),
+    MS = make_matchspec(LUser, LServer, IDs, Start, End, LWith),
     Msgs = mnesia:dirty_select(archive_msg, MS),
     SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
     {FilteredMsgs, IsComplete} = filter_by_rsm(SortedMsgs, RSM),
@@ -297,36 +298,46 @@ is_empty_for_room(_LServer, LName, LHost) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-make_matchspec(LUser, LServer, Start, undefined, With) ->
+make_matchspec(LUser, LServer, [], Start, End, With) ->
+    make_matchspec(LUser, LServer, undefined, Start, End, With);
+make_matchspec(LUser, LServer, IDs, Start, End, With) when is_list(IDs) ->
+    lists:flatten([make_matchspec(LUser, LServer, ID, Start, End, With) || ID <- IDs]);
+make_matchspec(LUser, LServer, ID,Start, undefined, With) ->
     %% List is always greater than a tuple
-    make_matchspec(LUser, LServer, Start, [], With);
-make_matchspec(LUser, LServer, Start, End, {_, _, <<>>} = With) ->
+    make_matchspec(LUser, LServer, ID, Start, [], With);
+make_matchspec(LUser, LServer, ID, Start, End, {_, _, <<>>} = With) ->
     ets:fun2ms(
-      fun(#archive_msg{timestamp = TS,
+      fun(#archive_msg{id = ID0,
+                       timestamp = TS,
 		       us = US,
 		       bare_peer = BPeer} = Msg)
 	    when Start =< TS, End >= TS,
 		 US == {LUser, LServer},
-		 BPeer == With ->
+		 BPeer == With,
+                 (ID == undefined orelse ID0 == ID) ->
 	      Msg
       end);
-make_matchspec(LUser, LServer, Start, End, {_, _, _} = With) ->
+make_matchspec(LUser, LServer, ID, Start, End, {_, _, _} = With) ->
     ets:fun2ms(
-      fun(#archive_msg{timestamp = TS,
+      fun(#archive_msg{id = ID0,
+                       timestamp = TS,
 		       us = US,
 		       peer = Peer} = Msg)
 	    when Start =< TS, End >= TS,
 		 US == {LUser, LServer},
-		 Peer == With ->
+		 Peer == With,
+                 (ID == undefined orelse ID0 == ID) ->
 	      Msg
       end);
-make_matchspec(LUser, LServer, Start, End, undefined) ->
+make_matchspec(LUser, LServer, ID, Start, End, undefined) ->
     ets:fun2ms(
-      fun(#archive_msg{timestamp = TS,
+      fun(#archive_msg{id = ID0,
+                       timestamp = TS,
 		       us = US,
 		       peer = Peer} = Msg)
 	    when Start =< TS, End >= TS,
-		 US == {LUser, LServer} ->
+		 US == {LUser, LServer},
+                 (ID == undefined orelse ID0 == ID) ->
 	      Msg
       end).
 
