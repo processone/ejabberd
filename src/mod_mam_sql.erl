@@ -615,6 +615,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     End = proplists:get_value('end', MAMQuery),
     With = proplists:get_value(with, MAMQuery),
     WithText = proplists:get_value(withtext, MAMQuery),
+    StanzaIDs = proplists:get_value(ids, MAMQuery),
     {Max, Direction, ID} = get_max_direction_id(RSM),
     ODBCType = ejabberd_option:sql_type(LServer),
     ToString = fun(S) -> ejabberd_sql:to_string_literal(ODBCType, S) end,
@@ -639,6 +640,23 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 			true ->
 			     []
 		     end,
+    WithIDs =  if
+                   is_list(StanzaIDs), length(StanzaIDs) > 0 ->
+                       StanzaIN =
+                           binary:join(
+                             lists:filter(
+                               fun(StanzaID) ->
+                                       try binary_to_integer(StanzaID) of
+                                           StanzaInt -> StanzaInt > 0
+                                       catch
+                                           error:badarg -> false
+                                       end
+                              end, StanzaIDs),
+                             <<",">>),
+                       [<<" AND timestamp IN (">>, StanzaIN, <<")">>];
+                   true ->
+                       []
+               end,
     WithClause = case catch jid:tolower(With) of
 		     {_, _, <<>>} ->
 			 [<<" and bare_peer=">>,
@@ -710,7 +728,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     Query = [<<"SELECT ">>, TopClause, UserSel,
 	     <<" timestamp, xml, peer, kind, nick"
 	       " FROM archive WHERE">>, UserWhere, HostMatch,
-	     WithClause, WithTextClause,
+	     WithClause, WithTextClause, WithIDs,
 	     StartClause, EndClause, PageClause],
 
     QueryPage =
@@ -728,7 +746,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 	end,
     {QueryPage,
      [<<"SELECT COUNT(*) FROM archive WHERE ">>, UserWhere,
-      HostMatch, WithClause, WithTextClause,
+      HostMatch, WithClause, WithTextClause, WithIDs,
       StartClause, EndClause, <<";">>]}.
 
 -spec get_max_direction_id(rsm_set() | undefined) ->
