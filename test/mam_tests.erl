@@ -59,6 +59,7 @@ feature_enabled(Config) ->
     ct:comment("Checking if all MAM conference service features are enabled"),
     true = lists:member(?NS_MAM_1, MUCFeatures),
     true = lists:member(?NS_MAM_2, MUCFeatures),
+    true = lists:member(?NS_MAM_2_EXTENDED, MUCFeatures),
     clean(disconnect(Config)).
 
 fake_by(Config) ->
@@ -114,7 +115,20 @@ get_form(Config) ->
     Range = [{JID, NS} || JID <- [undefined, ServerJID],
 			  NS <- ?VERSIONS -- [?NS_MAM_TMP]],
     lists:foreach(
-      fun({To, NS}) ->
+      fun({To, ?NS_MAM_2 = NS}) ->
+	      #iq{type = result,
+		  sub_els = [#mam_query{xmlns = NS,
+					xdata = #xdata{} = X}]} =
+		  send_recv(Config, #iq{type = get, to = To,
+					sub_els = [#mam_query{xmlns = NS}]}),
+	      [NS] = xmpp_util:get_xdata_values(<<"FORM_TYPE">>, X),
+	      true = xmpp_util:has_xdata_var(<<"with">>, X),
+	      true = xmpp_util:has_xdata_var(<<"start">>, X),
+	      true = xmpp_util:has_xdata_var(<<"end">>, X),
+	      true = xmpp_util:has_xdata_var(<<"after-id">>, X),
+	      true = xmpp_util:has_xdata_var(<<"before-id">>, X),
+	      true = xmpp_util:has_xdata_var(<<"ids">>, X);
+         ({To, NS}) ->
 	      #iq{type = result,
 		  sub_els = [#mam_query{xmlns = NS,
 					xdata = #xdata{} = X}]} =
