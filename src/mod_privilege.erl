@@ -214,7 +214,8 @@ component_connected(Host) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc_check(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_connected, Host})
-      end, ejabberd_option:hosts()).
+      end, [H || H <- ejabberd_option:hosts(),
+	    gen_mod:is_loaded(H, ?MODULE)]).
 
 -spec component_disconnected(binary(), binary()) -> ok.
 component_disconnected(Host, _Reason) ->
@@ -222,7 +223,8 @@ component_disconnected(Host, _Reason) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc_check(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_disconnected, Host})
-      end, ejabberd_option:hosts()).
+      end, [H || H <- ejabberd_option:hosts(),
+	    gen_mod:is_loaded(H, ?MODULE)]).
 
 %%
 %% Message processing

@@ -557,6 +557,7 @@ component_tests() ->
        test_invalid_from,
        test_component_send,
        test_component_privilege,
+       test_component_privilege_vhosts,
        bad_nonza,
        codec_failure]}].
 
@@ -870,6 +871,30 @@ test_component_privilege(Config) ->
 			  sub_els = [#ping{}]}),
     ?recv1(#iq{type = result, id = ID, from = Host}),
     gen_mod:update_module(Server, mod_privilege, #{iq => []}),
+    disconnect(Config).
+
+test_component_privilege_vhosts(Config) ->
+    %% mod_privilege is loaded on a vhost that comes after vhosts
+    %% that do not load it: the component still gets its privileges there
+    Server = ?MNESIA_VHOST,
+    From = server_jid(Config),
+    Modules = ejabberd_option:modules(Server),
+    Opts = #{roster => [{both, none}, {get, none}, {set, none}],
+	     iq => [{?NS_PING, [{both, all}]}],
+	     presence => [{managed_entity, none}, {roster, none}],
+	     message => [{outgoing, none}]},
+    %% The suite's configuration may load mod_privilege everywhere:
+    %% start it here with this vhost's own options
+    Loaded = gen_mod:is_loaded(Server, mod_privilege),
+    Loaded andalso gen_mod:stop_module(Server, mod_privilege),
+    ejabberd_config:set_option({modules, Server},
+			       [{mod_privilege, Opts, 0} | Modules]),
+    {ok, _} = gen_mod:start_module(Server, mod_privilege),
+    ejabberd_hooks:run(component_connected, [From#jid.lserver]),
+    ?recv1(#message{from = #jid{lserver = Server}, sub_els = [#privilege{}]}),
+    gen_mod:stop_module(Server, mod_privilege),
+    ejabberd_config:set_option({modules, Server}, Modules),
+    Loaded andalso gen_mod:start_module(Server, mod_privilege),
     disconnect(Config).
 
 s2s_dialback(Config) ->
