@@ -4501,6 +4501,7 @@ destroy_room(DEl, StateData) ->
 	      Packet = #presence{
 			  type = unavailable,
 			  sub_els = [#muc_user{items = [Item],
+					       status_codes = [110],
 					       destroy = Destroy}]},
 	      send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
 			   Info#user.jid, Packet,
