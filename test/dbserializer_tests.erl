@@ -99,7 +99,11 @@ muc(Config) ->
         {<<"affiliations">>, <<"owner=bob@server;member=peter@server">>},
         {<<"subscribers">>, <<"bob@server=bob=messages">>}]),
     mod_muc_admin:muc_register_nick(<<"bob">>, <<"bob@server">>, MucHost),
-    export_import(Config, gen_mod:db_mod(Host, mod_muc)).
+    export_import(Config, gen_mod:db_mod(Host, mod_muc)),
+    ?match(member, mod_muc_admin:get_room_affiliation(<<"test">>, MucHost, <<"peter@server">>)),
+    ?match(owner, mod_muc_admin:get_room_affiliation(<<"test">>, MucHost, <<"bob@server">>)),
+    ?match([<<"bob@server">>], mod_muc_admin:get_subscribers(<<"test">>, MucHost)),
+    Config.
 
 muc_clean(Config) ->
     Host = ?config(server, Config),
