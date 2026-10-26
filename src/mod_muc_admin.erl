@@ -2140,7 +2140,7 @@ get_room_affiliations(Name, Service) ->
 				 ({Uname, Domain, _Res}, Aff, Acc) when is_atom(Aff)->
 				      [{Uname, Domain, Aff, <<>>} | Acc]
 			      end, [], Affiliations);
-			timeout ->
+			{error, timeout} ->
 			    throw({error, "Database error"});
 			{error, notfound} ->
 			    throw({error, "The room does not exist."})
@@ -2167,7 +2167,7 @@ get_room_affiliations_v3(Name, Service) ->
 				      Jid = makeencode(Uname, Domain),
 				      [{Jid, Aff, <<>>} | Acc]
 			      end, [], Affiliations);
-			timeout ->
+			{error, timeout} ->
 			    throw({error, "Database error"});
 			{error, notfound} ->
 			    throw({error, "The room does not exist."})
@@ -2213,7 +2213,7 @@ get_room_affiliation(Name, Service, JID) ->
 		case mod_muc_room:get_room_affiliation(Pid, UserJID) of
 			{ok, Affiliation} ->
 				Affiliation;
-			timeout ->
+			{error, timeout} ->
 			    throw({error, "Database error"});
 			{error, notfound} ->
 			    throw({error, "The room does not exist."})
