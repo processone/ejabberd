@@ -910,32 +910,35 @@ process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
 process_iq(IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed()).
 
-process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
-			sub_els = [SubEl]} = IQ, MsgType) ->
-    Ret = case MsgType of
-	      chat ->
-		  maybe_activate_mam(LUser, LServer);
-	      _ ->
-		  ok
-	  end,
-    case Ret of
-	ok ->
-	    case SubEl of
-		#mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
-		    Txt = ?T("Unsupported <index/> element"),
-		    xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
-		#mam_query{rsm = RSM, flippage = FlipPage, xmlns = NS} ->
-		    case parse_query(SubEl, Lang) of
-			{ok, Query} ->
-			    NewRSM = limit_max(RSM, NS),
-			    select_and_send(LServer, Query, NewRSM, FlipPage, IQ, MsgType);
-			{error, Err} ->
-			    xmpp:make_error(IQ, Err)
-		    end
-	    end;
+process_iq(LServer, #iq{from = #jid{luser = LUser},
+                        to = #jid{luser = LUser},
+                        lang = Lang} = IQ, chat = MsgType) ->
+    case maybe_activate_mam(LUser, LServer) of
+        ok ->
+            process_mam_query(LServer, IQ, MsgType);
 	{error, _} ->
-	     Txt = ?T("Database failure"),
+            Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
+    end;
+process_iq(_LServer, IQ, chat) ->
+    xmpp:make_error(IQ, xmpp:err_not_allowed());
+process_iq(LServer, IQ, MsgType) ->
+    process_mam_query(LServer, IQ, MsgType).
+
+process_mam_query(LServer, #iq{lang = Lang,
+                               sub_els = [SubEl]} = IQ, MsgType) ->
+    case SubEl of
+        #mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
+            Txt = ?T("Unsupported <index/> element"),
+            xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
+        #mam_query{rsm = RSM, flippage = FlipPage, xmlns = NS} ->
+            case parse_query(SubEl, Lang) of
+                {ok, Query} ->
+                    NewRSM = limit_max(RSM, NS),
+                    select_and_send(LServer, Query, NewRSM, FlipPage, IQ, MsgType);
+                {error, Err} ->
+                    xmpp:make_error(IQ, Err)
+            end
     end.
 
 -spec should_archive(message(), binary()) -> boolean().
