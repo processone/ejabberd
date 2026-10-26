@@ -25,6 +25,10 @@
 
 -module(mod_muc_room).
 
+-export([get_room_affiliations/1]).
+
+-export([get_room_affiliation/2]).
+
 -author('alexey@process-one.net').
 
 -protocol({xep, 317, '0.3.1', '21.12', "complete", "0.3.1 since 25.10"}).
@@ -232,6 +236,26 @@ get_state(Pid) ->
 get_info(Pid) ->
     try
         {ok, p1_fsm:sync_send_all_state_event(Pid, get_info)}
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, timeout};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, notfound}
+    end.
+
+-spec get_room_affiliation(pid(), jid()) -> {ok, affiliation()} | {error, notfound | timeout}.
+get_room_affiliation(Pid, Jid) ->
+    try
+        {ok, p1_fsm:sync_send_all_state_event(Pid, {get_room_affiliation, Jid})}
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, timeout};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, notfound}
+    end.
+
+-spec get_room_affiliations(pid()) -> {ok, affiliations()} | {error, notfound | timeout}.
+get_room_affiliations(Pid) ->
+    try
+        {ok, p1_fsm:sync_send_all_state_event(Pid, get_room_affiliations)}
     catch _:{timeout, {p1_fsm, _, _}} ->
 	    {error, timeout};
 	  _:{_, {p1_fsm, _, _}} ->
@@ -801,6 +825,10 @@ handle_sync_event(get_info, _From, StateName,
 		  StateData) ->
     Result = #{occupants_number => maps:size(StateData#state.users)},
     {reply, Result, StateName, StateData};
+handle_sync_event({get_room_affiliation, Jid}, _From, StateName, StateData) ->
+	{reply, get_affiliation(Jid, StateData), StateName, StateData};
+handle_sync_event(get_room_affiliations, _From, StateName, StateData) ->
+	{reply, get_affiliations(StateData), StateName, StateData};
 handle_sync_event({change_config, Config}, _From,
 		  StateName, StateData) ->
     {result, undefined, NSD} = change_config(Config, StateData),
