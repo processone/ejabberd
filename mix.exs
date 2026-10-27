@@ -150,7 +150,7 @@ defmodule Ejabberd.MixProject do
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {if_version_below(~c"27", true), {:jiffy, "~> 1.1.5"}},
                          {if_version_below(~c"26", true), {:jose, "1.11.10", override: true}},
-                         {if_version_above(~c"25", true), {:jose, "~> 1.11.12"}},
+                         {if_version_above(~c"25", true), {:jose, "~> 1.11.13"}},
                          {config(:lua), {:luerl, "~> 1.2.0"}},
                          {config(:mysql), {:p1_mysql, ">= 1.0.28"}},
                          {config(:pgsql), {:p1_pgsql, ">= 1.1.38"}},
