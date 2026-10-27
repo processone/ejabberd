@@ -25,6 +25,7 @@
 
 %% API
 -compile(export_all).
+-deprecated([{wait_for_master, 1}, {wait_for_slave, 1}]).
 
 -include("suite.hrl").
 -include_lib("kernel/include/file.hrl").
@@ -891,7 +892,7 @@ set_opts([], Config) -> Config;
 set_opts([{Opt, Val} | Opts], Config) ->
     set_opts(Opts, set_opt(Opt, Val, Config)).
 
-wait_for_master(Config) ->
+wait_for_peer(Config) ->
     put_event(Config, peer_ready),
     case get_event(Config) of
 	peer_ready ->
@@ -900,14 +901,11 @@ wait_for_master(Config) ->
 	    suite:match_failure(Other, peer_ready)
     end.
 
+wait_for_master(Config) ->
+    wait_for_peer(Config).
+
 wait_for_slave(Config) ->
-    put_event(Config, peer_ready),
-    case get_event(Config) of
-	peer_ready ->
-	    ok;
-	Other ->
-	    suite:match_failure(Other, peer_ready)
-    end.
+    wait_for_peer(Config).
 
 make_iq_result(#iq{from = From} = IQ) ->
     IQ#iq{type = result, to = From, from = undefined, sub_els = []}.

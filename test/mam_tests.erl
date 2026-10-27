@@ -26,8 +26,8 @@
 %% API
 -compile(export_all).
 -import(suite, [get_features/1, disconnect/1, my_jid/1, send_recv/2,
-		wait_for_slave/1, server_jid/1, send/2, get_features/2,
-		wait_for_master/1, recv_message/1, recv_iq/1, muc_room_jid/1,
+		server_jid/1, send/2, get_features/2,
+		wait_for_peer/1, recv_message/1, recv_iq/1, muc_room_jid/1,
 		muc_jid/1, is_feature_advertised/3, get_event/1, put_event/2]).
 
 -include("suite.hrl").
@@ -159,14 +159,14 @@ master_slave_cases() ->
 
 archived_and_stanza_id_master(Config) ->
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     clean(disconnect(Config)).
 
 archived_and_stanza_id_slave(Config) ->
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     clean(disconnect(Config)).
 
@@ -175,7 +175,7 @@ query_all_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_all(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -185,7 +185,7 @@ query_all_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_all(Config, Peer, MyJID),
     clean(disconnect(Config)).
@@ -195,7 +195,7 @@ query_with_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_with(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -205,7 +205,7 @@ query_with_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_with(Config, Peer, MyJID),
     clean(disconnect(Config)).
@@ -215,7 +215,7 @@ query_rsm_max_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_rsm_max(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -225,7 +225,7 @@ query_rsm_max_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_rsm_max(Config, Peer, MyJID),
     clean(disconnect(Config)).
@@ -235,7 +235,7 @@ query_rsm_after_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_rsm_after(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -245,7 +245,7 @@ query_rsm_after_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_rsm_after(Config, Peer, MyJID),
     clean(disconnect(Config)).
@@ -255,7 +255,7 @@ query_rsm_before_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_rsm_before(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -265,7 +265,7 @@ query_rsm_before_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_rsm_before(Config, Peer, MyJID),
     clean(disconnect(Config)).
@@ -308,7 +308,7 @@ muc_slave(Config) ->
 mucsub_master(Config) ->
     Room = muc_room_jid(Config),
     Peer = ?config(peer, Config),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     ct:comment("Joining muc room"),
     ok = muc_tests:join_new(Config),
 
@@ -344,7 +344,7 @@ mucsub_slave(Config) ->
     MyJIDBare = jid:remove_resource(MyJID),
     ok = set_default(Config, always),
     send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
 
     ct:comment("Receiving mucsub events"),
     lists:foreach(
