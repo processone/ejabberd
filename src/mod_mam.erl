@@ -714,41 +714,47 @@ webadmin_user(Acc, User, Server, R) ->
 %%%
 
 delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"chat">>;
-								  Type == <<"groupchat">>;
-								  Type == <<"all">> ->
+								    Type == <<"groupchat">>;
+								    Type == <<"all">> ->
     CurrentTime = make_id(),
-    Diff = Days * 24 * 60 * 60 * 1000000,
+    Diff = Days*24*60*60*1000000,
     TimeStamp = misc:usec_to_now(CurrentTime - Diff),
     TypeA = misc:binary_to_existing_atom(Type),
     LServer = jid:nameprep(Server),
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case gen_mod:is_loaded(LServer, ?MODULE) of
+	false ->
+	    {error, "MAM module not enabled"};
+	_ ->
+	    Mod = gen_mod:db_mod(LServer, ?MODULE),
 
-    case ejabberd_batch:register_task({mam, LServer}, 0, Rate, {LServer, TypeA, TimeStamp, BatchSize, none},
-				      fun({L, T, St, B, IS} = S) ->
-					  case {erlang:function_exported(Mod, delete_old_messages_batch, 4),
-						erlang:function_exported(Mod, delete_old_messages_batch, 5)} of
-					      {true, _} ->
-						  case Mod:delete_old_messages_batch(L, St, T, B) of
-						      {ok, Count} ->
-							  {ok, S, Count, undefined};
-						      {error, _} = E ->
-							  E
-						  end;
-					      {_, true} ->
-						  case Mod:delete_old_messages_batch(L, St, T, B, IS) of
-						      {ok, IS2, Count} ->
-							  {ok, {L, St, T, B, IS2}, Count, undefined};
-						      {error, _} = E ->
-							  E
-						  end;
-					      _ ->
-						  {error, not_implemented_for_backend}
-					  end
-				      end) of
-	ok ->
-	    {ok, ""};
-	{error, in_progress} ->
-	    {error, "Operation in progress"}
+	    Job = fun({L, T, St, B, IS} = S) ->
+		    case {erlang:function_exported(Mod, delete_old_messages_batch, 4),
+			  erlang:function_exported(Mod, delete_old_messages_batch, 5)} of
+			{true, _} ->
+			    case Mod:delete_old_messages_batch(L, St, T, B) of
+				{ok, Count} ->
+				    {ok, S, Count, undefined};
+				{error, _} = E ->
+				    E
+			    end;
+			{_, true} ->
+			    case Mod:delete_old_messages_batch(L, St, T, B, IS) of
+				{ok, IS2, Count} ->
+				    {ok, {L, St, T, B, IS2}, Count, undefined};
+				{error, _} = E ->
+				    E
+			    end;
+			_ ->
+			    {error, not_implemented_for_backend}
+		    end
+		end,
+	    case ejabberd_batch:register_task({mam, LServer}, 0, Rate, {LServer, TypeA, TimeStamp, BatchSize, none},
+	                                      Job) of
+		ok ->
+		    {ok, ""};
+		{error, in_progress} ->
+		    {error, "Operation in progress"}
+	    end
     end.
 delete_old_messages_status(Server) ->
     LServer = jid:nameprep(Server),
@@ -785,13 +791,17 @@ delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
     TimeStamp = misc:usec_to_now(CurrentTime - Diff),
     Type = misc:binary_to_existing_atom(TypeBin),
     DBTypes = lists:usort(
-		lists:map(
-		  fun(Host) ->
-			  case mod_mam_opt:db_type(Host) of
-			      sql -> {sql, Host};
-			      Other -> {Other, global}
-			  end
-		  end, ejabberd_option:hosts())),
+	lists:filtermap(
+	    fun(Host) ->
+		case gen_mod:is_loaded(Host, ?MODULE) of
+		    false -> false;
+		    _ ->
+			case mod_mam_opt:db_type(Host) of
+			    sql -> {true, {sql, Host}};
+			    Other -> {true, {Other, global}}
+			end
+		end
+	    end, ejabberd_option:hosts())),
     Results = lists:map(
 		fun({DBType, ServerHost}) ->
 			Mod = gen_mod:db_mod(DBType, ?MODULE),
