@@ -665,7 +665,7 @@ route_to_room(Packet, ServerHost) ->
 				false ->
 				    Lang = xmpp:get_lang(Packet),
 				    ErrText = ?T("Room creation is denied by service policy"),
-				    Err = xmpp:err_forbidden(ErrText, Lang),
+				    Err = xmpp:err_not_allowed(ErrText, Lang),
 				    ejabberd_router:route_error(Packet, Err)
 			    end;
 			{error, notfound} ->
