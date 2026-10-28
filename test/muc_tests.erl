@@ -1135,6 +1135,7 @@ destroy_master(Config) ->
     #presence{from = Room, type = unavailable} = recv_presence(Config),
     #muc_user{items = [#muc_item{role = none,
 				 affiliation = none}],
+	      status_codes = [110],
 	      destroy = #muc_destroy{jid = AltRoom,
 				     reason = Reason}} =
 	recv_muc_presence(Config, MyNickJID, unavailable),
@@ -1154,6 +1155,7 @@ destroy_slave(Config) ->
     #presence{from = Room, type = unavailable} = recv_presence(Config),
     #muc_user{items = [#muc_item{role = none,
 				 affiliation = none}],
+	      status_codes = [110],
 	      destroy = #muc_destroy{jid = AltRoom,
 				     reason = Reason}} =
 	recv_muc_presence(Config, MyNickJID, unavailable),
