@@ -286,7 +286,7 @@ select(_LServer, JidRequestor,
 	       true -> undefined
 	    end,
     IDs = proplists:get_value(ids, Query, []),
-    _= [get_message_by_id(LUser, LServer, ID) || ID <- IDs],
+    _= [get_timestamp_by_id(LUser, LServer, ID) || ID <- IDs],
     MS = make_matchspec(LUser, LServer, IDs, Start, End, LWith),
     {Msgs, IsComplete, Count} = select_messages(MS, RSM, Flags),
     Result = {lists:flatmap(
@@ -307,10 +307,10 @@ select(_LServer, JidRequestor,
 adjust_timestamp(Ts, _LUser, _LServer, undefined, _Cmp, _AdjustF) ->
     Ts;
 adjust_timestamp(Ts, LUser, LServer, ID, Cmp, AdjustF) ->
-    Msg = get_message_by_id(LUser, LServer, ID),
-    case Cmp(Ts, Msg#archive_msg.timestamp) of
+    Timestamp = get_timestamp_by_id(LUser, LServer, ID),
+    case Cmp(Ts, Timestamp) of
         true ->
-            AdjustF(Msg#archive_msg.timestamp);
+            AdjustF(Timestamp);
         false ->
             Ts
     end.
@@ -329,15 +329,14 @@ rem_one(TS) ->
 ts_rochade(TS, F) ->
     misc:usec_to_now(F(misc:now_to_usec(TS))).
 
-get_message_by_id(LUser, LServer, ID) ->
-    MS = make_matchspec(LUser, LServer, [ID], undefined, [], undefined),
-    FullMS = [{Head, Guards, ['$_']} || {Head, Guards, _} <- MS],
+get_timestamp_by_id(LUser, LServer, ID) ->
     case
-        mnesia:dirty_select(archive_msg, FullMS)
+        mnesia:dirty_select(archive_msg,
+                            make_matchspec(LUser, LServer, [ID], undefined, [], undefined))
     of
         [] -> throw({error, not_found});
-        [Msg] ->
-            Msg
+        [{Timestamp, _ID}] ->
+            Timestamp
     end.
 
 
@@ -392,7 +391,7 @@ make_matchspec(LUser, LServer, [], Start, End, With) ->
     make_matchspec(LUser, LServer, undefined, Start, End, With);
 make_matchspec(LUser, LServer, IDs, Start, End, With) when is_list(IDs) ->
     lists:flatten([make_matchspec(LUser, LServer, ID, Start, End, With) || ID <- IDs]);
-make_matchspec(LUser, LServer, ID,Start, undefined, With) ->
+make_matchspec(LUser, LServer, ID, Start, undefined, With) ->
     %% List is always greater than a tuple
     make_matchspec(LUser, LServer, ID, Start, [], With);
 make_matchspec(LUser, LServer, ID, Start, End, {_, _, <<>>} = With) ->

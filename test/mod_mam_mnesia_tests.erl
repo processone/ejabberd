@@ -4,7 +4,7 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_mam.hrl").
 
--export([initialize/1, pagination_case/0, filters_case/0,
+-export([initialize/1, pagination_case/0, filters_case/0, id_filters_case/0,
          selected_key_filters_case/0, timestamp_ties_case/0,
          count_only_case/0, bounded_memory_case/0]).
 
@@ -20,7 +20,7 @@ mnesia_select_test_() ->
             {timeout, 180,
              fun() ->
                  ?assertEqual(ok, peer:call(Peer, ?MODULE, Case, [], 170000))
-             end}} || Case <- [pagination_case, filters_case,
+             end}} || Case <- [pagination_case, filters_case, id_filters_case,
                                selected_key_filters_case, timestamp_ties_case,
                                count_only_case, bounded_memory_case]]
       end}}.
@@ -116,6 +116,40 @@ filters_case() ->
            {with, make_jid(bare(?PEER))}], #rsm_set{max = 1}),
     check([], true, 0,
           [{start, timestamp(4)}, {'end', timestamp(2)}], #rsm_set{max = 50}),
+    ok.
+
+id_filters_case() ->
+    reset([message(ID) || ID <- lists:seq(1, 5)] ++
+          [message(6, {<<"different">>, ?HOST}, ?PEER)]),
+    IDs = [{ids, [<<"4">>, <<"2">>, <<"4">>]}],
+    check([2], false, 2, IDs, #rsm_set{max = 1}),
+    check([4], false, 2, IDs, #rsm_set{before = <<>>, max = 1}),
+    check([2, 4], true, 2, IDs, undefined),
+    Bounds = [{'after-id', <<"2">>}, {'before-id', <<"5">>}],
+    check([3], false, 2,
+          Bounds ++ [{start, timestamp(1)}, {'end', timestamp(5)}],
+          #rsm_set{max = 1}),
+    check([3, 4], true, 2, Bounds, undefined),
+    check([4], true, 1,
+          Bounds ++ [{start, timestamp(4)}, {'end', timestamp(4)}],
+          #rsm_set{max = 50}),
+    ?assertEqual({[], true, 1},
+                 select(IDs ++ [{'after-id', <<"1">>}, {'before-id', <<"5">>},
+                                {start, timestamp(3)}, {'end', timestamp(5)}],
+                        #rsm_set{'after' = <<"4">>, max = 0}, only_count)),
+    lists:foreach(
+      fun({Field, ID, Flags}) ->
+          Value = case Field of
+                      ids -> [<<"2">>, ID];
+                      _ -> ID
+                  end,
+          ?assertThrow({error, not_found},
+                       select([{Field, Value}, {start, timestamp(10)},
+                               {'end', timestamp(11)}],
+                              #rsm_set{max = 1}, Flags))
+      end, [{Field, ID, Flags} || Field <- [ids, 'after-id', 'before-id'],
+                                 ID <- [<<"6">>, <<"999">>],
+                                 Flags <- [all, only_count]]),
     ok.
 
 selected_key_filters_case() ->
