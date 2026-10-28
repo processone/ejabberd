@@ -26,12 +26,13 @@
 %% API
 -compile(export_all).
 -import(suite, [get_features/1, disconnect/1, my_jid/1, send_recv/2,
-		wait_for_slave/1, server_jid/1, send/2, get_features/2,
-		wait_for_master/1, recv_message/1, recv_iq/1, muc_room_jid/1,
+		server_jid/1, send/2, get_features/2,
+		wait_for_peer/1, recv_message/1, recv_iq/1, muc_room_jid/1,
 		muc_jid/1, is_feature_advertised/3, get_event/1, put_event/2]).
 
 -include("suite.hrl").
 -define(VERSIONS, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2]).
+-define(has_stanza(Els, Stanza), ?not_match([], [El || El = Stanza <- Els])).
 
 %%%===================================================================
 %%% API
@@ -59,6 +60,7 @@ feature_enabled(Config) ->
     ct:comment("Checking if all MAM conference service features are enabled"),
     true = lists:member(?NS_MAM_1, MUCFeatures),
     true = lists:member(?NS_MAM_2, MUCFeatures),
+    true = lists:member(?NS_MAM_2_EXTENDED, MUCFeatures),
     clean(disconnect(Config)).
 
 fake_by(Config) ->
@@ -114,7 +116,20 @@ get_form(Config) ->
     Range = [{JID, NS} || JID <- [undefined, ServerJID],
 			  NS <- ?VERSIONS -- [?NS_MAM_TMP]],
     lists:foreach(
-      fun({To, NS}) ->
+      fun({To, ?NS_MAM_2 = NS}) ->
+	      #iq{type = result,
+		  sub_els = [#mam_query{xmlns = NS,
+					xdata = #xdata{} = X}]} =
+		  send_recv(Config, #iq{type = get, to = To,
+					sub_els = [#mam_query{xmlns = NS}]}),
+	      [NS] = xmpp_util:get_xdata_values(<<"FORM_TYPE">>, X),
+	      true = xmpp_util:has_xdata_var(<<"with">>, X),
+	      true = xmpp_util:has_xdata_var(<<"start">>, X),
+	      true = xmpp_util:has_xdata_var(<<"end">>, X),
+	      true = xmpp_util:has_xdata_var(<<"after-id">>, X),
+	      true = xmpp_util:has_xdata_var(<<"before-id">>, X),
+	      true = xmpp_util:has_xdata_var(<<"ids">>, X);
+         ({To, NS}) ->
 	      #iq{type = result,
 		  sub_els = [#mam_query{xmlns = NS,
 					xdata = #xdata{} = X}]} =
@@ -135,6 +150,9 @@ master_slave_cases() ->
      [master_slave_test(archived_and_stanza_id),
       master_slave_test(query_all),
       master_slave_test(query_with),
+      master_slave_test(query_ids),
+      master_slave_test(query_metadata),
+      master_slave_test(query_wrong_jid),
       master_slave_test(query_rsm_max),
       master_slave_test(query_rsm_after),
       master_slave_test(query_rsm_before),
@@ -145,14 +163,14 @@ master_slave_cases() ->
 
 archived_and_stanza_id_master(Config) ->
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     clean(disconnect(Config)).
 
 archived_and_stanza_id_slave(Config) ->
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     clean(disconnect(Config)).
 
@@ -161,7 +179,7 @@ query_all_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_all(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -171,7 +189,7 @@ query_all_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_all(Config, Peer, MyJID),
     clean(disconnect(Config)).
@@ -181,7 +199,7 @@ query_with_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_with(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -191,9 +209,61 @@ query_with_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_with(Config, Peer, MyJID),
+    clean(disconnect(Config)).
+
+query_ids_master(Config) ->
+    ok = set_default(Config, always),
+    #presence{} = send_recv(Config, #presence{}),
+    wait_for_peer(Config),
+    send_messages(Config, lists:seq(1, 5)),
+    clean(disconnect(Config)).
+
+query_ids_slave(Config) ->
+    Peer = ?config(peer, Config),
+    MyJID = my_jid(Config),
+    ok = set_default(Config, always),
+    #presence{} = send_recv(Config, #presence{}),
+    wait_for_peer(Config),
+    IDs = recv_messages(Config, lists:seq(1, 5)),
+    query_by_ids(Config, Peer, MyJID, IDs),
+    clean(disconnect(Config)).
+
+query_metadata_master(Config) ->
+    ok = set_default(Config, always),
+    #presence{} = send_recv(Config, #presence{}),
+    wait_for_peer(Config),
+    send_messages(Config, lists:seq(1, 5)),
+    clean(disconnect(Config)).
+
+query_metadata_slave(Config) ->
+    ok = set_default(Config, always),
+    #presence{} = send_recv(Config, #presence{}),
+    wait_for_peer(Config),
+    IDs = recv_messages(Config, lists:seq(1, 5)),
+    query_metadata(Config, lists:nth(length(IDs) - 1, IDs), hd(IDs)),
+    clean(disconnect(Config)).
+
+query_wrong_jid_master(Config) ->
+    Peer = ?config(peer, Config),
+    MyJID = my_jid(Config),
+    ok = set_default(Config, always),
+    #presence{} = send_recv(Config, #presence{}),
+    wait_for_peer(Config),
+    send_messages(Config, lists:seq(1, 5)),
+    query_all_err(Config, MyJID, jid:remove_resource(Peer)),
+    clean(disconnect(Config)).
+
+query_wrong_jid_slave(Config) ->
+    Peer = ?config(peer, Config),
+    MyJID = my_jid(Config),
+    ok = set_default(Config, always),
+    #presence{} = send_recv(Config, #presence{}),
+    wait_for_peer(Config),
+    recv_messages(Config, lists:seq(1, 5)),
+    query_all_err(Config, MyJID, jid:remove_resource(Peer)),
     clean(disconnect(Config)).
 
 query_rsm_max_master(Config) ->
@@ -201,7 +271,7 @@ query_rsm_max_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_rsm_max(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -211,7 +281,7 @@ query_rsm_max_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_rsm_max(Config, Peer, MyJID),
     clean(disconnect(Config)).
@@ -221,7 +291,7 @@ query_rsm_after_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_rsm_after(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -231,7 +301,7 @@ query_rsm_after_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_rsm_after(Config, Peer, MyJID),
     clean(disconnect(Config)).
@@ -241,7 +311,7 @@ query_rsm_before_master(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     send_messages(Config, lists:seq(1, 5)),
     query_rsm_before(Config, MyJID, Peer),
     clean(disconnect(Config)).
@@ -251,7 +321,7 @@ query_rsm_before_slave(Config) ->
     MyJID = my_jid(Config),
     ok = set_default(Config, always),
     #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
     recv_messages(Config, lists:seq(1, 5)),
     query_rsm_before(Config, Peer, MyJID),
     clean(disconnect(Config)).
@@ -294,7 +364,7 @@ muc_slave(Config) ->
 mucsub_master(Config) ->
     Room = muc_room_jid(Config),
     Peer = ?config(peer, Config),
-    wait_for_slave(Config),
+    wait_for_peer(Config),
     ct:comment("Joining muc room"),
     ok = muc_tests:join_new(Config),
 
@@ -330,7 +400,7 @@ mucsub_slave(Config) ->
     MyJIDBare = jid:remove_resource(MyJID),
     ok = set_default(Config, always),
     send_recv(Config, #presence{}),
-    wait_for_master(Config),
+    wait_for_peer(Config),
 
     ct:comment("Receiving mucsub events"),
     lists:foreach(
@@ -448,16 +518,17 @@ send_message_extra(Config, N, Id, Sub) ->
 
 recv_messages(Config, Range) ->
     Peer = ?config(peer, Config),
-    lists:foreach(
-      fun(N) ->
+    lists:foldl(
+      fun(N, IDs) ->
 	      Body = xmpp:mk_text(integer_to_binary(N)),
 	      #message{from = Peer, body = Body} = Msg =
 		  recv_message(Config),
-	      #mam_archived{by = BareMyJID} =
+	      #mam_archived{by = BareMyJID, id = ID} =
 		  xmpp:get_subtag(Msg, #mam_archived{}),
 	      #stanza_id{by = BareMyJID} =
-		  xmpp:get_subtag(Msg, #stanza_id{})
-      end, [0 | Range]).
+		  xmpp:get_subtag(Msg, #stanza_id{}),
+              [ID | IDs]
+      end, [], [0 | Range]).
 
 recv_archived_messages(Config, From, To, QID, Range) ->
     MyJID = my_jid(Config),
@@ -607,6 +678,80 @@ query_with(Config, From, To, NS) ->
 	      RSM = recv_fin(Config, ID, QID, NS, true),
 	      match_rsm_count(RSM, 5)
       end, [Peer, BarePeer]).
+
+query_by_ids(Config, From, To, IDs) ->
+    %% IDs is reversed, last is retracted
+    query_with_cfg(Config, From, To, [{ids, lists:reverse(lists:droplast(IDs))}], lists:seq(1,5)),
+
+    query_with_cfg(Config, From, To, [{'before-id', hd(IDs)}], lists:seq(1, 4)),
+    query_with_cfg(Config, From, To, [{'after-id', hd(IDs)}], []),
+
+    query_with_cfg(Config, From, To, [{'after-id', lists:last(lists:droplast(IDs))}], lists:seq(2, 5)),
+    query_with_cfg(Config, From, To, [{'before-id',lists:last(lists:droplast(IDs))}], []),
+
+    ct:comment("Testing querying for bad ids"),
+    test_bad_id(Config, lists:last(IDs)),
+    test_bad_id(Config, <<"1234">>),
+    test_bad_id(Config, <<"; DROP TABLE archive">>),
+    %% one foul egg is enough
+    #iq{type = error, sub_els = SubEls1} =
+        send_mam2_query_iq(Config, mam_query:encode([{ids, lists:reverse(lists:droplast(IDs))},
+                                                     {'before-id', lists:last(IDs)}])),
+    ?has_stanza(SubEls1, #stanza_error{type = cancel, reason = 'item-not-found'}).
+
+query_with_cfg(Config, From, To, Cfg, Range) ->
+    ct:comment("Querying with cfg ~p", [Cfg]),
+    QID = p1_rand:get_string(),
+    Fs = mam_query:encode(Cfg),
+    Query = #mam_query{xmlns = ?NS_MAM_2, id = QID,
+                       xdata = #xdata{type = submit,
+                                      fields = Fs}},
+    ID = send_query(Config, Query),
+    recv_archived_messages(Config, From, To, QID, Range),
+    RSM = recv_fin(Config, ID, QID, ?NS_MAM_2, true),
+    match_rsm_count(RSM, length(Range)).
+
+
+test_bad_id(Config, BadID) ->
+    #iq{type = error, sub_els = SubEls1} =
+        send_mam2_query_iq(Config, mam_query:encode([{ids, [BadID]}])),
+    ?has_stanza(SubEls1, #stanza_error{type = cancel, reason = 'item-not-found'}),
+    #iq{type = error, sub_els = SubEls2} =
+        send_mam2_query_iq(Config, mam_query:encode([{'before-id', BadID}])),
+    ?has_stanza(SubEls2, #stanza_error{type = cancel, reason = 'item-not-found'}),
+    #iq{type = error, sub_els = SubEls3} =
+        send_mam2_query_iq(Config, mam_query:encode([{'after-id', BadID}])),
+    ?has_stanza(SubEls3, #stanza_error{type = cancel, reason = 'item-not-found'}).
+
+send_mam2_query_iq(Config, Fs) ->
+    QID = p1_rand:get_string(),
+    send_recv(Config,
+              #iq{type = set,
+                  sub_els = [#mam_query{xmlns = ?NS_MAM_2, id = QID,
+                                        xdata = #xdata{type = submit, fields = Fs}}]}).
+
+
+query_metadata(Config, Start, End) ->
+    #iq{type = result,
+        sub_els =
+            [#mam_metadata{start = #mam_metadata_start{id = Start},
+                           'end' = #mam_metadata_end{id = End}}]
+       } = send_recv(Config, #iq{type = get, sub_els = [#mam_metadata{}]}).
+
+query_all_err(Config, From, To) ->
+    lists:foreach(
+      fun(NS) ->
+	      query_all_err(Config, From, To, NS)
+      end, ?VERSIONS).
+
+query_all_err(Config, _From, To, NS) ->
+    QID = p1_rand:get_string(),
+    Type = query_iq_type(NS),
+    #iq{type = error, sub_els = SubEls} =
+        send_recv(Config, #iq{type = Type,
+                              to = To,
+                              sub_els = [#mam_query{xmlns = NS, id = QID}]}),
+    ?has_stanza(SubEls, #stanza_error{type = cancel, reason = 'not-allowed'}).
 
 query_rsm_max(Config, From, To) ->
     lists:foreach(

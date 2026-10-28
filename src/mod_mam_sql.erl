@@ -33,7 +33,8 @@
          additional_namespaces/1,
 	 extended_fields/1, store/10, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
 	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6,
-	 delete_old_messages_batch/4, count_messages_to_delete/3]).
+	 delete_old_messages_batch/4, count_messages_to_delete/3,
+         get_metadata/2]).
 -export([sql_schemas/0]).
 -export([serialize/3, deserialize_start/1, deserialize/2]).
 
@@ -615,11 +616,29 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     End = proplists:get_value('end', MAMQuery),
     With = proplists:get_value(with, MAMQuery),
     WithText = proplists:get_value(withtext, MAMQuery),
+    AfterID = proplists:get_value('after-id', MAMQuery, <<>>),
+    BeforeID = proplists:get_value('before-id', MAMQuery, <<>>),
+    StanzaIDs = proplists:get_value(ids, MAMQuery, []),
     {Max, Direction, ID} = get_max_direction_id(RSM),
     ODBCType = ejabberd_option:sql_type(LServer),
     ToString = fun(S) -> ejabberd_sql:to_string_literal(ODBCType, S) end,
+    AllIDs = [StanzaID || StanzaID <- [AfterID, BeforeID | StanzaIDs], StanzaID =/= <<>>],
+
+    ensure(fun is_valid_stanza_id/1, AllIDs, {error, not_found}),
+    case length(AllIDs) of
+        0 -> ok;
+        AllIDsLen ->
+            IDCheckQuery = [<<"SELECT COUNT(*) FROM archive WHERE timestamp IN (">>, binary_join(AllIDs, <<",">>), <<");">>],
+            {selected, _, [[CountAllIDs]]} = ejabberd_sql:sql_query(LServer, IDCheckQuery),
+            case binary_to_integer(CountAllIDs) of
+                I when I < AllIDsLen ->
+                    throw({error, not_found});
+                I when I == AllIDsLen ->
+                    ok
+            end
+    end,
     LimitClause = if is_integer(Max), Max >= 0, ODBCType /= mssql ->
-			  [<<" limit ">>, integer_to_binary(Max+1)];
+			  [<<" LIMIT ">>, integer_to_binary(Max+1)];
 		     true ->
 			  []
 		  end,
@@ -634,23 +653,33 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 			  []
 		  end,
     WithTextClause = if is_binary(WithText), WithText /= <<>> ->
-			     [<<" and match (txt) against (">>,
+			     [<<" AND MATCH (txt) AGAINST (">>,
 			      ToString(WithText), <<")">>];
 			true ->
 			     []
 		     end,
+    WithIDs =  if
+                   length(StanzaIDs) > 0 ->
+                       StanzaIN =
+                           binary_join(
+                             lists:filter(fun is_valid_stanza_id/1, StanzaIDs),
+                             <<",">>),
+                       [<<" AND timestamp IN (">>, StanzaIN, <<")">>];
+                   true ->
+                       []
+               end,
     WithClause = case catch jid:tolower(With) of
 		     {_, _, <<>>} ->
-			 [<<" and bare_peer=">>,
+			 [<<" AND bare_peer=">>,
 			  ToString(jid:encode(With))];
 		     {_, _, _} ->
-			 [<<" and peer=">>,
+			 [<<" AND peer=">>,
 			  ToString(jid:encode(With))];
 		     _ ->
 			 []
 		 end,
-    PageClause = case catch binary_to_integer(ID) of
-		     I when is_integer(I), I >= 0 ->
+    PageClause = case is_valid_stanza_id(ID) of
+		     true ->
 			 case Direction of
 			     before ->
 				 [<<" AND timestamp < ">>, ID];
@@ -664,18 +693,30 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 		 end,
     StartClause = case Start of
 		      {_, _, _} ->
-			  [<<" and timestamp >= ">>,
+			  [<<" AND timestamp >= ">>,
 			   integer_to_binary(misc:now_to_usec(Start))];
 		      _ ->
 			  []
 		  end,
     EndClause = case End of
 		    {_, _, _} ->
-			[<<" and timestamp <= ">>,
+			[<<" AND timestamp <= ">>,
 			 integer_to_binary(misc:now_to_usec(End))];
 		    _ ->
 			[]
 		end,
+    AfterIDClause = case is_valid_stanza_id(AfterID) of
+                        true ->
+                            [<<" AND timestamp > ">>, AfterID];
+                        false ->
+                            []
+                    end,
+    BeforeIDClause = case is_valid_stanza_id(BeforeID) of
+                        true ->
+                            [<<" AND timestamp < ">>, BeforeID];
+                        false ->
+                            []
+                    end,
     SUser = ToString(User),
     SServer = ToString(LServer),
 
@@ -710,8 +751,8 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     Query = [<<"SELECT ">>, TopClause, UserSel,
 	     <<" timestamp, xml, peer, kind, nick"
 	       " FROM archive WHERE">>, UserWhere, HostMatch,
-	     WithClause, WithTextClause,
-	     StartClause, EndClause, PageClause],
+	     WithClause, WithTextClause, WithIDs,
+	     StartClause, EndClause, AfterIDClause, BeforeIDClause, PageClause],
 
     QueryPage =
 	case Direction of
@@ -728,8 +769,21 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 	end,
     {QueryPage,
      [<<"SELECT COUNT(*) FROM archive WHERE ">>, UserWhere,
-      HostMatch, WithClause, WithTextClause,
-      StartClause, EndClause, <<";">>]}.
+      HostMatch, WithClause, WithTextClause, WithIDs,
+      StartClause, EndClause, AfterIDClause, BeforeIDClause, <<";">>]}.
+
+is_valid_stanza_id(StanzaID) ->
+    try binary_to_integer(StanzaID) of
+        StanzaInt -> StanzaInt > 0
+    catch
+        error:badarg -> false
+    end.
+
+ensure(F, L, Throw) ->
+    case [I || I <- L, not F(I)] of
+        [] -> ok;
+        _ -> throw(Throw)
+    end.
 
 -spec get_max_direction_id(rsm_set() | undefined) ->
 				  {integer() | undefined,
@@ -917,3 +971,26 @@ deserialize(LServer, Batch) ->
 	    {atomic, _} -> ok;
 	    _ -> {error, io_lib:format("Error when writing archive data", [])}
 	end.
+
+get_metadata(LUser, LServer) ->
+    StartQuery =
+        ?SQL("SELECT @(timestamp)d FROM archive WHERE %(LServer)H AND username = %(LUser)s "
+             "ORDER BY timestamp LIMIT 1;"),
+    {selected, [{StartTS}]} = ejabberd_sql:sql_query(LServer, StartQuery),
+    EndQuery =
+        ?SQL("SELECT @(timestamp)d FROM archive WHERE %(LServer)H AND username = %(LUser)s"
+             " ORDER BY timestamp DESC LIMIT 1;"),
+    {selected, [{EndTS}]} = ejabberd_sql:sql_query(LServer, EndQuery),
+    {{integer_to_binary(StartTS), misc:usec_to_now(StartTS)},
+     {integer_to_binary(EndTS), misc:usec_to_now(EndTS)}}.
+
+-ifdef(OTP_BELOW_28).
+binary_join([], _Separator) -> <<>>;
+binary_join([H | T], Separator) ->
+    lists:foldl(fun(Bin, Res) ->
+                        <<Res/binary, Separator/binary, Bin/binary>>
+                end, H, T).
+-else.
+binary_join(Bins, Separator) ->
+    binary:join(Bins, Separator).
+-endif.
