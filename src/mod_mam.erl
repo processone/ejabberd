@@ -25,7 +25,7 @@
 
 -module(mod_mam).
 
--protocol({xep, 313, '0.6.1', '15.06', "complete", ""}).
+-protocol({xep, 313, '1.1.3', '15.06', "complete", ""}).
 -protocol({xep, 334, '1.0.0', '16.01', "complete", ""}).
 -protocol({xep, 359, '0.7.0', '15.09', "complete", ""}).
 -protocol({xep, 424, '0.4.2', '24.02', "partial", "Tombstones not implemented"}).
