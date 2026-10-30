@@ -451,6 +451,7 @@ try_change_password(Username, Host, PasswordOld,
     of
       {atomic, ok} -> {atomic, ok}
     catch
+      error:{badmatch, {error, Why}} -> {error, Why};
       error:{badmatch, Error} -> {error, Error}
     end.
 
@@ -459,7 +460,7 @@ change_password(Username, Host, PasswordOld,
     account_exists = check_account_exists(Username, Host),
     password_correct = check_password(Username, Host,
 				      PasswordOld),
-    ok = ejabberd_auth:set_password(Username, Host,
+    ok = mod_register:try_set_password(Username, Host,
 				    Password),
     case check_password(Username, Host, Password) of
       password_correct -> {atomic, ok};
