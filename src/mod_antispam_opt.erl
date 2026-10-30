@@ -45,7 +45,7 @@ forward_reports(Opts) when is_map(Opts) ->
 forward_reports(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, forward_reports).
 
--spec forward_reports_to_third_party(gen_mod:opts() | global | binary()) -> [binary()].
+-spec forward_reports_to_third_party(gen_mod:opts() | global | binary()) -> [jid:jid()].
 forward_reports_to_third_party(Opts) when is_map(Opts) ->
     gen_mod:get_opt(forward_reports_to_third_party, Opts);
 forward_reports_to_third_party(Host) ->

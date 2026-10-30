@@ -248,10 +248,14 @@ get_stanzas(_, _, _, #report{stanza_ids = []}) ->
     undefined;
 get_stanzas(Host, FromJID, With, #report{stanza_ids = StanzaIds}) ->
     {Results, _Complete, _Count} =
-        mod_mam:select(Host, FromJID, FromJID,
-                       [{'with', With},
-                        {'ids', [Id || #stanza_id{by = By, id = Id} <- StanzaIds, By == With]}],
-                       undefined, chat, only_messages),
+        mod_mam:select(Host,
+                       FromJID,
+                       FromJID,
+                       [{with, With},
+                        {ids, [Id || #stanza_id{by = By, id = Id} <- StanzaIds, By == With]}],
+                       undefined,
+                       chat,
+                       only_messages),
     [Forwarded || {_BinID, _ID, #forwarded{} = Forwarded} <- Results].
 
 maybe_anonymize(Host, To, ReceivedReport) ->
@@ -327,7 +331,8 @@ report_third_party(Host, ReportJIDs, JID, ReceivedReport) ->
 send_report(Type, Host, To, JID, ReceivedReport) when is_binary(To) ->
     send_report(Type, Host, jid:decode(To), JID, ReceivedReport);
 send_report(Type, Host, ToJID, JID, ReceivedReport) ->
-    ?INFO_MSG("Sending report ~s to ~s", [ReceivedReport#received_report.id, jid:encode(ToJID)]),
+    ?INFO_MSG("Sending report ~s to ~s",
+              [ReceivedReport#received_report.id, jid:encode(ToJID)]),
     Msg = make_report_message(Type, ToJID, JID, ReceivedReport),
     send(Host, ToJID, Msg).
 

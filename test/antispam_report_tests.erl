@@ -84,8 +84,7 @@ report_spam(Config) ->
 %%% Master-slave tests
 %%%===================================================================
 couple_cases() ->
-    {antispam_report_couple, [sequence],
-     [couple_test(report_stanza_id)]}.
+    {antispam_report_couple, [sequence], [couple_test(report_stanza_id)]}.
 
 report_stanza_id_romeo(Config) ->
     wait_for_peer(Config),
@@ -100,8 +99,8 @@ report_stanza_id_julia(Config) ->
     ok = mam_tests:set_default(Config, always),
 
     wait_for_peer(Config),
-    #message{from = Peer,
-             sub_els = [#mam_archived{id = ArchiveId} | _]} = Msg = recv_message(Config),
+    #message{from = Peer, sub_els = [#mam_archived{id = ArchiveId} | _]} =
+        Msg = recv_message(Config),
     ct:pal("julia got message: ~p", [Msg]),
     peer_down = get_event(Config),
 
@@ -109,12 +108,10 @@ report_stanza_id_julia(Config) ->
 
     await(1, {mod_offline, count_offline_messages, [<<"abuse">>, Server]}, 10, 500),
 
-    [#message{sub_els = [ReceivedReport | _]}] = mod_offline:get_offline_els(<<"abuse">>, Server),
-    #received_report{
-        stanzas =
-            [#forwarded{sub_els =
-                            [Message]}]}
-        = xmpp:decode(ReceivedReport),
+    [#message{sub_els = [ReceivedReport | _]}] =
+        mod_offline:get_offline_els(<<"abuse">>, Server),
+    #received_report{stanzas = [#forwarded{sub_els = [Message]}]} =
+        xmpp:decode(ReceivedReport),
     #message{body = [#text{data = <<"make $$ fast!">>}]} = xmpp:decode(Message),
     unblock(Config, Peer),
     ejabberd_auth:remove_user(<<"abuse">>, Server),
@@ -127,7 +124,8 @@ single_test(T) ->
     list_to_atom("antispam_report." ++ atom_to_list(T)).
 
 couple_test(T) ->
-    {list_to_atom("antispam_report_" ++ atom_to_list(T)), [parallel],
+    {list_to_atom("antispam_report_" ++ atom_to_list(T)),
+     [parallel],
      [list_to_atom("antispam_report." ++ atom_to_list(T) ++ "_romeo"),
       list_to_atom("antispam_report." ++ atom_to_list(T) ++ "_julia")]}.
 
@@ -140,9 +138,9 @@ report_spam_iq(JID, ReportOrigin, ThirdParty, StanzaIDs) ->
                                          #report{reason = spam,
                                                  report_origin = ReportOrigin,
                                                  third_party = ThirdParty,
-                                                 stanza_ids = [#stanza_id{by = JID,
-                                                                          id = Id} || Id <- StanzaIDs]
-                                                }}]}]}.
+                                                 stanza_ids =
+                                                     [#stanza_id{by = JID, id = Id}
+                                                      || Id <- StanzaIDs]}}]}]}.
 
 unblock_iq(JID) ->
     #iq{type = set, sub_els = [#unblock{items = [#block_item{jid = JID}]}]}.
@@ -150,7 +148,8 @@ unblock_iq(JID) ->
 do_report(Config, SpamJID, ReportOrigin, ThirdParty) ->
     do_report(Config, SpamJID, ReportOrigin, ThirdParty, []).
 
-do_report(Config, SpamJID, ReportOrigin, ThirdParty, StanzaID) when not is_list(StanzaID) ->
+do_report(Config, SpamJID, ReportOrigin, ThirdParty, StanzaID)
+    when not is_list(StanzaID) ->
     do_report(Config, SpamJID, ReportOrigin, ThirdParty, [StanzaID]);
 do_report(Config, SpamJID, ReportOrigin, ThirdParty, StanzaIDs) ->
     ?match(#iq{type = result},
