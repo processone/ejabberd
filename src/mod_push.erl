@@ -451,7 +451,9 @@ should_notify_for_queued_message(#message{} = Pkt) ->
 	    is_incoming_chat_msg(Pkt);
 	true ->
 	    false
-    end.
+    end;
+should_notify_for_queued_message(_Pkt) ->
+    false.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{push_enabled := true,
@@ -564,7 +566,9 @@ notify(LServer, PushLJID, Node, XData, Pkt0, Dir, HandleResponse) ->
 		    ejabberd_router:route_iq(IQ, HandleResponse),
 		    case Pkt0 of
 			#message{} ->
-			    xmpp:put_meta(Pkt0, mod_push_notified, true)
+			    xmpp:put_meta(Pkt0, mod_push_notified, true);
+			_ ->
+			    Pkt0
 		    end
 	    end
     end.
