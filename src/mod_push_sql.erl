@@ -73,14 +73,17 @@ store_session(LUser, LServer, NowTS, PushJID, Node, XData) ->
     Service = jid:encode(PushLJID),
     MaxSessions = ejabberd_sm:get_max_user_sessions(LUser, LServer),
     enforce_max_sessions(LUser, LServer, MaxSessions),
-    case ?SQL_UPSERT(LServer, "push_session",
-		     ["!username=%(LUser)s",
-                      "!server_host=%(LServer)s",
-		      "timestamp=%(TS)d",
-		      "!service=%(Service)s",
-		      "!node=%(Node)s",
-		      "xml=%(XML)s"]) of
-	ok ->
+    F = fun() ->
+		?SQL_UPSERT_T("push_session",
+			      ["!username=%(LUser)s",
+			       "!server_host=%(LServer)s",
+			       "timestamp=%(TS)d",
+			       "!service=%(Service)s",
+			       "!node=%(Node)s",
+			       "xml=%(XML)s"])
+	end,
+    case ejabberd_sql:sql_transaction(LServer, F) of
+	{atomic, ok} ->
 	    {ok, {NowTS, PushLJID, Node, XData}};
 	_Err ->
 	    {error, db_failure}
