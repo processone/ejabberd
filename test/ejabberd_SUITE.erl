@@ -558,6 +558,7 @@ component_tests() ->
        test_component_send,
        test_component_privilege,
        test_component_privilege_vhosts,
+       test_component_privilege_result,
        bad_nonza,
        codec_failure]}].
 
@@ -895,6 +896,18 @@ test_component_privilege_vhosts(Config) ->
     gen_mod:stop_module(Server, mod_privilege),
     ejabberd_config:set_option({modules, Server}, Modules),
     Loaded andalso gen_mod:start_module(Server, mod_privilege),
+    disconnect(Config).
+
+test_component_privilege_result(Config) ->
+    %% A component's answer to an IQ from the server, a result without a
+    %% payload (a push service's to mod_push), is routed as it is: it is
+    %% not a privileged IQ, which only a get or a set can be
+    From = server_jid(Config),
+    To = jid:make(?COMMON_VHOST),
+    IQ = #iq{type = result, id = p1_rand:get_string(), from = From, to = To},
+    {IQ, state} = mod_privilege:component_send_packet({IQ, state}),
+    Err = IQ#iq{type = error, sub_els = [xmpp:err_service_unavailable()]},
+    {Err, state} = mod_privilege:component_send_packet({Err, state}),
     disconnect(Config).
 
 s2s_dialback(Config) ->

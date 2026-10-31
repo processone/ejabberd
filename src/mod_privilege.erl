@@ -268,7 +268,7 @@ component_send_packet({#iq{from = From,
                            type = Type} =
                            IQ,
                        State})
-    when Type /= error ->
+    when Type == get; Type == set ->
     Host = From#jid.lserver,
     ServerHost = To#jid.lserver,
     Permissions = get_permissions(ServerHost),
