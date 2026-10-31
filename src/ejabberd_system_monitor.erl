@@ -58,7 +58,6 @@
 %%%===================================================================
 -spec start() -> ok.
 start() ->
-    gen_event:add_handler(alarm_handler, ?MODULE, []),
     gen_event:swap_handler(alarm_handler, {alarm_handler, swap}, {?MODULE, []}),
     application:load(os_mon),
     application:set_env(os_mon, start_cpu_sup, false),
@@ -82,9 +81,7 @@ config_reloaded() ->
 %%%===================================================================
 %%% gen_event callbacks
 %%%===================================================================
-init({[], _}) -> % Called by gen_event:swap_handler
-    {ok, #state{}};
-init([]) -> % Called by gen_event:add_handler
+init({[], _}) ->
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     {ok, #state{}}.
 
