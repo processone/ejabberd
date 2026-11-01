@@ -433,8 +433,14 @@ c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue,
 	    case find_unacked_stanza(mod_push_opt:notify_on(LServer), Queue) of
 		{new, Pkt} ->
 		    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
-		    notify(State, Pkt, get_direction(Pkt)),
-		    State;
+		    case is_notified(notify(State, Pkt, get_direction(Pkt))) of
+			true ->
+			    State#{mgmt_queue =>
+				       mod_stream_mgmt:queue_map(
+					 fun mark_notified/1, Queue)};
+			false ->
+			    State
+		    end;
 		notified ->
 		    ?DEBUG("Notifying client of unacknowledged stanza(s) "
 			   "again, without summary", []),
@@ -474,6 +480,12 @@ find_unacked_stanza(NotifyOn, Queue) ->
 -spec is_notified(stanza()) -> boolean().
 is_notified(Pkt) ->
     xmpp:get_meta(Pkt, mod_push_notified, false).
+
+-spec mark_notified(Pkt) -> Pkt when Pkt :: xmpp_element() | xmlel() | none.
+mark_notified(Pkt) when ?is_stanza(Pkt) ->
+    xmpp:put_meta(Pkt, mod_push_notified, true);
+mark_notified(Pkt) ->
+    Pkt.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{push_enabled := true,
@@ -584,11 +596,7 @@ notify(LServer, PushLJID, Node, XData, Pkt0, Dir, HandleResponse) ->
 		IQ ->
 		    ?DEBUG("Sending notification: ~n~ts", [xmpp:pp(IQ)]),
 		    ejabberd_router:route_iq(IQ, HandleResponse),
-		    if ?is_stanza(Pkt0) ->
-			    xmpp:put_meta(Pkt0, mod_push_notified, true);
-		       true ->
-			    Pkt0
-		    end
+		    mark_notified(Pkt0)
 	    end
     end.
 
