@@ -2110,8 +2110,12 @@ get_room_options(Name, Service) ->
     end.
 
 get_room_options(Pid) ->
-    Config = get_room_config(Pid),
-    get_options(Config).
+    case mod_muc_room:get_config(Pid) of
+	{ok, Config} ->
+	    get_options(Config);
+	{error, _} ->
+	    []
+    end.
 
 get_options(Config) ->
     Fields = [misc:atom_to_binary(Field) || Field <- record_info(fields, config)],
