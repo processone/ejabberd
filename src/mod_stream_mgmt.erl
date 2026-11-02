@@ -37,7 +37,8 @@
 	 c2s_handle_sasl2_inline/1, c2s_handle_sasl2_inline_post/3,
 	 c2s_handle_bind2_inline/1]).
 %% adjust pending session timeout / access queue
--export([get_resume_timeout/1, set_resume_timeout/2, queue_find/2]).
+-export([get_resume_timeout/1, set_resume_timeout/2, queue_find/2,
+	 queue_map/2]).
 
 %% for sasl2 inline resume
 -export([has_resume_data/2, post_resume_tasks/1]).
@@ -367,6 +368,12 @@ queue_find(Pred, Queue) ->
 	{empty, _Queue1} ->
 	    none
     end.
+
+-spec queue_map(fun((stanza()) -> stanza()), queue()) -> queue().
+queue_map(Fun, Queue) ->
+    Items = p1_queue:to_list(Queue),
+    lists:foldl(fun({N, Time, Pkt}, Q) -> p1_queue:in({N, Time, Fun(Pkt)}, Q) end,
+		p1_queue:clear(Queue), Items).
 
 %%%===================================================================
 %%% Internal functions

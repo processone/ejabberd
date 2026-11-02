@@ -426,16 +426,27 @@ offline_message(Acc) ->
     Acc.
 
 -spec c2s_session_pending(c2s_state()) -> c2s_state().
-c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
+c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue,
+		      lserver := LServer} = State) ->
     case p1_queue:len(Queue) of
 	Len when Len > 0 ->
-	    case mod_stream_mgmt:queue_find(
-		fun should_notify_for_queued_message/1, Queue) of
-		none ->
-		    State;
-		Pkt0 ->
+	    case find_unacked_stanza(mod_push_opt:notify_on(LServer), Queue) of
+		{new, Pkt} ->
 		    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
-		    notify(State, Pkt0, get_direction(Pkt0)),
+		    case is_notified(notify(State, Pkt, get_direction(Pkt))) of
+			true ->
+			    State#{mgmt_queue =>
+				       mod_stream_mgmt:queue_map(
+					 fun mark_notified/1, Queue)};
+			false ->
+			    State
+		    end;
+		notified ->
+		    ?DEBUG("Notifying client of unacknowledged stanza(s) "
+			   "again, without summary", []),
+		    notify(State, none, undefined),
+		    State;
+		none ->
 		    State
 	    end;
 	0 ->
@@ -444,16 +455,37 @@ c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
 c2s_session_pending(State) ->
     State.
 
--spec should_notify_for_queued_message(stanza()) -> boolean().
-should_notify_for_queued_message(#message{} = Pkt) ->
-    case xmpp:get_meta(Pkt, mod_push_notified, false) of
-	false ->
-	    is_incoming_chat_msg(Pkt);
-	true ->
-	    false
-    end;
-should_notify_for_queued_message(_Pkt) ->
-    false.
+-spec find_unacked_stanza(all | messages, p1_queue:queue(term()))
+      -> {new, stanza()} | notified | none.
+find_unacked_stanza(NotifyOn, Queue) ->
+    FindNew = fun(Pred) ->
+		      mod_stream_mgmt:queue_find(
+			fun(Pkt) -> Pred(Pkt) andalso not is_notified(Pkt) end,
+			Queue)
+	      end,
+    case FindNew(fun is_incoming_chat_msg/1) of
+	none when NotifyOn == all ->
+	    case FindNew(fun(_Pkt) -> true end) of
+		none ->
+		    notified;
+		Pkt ->
+		    {new, Pkt}
+	    end;
+	none ->
+	    none;
+	Pkt ->
+	    {new, Pkt}
+    end.
+
+-spec is_notified(stanza()) -> boolean().
+is_notified(Pkt) ->
+    xmpp:get_meta(Pkt, mod_push_notified, false).
+
+-spec mark_notified(Pkt) -> Pkt when Pkt :: xmpp_element() | xmlel() | none.
+mark_notified(Pkt) when ?is_stanza(Pkt) ->
+    xmpp:put_meta(Pkt, mod_push_notified, true);
+mark_notified(Pkt) ->
+    Pkt.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{push_enabled := true,
@@ -564,12 +596,7 @@ notify(LServer, PushLJID, Node, XData, Pkt0, Dir, HandleResponse) ->
 		IQ ->
 		    ?DEBUG("Sending notification: ~n~ts", [xmpp:pp(IQ)]),
 		    ejabberd_router:route_iq(IQ, HandleResponse),
-		    case Pkt0 of
-			#message{} ->
-			    xmpp:put_meta(Pkt0, mod_push_notified, true);
-			_ ->
-			    Pkt0
-		    end
+		    mark_notified(Pkt0)
 	    end
     end.
 
