@@ -39,8 +39,7 @@ jobs:
           rebar: 'rebar'
         - otp: '29'
           rebar: 'rebar'
-    container:
-      image: public.ecr.aws/docker/library/erlang:${{ matrix.otp }}
+    container: erlang:${{ matrix.otp }}
 
     steps:
 
@@ -118,8 +117,7 @@ jobs:
     strategy:
       matrix:
         elixir: ['1.14', '1.19', '1.20']
-    container:
-      image: public.ecr.aws/docker/library/elixir:${{ matrix.elixir }}
+    container: elixir:${{ matrix.elixir }}
 
     steps:
 
@@ -199,8 +197,7 @@ jobs:
     strategy:
       matrix:
         elixir: ['1.14', '1.19', '1.20']
-    container:
-      image: public.ecr.aws/docker/library/elixir:${{ matrix.elixir }}
+    container: elixir:${{ matrix.elixir }}
 
     steps:
 

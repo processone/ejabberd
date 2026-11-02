@@ -375,10 +375,10 @@ AS_CASE([$rebar],
    [AC_MSG_NOTICE([unlocking disabled rebar3 dependencies: $deps])
     $rebar unlock "$deps"])
   deps=""
-  ERLANG_VERSION=m4_esyscmd([erl -noinput -noshell -eval 'erlang:display(list_to_integer(erlang:system_info(otp_release))), halt().'])
-  AS_IF([test "$ERLANG_VERSION" -le "26"], [deps="jose,$deps"])
+  ERLANG_VERSION=`"$ERL" -noinput -eval 'io:put_chars(erlang:system_info(otp_release)), halt().'`
+  AS_IF([test "$ERLANG_VERSION" -lt "26"], [deps="jose,$deps"])
   AS_IF([test "$ERLANG_VERSION" -ge "27"], [deps="jiffy,$deps"])
   AS_IF([test "x$deps" = "x"], [],
-   [AC_MSG_NOTICE([unlocking rebar3 dependencies for old Erlang/OTP: $deps])
+   [AC_MSG_NOTICE([unlocking rebar3 dependencies for Erlang/OTP $ERLANG_VERSION: $deps])
     $rebar unlock "$deps"])
  ])

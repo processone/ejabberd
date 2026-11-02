@@ -25,7 +25,7 @@
 
 -module(mod_mam).
 
--protocol({xep, 313, '0.6.1', '15.06', "complete", ""}).
+-protocol({xep, 313, '1.1.3', '15.06', "complete", ""}).
 -protocol({xep, 334, '1.0.0', '16.01', "complete", ""}).
 -protocol({xep, 359, '0.7.0', '15.09', "complete", ""}).
 -protocol({xep, 424, '0.4.2', '24.02', "partial", "Tombstones not implemented"}).
@@ -114,6 +114,8 @@
 				    all | chat | groupchat,
 				    pos_integer(), any()) ->
     {ok, any(), non_neg_integer()} | {error, term()}.
+-callback get_metadata(LUser :: binary(), LServer :: binary()) -> {Start :: {binary(), erlang:timestamp()},
+                                                                   End :: {binary(), erlang:timestamp()}}.
 
 -optional_callbacks([use_cache/1, cache_nodes/1, select_with_mucsub/6, select/6, select/7,
     delete_old_messages_batch/5, delete_old_messages_batch/4]).
@@ -605,7 +607,7 @@ parse_query(#mam_query{xmlns = ?NS_MAM_TMP,
 parse_query(#mam_query{xdata = #xdata{}} = Query, Lang) ->
     X = xmpp_util:set_xdata_field(
 	  #xdata_field{var = <<"FORM_TYPE">>,
-		       type = hidden, values = [?NS_MAM_1]},
+		       type = hidden, values = [?NS_MAM_2]},
 	  Query#mam_query.xdata),
     {Fields, WithText} = case lists:keytake(<<"{urn:xmpp:fulltext:0}fulltext">>, #xdata_field.var, X#xdata.fields) of
 			     false -> {X#xdata.fields, <<>>};
@@ -635,7 +637,7 @@ disco_local_features(Acc, _From, #jid{lserver = LServer} = _To, <<"">>, _Lang) -
 	       end,
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     AdditionalNamespaces = Mod:additional_namespaces(LServer),
-    Namespaces = [?NS_MESSAGE_RETRACT],
+    Namespaces = [?NS_MESSAGE_RETRACT, ?NS_MAM_2_EXTENDED],
     {result, lists:append([Namespaces, AdditionalNamespaces, Features])};
 disco_local_features(empty, _From, _To, _Node, Lang) ->
     Txt = ?T("No features available"),
@@ -650,8 +652,8 @@ disco_sm_features({result, OtherFeatures},
 		  #jid{luser = U, lserver = S}, <<"">>, _Lang) ->
     Mod = gen_mod:db_mod(S, ?MODULE),
     AdditionalNamespaces = Mod:additional_namespaces(S),
-    Namespaces = [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_SID_0,
-              ?NS_MESSAGE_RETRACT],
+    Namespaces = [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_MAM_2_EXTENDED, ?NS_SID_0,
+                  ?NS_MESSAGE_RETRACT],
     {result, lists:append([Namespaces, AdditionalNamespaces, OtherFeatures])};
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -714,41 +716,47 @@ webadmin_user(Acc, User, Server, R) ->
 %%%
 
 delete_old_messages_batch(Server, Type, Days, BatchSize, Rate) when Type == <<"chat">>;
-								  Type == <<"groupchat">>;
-								  Type == <<"all">> ->
+								    Type == <<"groupchat">>;
+								    Type == <<"all">> ->
     CurrentTime = make_id(),
-    Diff = Days * 24 * 60 * 60 * 1000000,
+    Diff = Days*24*60*60*1000000,
     TimeStamp = misc:usec_to_now(CurrentTime - Diff),
     TypeA = misc:binary_to_existing_atom(Type),
     LServer = jid:nameprep(Server),
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case gen_mod:is_loaded(LServer, ?MODULE) of
+	false ->
+	    {error, "MAM module not enabled"};
+	_ ->
+	    Mod = gen_mod:db_mod(LServer, ?MODULE),
 
-    case ejabberd_batch:register_task({mam, LServer}, 0, Rate, {LServer, TypeA, TimeStamp, BatchSize, none},
-				      fun({L, T, St, B, IS} = S) ->
-					  case {erlang:function_exported(Mod, delete_old_messages_batch, 4),
-						erlang:function_exported(Mod, delete_old_messages_batch, 5)} of
-					      {true, _} ->
-						  case Mod:delete_old_messages_batch(L, St, T, B) of
-						      {ok, Count} ->
-							  {ok, S, Count, undefined};
-						      {error, _} = E ->
-							  E
-						  end;
-					      {_, true} ->
-						  case Mod:delete_old_messages_batch(L, St, T, B, IS) of
-						      {ok, IS2, Count} ->
-							  {ok, {L, St, T, B, IS2}, Count, undefined};
-						      {error, _} = E ->
-							  E
-						  end;
-					      _ ->
-						  {error, not_implemented_for_backend}
-					  end
-				      end) of
-	ok ->
-	    {ok, ""};
-	{error, in_progress} ->
-	    {error, "Operation in progress"}
+	    Job = fun({L, T, St, B, IS} = S) ->
+		    case {erlang:function_exported(Mod, delete_old_messages_batch, 4),
+			  erlang:function_exported(Mod, delete_old_messages_batch, 5)} of
+			{true, _} ->
+			    case Mod:delete_old_messages_batch(L, St, T, B) of
+				{ok, Count} ->
+				    {ok, S, Count, undefined};
+				{error, _} = E ->
+				    E
+			    end;
+			{_, true} ->
+			    case Mod:delete_old_messages_batch(L, St, T, B, IS) of
+				{ok, IS2, Count} ->
+				    {ok, {L, St, T, B, IS2}, Count, undefined};
+				{error, _} = E ->
+				    E
+			    end;
+			_ ->
+			    {error, not_implemented_for_backend}
+		    end
+		end,
+	    case ejabberd_batch:register_task({mam, LServer}, 0, Rate, {LServer, TypeA, TimeStamp, BatchSize, none},
+	                                      Job) of
+		ok ->
+		    {ok, ""};
+		{error, in_progress} ->
+		    {error, "Operation in progress"}
+	    end
     end.
 delete_old_messages_status(Server) ->
     LServer = jid:nameprep(Server),
@@ -785,13 +793,17 @@ delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
     TimeStamp = misc:usec_to_now(CurrentTime - Diff),
     Type = misc:binary_to_existing_atom(TypeBin),
     DBTypes = lists:usort(
-		lists:map(
-		  fun(Host) ->
-			  case mod_mam_opt:db_type(Host) of
-			      sql -> {sql, Host};
-			      Other -> {Other, global}
-			  end
-		  end, ejabberd_option:hosts())),
+	lists:filtermap(
+	    fun(Host) ->
+		case gen_mod:is_loaded(Host, ?MODULE) of
+		    false -> false;
+		    _ ->
+			case mod_mam_opt:db_type(Host) of
+			    sql -> {true, {sql, Host}};
+			    Other -> {true, {Other, global}}
+			end
+		end
+	    end, ejabberd_option:hosts())),
     Results = lists:map(
 		fun({DBType, ServerHost}) ->
 			Mod = gen_mod:db_mod(DBType, ?MODULE),
@@ -832,9 +844,19 @@ check_create_room(Acc, ServerHost, RoomID, Host) ->
 
 process_iq(LServer, #iq{sub_els = [#mam_query{xmlns = NS}]} = IQ) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    CommonFields = [{with, undefined},
-		    {start, undefined},
-		    {'end', undefined}],
+    CommonFields = case NS of
+                       ?NS_MAM_2 ->
+                           [{with, undefined},
+                            {start, undefined},
+                            {'end', undefined},
+                            {'after-id', <<>>},
+                            {'before-id', <<>>},
+                            {ids, []}];
+                       _ ->
+                           [{with, undefined},
+                            {start, undefined},
+                            {'end', undefined}]
+                   end,
     ExtendedFields = Mod:extended_fields(LServer),
     Fields = mam_query:encode(CommonFields ++ ExtendedFields),
     X = xmpp_util:set_xdata_field(
@@ -842,6 +864,15 @@ process_iq(LServer, #iq{sub_els = [#mam_query{xmlns = NS}]} = IQ) ->
 	  #xdata{type = form, fields = Fields}),
     xmpp:make_iq_result(IQ, #mam_query{xmlns = NS, xdata = X}).
 
+process_iq(#iq{type = get, lang = _Lang,
+               from = #jid{luser = LUser, lserver = LServer},
+               to = #jid{luser = LUser, lserver = LServer},
+	       sub_els = [#mam_metadata{}]} = IQ) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    {{StartID, StartTS}, {EndID, EndTS}} = Mod:get_metadata(LUser, LServer),
+    Res = #mam_metadata{start = #mam_metadata_start{id = StartID, timestamp = StartTS},
+                        'end' = #mam_metadata_end{id = EndID, timestamp = EndTS}},
+    xmpp:make_iq_result(IQ, Res);
 % Preference setting (both v0.2 & v0.3)
 process_iq(#iq{type = set, lang = Lang,
 	       sub_els = [#mam_prefs{default = undefined, xmlns = NS}]} = IQ) ->
@@ -889,32 +920,35 @@ process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
 process_iq(IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed()).
 
-process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
-			sub_els = [SubEl]} = IQ, MsgType) ->
-    Ret = case MsgType of
-	      chat ->
-		  maybe_activate_mam(LUser, LServer);
-	      _ ->
-		  ok
-	  end,
-    case Ret of
-	ok ->
-	    case SubEl of
-		#mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
-		    Txt = ?T("Unsupported <index/> element"),
-		    xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
-		#mam_query{rsm = RSM, flippage = FlipPage, xmlns = NS} ->
-		    case parse_query(SubEl, Lang) of
-			{ok, Query} ->
-			    NewRSM = limit_max(RSM, NS),
-			    select_and_send(LServer, Query, NewRSM, FlipPage, IQ, MsgType);
-			{error, Err} ->
-			    xmpp:make_error(IQ, Err)
-		    end
-	    end;
+process_iq(LServer, #iq{from = #jid{luser = LUser},
+                        to = #jid{luser = LUser},
+                        lang = Lang} = IQ, chat = MsgType) ->
+    case maybe_activate_mam(LUser, LServer) of
+        ok ->
+            process_mam_query(LServer, IQ, MsgType);
 	{error, _} ->
-	     Txt = ?T("Database failure"),
+            Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
+    end;
+process_iq(_LServer, IQ, chat) ->
+    xmpp:make_error(IQ, xmpp:err_not_allowed());
+process_iq(LServer, IQ, MsgType) ->
+    process_mam_query(LServer, IQ, MsgType).
+
+process_mam_query(LServer, #iq{lang = Lang,
+                               sub_els = [SubEl]} = IQ, MsgType) ->
+    case SubEl of
+        #mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
+            Txt = ?T("Unsupported <index/> element"),
+            xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
+        #mam_query{rsm = RSM, flippage = FlipPage, xmlns = NS} ->
+            case parse_query(SubEl, Lang) of
+                {ok, Query} ->
+                    NewRSM = limit_max(RSM, NS),
+                    select_and_send(LServer, Query, NewRSM, FlipPage, IQ, MsgType);
+                {error, Err} ->
+                    xmpp:make_error(IQ, Err)
+            end
     end.
 
 -spec should_archive(message(), binary()) -> boolean().
@@ -1274,9 +1308,9 @@ maybe_activate_mam(LUser, LServer) ->
 select_and_send(LServer, Query, RSM, FlipPage, #iq{from = From, to = To} = IQ, MsgType) ->
     Ret = case MsgType of
 	      chat ->
-		  select(LServer, From, From, Query, RSM, MsgType);
+		  try_select(LServer, From, From, Query, RSM, MsgType);
 	      _ ->
-		  select(LServer, From, To, Query, RSM, MsgType)
+		  try_select(LServer, From, To, Query, RSM, MsgType)
 	  end,
     case Ret of
 	{Msgs, IsComplete, Count} ->
@@ -1286,10 +1320,22 @@ select_and_send(LServer, Query, RSM, FlipPage, #iq{from = From, to = To} = IQ, M
 	                       false -> SortedMsgs
 	                  end,
 	    send(SortedMsgs2, Count, IsComplete, IQ);
+        {error, not_found} ->
+	    Txt = ?T("Item Not Found"),
+	    Err = xmpp:err_item_not_found(Txt, IQ#iq.lang),
+	    xmpp:make_error(IQ, Err);
 	{error, _} ->
 	    Txt = ?T("Database failure"),
 	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
 	    xmpp:make_error(IQ, Err)
+    end.
+
+try_select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
+    try
+        select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType)
+    catch
+        throw:{error, not_found} = Error ->
+            Error
     end.
 
 select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
@@ -1424,10 +1470,10 @@ select_with_mucsub_fallback(LServer, JidRequestor, JidArchive, Query, RSM, Flags
 db_select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType, Flags) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case erlang:function_exported(Mod, select, 7) of
-	true ->
-	    Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType, Flags);
-	_ ->
-	Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType)
+        true ->
+            Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType, Flags);
+        _ ->
+            Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType)
     end.
 
 wrap_as_mucsub(Messages, #jid{lserver = LServer} = Requester) ->

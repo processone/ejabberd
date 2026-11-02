@@ -185,7 +185,7 @@ process_disco_info(#iq{type = get, to = #jid{luser = <<_, _/binary>>} = To,
 	    Identity = #identity{category = <<"conference">>,
 				 type = <<"mix">>},
 	    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
-			?NS_MIX_CORE_0, ?NS_MIX_CORE_1, ?NS_MAM_2],
+			?NS_MIX_CORE_0, ?NS_MIX_CORE_1, ?NS_MAM_2, ?NS_MAM_2_EXTENDED],
 	    xmpp:make_iq_result(
 	      IQ, #disco_info{node = Node,
 			      features = Features,

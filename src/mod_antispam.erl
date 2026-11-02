@@ -64,6 +64,8 @@
 	 reload_spam_filter_files/1,
 	 remove_blocked_domain/2]).
 
+-import(mod_antispam_util, [try_call_by_host/3, for_all_hosts/2, sets_equal/2, format/2]).
+
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
 -include("mod_antispam.hrl").
@@ -83,12 +85,11 @@
 	 rtbl_retry_timer = undefined	:: reference() | undefined,
 	 rtbl_domains_node		:: binary(),
 	 blocked_domains = #{}		:: #{binary() => any()},
-	 allow_domains = #{}	:: #{binary() => false}
+	 allow_domains = #{}		:: #{binary() => false}
 	}).
 
 -type state() :: #state{}.
 
--define(COMMAND_TIMEOUT, timer:seconds(30)).
 -define(DEFAULT_CACHE_SIZE, 10000).
 
 %% @format-begin
@@ -96,19 +97,17 @@
 %%--------------------------------------------------------------------
 %%| gen_mod callbacks
 
--spec start(binary(), gen_mod:opts()) -> ok | {error, any()}.
+-spec start(binary(), gen_mod:opts()) -> {ok, [gen_mod:registration()]}.
 start(Host, Opts) ->
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-        false ->
-            ejabberd_commands:register_commands(?MODULE, get_commands_spec());
-        true ->
-            ok
-    end,
-    gen_mod:start_child(?MODULE, Host, Opts).
+    {ok, _Pid} = gen_mod:start_child(?MODULE, Host, Opts),
+    {ok, _Pid2} = mod_antispam_report:start(Host, Opts),
+    {ok,
+     [{hook, spam_reported, mod_antispam_report, spam_reported, 50},
+      {commands, get_commands_spec()}]}.
 
 -spec prep_stop(binary()) -> ok | {error, any()}.
 prep_stop(Host) ->
-    case try_call_by_host(Host, prepare_stop) of
+    case try_call_by_host(Host, ?MODULE, prepare_stop) of
         ready_to_stop ->
             ok
     end.
@@ -121,6 +120,7 @@ stop(Host) ->
         true ->
             ok
     end,
+    mod_antispam_report:stop(Host),
     gen_mod:stop_child(?MODULE, Host).
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
@@ -136,8 +136,18 @@ depends(_Host, _Opts) ->
 -spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(access_spam) ->
     econf:acl();
+mod_opt_type(allow_domains_file) ->
+    econf:either(
+        econf:enum([none]), econf:file());
 mod_opt_type(cache_size) ->
     econf:pos_int(unlimited);
+mod_opt_type(collect_report_stats) ->
+    econf:bool();
+mod_opt_type(forward_reports) ->
+    econf:bool();
+mod_opt_type(forward_reports_to_third_party) ->
+    econf:list(
+        econf:jid());
 mod_opt_type(rtbl_services) ->
     econf:list(
         econf:either(
@@ -157,21 +167,21 @@ mod_opt_type(spam_jids_file) ->
         econf:enum([none]), econf:file());
 mod_opt_type(spam_urls_file) ->
     econf:either(
-        econf:enum([none]), econf:file());
-mod_opt_type(allow_domains_file) ->
-    econf:either(
         econf:enum([none]), econf:file()).
 
 -spec mod_options(binary()) -> [{rtbl_services, [tuple()]} | {atom(), any()}].
 mod_options(_Host) ->
     [{access_spam, none},
+     {allow_domains_file, none},
      {cache_size, ?DEFAULT_CACHE_SIZE},
+     {collect_report_stats, true},
+     {forward_reports, true},
+     {forward_reports_to_third_party, []},
      {rtbl_services, []},
      {spam_domains_file, none},
      {spam_dump_file, false},
      {spam_jids_file, none},
-     {spam_urls_file, none},
-     {allow_domains_file, none}].
+     {spam_urls_file, none}].
 
 mod_doc() ->
     #{desc =>
@@ -192,6 +202,18 @@ mod_doc() ->
                      "spam messages aren't rejected for that recipient. "
                      "The default value is 'none', which means that all recipients "
                      "are subject to spam filtering verification.")}},
+           {allow_domains_file,
+            #{value => ?T("none | Path"),
+              desc =>
+                  ?T("Path to a file containing a list of "
+                     "domains to remove from list of blocked domains, one per line. "
+                     "If either it is in 'spam_domains_file' or more realistically "
+                     "in a domain sent by a RTBL host (see option 'rtbl_services') "
+                     "then this domain will be ignored and stanzas from there won't be blocked. "
+                     "Use an absolute path, or the '@CONFIG_PATH@' "
+                     "https://docs.ejabberd.im/admin/configuration/file-format/#predefined-keywords[predefined keyword] "
+                     "if the file is available in the configuration directory. "
+                     "The default value is 'none'.")}},
            {cache_size,
             #{value => "pos_integer()",
               desc =>
@@ -202,6 +224,21 @@ mod_doc() ->
                      "Note that separate caches are used for each virtual host, "
                      " and that the caches aren't distributed across cluster nodes. "
                      "The default value is '10000'.")}},
+           {collect_report_stats,
+            #{value => "boolean()",
+              desc =>
+                  ?T("Whether to keep reports locally in cache for stats and analysis. Can be queried"
+                     "by command 'get_report_stats'. Default is 'true'")}},
+           {forward_reports,
+            #{value => "boolean()",
+              desc =>
+                  ?T("Whether to forward spam and abuse reports to the originating server, if "
+                     "allowed by reporter. Default is 'true'")}},
+           {forward_reports_to_third_party,
+            #{value => ?T("[Service]"),
+              desc =>
+                  ?T("List of third-party services to forward spam and abuse reports to, if allowed"
+                     " by reporter. Default is '[]'.")}},
            {rtbl_services,
             #{value => ?T("[Service]"),
               example =>
@@ -263,18 +300,6 @@ mod_doc() ->
                      "Messages containing at least one of the listed URLs are classified as spam. "
                      "Furthermore, the sender's JID will be cached, "
                      "so that future traffic originating from that JID will be classified as spam as well. "
-                     "Use an absolute path, or the '@CONFIG_PATH@' "
-                     "https://docs.ejabberd.im/admin/configuration/file-format/#predefined-keywords[predefined keyword] "
-                     "if the file is available in the configuration directory. "
-                     "The default value is 'none'.")}},
-           {allow_domains_file,
-            #{value => ?T("none | Path"),
-              desc =>
-                  ?T("Path to a file containing a list of "
-                     "domains to remove from list of blocked domains, one per line. "
-                     "If either it is in 'spam_domains_file' or more realistically "
-                     "in a domain sent by a RTBL host (see option 'rtbl_services') "
-                     "then this domain will be ignored and stanzas from there won't be blocked. "
                      "Use an absolute path, or the '@CONFIG_PATH@' "
                      "https://docs.ejabberd.im/admin/configuration/file-format/#predefined-keywords[predefined keyword] "
                      "if the file is available in the configuration directory. "
@@ -354,7 +379,7 @@ handle_call(get_cache, _From, #state{jid_cache = Cache} = State) ->
 handle_call({add_blocked_domain, Domain},
             _From,
             #state{blocked_domains = BlockedDomains} = State) ->
-    BlockedDomains1 = maps:merge(BlockedDomains, #{Domain => true}),
+    BlockedDomains1 = BlockedDomains#{Domain => true},
     Txt = format("~s added to blocked domains", [Domain]),
     {reply, {spam_filter, {ok, Txt}}, State#state{blocked_domains = BlockedDomains1}};
 handle_call({remove_blocked_domain, Domain},
@@ -365,13 +390,11 @@ handle_call({remove_blocked_domain, Domain},
     {reply, {spam_filter, {ok, Txt}}, State#state{blocked_domains = BlockedDomains1}};
 handle_call(get_blocked_domains,
             _From,
-            #state{blocked_domains = BlockedDomains, allow_domains = AllowDomains} =
-                State) ->
+            #state{blocked_domains = BlockedDomains, allow_domains = AllowDomains} = State) ->
     {reply, {blocked_domains, maps:merge(BlockedDomains, AllowDomains)}, State};
 handle_call({is_blocked_domain, Domain},
             _From,
-            #state{blocked_domains = BlockedDomains, allow_domains = AllowDomains} =
-                State) ->
+            #state{blocked_domains = BlockedDomains, allow_domains = AllowDomains} = State) ->
     {reply,
      maps:get(Domain, maps:merge(BlockedDomains, AllowDomains), false) =/= false,
      State};
@@ -616,18 +639,6 @@ get_rtbl_services_option(Opts) when is_map(Opts) ->
             [#rtbl_service{host = Host, node = Node}]
     end.
 
--spec get_spam_filter_hosts() -> [binary()].
-get_spam_filter_hosts() ->
-    [H || H <- ejabberd_option:hosts(), gen_mod:is_loaded(H, ?MODULE)].
-
--spec sets_equal(sets:set(), sets:set()) -> boolean().
-sets_equal(A, B) ->
-    sets:is_subset(A, B) andalso sets:is_subset(B, A).
-
--spec format(io:format(), [term()]) -> binary().
-format(Format, Data) ->
-    iolist_to_binary(io_lib:format(Format, Data)).
-
 %%--------------------------------------------------------------------
 %%| Caching
 
@@ -760,47 +771,11 @@ get_commands_spec() ->
                         args = [{host, binary}, {domain, binary}],
                         result = {res, restuple}}].
 
-for_all_hosts(F, A) ->
-    try lists:map(fun(Host) -> apply(F, [Host | A]) end, get_spam_filter_hosts()) of
-        List ->
-            case lists:filter(fun ({error, _}) ->
-                                      true;
-                                  (_) ->
-                                      false
-                              end,
-                              List)
-            of
-                [] ->
-                    hd(List);
-                Errors ->
-                    hd(Errors)
-            end
-    catch
-        error:{badmatch, {error, _Reason} = Error} ->
-            Error
-    end.
-
-try_call_by_host(Host, Call) ->
-    LServer = jid:nameprep(Host),
-    try Proc = gen_mod:get_module_proc_check(LServer, ?MODULE),
-        gen_server:call(Proc, Call, ?COMMAND_TIMEOUT)
-    of
-        Result ->
-            Result
-    catch
-        error:badarg ->
-            {error, "Not configured for " ++ binary_to_list(Host)};
-        exit:{noproc, _} ->
-            {error, "Not configured for " ++ binary_to_list(Host)};
-        exit:{timeout, _} ->
-            {error, "Timeout while querying ejabberd"}
-    end.
-
 -spec reload_spam_filter_files(binary()) -> ok | {error, string()}.
 reload_spam_filter_files(<<"global">>) ->
     for_all_hosts(fun reload_spam_filter_files/1, []);
 reload_spam_filter_files(Host) ->
-    case try_call_by_host(Host, reload_spam_files) of
+    case try_call_by_host(Host, ?MODULE, reload_spam_files) of
         {spam_filter, ok} ->
             ok;
         {spam_filter, {error, Txt}} ->
@@ -811,7 +786,7 @@ reload_spam_filter_files(Host) ->
 
 -spec get_blocked_domains(binary()) -> [binary()].
 get_blocked_domains(Host) ->
-    case try_call_by_host(Host, get_blocked_domains) of
+    case try_call_by_host(Host, ?MODULE, get_blocked_domains) of
         {blocked_domains, BlockedDomains} ->
             maps:keys(
                 maps:filter(fun (_, false) ->
@@ -828,7 +803,7 @@ get_blocked_domains(Host) ->
 add_blocked_domain(<<"global">>, Domain) ->
     for_all_hosts(fun add_blocked_domain/2, [Domain]);
 add_blocked_domain(Host, Domain) ->
-    case try_call_by_host(Host, {add_blocked_domain, Domain}) of
+    case try_call_by_host(Host, ?MODULE, {add_blocked_domain, Domain}) of
         {spam_filter, {Status, Txt}} ->
             {Status, binary_to_list(Txt)};
         {error, _R} = Error ->
@@ -839,7 +814,7 @@ add_blocked_domain(Host, Domain) ->
 remove_blocked_domain(<<"global">>, Domain) ->
     for_all_hosts(fun remove_blocked_domain/2, [Domain]);
 remove_blocked_domain(Host, Domain) ->
-    case try_call_by_host(Host, {remove_blocked_domain, Domain}) of
+    case try_call_by_host(Host, ?MODULE, {remove_blocked_domain, Domain}) of
         {spam_filter, {Status, Txt}} ->
             {Status, binary_to_list(Txt)};
         {error, _R} = Error ->
@@ -848,7 +823,7 @@ remove_blocked_domain(Host, Domain) ->
 
 -spec get_spam_filter_cache(binary()) -> [{binary(), integer()}] | {error, string()}.
 get_spam_filter_cache(Host) ->
-    case try_call_by_host(Host, get_cache) of
+    case try_call_by_host(Host, ?MODULE, get_cache) of
         {spam_filter, Cache} ->
             [{jid:encode(JID), TS + erlang:time_offset(second)} || {JID, TS} <- Cache];
         {error, _R} = Error ->
@@ -859,7 +834,7 @@ get_spam_filter_cache(Host) ->
 expire_spam_filter_cache(<<"global">>, Age) ->
     for_all_hosts(fun expire_spam_filter_cache/2, [Age]);
 expire_spam_filter_cache(Host, Age) ->
-    case try_call_by_host(Host, {expire_cache, Age}) of
+    case try_call_by_host(Host, ?MODULE, {expire_cache, Age}) of
         {spam_filter, {Status, Txt}} ->
             {Status, binary_to_list(Txt)};
         {error, _R} = Error ->
@@ -876,7 +851,7 @@ add_to_spam_filter_cache(Host, EncJID) ->
             LJID =
                 jid:remove_resource(
                     jid:tolower(JID)),
-            case try_call_by_host(Host, {add_to_cache, LJID}) of
+            case try_call_by_host(Host, ?MODULE, {add_to_cache, LJID}) of
                 {spam_filter, {Status, Txt}} ->
                     {Status, binary_to_list(Txt)};
                 {error, _R} = Error ->
@@ -896,7 +871,7 @@ drop_from_spam_filter_cache(Host, EncJID) ->
             LJID =
                 jid:remove_resource(
                     jid:tolower(JID)),
-            case try_call_by_host(Host, {drop_from_cache, LJID}) of
+            case try_call_by_host(Host, ?MODULE, {drop_from_cache, LJID}) of
                 {spam_filter, {Status, Txt}} ->
                     {Status, binary_to_list(Txt)};
                 {error, _R} = Error ->
@@ -906,7 +881,5 @@ drop_from_spam_filter_cache(Host, EncJID) ->
         _:{bad_jid, _} ->
             {error, "Not a valid JID: " ++ binary_to_list(EncJID)}
     end.
-
-%%--------------------------------------------------------------------
 
 %%| vim: set foldmethod=marker foldmarker=%%|,%%-:

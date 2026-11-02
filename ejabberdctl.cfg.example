@@ -15,14 +15,14 @@
 #.
 #' ERL_MAX_PORTS: Maximum number of simultaneously open Erlang ports
 #
-# ejabberd consumes two or three ports for every connection, either
-# from a client or from another XMPP server. So take this into
-# account when setting this limit.
+# ejabberd consumes one port per connection, e.g., from a client or from/to
+# another XMPP server.  Make sure the file descriptor limit (e.g., LimitNOFILE
+# in ejabberd.service) is at least as high.
 #
 # Default: 65536 (or 8196 on Windows)
 # Maximum: 268435456
 #
-#ERL_MAX_PORTS=65536
+#ERL_MAX_PORTS=131072
 
 #.
 #' INET_DIST_INTERFACE: IP address where this Erlang node listens other nodes

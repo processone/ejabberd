@@ -665,7 +665,7 @@ route_to_room(Packet, ServerHost) ->
 				false ->
 				    Lang = xmpp:get_lang(Packet),
 				    ErrText = ?T("Room creation is denied by service policy"),
-				    Err = xmpp:err_forbidden(ErrText, Lang),
+				    Err = xmpp:err_not_allowed(ErrText, Lang),
 				    ejabberd_router:route_error(Packet, Err)
 			    end;
 			{error, notfound} ->
@@ -745,7 +745,7 @@ process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
     X = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
 				[ServerHost, ?MODULE, <<"">>, Lang]),
     MAMFeatures = case gen_mod:is_loaded(ServerHost, mod_mam) of
-		      true -> [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2];
+		      true -> [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_MAM_2_EXTENDED];
 		      false -> []
 		  end,
     RSMFeatures = case RMod:rsm_supported() of

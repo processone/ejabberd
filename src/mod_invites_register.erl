@@ -284,6 +284,8 @@ to_xmpp_error(db_failure = Why, Lang) ->
 to_xmpp_error(conflict, Lang) ->
     xmpp:err_conflict(
         mod_register:format_error(not_allowed), Lang);
+to_xmpp_error(#stanza_error{} = Err, _Lang) ->
+    Err;
 to_xmpp_error(Unexpected, Lang) ->
     xmpp:err_internal_server_error(
         mod_register:format_error(Unexpected), Lang).

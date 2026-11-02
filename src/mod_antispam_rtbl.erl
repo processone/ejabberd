@@ -136,7 +136,6 @@ pubsub_event_handler(#message{from = FromJid,
             ParsedItems = parse_pubsub_event(Msg),
             Proc = gen_mod:get_module_proc_check(LServer, ?SERVICE_MODULE),
             gen_server:cast(Proc, {update_blocked_domains, ParsedItems}),
-            %% FIXME what's the difference between `{drop, ...}` and `{stop, {drop, ...}}`?
             drop;
         _Other ->
             ?INFO_MSG("Got unexpected message from ~s to rtbl resource:~n~p", [From, Msg]),

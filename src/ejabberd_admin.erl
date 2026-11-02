@@ -1093,45 +1093,58 @@ export_db_ext(Host, Dir, Mods, <<"dbser">>) ->
 
 delete_expired_messages() ->
     lists:foreach(
-      fun(Host) ->
-              {atomic, ok} = mod_offline:remove_expired_messages(Host)
-      end, ejabberd_option:hosts()).
+	fun(Host) ->
+	    case gen_mod:is_loaded(Host, mod_offline) of
+		true ->
+		    {atomic, ok} = mod_offline:remove_expired_messages(Host);
+		_ -> ok
+	    end
+	end, ejabberd_option:hosts()).
 
 delete_old_messages(Days) ->
     lists:foreach(
-      fun(Host) ->
-              {atomic, _} = mod_offline:remove_old_messages(Days, Host)
-      end, ejabberd_option:hosts()).
+	fun(Host) ->
+	    case gen_mod:is_loaded(Host, mod_offline) of
+		true ->
+		    {atomic, _} = mod_offline:remove_old_messages(Days, Host);
+		_ -> ok
+	    end
+	end, ejabberd_option:hosts()).
 
 delete_old_messages_batch(Server, Days, BatchSize, Rate) ->
     LServer = jid:nameprep(Server),
-    Mod = gen_mod:db_mod(LServer, mod_offline),
-    case ejabberd_batch:register_task({spool, LServer}, 0, Rate, {LServer, Days, BatchSize, none},
-				      fun({L, Da, B, IS} = S) ->
-					  case {erlang:function_exported(Mod, remove_old_messages_batch, 3),
-						erlang:function_exported(Mod, remove_old_messages_batch, 4)} of
-					      {true, _} ->
-						  case Mod:remove_old_messages_batch(L, Da, B) of
-						      {ok, Count} ->
-							  {ok, S, Count, undefined};
-						      {error, _} = E ->
-							  E
-						  end;
-					      {_, true} ->
-						  case Mod:remove_old_messages_batch(L, Da, B, IS) of
-						      {ok, IS2, Count, undefined} ->
-							  {ok, {L, Da, B, IS2}, Count};
-						      {error, _} = E ->
-							  E
-						  end;
-					      _ ->
-						  {error, not_implemented_for_backend}
-					  end
-				      end) of
-	ok ->
-	    {ok, ""};
-	{error, in_progress} ->
-	    {error, "Operation in progress"}
+    case gen_mod:is_loaded(LServer, mod_offline) of
+	false -> {error, "Offline messages not enabled"};
+	_ ->
+	    Mod = gen_mod:db_mod(LServer, mod_offline),
+	    Job = fun({L, Da, B, IS} = S) ->
+		    case {erlang:function_exported(Mod, remove_old_messages_batch, 3),
+			  erlang:function_exported(Mod, remove_old_messages_batch, 4)} of
+			{true, _} ->
+			    case Mod:remove_old_messages_batch(L, Da, B) of
+				{ok, Count} ->
+				    {ok, S, Count, undefined};
+				{error, _} = E ->
+				    E
+			    end;
+			{_, true} ->
+			    case Mod:remove_old_messages_batch(L, Da, B, IS) of
+				{ok, IS2, Count, undefined} ->
+				    {ok, {L, Da, B, IS2}, Count};
+				{error, _} = E ->
+				    E
+			    end;
+			_ ->
+			    {error, not_implemented_for_backend}
+		    end
+		end,
+	    case ejabberd_batch:register_task({spool, LServer}, 0, Rate, {LServer, Days, BatchSize, none},
+					      Job) of
+		ok ->
+		    {ok, ""};
+		{error, in_progress} ->
+		    {error, "Operation in progress"}
+	    end
     end.
 
 delete_old_messages_status(Server) ->

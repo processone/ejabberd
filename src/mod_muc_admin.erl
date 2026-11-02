@@ -2110,8 +2110,12 @@ get_room_options(Name, Service) ->
     end.
 
 get_room_options(Pid) ->
-    Config = get_room_config(Pid),
-    get_options(Config).
+    case mod_muc_room:get_config(Pid) of
+	{ok, Config} ->
+	    get_options(Config);
+	{error, _} ->
+	    []
+    end.
 
 get_options(Config) ->
     Fields = [misc:atom_to_binary(Field) || Field <- record_info(fields, config)],
@@ -2132,15 +2136,19 @@ get_options(Config) ->
 get_room_affiliations(Name, Service) ->
     case get_room_pid_validate(Name, Service, <<"service">>) of
 	{Pid, _, _} when is_pid(Pid) ->
-	    %% Get the PID of the online room, then request its state
-	    {ok, StateData} = mod_muc_room:get_state(Pid),
-	    Affiliations = maps:to_list(StateData#state.affiliations),
-	    lists:map(
-	      fun({{Uname, Domain, _Res}, {Aff, Reason}}) when is_atom(Aff)->
-		      {Uname, Domain, Aff, Reason};
-		 ({{Uname, Domain, _Res}, Aff}) when is_atom(Aff)->
-		      {Uname, Domain, Aff, <<>>}
-	      end, Affiliations);
+		case mod_muc_room:get_room_affiliations(Pid) of
+			{ok, Affiliations} ->
+			    maps:fold(
+			      fun({Uname, Domain, _Res}, {Aff, Reason}, Acc) when is_atom(Aff)->
+				      [{Uname, Domain, Aff, Reason} | Acc];
+				 ({Uname, Domain, _Res}, Aff, Acc) when is_atom(Aff)->
+				      [{Uname, Domain, Aff, <<>>} | Acc]
+			      end, [], Affiliations);
+			{error, timeout} ->
+			    throw({error, "Database error"});
+			{error, notfound} ->
+			    throw({error, "The room does not exist."})
+		end;
 	{db_failure, _Name, _Host} ->
 	    throw({error, "Database error"});
 	_ ->
@@ -2153,17 +2161,21 @@ get_room_affiliations(Name, Service) ->
 get_room_affiliations_v3(Name, Service) ->
     case get_room_pid_validate(Name, Service, <<"service">>) of
 	{Pid, _, _} when is_pid(Pid) ->
-	    %% Get the PID of the online room, then request its state
-	    {ok, StateData} = mod_muc_room:get_state(Pid),
-	    Affiliations = maps:to_list(StateData#state.affiliations),
-	    lists:map(
-	      fun({{Uname, Domain, _Res}, {Aff, Reason}}) when is_atom(Aff)->
-		      Jid = makeencode(Uname, Domain),
-		      {Jid, Aff, Reason};
-		 ({{Uname, Domain, _Res}, Aff}) when is_atom(Aff)->
-		      Jid = makeencode(Uname, Domain),
-		      {Jid, Aff, <<>>}
-	      end, Affiliations);
+		case mod_muc_room:get_room_affiliations(Pid) of
+			{ok, Affiliations} ->
+			    maps:fold(
+			      fun({Uname, Domain, _Res}, {Aff, Reason}, Acc) when is_atom(Aff)->
+				      Jid = makeencode(Uname, Domain),
+				      [{Jid, Aff, Reason} | Acc];
+				 ({Uname, Domain, _Res}, Aff, Acc) when is_atom(Aff)->
+				      Jid = makeencode(Uname, Domain),
+				      [{Jid, Aff, <<>>} | Acc]
+			      end, [], Affiliations);
+			{error, timeout} ->
+			    throw({error, "Database error"});
+			{error, notfound} ->
+			    throw({error, "The room does not exist."})
+		end;
 	{db_failure, _Name, _Host} ->
 	    throw({error, "Database error"});
 	_ ->
@@ -2201,10 +2213,15 @@ get_room_history(Name, Service) ->
 get_room_affiliation(Name, Service, JID) ->
     case get_room_pid_validate(Name, Service, <<"service">>) of
 	{Pid, _, _} when is_pid(Pid) ->
-	    %% Get the PID of the online room, then request its state
-	    {ok, StateData} = mod_muc_room:get_state(Pid),
 	    UserJID = jid:decode(JID),
-	    mod_muc_room:get_affiliation(UserJID, StateData);
+		case mod_muc_room:get_room_affiliation(Pid, UserJID) of
+			{ok, Affiliation} ->
+				Affiliation;
+			{error, timeout} ->
+			    throw({error, "Database error"});
+			{error, notfound} ->
+			    throw({error, "The room does not exist."})
+		end;
 	{db_failure, _Name, _Host} ->
 	    throw({error, "Database error"});
 	_ ->
