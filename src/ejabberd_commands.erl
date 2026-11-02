@@ -148,6 +148,28 @@ register_commands(Commands) ->
 
 -spec register_commands(atom(), [ejabberd_commands()]) -> ok.
 
+inherit_command_definition(#ejabberd_commands{name = Name} = Command) ->
+    try get_command_definition(Name) of
+        PreviousDefinition ->
+            Res = lists:zipwith3(fun(NewValue, DefaultValue, PreviousValue) ->
+                                    case NewValue of
+                                        keep_default_dont_inherit ->
+                                            DefaultValue;
+                                        DefaultValue ->
+                                            PreviousValue;
+                                        _ ->
+                                            NewValue
+                                    end
+                                 end,
+                                 erlang:tuple_to_list(Command),
+                                 erlang:tuple_to_list(#ejabberd_commands{}),
+                                 erlang:tuple_to_list(PreviousDefinition)),
+            erlang:list_to_tuple(Res)
+    catch
+        {error, unknown_command} ->
+            Command
+    end.
+
 register_commands(Definer, Commands) ->
     ExistingCommands = list_commands(),
     lists:foreach(
@@ -155,7 +177,8 @@ register_commands(Definer, Commands) ->
               Name = Command#ejabberd_commands.name,
               case lists:keyfind(Name, 1, ExistingCommands) of
                   false ->
-                      mnesia:dirty_write(register_command_prepare(Command, Definer));
+                      Command2 = inherit_command_definition(Command),
+                      mnesia:dirty_write(register_command_prepare(Command2, Definer));
                   _ ->
                       OtherCommandDef = get_command_definition(Name),
                       ?CRITICAL_MSG("Error trying to define a command: another one already exists with the same name:~n Existing: ~p~n New: ~p", [OtherCommandDef, Command])
@@ -187,6 +210,8 @@ register_command_prepare(Command, Definer) ->
         end,
     Command2 =
         case Command of
+            #ejabberd_commands{policy = user, args = [{user, binary}, {host, binary} | _]} ->
+                Command;
             #ejabberd_commands{policy = user,
                                args = Args,
                                args_desc = none,
