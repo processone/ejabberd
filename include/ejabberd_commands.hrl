@@ -72,7 +72,7 @@
         {name                    :: atom(),
          tags = []               :: [atom()] | '_' | '$2',
          desc = ""               :: string() | '_' | '$3',
-         longdesc = ""           :: string() | '_',
+         longdesc = ""           :: string() | '_' | keep_default_dont_inherit,
          version = 0             :: integer(),
          note = ""               :: string(),
          weight = 1              :: integer(),
