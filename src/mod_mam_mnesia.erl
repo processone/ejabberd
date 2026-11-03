@@ -612,7 +612,11 @@ deserialize(LServer, Batch) ->
 get_metadata(LUser, LServer) ->
     Msgs = mnesia:dirty_read(archive_msg, {LUser, LServer}),
     SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
-    Start = hd(SortedMsgs),
-    End = lists:last(SortedMsgs),
-    {{Start#archive_msg.id, Start#archive_msg.timestamp},
-     {End#archive_msg.id, End#archive_msg.timestamp}}.
+    case SortedMsgs of
+        [] -> {error, not_found};
+        _ ->
+            Start = hd(SortedMsgs),
+            End = lists:last(SortedMsgs),
+            {ok, {{Start#archive_msg.id, Start#archive_msg.timestamp},
+            {End#archive_msg.id, End#archive_msg.timestamp}}}
+    end.

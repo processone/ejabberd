@@ -1000,13 +1000,19 @@ get_metadata(LUser, LServer) ->
     StartQuery =
         ?SQL("SELECT @(timestamp)d FROM archive WHERE %(LServer)H AND username = %(LUser)s "
              "ORDER BY timestamp LIMIT 1;"),
-    {selected, [{StartTS}]} = ejabberd_sql:sql_query(LServer, StartQuery),
-    EndQuery =
-        ?SQL("SELECT @(timestamp)d FROM archive WHERE %(LServer)H AND username = %(LUser)s"
-             " ORDER BY timestamp DESC LIMIT 1;"),
-    {selected, [{EndTS}]} = ejabberd_sql:sql_query(LServer, EndQuery),
-    {{integer_to_binary(StartTS), misc:usec_to_now(StartTS)},
-     {integer_to_binary(EndTS), misc:usec_to_now(EndTS)}}.
+    case ejabberd_sql:sql_query(LServer, StartQuery) of
+    	{selected, [{StartTS}]} ->
+		    EndQuery =
+		        ?SQL("SELECT @(timestamp)d FROM archive WHERE %(LServer)H AND username = %(LUser)s"
+		             " ORDER BY timestamp DESC LIMIT 1;"),
+		    {selected, [{EndTS}]} = ejabberd_sql:sql_query(LServer, EndQuery),
+		    {ok, {{integer_to_binary(StartTS), misc:usec_to_now(StartTS)},
+		     {integer_to_binary(EndTS), misc:usec_to_now(EndTS)}}};
+		{selected, []} ->
+			{error, not_found};
+		{error, _} = Err ->
+			Err
+	end.
 
 -ifdef(OTP_BELOW_28).
 binary_join([], _Separator) -> <<>>;

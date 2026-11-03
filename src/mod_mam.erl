@@ -120,8 +120,8 @@
 				    all | chat | groupchat,
 				    pos_integer(), any()) ->
     {ok, any(), non_neg_integer()} | {error, term()}.
--callback get_metadata(LUser :: binary(), LServer :: binary()) -> {Start :: {binary(), erlang:timestamp()},
-                                                                   End :: {binary(), erlang:timestamp()}}.
+-callback get_metadata(LUser :: binary(), LServer :: binary()) ->
+	{ok, {Start :: {binary(), erlang:timestamp()}, End :: {binary(), erlang:timestamp()}}} | {error, term()}.
 
 -optional_callbacks([use_cache/1, cache_nodes/1, select_with_mucsub/6, select/6, select/7,
     delete_old_messages_batch/5, delete_old_messages_batch/4,
@@ -947,9 +947,12 @@ process_iq(#iq{type = get, lang = _Lang,
                to = #jid{luser = LUser, lserver = LServer},
 	       sub_els = [#mam_metadata{}]} = IQ) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    {{StartID, StartTS}, {EndID, EndTS}} = Mod:get_metadata(LUser, LServer),
-    Res = #mam_metadata{start = #mam_metadata_start{id = StartID, timestamp = StartTS},
-                        'end' = #mam_metadata_end{id = EndID, timestamp = EndTS}},
+    Res = case Mod:get_metadata(LUser, LServer) of
+	    {ok, {{StartID, StartTS}, {EndID, EndTS}}} ->
+	    	#mam_metadata{start = #mam_metadata_start{id = StartID, timestamp = StartTS},
+	    		          'end' = #mam_metadata_end{id = EndID, timestamp = EndTS}};
+	    _ -> #mam_metadata{}
+	end,
     xmpp:make_iq_result(IQ, Res);
 % Preference setting (both v0.2 & v0.3)
 process_iq(#iq{type = set, lang = Lang,
