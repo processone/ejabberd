@@ -113,6 +113,10 @@ process_iq(_Host, Module, Function, IQ) ->
 	ignore ->
 	    ok
     catch
+        error:{badmatch, {error, db_failure}}:_StackTrace ->
+            Txt = ?T("Database failure"),
+            Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
+            ejabberd_router:route_error(IQ, Err);
         Class:Reason:StackTrace ->
             ErrorID = misc:strong_alphanum_token(?ERROR_ID_LENGTH),
             ?ERROR_MSG("Failed to process iq: module=~p function=~p error_id=~s~n~ts~n** ~ts",
