@@ -32,6 +32,7 @@
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
          additional_namespaces/1,
 	 extended_fields/1, store/10, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
+	 remove_from_room_archive/5,
 	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6,
 	 delete_old_messages_batch/4, count_messages_to_delete/3,
          get_metadata/2]).
@@ -45,6 +46,8 @@
 -include("ejabberd_sql_pt.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_db_serialize.hrl").
+
+-define(MAX_TIMESTAMP, 9223372036854775807). % Largest SQL bigint
 
 %%%===================================================================
 %%% API
@@ -188,6 +191,27 @@ remove_from_archive(LUser, LServer, StanzaId) ->
 				?SQL("delete from archive where username=%(LUser)s and %(LServer)H and timestamp=%(StanzaId)d")) of
 	{error, Reason} -> {error, Reason};
 	_ -> ok
+    end.
+
+remove_from_room_archive(LServer, LName, LHost, Peer, TimeRange) ->
+    SUser = jid:encode({LName, LHost, <<>>}),
+    {Start, End} = case TimeRange of
+		       none -> {0, ?MAX_TIMESTAMP};
+		       _ -> TimeRange
+		   end,
+    Query = case Peer of
+		none ->
+		    ?SQL("delete from archive where username=%(SUser)s and %(LServer)H"
+			 " and timestamp>=%(Start)d and timestamp<=%(End)d");
+		#jid{} ->
+		    BarePeer = jid:encode(jid:tolower(Peer)),
+		    ?SQL("delete from archive where username=%(SUser)s and %(LServer)H"
+			 " and bare_peer=%(BarePeer)s"
+			 " and timestamp>=%(Start)d and timestamp<=%(End)d")
+	    end,
+    case ejabberd_sql:sql_query(LServer, Query) of
+	{updated, Count} -> {ok, Count};
+	{error, _} = Err -> Err
     end.
 
 count_messages_to_delete(ServerHost, TimeStamp, Type) ->

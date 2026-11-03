@@ -31,7 +31,7 @@
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
          additional_namespaces/1,
 	 extended_fields/1, store/10, write_prefs/4, get_prefs/2, select/6, select/7,
-         remove_from_archive/3,
+         remove_from_archive/3, remove_from_room_archive/5,
 	 is_empty_for_user/2, is_empty_for_room/3, delete_old_messages_batch/5,
          get_metadata/2,
          transform/1]).
@@ -120,6 +120,37 @@ remove_from_archive(US, _LServer, StanzaId) ->
 	{atomic, _} -> ok;
 	{aborted, Reason} -> {error, Reason}
     end.
+
+remove_from_room_archive(_LServer, LName, LHost, Peer, TimeRange) ->
+    BarePeer = case Peer of
+		   none -> none;
+		   #jid{} -> jid:tolower(Peer)
+	       end,
+    F = fun() ->
+		lists:foldl(
+		  fun(#archive_msg{bare_peer = BarePeer1, timestamp = TS} = Msg, N)
+			when BarePeer == none orelse BarePeer == BarePeer1 ->
+			  case in_time_range(TS, TimeRange) of
+			      true ->
+				  mnesia:delete_object(Msg),
+				  N + 1;
+			      false ->
+				  N
+			  end;
+		     (_, N) ->
+			  N
+		  end, 0, mnesia:wread({archive_msg, {LName, LHost}}))
+	end,
+    case mnesia:transaction(F) of
+	{atomic, Count} -> {ok, Count};
+	{aborted, Reason} -> {error, Reason}
+    end.
+
+in_time_range(_TS, none) ->
+    true;
+in_time_range(TS, {Start, End}) ->
+    USec = misc:now_to_usec(TS),
+    USec >= Start andalso USec =< End.
 
 delete_old_messages(global, TimeStamp, Type) ->
     mnesia:change_table_copy_type(archive_msg, node(), disc_copies),

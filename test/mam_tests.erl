@@ -45,7 +45,8 @@ single_cases() ->
      [single_test(feature_enabled),
       single_test(get_set_prefs),
       single_test(get_form),
-      single_test(fake_by)]}.
+      single_test(fake_by),
+      single_test(remove_room)]}.
 
 feature_enabled(Config) ->
     BareMyJID = jid:remove_resource(my_jid(Config)),
@@ -141,6 +142,76 @@ get_form(Config) ->
 	      true = xmpp_util:has_xdata_var(<<"end">>, X)
       end, Range),
     clean(disconnect(Config)).
+
+remove_room(Config) ->
+    Server = ?config(server, Config),
+    Service = <<"conference.", Server/binary>>,
+    Room1 = jid:make(<<"mamremove1">>, Service),
+    Room2 = jid:make(<<"mamremove2">>, Service),
+    Me = jid:encode(jid:remove_resource(my_jid(Config))),
+    Other = <<"other@", Server/binary>>,
+    Now = erlang:system_time(second),
+    lists:foreach(
+      fun(Room) ->
+	      ok = muc_tests:join_new(Config, Room),
+	      [104] = muc_tests:set_config(Config, [{mam, true}], Room)
+      end, [Room1, Room2]),
+    Fill = fun(Room) ->
+		   send_messages_to_room(Config, Room, [1, 2]),
+		   ?match(2, count_room_archive(Config, Room))
+	   end,
+    Removed = fun(N) -> {ok, <<"Removed ", (integer_to_binary(N))/binary,
+			       " messages from MAM archive">>} end,
+    Remove = fun(Name, Args) ->
+		     ejabberd_commands:execute_command2(
+		       Name, [<<"mamremove1">>, Service | Args],
+		       #{caller_module => ejabberd_ctl}, 1000000)
+	     end,
+    R0 = Removed(0),
+    R2 = Removed(2),
+    Fill(Room1),
+    Fill(Room2),
+    ct:comment("Nothing is removed for another user or outside the time range"),
+    ?match(R0, Remove(remove_mam_for_user_in_room, [Other])),
+    ?match(R0, Remove(remove_mam_for_room_with_time_range,
+		      [Now - 3600, Now - 1800])),
+    ?match(R0, Remove(remove_mam_for_user_in_room_with_time_range,
+		      [Me, Now - 3600, Now - 1800])),
+    ?match(R0, Remove(remove_mam_for_user_in_room_with_time_range,
+		      [Other, Now - 60, Now + 60])),
+    ?match(2, count_room_archive(Config, Room1)),
+    ct:comment("Removing matching messages"),
+    ?match(R2, Remove(remove_mam_for_user_in_room_with_time_range,
+		      [Me, Now - 60, Now + 60])),
+    ?match(0, count_room_archive(Config, Room1)),
+    Fill(Room1),
+    ?match(R2, Remove(remove_mam_for_user_in_room, [Me])),
+    ?match(0, count_room_archive(Config, Room1)),
+    Fill(Room1),
+    ?match(R2, Remove(remove_mam_for_room_with_time_range,
+		      [Now - 60, Now + 60])),
+    ?match(0, count_room_archive(Config, Room1)),
+    Fill(Room1),
+    ?match(R2, Remove(remove_mam_for_room, [])),
+    ?match(0, count_room_archive(Config, Room1)),
+    ct:comment("Other room archive is untouched"),
+    ?match(2, count_room_archive(Config, Room2)),
+    ct:comment("Invalid arguments"),
+    ?match({error, <<"Invalid time range">>},
+	   Remove(remove_mam_for_room_with_time_range, [Now, Now - 1])),
+    ?match({error, <<"Unknown MUC service">>},
+	   mod_mam:remove_mam_for_room(<<"mamremove1">>, <<"unknown.", Server/binary>>)),
+    lists:foreach(fun(Room) -> muc_tests:leave(Config, Room) end, [Room1, Room2]),
+    clean(disconnect(Config)).
+
+count_room_archive(Config, Room) ->
+    #iq{type = result,
+	sub_els = [#mam_fin{rsm = #rsm_set{count = Count}}]} =
+	send_recv(Config, #iq{type = set, to = Room,
+			      sub_els = [#mam_query{xmlns = ?NS_MAM_2,
+						    id = p1_rand:get_string(),
+						    rsm = #rsm_set{max = 0}}]}),
+    Count.
 
 %%%===================================================================
 %%% Master-slave tests
@@ -592,7 +663,12 @@ recv_fin(Config, _, QueryID, ?NS_MAM_0 = NS, IsComplete) ->
 
 send_messages_to_room(Config, Range) ->
     MyNick = ?config(master_nick, Config),
-    Room = muc_room_jid(Config),
+    send_messages_to_room(Config, muc_room_jid(Config), MyNick, Range).
+
+send_messages_to_room(Config, Room, Range) ->
+    send_messages_to_room(Config, Room, ?config(nick, Config), Range).
+
+send_messages_to_room(Config, Room, MyNick, Range) ->
     MyNickJID = jid:replace_resource(Room, MyNick),
     lists:foreach(
       fun(N) ->
