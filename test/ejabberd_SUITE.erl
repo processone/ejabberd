@@ -556,6 +556,9 @@ component_tests() ->
        test_missing_to,
        test_invalid_from,
        test_component_send,
+       test_component_privilege,
+       test_component_privilege_vhosts,
+       test_component_privilege_result,
        bad_nonza,
        codec_failure]}].
 
@@ -829,6 +832,82 @@ test_component_send(Config) ->
     #iq{type = result, from = To, to = From} =
 	send_recv(Config, #iq{type = get, to = To, from = From,
 			      sub_els = [#ping{}]}),
+    disconnect(Config).
+
+test_component_privilege(Config) ->
+    Server = ?COMMON_VHOST,
+    Host = jid:make(Server),
+    Upload = jid:make(?UPLOAD_VHOST),
+    User = jid:make(<<"test_privilege">>, Server),
+    From = server_jid(Config),
+    %% Without privileges, plain IQs go to the host and to a service
+    %% that is not a host, as if mod_privilege were not loaded (#4472)
+    #iq{type = result, from = Upload} =
+	send_recv(Config, #iq{type = get, to = Upload, from = From,
+			      sub_els = [#disco_info{}]}),
+    gen_mod:update_module(Server, mod_privilege,
+			  #{iq => [{?NS_PING, [{both, all}]}]}),
+    ejabberd_hooks:run(component_connected, [From#jid.lserver]),
+    ?recv1(#message{from = Host, sub_els = [#privilege{}]}),
+    %% With privileges, plain IQs still go anywhere
+    #iq{type = result, from = Host} =
+	send_recv(Config, #iq{type = get, to = Host, from = From,
+			      sub_els = [#ping{}]}),
+    #iq{type = result, from = Upload} =
+	send_recv(Config, #iq{type = get, to = Upload, from = From,
+			      sub_els = [#disco_info{}]}),
+    %% A privileged IQ in a granted namespace is forwarded
+    #iq{type = result, from = User,
+	sub_els = [#privilege{forwarded = #forwarded{sub_els = [_]}}]} =
+	send_recv(Config, #iq{type = get, to = User, from = From,
+			      sub_els = [#privileged_iq{
+					    iq = #iq{type = get, to = User, from = User,
+						     sub_els = [#ping{}]}}]}),
+    %% A privileged IQ in a namespace not granted is dropped
+    send(Config, #iq{type = get, to = User, from = From,
+		     sub_els = [#privileged_iq{
+				   iq = #iq{type = get, to = User, from = User,
+					    sub_els = [#disco_info{}]}}]}),
+    ID = send(Config, #iq{type = get, to = Host, from = From,
+			  sub_els = [#ping{}]}),
+    ?recv1(#iq{type = result, id = ID, from = Host}),
+    gen_mod:update_module(Server, mod_privilege, #{iq => []}),
+    disconnect(Config).
+
+test_component_privilege_vhosts(Config) ->
+    %% mod_privilege is loaded on a vhost that comes after vhosts
+    %% that do not load it: the component still gets its privileges there
+    Server = ?MNESIA_VHOST,
+    From = server_jid(Config),
+    Modules = ejabberd_option:modules(Server),
+    Opts = #{roster => [{both, none}, {get, none}, {set, none}],
+	     iq => [{?NS_PING, [{both, all}]}],
+	     presence => [{managed_entity, none}, {roster, none}],
+	     message => [{outgoing, none}]},
+    %% The suite's configuration may load mod_privilege everywhere:
+    %% start it here with this vhost's own options
+    Loaded = gen_mod:is_loaded(Server, mod_privilege),
+    Loaded andalso gen_mod:stop_module(Server, mod_privilege),
+    ejabberd_config:set_option({modules, Server},
+			       [{mod_privilege, Opts, 0} | Modules]),
+    {ok, _} = gen_mod:start_module(Server, mod_privilege),
+    ejabberd_hooks:run(component_connected, [From#jid.lserver]),
+    ?recv1(#message{from = #jid{lserver = Server}, sub_els = [#privilege{}]}),
+    gen_mod:stop_module(Server, mod_privilege),
+    ejabberd_config:set_option({modules, Server}, Modules),
+    Loaded andalso gen_mod:start_module(Server, mod_privilege),
+    disconnect(Config).
+
+test_component_privilege_result(Config) ->
+    %% A component's answer to an IQ from the server, a result without a
+    %% payload (a push service's to mod_push), is routed as it is: it is
+    %% not a privileged IQ, which only a get or a set can be
+    From = server_jid(Config),
+    To = jid:make(?COMMON_VHOST),
+    IQ = #iq{type = result, id = p1_rand:get_string(), from = From, to = To},
+    {IQ, state} = mod_privilege:component_send_packet({IQ, state}),
+    Err = IQ#iq{type = error, sub_els = [xmpp:err_service_unavailable()]},
+    {Err, state} = mod_privilege:component_send_packet({Err, state}),
     disconnect(Config).
 
 s2s_dialback(Config) ->

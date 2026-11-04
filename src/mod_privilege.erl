@@ -214,7 +214,8 @@ component_connected(Host) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc_check(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_connected, Host})
-      end, ejabberd_option:hosts()).
+      end, [H || H <- ejabberd_option:hosts(),
+	    gen_mod:is_loaded(H, ?MODULE)]).
 
 -spec component_disconnected(binary(), binary()) -> ok.
 component_disconnected(Host, _Reason) ->
@@ -222,7 +223,8 @@ component_disconnected(Host, _Reason) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc_check(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_disconnected, Host})
-      end, ejabberd_option:hosts()).
+      end, [H || H <- ejabberd_option:hosts(),
+	    gen_mod:is_loaded(H, ?MODULE)]).
 
 %%
 %% Message processing
@@ -266,12 +268,16 @@ component_send_packet({#iq{from = From,
                            type = Type} =
                            IQ,
                        State})
-    when Type /= error ->
+    when Type == get; Type == set ->
     Host = From#jid.lserver,
     ServerHost = To#jid.lserver,
     Permissions = get_permissions(ServerHost),
     Result =
         case {maps:find(Host, Permissions), get_iq_encapsulated_details(IQ)} of
+            {_, {unprivileged_iq}} ->
+                ?DEBUG("Component ~ts sent a not-wrapped IQ stanza, routing it as-is.",
+                       [From#jid.lserver]),
+                IQ;
             {{ok, Access}, {privileged_iq, EncapType, EncapNs, EncapFrom, EncIq}}
                 when (EncapType == Type) and ((EncapFrom == undefined) or (EncapFrom == To)) ->
                 NsPermissions = proplists:get_value(iq, Access, []),
@@ -307,10 +313,6 @@ component_send_packet({#iq{from = From,
                           "IQ stanza and the TO in top-level IQ stanza do not match",
                           []),
                 drop;
-            {_, {unprivileged_iq}} ->
-                ?DEBUG("Component ~ts sent a not-wrapped IQ stanza, routing it as-is.",
-                       [From#jid.lserver]),
-                IQ;
             {_, {error, ErrType, _Err}} ->
                 ?INFO_MSG("IQ not forwarded: Component tried to send not valid IQ stanza: ~p.",
                           [ErrType]),
