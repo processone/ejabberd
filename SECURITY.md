@@ -12,7 +12,7 @@ To ensure the best experience and security, upgrade to the latest version availa
 
 **Preferred Method**: Use GitHub's private vulnerability reporting system by clicking the "Report a Vulnerability" button in the [Security tab of this repository](https://github.com/processone/ejabberd/security). This ensures your report is securely transmitted and tracked.  
 
-**Alternative**: If you cannot use the GitHub system, send an email to **`contact@process-one.net`** with the following details:  
+**Alternative**: If you cannot use the GitHub system, send an email to **`security@process-one.net`** with the following details:  
 
 - A clear description of the vulnerability.  
 - Steps to reproduce the issue.  
