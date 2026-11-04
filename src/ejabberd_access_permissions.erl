@@ -252,46 +252,59 @@ get_definitions(#state{definitions = none} = State) ->
 	    end,
     {State#state{definitions = NDefs}, NDefs}.
 
+%% @format-begin
 -spec matches_definition(definition(), atom(), module(),
 			 atom(), global | binary(), caller_info()) -> boolean().
 matches_definition({_Name, {From, Who, What}}, Cmd, Module, Tag, Host, CallerInfo) ->
-    case What == all orelse lists:member(Cmd, What) of
-	true ->
-	    {Tags, Modules} = lists:partition(fun({tag, _}) -> true; (_) -> false end, From),
-	    case (Modules == [] orelse lists:member(Module, Modules)) andalso
-		 (Tags == [] orelse lists:member({tag, Tag}, Tags)) of
-		true ->
-		    Scope = maps:get(oauth_scope, CallerInfo, none),
-		    lists:any(
-		      fun({access, Access}) when Scope == none ->
-			      acl:match_rule(Host, Access, CallerInfo) == allow;
-			 ({acl, Name} = Acl) when Scope == none, is_atom(Name) ->
-			      acl:match_acl(Host, Acl, CallerInfo);
-			 ({acl, Acl}) when Scope == none ->
-			      acl:match_acl(Host, Acl, CallerInfo);
-			 ({oauth, {Scopes, List}}) when Scope /= none ->
-			      case ejabberd_oauth:scope_in_scope_list(Scope, Scopes) of
-				  true ->
-				      lists:any(
-					fun({access, Access}) ->
-						acl:match_rule(Host, Access, CallerInfo) == allow;
-					   ({acl, Name} = Acl) when is_atom(Name) ->
-						acl:match_acl(Host, Acl, CallerInfo);
-					   ({acl, Acl}) ->
-						acl:match_acl(Host, Acl, CallerInfo)
-					end, List);
-				  _ ->
-				      false
-			      end;
-			 (_) ->
-			      false
-		      end, Who);
-		_ ->
-		    false
-	    end;
-	_ ->
-	    false
+    maybe
+        %% Check WHAT
+        true ?= What == all orelse lists:member(Cmd, What),
+        %% Check FROM
+        {Tags, Modules} =
+            lists:partition(fun ({tag, _}) ->
+                                    true;
+                                (_) ->
+                                    false
+                            end,
+                            From),
+        true ?= Modules == [] orelse lists:member(Module, Modules),
+        true ?= Tags == [] orelse lists:member({tag, Tag}, Tags),
+        %% Check WHO
+        true ?=
+            case maps:get(oauth_scope, CallerInfo, none) of
+                none ->
+                    check_acl_access(Who, Host, CallerInfo);
+                Scope ->
+                    lists:any(fun ({oauth, {Scopes, List}}) when Scope /= none ->
+                                      case ejabberd_oauth:scope_in_scope_list(Scope, Scopes) of
+                                          true ->
+                                              check_acl_access(List, Host, CallerInfo);
+                                          _ ->
+                                              false
+                                      end;
+                                  (_) ->
+                                      false
+                              end,
+                              Who)
+            end,
+        true
+    else
+        _ ->
+            false
     end.
+
+check_acl_access(List, Host, CallerInfo) ->
+    lists:any(fun ({access, Access}) ->
+                      acl:match_rule(Host, Access, CallerInfo) == allow;
+                  ({acl, Name} = Acl) when is_atom(Name) ->
+                      acl:match_acl(Host, Acl, CallerInfo);
+                  ({acl, Acl}) ->
+                      acl:match_acl(Host, Acl, CallerInfo);
+                  (_) ->
+                      false
+              end,
+              List).
+%% @format-end
 
 -spec filter_commands_with_permissions([#ejabberd_commands{}], what(), what()) -> [atom()].
 filter_commands_with_permissions(AllCommands, Add, Del) ->
