@@ -64,8 +64,9 @@
 -type what() :: all | none | [atom() | {tag, atom()}].
 -type who() :: rule() | {oauth, {[binary()], [rule()]}}.
 -type from() :: atom().
--type permission() :: {binary(), {[from()], [who()], {what(), what()}}}.
--type definition() :: {binary(), {[from()], [who()], [atom()] | all}}.
+-type where() :: {binary(), any()}.
+-type permission() :: {binary(), {[from()], [who()], {what(), what()}, [where()]}}.
+-type definition() :: {binary(), {[from()], [who()], [atom()] | all, [where()]}}.
 -type caller_info() :: #{caller_module => module(),
 			 caller_host => global | binary(),
 			 tag => binary() | none,
@@ -77,10 +78,6 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-get_vhost_argument(ArgsFormat, Arguments) ->
-    Args2 = prepare_arguments(ArgsFormat, Arguments),
-    get_vhost_argument(Args2).
 
 prepare_arguments(ArgsFormat, Arguments) ->
     AAzip = zip_arguments(ArgsFormat, Arguments),
@@ -135,22 +132,27 @@ get_vhost_argument([_ | Tail]) ->
 
 -spec can_access(atom(), caller_info(), list(), list()) -> allow | deny.
 can_access(Cmd, CallerInfo, Arguments, ArgsFormat) ->
-    Vhost = get_vhost_argument(ArgsFormat, Arguments),
+    ArgsNameValue = prepare_arguments(ArgsFormat, Arguments),
+    Vhost = get_vhost_argument(ArgsNameValue),
     CallerHost = case Vhost of
                       B when is_binary(B) -> B;
                       global_scope -> global;
                       no_host_argument -> global
                   end,
-    can_access(Cmd, CallerInfo#{caller_host => CallerHost}).
+    can_access(Cmd, CallerInfo#{caller_host => CallerHost}, ArgsNameValue).
 
 -spec can_access(atom(), caller_info()) -> allow | deny.
-can_access(echo, _CallerInfo) ->
-    allow;
-can_access(echo3, _CallerInfo) ->
-    allow;
-can_access(registered_vhosts, #{caller_module := ejabberd_web_admin}) ->
-    allow;
 can_access(Cmd, CallerInfo) ->
+    can_access(Cmd, CallerInfo, []).
+
+-spec can_access(atom(), caller_info(), [where()]) -> allow | deny.
+can_access(echo, _CallerInfo, _ArgsNameValue) ->
+    allow;
+can_access(echo3, _CallerInfo, _ArgsNameValue) ->
+    allow;
+can_access(registered_vhosts, #{caller_module := ejabberd_web_admin}, _ArgsNameValue) ->
+    allow;
+can_access(Cmd, CallerInfo, ArgsNameValue) ->
     Defs0 = show_current_definitions(),
     CallerModule = maps:get(caller_module, CallerInfo, none),
     Host = maps:get(caller_host, CallerInfo, global),
@@ -158,7 +160,7 @@ can_access(Cmd, CallerInfo) ->
     Defs = maps:get(extra_permissions, CallerInfo, []) ++ Defs0,
     Res = lists:foldl(
 	fun({Name, _} = Def, none) ->
-	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo) of
+	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo, ArgsNameValue) of
 		true ->
 		    ?DEBUG("Command '~p' execution allowed by rule "
 			   "'~ts'~n (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
@@ -237,9 +239,9 @@ get_definitions(#state{definitions = none} = State) ->
     ApiPerms = ejabberd_option:api_permissions(),
     AllCommands = ejabberd_commands:get_commands_definition(),
     NDefs0 = lists:map(
-	       fun({Name, {From, Who, {Add, Del}}}) ->
+	       fun({Name, {From, Who, {Add, Del}, Where}}) ->
 		       Cmds = filter_commands_with_permissions(AllCommands, Add, Del),
-		       {Name, {From, Who, Cmds}}
+		       {Name, {From, Who, Cmds, Where}}
 	       end, ApiPerms),
     NDefs = case lists:keyfind(<<"console commands">>, 1, NDefs0) of
 		false ->
@@ -253,9 +255,21 @@ get_definitions(#state{definitions = none} = State) ->
     {State#state{definitions = NDefs}, NDefs}.
 
 %% @format-begin
--spec matches_definition(definition(), atom(), module(),
-			 atom(), global | binary(), caller_info()) -> boolean().
-matches_definition({_Name, {From, Who, What}}, Cmd, Module, Tag, Host, CallerInfo) ->
+-spec matches_definition(definition(),
+                         atom(),
+                         module(),
+                         atom(),
+                         global | binary(),
+                         caller_info(),
+                         [where()]) ->
+                            boolean().
+matches_definition({_Name, {From, Who, What, Where}},
+                   Cmd,
+                   Module,
+                   Tag,
+                   Host,
+                   CallerInfo,
+                   Arguments) ->
     maybe
         %% Check WHAT
         true ?= What == all orelse lists:member(Cmd, What),
@@ -287,6 +301,45 @@ matches_definition({_Name, {From, Who, What}}, Cmd, Module, Tag, Host, CallerInf
                               end,
                               Who)
             end,
+        %% Check WHERE
+        {CallerUser, CallerHost, _CallerResource} =
+            case maps:get(usr, CallerInfo, global) of
+                global ->
+                    {<<"">>, <<"">>, <<"">>};
+                Tuple when is_tuple(Tuple) ->
+                    Tuple
+            end,
+        Where2 =
+            lists:map(fun ({WhereName, <<"$CALLER_USER">>}) ->
+                              {WhereName, CallerUser};
+                          ({WhereName, <<"$CALLER_HOST">>}) ->
+                              {WhereName, CallerHost};
+                          ({WhereName, WhereValue}) ->
+                              {WhereName, WhereValue}
+                      end,
+                      Where),
+        Where3 =
+            lists:map(fun ({[$? | WhereName], WhereValue}) ->
+                              {WhereName, WhereValue, true};
+                          ({WhereName, WhereValue}) ->
+                              {WhereName, WhereValue, false}
+                      end,
+                      Where2),
+        true ?=
+            lists:all(fun({WhereNameString, WhereValue, Optional}) ->
+                         WhereNameAtom = list_to_existing_atom(WhereNameString),
+                         case {proplists:get_value(WhereNameAtom, Arguments, argument_undefined),
+                               Optional}
+                         of
+                             {argument_undefined, true} ->
+                                 true;
+                             {argument_undefined, false} ->
+                                 false;
+                             {ArgumentValue, _} ->
+                                 ArgumentValue == WhereValue
+                         end
+                      end,
+                      Where3),
         true
     else
         _ ->
@@ -455,6 +508,8 @@ validator(what) ->
     econf:and_then(
       econf:list_or_single(econf:non_empty(econf:binary())),
       fun parse_what/1);
+validator(where) ->
+    econf:map(econf:string(), econf:any());
 validator(who) ->
     validator(#{access => econf:acl(), oauth => validator(oauth)}, []);
 validator(oauth) ->
@@ -474,11 +529,13 @@ validator() ->
       econf:and_then(
 	econf:options(
 	  #{from => validator(from),
+	    who => validator(who),
 	    what => validator(what),
-	    who => validator(who)}),
+	    where => validator(where)}),
 	fun(Os) ->
 		{proplists:get_value(from, Os, []),
 		 proplists:get_value(who, Os, none),
-		 proplists:get_value(what, Os, {none, none})}
+		 proplists:get_value(what, Os, {none, none}),
+		 proplists:get_value(where, Os, [])}
 	end),
       [unique]).
