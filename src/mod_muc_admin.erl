@@ -42,7 +42,8 @@
          get_room_occupants_number/2, send_direct_invitation/5,
          change_room_option/4, get_room_options/2,
          set_room_affiliation/4, set_room_affiliation/5, get_room_affiliations/2,
-         get_room_affiliations_v3/2, get_room_affiliation/3,
+         get_room_affiliations_v3/2,
+         get_room_affiliation/3, get_room_affiliation/4,
          subscribe_room/4, subscribe_room/6,
          subscribe_room_many/3, subscribe_room_many_v3/4,
          unsubscribe_room/2, unsubscribe_room/4, get_subscribers/2,
@@ -660,6 +661,12 @@ get_commands_spec() ->
 			args = [{room, binary}, {service, binary}, {jid, binary}],
 		        args_rename = [{name, room}],
 			result = {affiliation, atom}},
+	 #ejabberd_commands{name = get_room_affiliation,
+                            version = 4,
+                            note = "updated in 26.xx",
+                            args = [{room, binary}, {service, binary}, {user, binary}, {host, binary}],
+                            args_desc = ["Room name", "MUC service", "Username", "Hostname"],
+                            args_example = ["room1", "conference.example.com", "user", "example.org"]},
          #ejabberd_commands{name = get_room_history, tags = [muc_room],
 			desc = "Get history of messages stored inside MUC room state",
 			note = "added in 23.04",
@@ -2211,9 +2218,13 @@ get_room_history(Name, Service) ->
 %% @doc Get affiliation of a user in the room Name@Service.
 
 get_room_affiliation(Name, Service, JID) ->
+    Jid = jid:decode(JID),
+    get_room_affiliation(Name, Service, Jid#jid.luser, Jid#jid.lserver).
+
+get_room_affiliation(Name, Service, Username, Userhost) ->
     case get_room_pid_validate(Name, Service, <<"service">>) of
 	{Pid, _, _} when is_pid(Pid) ->
-	    UserJID = jid:decode(JID),
+		UserJID = jid:make(Username, Userhost),
 		case mod_muc_room:get_room_affiliation(Pid, UserJID) of
 			{ok, Affiliation} ->
 				Affiliation;
