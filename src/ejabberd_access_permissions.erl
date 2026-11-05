@@ -33,7 +33,8 @@
 %% API
 -export([start_link/0,
 	 can_access/2,
-	 can_access/4,
+	 can_access/3,
+	 can_access/5,
 	 invalidate/0,
 	 validator/0,
 	 show_current_definitions/0]).
@@ -130,8 +131,8 @@ get_vhost_argument([{host, Host} | _Tail]) ->
 get_vhost_argument([_ | Tail]) ->
     get_vhost_argument(Tail).
 
--spec can_access(atom(), caller_info(), list(), list()) -> allow | deny.
-can_access(Cmd, CallerInfo, Arguments, ArgsFormat) ->
+-spec can_access(atom(), caller_info(), integer(), list(), list()) -> allow | deny.
+can_access(Cmd, CallerInfo, ApiVersion, Arguments, ArgsFormat) ->
     ArgsNameValue = prepare_arguments(ArgsFormat, Arguments),
     Vhost = get_vhost_argument(ArgsNameValue),
     CallerHost = case Vhost of
@@ -139,20 +140,24 @@ can_access(Cmd, CallerInfo, Arguments, ArgsFormat) ->
                       global_scope -> global;
                       no_host_argument -> global
                   end,
-    can_access(Cmd, CallerInfo#{caller_host => CallerHost}, ArgsNameValue).
+    can_access(Cmd, CallerInfo#{caller_host => CallerHost}, ApiVersion, ArgsNameValue).
 
 -spec can_access(atom(), caller_info()) -> allow | deny.
 can_access(Cmd, CallerInfo) ->
-    can_access(Cmd, CallerInfo, []).
+    can_access(Cmd, CallerInfo, ?DEFAULT_API_VERSION, check_where_existence).
 
--spec can_access(atom(), caller_info(), [where()]) -> allow | deny.
-can_access(echo, _CallerInfo, _ArgsNameValue) ->
+-spec can_access(atom(), caller_info(), integer()) -> allow | deny.
+can_access(Cmd, CallerInfo, ApiVersion) ->
+    can_access(Cmd, CallerInfo, ApiVersion, check_where_existence).
+
+-spec can_access(atom(), caller_info(), integer(), [where()] | check_where_existence) -> allow | deny.
+can_access(echo, _CallerInfo, _ApiVersion, _ArgsNameValue) ->
     allow;
-can_access(echo3, _CallerInfo, _ArgsNameValue) ->
+can_access(echo3, _CallerInfo, _ApiVersion, _ArgsNameValue) ->
     allow;
-can_access(registered_vhosts, #{caller_module := ejabberd_web_admin}, _ArgsNameValue) ->
+can_access(registered_vhosts, #{caller_module := ejabberd_web_admin}, _ApiVersion, _ArgsNameValue) ->
     allow;
-can_access(Cmd, CallerInfo, ArgsNameValue) ->
+can_access(Cmd, CallerInfo, ApiVersion, ArgsNameValue) ->
     Defs0 = show_current_definitions(),
     CallerModule = maps:get(caller_module, CallerInfo, none),
     Host = maps:get(caller_host, CallerInfo, global),
@@ -160,7 +165,7 @@ can_access(Cmd, CallerInfo, ArgsNameValue) ->
     Defs = maps:get(extra_permissions, CallerInfo, []) ++ Defs0,
     Res = lists:foldl(
 	fun({Name, _} = Def, none) ->
-	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo, ArgsNameValue) of
+	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo, ArgsNameValue, ApiVersion) of
 		true ->
 		    ?DEBUG("Command '~p' execution allowed by rule "
 			   "'~ts'~n (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
@@ -248,7 +253,8 @@ get_definitions(#state{definitions = none} = State) ->
 		    [{<<"console commands">>,
 		      {[ejabberd_ctl],
 		       [{acl, all}],
-		       filter_commands_with_permissions(AllCommands, all, none)}} | NDefs0];
+		       filter_commands_with_permissions(AllCommands, all, none),
+		       []}} | NDefs0];
 		_ ->
 		    NDefs0
 	    end,
@@ -261,7 +267,8 @@ get_definitions(#state{definitions = none} = State) ->
                          atom(),
                          global | binary(),
                          caller_info(),
-                         [where()]) ->
+                         [where()] | check_where_existence,
+                         integer()) ->
                             boolean().
 matches_definition({_Name, {From, Who, What, Where}},
                    Cmd,
@@ -269,7 +276,8 @@ matches_definition({_Name, {From, Who, What, Where}},
                    Tag,
                    Host,
                    CallerInfo,
-                   Arguments) ->
+                   Arguments,
+                   ApiVersion) ->
     maybe
         %% Check WHAT
         true ?= What == all orelse lists:member(Cmd, What),
@@ -326,20 +334,14 @@ matches_definition({_Name, {From, Who, What, Where}},
                       end,
                       Where2),
         true ?=
-            lists:all(fun({WhereNameString, WhereValue, Optional}) ->
-                         WhereNameAtom = list_to_existing_atom(WhereNameString),
-                         case {proplists:get_value(WhereNameAtom, Arguments, argument_undefined),
-                               Optional}
-                         of
-                             {argument_undefined, true} ->
-                                 true;
-                             {argument_undefined, false} ->
-                                 false;
-                             {ArgumentValue, _} ->
-                                 ArgumentValue == WhereValue
-                         end
-                      end,
-                      Where3),
+            case Arguments of
+                check_where_existence ->
+                    {ArgsFormat, _Rename, _Result} =
+                        ejabberd_commands:get_command_format(Cmd, ApiVersion),
+                    check_where_values(Where3, ArgsFormat, true);
+                _ ->
+                    check_where_values(Where3, Arguments, false)
+            end,
         true
     else
         _ ->
@@ -357,6 +359,27 @@ check_acl_access(List, Host, CallerInfo) ->
                       false
               end,
               List).
+
+check_where_values(Where3, Arguments, OnlyCheckExistence) ->
+    lists:all(fun({WhereNameString, WhereValue, Optional}) ->
+                 WhereNameAtom = list_to_existing_atom(WhereNameString),
+                 case {proplists:get_value(WhereNameAtom, Arguments, argument_undefined), Optional}
+                 of
+                     {argument_undefined, true} ->
+                         true;
+                     {argument_undefined, false} ->
+                         false;
+                     _ when OnlyCheckExistence == true ->
+                         true;
+                     %% "arg" in yaml config is converted to binary,
+                     %% but some arguments may be declared of type string instead of binary
+                     {ArgumentValue, _} when is_list(ArgumentValue) ->
+                         list_to_binary(ArgumentValue) == WhereValue;
+                     {ArgumentValue, _} ->
+                         ArgumentValue == WhereValue
+                 end
+              end,
+              Where3).
 %% @format-end
 
 -spec filter_commands_with_permissions([#ejabberd_commands{}], what(), what()) -> [atom()].

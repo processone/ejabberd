@@ -282,7 +282,7 @@ list_commands(Version) ->
 list_commands(Version, CallerInfo) ->
     lists:filter(
       fun({Name, _Args, _Desc}) ->
-        allow == ejabberd_access_permissions:can_access(Name, CallerInfo)
+        allow == ejabberd_access_permissions:can_access(Name, CallerInfo, Version)
       end,
       list_commands(Version)
     ).
@@ -357,7 +357,7 @@ execute_command2(Name, Arguments, CallerInfo, Version) ->
         maps:get(caller_module, CallerInfo, none) /= ejabberd_web_admin
         andalso lists:member(internal, Command#ejabberd_commands.tags),
     {ArgsFormat, _, _} = get_command_format(Name, Version),
-    case {ejabberd_access_permissions:can_access(Name, CallerInfo, Arguments, ArgsFormat),
+    case {ejabberd_access_permissions:can_access(Name, CallerInfo, Version, Arguments, ArgsFormat),
           FrontedCalledInternal} of
         {allow, false} ->
 	    do_execute_command(Command, Arguments);
