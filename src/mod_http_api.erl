@@ -35,11 +35,10 @@
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
+-include("ejabberd_commands.hrl").
 -include("ejabberd_http.hrl").
 
 -include("translate.hrl").
-
--define(DEFAULT_API_VERSION, 1000000).
 
 -define(CT_PLAIN,
         {<<"Content-Type">>, <<"text/plain">>}).
