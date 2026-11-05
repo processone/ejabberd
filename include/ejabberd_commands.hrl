@@ -18,6 +18,8 @@
 %%%
 %%%----------------------------------------------------------------------
 
+-define(DEFAULT_API_VERSION, 1000000).
+
 -type aterm() :: {atom(), atype()}.
 -type atype() :: integer | string | binary | any | atom |
                  {tuple, [aterm()]} | {list, aterm()}.
@@ -108,4 +110,3 @@
                                                 args_example            :: none | [any()] | '_',
                                                 result_example          :: any()
                                                }.
-

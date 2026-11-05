@@ -46,8 +46,6 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 
--define(DEFAULT_API_VERSION, 1000000).
-
 %%%==================================
 %%%% gen_mod
 
