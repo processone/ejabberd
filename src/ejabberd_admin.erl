@@ -241,7 +241,7 @@ get_commands_spec() ->
 			result_example = {ok, <<"Updated modules: mod_configure, mod_vcard">>},
 			result = {res, restuple}},
 
-     #ejabberd_commands{name = register, tags = [accounts],
+     #ejabberd_commands{name = register, tags = [account],
 			desc = "Register a user",
 			policy = admin,
 			module = ?MODULE, function = register,
@@ -249,7 +249,7 @@ get_commands_spec() ->
 			args_example = [<<"bob">>, <<"example.com">>, <<"SomEPass44">>],
 			args = [{user, binary}, {host, binary}, {password, binary}],
 			result = {res, restuple}},
-     #ejabberd_commands{name = unregister, tags = [accounts],
+     #ejabberd_commands{name = unregister, tags = [account],
 			desc = "Unregister a user",
 			longdesc = "This deletes the authentication and all the "
                         "data associated to the account (roster, vcard...).",
