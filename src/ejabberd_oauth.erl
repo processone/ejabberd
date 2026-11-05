@@ -49,7 +49,8 @@
          verify_resowner_scope/3]).
 
 -export([get_commands_spec/0,
-         oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1,
+         oauth_issue_token/3, oauth_issue_token/4,
+         oauth_list_tokens/0, oauth_revoke_token/1,
          oauth_add_client_password/3,
          oauth_add_client_implicit/3,
          oauth_remove_client/1]).
@@ -107,6 +108,16 @@ get_commands_spec() ->
 				     "List of scopes to allow"],
                         result = {result, {tuple, [{token, string}, {scopes, {list, {scope, string}}}, {expires_in, string}]}}
                        },
+     #ejabberd_commands{name = oauth_issue_token,
+                        version = 4,
+                        note = "updated in 26.xx",
+                        args = [{user, binary}, {host, binary}, {ttl, integer}, {scopes, {list, {scope, binary}}}],
+                        args_example = ["user", "server.com", 3600, ["connected_users_number", "muc_online_rooms"]],
+                        args_desc = ["Username of the JID to issue token",
+                                     "Host for the JID to issue token",
+				     "Time to live of generated token in seconds",
+				     "List of scopes to allow"]
+                       },
      #ejabberd_commands{name = oauth_list_tokens, tags = [oauth],
                         desc = "List OAuth tokens, user, scope, and seconds to expire (only Mnesia)",
                         longdesc = "List  _`oauth.md|OAuth`_ tokens, their user and scope, and how many seconds remain until expiry",
@@ -157,18 +168,21 @@ oauth_issue_token(Jid, TTLSeconds, [Head|_] = ScopesString) when is_integer(Head
 oauth_issue_token(Jid, TTLSeconds, Scopes) ->
     try jid:decode(list_to_binary(Jid)) of
         #jid{luser =Username, lserver = Server} ->
-            Ctx1 = #oauth_ctx{password = admin_generated},
-            case oauth2:authorize_password({Username, Server}, Scopes, Ctx1) of
-                {ok, {_Ctx,Authorization}} ->
-                    {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, [{expiry_time, TTLSeconds}]),
-		    {ok, AccessToken} = oauth2_response:access_token(Response),
-		    {ok, VerifiedScope} = oauth2_response:scope(Response),
-                    {AccessToken, VerifiedScope, integer_to_list(TTLSeconds) ++ " seconds"};
-		{error, Error} ->
-		    {error, Error}
-            end
+            oauth_issue_token(Username, Server, TTLSeconds, Scopes)
     catch _:{bad_jid, _} ->
             {error, "Invalid JID: " ++ Jid}
+    end.
+
+oauth_issue_token(Username, Server, TTLSeconds, Scopes) ->
+    Ctx1 = #oauth_ctx{password = admin_generated},
+    case oauth2:authorize_password({Username, Server}, Scopes, Ctx1) of
+        {ok, {_Ctx,Authorization}} ->
+            {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, [{expiry_time, TTLSeconds}]),
+            {ok, AccessToken} = oauth2_response:access_token(Response),
+            {ok, VerifiedScope} = oauth2_response:scope(Response),
+            {AccessToken, VerifiedScope, integer_to_list(TTLSeconds) ++ " seconds"};
+        {error, Error} ->
+            {error, Error}
     end.
 
 oauth_list_tokens() ->
