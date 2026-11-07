@@ -674,7 +674,10 @@ adhoc_items(Acc, _From, _To, _Lang) ->
 %% ---
 
 -spec adhoc_commands(empty | adhoc_command(), jid(), jid(), adhoc_command()) ->
-                        adhoc_command() | {error, stanza_error()}.
+                        empty |
+                        adhoc_command() |
+                        {stop, adhoc_command()} |
+                        {stop, {error, stanza_error()}}.
 adhoc_commands(_Acc,
                #jid{luser = LUser, lserver = LServer},
                #jid{lserver = LServer},
