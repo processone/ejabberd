@@ -507,7 +507,7 @@ ctx(Invite,
 
 apps_json(Host, Lang, Ctx) ->
     AppsBins = render(Host, Lang, <<"apps.json">>, Ctx),
-    AppsBin = binary_join(AppsBins, <<>>),
+    AppsBin = misc:binary_join(lists:flatten(AppsBins), <<>>),
     AppsMap = misc:json_decode(AppsBin),
     [app_id(App) || App <- AppsMap].
 
@@ -523,7 +523,7 @@ invite_to_proplist(I) ->
 render_url(Tmpl, Vars) ->
     Renderer = tmpl_to_renderer(Tmpl),
     {ok, URL} = Renderer:render(Vars),
-    binary_join(URL, <<>>).
+    misc:binary_join(lists:flatten(URL), <<>>).
 
 render_app_urls(App = #{<<"supports_preauth_uri">> := true}, Vars) ->
     App#{proceed_url => render_url(<<"{{ invite.token }}/{{ app.id }}">>, Vars)};
@@ -623,24 +623,6 @@ maybe_add_username(Ctx, #invite_token{account_name = <<>>}) ->
     Ctx;
 maybe_add_username(Ctx, #invite_token{account_name = AccountName}) ->
     [{username, AccountName} | Ctx].
-
--spec binary_join(binary() | [binary()], binary()) -> binary().
-binary_join(Bin, _Sep) when is_binary(Bin) ->
-    Bin;
-binary_join([], _Sep) ->
-    <<>>;
-binary_join([Part], _Sep) ->
-    Part;
-binary_join(List, Sep) ->
-    lists:foldr(fun(A, B) ->
-                   if bit_size(B) > 0 ->
-                          <<A/binary, Sep/binary, B/binary>>;
-                      true ->
-                          A
-                   end
-                end,
-                <<>>,
-                List).
 
 security_headers() ->
     [{<<"Content-Security-Policy">>,
