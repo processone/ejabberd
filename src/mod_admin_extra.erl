@@ -37,7 +37,7 @@
 % Commands API
 -export([
 	 % Adminsys
-	 compile/1, get_cookie/0,
+	 compile/1,
 	 restart_module/2,
 
 	 % Sessions
@@ -167,13 +167,6 @@ get_commands_spec() ->
 			args_desc = ["Filename of erlang source file to compile"],
 			result = {res, rescode},
 			result_example = ok},
-     #ejabberd_commands{name = get_cookie, tags = [erlang],
-			desc = "Get the Erlang cookie of this node",
-			module = ?MODULE, function = get_cookie,
-			args = [],
-			result = {cookie, string},
-			result_example = "MWTAVMODFELNLSMYXPPD",
-			result_desc = "Erlang cookie used for authentication by ejabberd"},
     #ejabberd_commands{name = restart_module, tags = [erlang],
 			desc = "Stop an ejabberd module, reload code and start",
 			module = ?MODULE, function = restart_module,
@@ -1154,9 +1147,6 @@ compile(File) ->
 	_ ->
 	    error
     end.
-
-get_cookie() ->
-    atom_to_list(erlang:get_cookie()).
 
 restart_module(Host, Module) when is_binary(Module) ->
     restart_module(Host, misc:binary_to_atom(Module));
