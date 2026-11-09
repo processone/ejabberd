@@ -34,6 +34,7 @@
 	 list_commands/0,
 	 list_commands/1,
 	 list_commands/2,
+	 commands_allowed/2,
 	 get_command_format/1,
 	 get_command_format/2,
 	 get_command_format/3,
@@ -66,6 +67,10 @@
 
 get_commands_spec() ->
     [
+        #ejabberd_commands{name = commands_allowed, tags = [documentation],
+                           desc = "List of commands allowed in those circumstances",
+                           module = ?MODULE, function = commands_allowed,
+                           result = {commands, {list, {command, string}}}},
         #ejabberd_commands{name = gen_html_doc_for_commands, tags = [documentation],
                            desc = "Generates html documentation for ejabberd_commands",
                            module = ejabberd_commands_doc, function = generate_html_output,
@@ -287,6 +292,9 @@ list_commands(Version, CallerInfo) ->
       list_commands(Version)
     ).
 
+commands_allowed(CallerInfo, ApiVersion) ->
+    [atom_to_list(Name) || {Name, _Args, _Desc} <- list_commands(ApiVersion, CallerInfo)].
+
 -spec get_command_format(atom()) -> {[aterm()], [{atom(),atom()}], rterm()}.
 
 get_command_format(Name) ->
@@ -360,13 +368,19 @@ execute_command2(Name, Arguments, CallerInfo, Version) ->
     case {ejabberd_access_permissions:can_access(Name, CallerInfo, Version, Arguments, ArgsFormat),
           FrontedCalledInternal} of
         {allow, false} ->
-	    do_execute_command(Command, Arguments);
+	    do_execute_command(Command, Arguments, CallerInfo, Version);
+        {deny, false} when Name == commands_allowed ->
+	    do_execute_command(Command, Arguments, CallerInfo, Version);
         {_, true} ->
 	    throw({error, frontend_cannot_call_an_internal_command});
         {deny, false} ->
 	    throw({error, access_rules_unauthorized})
     end.
 
+do_execute_command(#ejabberd_commands{name = commands_allowed} = Command, [], CallerInfo, Version) ->
+    do_execute_command(Command, [CallerInfo, Version]);
+do_execute_command(Command, Arguments, _CallerInfo, _Version) ->
+    do_execute_command(Command, Arguments).
 
 do_execute_command(Command, Arguments) ->
     Module = Command#ejabberd_commands.module,
