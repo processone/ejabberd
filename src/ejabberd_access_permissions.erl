@@ -318,14 +318,12 @@ matches_definition({_Name, {From, Who, What, Where}},
                     Tuple
             end,
         Where2 =
-            lists:map(fun ({WhereName, <<"$CALLER_USER">>}) ->
-                              {WhereName, CallerUser};
-                          ({WhereName, <<"$CALLER_HOST">>}) ->
-                              {WhereName, CallerHost};
-                          ({WhereName, WhereValue}) ->
-                              {WhereName, WhereValue}
-                      end,
-                      Where),
+            [{WhereName,
+              ejabberd_config:replace_keywords(global,
+                                               WhereValue,
+                                               [{<<"CALLER_USER">>, CallerUser},
+                                                {<<"CALLER_HOST">>, CallerHost}])}
+             || {WhereName, WhereValue} <- Where],
         Where3 =
             lists:map(fun ({[$? | WhereName], WhereValue}) ->
                               {WhereName, WhereValue, true};
