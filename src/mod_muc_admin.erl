@@ -35,6 +35,7 @@
          muc_get_registered_nick/3,
          muc_get_registered_nicks/1,
          create_room_with_opts/4, create_room/3, destroy_room/2,
+         create_room_with_opts/3, create_room/2,
          create_rooms_file/1, destroy_rooms_file/1,
          rooms_unused_list/2, rooms_unused_destroy/2, rooms_unused_destroy_skip_notifications/2,
          rooms_empty_list/1, rooms_empty_destroy/1, rooms_empty_destroy_restuple/1,
@@ -209,6 +210,15 @@ get_commands_spec() ->
 			       {host, binary}],
 		       args_rename = [{name, room}],
 		       result = {res, rescode}},
+     #ejabberd_commands{name = create_room, tags = [muc_room],
+		       desc = "Create a MUC room name@service in host",
+		       module = ?MODULE, function = create_room,
+                       version = 4,
+		       args_desc = ["Room name", "MUC service"],
+		       args_example = ["room1", "conference.example.com"],
+		       args = [{room, binary}, {service, binary}],
+		       args_rename = [{name, room}],
+		       result = {res, rescode}},
      #ejabberd_commands{name = destroy_room, tags = [muc_room],
 		       desc = "Destroy a MUC room",
 		       module = ?MODULE, function = destroy_room,
@@ -245,6 +255,33 @@ get_commands_spec() ->
                                         {"subscribers", "user3@localhost=User3=messages=subject;user4@localhost=User4=messages"}]],
 		       args = [{room, binary}, {service, binary},
 			       {host, binary},
+			       {options, {list,
+					  {option, {tuple,
+						    [{name, binary},
+						     {value, binary}
+						    ]}}
+					 }}],
+		       args_rename = [{name, room}],
+		       result = {res, rescode}},
+     #ejabberd_commands{name = create_room_with_opts, tags = [muc_room, muc_sub],
+		       desc = "Create a MUC room name@service in host with given options",
+		       longdesc =
+                        "Options `affiliations` and `subscribers` are lists of tuples. "
+                        "The tuples in the list are separated with `;` and "
+                        "the elements in each tuple are separated with `=` "
+                        "(until ejabberd 24.12 the separators were `,` and `:` respectively). "
+                        "Each subscriber can have one or more nodes. "
+                        "In summary, `affiliations` is like `Type1=JID1;Type2=JID2` "
+                        "and `subscribers` is like `JID1=Nick1=Node1A=Node1B=Node1C;JID2=Nick2=Node2`.",
+                       note = "modified in 25.03",
+                       version = 4,
+		       module = ?MODULE, function = create_room_with_opts,
+		       args_desc = ["Room name", "MUC service", "List of options"],
+		       args_example = ["room1", "conference.example.com",
+				       [{"members_only","true"},
+                                        {"affiliations", "owner=user1@localhost;member=user2@localhost"},
+                                        {"subscribers", "user3@localhost=User3=messages=subject;user4@localhost=User4=messages"}]],
+		       args = [{room, binary}, {service, binary},
 			       {options, {list,
 					  {option, {tuple,
 						    [{name, binary},
@@ -1399,13 +1436,19 @@ make_webadmin_roster_table(Service, R, RPath) ->
 %% Create/Delete Room
 %%----------------------------
 
--spec create_room(Name::binary(), Host::binary(), ServerHost::binary()) -> ok | error.
-%% @doc Create a room immediately with the default options.
-create_room(Name1, Host1, ServerHost) ->
-    create_room_with_opts(Name1, Host1, ServerHost, []).
+%% API version 3 or older
+create_room(Name1, Host1, _ServerHost) ->
+    create_room_with_opts(Name1, Host1, []).
+create_room_with_opts(Name1, Host1, _ServerHost1, CustomRoomOpts) ->
+    create_room_with_opts(Name1, Host1, CustomRoomOpts).
 
-create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
-    ServerHost = validate_host(ServerHost1, <<"serverhost">>),
+-spec create_room(Name::binary(), Host::binary()) -> ok | error.
+%% @doc Create a room immediately with the default options.
+create_room(Name1, Host1) ->
+    create_room_with_opts(Name1, Host1, []).
+
+create_room_with_opts(Name1, Host1, CustomRoomOpts) ->
+    ServerHost = get_room_serverhost(Host1),
     case get_room_pid_validate(Name1, Host1, <<"service">>) of
 	{room_not_found, Name, Host} ->
 	    %% Get the default room options from the muc configuration
