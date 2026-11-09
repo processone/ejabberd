@@ -56,8 +56,8 @@
 	 delete_old_messages_batch/5, delete_old_messages_status/1, delete_old_messages_abort/1,
 	 remove_message_from_archive/3, strip_my_stanza_id/2,
 	 remove_mam_for_room/2, remove_mam_for_room_with_time_range/4,
-	 remove_mam_for_user_in_room/3,
-	 remove_mam_for_user_in_room_with_time_range/5]).
+	 remove_mam_for_user_in_room/4,
+	 remove_mam_for_user_in_room_with_time_range/6]).
 
 -import(ejabberd_web_admin, [make_command/4, make_command/2]).
 
@@ -398,21 +398,21 @@ remove_mam_for_room(Room, Service) ->
 remove_mam_for_room_with_time_range(Room, Service, From, To) ->
     remove_room_messages(Room, Service, none, {From, To}).
 
--spec remove_mam_for_user_in_room(binary(), binary(), binary()) ->
+-spec remove_mam_for_user_in_room(binary(), binary(), binary(), binary()) ->
     {ok, binary()} | {error, binary()}.
-remove_mam_for_user_in_room(Room, Service, User) ->
-    remove_room_messages(Room, Service, User, none).
+remove_mam_for_user_in_room(Room, Service, Username, Host) ->
+    remove_room_messages(Room, Service, jid:make(Username, Host), none).
 
 -spec remove_mam_for_user_in_room_with_time_range(binary(), binary(), binary(),
-						  integer(), integer()) ->
+						  binary(), integer(), integer()) ->
     {ok, binary()} | {error, binary()}.
-remove_mam_for_user_in_room_with_time_range(Room, Service, User, From, To) ->
-    remove_room_messages(Room, Service, User, {From, To}).
+remove_mam_for_user_in_room_with_time_range(Room, Service, Username, Host, From, To) ->
+    remove_room_messages(Room, Service, jid:make(Username, Host), {From, To}).
 
 %% Remove messages from a room archive, optionally only those sent by
 %% User (a JID) and/or sent between From and To (seconds since epoch,
 %% both inclusive)
--spec remove_room_messages(binary(), binary(), binary() | none,
+-spec remove_room_messages(binary(), binary(), jid() | none,
 			   {integer(), integer()} | none) ->
     {ok, binary()} | {error, binary()}.
 remove_room_messages(Room, Service, User, TimeRange) ->
@@ -431,10 +431,7 @@ remove_room_messages(Room, Service, User, TimeRange) ->
 		     end,
 	Peer = case User of
 		   none -> none;
-		   _ ->
-		       try jid:remove_resource(jid:decode(User))
-		       catch _:{bad_jid, _} -> throw(<<"Invalid user JID">>)
-		       end
+		   UserJid when is_record(UserJid, jid) -> UserJid
 	       end,
 	Range = case TimeRange of
 		    none -> none;
@@ -1872,9 +1869,9 @@ get_commands_spec() ->
 			desc = "Remove messages sent by a user from a MUC room MAM archive",
 			note = "added in 26.12",
 			module = ?MODULE, function = remove_mam_for_user_in_room,
-			args = [{room, binary}, {service, binary}, {user, binary}],
-			args_desc = ["Room name", "MUC service", "User JID"],
-			args_example = [<<"room1">>, <<"conference.example.com">>, <<"anne@example.com">>],
+			args = [{room, binary}, {service, binary}, {user, binary}, {host, binary}],
+			args_desc = ["Room name", "MUC service", "Username", "User host"],
+			args_example = [<<"room1">>, <<"conference.example.com">>, <<"anne">>, <<"example.com">>],
 			result = {res, restuple},
 			result_desc = "Result tuple",
 			result_example = {ok, <<"Removed 42 messages from MAM archive">>}},
@@ -1884,11 +1881,11 @@ get_commands_spec() ->
 			note = "added in 26.12",
 			module = ?MODULE, function = remove_mam_for_user_in_room_with_time_range,
 			args = [{room, binary}, {service, binary}, {user, binary},
-				{from, integer}, {to, integer}],
-			args_desc = ["Room name", "MUC service", "User JID",
+                                {host, binary}, {from, integer}, {to, integer}],
+			args_desc = ["Room name", "MUC service", "Username", "Host",
 				     "Start of the time range, in seconds since epoch",
 				     "End of the time range, in seconds since epoch"],
-			args_example = [<<"room1">>, <<"conference.example.com">>, <<"anne@example.com">>,
+			args_example = [<<"room1">>, <<"conference.example.com">>, <<"anne">>, <<"example.com">>,
 					1767225600, 1769903999],
 			result = {res, restuple},
 			result_desc = "Result tuple",
