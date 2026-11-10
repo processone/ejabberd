@@ -124,6 +124,7 @@ modules:
   mod_configure: []
   mod_disco: []
   mod_ping: []
+  mod_privilege: []
   mod_proxy65:
     port: PROXY_PORT
     vcard: VCARD
