@@ -38,8 +38,9 @@
 -include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
-
 -type component() :: ejabberd_sm | ejabberd_local.
+
+-define(ERROR_ID_LENGTH, 6).
 
 %%====================================================================
 %% API
@@ -112,11 +113,18 @@ process_iq(_Host, Module, Function, IQ) ->
 	ignore ->
 	    ok
     catch
+        error:{badmatch, {error, db_failure}}:_StackTrace ->
+            ?WARNING_MSG("Database failure while processing iq: module=~p function=~p~niq=~ts",
+                        [Module, Function, xmpp:pp(IQ)]),
+            Txt = ?T("Database failure"),
+            Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
+            ejabberd_router:route_error(IQ, Err);
         Class:Reason:StackTrace ->
-            ?ERROR_MSG("Failed to process iq:~n~ts~n** ~ts",
-                       [xmpp:pp(IQ),
+            ErrorID = misc:strong_alphanum_token(?ERROR_ID_LENGTH),
+            ?ERROR_MSG("Failed to process iq: module=~p function=~p error_id=~s~n~ts~n** ~ts",
+                       [Module, Function, ErrorID, xmpp:pp(IQ),
                         misc:format_exception(2, Class, Reason, StackTrace)]),
-            Txt = ?T("Module failed to handle the query"),
+            Txt = list_to_binary(io_lib:format("Module failed to handle the query, error id: ~s", [ErrorID])),
             Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
             ejabberd_router:route_error(IQ, Err)
     end.
