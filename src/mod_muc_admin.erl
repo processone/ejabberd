@@ -35,6 +35,7 @@
          muc_get_registered_nick/3,
          muc_get_registered_nicks/1,
          create_room_with_opts/4, create_room/3, destroy_room/2,
+         create_room_with_opts/3, create_room/2,
          create_rooms_file/1, destroy_rooms_file/1,
          rooms_unused_list/2, rooms_unused_destroy/2, rooms_unused_destroy_skip_notifications/2,
          rooms_empty_list/1, rooms_empty_destroy/1, rooms_empty_destroy_restuple/1,
@@ -42,7 +43,8 @@
          get_room_occupants_number/2, send_direct_invitation/5,
          change_room_option/4, get_room_options/2,
          set_room_affiliation/4, set_room_affiliation/5, get_room_affiliations/2,
-         get_room_affiliations_v3/2, get_room_affiliation/3,
+         get_room_affiliations_v3/2,
+         get_room_affiliation/3, get_room_affiliation/4,
          subscribe_room/4, subscribe_room/6,
          subscribe_room_many/3, subscribe_room_many_v3/4,
          unsubscribe_room/2, unsubscribe_room/4, get_subscribers/2,
@@ -146,16 +148,12 @@ get_commands_spec() ->
 		       args = [{nick, binary}, {jid, binary}, {service, binary}],
 		       args_rename = [{host, service}],
 		       result = {res, rescode}},
-     #ejabberd_commands{name = muc_register_nick, tags = [muc],
-		       desc = "Register a nick to a User JID in a MUC service",
-		       module = ?MODULE, function = muc_register_nick,
+     #ejabberd_commands{name = muc_register_nick,
 		       version = 3,
 		       note = "updated in 24.12",
 		       args_desc = ["nick", "user name", "user host", "MUC service"],
 		       args_example = [<<"Tim">>, <<"tim">>, <<"example.org">>, <<"conference.example.org">>],
-		       args = [{nick, binary}, {user, binary}, {host, binary}, {service, binary}],
-		       args_rename = [{host, service}],
-		       result = {res, rescode}},
+		       args = [{nick, binary}, {user, binary}, {host, binary}, {service, binary}]},
      #ejabberd_commands{name = muc_unregister_nick, tags = [muc],
 		       desc = "Unregister the nick registered by that account in the MUC service",
 		       module = ?MODULE, function = muc_unregister_nick,
@@ -164,16 +162,12 @@ get_commands_spec() ->
 		       args = [{jid, binary}, {service, binary}],
 		       args_rename = [{host, service}],
 		       result = {res, rescode}},
-     #ejabberd_commands{name = muc_unregister_nick, tags = [muc],
-		       desc = "Unregister the nick registered by that account in the MUC service",
-		       module = ?MODULE, function = muc_unregister_nick,
+     #ejabberd_commands{name = muc_unregister_nick,
 		       version = 3,
 		       note = "updated in 24.12",
 		       args_desc = ["user name", "user host", "MUC service"],
 		       args_example = [<<"tim">>, <<"example.org">>, <<"conference.example.org">>],
-		       args = [{user, binary}, {host, binary}, {service, binary}],
-		       args_rename = [{host, service}],
-		       result = {res, rescode}},
+		       args = [{user, binary}, {host, binary}, {service, binary}]},
      #ejabberd_commands{name = muc_get_registered_nick, tags = [muc],
 		       desc = "Get nick registered for that account in the MUC service",
 		       module = ?MODULE, function = muc_get_registered_nick,
@@ -208,6 +202,11 @@ get_commands_spec() ->
 			       {host, binary}],
 		       args_rename = [{name, room}],
 		       result = {res, rescode}},
+     #ejabberd_commands{name = create_room,
+                       version = 4,
+		       args_desc = ["Room name", "MUC service"],
+		       args_example = ["room1", "conference.example.com"],
+		       args = [{room, binary}, {service, binary}]},
      #ejabberd_commands{name = destroy_room, tags = [muc_room],
 		       desc = "Destroy a MUC room",
 		       module = ?MODULE, function = destroy_room,
@@ -252,6 +251,20 @@ get_commands_spec() ->
 					 }}],
 		       args_rename = [{name, room}],
 		       result = {res, rescode}},
+     #ejabberd_commands{name = create_room_with_opts,
+                       version = 4,
+		       args_desc = ["Room name", "MUC service", "List of options"],
+		       args_example = ["room1", "conference.example.com",
+				       [{"members_only","true"},
+                                        {"affiliations", "owner=user1@localhost;member=user2@localhost"},
+                                        {"subscribers", "user3@localhost=User3=messages=subject;user4@localhost=User4=messages"}]],
+		       args = [{room, binary}, {service, binary},
+			       {options, {list,
+					  {option, {tuple,
+						    [{name, binary},
+						     {value, binary}
+						    ]}}
+					 }}]},
      #ejabberd_commands{name = destroy_rooms_file, tags = [muc],
 		       desc = "Destroy the rooms indicated in file",
 		       longdesc = "Provide one room JID per line.",
@@ -324,18 +337,11 @@ get_commands_spec() ->
 		       args = [{service, binary}],
 		       args_rename = [{host, service}],
 		       result = {rooms, {list, {room, string}}}},
-     #ejabberd_commands{name = rooms_empty_destroy, tags = [muc],
-		       desc = "Destroy the rooms that have no messages in archive",
-		       longdesc = "The MUC service argument can be `global` to get all hosts.",
-		       module = ?MODULE, function = rooms_empty_destroy_restuple,
+     #ejabberd_commands{name = rooms_empty_destroy,
                        version = 2,
+		       function = rooms_empty_destroy_restuple,
                        note = "modified in 24.06",
-		       args_desc = ["MUC service, or `global` for all"],
-		       args_example = ["conference.example.com"],
-		       result_desc = "List of empty rooms that have been destroyed",
 		       result_example = {ok, <<"Destroyed rooms: 2">>},
-		       args = [{service, binary}],
-		       args_rename = [{host, service}],
 		       result = {res, restuple}},
 
      #ejabberd_commands{name = get_user_rooms, tags = [muc],
@@ -409,14 +415,12 @@ get_commands_spec() ->
 				{reason, binary}, {users, binary}],
 		        args_rename = [{name, room}],
 		        result = {res, rescode}},
-     #ejabberd_commands{name = send_direct_invitation, tags = [muc_room],
-			desc = "Send a direct invitation to several destinations",
+     #ejabberd_commands{name = send_direct_invitation,
+			version = 1,
 			longdesc = "Since ejabberd 20.12, this command is "
                         "asynchronous: the API call may return before the "
                         "server has send all the invitations.\n\n"
                         "`password` and `message` can be set to `none`.",
-			module = ?MODULE, function = send_direct_invitation,
-			version = 1,
 			note = "updated in 24.02",
 		        args_desc = ["Room name", "MUC service", "Password, or `none`",
 			 "Reason text, or `none`", "List of users JIDs"],
@@ -424,9 +428,7 @@ get_commands_spec() ->
 					<<>>, <<"Check this out!">>,
 					["user2@localhost", "user3@example.com"]],
 			args = [{room, binary}, {service, binary}, {password, binary},
-				{reason, binary}, {users, {list, {jid, binary}}}],
-		        args_rename = [{name, room}],
-		        result = {res, rescode}},
+				{reason, binary}, {users, {list, {jid, binary}}}]},
 
      #ejabberd_commands{name = change_room_option, tags = [muc_room],
 		       desc = "Change an option in a MUC room",
@@ -465,36 +467,24 @@ get_commands_spec() ->
 			args = [{user, binary}, {nick, binary}, {room, binary},
 				{nodes, binary}],
 			result = {nodes, {list, {node, string}}}},
-     #ejabberd_commands{name = subscribe_room, tags = [muc_room, muc_sub],
-			desc = "Subscribe to a MUC conference",
-			module = ?MODULE, function = subscribe_room,
+     #ejabberd_commands{name = subscribe_room,
 			version = 1,
 			note = "updated in 24.02",
 			args_desc = ["User JID", "a user's nick",
 			    "the room to subscribe", "list of nodes"],
 			args_example = ["tom@localhost", "Tom", "room1@conference.localhost",
 			    ["urn:xmpp:mucsub:nodes:messages", "urn:xmpp:mucsub:nodes:affiliations"]],
-			result_desc = "The list of nodes that has subscribed",
-			result_example = ["urn:xmpp:mucsub:nodes:messages",
-			    "urn:xmpp:mucsub:nodes:affiliations"],
 			args = [{user, binary}, {nick, binary}, {room, binary},
-				{nodes, {list, {node, binary}}}],
-			result = {nodes, {list, {node, string}}}},
-     #ejabberd_commands{name = subscribe_room, tags = [muc_room, muc_sub],
-			desc = "Subscribe to a MUC conference",
-			module = ?MODULE, function = subscribe_room,
+				{nodes, {list, {node, binary}}}]},
+     #ejabberd_commands{name = subscribe_room,
 			version = 3,
 			note = "updated in 24.12",
 			args_desc = ["user name", "user host", "user nick",
 			    "room name", "MUC service", "list of nodes"],
 			args_example = ["tom", "localhost", "Tom", "room1", "conference.localhost",
 			    ["urn:xmpp:mucsub:nodes:messages", "urn:xmpp:mucsub:nodes:affiliations"]],
-			result_desc = "The list of nodes that has subscribed",
-			result_example = ["urn:xmpp:mucsub:nodes:messages",
-			    "urn:xmpp:mucsub:nodes:affiliations"],
 			args = [{user, binary}, {host, binary}, {nick, binary}, {room, binary},
-                                {service, binary}, {nodes, {list, {node, binary}}}],
-			result = {nodes, {list, {node, string}}}},
+                                {service, binary}, {nodes, {list, {node, binary}}}]},
      #ejabberd_commands{name = subscribe_room_many, tags = [muc_room, muc_sub],
 			desc = "Subscribe several users to a MUC conference",
 			note = "added in 22.05",
@@ -518,12 +508,7 @@ get_commands_spec() ->
                                 {room, binary},
 				{nodes, binary}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = subscribe_room_many, tags = [muc_room, muc_sub],
-			desc = "Subscribe several users to a MUC conference",
-			longdesc = "This command accepts up to 50 users at once "
-                            "(this is configurable with the _`mod_muc_admin`_ option "
-                            "`subscribe_room_many_max_users`)",
-			module = ?MODULE, function = subscribe_room_many,
+     #ejabberd_commands{name = subscribe_room_many,
 			version = 1,
 			note = "updated in 24.02",
 			args_desc = ["Users JIDs and nicks",
@@ -540,15 +525,10 @@ get_commands_spec() ->
                                                  ]}}
                                         }},
                                 {room, binary},
-				{nodes, {list, {node, binary}}}],
-			result = {res, rescode}},
-     #ejabberd_commands{name = subscribe_room_many, tags = [muc_room, muc_sub],
-			desc = "Subscribe several users to a MUC conference",
-			longdesc = "This command accepts up to 50 users at once "
-                            "(this is configurable with the _`mod_muc_admin`_ option "
-                            "`subscribe_room_many_max_users`)",
-			module = ?MODULE, function = subscribe_room_many_v3,
+				{nodes, {list, {node, binary}}}]},
+     #ejabberd_commands{name = subscribe_room_many,
 			version = 3,
+			function = subscribe_room_many_v3,
 			note = "updated in 24.12",
 			args_desc = ["List of tuples with users name, host and nick",
                                      "room name",
@@ -566,8 +546,7 @@ get_commands_spec() ->
                                                  ]}}
                                         }},
                                 {room, binary}, {service, binary},
-				{nodes, {list, {node, binary}}}],
-			result = {res, rescode}},
+				{nodes, {list, {node, binary}}}]},
      #ejabberd_commands{name = unsubscribe_room, tags = [muc_room, muc_sub],
 			desc = "Unsubscribe from a MUC conference",
 			module = ?MODULE, function = unsubscribe_room,
@@ -575,15 +554,12 @@ get_commands_spec() ->
 			args_example = ["tom@localhost", "room1@conference.localhost"],
 			args = [{user, binary}, {room, binary}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = unsubscribe_room, tags = [muc_room, muc_sub],
-			desc = "Unsubscribe from a MUC conference",
-			module = ?MODULE, function = unsubscribe_room,
+     #ejabberd_commands{name = unsubscribe_room,
 			version = 3,
 			note = "updated in 24.12",
 			args_desc = ["user name", "user host", "room name", "MUC service"],
 			args_example = ["tom", "localhost", "room1", "conference.localhost"],
-			args = [{user, binary}, {host, binary}, {room, binary}, {service, binary}],
-			result = {res, rescode}},
+			args = [{user, binary}, {host, binary}, {room, binary}, {service, binary}]},
      #ejabberd_commands{name = get_subscribers, tags = [muc_room, muc_sub],
 			desc = "List subscribers of a MUC conference",
 			module = ?MODULE, function = get_subscribers,
@@ -602,17 +578,14 @@ get_commands_spec() ->
 		       args = [{name, binary}, {service, binary},
 			       {jid, binary}, {affiliation, binary}],
 		       result = {res, rescode}},
-     #ejabberd_commands{name = set_room_affiliation, tags = [muc_room],
-		       desc = "Change an affiliation in a MUC room",
-		       longdesc = "If affiliation is `none`, then the affiliation is removed.",
-		       module = ?MODULE, function = set_room_affiliation,
+     #ejabberd_commands{name = set_room_affiliation,
 		       version = 3,
+		       longdesc = "If affiliation is `none`, then the affiliation is removed.",
 		       note = "updated in 24.12",
 		       args_desc = ["room name", "MUC service", "user name", "user host", "affiliation to set"],
 		       args_example = ["room1", "conference.example.com", "sun", "localhost", "member"],
 		       args = [{room, binary}, {service, binary},
-			       {user, binary}, {host, binary}, {affiliation, binary}],
-		       result = {res, rescode}},
+			       {user, binary}, {host, binary}, {affiliation, binary}]},
 
 
      #ejabberd_commands{name = get_room_affiliations, tags = [muc_room],
@@ -631,13 +604,10 @@ get_commands_spec() ->
 								 {reason, string}
 								]}}
 						}}},
-     #ejabberd_commands{name = get_room_affiliations, tags = [muc_room],
-			desc = "Get the list of affiliations of a MUC room",
-			module = ?MODULE, function = get_room_affiliations_v3,
+     #ejabberd_commands{name = get_room_affiliations,
 			version = 3,
+			function = get_room_affiliations_v3,
 			note = "updated in 24.12",
-		        args_desc = ["Room name", "MUC service"],
-		        args_example = ["room1", "conference.example.com"],
 		        result_desc = "The list of affiliations with jid, affiliation and reason",
 			result_example = [{"user1@example.com", member, "member"}],
 			args = [{room, binary}, {service, binary}],
@@ -660,6 +630,12 @@ get_commands_spec() ->
 			args = [{room, binary}, {service, binary}, {jid, binary}],
 		        args_rename = [{name, room}],
 			result = {affiliation, atom}},
+	 #ejabberd_commands{name = get_room_affiliation,
+                            version = 4,
+                            note = "updated in 26.xx",
+                            args = [{room, binary}, {service, binary}, {user, binary}, {host, binary}],
+                            args_desc = ["Room name", "MUC service", "Username", "Hostname"],
+                            args_example = ["room1", "conference.example.com", "user", "example.org"]},
          #ejabberd_commands{name = get_room_history, tags = [muc_room],
 			desc = "Get history of messages stored inside MUC room state",
 			note = "added in 23.04",
@@ -1392,13 +1368,19 @@ make_webadmin_roster_table(Service, R, RPath) ->
 %% Create/Delete Room
 %%----------------------------
 
--spec create_room(Name::binary(), Host::binary(), ServerHost::binary()) -> ok | error.
-%% @doc Create a room immediately with the default options.
-create_room(Name1, Host1, ServerHost) ->
-    create_room_with_opts(Name1, Host1, ServerHost, []).
+%% API version 3 or older
+create_room(Name1, Host1, _ServerHost) ->
+    create_room_with_opts(Name1, Host1, []).
+create_room_with_opts(Name1, Host1, _ServerHost1, CustomRoomOpts) ->
+    create_room_with_opts(Name1, Host1, CustomRoomOpts).
 
-create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
-    ServerHost = validate_host(ServerHost1, <<"serverhost">>),
+-spec create_room(Name::binary(), Host::binary()) -> ok | error.
+%% @doc Create a room immediately with the default options.
+create_room(Name1, Host1) ->
+    create_room_with_opts(Name1, Host1, []).
+
+create_room_with_opts(Name1, Host1, CustomRoomOpts) ->
+    ServerHost = get_room_serverhost(Host1),
     case get_room_pid_validate(Name1, Host1, <<"service">>) of
 	{room_not_found, Name, Host} ->
 	    %% Get the default room options from the muc configuration
@@ -2211,9 +2193,13 @@ get_room_history(Name, Service) ->
 %% @doc Get affiliation of a user in the room Name@Service.
 
 get_room_affiliation(Name, Service, JID) ->
+    Jid = jid:decode(JID),
+    get_room_affiliation(Name, Service, Jid#jid.luser, Jid#jid.lserver).
+
+get_room_affiliation(Name, Service, Username, Userhost) ->
     case get_room_pid_validate(Name, Service, <<"service">>) of
 	{Pid, _, _} when is_pid(Pid) ->
-	    UserJID = jid:decode(JID),
+		UserJID = jid:make(Username, Userhost),
 		case mod_muc_room:get_room_affiliation(Pid, UserJID) of
 			{ok, Affiliation} ->
 				Affiliation;

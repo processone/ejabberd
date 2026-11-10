@@ -34,6 +34,7 @@
 	 list_commands/0,
 	 list_commands/1,
 	 list_commands/2,
+	 commands_allowed/2,
 	 get_command_format/1,
 	 get_command_format/2,
 	 get_command_format/3,
@@ -66,6 +67,10 @@
 
 get_commands_spec() ->
     [
+        #ejabberd_commands{name = commands_allowed, tags = [documentation],
+                           desc = "List of commands allowed in those circumstances",
+                           module = ?MODULE, function = commands_allowed,
+                           result = {commands, {list, {command, string}}}},
         #ejabberd_commands{name = gen_html_doc_for_commands, tags = [documentation],
                            desc = "Generates html documentation for ejabberd_commands",
                            module = ejabberd_commands_doc, function = generate_html_output,
@@ -148,6 +153,28 @@ register_commands(Commands) ->
 
 -spec register_commands(atom(), [ejabberd_commands()]) -> ok.
 
+inherit_command_definition(#ejabberd_commands{name = Name} = Command) ->
+    try get_command_definition(Name) of
+        PreviousDefinition ->
+            Res = lists:zipwith3(fun(NewValue, DefaultValue, PreviousValue) ->
+                                    case NewValue of
+                                        keep_default_dont_inherit ->
+                                            DefaultValue;
+                                        DefaultValue ->
+                                            PreviousValue;
+                                        _ ->
+                                            NewValue
+                                    end
+                                 end,
+                                 erlang:tuple_to_list(Command),
+                                 erlang:tuple_to_list(#ejabberd_commands{}),
+                                 erlang:tuple_to_list(PreviousDefinition)),
+            erlang:list_to_tuple(Res)
+    catch
+        {error, unknown_command} ->
+            Command
+    end.
+
 register_commands(Definer, Commands) ->
     ExistingCommands = list_commands(),
     lists:foreach(
@@ -155,7 +182,8 @@ register_commands(Definer, Commands) ->
               Name = Command#ejabberd_commands.name,
               case lists:keyfind(Name, 1, ExistingCommands) of
                   false ->
-                      mnesia:dirty_write(register_command_prepare(Command, Definer));
+                      Command2 = inherit_command_definition(Command),
+                      mnesia:dirty_write(register_command_prepare(Command2, Definer));
                   _ ->
                       OtherCommandDef = get_command_definition(Name),
                       ?CRITICAL_MSG("Error trying to define a command: another one already exists with the same name:~n Existing: ~p~n New: ~p", [OtherCommandDef, Command])
@@ -187,6 +215,8 @@ register_command_prepare(Command, Definer) ->
         end,
     Command2 =
         case Command of
+            #ejabberd_commands{policy = user, args = [{user, binary}, {host, binary} | _]} ->
+                Command;
             #ejabberd_commands{policy = user,
                                args = Args,
                                args_desc = none,
@@ -257,10 +287,13 @@ list_commands(Version) ->
 list_commands(Version, CallerInfo) ->
     lists:filter(
       fun({Name, _Args, _Desc}) ->
-        allow == ejabberd_access_permissions:can_access(Name, CallerInfo)
+        allow == ejabberd_access_permissions:can_access(Name, CallerInfo, Version)
       end,
       list_commands(Version)
     ).
+
+commands_allowed(CallerInfo, ApiVersion) ->
+    [atom_to_list(Name) || {Name, _Args, _Desc} <- list_commands(ApiVersion, CallerInfo)].
 
 -spec get_command_format(atom()) -> {[aterm()], [{atom(),atom()}], rterm()}.
 
@@ -332,16 +365,22 @@ execute_command2(Name, Arguments, CallerInfo, Version) ->
         maps:get(caller_module, CallerInfo, none) /= ejabberd_web_admin
         andalso lists:member(internal, Command#ejabberd_commands.tags),
     {ArgsFormat, _, _} = get_command_format(Name, Version),
-    case {ejabberd_access_permissions:can_access(Name, CallerInfo, Arguments, ArgsFormat),
+    case {ejabberd_access_permissions:can_access(Name, CallerInfo, Version, Arguments, ArgsFormat),
           FrontedCalledInternal} of
         {allow, false} ->
-	    do_execute_command(Command, Arguments);
+	    do_execute_command(Command, Arguments, CallerInfo, Version);
+        {deny, false} when Name == commands_allowed ->
+	    do_execute_command(Command, Arguments, CallerInfo, Version);
         {_, true} ->
 	    throw({error, frontend_cannot_call_an_internal_command});
         {deny, false} ->
 	    throw({error, access_rules_unauthorized})
     end.
 
+do_execute_command(#ejabberd_commands{name = commands_allowed} = Command, [], CallerInfo, Version) ->
+    do_execute_command(Command, [CallerInfo, Version]);
+do_execute_command(Command, Arguments, _CallerInfo, _Version) ->
+    do_execute_command(Command, Arguments).
 
 do_execute_command(Command, Arguments) ->
     Module = Command#ejabberd_commands.module,

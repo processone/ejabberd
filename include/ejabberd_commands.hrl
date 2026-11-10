@@ -18,6 +18,8 @@
 %%%
 %%%----------------------------------------------------------------------
 
+-define(DEFAULT_API_VERSION, 1000000).
+
 -type aterm() :: {atom(), atype()}.
 -type atype() :: integer | string | binary | any | atom |
                  {tuple, [aterm()]} | {list, aterm()}.
@@ -70,7 +72,7 @@
         {name                    :: atom(),
          tags = []               :: [atom()] | '_' | '$2',
          desc = ""               :: string() | '_' | '$3',
-         longdesc = ""           :: string() | '_',
+         longdesc = ""           :: string() | '_' | keep_default_dont_inherit,
          version = 0             :: integer(),
          note = ""               :: string(),
          weight = 1              :: integer(),
@@ -108,4 +110,3 @@
                                                 args_example            :: none | [any()] | '_',
                                                 result_example          :: any()
                                                }.
-
