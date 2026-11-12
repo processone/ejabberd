@@ -1119,10 +1119,7 @@ webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
 
 webadmin_page_hostuser(_, Host, Username, #request{path = [<<"roster">> | RPath]} = R) ->
     Head = ?H1GL(<<"Roster">>, <<"modules/#mod_roster">>, <<"mod_roster">>),
-    Set = [make_command(add_rosteritem,
-                        R,
-                        [{<<"user">>, Username}, {<<"host">>, Host}],
-                        []),
+    Set = [make_command(add_rosteritem, R, [{<<"user">>, Username}, {<<"host">>, Host}], []),
            make_command(push_roster, R, [{<<"user">>, Username}, {<<"host">>, Host}], [])],
     Level = 5 + length(RPath),
     Get = [make_webadmin_roster_table(Host, Username, R, RPath, Level),
