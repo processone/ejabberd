@@ -41,7 +41,7 @@
 	 get_subscribed_rooms/3, get_rooms_without_subscribers/2,
 	 get_hibernated_rooms_older_than/3,
 	 find_online_room_by_pid/2, remove_user/2]).
--export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
+-export([set_affiliation/5, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 -export([sql_schemas/0]).
 -export([serialize/3, deserialize_start/1, deserialize/2]).
@@ -423,7 +423,7 @@ set_nick(LServer, ServiceOrRoom, From, Nick) ->
 	end,
     ejabberd_sql:sql_transaction(LServer, F).
 
-set_affiliation(_ServerHost, _Room, _Host, _JID, _Affiliation, _Reason) ->
+set_affiliation(_ServerHost, _Room, _Host, _JID, _AffiliationData) ->
     {error, not_implemented}.
 
 set_affiliations(_ServerHost, _Room, _Host, _Affiliations) ->

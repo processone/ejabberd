@@ -125,15 +125,14 @@
                         {jid(), role, role(), binary()}.
 -export_type([state/0, disco_item_filter/0]).
 
--callback set_affiliation(binary(), binary(), binary(), jid(), affiliation(),
-			  binary()) -> ok | {error, any()}.
+-callback set_affiliation(binary(), binary(), binary(), jid(), affiliation_data()) -> ok | {error, any()}.
 -callback set_affiliations(binary(), binary(), binary(),
 			   affiliations()) -> ok | {error, any()}.
 -callback get_affiliation(binary(), binary(), binary(),
 			  binary(), binary()) -> {ok, affiliation()} | {error, any()}.
 -callback get_affiliations(binary(), binary(), binary()) -> {ok, affiliations()} | {error, any()}.
 -callback search_affiliation(binary(), binary(), binary(), affiliation()) ->
-    {ok, [{ljid(), {affiliation(), binary()}}]} | {error, any()}.
+    {ok, [{ljid(), affiliation_data()}]} | {error, any()}.
 
 -ifndef(OTP_BELOW_28).
 -dialyzer([no_opaque_union]).
@@ -1735,8 +1734,7 @@ set_affiliation(JID, AffiliationData, StateData) ->
     Room = StateData#state.room,
     Host = StateData#state.host,
     Mod = gen_mod:db_mod(ServerHost, mod_muc),
-    #affiliation{affiliation = Affiliation, reason = Reason} = AffiliationData,
-    case Mod:set_affiliation(ServerHost, Room, Host, JID, Affiliation, Reason) of
+    case Mod:set_affiliation(ServerHost, Room, Host, JID, AffiliationData) of
 	ok ->
 	    StateData;
 	{error, _} ->

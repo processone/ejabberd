@@ -37,7 +37,7 @@
 	 register_online_user/4, unregister_online_user/4,
 	 count_online_rooms_by_user/3, get_online_rooms_by_user/3,
 	 find_online_room_by_pid/2]).
--export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
+-export([set_affiliation/5, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 %% gen_server callbacks
 -export([start_link/2, init/1, handle_cast/2, handle_call/3, handle_info/2,
@@ -185,7 +185,7 @@ set_nick(_LServer, ServiceOrRoom, From, Nick) ->
 	end,
     mnesia:transaction(F).
 
-set_affiliation(_ServerHost, _Room, _Host, _JID, _Affiliation, _Reason) ->
+set_affiliation(_ServerHost, _Room, _Host, _JID, _AffiliationData) ->
     {error, not_implemented}.
 
 set_affiliations(_ServerHost, _Room, _Host, _Affiliations) ->
