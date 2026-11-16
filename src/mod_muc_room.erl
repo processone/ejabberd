@@ -4609,7 +4609,12 @@ set_opts2([{Opt, Val} | Opts], StateData) ->
                   StateData#state{hats_users = maps:from_list(Val)};
 	    hibernation_time -> StateData;
 	    salt ->
-		  StateData#state{salt = Val};
+                case Val of
+                    <<_:16/binary>> ->
+                        StateData#state{salt = Val};
+                    _ ->
+                        StateData#state{salt = base64:decode(Val)}
+                end;
             mods ->
                 Mods =
                     lists:flatmap(
@@ -4716,7 +4721,7 @@ make_opts(StateData, Hibernation) ->
      {hats_defs, maps:to_list(StateData#state.hats_defs)},
      {hats_users, maps:to_list(StateData#state.hats_users)},
      {hibernation_time, if Hibernation -> erlang:system_time(microsecond); true -> undefined end},
-     {salt, StateData#state.salt},
+     {salt, base64:encode(StateData#state.salt)},
      {subscribers, Subscribers},
      {mods, Mods}].
 
