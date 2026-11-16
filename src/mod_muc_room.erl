@@ -4607,13 +4607,13 @@ set_opts2([{Opt, Val} | Opts], StateData) ->
                   StateData#state{hats_users = maps:from_list(Val)};
 	    hibernation_time -> StateData;
 	    salt ->
-                case Val of
-                    <<_:16/binary>> ->
-                        StateData#state{salt = Val};
-                    _ ->
-                        StateData#state{salt = base64:decode(Val)}
-                end;
-            mods ->
+			try base64:decode(Val) of
+			    Decoded ->
+					StateData#state{salt = Decoded}
+			catch _:_ ->
+			    StateData#state{salt = Val}
+			end;
+        mods ->
                 Mods =
                     lists:flatmap(
                       fun({Mod, Data}) ->
