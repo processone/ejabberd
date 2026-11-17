@@ -23,6 +23,7 @@
 
 -module(antispam_tests).
 
+% elp:ignore L1224
 -compile(export_all).
 
 -import(suite, [recv_presence/1, send_recv/2, my_jid/1, muc_room_jid/1,
@@ -32,7 +33,6 @@
 		my_muc_jid/1, get_features/2, set_opt/3]).
 -include("suite.hrl").
 -include("mod_roster.hrl").
--include("mod_antispam.hrl").
 
 %% @format-begin
 
@@ -63,7 +63,7 @@ single_cases() ->
       single_test(unblock_domain_in_vhost2),
       single_test(jid_cache),
       single_test(rtbl_domains),
-      single_test(rtbl_domains_whitelisted),
+      single_test(rtbl_domains_allowed),
       single_test(spam_dump_file)]}.
 
 %%%===================================================================
@@ -201,9 +201,9 @@ rtbl_domains(Config) ->
             suite:pubsub_jid(Config)),
     RTBLDomainsNode = <<"spam_source_domains">>,
     OldOpts = gen_mod:get_module_opts(Server, mod_antispam),
-    NewOpts =
-        maps:merge(OldOpts,
-                   #{rtbl_services => [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}]}),
+    NewOpts = OldOpts#{rtbl_services =>
+                           [[{RTBLHost,
+                              [{spam_source_domains_node, RTBLDomainsNode}]}]]},
     Owner = jid:make(?config(user, Config), ?config(server, Config), <<>>),
     {result, _} =
         mod_pubsub:create_node(RTBLHost,
@@ -239,16 +239,16 @@ rtbl_domains(Config) ->
     {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
     disconnect(Config).
 
-rtbl_domains_whitelisted(Config) ->
+rtbl_domains_allowed(Config) ->
     Server = ?config(server, Config),
     RTBLHost =
         jid:encode(
             suite:pubsub_jid(Config)),
     RTBLDomainsNode = <<"spam_source_domains">>,
     OldOpts = gen_mod:get_module_opts(Server, mod_antispam),
-    NewOpts =
-        maps:merge(OldOpts,
-                   #{rtbl_services => [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}]}),
+    NewOpts = OldOpts#{rtbl_services =>
+                           [[{RTBLHost,
+                              [{spam_source_domains_node, RTBLDomainsNode}]}]]},
     Owner = jid:make(?config(user, Config), ?config(server, Config), <<>>),
     {result, _} =
         mod_pubsub:create_node(RTBLHost,
@@ -261,8 +261,8 @@ rtbl_domains_whitelisted(Config) ->
                                 ?config(server, Config),
                                 RTBLDomainsNode,
                                 Owner,
-                                <<"whitelisted.domain">>,
-                                [xmpp:encode(#ps_item{id = <<"whitelisted.domain">>,
+                                <<"allowed.domain">>,
+                                [xmpp:encode(#ps_item{id = <<"allowed.domain">>,
                                                       sub_els = []})]),
     mod_antispam:reload(Server, OldOpts, NewOpts),
     {result, _} =
@@ -276,7 +276,7 @@ rtbl_domains_whitelisted(Config) ->
     ?retry(100, 10, ?match(true, (has_spam_domain(<<"yetanother.domain">>))(Server))),
     %% we assume that the previous "whitelisted.domain" pubsub item has been consumed by now, so we
     %% can check that it doesn't exist
-    ?match(false, (has_spam_domain(<<"whitelisted.domain">>))(Server)),
+    ?match(false, (has_spam_domain(<<"allowed.domain">>))(Server)),
     {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
     disconnect(Config).
 

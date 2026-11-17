@@ -27,7 +27,6 @@
 %%| definitions
 
 -module(mod_antispam).
--author('holger@zedat.fu-berlin.de').
 -author('stefan@strigler.de').
 
 -behaviour(gen_server).
@@ -35,34 +34,34 @@
 
 %% gen_mod callbacks.
 -export([start/2,
-	 prep_stop/1,
-	 stop/1,
-	 reload/3,
-	 depends/2,
-	 mod_doc/0,
-	 mod_opt_type/1,
-	 mod_options/1]).
+         prep_stop/1,
+         stop/1,
+         reload/3,
+         depends/2,
+         mod_doc/0,
+         mod_opt_type/1,
+         mod_options/1]).
 
 %% gen_server callbacks.
 -export([init/1,
-	 handle_call/3,
-	 handle_cast/2,
-	 handle_info/2,
-	 terminate/2,
-	 code_change/3]).
+         handle_call/3,
+         handle_cast/2,
+         handle_info/2,
+         terminate/2,
+         code_change/3]).
 
 -export([get_rtbl_services_option/1]).
 
 %% ejabberd_commands callbacks.
 -export([add_blocked_domain/2,
-	 add_to_spam_filter_cache/2,
-	 drop_from_spam_filter_cache/2,
-	 expire_spam_filter_cache/2,
-	 get_blocked_domains/1,
-	 get_commands_spec/0,
-	 get_spam_filter_cache/1,
-	 reload_spam_filter_files/1,
-	 remove_blocked_domain/2]).
+         add_to_spam_filter_cache/2,
+         drop_from_spam_filter_cache/2,
+         expire_spam_filter_cache/2,
+         get_blocked_domains/1,
+         get_commands_spec/0,
+         get_spam_filter_cache/1,
+         reload_spam_filter_files/1,
+         remove_blocked_domain/2]).
 
 -import(mod_antispam_util, [try_call_by_host/3, for_all_hosts/2, sets_equal/2, format/2]).
 
@@ -74,19 +73,16 @@
 -include_lib("xmpp/include/xmpp.hrl").
 
 -record(state,
-	{host = <<>>			:: binary(),
-	 dump_fd = undefined		:: file:io_device() | undefined,
-	 url_set = sets:new()		:: url_set(),
-	 jid_set = sets:new()		:: jid_set(),
-	 jid_cache = #{}		:: map(),
-	 max_cache_size = 0		:: non_neg_integer() | unlimited,
-	 rtbl_host = none		:: binary() | none,
-	 rtbl_subscribed = false	:: boolean(),
-	 rtbl_retry_timer = undefined	:: reference() | undefined,
-	 rtbl_domains_node		:: binary(),
-	 blocked_domains = #{}		:: #{binary() => any()},
-	 allow_domains = #{}		:: #{binary() => false}
-	}).
+        {host = <<>>           :: binary(),
+         dump_fd = undefined   :: file:io_device() | undefined,
+         url_set = sets:new()  :: url_set(),
+         jid_set = sets:new()  :: jid_set(),
+         jid_cache = #{}       :: map(),
+         max_cache_size = 0    :: non_neg_integer() | unlimited,
+         rtbl_services = #{}   :: rtbl_services(),
+         blocked_domains = #{} :: #{binary() => any()},
+         allow_domains = #{}   :: #{binary() => false}
+        }).
 
 -type state() :: #state{}.
 
@@ -236,8 +232,9 @@ mod_doc() ->
               example =>
                   ["rtbl_services:",
                    "  - pubsub.server1.localhost:",
-                   "      spam_source_domains_node: actual_custom_pubsub_node"],
-              desc =>
+                   "      spam_source_domains_node: some_custom_pubsub_node"],
+              desc % FIXME
+                  =>
                   ?T("Query a RTBL service to get domains to block, as provided by "
                      "https://xmppbl.org/[xmppbl.org]. "
                      "Please note right now this option only supports one service in that list. "
@@ -322,7 +319,7 @@ init([Host, Opts]) ->
                        mod_antispam_rtbl,
                        pubsub_event_handler,
                        50),
-    [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}] = get_rtbl_services_option(Opts),
+    RTBLServices = get_rtbl_services_option(Opts),
     mod_antispam_filter:init_filtering(Host),
     InitState =
         #state{host = Host,
@@ -332,9 +329,8 @@ init([Host, Opts]) ->
                max_cache_size = gen_mod:get_opt(cache_size, Opts),
                blocked_domains = set_to_map(SpamDomainsSet),
                allow_domains = set_to_map(AllowDomains, false),
-               rtbl_host = RTBLHost,
-               rtbl_domains_node = RTBLDomainsNode},
-    mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
+               rtbl_services = RTBLServices},
+    mod_antispam_rtbl:get_items(Host, RTBLServices),
     {ok, InitState}.
 
 -spec handle_call(term(), {pid(), term()}, state()) ->
@@ -392,11 +388,8 @@ handle_call({is_blocked_domain, Domain},
      State};
 handle_call(prepare_stop,
             _From,
-            #state{host = Host,
-                   rtbl_host = RTBLHost,
-                   rtbl_domains_node = RTBLDomainsNode} =
-                State) ->
-    mod_antispam_rtbl:unsubscribe(RTBLHost, RTBLDomainsNode, Host),
+            #state{host = Host, rtbl_services = RTBLServices} = State) ->
+    mod_antispam_rtbl:unsubscribe(Host, RTBLServices),
     {reply, ready_to_stop, State};
 handle_call(Request, From, State) ->
     ?ERROR_MSG("Got unexpected request from ~p: ~p", [From, Request]),
@@ -411,11 +404,8 @@ handle_cast(reopen_log, #state{host = Host, dump_fd = Fd} = State) ->
 handle_cast({reload, NewOpts, OldOpts},
             #state{host = Host,
                    dump_fd = Fd,
-                   rtbl_host = OldRTBLHost,
-                   rtbl_domains_node = OldRTBLDomainsNode,
-                   rtbl_retry_timer = RTBLRetryTimer} =
+                   rtbl_services = OldRTBLServices} =
                 State) ->
-    misc:cancel_timer(RTBLRetryTimer),
     State1 =
         State#state{dump_fd = mod_antispam_dump:reload_dumping(Host, Fd, OldOpts, NewOpts)},
     State2 =
@@ -427,13 +417,13 @@ handle_cast({reload, NewOpts, OldOpts},
             {_OldMax, _NewMax} ->
                 State1
         end,
-    ok = mod_antispam_rtbl:unsubscribe(OldRTBLHost, OldRTBLDomainsNode, Host),
+    mod_antispam_rtbl:cancel_timers(OldRTBLServices),
+    ok = mod_antispam_rtbl:unsubscribe(Host, OldRTBLServices),
     {_Result, State3} = reload_files(State2#state{blocked_domains = #{}}),
-    [#rtbl_service{host = RTBLHost, node = RTBLDomainsNode}] =
-        get_rtbl_services_option(NewOpts),
-    ok = mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
-    {noreply, State3#state{rtbl_host = RTBLHost, rtbl_domains_node = RTBLDomainsNode}};
-handle_cast({update_blocked_domains, NewItems},
+    RTBLServices = get_rtbl_services_option(NewOpts),
+    ok = mod_antispam_rtbl:get_items(Host, RTBLServices),
+    {noreply, State3#state{rtbl_services = RTBLServices}};
+handle_cast({update_blocked_domains, {_RTBLHost, _RTBLNode, NewItems}},
             #state{blocked_domains = BlockedDomains} = State) ->
     {noreply, State#state{blocked_domains = maps:merge(BlockedDomains, NewItems)}};
 handle_cast(Request, State) ->
@@ -441,57 +431,97 @@ handle_cast(Request, State) ->
     {noreply, State}.
 
 -spec handle_info(term(), state()) -> {noreply, state()}.
-handle_info({iq_reply, timeout, blocked_domains}, State) ->
-    ?WARNING_MSG("Fetching blocked domains failed: fetch timeout. Retrying in 60 seconds",
-                 []),
+handle_info({iq_reply, timeout, {get_items, RTBLHost, RTBLNode}},
+            #state{rtbl_services = RTBLServices} = State) ->
+    ?WARNING_MSG("Fetching RTBL items failed: host=~s node=~s~nFetch timeout. Retrying in 60 seconds.",
+                 [RTBLHost, RTBLNode]),
     {noreply,
-     State#state{rtbl_retry_timer =
-                     erlang:send_after(60000, self(), request_blocked_domains)}};
-handle_info({iq_reply, #iq{type = error} = IQ, blocked_domains}, State) ->
+     State#state{rtbl_services =
+                     set_retry_timer(RTBLServices,
+                                     RTBLHost,
+                                     RTBLNode,
+                                     erlang:send_after(60000, self(), request_items))}};
+handle_info({iq_reply, #iq{type = error} = IQ, {get_items, RTBLHost, RTBLNode}},
+            #state{rtbl_services = RTBLServices} = State) ->
     ?WARNING_MSG("Fetching blocked domains failed: ~p. Retrying in 60 seconds",
                  [xmpp:format_stanza_error(
                       xmpp:get_error(IQ))]),
     {noreply,
-     State#state{rtbl_retry_timer =
-                     erlang:send_after(60000, self(), request_blocked_domains)}};
-handle_info({iq_reply, IQReply, blocked_domains},
+     State#state{rtbl_services =
+                     set_retry_timer(RTBLServices,
+                                     RTBLHost,
+                                     RTBLNode,
+                                     erlang:send_after(60000, self(), request_items))}};
+handle_info({iq_reply, IQReply, {get_items, RTBLHost, RTBLNode}},
             #state{blocked_domains = OldBlockedDomains,
-                   rtbl_host = RTBLHost,
-                   rtbl_domains_node = RTBLDomainsNode,
+                   rtbl_services = RTBLServices,
                    host = Host} =
                 State) ->
-    case mod_antispam_rtbl:parse_blocked_domains(IQReply) of
+    case mod_antispam_rtbl:parse_blocked_domains(IQReply, RTBLHost, RTBLNode) of
         undefined ->
             ?WARNING_MSG("Fetching initial list failed: invalid result payload", []),
-            {noreply, State#state{rtbl_retry_timer = undefined}};
-        NewBlockedDomains ->
-            ok = mod_antispam_rtbl:subscribe(RTBLHost, RTBLDomainsNode, Host),
             {noreply,
-             State#state{rtbl_retry_timer = undefined,
-                         rtbl_subscribed = true,
+             State#state{rtbl_services =
+                             set_retry_timer(RTBLServices, RTBLHost, RTBLNode, undefined)}};
+        NewBlockedDomains ->
+            ok = mod_antispam_rtbl:subscribe(Host, RTBLServices),
+            RTBLServiceNode = get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode),
+            {noreply,
+             State#state{rtbl_services =
+                             set_rtbl_service_node(RTBLServices,
+                                                   RTBLHost,
+                                                   RTBLNode,
+                                                   RTBLServiceNode#rtbl_service_node{retry_timer =
+                                                                                         undefined,
+                                                                                     subscribed =
+                                                                                         true}),
                          blocked_domains = maps:merge(OldBlockedDomains, NewBlockedDomains)}}
     end;
-handle_info({iq_reply, timeout, subscribe_result}, State) ->
+handle_info({iq_reply, timeout, {subscribe_result, RTBLHost, RTBLNode}},
+            #state{rtbl_services = RTBLServices} = State) ->
     ?WARNING_MSG("Subscription error: request timeout", []),
-    {noreply, State#state{rtbl_subscribed = false}};
-handle_info({iq_reply, #iq{type = error} = IQ, subscribe_result}, State) ->
+    RTBLServiceNode = get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode),
+    {noreply,
+     State#state{rtbl_services =
+                     set_rtbl_service_node(RTBLServices,
+                                           RTBLHost,
+                                           RTBLNode,
+                                           RTBLServiceNode#rtbl_service_node{subscribed = false})}};
+handle_info({iq_reply, #iq{type = error} = IQ, {subscribe_result, RTBLHost, RTBLNode}},
+            #state{rtbl_services = RTBLServices} = State) ->
     ?WARNING_MSG("Subscription error: ~p",
                  [xmpp:format_stanza_error(
                       xmpp:get_error(IQ))]),
-    {noreply, State#state{rtbl_subscribed = false}};
-handle_info({iq_reply, IQReply, subscribe_result}, State) ->
+    RTBLServiceNode = get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode),
+    {noreply,
+     State#state{rtbl_services =
+                     set_rtbl_service_node(RTBLServices,
+                                           RTBLHost,
+                                           RTBLNode,
+                                           RTBLServiceNode#rtbl_service_node{subscribed = false})}};
+handle_info({iq_reply, IQReply, {subscribe_result, RTBLHost, RTBLNode}},
+            #state{rtbl_services = RTBLServices} = State) ->
     ?DEBUG("Got subscribe result: ~p", [IQReply]),
-    {noreply, State#state{rtbl_subscribed = true}};
-handle_info({iq_reply, _IQReply, unsubscribe_result}, State) ->
+    RTBLServiceNode = get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode),
+    {noreply,
+     State#state{rtbl_services =
+                     set_rtbl_service_node(RTBLServices,
+                                           RTBLHost,
+                                           RTBLNode,
+                                           RTBLServiceNode#rtbl_service_node{subscribed = true})}};
+handle_info({iq_reply, _IQReply, {unsubscribe_result, RTBLHost, RTBLNode}},
+            #state{rtbl_services = RTBLServices} = State) ->
     %% FIXME: we should check it's true (of type `result`, not `error`), but at that point, what
     %% would we do?
-    {noreply, State#state{rtbl_subscribed = false}};
-handle_info(request_blocked_domains,
-            #state{host = Host,
-                   rtbl_host = RTBLHost,
-                   rtbl_domains_node = RTBLDomainsNode} =
-                State) ->
-    mod_antispam_rtbl:request_blocked_domains(RTBLHost, RTBLDomainsNode, Host),
+    RTBLServiceNode = get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode),
+    {noreply,
+     State#state{rtbl_services =
+                     set_rtbl_service_node(RTBLServices,
+                                           RTBLHost,
+                                           RTBLNode,
+                                           RTBLServiceNode#rtbl_service_node{subscribed = false})}};
+handle_info(request_items, #state{host = Host, rtbl_services = RTBLServices} = State) ->
+    mod_antispam_rtbl:get_items(Host, RTBLServices),
     {noreply, State};
 handle_info(Info, State) ->
     ?ERROR_MSG("Got unexpected info: ~p", [Info]),
@@ -501,12 +531,10 @@ handle_info(Info, State) ->
 terminate(Reason,
           #state{host = Host,
                  dump_fd = Fd,
-                 rtbl_host = RTBLHost,
-                 rtbl_domains_node = RTBLDomainsNode,
-                 rtbl_retry_timer = RTBLRetryTimer} =
+                 rtbl_services = RTBLServices} =
               _State) ->
     ?DEBUG("Stopping spam filter process for ~s: ~p", [Host, Reason]),
-    misc:cancel_timer(RTBLRetryTimer),
+    mod_antispam_rtbl:cancel_timers(RTBLServices),
     mod_antispam_dump:terminate_dumping(Host, Fd),
     mod_antispam_files:terminate_files(Host),
     mod_antispam_filter:terminate_filtering(Host),
@@ -515,7 +543,7 @@ terminate(Reason,
                           mod_antispam_rtbl,
                           pubsub_event_handler,
                           50),
-    mod_antispam_rtbl:unsubscribe(RTBLHost, RTBLDomainsNode, Host),
+    mod_antispam_rtbl:unsubscribe(Host, RTBLServices),
     ok.
 
 -spec code_change({down, term()} | term(), state(), term()) -> {ok, state()}.
@@ -622,14 +650,36 @@ get_rtbl_services_option(Opts) when is_map(Opts) ->
                          "were configured. Will use only first one",
                          [])
     end,
-    case Services of
-        [] ->
-            [#rtbl_service{}];
-        [Host | _] when is_binary(Host) ->
-            [#rtbl_service{host = Host, node = ?DEFAULT_RTBL_DOMAINS_NODE}];
-        [[{Host, [{spam_source_domains_node, Node}]}] | _] ->
-            [#rtbl_service{host = Host, node = Node}]
-    end.
+    lists:foldl(fun to_rtbl_service/2, #{}, lists:sublist(Services, 1, 1)).
+
+to_rtbl_service([{Host, Nodes}], M) ->
+    M#{Host => lists:foldl(fun to_rtbl_service_nodes/2, #{}, Nodes)};
+to_rtbl_service(Host, M) ->
+    M#{Host => #{?DEFAULT_SPAM_SOURCE_DOMAINS_NODE => #rtbl_service_node{}}}.
+
+to_rtbl_service_nodes({spam_source_domains_node = Type, Node}, M) ->
+    M#{Node => #rtbl_service_node{type = node_type(Type)}};
+to_rtbl_service_nodes({UnknownType, Node}, M) ->
+    ?WARNING_MSG("Unknown RTBL node type configured: type=~p node=~s", [UnknownType, Node]),
+    M.
+
+node_type(spam_source_domains_node) ->
+    spam_source_domains.
+
+get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode) ->
+    #{RTBLHost := #{RTBLNode := RTBLServiceNode}} = RTBLServices,
+    RTBLServiceNode.
+
+set_retry_timer(RTBLServices, RTBLHost, RTBLNode, TRef) ->
+    #{RTBLHost := #{RTBLNode := RTBLServiceNode} = RTBLNodes} = RTBLServices,
+    RTBLServices#{RTBLHost =>
+                      RTBLNodes#{RTBLNode =>
+                                     RTBLServiceNode#rtbl_service_node{retry_timer = TRef}}}.
+
+set_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode, RTBLServiceNode) ->
+    #{RTBLHost := RTBLNodes} = RTBLServices,
+    RTBLServices#{RTBLHost => RTBLNodes#{RTBLNode => RTBLServiceNode}}.
+
 
 %%--------------------------------------------------------------------
 %%| Caching
