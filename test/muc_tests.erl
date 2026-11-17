@@ -409,6 +409,7 @@ master_slave_cases() ->
       master_slave_test(config_allow_voice_requests),
       master_slave_test(config_voice_request_interval),
       master_slave_test(config_visitor_nickchange),
+      master_slave_test(config_captcha_subscribe),
       master_slave_test(join_conflict),
       master_slave_test(duplicate_occupantid),
       master_slave_test(hats)
@@ -1751,6 +1752,55 @@ config_visitor_nickchange_slave(Config) ->
     #presence{from = MyNewNickJID, type = error} = Err = recv_presence(Config),
     #stanza_error{reason = 'not-allowed'} = xmpp:get_error(Err),
     ok = leave(Config),
+    disconnect(Config).
+
+config_captcha_subscribe_master(Config) ->
+    Room = muc_room_jid(Config),
+    MyNickJID = my_muc_jid(Config),
+    ok = join_new(Config),
+    [104] = set_config(Config, [{captcha_protected, true},
+				    {allow_subscription, true}]),
+    put_event(Config, subscribe),
+    subscribed = get_event(Config),
+    ct:comment("The room still routes a groupchat message"),
+    Body = xmpp:mk_text(<<"after the subscribe">>),
+    send(Config, #message{type = groupchat, to = Room, body = Body}),
+    #message{type = groupchat, from = MyNickJID, body = Body} =
+	recv_message(Config),
+    done = get_event(Config),
+    ok = leave(Config),
+    disconnect(Config).
+
+config_captcha_subscribe_slave(Config) ->
+    Room = muc_room_jid(Config),
+    MyNick = ?config(nick, Config),
+    subscribe = get_event(Config),
+    ct:comment("Subscribing to the captcha protected room"),
+    SubID = send(Config, #iq{type = set, to = Room,
+			     sub_els = [#muc_subscribe{
+					   nick = MyNick,
+					   events = [?NS_MUCSUB_NODES_MESSAGES]}]}),
+    ct:comment("Solving the CAPTCHA"),
+    #message{from = Room} = Challenge = recv_message(Config),
+    #xcaptcha{xdata = #xdata{fields = Fs}} =
+	xmpp:get_subtag(Challenge, #xcaptcha{xdata = #xdata{}}),
+    [CaptchaID] = [V || #xdata_field{var = <<"challenge">>, values = [V]} <- Fs],
+    [Captcha] = ets:lookup(captcha, CaptchaID),
+    Key = element(4, Captcha),
+    Answer = [#xdata_field{var = <<"FORM_TYPE">>, values = [?NS_CAPTCHA]},
+	      #xdata_field{var = <<"challenge">>, values = [CaptchaID]},
+	      #xdata_field{var = <<"ocr">>, values = [Key]}],
+    #iq{type = result} =
+	send_recv(Config, #iq{type = set, to = Room,
+			      sub_els = [#xcaptcha{xdata = #xdata{type = submit,
+								  fields = Answer}}]}),
+    ct:comment("The subscription is answered"),
+    #iq{type = result, sub_els = [#muc_subscribe{}]} =
+	receive #iq{id = SubID} = SubRes -> SubRes end,
+    put_event(Config, subscribed),
+    ct:comment("The room is still there"),
+    ok = unsubscribe(Config, Room),
+    put_event(Config, done),
     disconnect(Config).
 
 register_master(Config) ->
