@@ -125,6 +125,12 @@
                         {jid(), role, role(), binary()}.
 -export_type([state/0, disco_item_filter/0]).
 
+-ifdef(TEST).
+%% The CAPTCHA grace-period waiver and its bookkeeping, for muc_captcha_grace_tests.
+-export([captcha_waived/2, captcha_pass_valid/3, remember_captcha_pass/4,
+	 purge_captcha_passes/2]).
+-endif.
+
 -callback set_affiliation(binary(), binary(), binary(), jid(), affiliation_data()) -> ok | {error, any()}.
 -callback set_affiliations(binary(), binary(), binary(),
 			   affiliations()) -> ok | {error, any()}.
@@ -980,8 +986,9 @@ handle_info({captcha_succeed, From}, normal_state,
     NewState = case maps:get(From, StateData#state.robots, passed) of
 		   {Nick, Packet} ->
 		       Robots = maps:put(From, passed, StateData#state.robots),
-		       add_new_user(From, Nick, Packet,
-				    StateData#state{robots = Robots});
+		       SD1 = note_captcha_pass(
+			       From, StateData#state{robots = Robots}),
+		       add_new_user(From, Nick, Packet, SD1);
 		   passed ->
 		       StateData
 	       end,
@@ -2271,11 +2278,19 @@ remove_online_user(JID, StateData, Reason) ->
 	    catch _:{badkey, _} ->
 		    StateData#state.nicks
 	    end,
+    %% Keep the grace period running from when a CAPTCHA-solving occupant was
+    %% last in the room: stamp their pass on the way out, so a reconnect a
+    %% moment later rejoins without a fresh challenge however long the session
+    %% lasted. Only affiliation 'none' is challenged, so only it is remembered.
+    SD0 = case get_affiliation(JID, StateData) of
+	      none -> note_captcha_pass(JID, StateData);
+	      _ -> StateData
+	  end,
     NewStateData =
     ejabberd_hooks:run_fold(
       muc_remove_online_user,
-      StateData#state.server_host,
-      StateData#state{users = Users, nicks = Nicks},
+      SD0#state.server_host,
+      SD0#state{users = Users, nicks = Nicks},
       [JID, Reason]),
     reset_hibernate_timer(NewStateData).
 
@@ -2674,28 +2689,80 @@ check_captcha(Affiliation, From, StateData) ->
 	   andalso ejabberd_captcha:is_feature_available()
 	of
       true when Affiliation == none ->
-	  case maps:get(From, StateData#state.robots, error) of
-	      passed -> true;
-	      _ ->
-		WList =
-		    (StateData#state.config)#config.captcha_whitelist,
-		#jid{luser = U, lserver = S, lresource = R} = From,
-		case (?SETS):is_element({U, S, R}, WList) of
-		  true -> true;
-		  false ->
-		      case (?SETS):is_element({U, S, <<"">>}, WList) of
-			true -> true;
-			false ->
-			    case (?SETS):is_element({<<"">>, S, <<"">>}, WList)
-				of
-			      true -> true;
-			      false -> captcha_required
-			    end
-		      end
-		end
+	  case captcha_waived(From, StateData) of
+	    true -> true;
+	    false -> captcha_required
 	  end;
       _ -> true
     end.
+
+%% A CAPTCHA is not asked of an entity that already proved itself:
+%%  - its challenge is pending-passed (robots);
+%%  - it is a current occupant (is_user_online) -- an occupant that subscribes
+%%    with MUC/Sub reaches add_new_user as a non-subscriber, and must not be
+%%    challenged for something it already joined;
+%%  - it is already a subscriber (it passed to subscribe);
+%%  - it solved a CAPTCHA here within the grace period (captcha_grace_period),
+%%    which survives a reconnect's new resource since the pass is kept by bare
+%%    JID and refreshed while the user keeps coming and going; or
+%%  - it is on the room's captcha_whitelist.
+%% Without this a captcha_protected room re-challenges an affiliation-'none'
+%% user on every rejoin -- after each reconnect -- though it just proved itself.
+-spec captcha_waived(jid(), state()) -> boolean().
+captcha_waived(From, StateData) ->
+    maps:get(From, StateData#state.robots, error) == passed
+	orelse is_user_online(From, StateData)
+	orelse is_subscriber(From, StateData)
+	orelse captcha_pass_valid(jid:tolower(jid:remove_resource(From)),
+				  StateData#state.captcha_passed,
+				  erlang:system_time(millisecond))
+	orelse in_captcha_whitelist(From, StateData).
+
+-spec in_captcha_whitelist(jid(), state()) -> boolean().
+in_captcha_whitelist(From, StateData) ->
+    WList = (StateData#state.config)#config.captcha_whitelist,
+    #jid{luser = U, lserver = S, lresource = R} = From,
+    (?SETS):is_element({U, S, R}, WList)
+	orelse (?SETS):is_element({U, S, <<"">>}, WList)
+	orelse (?SETS):is_element({<<"">>, S, <<"">>}, WList).
+
+%% The pure grace-period bookkeeping (unit-tested in muc_captcha_grace_tests):
+%% a pass is kept by bare JID until an absolute expiry in milliseconds (or the
+%% atom 'infinity'); expired entries are dropped whenever a new pass is noted,
+%% so the map cannot grow without bound.
+-spec captcha_pass_valid(ljid(), captcha_passes(), integer()) -> boolean().
+captcha_pass_valid(LBareJID, Passed, NowMs) ->
+    case maps:get(LBareJID, Passed, undefined) of
+	undefined -> false;
+	infinity -> true;
+	Exp when is_integer(Exp) -> Exp > NowMs
+    end.
+
+-spec remember_captcha_pass(ljid(), captcha_passes(), integer(),
+			    infinity | non_neg_integer()) -> captcha_passes().
+remember_captcha_pass(_LBareJID, Passed, _NowMs, 0) ->
+    Passed;
+remember_captcha_pass(LBareJID, Passed, _NowMs, infinity) ->
+    maps:put(LBareJID, infinity, Passed);
+remember_captcha_pass(LBareJID, Passed, NowMs, GraceMs) when is_integer(GraceMs) ->
+    maps:put(LBareJID, NowMs + GraceMs, purge_captcha_passes(Passed, NowMs)).
+
+-spec purge_captcha_passes(captcha_passes(), integer()) -> captcha_passes().
+purge_captcha_passes(Passed, NowMs) ->
+    maps:filter(fun(_, infinity) -> true;
+		   (_, Exp) -> Exp > NowMs
+		end, Passed).
+
+%% From just solved the room's CAPTCHA: remember it by bare JID for the grace
+%% period, so an imminent rejoin (a reconnect, a self-ping-driven re-entry) is
+%% not challenged again.
+-spec note_captcha_pass(jid(), state()) -> state().
+note_captcha_pass(From, StateData) ->
+    GraceMs = mod_muc_opt:captcha_grace_period(StateData#state.server_host),
+    Passed = remember_captcha_pass(jid:tolower(jid:remove_resource(From)),
+				   StateData#state.captcha_passed,
+				   erlang:system_time(millisecond), GraceMs),
+    StateData#state{captcha_passed = Passed}.
 
 -spec extract_password(presence() | iq()) -> binary() | false.
 extract_password(#presence{} = Pres) ->
