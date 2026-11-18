@@ -36,6 +36,8 @@
 %% ejabberd_hooks callbacks
 -export([s2s_in_handle_info/2, s2s_receive_packet/1, sm_receive_packet/1]).
 
+-import(mod_antispam, [cache_tab/1]).
+
 -include("logger.hrl").
 -include("mod_antispam.hrl").
 
@@ -107,10 +109,12 @@ do_check(From, To, Host, Stanza) ->
                         ham ->
                             Stanza;
                         spam ->
+                            ejabberd_hooks:run(spam_found, Host, [{jid, From}]),
                             reject(Stanza),
                             {stop, drop}
                     end;
                 spam ->
+                    ejabberd_hooks:run(spam_found, Host, [{jid, From}]),
                     reject(Stanza),
                     {stop, drop}
             end;
@@ -133,53 +137,31 @@ s2s_in_handle_info(State, _) ->
 
 -spec needs_checking(binary(), jid(), jid()) -> boolean().
 needs_checking(Host, #jid{lserver = FromHost} = From, To) ->
-    case gen_mod:is_loaded(Host, ?MODULE_ANTISPAM) of
-        true ->
-            Access = gen_mod:get_module_opt(Host, ?MODULE_ANTISPAM, access_spam),
-            case acl:match_rule(Host, Access, To) of
-                allow ->
-                    ?DEBUG("Spam not filtered for ~s", [jid:encode(To)]),
-                    false;
-                deny ->
-                    ?DEBUG("Spam is filtered for ~s", [jid:encode(To)]),
-                    not mod_roster:is_subscribed(From, To)
-                    andalso not
-                                mod_roster:is_subscribed(
-                                    jid:make(<<>>, FromHost),
-                                    To) % likely a gateway or user allowed whole domain
-                    andalso not is_room_affiliated(From, To)
-            end;
-        false ->
-            ?DEBUG("~s not loaded for ~s", [?MODULE_ANTISPAM, Host]),
-            false
+    maybe
+        true ?= gen_mod:is_loaded(Host, ?MODULE_ANTISPAM),
+        Access = gen_mod:get_module_opt(Host, ?MODULE_ANTISPAM, access_spam),
+        true ?= acl:match_rule(Host, Access, To) == deny,
+        not mod_roster:is_subscribed(From, To)
+        andalso not
+                    %% likely a gateway or user allowed whole domain?
+                    mod_roster:is_subscribed(
+                        jid:make(<<>>, FromHost), To)
+        andalso not is_room_affiliated(From, To)
     end.
 
 -spec check_from(binary(), jid()) -> ham | spam.
 check_from(Host, From) ->
-    try
-        Proc = gen_mod:get_module_proc_check(Host, ?MODULE_ANTISPAM),
-        LFrom =
-            {_, FromDomain, _} =
-                jid:remove_resource(
-                    jid:tolower(From)),
-        case gen_server:call(Proc, {is_blocked_domain, FromDomain}) of
-            true ->
-                ?DEBUG("Spam JID found in blocked domains: ~p", [From]),
-                ejabberd_hooks:run(spam_found, Host, [{jid, From}]),
-                spam;
-            false ->
-                case gen_server:call(Proc, {check_jid, LFrom}) of
-                    {spam_filter, Result} ->
-                        Result
-                end
-        end
-    catch
-        error:badarg ->
-            ham;
-        exit:{timeout, _} ->
-            ?WARNING_MSG("Timeout while checking ~s against list of blocked domains or spammers",
-                         [jid:encode(From)]),
-            ham
+    LFrom =
+        jid:remove_resource(
+            jid:tolower(From)),
+    maybe
+        false ?= mod_antispam:is_blocked_domain(Host, From#jid.lserver),
+        error ?= ets_cache:lookup(cache_tab(blocked_jids), {Host, LFrom}),
+        error ?= ets_cache:lookup(cache_tab(jids_cache), {Host, LFrom}),
+        ham
+    else
+        _ ->
+            spam
     end.
 
 -spec check_body(binary(), jid(), binary()) -> ham | spam.
@@ -189,22 +171,30 @@ check_body(Host, From, Body) ->
             ?DEBUG("No JIDs/URLs found in message", []),
             ham;
         {URLs, JIDs} ->
-            try Proc = gen_mod:get_module_proc_check(Host, ?MODULE_ANTISPAM),
-                LFrom =
-                    jid:remove_resource(
-                        jid:tolower(From)),
-                gen_server:call(Proc, {check_body, URLs, JIDs, LFrom})
-            of
-                {spam_filter, Result} ->
-                    Result
-            catch
-                error:badarg ->
-                    ham;
-                exit:{timeout, _} ->
-                    ?WARNING_MSG("Timeout while checking body", []),
-                    ham
+            LFrom =
+                jid:remove_resource(
+                    jid:tolower(From)),
+            maybe
+                ham ?= filter_body(URLs, cache_tab(blocked_urls), LFrom, Host),
+                filter_body(JIDs, cache_tab(blocked_jids), LFrom, Host)
             end
     end.
+
+filter_body({_, Addrs}, Tab, From, Host) ->
+    case lists:any(fun(Addr) -> ets_cache:lookup(Tab, {Host, Addr}) =/= error end, Addrs) of
+        true ->
+            ?DEBUG("Spam addresses found: ~p", [Addrs]),
+            ets_cache:insert(cache_tab(jids_cache),
+                             {Host, From},
+                             #{source => filter_body},
+                             ejabberd_cluster:get_nodes()),
+            spam;
+        false ->
+            ?DEBUG("Addresses not listed: ~p", [Addrs]),
+            ham
+    end;
+filter_body(none, _Set, _From, _Host) ->
+    ham.
 
 %%--------------------------------------------------------------------
 %%| Auxiliary

@@ -5,6 +5,7 @@
 
 -export([access_spam/1]).
 -export([allow_domains_file/1]).
+-export([cache_lifetime/1]).
 -export([cache_size/1]).
 -export([forward_reports/1]).
 -export([forward_reports_to_third_party/1]).
@@ -26,7 +27,13 @@ allow_domains_file(Opts) when is_map(Opts) ->
 allow_domains_file(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, allow_domains_file).
 
--spec cache_size(gen_mod:opts() | global | binary()) -> 'unlimited' | pos_integer().
+-spec cache_lifetime(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
+cache_lifetime(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(cache_lifetime, Opts);
+cache_lifetime(Host) ->
+    gen_mod:get_module_opt(Host, mod_antispam, cache_lifetime).
+
+-spec cache_size(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
 cache_size(Opts) when is_map(Opts) ->
     gen_mod:get_opt(cache_size, Opts);
 cache_size(Host) ->

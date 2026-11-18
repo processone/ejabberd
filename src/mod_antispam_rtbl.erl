@@ -29,10 +29,9 @@
 -include("logger.hrl").
 -include("mod_antispam.hrl").
 
--define(SERVICE_MODULE, mod_antispam).
 -define(SERVICE_JID_PREFIX, "rtbl-").
 
--export([parse_blocked_domains/3,
+-export([parse_iq_result/3,
 	 pubsub_event_handler/1,
          cancel_timers/1,
 	 get_items/2,
@@ -92,10 +91,10 @@ cancel_timers(Services) ->
                                end,
                                Services).
 
--spec parse_blocked_domains(stanza(), binary(), binary()) -> #{binary() => any()} | undefined.
-parse_blocked_domains(#iq{to = #jid{lserver = _LServer}, type = result} = IQ,
-                      _RTBLHost,
-                      RTBLNode) ->
+-spec parse_iq_result(stanza(), binary(), binary()) -> #{binary() => any()} | undefined.
+parse_iq_result(#iq{to = #jid{lserver = _LServer}, type = result} = IQ,
+                _RTBLHost,
+                RTBLNode) ->
     ?DEBUG("parsing iq-result items: ~p", [IQ]),
     case xmpp:get_subtag(IQ, #pubsub{}) of
         #pubsub{items = #ps_items{node = RTBLNode, items = Items}} ->
@@ -121,9 +120,12 @@ pubsub_event_handler(#message{from = FromJid,
     case parse_pubsub_event(Msg) of
         {RTBLNode, ParsedItems} ->
             case RTBLServices of
-                #{From := #{RTBLNode := _RTBLServiceNode}} ->
-                    Proc = gen_mod:get_module_proc_check(LServer, ?SERVICE_MODULE),
-                    gen_server:cast(Proc, {update_blocked_domains, {From, RTBLNode, ParsedItems}}),
+                #{From := #{RTBLNode := RTBLServiceNode}} ->
+                    mod_antispam:update_blocked_items(LServer,
+                                                      From,
+                                                      RTBLNode,
+                                                      RTBLServiceNode#rtbl_service_node.type,
+                                                      ParsedItems),
                     drop;
                 _NoMatch ->
                     ?INFO_MSG("Got unexpected message from ~s to rtbl resource:~n~p", [From, Msg]),
