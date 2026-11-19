@@ -90,8 +90,18 @@ stop_async(Pid) ->
 %%%===================================================================
 %%% xmpp_stream_in callbacks
 %%%===================================================================
-tls_options(#{tls_options := TLSOptions}) ->
-    TLSOptions.
+tls_options(#{server := Server, tls_options := TLSOptions}) ->
+    case proplists:get_value(certfile, TLSOptions) of
+	undefined ->
+	    case ejabberd_pkix:get_certfile(Server) of
+		{ok, CertFile} ->
+		    lists:keystore(certfile, 1, TLSOptions, {certfile, CertFile});
+		error ->
+		    TLSOptions
+	    end;
+	_ ->
+	    TLSOptions
+    end.
 
 init([State, Opts]) ->
     Access = proplists:get_value(access, Opts, all),
