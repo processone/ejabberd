@@ -76,11 +76,6 @@ infinity_never_expires_test() ->
     ?assert(mod_muc_room:captcha_pass_valid(?BARE, P, 1000)),
     ?assert(mod_muc_room:captcha_pass_valid(?BARE, P, 1 bsl 60)).
 
-zero_grace_disables_test() ->
-    P = mod_muc_room:remember_captcha_pass(?BARE, #{}, 1000, 0),
-    ?assertEqual(#{}, P),
-    ?assertNot(mod_muc_room:captcha_pass_valid(?BARE, P, 1000)).
-
 %% A later pass (a solve, or a leave) refreshes the window -- this is what keeps
 %% a client reconnecting every few minutes from being re-challenged each hour.
 refresh_extends_test() ->

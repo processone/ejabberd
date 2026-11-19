@@ -1680,9 +1680,8 @@ mod_doc() ->
 		     "JID) join or subscribe again without being challenged "
 		     "anew, expressed in seconds. This keeps a user who just "
 		     "proved they are human from being re-challenged on every "
-		     "reconnect. Set it to '0' to challenge on every join, or "
-		     "to 'infinity' to never re-challenge a user who passed. "
-		     "The default value is '3600' (one hour).")}},
+		     "reconnect. Set it to 'infinity' to never re-challenge a "
+		     "user who passed. The default value is '3600' (one hour).")}},
            {history_size,
             #{value => ?T("Size"),
               desc =>

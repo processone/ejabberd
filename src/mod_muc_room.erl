@@ -2747,9 +2747,7 @@ captcha_pass_valid(LBareJID, Passed, NowMs) ->
     end.
 
 -spec remember_captcha_pass(ljid(), captcha_passes(), integer(),
-			    infinity | non_neg_integer()) -> captcha_passes().
-remember_captcha_pass(_LBareJID, Passed, _NowMs, 0) ->
-    Passed;
+			    infinity | pos_integer()) -> captcha_passes().
 remember_captcha_pass(LBareJID, Passed, _NowMs, infinity) ->
     maps:put(LBareJID, infinity, Passed);
 remember_captcha_pass(LBareJID, Passed, NowMs, GraceMs) when is_integer(GraceMs) ->
