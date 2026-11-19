@@ -14,6 +14,7 @@
 -export([db_type/1]).
 -export([default_room_options/1]).
 -export([hibernation_timeout/1]).
+-export([captcha_grace_period/1]).
 -export([history_size/1]).
 -export([host/1]).
 -export([hosts/1]).
@@ -104,6 +105,12 @@ hibernation_timeout(Opts) when is_map(Opts) ->
     gen_mod:get_opt(hibernation_timeout, Opts);
 hibernation_timeout(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, hibernation_timeout).
+
+-spec captcha_grace_period(gen_mod:opts() | global | binary()) -> 'infinity' | non_neg_integer().
+captcha_grace_period(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(captcha_grace_period, Opts);
+captcha_grace_period(Host) ->
+    gen_mod:get_module_opt(Host, mod_muc, captcha_grace_period).
 
 -spec history_size(gen_mod:opts() | global | binary()) -> non_neg_integer().
 history_size(Opts) when is_map(Opts) ->

@@ -134,6 +134,7 @@
     muc_subscribers         = #muc_subscribers{} :: #muc_subscribers{},
     last_voice_request_time = treap:empty() :: treap:treap(),
     robots                  = #{} :: robots(),
+    captcha_passed          = #{} :: captcha_passes(),
     nicks                   = #{} :: nicks(),
     affiliations            = #{} :: affiliations(),
     roles                   = #{} :: roles(),
@@ -153,6 +154,7 @@
 
 -type users() :: #{ljid() => #user{}}.
 -type robots() :: #{jid() => {binary(), stanza()}}.
+-type captcha_passes() :: #{ljid() => integer() | infinity}.
 -type nicks() :: #{binary() => [ljid()]}.
 -type affiliation_data() :: affiliation() |
                             {affiliation(), binary()} |

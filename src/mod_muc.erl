@@ -1487,6 +1487,8 @@ mod_opt_type(queue_type) ->
     econf:queue_type();
 mod_opt_type(hibernation_timeout) ->
     econf:timeout(second, infinity);
+mod_opt_type(captcha_grace_period) ->
+    econf:timeout(second, infinity);
 mod_opt_type(vcard) ->
     econf:vcard_temp().
 
@@ -1528,6 +1530,7 @@ mod_options(Host) ->
      {user_presence_shaper, none},
      {preload_rooms, true},
      {hibernation_timeout, infinity},
+     {captcha_grace_period, timer:hours(1)},
      {vcard, undefined},
      {cleanup_affiliations_on_start, false},
      {default_room_options,
@@ -1669,6 +1672,16 @@ mod_doc() ->
               desc =>
                   ?T("Timeout before hibernating the room process, expressed "
 		     "in seconds. The default value is 'infinity'.")}},
+           {captcha_grace_period,
+            #{value => "infinity | Seconds",
+              desc =>
+                  ?T("In a 'captcha_protected' room, how long after a user "
+		     "solves the CAPTCHA the room will let that user (by bare "
+		     "JID) join or subscribe again without being challenged "
+		     "anew, expressed in seconds. This keeps a user who just "
+		     "proved they are human from being re-challenged on every "
+		     "reconnect. Set it to 'infinity' to never re-challenge a "
+		     "user who passed. The default value is '3600' (one hour).")}},
            {history_size,
             #{value => ?T("Size"),
               desc =>
