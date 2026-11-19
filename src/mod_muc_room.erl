@@ -984,6 +984,22 @@ handle_info(process_room_queue,
 handle_info({captcha_succeed, From}, normal_state,
 	    StateData) ->
     NewState = case maps:get(From, StateData#state.robots, passed) of
+		   {Nick, #iq{} = IQ} ->
+		       %% A MUC/Sub subscribe held for the CAPTCHA: add_new_user/4
+		       %% returns the reply beside the new state, as for
+		       %% process_iq_mucsub/3
+		       Robots = maps:put(From, passed, StateData#state.robots),
+		       StateData1 = StateData#state{robots = Robots},
+		       case add_new_user(From, Nick, IQ, StateData1) of
+			   {result, Res, StateData2} ->
+			       ejabberd_router:route(xmpp:make_iq_result(IQ, Res)),
+			       StateData2;
+			   {ignore, StateData2} ->
+			       StateData2;
+			   {error, Err} ->
+			       ejabberd_router:route_error(IQ, Err),
+			       StateData1
+		       end;
 		   {Nick, Packet} ->
 		       Robots = maps:put(From, passed, StateData#state.robots),
 		       SD1 = note_captcha_pass(
