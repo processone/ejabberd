@@ -102,3 +102,25 @@ purge_direct_test() ->
     ?assertEqual(#{{<<"bob">>, ?S, <<>>} => infinity},
 		 mod_muc_room:purge_captcha_passes(Map, 1000)),
     ?assertEqual(Map, mod_muc_room:purge_captcha_passes(Map, 100)).
+
+%% ---- a kick or ban revokes the pass (set_role to none) ----
+
+%% A kick (role none, no affiliation change) revokes the pass, so the kicked
+%% user is challenged again instead of walking back in on it.
+kick_revokes_pass_test() ->
+    ?assert(mod_muc_room:kick_revokes_captcha_pass(none, undefined)).
+
+%% A ban (role none, affiliation outcast) revokes it too.
+ban_revokes_pass_test() ->
+    Reason = {affiliation, #affiliation{affiliation = outcast}},
+    ?assert(mod_muc_room:kick_revokes_captcha_pass(none, Reason)).
+
+%% A config-change removal (e.g. the room turning members-only) is not a kick
+%% and leaves the pass alone.
+config_change_keeps_pass_test() ->
+    ?assertNot(mod_muc_room:kick_revokes_captcha_pass(none, config_change)).
+
+%% A role that is not 'none' (a grant, a nick/presence update) never revokes.
+non_removal_keeps_pass_test() ->
+    ?assertNot(mod_muc_room:kick_revokes_captcha_pass(participant, undefined)),
+    ?assertNot(mod_muc_room:kick_revokes_captcha_pass(visitor, config_change)).

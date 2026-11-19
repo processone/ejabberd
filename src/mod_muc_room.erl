@@ -128,7 +128,7 @@
 -ifdef(TEST).
 %% The CAPTCHA grace-period waiver and its bookkeeping, for muc_captcha_grace_tests.
 -export([captcha_waived/2, captcha_pass_valid/3, remember_captcha_pass/4,
-	 purge_captcha_passes/2]).
+	 purge_captcha_passes/2, kick_revokes_captcha_pass/2]).
 -endif.
 
 -callback set_affiliation(binary(), binary(), binary(), jid(), affiliation_data()) -> ok | {error, any()}.
@@ -1964,7 +1964,15 @@ set_role1(JID, Role, _KickBan, Reason, StateData) ->
                              Role,
                              StateData#state.roles)
     end,
-    StateData#state{users = Users, nicks = Nicks, roles = Roles}.
+    Passed = case kick_revokes_captcha_pass(Role, Reason) of
+		 true ->
+		     maps:remove(jid:tolower(jid:remove_resource(JID)),
+				 StateData#state.captcha_passed);
+		 false ->
+		     StateData#state.captcha_passed
+	     end,
+    StateData#state{users = Users, nicks = Nicks, roles = Roles,
+		    captcha_passed = Passed}.
 
 -spec get_user(jid() | tuple(), state()) -> #user{} | user_not_found.
 get_user(JID, StateData) when is_record(JID, jid) ->
@@ -2763,6 +2771,14 @@ note_captcha_pass(From, StateData) ->
 				   StateData#state.captcha_passed,
 				   erlang:system_time(millisecond), GraceMs),
     StateData#state{captcha_passed = Passed}.
+
+%% A kick or ban (role set to none, but not a config-change removal) revokes any
+%% CAPTCHA grace pass the target earned, so a removed affiliation-'none' user is
+%% challenged again when it tries to come back instead of walking in on the pass.
+-spec kick_revokes_captcha_pass(role(), term()) -> boolean().
+kick_revokes_captcha_pass(none, config_change) -> false;
+kick_revokes_captcha_pass(none, _Reason) -> true;
+kick_revokes_captcha_pass(_Role, _Reason) -> false.
 
 -spec extract_password(presence() | iq()) -> binary() | false.
 extract_password(#presence{} = Pres) ->
