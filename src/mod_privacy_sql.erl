@@ -404,7 +404,9 @@ deserialize(LServer, Batch) ->
 transaction(LServer, F) ->
     case ejabberd_sql:sql_transaction(LServer, F) of
 	{atomic, Res} -> Res;
-	{aborted, _Reason} -> {error, db_failure}
+	{aborted, Reason} ->
+            ?ERROR_MSG("SQL transaction on ~s failed with reason: ~p", [LServer, Reason]),
+            {error, db_failure}
     end.
 
 raw_to_item({SType, SValue, SAction, Order, MatchAll,
