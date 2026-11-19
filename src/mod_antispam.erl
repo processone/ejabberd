@@ -141,8 +141,6 @@ mod_opt_type(allow_domains_file) ->
         econf:enum([none]), econf:file());
 mod_opt_type(cache_size) ->
     econf:pos_int(unlimited);
-mod_opt_type(collect_report_stats) ->
-    econf:bool();
 mod_opt_type(forward_reports) ->
     econf:bool();
 mod_opt_type(forward_reports_to_third_party) ->
@@ -174,7 +172,6 @@ mod_options(_Host) ->
     [{access_spam, none},
      {allow_domains_file, none},
      {cache_size, ?DEFAULT_CACHE_SIZE},
-     {collect_report_stats, true},
      {forward_reports, true},
      {forward_reports_to_third_party, []},
      {rtbl_services, []},
@@ -224,11 +221,6 @@ mod_doc() ->
                      "Note that separate caches are used for each virtual host, "
                      " and that the caches aren't distributed across cluster nodes. "
                      "The default value is '10000'.")}},
-           {collect_report_stats,
-            #{value => "boolean()",
-              desc =>
-                  ?T("Whether to keep reports locally in cache for stats and analysis. Can be queried"
-                     "by command 'get_report_stats'. Default is 'true'")}},
            {forward_reports,
             #{value => "boolean()",
               desc =>

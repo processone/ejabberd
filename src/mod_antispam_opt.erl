@@ -6,7 +6,6 @@
 -export([access_spam/1]).
 -export([allow_domains_file/1]).
 -export([cache_size/1]).
--export([collect_report_stats/1]).
 -export([forward_reports/1]).
 -export([forward_reports_to_third_party/1]).
 -export([rtbl_services/1]).
@@ -32,12 +31,6 @@ cache_size(Opts) when is_map(Opts) ->
     gen_mod:get_opt(cache_size, Opts);
 cache_size(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, cache_size).
-
--spec collect_report_stats(gen_mod:opts() | global | binary()) -> boolean().
-collect_report_stats(Opts) when is_map(Opts) ->
-    gen_mod:get_opt(collect_report_stats, Opts);
-collect_report_stats(Host) ->
-    gen_mod:get_module_opt(Host, mod_antispam, collect_report_stats).
 
 -spec forward_reports(gen_mod:opts() | global | binary()) -> boolean().
 forward_reports(Opts) when is_map(Opts) ->
