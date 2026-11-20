@@ -95,6 +95,7 @@
 start(Host, Opts) ->
     {ok, _Pid} = gen_mod:start_child(?MODULE, Host, Opts),
     {ok, _Pid2} = mod_antispam_report:start(Host, Opts),
+    ok = mod_antispam_rtbl_muc:start(Host),
     {ok,
      [{hook, spam_reported, mod_antispam_report, spam_reported, 50},
       {commands, get_commands_spec()}]}.
@@ -114,6 +115,7 @@ stop(Host) ->
         true ->
             ok
     end,
+    mod_antispam_rtbl_muc:stop(Host),
     mod_antispam_report:stop(Host),
     gen_mod:stop_child(?MODULE, Host).
 
@@ -149,7 +151,7 @@ mod_opt_type(rtbl_services) ->
             econf:map(
                 econf:binary(),
                 econf:map(
-                    econf:enum([spam_source_domains_node]), econf:binary()))));
+                    econf:enum([spam_source_domains_node, muc_bans_node]), econf:binary()))));
 mod_opt_type(spam_domains_file) ->
     econf:either(
         econf:enum([none]), econf:file());
@@ -210,11 +212,9 @@ mod_doc() ->
                      "The default value is 'none'.")}},
            {cache_lifetime,
             #{value => "pos_integer() | infinity",
-             desc =>
+              desc =>
                   ?T("Lifetime of cache entries for jids cache in seconds, i.e. how long entries are kept in cache before they expire."
-                    "Default is '5*86400' (5 days).")
-             }
-           },
+                     "Default is '5*86400' (5 days).")}},
            {cache_size,
             #{value => "pos_integer() | infinity",
               desc =>
@@ -237,16 +237,16 @@ mod_doc() ->
               example =>
                   ["rtbl_services:",
                    "  - pubsub.server1.localhost:",
-                   "      spam_source_domains_node: some_custom_pubsub_node"],
-              desc % FIXME
-                  =>
-                  ?T("Query a RTBL service to get domains to block, as provided by "
+                   "      spam_source_domains_node: some_custom_pubsub_node"
+                   "      muc_bans_node: some_other_pubsub_node"],
+              desc =>
+                  ?T("Query a RTBL service to get domains and MUC jids to block, as provided by "
                      "https://xmppbl.org/[xmppbl.org]. "
                      "Please note right now this option only supports one service in that list. "
-                     "For blocking spam and abuse on MUC channels, please use _`mod_muc_rtbl`_ for now. "
-                     "If only the host is provided, the default node names will be assumed. "
-                     "If the node name is different than 'spam_source_domains', "
-                     "you can setup the custom node name with the option 'spam_source_domains_node'. "
+                     "If only the host is provided, the default node names ('spam_source_domains' "
+                     "and 'muc_bans_sha256' as found on 'xmppbl.org') will be assumed."
+                     "For using custom node name, e.g. different than 'spam_source_domains', "
+                     "you can setup the custom node name with the options 'spam_source_domains_node' or 'muc_bans_node'. In that case you have to set a value for both nodes though, unless you want to disable one of the features. Setting a node's value to 'none' disables this feauture too."
                      "The default value is an empty list of services.")}},
            {spam_domains_file,
             #{value => ?T("none | Path"),
@@ -331,8 +331,9 @@ init([Host, Opts]) ->
                          set_to_map(URLsSet, #{source => spam_urls_file})),
 
     %% the actual cache where we collect observed, actively sending jids to block
-    ets_cache:new(cache_tab(jids_cache), [{life_time, mod_antispam_opt:cache_lifetime(Opts) * 1000},
-                                          {max_size, mod_antispam_opt:cache_size(Opts)}]),
+    ets_cache:new(cache_tab(jids_cache),
+                  [{life_time, mod_antispam_opt:cache_lifetime(Opts) * 1000},
+                   {max_size, mod_antispam_opt:cache_size(Opts)}]),
 
     ets_cache:new(cache_tab(blocked_items)),
     insert_many_for_host(cache_tab(blocked_items),
@@ -423,14 +424,17 @@ handle_info({iq_reply, #iq{type = error} = IQ, {get_items, RTBLHost, RTBLNode}},
                                      erlang:send_after(60000, self(), request_items))}};
 handle_info({iq_reply, IQReply, {get_items, RTBLHost, RTBLNode}},
             #state{rtbl_services = RTBLServices, host = Host} = State) ->
-    case mod_antispam_rtbl:parse_iq_result(IQReply, RTBLHost, RTBLNode) of
+    RTBLServiceNode = get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode),
+    case mod_antispam_rtbl:parse_iq_result(IQReply,
+                                           RTBLNode,
+                                           RTBLServiceNode#rtbl_service_node.type)
+    of
         undefined ->
             ?WARNING_MSG("Fetching initial list failed: invalid result payload", []),
             {noreply,
              State#state{rtbl_services =
                              set_retry_timer(RTBLServices, RTBLHost, RTBLNode, undefined)}};
         Items ->
-            RTBLServiceNode = get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode),
             insert_many_for_host(cache_tab(blocked_items),
                                  Host,
                                  RTBLServiceNode#rtbl_service_node.type,
@@ -542,7 +546,7 @@ get_commands_spec() ->
                         args = [{host, binary}],
                         result =
                             {spammers,
-                             {list, {spammer, {tuple, [{jid, string}, {timestamp, integer}]}}}}},
+                             {list, {spammer, {tuple, [{jid, string}, {timestamp, string}]}}}}},
      #ejabberd_commands{name = add_to_spam_filter_cache,
                         tags = [spam],
                         desc = "Add JID to spam filter cache",
@@ -634,8 +638,9 @@ get_spam_filter_cache(Host) ->
     [{jid:encode(JID), encode_timestamp(TS)} || {JID, TS} <- Cache].
 
 encode_timestamp(TS) ->
-    encode_datetime(
-      calendar:now_to_datetime({TS div 1000000000, TS rem 1000000000 div 1000, TS rem 1000 * 1000})).
+    encode_datetime(calendar:now_to_datetime({TS div 1000000000,
+                                              TS rem 1000000000 div 1000,
+                                              TS rem 1000 * 1000})).
 
 -spec encode_datetime(calendar:datetime()) -> string().
 encode_datetime({{Year, Month, Day}, {Hour, Minute, Second}}) ->
@@ -652,10 +657,18 @@ add_to_spam_filter_cache(Host, EncJID) ->
             LJID =
                 jid:remove_resource(
                     jid:tolower(JID)),
-            ets_cache:insert(cache_tab(jids_cache),
-                             {Host, LJID},
-                             #{source => cmd},
-                             ejabberd_cluster:get_nodes())
+            case ets_cache:insert(cache_tab(jids_cache),
+                                  {Host, LJID},
+                                  #{source => cmd},
+                                  ejabberd_cluster:get_nodes())
+            of
+                true ->
+                    Txt = format("~s added to cache", [jid:encode(LJID)]),
+                    {ok, Txt};
+                false ->
+                    Txt = format("failed to add ~s to cache", [jid:encode(LJID)]),
+                    {error, Txt}
+            end
     catch
         _:{bad_jid, _} ->
             {error, "Not a valid JID: " ++ binary_to_list(EncJID)}
@@ -670,7 +683,17 @@ drop_from_spam_filter_cache(Host, EncJID) ->
             LJID =
                 jid:remove_resource(
                     jid:tolower(JID)),
-            ets_cache:delete(cache_tab(jids_cache), {Host, LJID}, ejabberd_cluster:get_nodes())
+            case ets_cache:lookup(cache_tab(jids_cache), {Host, LJID}) of
+                error ->
+                    Txt = format("~s wasn't cached", [jid:encode(LJID)]),
+                    {ok, Txt};
+                {ok, _} ->
+                    ets_cache:delete(cache_tab(jids_cache),
+                                     {Host, LJID},
+                                     ejabberd_cluster:get_nodes()),
+                    Txt = format("~s removed from cache", [jid:encode(LJID)]),
+                    {ok, Txt}
+            end
     catch
         _:{bad_jid, _} ->
             {error, "Not a valid JID: " ++ binary_to_list(EncJID)}
@@ -685,13 +708,15 @@ is_blocked_domain(Host, Domain) ->
         ets_cache:lookup(cache_tab(blocked_items), {Host, Domain, spam_source_domains}) =/= error
     end.
 
-update_blocked_items(Host, RTBLHost, RTBLNode, RTBLNodeType, NewItems) ->
-    maps:foreach(fun (Domain, false) ->
-                         ets_cache:delete(cache_tab(blocked_items), {Host, Domain, RTBLNodeType});
-                     (Domain, _V) ->
-                         ets_cache:insert(cache_tab(blocked_items),
-                                          {Host, Domain, RTBLNodeType},
-                                          #{source => {RTBLHost, RTBLNode}})
+update_blocked_items(Host, RTBLHost, RTBLNode, RTBLNodeType, {RetractIds, NewItems}) ->
+    lists:foreach(fun(RetractId) ->
+                     ets_cache:delete(cache_tab(blocked_items), {Host, RetractId, RTBLNodeType})
+                  end,
+                  RetractIds),
+    maps:foreach(fun(Id, _V) ->
+                    ets_cache:insert(cache_tab(blocked_items),
+                                     {Host, Id, RTBLNodeType},
+                                     #{source => {RTBLHost, RTBLNode}})
                  end,
                  NewItems).
 
@@ -766,16 +791,24 @@ get_rtbl_services_option(HostOrOpts) ->
 to_rtbl_service([{Host, Nodes}], M) ->
     M#{Host => lists:foldl(fun to_rtbl_service_nodes/2, #{}, Nodes)};
 to_rtbl_service(Host, M) ->
-    M#{Host => #{?DEFAULT_SPAM_SOURCE_DOMAINS_NODE => #rtbl_service_node{}}}.
+    M#{Host =>
+           #{?DEFAULT_SPAM_SOURCE_DOMAINS_NODE => #rtbl_service_node{},
+             ?DEFAULT_MUC_BANS_NODE => #rtbl_service_node{type = muc_bans}}}.
 
-to_rtbl_service_nodes({spam_source_domains_node = Type, Node}, M) ->
+to_rtbl_service_nodes({Type, none}, M)
+    when Type == spam_source_domains_node; Type == muc_bans_node ->
+    M;
+to_rtbl_service_nodes({Type, Node}, M)
+    when Type == spam_source_domains_node; Type == muc_bans_node ->
     M#{Node => #rtbl_service_node{type = node_type(Type)}};
 to_rtbl_service_nodes({UnknownType, Node}, M) ->
     ?WARNING_MSG("Unknown RTBL node type configured: type=~p node=~s", [UnknownType, Node]),
     M.
 
 node_type(spam_source_domains_node) ->
-    spam_source_domains.
+    spam_source_domains;
+node_type(muc_bans_node) ->
+    muc_bans.
 
 get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode) ->
     #{RTBLHost := #{RTBLNode := RTBLServiceNode}} = RTBLServices,

@@ -230,7 +230,8 @@ rtbl_domains(Config) ->
     {result, _} =
         mod_pubsub:delete_item(RTBLHost, RTBLDomainsNode, Owner, <<"spam.source.another">>, true),
     ?retry(100, 10, ?match(false, (has_spam_domain(<<"spam.source.another">>))(Server))),
-    {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner).
+    {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
+    disconnect(Config).
 
 rtbl_domains_allowed(Config) ->
     Server = ?config(server, Config),
@@ -269,7 +270,8 @@ rtbl_domains_allowed(Config) ->
     %% we assume that the previous "whitelisted.domain" pubsub item has been consumed by now, so we
     %% can check that it doesn't exist
     ?match(false, (has_spam_domain(<<"allowed.domain">>))(Server)),
-    {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner).
+    {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
+    disconnect(Config).
 
 %%%===================================================================
 

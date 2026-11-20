@@ -91,15 +91,19 @@ cancel_timers(Services) ->
                                end,
                                Services).
 
--spec parse_iq_result(stanza(), binary(), binary()) -> #{binary() => any()} | undefined.
-parse_iq_result(#iq{to = #jid{lserver = _LServer}, type = result} = IQ,
-                _RTBLHost,
-                RTBLNode) ->
+-spec parse_iq_result(stanza(), binary(), rtbl_service_node_type()) ->
+                         #{binary() => any()} | undefined.
+parse_iq_result(#iq{to = #jid{lserver = LServer}, type = result} = IQ,
+                RTBLNode,
+                RTBLServiceNodeType) ->
     ?DEBUG("parsing iq-result items: ~p", [IQ]),
     case xmpp:get_subtag(IQ, #pubsub{}) of
         #pubsub{items = #ps_items{node = RTBLNode, items = Items}} ->
-            ?DEBUG("Got items:~n~p", [Items]),
-            parse_items(Items);
+            ParsedItems = parse_items(Items),
+            ejabberd_hooks:run(antispam_rtbl_items,
+                               LServer,
+                               [LServer, {RTBLServiceNodeType, {[], ParsedItems}}]),
+            ParsedItems;
         _ ->
             undefined
     end.
@@ -126,6 +130,10 @@ pubsub_event_handler(#message{from = FromJid,
                                                       RTBLNode,
                                                       RTBLServiceNode#rtbl_service_node.type,
                                                       ParsedItems),
+                    ejabberd_hooks:run(antispam_rtbl_items,
+                                       LServer,
+                                       [LServer,
+                                        {RTBLServiceNode#rtbl_service_node.type, ParsedItems}]),
                     drop;
                 _NoMatch ->
                     ?INFO_MSG("Got unexpected message from ~s to rtbl resource:~n~p", [From, Msg]),
@@ -148,7 +156,7 @@ parse_pubsub_event(#message{to = #jid{lserver = _LServer}} = Msg) ->
                       #ps_items{node = Node,
                                 items = Items,
                                 retract = RetractIds}} ->
-            {Node, maps:merge(retract_items(RetractIds), parse_items(Items))};
+            {Node, {RetractIds, parse_items(Items)}};
         Other ->
             ?WARNING_MSG("Couldn't extract items: ~p", [Other]),
             undefined
@@ -162,10 +170,6 @@ parse_items(Items) ->
                 end,
                 #{},
                 Items).
-
--spec retract_items([binary()]) -> #{binary() => false}.
-retract_items(Ids) ->
-    maps:from_keys(Ids, false).
 
 -spec service_jid(binary()) -> jid().
 service_jid(Host) ->

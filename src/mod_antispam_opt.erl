@@ -51,7 +51,7 @@ forward_reports_to_third_party(Opts) when is_map(Opts) ->
 forward_reports_to_third_party(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, forward_reports_to_third_party).
 
--spec rtbl_services(gen_mod:opts() | global | binary()) -> [binary() | [{binary(),[{'spam_source_domains_node',binary()}]}]].
+-spec rtbl_services(gen_mod:opts() | global | binary()) -> [binary() | [{binary(),[{'muc_bans_node',binary()} | {'spam_source_domains_node',binary()}]}]].
 rtbl_services(Opts) when is_map(Opts) ->
     gen_mod:get_opt(rtbl_services, Opts);
 rtbl_services(Host) ->

@@ -26,12 +26,13 @@
 -type url_set() :: sets:set(url()).
 
 -define(DEFAULT_SPAM_SOURCE_DOMAINS_NODE, <<"spam_source_domains">>).
+-define(DEFAULT_MUC_BANS_NODE, <<"muc_bans_sha256">>).
 
 -record(rtbl_service_node,
         {type = spam_source_domains               :: rtbl_service_node_type(),
          subscribed = false                       :: boolean(),
          retry_timer = undefined                  :: reference() | undefined}).
 
--type rtbl_service_node_type() :: spam_source_domains.
+-type rtbl_service_node_type() :: spam_source_domains | muc_bans.
 -type rtbl_service_node() :: #rtbl_service_node{}.
 -type rtbl_services() :: #{Host :: binary() => #{Node :: binary() => rtbl_service_node()}}.
