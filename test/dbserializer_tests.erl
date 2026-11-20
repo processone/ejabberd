@@ -90,11 +90,11 @@ roster_clean(Config) ->
 muc(Config) ->
     Host = ?config(server, Config),
     MucHost = <<"conference.",Host/binary>>,
-    mod_muc_admin:create_room_with_opts(<<"test">>, MucHost, Host, [
+    mod_muc_admin:create_room_with_opts(<<"test">>, MucHost, [
         {<<"persistent">>, <<"true">>},
         {<<"affiliations">>, <<"owner=bob@server;member=peter@server">>},
         {<<"subscribers">>, <<"bob@server=bob=messages">>}]),
-    mod_muc_admin:create_room_with_opts(<<"test2">>, MucHost, Host, [
+    mod_muc_admin:create_room_with_opts(<<"test2">>, MucHost, [
         {<<"persistent">>, <<"true">>},
         {<<"affiliations">>, <<"owner=bob@server;member=peter@server">>},
         {<<"subscribers">>, <<"bob@server=bob=messages">>}]),

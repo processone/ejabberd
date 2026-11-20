@@ -1119,10 +1119,7 @@ webadmin_menu_hostuser(Acc, _Host, _Username, _Lang) ->
 
 webadmin_page_hostuser(_, Host, Username, #request{path = [<<"roster">> | RPath]} = R) ->
     Head = ?H1GL(<<"Roster">>, <<"modules/#mod_roster">>, <<"mod_roster">>),
-    Set = [make_command(add_rosteritem,
-                        R,
-                        [{<<"localuser">>, Username}, {<<"localhost">>, Host}],
-                        []),
+    Set = [make_command(add_rosteritem, R, [{<<"user">>, Username}, {<<"host">>, Host}], []),
            make_command(push_roster, R, [{<<"user">>, Username}, {<<"host">>, Host}], [])],
     Level = 5 + length(RPath),
     Get = [make_webadmin_roster_table(Host, Username, R, RPath, Level),
@@ -1141,9 +1138,8 @@ webadmin_user(Acc, User, Server, R) ->
 
 make_webadmin_roster_table(Host, Username, Request, RPath, Level) ->
     BaseArguments = [{<<"user">>, Username}, {<<"host">>, Host}],
-    BaseArguments2 = [{<<"localuser">>, Username}, {<<"localhost">>, Host}],
     DeleteRosteritem =
-        action_button(delete_rosteritem_jid, Request, BaseArguments2, [{style, danger}]),
+        action_button(delete_rosteritem_jid, Request, BaseArguments, [{style, danger}]),
     make_command(get_roster,
                  Request,
                  BaseArguments,

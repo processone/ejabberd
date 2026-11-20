@@ -33,7 +33,8 @@
 %% API
 -export([start_link/0,
 	 can_access/2,
-	 can_access/4,
+	 can_access/3,
+	 can_access/5,
 	 invalidate/0,
 	 validator/0,
 	 show_current_definitions/0]).
@@ -64,8 +65,9 @@
 -type what() :: all | none | [atom() | {tag, atom()}].
 -type who() :: rule() | {oauth, {[binary()], [rule()]}}.
 -type from() :: atom().
--type permission() :: {binary(), {[from()], [who()], {what(), what()}}}.
--type definition() :: {binary(), {[from()], [who()], [atom()] | all}}.
+-type where() :: {binary(), any()}.
+-type permission() :: {binary(), {[from()], [who()], {what(), what()}, [where()]}}.
+-type definition() :: {binary(), {[from()], [who()], [atom()] | all, [where()]}}.
 -type caller_info() :: #{caller_module => module(),
 			 caller_host => global | binary(),
 			 tag => binary() | none,
@@ -77,10 +79,6 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-get_vhost_argument(ArgsFormat, Arguments) ->
-    Args2 = prepare_arguments(ArgsFormat, Arguments),
-    get_vhost_argument(Args2).
 
 prepare_arguments(ArgsFormat, Arguments) ->
     AAzip = zip_arguments(ArgsFormat, Arguments),
@@ -133,24 +131,33 @@ get_vhost_argument([{host, Host} | _Tail]) ->
 get_vhost_argument([_ | Tail]) ->
     get_vhost_argument(Tail).
 
--spec can_access(atom(), caller_info(), list(), list()) -> allow | deny.
-can_access(Cmd, CallerInfo, Arguments, ArgsFormat) ->
-    Vhost = get_vhost_argument(ArgsFormat, Arguments),
+-spec can_access(atom(), caller_info(), integer(), list(), list()) -> allow | deny.
+can_access(Cmd, CallerInfo, ApiVersion, Arguments, ArgsFormat) ->
+    ArgsNameValue = prepare_arguments(ArgsFormat, Arguments),
+    Vhost = get_vhost_argument(ArgsNameValue),
     CallerHost = case Vhost of
                       B when is_binary(B) -> B;
                       global_scope -> global;
                       no_host_argument -> global
                   end,
-    can_access(Cmd, CallerInfo#{caller_host => CallerHost}).
+    can_access(Cmd, CallerInfo#{caller_host => CallerHost}, ApiVersion, ArgsNameValue).
 
 -spec can_access(atom(), caller_info()) -> allow | deny.
-can_access(echo, _CallerInfo) ->
-    allow;
-can_access(echo3, _CallerInfo) ->
-    allow;
-can_access(registered_vhosts, #{caller_module := ejabberd_web_admin}) ->
-    allow;
 can_access(Cmd, CallerInfo) ->
+    can_access(Cmd, CallerInfo, ?DEFAULT_API_VERSION, check_where_existence).
+
+-spec can_access(atom(), caller_info(), integer()) -> allow | deny.
+can_access(Cmd, CallerInfo, ApiVersion) ->
+    can_access(Cmd, CallerInfo, ApiVersion, check_where_existence).
+
+-spec can_access(atom(), caller_info(), integer(), [where()] | check_where_existence) -> allow | deny.
+can_access(echo, _CallerInfo, _ApiVersion, _ArgsNameValue) ->
+    allow;
+can_access(echo3, _CallerInfo, _ApiVersion, _ArgsNameValue) ->
+    allow;
+can_access(registered_vhosts, #{caller_module := ejabberd_web_admin}, _ApiVersion, _ArgsNameValue) ->
+    allow;
+can_access(Cmd, CallerInfo, ApiVersion, ArgsNameValue) ->
     Defs0 = show_current_definitions(),
     CallerModule = maps:get(caller_module, CallerInfo, none),
     Host = maps:get(caller_host, CallerInfo, global),
@@ -158,7 +165,7 @@ can_access(Cmd, CallerInfo) ->
     Defs = maps:get(extra_permissions, CallerInfo, []) ++ Defs0,
     Res = lists:foldl(
 	fun({Name, _} = Def, none) ->
-	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo) of
+	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo, ArgsNameValue, ApiVersion) of
 		true ->
 		    ?DEBUG("Command '~p' execution allowed by rule "
 			   "'~ts'~n (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
@@ -237,61 +244,141 @@ get_definitions(#state{definitions = none} = State) ->
     ApiPerms = ejabberd_option:api_permissions(),
     AllCommands = ejabberd_commands:get_commands_definition(),
     NDefs0 = lists:map(
-	       fun({Name, {From, Who, {Add, Del}}}) ->
+	       fun({Name, {From, Who, {Add, Del}, Where}}) ->
 		       Cmds = filter_commands_with_permissions(AllCommands, Add, Del),
-		       {Name, {From, Who, Cmds}}
+		       {Name, {From, Who, Cmds, Where}}
 	       end, ApiPerms),
     NDefs = case lists:keyfind(<<"console commands">>, 1, NDefs0) of
 		false ->
 		    [{<<"console commands">>,
 		      {[ejabberd_ctl],
 		       [{acl, all}],
-		       filter_commands_with_permissions(AllCommands, all, none)}} | NDefs0];
+		       filter_commands_with_permissions(AllCommands, all, none),
+		       []}} | NDefs0];
 		_ ->
 		    NDefs0
 	    end,
     {State#state{definitions = NDefs}, NDefs}.
 
--spec matches_definition(definition(), atom(), module(),
-			 atom(), global | binary(), caller_info()) -> boolean().
-matches_definition({_Name, {From, Who, What}}, Cmd, Module, Tag, Host, CallerInfo) ->
-    case What == all orelse lists:member(Cmd, What) of
-	true ->
-	    {Tags, Modules} = lists:partition(fun({tag, _}) -> true; (_) -> false end, From),
-	    case (Modules == [] orelse lists:member(Module, Modules)) andalso
-		 (Tags == [] orelse lists:member({tag, Tag}, Tags)) of
-		true ->
-		    Scope = maps:get(oauth_scope, CallerInfo, none),
-		    lists:any(
-		      fun({access, Access}) when Scope == none ->
-			      acl:match_rule(Host, Access, CallerInfo) == allow;
-			 ({acl, Name} = Acl) when Scope == none, is_atom(Name) ->
-			      acl:match_acl(Host, Acl, CallerInfo);
-			 ({acl, Acl}) when Scope == none ->
-			      acl:match_acl(Host, Acl, CallerInfo);
-			 ({oauth, {Scopes, List}}) when Scope /= none ->
-			      case ejabberd_oauth:scope_in_scope_list(Scope, Scopes) of
-				  true ->
-				      lists:any(
-					fun({access, Access}) ->
-						acl:match_rule(Host, Access, CallerInfo) == allow;
-					   ({acl, Name} = Acl) when is_atom(Name) ->
-						acl:match_acl(Host, Acl, CallerInfo);
-					   ({acl, Acl}) ->
-						acl:match_acl(Host, Acl, CallerInfo)
-					end, List);
-				  _ ->
-				      false
-			      end;
-			 (_) ->
-			      false
-		      end, Who);
-		_ ->
-		    false
-	    end;
-	_ ->
-	    false
+%% @format-begin
+-spec matches_definition(definition(),
+                         atom(),
+                         module(),
+                         atom(),
+                         global | binary(),
+                         caller_info(),
+                         [where()] | check_where_existence,
+                         integer()) ->
+                            boolean().
+matches_definition({_Name, {From, Who, What, Where}},
+                   Cmd,
+                   Module,
+                   Tag,
+                   Host,
+                   CallerInfo,
+                   Arguments,
+                   ApiVersion) ->
+    maybe
+        %% Check WHAT
+        true ?= What == all orelse lists:member(Cmd, What),
+        %% Check FROM
+        {Tags, Modules} =
+            lists:partition(fun ({tag, _}) ->
+                                    true;
+                                (_) ->
+                                    false
+                            end,
+                            From),
+        true ?= Modules == [] orelse lists:member(Module, Modules),
+        true ?= Tags == [] orelse lists:member({tag, Tag}, Tags),
+        %% Check WHO
+        true ?=
+            case maps:get(oauth_scope, CallerInfo, none) of
+                none ->
+                    check_acl_access(Who, Host, CallerInfo);
+                Scope ->
+                    lists:any(fun ({oauth, {Scopes, List}}) when Scope /= none ->
+                                      case ejabberd_oauth:scope_in_scope_list(Scope, Scopes) of
+                                          true ->
+                                              check_acl_access(List, Host, CallerInfo);
+                                          _ ->
+                                              false
+                                      end;
+                                  (_) ->
+                                      false
+                              end,
+                              Who)
+            end,
+        %% Check WHERE
+        {CallerUser, CallerHost, _CallerResource} =
+            case maps:get(usr, CallerInfo, global) of
+                global ->
+                    {<<"">>, <<"">>, <<"">>};
+                Tuple when is_tuple(Tuple) ->
+                    Tuple
+            end,
+        Where2 =
+            [{WhereName,
+              ejabberd_config:replace_keywords(global,
+                                               WhereValue,
+                                               [{<<"CALLER_USER">>, CallerUser},
+                                                {<<"CALLER_HOST">>, CallerHost}])}
+             || {WhereName, WhereValue} <- Where],
+        Where3 =
+            lists:map(fun ({[$? | WhereName], WhereValue}) ->
+                              {WhereName, WhereValue, true};
+                          ({WhereName, WhereValue}) ->
+                              {WhereName, WhereValue, false}
+                      end,
+                      Where2),
+        true ?=
+            case Arguments of
+                check_where_existence ->
+                    {ArgsFormat, _Rename, _Result} =
+                        ejabberd_commands:get_command_format(Cmd, ApiVersion),
+                    check_where_values(Where3, ArgsFormat, true);
+                _ ->
+                    check_where_values(Where3, Arguments, false)
+            end,
+        true
+    else
+        _ ->
+            false
     end.
+
+check_acl_access(List, Host, CallerInfo) ->
+    lists:any(fun ({access, Access}) ->
+                      acl:match_rule(Host, Access, CallerInfo) == allow;
+                  ({acl, Name} = Acl) when is_atom(Name) ->
+                      acl:match_acl(Host, Acl, CallerInfo);
+                  ({acl, Acl}) ->
+                      acl:match_acl(Host, Acl, CallerInfo);
+                  (_) ->
+                      false
+              end,
+              List).
+
+check_where_values(Where3, Arguments, OnlyCheckExistence) ->
+    lists:all(fun({WhereNameString, WhereValue, Optional}) ->
+                 WhereNameAtom = list_to_existing_atom(WhereNameString),
+                 case {proplists:get_value(WhereNameAtom, Arguments, argument_undefined), Optional}
+                 of
+                     {argument_undefined, true} ->
+                         true;
+                     {argument_undefined, false} ->
+                         false;
+                     _ when OnlyCheckExistence == true ->
+                         true;
+                     %% "arg" in yaml config is converted to binary,
+                     %% but some arguments may be declared of type string instead of binary
+                     {ArgumentValue, _} when is_list(ArgumentValue) ->
+                         list_to_binary(ArgumentValue) == WhereValue;
+                     {ArgumentValue, _} ->
+                         ArgumentValue == WhereValue
+                 end
+              end,
+              Where3).
+%% @format-end
 
 -spec filter_commands_with_permissions([#ejabberd_commands{}], what(), what()) -> [atom()].
 filter_commands_with_permissions(AllCommands, Add, Del) ->
@@ -442,6 +529,8 @@ validator(what) ->
     econf:and_then(
       econf:list_or_single(econf:non_empty(econf:binary())),
       fun parse_what/1);
+validator(where) ->
+    econf:map(econf:string(), econf:any());
 validator(who) ->
     validator(#{access => econf:acl(), oauth => validator(oauth)}, []);
 validator(oauth) ->
@@ -461,11 +550,13 @@ validator() ->
       econf:and_then(
 	econf:options(
 	  #{from => validator(from),
+	    who => validator(who),
 	    what => validator(what),
-	    who => validator(who)}),
+	    where => validator(where)}),
 	fun(Os) ->
 		{proplists:get_value(from, Os, []),
 		 proplists:get_value(who, Os, none),
-		 proplists:get_value(what, Os, {none, none})}
+		 proplists:get_value(what, Os, {none, none}),
+		 proplists:get_value(where, Os, [])}
 	end),
       [unique]).
