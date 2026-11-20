@@ -148,7 +148,7 @@ parse_subscription(State, _) ->
 
 pubsub_event_handler(#message{from = #jid{luser = <<>>, lserver = SServer},
 			      to = #jid{luser = <<>>, lserver = Server,
-					lresource = <<"rtbl-", _/binary>>}} = Msg) ->
+					lresource = <<"rtbl-muc-", _/binary>>}} = Msg) ->
 
     SServer2 = mod_muc_rtbl_opt:rtbl_server(Server),
     SNode = mod_muc_rtbl_opt:rtbl_node(Server),
@@ -251,7 +251,7 @@ notify_rooms(Host, Items) ->
 
 
 service_jid(Host) ->
-    jid:make(<<>>, Host, <<"rtbl-", (ejabberd_cluster:node_id())/binary>>).
+    jid:make(<<>>, Host, <<"rtbl-muc-", (ejabberd_cluster:node_id())/binary>>).
 
 mod_opt_type(rtbl_server) ->
     econf:domain();
