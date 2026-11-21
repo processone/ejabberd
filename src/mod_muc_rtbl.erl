@@ -43,6 +43,7 @@
 -record(rtbl_state, {host, subscribed = false, retry_timer}).
 
 start(Host, _Opts) ->
+    ?WARNING_MSG("mod_muc_rtbl is deprecated, please use mod_antispam instead!", []),
     gen_server:start({local, gen_mod:get_module_proc(Host, ?MODULE)}, ?MODULE, [Host], []).
 
 stop(Host) ->
@@ -264,7 +265,8 @@ mod_options(_Host) ->
 
 mod_doc() ->
     #{desc =>
-      [?T("This module implement Real-time blocklists for MUC rooms."), "",
+      [?T("IMPORTANT: this module is deprecated, please use mod_antispam instead!"),
+       ?T("This module implement Real-time blocklists for MUC rooms."), "",
        ?T("It works by observing remote pubsub node conforming with "
 	  "specification described in https://xmppbl.org/.")],
       note => "added in 23.04",
