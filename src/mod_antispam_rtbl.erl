@@ -112,7 +112,7 @@ parse_iq_result(#iq{to = #jid{lserver = LServer}, type = result} = IQ,
 %% Hook callbacks.
 %%--------------------------------------------------------------------
 
--spec pubsub_event_handler(stanza()) -> drop | stanza().
+-spec pubsub_event_handler(stanza()) -> stop | ok.
 pubsub_event_handler(#message{from = FromJid,
                               to =
                                   #jid{lserver = LServer,
@@ -134,17 +134,17 @@ pubsub_event_handler(#message{from = FromJid,
                                        LServer,
                                        [LServer,
                                         {RTBLServiceNode#rtbl_service_node.type, ParsedItems}]),
-                    drop;
+                    stop;
                 _NoMatch ->
                     ?INFO_MSG("Got unexpected message from ~s to rtbl resource:~n~p", [From, Msg]),
-                    Msg
+                    ok
             end;
         undefined ->
-            Msg
+            ok
     end;
-pubsub_event_handler(Acc) ->
-    ?DEBUG("unexpected something on pubsub_event_handler: ~p", [Acc]),
-    Acc.
+pubsub_event_handler(Other) ->
+    ?DEBUG("unexpected something on pubsub_event_handler: ~p", [Other]),
+    ok.
 
 %%--------------------------------------------------------------------
 %% Helpers.
