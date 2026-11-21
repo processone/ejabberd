@@ -5743,15 +5743,22 @@ create_hat(URI, Title, Hue, #state{hats_defs = Hats, hats_users = Users} = State
 destroy_hat(URI, #state{hats_defs = Hats, hats_users = Users} = StateData) ->
     Hats2 = maps:remove(URI, Hats),
     {AffectedJids, Users2} =
-        maps:fold(fun(Jid, AssignedHatsUris, {ChangedAcc, UsersAcc}) ->
-                     case AssignedHatsUris -- [URI] of
-                         [] ->
-                             {ChangedAcc, UsersAcc};
-                         AssignedHatsUris2 ->
-                             {[Jid | ChangedAcc], maps:put(Jid, AssignedHatsUris2, UsersAcc)}
+        maps:fold(fun(Jid, AssignedHatsUris, {ChangedAcc, UsersAcc} = Acc) ->
+                     case lists:member(URI, AssignedHatsUris) of
+                         false ->
+                             Acc;
+                         true ->
+                             UsersAcc2 =
+                                 case lists:delete(URI, AssignedHatsUris) of
+                                     [] ->
+                                         maps:remove(Jid, UsersAcc);
+                                     AssignedHatsUris2 ->
+                                         maps:put(Jid, AssignedHatsUris2, UsersAcc)
+                                 end,
+                             {[Jid | ChangedAcc], UsersAcc2}
                      end
                   end,
-                  {[], maps:new()},
+                  {[], Users},
                   Users),
     {ok, AffectedJids, StateData#state{hats_defs = Hats2, hats_users = Users2}}.
 
