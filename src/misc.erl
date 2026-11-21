@@ -43,11 +43,12 @@
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
 	 get_my_ipv4_address/0, get_my_ipv6_address/0, parse_ip_mask/1,
 	 uri_parse/1, uri_parse/2,
-         json_encode/1, json_decode/1,
+	 json_encode/1, json_decode/1,
 	 set_proc_label/1,
 	 strong_alphanum_token/0, strong_alphanum_token/1,
 	 match_ip_mask/3, format_hosts_list/1, format_cycle/1, delete_dir/1,
-	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1]).
+	 semver_to_xxyy/1, logical_processors/0, get_mucsub_event_type/1,
+	 binary_join/2]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1,
@@ -806,4 +807,16 @@ set_proc_label(_Label) ->
 -else.
 set_proc_label(Label) ->
     proc_lib:set_label(Label).
+-endif.
+
+-spec binary_join([binary()], binary()) -> binary().
+-ifdef(OTP_BELOW_28).
+binary_join([], _Separator) -> <<>>;
+binary_join([H | T], Separator) ->
+    lists:foldl(fun(Bin, Res) ->
+                        <<Res/binary, Separator/binary, Bin/binary>>
+                end, H, T).
+-else.
+binary_join(Bins, Separator) ->
+    binary:join(Bins, Separator).
 -endif.

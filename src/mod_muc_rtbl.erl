@@ -43,6 +43,7 @@
 -record(rtbl_state, {host, subscribed = false, retry_timer}).
 
 start(Host, _Opts) ->
+    ?WARNING_MSG("mod_muc_rtbl is deprecated, please use mod_antispam instead!", []),
     gen_server:start({local, gen_mod:get_module_proc(Host, ?MODULE)}, ?MODULE, [Host], []).
 
 stop(Host) ->
@@ -148,7 +149,7 @@ parse_subscription(State, _) ->
 
 pubsub_event_handler(#message{from = #jid{luser = <<>>, lserver = SServer},
 			      to = #jid{luser = <<>>, lserver = Server,
-					lresource = <<"rtbl-", _/binary>>}} = Msg) ->
+					lresource = <<"rtbl-muc-", _/binary>>}} = Msg) ->
 
     SServer2 = mod_muc_rtbl_opt:rtbl_server(Server),
     SNode = mod_muc_rtbl_opt:rtbl_node(Server),
@@ -251,7 +252,7 @@ notify_rooms(Host, Items) ->
 
 
 service_jid(Host) ->
-    jid:make(<<>>, Host, <<"rtbl-", (ejabberd_cluster:node_id())/binary>>).
+    jid:make(<<>>, Host, <<"rtbl-muc-", (ejabberd_cluster:node_id())/binary>>).
 
 mod_opt_type(rtbl_server) ->
     econf:domain();
@@ -264,7 +265,8 @@ mod_options(_Host) ->
 
 mod_doc() ->
     #{desc =>
-      [?T("This module implement Real-time blocklists for MUC rooms."), "",
+      [?T("IMPORTANT: this module is deprecated, please use mod_antispam instead!"),
+       ?T("This module implement Real-time blocklists for MUC rooms."), "",
        ?T("It works by observing remote pubsub node conforming with "
 	  "specification described in https://xmppbl.org/.")],
       note => "added in 23.04",

@@ -1795,7 +1795,7 @@ make_command(Name, Request) ->
                     filter |
                     self,
                 Level :: integer(),
-                Append :: binary()}]} |
+                Append :: binary() | atom()}]} |
              {style, normal | danger}.
 make_command(Name, Request, BaseArguments, Options) ->
     if_cmd_allowed(Name,
