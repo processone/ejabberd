@@ -49,7 +49,7 @@
 	 handle_cast/2, terminate/2, code_change/3]).
 
 -export([user_send_packet/1, user_receive_packet/1,
-	 c2s_presence_in/2, c2s_copy_session/2,
+	 c2s_presence_in/2, c2s_copy_session/2, c2s_handle_info/2,
 	 mod_opt_type/1, mod_options/1, mod_doc/0]).
 
 -include("logger.hrl").
@@ -244,43 +244,72 @@ c2s_presence_in(C2SState,
 	    case Subscription of
 		from -> insert;
 		both -> insert;
+		%% Kept until we approve the contact's subscription, see
+		%% c2s_handle_info/2
+		to -> defer;
 		_ -> skip
 	    end;
 	_ ->
 	    skip
     end,
+    LFrom = jid:tolower(From),
     case Operation of
 	skip ->
 	    C2SState;
 	delete ->
-	    LFrom = jid:tolower(From),
 	    Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
-	    C2SState#{caps_resources => gb_trees:delete_any(LFrom, Rs)};
+	    Ps = maps:get(caps_pending, C2SState, #{}),
+	    C2SState#{caps_resources => gb_trees:delete_any(LFrom, Rs),
+		      caps_pending => maps:remove(LFrom, Ps)};
+	defer ->
+	    Ps = maps:get(caps_pending, C2SState, #{}),
+	    C2SState#{caps_pending => Ps#{LFrom => Caps}};
 	insert ->
-	    LFrom = jid:tolower(From),
-	    Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
-	    NewRs = case gb_trees:lookup(LFrom, Rs) of
-			{value, Caps} -> Rs;
-			none ->
-			    ejabberd_hooks:run(caps_add, To#jid.lserver,
-					       [From, To,
-						get_features(To#jid.lserver, Caps)]),
-			    gb_trees:insert(LFrom, Caps, Rs);
-			_ ->
-			    ejabberd_hooks:run(caps_update, To#jid.lserver,
-					       [From, To,
-						get_features(To#jid.lserver, Caps)]),
-			    gb_trees:update(LFrom, Caps, Rs)
-		    end,
-	    C2SState#{caps_resources => NewRs}
+	    Ps = maps:get(caps_pending, C2SState, #{}),
+	    insert_caps(From, To, Caps,
+			C2SState#{caps_pending => maps:remove(LFrom, Ps)})
     end.
+
+-spec insert_caps(jid(), jid(), caps(), ejabberd_c2s:state()) -> ejabberd_c2s:state().
+insert_caps(From, To, Caps, C2SState) ->
+    LFrom = jid:tolower(From),
+    Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
+    NewRs = case gb_trees:lookup(LFrom, Rs) of
+		{value, Caps} -> Rs;
+		none ->
+		    ejabberd_hooks:run(caps_add, To#jid.lserver,
+				       [From, To,
+					get_features(To#jid.lserver, Caps)]),
+		    gb_trees:insert(LFrom, Caps, Rs);
+		_ ->
+		    ejabberd_hooks:run(caps_update, To#jid.lserver,
+				       [From, To,
+					get_features(To#jid.lserver, Caps)]),
+		    gb_trees:update(LFrom, Caps, Rs)
+	    end,
+    C2SState#{caps_resources => NewRs}.
+
+%% mod_roster asks us to resend our presence to a contact whose
+%% subscription to us we have just approved: start using the caps
+%% the contact sent us before that.
+-spec c2s_handle_info(ejabberd_c2s:state(), term()) -> ejabberd_c2s:state().
+c2s_handle_info(#{caps_pending := Ps, jid := JID} = C2SState,
+		{resend_presence, #jid{} = Contact}) ->
+    LBare = jid:remove_resource(jid:tolower(Contact)),
+    Ready = maps:filter(fun(LFrom, _) ->
+				jid:remove_resource(LFrom) == LBare
+			end, Ps),
+    maps:fold(fun(LFrom, Caps, Acc) ->
+		      insert_caps(jid:make(LFrom), JID, Caps, Acc)
+	      end, C2SState#{caps_pending => maps:without(maps:keys(Ready), Ps)},
+	      Ready);
+c2s_handle_info(C2SState, _) ->
+    C2SState.
 
 -spec c2s_copy_session(ejabberd_c2s:state(), ejabberd_c2s:state())
       -> ejabberd_c2s:state().
-c2s_copy_session(C2SState, #{caps_resources := Rs}) ->
-    C2SState#{caps_resources => Rs};
-c2s_copy_session(C2SState, _) ->
-    C2SState.
+c2s_copy_session(C2SState, OldState) ->
+    maps:merge(C2SState, maps:with([caps_resources, caps_pending], OldState)).
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
@@ -314,6 +343,8 @@ init([Host|_]) ->
 		       caps_stream_features, 75),
     ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE,
 		       c2s_copy_session, 75),
+    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
+		       c2s_handle_info, 75),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
 		       disco_features, 75),
     ejabberd_hooks:add(disco_local_identity, Host, ?MODULE,
@@ -353,6 +384,8 @@ terminate(_Reason, State) ->
 			  ?MODULE, caps_stream_features, 75),
     ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE,
 			  c2s_copy_session, 75),
+    ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE,
+			  c2s_handle_info, 75),
     ejabberd_hooks:delete(disco_local_features, Host,
 			  ?MODULE, disco_features, 75),
     ejabberd_hooks:delete(disco_local_identity, Host,
