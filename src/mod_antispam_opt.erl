@@ -5,8 +5,8 @@
 
 -export([access_spam/1]).
 -export([allow_domains_file/1]).
+-export([cache_lifetime/1]).
 -export([cache_size/1]).
--export([collect_report_stats/1]).
 -export([forward_reports/1]).
 -export([forward_reports_to_third_party/1]).
 -export([rtbl_services/1]).
@@ -27,17 +27,17 @@ allow_domains_file(Opts) when is_map(Opts) ->
 allow_domains_file(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, allow_domains_file).
 
--spec cache_size(gen_mod:opts() | global | binary()) -> 'unlimited' | pos_integer().
+-spec cache_lifetime(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
+cache_lifetime(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(cache_lifetime, Opts);
+cache_lifetime(Host) ->
+    gen_mod:get_module_opt(Host, mod_antispam, cache_lifetime).
+
+-spec cache_size(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
 cache_size(Opts) when is_map(Opts) ->
     gen_mod:get_opt(cache_size, Opts);
 cache_size(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, cache_size).
-
--spec collect_report_stats(gen_mod:opts() | global | binary()) -> boolean().
-collect_report_stats(Opts) when is_map(Opts) ->
-    gen_mod:get_opt(collect_report_stats, Opts);
-collect_report_stats(Host) ->
-    gen_mod:get_module_opt(Host, mod_antispam, collect_report_stats).
 
 -spec forward_reports(gen_mod:opts() | global | binary()) -> boolean().
 forward_reports(Opts) when is_map(Opts) ->
@@ -51,7 +51,7 @@ forward_reports_to_third_party(Opts) when is_map(Opts) ->
 forward_reports_to_third_party(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, forward_reports_to_third_party).
 
--spec rtbl_services(gen_mod:opts() | global | binary()) -> [binary() | [{binary(),[{'spam_source_domains_node',binary()}]}]].
+-spec rtbl_services(gen_mod:opts() | global | binary()) -> [binary() | [{binary(),[{'muc_bans_node',binary()} | {'spam_source_domains_node',binary()}]}]].
 rtbl_services(Opts) when is_map(Opts) ->
     gen_mod:get_opt(rtbl_services, Opts);
 rtbl_services(Host) ->

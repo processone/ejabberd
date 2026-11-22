@@ -29,100 +29,90 @@
 -include("logger.hrl").
 -include("mod_antispam.hrl").
 
--define(SERVICE_MODULE, mod_antispam).
 -define(SERVICE_JID_PREFIX, "rtbl-").
 
--export([parse_blocked_domains/1,
-	 parse_pubsub_event/1,
+-export([parse_iq_result/3,
 	 pubsub_event_handler/1,
-	 request_blocked_domains/3,
-	 subscribe/3,
-	 unsubscribe/3]).
+         cancel_timers/1,
+	 get_items/2,
+	 subscribe/2,
+	 unsubscribe/2]).
 
 %% @format-begin
 
-subscribe(RTBLHost, RTBLDomainsNode, From) ->
-    FromJID = service_jid(From),
-    SubIQ =
-        #iq{type = set,
-            to = jid:make(RTBLHost),
-            from = FromJID,
-            sub_els = [#pubsub{subscribe = #ps_subscribe{jid = FromJID, node = RTBLDomainsNode}}]},
-    ?DEBUG("Sending subscription request:~n~p", [xmpp:encode(SubIQ)]),
-    ejabberd_router:route_iq(SubIQ, subscribe_result, self()).
+subscribe(Host, Services) ->
+    for_all_services_and_nodes(fun(RTBLHost, {RTBLNode, _}) ->
+                                  FromJID = service_jid(Host),
+                                  SubIQ =
+                                      #iq{type = set,
+                                          to = jid:make(RTBLHost),
+                                          from = FromJID,
+                                          sub_els =
+                                              [#pubsub{subscribe =
+                                                           #ps_subscribe{jid = FromJID,
+                                                                         node = RTBLNode}}]},
+                                  {SubIQ, {subscribe_result, RTBLHost, RTBLNode}}
+                               end,
+                               Services).
 
--spec unsubscribe(binary() | none, binary(), binary()) -> ok.
-unsubscribe(none, _PSNode, _From) ->
-    ok;
-unsubscribe(RTBLHost, RTBLDomainsNode, From) ->
-    FromJID = jid:make(From),
-    SubIQ =
-        #iq{type = set,
-            to = jid:make(RTBLHost),
-            from = FromJID,
-            sub_els =
-                [#pubsub{unsubscribe = #ps_unsubscribe{jid = FromJID, node = RTBLDomainsNode}}]},
-    ejabberd_router:route_iq(SubIQ, unsubscribe_result, self()).
+-spec unsubscribe(binary(), rtbl_services()) -> ok.
+unsubscribe(Host, Services) ->
+    for_all_services_and_nodes(fun (RTBLHost,
+                                    {RTBLNode, #rtbl_service_node{subscribed = true}}) ->
+                                       FromJID = service_jid(Host),
+                                       SubIQ =
+                                           #iq{type = set,
+                                               to = jid:make(RTBLHost),
+                                               from = FromJID,
+                                               sub_els =
+                                                   [#pubsub{unsubscribe =
+                                                                #ps_unsubscribe{jid = FromJID,
+                                                                                node = RTBLNode}}]},
+                                       {SubIQ, {unsubscribe_result, RTBLHost, RTBLNode}};
+                                   (_, _) ->
+                                       ok
+                               end,
+                               Services).
 
--spec request_blocked_domains(binary() | none, binary(), binary()) -> ok.
-request_blocked_domains(none, _PSNode, _From) ->
-    ok;
-request_blocked_domains(RTBLHost, RTBLDomainsNode, From) ->
-    IQ = #iq{type = get,
-             from = jid:make(From),
-             to = jid:make(RTBLHost),
-             sub_els = [#pubsub{items = #ps_items{node = RTBLDomainsNode}}]},
-    ?DEBUG("Requesting RTBL blocked domains from ~s:~n~p", [RTBLHost, xmpp:encode(IQ)]),
-    ejabberd_router:route_iq(IQ, blocked_domains, self()).
+-spec get_items(binary(), rtbl_services()) -> ok.
+get_items(Host, Services) ->
+    for_all_services_and_nodes(fun(RTBLHost, {RTBLNode, _}) ->
+                                  IQ = #iq{type = get,
+                                           from = jid:make(Host),
+                                           to = jid:make(RTBLHost),
+                                           sub_els = [#pubsub{items = #ps_items{node = RTBLNode}}]},
+                                  {IQ, {get_items, RTBLHost, RTBLNode}}
+                               end,
+                               Services).
 
--spec parse_blocked_domains(stanza()) -> #{binary() => any()} | undefined.
-parse_blocked_domains(#iq{to = #jid{lserver = LServer}, type = result} = IQ) ->
+cancel_timers(Services) ->
+    for_all_services_and_nodes(fun(_RTBLHost, {_, #rtbl_service_node{retry_timer = TRef}}) ->
+                                  misc:cancel_timer(TRef)
+                               end,
+                               Services).
+
+-spec parse_iq_result(stanza(), binary(), rtbl_service_node_type()) ->
+                         #{binary() => any()} | undefined.
+parse_iq_result(#iq{to = #jid{lserver = LServer}, type = result} = IQ,
+                RTBLNode,
+                RTBLServiceNodeType) ->
     ?DEBUG("parsing iq-result items: ~p", [IQ]),
-    [#rtbl_service{node = RTBLDomainsNode}] = mod_antispam:get_rtbl_services_option(LServer),
     case xmpp:get_subtag(IQ, #pubsub{}) of
-        #pubsub{items = #ps_items{node = RTBLDomainsNode, items = Items}} ->
-            ?DEBUG("Got items:~n~p", [Items]),
-            parse_items(Items);
+        #pubsub{items = #ps_items{node = RTBLNode, items = Items}} ->
+            ParsedItems = parse_items(Items),
+            ejabberd_hooks:run(antispam_rtbl_items,
+                               LServer,
+                               [LServer, {RTBLServiceNodeType, {[], ParsedItems}}]),
+            ParsedItems;
         _ ->
             undefined
     end.
-
--spec parse_pubsub_event(stanza()) -> #{binary() => any()}.
-parse_pubsub_event(#message{to = #jid{lserver = LServer}} = Msg) ->
-    [#rtbl_service{node = RTBLDomainsNode}] = mod_antispam:get_rtbl_services_option(LServer),
-    case xmpp:get_subtag(Msg, #ps_event{}) of
-        #ps_event{items =
-                      #ps_items{node = RTBLDomainsNode,
-                                items = Items,
-                                retract = RetractIds}} ->
-            maps:merge(retract_items(RetractIds), parse_items(Items));
-        Other ->
-            ?WARNING_MSG("Couldn't extract items: ~p", [Other]),
-            #{}
-    end.
-
--spec parse_items([ps_item()]) -> #{binary() => any()}.
-parse_items(Items) ->
-    lists:foldl(fun(#ps_item{id = ID}, Acc) ->
-                   %% TODO extract meta/extra instructions
-                   maps:put(ID, true, Acc)
-                end,
-                #{},
-                Items).
-
--spec retract_items([binary()]) -> #{binary() => false}.
-retract_items(Ids) ->
-    lists:foldl(fun(ID, Acc) -> Acc#{ID => false} end, #{}, Ids).
-
--spec service_jid(binary()) -> jid().
-service_jid(Host) ->
-    jid:make(<<>>, Host, <<?SERVICE_JID_PREFIX, (ejabberd_cluster:node_id())/binary>>).
 
 %%--------------------------------------------------------------------
 %% Hook callbacks.
 %%--------------------------------------------------------------------
 
--spec pubsub_event_handler(stanza()) -> drop | stanza().
+-spec pubsub_event_handler(stanza()) -> stop | ok.
 pubsub_event_handler(#message{from = FromJid,
                               to =
                                   #jid{lserver = LServer,
@@ -130,17 +120,72 @@ pubsub_event_handler(#message{from = FromJid,
                          Msg) ->
     ?DEBUG("Got RTBL message:~n~p", [Msg]),
     From = jid:encode(FromJid),
-    [#rtbl_service{host = RTBLHost}] = mod_antispam:get_rtbl_services_option(LServer),
-    case RTBLHost of
-        From ->
-            ParsedItems = parse_pubsub_event(Msg),
-            Proc = gen_mod:get_module_proc_check(LServer, ?SERVICE_MODULE),
-            gen_server:cast(Proc, {update_blocked_domains, ParsedItems}),
-            drop;
-        _Other ->
-            ?INFO_MSG("Got unexpected message from ~s to rtbl resource:~n~p", [From, Msg]),
-            Msg
+    RTBLServices = mod_antispam:get_rtbl_services_option(LServer),
+    case parse_pubsub_event(Msg) of
+        {RTBLNode, ParsedItems} ->
+            case RTBLServices of
+                #{From := #{RTBLNode := RTBLServiceNode}} ->
+                    mod_antispam:update_blocked_items(LServer,
+                                                      From,
+                                                      RTBLNode,
+                                                      RTBLServiceNode#rtbl_service_node.type,
+                                                      ParsedItems),
+                    ejabberd_hooks:run(antispam_rtbl_items,
+                                       LServer,
+                                       [LServer,
+                                        {RTBLServiceNode#rtbl_service_node.type, ParsedItems}]),
+                    stop;
+                _NoMatch ->
+                    ?INFO_MSG("Got unexpected message from ~s to rtbl resource:~n~p", [From, Msg]),
+                    ok
+            end;
+        undefined ->
+            ok
     end;
-pubsub_event_handler(Acc) ->
-    ?DEBUG("unexpected something on pubsub_event_handler: ~p", [Acc]),
-    Acc.
+pubsub_event_handler(Other) ->
+    ?DEBUG("unexpected something on pubsub_event_handler: ~p", [Other]),
+    ok.
+
+%%--------------------------------------------------------------------
+%% Helpers.
+%%--------------------------------------------------------------------
+
+parse_pubsub_event(#message{to = #jid{lserver = _LServer}} = Msg) ->
+    case xmpp:get_subtag(Msg, #ps_event{}) of
+        #ps_event{items =
+                      #ps_items{node = Node,
+                                items = Items,
+                                retract = RetractIds}} ->
+            {Node, {RetractIds, parse_items(Items)}};
+        Other ->
+            ?WARNING_MSG("Couldn't extract items: ~p", [Other]),
+            undefined
+    end.
+
+-spec parse_items([ps_item()]) -> #{binary() => any()}.
+parse_items(Items) ->
+    lists:foldl(fun(#ps_item{id = ID}, Acc) ->
+                   %% TODO extract meta/extra instructions
+                   Acc#{ID => true}
+                end,
+                #{},
+                Items).
+
+-spec service_jid(binary()) -> jid().
+service_jid(Host) ->
+    jid:make(<<>>, Host, <<?SERVICE_JID_PREFIX, (ejabberd_cluster:node_id())/binary>>).
+%% @format-end
+
+for_all_services_and_nodes(Fun, Services) ->
+    [maybe_send_iq(Fun, RTBLHost, NodeName, Node)
+     || {RTBLHost, Nodes} <- maps:to_list(Services), {NodeName, Node} <- maps:to_list(Nodes)],
+    ok.
+
+maybe_send_iq(Fun, RTBLHost, NodeName, Node) ->
+    case Fun(RTBLHost, {NodeName, Node}) of
+        {IQ, State} ->
+            ?DEBUG("Sending service request: host=~s: node=~s state=~p~n~p", [RTBLHost, NodeName, State, xmpp:encode(IQ)]),
+            ejabberd_router:route_iq(IQ, State, self());
+        _ ->
+            ok
+    end.

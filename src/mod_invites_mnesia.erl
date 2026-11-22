@@ -66,7 +66,7 @@ delete_invite_by_token(_Host, Token) ->
 
 expire_invite_by_token(_Host, Token) ->
     case mnesia:dirty_read(invite_token, Token) of
-        [Invite] ->
+        [#invite_token{} = Invite] ->
             mnesia:dirty_write(Invite#invite_token{expires = {{1970, 1, 1}, {0, 0, 1}}});
         [] ->
             {error, not_found}
@@ -74,7 +74,8 @@ expire_invite_by_token(_Host, Token) ->
 
 expire_tokens(User, Server) ->
     length([mnesia:dirty_write(I#invite_token{expires = {{1970, 1, 1}, {0, 0, 1}}})
-            || I <- mnesia:dirty_index_read(invite_token, {User, Server}, #invite_token.inviter),
+            || #invite_token{} = I
+                   <- mnesia:dirty_index_read(invite_token, {User, Server}, #invite_token.inviter),
                not mod_invites:is_expired(I),
                I#invite_token.type /= roster_only]).
 
@@ -120,11 +121,11 @@ init(_Host, _Opts) ->
 
 is_reserved(_Host, Token, User) ->
     lists:filter(fun(T) ->
-                    I = hd(mnesia:dirty_read(invite_token, T)),
+                    #invite_token{} = I = hd(mnesia:dirty_read(invite_token, T)),
                     not mod_invites:is_expired(I)
-                    and (I#invite_token.token /= Token)
-                    and (I#invite_token.invitee == <<>>)
-                    and (I#invite_token.account_name == User)
+                    andalso I#invite_token.token /= Token
+                    andalso I#invite_token.invitee == <<>>
+                    andalso I#invite_token.account_name == User
                  end,
                  mnesia:dirty_all_keys(invite_token))
     =/= [].
@@ -142,7 +143,7 @@ is_token_valid(Host, Token, Scope) ->
 
 list_invites(Host) ->
     lists:filtermap(fun(Token) ->
-                       Invite = hd(mnesia:dirty_read(invite_token, Token)),
+                       #invite_token{} = Invite = hd(mnesia:dirty_read(invite_token, Token)),
                        case element(2, Invite#invite_token.inviter) of
                            Host ->
                                {true, Invite};
@@ -174,7 +175,7 @@ set_invitee(F, _Host, Token, Invitee, AccountName) ->
                                andalso OAccountName =/= <<>>
                                andalso AccountName =/= <<>> ->
                    {error, conflict};
-               Invite ->
+               #invite_token{} = Invite ->
                    case F() of
                        ok ->
                            ok =

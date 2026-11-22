@@ -34,7 +34,6 @@
 
 -include_lib("xmpp/include/xmpp.hrl").
 
--include("ejabberd_commands.hrl").
 -include("mod_invites.hrl").
 -include("translate.hrl").
 

@@ -652,7 +652,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     case length(AllIDs) of
         0 -> ok;
         AllIDsLen ->
-            IDCheckQuery = [<<"SELECT COUNT(*) FROM archive WHERE timestamp IN (">>, binary_join(AllIDs, <<",">>), <<");">>],
+            IDCheckQuery = [<<"SELECT COUNT(*) FROM archive WHERE timestamp IN (">>, misc:binary_join(AllIDs, <<",">>), <<");">>],
             {selected, _, [[CountAllIDs]]} = ejabberd_sql:sql_query(LServer, IDCheckQuery),
             case binary_to_integer(CountAllIDs) of
                 I when I < AllIDsLen ->
@@ -685,7 +685,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     WithIDs =  if
                    length(StanzaIDs) > 0 ->
                        StanzaIN =
-                           binary_join(
+                           misc:binary_join(
                              lists:filter(fun is_valid_stanza_id/1, StanzaIDs),
                              <<",">>),
                        [<<" AND timestamp IN (">>, StanzaIN, <<")">>];
@@ -1013,14 +1013,3 @@ get_metadata(LUser, LServer) ->
 		{error, _} = Err ->
 			Err
 	end.
-
--ifdef(OTP_BELOW_28).
-binary_join([], _Separator) -> <<>>;
-binary_join([H | T], Separator) ->
-    lists:foldl(fun(Bin, Res) ->
-                        <<Res/binary, Separator/binary, Bin/binary>>
-                end, H, T).
--else.
-binary_join(Bins, Separator) ->
-    binary:join(Bins, Separator).
--endif.
