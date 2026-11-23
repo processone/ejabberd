@@ -99,8 +99,10 @@ c2s_unauthenticated_packet(State, _) ->
 user_send_packet({#iq{type = set} = IQ, C2sState} = Acc) ->
     try xmpp:try_subtag(IQ, #register{}) of
 	#register{} ->
+	    AuthModule = maps:get(auth_module, C2sState, unknown),
 	    case maps:get(password_change_disabled, C2sState, false) == true orelse
-	        maps:get(auth_module, C2sState, unknown) == mod_auth_fast
+	        AuthModule == mod_auth_fast orelse
+	        ejabberd_auth_anonymous:is_anonymous_auth_module(AuthModule)
 	    of
 		true ->
 		    {xmpp:put_meta(IQ, disable_password_change, true), C2sState};
