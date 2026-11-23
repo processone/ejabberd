@@ -75,7 +75,7 @@
 		suite:match_failure([Mismatch], [??Pattern])
 	end
     end)()).
-    
+
 -define(not_match(Pattern, Result),
     (fun() ->
 	case Result of
@@ -100,6 +100,7 @@
     ?match(Recv, suite:send_recv(Config, Send))).
 
 -define(retry(TIMEOUT, N, FUN), suite:retry(TIMEOUT, N, fun() -> FUN end)).
+-define(retry(FUN), ?retry(100, 10, FUN)).
 
 -define(COMMON_VHOST, <<"localhost">>).
 -define(MNESIA_VHOST, <<"mnesia.localhost">>).

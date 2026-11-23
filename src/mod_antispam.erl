@@ -50,7 +50,6 @@
          terminate/2,
          code_change/3]).
 
--export([get_rtbl_services_option/1]).
 
 %% ejabberd_commands callbacks.
 -export([add_blocked_domain/2,
@@ -67,6 +66,12 @@
          cache_tab/1]).
 
 -import(mod_antispam_util, [try_call_by_host/3, for_all_hosts/2, sets_equal/2, format/2]).
+-import(mod_antispam_rtbl, [get_rtbl_service_node/3,
+                            get_rtbl_services_option/1,
+                            set_retry_timer/4,
+                            set_rtbl_service_node/4,
+                            to_rtbl_service/2,
+                            to_rtbl_service_node/2]).
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
@@ -144,6 +149,8 @@ mod_opt_type(forward_reports) ->
 mod_opt_type(forward_reports_to_third_party) ->
     econf:list(
         econf:jid());
+mod_opt_type(rtbl_multi_host_policy) ->
+    econf:enum([all, one]);
 mod_opt_type(rtbl_services) ->
     econf:list(
         econf:either(
@@ -173,6 +180,7 @@ mod_options(_Host) ->
      {cache_size, ?DEFAULT_CACHE_SIZE},
      {forward_reports, true},
      {forward_reports_to_third_party, []},
+     {rtbl_multi_host_policy, one},
      {rtbl_services, []},
      {spam_domains_file, none},
      {spam_dump_file, false},
@@ -232,6 +240,12 @@ mod_doc() ->
               desc =>
                   ?T("List of third-party services to forward spam and abuse reports to, if allowed"
                      " by reporter. Default is '[]'.")}},
+           {rtbl_multi_host_policy,
+            #{value => "all | one",
+              desc =>
+                  ?T("If there's more than one RTBL service with the same node type configured, "
+                     "setting this to 'all' will require that an entry is being blocked if all "
+                     "services publish it rather than just one. Default is 'one'.")}},
            {rtbl_services,
             #{value => ?T("[Service]"),
               example =>
@@ -242,7 +256,6 @@ mod_doc() ->
               desc =>
                   ?T("Query a RTBL service to get domains and MUC jids to block, as provided by "
                      "https://xmppbl.org/[xmppbl.org]. "
-                     "Please note right now this option only supports one service in that list. "
                      "If only the host is provided, the default node names ('spam_source_domains' "
                      "and 'muc_bans_sha256' as found on 'xmppbl.org') will be assumed."
                      "For using custom node name, e.g. different than 'spam_source_domains', "
@@ -339,7 +352,7 @@ init([Host, Opts]) ->
     insert_many_for_host(cache_tab(blocked_items),
                          Host,
                          spam_source_domains,
-                         set_to_map(SpamDomainsSet, #{source => spam_domains_file})),
+                         set_to_map(SpamDomainsSet, #{spam_domains_file => true})),
 
     ets_cache:new(cache_tab(allow_domains)),
     insert_many_for_host(cache_tab(allow_domains),
@@ -369,6 +382,11 @@ handle_call(prepare_stop,
             #state{host = Host, rtbl_services = RTBLServices} = State) ->
     mod_antispam_rtbl:unsubscribe(Host, RTBLServices),
     {reply, ready_to_stop, State};
+handle_call({insert_many_for_host, [Tab, Type, Items]},
+            _From,
+            #state{host = Host} = State) ->
+    insert_many_for_host(Tab, Host, Type, Items),
+    {reply, ok, State};
 handle_call(Request, From, State) ->
     ?ERROR_MSG("Got unexpected request from ~p: ~p", [From, Request]),
     {noreply, State}.
@@ -438,8 +456,8 @@ handle_info({iq_reply, IQReply, {get_items, RTBLHost, RTBLNode}},
             insert_many_for_host(cache_tab(blocked_items),
                                  Host,
                                  RTBLServiceNode#rtbl_service_node.type,
-                                 Items),
-            ok = mod_antispam_rtbl:subscribe(Host, RTBLServices),
+                                 set_source({RTBLHost, RTBLNode}, Items)),
+            ok = mod_antispam_rtbl:subscribe(Host, RTBLHost, RTBLNode),
             {noreply,
              State#state{rtbl_services =
                              set_rtbl_service_node(RTBLServices,
@@ -614,10 +632,10 @@ get_blocked_domains(Host) ->
 add_blocked_domain(<<"global">>, Domain) ->
     for_all_hosts(fun add_blocked_domain/2, [Domain]);
 add_blocked_domain(Host, Domain) ->
-    ets_cache:insert(cache_tab(blocked_items),
-                     {Host, Domain, spam_source_domains},
-                     #{source => add_blocked_domain},
-                     ejabberd_cluster:get_nodes()),
+    ets_upsert(cache_tab(blocked_items),
+               {Host, Domain, spam_source_domains},
+               #{add_blocked_domain => true},
+               ejabberd_cluster:get_nodes()),
     Txt = format("~s added to blocked domains", [Domain]),
     {ok, Txt}.
 
@@ -705,7 +723,29 @@ drop_from_spam_filter_cache(Host, EncJID) ->
 is_blocked_domain(Host, Domain) ->
     maybe
         true ?= ets_cache:lookup(cache_tab(allow_domains), {Host, Domain}) =:= error,
-        ets_cache:lookup(cache_tab(blocked_items), {Host, Domain, spam_source_domains}) =/= error
+        Res ?= ets_cache:lookup(cache_tab(blocked_items), {Host, Domain, spam_source_domains}),
+        true ?= Res =/= error,
+        Policy = mod_antispam_opt:rtbl_multi_host_policy(Host),
+        false ?= Policy == one,
+        {ok, Blocked} = Res,
+        false ?= maps:filter(fun(K, _V) -> not is_tuple(K) end, Blocked) =/= #{},
+        Services = get_rtbl_services_option(Host),
+        Nodes =
+            maps:fold(fun(K, V, A) ->
+                         maps:fold(fun (K2, #rtbl_service_node{type = spam_source_domains}, A2) ->
+                                           [{K, K2} | A2];
+                                       (_, _, A2) ->
+                                           A2
+                                   end,
+                                   A,
+                                   V)
+                      end,
+                      [],
+                      Services),
+        Nodes
+        -- maps:keys(
+               maps:filter(fun(K, _V) -> is_tuple(K) end, Blocked))
+        == []
     end.
 
 update_blocked_items(Host, RTBLHost, RTBLNode, RTBLNodeType, {RetractIds, NewItems}) ->
@@ -713,12 +753,10 @@ update_blocked_items(Host, RTBLHost, RTBLNode, RTBLNodeType, {RetractIds, NewIte
                      ets_cache:delete(cache_tab(blocked_items), {Host, RetractId, RTBLNodeType})
                   end,
                   RetractIds),
-    maps:foreach(fun(Id, _V) ->
-                    ets_cache:insert(cache_tab(blocked_items),
-                                     {Host, Id, RTBLNodeType},
-                                     #{source => {RTBLHost, RTBLNode}})
-                 end,
-                 NewItems).
+    safe_insert_many_for_host(cache_tab(blocked_items),
+                              Host,
+                              RTBLNodeType,
+                              set_source({RTBLHost, RTBLNode}, NewItems)).
 
 %%--------------------------------------------------------------------
 %%| Internal functions
@@ -776,64 +814,58 @@ read_files(Host) ->
           allow_domains => mod_antispam_opt:allow_domains_file(Host)},
     ejabberd_hooks:run_fold(antispam_get_lists, Host, AccInitial, [Files]).
 
-get_rtbl_services_option(HostOrOpts) ->
-    Services = mod_antispam_opt:rtbl_services(HostOrOpts),
-    case length(Services) =< 1 of
-        true ->
-            ok;
-        false ->
-            ?WARNING_MSG("Option rtbl_services only supports one service, but several "
-                         "were configured. Will use only first one",
-                         [])
-    end,
-    lists:foldl(fun to_rtbl_service/2, #{}, lists:sublist(Services, 1, 1)).
-
-to_rtbl_service([{Host, Nodes}], M) ->
-    M#{Host => lists:foldl(fun to_rtbl_service_nodes/2, #{}, Nodes)};
-to_rtbl_service(Host, M) ->
-    M#{Host =>
-           #{?DEFAULT_SPAM_SOURCE_DOMAINS_NODE => #rtbl_service_node{},
-             ?DEFAULT_MUC_BANS_NODE => #rtbl_service_node{type = muc_bans}}}.
-
-to_rtbl_service_nodes({Type, none}, M)
-    when Type == spam_source_domains_node; Type == muc_bans_node ->
-    M;
-to_rtbl_service_nodes({Type, Node}, M)
-    when Type == spam_source_domains_node; Type == muc_bans_node ->
-    M#{Node => #rtbl_service_node{type = node_type(Type)}};
-to_rtbl_service_nodes({UnknownType, Node}, M) ->
-    ?WARNING_MSG("Unknown RTBL node type configured: type=~p node=~s", [UnknownType, Node]),
-    M.
-
-node_type(spam_source_domains_node) ->
-    spam_source_domains;
-node_type(muc_bans_node) ->
-    muc_bans.
-
-get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode) ->
-    #{RTBLHost := #{RTBLNode := RTBLServiceNode}} = RTBLServices,
-    RTBLServiceNode.
-
-set_retry_timer(RTBLServices, RTBLHost, RTBLNode, TRef) ->
-    #{RTBLHost := #{RTBLNode := RTBLServiceNode} = RTBLNodes} = RTBLServices,
-    RTBLServices#{RTBLHost =>
-                      RTBLNodes#{RTBLNode =>
-                                     RTBLServiceNode#rtbl_service_node{retry_timer = TRef}}}.
-
-set_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode, RTBLServiceNode) ->
-    #{RTBLHost := RTBLNodes} = RTBLServices,
-    RTBLServices#{RTBLHost => RTBLNodes#{RTBLNode => RTBLServiceNode}}.
-
 cache_tab(Name) ->
     %% elp:ignore W0023
     list_to_atom(atom_to_list(?MODULE) ++ "_" ++ atom_to_list(Name)).
 
-insert_many_for_host(Tab, Host, Type, Keys) ->
-    maps:foreach(fun(Key, V) -> ets_cache:insert(Tab, {Host, Key, Type}, V) end, Keys).
+inside_gen_server(Host) ->
+    whereis(gen_mod:get_module_proc_check(Host, ?MODULE)) =:= self().
 
-insert_many_for_host(Tab, Host, Keys) ->
-    maps:foreach(fun(Key, V) -> ets_cache:insert(Tab, {Host, Key}, V) end, Keys).
+safe_insert_many_for_host(Tab, Host, Type, Items) ->
+    %% If the pubsub node we're subscribing to is hosted on our local ejabberd processing of
+    %% messages happens inside the gen_server itself from within handle_info({iq_result, ...}, _, _).
+    %% I.e. mod_antispam_rtbl:pubsub_event_handler/2 is triggered from within.
+    case inside_gen_server(Host) of
+        true ->
+            insert_many_for_host(Tab, Host, Type, Items);
+        false ->
+            %% This is needed because we do an upsert in insert_many_for_host/X, so if we handle inserts
+            %% outside of the gen_server we need to make sure not overwrite concurrent inserts.
+            case try_call_by_host(Host, ?MODULE, {insert_many_for_host, [Tab, Type, Items]}) of
+                ok ->
+                    ok;
+                {error, _R} = Error ->
+                    Error
+            end
+    end.
+
+insert_many_for_host(Tab, Host, Type, Items) ->
+    maps:foreach(ets_upsert_fun(Tab, fun(K) -> {Host, K, Type} end), Items).
+
+insert_many_for_host(Tab, Host, Items) ->
+    maps:foreach(ets_upsert_fun(Tab, fun(K) -> {Host, K} end), Items).
+
+ets_upsert_fun(Tab, KeyF) ->
+    fun(K, V) -> ets_upsert(Tab, KeyF(K), V) end.
+
+ets_upsert(Tab, Key, Val) ->
+    ets_upsert(Tab, Key, Val, [node()]).
+
+ets_upsert(Tab, Key, Val, Nodes) ->
+    %% FIXME
+    %% This is only necessary because while ets_cache allows setting a table
+    %% type of 'bag' it doesn't actually support it.
+    case ets_cache:lookup(Tab, Key) of
+        {ok, OldVal} ->
+            ets_cache:delete(Tab, Key, Nodes),
+            ets_cache:insert(Tab, Key, maps:merge(OldVal, Val), Nodes);
+        error ->
+            ets_cache:insert(Tab, Key, Val, Nodes)
+    end.
 
 ets_cache_clear(Tab, Host) ->
     Keys = ets:select(Tab, [{{{Host, '$1'}, '_', '_'}, [], ['$1']}]),
     lists:foreach(fun(Key) -> ets:delete(Tab, Key) end, Keys).
+
+set_source(Source, Items) ->
+    maps:map(fun(_K, V) -> #{Source => V} end, Items).

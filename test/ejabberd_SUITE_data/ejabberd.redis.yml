@@ -8,9 +8,6 @@ define_macro:
         db_type: internal
         access: local
       mod_antispam:
-        rtbl_services:
-          - "pubsub.redis.localhost":
-                  spam_source_domains_node: spam_source_domains
         spam_jids_file: spam_jids.txt
         spam_domains_file: spam_domains.txt
         spam_urls_file: spam_urls.txt
@@ -36,6 +33,9 @@ define_macro:
       mod_private:
         db_type: internal
       mod_pubsub:
+        hosts:
+          - pubsub.redis.localhost
+          - rtbl.redis.localhost
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false

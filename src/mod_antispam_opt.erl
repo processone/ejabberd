@@ -9,6 +9,7 @@
 -export([cache_size/1]).
 -export([forward_reports/1]).
 -export([forward_reports_to_third_party/1]).
+-export([rtbl_multi_host_policy/1]).
 -export([rtbl_services/1]).
 -export([spam_domains_file/1]).
 -export([spam_dump_file/1]).
@@ -50,6 +51,12 @@ forward_reports_to_third_party(Opts) when is_map(Opts) ->
     gen_mod:get_opt(forward_reports_to_third_party, Opts);
 forward_reports_to_third_party(Host) ->
     gen_mod:get_module_opt(Host, mod_antispam, forward_reports_to_third_party).
+
+-spec rtbl_multi_host_policy(gen_mod:opts() | global | binary()) -> 'all' | 'one'.
+rtbl_multi_host_policy(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(rtbl_multi_host_policy, Opts);
+rtbl_multi_host_policy(Host) ->
+    gen_mod:get_module_opt(Host, mod_antispam, rtbl_multi_host_policy).
 
 -spec rtbl_services(gen_mod:opts() | global | binary()) -> [binary() | [{binary(),[{'muc_bans_node',binary()} | {'spam_source_domains_node',binary()}]}]].
 rtbl_services(Opts) when is_map(Opts) ->
