@@ -55,7 +55,8 @@ single_cases() ->
       single_test(service_subscriptions),
       single_test(set_room_affiliation),
       single_test(domain_owner_affiliation),
-      single_test(hats_without_xdata)]}.
+      single_test(hats_without_xdata),
+      single_test(hats_destroy)]}.
 
 service_presence_error(Config) ->
     Service = muc_jid(Config),
@@ -373,6 +374,51 @@ hats_without_xdata(Config) ->
            send_recv(Config, #iq{type = set, to = RoomJID,
                                  sub_els = [CommandDestroy]})),
     [104] = recv_only_config_change_message(Config),
+    ok = leave(Config, RoomJID),
+    disconnect(Config).
+
+hats_destroy(Config) ->
+    RoomJID = muc_room_jid(Config),
+    MyJID = my_jid(Config),
+    MyNick = ?config(nick, Config),
+    MyRoomJID = jid:replace_resource(RoomJID, MyNick),
+    ok = join_new(Config, RoomJID),
+    HatCommand =
+	fun(Node, Fields) ->
+		#iq{type = result, sub_els = [#adhoc_command{status = completed}]} =
+		    send_recv(Config,
+			      #iq{type = set, to = RoomJID,
+				  sub_els = [#adhoc_command{
+						action = complete, node = Node,
+						xdata = #xdata{
+							   type = form,
+							   fields = [#xdata_field{var = Var, values = [Val]}
+								     || {Var, Val} <- [{<<"FORM_TYPE">>, <<"urn:xmpp:hats:commands">>}
+										       | Fields]]}}]})
+	end,
+    lists:foreach(
+      fun(Hat) ->
+	      HatCommand(<<"urn:xmpp:hats:commands:create">>,
+			 [{<<"hats#title">>, Hat},
+			  {<<"hats#uri">>, <<"https://example.com/", Hat/binary>>}]),
+	      [104] = recv_only_config_change_message(Config)
+      end, [<<"Worn">>, <<"Other">>]),
+    HatCommand(<<"urn:xmpp:hats:commands:assign">>,
+	       [{<<"hats#jid">>, jid:encode(MyJID)},
+		{<<"hat">>, <<"https://example.com/Worn">>}]),
+    #presence{from = MyRoomJID} = PresHat = recv_presence(Config),
+    ?match(#muc_hats{hats = [#muc_hat{uri = <<"https://example.com/Worn">>}]},
+	   xmpp:get_subtag(PresHat, #muc_hats{})),
+    ct:comment("Destroying a hat nobody wears changes no presence"),
+    HatCommand(<<"urn:xmpp:hats:commands:destroy">>,
+	       [{<<"hat">>, <<"https://example.com/Other">>}]),
+    [104] = recv_only_config_change_message(Config),
+    ct:comment("Destroying the only hat an occupant wears takes it off"),
+    HatCommand(<<"urn:xmpp:hats:commands:destroy">>,
+	       [{<<"hat">>, <<"https://example.com/Worn">>}]),
+    [104] = recv_only_config_change_message(Config),
+    #presence{from = MyRoomJID} = Pres = recv_presence(Config),
+    false = xmpp:get_subtag(Pres, #muc_hats{}),
     ok = leave(Config, RoomJID),
     disconnect(Config).
 
