@@ -233,18 +233,113 @@ retire(US, DeviceID) ->
 %% Every m.room.member state change a room sees (mod_matrix_gw_room's
 %% rooms call it): join and invite add MXID to the room, anything else
 %% takes it out.
+%%
+%% A Matrix server tells a user's device
+%% changes (m.device_list_update) only to the servers already sharing a
+%% room with that user, so our copy of a remote user's keys taken while
+%% nobody here shared a room with them may miss devices made since. When a
+%% remote user comes to share a room with a local user here for the first
+%% time (their own new row, or a local user's new row in a room they are
+%% in), the copy is marked stale and the local devices sharing a room with
+%% them are told (<devices-changed/>, as inbound_edu/3 does); a remote
+%% user's join on a row the room had (an invite taken up) is told the same
+%% way. When the last room shared with them goes, nothing keeps the copy
+%% fresh any more: it is marked stale too.
 -spec membership(binary(), binary(), binary(), binary() | atom()) -> ok.
-membership(_Host, RoomID, MXID, Membership) when is_binary(RoomID), is_binary(MXID) ->
+membership(Host, RoomID, MXID, Membership) when is_binary(RoomID), is_binary(MXID) ->
     Key = {RoomID, MXID},
+    Had = mnesia:dirty_read(matrix_room_share, Key) /= [],
     case to_bin(Membership) of
         M when M == <<"join">>; M == <<"invite">> ->
-            mnesia:dirty_write(#matrix_room_share{room_mxid = Key, room = RoomID, mxid = MXID});
+            Before = unshared(Host, sharing_with(Host, RoomID, MXID, Had)),
+            mnesia:dirty_write(#matrix_room_share{room_mxid = Key, room = RoomID, mxid = MXID}),
+            Now = Before -- unshared(Host, Before),
+            Took = case {Had, M, kind(Host, MXID)} of
+                       {true, <<"join">>, remote} -> [MXID];
+                       _ -> []
+                   end,
+            [devices_unknown(Host, X, true) || X <- lists:usort(Now ++ Took)];
+        _ when Had ->
+            Affected = sharing_with(Host, RoomID, MXID, false),
+            mnesia:dirty_delete(matrix_room_share, Key),
+            [devices_unknown(Host, X, false) || X <- unshared(Host, Affected)];
         _ ->
-            mnesia:dirty_delete(matrix_room_share, Key)
+            ok
     end,
     ok;
 membership(_, _, _, _) ->
     ok.
+
+%% The remote users whose sharing MXID's row in RoomID may change, none
+%% when the row was there already (Had; a leave passes false): MXID
+%% itself when remote; for a local user's row, the room's remote members.
+sharing_with(_Host, _RoomID, _MXID, true) ->
+    [];
+sharing_with(Host, RoomID, MXID, false) ->
+    case kind(Host, MXID) of
+        local -> [X || X <- members_of(RoomID), kind(Host, X) == remote];
+        remote -> [MXID];
+        error -> []
+    end.
+
+kind(Host, MXID) ->
+    case parse(MXID) of
+        {ok, _, S} ->
+            case S == mod_matrix_gw_opt:matrix_domain(Host) of
+                true -> local;
+                false -> remote
+            end;
+        _ ->
+            error
+    end.
+
+%% The remote users of Xs who share no room and no direct chat with a
+%% local user (room_share/2 empty), each room looked at once.
+unshared(Host, Xs) ->
+    {Out, _} = lists:foldl(
+                 fun(X, {Acc, Memo}) ->
+                         {Shared, Memo2} = shared(Host, X, Memo),
+                         {case Shared of true -> Acc; false -> [X | Acc] end, Memo2}
+                 end, {[], #{}}, Xs),
+    lists:reverse(Out).
+
+shared(Host, X, Memo) ->
+    case lists:foldl(
+           fun(_, {true, M}) -> {true, M};
+              (R, {false, M}) ->
+                   case M of
+                       #{R := B} -> {B, M};
+                       _ ->
+                           B = lists:any(fun(Y) -> kind(Host, Y) == local end, members_of(R)),
+                           {B, M#{R => B}}
+                   end
+           end, {false, Memo}, rooms_of(X)) of
+        {true, _} = Yes ->
+            Yes;
+        {false, Memo2} ->
+            {[] /= [L || {matrix_direct, {{L, H}, _}, _} <- direct_rows({{'_', '_'}, X}), H == Host],
+             Memo2}
+    end.
+
+%% Our copy of MXID's keys no longer known to be fresh: marked stale (the
+%% next <keys-query/> fetches it); Tell: the local devices sharing a room
+%% with MXID told its devices changed.
+devices_unknown(Host, MXID, Tell) ->
+    Stream = case mnesia:dirty_read(matrix_remote_user, MXID) of
+                 [#matrix_remote_user{stream_id = S} = R] ->
+                     mnesia:dirty_write(R#matrix_remote_user{stale = true}),
+                     S;
+                 [] ->
+                     0
+             end,
+    ?DEBUG("matrix e2e: the device list of ~s no longer known fresh (shared ~p)", [MXID, Tell]),
+    case Tell of
+        true ->
+            Item = {devices_changed, [{MXID, Stream}]},
+            [queue(Host, U, D, Item) || U <- room_share(Host, MXID), {D, _} <- devices_of(Host, U)];
+        false ->
+            []
+    end.
 
 to_bin(A) when is_atom(A) -> atom_to_binary(A, utf8);
 to_bin(B) -> B.
