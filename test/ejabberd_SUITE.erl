@@ -414,7 +414,8 @@ no_db_tests() ->
        version,
        time,
        stats,
-       disco]},
+       disco,
+       anonymous_user_removed]},
      {presence_and_s2s, [sequence],
       [test_auth_fail,
        presence,
@@ -1109,6 +1110,17 @@ presence(Config) ->
     JID = my_jid(Config),
     #presence{from = JID, to = JID} = send_recv(Config, #presence{}),
     disconnect(Config).
+
+anonymous_user_removed(Config) ->
+    #jid{luser = U, lserver = S, lresource = R} = JID = my_jid(Config),
+    true = ejabberd_auth:user_exists(U, S),
+    #presence{from = JID, to = JID} = send_recv(Config, #presence{}),
+    Pid = ejabberd_sm:get_session_pid(U, S, R),
+    disconnect(Config),
+    Ref = erlang:monitor(process, Pid),
+    receive {'DOWN', Ref, process, Pid, _} -> ok end,
+    false = ejabberd_auth:user_exists(U, S),
+    not_found = mod_last:get_last_info(U, S).
 
 presence_broadcast(Config) ->
     Feature = <<"p1:tmp:", (p1_rand:get_string())/binary>>,

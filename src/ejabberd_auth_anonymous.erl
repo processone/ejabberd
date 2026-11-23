@@ -109,15 +109,25 @@ allow_multiple_connections(Host) ->
 anonymous_user_exist(User, Server) ->
     lists:any(
       fun({_LResource, Info}) ->
-	      proplists:get_value(auth_module, Info) == ?MODULE
+	      is_anonymous_session(Info)
       end, ejabberd_sm:get_user_info(User, Server)).
+
+%% A session authenticated with login_anon has this module as its
+%% auth_module, one authenticated with SASL ANONYMOUS has 'anonymous'
+-spec is_anonymous_session(ejabberd_sm:info()) -> boolean().
+is_anonymous_session(Info) ->
+    case proplists:get_value(auth_module, Info) of
+	?MODULE -> true;
+	anonymous -> true;
+	_ -> false
+    end.
 
 %% Register connection
 -spec register_connection(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> ok.
 register_connection(_SID,
 		    #jid{luser = LUser, lserver = LServer, lresource = LResource}, Info) ->
-    case proplists:get_value(auth_module, Info) of
-	?MODULE ->
+    case is_anonymous_session(Info) of
+	true ->
 	    % Register user only if we are first resource
 	    case ejabberd_sm:get_user_resources(LUser, LServer) of
 		[LResource] ->
@@ -125,7 +135,7 @@ register_connection(_SID,
 		_ ->
 		    ok
 	    end;
-	_ ->
+	false ->
 	    ok
     end.
 
@@ -133,8 +143,8 @@ register_connection(_SID,
 -spec unregister_connection(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> any().
 unregister_connection(_SID,
 		      #jid{luser = LUser, lserver = LServer}, Info) ->
-    case proplists:get_value(auth_module, Info) of
-	?MODULE ->
+    case is_anonymous_session(Info) of
+	true ->
 	    % Remove user data only if there is no more resources around
 	    case ejabberd_sm:get_user_resources(LUser, LServer) of
 		[] ->
@@ -142,7 +152,7 @@ unregister_connection(_SID,
 		_ ->
 		    ok
 	    end;
-	_ ->
+	false ->
 	    ok
     end.
 
