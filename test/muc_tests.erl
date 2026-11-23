@@ -1761,13 +1761,12 @@ config_captcha_subscribe_master(Config) ->
     [104] = set_config(Config, [{captcha_protected, true},
 				    {allow_subscription, true}]),
     put_event(Config, subscribe),
-    subscribed = get_event(Config),
+    unsubscribed = get_event(Config),
     ct:comment("The room still routes a groupchat message"),
     Body = xmpp:mk_text(<<"after the subscribe">>),
     send(Config, #message{type = groupchat, to = Room, body = Body}),
     #message{type = groupchat, from = MyNickJID, body = Body} =
 	recv_message(Config),
-    done = get_event(Config),
     ok = leave(Config),
     disconnect(Config).
 
@@ -1797,10 +1796,12 @@ config_captcha_subscribe_slave(Config) ->
     ct:comment("The subscription is answered"),
     #iq{type = result, sub_els = [#muc_subscribe{}]} =
 	receive #iq{id = SubID} = SubRes -> SubRes end,
-    put_event(Config, subscribed),
     ct:comment("The room is still there"),
+    %% Unsubscribe before the master's message: we have no available
+    %% resource, so a MUC/Sub event would go to offline storage
+    %% and pop up in a later test
     ok = unsubscribe(Config, Room),
-    put_event(Config, done),
+    put_event(Config, unsubscribed),
     disconnect(Config).
 
 register_master(Config) ->
