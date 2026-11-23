@@ -1180,7 +1180,8 @@ process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_info(#iq{type = get,
 		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
-    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MUC],
+    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MUC] ++
+        mod_matrix_gw_call:disco_features(IQ#iq.to),
     Identity = #identity{category = <<"gateway">>,
 			 type = <<"matrix">>},
     xmpp:make_iq_result(

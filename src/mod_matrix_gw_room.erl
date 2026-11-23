@@ -40,6 +40,8 @@
          route/1]).
 -export([process_edus/3, get_state/4, make_leave/3,
          get_known_room_version/1, restore_rooms/1]).
+%% Matrix calls (mod_matrix_gw_call)
+-export([send_direct/4]).
 
 %% gen_statem callbacks
 -export([init/1, terminate/3, code_change/4, callback_mode/0]).
@@ -250,6 +252,16 @@ route(#presence{from = From, to = #jid{luser = <<C, _/binary>>} = To,
             ejabberd_router:route_error(Packet, Err),
             ok
     end;
+%% a message carrying a https://ns.another.im/matrix-e2e/0 <event/> is
+%% mod_matrix_gw_call's; any other comes back once, marked, for the
+%% clauses below
+route(#message{to = To, meta = Meta} = Pkt)
+  when not is_map_key(matrix_e2e_event, Meta) ->
+    Host = ejabberd_config:get_myname(),
+    case mod_matrix_gw_call:route_event(Pkt, Host, user_id_from_jid(To, Host)) of
+        pass -> route(Pkt#message{meta = Meta#{matrix_e2e_event => pass}});
+        ok -> ok
+    end;
 %% a groupchat message is whatever mod_matrix_gw_xmpp:classify/1
 %% finds in it (a body, a correction, reactions, a chat state), not only a
 %% body
@@ -309,77 +321,13 @@ route(#message{from = From, to = To, id = MsgID} = Pkt) ->
                         [] ->
                             ok;
                         [_ | _] ->
-                            RoomID = new_room_id(),
-                            ?DEBUG("new room id ~p~n", [RoomID]),
-                            case get_room_pid(Host, RoomID) of
+                            MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
+                            FromMatrixID =
+                                <<$@, (From#jid.luser)/binary, $:, MatrixServer/binary>>,
+                            case new_direct_room(Host, FromMatrixID, ToMatrixID, []) of
                                 {ok, Pid} ->
-                                    MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
-                                    FromMatrixID =
-                                        <<$@, (From#jid.luser)/binary, $:, MatrixServer/binary>>,
-                                    gen_statem:cast(Pid, {create, MatrixServer, RoomID,
-                                                          FromMatrixID, ToMatrixID}),
-                                    JSONs =
-                                        [#{<<"content">> =>
-                                               #{<<"creator">> => FromMatrixID,
-                                                 <<"room_version">> => <<"9">>},
-                                           <<"sender">> => FromMatrixID,
-                                           <<"state_key">> => <<"">>,
-                                           <<"type">> => ?ROOM_CREATE},
-                                         #{<<"content">> =>
-                                               #{<<"membership">> => <<"join">>},
-                                           <<"sender">> => FromMatrixID,
-                                           <<"state_key">> => FromMatrixID,
-                                           <<"type">> => ?ROOM_MEMBER},
-                                         #{<<"content">> =>
-                                               #{<<"ban">> => 50,
-                                                 <<"events">> =>
-                                                     #{<<"m.room.avatar">> => 50,
-                                                       <<"m.room.canonical_alias">> => 50,
-                                                       <<"m.room.encryption">> => 100,
-                                                       <<"m.room.history_visibility">> => 100,
-                                                       <<"m.room.name">> => 50,
-                                                       <<"m.room.power_levels">> => 100,
-                                                       <<"m.room.server_acl">> => 100,
-                                                       <<"m.room.tombstone">> => 100},
-                                                 <<"events_default">> => 0,
-                                                 <<"historical">> => 100,
-                                                 <<"invite">> => 0,
-                                                 <<"kick">> => 50,
-                                                 <<"redact">> => 50,
-                                                 <<"state_default">> => 50,
-                                                 <<"users">> =>
-                                                     #{FromMatrixID => 100,
-                                                       ToMatrixID => 100},
-                                                 <<"users_default">> => 0},
-                                           <<"sender">> => FromMatrixID,
-                                           <<"state_key">> => <<"">>,
-                                           <<"type">> => ?ROOM_POWER_LEVELS},
-                                         #{<<"content">> => #{<<"join_rule">> => <<"invite">>},
-                                           <<"sender">> => FromMatrixID,
-                                           <<"state_key">> => <<"">>,
-                                           <<"type">> => ?ROOM_JOIN_RULES},
-                                         #{<<"content">> => #{<<"history_visibility">> => <<"shared">>},
-                                           <<"sender">> => FromMatrixID,
-                                           <<"state_key">> => <<"">>,
-                                           <<"type">> => ?ROOM_HISTORY_VISIBILITY},
-                                         #{<<"content">> => #{<<"guest_access">> => <<"can_join">>},
-                                           <<"sender">> => FromMatrixID,
-                                           <<"state_key">> => <<"">>,
-                                           <<"type">> => <<"m.room.guest_access">>},
-                                         #{<<"content">> =>
-                                               #{<<"is_direct">> => true,
-                                                 <<"membership">> => <<"invite">>},
-                                           <<"sender">> => FromMatrixID,
-                                           <<"state_key">> => ToMatrixID,
-                                           <<"type">> => ?ROOM_MEMBER}
-                                        ],
-                                    lists:foreach(fun(JSON) ->
-                                                          gen_statem:cast(Pid, {add_event, JSON})
-                                                  end, JSONs),
-                                    gen_statem:cast(Pid, {xmpp_actions, From, MsgID, Actions}),
-                                    ok;
-                                {error, Reason} ->
-                                    ?INFO_MSG("no direct room for ~s: ~p", [ToMatrixID, Reason]),
+                                    gen_statem:cast(Pid, {xmpp_actions, From, MsgID, Actions});
+                                _ ->
                                     ok
                             end
                     end
@@ -401,7 +349,8 @@ route(#iq{type = Type, lang = Lang, sub_els = [_]} = IQ0) ->
                          #disco_info{identities =
                                          [#identity{category = <<"conference">>,
                                                     type = <<"text">>}],
-                                     features = [?NS_MUC, ?NS_DISCO_INFO, ?NS_DISCO_ITEMS]}};
+                                     features = [?NS_MUC, ?NS_DISCO_INFO, ?NS_DISCO_ITEMS] ++
+                                         mod_matrix_gw_call:disco_features(IQ#iq.to)}};
                     {get, #disco_info{node = _}} ->
                         {error, xmpp:err_item_not_found()};
                     {get, #disco_items{node = <<>>}} ->
@@ -425,6 +374,99 @@ route(#iq{type = Type, lang = Lang, sub_els = [_]} = IQ0) ->
     end;
 route(_) ->
     ok.
+
+%% JSON, an event of the local
+%% user From, into the direct room with ToMatrixID, created first, as the
+%% first message creates it, when there is none
+send_direct(Host, From, ToMatrixID, #{<<"sender">> := FromMatrixID} = JSON) ->
+    Key = {{From#jid.luser, From#jid.lserver}, ToMatrixID},
+    case mnesia:dirty_read(matrix_direct, Key) of
+        [#matrix_direct{room_id = RoomID}] ->
+            case get_existing_room_pid(Host, RoomID) of
+                {ok, Pid} ->
+                    gen_statem:cast(Pid, {add_event, JSON});
+                {error, _} ->
+                    ?INFO_MSG("no process for the direct room ~s of ~s", [RoomID, ToMatrixID]),
+                    ok
+            end;
+        _ ->
+            new_direct_room(Host, FromMatrixID, ToMatrixID, [JSON])
+    end.
+
+%% 26.09's room creation for a first message, lifted out of
+%% route/1 for send_direct/4 too; Events follow the creation events; the
+%% room's process, for the first message's actions (media's merge)
+new_direct_room(Host, FromMatrixID, ToMatrixID, Events) ->
+    RoomID = new_room_id(),
+    ?DEBUG("new room id ~p~n", [RoomID]),
+    case get_room_pid(Host, RoomID) of
+        {ok, Pid} ->
+            MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
+            gen_statem:cast(Pid, {create, MatrixServer, RoomID,
+                                  FromMatrixID, ToMatrixID}),
+            JSONs =
+                [#{<<"content">> =>
+                       #{<<"creator">> => FromMatrixID,
+                         <<"room_version">> => <<"9">>},
+                   <<"sender">> => FromMatrixID,
+                   <<"state_key">> => <<"">>,
+                   <<"type">> => ?ROOM_CREATE},
+                 #{<<"content">> =>
+                       #{<<"membership">> => <<"join">>},
+                   <<"sender">> => FromMatrixID,
+                   <<"state_key">> => FromMatrixID,
+                   <<"type">> => ?ROOM_MEMBER},
+                 #{<<"content">> =>
+                       #{<<"ban">> => 50,
+                         <<"events">> =>
+                             #{<<"m.room.avatar">> => 50,
+                               <<"m.room.canonical_alias">> => 50,
+                               <<"m.room.encryption">> => 100,
+                               <<"m.room.history_visibility">> => 100,
+                               <<"m.room.name">> => 50,
+                               <<"m.room.power_levels">> => 100,
+                               <<"m.room.server_acl">> => 100,
+                               <<"m.room.tombstone">> => 100},
+                         <<"events_default">> => 0,
+                         <<"historical">> => 100,
+                         <<"invite">> => 0,
+                         <<"kick">> => 50,
+                         <<"redact">> => 50,
+                         <<"state_default">> => 50,
+                         <<"users">> =>
+                             #{FromMatrixID => 100,
+                               ToMatrixID => 100},
+                         <<"users_default">> => 0},
+                   <<"sender">> => FromMatrixID,
+                   <<"state_key">> => <<"">>,
+                   <<"type">> => ?ROOM_POWER_LEVELS},
+                 #{<<"content">> => #{<<"join_rule">> => <<"invite">>},
+                   <<"sender">> => FromMatrixID,
+                   <<"state_key">> => <<"">>,
+                   <<"type">> => ?ROOM_JOIN_RULES},
+                 #{<<"content">> => #{<<"history_visibility">> => <<"shared">>},
+                   <<"sender">> => FromMatrixID,
+                   <<"state_key">> => <<"">>,
+                   <<"type">> => ?ROOM_HISTORY_VISIBILITY},
+                 #{<<"content">> => #{<<"guest_access">> => <<"can_join">>},
+                   <<"sender">> => FromMatrixID,
+                   <<"state_key">> => <<"">>,
+                   <<"type">> => <<"m.room.guest_access">>},
+                 #{<<"content">> =>
+                       #{<<"is_direct">> => true,
+                         <<"membership">> => <<"invite">>},
+                   <<"sender">> => FromMatrixID,
+                   <<"state_key">> => ToMatrixID,
+                   <<"type">> => ?ROOM_MEMBER}
+                ] ++ Events,
+            lists:foreach(fun(JSON) ->
+                                  gen_statem:cast(Pid, {add_event, JSON})
+                          end, JSONs),
+            {ok, Pid};
+        {error, Reason} ->
+            ?INFO_MSG("no direct room for ~s: ~p", [ToMatrixID, Reason]),
+            ok
+    end.
 
 get_missing_events(Host, Origin, RoomID, EarliestEvents, LatestEvents, Limit, MinDepth) ->
     case get_existing_room_pid(Host, RoomID) of
@@ -3490,6 +3532,17 @@ notify_event_xmpp(
         _ ->
             Data
     end;
+%% m.call.* in a direct room, forwarded to the local user as the
+%% https://ns.another.im/matrix-e2e/0 <event/> (mod_matrix_gw_call); none in a room
+notify_event_xmpp(
+  #event{type = <<"m.call.", _/binary>> = Type, id = EventID, sender = Sender,
+         origin_server_ts = TS, json = JSON},
+  #data{kind = #direct{local_user = UserJID}, room_id = RoomID} = Data) ->
+    mod_matrix_gw_call:forward(
+      user_id_to_jid(Sender, Data), UserJID,
+      #{type => Type, id => EventID, room => RoomID, sender => Sender, ts => TS,
+        content => maps:get(<<"content">>, JSON, #{})}),
+    Data;
 notify_event_xmpp(_Event, Data) ->
     Data.
 
