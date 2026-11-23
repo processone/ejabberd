@@ -102,6 +102,10 @@ c2s_inline_features({Sasl, Bind, Extra} = Acc, Host, State) ->
 	    {Sasl, Bind, Methods ++ Extra}
     end.
 
+c2s_handle_sasl2_inline({#{auth_module := AuthModule}, _, _} = Acc)
+  when AuthModule == anonymous; AuthModule == ejabberd_auth_anonymous ->
+    %% An anonymous user has no password to upgrade
+    Acc;
 c2s_handle_sasl2_inline({State, Els, _Results} = Acc) ->
     case lists:keyfind(sasl_upgrade, 1, Els) of
 	false ->

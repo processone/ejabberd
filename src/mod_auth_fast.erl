@@ -154,6 +154,9 @@ get_tokens(LServer, LUser, UA, Mech) ->
     ToRefresh = erlang:system_time(second) - (mod_auth_fast_opt:token_refresh_age(LServer) div 1000),
     [{{Type, CreatedAt < ToRefresh}, Token} || {Type, Token, CreatedAt} <- Mod:get_tokens(LServer, LUser, ua_hash(UA, Mech))].
 
+c2s_inline_features(Acc, _Host, #{sasl2_stream_from := undefined}) ->
+    %% The stream names no user, so it can only log in anonymously
+    Acc;
 c2s_inline_features({Sasl, Bind, Extra}, Host, State) ->
     {Sasl ++ [#fast{mechs = get_mechanisms(Host, State)}], Bind, Extra}.
 
@@ -165,6 +168,10 @@ gen_token(Server, User, UA, Mech) ->
     #fast_token{token = Token, expiry = misc:usec_to_now(ExpiresAt*1000000)}.
 
 c2s_handle_sasl2_inline({#{sasl2_ua_id := undefined}, _, _} = Acc) ->
+    Acc;
+c2s_handle_sasl2_inline({#{auth_module := AuthModule}, _, _} = Acc)
+  when AuthModule == anonymous; AuthModule == ejabberd_auth_anonymous ->
+    %% An anonymous user lasts as long as its sessions: no token for it
     Acc;
 c2s_handle_sasl2_inline({#{server := Server, user := User, sasl2_ua_id := UA, sasl_mech := Mech,
 			   sasl2_extra_auth_info := Extra} = State, Els, Results} = Acc) ->
