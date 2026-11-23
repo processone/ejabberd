@@ -45,7 +45,7 @@
          base64_decode/1, base64_encode/1,
          prune_event/2, get_event_id/2, content_hash/1,
          sign_event/3, sign_pruned_event/2, sign_json/2,
-         send_request/8, s2s_out_bounce_packet/2, user_receive_packet/1,
+         send_request/8, send_request/9, s2s_out_bounce_packet/2, user_receive_packet/1,
 	 process_disco_info/1,
 	 process_disco_items/1,
          route/1]).
@@ -814,6 +814,20 @@ sign_json(Host, JSON) ->
 
 send_request(Host, Method, MatrixServer, Path, Query, JSON,
              HTTPOptions, Options) ->
+    %% found by the spec's discovery (mod_matrix_gw_http:resolve/3)
+    case mod_matrix_gw_s2s:get_destination(Host, MatrixServer) of
+        error ->
+            ?INFO_MSG("Matrix server ~s not found, ~s not sent", [MatrixServer, Path]),
+            {error, {no_destination, MatrixServer}};
+        Dest ->
+            send_request(Host, Method, MatrixServer, Dest, Path, Query, JSON,
+                         HTTPOptions, Options)
+    end.
+
+%% A request to MatrixServer at Destination (its discovery's
+%% result), its certificate verified as that server's.
+send_request(Host, Method, MatrixServer, Dest, Path, Query, JSON,
+             HTTPOptions, Options) ->
     URI1 = iolist_to_binary(
              lists:map(fun(P) -> [$/, uri_string:quote(P)] end, Path)),
     URI =
@@ -829,7 +843,7 @@ send_request(Host, Method, MatrixServer, Path, Query, JSON,
                            end, Query), $&),
                 <<URI1/binary, $?, URI2/binary>>
         end,
-    {MHost, MPort} = mod_matrix_gw_s2s:get_matrix_host_port(Host, MatrixServer),
+    #{host := MHost, port := MPort} = Dest,
     URL = <<"https://", MHost/binary,
             ":", (integer_to_binary(MPort))/binary,
             URI/binary>>,
@@ -840,7 +854,7 @@ send_request(Host, Method, MatrixServer, Path, Query, JSON,
             post -> <<"POST">>
         end,
     Auth = make_auth_header(Host, MatrixServer, SMethod, URI, JSON),
-    Headers = [{"Authorization", binary_to_list(Auth)}],
+    Headers = [{"Authorization", binary_to_list(Auth)} | mod_matrix_gw_s2s:host_header(Dest)],
     Content =
         case JSON of
             none -> <<>>;
@@ -857,9 +871,18 @@ send_request(Host, Method, MatrixServer, Path, Query, JSON,
     HTTPRes =
         httpc:request(Method,
                       Request,
-                      HTTPOptions,
+                      mod_matrix_gw_http:http_options(
+                        HTTPOptions, Dest, mod_matrix_gw_s2s:cacerts(Host)),
                       Options),
     ?DEBUG("httpc request res ~p", [HTTPRes]),
+    case HTTPRes of
+        {error, Reason} ->
+            %% an operator sees why a server cannot be reached
+            ?INFO_MSG("Matrix request ~s ~s to ~s failed: ~p",
+                      [SMethod, URI1, MatrixServer, Reason]);
+        _ ->
+            ok
+    end,
     HTTPRes.
 
 make_auth_header(Host, MatrixServer, Method, URI, Content) ->
@@ -991,7 +1014,9 @@ mod_opt_type(matrix_id_as_jid) ->
 mod_opt_type(notary_servers) ->
     econf:list(econf:host());
 mod_opt_type(leave_timeout) ->
-    econf:non_neg_int().
+    econf:non_neg_int();
+mod_opt_type(tls_cacertfile) ->
+    econf:pem().
 
 -spec mod_options(binary()) -> [{key, {binary(), binary()}} |
                                 {atom(), any()}].
@@ -1003,7 +1028,8 @@ mod_options(Host) ->
      {key, {<<"">>, <<"">>}},
      {matrix_id_as_jid, false},
      {notary_servers, []},
-     {leave_timeout, 0}].
+     {leave_timeout, 0},
+     {tls_cacertfile, undefined}].
 
 mod_doc() ->
     #{desc =>
@@ -1070,6 +1096,13 @@ mod_doc() ->
 	   {leave_timeout,
             #{value => "integer()",
               desc =>
-                  ?T("Delay in seconds between a user leaving a MUC room and sending 'leave' Matrix event.")}}
+                  ?T("Delay in seconds between a user leaving a MUC room and sending 'leave' Matrix event.")}},
+	   {tls_cacertfile,
+            #{value => ?T("Path"),
+              desc =>
+                  ?T("A PEM file of the CA certificates the other servers' "
+                     "certificates are verified against, instead of the "
+                     "system's store. Federation requests always verify the "
+                     "other server's certificate.")}}
           ]
      }.

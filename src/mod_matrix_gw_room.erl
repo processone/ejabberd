@@ -3372,17 +3372,25 @@ send_txn(TxnID, Events, Server, Count, Queue, Data) ->
                 ?DEBUG("send_txn_res ~p", [{RequestID, Res}]),
                 Self ! {send_txn_res, RequestID, TxnID, Server, Res}
         end,
-    {ok, RequestID} =
-        mod_matrix_gw:send_request(
-          Host, put, Server,
-          [<<"_matrix">>, <<"federation">>,
-           <<"v1">>, <<"send">>,
-           TxnID],
-          [],
-          Body,
-          [{timeout, 5000}],
-          [{sync, false},
-           {receiver, Receiver}]),
+    %% a server that cannot be reached now fails the transaction
+    %% (retried as any failed one), not the event that made it
+    RequestID =
+        case catch mod_matrix_gw:send_request(
+                     Host, put, Server,
+                     [<<"_matrix">>, <<"federation">>,
+                      <<"v1">>, <<"send">>,
+                      TxnID],
+                     [],
+                     Body,
+                     [{timeout, 5000}, {connect_timeout, 5000}],
+                     [{sync, false},
+                      {receiver, Receiver}]) of
+            {ok, RID} ->
+                RID;
+            Err ->
+                Self ! {send_txn_res, undefined, TxnID, Server, Err},
+                undefined
+        end,
     Data#data{outgoing_txns =
                   maps:put(Server, {{RequestID, TxnID, Events, Count}, Queue},
                            Data#data.outgoing_txns)}.

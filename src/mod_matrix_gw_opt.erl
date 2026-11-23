@@ -10,6 +10,7 @@
 -export([matrix_domain/1]).
 -export([matrix_id_as_jid/1]).
 -export([notary_servers/1]).
+-export([tls_cacertfile/1]).
 
 -spec host(gen_mod:opts() | global | binary()) -> binary().
 host(Opts) when is_map(Opts) ->
@@ -52,4 +53,10 @@ notary_servers(Opts) when is_map(Opts) ->
     gen_mod:get_opt(notary_servers, Opts);
 notary_servers(Host) ->
     gen_mod:get_module_opt(Host, mod_matrix_gw, notary_servers).
+
+-spec tls_cacertfile(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
+tls_cacertfile(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(tls_cacertfile, Opts);
+tls_cacertfile(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, tls_cacertfile).
 
