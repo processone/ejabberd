@@ -543,4 +543,13 @@ membership(Host, RoomID, MXID, Membership) ->
                          [MXID, RoomID, {Class, Reason}]),
             ok
     end,
+    %% MatrixRTC's delayed events of a local user leaving the room go
+    %% (mod_matrix_gw_rtc)
+    try mod_matrix_gw_rtc:membership(Host, RoomID, MXID, Membership)
+    catch
+        Class2:Reason2 ->
+            ?WARNING_MSG("delayed events of ~s in ~s not dropped: ~p",
+                         [MXID, RoomID, {Class2, Reason2}]),
+            ok
+    end,
     ok.

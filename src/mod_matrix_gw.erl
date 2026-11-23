@@ -605,6 +605,10 @@ process([<<"federation">>, <<"v2">>, <<"send_leave">>, RoomID, EventID],
         {result, HTTPResult} ->
             HTTPResult
     end;
+%% OpenID's userinfo, the federation's one unauthenticated
+%% endpoint (MatrixRTC's JWT services ask it, mod_matrix_gw_rtc).
+process([<<"federation">>, <<"v1">>, <<"openid">>, <<"userinfo">>], Request) ->
+    mod_matrix_gw_rtc:userinfo(Request);
 %% Media (mod_matrix_gw_media), the federation's signed and the
 %% legacy unauthenticated endpoints.
 process([<<"federation">>, <<"v1">>, <<"media">> | _] = Path, Request) ->
@@ -827,7 +831,12 @@ start(Host, _Opts) ->
                   {hook, user_receive_packet, user_receive_packet, 50},
                   %% a device online gets its queue (mod_matrix_gw_todevice)
                   {hook, set_presence_hook, mod_matrix_gw_todevice, set_presence_hook, 50},
-                  {hook, unset_presence_hook, mod_matrix_gw_todevice, unset_presence_hook, 50}]};
+                  {hook, unset_presence_hook, mod_matrix_gw_todevice, unset_presence_hook, 50},
+                  %% MatrixRTC's caps gate and delayed events (mod_matrix_gw_rtc)
+                  {hook, set_presence_hook, mod_matrix_gw_rtc, set_presence_hook, 50},
+                  {hook, unset_presence_hook, mod_matrix_gw_rtc, unset_presence_hook, 50},
+                  {hook, remove_user, mod_matrix_gw_rtc, remove_user, 50},
+                  {commands, mod_matrix_gw_rtc:get_commands_spec()}]};
 	Err ->
 	    Err
     end.
@@ -861,6 +870,8 @@ init([Host]) ->
     mod_matrix_gw_todevice:create_db(),
     %% the events local users sent, by XMPP id (<event-id/>)
     mod_matrix_gw_event:create_db(),
+    %% MatrixRTC's delayed events and OpenID tokens
+    mod_matrix_gw_rtc:create_db(),
     %% the aliases of the rooms made here
     mod_matrix_gw_muc:create_db(),
     %% our users' avatars as mxc ids, Matrix users' profiles
@@ -1361,6 +1372,15 @@ route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>},
           sub_els = [#xmlel{name = Name}]} = IQ)
   when Name == <<"resume">>; Name == <<"to-device">> ->
     mod_matrix_gw_todevice:route_iq(IQ);
+%% MatrixRTC's iqs to the gateway (mod_matrix_gw_rtc)
+route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>},
+          sub_els = [#xmlel{name = Name, attrs = Attrs}]} = IQ)
+  when Name == <<"delayed">>; Name == <<"transports">>; Name == <<"openid">>;
+       Name == <<"livekit-token">> ->
+    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
+        <<"https://ns.another.im/matrix-rtc/0">> -> mod_matrix_gw_rtc:route_iq(IQ);
+        _ -> ejabberd_router:process_iq(IQ)
+    end;
 %% <event-id/> (mod_matrix_gw_event)
 route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>},
           sub_els = [#xmlel{name = <<"event-id">>}]} = IQ) ->
@@ -1390,7 +1410,8 @@ process_disco_info(#iq{type = get,
 		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
     Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MUC] ++
         mod_matrix_gw_e2e:disco_features(IQ#iq.to) ++
-        mod_matrix_gw_call:disco_features(IQ#iq.to),
+        mod_matrix_gw_call:disco_features(IQ#iq.to) ++
+        mod_matrix_gw_rtc:disco_features(IQ#iq.to),
     Identity = #identity{category = <<"gateway">>,
 			 type = <<"matrix">>},
     xmpp:make_iq_result(
@@ -1454,7 +1475,16 @@ mod_opt_type(media_max_entries) ->
 mod_opt_type(todevice_max) ->
     econf:pos_int(unlimited);
 mod_opt_type(matrix_encrypt_dms) ->
-    econf:bool().
+    econf:bool();
+%% MatrixRTC (mod_matrix_gw_rtc)
+mod_opt_type(rtc_transports) ->
+    econf:list(econf:map(econf:binary(), econf:binary()));
+mod_opt_type(rtc_member_format) ->
+    econf:enum([legacy, sticky, auto]);
+mod_opt_type(rtc_max_delay_ms) ->
+    econf:pos_int();
+mod_opt_type(rtc_max_delayed_per_user) ->
+    econf:pos_int().
 
 -spec mod_options(binary()) -> [{key, {binary(), binary()}} |
                                 {atom(), any()}].
@@ -1476,7 +1506,13 @@ mod_options(Host) ->
      %% finite, so that no server fills a device's
      %% queue for good
      {todevice_max, 10000},
-     {matrix_encrypt_dms, true}].
+     {matrix_encrypt_dms, true},
+     %% MatrixRTC (mod_matrix_gw_rtc): no focus of our own, the
+     %% format the room's live members use, MSC4140's usual bounds
+     {rtc_transports, []},
+     {rtc_member_format, auto},
+     {rtc_max_delay_ms, 86400000},
+     {rtc_max_delayed_per_user, 10}].
 
 mod_doc() ->
     #{desc =>
@@ -1590,7 +1626,32 @@ mod_doc() ->
                      "creates is encrypted (m.room.encryption among its "
                      "first events). A chat a plain message or another "
                      "event creates never is; one made by the device's "
-                     "<encryption/> always is. The default is 'true'.")}}
+                     "<encryption/> always is. The default is 'true'.")}},
+	   {rtc_transports,
+            #{value => "[{type: livekit, livekit_service_url: URL} | {type: m.livekit, url: URL, server_name: Name}]",
+              desc =>
+                  ?T("The MatrixRTC foci the gateway names to its users' "
+                     "devices (https://ns.another.im/matrix-rtc/0 <transports/>): an "
+                     "lk-jwt-service for generation A calls, a LiveKit SFU "
+                     "for generation B. With none, the users join calls but "
+                     "start none. The default is '[]'.")}},
+	   {rtc_member_format,
+            #{value => "legacy | sticky | auto",
+              desc =>
+                  ?T("The call membership the devices write: legacy "
+                     "(org.matrix.msc3401.call.member state), sticky "
+                     "(m.rtc.member), auto (the room's live members', "
+                     "legacy when there are none). The default is 'auto'.")}},
+	   {rtc_max_delay_ms,
+            #{value => "integer()",
+              desc =>
+                  ?T("The longest delay of a delayed event (MSC4140) a "
+                     "device may schedule, in ms. The default is 86400000.")}},
+	   {rtc_max_delayed_per_user,
+            #{value => "integer()",
+              desc =>
+                  ?T("How many delayed events a user may have scheduled at "
+                     "once. The default is 10.")}}
           ]
      }.
 

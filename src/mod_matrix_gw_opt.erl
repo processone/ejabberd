@@ -13,6 +13,10 @@
 -export([media_max_bytes/1]).
 -export([media_max_entries/1]).
 -export([notary_servers/1]).
+-export([rtc_max_delay_ms/1]).
+-export([rtc_max_delayed_per_user/1]).
+-export([rtc_member_format/1]).
+-export([rtc_transports/1]).
 -export([tls_cacertfile/1]).
 -export([todevice_max/1]).
 -export([upload_url/1]).
@@ -76,6 +80,30 @@ notary_servers(Opts) when is_map(Opts) ->
     gen_mod:get_opt(notary_servers, Opts);
 notary_servers(Host) ->
     gen_mod:get_module_opt(Host, mod_matrix_gw, notary_servers).
+
+-spec rtc_max_delay_ms(gen_mod:opts() | global | binary()) -> pos_integer().
+rtc_max_delay_ms(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(rtc_max_delay_ms, Opts);
+rtc_max_delay_ms(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, rtc_max_delay_ms).
+
+-spec rtc_max_delayed_per_user(gen_mod:opts() | global | binary()) -> pos_integer().
+rtc_max_delayed_per_user(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(rtc_max_delayed_per_user, Opts);
+rtc_max_delayed_per_user(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, rtc_max_delayed_per_user).
+
+-spec rtc_member_format(gen_mod:opts() | global | binary()) -> 'auto' | 'legacy' | 'sticky'.
+rtc_member_format(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(rtc_member_format, Opts);
+rtc_member_format(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, rtc_member_format).
+
+-spec rtc_transports(gen_mod:opts() | global | binary()) -> [[{binary(),binary()}]].
+rtc_transports(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(rtc_transports, Opts);
+rtc_transports(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, rtc_transports).
 
 -spec tls_cacertfile(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
 tls_cacertfile(Opts) when is_map(Opts) ->

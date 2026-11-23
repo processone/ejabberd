@@ -49,6 +49,8 @@
 -export([failure/3]).
 %% /query/directory
 -export([directory/2]).
+%% MatrixRTC (mod_matrix_gw_rtc)
+-export([rtc_route/2, rtc_fire/4]).
 
 %% gen_statem callbacks
 -export([init/1, terminate/3, code_change/4, callback_mode/0]).
@@ -442,6 +444,15 @@ route(#message{from = From, to = To, id = MsgID, lang = Lang} = Pkt) ->
     end;
 route(#iq{type = Type}) when Type == error; Type == result ->
     ok;
+%% MatrixRTC's <send/> and <room-state/> to the chat
+%% (mod_matrix_gw_rtc); any other comes back once, marked
+route(#iq{sub_els = [#xmlel{name = N}]} = IQ)
+  when (N == <<"send">> orelse N == <<"room-state">>),
+       not is_map_key(matrix_rtc_iq, IQ#iq.meta) ->
+    case mod_matrix_gw_rtc:route_chat_iq(IQ) of
+        pass -> route(IQ#iq{meta = (IQ#iq.meta)#{matrix_rtc_iq => pass}});
+        ok -> ok
+    end;
 %% <room-info/>, <encryption/>, <redact/> to the chat
 %% (mod_matrix_gw_event)
 route(#iq{sub_els = [#xmlel{attrs = [_ | _]}]} = IQ)
@@ -489,7 +500,8 @@ route(#iq{type = Type, lang = Lang, sub_els = [_]} = IQ0) ->
                                      features = Muc ++ [?NS_DISCO_INFO, ?NS_DISCO_ITEMS] ++
                                          mod_matrix_gw_e2e:disco_features(IQ#iq.to) ++
                                          mod_matrix_gw_call:disco_features(IQ#iq.to) ++
-                                         mod_matrix_gw_event:disco_features(IQ#iq.to)}};
+                                         mod_matrix_gw_event:disco_features(IQ#iq.to) ++
+                                         mod_matrix_gw_rtc:disco_features(IQ#iq.to)}};
                     {get, #disco_info{node = _}} ->
                         {error, xmpp:err_item_not_found()};
                     {get, #disco_items{node = <<>>}} ->
@@ -573,14 +585,17 @@ new_direct_room(Host, FromMatrixID, ToMatrixID, Events, Key) ->
                  #{<<"content">> =>
                        #{<<"ban">> => 50,
                          <<"events">> =>
-                             #{<<"m.room.avatar">> => 50,
-                               <<"m.room.canonical_alias">> => 50,
-                               <<"m.room.encryption">> => 100,
-                               <<"m.room.history_visibility">> => 100,
-                               <<"m.room.name">> => 50,
-                               <<"m.room.power_levels">> => 100,
-                               <<"m.room.server_acl">> => 100,
-                               <<"m.room.tombstone">> => 100},
+                             %% MatrixRTC's types too (mod_matrix_gw_rtc)
+                             maps:merge(
+                               mod_matrix_gw_rtc:power_levels(),
+                               #{<<"m.room.avatar">> => 50,
+                                 <<"m.room.canonical_alias">> => 50,
+                                 <<"m.room.encryption">> => 100,
+                                 <<"m.room.history_visibility">> => 100,
+                                 <<"m.room.name">> => 50,
+                                 <<"m.room.power_levels">> => 100,
+                                 <<"m.room.server_acl">> => 100,
+                                 <<"m.room.tombstone">> => 100}),
                          <<"events_default">> => 0,
                          <<"historical">> => 100,
                          <<"invite">> => 0,
@@ -1364,6 +1379,34 @@ handle_event(cast, {e2e_iq, IQ, Req}, _State, Data) ->
                 {xmpp:make_error(IQ, xmpp:err_internal_server_error()), Data}
         end,
     ejabberd_router:route(Reply),
+    {keep_state, Data2, [{next_event, internal, update_client}]};
+%% MatrixRTC's <send/> and <room-state/>, and a delayed event
+%% fired (mod_matrix_gw_rtc)
+handle_event(cast, {rtc_iq, IQ, Req}, _State, Data) ->
+    {Reply, Data2} =
+        try rtc_iq(IQ, Req, Data)
+        catch Class:Reason:ST ->
+                ?INFO_MSG("failed RTC iq in ~s: ~p",
+                          [Data#data.room_id, failure(Class, Reason, ST)]),
+                {xmpp:make_error(IQ, xmpp:err_internal_server_error()), Data}
+        end,
+    ejabberd_router:route(Reply),
+    {keep_state, Data2, [{next_event, internal, update_client}]};
+handle_event(cast, {rtc_fire, {LUser, LServer}, JSON}, _State, Data) ->
+    Data2 = case owns_room(jid:make(LUser, LServer), Data) of
+                true ->
+                    case local_add(JSON, Data) of
+                        {ok, D2} ->
+                            D2;
+                        {error, Why} ->
+                            ?INFO_MSG("delayed ~s of ~s in ~s refused: ~p",
+                                      [maps:get(<<"type">>, JSON), maps:get(<<"sender">>, JSON),
+                                       Data#data.room_id, Why]),
+                            Data
+                    end;
+                false ->
+                    Data
+            end,
     {keep_state, Data2, [{next_event, internal, update_client}]};
 handle_event({call, From}, e2e_members, _State, Data) ->
     Members = try state_members(current_state_map(Data), Data)
@@ -3823,10 +3866,16 @@ notify_event(Event, Data) ->
     %% the event among the room's events already (its
     %% state map names it: a member's item reads her own join)
     Data3 = Data2#data{events = (Data2#data.events)#{Event#event.id => Event}},
-    %% the end-to-end forwarded set first (mod_matrix_gw_event)
+    %% the end-to-end forwarded set first (mod_matrix_gw_event),
+    %% then MatrixRTC's types (mod_matrix_gw_rtc)
     case e2e_notify(Event, Data3) of
-        pass -> notify_event_xmpp(Event, Data3);
-        Data4 -> Data4
+        pass ->
+            case mod_matrix_gw_rtc:is_rtc_type(Event#event.type) of
+                true -> rtc_notify(Event, Data3);
+                false -> notify_event_xmpp(Event, Data3)
+            end;
+        Data4 ->
+            Data4
     end.
 
 notify_event_matrix(
@@ -5893,6 +5942,201 @@ route_e2e_iq(#iq{from = From, to = To, lang = Lang} = IQ, Req) ->
     end,
     ok.
 
+%%--------------------------------------------------------------------
+%% MatrixRTC (mod_matrix_gw_rtc)
+%%--------------------------------------------------------------------
+
+%% A checked <send/> or <room-state/> from a local user to the room's JID
+%% or u%srv@G, answered by the room's process; a <send/> to a direct chat
+%% that does not exist yet makes it (as a first <event/> does), a
+%% <room-state/> of one is empty.
+rtc_route(#iq{from = From, to = To, lang = Lang} = IQ, Req) ->
+    Host = ejabberd_config:get_myname(),
+    NotFound = fun() -> ejabberd_router:route(
+                          xmpp:make_error(IQ, xmpp:err_item_not_found(<<"no such room">>, Lang)))
+               end,
+    Cast = {rtc_iq, IQ, Req},
+    case To#jid.luser of
+        <<C, _/binary>> when C == $!; C == $# ->
+            case room_pid_of(Host, To) of
+                {ok, Pid} -> gen_statem:cast(Pid, Cast);
+                error -> NotFound()
+            end;
+        _ ->
+            case user_id_from_jid(To, Host) of
+                {ok, ToMatrixID} ->
+                    case {direct_pid_of(Host, From, ToMatrixID), Req} of
+                        {{ok, Pid}, _} ->
+                            gen_statem:cast(Pid, Cast);
+                        {none, {room_state, _}} ->
+                            ejabberd_router:route(mod_matrix_gw_rtc:room_state_result(IQ, []));
+                        {none, {send, _}} ->
+                            {ok, FromMatrixID} = user_id_from_jid(From, Host),
+                            case new_direct_room(Host, FromMatrixID, ToMatrixID, []) of
+                                {ok, Pid} -> gen_statem:cast(Pid, Cast);
+                                _ -> NotFound()
+                            end;
+                        _ ->
+                            NotFound()
+                    end;
+                error ->
+                    NotFound()
+            end
+    end,
+    ok.
+
+%% A delayed event's JSON into the room RoomID as the local user US: ok,
+%% or error when the gateway has no such room now.
+rtc_fire(Host, RoomID, US, JSON) ->
+    case get_existing_room_pid(Host, RoomID) of
+        {ok, Pid} ->
+            gen_statem:cast(Pid, {rtc_fire, US, JSON}),
+            ok;
+        _ ->
+            error
+    end.
+
+rtc_iq(#iq{from = From, lang = Lang} = IQ, Req, Data) ->
+    case owns_room(From, Data) of
+        false ->
+            {xmpp:make_error(IQ, xmpp:err_item_not_found(<<"no such room">>, Lang)), Data};
+        true ->
+            {ok, UserID} = user_id_from_jid(From, Data#data.host),
+            rtc_iq(IQ, Req, UserID, Data)
+    end.
+
+rtc_iq(IQ, {send, #{delay_ms := Delay} = Send}, _UserID, Data) when is_integer(Delay) ->
+    {mod_matrix_gw_rtc:schedule(IQ, Send#{room => Data#data.room_id}), Data};
+rtc_iq(#iq{lang = Lang} = IQ, {send, #{type := Type, state_key := Key, content := Content} = Send},
+       UserID, Data) ->
+    JSON0 = #{<<"type">> => Type, <<"sender">> => UserID, <<"content">> => Content},
+    JSON = case Key of
+               undefined -> JSON0;
+               _ -> JSON0#{<<"state_key">> => Key}
+           end,
+    try add_event(JSON, Data) of
+        {Data2, Event} ->
+            {mod_matrix_gw_rtc:send_result(IQ, Send#{room => Data#data.room_id}, Event#event.id),
+             Data2}
+    catch
+        error:{event_auth_error, _} ->
+            {mod_matrix_gw_rtc:send_error(IQ, power_level, Lang), Data};
+        error:{too_large, _} ->
+            {mod_matrix_gw_rtc:send_error(IQ, too_large, Lang), Data}
+    end;
+rtc_iq(#iq{lang = Lang} = IQ, {room_state, Types}, UserID, Data) ->
+    StateMap = current_state_map(Data),
+    Member = maps:get(<<"membership">>, state_content(?ROOM_MEMBER, UserID, StateMap, Data), <<"leave">>),
+    case Member == <<"join">> orelse Member == <<"invite">> of
+        false ->
+            {xmpp:make_error(IQ, xmpp:err_item_not_found(<<"not a member of the room">>, Lang)), Data};
+        true ->
+            State = [rtc_fields(E, #{})
+                     || {T, _} = K <- lists:sort(maps:keys(StateMap)), lists:member(T, Types),
+                        {ok, #event{} = E} <- [statemap_find(K, StateMap, Data)]],
+            Fields = [F || #{type := T, sender := S} = F <- State ++ rtc_sticky(Types, Data),
+                           mod_matrix_gw_rtc:owner_ok(T, maps:get(state_key, F, undefined), S,
+                                                      maps:get(content, F))],
+            {mod_matrix_gw_rtc:room_state_result(IQ, Fields), Data}
+    end.
+
+%% The unexpired sticky events of the generation B member types among
+%% Types, the newest per sender and sticky key (MSC4354's map).
+rtc_sticky(Types, Data) ->
+    Now = erlang:system_time(millisecond),
+    Sticky = [T || T <- Types, mod_matrix_gw_rtc:kind(T) == member_b],
+    Best = case Sticky of
+               [] ->
+                   #{};
+               _ ->
+                   maps:fold(
+                     fun(_, #event{type = T, sender = S, json = J} = E, Acc) ->
+                             case lists:member(T, Sticky) andalso mod_matrix_gw_rtc:sticky_left(J, Now) of
+                                 Left when is_integer(Left), Left > 0 ->
+                                     SK = maps:get(<<"sticky_key">>, maps:get(<<"content">>, J, #{}), <<>>),
+                                     Key = {S, T, SK},
+                                     case Acc of
+                                         #{Key := {L0, _}} when L0 >= Left -> Acc;
+                                         _ -> Acc#{Key => {Left, E}}
+                                     end;
+                                 _ ->
+                                     Acc
+                             end
+                     end, #{}, Data#data.events)
+           end,
+    [rtc_fields(E, #{sticky_ms => Left}) || {_, {Left, E}} <- lists:sort(maps:to_list(Best))].
+
+rtc_fields(#event{type = Type, id = ID, sender = Sender, origin_server_ts = TS,
+                  state_key = Key, json = JSON}, Extra) ->
+    F = #{type => Type, id => ID, room => maps:get(<<"room_id">>, JSON, <<>>), sender => Sender,
+          ts => TS, content => case JSON of
+                                   #{<<"content">> := C} when is_map(C) -> C;
+                                   _ -> #{}
+                               end},
+    maps:merge(case Key of
+                   K when is_binary(K) -> F#{state_key => K};
+                   _ -> F
+               end, Extra).
+
+%% An RTC event the room took (a remote one or a local user's): to the
+%% local members' devices that speak MatrixRTC.
+rtc_notify(#event{type = Type, sender = Sender, state_map = SM, json = JSON} = Event, Data)
+  when is_map(SM) ->
+    case rtc_recipients(SM, Data) of
+        [] ->
+            Data;
+        Recipients ->
+            Extra = case mod_matrix_gw_rtc:kind(Type) of
+                        member_b ->
+                            case mod_matrix_gw_rtc:sticky_left(JSON, erlang:system_time(millisecond)) of
+                                none -> #{};
+                                Left -> #{sticky_ms => Left}
+                            end;
+                        _ ->
+                            #{}
+                    end,
+            Origin = case catch mod_matrix_gw:get_id_domain_exn(Sender) of
+                         O when is_binary(O) -> O;
+                         _ -> <<>>
+                     end,
+            try mod_matrix_gw_rtc:forward(Data#data.host,
+                                          (rtc_fields(Event, Extra))#{room => Data#data.room_id},
+                                          Origin, Recipients)
+            catch Class:Reason:ST ->
+                    ?INFO_MSG("failed to forward ~s ~s in ~s: ~p",
+                              [Type, Event#event.id, Data#data.room_id, failure(Class, Reason, ST)])
+            end,
+            Data
+    end;
+rtc_notify(_Event, Data) ->
+    Data.
+
+%% [{UserBareJID, ChatJID, MessageType}]: a direct chat's local user (from
+%% the peer's JID), a room's local joined members (from the room's JID).
+rtc_recipients(_SM, #data{kind = #direct{local_user = #jid{} = U, remote_user = R}} = Data)
+  when is_binary(R) ->
+    case user_id_to_jid(R, Data) of
+        #jid{} = Chat -> [{jid:remove_resource(U), Chat, chat}];
+        _ -> []
+    end;
+rtc_recipients(SM, #data{kind = #multi{users = Users}} = Data) ->
+    [{jid:make(LU, LS), rtc_room_jid({LU, LS}, Users, Data), groupchat}
+     || UserID <- joined_members(SM, Data), {LU, LS} <- [local_us(UserID, Data)]];
+rtc_recipients(_SM, _Data) ->
+    [].
+
+%% The room JID a member's resources joined by, else the room's own.
+rtc_room_jid(US, Users, Data) ->
+    case Users of
+        #{US := {online, Resources}} ->
+            case [J || #multi_user{room_jid = J} <- maps:values(Resources)] of
+                [J | _] -> J;
+                [] -> Data#data.room_jid
+            end;
+        _ ->
+            Data#data.room_jid
+    end.
+
 %% The members of a room the gateway has, with their membership.
 -spec members(binary()) -> [{binary(), binary()}].
 members(RoomID) ->
@@ -6830,7 +7074,8 @@ room_disco_info(#iq{from = From, to = To}, Data) ->
                               <<"invite">>),
         occupants => length(joined_members(StateMap, Data)), moderate => Moderate,
         avatar_hash => Avatar,
-        features => mod_matrix_gw_call:disco_features(To) ++ mod_matrix_gw_event:disco_features(To)}).
+        features => mod_matrix_gw_call:disco_features(To) ++ mod_matrix_gw_event:disco_features(To) ++
+            mod_matrix_gw_rtc:disco_features(To)}).
 
 %% An affiliation or role list (XEP-0045 §9.5, §8.5, ...) from the state:
 %% its members and the users the power levels name.
