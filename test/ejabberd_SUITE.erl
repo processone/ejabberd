@@ -339,6 +339,10 @@ init_per_testcase(TestCase, OrigConfig) ->
 	"auth_sasl2" ->
 	    Jid = jid:encode(jid:make(User, Server)),
 	    connect_sasl2(starttls(connect_sasl2(Config, Jid)), Jid);
+	"auth_sasl2_anonymous" ->
+	    Config;
+	"auth_sasl2_no_user" ->
+	    Config;
 	"auth_external" ++ _ ->
 	    connect(Config);
 	"unauthenticated_" ++ _ ->
@@ -403,6 +407,7 @@ no_db_tests() ->
        unauthenticated_presence,
        test_starttls,
        test_auth,
+       auth_sasl2_anonymous,
        test_zlib,
        test_bind,
        test_open_session,
@@ -454,6 +459,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        auth_plain,
        auth_plain_wrong_authzid,
        auth_sasl2,
+       auth_sasl2_no_user,
        auth_md5,
        auth_md5_wrong_authzid,
        presence_broadcast,
@@ -499,6 +505,7 @@ db_tests(DB) ->
        auth_plain,
        auth_plain_wrong_authzid,
        auth_sasl2,
+       auth_sasl2_no_user,
        auth_md5,
        auth_md5_wrong_authzid,
        presence_broadcast,
@@ -1017,6 +1024,50 @@ auth_sasl2(Config) ->
 	    disconnect(Config),
 	    {skipped, 'DIGEST-MD5_not_available'}
     end.
+
+%% A stream that names no user is offered SASL2 with ANONYMOUS only,
+%% no FAST, and the anonymous session binds inline.
+auth_sasl2_anonymous(Config0) ->
+    {Config, Fs} = sasl2_no_user_features(Config0),
+    #sasl2_authenticaton{mechanisms = [<<"ANONYMOUS">>], inline = Inline} =
+	lists:keyfind(sasl2_authenticaton, 1, Fs),
+    true = lists:keymember(bind2_bind, 1, Inline),
+    false = lists:keymember(fast, 1, Inline),
+    UA = #sasl2_user_agent{id = <<"6C1B7D1B-3D2B-4C24-9D0C-6B2C5B9C1A11">>,
+			   software = <<"TestRunner">>, device = <<"tester">>},
+    send(Config, #sasl2_authenticate{mechanism = <<"PLAIN">>,
+				     initial_response = <<0, "user", 0, "pass">>,
+				     user_agent = UA}),
+    #sasl2_failure{} = recv(Config),
+    send(Config, #sasl2_authenticate{mechanism = <<"ANONYMOUS">>,
+				     initial_response = <<>>,
+				     sub_els = [#bind2_bind{tag = <<"TestRunner">>},
+						#fast_request_token{mech = <<"HT-SHA-256-NONE">>}],
+				     user_agent = UA}),
+    Server = ?config(server, Config),
+    #sasl2_success{jid = #jid{luser = User, lserver = Server, lresource = Res}} = Pkt =
+	recv(Config),
+    true = User /= <<>> andalso Res /= <<>>,
+    #bind2_bound{} = xmpp:get_subtag(Pkt, #bind2_bound{}),
+    false = xmpp:get_subtag(Pkt, #fast_token{}),
+    #stream_features{} = recv(Config),
+    true = ejabberd_sm:get_user_resources(User, Server) /= [],
+    #iq{type = result} =
+	send_recv(Config, #iq{type = get, sub_els = [#ping{}],
+			      to = server_jid(Config)}),
+    disconnect(Config).
+
+%% Without ANONYMOUS, a stream that names no user gets no SASL2 at all.
+auth_sasl2_no_user(Config0) ->
+    {Config, Fs} = sasl2_no_user_features(Config0),
+    false = lists:keymember(sasl2_authenticaton, 1, Fs),
+    #sasl_mechanisms{list = [_|_]} = lists:keyfind(sasl_mechanisms, 1, Fs),
+    disconnect(Config).
+
+sasl2_no_user_features(Config0) ->
+    Config1 = starttls(connect(set_opt(stream_from, <<"">>, Config0))),
+    Config = init_stream(Config1),
+    receive #stream_features{sub_els = Fs} -> {Config, Fs} end.
 
 auth_external(Config0) ->
     Config = connect(starttls(Config0)),
