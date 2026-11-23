@@ -54,7 +54,7 @@
          fetch/4, fetch/5, process/2, route_iq/1, share/1, outbound_contents/5,
          media_content/3, route_share/3, share_message/3, share_els/1,
          failure_body/2, file_name/1, event_el/6, multipart/2,
-         parse_multipart/2, upload/4]).
+         parse_multipart/2, upload/4, plain_get/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -771,9 +771,17 @@ sfs(El) ->
 
 file_meta(File) ->
     Text = fun(Name) -> fxml:get_path_s(File, [{elem, Name}, cdata]) end,
+    %% <dimensions>WxH</dimensions> as clients
+    %% writes them, <desc/> (a sticker's name)
+    {W, H} = case binary:split(Text(<<"dimensions">>), <<"x">>) of
+                 [W0, H0] -> {to_int(W0), to_int(H0)};
+                 _ -> {undefined, undefined}
+             end,
     Fields = [{mime, Text(<<"media-type">>)}, {name, Text(<<"name">>)},
-              {size, to_int(Text(<<"size">>))}, {width, to_int(Text(<<"width">>))},
-              {height, to_int(Text(<<"height">>))}, {duration, to_int(Text(<<"length">>))}],
+              {size, to_int(Text(<<"size">>))},
+              {width, case to_int(Text(<<"width">>)) of undefined -> W; W1 -> W1 end},
+              {height, case to_int(Text(<<"height">>)) of undefined -> H; H1 -> H1 end},
+              {duration, to_int(Text(<<"length">>))}, {desc, Text(<<"desc">>)}],
     maps:from_list([{K, V} || {K, V} <- Fields, V /= <<>>, V /= undefined]).
 
 %% The m.room.message contents a share of URL is, the file then the
@@ -902,7 +910,8 @@ failure_body(Name, Reason) ->
 -spec share_els(info()) -> [xmlel()].
 share_els(#{url := URL} = File) ->
     Meta = [#xmlel{name = Name, children = [{xmlcdata, V}]}
-            || {Key, Name} <- [{mime, <<"media-type">>}, {name, <<"name">>}, {size, <<"size">>},
+            || {Key, Name} <- [{mime, <<"media-type">>}, {name, <<"name">>}, {desc, <<"desc">>},
+                               {size, <<"size">>},
                                {width, <<"width">>}, {height, <<"height">>},
                                {duration, <<"length">>}],
                V0 <- [maps:get(Key, File, undefined)], V0 /= undefined,

@@ -108,19 +108,18 @@ process([<<"federation">>, <<"v1">>, <<"query">>, <<"profile">>],
                     case preprocess_federation_request(Request) of
                         {ok, _JSON, _Origin} ->
                             %% the user's vCard nickname (or full
-                            %% name) as displayname; no avatar yet
+                            %% name) as displayname, its photo as
+                            %% avatar_url (an mxc of ours,
+                            %% mod_matrix_gw_profile)
                             Host = ejabberd_config:get_myname(),
                             case local_user(Host, UserID) of
                                 {ok, LUser} ->
-                                    Profile = case display_name(LUser, Host) of
-                                                  <<>> -> #{};
-                                                  Name -> #{<<"displayname">> => Name}
-                                              end,
+                                    Profile = mod_matrix_gw_profile:local_profile(LUser, Host, block),
                                     mod_matrix_gw_http:json(
                                       200, case Field of
                                                all -> Profile;
-                                               displayname -> Profile;
-                                               avatar_url -> #{}
+                                               displayname -> maps:with([<<"displayname">>], Profile);
+                                               avatar_url -> maps:with([<<"avatar_url">>], Profile)
                                            end);
                                 error ->
                                     mod_matrix_gw_http:error(404, <<"M_NOT_FOUND">>, <<"no such user">>)
@@ -234,10 +233,10 @@ process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
                                     pdu_error(PDU, <<"failed to process the PDU">>)
                             end
                     end, PDUs),
-            %% EDUs (26.09 read none): typing and receipts
+            %% EDUs (26.09 read none), by type (dispatch_edus/3)
             case JSON of
                 #{<<"edus">> := EDUs} when is_list(EDUs) ->
-                    catch mod_matrix_gw_room:process_edus(Host, Origin, EDUs);
+                    catch dispatch_edus(Host, Origin, EDUs);
                 _ ->
                     ok
             end,
@@ -469,12 +468,21 @@ process([<<"federation">>, <<"v1">>, <<"state">>, RoomID],
         undefined ->
             mod_matrix_gw_http:error(400, <<"M_MISSING_PARAM">>, <<"missing 'event_id' parameter">>)
     end;
-%% This gateway publishes no room aliases.
+%% The aliases of the rooms made here (mod_matrix_gw_muc),
+%% while this server is in them.
 process([<<"federation">>, <<"v1">>, <<"query">>, <<"directory">>],
         #request{method = 'GET'} = Request) ->
     case preprocess_federation_request(Request) of
         {ok, _JSON, _Origin} ->
-            mod_matrix_gw_http:error(404, <<"M_NOT_FOUND">>, <<"no such room alias">>);
+            Host = ejabberd_config:get_myname(),
+            Alias = proplists:get_value(<<"room_alias">>, Request#request.q, <<>>),
+            case mod_matrix_gw_room:directory(Host, Alias) of
+                {ok, RoomID, Servers} ->
+                    mod_matrix_gw_http:json(200, #{<<"room_id">> => RoomID,
+                                                   <<"servers">> => Servers});
+                error ->
+                    mod_matrix_gw_http:error(404, <<"M_NOT_FOUND">>, <<"no such room alias">>)
+            end;
         {result, HTTPResult} ->
             HTTPResult
     end;
@@ -573,17 +581,6 @@ local_user(Host, UserID) ->
                 _ -> error
             end;
         _ -> error
-    end.
-
-%% What a user is called, from the vCard: NICKNAME, else FN.
-display_name(LUser, Host) ->
-    case catch mod_vcard:get_vcard(LUser, Host) of
-        [#xmlel{} = VCard | _] ->
-            case fxml:get_path_s(VCard, [{elem, <<"NICKNAME">>}, cdata]) of
-                <<>> -> fxml:get_path_s(VCard, [{elem, <<"FN">>}, cdata]);
-                Nick -> Nick
-            end;
-        _ -> <<>>
     end.
 
 preprocess_federation_request(Request) ->
@@ -695,6 +692,10 @@ init([Host]) ->
     mod_matrix_gw_store:create_db(),
     %% our files' mxc ids and the remote files fetched
     mod_matrix_gw_media:create_db(),
+    %% the aliases of the rooms made here
+    mod_matrix_gw_muc:create_db(),
+    %% our users' avatars as mxc ids, Matrix users' profiles
+    mod_matrix_gw_profile:create_db(),
     self() ! restore_rooms,
     %% a server shutting down closes every session, which would
     %% make every local user leave every Matrix room; it is no leave.
@@ -1171,6 +1172,18 @@ route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>},
     mod_matrix_gw_media:route_iq(IQ);
 route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>}} = IQ) ->
     ejabberd_router:process_iq(IQ);
+%% a Matrix user's vCard and presence (mod_matrix_gw_profile)
+route(#iq{type = get, to = #jid{luser = <<C, _/binary>>},
+          sub_els = [#xmlel{name = <<"vCard">>}]} = IQ)
+  when C /= $!, C /= $# ->
+    mod_matrix_gw_profile:route_iq(IQ);
+route(#iq{type = get, to = #jid{luser = <<C, _/binary>>},
+          sub_els = [#vcard_temp{}]} = IQ)
+  when C /= $!, C /= $# ->
+    mod_matrix_gw_profile:route_iq(IQ);
+route(#presence{to = #jid{luser = <<C, _/binary>>}} = Pkt)
+  when C /= $!, C /= $# ->
+    mod_matrix_gw_profile:route_presence(Pkt);
 route(Pkt) ->
     mod_matrix_gw_room:route(Pkt).
 
@@ -1353,3 +1366,17 @@ mod_doc() ->
                      "100000.")}}
           ]
      }.
+
+%% the EDUs of a /send transaction from Origin. Each goes to the
+%% module of its type (dispatch_edu/3: the end-to-end ones, m.device_list_update
+%% and m.signing_key_update to mod_matrix_gw_e2e:inbound_edu/2,
+%% m.direct_to_device to mod_matrix_gw_todevice:inbound_edu/2, a clause
+%% each); what no clause takes (typing, receipts, m.presence, the unknown)
+%% goes to the rooms, mod_matrix_gw_room:process_edus/3, as before.
+dispatch_edus(Host, Origin, EDUs) ->
+    Rooms = [EDU || EDU <- EDUs, dispatch_edu(Host, Origin, EDU) == pass],
+    mod_matrix_gw_room:process_edus(Host, Origin, Rooms).
+
+%% ok: taken; pass: the rooms'
+dispatch_edu(_Host, _Origin, _EDU) ->
+    pass.

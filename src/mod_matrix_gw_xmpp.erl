@@ -53,6 +53,7 @@
 -define(NS_REACTIONS, <<"urn:xmpp:reactions:0">>).
 -define(NS_MARKERS, <<"urn:xmpp:chat-markers:0">>).
 -define(NS_STATES, <<"http://jabber.org/protocol/chatstates">>).
+-define(NS_STICKERS, <<"urn:xmpp:stickers:0">>).
 -define(XMPP_ID, <<"net.process-one.xmpp-id">>).
 
 %%--------------------------------------------------------------------
@@ -64,11 +65,15 @@
 %%   {media, URL, Meta, Text} a file shared (XEP-0066, XEP-0447), with the
 %%                            body (mod_matrix_gw_media:share/1)
 %%   {text, Text}             a new message
+%%   {text, Text, Rel}        one with a reply, mentions, a place or a poll
+%%                            (mod_matrix_gw_content:rel/2)
+%%   {receipt_request, From, [receipt | markable]}
+%%                            the receipts From asked for (XEP-0184, XEP-0333)
 %%   {reactions, TargetID, Keys}
 %%   {typing, boolean()}      from a chat state
 %%   {displayed, ID}
 -spec classify(message()) -> [tuple()].
-classify(#message{body = Body, sub_els = Els}) ->
+classify(#message{from = From, body = Body, sub_els = Els}) ->
     Text = xmpp:get_text(Body),
     Raw = [El || El <- Els],
     Replace = find(Raw, <<"replace">>, ?NS_CORRECT),
@@ -76,10 +81,31 @@ classify(#message{body = Body, sub_els = Els}) ->
     Displayed = find(Raw, <<"displayed">>, ?NS_MARKERS),
     Message =
         case {Text, Replace, mod_matrix_gw_media:share(Raw)} of
-            {_, none, {URL, Meta}} -> [{media, URL, Meta, Text}];
+            {_, none, {URL, Meta}} ->
+                %% a XEP-0449 sticker is the share's m.sticker
+                case find(Raw, <<"sticker">>, ?NS_STICKERS) of
+                    none -> [{media, URL, Meta, Text}];
+                    _ -> [{media, URL, Meta#{sticker => true}, Text}]
+                end;
             {<<>>, _, _} -> [];
             {_, #xmlel{} = R, _} -> [{edit, fxml:get_attr_s(<<"id">>, R#xmlel.attrs), Text}];
-            {_, none, none} -> [{text, Text}]
+            {_, none, none} ->
+                %% a reply, mentions, a place, a poll
+                %% (mod_matrix_gw_content:rel/2) ride on the text
+                case mod_matrix_gw_content:rel(Raw, Text) of
+                    {_, Rel} when map_size(Rel) == 0 -> [{text, Text}];
+                    {Text2, Rel} -> [{text, Text2, Rel}]
+                end
+        end,
+    %% XEP-0184 <request/> and XEP-0333 <markable/> of
+    %% a message: the receipts the sender gets once the event is accepted
+    Receipt =
+        case {Message, [K || {K, N, NS} <- [{receipt, <<"request">>, ?NS_RECEIPTS},
+                                            {markable, <<"markable">>, ?NS_MARKERS}],
+                             find(Raw, N, NS) /= none]} of
+            {[], _} -> [];
+            {_, []} -> [];
+            {_, Kinds} -> [{receipt_request, From, Kinds}]
         end,
     React =
         case Reactions of
@@ -99,7 +125,7 @@ classify(#message{body = Body, sub_els = Els}) ->
             #xmlel{attrs = Attrs2} -> [{displayed, fxml:get_attr_s(<<"id">>, Attrs2)}];
             none -> []
         end,
-    Message ++ React ++ State ++ Marker.
+    Message ++ Receipt ++ React ++ State ++ Marker.
 
 find([], _Name, _NS) -> none;
 find([#xmlel{name = Name, attrs = Attrs} = El | Els], Name, NS) ->
@@ -163,10 +189,16 @@ xmpp_id(_) -> <<>>.
 %%   {media, Content}                 a file at an mxc:// url, to be fetched
 %%   {encrypted_media, Content}       a file as an EncryptedFile, for the
 %%                                    device to open
+%%   {sticker, Content}               an m.sticker
+%%   {poll, Poll}                     a poll start (mod_matrix_gw_content:poll_start/1)
+%%   {vote, PollEventID, AnswerIDs}   a poll response
+%%   {poll_end, PollEventID}          a poll's end
 %%   ignore                           nothing it can show (logged by the caller)
 -spec inbound_message(map()) -> {text, binary()} | {edit, binary(), binary()} |
                                 {reaction, binary(), binary()} |
-                                {media | encrypted_media, map()} | ignore.
+                                {media | encrypted_media | sticker, map()} |
+                                {poll, map()} | {vote, binary(), [binary()]} |
+                                {poll_end, binary()} | ignore.
 inbound_message(#{<<"type">> := <<"m.reaction">>,
                   <<"content">> := #{<<"m.relates_to">> :=
                                          #{<<"rel_type">> := <<"m.annotation">>,
@@ -197,12 +229,37 @@ inbound_message(#{<<"type">> := <<"m.room.message">>, <<"content">> := Content})
         none -> ignore;
         Body -> {text, Body}
     end;
+%% stickers and polls (mod_matrix_gw_content)
+inbound_message(#{<<"type">> := <<"m.sticker">>, <<"content">> := #{<<"url">> := U} = Content})
+  when is_binary(U) ->
+    {sticker, Content};
+inbound_message(#{<<"type">> := T, <<"content">> := Content})
+  when T == <<"org.matrix.msc3381.poll.start">>; T == <<"m.poll.start">> ->
+    case mod_matrix_gw_content:poll_start(Content) of
+        {ok, Poll} -> {poll, Poll};
+        error -> ignore
+    end;
+inbound_message(#{<<"type">> := T, <<"content">> := Content})
+  when T == <<"org.matrix.msc3381.poll.response">>; T == <<"m.poll.response">> ->
+    case mod_matrix_gw_content:poll_response(Content) of
+        {Target, Answers} -> {vote, Target, Answers};
+        error -> ignore
+    end;
+inbound_message(#{<<"type">> := T, <<"content">> := Content})
+  when T == <<"org.matrix.msc3381.poll.end">>; T == <<"m.poll.end">> ->
+    case mod_matrix_gw_content:poll_end_target(Content) of
+        error -> ignore;
+        Target -> {poll_end, Target}
+    end;
 inbound_message(_) ->
     ignore.
 
 body(#{<<"msgtype">> := <<"m.emote">>, <<"body">> := B}) when is_binary(B) ->
     <<"/me ", B/binary>>;
-body(#{<<"msgtype">> := T, <<"body">> := B}) when is_binary(B), (T == <<"m.text">> orelse T == <<"m.notice">>) ->
+%% m.text, m.notice, m.server_notice, m.location and
+%% any msgtype not known here show their body, as the spec asks of a
+%% client; formatted_body (HTML) is dropped
+body(#{<<"msgtype">> := T, <<"body">> := B}) when is_binary(B), is_binary(T), B /= <<>> ->
     B;
 body(_) ->
     none.
