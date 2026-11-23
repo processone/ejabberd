@@ -1,0 +1,15 @@
+# The ejabberd mod_matrix_gw_low_tests starts (as mod_matrix_gw_tests): the Matrix gateway on
+# example.com with matrix_domain written out as the vhost itself (which
+# upstream's econf:host() refused) and a test key of 32 zero bytes. No
+# listener: the suite calls the HTTP handler itself. @DIR@ is the test's
+# own directory.
+hosts:
+  - example.com
+loglevel: warning
+default_db: mnesia
+listen: []
+modules:
+  mod_matrix_gw:
+    matrix_domain: example.com
+    key_name: test
+    key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="

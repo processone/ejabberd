@@ -39,7 +39,8 @@
          escape/1, unescape/1,
          route/1]).
 -ifdef(TEST).
--export([process_missing_events/6, json_to_event/2, history_sender/2]).
+-export([process_missing_events/6, json_to_event/2, history_sender/2,
+         check_event_auth/3]).
 -endif.
 -export([process_edus/3, get_state/4, make_leave/3,
          get_known_room_version/1, restore_rooms/1]).

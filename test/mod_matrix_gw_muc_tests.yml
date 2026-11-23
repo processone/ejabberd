@@ -1,0 +1,15 @@
+# The ejabberd mod_matrix_gw_muc_tests starts: the Matrix gateway on
+# example.com (matrix_domain and host left at their defaults, so
+# @ann:example.com and matrix.example.com) with a test key of 32 zero
+# bytes. No listener: the suite routes the stanzas itself; the remote
+# server's name, remote.invalid, resolves nowhere. @DIR@ is the test's own
+# directory.
+hosts:
+  - example.com
+loglevel: warning
+default_db: mnesia
+listen: []
+modules:
+  mod_matrix_gw:
+    key_name: test
+    key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
