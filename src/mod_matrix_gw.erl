@@ -102,11 +102,28 @@ process([<<"federation">>, <<"v1">>, <<"query">>, <<"profile">>],
                 end,
             case Field of
                 error ->
-                    {400, [], <<"400 Bad Request: bad 'field' parameter">>};
+                    mod_matrix_gw_http:error(400, <<"M_INVALID_PARAM">>, <<"bad 'field' parameter">>);
                 _ ->
                     case preprocess_federation_request(Request) of
                         {ok, _JSON, _Origin} ->
-                            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], <<"{}">>};
+                            %% the user's vCard nickname (or full
+                            %% name) as displayname; no avatar yet
+                            Host = ejabberd_config:get_myname(),
+                            case local_user(Host, UserID) of
+                                {ok, LUser} ->
+                                    Profile = case display_name(LUser, Host) of
+                                                  <<>> -> #{};
+                                                  Name -> #{<<"displayname">> => Name}
+                                              end,
+                                    mod_matrix_gw_http:json(
+                                      200, case Field of
+                                               all -> Profile;
+                                               displayname -> Profile;
+                                               avatar_url -> #{}
+                                           end);
+                                error ->
+                                    mod_matrix_gw_http:error(404, <<"M_NOT_FOUND">>, <<"no such user">>)
+                            end;
                         {result, HTTPResult} ->
                             HTTPResult
                     end
@@ -118,10 +135,11 @@ process([<<"federation">>, <<"v1">>, <<"user">>, <<"devices">>, UserID],
         #request{method = 'GET', host = _Host} = Request) ->
     case preprocess_federation_request(Request) of
         {ok, _JSON, _Origin} ->
-            Res = #{<<"devices">> =>
-                        [#{<<"device_id">> => <<"ejabberd/mod_matrix_gw">>,
-                           <<"keys">> => []}],
-                    <<"stream_id">> => 1,
+            %% the spec's shape, and no made-up device: a user
+            %% here has no Matrix device until end-to-end encryption
+            %% gives it one
+            Res = #{<<"devices">> => [],
+                    <<"stream_id">> => 0,
                     <<"user_id">> => UserID},
             {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], misc:json_encode(Res)};
         {result, HTTPResult} ->
@@ -182,7 +200,10 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
                             {400, [], <<"400 Bad Request: signature check failed">>}
                     end;
                 false ->
-                    {400, [], <<"400 Bad Request: unsupported room version">>}
+                    mod_matrix_gw_http:json(
+                      400, #{<<"errcode">> => <<"M_INCOMPATIBLE_ROOM_VERSION">>,
+                             <<"error">> => <<"unsupported room version">>,
+                             <<"room_version">> => RoomVer})
             end;
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
@@ -194,21 +215,34 @@ process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
     case preprocess_federation_request(Request) of
         {ok, #{<<"origin">> := Origin,
                <<"pdus">> := PDUs} = JSON,
-         Origin} ->
+         Origin} when is_list(PDUs) ->
             ?DEBUG("send request ~p~n", [JSON]),
             Host = ejabberd_config:get_myname(),
-            Res = lists:map(
+            %% a PDU that cannot be processed is an error of its
+            %% own, never the whole transaction's (nor a crash)
+            Res = lists:flatmap(
                     fun(PDU) ->
-                            case mod_matrix_gw_room:process_pdu(Host, Origin, PDU) of
-                                {ok, EventID} -> {EventID, #{}};
-                                {error, Error} ->
-                                    {get_event_id(PDU, mod_matrix_gw_room:binary_to_room_version(<<"9">>)),
-                                     #{<<"error">> => Error}}
+                            try mod_matrix_gw_room:process_pdu(Host, Origin, PDU) of
+                                {ok, EventID} -> [{EventID, #{}}];
+                                {error, Error} -> pdu_error(PDU, Error)
+                            catch
+                                Class:Reason:ST ->
+                                    ?INFO_MSG("failed to process a PDU from ~s: ~p",
+                                              [Origin, {Class, Reason}]),
+                                    ?DEBUG("failed PDU ~p: ~p", [PDU, ST]),
+                                    pdu_error(PDU, <<"failed to process the PDU">>)
                             end
                     end, PDUs),
+            %% EDUs (26.09 read none): typing and receipts
+            case JSON of
+                #{<<"edus">> := EDUs} when is_list(EDUs) ->
+                    catch mod_matrix_gw_room:process_edus(Host, Origin, EDUs);
+                _ ->
+                    ok
+            end,
             ?DEBUG("send res ~p~n", [Res]),
-            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-             misc:json_encode(maps:from_list(Res))};
+            %% the spec's answer is {"pdus": {EventID: Result}}
+            mod_matrix_gw_http:json(200, #{<<"pdus">> => maps:from_list(Res)});
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
         {result, HTTPResult} ->
@@ -410,9 +444,137 @@ process([<<"federation">>, <<"v2">>, <<"send_join">>, RoomID, EventID],
 %     [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>} |
 %      ?CORS_HEADERS] ++ Headers,
 %     jiffy:encode(JSON)};
+%% The room's state at an event, in full (26.09 served the
+%% ids alone).
+process([<<"federation">>, <<"v1">>, <<"state">>, RoomID],
+        #request{method = 'GET'} = Request) ->
+    case proplists:get_value(<<"event_id">>, Request#request.q) of
+        EventID when is_binary(EventID) ->
+            case preprocess_federation_request(Request) of
+                {ok, _JSON, Origin} ->
+                    Host = ejabberd_config:get_myname(),
+                    case mod_matrix_gw_room:get_state(Host, Origin, RoomID, EventID) of
+                        {ok, AuthChain, PDUs} ->
+                            mod_matrix_gw_http:json(200, #{<<"auth_chain">> => AuthChain,
+                                                           <<"pdus">> => PDUs});
+                        {error, not_allowed} ->
+                            mod_matrix_gw_http:error(403, <<"M_FORBIDDEN">>, <<"origin not in room">>);
+                        {error, _} ->
+                            mod_matrix_gw_http:error(404, <<"M_NOT_FOUND">>, <<"no such room or event">>)
+                    end;
+                {result, HTTPResult} ->
+                    HTTPResult
+            end;
+        undefined ->
+            mod_matrix_gw_http:error(400, <<"M_MISSING_PARAM">>, <<"missing 'event_id' parameter">>)
+    end;
+%% This gateway publishes no room aliases.
+process([<<"federation">>, <<"v1">>, <<"query">>, <<"directory">>],
+        #request{method = 'GET'} = Request) ->
+    case preprocess_federation_request(Request) of
+        {ok, _JSON, _Origin} ->
+            mod_matrix_gw_http:error(404, <<"M_NOT_FOUND">>, <<"no such room alias">>);
+        {result, HTTPResult} ->
+            HTTPResult
+    end;
+%% A remote user leaving a room this gateway is in, in two steps
+%% as for joining.
+process([<<"federation">>, <<"v1">>, <<"make_leave">>, RoomID, UserID],
+        #request{method = 'GET'} = Request) ->
+    case preprocess_federation_request(Request) of
+        {ok, _JSON, Origin} ->
+            Host = ejabberd_config:get_myname(),
+            case catch get_id_domain_exn(UserID) of
+                Origin ->
+                    case mod_matrix_gw_room:make_leave(Host, RoomID, UserID) of
+                        {ok, Res} ->
+                            mod_matrix_gw_http:json(200, Res);
+                        {error, room_not_found} ->
+                            mod_matrix_gw_http:error(404, <<"M_NOT_FOUND">>, <<"Unknown room">>);
+                        {error, _} ->
+                            mod_matrix_gw_http:error(403, <<"M_FORBIDDEN">>, <<"You cannot leave this room">>)
+                    end;
+                _ ->
+                    mod_matrix_gw_http:error(403, <<"M_FORBIDDEN">>, <<"User not from origin">>)
+            end;
+        {result, HTTPResult} ->
+            HTTPResult
+    end;
+process([<<"federation">>, <<"v2">>, <<"send_leave">>, RoomID, EventID],
+        #request{method = 'PUT'} = Request) ->
+    case preprocess_federation_request(Request) of
+        {ok, #{<<"content">> := #{<<"membership">> := <<"leave">>},
+               <<"room_id">> := RoomID,
+               <<"sender">> := Sender,
+               <<"state_key">> := Sender,
+               <<"type">> := <<"m.room.member">>} = JSON, Origin} ->
+            Host = ejabberd_config:get_myname(),
+            case catch get_id_domain_exn(Sender) of
+                Origin ->
+                    case catch mod_matrix_gw_room:process_pdu(Host, Origin, JSON) of
+                        {ok, EventID} ->
+                            ?INFO_MSG("send_leave: ~s left ~s", [Sender, RoomID]),
+                            mod_matrix_gw_http:json(200, #{});
+                        {ok, _} ->
+                            mod_matrix_gw_http:error(400, <<"M_BAD_JSON">>, <<"Bad event id">>);
+                        _ ->
+                            mod_matrix_gw_http:error(403, <<"M_FORBIDDEN">>, <<"The leave was refused">>)
+                    end;
+                _ ->
+                    mod_matrix_gw_http:error(403, <<"M_FORBIDDEN">>, <<"User not from origin">>)
+            end;
+        {ok, _JSON, _Origin} ->
+            mod_matrix_gw_http:error(400, <<"M_BAD_JSON">>, <<"Invalid event format">>);
+        {result, HTTPResult} ->
+            HTTPResult
+    end;
 process(Path, Request) ->
     ?DEBUG("matrix 404: ~p~n~p~n", [Path, Request]),
-    ejabberd_web:error(not_found).
+    %% the spec's answer to an endpoint not served
+    mod_matrix_gw_http:error(404, <<"M_UNRECOGNIZED">>, <<"Unrecognized request">>).
+
+%% The entry of a PDU /send could not take, under its event id
+%% (computed with its room's version when the room is known; none when the
+%% PDU is too broken for one).
+pdu_error(PDU, Error) ->
+    try
+        RoomVersion =
+            case mod_matrix_gw_room:get_known_room_version(PDU) of
+                #room_version{} = V -> V;
+                _ -> mod_matrix_gw_room:binary_to_room_version(<<"9">>)
+            end,
+        [{get_event_id(PDU, RoomVersion), #{<<"error">> => Error}}]
+    catch _:_ ->
+            []
+    end.
+
+%% The local part of a user of this server's Matrix domain who
+%% exists here, or error.
+local_user(Host, UserID) ->
+    MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
+    case mod_matrix_gw_room:parse_user_id(UserID) of
+        {ok, U, MatrixServer} ->
+            case jid:nodeprep(U) of
+                LUser when is_binary(LUser), LUser /= <<>> ->
+                    case ejabberd_auth:user_exists(LUser, Host) of
+                        true -> {ok, LUser};
+                        false -> error
+                    end;
+                _ -> error
+            end;
+        _ -> error
+    end.
+
+%% What a user is called, from the vCard: NICKNAME, else FN.
+display_name(LUser, Host) ->
+    case catch mod_vcard:get_vcard(LUser, Host) of
+        [#xmlel{} = VCard | _] ->
+            case fxml:get_path_s(VCard, [{elem, <<"NICKNAME">>}, cdata]) of
+                <<>> -> fxml:get_path_s(VCard, [{elem, <<"FN">>}, cdata]);
+                Nick -> Nick
+            end;
+        _ -> <<>>
+    end.
 
 preprocess_federation_request(Request) ->
     preprocess_federation_request(Request, true).
@@ -444,7 +606,7 @@ preprocess_federation_request(Request, _DoSignCheck) ->
                             ?DEBUG("json ~p~n", [JSON]),
                             case JSON of
                                 error ->
-                                    {result, {400, [], <<"400 Bad Request: invalid JSON">>}};
+                                    {result, mod_matrix_gw_http:error(400, <<"M_NOT_JSON">>, <<"invalid JSON">>)};
                                 %JSON when not DoSignCheck ->
                                 %    {ok, JSON, MatrixServer};
                                 JSON ->
@@ -458,17 +620,17 @@ preprocess_federation_request(Request, _DoSignCheck) ->
                                             {ok, JSON, MatrixServer};
                                         false ->
                                             ?DEBUG("auth failed~n", []),
-                                            {result, {401, [], <<"401 Unauthorized">>}}
+                                            {result, mod_matrix_gw_http:error(401, <<"M_UNAUTHORIZED">>, <<"bad signature">>)}
                                     end
                             end;
                         true ->
-                            {result, {400, [], <<"400 Bad Request: size limit">>}}
+                            {result, mod_matrix_gw_http:error(413, <<"M_TOO_LARGE">>, <<"request too large">>)}
                     end;
                 _ ->
-                    {result, {400, [], <<"400 Bad Request: bad 'Authorization' header">>}}
+                    {result, mod_matrix_gw_http:error(401, <<"M_UNAUTHORIZED">>, <<"bad 'Authorization' header">>)}
             end;
         undefined ->
-            {result, {400, [], <<"400 Bad Request: no 'Authorization' header">>}}
+            {result, mod_matrix_gw_http:error(401, <<"M_UNAUTHORIZED">>, <<"no 'Authorization' header">>)}
     end.
 
 recv_data(#request{length = Len, data = Trail,
