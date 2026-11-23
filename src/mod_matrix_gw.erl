@@ -529,6 +529,15 @@ process([<<"federation">>, <<"v2">>, <<"send_leave">>, RoomID, EventID],
         {result, HTTPResult} ->
             HTTPResult
     end;
+%% Media (mod_matrix_gw_media), the federation's signed and the
+%% legacy unauthenticated endpoints.
+process([<<"federation">>, <<"v1">>, <<"media">> | _] = Path, Request) ->
+    case preprocess_federation_request(Request) of
+        {ok, _JSON, _Origin} -> mod_matrix_gw_media:process(Path, Request);
+        {result, HTTPResult} -> HTTPResult
+    end;
+process([<<"media">> | _] = Path, Request) ->
+    mod_matrix_gw_media:process(Path, Request);
 process(Path, Request) ->
     ?DEBUG("matrix 404: ~p~n~p~n", [Path, Request]),
     %% the spec's answer to an endpoint not served
@@ -684,6 +693,8 @@ init([Host]) ->
     %% rooms and direct chats kept across a restart, brought
     %% back once the module is up
     mod_matrix_gw_store:create_db(),
+    %% our files' mxc ids and the remote files fetched
+    mod_matrix_gw_media:create_db(),
     self() ! restore_rooms,
     %% a server shutting down closes every session, which would
     %% make every local user leave every Matrix room; it is no leave.
@@ -1154,6 +1165,10 @@ is_stopping() ->
     persistent_term:get({?MODULE, stopping}, false).
 
 -spec route(stanza()) -> ok.
+%% <media-id/> and <media-fetch/> (mod_matrix_gw_media)
+route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>},
+          sub_els = [#xmlel{name = <<"media-", _/binary>>}]} = IQ) ->
+    mod_matrix_gw_media:route_iq(IQ);
 route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>}} = IQ) ->
     ejabberd_router:process_iq(IQ);
 route(Pkt) ->
@@ -1219,7 +1234,13 @@ mod_opt_type(notary_servers) ->
 mod_opt_type(leave_timeout) ->
     econf:non_neg_int();
 mod_opt_type(tls_cacertfile) ->
-    econf:pem().
+    econf:pem();
+mod_opt_type(upload_url) ->
+    econf:url([http, https]);
+mod_opt_type(media_max_bytes) ->
+    econf:pos_int();
+mod_opt_type(media_max_entries) ->
+    econf:pos_int().
 
 -spec mod_options(binary()) -> [{key, {binary(), binary()}} |
                                 {atom(), any()}].
@@ -1232,7 +1253,10 @@ mod_options(Host) ->
      {matrix_id_as_jid, false},
      {notary_servers, []},
      {leave_timeout, 0},
-     {tls_cacertfile, undefined}].
+     {tls_cacertfile, undefined},
+     {upload_url, undefined},
+     {media_max_bytes, 104857600},
+     {media_max_entries, 100000}].
 
 mod_doc() ->
     #{desc =>
@@ -1306,6 +1330,25 @@ mod_doc() ->
                   ?T("A PEM file of the CA certificates the other servers' "
                      "certificates are verified against, instead of the "
                      "system's store. Federation requests always verify the "
-                     "other server's certificate.")}}
+                     "other server's certificate.")}},
+	   {upload_url,
+            #{value => ?T("URL"),
+              desc =>
+                  ?T("The base URL of the XEP-0363 store's objects: a file "
+                     "there shared from XMPP crosses to Matrix, and files "
+                     "from Matrix are put there. The default is where "
+                     "'mod_s3_upload' says its objects are read.")}},
+	   {media_max_bytes,
+            #{value => "integer()",
+              desc =>
+                  ?T("The largest file fetched from a Matrix server or "
+                     "served from the store, in bytes. The default is "
+                     "104857600.")}},
+	   {media_max_entries,
+            #{value => "integer()",
+              desc =>
+                  ?T("How many of the local users' files have an mxc:// "
+                     "id; past it the oldest are forgotten. The default is "
+                     "100000.")}}
           ]
      }.

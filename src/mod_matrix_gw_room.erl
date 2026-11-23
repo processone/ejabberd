@@ -302,11 +302,13 @@ route(#message{from = From, to = To, id = MsgID} = Pkt) ->
                     ok;
                 [] ->
                     %% a new direct room, made with the first message that
-                    %% has a body; a chat state or marker alone makes none
-                    case [T || {text, T} <- Actions] of
+                    %% has a body or a file; a chat state or marker alone
+                    %% makes none (the gateway: the message itself is sent as
+                    %% the room's actions once it is made)
+                    case [A || A <- Actions, element(1, A) == text orelse element(1, A) == media] of
                         [] ->
                             ok;
-                        [Text | _] ->
+                        [_ | _] ->
                             RoomID = new_room_id(),
                             ?DEBUG("new room id ~p~n", [RoomID]),
                             case get_room_pid(Host, RoomID) of
@@ -369,15 +371,12 @@ route(#message{from = From, to = To, id = MsgID} = Pkt) ->
                                                  <<"membership">> => <<"invite">>},
                                            <<"sender">> => FromMatrixID,
                                            <<"state_key">> => ToMatrixID,
-                                           <<"type">> => ?ROOM_MEMBER},
-                                         #{<<"content">> =>
-                                               mod_matrix_gw_xmpp:text_content(Text, MsgID),
-                                           <<"sender">> => FromMatrixID,
-                                           <<"type">> => ?ROOM_MESSAGE}
+                                           <<"type">> => ?ROOM_MEMBER}
                                         ],
                                     lists:foreach(fun(JSON) ->
                                                           gen_statem:cast(Pid, {add_event, JSON})
                                                   end, JSONs),
+                                    gen_statem:cast(Pid, {xmpp_actions, From, MsgID, Actions}),
                                     ok;
                                 {error, Reason} ->
                                     ?INFO_MSG("no direct room for ~s: ~p", [ToMatrixID, Reason]),
@@ -3320,16 +3319,17 @@ notify_event_xmpp(
                     case xmpp_payload(Event, chat, Data) of
                         {ID, Body, Els} ->
                             RoomID = Data#data.room_id,
-                            Msg = #message{id = ID,
-                                           from = SenderJID,
-                                           to = UserJID,
-                                           type = chat,
-                                           body = Body,
-                                           sub_els = Els ++
-                                               [#xmlel{name = <<"x">>,
-                                                       attrs = [{<<"xmlns">>, <<"p1:matrix">>},
-                                                                {<<"room_id">>, RoomID}]}]},
-                            ejabberd_router:route(maybe_delay(Msg, Event, SenderJID));
+                            Msg = with_body(
+                                    #message{id = ID,
+                                             from = SenderJID,
+                                             to = UserJID,
+                                             type = chat,
+                                             sub_els = Els ++
+                                                 [#xmlel{name = <<"x">>,
+                                                         attrs = [{<<"xmlns">>, <<"p1:matrix">>},
+                                                                  {<<"room_id">>, RoomID}]}]},
+                                    Body),
+                            route_payload(maybe_delay(Msg, Event, SenderJID), Data);
                         ignore ->
                             ok
                     end,
@@ -3354,14 +3354,14 @@ notify_event_xmpp(
                               when JoinTS =< OriginTS ->
                                 From = jid:replace_resource(RoomJID, SenderUser),
                                 UserJID = jid:make(LUser, LServer, LResource),
-                                Msg = #message{id = ID,
-                                               from = From,
-                                               to = UserJID,
-                                               type = groupchat,
-                                               body = Body,
-                                               sub_els = [#stanza_id{by = RoomJID, id = Event#event.id} | Els]
-                                              },
-                                ejabberd_router:route(maybe_delay(Msg, Event, RoomJID));
+                                Msg = with_body(
+                                        #message{id = ID,
+                                                 from = From,
+                                                 to = UserJID,
+                                                 type = groupchat,
+                                                 sub_els = [#stanza_id{by = RoomJID, id = Event#event.id} | Els]},
+                                        Body),
+                                route_payload(maybe_delay(Msg, Event, RoomJID), Data);
                            (_, _, _) -> ok
                         end, ok, Resources);
                  (_, _, ok) ->
@@ -4453,10 +4453,33 @@ xmpp_payload(#event{id = EventID, type = Type, sender = Sender, json = JSON}, Mo
             Keys = mod_matrix_gw_xmpp:reaction_keys(Data#data.reactions, Sender, Target),
             {ID, [], [mod_matrix_gw_xmpp:reactions_el(RefID, Keys),
                       mod_matrix_gw_xmpp:store_el()]};
+        %% a file: its body is filled when it is in the store
+        %% (route_payload/2); an EncryptedFile goes to the device as it is
+        {media, Content} ->
+            {ID, {media, Content}, [mod_matrix_gw_xmpp:markable_el() || Mode == chat]};
+        {encrypted_media, Content} ->
+            {ID, [#text{data = mod_matrix_gw_media:file_name(Content)}],
+             [mod_matrix_gw_media:event_el(Type, EventID, Data#data.room_id, Sender,
+                                           maps:get(<<"origin_server_ts">>, JSON, 0), Content),
+              mod_matrix_gw_xmpp:store_el()]};
         ignore ->
             ?DEBUG("~s ~s in ~s not carried to XMPP", [Type, EventID, Data#data.room_id]),
             ignore
     end.
+
+%% a message of xmpp_payload/3, a file's once it is in the store
+%% (its body {media, Content} is in the message's meta, with_body/2)
+route_payload(#message{meta = #{matrix_media := Content} = Meta} = Msg, Data) ->
+    mod_matrix_gw_media:route_share(Data#data.host, Msg#message{meta = maps:remove(matrix_media, Meta)},
+                                    Content),
+    ok;
+route_payload(Msg, _Data) ->
+    ejabberd_router:route(Msg).
+
+with_body(Msg, {media, Content}) ->
+    Msg#message{meta = #{matrix_media => Content}};
+with_body(Msg, Body) ->
+    Msg#message{body = Body}.
 
 %% The id an event has on the XMPP side: the XMPP message's when it was
 %% sent from there, else the event id.
@@ -4497,6 +4520,17 @@ maybe_delay(Msg, #event{origin_server_ts = TS}, By) ->
 
 xmpp_action({text, Text}, UserID, MsgID, Data) ->
     add_json(?ROOM_MESSAGE, mod_matrix_gw_xmpp:text_content(Text, MsgID), UserID, Data);
+%% a file in the store as m.image/m.video/m.audio/m.file and its caption;
+%% a link elsewhere is the text it was
+xmpp_action({media, URL, Meta, Text}, UserID, MsgID, Data) ->
+    case mod_matrix_gw_media:outbound_contents(Data#data.host, URL, Meta, Text, MsgID) of
+        {ok, Contents} ->
+            lists:foldl(fun(C, D) -> add_json(?ROOM_MESSAGE, C, UserID, D) end, Data, Contents);
+        not_ours when Text /= <<>> ->
+            xmpp_action({text, Text}, UserID, MsgID, Data);
+        not_ours ->
+            Data
+    end;
 xmpp_action({edit, ID, Text}, UserID, MsgID, Data) ->
     case event_id_of(ID, Data) of
         undefined ->

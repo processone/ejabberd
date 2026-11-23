@@ -9,8 +9,11 @@
 -export([leave_timeout/1]).
 -export([matrix_domain/1]).
 -export([matrix_id_as_jid/1]).
+-export([media_max_bytes/1]).
+-export([media_max_entries/1]).
 -export([notary_servers/1]).
 -export([tls_cacertfile/1]).
+-export([upload_url/1]).
 
 -spec host(gen_mod:opts() | global | binary()) -> binary().
 host(Opts) when is_map(Opts) ->
@@ -48,6 +51,18 @@ matrix_id_as_jid(Opts) when is_map(Opts) ->
 matrix_id_as_jid(Host) ->
     gen_mod:get_module_opt(Host, mod_matrix_gw, matrix_id_as_jid).
 
+-spec media_max_bytes(gen_mod:opts() | global | binary()) -> pos_integer().
+media_max_bytes(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(media_max_bytes, Opts);
+media_max_bytes(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, media_max_bytes).
+
+-spec media_max_entries(gen_mod:opts() | global | binary()) -> pos_integer().
+media_max_entries(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(media_max_entries, Opts);
+media_max_entries(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, media_max_entries).
+
 -spec notary_servers(gen_mod:opts() | global | binary()) -> [binary()].
 notary_servers(Opts) when is_map(Opts) ->
     gen_mod:get_opt(notary_servers, Opts);
@@ -59,4 +74,10 @@ tls_cacertfile(Opts) when is_map(Opts) ->
     gen_mod:get_opt(tls_cacertfile, Opts);
 tls_cacertfile(Host) ->
     gen_mod:get_module_opt(Host, mod_matrix_gw, tls_cacertfile).
+
+-spec upload_url(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
+upload_url(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(upload_url, Opts);
+upload_url(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, upload_url).
 

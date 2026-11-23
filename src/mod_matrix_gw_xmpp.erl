@@ -16,6 +16,8 @@
 %%%   XEP-0085 composing / paused, active   m.typing EDU, typing true / false
 %%%   XEP-0333 <displayed id=X/>            m.receipt EDU, m.read of X
 %%%                                         m.notice: the body; m.emote: "/me " body
+%%%   XEP-0066 / XEP-0447 share of a file   m.image, m.video, m.audio, m.file
+%%%   in the store                          (mod_matrix_gw_media)
 %%%
 %%% Anything else is left out, with a debug line where it is dropped.
 %%%
@@ -59,6 +61,8 @@
 
 %% What an XMPP message asks of the room, in the order to do it:
 %%   {edit, TargetID, Text}   a correction
+%%   {media, URL, Meta, Text} a file shared (XEP-0066, XEP-0447), with the
+%%                            body (mod_matrix_gw_media:share/1)
 %%   {text, Text}             a new message
 %%   {reactions, TargetID, Keys}
 %%   {typing, boolean()}      from a chat state
@@ -71,10 +75,11 @@ classify(#message{body = Body, sub_els = Els}) ->
     Reactions = find(Raw, <<"reactions">>, ?NS_REACTIONS),
     Displayed = find(Raw, <<"displayed">>, ?NS_MARKERS),
     Message =
-        case {Text, Replace} of
-            {<<>>, _} -> [];
-            {_, #xmlel{} = R} -> [{edit, fxml:get_attr_s(<<"id">>, R#xmlel.attrs), Text}];
-            {_, none} -> [{text, Text}]
+        case {Text, Replace, mod_matrix_gw_media:share(Raw)} of
+            {_, none, {URL, Meta}} -> [{media, URL, Meta, Text}];
+            {<<>>, _, _} -> [];
+            {_, #xmlel{} = R, _} -> [{edit, fxml:get_attr_s(<<"id">>, R#xmlel.attrs), Text}];
+            {_, none, none} -> [{text, Text}]
         end,
     React =
         case Reactions of
@@ -155,9 +160,13 @@ xmpp_id(_) -> <<>>.
 %%   {text, Body}                     a message
 %%   {edit, TargetEventID, Body}      a correction of TargetEventID
 %%   {reaction, TargetEventID, Key}   one reaction added
+%%   {media, Content}                 a file at an mxc:// url, to be fetched
+%%   {encrypted_media, Content}       a file as an EncryptedFile, for the
+%%                                    device to open
 %%   ignore                           nothing it can show (logged by the caller)
 -spec inbound_message(map()) -> {text, binary()} | {edit, binary(), binary()} |
-                                {reaction, binary(), binary()} | ignore.
+                                {reaction, binary(), binary()} |
+                                {media | encrypted_media, map()} | ignore.
 inbound_message(#{<<"type">> := <<"m.reaction">>,
                   <<"content">> := #{<<"m.relates_to">> :=
                                          #{<<"rel_type">> := <<"m.annotation">>,
@@ -175,6 +184,14 @@ inbound_message(#{<<"type">> := <<"m.room.message">>,
         none -> ignore;
         Body -> {edit, Target, Body}
     end;
+inbound_message(#{<<"type">> := <<"m.room.message">>,
+                  <<"content">> := #{<<"msgtype">> := T} = Content})
+  when T == <<"m.image">>; T == <<"m.file">>; T == <<"m.video">>; T == <<"m.audio">> ->
+    case Content of
+        #{<<"url">> := U} when is_binary(U) -> {media, Content};
+        #{<<"file">> := F} when is_map(F) -> {encrypted_media, Content};
+        _ -> ignore
+    end;
 inbound_message(#{<<"type">> := <<"m.room.message">>, <<"content">> := Content}) ->
     case body(Content) of
         none -> ignore;
@@ -187,12 +204,6 @@ body(#{<<"msgtype">> := <<"m.emote">>, <<"body">> := B}) when is_binary(B) ->
     <<"/me ", B/binary>>;
 body(#{<<"msgtype">> := T, <<"body">> := B}) when is_binary(B), (T == <<"m.text">> orelse T == <<"m.notice">>) ->
     B;
-body(#{<<"msgtype">> := T, <<"body">> := B, <<"url">> := U})
-  when is_binary(B), is_binary(U),
-       (T == <<"m.image">> orelse T == <<"m.file">> orelse T == <<"m.video">> orelse T == <<"m.audio">>) ->
-    %% media is phase 2: the name and the mxc:// address, so the reader
-    %% knows something was sent
-    <<B/binary, " (", U/binary, ")">>;
 body(_) ->
     none.
 
