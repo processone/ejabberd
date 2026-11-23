@@ -932,8 +932,5 @@ share_els(#{url := URL} = File) ->
 %% device to open.
 -spec event_el(binary(), binary(), binary(), binary(), integer(), map()) -> xmlel().
 event_el(Type, EventID, RoomID, Sender, TS, Content) ->
-    #xmlel{name = <<"event">>,
-           attrs = [{<<"xmlns">>, ?NS_E2E}, {<<"type">>, Type}, {<<"id">>, EventID},
-                    {<<"room">>, RoomID}, {<<"sender">>, Sender},
-                    {<<"ts">>, integer_to_binary(TS)}],
-           children = [{xmlcdata, misc:json_encode(Content)}]}.
+    mod_matrix_gw_event:event_el(#{type => Type, id => EventID, room => RoomID,
+                                   sender => Sender, ts => TS}, Content).

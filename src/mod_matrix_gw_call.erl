@@ -21,13 +21,10 @@
 %%%   </message>
 %%%
 %%% The user's own events are not echoed (the m.text rule); a room's are not
-%%% forwarded at all (1:1 calls only). Outbound, mod_matrix_gw_room's
-%%% route/1 hands every message to route_event/3 first: one from a local
-%%% user to u%srv@G carrying an m.call.* <event/> becomes the PDU {type,
-%%% content, sender} of the direct room with that user, the room created
-%%% first as the first text message creates it; any other <event/> type is
-%%% refused (not-acceptable), content that is not a JSON object too
-%%% (bad-request). The gateway and its user JIDs advertise
+%%% forwarded at all (1:1 calls only). Outbound, an m.call.* <event/> is a
+%%% room event like any other the device sends (mod_matrix_gw_event: the
+%%% event's type and content into the direct room, made first when there is
+%%% none, and <sent/> back). The gateway and its user JIDs advertise
 %%% https://ns.another.im/matrix-e2e/0#calls (disco_features/1).
 %%%
 %%%
@@ -50,12 +47,10 @@
 %%%-------------------------------------------------------------------
 -module(mod_matrix_gw_call).
 
--export([forward/3, forward_message/3, route_event/3, pdu/3,
-         disco_features/1]).
+-export([forward/3, forward_message/3, disco_features/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 
--define(NS_MATRIX_E2E, <<"https://ns.another.im/matrix-e2e/0">>).
 -define(NS_MATRIX_CALLS, <<"https://ns.another.im/matrix-e2e/0#calls">>).
 
 -type fields() :: #{type := binary(), id := binary(), room := binary(),
@@ -82,12 +77,9 @@ forward_message(#jid{} = SenderJID, #jid{} = UserJID,
         true ->
             ignore;
         false ->
-            Attrs = [{<<"xmlns">>, ?NS_MATRIX_E2E}, {<<"type">>, Type},
-                     {<<"id">>, EventID}, {<<"room">>, RoomID},
-                     {<<"sender">>, Sender}] ++
-                [{<<"ts">>, integer_to_binary(TS)} || is_integer(TS)],
-            Event = #xmlel{name = <<"event">>, attrs = Attrs,
-                           children = [{xmlcdata, iolist_to_binary(misc:json_encode(Content))}]},
+            Event = mod_matrix_gw_event:event_el(
+                      #{type => Type, id => EventID, room => RoomID, sender => Sender, ts => TS},
+                      Content),
             X = #xmlel{name = <<"x">>,
                        attrs = [{<<"xmlns">>, <<"p1:matrix">>}, {<<"room_id">>, RoomID}]},
             #message{from = SenderJID, to = UserJID, type = chat, sub_els = [Event, X]}
@@ -98,69 +90,6 @@ forward_message(_, _, _) ->
 bare(JID) ->
     {U, S, _} = jid:tolower(JID),
     {U, S}.
-
-%%--------------------------------------------------------------------
-%% XMPP -> Matrix
-%%--------------------------------------------------------------------
-%% `pass` when the message is not this module's (no <event/> of the
-%% namespace, an error, a room's), so the gateway's own clauses take it;
-%% `ok` when it was handled, refused or ignored. ToMatrixID is the
-%% recipient's Matrix user id, or error.
--spec route_event(message(), binary(), {ok, binary()} | error) -> pass | ok.
-route_event(#message{type = error}, _Host, _ToMatrixID) ->
-    pass;
-route_event(#message{from = From, to = To, lang = Lang} = Pkt, Host, ToMatrixID) ->
-    case {event_child(Pkt), To#jid.luser} of
-        {false, _} ->
-            pass;
-        {_, <<C, _/binary>>} when C == $!; C == $# ->
-            pass;
-        {_, _} when From#jid.lserver /= Host ->
-            ok;
-        {_, _} when ToMatrixID == error ->
-            ok;
-        {#xmlel{} = El, _} ->
-            {ok, ToID} = ToMatrixID,
-            Type = fxml:get_attr_s(<<"type">>, El#xmlel.attrs),
-            case Type of
-                <<"m.call.", _/binary>> ->
-                    case content(El) of
-                        {ok, Content} ->
-                            MatrixServer = mod_matrix_gw_opt:matrix_domain(Host),
-                            Sender = <<$@, (From#jid.luser)/binary, $:, MatrixServer/binary>>,
-                            mod_matrix_gw_room:send_direct(Host, From, ToID,
-                                                           pdu(Type, Content, Sender));
-                        error ->
-                            Txt = <<"the event's content is not a JSON object">>,
-                            ejabberd_router:route_error(Pkt, xmpp:err_bad_request(Txt, Lang))
-                    end;
-                _ ->
-                    Txt = <<"only m.call.* events cross this gateway">>,
-                    ejabberd_router:route_error(Pkt, xmpp:err_not_acceptable(Txt, Lang))
-            end,
-            ok
-    end.
-
-%% The room event the gateway adds for an <event/>: its type, the JSON as
-%% the content, the local user as the sender.
--spec pdu(binary(), map(), binary()) -> map().
-pdu(Type, Content, Sender) ->
-    #{<<"type">> => Type, <<"content">> => Content, <<"sender">> => Sender}.
-
-event_child(#message{sub_els = Els}) ->
-    case [El || #xmlel{name = <<"event">>} = El <- Els,
-                fxml:get_attr_s(<<"xmlns">>, El#xmlel.attrs) == ?NS_MATRIX_E2E] of
-        [El | _] -> El;
-        [] -> false
-    end.
-
-content(El) ->
-    try misc:json_decode(fxml:get_tag_cdata(El)) of
-        #{} = Content -> {ok, Content};
-        _ -> error
-    catch _:_ ->
-            error
-    end.
 
 %%--------------------------------------------------------------------
 %% Discovery

@@ -135,26 +135,34 @@ process([<<"federation">>, <<"v1">>, <<"user">>, <<"devices">>, UserID],
         #request{method = 'GET', host = _Host} = Request) ->
     case preprocess_federation_request(Request) of
         {ok, _JSON, _Origin} ->
-            %% the spec's shape, and no made-up device: a user
-            %% here has no Matrix device until end-to-end encryption
-            %% gives it one
-            Res = #{<<"devices">> => [],
-                    <<"stream_id">> => 0,
-                    <<"user_id">> => UserID},
-            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}], misc:json_encode(Res)};
+            %% the local user's devices and cross-signing keys
+            %% (mod_matrix_gw_e2e); M_NOT_FOUND for one who is not here
+            {Code, Res} = mod_matrix_gw_e2e:user_devices(ejabberd_config:get_myname(), UserID),
+            mod_matrix_gw_http:json(Code, Res);
         {result, HTTPResult} ->
             HTTPResult
     end;
 process([<<"federation">>, <<"v1">>, <<"user">>, <<"keys">>, <<"query">>],
         #request{method = 'POST', host = _Host} = Request) ->
     case preprocess_federation_request(Request) of
-        {ok, #{<<"device_keys">> := DeviceKeys}, _Origin} ->
-            DeviceKeys2 = maps:map(fun(_Key, _) -> #{} end, DeviceKeys),
-            Res = #{<<"device_keys">> => DeviceKeys2},
-            {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
-             misc:json_encode(Res)};
+        {ok, #{<<"device_keys">> := _} = JSON, _Origin} ->
+            %% the local users' keys (mod_matrix_gw_e2e)
+            {Code, Res} = mod_matrix_gw_e2e:keys_query(ejabberd_config:get_myname(), JSON),
+            mod_matrix_gw_http:json(Code, Res);
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
+        {result, HTTPResult} ->
+            HTTPResult
+    end;
+%% a one-time key of each local device asked (mod_matrix_gw_e2e)
+process([<<"federation">>, <<"v1">>, <<"user">>, <<"keys">>, <<"claim">>],
+        #request{method = 'POST'} = Request) ->
+    case preprocess_federation_request(Request) of
+        {ok, #{<<"one_time_keys">> := _} = JSON, _Origin} ->
+            {Code, Res} = mod_matrix_gw_e2e:keys_claim(ejabberd_config:get_myname(), JSON),
+            mod_matrix_gw_http:json(Code, Res);
+        {ok, _JSON, _Origin} ->
+            mod_matrix_gw_http:error(400, <<"M_BAD_JSON">>, <<"one_time_keys missing">>);
         {result, HTTPResult} ->
             HTTPResult
     end;
@@ -664,7 +672,10 @@ start(Host, _Opts) ->
     case mod_matrix_gw_sup:start(Host) of
 	{ok, _} ->
             {ok, [{hook, s2s_out_bounce_packet, s2s_out_bounce_packet, 50},
-                  {hook, user_receive_packet, user_receive_packet, 50}]};
+                  {hook, user_receive_packet, user_receive_packet, 50},
+                  %% a device online gets its queue (mod_matrix_gw_todevice)
+                  {hook, set_presence_hook, mod_matrix_gw_todevice, set_presence_hook, 50},
+                  {hook, unset_presence_hook, mod_matrix_gw_todevice, unset_presence_hook, 50}]};
 	Err ->
 	    Err
     end.
@@ -692,6 +703,12 @@ init([Host]) ->
     mod_matrix_gw_store:create_db(),
     %% our files' mxc ids and the remote files fetched
     mod_matrix_gw_media:create_db(),
+    %% the end-to-end keys (mod_matrix_gw_e2e)
+    mod_matrix_gw_e2e:create_db(),
+    %% each device's queue (to-device messages, key counts)
+    mod_matrix_gw_todevice:create_db(),
+    %% the events local users sent, by XMPP id (<event-id/>)
+    mod_matrix_gw_event:create_db(),
     %% the aliases of the rooms made here
     mod_matrix_gw_muc:create_db(),
     %% our users' avatars as mxc ids, Matrix users' profiles
@@ -1170,6 +1187,21 @@ is_stopping() ->
 route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>},
           sub_els = [#xmlel{name = <<"media-", _/binary>>}]} = IQ) ->
     mod_matrix_gw_media:route_iq(IQ);
+%% the device's keys (mod_matrix_gw_e2e)
+route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>},
+          sub_els = [#xmlel{name = Name}]} = IQ)
+  when Name == <<"device">>; Name == <<"keys-upload">>; Name == <<"signing-keys">>;
+       Name == <<"keys-query">>; Name == <<"keys-claim">> ->
+    mod_matrix_gw_e2e:route_iq(IQ);
+%% <resume/> and <to-device/> (mod_matrix_gw_todevice)
+route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>},
+          sub_els = [#xmlel{name = Name}]} = IQ)
+  when Name == <<"resume">>; Name == <<"to-device">> ->
+    mod_matrix_gw_todevice:route_iq(IQ);
+%% <event-id/> (mod_matrix_gw_event)
+route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>},
+          sub_els = [#xmlel{name = <<"event-id">>}]} = IQ) ->
+    mod_matrix_gw_event:route_iq(IQ);
 route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>}} = IQ) ->
     ejabberd_router:process_iq(IQ);
 %% a Matrix user's vCard and presence (mod_matrix_gw_profile)
@@ -1194,6 +1226,7 @@ process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
 process_disco_info(#iq{type = get,
 		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
     Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MUC] ++
+        mod_matrix_gw_e2e:disco_features(IQ#iq.to) ++
         mod_matrix_gw_call:disco_features(IQ#iq.to),
     Identity = #identity{category = <<"gateway">>,
 			 type = <<"matrix">>},
@@ -1254,7 +1287,11 @@ mod_opt_type(upload_url) ->
 mod_opt_type(media_max_bytes) ->
     econf:pos_int();
 mod_opt_type(media_max_entries) ->
-    econf:pos_int().
+    econf:pos_int();
+mod_opt_type(todevice_max) ->
+    econf:pos_int(unlimited);
+mod_opt_type(matrix_encrypt_dms) ->
+    econf:bool().
 
 -spec mod_options(binary()) -> [{key, {binary(), binary()}} |
                                 {atom(), any()}].
@@ -1270,7 +1307,9 @@ mod_options(Host) ->
      {tls_cacertfile, undefined},
      {upload_url, undefined},
      {media_max_bytes, 104857600},
-     {media_max_entries, 100000}].
+     {media_max_entries, 100000},
+     {todevice_max, unlimited},
+     {matrix_encrypt_dms, true}].
 
 mod_doc() ->
     #{desc =>
@@ -1363,7 +1402,24 @@ mod_doc() ->
               desc =>
                   ?T("How many of the local users' files have an mxc:// "
                      "id; past it the oldest are forgotten. The default is "
-                     "100000.")}}
+                     "100000.")}},
+	   {todevice_max,
+            #{value => "integer() | unlimited",
+              desc =>
+                  ?T("How many items (to-device messages, device list "
+                     "changes, key counts) the gateway keeps for one device "
+                     "of a local user until the device takes them; past it "
+                     "the oldest are dropped and a warning is logged once an "
+                     "hour. The default is 'unlimited'.")}},
+	   {matrix_encrypt_dms,
+            #{value => "true | false",
+              desc =>
+                  ?T("Whether a direct chat that a device's encrypted "
+                     "event (https://ns.another.im/matrix-e2e/0, m.room.encrypted) "
+                     "creates is encrypted (m.room.encryption among its "
+                     "first events). A chat a plain message or another "
+                     "event creates never is; one made by the device's "
+                     "<encryption/> always is. The default is 'true'.")}}
           ]
      }.
 
@@ -1378,5 +1434,12 @@ dispatch_edus(Host, Origin, EDUs) ->
     mod_matrix_gw_room:process_edus(Host, Origin, Rooms).
 
 %% ok: taken; pass: the rooms'
+dispatch_edu(Host, Origin, #{<<"edu_type">> := Type} = EDU)
+  when Type == <<"m.device_list_update">>; Type == <<"m.signing_key_update">> ->
+    mod_matrix_gw_e2e:inbound_edu(Host, Origin, EDU),
+    ok;
+dispatch_edu(Host, Origin, #{<<"edu_type">> := <<"m.direct_to_device">>} = EDU) ->
+    mod_matrix_gw_todevice:inbound_edu(Host, Origin, EDU),
+    ok;
 dispatch_edu(_Host, _Origin, _EDU) ->
     pass.

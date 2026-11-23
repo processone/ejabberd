@@ -42,6 +42,8 @@
          get_known_room_version/1, restore_rooms/1]).
 %% Matrix calls (mod_matrix_gw_call)
 -export([send_direct/4]).
+%% the end-to-end room events (mod_matrix_gw_event)
+-export([members/1]).
 %% /query/directory
 -export([directory/2]).
 
@@ -120,6 +122,9 @@
          backlog = [],
          typing = #{},
          stored_meta,
+         %% {Sender, XmppID} of the <event/> being added, whose
+         %% XMPP id is not in its (encrypted) content
+         e2e_sending,
          %% the room's avatar as its vCard has it,
          %% {MXC, SHA1, Mime, Bytes}, or {fetching, MXC}
          avatar,
@@ -160,6 +165,7 @@
 -define(RESTORE_GRACE, 600).
 -define(ROOM_REDACTION, <<"m.room.redaction">>).
 -define(REACTION, <<"m.reaction">>).
+-define(ROOM_ENCRYPTION, <<"m.room.encryption">>).
 %% event types besides m.room.message and m.reaction
 %% that reach the XMPP side (mod_matrix_gw_content:is_content_type/1)
 -define(IS_CONTENT(T), (T == <<"m.sticker">> orelse
@@ -285,15 +291,17 @@ route(#presence{from = From, to = #jid{luser = <<C, _/binary>>} = To,
                     ok
             end
     end;
-%% a message carrying a https://ns.another.im/matrix-e2e/0 <event/> is
-%% mod_matrix_gw_call's; any other comes back once, marked, for the
-%% clauses below
-route(#message{to = To, meta = Meta} = Pkt)
+%% a message carrying a https://ns.another.im/matrix-e2e/0 <event/> is the
+%% room event it names (mod_matrix_gw_event); any other comes back once,
+%% marked, for the clauses below
+route(#message{meta = Meta} = Pkt)
   when not is_map_key(matrix_e2e_event, Meta) ->
     Host = ejabberd_config:get_myname(),
-    case mod_matrix_gw_call:route_event(Pkt, Host, user_id_from_jid(To, Host)) of
+    case mod_matrix_gw_event:parse_message(Pkt, Host) of
         pass -> route(Pkt#message{meta = Meta#{matrix_e2e_event => pass}});
-        ok -> ok
+        ignore -> ok;
+        {error, Err} -> ejabberd_router:route_error(Pkt, Err), ok;
+        {event, Type, Content} -> route_e2e_event(Pkt, Host, Type, Content)
     end;
 %% a subject change from an occupant (a groupchat
 %% message with a subject and no body) is the room's m.room.topic
@@ -400,6 +408,15 @@ route(#message{from = From, to = To, id = MsgID} = Pkt) ->
     end;
 route(#iq{type = Type}) when Type == error; Type == result ->
     ok;
+%% <room-info/>, <encryption/>, <redact/> to the chat
+%% (mod_matrix_gw_event)
+route(#iq{sub_els = [#xmlel{attrs = [_ | _]}]} = IQ)
+  when not is_map_key(matrix_e2e_iq, IQ#iq.meta) ->
+    case mod_matrix_gw_event:room_iq(IQ) of
+        false -> route(IQ#iq{meta = (IQ#iq.meta)#{matrix_e2e_iq => pass}});
+        {error, Err} -> ejabberd_router:route(xmpp:make_error(IQ, Err));
+        Req -> route_e2e_iq(IQ, Req)
+    end;
 %% an iq to a room the gateway is in is the room
 %% process's (disco#info, admin and owner requests, vCard, moderation);
 %% any other comes back once, marked, for the clause below
@@ -428,7 +445,9 @@ route(#iq{type = Type, lang = Lang, sub_els = [_]} = IQ0) ->
                                          [#identity{category = <<"conference">>,
                                                     type = <<"text">>}],
                                      features = [?NS_MUC, ?NS_DISCO_INFO, ?NS_DISCO_ITEMS] ++
-                                         mod_matrix_gw_call:disco_features(IQ#iq.to)}};
+                                         mod_matrix_gw_e2e:disco_features(IQ#iq.to) ++
+                                         mod_matrix_gw_call:disco_features(IQ#iq.to) ++
+                                         mod_matrix_gw_event:disco_features(IQ#iq.to)}};
                     {get, #disco_info{node = _}} ->
                         {error, xmpp:err_item_not_found()};
                     {get, #disco_items{node = <<>>}} ->
@@ -1213,8 +1232,39 @@ handle_event({call, From}, {add_event, JSON}, _State, Data) ->
             ?INFO_MSG("failed add_event: ~p", [{Class, Reason, ST}]),
             {keep_state, Data, []}
     end;
-%% what an XMPP message asks of the room (mod_matrix_gw_xmpp:classify/1)
-handle_event(cast, {xmpp_actions, From, MsgID, Actions}, _State, Data) ->
+%% a local user's <event/>, and the room iqs (mod_matrix_gw_event)
+handle_event(cast, {e2e_event, From, To, MsgID, Lang, Type, Content}, _State, Data) ->
+    Data2 = e2e_event(From, To, MsgID, Lang, Type, Content, Data),
+    {keep_state, Data2, [{next_event, internal, update_client}]};
+handle_event(cast, {e2e_iq, IQ, Req}, _State, Data) ->
+    {Reply, Data2} =
+        try e2e_iq(IQ, Req, Data)
+        catch Class:Reason:ST ->
+                ?INFO_MSG("failed room iq ~p in ~s: ~p",
+                          [Req, Data#data.room_id, {Class, Reason, ST}]),
+                {xmpp:make_error(IQ, xmpp:err_internal_server_error()), Data}
+        end,
+    ejabberd_router:route(Reply),
+    {keep_state, Data2, [{next_event, internal, update_client}]};
+handle_event({call, From}, e2e_members, _State, Data) ->
+    Members = try state_members(current_state_map(Data), Data)
+              catch _:_ -> []
+              end,
+    {keep_state_and_data, [{reply, From, Members}]};
+%% what an XMPP message asks of the room (mod_matrix_gw_xmpp:classify/1);
+%% in an encrypted room only what is no content (typing, receipts), the
+%% rest refused <not-encrypted/>
+handle_event(cast, {xmpp_actions, From, MsgID, Actions0}, _State, Data) ->
+    Actions =
+        case lists:any(fun mod_matrix_gw_event:content_action/1, Actions0)
+            andalso is_encrypted(Data) of
+            true ->
+                ejabberd_router:route(
+                  mod_matrix_gw_event:not_encrypted_message(chat_jid(From, Data), From, MsgID, <<>>)),
+                [A || A <- Actions0, not mod_matrix_gw_event:content_action(A)];
+            false ->
+                Actions0
+        end,
     case user_id_from_jid(From, Data#data.host) of
         {ok, UserID} ->
             Data2 = lists:foldl(
@@ -2393,11 +2443,13 @@ store_event(Event, Data) ->
                   {erlang:monotonic_time(micro_seconds),
                    erlang:unique_integer([monotonic])},
                   [], Data2#data.event_queue),
-            persist(Event, Data2#data.latest_events,
-                    Data2#data{events = Events#{Event#event.id => Event},
-                               latest_events = LatestEvents,
-                               nonlatest_events = NonLatestEvents,
-                               event_queue = EventQueue})
+            Data3 = persist(Event, Data2#data.latest_events,
+                            Data2#data{events = Events#{Event#event.id => Event},
+                                       latest_events = LatestEvents,
+                                       nonlatest_events = NonLatestEvents,
+                                       event_queue = EventQueue}),
+            %% a redaction prunes its target (mod_matrix_gw_event)
+            prune_redacted(Event, Data3)
     end.
 
 simple_toposort(Events) ->
@@ -3441,7 +3493,12 @@ notify_event(Event, Data) ->
     Data2 = notify_event_matrix(Event, Data),
     %% the event among the room's events already (its
     %% state map names it: a member's item reads her own join)
-    notify_event_xmpp(Event, Data2#data{events = (Data2#data.events)#{Event#event.id => Event}}).
+    Data3 = Data2#data{events = (Data2#data.events)#{Event#event.id => Event}},
+    %% the end-to-end forwarded set first (mod_matrix_gw_event)
+    case e2e_notify(Event, Data3) of
+        pass -> notify_event_xmpp(Event, Data3);
+        Data4 -> Data4
+    end.
 
 notify_event_matrix(
   #event{type = ?ROOM_MEMBER,
@@ -4135,25 +4192,64 @@ room_id_to_xmpp(RoomID, Origin) ->
             error
     end.
 
+%% the room id of a !-JID's opaque part R, Make(Opaque) the
+%% room id (Others: more raw readings, a version 12 id without its
+%% server). 26.09 writes the opaque part in hex (a JID's local part is
+%% case-folded, a room id is not); a client may write it as it is. The
+%% room the gateway has under either reading is the one, a raw id matched
+%% without case when only that tells it; a room it does not have is the
+%% hex reading's when R is hex, else the first raw one.
+bang_room_id(R, Make, Others, Via) ->
+    Hex = try
+              Len = size(R) * 4,
+              IR = binary_to_integer(R, 16),
+              {ok, Make(<<IR:Len>>)}
+          catch _:_ -> error
+          end,
+    Raws = [Make(R) | Others],
+    Known = fun(ID) -> mnesia:dirty_read(matrix_room, ID) /= [] end,
+    RoomID = case Hex of
+                 {ok, H} ->
+                     case Known(H) of
+                         true -> H;
+                         false -> raw_room_id(Raws, H, Known)
+                     end;
+                 error ->
+                     raw_room_id(Raws, hd(Raws), Known)
+             end,
+    {ok, RoomID, Via}.
+
+raw_room_id(Raws, Default, Known) ->
+    case [Raw || Raw <- Raws, Known(Raw)] of
+        [Raw | _] ->
+            Raw;
+        [] ->
+            Lowers = [string:lowercase(Raw) || Raw <- Raws],
+            case [ID || ID <- mnesia:dirty_all_keys(matrix_room),
+                        is_binary(ID), lists:member(string:lowercase(ID), Lowers)] of
+                [ID | _] -> ID;
+                [] -> Default
+            end
+    end.
+
 room_id_from_xmpp(Host, RID) ->
     case RID of
         <<$!, Parts/binary>> ->
+            %% a room id written as it is (!opaque%srv@G, as
+            %% the end-to-end wire has it) names the room too, not
+            %% only 26.09's hex form; neither crashes the routing
             case binary:split(Parts, <<"%">>) of
                 [R, <<$%, S/binary>>] ->
-                    IR = binary_to_integer(R, 16),
-                    Len = size(R) * 4,
-                    RoomID = <<IR:Len>>,
-                    {ok, <<$!, RoomID/binary>>, S};
+                    bang_room_id(R, fun(I) -> <<$!, I/binary>> end, [], S);
+                [R, <<>>] ->
+                    bang_room_id(R, fun(I) -> <<$!, I/binary>> end, [], undefined);
                 [R, S] ->
-                    IR = binary_to_integer(R, 16),
-                    Len = size(R) * 4,
-                    RoomID = <<IR:Len>>,
-                    {ok, <<$!, RoomID/binary, $:, S/binary>>, S};
+                    %% a room id of version 12 has no server: then %srv is
+                    %% only where to reach the room
+                    bang_room_id(R, fun(I) -> <<$!, I/binary, $:, S/binary>> end,
+                                 [<<$!, R/binary>>], S);
                 [R] ->
-                    IR = binary_to_integer(R, 16),
-                    Len = size(R) * 4,
-                    RoomID = <<IR:Len>>,
-                    {ok, <<$!, RoomID/binary>>, undefined};
+                    bang_room_id(R, fun(I) -> <<$!, I/binary>> end, [], undefined);
                 _ -> error
             end;
         <<$#, Parts/binary>> ->
@@ -4396,11 +4492,23 @@ forget(Data) ->
 %% a reaction added or taken back (whose new set the XMPP side gets here),
 %% a message for the MUC history.
 track_event(#event{id = EventID, type = Type, sender = Sender, json = JSON} = Event, Data) ->
+    %% an <event/>'s XMPP id is the stanza's, not in its content
+    XmppID0 = case {mod_matrix_gw_xmpp:xmpp_id(JSON), Data#data.e2e_sending} of
+                  {<<>>, {Sender, X}} when is_binary(X) -> X;
+                  {X, _} -> X
+              end,
     Data2 =
-        case mod_matrix_gw_xmpp:xmpp_id(JSON) of
+        case XmppID0 of
             <<>> ->
                 Data;
             XmppID ->
+                case user_id_to_jid(Sender, Data) of
+                    #jid{lserver = LServer, luser = LUser} when LServer == Data#data.host ->
+                        mod_matrix_gw_event:record_sent({LUser, LServer}, XmppID, EventID,
+                                                        Data#data.room_id);
+                    _ ->
+                        ok
+                end,
                 C = Data#data.counter + 1,
                 Data#data{counter = C,
                           xmpp_ids = mod_matrix_gw_xmpp:trim_ids(
@@ -4453,11 +4561,13 @@ track_event(#event{id = EventID, type = Type, sender = Sender, json = JSON} = Ev
                                                              <<"key">> => <<>>}}}},
                     notify_event_xmpp(Synthetic, Data3);
                 none ->
-                    %% a message redacted: in a room, its retraction
-                    %% (notify_redaction/2); a direct
-                    %% chat's is the end-to-end work's (matrix-e2ee-design.md §4.3)
+                    %% a message redacted: its retraction, in a direct
+                    %% chat and in a room alike, is the end-to-end
+                    %% forwarding's (e2e_notify/2 -> e2e_forward/4: ONE
+                    %% stanza, the <event/> and the retraction rendered by
+                    %% mod_matrix_gw_muc:retraction/4, never a deletion)
                     ?DEBUG("redaction ~s in ~s", [EventID, Data#data.room_id]),
-                    notify_redaction(Event, Data2)
+                    Data2
             end;
         _ ->
             Data2
@@ -4655,6 +4765,11 @@ xmpp_payload(#event{id = EventID, type = Type, sender = Sender, json = JSON} = E
              {groupchat, X} when X /= <<>> -> X;
              _ -> EventID
          end,
+    %% a plain message names its event for the device (an empty
+    %% <event/>, mod_matrix_gw_event), on text and corrections only (an
+    %% <event/> of another kind would make the device drop the stanza)
+    Plain = mod_matrix_gw_event:plain_event_el(EventID, Data#data.room_id, Sender,
+                                               maps:get(<<"origin_server_ts">>, JSON, 0)),
     %% in a direct chat a message names its sender
     %% (XEP-0172) and carries its event id as XEP-0359's stanza-id, as a
     %% room's does
@@ -4672,9 +4787,9 @@ xmpp_payload(#event{id = EventID, type = Type, sender = Sender, json = JSON} = E
             {Body2, Extra} = mod_matrix_gw_content:inbound_els(
                                maps:get(<<"content">>, JSON, #{}), Body, content_ctx(Mode, Data)),
             {ID, [#text{data = Body2}],
-             Extra ++ [mod_matrix_gw_xmpp:markable_el() || Mode == chat] ++ ChatEls};
+             Extra ++ [mod_matrix_gw_xmpp:markable_el() || Mode == chat] ++ ChatEls ++ [Plain]};
         {edit, Target, Body} ->
-            {ID, [#text{data = Body}], [mod_matrix_gw_xmpp:replace_el(xmpp_id_of(Target, Data))]};
+            {ID, [#text{data = Body}], [mod_matrix_gw_xmpp:replace_el(xmpp_id_of(Target, Data)), Plain]};
         {R, Target, _} when R == reaction; R == vote ->
             RefID = case Mode of
                         chat -> xmpp_id_of(Target, Data);
@@ -4861,16 +4976,20 @@ with_body(Msg, Body) ->
 %% The id an event has on the XMPP side: the XMPP message's when it was
 %% sent from there, else the event id.
 xmpp_id_of(EventID, Data) ->
+    ByIds = fun() ->
+                    maps:fold(fun(XmppID, {_, E}, _) when E == EventID -> XmppID;
+                                 (_, _, Acc) -> Acc
+                              end, EventID, Data#data.xmpp_ids)
+            end,
     case maps:find(EventID, Data#data.events) of
         {ok, #event{json = JSON}} ->
             case mod_matrix_gw_xmpp:xmpp_id(JSON) of
-                <<>> -> EventID;
+                %% an <event/>'s (encrypted content) or a pruned one's
+                <<>> -> ByIds();
                 XmppID -> XmppID
             end;
         error ->
-            maps:fold(fun(XmppID, {_, E}, _) when E == EventID -> XmppID;
-                         (_, _, Acc) -> Acc
-                      end, EventID, Data#data.xmpp_ids)
+            ByIds()
     end.
 
 %% The event an XMPP id names: one sent from XMPP, or an event id itself.
@@ -5104,6 +5223,510 @@ soft_failed(#event{sender = Sender, json = JSON} = Event, Data) ->
                     false
             end
     end.
+
+%%--------------------------------------------------------------------
+%% The end-to-end room events (mod_matrix_gw_event)
+%%--------------------------------------------------------------------
+
+%% A room event from a local user's <event/>: into the room of the room
+%% JID, or the direct room with u%srv@G, made first when there is none
+%% (encrypted when matrix_encrypt_dms says so and the event is
+%% m.room.encrypted).
+route_e2e_event(#message{from = From, to = To, id = MsgID, lang = Lang} = Pkt,
+                Host, Type, Content) ->
+    Cast = {e2e_event, From, To, MsgID, Lang, Type, Content},
+    case To#jid.luser of
+        <<C, _/binary>> when C == $!; C == $# ->
+            case room_pid_of(Host, To) of
+                {ok, Pid} -> gen_statem:cast(Pid, Cast);
+                error -> no_room(Pkt)
+            end;
+        _ ->
+            case user_id_from_jid(To, Host) of
+                {ok, ToMatrixID} ->
+                    case direct_pid_of(Host, From, ToMatrixID) of
+                        {ok, Pid} ->
+                            gen_statem:cast(Pid, Cast);
+                        none ->
+                            {ok, FromMatrixID} = user_id_from_jid(From, Host),
+                            %% encrypted from the start when the device
+                            %% already encrypts: a plain first event (a
+                            %% call, a verification) would be refused in
+                            %% a room it made encrypted
+                            Enc = [mod_matrix_gw_event:encryption_event(FromMatrixID)
+                                   || Type == <<"m.room.encrypted">>,
+                                      mod_matrix_gw_opt:matrix_encrypt_dms(Host)],
+                            case new_direct_room(Host, FromMatrixID, ToMatrixID, Enc) of
+                                {ok, Pid} -> gen_statem:cast(Pid, Cast);
+                                _ -> no_room(Pkt)
+                            end;
+                        error ->
+                            no_room(Pkt)
+                    end;
+                error ->
+                    ok
+            end
+    end,
+    ok.
+
+no_room(Pkt) ->
+    Lang = xmpp:get_lang(Pkt),
+    ejabberd_router:route_error(Pkt, xmpp:err_item_not_found(<<"no such room">>, Lang)).
+
+%% The process of the room a room JID names, when the gateway has it.
+room_pid_of(Host, #jid{luser = RID}) ->
+    case catch room_id_from_xmpp(Host, RID) of
+        {ok, RoomID, _Via} ->
+            case get_existing_room_pid(Host, RoomID) of
+                {ok, Pid} -> {ok, Pid};
+                _ -> error
+            end;
+        _ ->
+            error
+    end.
+
+%% The process of the direct room of From's user with ToMatrixID: none
+%% when there is no such room yet, error when its process is gone.
+direct_pid_of(Host, From, ToMatrixID) ->
+    case mnesia:dirty_read(matrix_direct, {{From#jid.luser, From#jid.lserver}, ToMatrixID}) of
+        [#matrix_direct{room_id = RoomID}] ->
+            case get_existing_room_pid(Host, RoomID) of
+                {ok, Pid} -> {ok, Pid};
+                _ -> error
+            end;
+        [] ->
+            none
+    end.
+
+%% <room-info/>, <encryption/>, <redact/> to a room JID or u%srv@G, from a
+%% local user, answered by the room's process; <encryption/> on a direct
+%% chat that does not exist yet makes it, encrypted from its start.
+route_e2e_iq(#iq{from = From, to = To, lang = Lang} = IQ, Req) ->
+    Host = ejabberd_config:get_myname(),
+    Reply = fun(Err) -> ejabberd_router:route(xmpp:make_error(IQ, Err)) end,
+    NotFound = fun() -> Reply(xmpp:err_item_not_found(<<"no such room">>, Lang)) end,
+    case From#jid.lserver of
+        Host ->
+            case To#jid.luser of
+                <<C, _/binary>> when C == $!; C == $# ->
+                    case room_pid_of(Host, To) of
+                        {ok, Pid} -> gen_statem:cast(Pid, {e2e_iq, IQ, Req});
+                        error -> NotFound()
+                    end;
+                _ ->
+                    case user_id_from_jid(To, Host) of
+                        {ok, ToMatrixID} ->
+                            case {direct_pid_of(Host, From, ToMatrixID), Req} of
+                                {{ok, Pid}, _} ->
+                                    gen_statem:cast(Pid, {e2e_iq, IQ, Req});
+                                {none, {encryption, _}} ->
+                                    {ok, FromMatrixID} = user_id_from_jid(From, Host),
+                                    Enc = [mod_matrix_gw_event:encryption_event(FromMatrixID)],
+                                    case new_direct_room(Host, FromMatrixID, ToMatrixID, Enc) of
+                                        {ok, Pid} -> gen_statem:cast(Pid, {e2e_iq, IQ, Req});
+                                        _ -> NotFound()
+                                    end;
+                                _ ->
+                                    NotFound()
+                            end;
+                        error ->
+                            NotFound()
+                    end
+            end;
+        _ ->
+            Reply(xmpp:err_not_allowed(<<"not a local user">>, Lang))
+    end,
+    ok.
+
+%% The members of a room the gateway has, with their membership.
+-spec members(binary()) -> [{binary(), binary()}].
+members(RoomID) ->
+    Host = ejabberd_config:get_myname(),
+    case get_existing_room_pid(Host, RoomID) of
+        {ok, Pid} ->
+            try gen_statem:call(Pid, e2e_members, 10000)
+            catch _:_ -> []
+            end;
+        _ ->
+            []
+    end.
+
+%% [{MXID, Membership}] of a state map.
+state_members(StateMap, Data) ->
+    lists:sort(
+      maps:fold(
+        fun({?ROOM_MEMBER, MXID}, _, Acc) ->
+                case statemap_find({?ROOM_MEMBER, MXID}, StateMap, Data) of
+                    {ok, #event{json = #{<<"content">> := #{<<"membership">> := M}}}}
+                      when is_binary(M) ->
+                        [{MXID, M} | Acc];
+                    _ ->
+                        Acc
+                end;
+           (_, _, Acc) ->
+                Acc
+        end, [], StateMap)).
+
+%% The room's m.room.encryption content, or undefined.
+room_encryption(StateMap, Data) ->
+    case statemap_find({?ROOM_ENCRYPTION, <<"">>}, StateMap, Data) of
+        {ok, #event{json = #{<<"content">> := #{<<"algorithm">> := A} = C}}} when is_binary(A) ->
+            C;
+        _ ->
+            undefined
+    end.
+
+is_encrypted(Data) ->
+    try room_encryption(current_state_map(Data), Data) /= undefined
+    catch _:_ -> false
+    end.
+
+%% The JID a local user writes to for this room: the peer's in a direct
+%% room, the room JID she joined by in a room.
+chat_jid(_From, #data{kind = #direct{remote_user = Remote}} = Data) when is_binary(Remote) ->
+    case user_id_to_jid(Remote, Data) of
+        #jid{} = J -> J;
+        error -> Data#data.room_jid
+    end;
+chat_jid(From, #data{kind = #multi{users = Users}} = Data) ->
+    {LUser, LServer, LResource} = jid:tolower(From),
+    case Users of
+        #{{LUser, LServer} := {online, #{LResource := #multi_user{room_jid = J}}}} -> J;
+        _ -> Data#data.room_jid
+    end;
+chat_jid(_From, Data) ->
+    Data#data.room_jid.
+
+%% Whether From's user is the local user of this direct room, or (a room)
+%% any local user: who may act on the room through it.
+owns_room(From, #data{kind = #direct{local_user = #jid{} = U}}) ->
+    {From#jid.luser, From#jid.lserver} == {U#jid.luser, U#jid.lserver};
+owns_room(_From, #data{kind = #multi{}}) ->
+    true;
+owns_room(_, _) ->
+    false.
+
+%% An <event/> from a local user into this room: added, then <sent/>, or
+%% the error.
+e2e_event(From, To, MsgID, Lang, Type, Content, Data) ->
+    Host = Data#data.host,
+    Error = fun(Err) ->
+                    ejabberd_router:route(
+                      #message{id = MsgID, type = error, from = To, to = From, lang = Lang,
+                               sub_els = [Err]}),
+                    Data
+            end,
+    case {owns_room(From, Data), user_id_from_jid(From, Host)} of
+        {true, {ok, UserID}} ->
+            case Type /= <<"m.room.encrypted">> andalso is_encrypted(Data) of
+                true ->
+                    Error(mod_matrix_gw_event:not_encrypted(Lang));
+                false ->
+                    try add_event(#{<<"type">> => Type, <<"sender">> => UserID,
+                                    <<"content">> => Content},
+                                  Data#data{e2e_sending = {UserID, MsgID}}) of
+                        {Data2, Event} ->
+                            ejabberd_router:route(
+                              mod_matrix_gw_event:sent_message(
+                                jid:make(mod_matrix_gw_opt:host(Host)), From, MsgID,
+                                Event#event.id, Data#data.room_id)),
+                            Data2#data{e2e_sending = undefined}
+                    catch
+                        error:{event_auth_error, _} ->
+                            Error(xmpp:err_forbidden(<<"the room's rules refuse it">>, Lang));
+                        Class:Reason:ST ->
+                            ?INFO_MSG("failed <event/> ~s in ~s: ~p",
+                                      [Type, Data#data.room_id, {Class, Reason, ST}]),
+                            Error(xmpp:err_internal_server_error())
+                    end
+            end;
+        _ ->
+            Error(xmpp:err_not_allowed(<<"not this user's room">>, Lang))
+    end.
+
+%% The room iqs, answered from this room's state.
+e2e_iq(#iq{from = From, lang = Lang} = IQ, Req, Data) ->
+    Host = Data#data.host,
+    {ok, UserID} = user_id_from_jid(From, Host),
+    StateMap = current_state_map(Data),
+    Member = case statemap_find({?ROOM_MEMBER, UserID}, StateMap, Data) of
+                 {ok, #event{json = #{<<"content">> := #{<<"membership">> := M}}}} -> M;
+                 _ -> <<"leave">>
+             end,
+    Info = fun(SM, D) ->
+                   mod_matrix_gw_event:room_info_el(
+                     #{id => D#data.room_id,
+                       version => (D#data.room_version)#room_version.id,
+                       encryption => room_encryption(SM, D),
+                       direct => is_record(D#data.kind, direct),
+                       power => get_user_power_level(UserID, SM, D),
+                       members => state_members(SM, D)})
+           end,
+    case Req of
+        _ when not (Member == <<"join">> orelse Member == <<"invite">>) ->
+            {xmpp:make_error(IQ, xmpp:err_item_not_found(<<"not a member of the room">>, Lang)), Data};
+        _ ->
+            case owns_room(From, Data) of
+                false ->
+                    {xmpp:make_error(IQ, xmpp:err_item_not_found(<<"no such room">>, Lang)), Data};
+                true ->
+                    e2e_iq(IQ, Req, UserID, StateMap, Info, Data)
+            end
+    end.
+
+e2e_iq(IQ, {room_info}, _UserID, StateMap, Info, Data) ->
+    {xmpp:make_iq_result(IQ, Info(StateMap, Data)), Data};
+e2e_iq(#iq{lang = Lang} = IQ, {encryption, Alg}, UserID, StateMap, Info, Data) ->
+    case {room_encryption(StateMap, Data), Alg} of
+        {#{<<"algorithm">> := Alg}, _} ->
+            {xmpp:make_iq_result(IQ, Info(StateMap, Data)), Data};
+        {#{}, _} ->
+            {xmpp:make_error(IQ, xmpp:err_not_acceptable(
+                                   <<"the room is encrypted under another algorithm">>, Lang)),
+             Data};
+        {undefined, <<"m.megolm.v1.aes-sha2">>} ->
+            try add_event(mod_matrix_gw_event:encryption_event(UserID), Data) of
+                {Data2, _} ->
+                    {xmpp:make_iq_result(IQ, Info(current_state_map(Data2), Data2)), Data2}
+            catch
+                error:{event_auth_error, _} ->
+                    {xmpp:make_error(IQ, xmpp:err_forbidden(
+                                           <<"your power level does not allow it">>, Lang)),
+                     Data}
+            end;
+        {undefined, _} ->
+            {xmpp:make_error(IQ, xmpp:err_not_acceptable(<<"unknown algorithm">>, Lang)), Data}
+    end;
+e2e_iq(#iq{lang = Lang} = IQ, {redact, Target, Reason}, UserID, StateMap, _Info, Data) ->
+    case maps:find(Target, Data#data.events) of
+        {ok, #event{sender = TargetSender}} ->
+            RedactLevel =
+                case statemap_find({?ROOM_POWER_LEVELS, <<"">>}, StateMap, Data) of
+                    {ok, #event{json = #{<<"content">> := #{<<"redact">> := L}}}} -> get_int(L);
+                    _ -> 50
+                end,
+            Allowed = TargetSender == UserID orelse
+                get_user_power_level(UserID, StateMap, Data) >= RedactLevel,
+            case Allowed of
+                false ->
+                    {xmpp:make_error(IQ, xmpp:err_forbidden(
+                                           <<"not your message, and no power to redact">>, Lang)),
+                     Data};
+                true ->
+                    Content = case Reason of
+                                  <<>> -> mod_matrix_gw_xmpp:redaction_content(Target);
+                                  _ -> (mod_matrix_gw_xmpp:redaction_content(Target))#{<<"reason">> => Reason}
+                              end,
+                    try add_event(#{<<"type">> => ?ROOM_REDACTION, <<"sender">> => UserID,
+                                    <<"redacts">> => Target, <<"content">> => Content}, Data) of
+                        {Data2, Event} ->
+                            {xmpp:make_iq_result(IQ, mod_matrix_gw_event:sent_el(Event#event.id)),
+                             Data2}
+                    catch
+                        error:{event_auth_error, _} ->
+                            {xmpp:make_error(IQ, xmpp:err_forbidden(
+                                                   <<"the room's rules refuse it">>, Lang)),
+                             Data}
+                    end
+            end;
+        error ->
+            {xmpp:make_error(IQ, xmpp:err_item_not_found(<<"no such event in the room">>, Lang)),
+             Data}
+    end.
+
+%% The forwarded set (mod_matrix_gw_event:forwarded/3), before the
+%% gateway's own mapping: Data when the event was this path's, pass when
+%% it is the mapping's. Every membership change goes to mod_matrix_gw_e2e
+%% too.
+e2e_notify(#event{type = Type, state_key = StateKey, json = JSON} = Event, Data) ->
+    Content = case JSON of
+                  #{<<"content">> := C} when is_map(C) -> C;
+                  _ -> #{}
+              end,
+    case {Type, StateKey, Content} of
+        {?ROOM_MEMBER, <<$@, _/binary>>, #{<<"membership">> := M}} when is_binary(M) ->
+            mod_matrix_gw_event:membership(Data#data.host, Data#data.room_id, StateKey, M);
+        _ ->
+            ok
+    end,
+    Kind = case Data#data.kind of
+               #direct{local_user = #jid{}} -> direct;
+               #multi{} -> multi;
+               _ -> none
+           end,
+    case Kind of
+        none ->
+            pass;
+        _ ->
+            case mod_matrix_gw_event:forwarded(Type, Content, Kind) of
+                pass ->
+                    pass;
+                What ->
+                    try e2e_forward(What, Event, Content, Data)
+                    catch Class:Reason:ST ->
+                            ?INFO_MSG("failed to forward ~s ~s in ~s: ~p",
+                                      [Type, Event#event.id, Data#data.room_id,
+                                       {Class, Reason, ST}]),
+                            Data
+                    end
+            end
+    end.
+
+e2e_forward(What, #event{type = Type, id = EventID, sender = Sender,
+                         origin_server_ts = TS, state_key = StateKey, json = JSON} = Event,
+            Content, Data) ->
+    RoomID = Data#data.room_id,
+    Redacts = redacts(JSON),
+    Fields0 = #{type => Type, id => EventID, room => RoomID, sender => Sender, ts => TS,
+                content => Content},
+    Fields1 = case StateKey of
+                  undefined -> Fields0;
+                  _ -> Fields0#{state_key => StateKey}
+              end,
+    Fields = case Type of
+                 ?ROOM_REDACTION -> Fields1#{redacts => Redacts};
+                 _ -> Fields1
+             end,
+    %% a redaction: the retraction of the message it takes back, unless the
+    %% target is a reaction (whose new set the reactions' mapping sends) or
+    %% the redactor may not take it back (the server applies no such one)
+    {Applies, TargetSender, IsReaction} =
+        case What of
+            redaction ->
+                case maps:find(Redacts, Data#data.events) of
+                    {ok, #event{type = TT, sender = TS0} = Target} ->
+                        {redaction_applies(Event, Target, Data), TS0, TT == ?REACTION};
+                    error ->
+                        {true, undefined, false}
+                end;
+            forward ->
+                {true, undefined, false}
+        end,
+    case Applies of
+        false ->
+            ?DEBUG("redaction ~s of ~s in ~s does not apply", [EventID, Redacts, RoomID]),
+            Data;
+        true ->
+            Retract = fun(Mode) ->
+                              case What == redaction andalso not IsReaction of
+                                  false -> #{};
+                                  true when Mode == chat -> #{retract => xmpp_id_of(Redacts, Data)};
+                                  true -> #{retract => Redacts}
+                              end
+                      end,
+            Moderated = TargetSender /= undefined andalso TargetSender /= Sender,
+            case Data#data.kind of
+                #direct{local_user = UserJID} ->
+                    case user_id_to_jid(Sender, Data) of
+                        #jid{} = SenderJID ->
+                            case jid:remove_resource(jid:tolower(SenderJID)) ==
+                                jid:remove_resource(jid:tolower(UserJID)) of
+                                true ->
+                                    Data;
+                                false ->
+                                    Msg = mod_matrix_gw_event:forward_message(
+                                            #message{id = EventID, from = SenderJID, to = UserJID,
+                                                     type = chat},
+                                            Fields, Retract(chat), undefined),
+                                    ejabberd_router:route(maybe_delay(Msg, Event, SenderJID)),
+                                    Data
+                            end;
+                        error ->
+                            Data
+                    end;
+                #multi{users = Users} ->
+                    <<$@, Nick/binary>> = Sender,
+                    ID = xmpp_id_of(EventID, Data),
+                    %% the sender's XEP-0421 occupant id, as on every
+                    %% groupchat message of the room (the rooms' merge)
+                    Occupant = mod_matrix_gw_muc:occupant_id_el(RoomID, Sender),
+                    maps:foreach(
+                      fun({LUser, LServer}, {online, Resources}) ->
+                              maps:foreach(
+                                fun(LResource, #multi_user{join_ts = JoinTS, room_jid = RoomJID})
+                                      when JoinTS =< TS ->
+                                        %% a moderator's redaction comes from the
+                                        %% room itself (XEP-0425), By her
+                                        %% occupant JID; anything else from the
+                                        %% sender's occupant JID with her id
+                                        Occupant0 = jid:replace_resource(RoomJID, Nick),
+                                        {From, By, OccupantEl} =
+                                            case Moderated of
+                                                true -> {RoomJID, Occupant0, []};
+                                                false -> {Occupant0, undefined, [Occupant]}
+                                            end,
+                                        Msg = mod_matrix_gw_event:forward_message(
+                                                #message{id = ID, from = From, type = groupchat,
+                                                         to = jid:make(LUser, LServer, LResource),
+                                                         sub_els = [#stanza_id{by = RoomJID,
+                                                                               id = EventID}
+                                                                    | OccupantEl]},
+                                                Fields,
+                                                (Retract(groupchat))#{occupant_els => [Occupant]},
+                                                By),
+                                        ejabberd_router:route(maybe_delay(Msg, Event, RoomJID));
+                                   (_, _) ->
+                                        ok
+                                end, Resources);
+                         (_, _) ->
+                              ok
+                      end, Users),
+                    Data
+            end
+    end.
+
+%% Whether a redaction takes its target back: the redactor's power reaches
+%% the room's `redact` level, or it comes from the target sender's server
+%% (room versions 3 and later).
+redaction_applies(#event{sender = Sender} = Redaction, #event{sender = TargetSender}, Data) ->
+    SameServer = (catch mod_matrix_gw:get_id_domain_exn(Sender)) ==
+        (catch mod_matrix_gw:get_id_domain_exn(TargetSender)),
+    SameServer orelse
+        try
+            StateMap = case Redaction#event.state_map of
+                           SM when is_map(SM) -> SM;
+                           _ -> current_state_map(Data)
+                       end,
+            RedactLevel =
+                case statemap_find({?ROOM_POWER_LEVELS, <<"">>}, StateMap, Data) of
+                    {ok, #event{json = #{<<"content">> := #{<<"redact">> := L}}}} -> get_int(L);
+                    _ -> 50
+                end,
+            get_user_power_level(Sender, StateMap, Data) >= RedactLevel
+        catch _:_ ->
+                false
+        end.
+
+%% A redaction stored: the gateway's copy of its target pruned, as the
+%% spec has a server do (the device and the account's archive keep theirs:
+%% never a deletion on the XMPP side), and gone from the MUC history.
+prune_redacted(#event{type = ?ROOM_REDACTION, json = JSON} = Redaction, Data) ->
+    Target = redacts(JSON),
+    case maps:find(Target, Data#data.events) of
+        {ok, #event{json = TJSON, state_key = SK, state_map = SM} = TEvent} ->
+            case redaction_applies(Redaction, TEvent, Data) of
+                true ->
+                    Pruned = mod_matrix_gw:prune_event(TJSON, Data#data.room_version),
+                    Events = (Data#data.events)#{Target => TEvent#event{json = Pruned}},
+                    Latest = Data#data.latest_events,
+                    case SK /= undefined orelse sets:is_element(Target, Latest) of
+                        true ->
+                            catch mod_matrix_gw_store:save_events(
+                                    Data#data.room_id, [{Target, Pruned, SM}],
+                                    sets:to_list(Latest));
+                        false ->
+                            ok
+                    end,
+                    Data#data{events = Events,
+                              backlog = lists:keydelete(Target, 2, Data#data.backlog)};
+                false ->
+                    Data
+            end;
+        error ->
+            Data
+    end;
+prune_redacted(_Event, Data) ->
+    Data.
 
 %%--------------------------------------------------------------------
 %% A Matrix room as a complete MUC room
@@ -5346,52 +5969,6 @@ maybe_send_invite(#event{type = ?ROOM_MEMBER, sender = Sender, state_key = UserI
 maybe_send_invite(_, _) ->
     ok.
 
-%% A redaction in a room, for its occupants: the sender's own (XEP-0424)
-%% or a moderator's (XEP-0425), rendered by mod_matrix_gw_muc:retraction/4
-%% as a groupchat message of its own; nothing is deleted.
-notify_redaction(#event{id = EventID, sender = Redactor, json = JSON} = Event,
-                 #data{kind = #multi{}} = Data) ->
-    case redacts(JSON) of
-        <<>> ->
-            Data;
-        Target ->
-            Own = case maps:find(Target, Data#data.events) of
-                      {ok, #event{sender = Redactor}} -> true;
-                      {ok, #event{}} -> false;
-                      error ->
-                          StateMap = current_state_map(Data),
-                          Levels = mod_matrix_gw_muc:levels(
-                                     state_content(?ROOM_POWER_LEVELS, <<"">>, StateMap, Data)),
-                          not mod_matrix_gw_muc:can_redact(
-                                Levels, get_user_power_level(Redactor, StateMap, Data))
-                  end,
-            Reason = case maps:get(<<"content">>, JSON, #{}) of
-                         #{<<"reason">> := R} when is_binary(R) -> R;
-                         _ -> <<>>
-                     end,
-            Nick = mod_matrix_gw_muc:nick(Redactor),
-            Occupant = mod_matrix_gw_muc:occupant_id_el(Data#data.room_id, Redactor),
-            for_occupants(
-              Event, Data,
-              fun(UserJID, RoomJID, _) ->
-                      {From, By} = case Own of
-                                       true -> {jid:replace_resource(RoomJID, Nick), undefined};
-                                       false -> {RoomJID, jid:replace_resource(RoomJID, Nick)}
-                                   end,
-                      {Body, Els} = mod_matrix_gw_muc:retraction(Target, By, [Occupant], Reason),
-                      ejabberd_router:route(
-                        maybe_delay(#message{id = EventID, from = From, to = UserJID, type = groupchat,
-                                             body = [#text{data = Body}],
-                                             sub_els = Els ++ [#stanza_id{by = RoomJID, id = EventID}
-                                                               | [Occupant || Own]]},
-                                    Event, RoomJID))
-              end),
-            Data
-    end;
-notify_redaction(_Event, Data) ->
-    ?DEBUG("redaction not carried to XMPP in ~s", [Data#data.room_id]),
-    Data.
-
 %%--------------------------------------------------------------------
 %% From XMPP to a room
 %%--------------------------------------------------------------------
@@ -5592,7 +6169,8 @@ room_disco_info(#iq{from = From, to = To}, Data) ->
         join_rule => maps:get(<<"join_rule">>, state_content(?ROOM_JOIN_RULES, <<"">>, StateMap, Data),
                               <<"invite">>),
         occupants => length(joined_members(StateMap, Data)), moderate => Moderate,
-        avatar_hash => Avatar, features => mod_matrix_gw_call:disco_features(To)}).
+        avatar_hash => Avatar,
+        features => mod_matrix_gw_call:disco_features(To) ++ mod_matrix_gw_event:disco_features(To)}).
 
 %% An affiliation or role list (XEP-0045 §9.5, §8.5, ...) from the state:
 %% its members and the users the power levels name.

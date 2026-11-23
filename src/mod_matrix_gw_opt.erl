@@ -8,11 +8,13 @@
 -export([key_name/1]).
 -export([leave_timeout/1]).
 -export([matrix_domain/1]).
+-export([matrix_encrypt_dms/1]).
 -export([matrix_id_as_jid/1]).
 -export([media_max_bytes/1]).
 -export([media_max_entries/1]).
 -export([notary_servers/1]).
 -export([tls_cacertfile/1]).
+-export([todevice_max/1]).
 -export([upload_url/1]).
 
 -spec host(gen_mod:opts() | global | binary()) -> binary().
@@ -45,6 +47,12 @@ matrix_domain(Opts) when is_map(Opts) ->
 matrix_domain(Host) ->
     gen_mod:get_module_opt(Host, mod_matrix_gw, matrix_domain).
 
+-spec matrix_encrypt_dms(gen_mod:opts() | global | binary()) -> boolean().
+matrix_encrypt_dms(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(matrix_encrypt_dms, Opts);
+matrix_encrypt_dms(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, matrix_encrypt_dms).
+
 -spec matrix_id_as_jid(gen_mod:opts() | global | binary()) -> boolean().
 matrix_id_as_jid(Opts) when is_map(Opts) ->
     gen_mod:get_opt(matrix_id_as_jid, Opts);
@@ -74,6 +82,12 @@ tls_cacertfile(Opts) when is_map(Opts) ->
     gen_mod:get_opt(tls_cacertfile, Opts);
 tls_cacertfile(Host) ->
     gen_mod:get_module_opt(Host, mod_matrix_gw, tls_cacertfile).
+
+-spec todevice_max(gen_mod:opts() | global | binary()) -> 'unlimited' | pos_integer().
+todevice_max(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(todevice_max, Opts);
+todevice_max(Host) ->
+    gen_mod:get_module_opt(Host, mod_matrix_gw, todevice_max).
 
 -spec upload_url(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
 upload_url(Opts) when is_map(Opts) ->
