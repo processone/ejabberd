@@ -973,7 +973,11 @@ depends(_Host, _Opts) ->
 mod_opt_type(host) ->
     econf:host();
 mod_opt_type(matrix_domain) ->
-    econf:host();
+    %% econf:domain(), not econf:host(): host() refuses a name ejabberd
+    %% already routes (route_conflict), so the XMPP domain itself, the
+    %% server name this gateway is meant to carry, could only be had as the
+    %% default @HOST@ and never written out.
+    econf:domain();
 mod_opt_type(key_name) ->
     econf:binary();
 mod_opt_type(key) ->
