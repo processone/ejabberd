@@ -342,10 +342,12 @@ admin_action(#muc_item{role = visitor, affiliation = undefined}, _, _, _) ->
 admin_action(#muc_item{affiliation = outcast, reason = Reason}, _, _, _) ->
     {member, <<"ban">>, Reason};
 admin_action(#muc_item{affiliation = none, reason = Reason}, Levels, Level, Membership) ->
+    %% an invite is withdrawn whatever the
+    %% invitee's level
     case Membership of
         <<"ban">> -> {member, <<"leave">>, Reason};
-        _ when Level > map_get(users_default, Levels) -> {level, default};
         <<"invite">> -> {member, <<"leave">>, Reason};
+        _ when Level > map_get(users_default, Levels) -> {level, default};
         _ -> ok
     end;
 admin_action(#muc_item{affiliation = member, reason = Reason}, Levels, Level, Membership) ->

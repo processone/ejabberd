@@ -45,7 +45,8 @@
          redaction_content/1, inbound_message/1, typing_edu/3, receipt_edu/4,
          parse_edu/1, replace_el/1, reactions_el/2, displayed_el/1,
          chatstate_el/1, xmpp_id/1, add_reaction/4, remove_reaction/2,
-         reaction_keys/3, trim_ids/2, markable_el/0, store_el/0, no_store_el/0]).
+         reaction_keys/3, trim_ids/2, markable_el/0, store_el/0, no_store_el/0,
+         edu_order/1]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 
@@ -333,6 +334,18 @@ parse_edu(#{<<"edu_type">> := <<"m.receipt">>, <<"content">> := Content}) when i
           is_binary(RoomID), is_map(Users)]);
 parse_edu(_) ->
     [].
+
+%% The EDUs of a /send in the order they are handed on:
+%% {before the PDUs, after them}. The to-device ones (room keys) first, so
+%% that a Megolm event finds its key; typing and receipts (of these PDUs)
+%% after.
+-spec edu_order(term()) -> {[map()], [map()]}.
+edu_order(EDUs) when is_list(EDUs) ->
+    lists:partition(fun(#{<<"edu_type">> := <<"m.direct_to_device">>}) -> true;
+                       (_) -> false
+                    end, EDUs);
+edu_order(_) ->
+    {[], []}.
 
 %%--------------------------------------------------------------------
 %% XML

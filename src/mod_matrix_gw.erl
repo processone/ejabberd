@@ -51,6 +51,10 @@
 	 process_disco_items/1,
          route/1]).
 
+-ifdef(TEST).
+-export([e2e_edu_allowed/2, claims_allowed/2]).
+-endif.
+
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
@@ -59,6 +63,19 @@
 -include("mod_matrix_gw.hrl").
 
 -define(MAX_REQUEST_SIZE, 1000000).
+%% invites one origin may send a minute, EDUs
+%% of the end-to-end kinds (device lists, to-device) a second
+-define(INVITES_PER_MINUTE, 30).
+-define(E2E_EDUS_PER_SECOND, 100).
+%% beside the per-origin windows, whatever the
+%% origins (one operator is a new origin a minute under each name it
+%% delegates): invites a minute per local user and in all, end-to-end EDUs
+%% a second in all, claims of one local device's keys a minute and in all
+-define(INVITES_PER_USER, 30).
+-define(INVITES_ALL, 300).
+-define(E2E_EDUS_ALL, 1000).
+-define(CLAIMS_PER_DEVICE, 100).
+-define(CLAIMS_ALL, 1000).
 
 -define(CORS_HEADERS,
         [{<<"Access-Control-Allow-Origin">>, <<"*">>},
@@ -158,9 +175,22 @@ process([<<"federation">>, <<"v1">>, <<"user">>, <<"keys">>, <<"query">>],
 process([<<"federation">>, <<"v1">>, <<"user">>, <<"keys">>, <<"claim">>],
         #request{method = 'POST'} = Request) ->
     case preprocess_federation_request(Request) of
-        {ok, #{<<"one_time_keys">> := _} = JSON, _Origin} ->
-            {Code, Res} = mod_matrix_gw_e2e:keys_claim(ejabberd_config:get_myname(), JSON),
-            mod_matrix_gw_http:json(Code, Res);
+        {ok, #{<<"one_time_keys">> := _} = JSON, Origin} ->
+            %% within the origin's claims a minute;
+            %%  and within each local device's and the
+            %% gateway's, whatever the origins
+            Host = ejabberd_config:get_myname(),
+            case claims_allowed(Host, JSON) of
+                true ->
+                    {Code, Res} = mod_matrix_gw_e2e:keys_claim(Host, Origin, JSON),
+                    http_json(Code, Res);
+                false ->
+                    ?INFO_MSG("Matrix gateway: claims from ~s over the gateway's or a device's "
+                              "claims a minute: refused", [Origin]),
+                    http_json(429, #{<<"errcode">> => <<"M_LIMIT_EXCEEDED">>,
+                                     <<"error">> => <<"too many one-time key claims">>,
+                                     <<"retry_after_ms">> => 60000})
+            end;
         {ok, _JSON, _Origin} ->
             mod_matrix_gw_http:error(400, <<"M_BAD_JSON">>, <<"one_time_keys missing">>);
         {result, HTTPResult} ->
@@ -176,10 +206,19 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
                                 <<"state_key">> := UserID} = Event,
                <<"room_version">> := RoomVer} = JSON,
          Origin} ->
-            case mod_matrix_gw_room:binary_to_room_version(RoomVer) of
-                #room_version{} = RoomVersion ->
-                    %% TODO: check type and userid
-                    Host = ejabberd_config:get_myname(),
+            Host = ejabberd_config:get_myname(),
+            case {mod_matrix_gw_room:binary_to_room_version(RoomVer),
+                  invite_check(Host, Origin, RoomID, Event)} of
+                {false, _} ->
+                    mod_matrix_gw_http:json(
+                      400, #{<<"errcode">> => <<"M_INCOMPATIBLE_ROOM_VERSION">>,
+                             <<"error">> => <<"unsupported room version">>,
+                             <<"room_version">> => RoomVer});
+                {_, {error, Code, ErrCode, Text}} ->
+                    ?INFO_MSG("Matrix gateway: an invite from ~s for ~p refused: ~s",
+                              [Origin, UserID, Text]),
+                    http_json(Code, #{<<"errcode">> => ErrCode, <<"error">> => Text});
+                {#room_version{} = RoomVersion, ok} ->
                     PrunedEvent = prune_event(Event, RoomVersion),
                     %?DEBUG("invite ~p~n", [{RoomID, EventID, Event, RoomVer, catch mod_matrix_gw_s2s:check_signature(Host, PrunedEvent, RoomVersion), get_pruned_event_id(PrunedEvent)}]),
                     case mod_matrix_gw_s2s:check_signature(Host, PrunedEvent, RoomVersion) of
@@ -206,12 +245,7 @@ process([<<"federation">>, <<"v2">>, <<"invite">>, RoomID, EventID],
                             end;
                         false ->
                             {400, [], <<"400 Bad Request: signature check failed">>}
-                    end;
-                false ->
-                    mod_matrix_gw_http:json(
-                      400, #{<<"errcode">> => <<"M_INCOMPATIBLE_ROOM_VERSION">>,
-                             <<"error">> => <<"unsupported room version">>,
-                             <<"room_version">> => RoomVer})
+                    end
             end;
         {ok, _JSON, _Origin} ->
             {400, [], <<"400 Bad Request: invalid format">>};
@@ -226,6 +260,11 @@ process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
          Origin} when is_list(PDUs) ->
             ?DEBUG("send request ~p~n", [JSON]),
             Host = ejabberd_config:get_myname(),
+            %% the to-device EDUs (room keys) before
+            %% the PDUs, so that a Megolm event finds its key; the rest
+            %% (typing, receipts of these events) after them
+            {KeyEDUs, LaterEDUs} = mod_matrix_gw_xmpp:edu_order(maps:get(<<"edus">>, JSON, [])),
+            catch dispatch_edus(Host, Origin, KeyEDUs),
             %% a PDU that cannot be processed is an error of its
             %% own, never the whole transaction's (nor a crash)
             Res = lists:flatmap(
@@ -235,19 +274,20 @@ process([<<"federation">>, <<"v1">>, <<"send">>, _TxnID],
                                 {error, Error} -> pdu_error(PDU, Error)
                             catch
                                 Class:Reason:ST ->
-                                    ?INFO_MSG("failed to process a PDU from ~s: ~p",
-                                              [Origin, {Class, Reason}]),
-                                    ?DEBUG("failed PDU ~p: ~p", [PDU, ST]),
+                                    %% no term of the
+                                    %% PDU in the log, the stack at DEBUG
+                                    ?INFO_MSG("failed to process a PDU from ~s in ~p: ~p",
+                                              [Origin, case PDU of
+                                                           #{<<"room_id">> := R} when is_binary(R),
+                                                                                      byte_size(R) =< 255 -> R;
+                                                           _ -> none
+                                                       end,
+                                               mod_matrix_gw_room:failure(Class, Reason, ST)]),
                                     pdu_error(PDU, <<"failed to process the PDU">>)
                             end
                     end, PDUs),
             %% EDUs (26.09 read none), by type (dispatch_edus/3)
-            case JSON of
-                #{<<"edus">> := EDUs} when is_list(EDUs) ->
-                    catch dispatch_edus(Host, Origin, EDUs);
-                _ ->
-                    ok
-            end,
+            catch dispatch_edus(Host, Origin, LaterEDUs),
             ?DEBUG("send res ~p~n", [Res]),
             %% the spec's answer is {"pdus": {EventID: Result}}
             mod_matrix_gw_http:json(200, #{<<"pdus">> => maps:from_list(Res)});
@@ -288,9 +328,10 @@ process([<<"federation">>, <<"v1">>, <<"backfill">>, RoomID],
                     Host = ejabberd_config:get_myname(),
                     PDUs1 = mod_matrix_gw_room:get_missing_events(
                               Host, Origin, RoomID, [], LatestEvents, Limit, 0),
+                    %% to a server joined to the room
                     PDUs2 = lists:flatmap(
                               fun(EventID) ->
-                                      case mod_matrix_gw_room:get_event(Host, RoomID, EventID) of
+                                      case catch mod_matrix_gw_room:get_event(Host, Origin, RoomID, EventID) of
                                           {ok, PDU} ->
                                               [PDU];
                                           _ ->
@@ -341,13 +382,15 @@ process([<<"federation">>, <<"v1">>, <<"state_ids">>, RoomID],
 process([<<"federation">>, <<"v1">>, <<"event">>, EventID],
         #request{method = 'GET', host = _Host} = Request) ->
     case preprocess_federation_request(Request) of
-        {ok, _JSON, _Origin} ->
+        {ok, _JSON, Origin} ->
             Host = ejabberd_config:get_myname(),
             %% TODO: very inefficient, replace with an SQL call
+            %% from the rooms the origin is joined
+            %% to only, a room that does not answer skipped
             PDU =
                 lists:foldl(
                   fun(RoomID, undefined) ->
-                          case mod_matrix_gw_room:get_event(Host, RoomID, EventID) of
+                          case catch mod_matrix_gw_room:get_event(Host, Origin, RoomID, EventID) of
                               {ok, PDU} ->
                                   PDU;
                               _ ->
@@ -418,9 +461,13 @@ process([<<"federation">>, <<"v2">>, <<"send_join">>, RoomID, EventID],
                <<"state_key">> := Sender,
                <<"type">> := <<"m.room.member">>} = JSON, Origin} ->
             Host = ejabberd_config:get_myname(),
-            case get_id_domain_exn(Sender) of
+            %% a member event of the wrong shape is
+            %% M_BAD_JSON, and nothing in its handling crashes the request
+            case member_pdu_ok(JSON) andalso (catch get_id_domain_exn(Sender)) of
+                Bad when Bad == false; element(1, Bad) == 'EXIT' ->
+                    mod_matrix_gw_http:error(400, <<"M_BAD_JSON">>, <<"Invalid event format">>);
                 Origin ->
-                    case mod_matrix_gw_room:send_join(Host, Origin, RoomID, EventID, JSON) of
+                    try mod_matrix_gw_room:send_join(Host, Origin, RoomID, EventID, JSON) of
                         {error, Error} when is_binary(Error) ->
                             Res = #{<<"errcode">> => <<"M_BAD_REQUEST">>,
                                     <<"error">> => Error},
@@ -430,6 +477,11 @@ process([<<"federation">>, <<"v2">>, <<"send_join">>, RoomID, EventID],
                             ?DEBUG("send_join res: ~p~n", [Res]),
                             {200, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
                              misc:json_encode(Res)}
+                    catch
+                        Class:Reason:ST ->
+                            ?INFO_MSG("failed send_join of ~s to ~s: ~p",
+                                      [Origin, RoomID, mod_matrix_gw_room:failure(Class, Reason, ST)]),
+                            mod_matrix_gw_http:error(400, <<"M_BAD_JSON">>, <<"The event could not be processed">>)
                     end;
                 _ ->
                     Res = #{<<"errcode">> => <<"M_FORBIDDEN">>,
@@ -526,9 +578,12 @@ process([<<"federation">>, <<"v2">>, <<"send_leave">>, RoomID, EventID],
                <<"state_key">> := Sender,
                <<"type">> := <<"m.room.member">>} = JSON, Origin} ->
             Host = ejabberd_config:get_myname(),
-            case catch get_id_domain_exn(Sender) of
+            %% as /send_join
+            case member_pdu_ok(JSON) andalso (catch get_id_domain_exn(Sender)) of
+                Bad when Bad == false; element(1, Bad) == 'EXIT' ->
+                    mod_matrix_gw_http:error(400, <<"M_BAD_JSON">>, <<"Invalid event format">>);
                 Origin ->
-                    case catch mod_matrix_gw_room:process_pdu(Host, Origin, JSON) of
+                    try mod_matrix_gw_room:process_pdu(Host, Origin, JSON) of
                         {ok, EventID} ->
                             ?INFO_MSG("send_leave: ~s left ~s", [Sender, RoomID]),
                             mod_matrix_gw_http:json(200, #{});
@@ -536,6 +591,11 @@ process([<<"federation">>, <<"v2">>, <<"send_leave">>, RoomID, EventID],
                             mod_matrix_gw_http:error(400, <<"M_BAD_JSON">>, <<"Bad event id">>);
                         _ ->
                             mod_matrix_gw_http:error(403, <<"M_FORBIDDEN">>, <<"The leave was refused">>)
+                    catch
+                        Class:Reason:ST ->
+                            ?INFO_MSG("failed send_leave of ~s to ~s: ~p",
+                                      [Origin, RoomID, mod_matrix_gw_room:failure(Class, Reason, ST)]),
+                            mod_matrix_gw_http:error(400, <<"M_BAD_JSON">>, <<"The event could not be processed">>)
                     end;
                 _ ->
                     mod_matrix_gw_http:error(403, <<"M_FORBIDDEN">>, <<"User not from origin">>)
@@ -559,6 +619,19 @@ process(Path, Request) ->
     %% the spec's answer to an endpoint not served
     mod_matrix_gw_http:error(404, <<"M_UNRECOGNIZED">>, <<"Unrecognized request">>).
 
+%% The fields of a /send_join or /send_leave member
+%% event the room reads before its checks, of the spec's types: sender and
+%% state_key strings (one user id), origin_server_ts an integer, content an
+%% object, and the event lists lists.
+member_pdu_ok(#{<<"sender">> := Sender, <<"state_key">> := Sender,
+                <<"origin_server_ts">> := TS, <<"content">> := Content} = JSON)
+  when is_binary(Sender), is_integer(TS), is_map(Content) ->
+    lists:all(fun(K) -> is_list(maps:get(K, JSON, [])) end,
+              [<<"prev_events">>, <<"auth_events">>]) andalso
+        is_integer(maps:get(<<"depth">>, JSON, 0));
+member_pdu_ok(_) ->
+    false.
+
 %% The entry of a PDU /send could not take, under its event id
 %% (computed with its room's version when the room is known; none when the
 %% PDU is too broken for one).
@@ -573,6 +646,85 @@ pdu_error(PDU, Error) ->
     catch _:_ ->
             []
     end.
+
+%% What /v2/invite takes: a membership event
+%% inviting a user of ours who exists, sent by a user of the origin, at most
+%% ?INVITES_PER_MINUTE a minute from one origin; a direct chat's invite
+%% names a room the gateway does not have (or the chat it has with that
+%% sender already), so that no invite takes over a room's process.
+invite_check(Host, Origin, RoomID, #{<<"sender">> := Sender, <<"state_key">> := UserID} = Event) ->
+    Content = maps:get(<<"content">>, Event, #{}),
+    case {maps:get(<<"type">>, Event, none), Content} of
+        {<<"m.room.member">>, #{<<"membership">> := <<"invite">>}} ->
+            case catch get_id_domain_exn(Sender) of
+                Origin ->
+                    case local_user(Host, UserID) of
+                        {ok, LUser} ->
+                            %%  the origin's, the invited
+                            %% user's and the gateway's invites a minute
+                            case mod_matrix_gw_s2s:rate({invite, Origin},
+                                                        mod_matrix_gw_s2s:limit(invites, ?INVITES_PER_MINUTE),
+                                                        60000, 1)
+                                andalso mod_matrix_gw_s2s:rate({invite_user, LUser},
+                                                               mod_matrix_gw_s2s:limit(invites_user, ?INVITES_PER_USER),
+                                                               60000, 1)
+                                andalso mod_matrix_gw_s2s:rate(invites_all,
+                                                               mod_matrix_gw_s2s:limit(invites_all, ?INVITES_ALL),
+                                                               60000, 1) of
+                                true ->
+                                    case Content of
+                                        #{<<"is_direct">> := true} ->
+                                            direct_invite_check(Host, LUser, Sender, RoomID);
+                                        _ ->
+                                            ok
+                                    end;
+                                false ->
+                                    {error, 429, <<"M_LIMIT_EXCEEDED">>, <<"too many invites">>}
+                            end;
+                        error ->
+                            {error, 404, <<"M_NOT_FOUND">>, <<"no such user">>}
+                    end;
+                _ ->
+                    {error, 403, <<"M_FORBIDDEN">>, <<"sender not from origin">>}
+            end;
+        _ ->
+            {error, 400, <<"M_BAD_JSON">>, <<"not an invite">>}
+    end.
+
+%% The claims of a /user/keys/claim within each of
+%% our devices' claims a minute and the gateway's.
+claims_allowed(Host, #{<<"one_time_keys">> := #{} = Asked}) ->
+    Domain = mod_matrix_gw_opt:matrix_domain(Host),
+    Devices = [{MXID, D} || {MXID, #{} = Devs} <- maps:to_list(Asked),
+                            (catch get_id_domain_exn(MXID)) == Domain,
+                            D <- maps:keys(Devs)],
+    PerDevice = mod_matrix_gw_s2s:limit(claims_device, ?CLAIMS_PER_DEVICE),
+    Devices == []
+        orelse (mod_matrix_gw_s2s:rate(claims_all, mod_matrix_gw_s2s:limit(claims_all, ?CLAIMS_ALL),
+                                       60000, length(Devices))
+                andalso lists:all(fun(K) -> mod_matrix_gw_s2s:rate({claims_device, K}, PerDevice, 60000, 1) end,
+                                  Devices));
+claims_allowed(_Host, _JSON) ->
+    true.
+
+direct_invite_check(Host, LUser, Sender, RoomID) ->
+    case mnesia:dirty_read(matrix_room, RoomID) of
+        [] ->
+            ok;
+        _ ->
+            case mnesia:dirty_read(matrix_direct, {{LUser, Host}, Sender}) of
+                [{matrix_direct, _, RoomID}] -> ok;
+                _ -> {error, 403, <<"M_FORBIDDEN">>, <<"the room is known here">>}
+            end
+    end.
+
+%% An answer of JSON; ejabberd_http has no reason phrase of its
+%% own for 429 (M_LIMIT_EXCEEDED) and would close the connection unanswered.
+http_json(429, JSON) ->
+    {429, <<"Too Many Requests">>, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>}],
+     misc:json_encode(JSON)};
+http_json(Code, JSON) ->
+    mod_matrix_gw_http:json(Code, JSON).
 
 %% The local part of a user of this server's Matrix domain who
 %% exists here, or error.
@@ -1077,14 +1229,25 @@ send_request(Host, Method, MatrixServer, Dest, Path, Query, JSON,
                 {URL, Headers, "application/json;charset=UTF-8", Content}
         end,
     ?DEBUG("httpc request ~p", [{Method, Request, HTTPOptions, Options}]),
+    %% the answer read up to a bound per endpoint
+    %% (mod_matrix_gw_http:max_body/1, or the caller's {max_body, N})
+    Max = proplists:get_value(max_body, Options, mod_matrix_gw_http:max_body(Path)),
     HTTPRes =
-        httpc:request(Method,
+        mod_matrix_gw_http:request(Method,
                       Request,
                       mod_matrix_gw_http:http_options(
                         HTTPOptions, Dest, mod_matrix_gw_s2s:cacerts(Host)),
-                      Options),
+                      proplists:delete(max_body, Options), Max),
     ?DEBUG("httpc request res ~p", [HTTPRes]),
     case HTTPRes of
+        {error, too_large} ->
+            case mod_matrix_gw_s2s:rate({too_large_logged, MatrixServer}, 1, 60000, 1) of
+                true ->
+                    ?WARNING_MSG("Matrix request ~s ~s to ~s: the answer is over ~B bytes, dropped",
+                                 [SMethod, URI1, MatrixServer, Max]);
+                false ->
+                    ok
+            end;
         {error, Reason} ->
             %% an operator sees why a server cannot be reached
             ?INFO_MSG("Matrix request ~s ~s to ~s failed: ~p",
@@ -1303,12 +1466,16 @@ mod_options(Host) ->
      {key, {<<"">>, <<"">>}},
      {matrix_id_as_jid, false},
      {notary_servers, []},
-     {leave_timeout, 0},
+     %% a session lost (a phone's stream
+     %% management expired) is ten minutes away, as a restart is
+     {leave_timeout, 600},
      {tls_cacertfile, undefined},
      {upload_url, undefined},
      {media_max_bytes, 104857600},
      {media_max_entries, 100000},
-     {todevice_max, unlimited},
+     %% finite, so that no server fills a device's
+     %% queue for good
+     {todevice_max, 10000},
      {matrix_encrypt_dms, true}].
 
 mod_doc() ->
@@ -1376,7 +1543,11 @@ mod_doc() ->
 	   {leave_timeout,
             #{value => "integer()",
               desc =>
-                  ?T("Delay in seconds between a user leaving a MUC room and sending 'leave' Matrix event.")}},
+                  ?T("Delay in seconds between a user's last session in a room ending "
+                     "(her client gone, not her leave) and the 'leave' Matrix event; she "
+                     "keeps her membership if she comes back in time. A leave of the room "
+                     "from a session that goes on is the 'leave' at once. The default is 600 "
+                     "(it was 0).")}},
 	   {tls_cacertfile,
             #{value => ?T("Path"),
               desc =>
@@ -1410,7 +1581,7 @@ mod_doc() ->
                      "changes, key counts) the gateway keeps for one device "
                      "of a local user until the device takes them; past it "
                      "the oldest are dropped and a warning is logged once an "
-                     "hour. The default is 'unlimited'.")}},
+                     "hour. The default is 10000.")}},
 	   {matrix_encrypt_dms,
             #{value => "true | false",
               desc =>
@@ -1433,13 +1604,40 @@ dispatch_edus(Host, Origin, EDUs) ->
     Rooms = [EDU || EDU <- EDUs, dispatch_edu(Host, Origin, EDU) == pass],
     mod_matrix_gw_room:process_edus(Host, Origin, Rooms).
 
-%% ok: taken; pass: the rooms'
+%% ok: taken; pass: the rooms'. The end-to-end kinds within
+%% ?E2E_EDUS_PER_SECOND a second from one origin, the rest
+%% dropped with a line in the log once a minute.
 dispatch_edu(Host, Origin, #{<<"edu_type">> := Type} = EDU)
   when Type == <<"m.device_list_update">>; Type == <<"m.signing_key_update">> ->
-    mod_matrix_gw_e2e:inbound_edu(Host, Origin, EDU),
+    case e2e_edu_allowed(Origin, Type) of
+        true -> mod_matrix_gw_e2e:inbound_edu(Host, Origin, EDU);
+        false -> ok
+    end,
     ok;
-dispatch_edu(Host, Origin, #{<<"edu_type">> := <<"m.direct_to_device">>} = EDU) ->
-    mod_matrix_gw_todevice:inbound_edu(Host, Origin, EDU),
+dispatch_edu(Host, Origin, #{<<"edu_type">> := <<"m.direct_to_device">> = Type} = EDU) ->
+    case e2e_edu_allowed(Origin, Type) of
+        true -> mod_matrix_gw_todevice:inbound_edu(Host, Origin, EDU);
+        false -> ok
+    end,
     ok;
 dispatch_edu(_Host, _Origin, _EDU) ->
     pass.
+
+e2e_edu_allowed(Origin, Type) ->
+    Max = mod_matrix_gw_s2s:limit(e2e_edus, ?E2E_EDUS_PER_SECOND),
+    %%  and the gateway's, whatever the origins
+    case mod_matrix_gw_s2s:rate({e2e_edus, Origin}, Max, 1000, 1)
+        andalso mod_matrix_gw_s2s:rate(e2e_edus_all, mod_matrix_gw_s2s:limit(e2e_edus_all, ?E2E_EDUS_ALL),
+                                       1000, 1) of
+        true ->
+            true;
+        false ->
+            case mod_matrix_gw_s2s:rate({e2e_edus_logged, Origin}, 1, 60000, 1) of
+                true ->
+                    ?WARNING_MSG("Matrix gateway: over ~B end-to-end EDUs a second from ~s: "
+                                 "dropped (~s the latest)", [Max, Origin, Type]);
+                false ->
+                    ok
+            end,
+            false
+    end.

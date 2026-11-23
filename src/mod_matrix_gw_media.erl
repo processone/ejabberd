@@ -20,7 +20,14 @@
 %%%                  fallback), bounded by media_max_bytes, PUT into the
 %%%                  store through a slot the gateway asks upload.<domain>
 %%%                  for, and the store's URL kept (matrix_media_remote), so
-%%%                  every later asker gets that link (resolve/3)
+%%%                  every later asker gets that link (resolve/3); a
+%%%                  Location or redirect the remote server names is
+%%%                  followed only to a public https address
+%%%                  (mod_matrix_gw_http:safe_url/2) or into the store,
+%%%                  at most two hops; at most ?MAX_FETCHES fetches at once
+%%%                  (fewer when media_max_bytes is large: ?MEM_BUDGET over
+%%%                  it), each within ?FETCH_DEADLINE in all; the table
+%%%                  bounded by media_max_entries as matrix_media is
 %%%   the wire       <media-id/> and <media-fetch/> in https://ns.another.im/matrix-e2e/0
 %%%                  to the gateway's JID, for the local users (route_iq/1)
 %%%   plain chats    an XMPP share (XEP-0066 OOB, XEP-0447 with XEP-0446
@@ -54,7 +61,7 @@
          fetch/4, fetch/5, process/2, route_iq/1, share/1, outbound_contents/5,
          media_content/3, route_share/3, share_message/3, share_els/1,
          failure_body/2, file_name/1, event_el/6, multipart/2,
-         parse_multipart/2, upload/4, plain_get/3]).
+         parse_multipart/2, upload/4, plain_get/3, plain_get/4, with_slot/3]).
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
@@ -66,6 +73,21 @@
 -define(NS_FILE_META, <<"urn:xmpp:file:metadata:0">>).
 -define(NS_URL_DATA, <<"http://jabber.org/protocol/url-data">>).
 -define(FETCH_TIMEOUT, 120000).
+%% A fetch of a remote file in all (federation, Location, redirect), from
+%% the moment it has a slot; the time a fetch waits for one.
+-define(FETCH_DEADLINE, 300000).
+-define(SLOT_WAIT, 120000).
+%% Fetches at once, and the bytes they may hold in memory together (each
+%% may hold media_max_bytes):.
+-define(MAX_FETCHES, 4).
+-define(MEM_BUDGET, 268435456).
+-define(SLOTS, mod_matrix_gw_media_slots).
+%% Redirects followed after the first Location or 3xx.
+-define(MAX_HOPS, 1).
+%% the legacy endpoint's proxy: 8 MiB at most, a
+%% slot waited for 10 s at most
+-define(PROXY_MAX, 8388608).
+-define(PROXY_WAIT, 10000).
 -define(SLOT_TIMEOUT, 35000).
 
 -record(matrix_media,
@@ -100,6 +122,11 @@ create_db() ->
       [{disc_copies, [node()]},
        {type, set},
        {attributes, record_info(fields, matrix_media_remote)}]),
+    %% the fetch slots: owned by the caller, mod_matrix_gw's process
+    case ets:info(?SLOTS) of
+        undefined -> ets:new(?SLOTS, [named_table, public, set]);
+        _ -> ok
+    end,
     ok.
 
 %%--------------------------------------------------------------------
@@ -267,14 +294,56 @@ cached(Key) ->
         [] -> error
     end.
 
-%% Fetches mxc://Origin/ID over the federation and puts it into the store.
+%% Fetches mxc://Origin/ID over the federation and puts it into the store,
+%% in a slot (with_slot/3) and within ?FETCH_DEADLINE.
 -spec fetch(binary(), binary(), binary(), info()) -> {ok, info()} | {error, atom()}.
 fetch(Host, Origin, ID, Hints) ->
     Max = mod_matrix_gw_opt:media_max_bytes(Host),
-    Http = #{federation => fun(Path, Query) -> federation_get(Host, Origin, Path, Query, Max) end,
-             get => fun(URL) -> plain_get(Host, URL, Max) end,
-             upload => fun(Name, Mime, Bytes) -> upload(Host, Name, Mime, Bytes) end},
-    fetch(Origin, ID, Hints, Max, Http).
+    Slots = max(1, min(?MAX_FETCHES, ?MEM_BUDGET div max(1, Max))),
+    with_slot(Slots, ?SLOT_WAIT,
+              fun() ->
+                      Deadline = erlang:monotonic_time(millisecond) + ?FETCH_DEADLINE,
+                      Http = #{federation => fun(Path, Query) ->
+                                                     federation_get(Host, Origin, Path, Query, Max, Deadline)
+                                             end,
+                               get => fun(URL) -> plain_get(Host, URL, Max, Deadline) end,
+                               store => upload_url(Host),
+                               upload => fun(Name, Mime, Bytes) -> upload(Host, Name, Mime, Bytes) end},
+                      Res = fetch(Origin, ID, Hints, Max, Http),
+                      bound(matrix_media_remote, #matrix_media_remote.fetched,
+                            mod_matrix_gw_opt:media_max_entries(Host)),
+                      Res
+              end).
+
+%% Fun run in one of Slots slots shared by every fetch of the node, waited
+%% for up to Wait ms; {error, busy} when none came free.
+-spec with_slot(pos_integer(), non_neg_integer(), fun(() -> T)) -> T | {error, busy}.
+with_slot(Slots, Wait, Fun) ->
+    case acquire(Slots, erlang:monotonic_time(millisecond) + Wait) of
+        ok ->
+            try Fun()
+            after ets:update_counter(?SLOTS, fetching, {2, -1}, {fetching, 1})
+            end;
+        busy ->
+            ?INFO_MSG("Matrix media: all ~B fetch slots busy for ~B s, a file not fetched",
+                      [Slots, Wait div 1000]),
+            {error, busy}
+    end.
+
+acquire(Slots, Until) ->
+    case ets:update_counter(?SLOTS, fetching, {2, 1}, {fetching, 0}) of
+        N when N =< Slots ->
+            ok;
+        _ ->
+            ets:update_counter(?SLOTS, fetching, {2, -1}),
+            case erlang:monotonic_time(millisecond) >= Until of
+                true ->
+                    busy;
+                false ->
+                    timer:sleep(100 + rand:uniform(100)),
+                    acquire(Slots, Until)
+            end
+    end.
 
 fetch(Origin, ID, Hints, Max, Http) ->
     Download = maps:get(federation, Http),
@@ -327,7 +396,7 @@ fetch(Origin, ID, Hints, Max, Http) ->
 legacy({ok, 200, Headers, Body}, _Http) ->
     {ok, Body, Headers};
 legacy({ok, Status, Headers, _}, Http) when Status >= 300, Status < 400 ->
-    follow(header(<<"location">>, Headers), Http);
+    follow(header(<<"location">>, Headers), Http, undefined, ?MAX_HOPS);
 legacy({ok, Status, _, Body}, _Http) ->
     {error, status_error(Status, Body)};
 legacy({error, _} = Err, _Http) ->
@@ -340,20 +409,69 @@ from_multipart(Headers, Body, Http) ->
         {ok, [_JSON, {PartHeaders, Bytes} | _]} ->
             case header(<<"location">>, PartHeaders) of
                 undefined -> {ok, Bytes, PartHeaders};
-                Location -> follow(Location, Http)
+                Location -> follow(Location, Http, undefined, ?MAX_HOPS)
             end;
         _ ->
             {error, bad_response}
     end.
 
-follow(undefined, _Http) ->
+%% A Location (or redirect) a remote server named, relative to Base: GET
+%% only when it is in the store or at a public https address
+%% (allowed/2), and a redirect from there followed the same
+%% way Hops more times.
+follow(undefined, _Http, _Base, _Hops) ->
     {error, bad_response};
-follow(Location, Http) ->
-    case (maps:get(get, Http))(Location) of
-        {ok, 200, Headers, Bytes} -> {ok, Bytes, Headers};
-        {ok, Status, _, Body} -> {error, status_error(Status, Body)};
-        {error, _} = Err -> Err
+follow(Location0, Http, Base, Hops) ->
+    Location = case Base of
+                   undefined -> Location0;
+                   _ -> try uri_string:resolve(Location0, Base) of
+                            L when is_binary(L) -> L;
+                            _ -> Location0
+                        catch _:_ -> Location0
+                        end
+               end,
+    case allowed(Location, Http) of
+        ok ->
+            case (maps:get(get, Http))(Location) of
+                {ok, 200, Headers, Bytes} ->
+                    {ok, Bytes, Headers};
+                {ok, Status, Headers, _} when Status >= 300, Status < 400, Hops > 0 ->
+                    follow(header(<<"location">>, Headers), Http, Location, Hops - 1);
+                {ok, Status, _, Body} ->
+                    {error, status_error(Status, Body)};
+                {error, _} = Err ->
+                    Err
+            end;
+        {error, Why} ->
+            refused(Location, Why)
     end.
+
+%% Whether a URL a remote server named may be fetched: in the store
+%% (the Http map's `store`), or https to public addresses only (resolved
+%% by the map's `resolve`, the system's resolver by default).
+allowed(URL, Http) ->
+    case under(URL, maps:get(store, Http, undefined)) of
+        true ->
+            ok;
+        false ->
+            Checked = case maps:find(resolve, Http) of
+                          {ok, Resolve} -> mod_matrix_gw_http:safe_url(URL, Resolve);
+                          error -> mod_matrix_gw_http:safe_url(URL)
+                      end,
+            case Checked of
+                {ok, _} -> ok;
+                {error, _} = Err -> Err
+            end
+    end.
+
+refused(URL, Why) ->
+    Where = case catch uri_string:parse(URL) of
+                #{scheme := S, host := H} -> <<S/binary, "://", H/binary>>;
+                _ -> <<"a malformed URL">>
+            end,
+    ?WARNING_MSG("Matrix media: refused to fetch from ~ts, which a remote server named: ~p",
+                 [Where, Why]),
+    {error, refused}.
 
 errcode(Body) ->
     try misc:json_decode(Body) of
@@ -376,6 +494,8 @@ error_reason(too_large) -> too_large;
 error_reason(not_found) -> not_found;
 error_reason(timeout) -> timeout;
 error_reason(upload) -> upload;
+error_reason(refused) -> refused;
+error_reason(busy) -> busy;
 error_reason({failed_connect, _}) -> unreachable;
 error_reason(_) -> unreachable.
 
@@ -410,39 +530,65 @@ disposition_name(Headers, Default) ->
 
 %% A signed GET to the remote server (mod_matrix_gw's discovery and
 %% verified TLS), its body bounded.
-federation_get(Host, Origin, Path, Query, Max) ->
+federation_get(Host, Origin, Path, Query, Max, Deadline) ->
     case mod_matrix_gw:send_request(Host, get, Origin, Path, Query, none,
                                     [{connect_timeout, 10000}, {timeout, ?FETCH_TIMEOUT},
                                      {autoredirect, false}],
                                     [{sync, false}, {stream, self}, {body_format, binary}]) of
-        {ok, ReqID} -> collect(ReqID, Max);
+        {ok, ReqID} -> collect(ReqID, Max, Deadline);
         {error, _} = Err -> Err
     end.
 
-%% A GET of an https URL (a Location, the store's object), the server's
-%% certificate verified, the body bounded.
+%% A GET of a URL, the body bounded, within FETCH_TIMEOUT. A URL in the
+%% store (the upload_url the operator set) is fetched as it is, its
+%% certificate verified when https; any other only when
+%% mod_matrix_gw_http:safe_url/1 allows it (https, every address public),
+%% then from the address it checked (no second resolution), the name in
+%% the Host header and the certificate.
 plain_get(Host, URL, Max) ->
-    TLS = case uri_string:parse(URL) of
-              #{scheme := <<"https">>, host := H} ->
-                  [{ssl, mod_matrix_gw_http:tls_options(H, mod_matrix_gw_s2s:cacerts(Host))}];
-              _ ->
-                  []
-          end,
-    case catch httpc:request(get, {URL, []},
-                             [{connect_timeout, 10000}, {timeout, ?FETCH_TIMEOUT},
-                              {autoredirect, false} | TLS],
-                             [{sync, false}, {stream, self}, {body_format, binary}]) of
-        {ok, ReqID} -> collect(ReqID, Max);
-        {error, _} = Err -> Err;
-        Other -> {error, Other}
+    plain_get(Host, URL, Max, erlang:monotonic_time(millisecond) + ?FETCH_TIMEOUT).
+
+plain_get(Host, URL, Max, Deadline) ->
+    Target =
+        case under(URL, upload_url(Host)) of
+            true ->
+                case uri_string:parse(URL) of
+                    #{scheme := <<"https">>, host := H} ->
+                        {ok, URL, [], [{ssl, mod_matrix_gw_http:tls_options(H, mod_matrix_gw_s2s:cacerts(Host))}]};
+                    _ ->
+                        {ok, URL, [], []}
+                end;
+            false ->
+                case mod_matrix_gw_http:safe_url(URL) of
+                    {ok, #{url := IPURL, name := Name, host_header := HH}} ->
+                        {ok, IPURL, [{"host", HH}],
+                         [{ssl, mod_matrix_gw_http:tls_options(Name, mod_matrix_gw_s2s:cacerts(Host))}]};
+                    {error, Why} ->
+                        refused(URL, Why)
+                end
+        end,
+    case Target of
+        {ok, Get, Headers, TLS} ->
+            case catch httpc:request(get, {Get, Headers},
+                                     [{connect_timeout, 10000}, {timeout, ?FETCH_TIMEOUT},
+                                      {autoredirect, false} | TLS],
+                                     [{sync, false}, {stream, self}, {body_format, binary}]) of
+                {ok, ReqID} -> collect(ReqID, Max, Deadline);
+                {error, _} = Err -> Err;
+                Other -> {error, Other}
+            end;
+        {error, _} = Err ->
+            Err
     end.
 
-%% httpc's streamed answer, read up to Max bytes: {ok, Status, Headers, Body}
-%% with the headers as binaries, or {error, too_large | Reason}.
-collect(ReqID, Max) ->
-    collect(ReqID, Max, [], [], 0).
+%% httpc's streamed answer, read up to Max bytes before Deadline (a
+%% monotonic time in ms, the whole answer's, not a chunk's):
+%% {ok, Status, Headers, Body} with the headers as binaries, or
+%% {error, too_large | timeout | Reason}.
+collect(ReqID, Max, Deadline) ->
+    collect(ReqID, Max, Deadline, [], [], 0).
 
-collect(ReqID, Max, Headers, Acc, Size) ->
+collect(ReqID, Max, Deadline, Headers, Acc, Size) ->
     receive
         {http, {ReqID, stream_start, Hs}} ->
             Hs2 = [{iolist_to_binary(K), iolist_to_binary(V)} || {K, V} <- Hs],
@@ -451,7 +597,7 @@ collect(ReqID, Max, Headers, Acc, Size) ->
                     httpc:cancel_request(ReqID),
                     {error, too_large};
                 _ ->
-                    collect(ReqID, Max, Hs2, Acc, Size)
+                    collect(ReqID, Max, Deadline, Hs2, Acc, Size)
             end;
         {http, {ReqID, stream, Bin}} ->
             case Size + byte_size(Bin) of
@@ -459,7 +605,7 @@ collect(ReqID, Max, Headers, Acc, Size) ->
                     httpc:cancel_request(ReqID),
                     {error, too_large};
                 S ->
-                    collect(ReqID, Max, Headers, [Bin | Acc], S)
+                    collect(ReqID, Max, Deadline, Headers, [Bin | Acc], S)
             end;
         {http, {ReqID, stream_end, _}} ->
             {ok, 200, Headers, iolist_to_binary(lists:reverse(Acc))};
@@ -468,7 +614,7 @@ collect(ReqID, Max, Headers, Acc, Size) ->
              iolist_to_binary(Body)};
         {http, {ReqID, {error, Reason}}} ->
             {error, Reason}
-    after ?FETCH_TIMEOUT ->
+    after max(0, Deadline - erlang:monotonic_time(millisecond)) ->
             httpc:cancel_request(ReqID),
             {error, timeout}
     end.
@@ -571,15 +717,33 @@ own(ID, Kind) ->
         _ -> error
     end.
 
-%% The object's bytes, read from the store, under media_max_bytes.
-proxy(Host, #matrix_media{url = URL, name = Name, mime = Mime}) ->
-    case plain_get(Host, URL, mod_matrix_gw_opt:media_max_bytes(Host)) of
+%% The object's bytes, read from the store. The gateway: the
+%% unauthenticated endpoint holds a file in memory only in one of the
+%% fetches' slots (with_slot/3, the same pool), waited for ?PROXY_WAIT at
+%% most (503 M_LIMIT_EXCEEDED then), and only up to ?PROXY_MAX bytes (and
+%% media_max_bytes): a larger file is 502 M_TOO_LARGE, never read; the
+%% client that may follow a redirect (allow_redirect=true) gets the store's
+%% URL for any size.
+proxy(Host, #matrix_media{url = URL, name = Name, mime = Mime, size = Size}) ->
+    MaxBytes = mod_matrix_gw_opt:media_max_bytes(Host),
+    Max = min(MaxBytes, mod_matrix_gw_s2s:limit(proxy_max, ?PROXY_MAX)),
+    Slots = max(1, min(?MAX_FETCHES, ?MEM_BUDGET div max(1, MaxBytes))),
+    Res = case Size of
+              N when is_integer(N), N > Max ->
+                  {error, too_large};
+              _ ->
+                  with_slot(Slots, mod_matrix_gw_s2s:limit(proxy_wait, ?PROXY_WAIT),
+                            fun() -> plain_get(Host, URL, Max) end)
+          end,
+    case Res of
         {ok, 200, _, Bytes} ->
             {200, [{<<"Content-Type">>, Mime},
                    {<<"Content-Disposition">>, disposition(Name)}], Bytes};
         {error, too_large} ->
             mod_matrix_gw_http:error(502, <<"M_TOO_LARGE">>, <<"the file is too large to proxy">>);
-        Res ->
+        {error, busy} ->
+            mod_matrix_gw_http:error(503, <<"M_LIMIT_EXCEEDED">>, <<"too many files being read, try again">>);
+        _ ->
             ?DEBUG("store answered ~p for ~s", [Res, URL]),
             mod_matrix_gw_http:error(502, <<"M_UNKNOWN">>, <<"the store did not answer">>)
     end.
@@ -706,6 +870,8 @@ iq_error(not_found, Lang) -> xmpp:err_item_not_found(<<"No such media">>, Lang);
 iq_error(too_large, Lang) -> xmpp:err_resource_constraint(<<"The file is too large">>, Lang);
 iq_error(timeout, Lang) -> xmpp:err_remote_server_timeout(<<"The Matrix server did not answer">>, Lang);
 iq_error(upload, Lang) -> xmpp:err_internal_server_error(<<"The file could not be stored">>, Lang);
+iq_error(refused, Lang) -> xmpp:err_not_allowed(<<"The Matrix server named a place the gateway does not fetch from">>, Lang);
+iq_error(busy, Lang) -> xmpp:err_resource_constraint(<<"The gateway is fetching too many files">>, Lang);
 iq_error(_, Lang) -> xmpp:err_remote_server_not_found(<<"The Matrix server cannot be reached">>, Lang).
 
 hints(Attrs) ->
@@ -901,6 +1067,8 @@ failure_body(Name, Reason) ->
               too_large -> <<"too large for the gateway">>;
               timeout -> <<"its server did not answer">>;
               upload -> <<"it could not be stored">>;
+              refused -> <<"its server named a place the gateway does not fetch from">>;
+              busy -> <<"the gateway is fetching too many files">>;
               _ -> <<"its server cannot be reached">>
           end,
     <<Name/binary, " (a file from Matrix that could not be fetched: ", Why/binary, ")">>.

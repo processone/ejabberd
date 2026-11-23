@@ -28,8 +28,15 @@
 %% API
 -export([start_link/2, supervisor/1, create_db/0,
          get_connection/2, check_auth/5, check_signature/3,
-         get_matrix_host_port/2, get_destination/2, queue_edu/3,
+         get_destination/2, queue_edu/3,
          cacerts/1]).
+%% the limits against a hostile server
+-export([rate/4, limit/2, valid_server_name/1]).
+%% EDUs held for a server that was down
+-export([held_edus/1]).
+-ifdef(TEST).
+-export([key_response_ok/4]).
+-endif.
 
 %% gen_statem callbacks
 -export([init/1, terminate/3, code_change/4, callback_mode/0]).
@@ -48,15 +55,27 @@
 -record(pending,
         {request_id :: any(),
          servers :: [binary()],
+         %% the server asked, the matrix server
+         %% itself or a notary
+         via :: binary() | undefined,
          key_queue = []}).
 
 -record(wait,
         {timer_ref :: reference(),
          last :: integer()}).
 
+%% a transaction of EDUs a server did not take in
+%% its tries, kept (disc) to be sent again until it does; key = {Server,
+%% when it was held, a unique integer}, so a server's rows sort oldest first
+-record(matrix_edu_retry,
+        {key :: {binary(), integer() | '_', integer() | '_'},
+         txn_id :: binary() | '_',
+         edus :: [map()] | '_'}).
+
 -record(data,
         {host :: binary(),
          matrix_server :: binary(),
+         %% unused since the gateway, kept for the record's shape
          matrix_host_port :: {binary(), integer()} | undefined,
          %% where the server is (mod_matrix_gw_http:resolve/3)
          %% and until when that holds; the EDUs waiting for a transaction
@@ -65,7 +84,17 @@
          edu_queue = [] :: [map()],
          edu_txn :: {any(), binary(), [map()], integer()} | undefined,
          keys = #{},
-         state :: #pending{} | #wait{}}).
+         %% the last call or EDU (a connection unused for
+         %% idle_ms() stops)
+         used = 0 :: integer(),
+         state :: #pending{} | #wait{},
+         %% the held transaction in flight (its
+         %% row's key) or none, the next back-off and whether the held rows
+         %% are due (a timer fired or a transaction got through)
+         edu_held = none :: none | {binary(), integer(), integer()},
+         edu_backoff = 0 :: non_neg_integer(),
+         edu_due = false :: boolean(),
+         edu_timer :: reference() | undefined}).
 
 -define(KEYS_REQUEST_TIMEOUT, 600000).
 %% a server's discovery is kept a day (the spec's default for a
@@ -77,6 +106,29 @@
 -define(MAX_EDUS, 100).
 -define(MAX_EDU_TRIES, 5).
 -define(EDU_RETRY, 30000).
+%% what is not typing or a receipt is never dropped
+%% for failed tries: it is held (matrix_edu_retry) and sent again after a
+%% back-off doubling from a minute to a day, and at once after any
+%% transaction to that server gets through; at most ?MAX_HELD transactions
+%% a server (the oldest goes, with a warning). A request may take a minute,
+%% as the rooms' PDU transactions may.
+-define(EDU_TIMEOUT, 60000).
+-define(EDU_BACKOFF_MIN, 60000).
+-define(EDU_BACKOFF_MAX, 86400000).
+-define(MAX_HELD, 1000).
+%% a connection unused for an hour stops (its keys
+%% and discovery are fetched again when it is needed); at most 300 servers
+%% a minute get a connection from an unauthenticated request, and one whose
+%% request did not verify is not tried again for a minute
+-define(IDLE_MS, 3600000).
+-define(NEW_ORIGINS, 300).
+-define(NEGATIVE_MS, 60000).
+-define(RATE_TAB, matrix_gw_rate).
+%% new connections a minute, whoever asks for them,
+%% and live connections at most
+-define(NEW_CONNECTIONS, 1200).
+-define(MAX_CONNECTIONS, 10000).
+-define(RATE_MAX_KEYS, 100000).
 
 %%%===================================================================
 %%% API
@@ -108,23 +160,149 @@ create_db() ->
       [{ram_copies, [node()]},
        {type, set},
        {attributes, record_info(fields, matrix_s2s)}]),
+    %% EDU transactions held for a server
+    ejabberd_mnesia:create(
+      ?MODULE, matrix_edu_retry,
+      [{disc_copies, [node()]},
+       {type, ordered_set},
+       {attributes, record_info(fields, matrix_edu_retry)}]),
+    %% the counters of rate/4, owned by the module's process
+    %% (mod_matrix_gw's init/1 calls this)
+    case ets:info(?RATE_TAB) of
+        undefined -> ets:new(?RATE_TAB, [named_table, public, set, {write_concurrency, true}]);
+        _ -> ok
+    end,
     ok.
 
+%% Cost more of Key in the current window of Period ms, if that
+%% stays within Max; false (nothing counted) otherwise. A fixed window per
+%% key; with no table (the module not started) everything is allowed. A
+%% counter row is {Key, Window, N, Expires}; past rate_max_keys() rows the
+%% expired ones go (counters and the negative cache alike), and
+%% when that is not enough the tenth that expires first: the other origins'
+%% windows go on.
+-spec rate(term(), pos_integer(), pos_integer(), non_neg_integer()) -> boolean().
+rate(Key, Max, Period, Cost) ->
+    Now = erlang:monotonic_time(millisecond),
+    Window = Now div Period,
+    try ets:lookup(?RATE_TAB, Key) of
+        [{_, Window, N, _}] when N + Cost > Max ->
+            false;
+        [{_, Window, _, _}] ->
+            ets:update_counter(?RATE_TAB, Key, {3, Cost}),
+            true;
+        _ when Cost > Max ->
+            false;
+        _ ->
+            case ets:info(?RATE_TAB, size) >= limit(rate_max_keys, ?RATE_MAX_KEYS) of
+                true -> purge_rates(Now);
+                false -> ok
+            end,
+            ets:insert(?RATE_TAB, {Key, Window, Cost, (Window + 1) * Period}),
+            true
+    catch error:badarg ->
+            true
+    end.
+
+%% The rows of the rate table whose time is over; then, while the table is
+%% still full, the tenth of it that expires first.
+purge_rates(Now) ->
+    ets:select_delete(?RATE_TAB, [{{'_', '_', '_', '$1'}, [{'=<', '$1', Now}], [true]},
+                                  {{'_', '$1', negative}, [{'=<', '$1', Now}], [true]}]),
+    Max = limit(rate_max_keys, ?RATE_MAX_KEYS),
+    case ets:info(?RATE_TAB, size) of
+        Size when Size >= Max ->
+            Expiries = lists:sort(ets:select(?RATE_TAB, [{{'_', '_', '_', '$1'}, [], ['$1']},
+                                                         {{'_', '$1', negative}, [], ['$1']}])),
+            Cut = lists:nth(max(1, min(length(Expiries), Size div 10)), Expiries),
+            ets:select_delete(?RATE_TAB, [{{'_', '_', '_', '$1'}, [{'=<', '$1', Cut}], [true]},
+                                          {{'_', '$1', negative}, [{'=<', '$1', Cut}], [true]}]),
+            ok;
+        _ ->
+            ok
+    end.
+
+%% A limit, Default unless the suite set another
+%% (persistent_term {mod_matrix_gw_s2s, limit, Name}).
+-spec limit(atom(), term()) -> term().
+limit(Name, Default) ->
+    persistent_term:get({?MODULE, limit, Name}, Default).
+
+%% A server name as the spec has it (a host name of letters,
+%% digits, dots and dashes, an IPv4 address or a bracketed IPv6 one, and an
+%% optional port), at most 255 bytes.
+-spec valid_server_name(term()) -> boolean().
+valid_server_name(Name) when is_binary(Name), byte_size(Name) =< 255 ->
+    case mod_matrix_gw_http:parse_server_name(Name) of
+        {<<$[, _/binary>>, _} ->
+            true;
+        {HostName, _} ->
+            lists:all(fun(C) -> (C >= $a andalso C =< $z) orelse (C >= $A andalso C =< $Z)
+                                    orelse (C >= $0 andalso C =< $9) orelse C == $. orelse C == $-
+                      end, binary_to_list(HostName));
+        error ->
+            false
+    end;
+valid_server_name(_) ->
+    false.
+
+%% The connection to MatrixServer, made when there is none. The gateway
+%% : the one gate for every new connection, whoever asks (a PDU's
+%% sender, an alias's server, a local query): a server name only, not one
+%% refused a minute ago (negative/1), within ?NEW_CONNECTIONS new ones a
+%% minute and ?MAX_CONNECTIONS live ones; {error, refused} beyond, logged
+%% once a minute. The caller retries as it does for a server that does not
+%% answer (a room's transaction, an EDU's), or reports the server unreachable.
 get_connection(Host, MatrixServer) ->
     case mnesia:dirty_read(matrix_s2s, MatrixServer) of
 	[] ->
-	    try
-                Proc = gen_mod:get_module_proc_check(Host, mod_matrix_gw_s2s_sup),
-                supervisor:start_child(Proc, [Host, MatrixServer])
-            of
-		{ok, undefined} -> {error, ignored};
-		Res -> Res
-            catch
-                error:badarg ->
-                    {error, wrong_host}
-	    end;
+            case admit(MatrixServer) of
+                ok ->
+                    try
+                        Proc = gen_mod:get_module_proc_check(Host, mod_matrix_gw_s2s_sup),
+                        supervisor:start_child(Proc, [Host, MatrixServer])
+                    of
+                        {ok, undefined} -> {error, ignored};
+                        Res -> Res
+                    catch
+                        error:badarg ->
+                            {error, wrong_host}
+                    end;
+                {error, Why} ->
+                    case rate(connections_logged, 1, 60000, 1) of
+                        true ->
+                            ?WARNING_MSG("Matrix gateway: no connection made to ~p: ~s",
+                                         [MatrixServer, Why]);
+                        false ->
+                            ok
+                    end,
+                    {error, refused}
+            end;
         [#matrix_s2s{pid = Pid}] ->
             {ok, Pid}
+    end.
+
+admit(MatrixServer) ->
+    Now = erlang:monotonic_time(millisecond),
+    case valid_server_name(MatrixServer) of
+        false ->
+            {error, "not a server name"};
+        true ->
+            case catch ets:lookup(?RATE_TAB, {negative, MatrixServer}) of
+                [{_, Until, negative}] when Until > Now ->
+                    {error, "refused a moment ago"};
+                _ ->
+                    Live = try mnesia:table_info(matrix_s2s, size) catch _:_ -> 0 end,
+                    case Live >= limit(max_connections, ?MAX_CONNECTIONS) of
+                        true ->
+                            {error, "too many servers connected"};
+                        false ->
+                            case rate(new_connections, limit(new_connections, ?NEW_CONNECTIONS), 60000, 1) of
+                                true -> ok;
+                                false -> {error, "too many new servers a minute"}
+                            end
+                    end
+            end
     end.
 
 get_key(Host, MatrixServer, KeyID) ->
@@ -139,12 +317,6 @@ get_key(Host, MatrixServer, KeyID) ->
                     gen_statem:call(S2SPid, {get_key, KeyID});
                 Error -> Error
             end
-    end.
-
-get_matrix_host_port(Host, MatrixServer) ->
-    case get_destination(Host, MatrixServer) of
-        #{host := H, port := P} -> {H, P};
-        Error -> Error
     end.
 
 %% Where MatrixServer's federation API is, with the name its
@@ -198,44 +370,120 @@ cacerts(Host) ->
 
 check_auth(Host, MatrixServer, AuthParams, Content, Request) ->
     Destination = mod_matrix_gw_opt:matrix_domain(Host),
-    case get_connection(Host, MatrixServer) of
-        {ok, _} when map_get(<<"destination">>, AuthParams) /= Destination,
-                     is_map_key(<<"destination">>, AuthParams) ->
+    case AuthParams of
+        #{<<"destination">> := D} when D /= Destination ->
             %% a request signed for another server is not ours
             ?WARNING_MSG("Request from ~s for another destination: ~p",
-                         [MatrixServer, maps:get(<<"destination">>, AuthParams)]),
+                         [MatrixServer, D]),
             false;
-        {ok, S2SPid} ->
-            #{<<"key">> := KeyID} = AuthParams,
-            Now = erlang:system_time(millisecond),
-            case catch gen_statem:call(S2SPid, {get_key, KeyID}) of
-                {ok, VerifyKey, ValidUntil} when ValidUntil >= Now ->
-                    #{<<"sig">> := Sig} = AuthParams,
-                    JSON = #{<<"method">> => atom_to_binary(Request#request.method, latin1),
-                             <<"uri">> => Request#request.raw_path,
-                             <<"origin">> => MatrixServer,
-                             <<"destination">> => Destination,
-                             <<"signatures">> => #{
-                                 MatrixServer => #{KeyID => Sig}
-                                }
-                            },
-                    JSON2 =
-                        case Content of
-                            none -> JSON;
-                            _ ->
-                                JSON#{<<"content">> => Content}
-                        end,
-                    case check_signature(JSON2, MatrixServer, KeyID, VerifyKey) of
-                        true ->
-                            true;
-                        false ->
-                            ?WARNING_MSG("Failed authentication: ~p", [JSON2]),
-                            false
-                    end;
+        _ ->
+            %% no connection, no key fetch, for a name
+            %% that is no server name
+            case valid_server_name(MatrixServer) of
+                true ->
+                    check_auth(Host, MatrixServer, Destination, AuthParams, Content, Request);
+                false ->
+                    ?DEBUG("Request from an invalid server name ~p", [MatrixServer]),
+                    false
+            end
+    end.
+
+%% The key from the connection there is, or one made
+%% for this request when the new-server budget allows it; a connection made
+%% for a request that does not verify is stopped at once and the server is
+%% not tried again for a minute. Our own server name verifies with our key.
+check_auth(Host, MatrixServer, MatrixServer, AuthParams, Content, Request) ->
+    verify_request(Host, MatrixServer, MatrixServer, AuthParams, Content, Request,
+                   fun(KeyID) -> catch get_key(Host, MatrixServer, KeyID) end);
+check_auth(Host, MatrixServer, Destination, AuthParams, Content, Request) ->
+    case auth_connection(Host, MatrixServer) of
+        {ok, S2SPid, New} ->
+            Res = verify_request(Host, MatrixServer, Destination, AuthParams, Content, Request,
+                                 fun(KeyID) -> catch gen_statem:call(S2SPid, {get_key, KeyID}) end),
+            case {Res, New} of
+                {false, true} ->
+                    negative(MatrixServer),
+                    gen_statem:cast(S2SPid, unused);
                 _ ->
+                    ok
+            end,
+            Res;
+        refused ->
+            false
+    end.
+
+auth_connection(Host, MatrixServer) ->
+    case mnesia:dirty_read(matrix_s2s, MatrixServer) of
+        [#matrix_s2s{pid = Pid}] ->
+            {ok, Pid, false};
+        [] ->
+            Now = erlang:monotonic_time(millisecond),
+            case catch ets:lookup(?RATE_TAB, {negative, MatrixServer}) of
+                [{_, Until, negative}] when Until > Now ->
+                    refused;
+                _ ->
+                    case rate(new_origins, limit(new_origins, ?NEW_ORIGINS), 60000, 1) of
+                        true ->
+                            case get_connection(Host, MatrixServer) of
+                                {ok, Pid} -> {ok, Pid, true};
+                                _ -> refused
+                            end;
+                        false ->
+                            case rate(new_origins_logged, 1, 60000, 1) of
+                                true ->
+                                    ?WARNING_MSG("Matrix gateway: over ~B new servers a minute "
+                                                 "asked for (~s the latest): refused unchecked",
+                                                 [limit(new_origins, ?NEW_ORIGINS), MatrixServer]);
+                                false ->
+                                    ok
+                            end,
+                            refused
+                    end
+            end
+    end.
+
+negative(MatrixServer) ->
+    Until = erlang:monotonic_time(millisecond) + limit(negative_ms, ?NEGATIVE_MS),
+    catch ets:insert(?RATE_TAB, {{negative, MatrixServer}, Until, negative}),
+    ok.
+
+verify_request(_Host, MatrixServer, Destination, AuthParams, Content, Request, GetKey) ->
+    #{<<"key">> := KeyID} = AuthParams,
+    Now = erlang:system_time(millisecond),
+    case GetKey(KeyID) of
+        {ok, VerifyKey, ValidUntil} when ValidUntil >= Now ->
+            #{<<"sig">> := Sig} = AuthParams,
+            JSON = #{<<"method">> => atom_to_binary(Request#request.method, latin1),
+                     <<"uri">> => Request#request.raw_path,
+                     <<"origin">> => MatrixServer,
+                     <<"destination">> => Destination,
+                     <<"signatures">> => #{
+                         MatrixServer => #{KeyID => Sig}
+                        }
+                    },
+            JSON2 =
+                case Content of
+                    none -> JSON;
+                    _ ->
+                        JSON#{<<"content">> => Content}
+                end,
+            case check_signature(JSON2, MatrixServer, KeyID, VerifyKey) of
+                true ->
+                    true;
+                false ->
+                    %% what was asked, not the
+                    %% content, and once a minute per server
+                    case rate({auth_logged, MatrixServer}, 1, 60000, 1) of
+                        true ->
+                            ?WARNING_MSG("Failed authentication: ~s ~s from ~s (~B bytes)",
+                                         [Request#request.method, Request#request.raw_path,
+                                          MatrixServer, Request#request.length]);
+                        false ->
+                            ok
+                    end,
                     false
             end;
-        {error, _} = _Error ->
+        _ ->
             false
     end.
 
@@ -258,7 +506,10 @@ check_signature(Host, JSON, RoomVersion) ->
                                                 true ->
                                                     true;
                                                 false ->
-                                                    ?WARNING_MSG("Failed authentication: ~p", [JSON]),
+                                                    %% the event's
+                                                    %% id fields, not the event
+                                                    ?WARNING_MSG("Failed authentication of an event of ~s in ~p",
+                                                                 [Sender, maps:get(<<"room_id">>, JSON, none)]),
                                                     false
                                             end;
                                         true ->
@@ -295,12 +546,36 @@ init([Host, MatrixServer]) ->
     mnesia:dirty_write(
       #matrix_s2s{to = MatrixServer,
                   pid = self()}),
+    %% the keys are fetched after init, so that the
+    %% supervisor, which starts every connection, is not held by one
+    %% server's discovery; and an unused connection stops
+    idle_timer(),
+    %% what was held for this server before (an
+    %% earlier connection, a restart) is sent soon
+    case held_edus(MatrixServer) of
+        [] -> ok;
+        _ -> erlang:send_after(1000, self(), retry_held_edus)
+    end,
     {ok, state_name,
-     request_keys(
-       MatrixServer,
-       #data{host = Host,
-             matrix_server = MatrixServer,
-             state = #wait{timer_ref = make_ref(), last = 0}})}.
+     #data{host = Host,
+           matrix_server = MatrixServer,
+           used = erlang:monotonic_time(millisecond),
+           state = #wait{timer_ref = make_ref(), last = 0}},
+     [{next_event, internal, request_keys}]}.
+
+idle_ms() ->
+    limit(idle_ms, ?IDLE_MS).
+
+idle_timer() ->
+    erlang:send_after(max(100, min(idle_ms() div 2, 600000)), self(), idle_check).
+
+%% Nothing queued, nothing in flight, nobody waiting for a key, nothing
+%% held (the connection lives on to send it).
+unused(#data{edu_queue = [], edu_txn = undefined, state = #wait{}} = Data) ->
+    held_edus(Data#data.matrix_server) == [];
+unused(#data{edu_queue = [], edu_txn = undefined, state = #pending{key_queue = []}} = Data) ->
+    held_edus(Data#data.matrix_server) == [];
+unused(_) -> false.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -315,38 +590,65 @@ init([Host, MatrixServer]) ->
                           gen_statem:handle_event_result().
 %handle_event({call, From}, _Msg, State, Data) ->
 %    {next_state, State, Data, [{reply, From, ok}]}.
-handle_event({call, From}, get_destination, _State, Data) ->
+%% calls and queued EDUs are uses
+handle_event({call, _} = Type, Msg, State, Data) ->
+    handle_event1(Type, Msg, State, Data#data{used = erlang:monotonic_time(millisecond)});
+handle_event(cast, {queue_edu, _} = Msg, State, Data) ->
+    handle_event1(cast, Msg, State, Data#data{used = erlang:monotonic_time(millisecond)});
+handle_event(internal, request_keys, _State, Data) ->
+    {keep_state, request_keys(Data#data.matrix_server, Data)};
+handle_event(info, idle_check, _State, Data) ->
+    case unused(Data) andalso
+        erlang:monotonic_time(millisecond) - Data#data.used >= idle_ms() of
+        true ->
+            ?DEBUG("Matrix gateway: the connection to ~s is unused, stopped",
+                   [Data#data.matrix_server]),
+            {stop, normal};
+        false ->
+            idle_timer(),
+            keep_state_and_data
+    end;
+%% a connection made for a request that did not verify
+handle_event(cast, unused, _State, Data) ->
+    case unused(Data) of
+        true -> {stop, normal};
+        false -> keep_state_and_data
+    end;
+handle_event(Type, Msg, State, Data) ->
+    handle_event1(Type, Msg, State, Data).
+
+handle_event1({call, From}, get_destination, _State, Data) ->
     {Dest, Data2} = local_destination(Data),
     {keep_state, Data2, [{reply, From, Dest}]};
-handle_event(cast, {queue_edu, EDU}, _State, Data) ->
+handle_event1(cast, {queue_edu, EDU}, _State, Data) ->
     {keep_state, maybe_send_edus(Data#data{edu_queue = Data#data.edu_queue ++ [EDU]})};
-handle_event(info, {edu_txn_res, RequestID, Res}, _State,
+handle_event1(info, {edu_txn_res, RequestID, Res}, _State,
              #data{edu_txn = {RequestID, TxnID, EDUs, Tries}} = Data) ->
     case Res of
         {{_, 200, _}, _, _} ->
-            {keep_state, maybe_send_edus(Data#data{edu_txn = undefined})};
-        _ when Tries < ?MAX_EDU_TRIES ->
+            {keep_state, maybe_send_edus(edu_txn_done(Data#data{edu_txn = undefined}))};
+        _ when Data#data.edu_held /= none ->
+            %% a held transaction failed again: kept, a longer wait
+            {keep_state, maybe_send_edus(edu_held_failed(TxnID, Res, Data#data{edu_txn = undefined}))};
+        _ when Tries < ?MAX_EDU_TRIES, Data#data.edu_backoff == 0 ->
             ?DEBUG("EDU transaction ~s to ~s failed (~p), retrying",
                    [TxnID, Data#data.matrix_server, Res]),
-            erlang:send_after(?EDU_RETRY, self(), resend_edus),
-            {keep_state, Data#data{edu_txn = {undefined, TxnID, EDUs, Tries}}};
+            %% a failed discovery is tried again
+            %% before the next try, not served from its hour's cache
+            erlang:send_after(edu_retry_ms(), self(), resend_edus),
+            {keep_state, forget_failed_destination(
+                           Data#data{edu_txn = {undefined, TxnID, EDUs, Tries}})};
         _ ->
-            ?INFO_MSG("EDU transaction ~s to ~s dropped after ~B tries: ~p",
-                      [TxnID, Data#data.matrix_server, Tries, Res]),
-            {keep_state, maybe_send_edus(Data#data{edu_txn = undefined})}
+            %% out of tries (or the server is known
+            %% to be down): held, not dropped
+            {keep_state, maybe_send_edus(hold_edus(TxnID, EDUs, Tries, Res,
+                                                   Data#data{edu_txn = undefined}))}
     end;
-handle_event(info, resend_edus, _State, #data{edu_txn = {undefined, TxnID, EDUs, Tries}} = Data) ->
+handle_event1(info, resend_edus, _State, #data{edu_txn = {undefined, TxnID, EDUs, Tries}} = Data) ->
     {keep_state, send_edu_txn(TxnID, EDUs, Tries + 1, Data)};
-handle_event({call, From}, get_matrix_host_port, _State, Data) ->
-    case Data#data.matrix_host_port of
-        undefined ->
-            Result = do_get_matrix_host_port(Data#data.matrix_server),
-            Data2 = Data#data{matrix_host_port = Result},
-            {keep_state, Data2, [{reply, From, Result}]};
-        Result ->
-            {keep_state_and_data, [{reply, From, Result}]}
-    end;
-handle_event({call, From}, {get_key, KeyID}, State, Data) ->
+handle_event1(info, retry_held_edus, _State, Data) ->
+    {keep_state, maybe_send_edus(Data#data{edu_due = true, edu_timer = undefined})};
+handle_event1({call, From}, {get_key, KeyID}, State, Data) ->
     Now = erlang:system_time(millisecond),
     case maps:find(KeyID, Data#data.keys) of
         {ok, {Key, ValidUntil}} when ValidUntil >= Now ->
@@ -402,9 +704,10 @@ handle_event({call, From}, {get_key, KeyID}, State, Data) ->
                     end
             end
     end;
-handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
+handle_event1(cast, {key_reply, RequestID, HTTPResult}, State,
              #data{state = #pending{request_id = RequestID,
                                     servers = Servers,
+                                    via = Via,
                                     key_queue = KeyQueue} = St} = Data) ->
     TS = erlang:system_time(millisecond),
     Res =
@@ -422,17 +725,11 @@ handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
                     %% the keys are the server's we asked about
                     #{<<"server_name">> := ServerName} = JSON,
                     ServerName = Data#data.matrix_server,
-                    {KeyID, KeyData, _} = maps:next(maps:iterator(VerifyKeys)),
-                    #{<<"key">> := SKey} = KeyData,
-                    VerifyKey = mod_matrix_gw:base64_decode(SKey),
-                    ?DEBUG("key ~p~n", [VerifyKey]),
-                    ?DEBUG("check ~p~n",
-                           [catch check_signature(
-                                    JSON, Data#data.matrix_server,
-                                    KeyID, VerifyKey)]),
-                    true = check_signature(
-                             JSON, Data#data.matrix_server,
-                             KeyID, VerifyKey),
+                    %% signed by the server under
+                    %% every key it lists, and by the notary that answered
+                    true = key_response_ok(
+                             JSON, Data#data.matrix_server, Via,
+                             fun(NotaryKeyID) -> notary_key(Data#data.host, Via, NotaryKeyID) end),
                     #{<<"valid_until_ts">> := ValidUntil} = JSON,
                     ValidUntil2 =
                         min(ValidUntil,
@@ -504,14 +801,14 @@ handle_event(cast, {key_reply, RequestID, HTTPResult}, State,
         {error, Data2} ->
             {next_state, State, Data2, []}
     end;
-handle_event(info, {timeout, TimerRef, []}, State,
+handle_event1(info, {timeout, TimerRef, []}, State,
              #data{state = #wait{timer_ref = TimerRef}} = Data) ->
     Data2 = request_keys(Data#data.matrix_server, Data),
     {next_state, State, Data2, []};
-handle_event(cast, Msg, State, Data) ->
+handle_event1(cast, Msg, State, Data) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {next_state, State, Data, []};
-handle_event(info, Info, State, Data) ->
+handle_event1(info, Info, State, Data) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {next_state, State, Data, []}.
 
@@ -561,10 +858,11 @@ resolve_destination(Host, MatrixServer) ->
     WellKnown =
         fun(Name) ->
                 URL = <<"https://", Name/binary, "/.well-known/matrix/server">>,
-                case httpc:request(get, {URL, []},
+                %% 64 KiB at most
+                case mod_matrix_gw_http:request(get, {URL, []},
                                    [{timeout, 5000}, {connect_timeout, 5000},
                                     {ssl, mod_matrix_gw_http:tls_options(Name, CACerts)}],
-                                   [{sync, true}, {body_format, binary}]) of
+                                   [{sync, true}, {body_format, binary}], 65536) of
                     {ok, {{_, 200, _}, _Headers, Body}} -> Body;
                     _ -> error
                 end
@@ -580,10 +878,115 @@ resolve_destination(Host, MatrixServer) ->
     ?DEBUG("~s is at ~p", [MatrixServer, Res]),
     Res.
 
+maybe_send_edus(#data{edu_txn = undefined, edu_due = true} = Data) ->
+    %% the oldest held transaction first, under its
+    %% own id (a server that had taken it answers from its cache)
+    case held_edus(Data#data.matrix_server) of
+        [#matrix_edu_retry{key = Key, txn_id = TxnID, edus = EDUs} | _] ->
+            send_edu_txn(TxnID, EDUs, 1, Data#data{edu_held = Key});
+        [] ->
+            maybe_send_edus(Data#data{edu_due = false, edu_backoff = 0})
+    end;
 maybe_send_edus(#data{edu_txn = undefined, edu_queue = [_ | _] = Queue} = Data) ->
     {EDUs, Rest} = lists:split(min(?MAX_EDUS, length(Queue)), Queue),
     send_edu_txn(p1_rand:get_string(), EDUs, 1, Data#data{edu_queue = Rest});
 maybe_send_edus(Data) ->
+    Data.
+
+%% EDU transactions held for MatrixServer, oldest
+%% first.
+-spec held_edus(binary()) -> [#matrix_edu_retry{}].
+held_edus(MatrixServer) ->
+    try mnesia:dirty_select(matrix_edu_retry,
+                            [{#matrix_edu_retry{key = {MatrixServer, '_', '_'}, _ = '_'}, [], ['$_']}])
+    catch _:_ -> []
+    end.
+
+edu_retry_ms() ->
+    limit(edu_retry_ms, ?EDU_RETRY).
+
+%% A transaction got through: a held one's row goes; whatever else is held
+%% for the server is due now (it answers again).
+edu_txn_done(#data{edu_held = none, edu_backoff = 0} = Data) ->
+    Data;
+edu_txn_done(#data{edu_held = Key} = Data) ->
+    case Key of
+        none -> ok;
+        _ -> mnesia:dirty_delete(matrix_edu_retry, Key)
+    end,
+    case held_edus(Data#data.matrix_server) of
+        [] ->
+            ?INFO_MSG("Matrix gateway: ~s takes EDUs again; every held one sent",
+                      [Data#data.matrix_server]),
+            Data#data{edu_held = none, edu_backoff = 0, edu_due = false};
+        _ ->
+            Data#data{edu_held = none, edu_due = true}
+    end.
+
+edu_held_failed(TxnID, Res, Data) ->
+    ?DEBUG("Held EDU transaction ~s to ~s failed again: ~p",
+           [TxnID, Data#data.matrix_server, Res]),
+    backoff(forget_failed_destination(Data#data{edu_held = none, edu_due = false})).
+
+%% Out of tries: typing and receipts are dropped (they are of the moment),
+%% the rest held. Logged once per outage (the device is told nothing).
+hold_edus(TxnID, EDUs, Tries, Res, Data) ->
+    Server = Data#data.matrix_server,
+    Keep = [E || E <- EDUs, not transient_edu(E)],
+    case Keep of
+        [] ->
+            ok;
+        _ ->
+            Now = erlang:system_time(microsecond),
+            mnesia:dirty_write(#matrix_edu_retry{key = {Server, Now, erlang:unique_integer([positive])},
+                                                 txn_id = TxnID, edus = Keep}),
+            Held = held_edus(Server),
+            case length(Held) - limit(max_held_edus, ?MAX_HELD) of
+                Over when Over > 0 ->
+                    ?WARNING_MSG("Matrix gateway: over ~B EDU transactions held for ~s; "
+                                 "the oldest ~B dropped",
+                                 [limit(max_held_edus, ?MAX_HELD), Server, Over]),
+                    [mnesia:dirty_delete(matrix_edu_retry, K)
+                     || #matrix_edu_retry{key = K} <- lists:sublist(Held, Over)];
+                _ ->
+                    ok
+            end
+    end,
+    case Data#data.edu_backoff of
+        0 ->
+            ?INFO_MSG("Matrix gateway: EDU transaction ~s to ~s failed ~B times (~p); "
+                      "~B EDUs held, sent again when ~s answers",
+                      [TxnID, Server, Tries, Res, length(Keep), Server]),
+            backoff(forget_failed_destination(Data));
+        _ ->
+            Data
+    end.
+
+transient_edu(#{<<"edu_type">> := T}) ->
+    T == <<"m.typing">> orelse T == <<"m.receipt">>;
+transient_edu(_) ->
+    false.
+
+%% The next wait for the held transactions: from a minute, doubling, at
+%% most a day.
+backoff(Data) ->
+    Min = limit(edu_backoff_min, ?EDU_BACKOFF_MIN),
+    Wait = case Data#data.edu_backoff of
+               0 -> Min;
+               B -> min(B * 2, ?EDU_BACKOFF_MAX)
+           end,
+    case Data#data.edu_timer of
+        undefined -> ok;
+        Old -> erlang:cancel_timer(Old)
+    end,
+    Data#data{edu_backoff = Wait,
+              edu_timer = erlang:send_after(Wait, self(), retry_held_edus)}.
+
+%% A discovery that found nothing is not kept for its hour when a
+%% transaction failed: the next try looks again.
+forget_failed_destination(#data{destination = {error, _}} = Data) ->
+    Data#data{destination = undefined};
+forget_failed_destination(Data) ->
     Data.
 
 send_edu_txn(TxnID, EDUs, Tries, Data) ->
@@ -595,12 +998,17 @@ send_edu_txn(TxnID, EDUs, Tries, Data) ->
     Self = self(),
     Receiver = fun({RequestID, Res}) -> Self ! {edu_txn_res, RequestID, Res} end,
     %% the destination from this process's own cache: send_request/8 would
-    %% ask this very process for it
-    {Dest, Data1} = local_destination(Data),
+    %% ask this very process for it. The gateway: a suite stands in for the
+    %% remote server (persistent_term {mod_matrix_gw_s2s, edu_sender}, a
+    %% fun of the server and the body giving the answer)
+    {Dest, Data1} = case persistent_term:get({?MODULE, edu_sender}, undefined) of
+                        undefined -> local_destination(Data);
+                        _ -> {stand_in, Data}
+                    end,
     case catch send_with(Dest,
                  Host, put, Data#data.matrix_server,
                  [<<"_matrix">>, <<"federation">>, <<"v1">>, <<"send">>, TxnID],
-                 [], Body, [{timeout, 5000}, {connect_timeout, 5000}],
+                 [], Body, [{timeout, ?EDU_TIMEOUT}, {connect_timeout, 5000}],
                  [{sync, false}, {receiver, Receiver}]) of
         {ok, RequestID} ->
             Data1#data{edu_txn = {RequestID, TxnID, EDUs, Tries}};
@@ -612,6 +1020,11 @@ send_edu_txn(TxnID, EDUs, Tries, Data) ->
 
 send_with(error, _Host, _Method, MatrixServer, _Path, _Query, _JSON, _HTTPOptions, _Options) ->
     {error, {no_destination, MatrixServer}};
+send_with(stand_in, _Host, _Method, MatrixServer, _Path, _Query, JSON, _HTTPOptions, Options) ->
+    Ref = make_ref(),
+    Res = (persistent_term:get({?MODULE, edu_sender}))(MatrixServer, JSON),
+    (proplists:get_value(receiver, Options))({Ref, Res}),
+    {ok, Ref};
 send_with(Dest, Host, Method, MatrixServer, Path, Query, JSON, HTTPOptions, Options) ->
     mod_matrix_gw:send_request(Host, Method, MatrixServer, Dest, Path, Query, JSON,
                                HTTPOptions, Options).
@@ -626,94 +1039,6 @@ local_destination(Data) ->
             TTL = case Dest of error -> ?DESTINATION_ERROR_TTL; _ -> ?DESTINATION_TTL end,
             {Dest, Data#data{destination = {Dest, Now + TTL}}}
     end.
-
-do_get_matrix_host_port(MatrixServer) ->
-    case binary:split(MatrixServer, <<":">>) of
-        [Addr] ->
-            case inet:parse_address(binary_to_list(Addr)) of
-                {ok, _} ->
-                    {Addr, 8448};
-                _ ->
-                    URL = <<"https://", Addr/binary, "/.well-known/matrix/server">>,
-                    HTTPRes =
-                        httpc:request(get, {URL, []},
-                                      [{timeout, 5000}],
-                                      [{sync, true},
-                                       {body_format, binary}]),
-                    ?DEBUG("HTTPRes ~p~n", [HTTPRes]),
-                    Res =
-                        case HTTPRes of
-                            {ok, {{_, 200, _}, _Headers, Body}} ->
-                                try
-                                    case misc:json_decode(Body) of
-                                        #{<<"m.server">> := Server} ->
-                                            case binary:split(Server, <<":">>) of
-                                                [ServerAddr] ->
-                                                    {ServerAddr, 8448};
-                                                [ServerAddr, ServerPort] ->
-                                                    {ServerAddr, binary_to_integer(ServerPort)}
-                                            end
-                                    end
-                                catch
-                                    _:_ ->
-                                        error
-                                end;
-                            _ ->
-                                error
-                        end,
-                    case Res of
-                        error ->
-                            SRVName =
-                                "_matrix._tcp." ++ binary_to_list(MatrixServer),
-                            case inet_res:getbyname(SRVName, srv, 5000) of
-                                {ok, HostEntry} ->
-                                    {hostent, _Name, _Aliases, _AddrType, _Len,
-                                     HAddrList} = HostEntry,
-                                    case h_addr_list_to_host_ports(HAddrList) of
-                                        {ok, [{Host, Port} | _]} ->
-                                            {list_to_binary(Host), Port};
-                                        _ ->
-                                            {MatrixServer, 8448}
-                                    end;
-                                {error, _} ->
-                                    {MatrixServer, 8448}
-                            end;
-                        _ ->
-                            Res
-                    end
-            end;
-        [Addr, SPort] ->
-            case catch binary_to_integer(SPort) of
-                Port when is_integer(Port) ->
-                    {Addr, Port};
-                _ ->
-                    error
-            end
-    end.
-
-%% Copied from xmpp_stream_out.erl
--type host_port() :: {inet:hostname(), inet:port_number()}.
--type h_addr_list() :: [{integer(), integer(), inet:port_number(), string()}].
--spec h_addr_list_to_host_ports(h_addr_list()) -> {ok, [host_port(),...]} |
-						  {error, nxdomain}.
-h_addr_list_to_host_ports(AddrList) ->
-    PrioHostPorts = lists:flatmap(
-		      fun({Priority, Weight, Port, Host}) ->
-			      N = case Weight of
-				      0 -> 0;
-				      _ -> (Weight + 1) * p1_rand:uniform()
-				  end,
-			      [{Priority * 65536 - N, Host, Port}];
-			 (_) ->
-			      []
-		      end, AddrList),
-    HostPorts = [{Host, Port}
-		 || {_Priority, Host, Port} <- lists:usort(PrioHostPorts)],
-    case HostPorts of
-	[] -> {error, nxdomain};
-	_ -> {ok, HostPorts}
-    end.
-
 
 %% The Host header a request carries when the server is reached
 %% at another name than its own (an SRV target).
@@ -733,6 +1058,68 @@ check_signature(JSON, SignatureName, KeyID, VerifyKey) ->
         _:_ ->
             false
     end.
+
+%% A /key/v2 answer about ServerName is taken only
+%% when every key in its verify_keys is a key of ed25519 that signed the
+%% answer (the spec: "signed by each of the keys"), and, when a notary Via
+%% answered for ServerName, when it carries a signature of Via's that
+%% verifies with Via's own key (GetNotaryKey(KeyID) -> {ok, Key, _}).
+-spec key_response_ok(map(), binary(), binary() | undefined, fun((binary()) -> term())) -> boolean().
+key_response_ok(#{<<"verify_keys">> := VerifyKeys} = JSON, ServerName, Via, GetNotaryKey)
+  when is_map(VerifyKeys), map_size(VerifyKeys) > 0 ->
+    SelfSigned =
+        lists:all(
+          fun({<<"ed25519:", _/binary>> = KeyID, #{<<"key">> := SKey}}) when is_binary(SKey) ->
+                  case catch mod_matrix_gw:base64_decode(SKey) of
+                      Key when is_binary(Key), byte_size(Key) == 32 ->
+                          check_signature(JSON, ServerName, KeyID, Key);
+                      _ ->
+                          false
+                  end;
+             (_) ->
+                  false
+          end, maps:to_list(VerifyKeys)),
+    SelfSigned andalso
+        case Via of
+            ServerName -> true;
+            undefined -> true;
+            _ -> notary_signed(JSON, Via, GetNotaryKey)
+        end;
+key_response_ok(_, _, _, _) ->
+    false.
+
+%% A notary's key, through the notary's own connection, waited for at most
+%% ten seconds (two notaries fetching each other's keys through each other
+%% must not wait for ever).
+notary_key(Host, Via, KeyID) ->
+    Conn = case mod_matrix_gw_opt:matrix_domain(Host) of
+               Via -> own;
+               _ -> catch get_connection(Host, Via)
+           end,
+    case Conn of
+        own ->
+            get_key(Host, Via, KeyID);
+        {ok, Pid} when Pid /= self() ->
+            catch gen_statem:call(Pid, {get_key, KeyID}, 10000);
+        _ ->
+            error
+    end.
+
+notary_signed(#{<<"signatures">> := #{} = Sigs} = JSON, Via, GetNotaryKey) ->
+    case Sigs of
+        #{Via := #{} = ViaSigs} ->
+            lists:any(
+              fun(KeyID) ->
+                      case GetNotaryKey(KeyID) of
+                          {ok, Key, _} -> check_signature(JSON, Via, KeyID, Key);
+                          _ -> false
+                      end
+              end, maps:keys(ViaSigs));
+        _ ->
+            false
+    end;
+notary_signed(_, _, _) ->
+    false.
 
 request_keys(Via, Data) ->
     %% found by the spec's discovery, over verified TLS
@@ -754,8 +1141,9 @@ request_keys(Via, Data) ->
                   "/_matrix/key/v2/query/", MatrixServer/binary>>
         end,
     Self = self(),
+    %% the keys' answer read up to 1 MiB
     {ok, RequestID} =
-        httpc:request(get, {URL, host_header(Dest)},
+        mod_matrix_gw_http:request(get, {URL, host_header(Dest)},
                       mod_matrix_gw_http:http_options(
                         [{timeout, 5000}, {connect_timeout, 5000}], Dest,
                         cacerts(Data#data.host)),
@@ -764,7 +1152,7 @@ request_keys(Via, Data) ->
                         fun({RequestId, Result}) ->
                                 gen_statem:cast(
                                   Self, {key_reply, RequestId, Result})
-                        end}]),
+                        end}], 1048576),
     case Data#data.state of
         #pending{request_id = OldReqID} = St ->
             case OldReqID of
@@ -773,10 +1161,11 @@ request_keys(Via, Data) ->
                 _ ->
                     httpc:cancel_request(OldReqID)
             end,
-            Data#data{state = St#pending{request_id = RequestID}};
+            Data#data{state = St#pending{request_id = RequestID, via = Via}};
         #wait{timer_ref = TimerRef} ->
             erlang:cancel_timer(TimerRef),
             NotaryServers = mod_matrix_gw_opt:notary_servers(Data#data.host),
             Data#data{state = #pending{request_id = RequestID,
-                                       servers = NotaryServers}}
+                                       servers = NotaryServers,
+                                       via = Via}}
     end.

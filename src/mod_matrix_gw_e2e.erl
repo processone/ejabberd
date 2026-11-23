@@ -58,7 +58,7 @@
 -module(mod_matrix_gw_e2e).
 
 -export([create_db/0, route_iq/1, disco_features/1,
-         user_devices/2, keys_query/2, keys_claim/2,
+         user_devices/2, keys_query/2, keys_claim/2, keys_claim/3,
          inbound_edu/3, membership/4,
          devices_of/2, resource_of/3, otk_count/3,
          delete_device/3, forget_device/3,
@@ -80,6 +80,16 @@
 -define(FRESH_MS, 3600000).
 -define(REMOTE_MAX, 10000).
 -define(FED_TIMEOUT, 10000).
+%% one-time keys of our devices one server may
+%% claim a minute, keys one <keys-claim/> may
+%% name, and keys of our devices one local user may claim a minute
+-define(CLAIMS_PER_MINUTE, 100).
+-define(MAX_CLAIM, 100).
+-define(LOCAL_CLAIMS_PER_MINUTE, 200).
+%% active devices one account may have; a new one
+%% past it retires the oldest unbound device (then the oldest whose
+%% resource is not online)
+-define(MAX_DEVICES, 20).
 
 -type us() :: {binary(), binary()}.
 
@@ -380,14 +390,14 @@ bad_signature(IQ, Lang) ->
     Err = xmpp:err_not_acceptable(<<"The keys do not verify">>, Lang),
     xmpp:make_error(IQ, Err#stanza_error{sub_els = [el(<<"bad-signature">>, [{<<"xmlns">>, ?NS}], [])]}).
 
-get_iq(Host, _LUser, #iq{lang = Lang} = IQ, <<"keys-query">>, El) ->
+get_iq(Host, LUser, #iq{lang = Lang} = IQ, <<"keys-query">>, El) ->
     Users = lists:usort([fxml:get_tag_attr_s(<<"id">>, C)
                          || #xmlel{name = <<"user">>} = C <- El#xmlel.children]),
     case length(Users) > ?MAX_QUERY of
         true ->
             xmpp:make_error(IQ, xmpp:err_resource_constraint(<<"At most 50 users">>, Lang));
         false ->
-            Answers = query_users(Host, Users),
+            Answers = query_users(Host, LUser, Users),
             xmpp:make_iq_result(
               IQ, el(<<"keys-query">>, [{<<"xmlns">>, ?NS}],
                      [el(<<"user">>, [{<<"id">>, U}, {<<"stream_id">>, integer_to_binary(S)},
@@ -395,11 +405,27 @@ get_iq(Host, _LUser, #iq{lang = Lang} = IQ, <<"keys-query">>, El) ->
                          [{xmlcdata, misc:json_encode(Obj)}])
                       || {U, S, F, Obj} <- Answers]))
     end;
-get_iq(Host, _LUser, IQ, <<"keys-claim">>, El) ->
+get_iq(Host, LUser, #iq{lang = Lang} = IQ, <<"keys-claim">>, El) ->
     Wanted = [{fxml:get_tag_attr_s(<<"user">>, C), fxml:get_tag_attr_s(<<"device">>, C),
                fxml:get_tag_attr_s(<<"algorithm">>, C)}
               || #xmlel{name = <<"key">>} = C <- El#xmlel.children],
-    Claimed = claim(Host, [{U, D} || {U, D, A} <- Wanted, A == ?OTK_ALG, U /= <<>>, D /= <<>>]),
+    Asked = lists:usort([{U, D} || {U, D, A} <- Wanted, A == ?OTK_ALG, U /= <<>>, D /= <<>>]),
+    %% at most ?MAX_CLAIM keys an iq, and the keys
+    %% of our own devices within the user's claims a minute
+    Domain = mod_matrix_gw_opt:matrix_domain(Host),
+    Ours = length([U || {U, _} <- Asked, server_of(U) == Domain]),
+    case length(Wanted) > ?MAX_CLAIM orelse
+        not mod_matrix_gw_s2s:rate({claims_local, LUser, Host},
+                                   mod_matrix_gw_s2s:limit(local_claims, ?LOCAL_CLAIMS_PER_MINUTE),
+                                   60000, Ours) of
+        true ->
+            xmpp:make_error(IQ, xmpp:err_resource_constraint(<<"Too many keys claimed">>, Lang));
+        false ->
+            claim_iq(Host, IQ, Wanted, Asked)
+    end.
+
+claim_iq(Host, IQ, Wanted, Asked) ->
+    Claimed = claim(Host, Asked),
     Els = [case maps:find({U, D}, Claimed) of
                {ok, {KeyID, Obj}} ->
                    el(<<"key">>, [{<<"user">>, U}, {<<"device">>, D}, {<<"algorithm">>, ?OTK_ALG},
@@ -447,6 +473,10 @@ bind(Host, LUser, Res, ID, Name, Replaces) ->
     US = {LUser, Host},
     Live = ejabberd_sm:get_user_resources(LUser, Host),
     F = fun() ->
+                OldRes = case Replaces /= <<>> andalso mnesia:read(matrix_device, {US, Replaces}, write) of
+                             [#matrix_device{state = active, resource = OR}] -> OR;
+                             _ -> none
+                         end,
                 case mnesia:read(matrix_device, {US, ID}, write) of
                     [#matrix_device{state = active, resource = R}]
                       when R /= Res, R /= <<>> ->
@@ -461,31 +491,47 @@ bind(Host, LUser, Res, ID, Name, Replaces) ->
                  || #matrix_device{us_dev = {_, Other}, resource = R, state = active} = D
                         <- mnesia:index_read(matrix_device, US, #matrix_device.us),
                     R == Res, Other /= ID],
-                New = case mnesia:read(matrix_device, {US, ID}, write) of
-                          [#matrix_device{state = active} = D] ->
-                              D#matrix_device{resource = Res, name = Name};
-                          _ ->
-                              #matrix_device{us_dev = {US, ID}, us = US, resource = Res, name = Name,
-                                             created = erlang:system_time(millisecond)}
-                      end,
+                {New, Fresh} =
+                    case mnesia:read(matrix_device, {US, ID}, write) of
+                        [#matrix_device{state = active} = D] ->
+                            {D#matrix_device{resource = Res, name = Name}, false};
+                        _ ->
+                            {#matrix_device{us_dev = {US, ID}, us = US, resource = Res, name = Name,
+                                            created = erlang:system_time(millisecond)}, true}
+                    end,
                 mnesia:write(New),
-                case Replaces /= <<>> andalso Replaces /= ID andalso retire(US, Replaces) of
-                    true -> {replaced, Replaces};
-                    false -> none
-                end
+                Evicted = case Fresh of
+                              true -> evict(US, ID, Replaces, Live);
+                              false -> none
+                          end,
+                    %% the replaced device's resource, before the unbinding above
+                %% (read again: it is <<>> now when it was Res)
+                {case Replaces /= <<>> andalso Replaces /= ID andalso OldRes /= none
+                     andalso retire(US, Replaces) of
+                     true -> {replaced, Replaces, OldRes};
+                     false -> none
+                 end, Evicted}
         end,
     case mnesia:transaction(F) of
         {aborted, {conflict, R}} ->
             ?INFO_MSG("matrix e2e: device ~s of ~s is bound to another resource", [ID, LUser]),
             {conflict, R};
-        {atomic, Replaced} ->
+        {atomic, {Replaced, Evicted}} ->
+            evicted(Host, LUser, Evicted),
             ?INFO_MSG("matrix e2e: device ~s of ~s bound to its resource~s",
                       [ID, LUser, case Replaced of
-                                      {replaced, O} -> [", replacing ", O];
+                                      {replaced, O, _} -> [", replacing ", O];
                                       none -> ""
                                   end]),
             case Replaced of
-                {replaced, Old} ->
+                {replaced, Old, OldRes} when OldRes == Res; OldRes == <<>> ->
+                    %% the same installation, or
+                    %% one bound nowhere: nobody to tell, so its queue and
+                    %% its row go now
+                    drop_queue(Host, LUser, Old),
+                    forget_device(Host, LUser, Old),
+                    device_changed(Host, LUser, Old, deleted, none);
+                {replaced, Old, _} ->
                     queue(Host, LUser, Old, {device_deleted, Old}),
                     device_changed(Host, LUser, Old, deleted, none);
                 none ->
@@ -493,6 +539,49 @@ bind(Host, LUser, Res, ID, Name, Replaces) ->
             end,
             {ok, stream(US)}
     end.
+
+%%  In bind/6's transaction, a new device ID of US written: past
+%% ?MAX_DEVICES active ones, the oldest bound to no resource is retired, or
+%% else the oldest whose resource is not online (Live); never ID itself nor
+%% the device it replaces (retired by bind/6 already). {Device, Resource} or
+%% none.
+evict(US, ID, Replaces, Live) ->
+    Active = [D || #matrix_device{state = active, us_dev = {_, Other}} = D
+                       <- mnesia:index_read(matrix_device, US, #matrix_device.us),
+                   Other /= ID, Other /= Replaces],
+    case length(Active) + 1 > max_devices() of
+        true ->
+            Oldest = fun(Ds) -> lists:keysort(#matrix_device.created, Ds) end,
+            case Oldest([D || #matrix_device{resource = <<>>} = D <- Active])
+                ++ Oldest([D || #matrix_device{resource = R} = D <- Active,
+                                R /= <<>>, not lists:member(R, Live)]) of
+                [#matrix_device{us_dev = {_, Victim}, resource = R} | _] ->
+                    retire(US, Victim),
+                    {Victim, R};
+                [] ->
+                    none
+            end;
+        false ->
+            none
+    end.
+
+max_devices() ->
+    persistent_term:get({?MODULE, max_devices}, ?MAX_DEVICES).
+
+%% The device evict/4 retired: one bound nowhere goes with its queue (as an
+%% A15 replace); one with a resource is told at its next session.
+evicted(_Host, _LUser, none) ->
+    ok;
+evicted(Host, LUser, {Old, Res}) ->
+    ?INFO_MSG("matrix e2e: device ~s of ~s retired: over ~B devices", [Old, LUser, max_devices()]),
+    case Res of
+        <<>> ->
+            drop_queue(Host, LUser, Old),
+            forget_device(Host, LUser, Old);
+        _ ->
+            queue(Host, LUser, Old, {device_deleted, Old})
+    end,
+    device_changed(Host, LUser, Old, deleted, none).
 
 %% The device id a resource registered.
 bound_device(Host, LUser, Res) ->
@@ -747,6 +836,13 @@ queue(Host, LUser, DeviceID, Item) ->
             F({queue, LUser, DeviceID, Item})
     end.
 
+%% A device's queue emptied (mod_matrix_gw_todevice:drop/3).
+drop_queue(Host, LUser, DeviceID) ->
+    case sink() of
+        undefined -> mod_matrix_gw_todevice:drop(Host, LUser, DeviceID);
+        F -> F({drop, LUser, DeviceID})
+    end.
+
 %% What goes out (EDUs, queue items) handed to a function of the suite's
 %% instead (set_sink/1); undefined outside the suite.
 sink() ->
@@ -813,12 +909,14 @@ local_keys(Host, LUser, Devices, WithNames) ->
         end,
     {stream(US), X#{<<"device_keys">> => DKs}}.
 
-%% Users' keys for <keys-query/>: [{MXID, Stream, Fresh, Obj}].
-query_users(Host, Users) ->
+%% Users' keys for <keys-query/> by Asker (a local part): [{MXID, Stream,
+%% Fresh, Obj}]. The device names for the asker's own devices only
+%% (not another user's).
+query_users(Host, Asker, Users) ->
     Domain = mod_matrix_gw_opt:matrix_domain(Host),
     {Local, Remote} = lists:partition(fun(U) -> server_of(U) == Domain end, Users),
     LocalAns = [case local_part(Host, U) of
-                    {ok, L} -> {S, Obj} = local_keys(Host, L, [], true), {U, S, true, Obj};
+                    {ok, L} -> {S, Obj} = local_keys(Host, L, [], L == Asker), {U, S, true, Obj};
                     error -> {U, 0, true, #{<<"device_keys">> => #{}}}
                 end || U <- Local],
     Now = erlang:system_time(millisecond),
@@ -1028,7 +1126,14 @@ user_devices(Host, MXID) ->
                              #{<<"user_id">> => MXID, <<"stream_id">> => Stream,
                                <<"devices">> => Devices})};
         error ->
-            {404, #{<<"errcode">> => <<"M_NOT_FOUND">>, <<"error">> => <<"no such user">>}}
+            %% a user of our domain who is not here
+            %% looks like one without devices (no account enumeration)
+            case server_of(MXID) == mod_matrix_gw_opt:matrix_domain(Host) of
+                true ->
+                    {200, #{<<"user_id">> => MXID, <<"stream_id">> => 0, <<"devices">> => []}};
+                false ->
+                    {404, #{<<"errcode">> => <<"M_NOT_FOUND">>, <<"error">> => <<"no such user">>}}
+            end
     end.
 
 %% POST /user/keys/query
@@ -1060,8 +1165,32 @@ with_key(MXID, K, Obj, Acc) ->
 
 %% POST /user/keys/claim
 -spec keys_claim(binary(), term()) -> {integer(), map()}.
-keys_claim(Host, #{<<"one_time_keys">> := #{} = Asked}) ->
-    OTKs = maps:fold(
+keys_claim(Host, JSON) ->
+    keys_claim(Host, undefined, JSON).
+
+%% Origin's claims within ?CLAIMS_PER_MINUTE keys of
+%% our devices a minute (undefined: not counted), M_LIMIT_EXCEEDED past it
+%% and nothing claimed; a user of our domain who is not here answered as
+%% one without keys.
+-spec keys_claim(binary(), binary() | undefined, term()) -> {integer(), map()}.
+keys_claim(Host, Origin, #{<<"one_time_keys">> := #{} = Asked}) ->
+    Domain = mod_matrix_gw_opt:matrix_domain(Host),
+    Cost = lists:sum([maps:size(Devs) || {MXID, #{} = Devs} <- maps:to_list(Asked), server_of(MXID) == Domain]),
+    Max = mod_matrix_gw_s2s:limit(claims, ?CLAIMS_PER_MINUTE),
+    case Origin == undefined orelse mod_matrix_gw_s2s:rate({claims, Origin}, Max, 60000, Cost) of
+        true ->
+            {200, #{<<"one_time_keys">> => claim_asked(Host, Domain, Asked)}};
+        false ->
+            ?INFO_MSG("matrix e2e: ~s claims over ~B keys a minute: refused", [Origin, Max]),
+            {429, #{<<"errcode">> => <<"M_LIMIT_EXCEEDED">>,
+                    <<"error">> => <<"too many one-time key claims">>,
+                    <<"retry_after_ms">> => 60000}}
+    end;
+keys_claim(_Host, _Origin, _) ->
+    {400, #{<<"errcode">> => <<"M_BAD_JSON">>, <<"error">> => <<"one_time_keys missing">>}}.
+
+claim_asked(Host, Domain, Asked) ->
+    maps:fold(
              fun(MXID, #{} = Devs, Acc) ->
                      case local_part(Host, MXID) of
                          {ok, L} ->
@@ -1075,14 +1204,14 @@ keys_claim(Host, #{<<"one_time_keys">> := #{} = Asked}) ->
                                      end, #{}, Devs),
                              Acc#{MXID => Got};
                          error ->
-                             Acc
+                             case server_of(MXID) == Domain of
+                                 true -> Acc#{MXID => #{}};
+                                 false -> Acc
+                             end
                      end;
                 (_, _, Acc) ->
                      Acc
-             end, #{}, Asked),
-    {200, #{<<"one_time_keys">> => OTKs}};
-keys_claim(_Host, _) ->
-    {400, #{<<"errcode">> => <<"M_BAD_JSON">>, <<"error">> => <<"one_time_keys missing">>}}.
+             end, #{}, Asked).
 
 %%--------------------------------------------------------------------
 %% Helpers

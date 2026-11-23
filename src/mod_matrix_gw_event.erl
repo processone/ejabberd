@@ -65,8 +65,8 @@
          forwarded/3, event_el/2, plain_event_el/4, forward_message/4,
          retraction_els/3, encryption_content/0, encryption_event/1,
          sent_message/5, sent_el/1, room_info_el/1, room_iq/1,
-         not_encrypted/1, not_encrypted_message/4,
-         record_sent/4, lookup_sent/2, route_iq/1,
+         not_encrypted/1, not_encrypted_message/4, too_large/1,
+         record_sent/4, lookup_sent/2, sent_event/1, route_iq/1,
          disco_features/1, membership/4]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -103,8 +103,11 @@
                     state_key => binary()}.
 
 create_db() ->
+    %% indexed by event id too, for the XMPP id
+    %% and the sender of an event the room no longer holds
     ejabberd_mnesia:create(?MODULE, matrix_sent,
                            [{disc_copies, [node()]}, {type, set},
+                            {index, [event_id]},
                             {attributes, record_info(fields, matrix_sent)}]),
     ejabberd_mnesia:create(?MODULE, matrix_sent_log,
                            [{disc_copies, [node()]}, {type, ordered_set},
@@ -216,6 +219,15 @@ sent_el(EventID) ->
 not_encrypted(Lang) ->
     Err = xmpp:err_not_acceptable(<<"the room is encrypted">>, Lang),
     Err#stanza_error{sub_els = [#xmlel{name = <<"not-encrypted">>,
+                                       attrs = [{<<"xmlns">>, ?NS_E2E}]}]}.
+
+%% The error an event (or a message) too large for a PDU comes back as
+%% : not-acceptable with the namespace's <too-large/>, as a
+%% <to-device/> over 64 KiB.
+-spec too_large(binary()) -> stanza_error().
+too_large(Lang) ->
+    Err = xmpp:err_not_acceptable(<<"Over the 64 KiB a Matrix event may have">>, Lang),
+    Err#stanza_error{sub_els = [#xmlel{name = <<"too-large">>,
                                        attrs = [{<<"xmlns">>, ?NS_E2E}]}]}.
 
 %% The error a plain message into an encrypted room comes back as, from the
@@ -380,10 +392,13 @@ room_iq(_) ->
 
 %% <room-info/> from what the room module read of its state: id, version,
 %% encryption (undefined or the m.room.encryption content), direct, power
-%% (the asking user's level), members [{MXID, Membership}].
+%% (the asking user's level), members [{MXID, Membership} | {MXID,
+%% Membership, Level}], and redact (optional: the level a redaction of
+%% another's event needs; with each member's level, what the device judges
+%% a forwarded m.room.redaction by).
 -spec room_info_el(map()) -> xmlel().
 room_info_el(#{id := ID, version := Version, encryption := Enc, direct := Direct,
-               power := Power, members := Members}) ->
+               power := Power, members := Members} = Info) ->
     EncAttrs =
         case Enc of
             #{<<"algorithm">> := Alg} when is_binary(Alg) ->
@@ -397,10 +412,13 @@ room_info_el(#{id := ID, version := Version, encryption := Enc, direct := Direct
            attrs = [{<<"xmlns">>, ?NS_E2E}, {<<"id">>, ID}, {<<"version">>, Version}] ++
                EncAttrs ++
                [{<<"direct">>, case Direct of true -> <<"1">>; false -> <<"0">> end},
-                {<<"power">>, integer_to_binary(Power)}],
+                {<<"power">>, integer_to_binary(Power)}] ++
+               [{<<"redact">>, integer_to_binary(R)} || R <- [maps:get(redact, Info, none)], is_integer(R)],
            children = [#xmlel{name = <<"member">>,
-                              attrs = [{<<"id">>, M}, {<<"membership">>, S}]}
-                       || {M, S} <- lists:sort(Members)]}.
+                              attrs = [{<<"id">>, element(1, M)}, {<<"membership">>, element(2, M)}] ++
+                                  [{<<"power">>, integer_to_binary(P)}
+                                   || tuple_size(M) == 3, P <- [element(3, M)], is_integer(P)]}
+                       || M <- lists:sort(Members)]}.
 
 int(I, _) when is_integer(I), I >= 0 -> integer_to_binary(I);
 int(B, Default) when is_binary(B) ->
@@ -460,6 +478,15 @@ lookup_sent(US, XmppID) ->
     case mnesia:dirty_read(matrix_sent, {US, XmppID}) of
         [#matrix_sent{event_id = E, room = R}] -> {ok, E, R};
         [] -> error
+    end.
+
+%% The local user who sent EventID from XMPP, the XMPP id and the room
+%% (what a room that no longer holds the event knows of it).
+-spec sent_event(binary()) -> {ok, {binary(), binary()}, binary(), binary()} | error.
+sent_event(EventID) ->
+    case catch mnesia:dirty_index_read(matrix_sent, EventID, #matrix_sent.event_id) of
+        [#matrix_sent{key = {US, XmppID}, room = R} | _] -> {ok, US, XmppID, R};
+        _ -> error
     end.
 
 %% <event-id id='XMPP-ID'/> get on the gateway's JID, from a local user.

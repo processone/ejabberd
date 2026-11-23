@@ -54,7 +54,7 @@
 
 -behaviour(gen_server).
 
--export([create_db/0, start_link/1, procname/1, queue/4, route_iq/1,
+-export([create_db/0, start_link/1, procname/1, queue/4, drop/3, route_iq/1,
          inbound_edu/2, inbound_edu/3, set_presence_hook/4,
          unset_presence_hook/4, item_el/3]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
@@ -74,6 +74,15 @@
 -define(TXN_TTL, 300000).
 -define(WARN_EVERY, 3600000).
 -define(PURGE_EVERY, 60000).
+-define(MAX_REFUSALS, 3).
+%% inbound to-device rows and bytes a minute, from
+%% one origin and for the whole gateway; how long a to-device message a
+%% local device sent opens the way back without a shared room
+-define(ORIGIN_ROWS, 1000).
+-define(ORIGIN_BYTES, 1048576).
+-define(ALL_ROWS, 20000).
+-define(ALL_BYTES, 16777216).
+-define(PEER_TTL, 86400000).
 
 -type us() :: {binary(), binary()}.
 -type item() :: {to_device, binary(), binary(), binary(), binary() | map()} |
@@ -110,19 +119,63 @@ create_db() ->
 
 %% Item for User's device DeviceId (all: each device the user has), kept
 %% until the device answers it; delivered at once when the device is being
-%% served. User is the local part on the server Host.
+%% served. User is the local part on the server Host. A devices_changed or
+%% keys_count item is state, not a message: it takes the place of the
+%% device's earlier ones of its kind, merged into it.
 -spec queue(binary(), binary(), binary() | all, item()) -> ok.
 queue(Host, User, all, Item) ->
     lists:foreach(fun({Dev, _}) -> queue(Host, User, Dev, Item) end,
                   devices_of(Host, User));
 queue(Host, User, Dev, Item) ->
     US = {User, Host},
+    Payload = coalesce(US, Dev, normalize(Item)),
     Seq = mnesia:dirty_update_counter(matrix_todevice_seq, {US, Dev}, 1),
-    Payload = normalize(Item),
     mnesia:dirty_write(#matrix_todevice{key = {US, Dev, Seq}, kind = element(1, Payload),
                                         payload = Payload, ts = now_ms()}),
     bound(Host, US, Dev),
     gen_server:cast(procname(Host), {kick, US, Dev}).
+
+%% The device's queued items of Kind, deleted, merged into Item. One in
+%% flight is deleted too: the courier's answer for it then finds nothing to
+%% delete and sends the next, this one, so nothing is lost.
+coalesce(US, Dev, {devices_changed, Users}) ->
+    Old = take(US, Dev, devices_changed),
+    Merged = lists:foldl(
+               fun({devices_changed, Us}, Acc) ->
+                       lists:foldl(fun({M, S}, A) -> maps:update_with(M, fun(S0) -> newer(S0, S) end, S, A) end,
+                                   Acc, Us);
+                  (_, Acc) ->
+                       Acc
+               end, #{}, Old ++ [{devices_changed, Users}]),
+    {devices_changed, lists:sort(maps:to_list(Merged))};
+coalesce(US, Dev, {keys_count, Alg, Count, FallbackUsed}) ->
+    Old = take(US, Dev, keys_count),
+    {keys_count, Alg, Count,
+     FallbackUsed == true orelse lists:any(fun({keys_count, A, _, F}) -> A == Alg andalso F == true;
+                                              (_) -> false
+                                           end, Old)};
+coalesce(_US, _Dev, Item) ->
+    Item.
+
+%% max of two stream ids when both are numbers, else the later one
+newer(A, B) when is_integer(A), is_integer(B) -> max(A, B);
+newer(_, B) -> B.
+
+take(US, Dev, Kind) ->
+    Rows = mnesia:dirty_select(
+             matrix_todevice,
+             [{#matrix_todevice{key = {US, Dev, '_'}, kind = Kind, _ = '_'}, [], ['$_']}]),
+    [mnesia:dirty_delete(matrix_todevice, K) || #matrix_todevice{key = K} <- Rows],
+    [P || #matrix_todevice{payload = P} <- lists:keysort(#matrix_todevice.key, Rows)].
+
+%% Every item of User's device Dev deleted: a device replaced on its own
+%% resource (mod_matrix_gw_e2e's bind). Its seq counter stays,
+%% so that the id bound again never reuses a seq.
+-spec drop(binary(), binary(), binary()) -> ok.
+drop(Host, User, Dev) ->
+    US = {User, Host},
+    [mnesia:dirty_delete(matrix_todevice, {US, Dev, S}) || S <- items(US, Dev)],
+    ok.
 
 normalize({to_device, Type, Sender, MsgID, Content}) when is_map(Content) ->
     {to_device, Type, Sender, MsgID, misc:json_encode(Content)};
@@ -248,11 +301,14 @@ set_presence_hook(User, Server, Resource, _Presence) ->
     [gen_server:cast(procname(LServer), {start, US, D, Resource}) || D <- Own ++ Replaced],
     ok.
 
+%% Run by the session going (its process): the courier, told which one,
+%% leaves alone a device whose resource another session holds by now
+%% (a replaced session's late hook).
 -spec unset_presence_hook(binary(), binary(), binary(), binary()) -> any().
 unset_presence_hook(User, Server, Resource, _Status) ->
     LServer = jid:nameprep(Server),
     gen_server:cast(procname(LServer), {stop, {jid:nodeprep(User), LServer},
-                                        jid:resourceprep(Resource)}).
+                                        jid:resourceprep(Resource), self()}).
 
 %%--------------------------------------------------------------------
 %% The iqs to the gateway: <resume/> and <to-device/>
@@ -384,7 +440,9 @@ send_to_device(Host, User, Dev, Type, Txn, Messages) ->
                       ok
               end
       end, Local),
-    %% theirs: one EDU per server
+    %% theirs: one EDU per server; each user written to may write back
+    %% across no shared room for a while
+    [mark_peer(Host, User, MXID) || {{_, _, MXID}, _} <- Remote],
     ByServer = lists:foldl(
                  fun({{_, S, MXID}, Ds}, Acc) ->
                          Devs = maps:from_list(Ds),
@@ -436,7 +494,7 @@ inbound_edu(Host, Origin, #{<<"content">> := #{<<"sender">> := Sender, <<"type">
         {ok, _, S} when Origin == undefined; S == Origin ->
             case MsgID /= <<>> andalso seen(Host, {in, S, Sender, MsgID}, true) of
                 true -> ok;
-                false -> deliver_inbound(Host, Sender, Type, MsgID, Msgs)
+                false -> deliver_inbound(Host, Origin, Sender, Type, MsgID, Msgs)
             end;
         _ ->
             ?INFO_MSG("Matrix gateway: an m.direct_to_device from ~ts names the sender ~ts: dropped",
@@ -446,39 +504,121 @@ inbound_edu(_Host, Origin, _EDU) ->
     ?DEBUG("Matrix gateway: a malformed m.direct_to_device from ~ts", [Origin]),
     ok.
 
-deliver_inbound(Host, Sender, Type, MsgID, Msgs) ->
+%% The rows an EDU makes, each counted (a `*`
+%% is a row per device), within the origin's rows and bytes a minute and
+%% the gateway's (S7), each row at most ?MAX_JSON bytes; and only for a
+%% local user who shares a room or a direct chat with the sender (the
+%% e2e module's room_share/2) or one of whose devices sent the sender a
+%% to-device message in the last ?PEER_TTL (a verification or a key
+%% request across no room). Past a budget the whole EDU is dropped, logged
+%% once a minute per origin.
+deliver_inbound(Host, Origin, Sender, Type, MsgID, Msgs) ->
     Domain = mod_matrix_gw_opt:matrix_domain(Host),
-    maps:foreach(
-      fun(MXID, Devs) when is_map(Devs) ->
-              case mod_matrix_gw_room:parse_user_id(MXID) of
-                  {ok, U, Domain} ->
-                      LU = jid:nodeprep(U),
-                      Known = case LU of
-                                  error -> [];
-                                  _ -> devices_of(Host, LU)
-                              end,
-                      maps:foreach(
-                        fun(D, Content) when is_map(Content) ->
-                                Item = {to_device, Type, Sender, MsgID, Content},
-                                case D of
-                                    <<"*">> -> [queue(Host, LU, K, Item) || {K, _} <- Known];
-                                    _ ->
-                                        case lists:keymember(D, 1, Known) of
-                                            true -> queue(Host, LU, D, Item);
-                                            false -> ?DEBUG("Matrix to-device for ~ts's unknown device ~ts",
-                                                            [MXID, D])
-                                        end
-                                end;
-                           (_, _) ->
-                                ok
-                        end, Devs);
+    Sharing = sharing(Host, Sender),
+    Rows =
+        lists:flatmap(
+          fun({MXID, Devs}) when is_map(Devs) ->
+                  case mod_matrix_gw_room:parse_user_id(MXID) of
+                      {ok, U, Domain} ->
+                          case jid:nodeprep(U) of
+                              LU when is_binary(LU), LU /= <<>> ->
+                                  case lists:member(LU, Sharing) orelse peer(Host, LU, Sender) of
+                                      true ->
+                                          rows(Host, LU, MXID, Devs);
+                                      false ->
+                                          ?DEBUG("Matrix to-device from ~ts for ~ts, who shares no room with it",
+                                                 [Sender, MXID]),
+                                          []
+                                  end;
+                              _ ->
+                                  []
+                          end;
+                      _ ->
+                          ?DEBUG("Matrix to-device for ~ts, not a user of ours", [MXID]),
+                          []
+                  end;
+             (_) ->
+                  []
+          end, maps:to_list(Msgs)),
+    Bytes = lists:sum([byte_size(J) || {_, _, J} <- Rows]),
+    case inbound_budget(Origin, length(Rows), Bytes) of
+        ok ->
+            [queue(Host, LU, D, {to_device, Type, Sender, MsgID, J}) || {LU, D, J} <- Rows],
+            ok;
+        {over, What} ->
+            Key = case Origin of undefined -> Sender; _ -> Origin end,
+            case mod_matrix_gw_s2s:rate({todevice_logged, Key}, 1, 60000, 1) of
+                true ->
+                    ?WARNING_MSG("Matrix gateway: m.direct_to_device from ~ts over ~ts "
+                                 "(~B rows, ~B bytes): dropped", [Key, What, length(Rows), Bytes]);
+                false ->
+                    ok
+            end
+    end.
+
+%% User LU's rows of Devs (a device id or `*` to a content), the content
+%% as JSON, one of over ?MAX_JSON bytes left out.
+rows(Host, LU, MXID, Devs) ->
+    Known = devices_of(Host, LU),
+    lists:flatmap(
+      fun({D, Content}) when is_map(Content) ->
+              J = misc:json_encode(Content),
+              Targets = case D of
+                            <<"*">> -> [K || {K, _} <- Known];
+                            _ -> [D || lists:keymember(D, 1, Known)]
+                        end,
+              case {Targets, byte_size(J) > ?MAX_JSON} of
+                  {[], _} ->
+                      ?DEBUG("Matrix to-device for ~ts's unknown device ~ts", [MXID, D]),
+                      [];
+                  {_, true} ->
+                      ?DEBUG("Matrix to-device for ~ts's ~ts over ~B bytes: dropped", [MXID, D, ?MAX_JSON]),
+                      [];
                   _ ->
-                      ?DEBUG("Matrix to-device for ~ts, not a user of ours", [MXID])
+                      [{LU, T, J} || T <- Targets]
               end;
-         (_, _) ->
-              ok
-      end, Msgs),
+         (_) ->
+              []
+      end, maps:to_list(Devs)).
+
+%% The local users who share a room or a direct chat with Sender.
+sharing(Host, Sender) ->
+    try (e2e()):room_share(Host, Sender)
+    catch _:_ -> []
+    end.
+
+%% Whether a device of LU sent Sender a to-device message lately.
+peer(Host, LU, Sender) ->
+    Now = now_ms(),
+    case catch ets:lookup(mem(Host), {peer, LU, Sender}) of
+        [{_, T, peer}] -> Now - T < ?PEER_TTL;
+        _ -> false
+    end.
+
+mark_peer(Host, LU, MXID) ->
+    catch ets:insert(mem(Host), {{peer, LU, MXID}, now_ms(), peer}),
     ok.
+
+inbound_budget(Origin, Rows, Bytes) ->
+    L = fun(Name, Default) -> mod_matrix_gw_s2s:limit(Name, Default) end,
+    Per = case Origin of
+              undefined -> [];
+              _ -> [{{todevice_rows, Origin}, L(todevice_rows, ?ORIGIN_ROWS), Rows, "the origin's rows a minute"},
+                    {{todevice_bytes, Origin}, L(todevice_bytes, ?ORIGIN_BYTES), Bytes, "the origin's bytes a minute"}]
+          end,
+    All = [{todevice_rows_all, L(todevice_rows_all, ?ALL_ROWS), Rows, "the gateway's rows a minute"},
+           {todevice_bytes_all, L(todevice_bytes_all, ?ALL_BYTES), Bytes, "the gateway's bytes a minute"}],
+    budget(Per ++ All).
+
+%% Each bucket in turn; the first one over stops (what the earlier ones
+%% counted stays counted: the EDU was sent).
+budget([]) ->
+    ok;
+budget([{Key, Max, Cost, What} | Rest]) ->
+    case mod_matrix_gw_s2s:rate(Key, Max, 60000, Cost) of
+        true -> budget(Rest);
+        false -> {over, What}
+    end.
 
 %%--------------------------------------------------------------------
 %% The items on the wire
@@ -532,17 +672,21 @@ init([Host]) ->
     ets:new(mem(Host), [named_table, public, set]),
     erlang:send_after(?PURGE_EVERY, self(), purge),
     self() ! online,
-    {ok, #{host => Host, devs => #{}}}.
+    {ok, #{host => Host, devs => #{}, again => #{}}}.
 
 handle_call(state, _From, #{devs := Devs} = State) ->
     {reply, Devs, State};
 handle_call(_Request, _From, State) ->
     {reply, {error, badarg}, State}.
 
-handle_cast({start, US, Dev, Res}, #{devs := Devs} = State) ->
+handle_cast({start, US, Dev, Res}, #{devs := Devs, again := Again} = State) ->
     K = {US, Dev},
     case maps:get(K, Devs, stopped) of
-        {busy, _, Seq} -> {noreply, State#{devs := Devs#{K => {busy, Res, Seq}}}};
+        %% the device came (back) while an item is
+        %% in flight, maybe to a session that is gone: if that item fails,
+        %% it is sent again rather than the device stopped
+        {busy, _, Seq} -> {noreply, State#{devs := Devs#{K => {busy, Res, Seq}},
+                                           again := Again#{K => true}}};
         _ -> {noreply, next(K, Res, State)}
     end;
 handle_cast({kick, US, Dev}, #{devs := Devs} = State) ->
@@ -551,27 +695,39 @@ handle_cast({kick, US, Dev}, #{devs := Devs} = State) ->
         {idle, Res} -> {noreply, next(K, Res, State)};
         _ -> {noreply, State}
     end;
-handle_cast({stop, US, LRes}, #{devs := Devs} = State) ->
-    {noreply, State#{devs := maps:filter(
-                                fun({U, _}, S) when U == US -> jid:resourceprep(element(2, S)) /= LRes;
-                                   (_, _) -> true
-                                end, Devs)}};
+handle_cast({stop, {U, S} = US, LRes, Pid}, State) ->
+    case ejabberd_sm:get_session_pid(U, S, LRes) of
+        Other when is_pid(Other), Other /= Pid ->
+            %% another session holds the resource now: its device stays
+            {noreply, State};
+        _ ->
+            handle_cast({stop, US, LRes}, State)
+    end;
+handle_cast({stop, US, LRes}, #{devs := Devs, again := Again} = State) ->
+    Devs2 = maps:filter(fun({U, _}, St) when U == US -> jid:resourceprep(element(2, St)) /= LRes;
+                           (_, _) -> true
+                        end, Devs),
+    {noreply, State#{devs := Devs2, again := maps:with(maps:keys(Devs2), Again)}};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({iq_reply, Reply, {{US, Dev} = K, Seq}}, #{devs := Devs} = State) ->
+handle_info({iq_reply, Reply, {{US, Dev} = K, Seq}}, #{devs := Devs, again := Again} = State) ->
     Current = maps:get(K, Devs, stopped),
     case Reply of
         #iq{type = result} ->
             mnesia:dirty_delete(matrix_todevice, {US, Dev, Seq}),
             case Current of
-                {busy, Res, Seq} -> {noreply, next(K, Res, State)};
+                {busy, Res, Seq} -> {noreply, next(K, Res, State#{again := maps:remove(K, Again)})};
                 _ -> {noreply, State}
             end;
         _ ->
             log_failure(US, Dev, Seq, Reply),
             case Current of
-                {busy, _, Seq} -> {noreply, State#{devs := maps:remove(K, Devs)}};
+                {busy, Res, Seq} when is_map_key(K, Again) ->
+                    %% the device came back meanwhile: the item again, to it
+                    {noreply, next(K, Res, State#{again := maps:remove(K, Again)})};
+                {busy, _, Seq} ->
+                    {noreply, State#{devs := maps:remove(K, Devs)}};
                 _ -> {noreply, State}
             end
     end;
@@ -594,7 +750,8 @@ handle_info(online, #{host := Host} = State) ->
 handle_info(purge, #{host := Host} = State) ->
     Now = now_ms(),
     ets:select_delete(mem(Host), [{{'_', '$1', txn}, [{'<', '$1', Now - ?TXN_TTL}], [true]},
-                                  {{'_', '$1', warn}, [{'<', '$1', Now - ?WARN_EVERY}], [true]}]),
+                                  {{'_', '$1', warn}, [{'<', '$1', Now - ?WARN_EVERY}], [true]},
+                                  {{'_', '$1', peer}, [{'<', '$1', Now - ?PEER_TTL}], [true]}]),
     erlang:send_after(?PURGE_EVERY, self(), purge),
     {noreply, State};
 handle_info(_Info, State) ->
@@ -636,6 +793,24 @@ log_failure({User, Server}, Dev, Seq, #iq{} = Err) ->
         false ->
             ?INFO_MSG("Matrix gateway: ~ts@~ts's device ~ts refused item ~B: ~ts",
                       [User, Server, Dev, Seq, format_error(xmpp:get_error(Err))])
+    end,
+    refused({User, Server}, Dev, Seq).
+
+%% an item refused ?MAX_REFUSALS times (an error answer, not
+%% a timeout) is dropped, so it wedges the device's queue no longer.
+refused({_, Server} = US, Dev, Seq) ->
+    K = {refused, US, Dev, Seq},
+    N = try ets:update_counter(mem(Server), K, {2, 1}, {K, 0})
+        catch _:_ -> 0
+        end,
+    case N >= ?MAX_REFUSALS of
+        true ->
+            mnesia:dirty_delete(matrix_todevice, {US, Dev, Seq}),
+            catch ets:delete(mem(Server), K),
+            ?WARNING_MSG("Matrix gateway: ~ts@~ts's device ~ts refused item ~B ~B times: dropped",
+                         [element(1, US), Server, Dev, Seq, N]);
+        false ->
+            ok
     end.
 
 format_error(#stanza_error{reason = R}) when is_atom(R) -> atom_to_binary(R);
