@@ -46,6 +46,7 @@
          prune_event/2, get_event_id/2, content_hash/1,
          sign_event/3, sign_pruned_event/2, sign_json/2,
          send_request/8, send_request/9, s2s_out_bounce_packet/2, user_receive_packet/1,
+         stopping/0, is_stopping/0, c2s_terminated/2,
 	 process_disco_info/1,
 	 process_disco_items/1,
          route/1]).
@@ -680,6 +681,18 @@ init([Host]) ->
     process_flag(trap_exit, true),
     mod_matrix_gw_s2s:create_db(),
     mod_matrix_gw_room:create_db(),
+    %% rooms and direct chats kept across a restart, brought
+    %% back once the module is up
+    mod_matrix_gw_store:create_db(),
+    self() ! restore_rooms,
+    %% a server shutting down closes every session, which would
+    %% make every local user leave every Matrix room; it is no leave.
+    %% ejabberdctl stop closes the sessions a second before ejabberd_stopping
+    %% runs, so a session closed for system-shutdown says so too (before
+    %% ejabberd_c2s's own hook, at 100, sends its unavailable presence)
+    persistent_term:erase({?MODULE, stopping}),
+    ejabberd_hooks:add(ejabberd_stopping, ?MODULE, stopping, 50),
+    ejabberd_hooks:add(c2s_terminated, Host, ?MODULE, c2s_terminated, 50),
     %mod_matrix_gw_c2s:create_db(),
     Opts = gen_mod:get_module_opts(Host, ?MODULE),
     MyHost = gen_mod:get_opt(host, Opts),
@@ -702,12 +715,17 @@ handle_cast(Msg, State) ->
     {noreply, State}.
 
 -spec handle_info(term(), state()) -> {noreply, state()}.
+handle_info(restore_rooms, State) ->
+    mod_matrix_gw_room:restore_rooms(State#state.server_host),
+    {noreply, State};
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 -spec terminate(term(), state()) -> any().
-terminate(_Reason, #state{host = Host}) ->
+terminate(_Reason, #state{host = Host, server_host = ServerHost}) ->
+    ejabberd_hooks:delete(ejabberd_stopping, ?MODULE, stopping, 50),
+    ejabberd_hooks:delete(c2s_terminated, ServerHost, ?MODULE, c2s_terminated, 50),
     unregister_routes([Host]),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS).
@@ -1111,6 +1129,29 @@ user_receive_packet({Pkt, C2SState} = Acc) ->
                     Acc
             end
     end.
+
+%% ejabberd is shutting down (the ejabberd_stopping hook, run
+%% before the sessions are closed).
+-spec stopping() -> ok.
+stopping() ->
+    persistent_term:put({?MODULE, stopping}, true),
+    ok.
+
+%% A c2s session closed with the system-shutdown stream error is
+%% the server shutting down (ejabberd_sm closes every session so, for
+%% `ejabberdctl stop` before ejabberd_stopping and for the server's own stop
+%% after it); the flag holds until the module starts again.
+-spec c2s_terminated(ejabberd_c2s:state(), term()) -> ejabberd_c2s:state().
+c2s_terminated(#{stop_reason := {stream, {out, #stream_error{reason = 'system-shutdown'}}}} = State,
+               _Reason) ->
+    stopping(),
+    State;
+c2s_terminated(State, _Reason) ->
+    State.
+
+-spec is_stopping() -> boolean().
+is_stopping() ->
+    persistent_term:get({?MODULE, stopping}, false).
 
 -spec route(stanza()) -> ok.
 route(#iq{to = #jid{luser = <<"">>, lresource = <<"">>}} = IQ) ->

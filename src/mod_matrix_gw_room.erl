@@ -39,7 +39,7 @@
          escape/1, unescape/1,
          route/1]).
 -export([process_edus/3, get_state/4, make_leave/3,
-         get_known_room_version/1]).
+         get_known_room_version/1, restore_rooms/1]).
 
 %% gen_statem callbacks
 -export([init/1, terminate/3, code_change/4, callback_mode/0]).
@@ -104,12 +104,14 @@
          %% XMPP message ids of the events sent from XMPP
          %% #{XmppID => {Counter, EventID}}, the reactions kept
          %% (mod_matrix_gw_xmpp:add_reaction/4), the room's last messages
-         %% as MUC history [{TS, EventID, Sender, Body}], newest first
+         %% as MUC history [{TS, EventID, Sender, Body}], newest first, and
+         %% what mod_matrix_gw_store last saved of the room
          xmpp_ids = #{},
          counter = 0,
          reactions = #{},
          backlog = [],
-         typing = #{}}).
+         typing = #{},
+         stored_meta}).
 
 -define(ROOM_CREATE, <<"m.room.create">>).
 -define(ROOM_MEMBER, <<"m.room.member">>).
@@ -129,11 +131,14 @@
 -define(MATRIX_ROOM_ALIAS_CACHE, matrix_room_alias_cache).
 -define(MATRIX_ROOM_ALIAS_CACHE_ERROR_TIMEOUT, 60000).
 
-%% how many XMPP ids and messages a room remembers, and the history a
-%% joining resource gets when it asks for none
+%% how many XMPP ids and messages a room remembers, the history a
+%% joining resource gets when it asks for none, and how long a local member
+%% of a room brought back after a restart has to come back before the
+%% gateway leaves the room for her (at least the leave_timeout option)
 -define(MAX_XMPP_IDS, 1000).
 -define(MAX_BACKLOG, 50).
 -define(DEFAULT_HISTORY, 20).
+-define(RESTORE_GRACE, 600).
 -define(ROOM_REDACTION, <<"m.room.redaction">>).
 -define(REACTION, <<"m.reaction">>).
 
@@ -565,6 +570,16 @@ process_edus(Host, Origin, EDUs) ->
                 end)
       end, EDUs).
 
+%% Brings back the rooms mod_matrix_gw_store keeps, at start.
+restore_rooms(Host) ->
+    lists:foreach(
+      fun(RoomID) ->
+              case get_room_pid(Host, RoomID) of
+                  {ok, _} -> ok;
+                  Err -> ?WARNING_MSG("Matrix room ~s not restored: ~p", [RoomID, Err])
+              end
+      end, mod_matrix_gw_store:rooms()).
+
 %%%===================================================================
 %%% gen_statem callbacks
 %%%===================================================================
@@ -585,11 +600,12 @@ init([Host, RoomID]) ->
     mnesia:dirty_write(
       #matrix_room{room_id = RoomID,
                    pid = self()}),
+    %% a room kept across a restart comes back as it was
     {ok, state_name,
-     #data{host = Host,
-           room_id = RoomID,
-           room_jid = RoomJID,
-           room_version = binary_to_room_version(<<"9">>)}}.
+     restore(#data{host = Host,
+                   room_id = RoomID,
+                   room_jid = RoomJID,
+                   room_version = binary_to_room_version(<<"9">>)})}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -1002,7 +1018,12 @@ handle_event(cast, {join, UserJID, Packet, Via}, _State, Data) ->
 handle_event(cast, {leave, UserJID}, _State, Data) ->
     Host = Data#data.host,
     {LUser, LServer, LResource} = jid:tolower(UserJID),
+    %% the server shutting down closes the sessions; the rooms
+    %% keep their members, who have RESTORE_GRACE to come back after it
+    Stopping = mod_matrix_gw:is_stopping(),
     case Data#data.kind of
+        _ when Stopping ->
+            {keep_state_and_data, []};
         #multi{users = #{{LUser, LServer} := {online, #{LResource := #multi_user{room_jid = LeftRoomJID}} = Resources}} = Users} ->
             %% the leaving occupant's own unavailable presence
             %% (XEP-0045 §7.14), which 26.09 never sent
@@ -1106,6 +1127,7 @@ handle_event(internal, update_client, _State,
                          <<"type">> => ?ROOM_MEMBER},
                 {keep_state, Data2, [{next_event, cast, {add_event, JSON}}]};
             stop ->
+                forget(Data),
                 {stop, normal}
         end
     catch
@@ -1120,6 +1142,7 @@ handle_event(internal, update_client, _State,
             {ok, Data2} ->
                 {keep_state, Data2, []};
             stop ->
+                forget(Data),
                 {stop, normal}
         end
     catch
@@ -1167,7 +1190,11 @@ handle_event(info, {resend_txn, Server}, _State, Data) ->
     end;
 handle_event(info, {timeout, TimerRef, {leave, LUser, LServer}}, State, Data) ->
     Host = Data#data.host,
+    %% no leave of a server shutting down (the leave cast's rule)
+    Stopping = mod_matrix_gw:is_stopping(),
     case Data#data.kind of
+        _ when Stopping ->
+            {next_state, State, Data, []};
         #multi{users = #{{LUser, LServer} := {offline, TimerRef}} = Users} ->
             Users2 = maps:remove({LUser, LServer}, Users),
             Kind = (Data#data.kind)#multi{users = Users2},
@@ -2109,13 +2136,15 @@ store_event(Event, Data) ->
     Events = Data#data.events,
     case maps:find(Event#event.id, Events) of
         {ok, #event{state_map = undefined}} when Event#event.state_map /= undefined ->
-            Data#data{events = Events#{Event#event.id => Event}};
+            %% kept across a restart (mod_matrix_gw_store)
+            persist(Event, Data#data.latest_events,
+                    Data#data{events = Events#{Event#event.id => Event}});
         {ok, _} ->
             Data;
         error ->
             ?DEBUG("store ~p~n", [Event#event.id]),
             %% the room's bookkeeping of XMPP ids, reactions and
-            %% history first, then the notifications
+            %% history first, then the notifications, then the store
             Data2 = notify_event(Event, track_event(Event, Data)),
             {LatestEvents, NonLatestEvents} =
                 case Event of
@@ -2145,10 +2174,11 @@ store_event(Event, Data) ->
                   {erlang:monotonic_time(micro_seconds),
                    erlang:unique_integer([monotonic])},
                   [], Data2#data.event_queue),
-            Data2#data{events = Events#{Event#event.id => Event},
-                       latest_events = LatestEvents,
-                       nonlatest_events = NonLatestEvents,
-                       event_queue = EventQueue}
+            persist(Event, Data2#data.latest_events,
+                    Data2#data{events = Events#{Event#event.id => Event},
+                               latest_events = LatestEvents,
+                               nonlatest_events = NonLatestEvents,
+                               event_queue = EventQueue})
     end.
 
 simple_toposort(Events) ->
@@ -3676,8 +3706,8 @@ is_server_joined(Server, Data) ->
 
 get_remote_servers(Data) ->
     Servers =
-        maps:fold(
-          fun(EventID, _, Acc) ->
+        sets:fold(
+          fun(EventID, Acc) ->
                   case maps:find(EventID, Data#data.events) of
                       {ok, Event} when is_map(Event#event.state_map) ->
                           maps:fold(
@@ -3703,8 +3733,8 @@ get_remote_servers(Data) ->
 
 get_joined_users(Data) ->
     Users =
-        maps:fold(
-          fun(EventID, _, Acc) ->
+        sets:fold(
+          fun(EventID, Acc) ->
                   case maps:find(EventID, Data#data.events) of
                       {ok, Event} when is_map(Event#event.state_map) ->
                           maps:fold(
@@ -4052,8 +4082,139 @@ unescape(<<"\\5c", S/binary>>, Res) -> unescape(S, <<Res/binary, $\\>>);
 unescape(<<C, S/binary>>, Res) -> unescape(S, <<Res/binary, C>>).
 
 %%%===================================================================
-%%% Federation and the XMPP side
+%%% Federation, persistence and the XMPP side
 %%%===================================================================
+
+%%--------------------------------------------------------------------
+%% Kept across a restart (mod_matrix_gw_store)
+%%--------------------------------------------------------------------
+
+%% A room as mod_matrix_gw_store kept it, if it did: its version, kind,
+%% state events and forward extremities. A local member of a multi-user
+%% room gets RESTORE_GRACE seconds to join again before the gateway leaves
+%% the room for her, as if she had left it then.
+restore(Data) ->
+    case catch mod_matrix_gw_store:load(Data#data.room_id) of
+        {ok, #{version := Version, kind := Kind, latest := Latest, events := Stored}} ->
+            case binary_to_room_version(Version) of
+                #room_version{} = RoomVersion ->
+                    Events =
+                        lists:foldl(
+                          fun({EventID, JSON, StateMap}, Acc) ->
+                                  try json_to_event(JSON, RoomVersion) of
+                                      #event{id = EventID} = E ->
+                                          Acc#{EventID => E#event{state_map = StateMap}};
+                                      _ ->
+                                          Acc
+                                  catch _:_ ->
+                                          Acc
+                                  end
+                          end, #{}, Stored),
+                    LatestSet = sets:from_list([E || E <- Latest, maps:is_key(E, Events)],
+                                               [{version, 2}]),
+                    NonLatest =
+                        maps:fold(
+                          fun(_, E, Acc) ->
+                                  lists:foldl(fun sets:add_element/2, Acc,
+                                              E#event.prev_events ++ E#event.auth_events)
+                          end, sets:new([{version, 2}]), Events),
+                    Data2 = Data#data{room_version = RoomVersion,
+                                      events = Events,
+                                      latest_events = LatestSet,
+                                      nonlatest_events = NonLatest,
+                                      stored_meta = {Version, Kind}},
+                    ?INFO_MSG("Matrix room ~s restored with ~B events",
+                              [Data#data.room_id, maps:size(Events)]),
+                    Data2#data{kind = restore_kind(Kind, Data2)};
+                false ->
+                    Data
+            end;
+        _ ->
+            Data
+    end.
+
+restore_kind({direct, {LUser, LServer}, RemoteUserID, ClientState}, Data) ->
+    mnesia:dirty_write(
+      #matrix_direct{local_remote = {{LUser, LServer}, RemoteUserID},
+                     room_id = Data#data.room_id}),
+    #direct{local_user = jid:make(LUser, LServer),
+            remote_user = RemoteUserID,
+            client_state = ClientState};
+restore_kind(multi, Data) ->
+    Host = Data#data.host,
+    Grace = max(mod_matrix_gw_opt:leave_timeout(Host), ?RESTORE_GRACE) * 1000,
+    Users =
+        lists:foldl(
+          fun(UserID, Acc) ->
+                  case user_id_to_jid(UserID, Data) of
+                      #jid{lserver = Host, luser = LUser} ->
+                          Timer = erlang:start_timer(Grace, self(), {leave, LUser, Host}),
+                          Acc#{{LUser, Host} => {offline, Timer}};
+                      _ ->
+                          Acc
+                  end
+          end, #{}, get_joined_users(Data)),
+    #multi{users = Users}.
+
+stored_kind(#direct{local_user = #jid{} = JID, remote_user = Remote,
+                    client_state = ClientState}) when is_binary(Remote) ->
+    {direct, {JID#jid.luser, JID#jid.lserver}, Remote, ClientState};
+stored_kind(#multi{}) ->
+    multi;
+stored_kind(_) ->
+    undefined.
+
+%% Saves what a restart needs after Event was stored: the room's version
+%% and kind, every state event, the forward extremities; a message event
+%% that stopped being an extremity is forgotten.
+persist(Event, OldLatest, Data) ->
+    case stored_kind(Data#data.kind) of
+        undefined ->
+            Data;
+        Kind ->
+            try
+                do_persist(Event, OldLatest, Kind, Data)
+            catch
+                Class:Reason:ST ->
+                    ?WARNING_MSG("Matrix room ~s not saved: ~p",
+                                 [Data#data.room_id, {Class, Reason, ST}]),
+                    Data
+            end
+    end.
+
+do_persist(Event, OldLatest, Kind, Data) ->
+    RoomID = Data#data.room_id,
+    Version = (Data#data.room_version)#room_version.id,
+    Latest = Data#data.latest_events,
+    LatestList = sets:to_list(Latest),
+    Keep = fun(#event{id = ID, state_key = SK}) ->
+                   SK /= undefined orelse sets:is_element(ID, Latest)
+           end,
+    Stored = fun(#event{id = ID, json = JSON, state_map = SM}) -> {ID, JSON, SM} end,
+    case Data#data.stored_meta of
+        {Version, Kind} ->
+            Gone = [E || E <- sets:to_list(sets:subtract(OldLatest, Latest)),
+                         E /= Event#event.id,
+                         case maps:find(E, Data#data.events) of
+                             {ok, #event{state_key = undefined}} -> true;
+                             _ -> false
+                         end],
+            mod_matrix_gw_store:save_events(
+              RoomID, [Stored(E) || E <- [Event], Keep(E)], LatestList),
+            mod_matrix_gw_store:delete_events(RoomID, Gone),
+            Data;
+        _ ->
+            %% the room's first save, or its kind changed: all of it
+            mod_matrix_gw_store:save_meta(RoomID, Version, Kind, LatestList),
+            mod_matrix_gw_store:save_events(
+              RoomID, [Stored(E) || E <- maps:values(Data#data.events), Keep(E)], LatestList),
+            Data#data{stored_meta = {Version, Kind}}
+    end.
+
+%% The room is left: nothing of it is kept.
+forget(Data) ->
+    catch mod_matrix_gw_store:delete(Data#data.room_id),
+    ok.
 
 %%--------------------------------------------------------------------
 %% XMPP ids, reactions and history
