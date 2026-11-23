@@ -1903,12 +1903,20 @@ do_auth_and_store_external_events(EventList, Data) ->
                           %% at it (a missing prev event and its /state)
                           %% becomes part of the room's graph as one /send
                           %% brings: allowed by that state, soft-failed
-                          %% against the current one
-                          case auth_before(Ev, Ev#event.state_map, Acc) of
+                          %% against the current one. That state is the
+                          %% one before the event (/state leaves a state
+                          %% event itself out, as Synapse serves it); the
+                          %% event keeps the state after it, itself in,
+                          %% as every other event's state map is (a create
+                          %% event kept with an empty map refused the
+                          %% creator's own join after it)
+                          Before = Ev#event.state_map,
+                          Ev2 = Ev#event{state_map = state_after(Ev, Before)},
+                          case auth_before(Ev, Before, Acc) of
                               true ->
-                                  case soft_failed(Ev, Acc) of
-                                      true -> Acc#data{events = (Acc#data.events)#{E => Ev}};
-                                      false -> store_event(Ev, Acc)
+                                  case soft_failed(Ev2, Acc) of
+                                      true -> Acc#data{events = (Acc#data.events)#{E => Ev2}};
+                                      false -> store_event(Ev2, Acc)
                                   end;
                               false ->
                                   error({event_auth_error, E})
@@ -1982,14 +1990,11 @@ check_event_auth(Event, StateMap, Data) ->
                                             case Event#event.json of
                                                 #{<<"content">> :=
                                                       #{<<"additional_creators">> := Creators}} when is_list(Creators) ->
-                                                    lists:foreach(
-                                                      fun(C) ->
-                                                              case check_user_id(C) of
-                                                                  true -> ok;
-                                                                  false -> error(not_allowed)
-                                                              end
-                                                      end, Creators),
-                                                    true;
+                                                    %% a bad one refuses the
+                                                    %% event (false), never raises
+                                                    lists:all(
+                                                      fun(C) -> is_binary(C) andalso check_user_id(C) end,
+                                                      Creators);
                                                 #{<<"content">> :=
                                                       #{<<"additional_creators">> := _}} ->
                                                     false;
@@ -2093,13 +2098,25 @@ check_event_auth(Event, StateMap, Data) ->
 check_event_auth_join(Event, StateMap, Data) ->
     RoomVersion = Data#data.room_version,
     StateKey = Event#event.state_key,
+    Create = maps:get({?ROOM_CREATE, <<"">>}, StateMap, undefined),
     case {length(Event#event.auth_events),
           RoomVersion#room_version.implicit_room_creator,
-          maps:get({?ROOM_CREATE, <<"">>}, StateMap, undefined)} of
+          Create} of
         {1, false, #event{json = #{<<"content">> := #{<<"creator">> := StateKey}}}} ->
             ?DEBUG("creator join ~p~n", [Event]),
             true;
-        {1, true, #event{sender = StateKey}} ->
+        %% room version 12 names the create event in no
+        %% auth_events (json_to_event/2 puts it back), so its rule 5.3.1
+        %% is read as the spec words it: the only previous event is the
+        %% create event, its sender joining
+        {1, true, #event{sender = StateKey, id = CreateID}}
+          when RoomVersion#room_version.hydra,
+               Event#event.prev_events == [CreateID],
+               Event#event.sender == StateKey ->
+            ?DEBUG("creator join ~p~n", [Event]),
+            true;
+        {1, true, #event{sender = StateKey}}
+          when not RoomVersion#room_version.hydra ->
             ?DEBUG("creator join ~p~n", [Event]),
             true;
         _ ->
@@ -2411,14 +2428,16 @@ check_event_auth_power_levels(Event, StateMap, Data) ->
                                         _ ->
                                             [C]
                                     end,
+                                %% refused (false) like every
+                                %% other rule here, never raised
                                 case maps:size(maps:with(Creators, Users)) > 0 of
                                     true ->
-                                        error(creators_in_pl);
+                                        error(not_allowed);
                                     false ->
                                         ok
                                 end;
                             _ ->
-                                error(missed_create_event)
+                                error(not_allowed)
                         end
                 end,
                 CheckKeys =
@@ -3090,15 +3109,16 @@ get_event_prev_state_map(Event, Data) ->
           end, Event#event.prev_events),
     resolve_state_maps(StateMaps, Data).
 
+%% The state after Event from the state before it (type and state key to
+%% event id): a state event's own key names the event.
+state_after(#event{state_key = undefined}, Before) ->
+    Before;
+state_after(#event{type = Type, state_key = Key, id = ID}, Before) ->
+    Before#{{Type, Key} => ID}.
+
 do_resolve_auth_store_event(Event, SoftFailCheck, Data) ->
     StateMap = get_event_prev_state_map(Event, Data),
-    StateMap2 =
-        case Event#event.state_key of
-            undefined ->
-                StateMap;
-            _ ->
-                StateMap#{{Event#event.type, Event#event.state_key} => Event#event.id}
-        end,
+    StateMap2 = state_after(Event, StateMap),
     Event2 = Event#event{state_map = StateMap2},
     case check_event_auth(Event2, Data) andalso auth_before(Event2, StateMap, Data) of
         true ->
