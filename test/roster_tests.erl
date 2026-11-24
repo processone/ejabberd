@@ -28,7 +28,8 @@
 -import(suite, [send_recv/2, recv_iq/1, send/2, disconnect/1, del_roster/1,
 		del_roster/2, make_iq_result/1, wait_for_slave/1,
 		wait_for_master/1, recv_presence/1, self_presence/2,
-		put_event/2, get_event/1, match_failure/2, get_roster/1]).
+		put_event/2, get_event/1, match_failure/2, get_roster/1,
+		my_jid/1]).
 -include("suite.hrl").
 -include("mod_roster.hrl").
 
@@ -149,7 +150,8 @@ version(Config) ->
 %%%===================================================================
 master_slave_cases() ->
     {roster_master_slave, [sequence],
-     [master_slave_test(subscribe)]}.
+     [master_slave_test(subscribe),
+      master_slave_test(subscribe_pep_notify)]}.
 
 subscribe_master(Config) ->
     Actions = actions(),
@@ -159,6 +161,73 @@ subscribe_master(Config) ->
 subscribe_slave(Config) ->
     process_subscriptions_slave(Config),
     del_roster(disconnect(Config)).
+
+%% The peer's presence (with caps) reaches us while our subscription is
+%% still 'to'; we approve its subscription only afterwards. Our PEP
+%% notifications must still reach it.
+subscribe_pep_notify_master(Config) ->
+    PeerJID = jid:remove_resource(?config(peer, Config)),
+    MyBareJID = jid:remove_resource(my_jid(Config)),
+    self_presence(Config, available),
+    Node = get_event(Config),
+    send(Config, #presence{to = PeerJID, type = subscribe}),
+    recv_push(Config, none, subscribe),
+    recv_push(Config, to, undefined),
+    recv_subscription(Config, subscribed),
+    recv_presence(Config, available),
+    recv_push(Config, to, undefined),
+    recv_subscription(Config, subscribe),
+    send(Config, #presence{to = PeerJID, type = subscribed}),
+    recv_push(Config, both, undefined),
+    ct:comment("Publishing to PEP node ~s", [Node]),
+    ItemID = p1_rand:get_string(),
+    Item = #ps_item{id = ItemID, sub_els = [xmpp:encode(#presence{id = ItemID})]},
+    #iq{type = result} =
+	send_recv(Config, #iq{type = set, to = MyBareJID,
+			      sub_els = [#pubsub{publish = #ps_publish{
+							      node = Node,
+							      items = [Item]}}]}),
+    put_event(Config, ItemID),
+    wait_for_slave(Config),
+    #iq{type = result} =
+	send_recv(Config, #iq{type = set, to = MyBareJID,
+			      sub_els = [#pubsub_owner{delete = {Node, <<>>}}]}),
+    del_roster(Config),
+    wait_for_slave(Config),
+    disconnect(Config).
+
+subscribe_pep_notify_slave(Config) ->
+    PeerJID = jid:remove_resource(?config(peer, Config)),
+    Node = <<"urn:example:pep-notify:", (p1_rand:get_string())/binary>>,
+    caps_presence(Config, <<Node/binary, "+notify">>),
+    put_event(Config, Node),
+    recv_subscription(Config, subscribe),
+    send(Config, #presence{to = PeerJID, type = subscribed}),
+    recv_push(Config, from, undefined),
+    send(Config, #presence{to = PeerJID, type = subscribe}),
+    recv_push(Config, from, subscribe),
+    recv_push(Config, both, undefined),
+    recv_subscription(Config, subscribed),
+    recv_presence(Config, available),
+    ItemID = get_event(Config),
+    ct:comment("Waiting for the PEP notification"),
+    Event = receive
+		#message{from = PeerJID} = Msg ->
+		    xmpp:get_subtag(Msg, #ps_event{})
+	    after 5000 ->
+		    no_pep_notification
+	    end,
+    wait_for_master(Config),
+    del_roster(Config),
+    wait_for_master(Config),
+    disconnect(Config),
+    case Event of
+	#ps_event{items = #ps_items{node = Node,
+				    items = [#ps_item{id = ItemID}]}} ->
+	    ok;
+	_ ->
+	    ct:fail({Event, Node})
+    end.
 
 process_subscriptions_master(Config, Actions) ->
     EnumeratedActions = lists:zip(lists:seq(1, length(Actions)), Actions),
@@ -211,6 +280,34 @@ process_subscriptions_slave(Config, {N, Dir, Type}, State) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+caps_presence(Config, Feature) ->
+    Ver = crypto:hash(sha, ["client", $/, "bot", $/, "en", $/,
+			    "ejabberd_ct", $<, Feature, $<]),
+    B64Ver = base64:encode(Ver),
+    Node = <<(?EJABBERD_CT_URI)/binary, $#, B64Ver/binary>>,
+    Server = ?config(server, Config),
+    Info = #disco_info{identities =
+			   [#identity{category = <<"client">>,
+				      type = <<"bot">>,
+				      lang = <<"en">>,
+				      name = <<"ejabberd_ct">>}],
+		       node = Node, features = [Feature]},
+    Caps = #caps{hash = <<"sha-1">>, node = ?EJABBERD_CT_URI, version = B64Ver},
+    MyJID = my_jid(Config),
+    send(Config, #presence{sub_els = [Caps]}),
+    #iq{type = get, sub_els = [#disco_info{node = Node}]} = IQ = recv_iq(Config),
+    send(Config, #iq{type = result, id = IQ#iq.id,
+		     to = IQ#iq.from, sub_els = [Info]}),
+    #presence{from = MyJID, type = available} = recv_presence(Config),
+    [Feature] =
+	lists:foldl(
+	  fun(Time, []) ->
+		  timer:sleep(Time),
+		  mod_caps:get_features(Server, Caps);
+	     (_, Acc) ->
+		  Acc
+	  end, [], [0, 100, 200, 2000, 5000]).
+
 single_test(T) ->
     list_to_atom("roster_" ++ atom_to_list(T)).
 
