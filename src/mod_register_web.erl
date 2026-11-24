@@ -328,7 +328,7 @@ get_register_parameters(Q) ->
 	       <<"id">>, <<"key">>]).
 
 form_new_post(Username, Host, Password, {false, false}, Ip) ->
-	case ejabberd_captcha:is_feature_available() of
+	case ejabberd_option:captcha_cmd() /= undefined of
 		true ->
 			{error, captcha_not_valid};
 		_ ->
@@ -347,7 +347,7 @@ form_new_post(Username, Host, Password, {Id, Key}, Ip) ->
 %%%----------------------------------------------------------------------
 
 build_captcha_li_list(Lang, IP) ->
-    case ejabberd_captcha:is_feature_available() of
+    case ejabberd_option:captcha_cmd() /= undefined of
       true -> build_captcha_li_list2(Lang, IP);
       false -> []
     end.

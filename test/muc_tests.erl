@@ -456,6 +456,7 @@ master_slave_cases() ->
       master_slave_test(config_voice_request_interval),
       master_slave_test(config_visitor_nickchange),
       master_slave_test(config_captcha_subscribe),
+      master_slave_test(config_captcha_pow),
       master_slave_test(join_conflict),
       master_slave_test(duplicate_occupantid),
       master_slave_test(hats)
@@ -1850,6 +1851,89 @@ config_captcha_subscribe_slave(Config) ->
     put_event(Config, unsubscribed),
     disconnect(Config).
 
+config_captcha_pow_master(Config) ->
+    PeerJID = ?config(slave, Config),
+    PeerNick = ?config(slave_nick, Config),
+    PeerNickJID = jid:replace_resource(muc_room_jid(Config), PeerNick),
+    CaptchaCmd = ejabberd_option:captcha_cmd(),
+    CaptchaPow = ejabberd_option:captcha_pow(),
+    ct:comment("Offering only the proof of work, without captcha_cmd"),
+    ejabberd_config:set_option(captcha_cmd, undefined),
+    ejabberd_config:set_option(captcha_pow, 3),
+    try
+	true = ejabberd_captcha:is_feature_available(),
+	ok = join_new(Config),
+	[104] = set_config(Config, [{captcha_protected, true}]),
+	put_event(Config, join),
+	ct:comment("The peer joins after solving the proof of work"),
+	#muc_user{items = [#muc_item{jid = PeerJID,
+				     role = participant,
+				     affiliation = none}]} =
+	    recv_muc_presence(Config, PeerNickJID, available),
+	#muc_user{items = [#muc_item{jid = PeerJID, role = none}]} =
+	    recv_muc_presence(Config, PeerNickJID, unavailable),
+	ok = leave(Config)
+    after
+	ejabberd_config:set_option(captcha_cmd, CaptchaCmd),
+	ejabberd_config:set_option(captcha_pow, CaptchaPow)
+    end,
+    disconnect(Config).
+
+config_captcha_pow_slave(Config) ->
+    MyNickJID = my_muc_jid(Config),
+    join = get_event(Config),
+    ct:comment("A wrong proof of work is refused"),
+    {Id1, _, _} = recv_captcha_pow_challenge(Config),
+    #iq{type = error} = Err =
+	send_recv(Config, captcha_pow_answer(Config, Id1, <<"wrong">>)),
+    #stanza_error{reason = 'not-allowed'} = xmpp:get_error(Err),
+    #presence{type = error, from = MyNickJID} = Refused = recv_presence(Config),
+    #stanza_error{reason = 'not-authorized'} = xmpp:get_error(Refused),
+    ct:comment("A correct proof of work lets us in"),
+    {Id2, Prefix, Label} = recv_captcha_pow_challenge(Config),
+    #iq{type = result} =
+	send_recv(Config, captcha_pow_answer(Config, Id2,
+					     solve_captcha_pow(Prefix, Label))),
+    {[], _, _} = recv_join(Config, participant, none),
+    ok = leave(Config),
+    disconnect(Config).
+
+%% Joins the room and returns the challenge's id, prefix and label; the
+%% challenge carries the SHA-256 field only, no image and no URL
+recv_captcha_pow_challenge(Config) ->
+    Room = muc_room_jid(Config),
+    MyNickJID = my_muc_jid(Config),
+    send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
+    #message{from = Room} = Challenge = recv_message(Config),
+    false = xmpp:get_subtag(Challenge, #oob_x{}),
+    false = xmpp:get_subtag(Challenge, #bob_data{}),
+    #xcaptcha{xdata = #xdata{fields = Fs}} =
+	xmpp:get_subtag(Challenge, #xcaptcha{xdata = #xdata{}}),
+    [] = [F || #xdata_field{var = <<"ocr">>} = F <- Fs],
+    [Id] = [V || #xdata_field{var = <<"challenge">>, values = [V]} <- Fs],
+    [Prefix] = [V || #xdata_field{var = <<"from">>, values = [V]} <- Fs],
+    Prefix = jid:encode(MyNickJID),
+    [Label] = [L || #xdata_field{var = <<"SHA-256">>, label = L} <- Fs],
+    {Id, Prefix, Label}.
+
+captcha_pow_answer(Config, Id, Solution) ->
+    Answer = [#xdata_field{var = <<"FORM_TYPE">>, values = [?NS_CAPTCHA]},
+	      #xdata_field{var = <<"challenge">>, values = [Id]},
+	      #xdata_field{var = <<"SHA-256">>, values = [Solution]}],
+    #iq{type = set, to = muc_room_jid(Config),
+	sub_els = [#xcaptcha{xdata = #xdata{type = submit, fields = Answer}}]}.
+
+solve_captcha_pow(Prefix, Label) ->
+    solve_captcha_pow(Prefix, Label, 0).
+
+solve_captcha_pow(Prefix, Label, N) ->
+    Solution = <<Prefix/binary, (integer_to_binary(N))/binary>>,
+    Hash = str:to_hexlist(crypto:hash(sha256, Solution)),
+    case binary:longest_common_suffix([Hash, Label]) == byte_size(Label) of
+	true -> Solution;
+	false -> solve_captcha_pow(Prefix, Label, N + 1)
+    end.
+
 register_master(Config) ->
     MUC = muc_jid(Config),
     %% Register nick "master1"
@@ -1964,13 +2048,17 @@ join(Config, Role, #muc{} = SubEl) when is_atom(Role) ->
 
 join(Config, Role, Aff, SubEls) when is_list(SubEls) ->
     ct:comment("Joining existing room as ~s/~s", [Aff, Role]),
+    send(Config, #presence{to = my_muc_jid(Config), sub_els = SubEls}),
+    recv_join(Config, Role, Aff);
+join(Config, Role, Aff, SubEl) ->
+    join(Config, Role, Aff, [SubEl]).
+
+recv_join(Config, Role, Aff) ->
     MyJID = my_jid(Config),
     Room = muc_room_jid(Config),
-    MyNick = ?config(nick, Config),
-    MyNickJID = jid:replace_resource(Room, MyNick),
+    MyNickJID = my_muc_jid(Config),
     PeerNick = ?config(peer_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    send(Config, #presence{to = MyNickJID, sub_els = SubEls}),
     case recv_presence(Config) of
 	#presence{type = error, from = MyNickJID} = Err ->
 	    xmpp:get_subtag(Err, #stanza_error{});
@@ -2001,9 +2089,7 @@ join(Config, Role, Aff, SubEls) when is_list(SubEls) ->
 		    {History, Subj} = recv_history_and_subject(Config),
 		    {empty, History, Subj, Codes}
 	    end
-    end;
-join(Config, Role, Aff, SubEl) ->
-    join(Config, Role, Aff, [SubEl]).
+    end.
 
 leave(Config) ->
     leave(Config, muc_room_jid(Config)).

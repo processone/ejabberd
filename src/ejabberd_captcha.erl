@@ -98,39 +98,45 @@ update_captcha_key(Id, _Key, Key2) ->
 		     callback() | term()) -> {error, image_error()} |
 					     {ok, binary(), [text()], [xmpp_element()]}.
 create_captcha(SID, From, To, Lang, Limiter, Args) ->
-    case create_image(Limiter) of
-      {ok, Type, Key, Image} ->
-	    Id = misc:strong_alphanum_token(),
+    Id = misc:strong_alphanum_token(),
+    ImageRes = maybe_create_image(Limiter),
+    Pow = ejabberd_option:captcha_pow(),
+    case build_challenge_fields(Id, To, Lang, ImageRes, Pow) of
+	{ok, ChallengeFields, ExtraEls, Key, PowState} ->
 	    JID = jid:encode(From),
-	    CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
-	    Data = #bob_data{cid = CID, 'max-age' = 0, type = Type, data = Image},
 	    Fs = captcha_form:encode(
-		   [{from, To}, {challenge, Id}, {sid, SID},
-		    mk_ocr_field(Lang, CID, Type)],
+		   [{from, To}, {challenge, Id}, {sid, SID} | ChallengeFields],
 		   Lang, [challenge]),
 	    X = #xdata{type = form, fields = Fs},
 	    Captcha = #xcaptcha{xdata = X},
-	    BodyString = {?T("Your subscription request and/or messages to ~s have been blocked. "
+	    {BodyString, OOB} =
+		case Key of
+		    undefined ->
+			{{?T("Your subscription request and/or messages to ~s have been blocked. "
+			     "To unblock your subscription request, solve the proof of work "
+			     "in this message"), [JID]},
+			 []};
+		    _ ->
+			{{?T("Your subscription request and/or messages to ~s have been blocked. "
 			     "To unblock your subscription request, visit ~s"), [JID, get_url(Id)]},
+			 [#oob_x{url = get_url(Id)}]}
+		end,
 	    Body = xmpp:mk_text(BodyString, Lang),
-	    OOB = #oob_x{url = get_url(Id)},
 	    Hint = #hint{type = 'no-store'},
 	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
 	    ets:insert(captcha,
 		       #captcha{id = Id, pid = self(), key = Key, tref = Tref,
-				args = Args}),
-	    {ok, Id, Body, [Hint, OOB, Captcha, Data]};
-	Err -> Err
+				args = Args, pow = PowState}),
+	    {ok, Id, Body, [Hint | OOB] ++ [Captcha | ExtraEls]};
+	{error, _} = Err ->
+	    Err
     end.
 
 -spec create_captcha_x(binary(), jid(), binary(), any(), xdata()) ->
 			      {ok, [xmpp_element()]} | {error, image_error()}.
 create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
     Id = misc:strong_alphanum_token(),
-    ImageRes = case captcha_cmd_configured() of
-		   true -> create_image(Limiter);
-		   false -> false
-	       end,
+    ImageRes = maybe_create_image(Limiter),
     Pow = ejabberd_option:captcha_pow(),
     case build_challenge_fields(Id, To, Lang, ImageRes, Pow) of
 	{ok, ChallengeFields, ExtraEls, Key, PowState} ->
@@ -143,6 +149,12 @@ create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
 	    {ok, [Captcha | ExtraEls]};
 	{error, _} = Err ->
 	    Err
+    end.
+
+maybe_create_image(Limiter) ->
+    case captcha_cmd_configured() of
+	true -> create_image(Limiter);
+	false -> false
     end.
 
 build_challenge_fields(Id, To, Lang, ImageRes, Pow) ->
@@ -513,6 +525,12 @@ do_create_image(Key, FileName) when is_binary(FileName) ->
 captcha_cmd_configured() ->
     ejabberd_option:captcha_cmd() /= undefined.
 
+pow_configured() ->
+    case ejabberd_option:captcha_pow() of
+	N when is_integer(N), N >= 1 -> true;
+	_ -> false
+    end.
+
 get_prog_name() ->
     case ejabberd_option:captcha_cmd() of
         undefined ->
@@ -665,13 +683,17 @@ return(Port, TRef, Result) ->
     Result.
 
 is_feature_available() ->
-    case get_prog_name() of
-      PathOrModule when is_binary(PathOrModule) -> true;
-      false -> false
+    case pow_configured() andalso not captcha_cmd_configured() of
+      true -> true;
+      false ->
+	    case get_prog_name() of
+	      PathOrModule when is_binary(PathOrModule) -> true;
+	      false -> false
+	    end
     end.
 
 check_captcha_setup() ->
-    case is_feature_available() of
+    case is_feature_available() andalso captcha_cmd_configured() of
 	true ->
 	    case create_image() of
 		{ok, _, _, _} ->
@@ -683,7 +705,7 @@ check_captcha_setup() ->
 		    Err
 	    end;
 	false ->
-	    false
+	    pow_configured()
     end.
 
 -spec lookup_captcha(binary()) -> {ok, #captcha{}} | {error, enoent}.
