@@ -406,6 +406,7 @@ no_db_tests() ->
        test_zlib,
        test_bind,
        test_open_session,
+       anonymous_set_password,
        codec_failure,
        unsupported_query,
        bad_nonza,
@@ -1088,6 +1089,20 @@ test_bind(Config) ->
 
 test_open_session(Config) ->
     disconnect(open_session(Config, true)).
+
+anonymous_set_password(Config) ->
+    #jid{luser = U, lserver = S, lresource = R} = my_jid(Config),
+    #iq{type = error} = Err =
+	send_recv(Config,
+		  #iq{type = set, to = server_jid(Config),
+		      sub_els = [#register{username = U,
+					   password = p1_rand:get_string()}]}),
+    #stanza_error{reason = 'not-allowed'} = xmpp:get_error(Err),
+    Pid = ejabberd_sm:get_session_pid(U, S, R),
+    disconnect(Config),
+    Ref = erlang:monitor(process, Pid),
+    receive {'DOWN', Ref, process, Pid, _} -> ok end,
+    false = ejabberd_auth:user_exists(U, S).
 
 codec_failure(Config) ->
     JID = my_jid(Config),

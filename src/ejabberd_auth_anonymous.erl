@@ -39,7 +39,8 @@
 	 anonymous_user_exist/2,
 	 allow_multiple_connections/1,
 	 register_connection/3,
-	 unregister_connection/3
+	 unregister_connection/3,
+	 is_anonymous_auth_module/1
 	]).
 
 -export([login/2, check_password/4, user_exists/2,
@@ -105,6 +106,13 @@ anonymous_protocol(Host) ->
 %% defaults to false
 allow_multiple_connections(Host) ->
     ejabberd_option:allow_multiple_connections(Host).
+
+%% Whether an auth_module (a c2s state's or a session's) is an anonymous
+%% login: this module for login_anon, 'anonymous' for SASL ANONYMOUS
+-spec is_anonymous_auth_module(atom()) -> boolean().
+is_anonymous_auth_module(?MODULE) -> true;
+is_anonymous_auth_module(anonymous) -> true;
+is_anonymous_auth_module(_) -> false.
 
 anonymous_user_exist(User, Server) ->
     lists:any(
