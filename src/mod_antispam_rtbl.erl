@@ -31,29 +31,67 @@
 
 -define(SERVICE_JID_PREFIX, "rtbl-").
 
--export([parse_iq_result/3,
-	 pubsub_event_handler/1,
-         cancel_timers/1,
-	 get_items/2,
-	 subscribe/2,
-	 unsubscribe/2]).
+-export([cancel_timers/1,
+         get_items/2,
+         get_rtbl_service_node/3,
+         get_rtbl_services_option/1,
+         parse_iq_result/3,
+         pubsub_event_handler/1,
+         set_retry_timer/4,
+         set_rtbl_service_node/4,
+         subscribe/3,
+         unsubscribe/2
+        ]).
 
 %% @format-begin
 
-subscribe(Host, Services) ->
-    for_all_services_and_nodes(fun(RTBLHost, {RTBLNode, _}) ->
-                                  FromJID = service_jid(Host),
-                                  SubIQ =
-                                      #iq{type = set,
-                                          to = jid:make(RTBLHost),
-                                          from = FromJID,
-                                          sub_els =
-                                              [#pubsub{subscribe =
-                                                           #ps_subscribe{jid = FromJID,
-                                                                         node = RTBLNode}}]},
-                                  {SubIQ, {subscribe_result, RTBLHost, RTBLNode}}
-                               end,
-                               Services).
+get_rtbl_services_option(HostOrOpts) ->
+    Services = mod_antispam_opt:rtbl_services(HostOrOpts),
+    lists:foldl(fun to_rtbl_service/2, #{}, Services).
+
+to_rtbl_service([{Host, Nodes}], M) ->
+    M#{Host => lists:foldl(fun to_rtbl_service_nodes/2, #{}, Nodes)};
+to_rtbl_service(Host, M) ->
+    M#{Host =>
+           #{?DEFAULT_SPAM_SOURCE_DOMAINS_NODE => #rtbl_service_node{},
+             ?DEFAULT_MUC_BANS_NODE => #rtbl_service_node{type = muc_bans}}}.
+
+to_rtbl_service_nodes({Type, none}, M)
+    when Type == spam_source_domains_node; Type == muc_bans_node ->
+    M;
+to_rtbl_service_nodes({Type, Node}, M)
+    when Type == spam_source_domains_node; Type == muc_bans_node ->
+    M#{Node => #rtbl_service_node{type = node_type(Type)}};
+to_rtbl_service_nodes({UnknownType, Node}, M) ->
+    ?WARNING_MSG("Unknown RTBL node type configured: type=~p node=~s", [UnknownType, Node]),
+    M.
+
+node_type(spam_source_domains_node) ->
+    spam_source_domains;
+node_type(muc_bans_node) ->
+    muc_bans.
+
+get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode) ->
+    #{RTBLHost := #{RTBLNode := RTBLServiceNode}} = RTBLServices,
+    RTBLServiceNode.
+
+set_retry_timer(RTBLServices, RTBLHost, RTBLNode, TRef) ->
+    #{RTBLHost := #{RTBLNode := RTBLServiceNode} = RTBLNodes} = RTBLServices,
+    RTBLServices#{RTBLHost =>
+                      RTBLNodes#{RTBLNode =>
+                                     RTBLServiceNode#rtbl_service_node{retry_timer = TRef}}}.
+
+set_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode, RTBLServiceNode) ->
+    #{RTBLHost := RTBLNodes} = RTBLServices,
+    RTBLServices#{RTBLHost => RTBLNodes#{RTBLNode => RTBLServiceNode}}.
+
+subscribe(Host, RTBLHost, RTBLNode) ->
+    FromJID = service_jid(Host),
+    IQ = #iq{type = set,
+             to = jid:make(RTBLHost),
+             from = FromJID,
+             sub_els = [#pubsub{subscribe = #ps_subscribe{jid = FromJID, node = RTBLNode}}]},
+    ejabberd_router:route_iq(IQ, {subscribe_result, RTBLHost, RTBLNode}, self()).
 
 -spec unsubscribe(binary(), rtbl_services()) -> ok.
 unsubscribe(Host, Services) ->
@@ -118,9 +156,9 @@ pubsub_event_handler(#message{from = FromJid,
                                   #jid{lserver = LServer,
                                        lresource = <<?SERVICE_JID_PREFIX, _/binary>>}} =
                          Msg) ->
-    ?DEBUG("Got RTBL message:~n~p", [Msg]),
+    ?DEBUG("Got RTBL message (~p):~n~p", [self(), Msg]),
     From = jid:encode(FromJid),
-    RTBLServices = mod_antispam:get_rtbl_services_option(LServer),
+    RTBLServices = get_rtbl_services_option(LServer),
     case parse_pubsub_event(Msg) of
         {RTBLNode, ParsedItems} ->
             case RTBLServices of
@@ -164,10 +202,7 @@ parse_pubsub_event(#message{to = #jid{lserver = _LServer}} = Msg) ->
 
 -spec parse_items([ps_item()]) -> #{binary() => any()}.
 parse_items(Items) ->
-    lists:foldl(fun(#ps_item{id = ID}, Acc) ->
-                   %% TODO extract meta/extra instructions
-                   Acc#{ID => true}
-                end,
+    lists:foldl(fun(#ps_item{id = ID, sub_els = SubEls}, Acc) -> Acc#{ID => SubEls} end,
                 #{},
                 Items).
 

@@ -64,6 +64,7 @@ single_cases() ->
       single_test(jid_cache),
       single_test(rtbl_domains),
       single_test(rtbl_domains_allowed),
+      single_test(rtbl_multi_domains),
       single_test(spam_dump_file)]}.
 
 %%%===================================================================
@@ -197,81 +198,72 @@ rtbl_domains(Config) ->
     RTBLHost =
         jid:encode(
             suite:pubsub_jid(Config)),
-    RTBLDomainsNode = <<"spam_source_domains">>,
-    OldOpts = gen_mod:get_module_opts(Server, mod_antispam),
-    NewOpts =
-        OldOpts#{rtbl_services => [[{RTBLHost, [{spam_source_domains_node, RTBLDomainsNode}]}]]},
-    Owner = jid:make(?config(user, Config), ?config(server, Config), <<>>),
-    {result, _} =
-        mod_pubsub:create_node(RTBLHost, Server, RTBLDomainsNode, Owner, <<"flat">>),
-    {result, _} =
-        mod_pubsub:publish_item(RTBLHost,
-                                Server,
-                                RTBLDomainsNode,
-                                Owner,
-                                <<"spam.source.domain">>,
-                                [xmpp:encode(#ps_item{id = <<"spam.source.domain">>,
-                                                      sub_els = []})]),
-    mod_antispam:reload(Server, OldOpts, NewOpts),
-    ?retry(100, 10, ?match(true, (has_spam_domain(<<"spam_domain.org">>))(Server))),
+    RTBLNode = <<"spam_source_domains">>,
+    Nodes = [{RTBLHost, RTBLNode, spam_source_domains_node}],
+    create_nodes_and_reload(Config, Nodes),
+
+    pubsub_block(Config, RTBLHost, RTBLNode, <<"spam.source.domain">>),
+    ?retry(?match(true, (has_spam_domain(<<"spam_domain.org">>))(Server))),
     ?match({ok, _}, mod_antispam:remove_blocked_domain(Server, <<"spam_domain.org">>)),
-    ?retry(100,
-           10,
-           ?match([<<"spam.source.domain">>], mod_antispam:get_blocked_domains(Server))),
-    {result, _} =
-        mod_pubsub:publish_item(RTBLHost,
-                                ?config(server, Config),
-                                RTBLDomainsNode,
-                                Owner,
-                                <<"spam.source.another">>,
-                                [xmpp:encode(#ps_item{id = <<"spam.source.another">>,
-                                                      sub_els = []})]),
-    ?retry(100, 10, ?match(true, (has_spam_domain(<<"spam.source.another">>))(Server))),
-    {result, _} =
-        mod_pubsub:delete_item(RTBLHost, RTBLDomainsNode, Owner, <<"spam.source.another">>, true),
-    ?retry(100, 10, ?match(false, (has_spam_domain(<<"spam.source.another">>))(Server))),
-    {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
-    disconnect(Config).
+    ?retry(?match([<<"spam.source.domain">>], mod_antispam:get_blocked_domains(Server))),
+    pubsub_block(Config, RTBLHost, RTBLNode, <<"spam.source.another">>),
+    ?retry(?match(true, (has_spam_domain(<<"spam.source.another">>))(Server))),
+    pubsub_unblock(Config, RTBLHost, RTBLNode, <<"spam.source.another">>),
+    ?retry(?match(false, (has_spam_domain(<<"spam.source.another">>))(Server))),
+    delete_nodes(Config, Nodes).
 
 rtbl_domains_allowed(Config) ->
     Server = ?config(server, Config),
     RTBLHost =
         jid:encode(
             suite:pubsub_jid(Config)),
-    RTBLDomainsNode = <<"spam_source_domains">>,
-    OldOpts = gen_mod:get_module_opts(Server, mod_antispam),
-    NewOpts =
-        OldOpts#{rtbl_services => [[{RTBLHost, [{spam_source_domains_node, RTBLDomainsNode}]}]]},
-    Owner = jid:make(?config(user, Config), ?config(server, Config), <<>>),
-    {result, _} =
-        mod_pubsub:create_node(RTBLHost,
-                               ?config(server, Config),
-                               RTBLDomainsNode,
-                               Owner,
-                               <<"flat">>),
-    {result, _} =
-        mod_pubsub:publish_item(RTBLHost,
-                                ?config(server, Config),
-                                RTBLDomainsNode,
-                                Owner,
-                                <<"allowed.domain">>,
-                                [xmpp:encode(#ps_item{id = <<"allowed.domain">>, sub_els = []})]),
-    mod_antispam:reload(Server, OldOpts, NewOpts),
-    ?retry(100, 10, ?match(true, (has_spam_domain(<<"spam_domain.org">>))(Server))),
-    {result, _} =
-        mod_pubsub:publish_item(RTBLHost,
-                                ?config(server, Config),
-                                RTBLDomainsNode,
-                                Owner,
-                                <<"yetanother.domain">>,
-                                [xmpp:encode(#ps_item{id = <<"yetanother.domain">>,
-                                                      sub_els = []})]),
-    ?retry(100, 10, ?match(true, (has_spam_domain(<<"yetanother.domain">>))(Server))),
-    %% we assume that the previous "whitelisted.domain" pubsub item has been consumed by now, so we
+    RTBLNode = <<"spam_source_domains">>,
+    Nodes = [{RTBLHost, RTBLNode, spam_source_domains_node}],
+    create_nodes_and_reload(Config, Nodes),
+
+    pubsub_block(Config, RTBLHost, RTBLNode, <<"allowed.domain">>),
+    ?retry(?match(true, (has_spam_domain(<<"spam_domain.org">>))(Server))),
+    pubsub_block(Config, RTBLHost, RTBLNode, <<"yetanother.domain">>),
+    ?retry(?match(true, (has_spam_domain(<<"yetanother.domain">>))(Server))),
+    %% we assume that the previous "allowed.domain" pubsub item has been consumed by now, so we
     %% can check that it doesn't exist
     ?match(false, (has_spam_domain(<<"allowed.domain">>))(Server)),
-    {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLDomainsNode, Owner),
-    disconnect(Config).
+    delete_nodes(Config, Nodes).
+
+rtbl_multi_domains(Config) ->
+    Server = ?config(server, Config),
+    RTBLHost =
+        jid:encode(
+            suite:pubsub_jid(Config)),
+    RTBLNode = <<"spam_source_domains">>,
+    RTBLExtraHost = <<"rtbl.", Server/binary>>,
+    RTBLExtraNode = <<"extra_spam_source_domains">>,
+    Nodes =
+        [{RTBLHost, RTBLNode, spam_source_domains_node},
+         {RTBLExtraHost, RTBLExtraNode, spam_source_domains_node}],
+    create_nodes_and_reload(Config, Nodes, #{rtbl_multi_host_policy => all}),
+
+    ?match(false, (has_spam_domain(<<"good.domain">>))(Server)),
+    ?match(true, (has_spam_domain(<<"spam_domain.org">>))(Server)),
+    pubsub_block(Config, RTBLHost, RTBLNode, <<"spam.domain">>),
+    ?match(false, (has_spam_domain(<<"spam.domain">>))(Server)),
+    pubsub_block(Config, RTBLExtraHost, RTBLExtraNode, <<"spam.domain">>),
+    ?retry(?match(true, (has_spam_domain(<<"spam.domain">>))(Server))),
+    pubsub_block(Config, RTBLHost, RTBLNode, <<"allowed.domain">>),
+    pubsub_block(Config, RTBLExtraHost, RTBLExtraNode, <<"allowed.domain">>),
+    pubsub_block(Config, RTBLHost, RTBLNode, <<"yetanother.domain">>),
+    pubsub_block(Config, RTBLExtraHost, RTBLExtraNode, <<"yetanother.domain">>),
+    ?retry(?match(true, (has_spam_domain(<<"yetanother.domain">>))(Server))),
+    %% since yetanother.domain has been processed, it's safe to assume that allowed.domain has been
+    %% processed too
+    ?match(false, (has_spam_domain(<<"allowed.domain">>))(Server)),
+    pubsub_unblock(Config, RTBLHost, RTBLNode, <<"yetanother.domain">>),
+    ?retry(?match(false, (has_spam_domain(<<"yetanother.domain">>))(Server))),
+    {ok, _} = mod_antispam:remove_blocked_domain(Server, <<"spam.domain">>),
+    ?retry(?match(false, (has_spam_domain(<<"spam.domain">>))(Server))),
+    {ok, _} = mod_antispam:add_blocked_domain(Server, <<"spam.domain">>),
+    ?retry(?match(true, (has_spam_domain(<<"spam.domain">>))(Server))),
+    delete_nodes(Config, Nodes).
 
 %%%===================================================================
 
@@ -317,3 +309,51 @@ message(From, To, BodyText) ->
 get_bytes(Filename) ->
     {ok, Bytes} = file:read_file(Filename),
     Bytes.
+
+create_nodes_and_reload(Config, Nodes) ->
+    create_nodes_and_reload(Config, Nodes, #{}).
+
+create_nodes_and_reload(Config, Nodes, ExtraOpts) ->
+    Server = ?config(server, Config),
+    Owner =
+        jid:remove_resource(
+            suite:my_jid(Config)),
+
+    RTBLServices =
+        lists:foldl(fun({RTBLHost, RTBLNode, RTBLNodeType}, Acc) ->
+                       {result, _} =
+                           mod_pubsub:create_node(RTBLHost, Server, RTBLNode, Owner, <<"flat">>),
+                       [[{RTBLHost, [{RTBLNodeType, RTBLNode}]}] | Acc]
+                    end,
+                    [],
+                    Nodes),
+    Opts = ExtraOpts#{rtbl_services => RTBLServices},
+    gen_mod:update_module(Server, mod_antispam, Opts).
+
+delete_nodes(Config, Nodes) ->
+    Owner =
+        jid:remove_resource(
+            suite:my_jid(Config)),
+    lists:foreach(fun({RTBLHost, RTBLNode, _Type}) ->
+                     {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLNode, Owner)
+                  end,
+                  Nodes).
+
+pubsub_block(Config, RTBLHost, RTBLNode, JID) ->
+    Server = ?config(server, Config),
+    Owner =
+        jid:remove_resource(
+            suite:my_jid(Config)),
+    {result, _} =
+        mod_pubsub:publish_item(RTBLHost,
+                                Server,
+                                RTBLNode,
+                                Owner,
+                                JID,
+                                [xmpp:encode(#report{reason = spam})]).
+
+pubsub_unblock(Config, RTBLHost, RTBLNode, JID) ->
+    Owner =
+        jid:remove_resource(
+            suite:my_jid(Config)),
+    {result, _} = mod_pubsub:delete_item(RTBLHost, RTBLNode, Owner, JID, true).
