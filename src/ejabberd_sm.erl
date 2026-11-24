@@ -175,18 +175,26 @@ open_session(SID, User, Server, Resource, Info) ->
 -spec close_session(sid(), binary(), binary(), binary()) -> ok.
 
 close_session(SID, User, Server, Resource) ->
+    Info = take_session(SID, User, Server, Resource),
+    remove_connection(SID, User, Server, Resource, Info).
+
+-spec take_session(sid(), binary(), binary(), binary()) -> info().
+take_session(SID, User, Server, Resource) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
     Mod = get_sm_backend(LServer),
     Sessions = get_sessions(Mod, LUser, LServer, LResource),
-    Info = case lists:keyfind(SID, #session.sid, Sessions) of
-	       #session{info = I} = Session ->
-		   delete_session(Mod, Session),
-		   I;
-	       _ ->
-		   []
-	   end,
+    case lists:keyfind(SID, #session.sid, Sessions) of
+	#session{info = Info} = Session ->
+	    delete_session(Mod, Session),
+	    Info;
+	_ ->
+	    []
+    end.
+
+-spec remove_connection(sid(), binary(), binary(), binary(), info()) -> ok.
+remove_connection(SID, User, Server, Resource, Info) ->
     JID = jid:make(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_connection_hook,
 		       JID#jid.lserver, [SID, JID, Info]).
@@ -385,10 +393,13 @@ unset_presence(SID, User, Server, Resource, Status) ->
 
 close_session_unset_presence(SID, User, Server,
 			     Resource, Status) ->
-    close_session(SID, User, Server, Resource),
+    Info = take_session(SID, User, Server, Resource),
     ejabberd_hooks:run(unset_presence_hook,
 		       jid:nameprep(Server),
-		       [User, Server, Resource, Status]).
+		       [User, Server, Resource, Status]),
+    %% After unset_presence_hook: with an anonymous user's last session,
+    %% this removes the user's data, including what that hook stored
+    remove_connection(SID, User, Server, Resource, Info).
 
 -spec get_session_pid(binary(), binary(), binary()) -> none | pid().
 
