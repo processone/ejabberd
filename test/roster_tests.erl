@@ -416,6 +416,8 @@ transition(Id, Config, out, subscribed,
 	    put_event(Config, {is_approved, false}),
 	    %% BUG: we should not transition to 'both' state
 	    recv_push(Config, both, undefined),
+	    %% The peer is probed: its presence comes again
+	    recv_presence(Config, available),
 	    State#state{subscription = both, pending_in = false};
 	{to, false, false} ->
 	    put_event(Config, {is_approved, true}),
@@ -478,6 +480,8 @@ transition(_, Config, in, subscribe = Type,
     case {Sub, Out, In, Approved} of
 	{to, false, false, true} ->
 	    recv_push(Config, both, undefined, true),
+	    %% The peer is probed: its presence comes again
+	    recv_presence(Config, available),
 	    State#state{subscription = both};
 	{none, true, false, true} ->
 	    recv_push(Config, from, subscribe, true),

@@ -542,6 +542,26 @@ route_presence_change(From, OldItem, NewItem) ->
 	    ok
     end.
 
+%% The user now lets a contact see its presence, and was subscribed to
+%% the contact's already: the contact's presence reached the user's
+%% sessions while the subscription was still 'to', and what they keep
+%% from a contact's presence only once that contact may see the user's
+%% (mod_caps, and with it the contact's PEP notifications) passed it by.
+%% Probe the contact, so that its presence arrives again now.
+-spec maybe_probe_contact(binary(), binary(), jid(), #roster{}, #roster{}) -> ok.
+maybe_probe_contact(User, Server, JID,
+		    #roster{subscription = to}, #roster{subscription = both}) ->
+    From = jid:make(User, Server),
+    Probe = #presence{type = probe, from = From,
+		      to = jid:remove_resource(JID)},
+    case ejabberd_hooks:run_fold(privacy_check_packet, From#jid.lserver, allow,
+				 [From, Probe, out]) of
+	deny -> ok;
+	allow -> ejabberd_router:route(Probe)
+    end;
+maybe_probe_contact(_User, _Server, _JID, _OldItem, _NewItem) ->
+    ok.
+
 -spec ask_to_pending(ask()) -> none | in | out | both.
 ask_to_pending(subscribe) -> out;
 ask_to_pending(unsubscribe) -> none;
@@ -665,6 +685,7 @@ process_subscription(Direction, User, Server, JID1,
 				      encode_item(OldItem),
 				      encode_item(NewItem))
 		    end,
+		    maybe_probe_contact(User, Server, JID1, OldItem, NewItem),
 		    not (Type == subscribe andalso Direction == in andalso NewItem#roster.approved);
 		none ->
 		    false
