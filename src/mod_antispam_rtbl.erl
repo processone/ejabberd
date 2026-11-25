@@ -33,17 +33,75 @@
 
 -export([cancel_timers/1,
          get_items/2,
+         get_rtbl_exports/1,
          get_rtbl_service_node/3,
          get_rtbl_services_option/1,
          parse_iq_result/3,
          pubsub_event_handler/1,
          set_retry_timer/4,
          set_rtbl_service_node/4,
+         start/2,
+         stop/1,
          subscribe/3,
          unsubscribe/2
         ]).
 
 %% @format-begin
+
+start(Server, Opts) ->
+    try get_rtbl_exports(Server, mod_antispam_opt:rtbl_exports(Opts)) of
+        none ->
+            ok;
+        RTBLExports ->
+            Owner = jid:make(Server),
+            maps:foreach(
+              fun(_Type, Nodes) ->
+                      lists:foreach(
+                        fun({Host, Node}) ->
+                                mod_pubsub:create_node(Host, Server, Node, Owner, <<"flat">>)
+                        end, Nodes)
+              end, RTBLExports)
+    catch
+        error:{module_not_loaded, mod_pubsub, Server} = E ->
+            ?CRITICAL_MSG("'mod_antispam->rtbl_exports' configured with option 'auto' but 'mod_pubsub' not loaded for host ~s", [Server]),
+            {error, E}
+    end.
+
+get_rtbl_exports(Server) ->
+    get_rtbl_exports(Server, mod_antispam_opt:rtbl_exports(Server)).
+
+get_rtbl_exports(_Server, none) ->
+    none;
+get_rtbl_exports(Server, auto) ->
+    Host = hd(gen_mod:get_module_opt_hosts(Server, mod_pubsub)),
+    #{muc_bans => [{Host, ?DEFAULT_MUC_BANS_NODE}],
+      spam_source_domains => [{Host, ?DEFAULT_SPAM_SOURCE_DOMAINS_NODE}]};
+get_rtbl_exports(_Server, Opts) ->
+    lists:foldl(fun to_rtbl_export/2,
+                #{},
+                Opts).
+
+to_rtbl_export([{Host, Nodes}], M) ->
+    lists:foldl(
+      fun({Type, NodeName}, M2) ->
+              add_node(M2, node_type(Type), {Host, NodeName})
+      end, M, Nodes
+     );
+to_rtbl_export(Host, M) ->
+    add_node(
+      add_node(M, muc_bans,{Host, ?DEFAULT_MUC_BANS_NODE}),
+      spam_source_domains, {Host, ?DEFAULT_SPAM_SOURCE_DOMAINS_NODE}).
+
+add_node(M, Type, Node) ->
+    case M of
+        #{Type := Nodes} ->
+            M#{Type => [Node | Nodes]};
+        _ ->
+            M#{Type => [Node]}
+    end.
+
+stop(_Host) ->
+    ok.
 
 get_rtbl_services_option(HostOrOpts) ->
     Services = mod_antispam_opt:rtbl_services(HostOrOpts),

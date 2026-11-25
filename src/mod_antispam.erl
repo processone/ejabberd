@@ -98,14 +98,17 @@
 %%--------------------------------------------------------------------
 %%| gen_mod callbacks
 
--spec start(binary(), gen_mod:opts()) -> {ok, [gen_mod:registration()]}.
+-spec start(binary(), gen_mod:opts()) -> {ok, [gen_mod:registration()]} | {error, term()}.
 start(Host, Opts) ->
-    {ok, _Pid} = gen_mod:start_child(?MODULE, Host, Opts),
-    {ok, _Pid2} = mod_antispam_report:start(Host, Opts),
-    ok = mod_antispam_rtbl_muc:start(Host),
-    {ok,
-     [{hook, spam_reported, mod_antispam_report, spam_reported, 50},
-      {commands, get_commands_spec()}]}.
+    maybe
+        {ok, _Pid} ?= gen_mod:start_child(?MODULE, Host, Opts),
+        {ok, _Pid2} ?= mod_antispam_report:start(Host, Opts),
+        ok = mod_antispam_rtbl_muc:start(Host),
+        ok ?= mod_antispam_rtbl:start(Host, Opts),
+        {ok,
+         [{hook, spam_reported, mod_antispam_report, spam_reported, 50},
+          {commands, get_commands_spec()}]}
+    end.
 
 -spec prep_stop(binary()) -> ok | {error, any()}.
 prep_stop(Host) ->
@@ -122,6 +125,7 @@ stop(Host) ->
         true ->
             ok
     end,
+    mod_antispam_rtbl:stop(Host),
     mod_antispam_rtbl_muc:stop(Host),
     mod_antispam_report:stop(Host),
     gen_mod:stop_child(?MODULE, Host).
@@ -439,9 +443,16 @@ handle_cast({reload, NewOpts, OldOpts},
     mod_antispam_rtbl:cancel_timers(OldRTBLServices),
     ok = mod_antispam_rtbl:unsubscribe(Host, OldRTBLServices),
     ets_cache_clear(cache_tab(blocked_items), Host),
-    RTBLServices = get_rtbl_services_option(NewOpts),
-    ok = mod_antispam_rtbl:get_items(Host, RTBLServices),
-    {noreply, State2#state{rtbl_services = RTBLServices}};
+    ok = mod_antispam_rtbl:stop(Host),
+    maybe
+        ok ?= mod_antispam_rtbl:start(Host, NewOpts),
+        RTBLServices = get_rtbl_services_option(NewOpts),
+        ok = mod_antispam_rtbl:get_items(Host, RTBLServices),
+        {noreply, State2#state{rtbl_services = RTBLServices}}
+    else
+        {error, _} = Error ->
+            {stop, Error, State2}
+    end;
 handle_cast(Request, State) ->
     ?ERROR_MSG("Got unexpected request from: ~p", [Request]),
     {noreply, State}.
@@ -532,13 +543,19 @@ handle_info({iq_reply, _IQReply, {unsubscribe_result, RTBLHost, RTBLNode}},
             #state{rtbl_services = RTBLServices} = State) ->
     %% FIXME: we should check it's true (of type `result`, not `error`), but at that point, what
     %% would we do?
-    RTBLServiceNode = get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode),
-    {noreply,
-     State#state{rtbl_services =
-                     set_rtbl_service_node(RTBLServices,
-                                           RTBLHost,
-                                           RTBLNode,
-                                           RTBLServiceNode#rtbl_service_node{subscribed = false})}};
+    try get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode) of
+        RTBLServiceNode ->
+            {noreply,
+             State#state{rtbl_services =
+                             set_rtbl_service_node(RTBLServices,
+                                                   RTBLHost,
+                                                   RTBLNode,
+                                                   RTBLServiceNode#rtbl_service_node{subscribed =
+                                                                                         false})}}
+    catch
+        _:_ ->
+            {noreply, State}
+    end;
 handle_info(request_items, #state{host = Host, rtbl_services = RTBLServices} = State) ->
     mod_antispam_rtbl:get_items(Host, RTBLServices),
     {noreply, State};
