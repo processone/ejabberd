@@ -3,7 +3,8 @@
 -export([for_all_hosts/2,
          try_call_by_host/3,
          sets_equal/2,
-         format/2
+         format/2,
+         format_s/2
         ]).
 
 -define(COMMAND_TIMEOUT, timer:seconds(30)).
@@ -55,3 +56,7 @@ sets_equal(A, B) ->
 -spec format(io:format(), [term()]) -> binary().
 format(Format, Data) ->
     iolist_to_binary(io_lib:format(Format, Data)).
+
+-spec format_s(io:format(), [term()]) -> string().
+format_s(Format, Data) ->
+    lists:flatten(binary_to_list(format(Format, Data))).
