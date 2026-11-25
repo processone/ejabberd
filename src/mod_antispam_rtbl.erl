@@ -51,6 +51,10 @@ get_rtbl_services_option(HostOrOpts) ->
 
 to_rtbl_service([{Host, Nodes}], M) ->
     M#{Host => lists:foldl(fun to_rtbl_service_nodes/2, #{}, Nodes)};
+to_rtbl_service(<<"xmppbl.org">> = Host, M) ->
+    M#{Host =>
+           #{?DEFAULT_SPAM_SOURCE_DOMAINS_NODE => #rtbl_service_node{},
+             ?XMPPBL_MUC_BANS_NODE => #rtbl_service_node{type = muc_bans}}};
 to_rtbl_service(Host, M) ->
     M#{Host =>
            #{?DEFAULT_SPAM_SOURCE_DOMAINS_NODE => #rtbl_service_node{},
