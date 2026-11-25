@@ -481,8 +481,10 @@ replace_keywords(_Host, Binary, Keywords) when is_binary(Binary) ->
                 end,
                 Binary,
                 Keywords);
-replace_keywords(Host, {Element1, Element2}, Keywords) ->
+replace_keywords(Host, {Element1, Element2}, Keywords) when is_binary(Element1) ->
     {replace_keywords(Host, Element1, Keywords), replace_keywords(Host, Element2, Keywords)};
+replace_keywords(Host, {Element1, Element2}, Keywords) ->
+    {Element1, replace_keywords(Host, Element2, Keywords)};
 replace_keywords(_Host, Value, _DK) ->
     Value.
 
