@@ -155,7 +155,7 @@ get_tokens(LServer, LUser, UA, Mech) ->
     [{{Type, CreatedAt < ToRefresh}, Token} || {Type, Token, CreatedAt} <- Mod:get_tokens(LServer, LUser, ua_hash(UA, Mech))].
 
 c2s_inline_features(Acc, _Host, #{sasl2_stream_from := undefined}) ->
-    %% The stream names no user, so it can only log in anonymously
+    %% The stream names no user, whose tokens FAST would need
     Acc;
 c2s_inline_features({Sasl, Bind, Extra}, Host, State) ->
     {Sasl ++ [#fast{mechs = get_mechanisms(Host, State)}], Bind, Extra}.

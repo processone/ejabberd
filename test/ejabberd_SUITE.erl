@@ -1025,14 +1025,15 @@ auth_sasl2(Config) ->
 	    {skipped, 'DIGEST-MD5_not_available'}
     end.
 
-%% A stream that names no user is offered SASL2 with ANONYMOUS only,
-%% no FAST, and the anonymous session binds inline.
+%% A stream that names no user is offered SASL2 with the mechanisms of
+%% SASL, ANONYMOUS among them, and no FAST. An anonymous session binds
+%% inline and gets no FAST token though it asks for one; a password
+%% logs in an account there as it does in SASL.
 auth_sasl2_anonymous(Config0) ->
     {Config, Fs} = sasl2_no_user_features(Config0),
-    #sasl2_authenticaton{mechanisms = [<<"ANONYMOUS">>], inline = Inline} =
-	lists:keyfind(sasl2_authenticaton, 1, Fs),
-    true = lists:keymember(bind2_bind, 1, Inline),
-    false = lists:keymember(fast, 1, Inline),
+    Mechs = sasl2_no_user_mechs(Fs),
+    true = lists:member(<<"ANONYMOUS">>, Mechs),
+    true = lists:member(<<"PLAIN">>, Mechs),
     UA = #sasl2_user_agent{id = <<"6C1B7D1B-3D2B-4C24-9D0C-6B2C5B9C1A11">>,
 			   software = <<"TestRunner">>, device = <<"tester">>},
     send(Config, #sasl2_authenticate{mechanism = <<"PLAIN">>,
@@ -1055,19 +1056,136 @@ auth_sasl2_anonymous(Config0) ->
     #iq{type = result} =
 	send_recv(Config, #iq{type = get, sub_els = [#ping{}],
 			      to = server_jid(Config)}),
-    disconnect(Config).
+    disconnect(Config),
+    sasl2_no_user_logins(Config0, Mechs).
 
-%% Without ANONYMOUS, a stream that names no user gets no SASL2 at all.
+%% A stream that names no user is offered SASL2 with the mechanisms of
+%% SASL and no FAST, and each password mechanism logs the account in,
+%% the user coming from the mechanism; a wrong password is refused.
 auth_sasl2_no_user(Config0) ->
     {Config, Fs} = sasl2_no_user_features(Config0),
-    false = lists:keymember(sasl2_authenticaton, 1, Fs),
-    #sasl_mechanisms{list = [_|_]} = lists:keyfind(sasl_mechanisms, 1, Fs),
-    disconnect(Config).
+    Mechs = sasl2_no_user_mechs(Fs),
+    false = lists:member(<<"ANONYMOUS">>, Mechs),
+    disconnect(Config),
+    sasl2_no_user_logins(Config0, Mechs).
 
 sasl2_no_user_features(Config0) ->
     Config1 = starttls(connect(set_opt(stream_from, <<"">>, Config0))),
     Config = init_stream(Config1),
     receive #stream_features{sub_els = Fs} -> {Config, Fs} end.
+
+sasl2_no_user_mechs(Fs) ->
+    #sasl_mechanisms{list = Sasl} = lists:keyfind(sasl_mechanisms, 1, Fs),
+    #sasl2_authenticaton{mechanisms = Mechs, inline = Inline} =
+	lists:keyfind(sasl2_authenticaton, 1, Fs),
+    true = lists:sort(Mechs) == lists:sort(Sasl),
+    true = lists:keymember(bind2_bind, 1, Inline),
+    false = lists:keymember(fast, 1, Inline),
+    Mechs.
+
+sasl2_no_user_logins(Config, Mechs) ->
+    User = ?config(user, Config),
+    Server = ?config(server, Config),
+    Password = ?config(password, Config),
+    ejabberd_auth:try_register(User, Server, Password),
+    Tried = [Mech || Mech <- Mechs,
+		     Mech == <<"PLAIN">> orelse
+			 lists:prefix("SCRAM-", binary_to_list(Mech))],
+    true = Tried /= [],
+    lists:foreach(
+      fun(Mech) ->
+	      ct:pal("SASL2 ~s on a stream that names no user", [Mech]),
+	      failure = sasl2_no_user_login(Config, Mech, <<Password/binary, "-wrong">>),
+	      success = sasl2_no_user_login(Config, Mech, Password)
+      end, Tried).
+
+sasl2_no_user_login(Config0, Mech, Password) ->
+    {Config, _} = sasl2_no_user_features(Config0),
+    User = ?config(user, Config),
+    Server = ?config(server, Config),
+    UA = #sasl2_user_agent{id = <<"0F5E3B8E-6D1C-4D7A-9C55-2B1E7A3C9D44">>,
+			   software = <<"TestRunner">>, device = <<"tester">>},
+    Auth = #sasl2_authenticate{mechanism = Mech,
+			       sub_els = [#bind2_bind{tag = <<"TestRunner">>}],
+			       user_agent = UA},
+    Res = case Mech of
+	      <<"PLAIN">> ->
+		  send(Config, Auth#sasl2_authenticate{
+				 initial_response = <<0, User/binary, 0, Password/binary>>}),
+		  recv(Config);
+	      _ ->
+		  sasl2_scram(Config, Auth, User, Password)
+	  end,
+    case Res of
+	#sasl2_success{jid = #jid{luser = LUser, lserver = Server, lresource = LRes}} = Pkt ->
+	    LUser = jid:nodeprep(User),
+	    true = LRes /= <<>>,
+	    #bind2_bound{} = xmpp:get_subtag(Pkt, #bind2_bound{}),
+	    #stream_features{} = recv(Config),
+	    #iq{type = result} =
+		send_recv(Config, #iq{type = get, sub_els = [#ping{}],
+				      to = server_jid(Config)}),
+	    disconnect(Config),
+	    success;
+	#sasl2_failure{} ->
+	    disconnect(Config),
+	    failure
+    end.
+
+%% RFC 5802 client, with tls-server-end-point for the -PLUS mechanisms
+sasl2_scram(Config, #sasl2_authenticate{mechanism = Mech} = Auth, User, Password) ->
+    {Algo, Plus} = case Mech of
+		       <<"SCRAM-SHA-1">> -> {sha, false};
+		       <<"SCRAM-SHA-1-PLUS">> -> {sha, true};
+		       <<"SCRAM-SHA-256">> -> {sha256, false};
+		       <<"SCRAM-SHA-256-PLUS">> -> {sha256, true};
+		       <<"SCRAM-SHA-512">> -> {sha512, false};
+		       <<"SCRAM-SHA-512-PLUS">> -> {sha512, true}
+		   end,
+    GS2 = case Plus of
+	      true -> <<"p=tls-server-end-point,,">>;
+	      false -> <<"n,,">>
+	  end,
+    Name = binary:replace(binary:replace(User, <<"=">>, <<"=3D">>, [global]),
+			  <<",">>, <<"=2C">>, [global]),
+    CNonce = base64:encode(crypto:strong_rand_bytes(18)),
+    Bare = <<"n=", Name/binary, ",r=", CNonce/binary>>,
+    send(Config, Auth#sasl2_authenticate{initial_response = <<GS2/binary, Bare/binary>>}),
+    case recv(Config) of
+	#sasl2_challenge{text = First} ->
+	    Attrs = [{K, V} || <<K, $=, V/binary>> <- binary:split(First, <<",">>, [global])],
+	    {_, Nonce} = lists:keyfind($r, 1, Attrs),
+	    true = binary:part(Nonce, 0, byte_size(CNonce)) == CNonce,
+	    {_, Salt} = lists:keyfind($s, 1, Attrs),
+	    {_, Iter} = lists:keyfind($i, 1, Attrs),
+	    CBind = case Plus of
+			true ->
+			    {ok, CBData} = suite:recv_call(Config, get_cb),
+			    <<GS2/binary, CBData/binary>>;
+			false ->
+			    GS2
+		    end,
+	    NoProof = <<"c=", (base64:encode(CBind))/binary, ",r=", Nonce/binary>>,
+	    AuthMessage = <<Bare/binary, ",", First/binary, ",", NoProof/binary>>,
+	    Salted = scram:salted_password(Algo, Password, base64:decode(Salt),
+					   binary_to_integer(Iter)),
+	    ClientKey = scram:client_key(Algo, Salted),
+	    Signature = scram:client_signature(Algo, scram:stored_key(Algo, ClientKey),
+					       AuthMessage),
+	    Proof = crypto:exor(ClientKey, Signature),
+	    send(Config, #sasl2_response{
+			    text = <<NoProof/binary, ",p=", (base64:encode(Proof))/binary>>}),
+	    case recv(Config) of
+		#sasl2_success{additional_data = <<"v=", V/binary>>} = Pkt ->
+		    V = base64:encode(scram:server_signature(
+					Algo, scram:server_key(Algo, Salted), AuthMessage)),
+		    Pkt;
+		Other ->
+		    Other
+	    end;
+	Other ->
+	    Other
+    end.
 
 auth_external(Config0) ->
     Config = connect(starttls(Config0)),
