@@ -151,6 +151,16 @@ mod_opt_type(forward_reports) ->
 mod_opt_type(forward_reports_to_third_party) ->
     econf:list(
         econf:jid());
+mod_opt_type(rtbl_exports) ->
+    econf:either(
+        econf:enum([none, auto]),
+        econf:list(
+            econf:either(
+                econf:binary(),
+                econf:map(
+                    econf:binary(),
+                    econf:map(
+                        econf:enum([spam_source_domains_node, muc_bans_node]), econf:binary())))));
 mod_opt_type(rtbl_multi_host_policy) ->
     econf:enum([all, one]);
 mod_opt_type(rtbl_services) ->
@@ -182,6 +192,7 @@ mod_options(_Host) ->
      {cache_size, ?DEFAULT_CACHE_SIZE},
      {forward_reports, true},
      {forward_reports_to_third_party, []},
+     {rtbl_exports, none},
      {rtbl_multi_host_policy, one},
      {rtbl_services, []},
      {spam_domains_file, none},
@@ -242,6 +253,19 @@ mod_doc() ->
               desc =>
                   ?T("List of third-party services to forward spam and abuse reports to, if allowed"
                      " by reporter. Default is '[]'.")}},
+           {rtbl_exports,
+            #{value => "none | auto | [Export]",
+              example =>
+                  ["rtbl_exports:",
+                   "  - \"rtbl.@HOST@\":",
+                   "      spam_source_domains_node: some_custom_pubsub_node",
+                   "      muc_bans_node: some_other_pubsub_node"],
+              desc =>
+                  ?T("If not 'none' blocked items that have been added manually either by file or command will be exported to a a pubsub host at the given nodes. If set to 'auto' both, domains and MUC bans, will be exported to the default pubsub services at this server's hosts at the default node names 'spam_source_domains' and 'muc_bans' respectively. If no nodes are given, again the defaults are being used. The default value for this whole functionality is 'none', which disables it."
+                     ""
+                     "Note that it's perfectly fine to subscribe to your own nodes, i.e. configure your own service and nodes at 'rtbl_services'. This way entries added manually will be persisted and don't get lost between server restarts ('rtbl_multi_host_policiy' needs to be set to 'one')."
+                     ""
+                     "Note that when using custom node names and you want to use keyword expansion for your pubsub hostnames, like in the example given, they have to be put in parenthesis (i.e. be a yaml string).")}},
            {rtbl_multi_host_policy,
             #{value => "all | one",
               desc =>
@@ -252,14 +276,14 @@ mod_doc() ->
             #{value => ?T("[Service]"),
               example =>
                   ["rtbl_services:",
-                   "  - pubsub.server1.localhost:",
+                   "  - pubsub.server1.local:",
                    "      spam_source_domains_node: some_custom_pubsub_node"
                    "      muc_bans_node: some_other_pubsub_node"],
               desc =>
                   ?T("Query a RTBL service to get domains and MUC jids to block, as provided by "
                      "https://xmppbl.org/[xmppbl.org]. "
-                     "If only the host is provided, the default node names ('spam_source_domains' "
-                     "and 'muc_bans_sha256' as found on 'xmppbl.org') will be assumed."
+                     "If only the host is provided, the default node names, 'spam_source_domains' "
+                     "and 'muc_bans', are used. Except for 'xmppbl.org' where the default node for MUC bans is called 'muc_bans_sha256'."
                      "For using custom node name, e.g. different than 'spam_source_domains', "
                      "you can setup the custom node name with the options 'spam_source_domains_node' or 'muc_bans_node'. In that case you have to set a value for both nodes though, unless you want to disable one of the features. Setting a node's value to 'none' disables this feauture too."
                      "The default value is an empty list of services.")}},
@@ -316,8 +340,10 @@ mod_doc() ->
       example =>
           ["modules:",
            "  mod_antispam:",
+           "    rtbl_exports: auto"
            "    rtbl_services:",
            "      - xmppbl.org",
+           "      - pubsub.@HOST@"
            "    spam_jids_file: \"@CONFIG_PATH@/spam_jids.txt\"",
            "    spam_dump_file: \"@LOG_PATH@/spam/host-@HOST@.log\""]}.
 
