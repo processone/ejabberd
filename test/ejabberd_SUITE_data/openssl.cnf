@@ -220,7 +220,8 @@ extendedKeyUsage = OCSPSigning,serverAuth,clientAuth
 subjectAltName          = @alt_names
 
 [alt_names]
-DNS.1 = *.localhost
+DNS.1 = localhost
+DNS.2 = *.localhost
 otherName.1 = 1.3.6.1.5.5.7.8.5;UTF8:"test_single!#$%^*()`~+-;_=[]{}|\\@localhost"
 
 [ v3_ca ]
