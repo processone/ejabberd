@@ -36,6 +36,7 @@
          get_rtbl_exports/1,
          get_rtbl_service_node/3,
          get_rtbl_services_option/1,
+         item_id_and_payload/1,
          parse_iq_result/3,
          publish_blocked/3,
          publish_unblocked/3,
@@ -47,6 +48,9 @@
          subscribe/3,
          unsubscribe/2
         ]).
+
+-type rtbl_block_item() :: binary() | {binary(), spam | abuse, binary()}.
+-export_type([rtbl_block_item/0]).
 
 %% @format-begin
 
@@ -222,11 +226,15 @@ parse_iq_result(#iq{to = #jid{lserver = LServer}, type = result} = IQ,
 
 -spec publish_blocked(binary(),
                       rtbl_service_node_type(),
-                      [binary() | {binary(), spam | abuse, binary()}]) ->
+                      rtbl_block_item() | [rtbl_block_item()]) ->
                          ok.
 publish_blocked(Host, Type, ItemOrItems) ->
     publish_to_exports(Host, Type, ItemOrItems, fun publish_item/5).
 
+-spec publish_unblocked(binary(),
+                        rtbl_service_node_type(),
+                        rtbl_block_item() | [rtbl_block_item()]) ->
+                           ok.
 publish_unblocked(Host, Type, ItemOrItems) ->
     publish_to_exports(Host, Type, ItemOrItems, fun delete_item/5).
 
@@ -250,8 +258,7 @@ delete_item(PHost, _Host, Node, Publisher, Item) ->
     {ItemId, _} = item_id_and_payload(Item),
     mod_pubsub:delete_item(PHost, Node, Publisher, ItemId, true).
 
--spec item_id_and_payload(Item :: binary() | {binary(), spam | abuse, binary()}) ->
-                             {binary(), [xmlel()]}.
+-spec item_id_and_payload(Item :: rtbl_block_item()) -> {binary(), [xmlel()]}.
 item_id_and_payload(Item) when is_binary(Item) ->
     Payload = [xmpp:encode(#report{reason = spam})],
     {Item, Payload};

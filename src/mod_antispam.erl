@@ -54,6 +54,7 @@
 %% ejabberd_commands callbacks.
 -export([add_blocked_domain/2,
          add_muc_ban/2,
+         add_muc_ban_with_reason/4,
          add_to_spam_filter_cache/2,
          drop_from_spam_filter_cache/2,
          get_blocked_domains/1,
@@ -70,6 +71,7 @@
 -import(mod_antispam_util, [try_call_by_host/3, for_all_hosts/2, sets_equal/2, format/2, format_s/2]).
 -import(mod_antispam_rtbl, [get_rtbl_service_node/3,
                             get_rtbl_services_option/1,
+                            item_id_and_payload/1,
                             set_retry_timer/4,
                             set_rtbl_service_node/4,
                             to_rtbl_service/2,
@@ -613,6 +615,15 @@ get_commands_spec() ->
                         note = "added in 26.12",
                         args = [{host, binary}, {jid, binary}],
                         result = {res, restuple}},
+     #ejabberd_commands{name = add_muc_ban_with_reason,
+                        tags = [spam],
+                        desc =
+                            "Add JID to MUC bans, JID can be either in cleartext or as a sha256 hash. 'reason' must be either 'spam' or 'abuse'. 'text' is a free form explanation, needs to be put it in quotiation marks.",
+                        module = ?MODULE,
+                        function = add_muc_ban_with_reason,
+                        note = "added in 26.12",
+                        args = [{host, binary}, {jid, binary}, {reason, binary}, {text, binary}],
+                        result = {res, restuple}},
      #ejabberd_commands{name = add_to_spam_filter_cache,
                         tags = [spam],
                         desc = "Add JID to spam filter cache",
@@ -722,24 +733,36 @@ add_blocked_domain(HostOrGlobal, Domain) ->
     add_blocked_item(HostOrGlobal, spam_source_domains, Domain).
 
 -spec add_muc_ban(binary(), binary()) -> {ok, string()}.
-add_muc_ban(HostOrGlobal, JID) ->
-    add_blocked_item(HostOrGlobal, muc_bans, JID).
+add_muc_ban(HostOrGlobal, Item) ->
+    add_blocked_item(HostOrGlobal, muc_bans, Item).
 
--spec add_blocked_item(binary(), rtbl_service_node_type(), binary()) -> {ok, string()}.
+-spec add_muc_ban_with_reason(binary(), binary(), binary(), binary()) -> {ok, string()}.
+add_muc_ban_with_reason(HostOrGlobal, ItemId, Reason, Text)
+    when Reason == <<"spam">>; Reason == <<"abuse">> ->
+    add_blocked_item(HostOrGlobal, muc_bans, {ItemId, binary_to_existing_atom(Reason), Text});
+add_muc_ban_with_reason(_, _, Reason, _) ->
+    {error,
+     format_s("Not a valid reason: '~s' - valid reasons are: 'spam' or 'abuse'.", [Reason])}.
+
+-spec add_blocked_item(binary(),
+                       rtbl_service_node_type(),
+                       mod_antispam_rtbl:rtbl_block_item()) ->
+                          {ok, string()}.
 add_blocked_item(<<"global">>, Type, Item) ->
     for_all_hosts(fun add_blocked_item/3, [Type, Item]);
 add_blocked_item(Host, Type, Item) ->
     ?check_host(begin
-                    Val = #{add_blocked_item => true},
+                    {ItemId, Payload} = item_id_and_payload(Item),
+                    Val = #{add_blocked_item => Payload},
                     ets_cache_upsert(cache_tab(blocked_items),
-                                     {Host, Item, Type},
+                                     {Host, ItemId, Type},
                                      Val,
                                      ejabberd_cluster:get_nodes()),
                     ejabberd_hooks:run(antispam_rtbl_items,
                                        Host,
-                                       [Host, {Type, {[], #{Item => Val}}}]),
+                                       [Host, {Type, {[], #{ItemId => Val}}}]),
                     mod_antispam_rtbl:publish_blocked(Host, Type, Item),
-                    Txt = format("~s added to blocked items of type ~p", [Item, Type]),
+                    Txt = format("~s added to blocked items of type ~p", [ItemId, Type]),
                     {ok, Txt}
                 end).
 
