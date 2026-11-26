@@ -391,6 +391,10 @@ init([Host, Opts]) ->
                          Host,
                          set_to_map(AllowDomainsSet, #{source => allow_domains_file})),
 
+    BlockedDomains =
+        sets:to_list(
+            sets:subtract(SpamDomainsSet, AllowDomainsSet)),
+    mod_antispam_rtbl:publish_blocked(Host, spam_source_domains, BlockedDomains),
     ejabberd_hooks:add(local_send_to_resource_hook,
                        Host,
                        mod_antispam_rtbl,
@@ -715,52 +719,50 @@ get_blocked_domains(Host) ->
 
 -spec add_blocked_domain(binary(), binary()) -> {ok, string()}.
 add_blocked_domain(HostOrGlobal, Domain) ->
-    add_blocked_item(HostOrGlobal, Domain, spam_source_domains).
+    add_blocked_item(HostOrGlobal, spam_source_domains, Domain).
 
 -spec add_muc_ban(binary(), binary()) -> {ok, string()}.
 add_muc_ban(HostOrGlobal, JID) ->
-    add_blocked_item(HostOrGlobal, JID, muc_bans).
+    add_blocked_item(HostOrGlobal, muc_bans, JID).
 
--spec add_blocked_item(binary(), binary(), atom()) -> {ok, string()}.
-add_blocked_item(<<"global">>, Item, Type) ->
-    for_all_hosts(fun add_blocked_item/3, [Item, Type]);
-add_blocked_item(Host, Item, Type) ->
-    ?check_host(
-       begin
-           Val = #{add_blocked_item => true},
-           ets_upsert(cache_tab(blocked_items),
-                      {Host, Item, Type},
-                      Val,
-                      ejabberd_cluster:get_nodes()),
-           ejabberd_hooks:run(antispam_rtbl_items,
-                              Host,
-                              [Host, {Type, {[], #{Item => Val}}}]),
-           Txt = format("~s added to blocked items of type ~p", [Item, Type]),
-           {ok, Txt}
-       end).
+-spec add_blocked_item(binary(), rtbl_service_node_type(), binary()) -> {ok, string()}.
+add_blocked_item(<<"global">>, Type, Item) ->
+    for_all_hosts(fun add_blocked_item/3, [Type, Item]);
+add_blocked_item(Host, Type, Item) ->
+    ?check_host(begin
+                    Val = #{add_blocked_item => true},
+                    ets_cache_upsert(cache_tab(blocked_items),
+                                     {Host, Item, Type},
+                                     Val,
+                                     ejabberd_cluster:get_nodes()),
+                    ejabberd_hooks:run(antispam_rtbl_items,
+                                       Host,
+                                       [Host, {Type, {[], #{Item => Val}}}]),
+                    mod_antispam_rtbl:publish_blocked(Host, Type, Item),
+                    Txt = format("~s added to blocked items of type ~p", [Item, Type]),
+                    {ok, Txt}
+                end).
 
 -spec remove_blocked_domain(binary(), binary()) -> {ok, string()}.
 remove_blocked_domain(HostOrGlobal, Domain) ->
-    remove_blocked_item(HostOrGlobal, Domain, spam_source_domains).
+    remove_blocked_item(HostOrGlobal, spam_source_domains, Domain).
 
 remove_muc_ban(HostOrGlobal, JID) ->
-    remove_blocked_item(HostOrGlobal, JID, muc_bans).
+    remove_blocked_item(HostOrGlobal, muc_bans, JID).
 
--spec remove_blocked_item(binary(), binary(), atom()) -> {ok, string()}.
-remove_blocked_item(<<"global">>, Item, Type) ->
-    for_all_hosts(fun remove_blocked_item/3, [Item, Type]);
-remove_blocked_item(Host, Item, Type) ->
-    ?check_host(
-       begin
-           ets_cache:delete(cache_tab(blocked_items),
-                            {Host, Item, Type},
-                            ejabberd_cluster:get_nodes()),
-           ejabberd_hooks:run(antispam_rtbl_items,
-                              Host,
-                              [Host, {Type, {[Item], #{}}}]),
-           Txt = format("~s removed from blocked items of type ~p", [Item, Type]),
-           {ok, Txt}
-       end).
+-spec remove_blocked_item(binary(), rtbl_service_node_type(), binary()) -> {ok, string()}.
+remove_blocked_item(<<"global">>, Type, Item) ->
+    for_all_hosts(fun remove_blocked_item/3, [Type, Item]);
+remove_blocked_item(Host, Type, Item) ->
+    ?check_host(begin
+                    ets_cache:delete(cache_tab(blocked_items),
+                                     {Host, Item, Type},
+                                     ejabberd_cluster:get_nodes()),
+                    ejabberd_hooks:run(antispam_rtbl_items, Host, [Host, {Type, {[Item], #{}}}]),
+                    mod_antispam_rtbl:publish_unblocked(Host, Type, Item),
+                    Txt = format("~s removed from blocked items of type ~p", [Item, Type]),
+                    {ok, Txt}
+                end).
 
 -spec get_spam_filter_cache(binary()) -> [{binary(), string()}] | {error, string()}.
 get_spam_filter_cache(Host) ->
@@ -909,6 +911,10 @@ reload_files(#state{host = Host} = State) ->
             insert_many_for_host(cache_tab(allow_domains),
                                  Host,
                                  set_to_map(AllowDomainsSet, #{source => allow_domains_file})),
+            BlockedDomains =
+                sets:to_list(
+                    sets:subtract(SpamDomainsSet, AllowDomainsSet)),
+            mod_antispam_rtbl:publish_blocked(Host, spam_source_domains, BlockedDomains),
             {ok, State};
         {config_error, ErrorText} ->
             {{error, ErrorText}, State}

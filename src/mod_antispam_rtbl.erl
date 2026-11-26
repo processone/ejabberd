@@ -37,6 +37,8 @@
          get_rtbl_service_node/3,
          get_rtbl_services_option/1,
          parse_iq_result/3,
+         publish_blocked/3,
+         publish_unblocked/3,
          pubsub_event_handler/1,
          set_retry_timer/4,
          set_rtbl_service_node/4,
@@ -54,22 +56,35 @@ start(Server, Opts) ->
             ok;
         RTBLExports ->
             Owner = jid:make(Server),
-            maps:foreach(
-              fun(_Type, Nodes) ->
-                      lists:foreach(
-                        fun({Host, Node}) ->
-                                mod_pubsub:create_node(Host, Server, Node, Owner, <<"flat">>)
-                        end, Nodes)
-              end, RTBLExports)
+            maps:foreach(fun(_Type, Nodes) ->
+                            lists:foreach(fun({Host, Node}) ->
+                                             mod_pubsub:create_node(Host,
+                                                                    Server,
+                                                                    Node,
+                                                                    Owner,
+                                                                    <<"flat">>)
+                                          end,
+                                          Nodes)
+                         end,
+                         RTBLExports)
     catch
-        error:{module_not_loaded, mod_pubsub, Server} = E ->
-            ?CRITICAL_MSG("'mod_antispam->rtbl_exports' configured with option 'auto' but 'mod_pubsub' not loaded for host ~s", [Server]),
+        error:({module_not_loaded, mod_pubsub, Server} = E) ->
+            ?CRITICAL_MSG("'mod_antispam->rtbl_exports' configured with option 'auto' but 'mod_pubsub' not loaded for host ~s",
+                          [Server]),
             {error, E}
     end.
 
+-spec get_rtbl_exports(Server :: binary()) ->
+                          none |
+                          #{muc_bans | spam_source_domains =>
+                                [{PHost :: binary(), Node :: binary()}]}.
 get_rtbl_exports(Server) ->
     get_rtbl_exports(Server, mod_antispam_opt:rtbl_exports(Server)).
 
+-spec get_rtbl_exports(Server :: binary(), none | auto | [[{PHost, Nodes :: [Node]}]]) ->
+                          none | #{muc_bans | spam_source_domains => [{PHost, Node}]}
+    when Node :: binary(),
+         PHost :: binary().
 get_rtbl_exports(_Server, none) ->
     none;
 get_rtbl_exports(Server, auto) ->
@@ -77,20 +92,17 @@ get_rtbl_exports(Server, auto) ->
     #{muc_bans => [{Host, ?DEFAULT_MUC_BANS_NODE}],
       spam_source_domains => [{Host, ?DEFAULT_SPAM_SOURCE_DOMAINS_NODE}]};
 get_rtbl_exports(_Server, Opts) ->
-    lists:foldl(fun to_rtbl_export/2,
-                #{},
-                Opts).
+    lists:foldl(fun to_rtbl_export/2, #{}, Opts).
 
 to_rtbl_export([{Host, Nodes}], M) ->
-    lists:foldl(
-      fun({Type, NodeName}, M2) ->
-              add_node(M2, node_type(Type), {Host, NodeName})
-      end, M, Nodes
-     );
+    lists:foldl(fun({Type, NodeName}, M2) -> add_node(M2, node_type(Type), {Host, NodeName})
+                end,
+                M,
+                Nodes);
 to_rtbl_export(Host, M) ->
-    add_node(
-      add_node(M, muc_bans,{Host, ?DEFAULT_MUC_BANS_NODE}),
-      spam_source_domains, {Host, ?DEFAULT_SPAM_SOURCE_DOMAINS_NODE}).
+    add_node(add_node(M, muc_bans, {Host, ?DEFAULT_MUC_BANS_NODE}),
+             spam_source_domains,
+             {Host, ?DEFAULT_SPAM_SOURCE_DOMAINS_NODE}).
 
 add_node(M, Type, Node) ->
     case M of
@@ -207,6 +219,45 @@ parse_iq_result(#iq{to = #jid{lserver = LServer}, type = result} = IQ,
         _ ->
             undefined
     end.
+
+-spec publish_blocked(binary(),
+                      rtbl_service_node_type(),
+                      [binary() | {binary(), spam | abuse, binary()}]) ->
+                         ok.
+publish_blocked(Host, Type, ItemOrItems) ->
+    publish_to_exports(Host, Type, ItemOrItems, fun publish_item/5).
+
+publish_unblocked(Host, Type, ItemOrItems) ->
+    publish_to_exports(Host, Type, ItemOrItems, fun delete_item/5).
+
+publish_to_exports(Host, Type, Items, PublishFun) when is_list(Items) ->
+    lists:foreach(fun(Item) -> publish_to_exports(Host, Type, Item, PublishFun) end, Items);
+publish_to_exports(Host, Type, Item, PublishFun) ->
+    case get_rtbl_exports(Host) of
+        #{Type := HostsAndNodes} ->
+            Publisher = jid:make(Host),
+            lists:foreach(fun({PHost, Node}) -> PublishFun(PHost, Host, Node, Publisher, Item) end,
+                          HostsAndNodes);
+        _ ->
+            ok
+    end.
+
+publish_item(PHost, Host, Node, Publisher, Item) ->
+    {ItemId, Payload} = item_id_and_payload(Item),
+    mod_pubsub:publish_item(PHost, Host, Node, Publisher, ItemId, Payload).
+
+delete_item(PHost, _Host, Node, Publisher, Item) ->
+    {ItemId, _} = item_id_and_payload(Item),
+    mod_pubsub:delete_item(PHost, Node, Publisher, ItemId, true).
+
+-spec item_id_and_payload(Item :: binary() | {binary(), spam | abuse, binary()}) ->
+                             {binary(), [xmlel()]}.
+item_id_and_payload(Item) when is_binary(Item) ->
+    Payload = [xmpp:encode(#report{reason = spam})],
+    {Item, Payload};
+item_id_and_payload({ItemId, Reason, Text}) ->
+    Payload = [xmpp:encode(#report{reason = Reason, text = [#text{data = Text}]})],
+    {ItemId, Payload}.
 
 %%--------------------------------------------------------------------
 %% Hook callbacks.
