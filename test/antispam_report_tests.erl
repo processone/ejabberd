@@ -81,7 +81,7 @@ report_spam(Config) ->
     disconnect(Config).
 
 %%%===================================================================
-%%% Master-slave tests
+%%% Couple tests
 %%%===================================================================
 couple_cases() ->
     {antispam_report_couple, [sequence], [couple_test(report_stanza_id)]}.
