@@ -226,7 +226,15 @@ doc() ->
           desc =>
               ?T("Same as 'node_regexp', but matching is performed on a "
                  "specified 'Pattern' according to the rules used by the "
-                 "Unix shell.")}}]},
+                 "Unix shell.")}},
+       {anonymous_user,
+        #{value => "true | false",
+          desc =>
+              ?T("When 'true', the rule matches users logged in with "
+                 "anonymous authentication (SASL ANONYMOUS or 'login_anon'); "
+                 "when 'false', it matches all other users. "
+                 "Useful to give anonymous users different access or shaper "
+                 "rules than registered accounts.")}}]},
      {access_rules,
       #{value => "{AccessName: {allow|deny: ACLName|ACLDefinition}}",
         desc =>

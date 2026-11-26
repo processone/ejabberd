@@ -54,8 +54,13 @@ access_rules:
   announce:
     allow: admin
   c2s:
-    deny: blocked
-    allow: all
+    - deny: blocked
+    - deny:
+        - anonymous_user: true
+        - resource: anonymous-denied
+    - allow: all
+  anonymous_only:
+    allow: anonymous
   configure:
     allow: admin
   local:
@@ -76,6 +81,8 @@ access_rules:
 acl:
   local:
     user_regexp: ""
+  anonymous:
+    anonymous_user: true
   admin:
     user: "admin"
 language: en

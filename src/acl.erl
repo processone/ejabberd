@@ -48,11 +48,13 @@
 		    {resource_glob, misc:re_mp()} |
 		    {node_glob, {misc:re_mp(), misc:re_mp()}} |
 		    {shared_group, {binary(), binary()} | binary()} |
-		    {ip, ip_mask()}.
+		    {ip, ip_mask()} |
+		    {anonymous_user, boolean()}.
 -type access() :: [{action(), [access_rule()]}].
 -type acl() :: atom() | access().
 -type match() :: #{ip => inet:ip_address(),
 		   usr => jid:ljid(),
+		   anonymous_user => boolean(),
 		   atom() => term()}.
 
 -export_type([acl/0, acl_rule/0, access/0, access_rule/0, match/0]).
@@ -93,6 +95,10 @@ match_acl(_Host, {ip, {Net, Mask}}, #{ip := {IP, _Port}}) ->
     misc:match_ip_mask(IP, Net, Mask);
 match_acl(_Host, {ip, {Net, Mask}}, #{ip := IP}) ->
     misc:match_ip_mask(IP, Net, Mask);
+match_acl(_Host, {anonymous_user, Anon}, #{anonymous_user := IsAnon}) ->
+    Anon == IsAnon;
+match_acl(_Host, {anonymous_user, Anon}, #{usr := {U, S, _}}) ->
+    Anon == is_anonymous_user(U, S);
 match_acl(_Host, {user, {U, S}}, #{usr := {U, S, _}}) ->
     true;
 match_acl(_Host, {user, U}, #{usr := {U, S, _}}) ->
@@ -263,6 +269,7 @@ validators() ->
       node_regexp => node_validator(econf:re([unicode]), econf:re([unicode])),
       node_glob => node_validator(econf:glob([unicode]), econf:glob([unicode])),
       shared_group => user_validator(econf:binary(), econf:domain()),
+      anonymous_user => econf:bool(),
       acl => econf:atom()}.
 
 rule_validator() ->
@@ -342,6 +349,17 @@ node_validator(UV, SV) ->
 %%%===================================================================
 %%% Aux
 %%%===================================================================
+%% Used when the caller only knows the JID (not the c2s state that
+%% sets 'anonymous_user' in the match map): look at the user's sessions,
+%% but only for local hosts where anonymous login is enabled at all.
+-spec is_anonymous_user(binary(), binary()) -> boolean().
+is_anonymous_user(<<>>, _S) ->
+    false;
+is_anonymous_user(U, S) ->
+    lists:member(S, ejabberd_option:hosts()) andalso
+	ejabberd_auth_anonymous:allow_anonymous(S) andalso
+	ejabberd_auth_anonymous:anonymous_user_exist(U, S).
+
 -spec match_regexp(iodata(), misc:re_mp()) -> boolean().
 match_regexp(Data, RegExp) ->
     re:run(Data, RegExp) /= nomatch.

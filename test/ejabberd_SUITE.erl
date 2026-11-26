@@ -351,6 +351,11 @@ init_per_testcase(TestCase, OrigConfig) ->
 	    auth(connect(Config));
         "test_open_session" ->
             bind(auth(connect(Config)));
+	"acl_anonymous_user_bind" ->
+	    auth(connect(Config));
+	"acl_registered_user_bind" ->
+	    ejabberd_auth:try_register(User, Server, ?config(password, Config)),
+	    auth(connect(Config));
 	"replaced" ++ _ ->
 	    auth(connect(Config));
 	"sqlschemaupdater_" ++ _ ->
@@ -406,6 +411,8 @@ no_db_tests() ->
        test_zlib,
        test_bind,
        test_open_session,
+       acl_anonymous_user,
+       acl_anonymous_user_bind,
        anonymous_set_password,
        codec_failure,
        unsupported_query,
@@ -423,6 +430,7 @@ no_db_tests() ->
        s2s_dialback,
        s2s_optional,
        s2s_required]},
+     acl_registered_user_bind,
      auth_external,
      auth_external_no_jid,
      auth_external_no_user,
@@ -1089,6 +1097,31 @@ test_bind(Config) ->
 
 test_open_session(Config) ->
     disconnect(open_session(Config, true)).
+
+%% The 'anonymous_only' access rule allows the 'anonymous' acl,
+%% which is 'anonymous_user: true'
+acl_anonymous_user(Config) ->
+    #jid{lserver = S} = JID = my_jid(Config),
+    allow = acl:match_rule(S, anonymous_only, JID),
+    deny = acl:match_rule(S, anonymous_only, jid:make(<<"admin">>, S)),
+    deny = acl:match_rule(S, anonymous_only, #{usr => jid:tolower(JID),
+					       anonymous_user => false}),
+    disconnect(Config).
+
+%% The 'c2s' access rule denies anonymous users the resource
+%% 'anonymous-denied'
+acl_anonymous_user_bind(Config) ->
+    #iq{type = error} = Err =
+	send_recv(Config, #iq{type = set,
+			      sub_els = [#bind{resource = <<"anonymous-denied">>}]}),
+    #stanza_error{reason = 'not-allowed'} = xmpp:get_error(Err),
+    disconnect(Config).
+
+acl_registered_user_bind(Config) ->
+    Config1 = bind(set_opt(resource, <<"anonymous-denied">>, Config)),
+    #jid{lserver = S} = JID = my_jid(Config1),
+    deny = acl:match_rule(S, anonymous_only, JID),
+    disconnect(Config1).
 
 anonymous_set_password(Config) ->
     #jid{luser = U, lserver = S, lresource = R} = my_jid(Config),
