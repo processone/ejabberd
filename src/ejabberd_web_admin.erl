@@ -837,12 +837,15 @@ list_users_element(_, row, roster, {R, Username, Host, Level}) ->
                   {result_links,
                    [{value, arg_host, Level, <<"user/", Username/binary, "/roster/">>}]}]);
 list_users_element(_, row, last, {R, Username, Host}) ->
-    [?C(element(1,
-                make_command_raw_value(get_last, R, [{<<"user">>, Username}, {<<"host">>, Host}]))),
-     ?C(element(2,
-                make_command_raw_value(get_last,
-                                       R,
-                                       [{<<"user">>, Username}, {<<"host">>, Host}])))];
+    case make_command_raw_value(get_last, R,
+                                [{<<"user">>, Username}, {<<"host">>, Host}]) of
+        {xmlcdata, _} = Fallback ->
+            %% get_last is unavailable: make_command_raw_value/3 already
+            %% returns an XML node, which must not be wrapped in ?C/1.
+            [Fallback, Fallback];
+        RawValue ->
+            [?C(element(1, RawValue)), ?C(element(2, RawValue))]
+    end;
 list_users_element(_, presentation, offline, R) ->
     make_command(get_offline_count, R, [], [{only, presentation}]);
 list_users_element(_, presentation, mam, R) ->
@@ -3127,6 +3130,28 @@ clean_token_duplicates_query(Query) ->
     Value = proplists:get_value(<<"csrf_token">>, Query),
     Cleaned = proplists:delete(<<"csrf_token">>, Query),
     [{<<"csrf_token">>, Value} | Cleaned].
+
+%%%==================================
+%%%% EUnit
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+
+%% Regression test for processone/ejabberd#4597.
+%% When the get_last command is unavailable, make_command_raw_value/3
+%% returns {xmlcdata, <<>>}. Wrapping that fallback node with ?C/1
+%% produced {xmlcdata, xmlcdata}, which makes fxml:element_to_binary/1
+%% crash and leaves the WebAdmin users page empty.
+list_users_last_fallback_test() ->
+    R = #request{us = {<<"admin">>, <<"localhost">>}},
+    Args = [{<<"user">>, <<"user">>}, {<<"host">>, <<"localhost">>}],
+    %% get_last is not registered outside a running node, so the command
+    %% helper returns its {xmlcdata, _} fallback.
+    ?assertEqual({xmlcdata, <<>>}, make_command_raw_value(get_last, R, Args)),
+    Expected = [{xmlcdata, <<>>}, {xmlcdata, <<>>}],
+    ?assertEqual(Expected,
+                 list_users_element(true, row, last, {R, <<"user">>, <<"localhost">>})).
+-endif.
 
 %%%==================================
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:
