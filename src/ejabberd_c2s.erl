@@ -523,7 +523,7 @@ bind(
         access := Access,
         lang := Lang,
         socket := Socket,
-        ip := IP
+        ip := {IP, _}
     }=State
 ) ->
     case ejabberd_hooks:run_fold(c2s_handle_bind, LServer, {R, {ok, State}}, []) of
@@ -533,7 +533,7 @@ bind(
                     {error, xmpp:err_conflict(), State2};
                 {accept_resource, Resource} ->
                     JID = jid:make(U, S, Resource),
-                    case acl:match_rule(LServer, Access, #{usr => jid:split(JID), ip => IP}) of
+                    case acl:match_rule(LServer, Access, acl_match(State2, jid:split(JID), IP)) of
                         allow ->
                             State3 = open_session(
                                 State2#{resource => Resource, sid => ejabberd_sm:make_sid()}
@@ -837,7 +837,8 @@ process_presence_out(#{lserver := LServer, jid := JID,
 	   Type == unsubscribe; Type == unsubscribed ->
 		Access = mod_roster_opt:access(LServer),
 		MyBareJID = jid:remove_resource(JID),
-		case acl:match_rule(LServer, Access, MyBareJID) of
+		case acl:match_rule(LServer, Access,
+				    acl_match(State0, jid:tolower(MyBareJID))) of
 		    deny ->
 			AccessErrTxt = ?T("Access denied by service policy"),
 			AccessErr = xmpp:err_forbidden(AccessErrTxt, Lang),
@@ -1136,8 +1137,20 @@ change_shaper(#{shaper := ShaperName, ip := {IP, _}, lserver := LServer,
 		user := U, server := S, resource := R} = State) ->
     JID = jid:make(U, S, R),
     Shaper = ejabberd_shaper:match(LServer, ShaperName,
-				   #{usr => jid:split(JID), ip => IP}),
+				   acl_match(State, jid:split(JID), IP)),
     xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)).
+
+%% What acl/access/shaper rules are matched against for this session.
+%% 'anonymous_user' comes from how the session authenticated.
+-spec acl_match(state(), jid:ljid()) -> acl:match().
+acl_match(State, USR) ->
+    #{usr => USR,
+      anonymous_user => ejabberd_auth_anonymous:is_anonymous_auth_module(
+			  maps:get(auth_module, State, undefined))}.
+
+-spec acl_match(state(), jid:ljid(), inet:ip_address()) -> acl:match().
+acl_match(State, USR, IP) ->
+    (acl_match(State, USR))#{ip => IP}.
 
 -spec format_reason(state(), term()) -> binary().
 format_reason(#{stop_reason := Reason}, _) ->
