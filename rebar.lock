@@ -26,7 +26,7 @@
  {<<"uuid">>,{pkg,<<"uuid_erl">>,<<"2.0.7">>},0},
  {<<"xmpp">>,
   {git,"https://github.com/processone/xmpp",
-       {ref,"9cad9a6c6abd3cdad75d0431f0ecccce73ddd7c0"}},
+       {ref,"776973e65fcfb267e76575715cd9d0c469f29531"}},
   0},
  {<<"yconf">>,{pkg,<<"yconf">>,<<"1.0.23">>},0}]}.
 [

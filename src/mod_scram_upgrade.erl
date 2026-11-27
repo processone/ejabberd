@@ -76,25 +76,36 @@ mod_doc() ->
        "      - sha256",
        "      - sha512"]}.
 
-c2s_inline_features({Sasl, Bind, Extra}, Host, State) ->
+c2s_inline_features({Sasl, Bind, Extra} = Acc, Host, State) ->
     KnowTypes = case State of
 	#{sasl2_password_fun := Fun} ->
 	    case Fun(<<>>) of
-		{Pass, _} -> lists:filtermap(
+		{Pass, _} when is_list(Pass) -> lists:filtermap(
 		    fun(#scram{hash = sha256}) -> {true, sha256};
 		       (#scram{hash = sha512}) -> {true, sha512};
 		       (_) -> false
 		    end, Pass);
-		_ -> []
+		_ -> none
 	    end;
 	_ -> []
     end,
-    Methods = lists:filtermap(
-	fun(sha256) -> {true, #sasl_upgrade{cdata = <<"UPGR-SCRAM-SHA-256">>}};
-	   (sha512) -> {true, #sasl_upgrade{cdata = <<"UPGR-SCRAM-SHA-512">>}}
-	end, mod_scram_upgrade_opt:offered_upgrades(Host) -- KnowTypes),
-    {Sasl, Bind, Methods ++ Extra}.
+    case KnowTypes of
+	none ->
+	    %% No stored password to upgrade: the user does not exist or
+	    %% is disabled, or the stream names no user
+	    Acc;
+	_ ->
+	    Methods = lists:filtermap(
+		fun(sha256) -> {true, #sasl_upgrade{cdata = <<"UPGR-SCRAM-SHA-256">>}};
+		   (sha512) -> {true, #sasl_upgrade{cdata = <<"UPGR-SCRAM-SHA-512">>}}
+		end, mod_scram_upgrade_opt:offered_upgrades(Host) -- KnowTypes),
+	    {Sasl, Bind, Methods ++ Extra}
+    end.
 
+c2s_handle_sasl2_inline({#{auth_module := AuthModule}, _, _} = Acc)
+  when AuthModule == anonymous; AuthModule == ejabberd_auth_anonymous ->
+    %% An anonymous user has no password to upgrade
+    Acc;
 c2s_handle_sasl2_inline({State, Els, _Results} = Acc) ->
     case lists:keyfind(sasl_upgrade, 1, Els) of
 	false ->
