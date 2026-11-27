@@ -490,6 +490,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        dbserializer_tests:single_cases(),
        test_pass_change,
        test_unregister]},
+     antispam_tests:couple_cases(),
      antispam_report_tests:couple_cases(),
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),

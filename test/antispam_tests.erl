@@ -28,7 +28,7 @@
 
 -import(suite, [recv_presence/1, send_recv/2, my_jid/1, muc_room_jid/1,
 		send/2, recv_message/1, recv_iq/1, muc_jid/1,
-		alt_room_jid/1, wait_for_slave/1, wait_for_master/1,
+		alt_room_jid/1, wait_for_peer/1,
 		disconnect/1, put_event/2, get_event/1, peer_muc_jid/1,
 		my_muc_jid/1, get_features/2, set_opt/3]).
 -include("suite.hrl").
@@ -65,6 +65,7 @@ single_cases() ->
       single_test(rtbl_domains),
       single_test(rtbl_domains_allowed),
       single_test(rtbl_multi_domains),
+      single_test(rtbl_exports),
       single_test(spam_dump_file)]}.
 
 %%%===================================================================
@@ -265,6 +266,38 @@ rtbl_multi_domains(Config) ->
     ?retry(?match(true, (has_spam_domain(<<"spam.domain">>))(Server))),
     delete_nodes(Config, Nodes).
 
+rtbl_exports(Config) ->
+    Server = ?config(server, Config),
+    RTBLHost =
+        jid:encode(
+            suite:pubsub_jid(Config)),
+    RTBLNode = <<"export_test">>,
+    gen_mod:update_module(Server,
+                          mod_antispam,
+                          #{rtbl_exports =>
+                                [[{RTBLHost, [{spam_source_domains_node, RTBLNode}]}]]}),
+    %% wait for node to be ready
+    IQ = #iq{type = get,
+             to = suite:pubsub_jid(Config),
+             sub_els = [#pubsub{items = #ps_items{node = RTBLNode}}]},
+    ?retry(?match(#iq{type = result}, send_recv(Config, IQ))),
+
+    ?match([<<"spam_domain.org">>], query_items(Config, RTBLNode)),
+
+    mod_antispam:add_blocked_domain(Server, <<"test.domain">>),
+    ?retry(?match(true, lists:member(<<"spam_domain.org">>, query_items(Config, RTBLNode)))),
+    mod_antispam:remove_blocked_domain(Server, <<"test.domain">>),
+    ?retry(?match([<<"spam_domain.org">>], query_items(Config, RTBLNode))),
+    ok.
+
+query_items(Config, RTBLNode) ->
+    IQ = #iq{type = get,
+             to = suite:pubsub_jid(Config),
+             sub_els = [#pubsub{items = #ps_items{node = RTBLNode}}]},
+    #iq{type = result, sub_els = [#pubsub{items = #ps_items{items = Items}}]} =
+        send_recv(Config, IQ),
+    [Id || #ps_item{id = Id} <- Items].
+
 %%%===================================================================
 
 spam_dump_file(Config) ->
@@ -280,10 +313,78 @@ spam_dump_file(Config) ->
            ?match({match, _}, re:run(get_bytes(Filename), <<"A very specific spam message">>))).
 
 %%%===================================================================
+%%% Couple tests
+%%%===================================================================
+couple_cases() ->
+    {antispam_couple, [sequence], [couple_test(rtbl_muc_bans)]}.
+
+rtbl_muc_bans_romeo(Config) ->
+    %% Romeo creates the room, so that Julia isn't a moderator
+    RTBLHost =
+        jid:encode(
+            suite:pubsub_jid(Config)),
+    RTBLNode = <<"muc_bans">>,
+    Nodes = [{RTBLHost, RTBLNode, muc_bans_node}],
+    create_nodes_and_reload(Config, Nodes),
+
+    RoomJID = muc_room_jid(Config),
+
+    ct:pal("romeo joining room ~p", [RoomJID]),
+    ok = muc_tests:master_join(Config),
+
+    PeerJID = ?config(peer, Config),
+    PeerBareJIDs =
+        jid:encode(
+            jid:remove_resource(PeerJID)),
+    pubsub_block(Config, RTBLHost, RTBLNode, PeerBareJIDs),
+
+    Room = muc_room_jid(Config),
+    PeerNick = ?config(peer_nick, Config),
+    PeerNickJID = jid:replace_resource(Room, PeerNick),
+    muc_tests:recv_muc_presence(Config, PeerNickJID, unavailable),
+
+    rtbl_muc_bans_unban = get_event(Config),
+    pubsub_unblock(Config, RTBLHost, RTBLNode, PeerBareJIDs),
+    put_event(Config, rtbl_muc_bans_unbanned),
+    muc_tests:recv_muc_presence(Config, PeerNickJID, available),
+
+    put_event(Config, rtbl_muc_bans_end),
+    rtbl_muc_bans_end = get_event(Config),
+    muc_tests:recv_muc_presence(Config, PeerNickJID, unavailable),
+
+    ok = muc_tests:leave(Config),
+    disconnect(Config).
+
+rtbl_muc_bans_julia(Config) ->
+    RoomJID = muc_room_jid(Config),
+    MyMUCJID = my_muc_jid(Config),
+    ct:pal("julia joining room ~p", [RoomJID]),
+    _ = muc_tests:slave_join(Config),
+
+    #presence{type = unavailable, from = RoomJID} = recv_presence(Config),
+    #muc_user{items = [#muc_item{reason = <<"Banned by RTBL">>}]} =
+        muc_tests:recv_muc_presence(Config, MyMUCJID, unavailable),
+
+    #stanza_error{type = auth, reason = forbidden} = muc_tests:join(Config),
+    put_event(Config, rtbl_muc_bans_unban),
+    rtbl_muc_bans_unbanned = get_event(Config),
+    ?retry(?match({[], _, _}, muc_tests:join(Config))),
+    rtbl_muc_bans_end = get_event(Config),
+    put_event(Config, rtbl_muc_bans_end),
+    ok = muc_tests:leave(Config),
+    disconnect(Config).
+
+%%%===================================================================
 %%% Internal functions
 %%%===================================================================
 single_test(T) ->
     list_to_atom("antispam_" ++ atom_to_list(T)).
+
+couple_test(T) ->
+    {list_to_atom("antispam_" ++ atom_to_list(T)),
+     [parallel],
+     [list_to_atom("antispam_" ++ atom_to_list(T) ++ "_romeo"),
+      list_to_atom("antispam_" ++ atom_to_list(T) ++ "_julia")]}.
 
 has_spam_domain(Domain) ->
     fun(Host) -> lists:member(Domain, mod_antispam:get_blocked_domains(Host)) end.
@@ -315,9 +416,7 @@ create_nodes_and_reload(Config, Nodes) ->
 
 create_nodes_and_reload(Config, Nodes, ExtraOpts) ->
     Server = ?config(server, Config),
-    Owner =
-        jid:remove_resource(
-            suite:my_jid(Config)),
+    Owner = jid:make(Server),
 
     RTBLServices =
         lists:foldl(fun({RTBLHost, RTBLNode, RTBLNodeType}, Acc) ->
@@ -328,12 +427,12 @@ create_nodes_and_reload(Config, Nodes, ExtraOpts) ->
                     [],
                     Nodes),
     Opts = ExtraOpts#{rtbl_services => RTBLServices},
+    ct:pal("setting new opts: ~p", [Opts]),
     gen_mod:update_module(Server, mod_antispam, Opts).
 
 delete_nodes(Config, Nodes) ->
-    Owner =
-        jid:remove_resource(
-            suite:my_jid(Config)),
+    Server = ?config(server, Config),
+    Owner = jid:make(Server),
     lists:foreach(fun({RTBLHost, RTBLNode, _Type}) ->
                      {result, _} = mod_pubsub:delete_node(RTBLHost, RTBLNode, Owner)
                   end,
@@ -341,19 +440,17 @@ delete_nodes(Config, Nodes) ->
 
 pubsub_block(Config, RTBLHost, RTBLNode, JID) ->
     Server = ?config(server, Config),
-    Owner =
-        jid:remove_resource(
-            suite:my_jid(Config)),
+    Publisher = jid:make(Server),
+    ct:pal("publishing to ~s:~s: ~s", [RTBLHost, RTBLNode, JID]),
     {result, _} =
         mod_pubsub:publish_item(RTBLHost,
                                 Server,
                                 RTBLNode,
-                                Owner,
+                                Publisher,
                                 JID,
                                 [xmpp:encode(#report{reason = spam})]).
 
 pubsub_unblock(Config, RTBLHost, RTBLNode, JID) ->
-    Owner =
-        jid:remove_resource(
-            suite:my_jid(Config)),
-    {result, _} = mod_pubsub:delete_item(RTBLHost, RTBLNode, Owner, JID, true).
+    Server = ?config(server, Config),
+    Publisher = jid:make(Server),
+    {result, _} = mod_pubsub:delete_item(RTBLHost, RTBLNode, Publisher, JID, true).

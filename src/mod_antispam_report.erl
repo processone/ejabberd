@@ -69,7 +69,7 @@
 start(Host, Opts) ->
     ejabberd_hooks:add(s2s_in_handle_cast, Host, ?MODULE, s2s_handle_cast, 1000),
     ejabberd_hooks:add(s2s_out_handle_cast, Host, ?MODULE, s2s_handle_cast, 1000),
-    {ok, _Pid} = gen_mod:start_child(?MODULE, Host, Opts).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 -spec stop(binary()) -> ok | {error, any()}.
 stop(Host) ->

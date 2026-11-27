@@ -53,21 +53,25 @@
 
 %% ejabberd_commands callbacks.
 -export([add_blocked_domain/2,
+         add_muc_ban/2,
+         add_muc_ban_with_reason/4,
          add_to_spam_filter_cache/2,
          drop_from_spam_filter_cache/2,
          get_blocked_domains/1,
          get_commands_spec/0,
          get_spam_filter_cache/1,
          reload_spam_filter_files/1,
-         remove_blocked_domain/2]).
+         remove_blocked_domain/2,
+         remove_muc_ban/2]).
 
 -export([is_blocked_domain/2,
          update_blocked_items/5,
          cache_tab/1]).
 
--import(mod_antispam_util, [try_call_by_host/3, for_all_hosts/2, sets_equal/2, format/2]).
+-import(mod_antispam_util, [try_call_by_host/3, for_all_hosts/2, sets_equal/2, format/2, format_s/2]).
 -import(mod_antispam_rtbl, [get_rtbl_service_node/3,
                             get_rtbl_services_option/1,
+                            item_id_and_payload/1,
                             set_retry_timer/4,
                             set_rtbl_service_node/4,
                             to_rtbl_service/2,
@@ -96,14 +100,17 @@
 %%--------------------------------------------------------------------
 %%| gen_mod callbacks
 
--spec start(binary(), gen_mod:opts()) -> {ok, [gen_mod:registration()]}.
+-spec start(binary(), gen_mod:opts()) -> {ok, [gen_mod:registration()]} | {error, term()}.
 start(Host, Opts) ->
-    {ok, _Pid} = gen_mod:start_child(?MODULE, Host, Opts),
-    {ok, _Pid2} = mod_antispam_report:start(Host, Opts),
-    ok = mod_antispam_rtbl_muc:start(Host),
-    {ok,
-     [{hook, spam_reported, mod_antispam_report, spam_reported, 50},
-      {commands, get_commands_spec()}]}.
+    maybe
+        {ok, _Pid} ?= gen_mod:start_child(?MODULE, Host, Opts),
+        {ok, _Pid2} ?= mod_antispam_report:start(Host, Opts),
+        ok = mod_antispam_rtbl_muc:start(Host),
+        ok ?= mod_antispam_rtbl:start(Host, Opts),
+        {ok,
+         [{hook, spam_reported, mod_antispam_report, spam_reported, 50},
+          {commands, get_commands_spec()}]}
+    end.
 
 -spec prep_stop(binary()) -> ok | {error, any()}.
 prep_stop(Host) ->
@@ -120,6 +127,7 @@ stop(Host) ->
         true ->
             ok
     end,
+    mod_antispam_rtbl:stop(Host),
     mod_antispam_rtbl_muc:stop(Host),
     mod_antispam_report:stop(Host),
     gen_mod:stop_child(?MODULE, Host).
@@ -149,6 +157,16 @@ mod_opt_type(forward_reports) ->
 mod_opt_type(forward_reports_to_third_party) ->
     econf:list(
         econf:jid());
+mod_opt_type(rtbl_exports) ->
+    econf:either(
+        econf:enum([none, auto]),
+        econf:list(
+            econf:either(
+                econf:binary(),
+                econf:map(
+                    econf:binary(),
+                    econf:map(
+                        econf:enum([spam_source_domains_node, muc_bans_node]), econf:binary())))));
 mod_opt_type(rtbl_multi_host_policy) ->
     econf:enum([all, one]);
 mod_opt_type(rtbl_services) ->
@@ -180,6 +198,7 @@ mod_options(_Host) ->
      {cache_size, ?DEFAULT_CACHE_SIZE},
      {forward_reports, true},
      {forward_reports_to_third_party, []},
+     {rtbl_exports, none},
      {rtbl_multi_host_policy, one},
      {rtbl_services, []},
      {spam_domains_file, none},
@@ -240,6 +259,19 @@ mod_doc() ->
               desc =>
                   ?T("List of third-party services to forward spam and abuse reports to, if allowed"
                      " by reporter. Default is '[]'.")}},
+           {rtbl_exports,
+            #{value => "none | auto | [Export]",
+              example =>
+                  ["rtbl_exports:",
+                   "  - \"rtbl.@HOST@\":",
+                   "      spam_source_domains_node: some_custom_pubsub_node",
+                   "      muc_bans_node: some_other_pubsub_node"],
+              desc =>
+                  ?T("If not 'none' blocked items that have been added manually either by file or command will be exported to a a pubsub host at the given nodes. If set to 'auto' both, domains and MUC bans, will be exported to the default pubsub services at this server's hosts at the default node names 'spam_source_domains' and 'muc_bans' respectively. If no nodes are given, again the defaults are being used. The default value for this whole functionality is 'none', which disables it."
+                     ""
+                     "Note that it's perfectly fine to subscribe to your own nodes, i.e. configure your own service and nodes at 'rtbl_services'. This way entries added manually will be persisted and don't get lost between server restarts ('rtbl_multi_host_policiy' needs to be set to 'one')."
+                     ""
+                     "Note that when using custom node names and you want to use keyword expansion for your pubsub hostnames, like in the example given, they have to be put in parenthesis (i.e. be a yaml string).")}},
            {rtbl_multi_host_policy,
             #{value => "all | one",
               desc =>
@@ -250,14 +282,14 @@ mod_doc() ->
             #{value => ?T("[Service]"),
               example =>
                   ["rtbl_services:",
-                   "  - pubsub.server1.localhost:",
+                   "  - pubsub.server1.local:",
                    "      spam_source_domains_node: some_custom_pubsub_node"
                    "      muc_bans_node: some_other_pubsub_node"],
               desc =>
                   ?T("Query a RTBL service to get domains and MUC jids to block, as provided by "
                      "https://xmppbl.org/[xmppbl.org]. "
-                     "If only the host is provided, the default node names ('spam_source_domains' "
-                     "and 'muc_bans_sha256' as found on 'xmppbl.org') will be assumed."
+                     "If only the host is provided, the default node names, 'spam_source_domains' "
+                     "and 'muc_bans', are used. Except for 'xmppbl.org' where the default node for MUC bans is called 'muc_bans_sha256'."
                      "For using custom node name, e.g. different than 'spam_source_domains', "
                      "you can setup the custom node name with the options 'spam_source_domains_node' or 'muc_bans_node'. In that case you have to set a value for both nodes though, unless you want to disable one of the features. Setting a node's value to 'none' disables this feauture too."
                      "The default value is an empty list of services.")}},
@@ -314,8 +346,10 @@ mod_doc() ->
       example =>
           ["modules:",
            "  mod_antispam:",
+           "    rtbl_exports: auto"
            "    rtbl_services:",
            "      - xmppbl.org",
+           "      - pubsub.@HOST@"
            "    spam_jids_file: \"@CONFIG_PATH@/spam_jids.txt\"",
            "    spam_dump_file: \"@LOG_PATH@/spam/host-@HOST@.log\""]}.
 
@@ -359,6 +393,10 @@ init([Host, Opts]) ->
                          Host,
                          set_to_map(AllowDomainsSet, #{source => allow_domains_file})),
 
+    BlockedDomains =
+        sets:to_list(
+            sets:subtract(SpamDomainsSet, AllowDomainsSet)),
+    mod_antispam_rtbl:publish_blocked(Host, spam_source_domains, BlockedDomains),
     ejabberd_hooks:add(local_send_to_resource_hook,
                        Host,
                        mod_antispam_rtbl,
@@ -411,9 +449,16 @@ handle_cast({reload, NewOpts, OldOpts},
     mod_antispam_rtbl:cancel_timers(OldRTBLServices),
     ok = mod_antispam_rtbl:unsubscribe(Host, OldRTBLServices),
     ets_cache_clear(cache_tab(blocked_items), Host),
-    RTBLServices = get_rtbl_services_option(NewOpts),
-    ok = mod_antispam_rtbl:get_items(Host, RTBLServices),
-    {noreply, State2#state{rtbl_services = RTBLServices}};
+    ok = mod_antispam_rtbl:stop(Host),
+    maybe
+        ok ?= mod_antispam_rtbl:start(Host, NewOpts),
+        RTBLServices = get_rtbl_services_option(NewOpts),
+        ok = mod_antispam_rtbl:get_items(Host, RTBLServices),
+        {noreply, State2#state{rtbl_services = RTBLServices}}
+    else
+        {error, _} = Error ->
+            {stop, Error, State2}
+    end;
 handle_cast(Request, State) ->
     ?ERROR_MSG("Got unexpected request from: ~p", [Request]),
     {noreply, State}.
@@ -504,13 +549,19 @@ handle_info({iq_reply, _IQReply, {unsubscribe_result, RTBLHost, RTBLNode}},
             #state{rtbl_services = RTBLServices} = State) ->
     %% FIXME: we should check it's true (of type `result`, not `error`), but at that point, what
     %% would we do?
-    RTBLServiceNode = get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode),
-    {noreply,
-     State#state{rtbl_services =
-                     set_rtbl_service_node(RTBLServices,
-                                           RTBLHost,
-                                           RTBLNode,
-                                           RTBLServiceNode#rtbl_service_node{subscribed = false})}};
+    try get_rtbl_service_node(RTBLServices, RTBLHost, RTBLNode) of
+        RTBLServiceNode ->
+            {noreply,
+             State#state{rtbl_services =
+                             set_rtbl_service_node(RTBLServices,
+                                                   RTBLHost,
+                                                   RTBLNode,
+                                                   RTBLServiceNode#rtbl_service_node{subscribed =
+                                                                                         false})}}
+    catch
+        _:_ ->
+            {noreply, State}
+    end;
 handle_info(request_items, #state{host = Host, rtbl_services = RTBLServices} = State) ->
     mod_antispam_rtbl:get_items(Host, RTBLServices),
     {noreply, State};
@@ -547,24 +598,32 @@ code_change(_OldVsn, #state{host = Host} = State, _Extra) ->
 
 -spec get_commands_spec() -> [ejabberd_commands()].
 get_commands_spec() ->
-    [#ejabberd_commands{name = reload_spam_filter_files,
+    [#ejabberd_commands{name = add_blocked_domain,
                         tags = [spam],
-                        desc = "Reload spam JID/URL files",
+                        desc = "Add domain to list of blocked domains",
                         module = ?MODULE,
-                        function = reload_spam_filter_files,
+                        function = add_blocked_domain,
                         note = "added in 25.07",
-                        args = [{host, binary}],
-                        result = {res, rescode}},
-     #ejabberd_commands{name = get_spam_filter_cache,
+                        args = [{host, binary}, {domain, binary}],
+                        result = {res, restuple}},
+     #ejabberd_commands{name = add_muc_ban,
                         tags = [spam],
-                        desc = "Show spam filter cache contents",
+                        desc =
+                            "Add JID to MUC bans, JID can be either in cleartext or as a sha256 hash.",
                         module = ?MODULE,
-                        function = get_spam_filter_cache,
-                        note = "added in 25.07",
-                        args = [{host, binary}],
-                        result =
-                            {spammers,
-                             {list, {spammer, {tuple, [{jid, string}, {timestamp, string}]}}}}},
+                        function = add_muc_ban,
+                        note = "added in 26.12",
+                        args = [{host, binary}, {jid, binary}],
+                        result = {res, restuple}},
+     #ejabberd_commands{name = add_muc_ban_with_reason,
+                        tags = [spam],
+                        desc =
+                            "Add JID to MUC bans, JID can be either in cleartext or as a sha256 hash. 'reason' must be either 'spam' or 'abuse'. 'text' is a free form explanation, needs to be put it in quotiation marks.",
+                        module = ?MODULE,
+                        function = add_muc_ban_with_reason,
+                        note = "added in 26.12",
+                        args = [{host, binary}, {jid, binary}, {reason, binary}, {text, binary}],
+                        result = {res, restuple}},
      #ejabberd_commands{name = add_to_spam_filter_cache,
                         tags = [spam],
                         desc = "Add JID to spam filter cache",
@@ -589,14 +648,24 @@ get_commands_spec() ->
                         note = "added in 25.07",
                         args = [{host, binary}],
                         result = {blocked_domains, {list, {jid, string}}}},
-     #ejabberd_commands{name = add_blocked_domain,
+     #ejabberd_commands{name = get_spam_filter_cache,
                         tags = [spam],
-                        desc = "Add domain to list of blocked domains",
+                        desc = "Show spam filter cache contents",
                         module = ?MODULE,
-                        function = add_blocked_domain,
+                        function = get_spam_filter_cache,
                         note = "added in 25.07",
-                        args = [{host, binary}, {domain, binary}],
-                        result = {res, restuple}},
+                        args = [{host, binary}],
+                        result =
+                            {spammers,
+                             {list, {spammer, {tuple, [{jid, string}, {timestamp, string}]}}}}},
+     #ejabberd_commands{name = reload_spam_filter_files,
+                        tags = [spam],
+                        desc = "Reload spam JID/URL files",
+                        module = ?MODULE,
+                        function = reload_spam_filter_files,
+                        note = "added in 25.07",
+                        args = [{host, binary}],
+                        result = {res, rescode}},
      #ejabberd_commands{name = remove_blocked_domain,
                         tags = [spam],
                         desc = "Remove domain from list of blocked domains",
@@ -604,57 +673,130 @@ get_commands_spec() ->
                         function = remove_blocked_domain,
                         note = "added in 25.07",
                         args = [{host, binary}, {domain, binary}],
+                        result = {res, restuple}},
+     #ejabberd_commands{name = remove_muc_ban,
+                        tags = [spam],
+                        desc = "Remove domain from list of blocked domains",
+                        module = ?MODULE,
+                        function = remove_muc_ban,
+                        note = "added in 26.12",
+                        args = [{host, binary}, {jid, binary}],
                         result = {res, restuple}}].
+
+-define(check_host(BLOCK),
+        maybe
+            true ?= is_host(Host),
+            BLOCK
+        else
+            false ->
+                {error, format_s("Host invalid or unknown: ~s", [binary_to_list(Host)])}
+        end).
+
+is_host(Host) ->
+    try jid:nameprep(Host) of
+        _ ->
+            lists:member(Host, ejabberd_option:hosts())
+    catch
+        _:_ ->
+            false
+    end.
 
 -spec reload_spam_filter_files(binary()) -> ok | {error, string()}.
 reload_spam_filter_files(<<"global">>) ->
     for_all_hosts(fun reload_spam_filter_files/1, []);
 reload_spam_filter_files(Host) ->
-    case try_call_by_host(Host, ?MODULE, reload_spam_files) of
-        {spam_filter, ok} ->
-            ok;
-        {spam_filter, {error, Txt}} ->
-            {error, Txt};
-        {error, _R} = Error ->
-            Error
-    end.
+    ?check_host(begin
+                    case try_call_by_host(Host, ?MODULE, reload_spam_files) of
+                        {spam_filter, ok} ->
+                            ok;
+                        {spam_filter, {error, Txt}} ->
+                            {error, Txt};
+                        {error, _R} = Error ->
+                            Error
+                    end
+                end).
 
 -spec get_blocked_domains(binary()) -> [binary()].
 get_blocked_domains(Host) ->
-    BlockedDomains =
-        ets:select(cache_tab(blocked_items),
-                   [{{{Host, '$1', spam_source_domains}, '_', '_'}, [], ['$1']}]),
-    AllowDomains =
-        ets:select(cache_tab(allow_domains), [{{{Host, '$1'}, '_', '_'}, [], ['$1']}]),
-    BlockedDomains -- AllowDomains.
+    ?check_host(begin
+                    BlockedDomains =
+                        ets:select(cache_tab(blocked_items),
+                                   [{{{Host, '$1', spam_source_domains}, '_', '_'}, [], ['$1']}]),
+                    AllowDomains =
+                        ets:select(cache_tab(allow_domains),
+                                   [{{{Host, '$1'}, '_', '_'}, [], ['$1']}]),
+                    BlockedDomains -- AllowDomains
+                end).
 
 -spec add_blocked_domain(binary(), binary()) -> {ok, string()}.
-add_blocked_domain(<<"global">>, Domain) ->
-    for_all_hosts(fun add_blocked_domain/2, [Domain]);
-add_blocked_domain(Host, Domain) ->
-    ets_upsert(cache_tab(blocked_items),
-               {Host, Domain, spam_source_domains},
-               #{add_blocked_domain => true},
-               ejabberd_cluster:get_nodes()),
-    Txt = format("~s added to blocked domains", [Domain]),
-    {ok, Txt}.
+add_blocked_domain(HostOrGlobal, Domain) ->
+    add_blocked_item(HostOrGlobal, spam_source_domains, Domain).
+
+-spec add_muc_ban(binary(), binary()) -> {ok, string()}.
+add_muc_ban(HostOrGlobal, Item) ->
+    add_blocked_item(HostOrGlobal, muc_bans, Item).
+
+-spec add_muc_ban_with_reason(binary(), binary(), binary(), binary()) -> {ok, string()}.
+add_muc_ban_with_reason(HostOrGlobal, ItemId, Reason, Text)
+    when Reason == <<"spam">>; Reason == <<"abuse">> ->
+    add_blocked_item(HostOrGlobal, muc_bans, {ItemId, binary_to_existing_atom(Reason), Text});
+add_muc_ban_with_reason(_, _, Reason, _) ->
+    {error,
+     format_s("Not a valid reason: '~s' - valid reasons are: 'spam' or 'abuse'.", [Reason])}.
+
+-spec add_blocked_item(binary(),
+                       rtbl_service_node_type(),
+                       mod_antispam_rtbl:rtbl_block_item()) ->
+                          {ok, string()}.
+add_blocked_item(<<"global">>, Type, Item) ->
+    for_all_hosts(fun add_blocked_item/3, [Type, Item]);
+add_blocked_item(Host, Type, Item) ->
+    ?check_host(begin
+                    {ItemId, Payload} = item_id_and_payload(Item),
+                    Val = #{add_blocked_item => Payload},
+                    ets_cache_upsert(cache_tab(blocked_items),
+                                     {Host, ItemId, Type},
+                                     Val,
+                                     ejabberd_cluster:get_nodes()),
+                    ejabberd_hooks:run(antispam_rtbl_items,
+                                       Host,
+                                       [Host, {Type, {[], #{ItemId => Val}}}]),
+                    mod_antispam_rtbl:publish_blocked(Host, Type, Item),
+                    Txt = format("~s added to blocked items of type ~p", [ItemId, Type]),
+                    {ok, Txt}
+                end).
 
 -spec remove_blocked_domain(binary(), binary()) -> {ok, string()}.
-remove_blocked_domain(<<"global">>, Domain) ->
-    for_all_hosts(fun remove_blocked_domain/2, [Domain]);
-remove_blocked_domain(Host, Domain) ->
-    ets_cache:delete(cache_tab(blocked_items),
-                     {Host, Domain, spam_source_domains},
-                     ejabberd_cluster:get_nodes()),
-    Txt = format("~s removed from blocked domains", [Domain]),
-    {ok, Txt}.
+remove_blocked_domain(HostOrGlobal, Domain) ->
+    remove_blocked_item(HostOrGlobal, spam_source_domains, Domain).
 
--spec get_spam_filter_cache(binary()) -> [{binary(), integer()}] | {error, string()}.
+remove_muc_ban(HostOrGlobal, JID) ->
+    remove_blocked_item(HostOrGlobal, muc_bans, JID).
+
+-spec remove_blocked_item(binary(), rtbl_service_node_type(), binary()) -> {ok, string()}.
+remove_blocked_item(<<"global">>, Type, Item) ->
+    for_all_hosts(fun remove_blocked_item/3, [Type, Item]);
+remove_blocked_item(Host, Type, Item) ->
+    ?check_host(begin
+                    ets_cache:delete(cache_tab(blocked_items),
+                                     {Host, Item, Type},
+                                     ejabberd_cluster:get_nodes()),
+                    ejabberd_hooks:run(antispam_rtbl_items, Host, [Host, {Type, {[Item], #{}}}]),
+                    mod_antispam_rtbl:publish_unblocked(Host, Type, Item),
+                    Txt = format("~s removed from blocked items of type ~p", [Item, Type]),
+                    {ok, Txt}
+                end).
+
+-spec get_spam_filter_cache(binary()) -> [{binary(), string()}] | {error, string()}.
 get_spam_filter_cache(Host) ->
-    Cache =
-        ets:select(cache_tab(jids_cache), [{{{Host, '$1'}, '_', '$2'}, [], [{{'$1', '$2'}}]}]),
-    [{jid:encode(JID), encode_timestamp(TS)} || {JID, TS} <- Cache].
+    ?check_host(begin
+                    Cache =
+                        ets:select(cache_tab(jids_cache),
+                                   [{{{Host, '$1'}, '_', '$2'}, [], [{{'$1', '$2'}}]}]),
+                    [{jid:encode(JID), encode_timestamp(TS)} || {JID, TS} <- Cache]
+                end).
 
+-spec encode_timestamp(TS :: integer()) -> string().
 encode_timestamp(TS) ->
     encode_datetime(calendar:now_to_datetime({TS div 1000000000,
                                               TS rem 1000000000 div 1000,
@@ -670,52 +812,56 @@ encode_datetime({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 add_to_spam_filter_cache(<<"global">>, JID) ->
     for_all_hosts(fun add_to_spam_filter_cache/2, [JID]);
 add_to_spam_filter_cache(Host, EncJID) ->
-    try jid:decode(EncJID) of
-        #jid{} = JID ->
-            LJID =
-                jid:remove_resource(
-                    jid:tolower(JID)),
-            case ets_cache:insert(cache_tab(jids_cache),
-                                  {Host, LJID},
-                                  #{source => cmd},
-                                  ejabberd_cluster:get_nodes())
-            of
-                true ->
-                    Txt = format("~s added to cache", [jid:encode(LJID)]),
-                    {ok, Txt};
-                false ->
-                    Txt = format("failed to add ~s to cache", [jid:encode(LJID)]),
-                    {error, Txt}
-            end
-    catch
-        _:{bad_jid, _} ->
-            {error, "Not a valid JID: " ++ binary_to_list(EncJID)}
-    end.
+    ?check_host(begin
+                    try jid:decode(EncJID) of
+                        #jid{} = JID ->
+                            LJID =
+                                jid:remove_resource(
+                                    jid:tolower(JID)),
+                            case ets_cache:insert(cache_tab(jids_cache),
+                                                  {Host, LJID},
+                                                  #{source => cmd},
+                                                  ejabberd_cluster:get_nodes())
+                            of
+                                true ->
+                                    Txt = format("~s added to cache", [jid:encode(LJID)]),
+                                    {ok, Txt};
+                                false ->
+                                    Txt = format_s("failed to add ~s to cache", [jid:encode(LJID)]),
+                                    {error, Txt}
+                            end
+                    catch
+                        _:{bad_jid, _} ->
+                            {error, "Not a valid JID: " ++ binary_to_list(EncJID)}
+                    end
+                end).
 
 -spec drop_from_spam_filter_cache(binary(), binary()) -> {ok | error, string()}.
 drop_from_spam_filter_cache(<<"global">>, JID) ->
     for_all_hosts(fun drop_from_spam_filter_cache/2, [JID]);
 drop_from_spam_filter_cache(Host, EncJID) ->
-    try jid:decode(EncJID) of
-        #jid{} = JID ->
-            LJID =
-                jid:remove_resource(
-                    jid:tolower(JID)),
-            case ets_cache:lookup(cache_tab(jids_cache), {Host, LJID}) of
-                error ->
-                    Txt = format("~s wasn't cached", [jid:encode(LJID)]),
-                    {ok, Txt};
-                {ok, _} ->
-                    ets_cache:delete(cache_tab(jids_cache),
-                                     {Host, LJID},
-                                     ejabberd_cluster:get_nodes()),
-                    Txt = format("~s removed from cache", [jid:encode(LJID)]),
-                    {ok, Txt}
-            end
-    catch
-        _:{bad_jid, _} ->
-            {error, "Not a valid JID: " ++ binary_to_list(EncJID)}
-    end.
+    ?check_host(begin
+                    try jid:decode(EncJID) of
+                        #jid{} = JID ->
+                            LJID =
+                                jid:remove_resource(
+                                    jid:tolower(JID)),
+                            case ets_cache:lookup(cache_tab(jids_cache), {Host, LJID}) of
+                                error ->
+                                    Txt = format_s("~s wasn't cached", [jid:encode(LJID)]),
+                                    {error, Txt};
+                                {ok, _} ->
+                                    ets_cache:delete(cache_tab(jids_cache),
+                                                     {Host, LJID},
+                                                     ejabberd_cluster:get_nodes()),
+                                    Txt = format("~s removed from cache", [jid:encode(LJID)]),
+                                    {ok, Txt}
+                            end
+                    catch
+                        _:{bad_jid, _} ->
+                            {error, "Not a valid JID: " ++ binary_to_list(EncJID)}
+                    end
+                end).
 
 %%--------------------------------------------------------------------
 %%| API
@@ -788,6 +934,10 @@ reload_files(#state{host = Host} = State) ->
             insert_many_for_host(cache_tab(allow_domains),
                                  Host,
                                  set_to_map(AllowDomainsSet, #{source => allow_domains_file})),
+            BlockedDomains =
+                sets:to_list(
+                    sets:subtract(SpamDomainsSet, AllowDomainsSet)),
+            mod_antispam_rtbl:publish_blocked(Host, spam_source_domains, BlockedDomains),
             {ok, State};
         {config_error, ErrorText} ->
             {{error, ErrorText}, State}
@@ -840,18 +990,18 @@ safe_insert_many_for_host(Tab, Host, Type, Items) ->
     end.
 
 insert_many_for_host(Tab, Host, Type, Items) ->
-    maps:foreach(ets_upsert_fun(Tab, fun(K) -> {Host, K, Type} end), Items).
+    maps:foreach(ets_cache_upsert_fun(Tab, fun(K) -> {Host, K, Type} end), Items).
 
 insert_many_for_host(Tab, Host, Items) ->
-    maps:foreach(ets_upsert_fun(Tab, fun(K) -> {Host, K} end), Items).
+    maps:foreach(ets_cache_upsert_fun(Tab, fun(K) -> {Host, K} end), Items).
 
-ets_upsert_fun(Tab, KeyF) ->
+ets_cache_upsert_fun(Tab, KeyF) ->
     fun(K, V) -> ets_upsert(Tab, KeyF(K), V) end.
 
 ets_upsert(Tab, Key, Val) ->
-    ets_upsert(Tab, Key, Val, [node()]).
+    ets_cache_upsert(Tab, Key, Val, [node()]).
 
-ets_upsert(Tab, Key, Val, Nodes) ->
+ets_cache_upsert(Tab, Key, Val, Nodes) ->
     %% FIXME
     %% This is only necessary because while ets_cache allows setting a table
     %% type of 'bag' it doesn't actually support it.

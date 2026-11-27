@@ -26,7 +26,8 @@
 -type url_set() :: sets:set(url()).
 
 -define(DEFAULT_SPAM_SOURCE_DOMAINS_NODE, <<"spam_source_domains">>).
--define(DEFAULT_MUC_BANS_NODE, <<"muc_bans_sha256">>).
+-define(DEFAULT_MUC_BANS_NODE, <<"muc_bans">>).
+-define(XMPPBL_MUC_BANS_NODE, <<"muc_bans_sha256">>).
 
 -record(rtbl_service_node,
         {type = spam_source_domains               :: rtbl_service_node_type(),
