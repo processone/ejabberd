@@ -247,11 +247,14 @@ c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
 	    end;
 	#stream_error{} ->
 	    case MgmtState of
-		resumed ->
-		    State;
 		active ->
 		    State;
-		pending ->
+		_ ->
+		    %% Pending or resumed: the error had no stream to go out
+		    %% on, and the process is of no further use. A resumed
+		    %% session gets one when ejabberd_sm replaces it with the
+		    %% stream that resumed it (open_session/7, which then waits
+		    %% for this process to end: replaced_connection_timeout).
 		    Mod:stop_async(self()),
 		    {stop, State#{stop_reason => {stream, {out, Pkt}}}}
 	    end;
