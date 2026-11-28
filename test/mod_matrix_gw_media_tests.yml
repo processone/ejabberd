@@ -1,0 +1,34 @@
+# The ejabberd mod_matrix_gw_media_tests starts: the Matrix gateway on
+# example.com with small media bounds, its upload_url and mod_http_upload's
+# put_url being the suite's own HTTP server on 127.0.0.1:18363 (the store
+# the gateway puts remote files into and reads ours from). The gateway's
+# JID asks for slots as ejabberd.yml lets it. @DIR@ is the test's own directory.
+hosts:
+  - example.com
+loglevel: warning
+default_db: mnesia
+listen: []
+acl:
+  local:
+    user_regexp: ""
+  matrix_gateway:
+    server: "matrix.example.com"
+access_rules:
+  local:
+    allow: local
+  upload:
+    - allow: local
+    - allow: matrix_gateway
+modules:
+  mod_matrix_gw:
+    matrix_domain: example.com
+    key_name: test
+    key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    media_max_bytes: 1000
+    media_max_entries: 20
+    upload_url: "http://127.0.0.1:18363/upload"
+  mod_http_upload:
+    access: upload
+    put_url: "http://127.0.0.1:18363/upload"
+    docroot: "@DIR@/upload"
+    max_size: 1000

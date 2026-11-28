@@ -1,0 +1,25 @@
+# The ejabberd mod_matrix_gw_rtc_tests starts: the Matrix gateway on
+# example.com (matrix_domain and host left at their defaults, so
+# @ann:example.com and matrix.example.com) with a test key of 32 zero
+# bytes, two MatrixRTC foci, and small delayed-event bounds the suite
+# reaches. No listener: the suite routes the stanzas itself; the remote
+# server's name, remote.invalid, resolves nowhere. @DIR@ is the test's own
+# directory.
+hosts:
+  - example.com
+loglevel: warning
+default_db: mnesia
+listen: []
+modules:
+  mod_matrix_gw:
+    key_name: test
+    key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    rtc_transports:
+      - type: livekit
+        livekit_service_url: "https://rtc.example.com/livekit/jwt"
+      - type: m.livekit
+        url: "wss://sfu.example.com"
+        server_name: example.com
+    rtc_member_format: legacy
+    rtc_max_delay_ms: 100000
+    rtc_max_delayed_per_user: 3

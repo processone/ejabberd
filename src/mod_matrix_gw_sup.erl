@@ -71,5 +71,21 @@ init([Host]) ->
            restart => permanent,
            shutdown => timer:minutes(1),
            type => worker,
-           modules => [mod_matrix_gw]}],
+           modules => [mod_matrix_gw]},
+         %% the devices' queues (its tables are made by
+         %% mod_matrix_gw's init, before it)
+         #{id => mod_matrix_gw_todevice:procname(Host),
+           start => {mod_matrix_gw_todevice, start_link, [Host]},
+           restart => permanent,
+           shutdown => 5000,
+           type => worker,
+           modules => [mod_matrix_gw_todevice]},
+         %% MatrixRTC's delayed events (its tables are made by
+         %% mod_matrix_gw's init too)
+         #{id => mod_matrix_gw_rtc:procname(Host),
+           start => {mod_matrix_gw_rtc, start_link, [Host]},
+           restart => permanent,
+           shutdown => 5000,
+           type => worker,
+           modules => [mod_matrix_gw_rtc]}],
     {ok, {{one_for_one, 10, 1}, Specs}}.
